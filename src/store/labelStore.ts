@@ -1,6 +1,7 @@
-import { create } from 'zustand';
+import { create, useStore } from 'zustand';
 import { temporal } from 'zundo';
 import type { LabelConfig, LabelObject } from '../types/ObjectType';
+import { ObjectRegistry } from '../registry';
 
 interface LabelState {
   label: LabelConfig;
@@ -15,22 +16,66 @@ interface LabelState {
 }
 
 export const useLabelStore = create<LabelState>()(
-  temporal((set) => ({
-    label: { widthMm: 100, heightMm: 60, dpmm: 8 },
-    objects: [],
-    selectedId: null,
+  temporal(
+    (set) => ({
+      label: { widthMm: 100, heightMm: 60, dpmm: 8 },
+      objects: [],
+      selectedId: null,
 
-    addObject: (_type: string) => {
-      // TODO
-    },
-    updateObject: (_id: string, _changes: Partial<LabelObject>) => {
-      // TODO
-    },
-    removeObject: (_id: string) => {
-      // TODO
-    },
-    selectObject: (id) => set({ selectedId: id }),
-    setLabelConfig: (config) =>
-      set((state) => ({ label: { ...state.label, ...config } })),
-  }))
+      addObject: (type) => {
+        const definition = ObjectRegistry[type];
+        if (!definition) return;
+
+        const obj: LabelObject = {
+          id: crypto.randomUUID(),
+          type,
+          x: 50,
+          y: 50,
+          rotation: 0,
+          props: { ...definition.defaultProps },
+        };
+
+        set((state) => ({
+          objects: [...state.objects, obj],
+          selectedId: obj.id,
+        }));
+      },
+
+      updateObject: (id, changes) =>
+        set((state) => ({
+          objects: state.objects.map((obj) => {
+            if (obj.id !== id) return obj;
+            return {
+              ...obj,
+              ...changes,
+              // props werden gemergt, nicht ersetzt
+              props: changes.props
+                ? { ...obj.props, ...changes.props }
+                : obj.props,
+            };
+          }),
+        })),
+
+      removeObject: (id) =>
+        set((state) => ({
+          objects: state.objects.filter((obj) => obj.id !== id),
+          selectedId: state.selectedId === id ? null : state.selectedId,
+        })),
+
+      selectObject: (id) => set({ selectedId: id }),
+
+      setLabelConfig: (config) =>
+        set((state) => ({ label: { ...state.label, ...config } })),
+    }),
+    {
+      // selectedId nicht im Undo-Verlauf tracken
+      partialize: (state) => ({
+        label: state.label,
+        objects: state.objects,
+      }),
+    }
+  )
 );
+
+// Undo / Redo
+export const useHistory = () => useStore(useLabelStore.temporal);
