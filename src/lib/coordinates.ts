@@ -8,3 +8,6 @@ export const dotsToPx = (dots: number, scale: number): number =>
 
 export const mmToDots = (mm: number): number =>
   Math.round(mm * DPMM);
+
+export const dotsToMm = (dots: number): number =>
+  Math.round((dots / DPMM) * 10) / 10;

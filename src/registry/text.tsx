@@ -1,0 +1,85 @@
+import type { ObjectTypeDefinition, LabelObject } from '../types/ObjectType';
+
+export interface TextProps {
+  content: string;
+  fontHeight: number;
+  fontWidth: number;
+  rotation: 'N' | 'R' | 'I' | 'B';
+}
+
+const inputCls = 'w-full bg-surface-2 border border-border rounded px-2 py-1 text-xs font-mono text-text focus:border-accent focus:outline-none';
+const labelCls = 'font-mono text-[10px] text-muted uppercase tracking-wider';
+
+export const text: ObjectTypeDefinition<TextProps> = {
+  label: 'Text',
+  icon: 'T',
+  defaultProps: {
+    content: 'Text',
+    fontHeight: 30,
+    fontWidth: 0,
+    rotation: 'N',
+  },
+  defaultSize: { width: 200, height: 40 },
+
+  toZPL: (obj: LabelObject): string => {
+    const p = obj.props as TextProps;
+    return [
+      `^FO${obj.x},${obj.y}`,
+      `^A0${p.rotation},${p.fontHeight},${p.fontWidth}`,
+      `^FD${p.content}^FS`,
+    ].join('');
+  },
+
+  PropertiesPanel: ({ obj, onChange }) => {
+    const p = obj.props as TextProps;
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>Inhalt</label>
+          <input
+            className={inputCls}
+            value={p.content}
+            onChange={(e) => onChange({ content: e.target.value })}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-1">
+            <label className={labelCls}>Höhe (dots)</label>
+            <input
+              type="number"
+              className={inputCls}
+              value={p.fontHeight}
+              min={1}
+              onChange={(e) => onChange({ fontHeight: Number(e.target.value) })}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className={labelCls}>Breite (dots)</label>
+            <input
+              type="number"
+              className={inputCls}
+              value={p.fontWidth}
+              min={0}
+              onChange={(e) => onChange({ fontWidth: Number(e.target.value) })}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>Rotation</label>
+          <select
+            className={inputCls}
+            value={p.rotation}
+            onChange={(e) => onChange({ rotation: e.target.value as TextProps['rotation'] })}
+          >
+            <option value="N">N — Normal</option>
+            <option value="R">R — 90°</option>
+            <option value="I">I — 180°</option>
+            <option value="B">B — 270°</option>
+          </select>
+        </div>
+      </div>
+    );
+  },
+};
