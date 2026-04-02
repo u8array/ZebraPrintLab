@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+@theme {
+  --color-bg:        #0c0c0f;
+  --color-surface:   #13131a;
+  --color-surface-2: #1a1a24;
+  --color-border:    #22222e;
+  --color-border-2:  #2e2e3e;
+  --color-text:      #e2e2e8;
+  --color-muted:     #5a5a72;
+  --color-accent:    #f59e0b;
+  --color-accent-dim:#78490a;
+
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -7,4 +22,7 @@
 html, body, #root {
   height: 100%;
   margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
 }

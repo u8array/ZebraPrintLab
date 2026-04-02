@@ -84,6 +84,11 @@ export function LabelCanvas() {
     <div
       ref={containerRef}
       className="w-full h-full"
+      style={{
+        background: '#0c0c0f',
+        backgroundImage: 'radial-gradient(circle, #2a2a38 1px, transparent 1px)',
+        backgroundSize: '24px 24px',
+      }}
       onDrop={handleDrop}
       onDragOver={(e) => e.preventDefault()}
     >

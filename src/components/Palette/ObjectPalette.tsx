@@ -7,8 +7,8 @@ export function ObjectPalette() {
   };
 
   return (
-    <div className="p-3 flex flex-col gap-2">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+    <div className="p-3 flex flex-col gap-1">
+      <p className="font-mono text-[10px] font-medium text-muted uppercase tracking-widest px-1 pt-1 pb-2">
         Objekte
       </p>
       {Object.entries(ObjectRegistry).map(([type, def]) => (
@@ -16,12 +16,20 @@ export function ObjectPalette() {
           key={type}
           draggable
           onDragStart={(e) => handleDragStart(e, type)}
-          className="flex items-center gap-2 px-3 py-2 rounded-md bg-gray-800 hover:bg-gray-700 cursor-grab active:cursor-grabbing select-none text-sm text-gray-200"
+          className="
+            group flex items-center gap-2.5 px-2.5 py-2 rounded
+            border border-transparent
+            hover:border-border-2 hover:bg-surface-2
+            cursor-grab active:cursor-grabbing select-none
+            transition-colors
+          "
         >
-          <span className="font-mono text-gray-400 w-6 text-center shrink-0">
+          <span className="font-mono text-[11px] text-accent w-6 text-center shrink-0 group-hover:text-accent">
             {def.icon}
           </span>
-          {def.label}
+          <span className="text-xs text-text">
+            {def.label}
+          </span>
         </div>
       ))}
     </div>
