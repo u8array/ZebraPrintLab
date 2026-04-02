@@ -8,7 +8,7 @@ interface LabelState {
   objects: LabelObject[];
   selectedId: string | null;
 
-  addObject: (type: string) => void;
+  addObject: (type: string, position?: { x: number; y: number }) => void;
   updateObject: (id: string, changes: Partial<LabelObject>) => void;
   removeObject: (id: string) => void;
   selectObject: (id: string | null) => void;
@@ -22,15 +22,15 @@ export const useLabelStore = create<LabelState>()(
       objects: [],
       selectedId: null,
 
-      addObject: (type) => {
+      addObject: (type, position = { x: 50, y: 50 }) => {
         const definition = ObjectRegistry[type];
         if (!definition) return;
 
         const obj: LabelObject = {
           id: crypto.randomUUID(),
           type,
-          x: 50,
-          y: 50,
+          x: position.x,
+          y: position.y,
           rotation: 0,
           props: { ...definition.defaultProps },
         };
