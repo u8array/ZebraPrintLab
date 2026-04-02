@@ -1,4 +1,5 @@
 import type { ObjectTypeDefinition, LabelObject } from '../types/ObjectType';
+import t from '../locales/en';
 
 export interface Code128Props {
   content: string;
@@ -37,7 +38,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
     return (
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>Inhalt</label>
+          <label className={labelCls}>{t.registry.code128.content}</label>
           <input
             className={inputCls}
             value={p.content}
@@ -46,7 +47,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>Höhe (dots)</label>
+          <label className={labelCls}>{t.registry.code128.height}</label>
           <input
             type="number"
             className={inputCls}
@@ -64,7 +65,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
               checked={p.printInterpretation}
               onChange={(e) => onChange({ printInterpretation: e.target.checked })}
             />
-            <span className={labelCls}>Klartextzeile</span>
+            <span className={labelCls}>{t.registry.code128.printInterpretation}</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -73,7 +74,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
               checked={p.checkDigit}
               onChange={(e) => onChange({ checkDigit: e.target.checked })}
             />
-            <span className={labelCls}>Check Digit</span>
+            <span className={labelCls}>{t.registry.code128.checkDigit}</span>
           </label>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useLabelStore } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
 import { dotsToMm, mmToDots } from '../../lib/coordinates';
+import t from '../../locales/en';
 
 const inputCls = 'w-full bg-surface-2 border border-border rounded px-2 py-1 text-xs font-mono text-text focus:border-accent focus:outline-none';
 const labelCls = 'font-mono text-[10px] text-muted uppercase tracking-wider';
@@ -12,8 +13,8 @@ export function PropertiesPanel() {
   if (!obj) {
     return (
       <div className="flex items-center justify-center h-full p-4">
-        <p className="font-mono text-[11px] text-muted text-center leading-relaxed">
-          Objekt auswählen<br />oder aus der Palette ziehen
+        <p className="font-mono text-[11px] text-muted text-center leading-relaxed whitespace-pre-line">
+          {t.properties.empty}
         </p>
       </div>
     );
@@ -36,10 +37,10 @@ export function PropertiesPanel() {
 
         {/* Position */}
         <div className="flex flex-col gap-2">
-          <p className={labelCls}>Position (mm)</p>
+          <p className={labelCls}>{t.properties.positionSection}</p>
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
-              <label className={labelCls}>X</label>
+              <label className={labelCls}>{t.properties.x}</label>
               <input
                 type="number"
                 className={inputCls}
@@ -49,7 +50,7 @@ export function PropertiesPanel() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className={labelCls}>Y</label>
+              <label className={labelCls}>{t.properties.y}</label>
               <input
                 type="number"
                 className={inputCls}

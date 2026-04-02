@@ -1,4 +1,5 @@
 import { ObjectRegistry } from '../../registry';
+import t from '../../locales/en';
 
 export function ObjectPalette() {
   const handleDragStart = (e: React.DragEvent, type: string) => {
@@ -9,7 +10,7 @@ export function ObjectPalette() {
   return (
     <div className="p-3 flex flex-col gap-1">
       <p className="font-mono text-[10px] font-medium text-muted uppercase tracking-widest px-1 pt-1 pb-2">
-        Objekte
+        {t.palette.heading}
       </p>
       {Object.entries(ObjectRegistry).map(([type, def]) => (
         <div

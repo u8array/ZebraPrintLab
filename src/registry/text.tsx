@@ -1,4 +1,5 @@
 import type { ObjectTypeDefinition, LabelObject } from '../types/ObjectType';
+import t from '../locales/en';
 
 export interface TextProps {
   content: string;
@@ -35,7 +36,7 @@ export const text: ObjectTypeDefinition<TextProps> = {
     return (
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>Inhalt</label>
+          <label className={labelCls}>{t.registry.text.content}</label>
           <input
             className={inputCls}
             value={p.content}
@@ -45,7 +46,7 @@ export const text: ObjectTypeDefinition<TextProps> = {
 
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>Höhe (dots)</label>
+            <label className={labelCls}>{t.registry.text.fontHeight}</label>
             <input
               type="number"
               className={inputCls}
@@ -55,7 +56,7 @@ export const text: ObjectTypeDefinition<TextProps> = {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>Breite (dots)</label>
+            <label className={labelCls}>{t.registry.text.fontWidth}</label>
             <input
               type="number"
               className={inputCls}
@@ -67,16 +68,16 @@ export const text: ObjectTypeDefinition<TextProps> = {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>Rotation</label>
+          <label className={labelCls}>{t.registry.text.rotation}</label>
           <select
             className={inputCls}
             value={p.rotation}
             onChange={(e) => onChange({ rotation: e.target.value as TextProps['rotation'] })}
           >
-            <option value="N">N — Normal</option>
-            <option value="R">R — 90°</option>
-            <option value="I">I — 180°</option>
-            <option value="B">B — 270°</option>
+            <option value="N">{t.registry.text.rotationN}</option>
+            <option value="R">{t.registry.text.rotationR}</option>
+            <option value="I">{t.registry.text.rotationI}</option>
+            <option value="B">{t.registry.text.rotationB}</option>
           </select>
         </div>
       </div>
