@@ -2,14 +2,21 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { Stage, Layer, Rect, Transformer } from 'react-konva';
 import type Konva from 'konva';
 import { useLabelStore } from '../../store/labelStore';
-import { dotsToPx, pxToDots } from '../../lib/coordinates';
+import { dotsToPx, pxToDots, DPMM } from '../../lib/coordinates';
 import { KonvaObject } from './KonvaObject';
+import { Grid } from './Grid';
+import { Ruler, RULER_SIZE } from './Ruler';
 import type { TextProps } from '../../registry/text';
 import type { Code128Props } from '../../registry/code128';
 
 const PADDING = 40;
 
-export function LabelCanvas() {
+interface Props {
+  showGrid: boolean;
+  snapEnabled: boolean;
+}
+
+export function LabelCanvas({ showGrid, snapEnabled }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -18,7 +25,6 @@ export function LabelCanvas() {
   const { label, objects, selectedId, addObject, updateObject, selectObject } =
     useLabelStore();
 
-  // Container-Größe via ResizeObserver tracken
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -30,23 +36,34 @@ export function LabelCanvas() {
     return () => observer.disconnect();
   }, []);
 
-  // Scale so dass Label mit Padding in den Container passt
-  const scaleX =
-    containerSize.width > 0
-      ? (containerSize.width - PADDING * 2) / label.widthMm
-      : 1;
-  const scaleY =
-    containerSize.height > 0
-      ? (containerSize.height - PADDING * 2) / label.heightMm
-      : 1;
+  // Nutzbarer Bereich nach Abzug des Lineal-Bereichs
+  const usableWidth = containerSize.width - RULER_SIZE;
+  const usableHeight = containerSize.height - RULER_SIZE;
+
+  const scaleX = usableWidth > 0 ? (usableWidth - PADDING * 2) / label.widthMm : 1;
+  const scaleY = usableHeight > 0 ? (usableHeight - PADDING * 2) / label.heightMm : 1;
   const scale = Math.min(scaleX, scaleY);
 
   const labelWidthPx = label.widthMm * scale;
   const labelHeightPx = label.heightMm * scale;
-  const labelOffsetX = (containerSize.width - labelWidthPx) / 2;
-  const labelOffsetY = (containerSize.height - labelHeightPx) / 2;
+  const labelOffsetX = RULER_SIZE + (usableWidth - labelWidthPx) / 2;
+  const labelOffsetY = RULER_SIZE + (usableHeight - labelHeightPx) / 2;
 
-  // Transformer an selektiertes Objekt hängen
+  // Snap: rundet auf nächsten mm-Schritt
+  const snap = useCallback((dots: number) =>
+    snapEnabled ? Math.round(dots / DPMM) * DPMM : dots,
+    [snapEnabled]
+  );
+
+  const handleObjectChange = useCallback((id: string, changes: Parameters<typeof updateObject>[1]) => {
+    updateObject(id, {
+      ...changes,
+      ...(changes.x !== undefined && { x: snap(changes.x) }),
+      ...(changes.y !== undefined && { y: snap(changes.y) }),
+    });
+  }, [snap, updateObject]);
+
+  // Transformer aktualisieren
   useEffect(() => {
     if (!transformerRef.current || !stageRef.current) return;
     const node = selectedId
@@ -55,26 +72,22 @@ export function LabelCanvas() {
     transformerRef.current.nodes(node ? [node] : []);
   }, [selectedId, objects]);
 
-  // Drop: neues Objekt an Drop-Position einfügen
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       const type = e.dataTransfer.getData('objectType');
       if (!type || !stageRef.current) return;
-
       stageRef.current.setPointersPositions(e.nativeEvent);
       const pos = stageRef.current.getPointerPosition();
       if (!pos) return;
-
       addObject(type, {
-        x: pxToDots(pos.x - labelOffsetX, scale),
-        y: pxToDots(pos.y - labelOffsetY, scale),
+        x: snap(pxToDots(pos.x - labelOffsetX, scale)),
+        y: snap(pxToDots(pos.y - labelOffsetY, scale)),
       });
     },
-    [addObject, labelOffsetX, labelOffsetY, scale]
+    [addObject, labelOffsetX, labelOffsetY, scale, snap]
   );
 
-  // Klick auf Stage-Hintergrund → deselektieren
   const handleStageClick = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
       if (e.target === e.target.getStage()) selectObject(null);
@@ -101,6 +114,20 @@ export function LabelCanvas() {
           height={containerSize.height}
           onClick={handleStageClick}
         >
+          {/* Lineal — eigener Layer ganz oben */}
+          <Layer listening={false}>
+            <Ruler
+              labelOffsetX={labelOffsetX}
+              labelOffsetY={labelOffsetY}
+              labelWidthMm={label.widthMm}
+              labelHeightMm={label.heightMm}
+              scale={scale}
+              canvasWidth={containerSize.width}
+              canvasHeight={containerSize.height}
+            />
+          </Layer>
+
+          {/* Objekt-Layer */}
           <Layer>
             {/* Label-Fläche */}
             <Rect
@@ -115,7 +142,17 @@ export function LabelCanvas() {
               onClick={() => selectObject(null)}
             />
 
-            {/* Objekte */}
+            {/* Raster über dem weißen Rect, unter den Objekten */}
+            {showGrid && (
+              <Grid
+                labelOffsetX={labelOffsetX}
+                labelOffsetY={labelOffsetY}
+                labelWidthPx={labelWidthPx}
+                labelHeightPx={labelHeightPx}
+                scale={scale}
+              />
+            )}
+
             {objects.map((obj) => (
               <KonvaObject
                 key={obj.id}
@@ -125,11 +162,10 @@ export function LabelCanvas() {
                 offsetY={labelOffsetY}
                 isSelected={obj.id === selectedId}
                 onSelect={() => selectObject(obj.id)}
-                onChange={(changes) => updateObject(obj.id, changes)}
+                onChange={(changes) => handleObjectChange(obj.id, changes)}
               />
             ))}
 
-            {/* Transformer für selektiertes Objekt */}
             <Transformer
               ref={transformerRef}
               rotateEnabled={false}
@@ -140,19 +176,15 @@ export function LabelCanvas() {
                 if (!selectedId || !stageRef.current) return;
                 const node = stageRef.current.findOne<Konva.Node>(`#${selectedId}`);
                 if (!node) return;
-
                 const scaleY = node.scaleY();
                 node.scaleX(1);
                 node.scaleY(1);
-
                 const obj = useLabelStore.getState().objects.find((o) => o.id === selectedId);
                 if (!obj) return;
-
                 const pos = {
-                  x: pxToDots(node.x() - labelOffsetX, scale),
-                  y: pxToDots(node.y() - labelOffsetY, scale),
+                  x: snap(pxToDots(node.x() - labelOffsetX, scale)),
+                  y: snap(pxToDots(node.y() - labelOffsetY, scale)),
                 };
-
                 if (obj.type === 'text') {
                   const p = obj.props as TextProps;
                   updateObject(selectedId, {
