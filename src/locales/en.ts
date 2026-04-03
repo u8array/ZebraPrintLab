@@ -13,10 +13,20 @@ const en = {
   },
 
   properties: {
-    empty: 'Select an object\nor drag one from the palette',
     positionSection: 'Position (mm)',
     x: 'X',
     y: 'Y',
+  },
+
+  label: {
+    heading: 'Label',
+    width: 'Width (mm)',
+    height: 'Height (mm)',
+    dpmm: 'Resolution',
+    dpmm6: '6 dpmm — 152 dpi',
+    dpmm8: '8 dpmm — 203 dpi',
+    dpmm12: '12 dpmm — 300 dpi',
+    dpmm24: '24 dpmm — 600 dpi',
   },
 
   output: {
