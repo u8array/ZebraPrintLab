@@ -43,7 +43,7 @@ export function ZPLOutput() {
 }
 
 function ZplLine({ line }: { line: string }) {
-  // ^CMD-Teile in Amber, Rest in gedämpftem Weiß
+  // highlight ^CMD tokens in amber, rest in default text color
   const parts = line.split(/([\^][A-Z0-9]+)/g);
   return (
     <span className="block">

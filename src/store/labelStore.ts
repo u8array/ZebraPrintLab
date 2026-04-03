@@ -48,7 +48,7 @@ export const useLabelStore = create<LabelState>()(
             return {
               ...obj,
               ...changes,
-              // props werden gemergt, nicht ersetzt
+              // merge props, not replace
               props: changes.props
                 ? { ...obj.props, ...changes.props }
                 : obj.props,
@@ -68,7 +68,7 @@ export const useLabelStore = create<LabelState>()(
         set((state) => ({ label: { ...state.label, ...config } })),
     }),
     {
-      // selectedId nicht im Undo-Verlauf tracken
+      // exclude selectedId from undo history
       partialize: (state) => ({
         label: state.label,
         objects: state.objects,
@@ -77,5 +77,5 @@ export const useLabelStore = create<LabelState>()(
   )
 );
 
-// Undo / Redo
+// Undo / redo
 export const useHistory = () => useStore(useLabelStore.temporal);

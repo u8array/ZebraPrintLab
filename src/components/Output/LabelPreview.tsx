@@ -42,7 +42,7 @@ export function LabelPreview() {
     };
   }, [label, objects]);
 
-  // Object-URL beim Unmount freigeben
+  // revoke object URL on unmount
   useEffect(() => {
     return () => {
       if (prevUrlRef.current) URL.revokeObjectURL(prevUrlRef.current);

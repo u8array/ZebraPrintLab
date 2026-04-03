@@ -10,6 +10,7 @@ import type { TextProps } from '../../registry/text';
 import type { Code128Props } from '../../registry/code128';
 
 const PADDING = 40;
+const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
 
 interface Props {
   showGrid: boolean;
@@ -21,6 +22,11 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [zoom, setZoom] = useState(1);
+
+  const zoomIn  = () => setZoom(z => ZOOM_STEPS.find(s => s > z) ?? ZOOM_STEPS.at(-1)!);
+  const zoomOut = () => setZoom(z => [...ZOOM_STEPS].reverse().find(s => s < z) ?? ZOOM_STEPS[0]);
+  const zoomFit = () => setZoom(1);
 
   const { label, objects, selectedId, addObject, updateObject, selectObject } =
     useLabelStore();
@@ -36,20 +42,36 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
     return () => observer.disconnect();
   }, []);
 
-  // Nutzbarer Bereich nach Abzug des Lineal-Bereichs
+  // non-passive wheel listener so preventDefault works for ctrl+scroll zoom
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      setZoom(z => {
+        const next = z * (e.deltaY < 0 ? 1.1 : 0.9);
+        return Math.max(ZOOM_STEPS[0], Math.min(ZOOM_STEPS.at(-1)!, next));
+      });
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // usable area after reserving space for the ruler
   const usableWidth = containerSize.width - RULER_SIZE;
   const usableHeight = containerSize.height - RULER_SIZE;
 
   const scaleX = usableWidth > 0 ? (usableWidth - PADDING * 2) / label.widthMm : 1;
   const scaleY = usableHeight > 0 ? (usableHeight - PADDING * 2) / label.heightMm : 1;
-  const scale = Math.min(scaleX, scaleY);
+  const scale = Math.min(scaleX, scaleY) * zoom;
 
   const labelWidthPx = label.widthMm * scale;
   const labelHeightPx = label.heightMm * scale;
   const labelOffsetX = RULER_SIZE + (usableWidth - labelWidthPx) / 2;
   const labelOffsetY = RULER_SIZE + (usableHeight - labelHeightPx) / 2;
 
-  // Snap: rundet auf nächsten mm-Schritt
+  // snap dots to nearest mm boundary
   const snap = useCallback((dots: number) =>
     snapEnabled ? Math.round(dots / DPMM) * DPMM : dots,
     [snapEnabled]
@@ -98,7 +120,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full"
+      className="w-full h-full relative"
       style={{
         background: '#0c0c0f',
         backgroundImage: 'radial-gradient(circle, #2a2a38 1px, transparent 1px)',
@@ -107,6 +129,14 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
       onDrop={handleDrop}
       onDragOver={(e) => e.preventDefault()}
     >
+      {/* Zoom-Controls */}
+      <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 bg-surface border border-border rounded px-1 py-0.5">
+        <button onClick={zoomOut} className="w-6 h-6 flex items-center justify-center text-muted hover:text-text font-mono text-sm transition-colors">−</button>
+        <button onClick={zoomFit} className="font-mono text-[10px] text-muted hover:text-accent w-10 text-center transition-colors">
+          {Math.round(zoom * 100)}%
+        </button>
+        <button onClick={zoomIn} className="w-6 h-6 flex items-center justify-center text-muted hover:text-text font-mono text-sm transition-colors">+</button>
+      </div>
       {containerSize.width > 0 && (
         <Stage
           ref={stageRef}
@@ -114,19 +144,6 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
           height={containerSize.height}
           onClick={handleStageClick}
         >
-          {/* Lineal — eigener Layer ganz oben */}
-          <Layer listening={false}>
-            <Ruler
-              labelOffsetX={labelOffsetX}
-              labelOffsetY={labelOffsetY}
-              labelWidthMm={label.widthMm}
-              labelHeightMm={label.heightMm}
-              scale={scale}
-              canvasWidth={containerSize.width}
-              canvasHeight={containerSize.height}
-            />
-          </Layer>
-
           {/* Objekt-Layer */}
           <Layer>
             {/* Label-Fläche */}
@@ -199,6 +216,19 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                   });
                 }
               }}
+            />
+          </Layer>
+
+          {/* Lineal — ganz oben, überdeckt alles */}
+          <Layer listening={false}>
+            <Ruler
+              labelOffsetX={labelOffsetX}
+              labelOffsetY={labelOffsetY}
+              labelWidthMm={label.widthMm}
+              labelHeightMm={label.heightMm}
+              scale={scale}
+              canvasWidth={containerSize.width}
+              canvasHeight={containerSize.height}
             />
           </Layer>
         </Stage>
