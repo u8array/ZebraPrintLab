@@ -36,7 +36,10 @@ export function KonvaObject({
 
   if (obj.type === 'text') {
     const p = obj.props as TextProps;
-    const fontSize = Math.max(dotsToPx(p.fontHeight, scale), 6);
+    const fontSize = Math.max(dotsToPx(p.fontHeight, scale) / 0.72, 6);
+    const zplRotationDeg: Record<TextProps['rotation'], number> = {
+      N: 0, R: 90, I: 180, B: 270,
+    };
     return (
       <Text
         id={obj.id}
@@ -44,6 +47,9 @@ export function KonvaObject({
         y={y}
         text={p.content}
         fontSize={fontSize}
+        fontFamily="'Barlow', sans-serif"
+        fontStyle="bold"
+        rotation={zplRotationDeg[p.rotation]}
         fill="#000000"
         stroke={isSelected ? '#6366f1' : undefined}
         strokeWidth={isSelected ? 1 : 0}
@@ -57,8 +63,6 @@ export function KonvaObject({
 
   if (obj.type === 'code128') {
     const p = obj.props as Code128Props;
-    const width = dotsToPx(300, scale);
-    const height = dotsToPx(p.height + 20, scale);
     return (
       <Group
         id={obj.id}
@@ -70,8 +74,8 @@ export function KonvaObject({
         onDragEnd={handleDragEnd}
       >
         <Rect
-          width={width}
-          height={height}
+          width={dotsToPx(300, scale)}
+          height={dotsToPx(p.height + 20, scale)}
           fill="#f9fafb"
           stroke={isSelected ? '#6366f1' : '#9ca3af'}
           strokeWidth={isSelected ? 2 : 1}

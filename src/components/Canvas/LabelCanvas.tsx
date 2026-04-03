@@ -4,6 +4,8 @@ import type Konva from 'konva';
 import { useLabelStore } from '../../store/labelStore';
 import { dotsToPx, pxToDots } from '../../lib/coordinates';
 import { KonvaObject } from './KonvaObject';
+import type { TextProps } from '../../registry/text';
+import type { Code128Props } from '../../registry/code128';
 
 const PADDING = 40;
 
@@ -134,6 +136,37 @@ export function LabelCanvas() {
               boundBoxFunc={(oldBox, newBox) =>
                 newBox.width < 10 || newBox.height < 10 ? oldBox : newBox
               }
+              onTransformEnd={() => {
+                if (!selectedId || !stageRef.current) return;
+                const node = stageRef.current.findOne<Konva.Node>(`#${selectedId}`);
+                if (!node) return;
+
+                const scaleY = node.scaleY();
+                node.scaleX(1);
+                node.scaleY(1);
+
+                const obj = useLabelStore.getState().objects.find((o) => o.id === selectedId);
+                if (!obj) return;
+
+                const pos = {
+                  x: pxToDots(node.x() - labelOffsetX, scale),
+                  y: pxToDots(node.y() - labelOffsetY, scale),
+                };
+
+                if (obj.type === 'text') {
+                  const p = obj.props as TextProps;
+                  updateObject(selectedId, {
+                    ...pos,
+                    props: { fontHeight: Math.max(1, Math.round(p.fontHeight * scaleY)) },
+                  });
+                } else if (obj.type === 'code128') {
+                  const p = obj.props as Code128Props;
+                  updateObject(selectedId, {
+                    ...pos,
+                    props: { height: Math.max(1, Math.round(p.height * scaleY)) },
+                  });
+                }
+              }}
             />
           </Layer>
         </Stage>
