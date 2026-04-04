@@ -1,8 +1,8 @@
-// Template für neue Objekt-Typen.
-// 1. Datei kopieren und umbenennen (z.B. ean13.ts)
-// 2. Props-Interface definieren
-// 3. ObjectTypeDefinition implementieren
-// 4. Eintrag in registry/index.ts hinzufügen
+// Template for new object types.
+// 1. Copy and rename this file (e.g. ean13.ts)
+// 2. Define the Props interface
+// 3. Implement ObjectTypeDefinition
+// 4. Add an entry in registry/index.ts
 
 import type { ObjectTypeDefinition, LabelObject } from '../types/ObjectType';
 

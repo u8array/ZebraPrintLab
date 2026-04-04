@@ -23,10 +23,16 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
   const transformerRef = useRef<Konva.Transformer>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [zoom, setZoom] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [spaceDown, setSpaceDown] = useState(false);
+  const isPanningRef = useRef(false);
+  const panStartRef = useRef({ mouseX: 0, mouseY: 0, panX: 0, panY: 0 });
+  // track whether the pointer actually moved during a pan gesture
+  const didPanRef = useRef(false);
 
   const zoomIn  = () => setZoom(z => ZOOM_STEPS.find(s => s > z) ?? ZOOM_STEPS.at(-1)!);
   const zoomOut = () => setZoom(z => [...ZOOM_STEPS].reverse().find(s => s < z) ?? ZOOM_STEPS[0]);
-  const zoomFit = () => setZoom(1);
+  const zoomFit = () => { setZoom(1); setPanOffset({ x: 0, y: 0 }); };
 
   const { label, objects, selectedId, addObject, updateObject, selectObject } =
     useLabelStore();
@@ -42,20 +48,72 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
     return () => observer.disconnect();
   }, []);
 
-  // non-passive wheel listener so preventDefault works for ctrl+scroll zoom
+  // non-passive wheel: ctrl+scroll → zoom, plain scroll → pan
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
-      if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
-      setZoom(z => {
-        const next = z * (e.deltaY < 0 ? 1.1 : 0.9);
-        return Math.max(ZOOM_STEPS[0], Math.min(ZOOM_STEPS.at(-1)!, next));
-      });
+      if (e.ctrlKey || e.metaKey) {
+        setZoom(z => {
+          const next = z * (e.deltaY < 0 ? 1.1 : 0.9);
+          return Math.max(ZOOM_STEPS[0], Math.min(ZOOM_STEPS.at(-1)!, next));
+        });
+      } else {
+        setPanOffset(p => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
+      }
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // space key toggles the grab cursor and enables space+drag panning
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && e.target === document.body) {
+        e.preventDefault();
+        setSpaceDown(true);
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') setSpaceDown(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    const isMiddle = e.button === 1;
+    const isSpaceDrag = e.button === 0 && spaceDown;
+    if (!isMiddle && !isSpaceDrag) return;
+    e.preventDefault();
+    isPanningRef.current = true;
+    didPanRef.current = false;
+    panStartRef.current = {
+      mouseX: e.clientX,
+      mouseY: e.clientY,
+      panX: panOffset.x,
+      panY: panOffset.y,
+    };
+  }, [spaceDown, panOffset]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanningRef.current) return;
+    const dx = e.clientX - panStartRef.current.mouseX;
+    const dy = e.clientY - panStartRef.current.mouseY;
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) didPanRef.current = true;
+    setPanOffset({
+      x: panStartRef.current.panX + dx,
+      y: panStartRef.current.panY + dy,
+    });
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    isPanningRef.current = false;
   }, []);
 
   // usable area after reserving space for the ruler
@@ -68,8 +126,8 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
 
   const labelWidthPx = label.widthMm * scale;
   const labelHeightPx = label.heightMm * scale;
-  const labelOffsetX = RULER_SIZE + (usableWidth - labelWidthPx) / 2;
-  const labelOffsetY = RULER_SIZE + (usableHeight - labelHeightPx) / 2;
+  const labelOffsetX = RULER_SIZE + (usableWidth - labelWidthPx) / 2 + panOffset.x;
+  const labelOffsetY = RULER_SIZE + (usableHeight - labelHeightPx) / 2 + panOffset.y;
 
   // snap dots to nearest mm boundary
   const snap = useCallback((dots: number) =>
@@ -85,7 +143,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
     });
   }, [snap, updateObject]);
 
-  // Transformer aktualisieren
+  // Sync transformer selection whenever the selected object or object list changes
   useEffect(() => {
     if (!transformerRef.current || !stageRef.current) return;
     const node = selectedId
@@ -112,10 +170,14 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
 
   const handleStageClick = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
+      // suppress deselection when the click was the end of a pan gesture
+      if (didPanRef.current) { didPanRef.current = false; return; }
       if (e.target === e.target.getStage()) selectObject(null);
     },
     [selectObject]
   );
+
+  const cursor = isPanningRef.current ? 'grabbing' : spaceDown ? 'grab' : undefined;
 
   return (
     <div
@@ -125,11 +187,16 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
         background: '#0c0c0f',
         backgroundImage: 'radial-gradient(circle, #2a2a38 1px, transparent 1px)',
         backgroundSize: '24px 24px',
+        cursor,
       }}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
       onDrop={handleDrop}
       onDragOver={(e) => e.preventDefault()}
     >
-      {/* Zoom-Controls */}
+      {/* Zoom controls */}
       <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 bg-surface border border-border rounded px-1 py-0.5">
         <button onClick={zoomOut} className="w-6 h-6 flex items-center justify-center text-muted hover:text-text font-mono text-sm transition-colors">−</button>
         <button onClick={zoomFit} className="font-mono text-[10px] text-muted hover:text-accent w-10 text-center transition-colors">
@@ -144,9 +211,9 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
           height={containerSize.height}
           onClick={handleStageClick}
         >
-          {/* Objekt-Layer */}
+          {/* Object layer */}
           <Layer>
-            {/* Label-Fläche */}
+            {/* Label surface */}
             <Rect
               x={labelOffsetX}
               y={labelOffsetY}
@@ -159,7 +226,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
               onClick={() => selectObject(null)}
             />
 
-            {/* Raster über dem weißen Rect, unter den Objekten */}
+            {/* Grid above the label surface, below objects */}
             {showGrid && (
               <Grid
                 labelOffsetX={labelOffsetX}
@@ -219,7 +286,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
             />
           </Layer>
 
-          {/* Lineal — ganz oben, überdeckt alles */}
+          {/* Ruler — topmost layer, always covers everything */}
           <Layer listening={false}>
             <Ruler
               labelOffsetX={labelOffsetX}

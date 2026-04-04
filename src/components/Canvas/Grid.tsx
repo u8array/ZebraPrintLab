@@ -17,14 +17,14 @@ export function Grid({
 }: Props) {
   const step5px = scale * 5;
   const step1px = scale * 1;
-  const show1mm = scale >= 6; // 1mm-Linien nur bei genug Zoom
+  const show1mm = scale >= 6; // 1mm lines only when zoomed in enough
 
   const lines: React.ReactElement[] = [];
 
   const right = labelOffsetX + labelWidthPx;
   const bottom = labelOffsetY + labelHeightPx;
 
-  // 5mm-Raster
+  // 5mm grid
   for (let x = labelOffsetX + step5px; x < right; x += step5px) {
     lines.push(
       <Line key={`v5-${x}`} points={[x, labelOffsetY, x, bottom]}
@@ -38,7 +38,7 @@ export function Grid({
     );
   }
 
-  // 1mm-Raster (nur bei genug Zoom, 5mm-Positionen überspringen)
+  // 1mm grid (only when zoomed in; skip positions already covered by 5mm lines)
   if (show1mm) {
     for (let x = labelOffsetX + step1px; x < right; x += step1px) {
       const isFive = Math.round((x - labelOffsetX) / step1px) % 5 === 0;

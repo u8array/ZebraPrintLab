@@ -1,6 +1,6 @@
 import { Group, Rect, Line, Text } from 'react-konva';
 
-export const RULER_SIZE = 20; // px — Breite/Höhe des Lineal-Bereichs
+export const RULER_SIZE = 20; // px — width/height of the ruler strip
 
 interface Props {
   labelOffsetX: number;
@@ -12,7 +12,7 @@ interface Props {
   canvasHeight: number;
 }
 
-// Adaptive Schrittweite: dichter bei größerem Scale
+// Adaptive tick density: finer steps at higher zoom levels
 function tickStep(scale: number) {
   if (scale >= 10) return { major: 5, minor: 1 };
   if (scale >= 5)  return { major: 10, minor: 5 };
@@ -31,18 +31,18 @@ export function Ruler({
   const { major, minor } = tickStep(scale);
   const els: React.ReactElement[] = [];
 
-  // ── Hintergründe ──────────────────────────────────────────────
+  // ── Backgrounds ───────────────────────────────────────────────
   els.push(
     <Rect key="bg-h" x={0} y={0} width={canvasWidth} height={RULER_SIZE}
       fill="#13131a" listening={false} />,
     <Rect key="bg-v" x={0} y={0} width={RULER_SIZE} height={canvasHeight}
       fill="#13131a" listening={false} />,
-    // Eckquadrat (Überschneidung)
+    // corner square covering the overlap of the two strips
     <Rect key="bg-corner" x={0} y={0} width={RULER_SIZE} height={RULER_SIZE}
       fill="#0c0c0f" listening={false} />,
   );
 
-  // ── Horizontales Lineal (oben) ─────────────────────────────────
+  // ── Horizontal ruler (top) ─────────────────────────────────────
   for (let mm = 0; mm <= labelWidthMm; mm += minor) {
     const x = labelOffsetX + mm * scale;
     const isMajor = mm % major === 0;
@@ -66,7 +66,7 @@ export function Ruler({
     }
   }
 
-  // ── Vertikales Lineal (links) ──────────────────────────────────
+  // ── Vertical ruler (left) ─────────────────────────────────────
   for (let mm = 0; mm <= labelHeightMm; mm += minor) {
     const y = labelOffsetY + mm * scale;
     const isMajor = mm % major === 0;
@@ -91,7 +91,7 @@ export function Ruler({
     }
   }
 
-  // ── Trennlinien ───────────────────────────────────────────────
+  // ── Separator lines ───────────────────────────────────────────
   els.push(
     <Line key="sep-h" points={[RULER_SIZE, RULER_SIZE, canvasWidth, RULER_SIZE]}
       stroke="#22222e" strokeWidth={1} listening={false} />,

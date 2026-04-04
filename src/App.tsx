@@ -67,7 +67,7 @@ function App() {
         </div>
       </header>
 
-      {/* Hauptbereich: 3 Spalten */}
+      {/* Main area: 3 columns */}
       <div className="flex flex-1 min-h-0">
 
         <aside className="w-44 shrink-0 border-r border-border bg-surface overflow-y-auto">
@@ -84,7 +84,7 @@ function App() {
 
       </div>
 
-      {/* Output-Panel */}
+      {/* Output panel */}
       <div className="h-52 shrink-0 border-t border-border flex bg-surface">
         <div className="flex-1 border-r border-border overflow-auto">
           <ZPLOutput />
