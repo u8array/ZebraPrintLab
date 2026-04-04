@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Stage, Layer, Rect, Transformer } from 'react-konva';
 import type Konva from 'konva';
 import { useLabelStore } from '../../store/labelStore';
@@ -86,7 +86,32 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
     };
   }, []);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  // arrow keys move the selected object; ignored when focus is inside an input
+  useEffect(() => {
+    const ARROW = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!ARROW.has(e.code)) return;
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+      const id = useLabelStore.getState().selectedId;
+      if (!id) return;
+      e.preventDefault();
+
+      // shift = 10 mm, normal = 1 mm when snap on, 1 dot when snap off
+      const step = e.shiftKey ? DPMM * 10 : snapEnabled ? DPMM : 1;
+      const dx = e.code === 'ArrowRight' ? step : e.code === 'ArrowLeft' ? -step : 0;
+      const dy = e.code === 'ArrowDown'  ? step : e.code === 'ArrowUp'   ? -step : 0;
+
+      const obj = useLabelStore.getState().objects.find(o => o.id === id);
+      if (!obj) return;
+      updateObject(id, { x: obj.x + dx, y: obj.y + dy });
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [snapEnabled, updateObject]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
     const isMiddle = e.button === 1;
     const isSpaceDrag = e.button === 0 && spaceDown;
     if (!isMiddle && !isSpaceDrag) return;
@@ -99,9 +124,9 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
       panX: panOffset.x,
       panY: panOffset.y,
     };
-  }, [spaceDown, panOffset]);
+  };
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handleMouseMove = (e: React.MouseEvent) => {
     if (!isPanningRef.current) return;
     const dx = e.clientX - panStartRef.current.mouseX;
     const dy = e.clientY - panStartRef.current.mouseY;
@@ -110,11 +135,9 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
       x: panStartRef.current.panX + dx,
       y: panStartRef.current.panY + dy,
     });
-  }, []);
+  };
 
-  const handleMouseUp = useCallback(() => {
-    isPanningRef.current = false;
-  }, []);
+  const handleMouseUp = () => { isPanningRef.current = false; };
 
   // usable area after reserving space for the ruler
   const usableWidth = containerSize.width - RULER_SIZE;
@@ -129,19 +152,16 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
   const labelOffsetX = RULER_SIZE + (usableWidth - labelWidthPx) / 2 + panOffset.x;
   const labelOffsetY = RULER_SIZE + (usableHeight - labelHeightPx) / 2 + panOffset.y;
 
-  // snap dots to nearest mm boundary
-  const snap = useCallback((dots: number) =>
-    snapEnabled ? Math.round(dots / DPMM) * DPMM : dots,
-    [snapEnabled]
-  );
+  const snap = (dots: number) =>
+    snapEnabled ? Math.round(dots / DPMM) * DPMM : dots;
 
-  const handleObjectChange = useCallback((id: string, changes: Parameters<typeof updateObject>[1]) => {
+  const handleObjectChange = (id: string, changes: Parameters<typeof updateObject>[1]) => {
     updateObject(id, {
       ...changes,
       ...(changes.x !== undefined && { x: snap(changes.x) }),
       ...(changes.y !== undefined && { y: snap(changes.y) }),
     });
-  }, [snap, updateObject]);
+  };
 
   // Sync transformer selection whenever the selected object or object list changes
   useEffect(() => {
@@ -152,30 +172,24 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
     transformerRef.current.nodes(node ? [node] : []);
   }, [selectedId, objects]);
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      const type = e.dataTransfer.getData('objectType');
-      if (!type || !stageRef.current) return;
-      stageRef.current.setPointersPositions(e.nativeEvent);
-      const pos = stageRef.current.getPointerPosition();
-      if (!pos) return;
-      addObject(type, {
-        x: snap(pxToDots(pos.x - labelOffsetX, scale)),
-        y: snap(pxToDots(pos.y - labelOffsetY, scale)),
-      });
-    },
-    [addObject, labelOffsetX, labelOffsetY, scale, snap]
-  );
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const type = e.dataTransfer.getData('objectType');
+    if (!type || !stageRef.current) return;
+    stageRef.current.setPointersPositions(e.nativeEvent);
+    const pos = stageRef.current.getPointerPosition();
+    if (!pos) return;
+    addObject(type, {
+      x: snap(pxToDots(pos.x - labelOffsetX, scale)),
+      y: snap(pxToDots(pos.y - labelOffsetY, scale)),
+    });
+  };
 
-  const handleStageClick = useCallback(
-    (e: Konva.KonvaEventObject<MouseEvent>) => {
-      // suppress deselection when the click was the end of a pan gesture
-      if (didPanRef.current) { didPanRef.current = false; return; }
-      if (e.target === e.target.getStage()) selectObject(null);
-    },
-    [selectObject]
-  );
+  const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    // suppress deselection when the click was the end of a pan gesture
+    if (didPanRef.current) { didPanRef.current = false; return; }
+    if (e.target === e.target.getStage()) selectObject(null);
+  };
 
   const cursor = isPanningRef.current ? 'grabbing' : spaceDown ? 'grab' : undefined;
 
