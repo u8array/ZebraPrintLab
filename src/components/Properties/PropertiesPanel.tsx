@@ -2,9 +2,7 @@ import { useLabelStore } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
 import { dotsToMm, mmToDots } from '../../lib/coordinates';
 import t from '../../locales/en';
-
-const inputCls = 'w-full bg-surface-2 border border-border rounded px-2 py-1 text-xs font-mono text-text focus:border-accent focus:outline-none';
-const labelCls = 'font-mono text-[10px] text-muted uppercase tracking-wider';
+import { inputCls, labelCls } from './styles';
 
 export function PropertiesPanel() {
   const { objects, selectedId, updateObject, label, setLabelConfig } = useLabelStore();
@@ -20,7 +18,7 @@ export function PropertiesPanel() {
   return (
     <div className="flex flex-col">
 
-      {/* Typ-Header */}
+      {/* Type header */}
       <div className="px-3 py-2.5 border-b border-border flex items-center gap-2">
         <span className="font-mono text-xs text-accent">{definition?.icon}</span>
         <span className="text-xs font-medium text-text">{definition?.label}</span>
@@ -29,7 +27,7 @@ export function PropertiesPanel() {
 
       <div className="p-3 flex flex-col gap-4">
 
-        {/* Position */}
+        {/* Position (mm) */}
         <div className="flex flex-col gap-2">
           <p className={labelCls}>{t.properties.positionSection}</p>
           <div className="grid grid-cols-2 gap-2">

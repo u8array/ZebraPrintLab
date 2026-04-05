@@ -1,5 +1,6 @@
 import type { ObjectTypeDefinition, LabelObject } from '../types/ObjectType';
 import t from '../locales/en';
+import { inputCls, labelCls } from '../components/Properties/styles';
 
 export interface Code128Props {
   content: string;
@@ -7,9 +8,6 @@ export interface Code128Props {
   printInterpretation: boolean;
   checkDigit: boolean;
 }
-
-const inputCls = 'w-full bg-surface-2 border border-border rounded px-2 py-1 text-xs font-mono text-text focus:border-accent focus:outline-none';
-const labelCls = 'font-mono text-[10px] text-muted uppercase tracking-wider';
 
 export const code128: ObjectTypeDefinition<Code128Props> = {
   label: 'Code 128',

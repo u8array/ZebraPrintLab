@@ -1,13 +1,13 @@
-import { useRef, useEffect, useState } from 'react';
-import { Stage, Layer, Rect, Transformer } from 'react-konva';
-import type Konva from 'konva';
-import { useLabelStore } from '../../store/labelStore';
-import { dotsToPx, pxToDots, DPMM } from '../../lib/coordinates';
-import { KonvaObject } from './KonvaObject';
-import { Grid } from './Grid';
-import { Ruler, RULER_SIZE } from './Ruler';
-import type { TextProps } from '../../registry/text';
-import type { Code128Props } from '../../registry/code128';
+import { useRef, useEffect, useState } from "react";
+import { Stage, Layer, Rect, Transformer } from "react-konva";
+import type Konva from "konva";
+import { useLabelStore } from "../../store/labelStore";
+import { pxToDots, DPMM } from "../../lib/coordinates";
+import { KonvaObject } from "./KonvaObject";
+import { Grid } from "./Grid";
+import { Ruler, RULER_SIZE } from "./Ruler";
+import type { TextProps } from "../../registry/text";
+import type { Code128Props } from "../../registry/code128";
 
 const PADDING = 40;
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
@@ -30,9 +30,16 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
   // track whether the pointer actually moved during a pan gesture
   const didPanRef = useRef(false);
 
-  const zoomIn  = () => setZoom(z => ZOOM_STEPS.find(s => s > z) ?? ZOOM_STEPS.at(-1)!);
-  const zoomOut = () => setZoom(z => [...ZOOM_STEPS].reverse().find(s => s < z) ?? ZOOM_STEPS[0]);
-  const zoomFit = () => { setZoom(1); setPanOffset({ x: 0, y: 0 }); };
+  const zoomIn = () =>
+    setZoom((z) => ZOOM_STEPS.find((s) => s > z) ?? ZOOM_STEPS.at(-1)!);
+  const zoomOut = () =>
+    setZoom(
+      (z) => [...ZOOM_STEPS].reverse().find((s) => s < z) ?? ZOOM_STEPS[0],
+    );
+  const zoomFit = () => {
+    setZoom(1);
+    setPanOffset({ x: 0, y: 0 });
+  };
 
   const { label, objects, selectedId, addObject, updateObject, selectObject } =
     useLabelStore();
@@ -55,44 +62,44 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
-        setZoom(z => {
+        setZoom((z) => {
           const next = z * (e.deltaY < 0 ? 1.1 : 0.9);
           return Math.max(ZOOM_STEPS[0], Math.min(ZOOM_STEPS.at(-1)!, next));
         });
       } else {
-        setPanOffset(p => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
+        setPanOffset((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
       }
     };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
   // space key toggles the grab cursor and enables space+drag panning
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && e.target === document.body) {
+      if (e.code === "Space" && e.target === document.body) {
         e.preventDefault();
         setSpaceDown(true);
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') setSpaceDown(false);
+      if (e.code === "Space") setSpaceDown(false);
     };
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
     };
   }, []);
 
   // arrow keys move the selected object; ignored when focus is inside an input
   useEffect(() => {
-    const ARROW = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+    const ARROW = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
     const onKeyDown = (e: KeyboardEvent) => {
       if (!ARROW.has(e.code)) return;
       const tag = (e.target as HTMLElement).tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
       const id = useLabelStore.getState().selectedId;
       if (!id) return;
@@ -100,15 +107,17 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
 
       // shift = 10 mm, normal = 1 mm when snap on, 1 dot when snap off
       const step = e.shiftKey ? DPMM * 10 : snapEnabled ? DPMM : 1;
-      const dx = e.code === 'ArrowRight' ? step : e.code === 'ArrowLeft' ? -step : 0;
-      const dy = e.code === 'ArrowDown'  ? step : e.code === 'ArrowUp'   ? -step : 0;
+      const dx =
+        e.code === "ArrowRight" ? step : e.code === "ArrowLeft" ? -step : 0;
+      const dy =
+        e.code === "ArrowDown" ? step : e.code === "ArrowUp" ? -step : 0;
 
-      const obj = useLabelStore.getState().objects.find(o => o.id === id);
+      const obj = useLabelStore.getState().objects.find((o) => o.id === id);
       if (!obj) return;
       updateObject(id, { x: obj.x + dx, y: obj.y + dy });
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [snapEnabled, updateObject]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -137,25 +146,34 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
     });
   };
 
-  const handleMouseUp = () => { isPanningRef.current = false; };
+  const handleMouseUp = () => {
+    isPanningRef.current = false;
+  };
 
   // usable area after reserving space for the ruler
   const usableWidth = containerSize.width - RULER_SIZE;
   const usableHeight = containerSize.height - RULER_SIZE;
 
-  const scaleX = usableWidth > 0 ? (usableWidth - PADDING * 2) / label.widthMm : 1;
-  const scaleY = usableHeight > 0 ? (usableHeight - PADDING * 2) / label.heightMm : 1;
+  const scaleX =
+    usableWidth > 0 ? (usableWidth - PADDING * 2) / label.widthMm : 1;
+  const scaleY =
+    usableHeight > 0 ? (usableHeight - PADDING * 2) / label.heightMm : 1;
   const scale = Math.min(scaleX, scaleY) * zoom;
 
   const labelWidthPx = label.widthMm * scale;
   const labelHeightPx = label.heightMm * scale;
-  const labelOffsetX = RULER_SIZE + (usableWidth - labelWidthPx) / 2 + panOffset.x;
-  const labelOffsetY = RULER_SIZE + (usableHeight - labelHeightPx) / 2 + panOffset.y;
+  const labelOffsetX =
+    RULER_SIZE + (usableWidth - labelWidthPx) / 2 + panOffset.x;
+  const labelOffsetY =
+    RULER_SIZE + (usableHeight - labelHeightPx) / 2 + panOffset.y;
 
   const snap = (dots: number) =>
     snapEnabled ? Math.round(dots / DPMM) * DPMM : dots;
 
-  const handleObjectChange = (id: string, changes: Parameters<typeof updateObject>[1]) => {
+  const handleObjectChange = (
+    id: string,
+    changes: Parameters<typeof updateObject>[1],
+  ) => {
     updateObject(id, {
       ...changes,
       ...(changes.x !== undefined && { x: snap(changes.x) }),
@@ -174,7 +192,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const type = e.dataTransfer.getData('objectType');
+    const type = e.dataTransfer.getData("objectType");
     if (!type || !stageRef.current) return;
     stageRef.current.setPointersPositions(e.nativeEvent);
     const pos = stageRef.current.getPointerPosition();
@@ -187,20 +205,28 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
 
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     // suppress deselection when the click was the end of a pan gesture
-    if (didPanRef.current) { didPanRef.current = false; return; }
+    if (didPanRef.current) {
+      didPanRef.current = false;
+      return;
+    }
     if (e.target === e.target.getStage()) selectObject(null);
   };
 
-  const cursor = isPanningRef.current ? 'grabbing' : spaceDown ? 'grab' : undefined;
+  const cursor = isPanningRef.current
+    ? "grabbing"
+    : spaceDown
+      ? "grab"
+      : undefined;
 
   return (
     <div
       ref={containerRef}
       className="w-full h-full relative"
       style={{
-        background: '#0c0c0f',
-        backgroundImage: 'radial-gradient(circle, #2a2a38 1px, transparent 1px)',
-        backgroundSize: '24px 24px',
+        background: "#0c0c0f",
+        backgroundImage:
+          "radial-gradient(circle, #2a2a38 1px, transparent 1px)",
+        backgroundSize: "24px 24px",
         cursor,
       }}
       onMouseDown={handleMouseDown}
@@ -212,11 +238,24 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
     >
       {/* Zoom controls */}
       <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 bg-surface border border-border rounded px-1 py-0.5">
-        <button onClick={zoomOut} className="w-6 h-6 flex items-center justify-center text-muted hover:text-text font-mono text-sm transition-colors">−</button>
-        <button onClick={zoomFit} className="font-mono text-[10px] text-muted hover:text-accent w-10 text-center transition-colors">
+        <button
+          onClick={zoomOut}
+          className="w-6 h-6 flex items-center justify-center text-muted hover:text-text font-mono text-sm transition-colors"
+        >
+          −
+        </button>
+        <button
+          onClick={zoomFit}
+          className="font-mono text-[10px] text-muted hover:text-accent w-10 text-center transition-colors"
+        >
           {Math.round(zoom * 100)}%
         </button>
-        <button onClick={zoomIn} className="w-6 h-6 flex items-center justify-center text-muted hover:text-text font-mono text-sm transition-colors">+</button>
+        <button
+          onClick={zoomIn}
+          className="w-6 h-6 flex items-center justify-center text-muted hover:text-text font-mono text-sm transition-colors"
+        >
+          +
+        </button>
       </div>
       {containerSize.width > 0 && (
         <Stage
@@ -272,28 +311,39 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
               }
               onTransformEnd={() => {
                 if (!selectedId || !stageRef.current) return;
-                const node = stageRef.current.findOne<Konva.Node>(`#${selectedId}`);
+                const node = stageRef.current.findOne<Konva.Node>(
+                  `#${selectedId}`,
+                );
                 if (!node) return;
                 const scaleY = node.scaleY();
                 node.scaleX(1);
                 node.scaleY(1);
-                const obj = useLabelStore.getState().objects.find((o) => o.id === selectedId);
+                const obj = useLabelStore
+                  .getState()
+                  .objects.find((o) => o.id === selectedId);
                 if (!obj) return;
                 const pos = {
                   x: snap(pxToDots(node.x() - labelOffsetX, scale)),
                   y: snap(pxToDots(node.y() - labelOffsetY, scale)),
                 };
-                if (obj.type === 'text') {
+                if (obj.type === "text") {
                   const p = obj.props as TextProps;
                   updateObject(selectedId, {
                     ...pos,
-                    props: { fontHeight: Math.max(1, Math.round(p.fontHeight * scaleY)) },
+                    props: {
+                      fontHeight: Math.max(
+                        1,
+                        Math.round(p.fontHeight * scaleY),
+                      ),
+                    },
                   });
-                } else if (obj.type === 'code128') {
+                } else if (obj.type === "code128") {
                   const p = obj.props as Code128Props;
                   updateObject(selectedId, {
                     ...pos,
-                    props: { height: Math.max(1, Math.round(p.height * scaleY)) },
+                    props: {
+                      height: Math.max(1, Math.round(p.height * scaleY)),
+                    },
                   });
                 }
               }}
