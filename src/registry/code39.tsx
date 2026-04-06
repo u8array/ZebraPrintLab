@@ -2,19 +2,19 @@ import type { ObjectTypeDefinition, LabelObject } from '../types/ObjectType';
 import t from '../locales/en';
 import { inputCls, labelCls } from '../components/Properties/styles';
 
-export interface Code128Props {
+export interface Code39Props {
   content: string;
   height: number;
   printInterpretation: boolean;
   checkDigit: boolean;
 }
 
-export const code128: ObjectTypeDefinition<Code128Props> = {
-  label: 'Code 128',
-  icon: '|||',
-  group: 'code' as const,
+export const code39: ObjectTypeDefinition<Code39Props> = {
+  label: 'Code 39',
+  icon: '|·|',
+  group: 'code',
   defaultProps: {
-    content: '12345678',
+    content: 'CODE39',
     height: 100,
     printInterpretation: true,
     checkDigit: false,
@@ -22,22 +22,22 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
   defaultSize: { width: 300, height: 120 },
 
   toZPL: (obj: LabelObject): string => {
-    const p = obj.props as Code128Props;
+    const p = obj.props as Code39Props;
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
     return [
       `^FO${obj.x},${obj.y}`,
-      `^BCN,${p.height},${interp},N,${check}`,
+      `^B3N,${check},${p.height},${interp},N`,
       `^FD${p.content}^FS`,
     ].join('');
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
-    const p = obj.props as Code128Props;
+    const p = obj.props as Code39Props;
     return (
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.code128.content}</label>
+          <label className={labelCls}>{t.registry.code39.content}</label>
           <input
             className={inputCls}
             value={p.content}
@@ -46,7 +46,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.code128.height}</label>
+          <label className={labelCls}>{t.registry.code39.height}</label>
           <input
             type="number"
             className={inputCls}
@@ -64,7 +64,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
               checked={p.printInterpretation}
               onChange={(e) => onChange({ printInterpretation: e.target.checked })}
             />
-            <span className={labelCls}>{t.registry.code128.printInterpretation}</span>
+            <span className={labelCls}>{t.registry.code39.printInterpretation}</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -73,7 +73,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
               checked={p.checkDigit}
               onChange={(e) => onChange({ checkDigit: e.target.checked })}
             />
-            <span className={labelCls}>{t.registry.code128.checkDigit}</span>
+            <span className={labelCls}>{t.registry.code39.checkDigit}</span>
           </label>
         </div>
       </div>

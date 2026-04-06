@@ -15,9 +15,12 @@ export interface LabelObject {
   props: Record<string, unknown>;
 }
 
+export type ObjectGroup = 'text' | 'code' | 'shape';
+
 export interface ObjectTypeDefinition<P = Record<string, unknown>> {
   label: string;
   icon: string;
+  group: ObjectGroup;
   defaultProps: P;
   defaultSize: { width: number; height: number };
   toZPL: (obj: LabelObject) => string;

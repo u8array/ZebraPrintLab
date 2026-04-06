@@ -6,6 +6,7 @@ export interface BoxProps {
   width: number;
   height: number;
   thickness: number;
+  filled: boolean;
   color: 'B' | 'W';
   rounding: number;
 }
@@ -13,10 +14,12 @@ export interface BoxProps {
 export const box: ObjectTypeDefinition<BoxProps> = {
   label: 'Box',
   icon: '□',
+  group: 'shape',
   defaultProps: {
     width: 200,
     height: 100,
     thickness: 3,
+    filled: false,
     color: 'B',
     rounding: 0,
   },
@@ -24,9 +27,10 @@ export const box: ObjectTypeDefinition<BoxProps> = {
 
   toZPL: (obj: LabelObject): string => {
     const p = obj.props as BoxProps;
+    const t = p.filled ? Math.min(p.width, p.height) : p.thickness;
     return [
       `^FO${obj.x},${obj.y}`,
-      `^GB${p.width},${p.height},${p.thickness},${p.color},${p.rounding}`,
+      `^GB${p.width},${p.height},${t},${p.color},${p.rounding}`,
     ].join('');
   },
 
@@ -57,16 +61,28 @@ export const box: ObjectTypeDefinition<BoxProps> = {
           </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.box.thickness}</label>
+        <label className="flex items-center gap-2 cursor-pointer">
           <input
-            type="number"
-            className={inputCls}
-            value={p.thickness}
-            min={1}
-            onChange={(e) => onChange({ thickness: Number(e.target.value) })}
+            type="checkbox"
+            className="accent-accent"
+            checked={p.filled}
+            onChange={(e) => onChange({ filled: e.target.checked })}
           />
-        </div>
+          <span className={labelCls}>{t.registry.box.filled}</span>
+        </label>
+
+        {!p.filled && (
+          <div className="flex flex-col gap-1">
+            <label className={labelCls}>{t.registry.box.thickness}</label>
+            <input
+              type="number"
+              className={inputCls}
+              value={p.thickness}
+              min={1}
+              onChange={(e) => onChange({ thickness: Number(e.target.value) })}
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">

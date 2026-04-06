@@ -8,7 +8,9 @@ import { Grid } from "./Grid";
 import { Ruler, RULER_SIZE } from "./Ruler";
 import type { TextProps } from "../../registry/text";
 import type { Code128Props } from "../../registry/code128";
+import type { Code39Props } from "../../registry/code39";
 import type { BoxProps } from "../../registry/box";
+import type { LineProps } from "../../registry/line";
 
 const PADDING = 40;
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
@@ -336,8 +338,8 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                       fontHeight: Math.max(1, Math.round(p.fontHeight * sy)),
                     },
                   });
-                } else if (obj.type === "code128") {
-                  const p = obj.props as Code128Props;
+                } else if (obj.type === "code128" || obj.type === "code39") {
+                  const p = obj.props as Code128Props | Code39Props;
                   updateObject(selectedId, {
                     ...pos,
                     props: {
@@ -351,6 +353,14 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                     props: {
                       width: Math.max(1, Math.round(p.width * sx)),
                       height: Math.max(1, Math.round(p.height * sy)),
+                    },
+                  });
+                } else if (obj.type === "line") {
+                  const p = obj.props as LineProps;
+                  updateObject(selectedId, {
+                    ...pos,
+                    props: {
+                      length: Math.max(1, Math.round(p.length * (p.direction === 'H' ? sx : sy))),
                     },
                   });
                 }

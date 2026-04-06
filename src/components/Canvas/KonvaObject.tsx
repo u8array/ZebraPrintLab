@@ -4,7 +4,10 @@ import type { LabelObject } from '../../types/ObjectType';
 import { dotsToPx, pxToDots } from '../../lib/coordinates';
 import type { TextProps } from '../../registry/text';
 import type { Code128Props } from '../../registry/code128';
+import type { Code39Props } from '../../registry/code39';
+import type { QrCodeProps } from '../../registry/qrcode';
 import type { BoxProps } from '../../registry/box';
+import type { LineProps } from '../../registry/line';
 
 interface Props {
   obj: LabelObject;
@@ -35,6 +38,9 @@ export function KonvaObject({
     });
   };
 
+  const selectionStroke = isSelected ? '#6366f1' : undefined;
+  const selectionWidth  = isSelected ? 1 : 0;
+
   if (obj.type === 'text') {
     const p = obj.props as TextProps;
     const fontSize = Math.max(dotsToPx(p.fontHeight, scale) / 0.72, 6);
@@ -52,8 +58,8 @@ export function KonvaObject({
         fontStyle="bold"
         rotation={zplRotationDeg[p.rotation]}
         fill="#000000"
-        stroke={isSelected ? '#6366f1' : undefined}
-        strokeWidth={isSelected ? 1 : 0}
+        stroke={selectionStroke}
+        strokeWidth={selectionWidth}
         draggable
         onClick={onSelect}
         onTap={onSelect}
@@ -62,8 +68,9 @@ export function KonvaObject({
     );
   }
 
-  if (obj.type === 'code128') {
-    const p = obj.props as Code128Props;
+  if (obj.type === 'code128' || obj.type === 'code39') {
+    const p = obj.props as Code128Props | Code39Props;
+    const label = obj.type === 'code128' ? `||| ${p.content} |||` : `| ${p.content} |`;
     return (
       <Group
         id={obj.id}
@@ -85,9 +92,42 @@ export function KonvaObject({
         <Text
           x={6}
           y={6}
-          text={`|||  ${p.content}  |||`}
+          text={label}
           fontSize={Math.max(dotsToPx(14, scale), 8)}
           fill="#374151"
+        />
+      </Group>
+    );
+  }
+
+  if (obj.type === 'qrcode') {
+    const p = obj.props as QrCodeProps;
+    const size = dotsToPx(p.magnification * 25, scale);
+    return (
+      <Group
+        id={obj.id}
+        x={x}
+        y={y}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragEnd={handleDragEnd}
+      >
+        <Rect
+          width={size}
+          height={size}
+          fill="#f9fafb"
+          stroke={isSelected ? '#6366f1' : '#9ca3af'}
+          strokeWidth={isSelected ? 2 : 1}
+          dash={isSelected ? undefined : [4, 2]}
+        />
+        <Text
+          x={6}
+          y={6}
+          text="QR"
+          fontSize={Math.max(size * 0.3, 8)}
+          fill="#374151"
+          fontStyle="bold"
         />
       </Group>
     );
@@ -97,8 +137,9 @@ export function KonvaObject({
     const p = obj.props as BoxProps;
     const w = dotsToPx(p.width, scale);
     const h = dotsToPx(p.height, scale);
-    const stroke = p.color === 'B' ? '#000000' : '#ffffff';
+    const stroke = p.color === 'B' ? '#000000' : '#cccccc';
     const strokeWidth = Math.max(dotsToPx(p.thickness, scale), 0.5);
+    const fill = p.filled ? (p.color === 'B' ? '#000000' : '#ffffff') : 'transparent';
     return (
       <Rect
         id={obj.id}
@@ -108,8 +149,29 @@ export function KonvaObject({
         height={h}
         stroke={isSelected ? '#6366f1' : stroke}
         strokeWidth={isSelected ? Math.max(strokeWidth, 1.5) : strokeWidth}
-        fill="transparent"
+        fill={fill}
         cornerRadius={p.rounding * dotsToPx(Math.min(p.width, p.height) / 8, scale)}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragEnd={handleDragEnd}
+      />
+    );
+  }
+
+  if (obj.type === 'line') {
+    const p = obj.props as LineProps;
+    const w = dotsToPx(p.direction === 'H' ? p.length : p.thickness, scale);
+    const h = dotsToPx(p.direction === 'H' ? p.thickness : p.length, scale);
+    const fill = p.color === 'B' ? '#000000' : '#cccccc';
+    return (
+      <Rect
+        id={obj.id}
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        fill={isSelected ? '#6366f1' : fill}
         draggable
         onClick={onSelect}
         onTap={onSelect}
