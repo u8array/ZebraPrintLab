@@ -44,7 +44,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
     setPanOffset({ x: 0, y: 0 });
   };
 
-  const { label, objects, selectedId, addObject, updateObject, selectObject } =
+  const { label, objects, selectedId, addObject, updateObject, removeObject, selectObject } =
     useLabelStore();
 
   useEffect(() => {
@@ -95,6 +95,21 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
       window.removeEventListener("keyup", onKeyUp);
     };
   }, []);
+
+  // Delete/Backspace removes the selected object; ignored when focus is inside an input
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== 'Delete' && e.code !== 'Backspace') return;
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      const id = useLabelStore.getState().selectedId;
+      if (!id) return;
+      e.preventDefault();
+      removeObject(id);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [removeObject]);
 
   // arrow keys move the selected object; ignored when focus is inside an input
   useEffect(() => {
@@ -330,24 +345,21 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                   x: snap(pxToDots(node.x() - labelOffsetX, scale)),
                   y: snap(pxToDots(node.y() - labelOffsetY, scale)),
                 };
+                // props is Record<string,unknown> in the store — double-cast is intentional
                 if (obj.type === "text") {
-                  const p = obj.props as TextProps;
+                  const p = obj.props as unknown as TextProps;
                   updateObject(selectedId, {
                     ...pos,
-                    props: {
-                      fontHeight: Math.max(1, Math.round(p.fontHeight * sy)),
-                    },
+                    props: { fontHeight: Math.max(1, Math.round(p.fontHeight * sy)) },
                   });
                 } else if (obj.type === "code128" || obj.type === "code39") {
-                  const p = obj.props as Code128Props | Code39Props;
+                  const p = obj.props as unknown as Code128Props | Code39Props;
                   updateObject(selectedId, {
                     ...pos,
-                    props: {
-                      height: Math.max(1, Math.round(p.height * sy)),
-                    },
+                    props: { height: Math.max(1, Math.round(p.height * sy)) },
                   });
                 } else if (obj.type === "box") {
-                  const p = obj.props as BoxProps;
+                  const p = obj.props as unknown as BoxProps;
                   updateObject(selectedId, {
                     ...pos,
                     props: {
@@ -356,11 +368,11 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                     },
                   });
                 } else if (obj.type === "line") {
-                  const p = obj.props as LineProps;
+                  const p = obj.props as unknown as LineProps;
                   updateObject(selectedId, {
                     ...pos,
                     props: {
-                      length: Math.max(1, Math.round(p.length * (p.direction === 'H' ? sx : sy))),
+                      length: Math.max(1, Math.round(p.length * (p.direction === "H" ? sx : sy))),
                     },
                   });
                 }

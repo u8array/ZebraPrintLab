@@ -19,6 +19,9 @@ interface Props {
   onChange: (changes: Partial<LabelObject>) => void;
 }
 
+// props is stored as Record<string,unknown> — double-cast via unknown is intentional
+const props = <T,>(obj: LabelObject) => obj.props as unknown as T;
+
 export function KonvaObject({
   obj,
   scale,
@@ -38,11 +41,8 @@ export function KonvaObject({
     });
   };
 
-  const selectionStroke = isSelected ? '#6366f1' : undefined;
-  const selectionWidth  = isSelected ? 1 : 0;
-
   if (obj.type === 'text') {
-    const p = obj.props as TextProps;
+    const p = props<TextProps>(obj);
     const fontSize = Math.max(dotsToPx(p.fontHeight, scale) / 0.72, 6);
     const zplRotationDeg: Record<TextProps['rotation'], number> = {
       N: 0, R: 90, I: 180, B: 270,
@@ -58,8 +58,8 @@ export function KonvaObject({
         fontStyle="bold"
         rotation={zplRotationDeg[p.rotation]}
         fill="#000000"
-        stroke={selectionStroke}
-        strokeWidth={selectionWidth}
+        stroke={isSelected ? '#6366f1' : undefined}
+        strokeWidth={isSelected ? 1 : 0}
         draggable
         onClick={onSelect}
         onTap={onSelect}
@@ -69,7 +69,7 @@ export function KonvaObject({
   }
 
   if (obj.type === 'code128' || obj.type === 'code39') {
-    const p = obj.props as Code128Props | Code39Props;
+    const p = props<Code128Props | Code39Props>(obj);
     const label = obj.type === 'code128' ? `||| ${p.content} |||` : `| ${p.content} |`;
     return (
       <Group
@@ -101,7 +101,7 @@ export function KonvaObject({
   }
 
   if (obj.type === 'qrcode') {
-    const p = obj.props as QrCodeProps;
+    const p = props<QrCodeProps>(obj);
     const size = dotsToPx(p.magnification * 25, scale);
     return (
       <Group
@@ -134,7 +134,7 @@ export function KonvaObject({
   }
 
   if (obj.type === 'box') {
-    const p = obj.props as BoxProps;
+    const p = props<BoxProps>(obj);
     const w = dotsToPx(p.width, scale);
     const h = dotsToPx(p.height, scale);
     const stroke = p.color === 'B' ? '#000000' : '#cccccc';
@@ -160,7 +160,7 @@ export function KonvaObject({
   }
 
   if (obj.type === 'line') {
-    const p = obj.props as LineProps;
+    const p = props<LineProps>(obj);
     const w = dotsToPx(p.direction === 'H' ? p.length : p.thickness, scale);
     const h = dotsToPx(p.direction === 'H' ? p.thickness : p.length, scale);
     const fill = p.color === 'B' ? '#000000' : '#cccccc';
