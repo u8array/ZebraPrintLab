@@ -4,6 +4,7 @@ import type { LabelObject } from '../../types/ObjectType';
 import { dotsToPx, pxToDots } from '../../lib/coordinates';
 import type { TextProps } from '../../registry/text';
 import type { Code128Props } from '../../registry/code128';
+import type { BoxProps } from '../../registry/box';
 
 interface Props {
   obj: LabelObject;
@@ -89,6 +90,31 @@ export function KonvaObject({
           fill="#374151"
         />
       </Group>
+    );
+  }
+
+  if (obj.type === 'box') {
+    const p = obj.props as BoxProps;
+    const w = dotsToPx(p.width, scale);
+    const h = dotsToPx(p.height, scale);
+    const stroke = p.color === 'B' ? '#000000' : '#ffffff';
+    const strokeWidth = Math.max(dotsToPx(p.thickness, scale), 0.5);
+    return (
+      <Rect
+        id={obj.id}
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        stroke={isSelected ? '#6366f1' : stroke}
+        strokeWidth={isSelected ? Math.max(strokeWidth, 1.5) : strokeWidth}
+        fill="transparent"
+        cornerRadius={p.rounding * dotsToPx(Math.min(p.width, p.height) / 8, scale)}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragEnd={handleDragEnd}
+      />
     );
   }
 

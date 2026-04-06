@@ -8,6 +8,7 @@ import { Grid } from "./Grid";
 import { Ruler, RULER_SIZE } from "./Ruler";
 import type { TextProps } from "../../registry/text";
 import type { Code128Props } from "../../registry/code128";
+import type { BoxProps } from "../../registry/box";
 
 const PADDING = 40;
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
@@ -315,7 +316,8 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                   `#${selectedId}`,
                 );
                 if (!node) return;
-                const scaleY = node.scaleY();
+                const sx = node.scaleX();
+                const sy = node.scaleY();
                 node.scaleX(1);
                 node.scaleY(1);
                 const obj = useLabelStore
@@ -331,10 +333,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                   updateObject(selectedId, {
                     ...pos,
                     props: {
-                      fontHeight: Math.max(
-                        1,
-                        Math.round(p.fontHeight * scaleY),
-                      ),
+                      fontHeight: Math.max(1, Math.round(p.fontHeight * sy)),
                     },
                   });
                 } else if (obj.type === "code128") {
@@ -342,7 +341,16 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                   updateObject(selectedId, {
                     ...pos,
                     props: {
-                      height: Math.max(1, Math.round(p.height * scaleY)),
+                      height: Math.max(1, Math.round(p.height * sy)),
+                    },
+                  });
+                } else if (obj.type === "box") {
+                  const p = obj.props as BoxProps;
+                  updateObject(selectedId, {
+                    ...pos,
+                    props: {
+                      width: Math.max(1, Math.round(p.width * sx)),
+                      height: Math.max(1, Math.round(p.height * sy)),
                     },
                   });
                 }

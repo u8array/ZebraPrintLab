@@ -20,6 +20,8 @@ const en = {
 
   label: {
     heading: 'Label',
+    preset: 'Preset',
+    presetCustom: 'Custom',
     width: 'Width (mm)',
     height: 'Height (mm)',
     dpmm: 'Resolution',
@@ -56,6 +58,15 @@ const en = {
       height: 'Height (dots)',
       printInterpretation: 'Human readable',
       checkDigit: 'Check digit',
+    },
+    box: {
+      width: 'Width (dots)',
+      height: 'Height (dots)',
+      thickness: 'Border (dots)',
+      color: 'Color',
+      colorB: 'B — Black',
+      colorW: 'W — White',
+      rounding: 'Rounding (0–8)',
     },
   },
 } as const;

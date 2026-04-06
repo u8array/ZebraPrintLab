@@ -68,12 +68,48 @@ export function PropertiesPanel() {
   );
 }
 
+// ── Label presets ──────────────────────────────────────────────────────────────
+
+interface Preset {
+  label: string;
+  widthMm: number;
+  heightMm: number;
+  dpmm: number;
+}
+
+const PRESETS: Preset[] = [
+  { label: '4" × 6"  — 101 × 152 mm',  widthMm: 101.6, heightMm: 152.4, dpmm: 8 },
+  { label: '4" × 4"  — 101 × 101 mm',  widthMm: 101.6, heightMm: 101.6, dpmm: 8 },
+  { label: '4" × 3"  — 101 × 76 mm',   widthMm: 101.6, heightMm: 76.2,  dpmm: 8 },
+  { label: '4" × 2"  — 101 × 51 mm',   widthMm: 101.6, heightMm: 50.8,  dpmm: 8 },
+  { label: '3" × 2"  — 76 × 51 mm',    widthMm: 76.2,  heightMm: 50.8,  dpmm: 8 },
+  { label: '2" × 1"  — 51 × 25 mm',    widthMm: 50.8,  heightMm: 25.4,  dpmm: 8 },
+  { label: '100 × 150 mm',             widthMm: 100,   heightMm: 150,   dpmm: 8 },
+  { label: '100 × 100 mm',             widthMm: 100,   heightMm: 100,   dpmm: 8 },
+  { label: '100 × 50 mm',              widthMm: 100,   heightMm: 50,    dpmm: 8 },
+  { label: '62 × 29 mm  (Brother)',     widthMm: 62,    heightMm: 29,    dpmm: 12 },
+  { label: '57 × 32 mm  (Brother)',     widthMm: 57,    heightMm: 32,    dpmm: 12 },
+];
+
+// ── LabelConfigPanel ───────────────────────────────────────────────────────────
+
 interface LabelConfigPanelProps {
   label: { widthMm: number; heightMm: number; dpmm: number };
   onUpdate: (config: Partial<{ widthMm: number; heightMm: number; dpmm: number }>) => void;
 }
 
 function LabelConfigPanel({ label, onUpdate }: LabelConfigPanelProps) {
+  const matchedPreset = PRESETS.find(
+    (p) => p.widthMm === label.widthMm && p.heightMm === label.heightMm && p.dpmm === label.dpmm,
+  );
+  const presetValue = matchedPreset ? PRESETS.indexOf(matchedPreset).toString() : 'custom';
+
+  const handlePreset = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (e.target.value === 'custom') return;
+    const p = PRESETS[Number(e.target.value)];
+    onUpdate({ widthMm: p.widthMm, heightMm: p.heightMm, dpmm: p.dpmm });
+  };
+
   return (
     <div className="flex flex-col">
       <div className="px-3 py-2.5 border-b border-border">
@@ -81,6 +117,18 @@ function LabelConfigPanel({ label, onUpdate }: LabelConfigPanelProps) {
       </div>
 
       <div className="p-3 flex flex-col gap-3">
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>{t.label.preset}</label>
+          <select className={inputCls} value={presetValue} onChange={handlePreset}>
+            <option value="custom">{t.label.presetCustom}</option>
+            {PRESETS.map((p, i) => (
+              <option key={i} value={i}>{p.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="border-t border-border" />
 
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
@@ -90,7 +138,7 @@ function LabelConfigPanel({ label, onUpdate }: LabelConfigPanelProps) {
               className={inputCls}
               value={label.widthMm}
               min={1}
-              step={1}
+              step={0.5}
               onChange={(e) => onUpdate({ widthMm: Number(e.target.value) })}
             />
           </div>
@@ -101,7 +149,7 @@ function LabelConfigPanel({ label, onUpdate }: LabelConfigPanelProps) {
               className={inputCls}
               value={label.heightMm}
               min={1}
-              step={1}
+              step={0.5}
               onChange={(e) => onUpdate({ heightMm: Number(e.target.value) })}
             />
           </div>
