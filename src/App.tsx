@@ -5,9 +5,12 @@ import { PropertiesPanel } from './components/Properties/PropertiesPanel';
 import { ZPLOutput } from './components/Output/ZPLOutput';
 import { LabelPreview } from './components/Output/LabelPreview';
 import { useLabelStore, useHistory } from './store/labelStore';
+import { generateZPL } from './lib/zplGenerator';
+import { fetchPreview } from './lib/labelary';
 
 function App() {
   const label = useLabelStore((s) => s.label);
+  const objects = useLabelStore((s) => s.objects);
   const selectObject = useLabelStore((s) => s.selectObject);
   const { undo, redo, pastStates, futureStates } = useHistory();
   const [showGrid, setShowGrid] = useState(true);
@@ -15,6 +18,35 @@ function App() {
 
   const canUndo = pastStates.length > 0;
   const canRedo = futureStates.length > 0;
+  const hasObjects = objects.length > 0;
+
+  const handleDownload = () => {
+    const zpl = generateZPL(label, objects);
+    const blob = new Blob([zpl], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'label.zpl';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const handlePrint = async () => {
+    const zpl = generateZPL(label, objects);
+    const url = await fetchPreview(zpl, label);
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`
+      <html><head><style>
+        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        img { max-width: 100%; max-height: 100%; }
+        @media print { body { height: auto; } }
+      </style></head>
+      <body><img src="${url}" onload="window.print();window.close();" /></body>
+      </html>
+    `);
+    win.document.close();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-bg text-text font-sans">
@@ -67,6 +99,25 @@ function App() {
             className="px-2.5 py-1 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
           >
             Redo ↪
+          </button>
+
+          <div className="w-px h-4 bg-border mx-1" />
+
+          <button
+            onClick={handleDownload}
+            disabled={!hasObjects}
+            title="Download ZPL"
+            className="px-2.5 py-1 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+          >
+            ↓ ZPL
+          </button>
+          <button
+            onClick={handlePrint}
+            disabled={!hasObjects}
+            title="Print preview"
+            className="px-2.5 py-1 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+          >
+            ⎙ Print
           </button>
         </div>
       </header>
