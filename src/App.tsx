@@ -8,6 +8,7 @@ import { useLabelStore, useHistory } from './store/labelStore';
 
 function App() {
   const label = useLabelStore((s) => s.label);
+  const selectObject = useLabelStore((s) => s.selectObject);
   const { undo, redo, pastStates, futureStates } = useHistory();
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(true);
@@ -21,9 +22,12 @@ function App() {
       {/* Header */}
       <header className="h-11 shrink-0 flex items-center justify-between px-4 border-b border-border bg-surface">
         <div className="flex items-center gap-3">
-          <span className="text-accent font-semibold tracking-tight text-sm">
+          <button
+            onClick={() => selectObject(null)}
+            className="text-accent font-semibold tracking-tight text-sm hover:opacity-75 transition-opacity"
+          >
             ZPL Designer
-          </span>
+          </button>
           <span className="text-border-2 select-none">·</span>
           <span className="font-mono text-xs text-muted">
             {label.widthMm} × {label.heightMm} mm · {label.dpmm} dpmm
