@@ -4,7 +4,7 @@
 // 3. Implement ObjectTypeDefinition
 // 4. Add an entry in registry/index.ts
 
-import type { ObjectTypeDefinition, LabelObject } from '../types/ObjectType';
+import type { ObjectTypeDefinition } from '../types/ObjectType';
 
 interface TemplateProps {
   content: string;
@@ -17,7 +17,7 @@ export const _template: ObjectTypeDefinition<TemplateProps> = {
     content: '',
   },
   defaultSize: { width: 200, height: 50 },
-  toZPL: (_obj: LabelObject): string => {
+  toZPL: (): string => {
     return '';
   },
   PropertiesPanel: () => null,

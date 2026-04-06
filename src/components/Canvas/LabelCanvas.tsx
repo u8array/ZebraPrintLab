@@ -14,6 +14,8 @@ import type { LineProps } from "../../registry/line";
 
 const PADDING = 40;
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 4;
 
 interface Props {
   showGrid: boolean;
@@ -28,17 +30,14 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [spaceDown, setSpaceDown] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ mouseX: 0, mouseY: 0, panX: 0, panY: 0 });
   // track whether the pointer actually moved during a pan gesture
   const didPanRef = useRef(false);
 
-  const zoomIn = () =>
-    setZoom((z) => ZOOM_STEPS.find((s) => s > z) ?? ZOOM_STEPS.at(-1)!);
-  const zoomOut = () =>
-    setZoom(
-      (z) => [...ZOOM_STEPS].reverse().find((s) => s < z) ?? ZOOM_STEPS[0],
-    );
+  const zoomIn  = () => setZoom(z => ZOOM_STEPS.find(s => s > z) ?? ZOOM_MAX);
+  const zoomOut = () => setZoom(z => [...ZOOM_STEPS].reverse().find(s => s < z) ?? ZOOM_MIN);
   const zoomFit = () => {
     setZoom(1);
     setPanOffset({ x: 0, y: 0 });
@@ -50,7 +49,9 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const observer = new ResizeObserver(([entry]) => {
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
       const { width, height } = entry.contentRect;
       setContainerSize({ width, height });
     });
@@ -67,7 +68,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
       if (e.ctrlKey || e.metaKey) {
         setZoom((z) => {
           const next = z * (e.deltaY < 0 ? 1.1 : 0.9);
-          return Math.max(ZOOM_STEPS[0], Math.min(ZOOM_STEPS.at(-1)!, next));
+          return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, next));
         });
       } else {
         setPanOffset((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
@@ -144,6 +145,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
     if (!isMiddle && !isSpaceDrag) return;
     e.preventDefault();
     isPanningRef.current = true;
+    setIsPanning(true);
     didPanRef.current = false;
     panStartRef.current = {
       mouseX: e.clientX,
@@ -166,6 +168,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
 
   const handleMouseUp = () => {
     isPanningRef.current = false;
+    setIsPanning(false);
   };
 
   // usable area after reserving space for the ruler
@@ -230,11 +233,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
     if (e.target === e.target.getStage()) selectObject(null);
   };
 
-  const cursor = isPanningRef.current
-    ? "grabbing"
-    : spaceDown
-      ? "grab"
-      : undefined;
+  const cursor = isPanning ? "grabbing" : spaceDown ? "grab" : undefined;
 
   return (
     <div
