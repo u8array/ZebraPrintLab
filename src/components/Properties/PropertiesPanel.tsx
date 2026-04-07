@@ -107,6 +107,7 @@ function LabelConfigPanel({ label, onUpdate }: LabelConfigPanelProps) {
   const handlePreset = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (e.target.value === 'custom') return;
     const p = PRESETS[Number(e.target.value)];
+    if (!p) return;
     onUpdate({ widthMm: p.widthMm, heightMm: p.heightMm, dpmm: p.dpmm });
   };
 

@@ -13,6 +13,7 @@ interface TemplateProps {
 export const _template: ObjectTypeDefinition<TemplateProps> = {
   label: 'Template',
   icon: '?',
+  group: 'shape',
   defaultProps: {
     content: '',
   },
