@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ObjectPalette } from './components/Palette/ObjectPalette';
 import { LabelCanvas } from './components/Canvas/LabelCanvas';
 import { PropertiesPanel } from './components/Properties/PropertiesPanel';
@@ -7,18 +7,80 @@ import { LabelPreview } from './components/Output/LabelPreview';
 import { useLabelStore, useHistory } from './store/labelStore';
 import { generateZPL } from './lib/zplGenerator';
 import { fetchPreview } from './lib/labelary';
+import type { LabelConfig, LabelObject } from './types/ObjectType';
 
 function App() {
   const label = useLabelStore((s) => s.label);
   const objects = useLabelStore((s) => s.objects);
   const selectObject = useLabelStore((s) => s.selectObject);
+  const duplicateObject = useLabelStore((s) => s.duplicateObject);
+  const loadDesign = useLabelStore((s) => s.loadDesign);
   const { undo, redo, pastStates, futureStates } = useHistory();
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(true);
+  const loadInputRef = useRef<HTMLInputElement>(null);
 
   const canUndo = pastStates.length > 0;
   const canRedo = futureStates.length > 0;
   const hasObjects = objects.length > 0;
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+      const mod = e.metaKey || e.ctrlKey;
+
+      if (mod && e.code === 'KeyZ') {
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undo();
+        return;
+      }
+      if (mod && e.code === 'KeyD') {
+        e.preventDefault();
+        const id = useLabelStore.getState().selectedId;
+        if (id) duplicateObject(id);
+        return;
+      }
+      if (inInput) return;
+      if (e.code === 'KeyG') { e.preventDefault(); setShowGrid((v) => !v); }
+      if (e.code === 'KeyS') { e.preventDefault(); setSnapEnabled((v) => !v); }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [undo, redo, duplicateObject]);
+
+  const handleSave = () => {
+    const data = JSON.stringify({ label, objects }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'label.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const handleLoad = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const json = JSON.parse(ev.target?.result as string) as {
+          label: LabelConfig;
+          objects: LabelObject[];
+        };
+        if (json.label && Array.isArray(json.objects)) {
+          loadDesign(json.label, json.objects);
+        }
+      } catch {
+        // invalid file — silently ignore
+      }
+    };
+    reader.readAsText(file);
+    // reset so same file can be loaded again
+    e.target.value = '';
+  };
 
   const handleDownload = () => {
     const zpl = generateZPL(label, objects);
@@ -100,6 +162,31 @@ function App() {
           >
             Redo ↪
           </button>
+
+          <div className="w-px h-4 bg-border mx-1" />
+
+          <button
+            onClick={handleSave}
+            disabled={!hasObjects}
+            title="Save design as JSON"
+            className="px-2.5 py-1 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+          >
+            ↓ JSON
+          </button>
+          <button
+            onClick={() => loadInputRef.current?.click()}
+            title="Load design from JSON"
+            className="px-2.5 py-1 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 transition-colors"
+          >
+            ↑ JSON
+          </button>
+          <input
+            ref={loadInputRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={handleLoad}
+          />
 
           <div className="w-px h-4 bg-border mx-1" />
 

@@ -31,6 +31,7 @@ export const box: ObjectTypeDefinition<BoxProps> = {
     return [
       `^FO${obj.x},${obj.y}`,
       `^GB${p.width},${p.height},${t},${p.color},${p.rounding}`,
+      `^FS`,
     ].join('');
   },
 

@@ -29,6 +29,7 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
     return [
       `^FO${obj.x},${obj.y}`,
       `^GE${p.width},${p.height},${thick},${p.color}`,
+      `^FS`,
     ].join('');
   },
 

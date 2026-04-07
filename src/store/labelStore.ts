@@ -11,8 +11,10 @@ interface LabelState {
   addObject: (type: string, position?: { x: number; y: number }) => void;
   updateObject: (id: string, changes: Partial<LabelObject>) => void;
   removeObject: (id: string) => void;
+  duplicateObject: (id: string) => void;
   selectObject: (id: string | null) => void;
   setLabelConfig: (config: Partial<LabelConfig>) => void;
+  loadDesign: (label: LabelConfig, objects: LabelObject[]) => void;
 }
 
 export const useLabelStore = create<LabelState>()(
@@ -62,7 +64,22 @@ export const useLabelStore = create<LabelState>()(
           selectedId: state.selectedId === id ? null : state.selectedId,
         })),
 
+      duplicateObject: (id) =>
+        set((state) => {
+          const src = state.objects.find((o) => o.id === id);
+          if (!src) return {};
+          const copy: LabelObject = {
+            ...src,
+            id: crypto.randomUUID(),
+            x: src.x + 20,
+            y: src.y + 20,
+          };
+          return { objects: [...state.objects, copy], selectedId: copy.id };
+        }),
+
       selectObject: (id) => set({ selectedId: id }),
+
+      loadDesign: (label, objects) => set({ label, objects, selectedId: null }),
 
       setLabelConfig: (config) =>
         set((state) => ({ label: { ...state.label, ...config } })),

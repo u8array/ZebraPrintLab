@@ -28,6 +28,7 @@ export const line: ObjectTypeDefinition<LineProps> = {
     return [
       `^FO${obj.x},${obj.y}`,
       `^GB${w},${h},${p.thickness},${p.color},0`,
+      `^FS`,
     ].join('');
   },
 
