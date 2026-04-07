@@ -19,8 +19,7 @@ interface Props {
   onChange: (changes: Partial<LabelObject>) => void;
 }
 
-// props is stored as Record<string,unknown> — double-cast via unknown is intentional
-const props = <T,>(obj: LabelObject) => obj.props as unknown as T;
+const props = <T,>(obj: LabelObject) => obj.props as T;
 
 export function KonvaObject({
   obj,

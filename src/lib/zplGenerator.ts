@@ -10,7 +10,7 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
     '^XA',
     `^PW${widthDots}`,
     `^LL${heightDots}`,
-    ...objects.map((obj) => ObjectRegistry[obj.type].toZPL(obj)),
+    ...objects.map((obj) => ObjectRegistry[obj.type]?.toZPL(obj) ?? ''),
     '^XZ',
   ];
 

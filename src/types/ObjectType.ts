@@ -12,12 +12,12 @@ export interface LabelObject {
   x: number;
   y: number;
   rotation: number;
-  props: Record<string, unknown>;
+  props: unknown;
 }
 
 export type ObjectGroup = 'text' | 'code' | 'shape';
 
-export interface ObjectTypeDefinition<P = Record<string, unknown>> {
+export interface ObjectTypeDefinition<P extends object = object> {
   label: string;
   icon: string;
   group: ObjectGroup;

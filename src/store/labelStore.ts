@@ -50,7 +50,7 @@ export const useLabelStore = create<LabelState>()(
               ...changes,
               // merge props, not replace
               props: changes.props
-                ? { ...obj.props, ...changes.props }
+                ? Object.assign({}, obj.props, changes.props)
                 : obj.props,
             };
           }),

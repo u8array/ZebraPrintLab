@@ -6,7 +6,7 @@ import { qrcode } from './qrcode.tsx';
 import { box } from './box.tsx';
 import { line } from './line.tsx';
 
-export const ObjectRegistry: Record<string, ObjectTypeDefinition> = {
+export const ObjectRegistry: Record<string, ObjectTypeDefinition<object>> = {
   text,
   code128,
   code39,
