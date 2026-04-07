@@ -9,7 +9,10 @@ import { Ruler, RULER_SIZE } from "./Ruler";
 import type { TextProps } from "../../registry/text";
 import type { Code128Props } from "../../registry/code128";
 import type { Code39Props } from "../../registry/code39";
+import type { Ean13Props } from "../../registry/ean13";
+import type { DataMatrixProps } from "../../registry/datamatrix";
 import type { BoxProps } from "../../registry/box";
+import type { EllipseProps } from "../../registry/ellipse";
 import type { LineProps } from "../../registry/line";
 
 const PADDING = 40;
@@ -351,8 +354,8 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                     ...pos,
                     props: { fontHeight: Math.max(1, Math.round(p.fontHeight * sy)) },
                   });
-                } else if (obj.type === "code128" || obj.type === "code39") {
-                  const p = obj.props as unknown as Code128Props | Code39Props;
+                } else if (obj.type === "code128" || obj.type === "code39" || obj.type === "ean13") {
+                  const p = obj.props as unknown as Code128Props | Code39Props | Ean13Props;
                   updateObject(selectedId, {
                     ...pos,
                     props: { height: Math.max(1, Math.round(p.height * sy)) },
@@ -363,6 +366,21 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                     ...pos,
                     props: {
                       width: Math.max(1, Math.round(p.width * sx)),
+                      height: Math.max(1, Math.round(p.height * sy)),
+                    },
+                  });
+                } else if (obj.type === "datamatrix") {
+                  const p = obj.props as unknown as DataMatrixProps;
+                  updateObject(selectedId, {
+                    ...pos,
+                    props: { dimension: Math.max(1, Math.min(12, Math.round(p.dimension * Math.min(sx, sy)))) },
+                  });
+                } else if (obj.type === "ellipse") {
+                  const p = obj.props as unknown as EllipseProps;
+                  updateObject(selectedId, {
+                    ...pos,
+                    props: {
+                      width:  Math.max(1, Math.round(p.width  * sx)),
                       height: Math.max(1, Math.round(p.height * sy)),
                     },
                   });

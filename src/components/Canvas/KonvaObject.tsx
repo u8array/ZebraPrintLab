@@ -1,12 +1,15 @@
-import { Group, Rect, Text } from 'react-konva';
+import { Ellipse, Group, Rect, Text } from 'react-konva';
 import type Konva from 'konva';
 import type { LabelObject } from '../../types/ObjectType';
 import { dotsToPx, pxToDots } from '../../lib/coordinates';
 import type { TextProps } from '../../registry/text';
 import type { Code128Props } from '../../registry/code128';
 import type { Code39Props } from '../../registry/code39';
+import type { Ean13Props } from '../../registry/ean13';
 import type { QrCodeProps } from '../../registry/qrcode';
+import type { DataMatrixProps } from '../../registry/datamatrix';
 import type { BoxProps } from '../../registry/box';
+import type { EllipseProps } from '../../registry/ellipse';
 import type { LineProps } from '../../registry/line';
 
 interface Props {
@@ -99,6 +102,37 @@ export function KonvaObject({
     );
   }
 
+  if (obj.type === 'ean13') {
+    const p = props<Ean13Props>(obj);
+    return (
+      <Group
+        id={obj.id}
+        x={x}
+        y={y}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragEnd={handleDragEnd}
+      >
+        <Rect
+          width={dotsToPx(270, scale)}
+          height={dotsToPx(p.height + 20, scale)}
+          fill="#f9fafb"
+          stroke={isSelected ? '#6366f1' : '#9ca3af'}
+          strokeWidth={isSelected ? 2 : 1}
+          dash={isSelected ? undefined : [4, 2]}
+        />
+        <Text
+          x={6}
+          y={6}
+          text={`| ${p.content} |`}
+          fontSize={Math.max(dotsToPx(14, scale), 8)}
+          fill="#374151"
+        />
+      </Group>
+    );
+  }
+
   if (obj.type === 'qrcode') {
     const p = props<QrCodeProps>(obj);
     const size = dotsToPx(p.magnification * 25, scale);
@@ -132,6 +166,39 @@ export function KonvaObject({
     );
   }
 
+  if (obj.type === 'datamatrix') {
+    const p = props<DataMatrixProps>(obj);
+    const size = dotsToPx(p.dimension * 20, scale);
+    return (
+      <Group
+        id={obj.id}
+        x={x}
+        y={y}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragEnd={handleDragEnd}
+      >
+        <Rect
+          width={size}
+          height={size}
+          fill="#f9fafb"
+          stroke={isSelected ? '#6366f1' : '#9ca3af'}
+          strokeWidth={isSelected ? 2 : 1}
+          dash={isSelected ? undefined : [4, 2]}
+        />
+        <Text
+          x={6}
+          y={6}
+          text="DM"
+          fontSize={Math.max(size * 0.3, 8)}
+          fill="#374151"
+          fontStyle="bold"
+        />
+      </Group>
+    );
+  }
+
   if (obj.type === 'box') {
     const p = props<BoxProps>(obj);
     const w = dotsToPx(p.width, scale);
@@ -154,6 +221,36 @@ export function KonvaObject({
         onClick={onSelect}
         onTap={onSelect}
         onDragEnd={handleDragEnd}
+      />
+    );
+  }
+
+  if (obj.type === 'ellipse') {
+    const p = props<EllipseProps>(obj);
+    const rx = dotsToPx(p.width, scale) / 2;
+    const ry = dotsToPx(p.height, scale) / 2;
+    const stroke = p.color === 'B' ? '#000000' : '#cccccc';
+    const strokeWidth = Math.max(dotsToPx(p.thickness, scale), 0.5);
+    const fill = p.filled ? (p.color === 'B' ? '#000000' : '#ffffff') : 'transparent';
+    return (
+      <Ellipse
+        id={obj.id}
+        x={x + rx}
+        y={y + ry}
+        radiusX={rx}
+        radiusY={ry}
+        stroke={isSelected ? '#6366f1' : stroke}
+        strokeWidth={isSelected ? Math.max(strokeWidth, 1.5) : strokeWidth}
+        fill={fill}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragEnd={(e) => {
+          onChange({
+            x: pxToDots(e.target.x() - rx - offsetX, scale),
+            y: pxToDots(e.target.y() - ry - offsetY, scale),
+          });
+        }}
       />
     );
   }
