@@ -4,6 +4,17 @@ import { LabelCanvas } from './components/Canvas/LabelCanvas';
 import { PropertiesPanel } from './components/Properties/PropertiesPanel';
 import { ZPLOutput } from './components/Output/ZPLOutput';
 import { LabelPreview } from './components/Output/LabelPreview';
+import { ZplImportModal } from './components/Output/ZplImportModal';
+import { DropdownMenu, DropdownItem, DropdownSeparator } from './components/ui/DropdownMenu';
+import {
+  ArrowUturnLeftIcon,
+  ArrowUturnRightIcon,
+  ArrowUpTrayIcon,
+  ArrowDownTrayIcon,
+  FolderOpenIcon,
+  DocumentArrowDownIcon,
+  PrinterIcon,
+} from '@heroicons/react/16/solid';
 import { useLabelStore, useHistory } from './store/labelStore';
 import { generateZPL } from './lib/zplGenerator';
 import { fetchPreview } from './lib/labelary';
@@ -18,6 +29,7 @@ function App() {
   const { undo, redo, pastStates, futureStates } = useHistory();
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(true);
+  const [showZplImport, setShowZplImport] = useState(false);
   const loadInputRef = useRef<HTMLInputElement>(null);
 
   const canUndo = pastStates.length > 0;
@@ -129,18 +141,10 @@ function App() {
         </div>
 
         <div className="flex items-center gap-1">
-          <ToggleButton
-            active={showGrid}
-            onClick={() => setShowGrid((v) => !v)}
-            title="Grid (G)"
-          >
+          <ToggleButton active={showGrid} onClick={() => setShowGrid((v) => !v)} title="Grid (G)">
             Grid
           </ToggleButton>
-          <ToggleButton
-            active={snapEnabled}
-            onClick={() => setSnapEnabled((v) => !v)}
-            title="Snap to mm"
-          >
+          <ToggleButton active={snapEnabled} onClick={() => setSnapEnabled((v) => !v)} title="Snap (S)">
             Snap
           </ToggleButton>
 
@@ -150,36 +154,41 @@ function App() {
             onClick={() => undo()}
             disabled={!canUndo}
             title="Undo (⌘Z)"
-            className="px-2.5 py-1 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            className="p-1.5 rounded text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
           >
-            ↩ Undo
+            <ArrowUturnLeftIcon className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => redo()}
             disabled={!canRedo}
             title="Redo (⌘⇧Z)"
-            className="px-2.5 py-1 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            className="p-1.5 rounded text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
           >
-            Redo ↪
+            <ArrowUturnRightIcon className="w-3.5 h-3.5" />
           </button>
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          <button
-            onClick={handleSave}
-            disabled={!hasObjects}
-            title="Save design as JSON"
-            className="px-2.5 py-1 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-          >
-            ↓ JSON
-          </button>
-          <button
-            onClick={() => loadInputRef.current?.click()}
-            title="Load design from JSON"
-            className="px-2.5 py-1 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 transition-colors"
-          >
-            ↑ JSON
-          </button>
+          <DropdownMenu label="File">
+            <DropdownItem icon={ArrowUpTrayIcon} onClick={() => setShowZplImport(true)}>
+              Import ZPL
+            </DropdownItem>
+            <DropdownItem icon={ArrowDownTrayIcon} onClick={handleDownload} disabled={!hasObjects}>
+              Export ZPL
+            </DropdownItem>
+            <DropdownSeparator />
+            <DropdownItem icon={FolderOpenIcon} onClick={() => loadInputRef.current?.click()}>
+              Open design
+            </DropdownItem>
+            <DropdownItem icon={DocumentArrowDownIcon} onClick={handleSave} disabled={!hasObjects}>
+              Save design
+            </DropdownItem>
+            <DropdownSeparator />
+            <DropdownItem icon={PrinterIcon} onClick={handlePrint} disabled={!hasObjects}>
+              Print
+            </DropdownItem>
+          </DropdownMenu>
+
           <input
             ref={loadInputRef}
             type="file"
@@ -187,25 +196,6 @@ function App() {
             className="hidden"
             onChange={handleLoad}
           />
-
-          <div className="w-px h-4 bg-border mx-1" />
-
-          <button
-            onClick={handleDownload}
-            disabled={!hasObjects}
-            title="Download ZPL"
-            className="px-2.5 py-1 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-          >
-            ↓ ZPL
-          </button>
-          <button
-            onClick={handlePrint}
-            disabled={!hasObjects}
-            title="Print preview"
-            className="px-2.5 py-1 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-          >
-            ⎙ Print
-          </button>
         </div>
       </header>
 
@@ -236,6 +226,7 @@ function App() {
         </div>
       </div>
 
+      {showZplImport && <ZplImportModal onClose={() => setShowZplImport(false)} />}
     </div>
   );
 }
