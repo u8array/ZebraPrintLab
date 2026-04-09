@@ -1,11 +1,13 @@
 import { useRef, useEffect, useState } from "react";
-import { Stage, Layer, Rect, Transformer } from "react-konva";
+import { Stage, Layer, Group, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore } from "../../store/labelStore";
 import { pxToDots, DPMM } from "../../lib/coordinates";
 import { KonvaObject } from "./KonvaObject";
 import { Grid } from "./Grid";
 import { Ruler, RULER_SIZE } from "./Ruler";
+import { ObjectRegistry } from "../../registry";
+import type { LabelObject } from "../../types/ObjectType";
 import type { TextProps } from "../../registry/text";
 import type { Code128Props } from "../../registry/code128";
 import type { Code39Props } from "../../registry/code39";
@@ -13,7 +15,6 @@ import type { Ean13Props } from "../../registry/ean13";
 import type { DataMatrixProps } from "../../registry/datamatrix";
 import type { BoxProps } from "../../registry/box";
 import type { EllipseProps } from "../../registry/ellipse";
-import type { LineProps } from "../../registry/line";
 
 const PADDING = 40;
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
@@ -38,6 +39,10 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
   const panStartRef = useRef({ mouseX: 0, mouseY: 0, panX: 0, panY: 0 });
   // track whether the pointer actually moved during a pan gesture
   const didPanRef = useRef(false);
+
+  // Ghost object shown while dragging any object from the palette
+  const [ghost, setGhost] = useState<LabelObject | null>(null);
+  const dragEnterCountRef = useRef(0);
 
   const zoomIn  = () => setZoom(z => ZOOM_STEPS.find(s => s > z) ?? ZOOM_MAX);
   const zoomOut = () => setZoom(z => [...ZOOM_STEPS].reverse().find(s => s < z) ?? ZOOM_MIN);
@@ -219,6 +224,8 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    dragEnterCountRef.current = 0;
+    setGhost(null);
     const type = e.dataTransfer.getData("objectType");
     if (!type || !stageRef.current) return;
     stageRef.current.setPointersPositions(e.nativeEvent);
@@ -228,6 +235,42 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
       x: snap(pxToDots(pos.x - labelOffsetX, scale)),
       y: snap(pxToDots(pos.y - labelOffsetY, scale)),
     });
+  };
+
+  const dragTypeFromEvent = (e: React.DragEvent): string | null => {
+    const hit = Array.from(e.dataTransfer.types).find((t) => t.startsWith('application/x-zpl-type+'));
+    return hit ? hit.slice('application/x-zpl-type+'.length) : null;
+  };
+
+  const handleDragEnter = () => {
+    dragEnterCountRef.current++;
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    const type = dragTypeFromEvent(e);
+    if (!type || !stageRef.current) return;
+    const def = ObjectRegistry[type];
+    if (!def) return;
+    stageRef.current.setPointersPositions(e.nativeEvent);
+    const pos = stageRef.current.getPointerPosition();
+    if (!pos) return;
+    setGhost({
+      id: '__ghost__',
+      type,
+      x: snap(pxToDots(pos.x - labelOffsetX, scale)),
+      y: snap(pxToDots(pos.y - labelOffsetY, scale)),
+      rotation: 0,
+      props: def.defaultProps,
+    });
+  };
+
+  const handleDragLeave = () => {
+    dragEnterCountRef.current--;
+    if (dragEnterCountRef.current <= 0) {
+      dragEnterCountRef.current = 0;
+      setGhost(null);
+    }
   };
 
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -257,7 +300,9 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onDrop={handleDrop}
-      onDragOver={(e) => e.preventDefault()}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
     >
       {/* Zoom controls */}
       <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 bg-surface border border-border rounded px-1 py-0.5">
@@ -325,6 +370,21 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                 onChange={(changes) => handleObjectChange(obj.id, changes)}
               />
             ))}
+
+            {/* Ghost preview while dragging any object from the palette */}
+            {ghost && (
+              <Group opacity={0.5} listening={false}>
+                <KonvaObject
+                  obj={ghost}
+                  scale={scale}
+                  offsetX={labelOffsetX}
+                  offsetY={labelOffsetY}
+                  isSelected={false}
+                  onSelect={() => { /* ghost */ }}
+                  onChange={() => { /* ghost */ }}
+                />
+              </Group>
+            )}
 
             <Transformer
               ref={transformerRef}

@@ -3,6 +3,9 @@ import { ObjectRegistry, PALETTE_GROUPS } from '../../registry';
 export function ObjectPalette() {
   const handleDragStart = (e: React.DragEvent, type: string) => {
     e.dataTransfer.setData('objectType', type);
+    // Encode the type into the MIME key so it's readable during dragover
+    // (dataTransfer.getData() is blocked during dragover by the spec)
+    e.dataTransfer.setData(`application/x-zpl-type+${type}`, type);
     e.dataTransfer.effectAllowed = 'copy';
   };
 
