@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useLabelStore } from '../../store/labelStore';
 import { generateZPL } from '../../lib/zplGenerator';
-import t from '../../locales/en';
+import { useT } from '../../lib/useT';
 
 export function ZPLOutput() {
+  const t = useT();
   const { label, objects } = useLabelStore();
   const [copied, setCopied] = useState(false);
 

@@ -1,5 +1,5 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
-import t from '../locales/en';
+import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 
 export interface Ean13Props {
@@ -30,6 +30,7 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
+    const t = useT();
     const p = obj.props;
     return (
       <div className="flex flex-col gap-3">

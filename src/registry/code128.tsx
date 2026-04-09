@@ -1,5 +1,5 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
-import t from '../locales/en';
+import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 
 export interface Code128Props {
@@ -33,6 +33,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
+    const t = useT();
     const p = obj.props;
     return (
       <div className="flex flex-col gap-3">

@@ -22,6 +22,17 @@ const ro = {
     dpmm24: '24 dpmm — 600 dpi',
   },
 
+  app: {
+    file: 'Fișier',
+    importZpl: 'Import ZPL',
+    exportZpl: 'Export ZPL',
+    openDesign: 'Deschide design',
+    saveDesign: 'Salvează design',
+    print: 'Imprimă',
+    propertiesTab: 'Proprietăți',
+    layersTab: 'Straturi',
+  },
+
   output: {
     zplHeading: 'ZPL',
     copy: 'Copiați',

@@ -22,6 +22,17 @@ const fi = {
     dpmm24: '24 dpmm — 600 dpi',
   },
 
+  app: {
+    file: 'Tiedosto',
+    importZpl: 'Import ZPL',
+    exportZpl: 'Export ZPL',
+    openDesign: 'Avaa rakenne',
+    saveDesign: 'Tallenna rakenne',
+    print: 'Tulosta',
+    propertiesTab: 'Ominaisuudet',
+    layersTab: 'Tasot',
+  },
+
   output: {
     zplHeading: 'ZPL',
     copy: 'Kopioi',

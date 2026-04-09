@@ -22,6 +22,17 @@ const lv = {
     dpmm24: '24 dpmm — 600 dpi',
   },
 
+  app: {
+    file: 'Fails',
+    importZpl: 'Import ZPL',
+    exportZpl: 'Export ZPL',
+    openDesign: 'Atvērt dizainu',
+    saveDesign: 'Saglabāt dizainu',
+    print: 'Drukāt',
+    propertiesTab: 'Īpašības',
+    layersTab: 'Slāņi',
+  },
+
   output: {
     zplHeading: 'ZPL',
     copy: 'Kopēt',

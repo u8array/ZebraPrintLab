@@ -22,6 +22,17 @@ const sr = {
     dpmm24: '24 dpmm — 600 dpi',
   },
 
+  app: {
+    file: 'Датотека',
+    importZpl: 'Import ZPL',
+    exportZpl: 'Export ZPL',
+    openDesign: 'Отвори дизајн',
+    saveDesign: 'Сачувај дизајн',
+    print: 'Штампај',
+    propertiesTab: 'Својства',
+    layersTab: 'Слојеви',
+  },
+
   output: {
     zplHeading: 'ZPL',
     copy: 'Kopiraj',

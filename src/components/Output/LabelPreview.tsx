@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useLabelStore } from '../../store/labelStore';
 import { generateZPL } from '../../lib/zplGenerator';
 import { fetchPreview } from '../../lib/labelary';
-import t from '../../locales/en';
+import { useT } from '../../lib/useT';
 
 export function LabelPreview() {
+  const t = useT();
   const { label, objects } = useLabelStore();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

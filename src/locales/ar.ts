@@ -1,0 +1,134 @@
+const ar = {
+  palette: {
+    heading: 'العناصر',
+  },
+
+  properties: {
+    positionSection: 'الموضع (مم)',
+    x: 'X',
+    y: 'Y',
+  },
+
+  label: {
+    heading: 'الملصق',
+    preset: 'إعداد مسبق',
+    presetCustom: 'مخصص',
+    width: 'العرض (مم)',
+    height: 'الارتفاع (مم)',
+    dpmm: 'الدقة',
+    dpmm6: '6 نقطة/مم — 152 dpi',
+    dpmm8: '8 نقطة/مم — 203 dpi',
+    dpmm12: '12 نقطة/مم — 300 dpi',
+    dpmm24: '24 نقطة/مم — 600 dpi',
+  },
+
+  app: {
+    file: 'ملف',
+    importZpl: 'استيراد ZPL',
+    exportZpl: 'تصدير ZPL',
+    openDesign: 'فتح تصميم',
+    saveDesign: 'حفظ تصميم',
+    print: 'طباعة',
+    propertiesTab: 'الخصائص',
+    layersTab: 'الطبقات',
+  },
+
+  output: {
+    zplHeading: 'ZPL',
+    copy: 'نسخ',
+    copied: '✓ تم النسخ',
+    noObjects: '// لا توجد عناصر على الملصق بعد',
+    previewHeading: 'معاينة',
+    loading: 'جارٍ التحميل…',
+    unavailable: 'غير متاح',
+    previewEmpty: 'تظهر المعاينة\nبعد إجراء تغييرات',
+  },
+
+  registry: {
+    text: {
+      content: 'المحتوى',
+      fontHeight: 'الارتفاع (نقطة)',
+      fontWidth: 'العرض (نقطة)',
+      rotation: 'التدوير',
+      rotationN: 'N — عادي',
+      rotationR: 'R — 90°',
+      rotationI: 'I — 180°',
+      rotationB: 'B — 270°',
+    },
+    code128: {
+      content: 'المحتوى',
+      height: 'الارتفاع (نقطة)',
+      printInterpretation: 'قابل للقراءة البشرية',
+      checkDigit: 'رقم التحقق',
+    },
+    box: {
+      width: 'العرض (نقطة)',
+      height: 'الارتفاع (نقطة)',
+      thickness: 'الحدود (نقطة)',
+      filled: 'ممتلئ',
+      color: 'اللون',
+      colorB: 'B — أسود',
+      colorW: 'W — أبيض',
+      rounding: 'التدوير (0–8)',
+    },
+    code39: {
+      content: 'المحتوى',
+      height: 'الارتفاع (نقطة)',
+      printInterpretation: 'قابل للقراءة البشرية',
+      checkDigit: 'رقم التحقق',
+    },
+    qrcode: {
+      content: 'المحتوى',
+      magnification: 'الحجم (1–10)',
+      errorCorrection: 'تصحيح الخطأ',
+      ecL: 'L — 7%',
+      ecM: 'M — 15%',
+      ecQ: 'Q — 25%',
+      ecH: 'H — 30%',
+    },
+    ean13: {
+      content: 'المحتوى (12 رقم)',
+      height: 'الارتفاع (نقطة)',
+      printInterpretation: 'قابل للقراءة البشرية',
+    },
+    datamatrix: {
+      content: 'المحتوى',
+      dimension: 'حجم الوحدة (1–12)',
+      quality: 'الجودة',
+      qualityAuto: '0 — تلقائي',
+      quality50: '50 — 2 of 5',
+      quality80: '80 — 3 of 9',
+      quality140: '140 — 4 of 9',
+      quality200: '200 — ECC 200',
+    },
+    ellipse: {
+      width: 'العرض (نقطة)',
+      height: 'الارتفاع (نقطة)',
+      thickness: 'الحدود (نقطة)',
+      filled: 'ممتلئ',
+      color: 'اللون',
+      colorB: 'B — أسود',
+      colorW: 'W — أبيض',
+    },
+    line: {
+      angle: 'الزاوية (°)',
+      length: 'الطول (نقطة)',
+      thickness: 'السماكة (نقطة)',
+      color: 'اللون',
+      colorB: 'B — أسود',
+      colorW: 'W — أبيض',
+    },
+  },
+
+  layers: {
+    propertiesTab: 'الخصائص',
+    layersTab: 'الطبقات',
+    empty: 'لا توجد عناصر على الملصق',
+    toFront: 'إحضار للأمام',
+    forward: 'تقديم للأمام',
+    backward: 'إرسال للخلف',
+    toBack: 'إرسال للخلف',
+  },
+} as const;
+
+export default ar;

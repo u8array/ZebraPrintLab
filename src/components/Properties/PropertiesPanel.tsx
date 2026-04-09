@@ -1,10 +1,11 @@
 import { useLabelStore } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
 import { dotsToMm, mmToDots } from '../../lib/coordinates';
-import t from '../../locales/en';
+import { useT } from '../../lib/useT';
 import { inputCls, labelCls } from './styles';
 
 export function PropertiesPanel() {
+  const t = useT();
   const { objects, selectedId, updateObject, label, setLabelConfig } = useLabelStore();
   const obj = objects.find((o) => o.id === selectedId);
 
@@ -99,6 +100,7 @@ interface LabelConfigPanelProps {
 }
 
 function LabelConfigPanel({ label, onUpdate }: LabelConfigPanelProps) {
+  const t = useT();
   const matchedPreset = PRESETS.find(
     (p) => p.widthMm === label.widthMm && p.heightMm === label.heightMm && p.dpmm === label.dpmm,
   );

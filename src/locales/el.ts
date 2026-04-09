@@ -22,6 +22,17 @@ const el = {
     dpmm24: '24 dpmm — 600 dpi',
   },
 
+  app: {
+    file: 'Αρχείο',
+    importZpl: 'Import ZPL',
+    exportZpl: 'Export ZPL',
+    openDesign: 'Άνοιγμα σχεδίου',
+    saveDesign: 'Αποθήκευση σχεδίου',
+    print: 'Εκτύπωση',
+    propertiesTab: 'Ιδιότητες',
+    layersTab: 'Επίπεδα',
+  },
+
   output: {
     zplHeading: 'ZPL',
     copy: 'Αντιγραφή',

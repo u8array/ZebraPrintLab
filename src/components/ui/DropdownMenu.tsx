@@ -15,8 +15,9 @@ interface MenuItemProps {
 }
 
 interface MenuProps {
-  label: string;
+  label: React.ReactNode;
   children: React.ReactNode;
+  maxHeight?: string;
 }
 
 // ── Components ────────────────────────────────────────────────────────────────
@@ -39,7 +40,7 @@ export function DropdownItem({ onClick, disabled, shortcut, icon: Icon, children
   );
 }
 
-export function DropdownMenu({ label, children }: MenuProps) {
+export function DropdownMenu({ label, children, maxHeight }: MenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -75,7 +76,8 @@ export function DropdownMenu({ label, children }: MenuProps) {
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 z-50 min-w-[190px] bg-surface border border-border rounded-lg shadow-2xl p-1"
+          className="absolute right-0 top-full mt-1 z-50 min-w-[190px] bg-surface border border-border rounded-lg shadow-2xl p-1 overflow-y-auto"
+          style={maxHeight ? { maxHeight } : undefined}
           onClick={() => setOpen(false)}
         >
           {children}

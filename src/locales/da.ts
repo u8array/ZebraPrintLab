@@ -22,6 +22,17 @@ const da = {
     dpmm24: '24 dpmm — 600 dpi',
   },
 
+  app: {
+    file: 'Fil',
+    importZpl: 'Import ZPL',
+    exportZpl: 'Export ZPL',
+    openDesign: 'Åbn design',
+    saveDesign: 'Gem design',
+    print: 'Udskriv',
+    propertiesTab: 'Egenskaber',
+    layersTab: 'Lag',
+  },
+
   output: {
     zplHeading: 'ZPL',
     copy: 'Kopiér',

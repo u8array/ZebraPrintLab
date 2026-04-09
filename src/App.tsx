@@ -15,19 +15,26 @@ import {
   FolderOpenIcon,
   DocumentArrowDownIcon,
   PrinterIcon,
+  GlobeAltIcon,
 } from '@heroicons/react/16/solid';
 import { useLabelStore, useHistory } from './store/labelStore';
+import { localeNames } from './locales';
+import type { LocaleCode } from './locales';
 import { generateZPL } from './lib/zplGenerator';
 import { fetchPreview } from './lib/labelary';
 import type { LabelConfig } from './types/ObjectType';
 import type { LabelObject } from './registry';
+import { useT } from './lib/useT';
 
 function App() {
+  const t = useT();
   const label = useLabelStore((s) => s.label);
   const objects = useLabelStore((s) => s.objects);
   const selectObject = useLabelStore((s) => s.selectObject);
   const duplicateObject = useLabelStore((s) => s.duplicateObject);
   const loadDesign = useLabelStore((s) => s.loadDesign);
+  const locale = useLabelStore((s) => s.locale);
+  const setLocale = useLabelStore((s) => s.setLocale);
   const { undo, redo, pastStates, futureStates } = useHistory();
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(true);
@@ -166,23 +173,40 @@ function App() {
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          <DropdownMenu label="File">
+          <DropdownMenu
+            label={<GlobeAltIcon className="w-3.5 h-3.5" />}
+            maxHeight="260px"
+          >
+            {(Object.entries(localeNames) as [LocaleCode, string][]).map(([code, name]) => (
+              <DropdownItem
+                key={code}
+                onClick={() => setLocale(code)}
+                shortcut={code === locale ? '✓' : undefined}
+              >
+                {name}
+              </DropdownItem>
+            ))}
+          </DropdownMenu>
+
+          <div className="w-px h-4 bg-border mx-1" />
+
+          <DropdownMenu label={t.app.file}>
             <DropdownItem icon={ArrowUpTrayIcon} onClick={() => setShowZplImport(true)}>
-              Import ZPL
+              {t.app.importZpl}
             </DropdownItem>
             <DropdownItem icon={ArrowDownTrayIcon} onClick={handleDownload} disabled={!hasObjects}>
-              Export ZPL
+              {t.app.exportZpl}
             </DropdownItem>
             <DropdownSeparator />
             <DropdownItem icon={FolderOpenIcon} onClick={() => loadInputRef.current?.click()}>
-              Open design
+              {t.app.openDesign}
             </DropdownItem>
             <DropdownItem icon={DocumentArrowDownIcon} onClick={handleSave} disabled={!hasObjects}>
-              Save design
+              {t.app.saveDesign}
             </DropdownItem>
             <DropdownSeparator />
             <DropdownItem icon={PrinterIcon} onClick={handlePrint} disabled={!hasObjects}>
-              Print
+              {t.app.print}
             </DropdownItem>
           </DropdownMenu>
 
@@ -225,7 +249,7 @@ function App() {
                   : 'text-muted hover:text-text'
               }`}
             >
-              Properties
+              {t.layers.propertiesTab}
             </button>
             <button
               onClick={() => setRightTab('layers')}
@@ -235,7 +259,7 @@ function App() {
                   : 'text-muted hover:text-text'
               }`}
             >
-              Layers
+              {t.layers.layersTab}
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">

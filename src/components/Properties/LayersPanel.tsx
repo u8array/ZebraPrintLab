@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useLabelStore } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
-import t from '../../locales/en';
+import { useT } from '../../lib/useT';
 
 export function LayersPanel() {
+  const t = useT();
   const {
     objects,
     selectedId,

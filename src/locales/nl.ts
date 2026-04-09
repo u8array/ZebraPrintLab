@@ -22,6 +22,17 @@ const nl = {
     dpmm24: '24 dpmm — 600 dpi',
   },
 
+  app: {
+    file: 'Bestand',
+    importZpl: 'Import ZPL',
+    exportZpl: 'Export ZPL',
+    openDesign: 'Ontwerp openen',
+    saveDesign: 'Ontwerp opslaan',
+    print: 'Afdrukken',
+    propertiesTab: 'Eigenschappen',
+    layersTab: 'Lagen',
+  },
+
   output: {
     zplHeading: 'ZPL',
     copy: 'Kopiëren',

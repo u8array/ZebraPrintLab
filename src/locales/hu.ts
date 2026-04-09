@@ -22,6 +22,17 @@ const hu = {
     dpmm24: '24 dpmm — 600 dpi',
   },
 
+  app: {
+    file: 'Fájl',
+    importZpl: 'Import ZPL',
+    exportZpl: 'Export ZPL',
+    openDesign: 'Terv megnyitása',
+    saveDesign: 'Terv mentése',
+    print: 'Nyomtatás',
+    propertiesTab: 'Tulajdonságok',
+    layersTab: 'Rétegek',
+  },
+
   output: {
     zplHeading: 'ZPL',
     copy: 'Másolás',

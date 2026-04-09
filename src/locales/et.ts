@@ -22,6 +22,17 @@ const et = {
     dpmm24: '24 dpmm — 600 dpi',
   },
 
+  app: {
+    file: 'Fail',
+    importZpl: 'Import ZPL',
+    exportZpl: 'Export ZPL',
+    openDesign: 'Ava kujundus',
+    saveDesign: 'Salvesta kujundus',
+    print: 'Prindi',
+    propertiesTab: 'Omadused',
+    layersTab: 'Kihid',
+  },
+
   output: {
     zplHeading: 'ZPL',
     copy: 'Kopeeri',

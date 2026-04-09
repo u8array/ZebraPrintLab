@@ -22,6 +22,17 @@ const bg = {
     dpmm24: '24 dpmm — 600 dpi',
   },
 
+  app: {
+    file: 'Файл',
+    importZpl: 'Import ZPL',
+    exportZpl: 'Export ZPL',
+    openDesign: 'Отвори дизайн',
+    saveDesign: 'Запази дизайн',
+    print: 'Печат',
+    propertiesTab: 'Свойства',
+    layersTab: 'Слоеве',
+  },
+
   output: {
     zplHeading: 'ZPL',
     copy: 'Копирай',

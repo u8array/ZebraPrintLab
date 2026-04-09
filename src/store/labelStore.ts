@@ -4,11 +4,19 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { LabelConfig, LabelObjectBase } from '../types/ObjectType';
 import { ObjectRegistry } from '../registry';
 import type { LabelObject } from '../registry';
+import { locales } from '../locales';
+import type { LocaleCode } from '../locales';
+
+function detectLocale(): LocaleCode {
+  const lang = navigator.language.slice(0, 2).toLowerCase();
+  return (lang in locales ? lang : 'en') as LocaleCode;
+}
 
 interface LabelState {
   label: LabelConfig;
   objects: LabelObject[];
   selectedId: string | null;
+  locale: LocaleCode;
 
   addObject: (type: string, position?: { x: number; y: number }) => void;
   updateObject: (id: string, changes: Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object }) => void;
@@ -16,6 +24,7 @@ interface LabelState {
   duplicateObject: (id: string) => void;
   selectObject: (id: string | null) => void;
   setLabelConfig: (config: Partial<LabelConfig>) => void;
+  setLocale: (locale: LocaleCode) => void;
   loadDesign: (label: LabelConfig, objects: LabelObject[]) => void;
   moveObjectForward: (id: string) => void;
   moveObjectBackward: (id: string) => void;
@@ -31,6 +40,7 @@ export const useLabelStore = create<LabelState>()(
       label: { widthMm: 100, heightMm: 60, dpmm: 8 },
       objects: [],
       selectedId: null,
+      locale: detectLocale(),
 
       addObject: (type, position = { x: 50, y: 50 }) => {
         const definition = ObjectRegistry[type];
@@ -136,6 +146,8 @@ export const useLabelStore = create<LabelState>()(
 
       setLabelConfig: (config) =>
         set((state) => ({ label: { ...state.label, ...config } })),
+
+      setLocale: (locale) => set({ locale }),
     }),
     {
       name: 'zpl-designer-session',
@@ -143,6 +155,7 @@ export const useLabelStore = create<LabelState>()(
       partialize: (state) => ({
         label: state.label,
         objects: state.objects,
+        locale: state.locale,
       }),
     }
     ),

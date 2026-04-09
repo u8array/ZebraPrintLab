@@ -22,6 +22,17 @@ const cs = {
     dpmm24: '24 dpmm — 600 dpi',
   },
 
+  app: {
+    file: 'Soubor',
+    importZpl: 'Import ZPL',
+    exportZpl: 'Export ZPL',
+    openDesign: 'Otevřít návrh',
+    saveDesign: 'Uložit návrh',
+    print: 'Tisknout',
+    propertiesTab: 'Vlastnosti',
+    layersTab: 'Vrstvy',
+  },
+
   output: {
     zplHeading: 'ZPL',
     copy: 'Kopírovat',
