@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ObjectPalette } from './components/Palette/ObjectPalette';
 import { LabelCanvas } from './components/Canvas/LabelCanvas';
 import { PropertiesPanel } from './components/Properties/PropertiesPanel';
+import { LayersPanel } from './components/Properties/LayersPanel';
 import { ZPLOutput } from './components/Output/ZPLOutput';
 import { LabelPreview } from './components/Output/LabelPreview';
 import { ZplImportModal } from './components/Output/ZplImportModal';
@@ -30,6 +31,7 @@ function App() {
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [showZplImport, setShowZplImport] = useState(false);
+  const [rightTab, setRightTab] = useState<'properties' | 'layers'>('properties');
   const loadInputRef = useRef<HTMLInputElement>(null);
 
   const canUndo = pastStates.length > 0;
@@ -210,8 +212,33 @@ function App() {
           <LabelCanvas showGrid={showGrid} snapEnabled={snapEnabled} />
         </main>
 
-        <aside className="w-64 shrink-0 border-l border-border bg-surface overflow-y-auto">
-          <PropertiesPanel />
+        <aside className="w-64 shrink-0 border-l border-border bg-surface flex flex-col">
+          {/* Tab bar */}
+          <div className="flex shrink-0 border-b border-border">
+            <button
+              onClick={() => setRightTab('properties')}
+              className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                rightTab === 'properties'
+                  ? 'text-accent border-b-2 border-accent'
+                  : 'text-muted hover:text-text'
+              }`}
+            >
+              Properties
+            </button>
+            <button
+              onClick={() => setRightTab('layers')}
+              className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                rightTab === 'layers'
+                  ? 'text-accent border-b-2 border-accent'
+                  : 'text-muted hover:text-text'
+              }`}
+            >
+              Layers
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {rightTab === 'properties' ? <PropertiesPanel /> : <LayersPanel />}
+          </div>
         </aside>
 
       </div>

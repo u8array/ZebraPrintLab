@@ -228,7 +228,7 @@ export function parseZPL(zpl: string): ParsedZPL {
         if (h === t && w > t) {
           objects.push(
             makeObj('line', x, y, {
-              direction: 'H',
+              angle: 0,
               length: w,
               thickness: t,
               color,
@@ -237,7 +237,7 @@ export function parseZPL(zpl: string): ParsedZPL {
         } else if (w === t && h > t) {
           objects.push(
             makeObj('line', x, y, {
-              direction: 'V',
+              angle: 90,
               length: h,
               thickness: t,
               color,

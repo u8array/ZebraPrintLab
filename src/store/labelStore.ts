@@ -15,6 +15,10 @@ interface LabelState {
   selectObject: (id: string | null) => void;
   setLabelConfig: (config: Partial<LabelConfig>) => void;
   loadDesign: (label: LabelConfig, objects: LabelObject[]) => void;
+  moveObjectForward: (id: string) => void;
+  moveObjectBackward: (id: string) => void;
+  moveObjectToFront: (id: string) => void;
+  moveObjectToBack: (id: string) => void;
 }
 
 export const useLabelStore = create<LabelState>()(
@@ -78,6 +82,44 @@ export const useLabelStore = create<LabelState>()(
         }),
 
       selectObject: (id) => set({ selectedId: id }),
+
+      moveObjectToFront: (id) =>
+        set((state) => {
+          const idx = state.objects.findIndex((o) => o.id === id);
+          if (idx === -1 || idx === state.objects.length - 1) return {};
+          const objs = [...state.objects];
+          const [obj] = objs.splice(idx, 1);
+          objs.push(obj);
+          return { objects: objs };
+        }),
+
+      moveObjectToBack: (id) =>
+        set((state) => {
+          const idx = state.objects.findIndex((o) => o.id === id);
+          if (idx <= 0) return {};
+          const objs = [...state.objects];
+          const [obj] = objs.splice(idx, 1);
+          objs.unshift(obj);
+          return { objects: objs };
+        }),
+
+      moveObjectForward: (id) =>
+        set((state) => {
+          const idx = state.objects.findIndex((o) => o.id === id);
+          if (idx === -1 || idx === state.objects.length - 1) return {};
+          const objs = [...state.objects];
+          [objs[idx], objs[idx + 1]] = [objs[idx + 1], objs[idx]];
+          return { objects: objs };
+        }),
+
+      moveObjectBackward: (id) =>
+        set((state) => {
+          const idx = state.objects.findIndex((o) => o.id === id);
+          if (idx <= 0) return {};
+          const objs = [...state.objects];
+          [objs[idx], objs[idx - 1]] = [objs[idx - 1], objs[idx]];
+          return { objects: objs };
+        }),
 
       loadDesign: (label, objects) => set({ label, objects, selectedId: null }),
 

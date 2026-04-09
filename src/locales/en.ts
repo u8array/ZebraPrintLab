@@ -109,15 +109,23 @@ const en = {
       colorW: 'W — White',
     },
     line: {
-      direction: 'Direction',
-      directionH: 'H — Horizontal',
-      directionV: 'V — Vertical',
+      angle: 'Angle (°)',
       length: 'Length (dots)',
       thickness: 'Thickness (dots)',
       color: 'Color',
       colorB: 'B — Black',
       colorW: 'W — White',
     },
+  },
+
+  layers: {
+    propertiesTab: 'Properties',
+    layersTab: 'Layers',
+    empty: 'No objects on the label',
+    toFront: 'Bring to Front',
+    forward: 'Bring Forward',
+    backward: 'Send Backward',
+    toBack: 'Send to Back',
   },
 } as const;
 

@@ -206,9 +206,12 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
   };
 
   // Sync transformer selection whenever the selected object or object list changes
+  // Lines use their own endpoint handle — skip the transformer for them
   useEffect(() => {
     if (!transformerRef.current || !stageRef.current) return;
-    const node = selectedId
+    const selectedObj = objects.find((o) => o.id === selectedId);
+    const useTransformer = selectedObj && selectedObj.type !== 'line';
+    const node = useTransformer
       ? stageRef.current.findOne<Konva.Node>(`#${selectedId}`)
       : null;
     transformerRef.current.nodes(node ? [node] : []);
@@ -384,15 +387,8 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                       height: Math.max(1, Math.round(p.height * sy)),
                     },
                   });
-                } else if (obj.type === "line") {
-                  const p = obj.props as unknown as LineProps;
-                  updateObject(selectedId, {
-                    ...pos,
-                    props: {
-                      length: Math.max(1, Math.round(p.length * (p.direction === "H" ? sx : sy))),
-                    },
-                  });
                 }
+                // 'line' is intentionally excluded — it uses its own endpoint handle
               }}
             />
           </Layer>
