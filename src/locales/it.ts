@@ -1,0 +1,123 @@
+const it = {
+  palette: {
+    heading: 'Oggetti',
+  },
+
+  properties: {
+    positionSection: 'Posizione (mm)',
+    x: 'X',
+    y: 'Y',
+  },
+
+  label: {
+    heading: 'Etichetta',
+    preset: 'Modello',
+    presetCustom: 'Personalizzato',
+    width: 'Larghezza (mm)',
+    height: 'Altezza (mm)',
+    dpmm: 'Risoluzione',
+    dpmm6: '6 dpmm — 152 dpi',
+    dpmm8: '8 dpmm — 203 dpi',
+    dpmm12: '12 dpmm — 300 dpi',
+    dpmm24: '24 dpmm — 600 dpi',
+  },
+
+  output: {
+    zplHeading: 'ZPL',
+    copy: 'Copia',
+    copied: '✓ Copiato',
+    noObjects: "// Nessun oggetto sull'etichetta",
+    previewHeading: 'Anteprima',
+    loading: 'Caricamento…',
+    unavailable: 'Non disponibile',
+    previewEmpty: "L'anteprima appare\ndopo le modifiche",
+  },
+
+  registry: {
+    text: {
+      content: 'Contenuto',
+      fontHeight: 'Altezza (punti)',
+      fontWidth: 'Larghezza (punti)',
+      rotation: 'Rotazione',
+      rotationN: 'N — Normal',
+      rotationR: 'R — 90°',
+      rotationI: 'I — 180°',
+      rotationB: 'B — 270°',
+    },
+    code128: {
+      content: 'Contenuto',
+      height: 'Altezza (punti)',
+      printInterpretation: "Leggibile dall'uomo",
+      checkDigit: 'Cifra di controllo',
+    },
+    box: {
+      width: 'Larghezza (punti)',
+      height: 'Altezza (punti)',
+      thickness: 'Bordo (punti)',
+      filled: 'Riempito',
+      color: 'Colore',
+      colorB: 'B — Nero',
+      colorW: 'W — Bianco',
+      rounding: 'Arrotondamento (0–8)',
+    },
+    code39: {
+      content: 'Contenuto',
+      height: 'Altezza (punti)',
+      printInterpretation: "Leggibile dall'uomo",
+      checkDigit: 'Cifra di controllo',
+    },
+    qrcode: {
+      content: 'Contenuto',
+      magnification: 'Dimensione (1–10)',
+      errorCorrection: 'Correzione errori',
+      ecL: 'L — 7%',
+      ecM: 'M — 15%',
+      ecQ: 'Q — 25%',
+      ecH: 'H — 30%',
+    },
+    ean13: {
+      content: 'Contenuto (12 cifre)',
+      height: 'Altezza (punti)',
+      printInterpretation: "Leggibile dall'uomo",
+    },
+    datamatrix: {
+      content: 'Contenuto',
+      dimension: 'Dimensione modulo (1–12)',
+      quality: 'Qualità',
+      qualityAuto: '0 — Auto',
+      quality50: '50 — 2 of 5',
+      quality80: '80 — 3 of 9',
+      quality140: '140 — 4 of 9',
+      quality200: '200 — ECC 200',
+    },
+    ellipse: {
+      width: 'Larghezza (punti)',
+      height: 'Altezza (punti)',
+      thickness: 'Bordo (punti)',
+      filled: 'Riempito',
+      color: 'Colore',
+      colorB: 'B — Nero',
+      colorW: 'W — Bianco',
+    },
+    line: {
+      angle: 'Angolo (°)',
+      length: 'Lunghezza (punti)',
+      thickness: 'Spessore (punti)',
+      color: 'Colore',
+      colorB: 'B — Nero',
+      colorW: 'W — Bianco',
+    },
+  },
+
+  layers: {
+    propertiesTab: 'Proprietà',
+    layersTab: 'Livelli',
+    empty: "Nessun oggetto sull'etichetta",
+    toFront: 'Porta in primo piano',
+    forward: 'Sposta avanti',
+    backward: 'Sposta indietro',
+    toBack: 'Porta in secondo piano',
+  },
+} as const;
+
+export default it;

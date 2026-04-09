@@ -1,0 +1,123 @@
+const no = {
+  palette: {
+    heading: 'Objekter',
+  },
+
+  properties: {
+    positionSection: 'Posisjon (mm)',
+    x: 'X',
+    y: 'Y',
+  },
+
+  label: {
+    heading: 'Etikett',
+    preset: 'Mal',
+    presetCustom: 'Egendefinert',
+    width: 'Bredde (mm)',
+    height: 'Høyde (mm)',
+    dpmm: 'Oppløsning',
+    dpmm6: '6 dpmm — 152 dpi',
+    dpmm8: '8 dpmm — 203 dpi',
+    dpmm12: '12 dpmm — 300 dpi',
+    dpmm24: '24 dpmm — 600 dpi',
+  },
+
+  output: {
+    zplHeading: 'ZPL',
+    copy: 'Kopier',
+    copied: '✓ Kopiert',
+    noObjects: '// Ingen objekter på etiketten ennå',
+    previewHeading: 'Forhåndsvisning',
+    loading: 'Laster…',
+    unavailable: 'Utilgjengelig',
+    previewEmpty: 'Forhåndsvisning vises\netter endringer',
+  },
+
+  registry: {
+    text: {
+      content: 'Innhold',
+      fontHeight: 'Høyde (punkter)',
+      fontWidth: 'Bredde (punkter)',
+      rotation: 'Rotasjon',
+      rotationN: 'N — Normal',
+      rotationR: 'R — 90°',
+      rotationI: 'I — 180°',
+      rotationB: 'B — 270°',
+    },
+    code128: {
+      content: 'Innhold',
+      height: 'Høyde (punkter)',
+      printInterpretation: 'Lesbar for mennesker',
+      checkDigit: 'Kontrollsiffer',
+    },
+    box: {
+      width: 'Bredde (punkter)',
+      height: 'Høyde (punkter)',
+      thickness: 'Kant (punkter)',
+      filled: 'Fylt',
+      color: 'Farge',
+      colorB: 'B — Svart',
+      colorW: 'W — Hvit',
+      rounding: 'Avrunding (0–8)',
+    },
+    code39: {
+      content: 'Innhold',
+      height: 'Høyde (punkter)',
+      printInterpretation: 'Lesbar for mennesker',
+      checkDigit: 'Kontrollsiffer',
+    },
+    qrcode: {
+      content: 'Innhold',
+      magnification: 'Størrelse (1–10)',
+      errorCorrection: 'Feilretting',
+      ecL: 'L — 7%',
+      ecM: 'M — 15%',
+      ecQ: 'Q — 25%',
+      ecH: 'H — 30%',
+    },
+    ean13: {
+      content: 'Innhold (12 sifre)',
+      height: 'Høyde (punkter)',
+      printInterpretation: 'Lesbar for mennesker',
+    },
+    datamatrix: {
+      content: 'Innhold',
+      dimension: 'Modulstørrelse (1–12)',
+      quality: 'Kvalitet',
+      qualityAuto: '0 — Auto',
+      quality50: '50 — 2 of 5',
+      quality80: '80 — 3 of 9',
+      quality140: '140 — 4 of 9',
+      quality200: '200 — ECC 200',
+    },
+    ellipse: {
+      width: 'Bredde (punkter)',
+      height: 'Høyde (punkter)',
+      thickness: 'Kant (punkter)',
+      filled: 'Fylt',
+      color: 'Farge',
+      colorB: 'B — Svart',
+      colorW: 'W — Hvit',
+    },
+    line: {
+      angle: 'Vinkel (°)',
+      length: 'Lengde (punkter)',
+      thickness: 'Tykkelse (punkter)',
+      color: 'Farge',
+      colorB: 'B — Svart',
+      colorW: 'W — Hvit',
+    },
+  },
+
+  layers: {
+    propertiesTab: 'Egenskaper',
+    layersTab: 'Lag',
+    empty: 'Ingen objekter på etiketten',
+    toFront: 'Flytt fremst',
+    forward: 'Flytt ett lag fremover',
+    backward: 'Flytt ett lag bakover',
+    toBack: 'Flytt bakerst',
+  },
+} as const;
+
+export default no;

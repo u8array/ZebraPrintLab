@@ -1,0 +1,123 @@
+const cs = {
+  palette: {
+    heading: 'Objekty',
+  },
+
+  properties: {
+    positionSection: 'Pozice (mm)',
+    x: 'X',
+    y: 'Y',
+  },
+
+  label: {
+    heading: 'Štítek',
+    preset: 'Šablona',
+    presetCustom: 'Vlastní',
+    width: 'Šířka (mm)',
+    height: 'Výška (mm)',
+    dpmm: 'Rozlišení',
+    dpmm6: '6 dpmm — 152 dpi',
+    dpmm8: '8 dpmm — 203 dpi',
+    dpmm12: '12 dpmm — 300 dpi',
+    dpmm24: '24 dpmm — 600 dpi',
+  },
+
+  output: {
+    zplHeading: 'ZPL',
+    copy: 'Kopírovat',
+    copied: '✓ Zkopírováno',
+    noObjects: '// Na štítku zatím nejsou žádné objekty',
+    previewHeading: 'Náhled',
+    loading: 'Načítání…',
+    unavailable: 'Nedostupné',
+    previewEmpty: 'Náhled se zobrazí\npo úpravách',
+  },
+
+  registry: {
+    text: {
+      content: 'Obsah',
+      fontHeight: 'Výška (body)',
+      fontWidth: 'Šířka (body)',
+      rotation: 'Otočení',
+      rotationN: 'N — Normal',
+      rotationR: 'R — 90°',
+      rotationI: 'I — 180°',
+      rotationB: 'B — 270°',
+    },
+    code128: {
+      content: 'Obsah',
+      height: 'Výška (body)',
+      printInterpretation: 'Čitelný pro člověka',
+      checkDigit: 'Kontrolní číslice',
+    },
+    box: {
+      width: 'Šířka (body)',
+      height: 'Výška (body)',
+      thickness: 'Rámeček (body)',
+      filled: 'Vyplněný',
+      color: 'Barva',
+      colorB: 'B — Černá',
+      colorW: 'W — Bílá',
+      rounding: 'Zaoblení (0–8)',
+    },
+    code39: {
+      content: 'Obsah',
+      height: 'Výška (body)',
+      printInterpretation: 'Čitelný pro člověka',
+      checkDigit: 'Kontrolní číslice',
+    },
+    qrcode: {
+      content: 'Obsah',
+      magnification: 'Velikost (1–10)',
+      errorCorrection: 'Oprava chyb',
+      ecL: 'L — 7%',
+      ecM: 'M — 15%',
+      ecQ: 'Q — 25%',
+      ecH: 'H — 30%',
+    },
+    ean13: {
+      content: 'Obsah (12 číslic)',
+      height: 'Výška (body)',
+      printInterpretation: 'Čitelný pro člověka',
+    },
+    datamatrix: {
+      content: 'Obsah',
+      dimension: 'Velikost modulu (1–12)',
+      quality: 'Kvalita',
+      qualityAuto: '0 — Auto',
+      quality50: '50 — 2 of 5',
+      quality80: '80 — 3 of 9',
+      quality140: '140 — 4 of 9',
+      quality200: '200 — ECC 200',
+    },
+    ellipse: {
+      width: 'Šířka (body)',
+      height: 'Výška (body)',
+      thickness: 'Rámeček (body)',
+      filled: 'Vyplněný',
+      color: 'Barva',
+      colorB: 'B — Černá',
+      colorW: 'W — Bílá',
+    },
+    line: {
+      angle: 'Úhel (°)',
+      length: 'Délka (body)',
+      thickness: 'Tloušťka (body)',
+      color: 'Barva',
+      colorB: 'B — Černá',
+      colorW: 'W — Bílá',
+    },
+  },
+
+  layers: {
+    propertiesTab: 'Vlastnosti',
+    layersTab: 'Vrstvy',
+    empty: 'Na štítku nejsou žádné objekty',
+    toFront: 'Přenést do popředí',
+    forward: 'Posunout dopředu',
+    backward: 'Posunout dozadu',
+    toBack: 'Odeslat do pozadí',
+  },
+} as const;
+
+export default cs;

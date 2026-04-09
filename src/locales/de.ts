@@ -1,0 +1,123 @@
+const de = {
+  palette: {
+    heading: 'Objekte',
+  },
+
+  properties: {
+    positionSection: 'Position (mm)',
+    x: 'X',
+    y: 'Y',
+  },
+
+  label: {
+    heading: 'Etikett',
+    preset: 'Vorlage',
+    presetCustom: 'Benutzerdefiniert',
+    width: 'Breite (mm)',
+    height: 'Höhe (mm)',
+    dpmm: 'Auflösung',
+    dpmm6: '6 dpmm — 152 dpi',
+    dpmm8: '8 dpmm — 203 dpi',
+    dpmm12: '12 dpmm — 300 dpi',
+    dpmm24: '24 dpmm — 600 dpi',
+  },
+
+  output: {
+    zplHeading: 'ZPL',
+    copy: 'Kopieren',
+    copied: '✓ Kopiert',
+    noObjects: '// Noch keine Objekte auf dem Etikett',
+    previewHeading: 'Vorschau',
+    loading: 'Lädt…',
+    unavailable: 'Nicht verfügbar',
+    previewEmpty: 'Vorschau erscheint\nnach Änderungen',
+  },
+
+  registry: {
+    text: {
+      content: 'Inhalt',
+      fontHeight: 'Höhe (Punkte)',
+      fontWidth: 'Breite (Punkte)',
+      rotation: 'Drehung',
+      rotationN: 'N — Normal',
+      rotationR: 'R — 90°',
+      rotationI: 'I — 180°',
+      rotationB: 'B — 270°',
+    },
+    code128: {
+      content: 'Inhalt',
+      height: 'Höhe (Punkte)',
+      printInterpretation: 'Klartext',
+      checkDigit: 'Prüfziffer',
+    },
+    box: {
+      width: 'Breite (Punkte)',
+      height: 'Höhe (Punkte)',
+      thickness: 'Rahmen (Punkte)',
+      filled: 'Gefüllt',
+      color: 'Farbe',
+      colorB: 'B — Schwarz',
+      colorW: 'W — Weiß',
+      rounding: 'Rundung (0–8)',
+    },
+    code39: {
+      content: 'Inhalt',
+      height: 'Höhe (Punkte)',
+      printInterpretation: 'Klartext',
+      checkDigit: 'Prüfziffer',
+    },
+    qrcode: {
+      content: 'Inhalt',
+      magnification: 'Größe (1–10)',
+      errorCorrection: 'Fehlerkorrektur',
+      ecL: 'L — 7%',
+      ecM: 'M — 15%',
+      ecQ: 'Q — 25%',
+      ecH: 'H — 30%',
+    },
+    ean13: {
+      content: 'Inhalt (12 Ziffern)',
+      height: 'Höhe (Punkte)',
+      printInterpretation: 'Klartext',
+    },
+    datamatrix: {
+      content: 'Inhalt',
+      dimension: 'Modulgröße (1–12)',
+      quality: 'Qualität',
+      qualityAuto: '0 — Auto',
+      quality50: '50 — 2 of 5',
+      quality80: '80 — 3 of 9',
+      quality140: '140 — 4 of 9',
+      quality200: '200 — ECC 200',
+    },
+    ellipse: {
+      width: 'Breite (Punkte)',
+      height: 'Höhe (Punkte)',
+      thickness: 'Rahmen (Punkte)',
+      filled: 'Gefüllt',
+      color: 'Farbe',
+      colorB: 'B — Schwarz',
+      colorW: 'W — Weiß',
+    },
+    line: {
+      angle: 'Winkel (°)',
+      length: 'Länge (Punkte)',
+      thickness: 'Stärke (Punkte)',
+      color: 'Farbe',
+      colorB: 'B — Schwarz',
+      colorW: 'W — Weiß',
+    },
+  },
+
+  layers: {
+    propertiesTab: 'Eigenschaften',
+    layersTab: 'Ebenen',
+    empty: 'Keine Objekte auf dem Etikett',
+    toFront: 'In den Vordergrund',
+    forward: 'Eine Ebene nach vorne',
+    backward: 'Eine Ebene nach hinten',
+    toBack: 'In den Hintergrund',
+  },
+} as const;
+
+export default de;

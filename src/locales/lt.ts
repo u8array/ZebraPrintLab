@@ -1,0 +1,123 @@
+const lt = {
+  palette: {
+    heading: 'Objektai',
+  },
+
+  properties: {
+    positionSection: 'Padėtis (mm)',
+    x: 'X',
+    y: 'Y',
+  },
+
+  label: {
+    heading: 'Etiketė',
+    preset: 'Šablonas',
+    presetCustom: 'Tinkintas',
+    width: 'Plotis (mm)',
+    height: 'Aukštis (mm)',
+    dpmm: 'Skiriamoji geba',
+    dpmm6: '6 dpmm — 152 dpi',
+    dpmm8: '8 dpmm — 203 dpi',
+    dpmm12: '12 dpmm — 300 dpi',
+    dpmm24: '24 dpmm — 600 dpi',
+  },
+
+  output: {
+    zplHeading: 'ZPL',
+    copy: 'Kopijuoti',
+    copied: '✓ Nukopijuota',
+    noObjects: '// Etiketėje dar nėra objektų',
+    previewHeading: 'Peržiūra',
+    loading: 'Įkeliama…',
+    unavailable: 'Nepasiekiama',
+    previewEmpty: 'Peržiūra rodoma\npo pakeitimų',
+  },
+
+  registry: {
+    text: {
+      content: 'Turinys',
+      fontHeight: 'Aukštis (taškai)',
+      fontWidth: 'Plotis (taškai)',
+      rotation: 'Pasukimas',
+      rotationN: 'N — Normal',
+      rotationR: 'R — 90°',
+      rotationI: 'I — 180°',
+      rotationB: 'B — 270°',
+    },
+    code128: {
+      content: 'Turinys',
+      height: 'Aukštis (taškai)',
+      printInterpretation: 'Žmogui skaitomas',
+      checkDigit: 'Tikrinimo skaitmuo',
+    },
+    box: {
+      width: 'Plotis (taškai)',
+      height: 'Aukštis (taškai)',
+      thickness: 'Rėmelis (taškai)',
+      filled: 'Užpildytas',
+      color: 'Spalva',
+      colorB: 'B — Juoda',
+      colorW: 'W — Balta',
+      rounding: 'Apvalinimas (0–8)',
+    },
+    code39: {
+      content: 'Turinys',
+      height: 'Aukštis (taškai)',
+      printInterpretation: 'Žmogui skaitomas',
+      checkDigit: 'Tikrinimo skaitmuo',
+    },
+    qrcode: {
+      content: 'Turinys',
+      magnification: 'Dydis (1–10)',
+      errorCorrection: 'Klaidų taisymas',
+      ecL: 'L — 7%',
+      ecM: 'M — 15%',
+      ecQ: 'Q — 25%',
+      ecH: 'H — 30%',
+    },
+    ean13: {
+      content: 'Turinys (12 skaitmenų)',
+      height: 'Aukštis (taškai)',
+      printInterpretation: 'Žmogui skaitomas',
+    },
+    datamatrix: {
+      content: 'Turinys',
+      dimension: 'Modulio dydis (1–12)',
+      quality: 'Kokybė',
+      qualityAuto: '0 — Auto',
+      quality50: '50 — 2 of 5',
+      quality80: '80 — 3 of 9',
+      quality140: '140 — 4 of 9',
+      quality200: '200 — ECC 200',
+    },
+    ellipse: {
+      width: 'Plotis (taškai)',
+      height: 'Aukštis (taškai)',
+      thickness: 'Rėmelis (taškai)',
+      filled: 'Užpildytas',
+      color: 'Spalva',
+      colorB: 'B — Juoda',
+      colorW: 'W — Balta',
+    },
+    line: {
+      angle: 'Kampas (°)',
+      length: 'Ilgis (taškai)',
+      thickness: 'Storis (taškai)',
+      color: 'Spalva',
+      colorB: 'B — Juoda',
+      colorW: 'W — Balta',
+    },
+  },
+
+  layers: {
+    propertiesTab: 'Savybės',
+    layersTab: 'Sluoksniai',
+    empty: 'Etiketėje nėra objektų',
+    toFront: 'Perkelti į priekį',
+    forward: 'Vienas sluoksnis į priekį',
+    backward: 'Vienas sluoksnis atgal',
+    toBack: 'Perkelti į galą',
+  },
+} as const;
+
+export default lt;

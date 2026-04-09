@@ -1,0 +1,123 @@
+const fr = {
+  palette: {
+    heading: 'Objets',
+  },
+
+  properties: {
+    positionSection: 'Position (mm)',
+    x: 'X',
+    y: 'Y',
+  },
+
+  label: {
+    heading: 'Étiquette',
+    preset: 'Modèle',
+    presetCustom: 'Personnalisé',
+    width: 'Largeur (mm)',
+    height: 'Hauteur (mm)',
+    dpmm: 'Résolution',
+    dpmm6: '6 dpmm — 152 dpi',
+    dpmm8: '8 dpmm — 203 dpi',
+    dpmm12: '12 dpmm — 300 dpi',
+    dpmm24: '24 dpmm — 600 dpi',
+  },
+
+  output: {
+    zplHeading: 'ZPL',
+    copy: 'Copier',
+    copied: '✓ Copié',
+    noObjects: "// Pas encore d'objets sur l'étiquette",
+    previewHeading: 'Aperçu',
+    loading: 'Chargement…',
+    unavailable: 'Indisponible',
+    previewEmpty: "L'aperçu apparaît\naprès les modifications",
+  },
+
+  registry: {
+    text: {
+      content: 'Contenu',
+      fontHeight: 'Hauteur (points)',
+      fontWidth: 'Largeur (points)',
+      rotation: 'Rotation',
+      rotationN: 'N — Normal',
+      rotationR: 'R — 90°',
+      rotationI: 'I — 180°',
+      rotationB: 'B — 270°',
+    },
+    code128: {
+      content: 'Contenu',
+      height: 'Hauteur (points)',
+      printInterpretation: 'Lisible par l\'homme',
+      checkDigit: 'Chiffre de contrôle',
+    },
+    box: {
+      width: 'Largeur (points)',
+      height: 'Hauteur (points)',
+      thickness: 'Bordure (points)',
+      filled: 'Rempli',
+      color: 'Couleur',
+      colorB: 'B — Noir',
+      colorW: 'W — Blanc',
+      rounding: 'Arrondi (0–8)',
+    },
+    code39: {
+      content: 'Contenu',
+      height: 'Hauteur (points)',
+      printInterpretation: 'Lisible par l\'homme',
+      checkDigit: 'Chiffre de contrôle',
+    },
+    qrcode: {
+      content: 'Contenu',
+      magnification: 'Taille (1–10)',
+      errorCorrection: "Correction d'erreur",
+      ecL: 'L — 7%',
+      ecM: 'M — 15%',
+      ecQ: 'Q — 25%',
+      ecH: 'H — 30%',
+    },
+    ean13: {
+      content: 'Contenu (12 chiffres)',
+      height: 'Hauteur (points)',
+      printInterpretation: 'Lisible par l\'homme',
+    },
+    datamatrix: {
+      content: 'Contenu',
+      dimension: 'Taille du module (1–12)',
+      quality: 'Qualité',
+      qualityAuto: '0 — Auto',
+      quality50: '50 — 2 of 5',
+      quality80: '80 — 3 of 9',
+      quality140: '140 — 4 of 9',
+      quality200: '200 — ECC 200',
+    },
+    ellipse: {
+      width: 'Largeur (points)',
+      height: 'Hauteur (points)',
+      thickness: 'Bordure (points)',
+      filled: 'Rempli',
+      color: 'Couleur',
+      colorB: 'B — Noir',
+      colorW: 'W — Blanc',
+    },
+    line: {
+      angle: 'Angle (°)',
+      length: 'Longueur (points)',
+      thickness: 'Épaisseur (points)',
+      color: 'Couleur',
+      colorB: 'B — Noir',
+      colorW: 'W — Blanc',
+    },
+  },
+
+  layers: {
+    propertiesTab: 'Propriétés',
+    layersTab: 'Calques',
+    empty: "Aucun objet sur l'étiquette",
+    toFront: 'Mettre au premier plan',
+    forward: "Avancer d'un calque",
+    backward: "Reculer d'un calque",
+    toBack: "Envoyer à l'arrière-plan",
+  },
+} as const;
+
+export default fr;

@@ -1,0 +1,123 @@
+const ro = {
+  palette: {
+    heading: 'Obiecte',
+  },
+
+  properties: {
+    positionSection: 'Poziție (mm)',
+    x: 'X',
+    y: 'Y',
+  },
+
+  label: {
+    heading: 'Etichetă',
+    preset: 'Șablon',
+    presetCustom: 'Personalizat',
+    width: 'Lățime (mm)',
+    height: 'Înălțime (mm)',
+    dpmm: 'Rezoluție',
+    dpmm6: '6 dpmm — 152 dpi',
+    dpmm8: '8 dpmm — 203 dpi',
+    dpmm12: '12 dpmm — 300 dpi',
+    dpmm24: '24 dpmm — 600 dpi',
+  },
+
+  output: {
+    zplHeading: 'ZPL',
+    copy: 'Copiați',
+    copied: '✓ Copiat',
+    noObjects: '// Nu există încă obiecte pe etichetă',
+    previewHeading: 'Previzualizare',
+    loading: 'Se încarcă…',
+    unavailable: 'Indisponibil',
+    previewEmpty: 'Previzualizarea apare\ndupă modificări',
+  },
+
+  registry: {
+    text: {
+      content: 'Conținut',
+      fontHeight: 'Înălțime (puncte)',
+      fontWidth: 'Lățime (puncte)',
+      rotation: 'Rotație',
+      rotationN: 'N — Normal',
+      rotationR: 'R — 90°',
+      rotationI: 'I — 180°',
+      rotationB: 'B — 270°',
+    },
+    code128: {
+      content: 'Conținut',
+      height: 'Înălțime (puncte)',
+      printInterpretation: 'Lizibil de om',
+      checkDigit: 'Cifră de control',
+    },
+    box: {
+      width: 'Lățime (puncte)',
+      height: 'Înălțime (puncte)',
+      thickness: 'Chenar (puncte)',
+      filled: 'Umplut',
+      color: 'Culoare',
+      colorB: 'B — Negru',
+      colorW: 'W — Alb',
+      rounding: 'Rotunjire (0–8)',
+    },
+    code39: {
+      content: 'Conținut',
+      height: 'Înălțime (puncte)',
+      printInterpretation: 'Lizibil de om',
+      checkDigit: 'Cifră de control',
+    },
+    qrcode: {
+      content: 'Conținut',
+      magnification: 'Mărime (1–10)',
+      errorCorrection: 'Corecție erori',
+      ecL: 'L — 7%',
+      ecM: 'M — 15%',
+      ecQ: 'Q — 25%',
+      ecH: 'H — 30%',
+    },
+    ean13: {
+      content: 'Conținut (12 cifre)',
+      height: 'Înălțime (puncte)',
+      printInterpretation: 'Lizibil de om',
+    },
+    datamatrix: {
+      content: 'Conținut',
+      dimension: 'Mărime modul (1–12)',
+      quality: 'Calitate',
+      qualityAuto: '0 — Auto',
+      quality50: '50 — 2 of 5',
+      quality80: '80 — 3 of 9',
+      quality140: '140 — 4 of 9',
+      quality200: '200 — ECC 200',
+    },
+    ellipse: {
+      width: 'Lățime (puncte)',
+      height: 'Înălțime (puncte)',
+      thickness: 'Chenar (puncte)',
+      filled: 'Umplut',
+      color: 'Culoare',
+      colorB: 'B — Negru',
+      colorW: 'W — Alb',
+    },
+    line: {
+      angle: 'Unghi (°)',
+      length: 'Lungime (puncte)',
+      thickness: 'Grosime (puncte)',
+      color: 'Culoare',
+      colorB: 'B — Negru',
+      colorW: 'W — Alb',
+    },
+  },
+
+  layers: {
+    propertiesTab: 'Proprietăți',
+    layersTab: 'Straturi',
+    empty: 'Nu există obiecte pe etichetă',
+    toFront: 'Aduce în prim-plan',
+    forward: 'Avansare un strat',
+    backward: 'Retragere un strat',
+    toBack: 'Trimite în fundal',
+  },
+} as const;
+
+export default ro;
