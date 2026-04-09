@@ -1,5 +1,6 @@
 import { create, useStore } from 'zustand';
 import { temporal } from 'zundo';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { LabelConfig, LabelObject } from '../types/ObjectType';
 import { ObjectRegistry } from '../registry';
 
@@ -23,6 +24,7 @@ interface LabelState {
 
 export const useLabelStore = create<LabelState>()(
   temporal(
+    persist(
     (set) => ({
       label: { widthMm: 100, heightMm: 60, dpmm: 8 },
       objects: [],
@@ -88,8 +90,7 @@ export const useLabelStore = create<LabelState>()(
           const idx = state.objects.findIndex((o) => o.id === id);
           if (idx === -1 || idx === state.objects.length - 1) return {};
           const objs = [...state.objects];
-          const [obj] = objs.splice(idx, 1);
-          objs.push(obj);
+          objs.push(objs.splice(idx, 1)[0]!);
           return { objects: objs };
         }),
 
@@ -98,8 +99,7 @@ export const useLabelStore = create<LabelState>()(
           const idx = state.objects.findIndex((o) => o.id === id);
           if (idx <= 0) return {};
           const objs = [...state.objects];
-          const [obj] = objs.splice(idx, 1);
-          objs.unshift(obj);
+          objs.unshift(objs.splice(idx, 1)[0]!);
           return { objects: objs };
         }),
 
@@ -108,7 +108,7 @@ export const useLabelStore = create<LabelState>()(
           const idx = state.objects.findIndex((o) => o.id === id);
           if (idx === -1 || idx === state.objects.length - 1) return {};
           const objs = [...state.objects];
-          [objs[idx], objs[idx + 1]] = [objs[idx + 1], objs[idx]];
+          [objs[idx], objs[idx + 1]] = [objs[idx + 1]!, objs[idx]!];
           return { objects: objs };
         }),
 
@@ -117,7 +117,7 @@ export const useLabelStore = create<LabelState>()(
           const idx = state.objects.findIndex((o) => o.id === id);
           if (idx <= 0) return {};
           const objs = [...state.objects];
-          [objs[idx], objs[idx - 1]] = [objs[idx - 1], objs[idx]];
+          [objs[idx], objs[idx - 1]] = [objs[idx - 1]!, objs[idx]!];
           return { objects: objs };
         }),
 
@@ -126,6 +126,15 @@ export const useLabelStore = create<LabelState>()(
       setLabelConfig: (config) =>
         set((state) => ({ label: { ...state.label, ...config } })),
     }),
+    {
+      name: 'zpl-designer-session',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        label: state.label,
+        objects: state.objects,
+      }),
+    }
+    ),
     {
       // exclude selectedId from undo history
       partialize: (state) => ({
