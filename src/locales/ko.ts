@@ -1,0 +1,134 @@
+const ko = {
+  palette: {
+    heading: '개체',
+  },
+
+  properties: {
+    positionSection: '위치 (mm)',
+    x: 'X',
+    y: 'Y',
+  },
+
+  label: {
+    heading: '레이블',
+    preset: '프리셋',
+    presetCustom: '사용자 정의',
+    width: '너비 (mm)',
+    height: '높이 (mm)',
+    dpmm: '해상도',
+    dpmm6: '6 점/mm — 152 dpi',
+    dpmm8: '8 점/mm — 203 dpi',
+    dpmm12: '12 점/mm — 300 dpi',
+    dpmm24: '24 점/mm — 600 dpi',
+  },
+
+  app: {
+    file: '파일',
+    importZpl: 'ZPL 가져오기',
+    exportZpl: 'ZPL 내보내기',
+    openDesign: '디자인 열기',
+    saveDesign: '디자인 저장',
+    print: '인쇄',
+    propertiesTab: '속성',
+    layersTab: '레이어',
+  },
+
+  output: {
+    zplHeading: 'ZPL',
+    copy: '복사',
+    copied: '✓ 복사됨',
+    noObjects: '// 레이블에 아직 개체가 없습니다',
+    previewHeading: '미리보기',
+    loading: '로딩 중…',
+    unavailable: '사용 불가',
+    previewEmpty: '변경 후 미리보기가\n표시됩니다',
+  },
+
+  registry: {
+    text: {
+      content: '내용',
+      fontHeight: '높이 (점)',
+      fontWidth: '너비 (점)',
+      rotation: '회전',
+      rotationN: 'N — 기본',
+      rotationR: 'R — 90°',
+      rotationI: 'I — 180°',
+      rotationB: 'B — 270°',
+    },
+    code128: {
+      content: '내용',
+      height: '높이 (점)',
+      printInterpretation: '사람이 읽을 수 있는',
+      checkDigit: '체크 숫자',
+    },
+    box: {
+      width: '너비 (점)',
+      height: '높이 (점)',
+      thickness: '테두리 (점)',
+      filled: '채우기',
+      color: '색상',
+      colorB: 'B — 검정',
+      colorW: 'W — 흰색',
+      rounding: '모서리 둥글기 (0–8)',
+    },
+    code39: {
+      content: '내용',
+      height: '높이 (점)',
+      printInterpretation: '사람이 읽을 수 있는',
+      checkDigit: '체크 숫자',
+    },
+    qrcode: {
+      content: '내용',
+      magnification: '크기 (1–10)',
+      errorCorrection: '오류 수정',
+      ecL: 'L — 7%',
+      ecM: 'M — 15%',
+      ecQ: 'Q — 25%',
+      ecH: 'H — 30%',
+    },
+    ean13: {
+      content: '내용 (12자리)',
+      height: '높이 (점)',
+      printInterpretation: '사람이 읽을 수 있는',
+    },
+    datamatrix: {
+      content: '내용',
+      dimension: '모듈 크기 (1–12)',
+      quality: '품질',
+      qualityAuto: '0 — 자동',
+      quality50: '50 — 2 of 5',
+      quality80: '80 — 3 of 9',
+      quality140: '140 — 4 of 9',
+      quality200: '200 — ECC 200',
+    },
+    ellipse: {
+      width: '너비 (점)',
+      height: '높이 (점)',
+      thickness: '테두리 (점)',
+      filled: '채우기',
+      color: '색상',
+      colorB: 'B — 검정',
+      colorW: 'W — 흰색',
+    },
+    line: {
+      angle: '각도 (°)',
+      length: '길이 (점)',
+      thickness: '두께 (점)',
+      color: '색상',
+      colorB: 'B — 검정',
+      colorW: 'W — 흰색',
+    },
+  },
+
+  layers: {
+    propertiesTab: '속성',
+    layersTab: '레이어',
+    empty: '레이블에 개체가 없습니다',
+    toFront: '맨 앞으로',
+    forward: '앞으로',
+    backward: '뒤로',
+    toBack: '맨 뒤로',
+  },
+} as const;
+
+export default ko;

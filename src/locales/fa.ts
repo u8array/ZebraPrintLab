@@ -1,0 +1,134 @@
+const fa = {
+  palette: {
+    heading: 'اشیاء',
+  },
+
+  properties: {
+    positionSection: 'موقعیت (میلی‌متر)',
+    x: 'X',
+    y: 'Y',
+  },
+
+  label: {
+    heading: 'برچسب',
+    preset: 'پیش‌تنظیم',
+    presetCustom: 'سفارشی',
+    width: 'عرض (میلی‌متر)',
+    height: 'ارتفاع (میلی‌متر)',
+    dpmm: 'وضوح',
+    dpmm6: '6 نقطه/میلی‌متر — 152 dpi',
+    dpmm8: '8 نقطه/میلی‌متر — 203 dpi',
+    dpmm12: '12 نقطه/میلی‌متر — 300 dpi',
+    dpmm24: '24 نقطه/میلی‌متر — 600 dpi',
+  },
+
+  app: {
+    file: 'فایل',
+    importZpl: 'وارد کردن ZPL',
+    exportZpl: 'خروجی ZPL',
+    openDesign: 'باز کردن طرح',
+    saveDesign: 'ذخیره طرح',
+    print: 'چاپ',
+    propertiesTab: 'ویژگی‌ها',
+    layersTab: 'لایه‌ها',
+  },
+
+  output: {
+    zplHeading: 'ZPL',
+    copy: 'کپی',
+    copied: '✓ کپی شد',
+    noObjects: '// هنوز هیچ شیئی روی برچسب نیست',
+    previewHeading: 'پیش‌نمایش',
+    loading: 'در حال بارگذاری…',
+    unavailable: 'در دسترس نیست',
+    previewEmpty: 'پیش‌نمایش پس از\nتغییرات نمایش داده می‌شود',
+  },
+
+  registry: {
+    text: {
+      content: 'محتوا',
+      fontHeight: 'ارتفاع (نقطه)',
+      fontWidth: 'عرض (نقطه)',
+      rotation: 'چرخش',
+      rotationN: 'N — عادی',
+      rotationR: 'R — 90°',
+      rotationI: 'I — 180°',
+      rotationB: 'B — 270°',
+    },
+    code128: {
+      content: 'محتوا',
+      height: 'ارتفاع (نقطه)',
+      printInterpretation: 'قابل خواندن توسط انسان',
+      checkDigit: 'رقم کنترل',
+    },
+    box: {
+      width: 'عرض (نقطه)',
+      height: 'ارتفاع (نقطه)',
+      thickness: 'حاشیه (نقطه)',
+      filled: 'پر شده',
+      color: 'رنگ',
+      colorB: 'B — مشکی',
+      colorW: 'W — سفید',
+      rounding: 'گردی (0–8)',
+    },
+    code39: {
+      content: 'محتوا',
+      height: 'ارتفاع (نقطه)',
+      printInterpretation: 'قابل خواندن توسط انسان',
+      checkDigit: 'رقم کنترل',
+    },
+    qrcode: {
+      content: 'محتوا',
+      magnification: 'اندازه (1–10)',
+      errorCorrection: 'تصحیح خطا',
+      ecL: 'L — 7%',
+      ecM: 'M — 15%',
+      ecQ: 'Q — 25%',
+      ecH: 'H — 30%',
+    },
+    ean13: {
+      content: 'محتوا (12 رقم)',
+      height: 'ارتفاع (نقطه)',
+      printInterpretation: 'قابل خواندن توسط انسان',
+    },
+    datamatrix: {
+      content: 'محتوا',
+      dimension: 'اندازه ماژول (1–12)',
+      quality: 'کیفیت',
+      qualityAuto: '0 — خودکار',
+      quality50: '50 — 2 of 5',
+      quality80: '80 — 3 of 9',
+      quality140: '140 — 4 of 9',
+      quality200: '200 — ECC 200',
+    },
+    ellipse: {
+      width: 'عرض (نقطه)',
+      height: 'ارتفاع (نقطه)',
+      thickness: 'حاشیه (نقطه)',
+      filled: 'پر شده',
+      color: 'رنگ',
+      colorB: 'B — مشکی',
+      colorW: 'W — سفید',
+    },
+    line: {
+      angle: 'زاویه (°)',
+      length: 'طول (نقطه)',
+      thickness: 'ضخامت (نقطه)',
+      color: 'رنگ',
+      colorB: 'B — مشکی',
+      colorW: 'W — سفید',
+    },
+  },
+
+  layers: {
+    propertiesTab: 'ویژگی‌ها',
+    layersTab: 'لایه‌ها',
+    empty: 'هیچ شیئی روی برچسب نیست',
+    toFront: 'آوردن به جلو',
+    forward: 'حرکت به جلو',
+    backward: 'حرکت به عقب',
+    toBack: 'ارسال به عقب',
+  },
+} as const;
+
+export default fa;

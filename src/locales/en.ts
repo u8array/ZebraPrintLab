@@ -1,12 +1,3 @@
-/**
- * UI strings — single source of truth.
- *
- * Migration path to i18next:
- *   1. pnpm add i18next react-i18next
- *   2. Init i18next with this object as the 'en' namespace
- *   3. Replace `import t from '../../locales/en'` → `const { t } = useTranslation()`
- *   4. Replace `t.some.key` → `t('some.key')`
- */
 const en = {
   palette: {
     heading: 'Objects',

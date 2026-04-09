@@ -1,0 +1,134 @@
+const tr = {
+  palette: {
+    heading: 'Nesneler',
+  },
+
+  properties: {
+    positionSection: 'Konum (mm)',
+    x: 'X',
+    y: 'Y',
+  },
+
+  label: {
+    heading: 'Etiket',
+    preset: 'Ön ayar',
+    presetCustom: 'Özel',
+    width: 'Genişlik (mm)',
+    height: 'Yükseklik (mm)',
+    dpmm: 'Çözünürlük',
+    dpmm6: '6 nokta/mm — 152 dpi',
+    dpmm8: '8 nokta/mm — 203 dpi',
+    dpmm12: '12 nokta/mm — 300 dpi',
+    dpmm24: '24 nokta/mm — 600 dpi',
+  },
+
+  app: {
+    file: 'Dosya',
+    importZpl: 'ZPL İçe Aktar',
+    exportZpl: 'ZPL Dışa Aktar',
+    openDesign: 'Tasarım Aç',
+    saveDesign: 'Tasarım Kaydet',
+    print: 'Yazdır',
+    propertiesTab: 'Özellikler',
+    layersTab: 'Katmanlar',
+  },
+
+  output: {
+    zplHeading: 'ZPL',
+    copy: 'Kopyala',
+    copied: '✓ Kopyalandı',
+    noObjects: '// Etikette henüz nesne yok',
+    previewHeading: 'Önizleme',
+    loading: 'Yükleniyor…',
+    unavailable: 'Kullanılamıyor',
+    previewEmpty: 'Önizleme değişikliklerden\nsonra görüntülenir',
+  },
+
+  registry: {
+    text: {
+      content: 'İçerik',
+      fontHeight: 'Yükseklik (nokta)',
+      fontWidth: 'Genişlik (nokta)',
+      rotation: 'Döndürme',
+      rotationN: 'N — Normal',
+      rotationR: 'R — 90°',
+      rotationI: 'I — 180°',
+      rotationB: 'B — 270°',
+    },
+    code128: {
+      content: 'İçerik',
+      height: 'Yükseklik (nokta)',
+      printInterpretation: 'İnsan tarafından okunabilir',
+      checkDigit: 'Kontrol hanesi',
+    },
+    box: {
+      width: 'Genişlik (nokta)',
+      height: 'Yükseklik (nokta)',
+      thickness: 'Kenarlık (nokta)',
+      filled: 'Dolu',
+      color: 'Renk',
+      colorB: 'B — Siyah',
+      colorW: 'W — Beyaz',
+      rounding: 'Yuvarlama (0–8)',
+    },
+    code39: {
+      content: 'İçerik',
+      height: 'Yükseklik (nokta)',
+      printInterpretation: 'İnsan tarafından okunabilir',
+      checkDigit: 'Kontrol hanesi',
+    },
+    qrcode: {
+      content: 'İçerik',
+      magnification: 'Boyut (1–10)',
+      errorCorrection: 'Hata düzeltme',
+      ecL: 'L — 7%',
+      ecM: 'M — 15%',
+      ecQ: 'Q — 25%',
+      ecH: 'H — 30%',
+    },
+    ean13: {
+      content: 'İçerik (12 basamak)',
+      height: 'Yükseklik (nokta)',
+      printInterpretation: 'İnsan tarafından okunabilir',
+    },
+    datamatrix: {
+      content: 'İçerik',
+      dimension: 'Modül boyutu (1–12)',
+      quality: 'Kalite',
+      qualityAuto: '0 — Otomatik',
+      quality50: '50 — 2 of 5',
+      quality80: '80 — 3 of 9',
+      quality140: '140 — 4 of 9',
+      quality200: '200 — ECC 200',
+    },
+    ellipse: {
+      width: 'Genişlik (nokta)',
+      height: 'Yükseklik (nokta)',
+      thickness: 'Kenarlık (nokta)',
+      filled: 'Dolu',
+      color: 'Renk',
+      colorB: 'B — Siyah',
+      colorW: 'W — Beyaz',
+    },
+    line: {
+      angle: 'Açı (°)',
+      length: 'Uzunluk (nokta)',
+      thickness: 'Kalınlık (nokta)',
+      color: 'Renk',
+      colorB: 'B — Siyah',
+      colorW: 'W — Beyaz',
+    },
+  },
+
+  layers: {
+    propertiesTab: 'Özellikler',
+    layersTab: 'Katmanlar',
+    empty: 'Etikette nesne yok',
+    toFront: 'Öne Getir',
+    forward: 'İleriye Taşı',
+    backward: 'Geriye Taşı',
+    toBack: 'Arkaya Gönder',
+  },
+} as const;
+
+export default tr;

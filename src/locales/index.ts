@@ -32,6 +32,14 @@ import sl from './sl';
 import et from './et';
 import lv from './lv';
 import lt from './lt';
+import ar from './ar';
+import he from './he';
+import fa from './fa';
+import tr from './tr';
+import zhHans from './zh-hans';
+import zhHant from './zh-hant';
+import ja from './ja';
+import ko from './ko';
 
 export const locales = {
   en,
@@ -58,6 +66,14 @@ export const locales = {
   et,
   lv,
   lt,
+  ar,
+  he,
+  fa,
+  tr,
+  'zh-hans': zhHans,
+  'zh-hant': zhHant,
+  ja,
+  ko,
 } as const;
 
 export type LocaleCode = keyof typeof locales;
@@ -87,6 +103,14 @@ export const localeNames: Record<LocaleCode, string> = {
   et: 'Eesti',
   lv: 'Latviešu',
   lt: 'Lietuvių',
+  ar: 'العربية',
+  he: 'עברית',
+  fa: 'فارسی',
+  tr: 'Türkçe',
+  'zh-hans': '中文 (简体)',
+  'zh-hant': '中文 (繁體)',
+  ja: '日本語',
+  ko: '한국어',
 };
 
 export default locales;

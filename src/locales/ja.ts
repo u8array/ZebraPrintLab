@@ -1,0 +1,134 @@
+const ja = {
+  palette: {
+    heading: 'オブジェクト',
+  },
+
+  properties: {
+    positionSection: '位置 (mm)',
+    x: 'X',
+    y: 'Y',
+  },
+
+  label: {
+    heading: 'ラベル',
+    preset: 'プリセット',
+    presetCustom: 'カスタム',
+    width: '幅 (mm)',
+    height: '高さ (mm)',
+    dpmm: '解像度',
+    dpmm6: '6 ドット/mm — 152 dpi',
+    dpmm8: '8 ドット/mm — 203 dpi',
+    dpmm12: '12 ドット/mm — 300 dpi',
+    dpmm24: '24 ドット/mm — 600 dpi',
+  },
+
+  app: {
+    file: 'ファイル',
+    importZpl: 'ZPL インポート',
+    exportZpl: 'ZPL エクスポート',
+    openDesign: 'デザインを開く',
+    saveDesign: 'デザインを保存',
+    print: '印刷',
+    propertiesTab: 'プロパティ',
+    layersTab: 'レイヤー',
+  },
+
+  output: {
+    zplHeading: 'ZPL',
+    copy: 'コピー',
+    copied: '✓ コピーしました',
+    noObjects: '// ラベルにオブジェクトがありません',
+    previewHeading: 'プレビュー',
+    loading: '読み込み中…',
+    unavailable: '利用不可',
+    previewEmpty: '変更後にプレビューが\n表示されます',
+  },
+
+  registry: {
+    text: {
+      content: 'コンテンツ',
+      fontHeight: '高さ (ドット)',
+      fontWidth: '幅 (ドット)',
+      rotation: '回転',
+      rotationN: 'N — 通常',
+      rotationR: 'R — 90°',
+      rotationI: 'I — 180°',
+      rotationB: 'B — 270°',
+    },
+    code128: {
+      content: 'コンテンツ',
+      height: '高さ (ドット)',
+      printInterpretation: '人間可読',
+      checkDigit: 'チェックデジット',
+    },
+    box: {
+      width: '幅 (ドット)',
+      height: '高さ (ドット)',
+      thickness: '枠線 (ドット)',
+      filled: '塗りつぶし',
+      color: '色',
+      colorB: 'B — 黒',
+      colorW: 'W — 白',
+      rounding: '角丸 (0–8)',
+    },
+    code39: {
+      content: 'コンテンツ',
+      height: '高さ (ドット)',
+      printInterpretation: '人間可読',
+      checkDigit: 'チェックデジット',
+    },
+    qrcode: {
+      content: 'コンテンツ',
+      magnification: 'サイズ (1–10)',
+      errorCorrection: '誤り訂正',
+      ecL: 'L — 7%',
+      ecM: 'M — 15%',
+      ecQ: 'Q — 25%',
+      ecH: 'H — 30%',
+    },
+    ean13: {
+      content: 'コンテンツ (12桁)',
+      height: '高さ (ドット)',
+      printInterpretation: '人間可読',
+    },
+    datamatrix: {
+      content: 'コンテンツ',
+      dimension: 'モジュールサイズ (1–12)',
+      quality: '品質',
+      qualityAuto: '0 — 自動',
+      quality50: '50 — 2 of 5',
+      quality80: '80 — 3 of 9',
+      quality140: '140 — 4 of 9',
+      quality200: '200 — ECC 200',
+    },
+    ellipse: {
+      width: '幅 (ドット)',
+      height: '高さ (ドット)',
+      thickness: '枠線 (ドット)',
+      filled: '塗りつぶし',
+      color: '色',
+      colorB: 'B — 黒',
+      colorW: 'W — 白',
+    },
+    line: {
+      angle: '角度 (°)',
+      length: '長さ (ドット)',
+      thickness: '太さ (ドット)',
+      color: '色',
+      colorB: 'B — 黒',
+      colorW: 'W — 白',
+    },
+  },
+
+  layers: {
+    propertiesTab: 'プロパティ',
+    layersTab: 'レイヤー',
+    empty: 'ラベルにオブジェクトがありません',
+    toFront: '最前面へ',
+    forward: '前面へ',
+    backward: '背面へ',
+    toBack: '最背面へ',
+  },
+} as const;
+
+export default ja;
