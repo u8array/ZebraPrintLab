@@ -1,6 +1,5 @@
 import type { LabelConfig } from '../types/ObjectType';
 import type { LabelObject } from '../registry';
-import { DPMM } from './coordinates';
 import type { TextProps } from '../registry/text';
 import type { Code128Props } from '../registry/code128';
 import type { Code39Props } from '../registry/code39';
@@ -39,7 +38,7 @@ function makeObj(type: string, x: number, y: number, props: unknown): LabelObjec
   return { id: crypto.randomUUID(), type, x, y, rotation: 0, props } as LabelObject;
 }
 
-export function parseZPL(zpl: string): ParsedZPL {
+export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   const tokens = tokenize(zpl);
   const objects: LabelObject[] = [];
   const labelConfig: Partial<LabelConfig> = {};
@@ -141,12 +140,12 @@ export function parseZPL(zpl: string): ParsedZPL {
       // ── Label dimensions ──────────────────────────────────────────
       case 'PW': {
         const dots = int(rest);
-        if (dots > 0) labelConfig.widthMm = Math.round((dots / DPMM) * 10) / 10;
+        if (dots > 0) labelConfig.widthMm = Math.round((dots / dpmm) * 10) / 10;
         break;
       }
       case 'LL': {
         const dots = int(rest);
-        if (dots > 0) labelConfig.heightMm = Math.round((dots / DPMM) * 10) / 10;
+        if (dots > 0) labelConfig.heightMm = Math.round((dots / dpmm) * 10) / 10;
         break;
       }
 

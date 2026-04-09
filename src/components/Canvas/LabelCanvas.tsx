@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { Stage, Layer, Group, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore } from "../../store/labelStore";
-import { pxToDots, DPMM } from "../../lib/coordinates";
+import { pxToDots } from "../../lib/coordinates";
 import { KonvaObject } from "./KonvaObject";
 import { Grid } from "./Grid";
 import { Ruler, RULER_SIZE } from "./Ruler";
@@ -130,7 +130,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
       e.preventDefault();
 
       // shift = 10 mm, normal = snapSize when snap on, 1 dot when snap off
-      const step = e.shiftKey ? DPMM * 10 : snapEnabled ? Math.round(snapSizeMm * DPMM) : 1;
+      const step = e.shiftKey ? label.dpmm * 10 : snapEnabled ? Math.round(snapSizeMm * label.dpmm) : 1;
       const dx =
         e.code === "ArrowRight" ? step : e.code === "ArrowLeft" ? -step : 0;
       const dy =
@@ -142,7 +142,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [snapEnabled, snapSizeMm, updateObject]);
+  }, [snapEnabled, snapSizeMm, label.dpmm, updateObject]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     const isMiddle = e.button === 1;
@@ -193,7 +193,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
   const labelOffsetY =
     RULER_SIZE + (usableHeight - labelHeightPx) / 2 + panOffset.y;
 
-  const snapUnit = Math.round(snapSizeMm * DPMM);
+  const snapUnit = Math.round(snapSizeMm * label.dpmm);
   const snap = (dots: number) =>
     snapEnabled ? Math.round(dots / snapUnit) * snapUnit : dots;
 
@@ -230,8 +230,8 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
     const pos = stageRef.current.getPointerPosition();
     if (!pos) return;
     addObject(type, {
-      x: snap(pxToDots(pos.x - labelOffsetX, scale)),
-      y: snap(pxToDots(pos.y - labelOffsetY, scale)),
+      x: snap(pxToDots(pos.x - labelOffsetX, scale, label.dpmm)),
+      y: snap(pxToDots(pos.y - labelOffsetY, scale, label.dpmm)),
     });
   };
 
@@ -256,8 +256,8 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
     setGhost({
       id: '__ghost__',
       type,
-      x: snap(pxToDots(pos.x - labelOffsetX, scale)),
-      y: snap(pxToDots(pos.y - labelOffsetY, scale)),
+      x: snap(pxToDots(pos.x - labelOffsetX, scale, label.dpmm)),
+      y: snap(pxToDots(pos.y - labelOffsetY, scale, label.dpmm)),
       rotation: 0,
       props: def.defaultProps,
     } as LabelObject);
@@ -389,6 +389,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
                 key={obj.id}
                 obj={obj}
                 scale={scale}
+                dpmm={label.dpmm}
                 offsetX={labelOffsetX}
                 offsetY={labelOffsetY}
                 isSelected={obj.id === selectedId}
@@ -410,6 +411,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
                   onSelect={() => { /* ghost */ }}
                   onChange={() => { /* ghost */ }}
                   snap={snap}
+                  dpmm={label.dpmm}
                 />
               </Group>
             )}
@@ -435,8 +437,8 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
                   .objects.find((o) => o.id === selectedId);
                 if (!obj) return;
                 const pos = {
-                  x: snap(pxToDots(node.x() - labelOffsetX, scale)),
-                  y: snap(pxToDots(node.y() - labelOffsetY, scale)),
+                  x: snap(pxToDots(node.x() - labelOffsetX, scale, label.dpmm)),
+                  y: snap(pxToDots(node.y() - labelOffsetY, scale, label.dpmm)),
                 };
                 if (obj.type === "text") {
                   updateObject(selectedId, {

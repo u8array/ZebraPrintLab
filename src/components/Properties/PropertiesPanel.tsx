@@ -36,9 +36,9 @@ export function PropertiesPanel() {
               <input
                 type="number"
                 className={inputCls}
-                value={dotsToMm(obj.x)}
+                value={dotsToMm(obj.x, label.dpmm)}
                 step={0.5}
-                onChange={(e) => updateObject(obj.id, { x: mmToDots(Number(e.target.value)) })}
+                onChange={(e) => updateObject(obj.id, { x: mmToDots(Number(e.target.value), label.dpmm) })}
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -46,9 +46,9 @@ export function PropertiesPanel() {
               <input
                 type="number"
                 className={inputCls}
-                value={dotsToMm(obj.y)}
+                value={dotsToMm(obj.y, label.dpmm)}
                 step={0.5}
-                onChange={(e) => updateObject(obj.id, { y: mmToDots(Number(e.target.value)) })}
+                onChange={(e) => updateObject(obj.id, { y: mmToDots(Number(e.target.value), label.dpmm) })}
               />
             </div>
           </div>

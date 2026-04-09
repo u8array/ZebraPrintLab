@@ -20,7 +20,7 @@ export function ZplImportModal({ onClose }: Props) {
       return;
     }
 
-    const { labelConfig, objects, skipped } = parseZPL(zpl);
+    const { labelConfig, objects, skipped } = parseZPL(zpl, label.dpmm);
 
     if (objects.length === 0 && Object.keys(labelConfig).length === 0) {
       setError('No supported objects found in the ZPL code.');

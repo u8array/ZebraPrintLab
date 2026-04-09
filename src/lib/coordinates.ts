@@ -1,13 +1,11 @@
-export const DPMM = 8;
+export const pxToDots = (px: number, scale: number, dpmm: number): number =>
+  Math.round((px / scale) * dpmm);
 
-export const pxToDots = (px: number, scale: number): number =>
-  Math.round((px / scale) * DPMM);
+export const dotsToPx = (dots: number, scale: number, dpmm: number): number =>
+  (dots / dpmm) * scale;
 
-export const dotsToPx = (dots: number, scale: number): number =>
-  (dots / DPMM) * scale;
+export const mmToDots = (mm: number, dpmm: number): number =>
+  Math.round(mm * dpmm);
 
-export const mmToDots = (mm: number): number =>
-  Math.round(mm * DPMM);
-
-export const dotsToMm = (dots: number): number =>
-  Math.round((dots / DPMM) * 10) / 10;
+export const dotsToMm = (dots: number, dpmm: number): number =>
+  Math.round((dots / dpmm) * 10) / 10;

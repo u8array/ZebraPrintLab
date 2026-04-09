@@ -4,8 +4,8 @@ import type { LabelConfig } from '../types/ObjectType';
 import type { LabelObject } from '../registry';
 
 export function generateZPL(label: LabelConfig, objects: LabelObject[]): string {
-  const widthDots = mmToDots(label.widthMm);
-  const heightDots = mmToDots(label.heightMm);
+  const widthDots = mmToDots(label.widthMm, label.dpmm);
+  const heightDots = mmToDots(label.heightMm, label.dpmm);
 
   const lines = [
     '^XA',
