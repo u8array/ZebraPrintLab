@@ -88,8 +88,8 @@ function LineObject({ obj: obj_, scale, offsetX, offsetY, isSelected, onSelect, 
         <>
           {/* Start point — dragging moves the origin; end point stays fixed */}
           <Circle
-            x={x1 + dx}
-            y={y1 + dy}
+            x={livePt1?.x ?? (x1 + dx)}
+            y={livePt1?.y ?? (y1 + dy)}
             radius={6}
             fill="#6366f1"
             stroke="white"
@@ -98,16 +98,15 @@ function LineObject({ obj: obj_, scale, offsetX, offsetY, isSelected, onSelect, 
             onDragMove={(e) => {
               const snappedX = offsetX + dotsToPx(snap(pxToDots(e.target.x() - offsetX, scale)), scale);
               const snappedY = offsetY + dotsToPx(snap(pxToDots(e.target.y() - offsetY, scale)), scale);
+              e.target.position({ x: snappedX, y: snappedY });
               setLivePt1({ x: snappedX, y: snappedY });
             }}
             onDragEnd={(e) => {
-              const dropX = e.target.x();
-              const dropY = e.target.y();
+              const snapped = livePt1 ?? { x: e.target.x(), y: e.target.y() };
               e.target.position({ x: x1 + dx, y: y1 + dy });
               setLivePt1(null);
-              // New start in dots (snapped); end point stays at (x2, y2) in stage coords
-              const newStartDotX = snap(pxToDots(dropX - offsetX, scale));
-              const newStartDotY = snap(pxToDots(dropY - offsetY, scale));
+              const newStartDotX = pxToDots(snapped.x - offsetX, scale);
+              const newStartDotY = pxToDots(snapped.y - offsetY, scale);
               const endDotX = pxToDots(x2 - offsetX, scale);
               const endDotY = pxToDots(y2 - offsetY, scale);
               const dxDots = endDotX - newStartDotX;
@@ -123,21 +122,20 @@ function LineObject({ obj: obj_, scale, offsetX, offsetY, isSelected, onSelect, 
           />
           {/* End point — dragging changes length & angle */}
           <Circle
-            x={x2 + dx}
-            y={y2 + dy}
+            x={livePt2?.x ?? (x2 + dx)}
+            y={livePt2?.y ?? (y2 + dy)}
             radius={6}
             fill="#6366f1"
             stroke="white"
             strokeWidth={1.5}
             draggable
             onDragMove={(e) => {
-              // Handle moves freely; line preview shows the snapped target position
               const snappedX = offsetX + dotsToPx(snap(pxToDots(e.target.x() - offsetX, scale)), scale);
               const snappedY = offsetY + dotsToPx(snap(pxToDots(e.target.y() - offsetY, scale)), scale);
+              e.target.position({ x: snappedX, y: snappedY });
               setLivePt2({ x: snappedX, y: snappedY });
             }}
             onDragEnd={(e) => {
-              // livePt2 holds the snapped stage position from onDragMove
               const snapped = livePt2 ?? { x: e.target.x(), y: e.target.y() };
               e.target.position({ x: x2 + dx, y: y2 + dy });
               setLivePt2(null);
@@ -145,7 +143,6 @@ function LineObject({ obj: obj_, scale, offsetX, offsetY, isSelected, onSelect, 
               const dyDots = pxToDots(snapped.y - offsetY, scale) - obj.y;
               const newLen = Math.sqrt(dxDots * dxDots + dyDots * dyDots);
               const newAngle = Math.round((Math.atan2(dyDots, dxDots) * 180) / Math.PI);
-              // type assertion is safe: this component only renders for 'line' objects
               onChange({ props: { length: Math.max(1, Math.round(newLen)), angle: newAngle } });
             }}
           />
