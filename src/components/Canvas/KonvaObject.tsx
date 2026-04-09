@@ -45,18 +45,22 @@ function LineObject({ obj, scale, offsetX, offsetY, isSelected, onSelect, onChan
   const displayX2 = livePt2?.x ?? x2;
   const displayY2 = livePt2?.y ?? y2;
 
+  // Live drag delta while the whole line is being dragged
+  const [dragDelta, setDragDelta] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dx = dragDelta.x;
+  const dy = dragDelta.y;
+
   return (
     <Group id={obj.id}>
-      {/* Visible line — not interactive, just visual */}
+      {/* Visible line — tracks both whole-drag and endpoint-drag live */}
       <KLine
-        points={[x1, y1, displayX2, displayY2]}
+        points={[x1 + dx, y1 + dy, displayX2 + dx, displayY2 + dy]}
         stroke={isSelected ? '#6366f1' : strokeColor}
         strokeWidth={lineStrokeWidth}
         lineCap="round"
         listening={false}
       />
-      {/* Wide transparent hit area — handles click-to-select and whole-line drag.
-          The KLine starts at position (0,0); Konva stores the drag delta in x()/y(). */}
+      {/* Wide transparent hit area — handles click-to-select and whole-line drag. */}
       <KLine
         points={[x1, y1, x2, y2]}
         stroke="transparent"
@@ -64,10 +68,14 @@ function LineObject({ obj, scale, offsetX, offsetY, isSelected, onSelect, onChan
         draggable
         onClick={onSelect}
         onTap={onSelect}
+        onDragMove={(e) => {
+          setDragDelta({ x: e.target.x(), y: e.target.y() });
+        }}
         onDragEnd={(e) => {
           const deltaXPx = e.target.x();
           const deltaYPx = e.target.y();
           e.target.position({ x: 0, y: 0 });
+          setDragDelta({ x: 0, y: 0 });
           onChange({
             x: obj.x + pxToDots(deltaXPx, scale),
             y: obj.y + pxToDots(deltaYPx, scale),
@@ -76,21 +84,20 @@ function LineObject({ obj, scale, offsetX, offsetY, isSelected, onSelect, onChan
       />
       {isSelected && (
         <>
-          {/* Start point indicator — not independently draggable */}
+          {/* Start point indicator — follows whole-drag delta */}
           <Circle
-            x={x1}
-            y={y1}
+            x={x1 + dx}
+            y={y1 + dy}
             radius={6}
             fill="#6366f1"
             stroke="white"
             strokeWidth={1.5}
             listening={false}
           />
-          {/* End point — dragging changes length & angle.
-              x/y are absolute (Group is at 0,0), so e.target.x() == stage x. */}
+          {/* End point — dragging changes length & angle */}
           <Circle
-            x={x2}
-            y={y2}
+            x={x2 + dx}
+            y={y2 + dy}
             radius={6}
             fill="#6366f1"
             stroke="white"
@@ -102,8 +109,7 @@ function LineObject({ obj, scale, offsetX, offsetY, isSelected, onSelect, onChan
             onDragEnd={(e) => {
               const newX2 = e.target.x();
               const newY2 = e.target.y();
-              // Reset to nominal before React re-render
-              e.target.position({ x: x2, y: y2 });
+              e.target.position({ x: x2 + dx, y: y2 + dy });
               setLivePt2(null);
               const dxPx = newX2 - x1;
               const dyPx = newY2 - y1;
