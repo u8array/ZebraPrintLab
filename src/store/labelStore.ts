@@ -21,6 +21,7 @@ interface LabelState {
   moveObjectBackward: (id: string) => void;
   moveObjectToFront: (id: string) => void;
   moveObjectToBack: (id: string) => void;
+  reorderObject: (id: string, toIndex: number) => void;
 }
 
 export const useLabelStore = create<LabelState>()(
@@ -119,6 +120,15 @@ export const useLabelStore = create<LabelState>()(
           if (idx <= 0) return {};
           const objs = [...state.objects];
           [objs[idx], objs[idx - 1]] = [objs[idx - 1]!, objs[idx]!];
+          return { objects: objs };
+        }),
+
+      reorderObject: (id, toIndex) =>
+        set((state) => {
+          const objs = [...state.objects];
+          const fromIndex = objs.findIndex((o) => o.id === id);
+          if (fromIndex === -1 || fromIndex === toIndex) return {};
+          objs.splice(toIndex, 0, objs.splice(fromIndex, 1)[0]!);
           return { objects: objs };
         }),
 

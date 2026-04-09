@@ -1,9 +1,4 @@
-import {
-  ChevronUpIcon,
-  ChevronDownIcon,
-  ChevronDoubleUpIcon,
-  ChevronDoubleDownIcon,
-} from '@heroicons/react/16/solid';
+import { useState } from 'react';
 import { useLabelStore } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
 import t from '../../locales/en';
@@ -13,11 +8,12 @@ export function LayersPanel() {
     objects,
     selectedId,
     selectObject,
-    moveObjectForward,
-    moveObjectBackward,
-    moveObjectToFront,
-    moveObjectToBack,
+    reorderObject,
   } = useLabelStore();
+
+  // Visual index (in reversed list) of the drop target gap
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
 
   if (objects.length === 0) {
     return (
@@ -27,74 +23,93 @@ export function LayersPanel() {
     );
   }
 
-  // Reverse so the topmost layer (last in array = front) appears first in the list
+  // Reverse so topmost layer (last in array = front) appears first
   const reversed = [...objects].reverse();
+  const n = objects.length;
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDragId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    // Prevent the canvas palette drag handler from picking this up
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, visualIndex: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setOverIndex(visualIndex);
+  };
+
+  const handleDrop = (e: React.DragEvent, visualIndex: number) => {
+    e.preventDefault();
+    if (!dragId) return;
+    // Convert visual index → array index (reversed list)
+    const toArrayIndex = n - 1 - visualIndex;
+    reorderObject(dragId, toArrayIndex);
+    setOverIndex(null);
+    setDragId(null);
+  };
+
+  const handleDragEnd = () => {
+    setOverIndex(null);
+    setDragId(null);
+  };
 
   return (
-    <div className="flex flex-col">
+    <div
+      className="flex flex-col"
+      onDragLeave={(e) => {
+        // Only clear when leaving the panel entirely
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setOverIndex(null);
+        }
+      }}
+    >
       {reversed.map((obj, i) => {
         const def = ObjectRegistry[obj.type];
         const isSelected = obj.id === selectedId;
-        const isFirst = i === 0; // visually topmost = front
-        const isLast = i === reversed.length - 1; // visually bottommost = back
+        const isDragging = obj.id === dragId;
 
         return (
-          <div
-            key={obj.id}
-            onClick={() => selectObject(obj.id)}
-            className={`flex items-center gap-2 px-2 py-1.5 cursor-pointer border-b border-border group transition-colors hover:bg-surface-2 ${
-              isSelected
-                ? 'bg-surface-2 border-l-2 border-l-accent'
-                : 'border-l-2 border-l-transparent'
-            }`}
-          >
-            <span className="font-mono text-xs text-accent shrink-0 w-4 text-center">
-              {def?.icon}
-            </span>
+          <div key={obj.id}>
+            {/* Drop indicator above this row */}
+            <div
+              className={`h-0.5 mx-2 rounded transition-colors ${overIndex === i ? 'bg-accent' : 'bg-transparent'}`}
+              onDragOver={(e) => handleDragOver(e, i)}
+              onDrop={(e) => handleDrop(e, i)}
+            />
 
-            <div className="flex flex-col flex-1 min-w-0">
-              <span className="text-xs text-text truncate">{def?.label ?? obj.type}</span>
-              <span className="font-mono text-[9px] text-muted">{obj.id.slice(0, 8)}</span>
-            </div>
+            <div
+              draggable
+              onDragStart={(e) => handleDragStart(e, obj.id)}
+              onDragEnd={handleDragEnd}
+              onDragOver={(e) => handleDragOver(e, i)}
+              onDrop={(e) => handleDrop(e, i)}
+              onClick={() => selectObject(obj.id)}
+              className={`flex items-center gap-2 px-2 py-1.5 cursor-grab active:cursor-grabbing border-b border-border group transition-colors hover:bg-surface-2 ${
+                isSelected ? 'bg-surface-2 border-l-2 border-l-accent' : 'border-l-2 border-l-transparent'
+              } ${isDragging ? 'opacity-40' : ''}`}
+            >
+              <span className="font-mono text-xs text-accent shrink-0 w-4 text-center">
+                {def?.icon}
+              </span>
 
-            {/* Z-order action buttons — visible on hover */}
-            <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={(e) => { e.stopPropagation(); moveObjectToFront(obj.id); }}
-                disabled={isFirst}
-                title={t.layers.toFront}
-                className="p-0.5 rounded text-muted hover:text-text disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronDoubleUpIcon className="w-3 h-3" />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); moveObjectForward(obj.id); }}
-                disabled={isFirst}
-                title={t.layers.forward}
-                className="p-0.5 rounded text-muted hover:text-text disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronUpIcon className="w-3 h-3" />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); moveObjectBackward(obj.id); }}
-                disabled={isLast}
-                title={t.layers.backward}
-                className="p-0.5 rounded text-muted hover:text-text disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronDownIcon className="w-3 h-3" />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); moveObjectToBack(obj.id); }}
-                disabled={isLast}
-                title={t.layers.toBack}
-                className="p-0.5 rounded text-muted hover:text-text disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronDoubleDownIcon className="w-3 h-3" />
-              </button>
+              <div className="flex flex-col flex-1 min-w-0">
+                <span className="text-xs text-text truncate">{def?.label ?? obj.type}</span>
+                <span className="font-mono text-[9px] text-muted">{obj.id.slice(0, 8)}</span>
+              </div>
+
             </div>
           </div>
         );
       })}
+
+      {/* Drop indicator after last row */}
+      <div
+        className={`h-0.5 mx-2 rounded transition-colors ${overIndex === n ? 'bg-accent' : 'bg-transparent'}`}
+        onDragOver={(e) => handleDragOver(e, n)}
+        onDrop={(e) => handleDrop(e, n)}
+      />
     </div>
   );
 }
