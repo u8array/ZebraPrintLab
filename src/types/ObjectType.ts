@@ -6,13 +6,13 @@ export interface LabelConfig {
   dpmm: number;
 }
 
-export interface LabelObject {
+/** Common fields shared by every label object, without the typed `props`. */
+export interface LabelObjectBase {
   id: string;
   type: string;
   x: number;
   y: number;
   rotation: number;
-  props: unknown;
 }
 
 export type ObjectGroup = 'text' | 'code' | 'shape';
@@ -23,9 +23,9 @@ export interface ObjectTypeDefinition<P extends object = object> {
   group: ObjectGroup;
   defaultProps: P;
   defaultSize: { width: number; height: number };
-  toZPL: (obj: LabelObject) => string;
+  toZPL: (obj: LabelObjectBase & { props: P }) => string;
   PropertiesPanel: React.FC<{
-    obj: LabelObject;
+    obj: LabelObjectBase & { props: P };
     onChange: (props: Partial<P>) => void;
   }>;
 }

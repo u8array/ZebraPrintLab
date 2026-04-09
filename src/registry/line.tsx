@@ -1,4 +1,4 @@
-import type { ObjectTypeDefinition, LabelObject } from '../types/ObjectType';
+import type { ObjectTypeDefinition } from '../types/ObjectType';
 import t from '../locales/en';
 import { inputCls, labelCls } from '../components/Properties/styles';
 
@@ -22,8 +22,8 @@ export const line: ObjectTypeDefinition<LineProps> = {
   },
   defaultSize: { width: 200, height: 3 },
 
-  toZPL: (obj: LabelObject): string => {
-    const p = obj.props as LineProps;
+  toZPL: (obj) => {
+    const p = obj.props;
     const t = p.thickness;
     const l = p.length;
     const a = ((p.angle % 360) + 360) % 360; // normalise to [0, 360)
@@ -52,7 +52,7 @@ export const line: ObjectTypeDefinition<LineProps> = {
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
-    const p = obj.props as LineProps;
+    const p = obj.props;
     return (
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-2">

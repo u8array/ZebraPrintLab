@@ -19,7 +19,8 @@ import {
 import { useLabelStore, useHistory } from './store/labelStore';
 import { generateZPL } from './lib/zplGenerator';
 import { fetchPreview } from './lib/labelary';
-import type { LabelConfig, LabelObject } from './types/ObjectType';
+import type { LabelConfig } from './types/ObjectType';
+import type { LabelObject } from './registry';
 
 function App() {
   const label = useLabelStore((s) => s.label);

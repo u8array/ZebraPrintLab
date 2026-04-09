@@ -1,17 +1,11 @@
 import { useState } from 'react';
 import { Circle, Ellipse, Group, Line as KLine, Rect, Text } from 'react-konva';
 import type Konva from 'konva';
-import type { LabelObject } from '../../types/ObjectType';
+import type { LabelObject } from '../../registry';
+import type { LabelObjectBase } from '../../types/ObjectType';
 import { dotsToPx, pxToDots } from '../../lib/coordinates';
-import type { TextProps } from '../../registry/text';
-import type { Code128Props } from '../../registry/code128';
-import type { Code39Props } from '../../registry/code39';
-import type { Ean13Props } from '../../registry/ean13';
-import type { QrCodeProps } from '../../registry/qrcode';
-import type { DataMatrixProps } from '../../registry/datamatrix';
-import type { BoxProps } from '../../registry/box';
-import type { EllipseProps } from '../../registry/ellipse';
-import type { LineProps } from '../../registry/line';
+
+type ObjectChanges = Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object };
 
 interface Props {
   obj: LabelObject;
@@ -20,14 +14,16 @@ interface Props {
   offsetY: number;
   isSelected: boolean;
   onSelect: () => void;
-  onChange: (changes: Partial<LabelObject>) => void;
+  onChange: (changes: ObjectChanges) => void;
 }
 
-const props = <T,>(obj: LabelObject) => obj.props as T;
+type LineLabelObject = Extract<LabelObject, { type: 'line' }>;
 
 // Separate component so hooks (useState) can be used for live endpoint drag
-function LineObject({ obj, scale, offsetX, offsetY, isSelected, onSelect, onChange }: Props) {
-  const p = obj.props as LineProps;
+// Called only after obj.type === 'line' guard in KonvaObject, so the cast is safe.
+function LineObject({ obj: obj_, scale, offsetX, offsetY, isSelected, onSelect, onChange }: Props) {
+  const obj = obj_ as LineLabelObject;
+  const p = obj.props;
   // All positions are absolute stage coordinates — the Group has no offset.
   // This eliminates any parent-child draggable conflict.
   const x1 = offsetX + dotsToPx(obj.x, scale);
@@ -115,6 +111,7 @@ function LineObject({ obj, scale, offsetX, offsetY, isSelected, onSelect, onChan
               const dyPx = newY2 - y1;
               const newLen = Math.sqrt(dxPx * dxPx + dyPx * dyPx);
               const newAngle = Math.round((Math.atan2(dyPx, dxPx) * 180) / Math.PI);
+              // type assertion is safe: this component only renders for 'line' objects
               onChange({ props: { length: Math.max(1, Math.round(pxToDots(newLen, scale))), angle: newAngle } });
             }}
           />
@@ -149,9 +146,9 @@ function KonvaObjectInner({
   };
 
   if (obj.type === 'text') {
-    const p = props<TextProps>(obj);
+    const p = obj.props;
     const fontSize = Math.max(dotsToPx(p.fontHeight, scale) / 0.72, 6);
-    const zplRotationDeg: Record<TextProps['rotation'], number> = {
+    const zplRotationDeg: Record<typeof p.rotation, number> = {
       N: 0, R: 90, I: 180, B: 270,
     };
     return (
@@ -176,7 +173,7 @@ function KonvaObjectInner({
   }
 
   if (obj.type === 'code128' || obj.type === 'code39') {
-    const p = props<Code128Props | Code39Props>(obj);
+    const p = obj.props;
     const label = obj.type === 'code128' ? `||| ${p.content} |||` : `| ${p.content} |`;
     return (
       <Group
@@ -208,7 +205,7 @@ function KonvaObjectInner({
   }
 
   if (obj.type === 'ean13') {
-    const p = props<Ean13Props>(obj);
+    const p = obj.props;
     return (
       <Group
         id={obj.id}
@@ -239,7 +236,7 @@ function KonvaObjectInner({
   }
 
   if (obj.type === 'qrcode') {
-    const p = props<QrCodeProps>(obj);
+    const p = obj.props;
     const size = dotsToPx(p.magnification * 25, scale);
     return (
       <Group
@@ -272,7 +269,7 @@ function KonvaObjectInner({
   }
 
   if (obj.type === 'datamatrix') {
-    const p = props<DataMatrixProps>(obj);
+    const p = obj.props;
     const size = dotsToPx(p.dimension * 20, scale);
     return (
       <Group
@@ -305,7 +302,7 @@ function KonvaObjectInner({
   }
 
   if (obj.type === 'box') {
-    const p = props<BoxProps>(obj);
+    const p = obj.props;
     const w = dotsToPx(p.width, scale);
     const h = dotsToPx(p.height, scale);
     const stroke = p.color === 'B' ? '#000000' : '#cccccc';
@@ -331,7 +328,7 @@ function KonvaObjectInner({
   }
 
   if (obj.type === 'ellipse') {
-    const p = props<EllipseProps>(obj);
+    const p = obj.props;
     const rx = dotsToPx(p.width, scale) / 2;
     const ry = dotsToPx(p.height, scale) / 2;
     const stroke = p.color === 'B' ? '#000000' : '#cccccc';

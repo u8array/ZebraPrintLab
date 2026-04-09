@@ -1,4 +1,4 @@
-import type { ObjectTypeDefinition, LabelObject } from '../types/ObjectType';
+import type { ObjectTypeDefinition } from '../types/ObjectType';
 import t from '../locales/en';
 import { inputCls, labelCls } from '../components/Properties/styles';
 
@@ -19,8 +19,8 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
   },
   defaultSize: { width: 200, height: 200 },
 
-  toZPL: (obj: LabelObject): string => {
-    const p = obj.props as QrCodeProps;
+  toZPL: (obj) => {
+    const p = obj.props;
     return [
       `^FO${obj.x},${obj.y}`,
       `^BQN,2,${p.magnification}`,
@@ -29,7 +29,7 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
-    const p = obj.props as QrCodeProps;
+    const p = obj.props;
     return (
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">

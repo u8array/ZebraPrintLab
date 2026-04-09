@@ -7,14 +7,7 @@ import { KonvaObject } from "./KonvaObject";
 import { Grid } from "./Grid";
 import { Ruler, RULER_SIZE } from "./Ruler";
 import { ObjectRegistry } from "../../registry";
-import type { LabelObject } from "../../types/ObjectType";
-import type { TextProps } from "../../registry/text";
-import type { Code128Props } from "../../registry/code128";
-import type { Code39Props } from "../../registry/code39";
-import type { Ean13Props } from "../../registry/ean13";
-import type { DataMatrixProps } from "../../registry/datamatrix";
-import type { BoxProps } from "../../registry/box";
-import type { EllipseProps } from "../../registry/ellipse";
+import type { LabelObject } from "../../registry";
 
 const PADDING = 40;
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
@@ -262,7 +255,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
       y: snap(pxToDots(pos.y - labelOffsetY, scale)),
       rotation: 0,
       props: def.defaultProps,
-    });
+    } as LabelObject);
   };
 
   const handleDragLeave = () => {
@@ -410,41 +403,40 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                   x: snap(pxToDots(node.x() - labelOffsetX, scale)),
                   y: snap(pxToDots(node.y() - labelOffsetY, scale)),
                 };
-                // props is Record<string,unknown> in the store — double-cast is intentional
                 if (obj.type === "text") {
-                  const p = obj.props as unknown as TextProps;
                   updateObject(selectedId, {
                     ...pos,
-                    props: { fontHeight: Math.max(1, Math.round(p.fontHeight * sy)) },
+                    props: { fontHeight: Math.max(1, Math.round(obj.props.fontHeight * sy)) },
                   });
                 } else if (obj.type === "code128" || obj.type === "code39" || obj.type === "ean13") {
-                  const p = obj.props as unknown as Code128Props | Code39Props | Ean13Props;
                   updateObject(selectedId, {
                     ...pos,
-                    props: { height: Math.max(1, Math.round(p.height * sy)) },
+                    props: { height: Math.max(1, Math.round(obj.props.height * sy)) },
                   });
                 } else if (obj.type === "box") {
-                  const p = obj.props as unknown as BoxProps;
                   updateObject(selectedId, {
                     ...pos,
                     props: {
-                      width: Math.max(1, Math.round(p.width * sx)),
-                      height: Math.max(1, Math.round(p.height * sy)),
+                      width: Math.max(1, Math.round(obj.props.width * sx)),
+                      height: Math.max(1, Math.round(obj.props.height * sy)),
                     },
                   });
-                } else if (obj.type === "datamatrix") {
-                  const p = obj.props as unknown as DataMatrixProps;
+                } else if (obj.type === "qrcode") {
                   updateObject(selectedId, {
                     ...pos,
-                    props: { dimension: Math.max(1, Math.min(12, Math.round(p.dimension * Math.min(sx, sy)))) },
+                    props: { magnification: Math.max(1, Math.min(10, Math.round(obj.props.magnification * Math.min(sx, sy)))) },
+                  });
+                } else if (obj.type === "datamatrix") {
+                  updateObject(selectedId, {
+                    ...pos,
+                    props: { dimension: Math.max(1, Math.min(12, Math.round(obj.props.dimension * Math.min(sx, sy)))) },
                   });
                 } else if (obj.type === "ellipse") {
-                  const p = obj.props as unknown as EllipseProps;
                   updateObject(selectedId, {
                     ...pos,
                     props: {
-                      width:  Math.max(1, Math.round(p.width  * sx)),
-                      height: Math.max(1, Math.round(p.height * sy)),
+                      width:  Math.max(1, Math.round(obj.props.width  * sx)),
+                      height: Math.max(1, Math.round(obj.props.height * sy)),
                     },
                   });
                 }

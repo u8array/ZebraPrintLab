@@ -1,4 +1,4 @@
-import type { ObjectTypeDefinition, LabelObject } from '../types/ObjectType';
+import type { ObjectTypeDefinition } from '../types/ObjectType';
 import t from '../locales/en';
 import { inputCls, labelCls } from '../components/Properties/styles';
 
@@ -19,8 +19,8 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
   },
   defaultSize: { width: 300, height: 120 },
 
-  toZPL: (obj: LabelObject): string => {
-    const p = obj.props as Ean13Props;
+  toZPL: (obj) => {
+    const p = obj.props;
     const interp = p.printInterpretation ? 'Y' : 'N';
     return [
       `^FO${obj.x},${obj.y}`,
@@ -30,7 +30,7 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
-    const p = obj.props as Ean13Props;
+    const p = obj.props;
     return (
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">

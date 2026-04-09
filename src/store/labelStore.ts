@@ -1,8 +1,9 @@
 import { create, useStore } from 'zustand';
 import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { LabelConfig, LabelObject } from '../types/ObjectType';
+import type { LabelConfig, LabelObjectBase } from '../types/ObjectType';
 import { ObjectRegistry } from '../registry';
+import type { LabelObject } from '../registry';
 
 interface LabelState {
   label: LabelConfig;
@@ -10,7 +11,7 @@ interface LabelState {
   selectedId: string | null;
 
   addObject: (type: string, position?: { x: number; y: number }) => void;
-  updateObject: (id: string, changes: Partial<LabelObject>) => void;
+  updateObject: (id: string, changes: Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object }) => void;
   removeObject: (id: string) => void;
   duplicateObject: (id: string) => void;
   selectObject: (id: string | null) => void;
@@ -34,14 +35,14 @@ export const useLabelStore = create<LabelState>()(
         const definition = ObjectRegistry[type];
         if (!definition) return;
 
-        const obj: LabelObject = {
+        const obj = {
           id: crypto.randomUUID(),
           type,
           x: position.x,
           y: position.y,
           rotation: 0,
           props: { ...definition.defaultProps },
-        };
+        } as LabelObject;
 
         set((state) => ({
           objects: [...state.objects, obj],
@@ -60,7 +61,7 @@ export const useLabelStore = create<LabelState>()(
               props: changes.props
                 ? Object.assign({}, obj.props, changes.props)
                 : obj.props,
-            };
+            } as LabelObject;
           }),
         })),
 

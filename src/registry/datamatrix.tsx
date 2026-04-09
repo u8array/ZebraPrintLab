@@ -1,4 +1,4 @@
-import type { ObjectTypeDefinition, LabelObject } from '../types/ObjectType';
+import type { ObjectTypeDefinition } from '../types/ObjectType';
 import t from '../locales/en';
 import { inputCls, labelCls } from '../components/Properties/styles';
 
@@ -19,8 +19,8 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
   },
   defaultSize: { width: 150, height: 150 },
 
-  toZPL: (obj: LabelObject): string => {
-    const p = obj.props as DataMatrixProps;
+  toZPL: (obj) => {
+    const p = obj.props;
     return [
       `^FO${obj.x},${obj.y}`,
       `^BXN,${p.dimension},${p.quality}`,
@@ -29,7 +29,7 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
-    const p = obj.props as DataMatrixProps;
+    const p = obj.props;
     return (
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">

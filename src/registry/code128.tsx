@@ -1,4 +1,4 @@
-import type { ObjectTypeDefinition, LabelObject } from '../types/ObjectType';
+import type { ObjectTypeDefinition } from '../types/ObjectType';
 import t from '../locales/en';
 import { inputCls, labelCls } from '../components/Properties/styles';
 
@@ -21,8 +21,8 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
   },
   defaultSize: { width: 300, height: 120 },
 
-  toZPL: (obj: LabelObject): string => {
-    const p = obj.props as Code128Props;
+  toZPL: (obj) => {
+    const p = obj.props;
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
     return [
@@ -33,7 +33,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
-    const p = obj.props as Code128Props;
+    const p = obj.props;
     return (
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">

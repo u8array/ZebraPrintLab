@@ -1,4 +1,5 @@
-import type { LabelConfig, LabelObject } from '../types/ObjectType';
+import type { LabelConfig } from '../types/ObjectType';
+import type { LabelObject } from '../registry';
 import { DPMM } from './coordinates';
 import type { TextProps } from '../registry/text';
 import type { Code128Props } from '../registry/code128';
@@ -35,7 +36,7 @@ function int(s: string | undefined, fallback = 0): number {
 }
 
 function makeObj(type: string, x: number, y: number, props: unknown): LabelObject {
-  return { id: crypto.randomUUID(), type, x, y, rotation: 0, props };
+  return { id: crypto.randomUUID(), type, x, y, rotation: 0, props } as LabelObject;
 }
 
 export function parseZPL(zpl: string): ParsedZPL {
@@ -106,12 +107,12 @@ export function parseZPL(zpl: string): ParsedZPL {
         );
         break;
       case 'qrcode': {
-        // content format from toZPL: "{ec}A,{data}"
+        // content format from toZPL: "{ec}A,{data}"  e.g. "QA,https://example.com"
         const ec = (content[0] ?? 'Q') as QrCodeProps['errorCorrection'];
-        const data = content.slice(3); // skip e.g. "QA,"
+        const data = content.slice(3); // skip "{ec}A,"
         objects.push(
           makeObj('qrcode', x, y, {
-            content: data || content,
+            content: data,
             magnification: qrMag,
             errorCorrection: ec,
           } satisfies QrCodeProps),
