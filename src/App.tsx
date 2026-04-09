@@ -31,6 +31,7 @@ function App() {
   const { undo, redo, pastStates, futureStates } = useHistory();
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(true);
+  const [snapSizeMm, setSnapSizeMm] = useState(1);
   const [showZplImport, setShowZplImport] = useState(false);
   const [rightTab, setRightTab] = useState<'properties' | 'layers'>('properties');
   const loadInputRef = useRef<HTMLInputElement>(null);
@@ -144,13 +145,6 @@ function App() {
         </div>
 
         <div className="flex items-center gap-1">
-          <ToggleButton active={showGrid} onClick={() => setShowGrid((v) => !v)} title="Grid (G)">
-            Grid
-          </ToggleButton>
-          <ToggleButton active={snapEnabled} onClick={() => setSnapEnabled((v) => !v)} title="Snap (S)">
-            Snap
-          </ToggleButton>
-
           <div className="w-px h-4 bg-border mx-1" />
 
           <button
@@ -210,7 +204,14 @@ function App() {
         </aside>
 
         <main className="flex-1 overflow-hidden">
-          <LabelCanvas showGrid={showGrid} snapEnabled={snapEnabled} />
+          <LabelCanvas
+            showGrid={showGrid}
+            onGridToggle={() => setShowGrid((v) => !v)}
+            snapEnabled={snapEnabled}
+            onSnapToggle={() => setSnapEnabled((v) => !v)}
+            snapSizeMm={snapSizeMm}
+            onSnapSizeChange={setSnapSizeMm}
+          />
         </main>
 
         <aside className="w-64 shrink-0 border-l border-border bg-surface flex flex-col">

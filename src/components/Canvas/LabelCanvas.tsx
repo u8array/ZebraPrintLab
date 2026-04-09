@@ -16,10 +16,14 @@ const ZOOM_MAX = 4;
 
 interface Props {
   showGrid: boolean;
+  onGridToggle: () => void;
   snapEnabled: boolean;
+  onSnapToggle: () => void;
+  snapSizeMm: number;
+  onSnapSizeChange: (mm: number) => void;
 }
 
-export function LabelCanvas({ showGrid, snapEnabled }: Props) {
+export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle, snapSizeMm, onSnapSizeChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -125,8 +129,8 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
       if (!id) return;
       e.preventDefault();
 
-      // shift = 10 mm, normal = 1 mm when snap on, 1 dot when snap off
-      const step = e.shiftKey ? DPMM * 10 : snapEnabled ? DPMM : 1;
+      // shift = 10 mm, normal = snapSize when snap on, 1 dot when snap off
+      const step = e.shiftKey ? DPMM * 10 : snapEnabled ? Math.round(snapSizeMm * DPMM) : 1;
       const dx =
         e.code === "ArrowRight" ? step : e.code === "ArrowLeft" ? -step : 0;
       const dy =
@@ -138,7 +142,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [snapEnabled, updateObject]);
+  }, [snapEnabled, snapSizeMm, updateObject]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     const isMiddle = e.button === 1;
@@ -189,8 +193,9 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
   const labelOffsetY =
     RULER_SIZE + (usableHeight - labelHeightPx) / 2 + panOffset.y;
 
+  const snapUnit = Math.round(snapSizeMm * DPMM);
   const snap = (dots: number) =>
-    snapEnabled ? Math.round(dots / DPMM) * DPMM : dots;
+    snapEnabled ? Math.round(dots / snapUnit) * snapUnit : dots;
 
   const handleObjectChange = (
     id: string,
@@ -297,8 +302,35 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
     >
-      {/* Zoom controls */}
+      {/* Bottom-right controls: view options + zoom */}
       <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 bg-surface border border-border rounded px-1 py-0.5">
+        <button
+          onClick={onGridToggle}
+          title="Grid (G)"
+          className={`px-2 h-6 rounded text-xs font-mono transition-colors ${showGrid ? 'text-accent bg-[--color-accent-dim]' : 'text-muted hover:text-text hover:bg-surface-2'}`}
+        >
+          Grid
+        </button>
+        <button
+          onClick={onSnapToggle}
+          title="Snap (S)"
+          className={`px-2 h-6 rounded text-xs font-mono transition-colors ${snapEnabled ? 'text-accent bg-[--color-accent-dim]' : 'text-muted hover:text-text hover:bg-surface-2'}`}
+        >
+          Snap
+        </button>
+        <select
+          value={snapSizeMm}
+          onChange={(e) => onSnapSizeChange(Number(e.target.value))}
+          disabled={!snapEnabled}
+          className="h-6 rounded px-1 text-xs bg-surface-2 border border-border text-text disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <option value={0.5}>0.5mm</option>
+          <option value={1}>1mm</option>
+          <option value={2}>2mm</option>
+          <option value={5}>5mm</option>
+          <option value={10}>10mm</option>
+        </select>
+        <div className="w-px h-3.5 bg-border mx-0.5" />
         <button
           onClick={zoomOut}
           className="w-6 h-6 flex items-center justify-center text-muted hover:text-text font-mono text-sm transition-colors"
@@ -348,6 +380,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                 labelWidthPx={labelWidthPx}
                 labelHeightPx={labelHeightPx}
                 scale={scale}
+                snapSizeMm={snapSizeMm}
               />
             )}
 
@@ -361,6 +394,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                 isSelected={obj.id === selectedId}
                 onSelect={() => selectObject(obj.id)}
                 onChange={(changes) => handleObjectChange(obj.id, changes)}
+                snap={snap}
               />
             ))}
 
@@ -375,6 +409,7 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                   isSelected={false}
                   onSelect={() => { /* ghost */ }}
                   onChange={() => { /* ghost */ }}
+                  snap={snap}
                 />
               </Group>
             )}
@@ -406,19 +441,19 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                 if (obj.type === "text") {
                   updateObject(selectedId, {
                     ...pos,
-                    props: { fontHeight: Math.max(1, Math.round(obj.props.fontHeight * sy)) },
+                    props: { fontHeight: Math.max(1, snap(Math.round(obj.props.fontHeight * sy))) },
                   });
                 } else if (obj.type === "code128" || obj.type === "code39" || obj.type === "ean13") {
                   updateObject(selectedId, {
                     ...pos,
-                    props: { height: Math.max(1, Math.round(obj.props.height * sy)) },
+                    props: { height: Math.max(1, snap(Math.round(obj.props.height * sy))) },
                   });
                 } else if (obj.type === "box") {
                   updateObject(selectedId, {
                     ...pos,
                     props: {
-                      width: Math.max(1, Math.round(obj.props.width * sx)),
-                      height: Math.max(1, Math.round(obj.props.height * sy)),
+                      width: Math.max(1, snap(Math.round(obj.props.width * sx))),
+                      height: Math.max(1, snap(Math.round(obj.props.height * sy))),
                     },
                   });
                 } else if (obj.type === "qrcode") {
@@ -435,8 +470,8 @@ export function LabelCanvas({ showGrid, snapEnabled }: Props) {
                   updateObject(selectedId, {
                     ...pos,
                     props: {
-                      width:  Math.max(1, Math.round(obj.props.width  * sx)),
-                      height: Math.max(1, Math.round(obj.props.height * sy)),
+                      width:  Math.max(1, snap(Math.round(obj.props.width  * sx))),
+                      height: Math.max(1, snap(Math.round(obj.props.height * sy))),
                     },
                   });
                 }
