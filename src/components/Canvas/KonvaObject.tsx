@@ -217,6 +217,34 @@ function KonvaObjectInner({
     );
   }
 
+  if (obj.type === 'serial') {
+    const p = obj.props;
+    const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 0.72, 6);
+    const zplRotationDeg: Record<typeof p.rotation, number> = {
+      N: 0, R: 90, I: 180, B: 270,
+    };
+    return (
+      <Text
+        id={obj.id}
+        x={x}
+        y={y}
+        text={`#${p.content}`}
+        fontSize={fontSize}
+        fontFamily="'Barlow', sans-serif"
+        fontStyle="bold"
+        rotation={zplRotationDeg[p.rotation]}
+        fill="#000000"
+        stroke={isSelected ? '#6366f1' : undefined}
+        strokeWidth={isSelected ? 1 : 0}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+      />
+    );
+  }
+
   if (obj.type === 'code128' || obj.type === 'code39') {
     const p = obj.props;
     const label = obj.type === 'code128' ? `||| ${p.content} |||` : `| ${p.content} |`;
