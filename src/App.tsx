@@ -36,9 +36,9 @@ function App() {
   const locale = useLabelStore((s) => s.locale);
   const setLocale = useLabelStore((s) => s.setLocale);
   const { undo, redo, pastStates, futureStates } = useHistory();
-  const [showGrid, setShowGrid] = useState(true);
-  const [snapEnabled, setSnapEnabled] = useState(true);
-  const [snapSizeMm, setSnapSizeMm] = useState(1);
+  const canvasSettings = useLabelStore((s) => s.canvasSettings);
+  const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
+  const { showGrid, snapEnabled, snapSizeMm } = canvasSettings;
   const [showZplImport, setShowZplImport] = useState(false);
   const [rightTab, setRightTab] = useState<'properties' | 'layers'>('properties');
   const loadInputRef = useRef<HTMLInputElement>(null);
@@ -66,12 +66,12 @@ function App() {
         return;
       }
       if (inInput) return;
-      if (e.code === 'KeyG') { e.preventDefault(); setShowGrid((v) => !v); }
-      if (e.code === 'KeyS') { e.preventDefault(); setSnapEnabled((v) => !v); }
+      if (e.code === 'KeyG') { e.preventDefault(); setCanvasSettings({ showGrid: !useLabelStore.getState().canvasSettings.showGrid }); }
+      if (e.code === 'KeyS') { e.preventDefault(); setCanvasSettings({ snapEnabled: !useLabelStore.getState().canvasSettings.snapEnabled }); }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [undo, redo, duplicateObject]);
+  }, [undo, redo, duplicateObject, setCanvasSettings]);
 
   const handleSave = () => {
     const data = JSON.stringify({ label, objects }, null, 2);
@@ -230,11 +230,13 @@ function App() {
         <main className="flex-1 overflow-hidden">
           <LabelCanvas
             showGrid={showGrid}
-            onGridToggle={() => setShowGrid((v) => !v)}
+            onGridToggle={() => setCanvasSettings({ showGrid: !showGrid })}
             snapEnabled={snapEnabled}
-            onSnapToggle={() => setSnapEnabled((v) => !v)}
+            onSnapToggle={() => setCanvasSettings({ snapEnabled: !snapEnabled })}
             snapSizeMm={snapSizeMm}
-            onSnapSizeChange={setSnapSizeMm}
+            onSnapSizeChange={(v) => setCanvasSettings({ snapSizeMm: v })}
+            zoom={canvasSettings.zoom}
+            onZoomChange={(v) => setCanvasSettings({ zoom: v })}
           />
         </main>
 

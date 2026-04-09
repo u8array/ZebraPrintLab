@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useLayoutEffect, useState } from "react";
 import { Stage, Layer, Group, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore } from "../../store/labelStore";
@@ -22,14 +22,15 @@ interface Props {
   onSnapToggle: () => void;
   snapSizeMm: number;
   onSnapSizeChange: (mm: number) => void;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
 }
 
-export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle, snapSizeMm, onSnapSizeChange }: Props) {
+export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle, snapSizeMm, onSnapSizeChange, zoom, onZoomChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [spaceDown, setSpaceDown] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
@@ -42,10 +43,10 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
   const [ghost, setGhost] = useState<LabelObject | null>(null);
   const dragEnterCountRef = useRef(0);
 
-  const zoomIn  = () => setZoom(z => ZOOM_STEPS.find(s => s > z) ?? ZOOM_MAX);
-  const zoomOut = () => setZoom(z => [...ZOOM_STEPS].reverse().find(s => s < z) ?? ZOOM_MIN);
+  const zoomIn  = () => onZoomChange(ZOOM_STEPS.find(s => s > zoom) ?? ZOOM_MAX);
+  const zoomOut = () => onZoomChange([...ZOOM_STEPS].reverse().find(s => s < zoom) ?? ZOOM_MIN);
   const zoomFit = () => {
-    setZoom(1);
+    onZoomChange(1);
     setPanOffset({ x: 0, y: 0 });
   };
 
@@ -67,6 +68,12 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
     return () => observer.disconnect();
   }, []);
 
+  // keep stable refs so the passive:false wheel listener can read current values
+  const zoomRef = useRef(zoom);
+  const onZoomChangeRef = useRef(onZoomChange);
+  useLayoutEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useLayoutEffect(() => { onZoomChangeRef.current = onZoomChange; }, [onZoomChange]);
+
   // non-passive wheel: ctrl+scroll → zoom, plain scroll → pan
   useEffect(() => {
     const el = containerRef.current;
@@ -74,10 +81,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
-        setZoom((z) => {
-          const next = z * (e.deltaY < 0 ? 1.1 : 0.9);
-          return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, next));
-        });
+        onZoomChangeRef.current(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomRef.current * (e.deltaY < 0 ? 1.1 : 0.9))));
       } else {
         setPanOffset((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
       }

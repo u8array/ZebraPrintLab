@@ -12,11 +12,19 @@ function detectLocale(): LocaleCode {
   return (lang in locales ? lang : 'en') as LocaleCode;
 }
 
+export interface CanvasSettings {
+  showGrid: boolean;
+  snapEnabled: boolean;
+  snapSizeMm: number;
+  zoom: number;
+}
+
 interface LabelState {
   label: LabelConfig;
   objects: LabelObject[];
   selectedId: string | null;
   locale: LocaleCode;
+  canvasSettings: CanvasSettings;
 
   addObject: (type: string, position?: { x: number; y: number }) => void;
   updateObject: (id: string, changes: Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object }) => void;
@@ -25,6 +33,7 @@ interface LabelState {
   selectObject: (id: string | null) => void;
   setLabelConfig: (config: Partial<LabelConfig>) => void;
   setLocale: (locale: LocaleCode) => void;
+  setCanvasSettings: (settings: Partial<CanvasSettings>) => void;
   loadDesign: (label: LabelConfig, objects: LabelObject[]) => void;
   moveObjectForward: (id: string) => void;
   moveObjectBackward: (id: string) => void;
@@ -41,6 +50,7 @@ export const useLabelStore = create<LabelState>()(
       objects: [],
       selectedId: null,
       locale: detectLocale(),
+      canvasSettings: { showGrid: true, snapEnabled: true, snapSizeMm: 1, zoom: 1 },
 
       addObject: (type, position = { x: 50, y: 50 }) => {
         const definition = ObjectRegistry[type];
@@ -148,6 +158,9 @@ export const useLabelStore = create<LabelState>()(
         set((state) => ({ label: { ...state.label, ...config } })),
 
       setLocale: (locale) => set({ locale }),
+
+      setCanvasSettings: (settings) =>
+        set((state) => ({ canvasSettings: { ...state.canvasSettings, ...settings } })),
     }),
     {
       name: 'zpl-designer-session',
@@ -156,6 +169,7 @@ export const useLabelStore = create<LabelState>()(
         label: state.label,
         objects: state.objects,
         locale: state.locale,
+        canvasSettings: state.canvasSettings,
       }),
     }
     ),
