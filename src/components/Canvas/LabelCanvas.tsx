@@ -8,6 +8,7 @@ import { Grid } from "./Grid";
 import { Ruler, RULER_SIZE } from "./Ruler";
 import { ObjectRegistry } from "../../registry";
 import type { LabelObject } from "../../registry";
+import { useColorScheme } from "../../lib/useColorScheme";
 
 const PADDING = 40;
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
@@ -47,6 +48,8 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
     setZoom(1);
     setPanOffset({ x: 0, y: 0 });
   };
+
+  const colors = useColorScheme();
 
   const { label, objects, selectedId, addObject, updateObject, removeObject, selectObject } =
     useLabelStore();
@@ -287,9 +290,9 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
       ref={containerRef}
       className="w-full h-full relative"
       style={{
-        background: "#0c0c0f",
+        background: colors.canvasBg,
         backgroundImage:
-          "radial-gradient(circle, #2a2a38 1px, transparent 1px)",
+          `radial-gradient(circle, ${colors.canvasDot} 1px, transparent 1px)`,
         backgroundSize: "24px 24px",
         cursor,
       }}
@@ -381,6 +384,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
                 labelHeightPx={labelHeightPx}
                 scale={scale}
                 snapSizeMm={snapSizeMm}
+                colors={colors}
               />
             )}
 
@@ -492,6 +496,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
               scale={scale}
               canvasWidth={containerSize.width}
               canvasHeight={containerSize.height}
+              colors={colors}
             />
           </Layer>
         </Stage>

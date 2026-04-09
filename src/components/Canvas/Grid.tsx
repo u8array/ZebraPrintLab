@@ -1,4 +1,6 @@
 import { Group, Line } from 'react-konva';
+import type { CanvasColors } from '../../lib/useColorScheme';
+import { DARK_COLORS } from '../../lib/useColorScheme';
 
 interface Props {
   labelOffsetX: number;
@@ -7,6 +9,7 @@ interface Props {
   labelHeightPx: number;
   scale: number;      // px/mm
   snapSizeMm: number; // primary grid = snap interval
+  colors?: CanvasColors;
 }
 
 export function Grid({
@@ -16,6 +19,7 @@ export function Grid({
   labelHeightPx,
   scale,
   snapSizeMm,
+  colors = DARK_COLORS,
 }: Props) {
   const snapPx = scale * snapSizeMm;
   const sub1Px = scale * 1;
@@ -30,13 +34,13 @@ export function Grid({
   for (let x = labelOffsetX + snapPx; x < right; x += snapPx) {
     lines.push(
       <Line key={`vs-${x}`} points={[x, labelOffsetY, x, bottom]}
-        stroke="#d1d5db" strokeWidth={0.5} listening={false} />
+        stroke={colors.gridLine} strokeWidth={0.5} listening={false} />
     );
   }
   for (let y = labelOffsetY + snapPx; y < bottom; y += snapPx) {
     lines.push(
       <Line key={`hs-${y}`} points={[labelOffsetX, y, right, y]}
-        stroke="#d1d5db" strokeWidth={0.5} listening={false} />
+        stroke={colors.gridLine} strokeWidth={0.5} listening={false} />
     );
   }
 
@@ -48,7 +52,7 @@ export function Grid({
       if (step % stepsPerSnap === 0) continue;
       lines.push(
         <Line key={`v1-${x}`} points={[x, labelOffsetY, x, bottom]}
-          stroke="#e9ecef" strokeWidth={0.3} listening={false} />
+          stroke={colors.gridSub} strokeWidth={0.3} listening={false} />
       );
     }
     for (let y = labelOffsetY + sub1Px; y < bottom; y += sub1Px) {
@@ -56,7 +60,7 @@ export function Grid({
       if (step % stepsPerSnap === 0) continue;
       lines.push(
         <Line key={`h1-${y}`} points={[labelOffsetX, y, right, y]}
-          stroke="#e9ecef" strokeWidth={0.3} listening={false} />
+          stroke={colors.gridSub} strokeWidth={0.3} listening={false} />
       );
     }
   }

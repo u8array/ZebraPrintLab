@@ -260,30 +260,4 @@ function App() {
   );
 }
 
-function ToggleButton({
-  active,
-  onClick,
-  title,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  title?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
-        active
-          ? 'text-accent bg-[--color-accent-dim] hover:bg-[--color-accent-dim]'
-          : 'text-muted hover:text-text hover:bg-surface-2'
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
 export default App;

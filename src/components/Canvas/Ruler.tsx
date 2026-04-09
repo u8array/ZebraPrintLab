@@ -1,4 +1,6 @@
 import { Group, Rect, Line, Text } from 'react-konva';
+import type { CanvasColors } from '../../lib/useColorScheme';
+import { DARK_COLORS } from '../../lib/useColorScheme';
 
 export const RULER_SIZE = 20; // px — width/height of the ruler strip
 
@@ -10,6 +12,7 @@ interface Props {
   scale: number; // px/mm
   canvasWidth: number;
   canvasHeight: number;
+  colors?: CanvasColors;
 }
 
 // Adaptive tick density: finer steps at higher zoom levels
@@ -27,6 +30,7 @@ export function Ruler({
   scale,
   canvasWidth,
   canvasHeight,
+  colors = DARK_COLORS,
 }: Props) {
   const { major, minor } = tickStep(scale);
   const els: React.ReactElement[] = [];
@@ -34,12 +38,12 @@ export function Ruler({
   // ── Backgrounds ───────────────────────────────────────────────
   els.push(
     <Rect key="bg-h" x={0} y={0} width={canvasWidth} height={RULER_SIZE}
-      fill="#13131a" listening={false} />,
+      fill={colors.rulerBg} listening={false} />,
     <Rect key="bg-v" x={0} y={0} width={RULER_SIZE} height={canvasHeight}
-      fill="#13131a" listening={false} />,
+      fill={colors.rulerBg} listening={false} />,
     // corner square covering the overlap of the two strips
     <Rect key="bg-corner" x={0} y={0} width={RULER_SIZE} height={RULER_SIZE}
-      fill="#0c0c0f" listening={false} />,
+      fill={colors.rulerCorner} listening={false} />,
   );
 
   // ── Horizontal ruler (top) ─────────────────────────────────────
@@ -50,7 +54,7 @@ export function Ruler({
     els.push(
       <Line key={`hr-${mm}`}
         points={[x, RULER_SIZE - tickH, x, RULER_SIZE]}
-        stroke={isMajor ? '#6b6b7e' : '#3a3a4e'}
+        stroke={isMajor ? colors.rulerMajorTick : colors.rulerMinorTick}
         strokeWidth={isMajor ? 1 : 0.5}
         listening={false} />,
     );
@@ -59,7 +63,7 @@ export function Ruler({
         <Text key={`ht-${mm}`}
           x={x + 2} y={RULER_SIZE - 14}
           text={`${mm}`}
-          fontSize={8} fill="#5a5a72"
+          fontSize={8} fill={colors.rulerLabel}
           fontFamily="'IBM Plex Mono', monospace"
           listening={false} />,
       );
@@ -74,7 +78,7 @@ export function Ruler({
     els.push(
       <Line key={`vr-${mm}`}
         points={[RULER_SIZE - tickW, y, RULER_SIZE, y]}
-        stroke={isMajor ? '#6b6b7e' : '#3a3a4e'}
+        stroke={isMajor ? colors.rulerMajorTick : colors.rulerMinorTick}
         strokeWidth={isMajor ? 1 : 0.5}
         listening={false} />,
     );
@@ -83,7 +87,7 @@ export function Ruler({
         <Text key={`vt-${mm}`}
           x={2} y={y + 2}
           text={`${mm}`}
-          fontSize={8} fill="#5a5a72"
+          fontSize={8} fill={colors.rulerLabel}
           fontFamily="'IBM Plex Mono', monospace"
           rotation={0}
           listening={false} />,
@@ -94,9 +98,9 @@ export function Ruler({
   // ── Separator lines ───────────────────────────────────────────
   els.push(
     <Line key="sep-h" points={[RULER_SIZE, RULER_SIZE, canvasWidth, RULER_SIZE]}
-      stroke="#22222e" strokeWidth={1} listening={false} />,
+      stroke={colors.rulerSeparator} strokeWidth={1} listening={false} />,
     <Line key="sep-v" points={[RULER_SIZE, RULER_SIZE, RULER_SIZE, canvasHeight]}
-      stroke="#22222e" strokeWidth={1} listening={false} />,
+      stroke={colors.rulerSeparator} strokeWidth={1} listening={false} />,
   );
 
   return <Group listening={false}>{els}</Group>;
