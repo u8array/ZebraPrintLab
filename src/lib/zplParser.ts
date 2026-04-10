@@ -38,6 +38,14 @@ function makeObj(type: string, x: number, y: number, props: unknown): LabelObjec
   return { id: crypto.randomUUID(), type, x, y, rotation: 0, props } as LabelObject;
 }
 
+/** Decode ^FH hex escapes: replaces {delimiter}XX with the character for hex XX */
+function decodeFH(text: string, delimiter: string): string {
+  const escaped = delimiter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp(`${escaped}([0-9A-Fa-f]{2})`, 'g'), (_, hex) =>
+    String.fromCharCode(parseInt(hex, 16)),
+  );
+}
+
 export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   const tokens = tokenize(zpl);
   const objects: LabelObject[] = [];
@@ -57,13 +65,22 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let bcHeight = 100;
   let bcInterp = true;
   let bcCheck = false;
+  // ^BY barcode defaults
+  let byHeight = 0;
   let qrMag = 4;
   let dmDim = 5;
   let dmQuality: DataMatrixProps['quality'] = 200;
 
+  // ^LR state (label reverse / invert)
+  let lrActive = false;
+
+  // ^FH state (field hex indicator)
+  let fhActive = false;
+  let fhDelimiter = '_';
+
   const flushField = () => {
     if (!fieldType || pendingFD === null) return;
-    const content = pendingFD;
+    const content = fhActive ? decodeFH(pendingFD, fhDelimiter) : pendingFD;
 
     switch (fieldType) {
       case 'text':
@@ -150,8 +167,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       }
 
       // ── Field origin ──────────────────────────────────────────────
-      case 'FO': {
-        flushField(); // close any open field at previous position
+      case 'FO':
+      case 'FT': {
+        flushField();
         x = int(p[0]);
         y = int(p[1]);
         break;
@@ -167,11 +185,18 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         break;
       }
 
+      // ── Barcode defaults ──────────────────────────────────────────
+      case 'BY': {
+        // ^BY{module_width},{ratio},{height}
+        byHeight = int(p[2], 0);
+        break;
+      }
+
       // ── Barcodes ──────────────────────────────────────────────────
       case 'BC': {
         // ^BCN,{height},{interp},N,{check}
         fieldType = 'code128';
-        bcHeight = int(p[1], 100);
+        bcHeight = int(p[1], byHeight || 100);
         bcInterp = (p[2] ?? 'Y') === 'Y';
         bcCheck = (p[4] ?? 'N') === 'Y';
         break;
@@ -180,14 +205,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         // ^B3N,{check},{height},{interp},N
         fieldType = 'code39';
         bcCheck = (p[1] ?? 'N') === 'Y';
-        bcHeight = int(p[2], 100);
+        bcHeight = int(p[2], byHeight || 100);
         bcInterp = (p[3] ?? 'Y') === 'Y';
         break;
       }
       case 'BE': {
         // ^BEN,{height},{interp},N
         fieldType = 'ean13';
-        bcHeight = int(p[1], 100);
+        bcHeight = int(p[1], byHeight || 100);
         bcInterp = (p[2] ?? 'Y') === 'Y';
         break;
       }
@@ -205,6 +230,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         break;
       }
 
+      // ── Field hex indicator ───────────────────────────────────────
+      case 'FH': {
+        fhActive = true;
+        fhDelimiter = rest[0] ?? '_';
+        break;
+      }
+
       // ── Field data / separator ────────────────────────────────────
       case 'FD': {
         pendingFD = rest;
@@ -212,6 +244,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       }
       case 'FS': {
         flushField();
+        fhActive = false; // ^FH applies only to the current field
+        break;
+      }
+
+      // ── Label reverse (invert colors) ─────────────────────────────
+      case 'LR': {
+        lrActive = rest.toUpperCase().startsWith('Y');
         break;
       }
 
@@ -221,7 +260,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         const w = int(p[0], 10);
         const h = int(p[1], 10);
         const t = int(p[2], 3);
-        const color = (p[3] ?? 'B') as 'B' | 'W';
+        const rawColor = (p[3] ?? 'B') as 'B' | 'W';
+        const color: 'B' | 'W' = lrActive ? (rawColor === 'B' ? 'W' : 'B') : rawColor;
         const rounding = int(p[4], 0);
 
         // Distinguish line from box: a line has one dimension equal to thickness
@@ -263,7 +303,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         const w = int(p[0], 100);
         const h = int(p[1], 100);
         const t = int(p[2], 3);
-        const color = (p[3] ?? 'B') as 'B' | 'W';
+        const rawColor = (p[3] ?? 'B') as 'B' | 'W';
+        const color: 'B' | 'W' = lrActive ? (rawColor === 'B' ? 'W' : 'B') : rawColor;
         const filled = t >= Math.min(w, h);
         objects.push(
           makeObj('ellipse', x, y, {
@@ -280,6 +321,11 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       // ── Ignored / structural ──────────────────────────────────────
       case 'XA':
       case 'XZ':
+      case 'CI': // character set encoding
+      case 'LS': // label shift
+      case 'MM': // media mode
+      case 'MT': // media type
+      case 'PQ': // print quantity
         break;
 
       default:
