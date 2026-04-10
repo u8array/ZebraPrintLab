@@ -142,6 +142,15 @@ const en = {
       zplModeSF: 'Serialize field (^SF)',
       zplModeSN: 'Serialization data (^SN)',
     },
+    image: {
+      source: 'Image source',
+      selectImage: 'Select image…',
+      upload: 'Upload image',
+      uploading: 'Uploading…',
+      preview: 'Preview',
+      widthDots: 'Width (dots)',
+      threshold: 'Mono threshold',
+    },
   },
 
   layers: {

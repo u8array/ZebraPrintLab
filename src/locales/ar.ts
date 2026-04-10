@@ -142,6 +142,15 @@ const ar = {
       zplModeSF: 'تسلسل الحقل (^SF)',
       zplModeSN: 'بيانات التسلسل (^SN)',
     },
+    image: {
+      source: 'مصدر الصورة',
+      selectImage: 'اختر صورة…',
+      upload: 'رفع صورة',
+      uploading: 'جارٍ الرفع…',
+      preview: 'معاينة',
+      widthDots: 'العرض (نقاط)',
+      threshold: 'عتبة أحادية',
+    },
   },
 
   layers: {

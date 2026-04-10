@@ -9,6 +9,8 @@ import type { DataMatrixProps } from '../registry/datamatrix';
 import type { BoxProps } from '../registry/box';
 import type { EllipseProps } from '../registry/ellipse';
 import type { LineProps } from '../registry/line';
+import type { ImageProps } from '../registry/image';
+import { putImage } from './imageCache';
 
 export interface ParsedZPL {
   labelConfig: Partial<LabelConfig>;
@@ -46,6 +48,90 @@ function decodeFH(text: string, delimiter: string): string {
   );
 }
 
+/**
+ * Decompress ZPL Alternative Data Compression used in ^GFA fields.
+ *
+ * Compression characters:
+ *   G–Y (uppercase) → repeat next hex digit 1–19 times
+ *   g–z (lowercase) → repeat next hex digit 20–400 times (multiples of 20)
+ *   Combinable: e.g. hI0 = (40+3) × '0' = 43 zeros
+ *   ,  → fill remainder of current row with '0'
+ *   !  → fill remainder of current row with 'F'
+ *   :  → repeat previous row
+ */
+function decompressGFA(data: string, bytesPerRow: number): string {
+  const nibblesPerRow = bytesPerRow * 2;
+  const rows: string[] = [];
+  let currentRow = '';
+  let i = 0;
+
+  const isHex = (ch: string) => /[0-9A-Fa-f]/.test(ch);
+  const repeatCount = (ch: string): number => {
+    if (ch >= 'G' && ch <= 'Y') return ch.charCodeAt(0) - 70; // G=1 .. Y=19
+    if (ch >= 'g' && ch <= 'z') return (ch.charCodeAt(0) - 102) * 20; // g=20 .. z=400
+    return 0;
+  };
+  const isCompressChar = (ch: string) =>
+    (ch >= 'G' && ch <= 'Y') || (ch >= 'g' && ch <= 'z');
+
+  const pushRow = () => {
+    rows.push(currentRow.slice(0, nibblesPerRow).padEnd(nibblesPerRow, '0'));
+    currentRow = '';
+  };
+
+  while (i < data.length) {
+    const ch = data[i]!;
+
+    if (ch === ',') {
+      // Fill rest of row with '0', complete row
+      pushRow();
+      i++;
+    } else if (ch === '!') {
+      // Fill rest of row with 'F', complete row
+      currentRow = currentRow.padEnd(nibblesPerRow, 'F');
+      rows.push(currentRow.slice(0, nibblesPerRow));
+      currentRow = '';
+      i++;
+    } else if (ch === ':') {
+      // Repeat previous row
+      rows.push(rows.length > 0 ? rows[rows.length - 1]! : '0'.repeat(nibblesPerRow));
+      i++;
+    } else if (isCompressChar(ch)) {
+      // Accumulate repeat count (lowercase + uppercase can combine)
+      let count = repeatCount(ch);
+      i++;
+      while (i < data.length && isCompressChar(data[i]!)) {
+        count += repeatCount(data[i]!);
+        i++;
+      }
+      // Next character is the hex digit to repeat
+      if (i < data.length && isHex(data[i]!)) {
+        currentRow += data[i]!.repeat(count);
+        i++;
+      }
+    } else if (isHex(ch)) {
+      currentRow += ch;
+      i++;
+    } else {
+      // Skip whitespace / unknown
+      i++;
+    }
+
+    // If row is complete, push it
+    if (currentRow.length >= nibblesPerRow) {
+      rows.push(currentRow.slice(0, nibblesPerRow));
+      currentRow = currentRow.slice(nibblesPerRow);
+    }
+  }
+
+  // Handle any remaining partial row
+  if (currentRow.length > 0) {
+    pushRow();
+  }
+
+  return rows.join('');
+}
+
 export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   const tokens = tokenize(zpl);
   const objects: LabelObject[] = [];
@@ -74,6 +160,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
   // ^LR state (label reverse / invert)
   let lrActive = false;
+  // ^FR field reverse (single-field reverse, reset on ^FS / new ^FO / ^FT)
+  let frActive = false;
+
+  // ^LH label home (origin offset applied to all field positions)
+  let lhX = 0;
+  let lhY = 0;
 
   // ^FH state (field hex indicator)
   let fhActive = false;
@@ -95,7 +187,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             fontHeight: textH,
             fontWidth: textW,
             rotation: textRot,
-            reverse: lrActive || undefined,
+            reverse: (lrActive || frActive) || undefined,
           } satisfies TextProps, posType),
         );
         break;
@@ -157,6 +249,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
     fieldType = null;
     pendingFD = null;
+    frActive = false;
   };
 
   for (const { cmd, rest } of tokens) {
@@ -178,15 +271,17 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       // ── Field origin ──────────────────────────────────────────────
       case 'FO': {
         flushField();
-        x = int(p[0]);
-        y = int(p[1]);
+        frActive = false;
+        x = int(p[0]) + lhX;
+        y = int(p[1]) + lhY;
         positionIsFT = false;
         break;
       }
       case 'FT': {
         flushField();
-        x = int(p[0]);
-        y = int(p[1]);
+        frActive = false;
+        x = int(p[0]) + lhX;
+        y = int(p[1]) + lhY;
         positionIsFT = true;
         break;
       }
@@ -266,9 +361,20 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         break;
       }
 
-      // ── Label reverse (invert colors) ─────────────────────────────
+      // ── Label reverse / field reverse ────────────────────────────
       case 'LR': {
         lrActive = rest.toUpperCase().startsWith('Y');
+        break;
+      }
+      case 'FR': {
+        frActive = true;
+        break;
+      }
+
+      // ── Label home (origin offset) ────────────────────────────────
+      case 'LH': {
+        lhX = int(p[0], 0);
+        lhY = int(p[1], 0);
         break;
       }
 
@@ -292,7 +398,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               length: w,
               thickness: t,
               color,
-              reverse: lrActive || undefined,
+              reverse: (lrActive || frActive) || undefined,
             } satisfies LineProps),
           );
         } else if (w === t && h > t) {
@@ -302,7 +408,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               length: h,
               thickness: t,
               color,
-              reverse: lrActive || undefined,
+              reverse: (lrActive || frActive) || undefined,
             } satisfies LineProps),
           );
         } else {
@@ -315,10 +421,118 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               filled,
               color,
               rounding,
-              reverse: lrActive || undefined,
+              reverse: (lrActive || frActive) || undefined,
             } satisfies BoxProps),
           );
         }
+        break;
+      }
+      case 'GD': {
+        // ^GD{w},{h},{t},{color},{orientation}
+        // orientation: L = top-left→bottom-right, R = top-right→bottom-left
+        const gdW = int(p[0], 1);
+        const gdH = int(p[1], 1);
+        const gdT = int(p[2], 3);
+        const gdColor = (p[3] ?? 'B') as 'B' | 'W';
+        const gdOri = (p[4] ?? 'L').toUpperCase();
+        const gdLen = Math.round(Math.sqrt(gdW * gdW + gdH * gdH));
+        // Recover start point and angle from bounding-box FO position
+        // 'L': dx>0,dy>0 → obj.x=boxX, angle=atan2(h,w)
+        // 'R': dx<0,dy>0 → obj.x=boxX+w, angle=atan2(h,-w)
+        const gdObjX = gdOri === 'R' ? x + gdW : x;
+        const gdAngle = Math.round(
+          gdOri === 'R'
+            ? (Math.atan2(gdH, -gdW) * 180) / Math.PI
+            : (Math.atan2(gdH, gdW) * 180) / Math.PI,
+        );
+        objects.push(
+          makeObj('line', gdObjX, y, {
+            angle: gdAngle,
+            length: gdLen,
+            thickness: gdT,
+            color: gdColor,
+            reverse: lrActive || frActive || undefined,
+          } satisfies LineProps),
+        );
+        break;
+      }
+      case 'GF': {
+        // ^GFA,{totalBytes},{totalBytes},{bytesPerRow},{compressedOrHexData}
+        const format = rest[0]?.toUpperCase();
+        if (format !== 'A') { skipped.push(`^GF${rest}`); break; }
+
+        // Extract params: skip "A," then find 3rd comma to separate params from data
+        const gfRest = rest.slice(2); // "total,total,bytesPerRow,data..."
+        let commaPos = -1;
+        for (let n = 0; n < 3; n++) {
+          commaPos = gfRest.indexOf(',', commaPos + 1);
+          if (commaPos === -1) break;
+        }
+        if (commaPos === -1) { skipped.push(`^GF${rest}`); break; }
+
+        const gfParams = gfRest.slice(0, commaPos).split(',');
+        const gfBytesPerRow = int(gfParams[2], 0);
+        // Everything after the 3rd comma is the (possibly compressed) graphic data
+        const gfRawData = gfRest.slice(commaPos + 1);
+
+        if (gfBytesPerRow <= 0) { skipped.push(`^GF${rest}`); break; }
+
+        // Decompress ZPL Alternative Data Compression for ^GFA
+        const gfHex = decompressGFA(gfRawData, gfBytesPerRow);
+        const gfWidthDots = gfBytesPerRow * 8;
+        const gfTotalBytes = gfHex.length / 2;
+        const gfHeightDots = Math.floor(gfTotalBytes / gfBytesPerRow);
+
+        if (gfHeightDots <= 0) { skipped.push(`^GF${rest}`); break; }
+
+        // Convert hex → 1-bit bitmap → canvas → data URL
+        const canvas = document.createElement('canvas');
+        canvas.width = gfWidthDots;
+        canvas.height = gfHeightDots;
+        const ctx = canvas.getContext('2d')!;
+        const imgData = ctx.createImageData(gfWidthDots, gfHeightDots);
+        const pixels = imgData.data;
+
+        for (let row = 0; row < gfHeightDots; row++) {
+          for (let byteIdx = 0; byteIdx < gfBytesPerRow; byteIdx++) {
+            const hexOffset = (row * gfBytesPerRow + byteIdx) * 2;
+            const byte = parseInt(gfHex.slice(hexOffset, hexOffset + 2), 16) || 0;
+            for (let bit = 0; bit < 8; bit++) {
+              const px = byteIdx * 8 + bit;
+              const idx = (row * gfWidthDots + px) * 4;
+              const isBlack = (byte & (0x80 >> bit)) !== 0;
+              pixels[idx] = isBlack ? 0 : 255;
+              pixels[idx + 1] = isBlack ? 0 : 255;
+              pixels[idx + 2] = isBlack ? 0 : 255;
+              pixels[idx + 3] = 255;
+            }
+          }
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+        const dataUrl = canvas.toDataURL('image/png');
+        const imageId = crypto.randomUUID();
+
+        putImage({
+          id: imageId,
+          name: `imported_${imageId.slice(0, 8)}.png`,
+          dataUrl,
+          width: gfWidthDots,
+          height: gfHeightDots,
+        });
+
+        // Store original compressed data for lossless re-export
+        const gfaCache = `^GFA,${Math.floor(gfTotalBytes)},${Math.floor(gfTotalBytes)},${gfBytesPerRow},${gfRawData}`;
+
+        const posType: 'FT' | 'FO' = positionIsFT ? 'FT' : 'FO';
+        objects.push(
+          makeObj('image', x, y, {
+            imageId,
+            widthDots: gfWidthDots,
+            threshold: 128,
+            _gfaCache: gfaCache,
+          } satisfies ImageProps, posType),
+        );
         break;
       }
       case 'GE': {

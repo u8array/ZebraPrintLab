@@ -19,6 +19,8 @@ import { line } from './line.tsx';
 import type { LineProps } from './line.tsx';
 import { serial } from './serial.tsx';
 import type { SerialProps } from './serial.tsx';
+import { image } from './image.tsx';
+import type { ImageProps } from './image.tsx';
 
 export type LabelObject =
   | (LabelObjectBase & { type: 'text'; props: TextProps })
@@ -30,7 +32,8 @@ export type LabelObject =
   | (LabelObjectBase & { type: 'box'; props: BoxProps })
   | (LabelObjectBase & { type: 'ellipse'; props: EllipseProps })
   | (LabelObjectBase & { type: 'line'; props: LineProps })
-  | (LabelObjectBase & { type: 'serial'; props: SerialProps });
+  | (LabelObjectBase & { type: 'serial'; props: SerialProps })
+  | (LabelObjectBase & { type: 'image'; props: ImageProps });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ObjectRegistry: Record<string, ObjectTypeDefinition<any>> = {
@@ -44,6 +47,7 @@ export const ObjectRegistry: Record<string, ObjectTypeDefinition<any>> = {
   ellipse,
   line,
   serial,
+  image,
 };
 
 export const PALETTE_GROUPS: { key: ObjectGroup; label: string }[] = [

@@ -142,6 +142,15 @@ const fa = {
       zplModeSF: 'سریال‌سازی فیلد (^SF)',
       zplModeSN: 'داده‌های سریال‌سازی (^SN)',
     },
+    image: {
+      source: 'منبع تصویر',
+      selectImage: 'انتخاب تصویر…',
+      upload: 'بارگذاری تصویر',
+      uploading: 'در حال بارگذاری…',
+      preview: 'پیش‌نمایش',
+      widthDots: 'عرض (نقاط)',
+      threshold: 'آستانه تک‌رنگ',
+    },
   },
 
   layers: {

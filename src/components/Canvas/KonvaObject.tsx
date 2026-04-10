@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { Circle, Ellipse, Group, Line as KLine, Rect, Text } from 'react-konva';
+import { useState, useEffect } from 'react';
+import { Circle, Ellipse, Group, Image as KImage, Line as KLine, Rect, Text } from 'react-konva';
 import type Konva from 'konva';
 import type { LabelObject } from '../../registry';
 import type { LabelObjectBase } from '../../types/ObjectType';
 import { dotsToPx, pxToDots } from '../../lib/coordinates';
+import { getImage } from '../../lib/imageCache';
 
 type ObjectChanges = Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object };
 
@@ -35,9 +36,8 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
   const x2 = x1 + lenPx * Math.cos(rad);
   const y2 = y1 + lenPx * Math.sin(rad);
 
-  const strokeColor = p.reverse
-    ? (p.color === 'B' ? '#ffffff' : '#000000')
-    : (p.color === 'B' ? '#000000' : '#cccccc');
+  // ^LR uses difference blend with white: white over white bg = black, white over black text = white
+  const strokeColor = !isSelected && p.reverse ? '#ffffff' : (p.color === 'B' ? '#000000' : '#cccccc');
   const lineStrokeWidth = Math.max(dotsToPx(p.thickness, scale, dpmm), 1);
 
   // Live positions while handles are being dragged (snapped preview)
@@ -64,6 +64,7 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
         strokeWidth={lineStrokeWidth}
         lineCap="round"
         listening={false}
+        globalCompositeOperation={!isSelected && p.reverse ? 'difference' : 'source-over'}
       />
       {/* Wide transparent hit area — handles click-to-select and whole-line drag. */}
       <KLine
@@ -179,9 +180,17 @@ function KonvaObjectInner({
   if (obj.positionType === 'FT') {
     if (obj.type === 'text' || obj.type === 'serial') {
       const p = obj.props as { fontHeight: number; rotation: string };
+      // ^FT places the origin at the baseline of the first character.
+      // The Konva anchor point after rotation sits at a different corner
+      // of the visual bounding box than the ZPL FT baseline origin:
+      //   N (0°):   FT=bottom-left,  Konva=top-left     → shift Y up
+      //   R (90°):  FT=bottom-left,  Konva=top-right    → shift X right
+      //   I (180°): FT=top-right,    Konva=bottom-right  → shift Y down
+      //   B (270°): FT=top-right,    Konva=bottom-left   → shift X left
       if (p.rotation === 'N') { displayY -= p.fontHeight; }
-      else if (p.rotation === 'R') { displayX -= p.fontHeight; }
-      // I and B: FT origin aligns with FO — no offset needed
+      else if (p.rotation === 'R') { displayX += p.fontHeight; }
+      else if (p.rotation === 'I') { displayY += p.fontHeight; }
+      else if (p.rotation === 'B') { displayX -= p.fontHeight; }
     } else if (obj.type === 'code128' || obj.type === 'code39' || obj.type === 'ean13') {
       const p = obj.props as { height: number };
       displayY -= p.height;
@@ -444,36 +453,11 @@ function KonvaObjectInner({
     const strokeWidth = Math.max(dotsToPx(p.thickness, scale, dpmm), 0.5);
     const cornerRadius = p.rounding * dotsToPx(Math.min(p.width, p.height) / 8, scale, dpmm);
 
-    if (p.reverse) {
-      // Black background + inverted content
-      const invStroke = p.color === 'B' ? '#ffffff' : '#000000';
-      const invFill = p.filled ? (p.color === 'B' ? '#ffffff' : '#000000') : '#000000';
-      return (
-        <Group
-          id={obj.id}
-          x={x}
-          y={y}
-          draggable
-          onClick={onSelect}
-          onTap={onSelect}
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
-        >
-          <Rect width={w} height={h} fill="#000000" cornerRadius={cornerRadius} />
-          <Rect
-            width={w}
-            height={h}
-            stroke={isSelected ? '#6366f1' : invStroke}
-            strokeWidth={isSelected ? Math.max(strokeWidth, 1.5) : strokeWidth}
-            fill={invFill}
-            cornerRadius={cornerRadius}
-          />
-        </Group>
-      );
-    }
-
-    const stroke = p.color === 'B' ? '#000000' : '#cccccc';
-    const fill = p.filled ? (p.color === 'B' ? '#000000' : '#ffffff') : 'transparent';
+    const useReverse = !isSelected && p.reverse;
+    const stroke = useReverse ? '#ffffff' : (p.color === 'B' ? '#000000' : '#cccccc');
+    const fill = useReverse
+      ? (p.filled ? '#ffffff' : 'transparent')
+      : (p.filled ? (p.color === 'B' ? '#000000' : '#ffffff') : 'transparent');
     return (
       <Rect
         id={obj.id}
@@ -490,6 +474,7 @@ function KonvaObjectInner({
         onTap={onSelect}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
+        globalCompositeOperation={!isSelected && p.reverse ? 'difference' : 'source-over'}
       />
     );
   }
@@ -526,6 +511,74 @@ function KonvaObjectInner({
           });
         }}
       />
+    );
+  }
+
+  if (obj.type === 'image') {
+    const p = obj.props;
+    const cached = getImage(p.imageId);
+    const w = dotsToPx(p.widthDots, scale, dpmm);
+    const h = cached
+      ? w * (cached.height / cached.width)
+      : w;
+
+    // Load the HTMLImageElement for Konva
+    const [htmlImg, setHtmlImg] = useState<HTMLImageElement | null>(null);
+    useEffect(() => {
+      if (!cached) { setHtmlImg(null); return; }
+      const img = new window.Image();
+      img.src = cached.dataUrl;
+      img.onload = () => setHtmlImg(img);
+    }, [cached?.dataUrl]);
+
+    if (htmlImg && cached) {
+      return (
+        <KImage
+          id={obj.id}
+          x={x}
+          y={y}
+          image={htmlImg}
+          width={w}
+          height={h}
+          stroke={isSelected ? '#6366f1' : undefined}
+          strokeWidth={isSelected ? 2 : 0}
+          draggable
+          onClick={onSelect}
+          onTap={onSelect}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+        />
+      );
+    }
+
+    // Placeholder when no image loaded
+    return (
+      <Group
+        id={obj.id}
+        x={x}
+        y={y}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+      >
+        <Rect
+          width={w}
+          height={h}
+          fill="#f9fafb"
+          stroke={isSelected ? '#6366f1' : '#9ca3af'}
+          strokeWidth={isSelected ? 2 : 1}
+          dash={[4, 2]}
+        />
+        <Text
+          x={6}
+          y={6}
+          text="🖼"
+          fontSize={Math.max(w * 0.3, 12)}
+          fill="#374151"
+        />
+      </Group>
     );
   }
 

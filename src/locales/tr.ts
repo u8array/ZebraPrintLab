@@ -142,6 +142,15 @@ const tr = {
       zplModeSF: 'Alanı seri yap (^SF)',
       zplModeSN: 'Seri verileri (^SN)',
     },
+    image: {
+      source: 'Görsel kaynağı',
+      selectImage: 'Görsel seçin…',
+      upload: 'Görsel yükle',
+      uploading: 'Yükleniyor…',
+      preview: 'Önizleme',
+      widthDots: 'Genişlik (nokta)',
+      threshold: 'Mono eşik',
+    },
   },
 
   layers: {

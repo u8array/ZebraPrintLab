@@ -142,6 +142,15 @@ const he = {
       zplModeSF: 'סריאליזציה של שדה (^SF)',
       zplModeSN: 'נתוני סריאליזציה (^SN)',
     },
+    image: {
+      source: 'מקור תמונה',
+      selectImage: 'בחר תמונה…',
+      upload: 'העלאת תמונה',
+      uploading: 'מעלה…',
+      preview: 'תצוגה מקדימה',
+      widthDots: 'רוחב (נקודות)',
+      threshold: 'סף מונו',
+    },
   },
 
   layers: {

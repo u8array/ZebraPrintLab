@@ -142,6 +142,15 @@ const lv = {
       zplModeSF: 'Lauka serializācija (^SF)',
       zplModeSN: 'Serializācijas dati (^SN)',
     },
+    image: {
+      source: 'Attēla avots',
+      selectImage: 'Izvēlēties attēlu…',
+      upload: 'Augšupielādēt attēlu',
+      uploading: 'Augšupielāde…',
+      preview: 'Priekšskatījums',
+      widthDots: 'Platums (punkti)',
+      threshold: 'Mono slieksnis',
+    },
   },
 
   layers: {

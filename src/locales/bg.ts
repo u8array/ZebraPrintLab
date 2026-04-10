@@ -142,6 +142,15 @@ const bg = {
       zplModeSF: 'Сериализиране на поле (^SF)',
       zplModeSN: 'Данни за сериализация (^SN)',
     },
+    image: {
+      source: 'Източник на изображение',
+      selectImage: 'Изберете изображение…',
+      upload: 'Качване на изображение',
+      uploading: 'Качване…',
+      preview: 'Преглед',
+      widthDots: 'Ширина (точки)',
+      threshold: 'Моно праг',
+    },
   },
 
   layers: {

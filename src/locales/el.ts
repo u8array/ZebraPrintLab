@@ -142,6 +142,15 @@ const el = {
       zplModeSF: 'Σειριοποίηση πεδίου (^SF)',
       zplModeSN: 'Δεδομένα σειριοποίησης (^SN)',
     },
+    image: {
+      source: 'Πηγή εικόνας',
+      selectImage: 'Επιλογή εικόνας…',
+      upload: 'Μεταφόρτωση εικόνας',
+      uploading: 'Μεταφόρτωση…',
+      preview: 'Προεπισκόπηση',
+      widthDots: 'Πλάτος (κουκκίδες)',
+      threshold: 'Κατώφλι mono',
+    },
   },
 
   layers: {

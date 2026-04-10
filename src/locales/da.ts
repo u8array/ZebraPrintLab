@@ -142,6 +142,15 @@ const da = {
       zplModeSF: 'Serialiser felt (^SF)',
       zplModeSN: 'Serialiseringsdata (^SN)',
     },
+    image: {
+      source: 'Billedkilde',
+      selectImage: 'Vælg billede…',
+      upload: 'Upload billede',
+      uploading: 'Uploader…',
+      preview: 'Forhåndsvisning',
+      widthDots: 'Bredde (punkter)',
+      threshold: 'Mono-tærskel',
+    },
   },
 
   layers: {

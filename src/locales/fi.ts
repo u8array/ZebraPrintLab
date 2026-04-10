@@ -142,6 +142,15 @@ const fi = {
       zplModeSF: 'Sarjalista kenttä (^SF)',
       zplModeSN: 'Sarjalistausdata (^SN)',
     },
+    image: {
+      source: 'Kuvan lähde',
+      selectImage: 'Valitse kuva…',
+      upload: 'Lataa kuva',
+      uploading: 'Ladataan…',
+      preview: 'Esikatselu',
+      widthDots: 'Leveys (pisteet)',
+      threshold: 'Mono-kynnys',
+    },
   },
 
   layers: {

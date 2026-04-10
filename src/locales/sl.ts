@@ -142,6 +142,15 @@ const sl = {
       zplModeSF: 'Serializacija polja (^SF)',
       zplModeSN: 'Podatki serializacije (^SN)',
     },
+    image: {
+      source: 'Vir slike',
+      selectImage: 'Izberite sliko…',
+      upload: 'Naloži sliko',
+      uploading: 'Nalaganje…',
+      preview: 'Predogled',
+      widthDots: 'Širina (pike)',
+      threshold: 'Mono prag',
+    },
   },
 
   layers: {

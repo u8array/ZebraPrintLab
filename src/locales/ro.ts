@@ -142,6 +142,15 @@ const ro = {
       zplModeSF: 'Serializare câmp (^SF)',
       zplModeSN: 'Date serializare (^SN)',
     },
+    image: {
+      source: 'Sursă imagine',
+      selectImage: 'Selectați imaginea…',
+      upload: 'Încărcați imaginea',
+      uploading: 'Se încarcă…',
+      preview: 'Previzualizare',
+      widthDots: 'Lățime (puncte)',
+      threshold: 'Prag mono',
+    },
   },
 
   layers: {

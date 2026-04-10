@@ -142,6 +142,15 @@ const de = {
       zplModeSF: 'Feld serialisieren (^SF)',
       zplModeSN: 'Serialisierungsdaten (^SN)',
     },
+    image: {
+      source: 'Bildquelle',
+      selectImage: 'Bild auswählen…',
+      upload: 'Bild hochladen',
+      uploading: 'Hochladen…',
+      preview: 'Vorschau',
+      widthDots: 'Breite (Punkte)',
+      threshold: 'Mono-Schwellenwert',
+    },
   },
 
   layers: {

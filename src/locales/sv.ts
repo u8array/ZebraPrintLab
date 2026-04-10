@@ -142,6 +142,15 @@ const sv = {
       zplModeSF: 'Serialisera fält (^SF)',
       zplModeSN: 'Serialiseringsdata (^SN)',
     },
+    image: {
+      source: 'Bildkälla',
+      selectImage: 'Välj bild…',
+      upload: 'Ladda upp bild',
+      uploading: 'Laddar upp…',
+      preview: 'Förhandsvisning',
+      widthDots: 'Bredd (punkter)',
+      threshold: 'Mono-tröskel',
+    },
   },
 
   layers: {

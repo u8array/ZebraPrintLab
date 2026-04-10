@@ -142,6 +142,15 @@ const hr = {
       zplModeSF: 'Serijalizacija polja (^SF)',
       zplModeSN: 'Podaci serijalizacije (^SN)',
     },
+    image: {
+      source: 'Izvor slike',
+      selectImage: 'Odaberite sliku…',
+      upload: 'Prenesi sliku',
+      uploading: 'Prenošenje…',
+      preview: 'Pregled',
+      widthDots: 'Širina (točke)',
+      threshold: 'Mono prag',
+    },
   },
 
   layers: {

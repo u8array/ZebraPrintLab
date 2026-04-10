@@ -142,6 +142,15 @@ const cs = {
       zplModeSF: 'Serializovat pole (^SF)',
       zplModeSN: 'Data serializace (^SN)',
     },
+    image: {
+      source: 'Zdroj obrázku',
+      selectImage: 'Vybrat obrázek…',
+      upload: 'Nahrát obrázek',
+      uploading: 'Nahrávání…',
+      preview: 'Náhled',
+      widthDots: 'Šířka (body)',
+      threshold: 'Mono práh',
+    },
   },
 
   layers: {

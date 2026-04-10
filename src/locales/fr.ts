@@ -142,6 +142,15 @@ const fr = {
       zplModeSF: 'Sérialiser le champ (^SF)',
       zplModeSN: 'Données de sérialisation (^SN)',
     },
+    image: {
+      source: 'Source de l\'image',
+      selectImage: 'Sélectionner une image…',
+      upload: 'Télécharger une image',
+      uploading: 'Téléchargement…',
+      preview: 'Aperçu',
+      widthDots: 'Largeur (points)',
+      threshold: 'Seuil mono',
+    },
   },
 
   layers: {

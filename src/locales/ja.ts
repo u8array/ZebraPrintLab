@@ -142,6 +142,15 @@ const ja = {
       zplModeSF: 'フィールドのシリアライズ (^SF)',
       zplModeSN: 'シリアライズデータ (^SN)',
     },
+    image: {
+      source: '画像ソース',
+      selectImage: '画像を選択…',
+      upload: '画像をアップロード',
+      uploading: 'アップロード中…',
+      preview: 'プレビュー',
+      widthDots: '幅（ドット）',
+      threshold: 'モノクロしきい値',
+    },
   },
 
   layers: {

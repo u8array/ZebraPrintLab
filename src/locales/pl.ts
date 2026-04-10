@@ -142,6 +142,15 @@ const pl = {
       zplModeSF: 'Serializuj pole (^SF)',
       zplModeSN: 'Dane serializacji (^SN)',
     },
+    image: {
+      source: 'Źródło obrazu',
+      selectImage: 'Wybierz obraz…',
+      upload: 'Prześlij obraz',
+      uploading: 'Przesyłanie…',
+      preview: 'Podgląd',
+      widthDots: 'Szerokość (punkty)',
+      threshold: 'Próg mono',
+    },
   },
 
   layers: {

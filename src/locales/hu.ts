@@ -142,6 +142,15 @@ const hu = {
       zplModeSF: 'Mező szerializálása (^SF)',
       zplModeSN: 'Szerializációs adatok (^SN)',
     },
+    image: {
+      source: 'Képforrás',
+      selectImage: 'Kép kiválasztása…',
+      upload: 'Kép feltöltése',
+      uploading: 'Feltöltés…',
+      preview: 'Előnézet',
+      widthDots: 'Szélesség (pont)',
+      threshold: 'Mono küszöb',
+    },
   },
 
   layers: {

@@ -142,6 +142,15 @@ const et = {
       zplModeSF: 'Välja serialiseerimine (^SF)',
       zplModeSN: 'Serialiseerimisandmed (^SN)',
     },
+    image: {
+      source: 'Pildi allikas',
+      selectImage: 'Vali pilt…',
+      upload: 'Laadi pilt üles',
+      uploading: 'Üleslaadimine…',
+      preview: 'Eelvaade',
+      widthDots: 'Laius (punktid)',
+      threshold: 'Mono lävi',
+    },
   },
 
   layers: {

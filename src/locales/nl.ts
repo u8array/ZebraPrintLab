@@ -142,6 +142,15 @@ const nl = {
       zplModeSF: 'Veld serialiseren (^SF)',
       zplModeSN: 'Serialisatiedata (^SN)',
     },
+    image: {
+      source: 'Afbeeldingsbron',
+      selectImage: 'Afbeelding selecteren…',
+      upload: 'Afbeelding uploaden',
+      uploading: 'Uploaden…',
+      preview: 'Voorbeeld',
+      widthDots: 'Breedte (punten)',
+      threshold: 'Mono-drempelwaarde',
+    },
   },
 
   layers: {

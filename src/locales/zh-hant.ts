@@ -142,6 +142,15 @@ const zhHant = {
       zplModeSF: '序列化欄位 (^SF)',
       zplModeSN: '序列化資料 (^SN)',
     },
+    image: {
+      source: '圖片來源',
+      selectImage: '選擇圖片…',
+      upload: '上傳圖片',
+      uploading: '上傳中…',
+      preview: '預覽',
+      widthDots: '寬度（點）',
+      threshold: '單色閾值',
+    },
   },
 
   layers: {

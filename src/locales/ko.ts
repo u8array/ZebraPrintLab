@@ -142,6 +142,15 @@ const ko = {
       zplModeSF: '필드 직렬화 (^SF)',
       zplModeSN: '직렬화 데이터 (^SN)',
     },
+    image: {
+      source: '이미지 소스',
+      selectImage: '이미지 선택…',
+      upload: '이미지 업로드',
+      uploading: '업로드 중…',
+      preview: '미리보기',
+      widthDots: '너비 (도트)',
+      threshold: '모노 임계값',
+    },
   },
 
   layers: {

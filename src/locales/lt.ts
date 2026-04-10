@@ -142,6 +142,15 @@ const lt = {
       zplModeSF: 'Serializuoti lauką (^SF)',
       zplModeSN: 'Serializacijos duomenys (^SN)',
     },
+    image: {
+      source: 'Vaizdo šaltinis',
+      selectImage: 'Pasirinkite vaizdą…',
+      upload: 'Įkelti vaizdą',
+      uploading: 'Įkeliama…',
+      preview: 'Peržiūra',
+      widthDots: 'Plotis (taškai)',
+      threshold: 'Mono slenkstis',
+    },
   },
 
   layers: {
