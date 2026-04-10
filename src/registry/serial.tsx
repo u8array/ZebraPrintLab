@@ -1,6 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
+import { fieldPos } from './zplHelpers';
 
 export interface SerialProps {
   content: string;
@@ -27,7 +28,7 @@ export const serial: ObjectTypeDefinition<SerialProps> = {
 
   toZPL: (obj) => {
     const p = obj.props;
-    const field = `^FO${obj.x},${obj.y}^A0${p.rotation},${p.fontHeight},${p.fontWidth}`;
+    const field = `${fieldPos(obj)}^A0${p.rotation},${p.fontHeight},${p.fontWidth}`;
     if (p.zplMode === 'SF') {
       // ^SF: increment, pad-digits (derived from content length), change-per-label
       return `${field}^SF${p.increment},${p.content.length},Y^FD${p.content}^FS`;

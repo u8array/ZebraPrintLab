@@ -171,8 +171,30 @@ function KonvaObjectInner({
   onChange,
   snap,
 }: Props) {
-  const x = offsetX + dotsToPx(obj.x, scale, dpmm);
-  const y = offsetY + dotsToPx(obj.y, scale, dpmm);
+  // If the object was imported with ^FT (baseline position), compute display offset.
+  // ^FT positions text at the baseline; ^FO at the top-left corner.
+  // We need to convert FT→FO for canvas rendering only.
+  let displayX = obj.x;
+  let displayY = obj.y;
+  if (obj.positionType === 'FT') {
+    if (obj.type === 'text' || obj.type === 'serial') {
+      const p = obj.props as { fontHeight: number; rotation: string };
+      if (p.rotation === 'N') { displayY -= p.fontHeight; }
+      else if (p.rotation === 'R') { displayX -= p.fontHeight; }
+      // I and B: FT origin aligns with FO — no offset needed
+    } else if (obj.type === 'code128' || obj.type === 'code39' || obj.type === 'ean13') {
+      const p = obj.props as { height: number };
+      displayY -= p.height;
+    } else if (obj.type === 'qrcode') {
+      const p = obj.props as { magnification: number };
+      displayY -= p.magnification * 25;
+    } else if (obj.type === 'datamatrix') {
+      const p = obj.props as { dimension: number };
+      displayY -= p.dimension * 20;
+    }
+  }
+  const x = offsetX + dotsToPx(displayX, scale, dpmm);
+  const y = offsetY + dotsToPx(displayY, scale, dpmm);
 
   // Snap a stage-position to the nearest grid point, returns stage-position.
   const snapPos = (stageX: number, stageY: number) => ({

@@ -1,6 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
+import { fieldPos } from './zplHelpers';
 
 export interface LineProps {
   /** Angle in degrees, 0 = rightward horizontal, clockwise positive (screen coords). */
@@ -32,11 +33,11 @@ export const line: ObjectTypeDefinition<LineProps> = {
 
     // Pure horizontal
     if (a === 0 || a === 180) {
-      return `${lr[0]}^FO${obj.x},${obj.y}^GB${l},${t},${t},${p.color},0^FS${lr[1]}`;
+      return `${lr[0]}${fieldPos(obj)}^GB${l},${t},${t},${p.color},0^FS${lr[1]}`;
     }
     // Pure vertical
     if (a === 90 || a === 270) {
-      return `${lr[0]}^FO${obj.x},${obj.y}^GB${t},${l},${t},${p.color},0^FS${lr[1]}`;
+      return `${lr[0]}${fieldPos(obj)}^GB${t},${l},${t},${p.color},0^FS${lr[1]}`;
     }
 
     // Diagonal — use ^GD (bounding-box diagonal command)

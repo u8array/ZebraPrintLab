@@ -1,6 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
+import { fieldPos } from './zplHelpers';
 
 export interface EllipseProps {
   width: number;
@@ -27,7 +28,7 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
     const p = obj.props;
     const thick = p.filled ? Math.min(p.width, p.height) : p.thickness;
     return [
-      `^FO${obj.x},${obj.y}`,
+      fieldPos(obj),
       `^GE${p.width},${p.height},${thick},${p.color}`,
       `^FS`,
     ].join('');

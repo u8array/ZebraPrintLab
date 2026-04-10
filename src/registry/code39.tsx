@@ -1,6 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
+import { fieldPos } from './zplHelpers';
 
 export interface Code39Props {
   content: string;
@@ -29,7 +30,7 @@ export const code39: ObjectTypeDefinition<Code39Props> = {
     const check = p.checkDigit ? 'Y' : 'N';
     return [
       p.moduleWidth !== 2 ? `^BY${p.moduleWidth}` : '',
-      `^FO${obj.x},${obj.y}`,
+      fieldPos(obj),
       `^B3N,${check},${p.height},${interp},N`,
       `^FD${p.content}^FS`,
     ].filter(Boolean).join('');

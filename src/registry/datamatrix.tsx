@@ -1,6 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
+import { fieldPos } from './zplHelpers';
 
 export interface DataMatrixProps {
   content: string;
@@ -22,7 +23,7 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
   toZPL: (obj) => {
     const p = obj.props;
     return [
-      `^FO${obj.x},${obj.y}`,
+      fieldPos(obj),
       `^BXN,${p.dimension},${p.quality}`,
       `^FD${p.content}^FS`,
     ].join('');

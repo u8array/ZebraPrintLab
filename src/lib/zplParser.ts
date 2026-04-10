@@ -34,8 +34,8 @@ function int(s: string | undefined, fallback = 0): number {
   return isNaN(n) ? fallback : n;
 }
 
-function makeObj(type: string, x: number, y: number, props: unknown): LabelObject {
-  return { id: crypto.randomUUID(), type, x, y, rotation: 0, props } as LabelObject;
+function makeObj(type: string, x: number, y: number, props: unknown, positionType?: 'FO' | 'FT'): LabelObject {
+  return { id: crypto.randomUUID(), type, x, y, rotation: 0, positionType, props } as LabelObject;
 }
 
 /** Decode ^FH hex escapes: replaces {delimiter}XX with the character for hex XX */
@@ -79,77 +79,56 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let fhActive = false;
   let fhDelimiter = '_';
 
-  // ^FT baseline correction: FT positions at the text baseline, FO at top-left corner.
-  // The offset must be applied at flush time (after ^A0 sets fontHeight/rotation).
+  // ^FT vs ^FO: store position type so we can reproduce exactly in re-export.
   let positionIsFT = false;
-
-  const ftCorrectedPos = (): { ox: number; oy: number } => {
-    if (!positionIsFT) return { ox: x, oy: y };
-    switch (fieldType) {
-      case 'text':
-        if (textRot === 'N') return { ox: x, oy: y - textH };
-        if (textRot === 'R') return { ox: x - textH, oy: y };
-        // I (180°) and B (270°): typeset point is at top edge — no offset needed
-        break;
-      case 'code128':
-      case 'code39':
-      case 'ean13':
-        return { ox: x, oy: y - bcHeight };
-      case 'qrcode':
-        return { ox: x, oy: y - qrMag * 25 };
-      case 'datamatrix':
-        return { ox: x, oy: y - dmDim * 20 };
-    }
-    return { ox: x, oy: y };
-  };
 
   const flushField = () => {
     if (!fieldType || pendingFD === null) return;
     const content = fhActive ? decodeFH(pendingFD, fhDelimiter) : pendingFD;
-    const { ox, oy } = ftCorrectedPos();
+    const posType: 'FT' | 'FO' = positionIsFT ? 'FT' : 'FO';
 
     switch (fieldType) {
       case 'text':
         objects.push(
-          makeObj('text', ox, oy, {
+          makeObj('text', x, y, {
             content,
             fontHeight: textH,
             fontWidth: textW,
             rotation: textRot,
             reverse: lrActive || undefined,
-          } satisfies TextProps),
+          } satisfies TextProps, posType),
         );
         break;
       case 'code128':
         objects.push(
-          makeObj('code128', ox, oy, {
+          makeObj('code128', x, y, {
             content,
             height: bcHeight,
             moduleWidth: byModuleWidth,
             printInterpretation: bcInterp,
             checkDigit: bcCheck,
-          } satisfies Code128Props),
+          } satisfies Code128Props, posType),
         );
         break;
       case 'code39':
         objects.push(
-          makeObj('code39', ox, oy, {
+          makeObj('code39', x, y, {
             content,
             height: bcHeight,
             moduleWidth: byModuleWidth,
             printInterpretation: bcInterp,
             checkDigit: bcCheck,
-          } satisfies Code39Props),
+          } satisfies Code39Props, posType),
         );
         break;
       case 'ean13':
         objects.push(
-          makeObj('ean13', ox, oy, {
+          makeObj('ean13', x, y, {
             content,
             height: bcHeight,
             moduleWidth: byModuleWidth,
             printInterpretation: bcInterp,
-          } satisfies Ean13Props),
+          } satisfies Ean13Props, posType),
         );
         break;
       case 'qrcode': {
@@ -157,21 +136,21 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         const ec = (content[0] ?? 'Q') as QrCodeProps['errorCorrection'];
         const data = content.slice(3); // skip "{ec}A,"
         objects.push(
-          makeObj('qrcode', ox, oy, {
+          makeObj('qrcode', x, y, {
             content: data,
             magnification: qrMag,
             errorCorrection: ec,
-          } satisfies QrCodeProps),
+          } satisfies QrCodeProps, posType),
         );
         break;
       }
       case 'datamatrix':
         objects.push(
-          makeObj('datamatrix', ox, oy, {
+          makeObj('datamatrix', x, y, {
             content,
             dimension: dmDim,
             quality: dmQuality,
-          } satisfies DataMatrixProps),
+          } satisfies DataMatrixProps, posType),
         );
         break;
     }

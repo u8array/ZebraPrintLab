@@ -1,6 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
+import { fieldPos } from './zplHelpers';
 
 export interface Code128Props {
   content: string;
@@ -29,7 +30,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
     const check = p.checkDigit ? 'Y' : 'N';
     return [
       p.moduleWidth !== 2 ? `^BY${p.moduleWidth}` : '',
-      `^FO${obj.x},${obj.y}`,
+      fieldPos(obj),
       `^BCN,${p.height},${interp},N,${check}`,
       `^FD${p.content}^FS`,
     ].filter(Boolean).join('');

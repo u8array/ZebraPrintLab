@@ -1,6 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
+import { fieldPos } from './zplHelpers';
 
 export interface BoxProps {
   width: number;
@@ -31,7 +32,7 @@ export const box: ObjectTypeDefinition<BoxProps> = {
     const t = p.filled ? Math.min(p.width, p.height) : p.thickness;
     return [
       p.reverse ? '^LRY' : '',
-      `^FO${obj.x},${obj.y}`,
+      fieldPos(obj),
       `^GB${p.width},${p.height},${t},${p.color},${p.rounding}`,
       '^FS',
       p.reverse ? '^LRN' : '',

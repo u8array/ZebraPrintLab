@@ -1,6 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
+import { fieldPos } from './zplHelpers';
 
 export interface Ean13Props {
   content: string;        // 12 digits — ZPL appends the check digit automatically
@@ -26,7 +27,7 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
     const interp = p.printInterpretation ? 'Y' : 'N';
     return [
       p.moduleWidth !== 2 ? `^BY${p.moduleWidth}` : '',
-      `^FO${obj.x},${obj.y}`,
+      fieldPos(obj),
       `^BEN,${p.height},${interp},N`,
       `^FD${p.content}^FS`,
     ].filter(Boolean).join('');

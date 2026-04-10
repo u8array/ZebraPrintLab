@@ -16,6 +16,10 @@ export interface LabelObjectBase {
   x: number;
   y: number;
   rotation: number;
+  /** How this object's x/y were originally positioned.
+   *  'FT' = field typeset (baseline), 'FO' = field origin (top-left).
+   *  Defaults to 'FO' for new objects. */
+  positionType?: 'FO' | 'FT';
 }
 
 export type ObjectGroup = 'text' | 'code' | 'shape';
