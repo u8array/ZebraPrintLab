@@ -20,12 +20,20 @@ const zhHant = {
     dpmm8: '8 點/公釐 — 203 dpi',
     dpmm12: '12 點/公釐 — 300 dpi',
     dpmm24: '24 點/公釐 — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: '檔案',
     importZpl: '匯入 ZPL',
     exportZpl: '匯出 ZPL',
+    newDesign: '新增設計',
     openDesign: '開啟設計',
     saveDesign: '儲存設計',
     print: '列印',
@@ -54,6 +62,7 @@ const zhHant = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: '內容',
@@ -70,6 +79,7 @@ const zhHant = {
       colorB: 'B — 黑色',
       colorW: 'W — 白色',
       rounding: '圓角 (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: '內容',
@@ -117,6 +127,7 @@ const zhHant = {
       color: '顏色',
       colorB: 'B — 黑色',
       colorW: 'W — 白色',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: '起始值',

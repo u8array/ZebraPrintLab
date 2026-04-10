@@ -20,12 +20,20 @@ const he = {
     dpmm8: '8 נקודות/מ"מ — 203 dpi',
     dpmm12: '12 נקודות/מ"מ — 300 dpi',
     dpmm24: '24 נקודות/מ"מ — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: 'קובץ',
     importZpl: 'ייבוא ZPL',
     exportZpl: 'ייצוא ZPL',
+    newDesign: 'עיצוב חדש',
     openDesign: 'פתח עיצוב',
     saveDesign: 'שמור עיצוב',
     print: 'הדפסה',
@@ -54,6 +62,7 @@ const he = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: 'תוכן',
@@ -70,6 +79,7 @@ const he = {
       colorB: 'B — שחור',
       colorW: 'W — לבן',
       rounding: 'עיגול (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: 'תוכן',
@@ -117,6 +127,7 @@ const he = {
       color: 'צבע',
       colorB: 'B — שחור',
       colorW: 'W — לבן',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: 'ערך התחלתי',

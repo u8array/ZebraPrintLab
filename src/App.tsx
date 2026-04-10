@@ -12,6 +12,7 @@ import {
   ArrowUturnRightIcon,
   ArrowUpTrayIcon,
   ArrowDownTrayIcon,
+  DocumentPlusIcon,
   FolderOpenIcon,
   DocumentArrowDownIcon,
   PrinterIcon,
@@ -72,6 +73,10 @@ function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [undo, redo, duplicateObject, setCanvasSettings]);
+
+  const handleNew = () => {
+    loadDesign({ widthMm: 100, heightMm: 60, dpmm: 8 }, []);
+  };
 
   const handleSave = () => {
     const data = JSON.stringify({ label, objects }, null, 2);
@@ -191,6 +196,10 @@ function App() {
           <div className="w-px h-4 bg-border mx-1" />
 
           <DropdownMenu label={t.app.file}>
+            <DropdownItem icon={DocumentPlusIcon} onClick={handleNew}>
+              {t.app.newDesign}
+            </DropdownItem>
+            <DropdownSeparator />
             <DropdownItem icon={ArrowUpTrayIcon} onClick={() => setShowZplImport(true)}>
               {t.app.importZpl}
             </DropdownItem>

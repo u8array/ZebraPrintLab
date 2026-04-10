@@ -9,6 +9,7 @@ export interface BoxProps {
   filled: boolean;
   color: 'B' | 'W';
   rounding: number;
+  reverse?: boolean;
 }
 
 export const box: ObjectTypeDefinition<BoxProps> = {
@@ -29,10 +30,12 @@ export const box: ObjectTypeDefinition<BoxProps> = {
     const p = obj.props;
     const t = p.filled ? Math.min(p.width, p.height) : p.thickness;
     return [
+      p.reverse ? '^LRY' : '',
       `^FO${obj.x},${obj.y}`,
       `^GB${p.width},${p.height},${t},${p.color},${p.rounding}`,
-      `^FS`,
-    ].join('');
+      '^FS',
+      p.reverse ? '^LRN' : '',
+    ].filter(Boolean).join('');
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
@@ -110,6 +113,16 @@ export const box: ObjectTypeDefinition<BoxProps> = {
             />
           </div>
         </div>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="accent-accent"
+            checked={p.reverse ?? false}
+            onChange={(e) => onChange({ reverse: e.target.checked })}
+          />
+          <span className={labelCls}>{t.registry.box.reverse}</span>
+        </label>
       </div>
     );
   },

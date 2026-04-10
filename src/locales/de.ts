@@ -20,12 +20,20 @@ const de = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
+    printQuantity: 'Druckanzahl',
+    mediaMode: 'Medien-Modus',
+    mediaModeT: 'T — Abriss',
+    mediaModeV: 'V — Abzug',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label-Versatz (Punkte)',
   },
 
   app: {
     file: 'Datei',
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
+    newDesign: 'Neues Design',
     openDesign: 'Design öffnen',
     saveDesign: 'Design speichern',
     print: 'Drucken',
@@ -54,6 +62,7 @@ const de = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invertieren (^LR)',
     },
     code128: {
       content: 'Inhalt',
@@ -70,6 +79,7 @@ const de = {
       colorB: 'B — Schwarz',
       colorW: 'W — Weiß',
       rounding: 'Rundung (0–8)',
+      reverse: 'Invertieren (^LR)',
     },
     code39: {
       content: 'Inhalt',
@@ -117,6 +127,7 @@ const de = {
       color: 'Farbe',
       colorB: 'B — Schwarz',
       colorW: 'W — Weiß',
+      reverse: 'Invertieren (^LR)',
     },
     serial: {
       content: 'Startwert',

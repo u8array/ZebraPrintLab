@@ -20,12 +20,20 @@ const el = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: 'Αρχείο',
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
+    newDesign: 'Νέο σχέδιο',
     openDesign: 'Άνοιγμα σχεδίου',
     saveDesign: 'Αποθήκευση σχεδίου',
     print: 'Εκτύπωση',
@@ -54,6 +62,7 @@ const el = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: 'Περιεχόμενο',
@@ -70,6 +79,7 @@ const el = {
       colorB: 'B — Μαύρο',
       colorW: 'W — Λευκό',
       rounding: 'Στρογγυλοποίηση (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: 'Περιεχόμενο',
@@ -117,6 +127,7 @@ const el = {
       color: 'Χρώμα',
       colorB: 'B — Μαύρο',
       colorW: 'W — Λευκό',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: 'Αρχική τιμή',

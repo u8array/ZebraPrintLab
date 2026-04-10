@@ -3,6 +3,7 @@ import { ObjectRegistry } from '../../registry';
 import { dotsToMm, mmToDots } from '../../lib/coordinates';
 import { useT } from '../../lib/useT';
 import { inputCls, labelCls } from './styles';
+import type { LabelConfig } from '../../types/ObjectType';
 
 export function PropertiesPanel() {
   const t = useT();
@@ -95,8 +96,8 @@ const PRESETS: Preset[] = [
 // ── LabelConfigPanel ───────────────────────────────────────────────────────────
 
 interface LabelConfigPanelProps {
-  label: { widthMm: number; heightMm: number; dpmm: number };
-  onUpdate: (config: Partial<{ widthMm: number; heightMm: number; dpmm: number }>) => void;
+  label: LabelConfig;
+  onUpdate: (config: Partial<LabelConfig>) => void;
 }
 
 function LabelConfigPanel({ label, onUpdate }: LabelConfigPanelProps) {
@@ -170,6 +171,44 @@ function LabelConfigPanel({ label, onUpdate }: LabelConfigPanelProps) {
             <option value={12}>{t.label.dpmm12}</option>
             <option value={24}>{t.label.dpmm24}</option>
           </select>
+        </div>
+
+        <div className="border-t border-border" />
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>{t.label.mediaMode}</label>
+          <select
+            className={inputCls}
+            value={label.mediaMode ?? ''}
+            onChange={(e) => onUpdate({ mediaMode: (e.target.value as LabelConfig['mediaMode']) || undefined })}
+          >
+            <option value="">{t.label.presetCustom}</option>
+            <option value="T">{t.label.mediaModeT}</option>
+            <option value="V">{t.label.mediaModeV}</option>
+            <option value="D">{t.label.mediaModeD}</option>
+            <option value="K">{t.label.mediaModeK}</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>{t.label.labelShift}</label>
+          <input
+            type="number"
+            className={inputCls}
+            value={label.labelShift ?? 0}
+            onChange={(e) => onUpdate({ labelShift: Number(e.target.value) || undefined })}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>{t.label.printQuantity}</label>
+          <input
+            type="number"
+            className={inputCls}
+            value={label.printQuantity ?? 1}
+            min={1}
+            onChange={(e) => onUpdate({ printQuantity: Number(e.target.value) > 1 ? Number(e.target.value) : undefined })}
+          />
         </div>
 
       </div>

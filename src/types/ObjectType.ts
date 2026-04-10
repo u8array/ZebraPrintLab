@@ -4,6 +4,9 @@ export interface LabelConfig {
   widthMm: number;
   heightMm: number;
   dpmm: number;
+  printQuantity?: number;
+  mediaMode?: 'T' | 'V' | 'D' | 'K';
+  labelShift?: number;
 }
 
 /** Common fields shared by every label object, without the typed `props`. */

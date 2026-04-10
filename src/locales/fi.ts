@@ -20,12 +20,20 @@ const fi = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: 'Tiedosto',
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
+    newDesign: 'Uusi rakenne',
     openDesign: 'Avaa rakenne',
     saveDesign: 'Tallenna rakenne',
     print: 'Tulosta',
@@ -54,6 +62,7 @@ const fi = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: 'Sisältö',
@@ -70,6 +79,7 @@ const fi = {
       colorB: 'B — Musta',
       colorW: 'W — Valkoinen',
       rounding: 'Pyöristys (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: 'Sisältö',
@@ -117,6 +127,7 @@ const fi = {
       color: 'Väri',
       colorB: 'B — Musta',
       colorW: 'W — Valkoinen',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: 'Aloitusarvo',

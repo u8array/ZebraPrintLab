@@ -20,12 +20,20 @@ const zhHans = {
     dpmm8: '8 点/毫米 — 203 dpi',
     dpmm12: '12 点/毫米 — 300 dpi',
     dpmm24: '24 点/毫米 — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: '文件',
     importZpl: '导入 ZPL',
     exportZpl: '导出 ZPL',
+    newDesign: '新建设计',
     openDesign: '打开设计',
     saveDesign: '保存设计',
     print: '打印',
@@ -54,6 +62,7 @@ const zhHans = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: '内容',
@@ -70,6 +79,7 @@ const zhHans = {
       colorB: 'B — 黑色',
       colorW: 'W — 白色',
       rounding: '圆角 (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: '内容',
@@ -117,6 +127,7 @@ const zhHans = {
       color: '颜色',
       colorB: 'B — 黑色',
       colorW: 'W — 白色',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: '起始值',

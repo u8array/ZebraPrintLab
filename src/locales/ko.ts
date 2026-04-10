@@ -20,12 +20,20 @@ const ko = {
     dpmm8: '8 점/mm — 203 dpi',
     dpmm12: '12 점/mm — 300 dpi',
     dpmm24: '24 점/mm — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: '파일',
     importZpl: 'ZPL 가져오기',
     exportZpl: 'ZPL 내보내기',
+    newDesign: '새 디자인',
     openDesign: '디자인 열기',
     saveDesign: '디자인 저장',
     print: '인쇄',
@@ -54,6 +62,7 @@ const ko = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: '내용',
@@ -70,6 +79,7 @@ const ko = {
       colorB: 'B — 검정',
       colorW: 'W — 흰색',
       rounding: '모서리 둥글기 (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: '내용',
@@ -117,6 +127,7 @@ const ko = {
       color: '색상',
       colorB: 'B — 검정',
       colorW: 'W — 흰색',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: '시작 값',

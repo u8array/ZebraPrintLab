@@ -20,12 +20,20 @@ const nl = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: 'Bestand',
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
+    newDesign: 'Nieuw ontwerp',
     openDesign: 'Ontwerp openen',
     saveDesign: 'Ontwerp opslaan',
     print: 'Afdrukken',
@@ -54,6 +62,7 @@ const nl = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: 'Inhoud',
@@ -70,6 +79,7 @@ const nl = {
       colorB: 'B — Zwart',
       colorW: 'W — Wit',
       rounding: 'Afronding (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: 'Inhoud',
@@ -117,6 +127,7 @@ const nl = {
       color: 'Kleur',
       colorB: 'B — Zwart',
       colorW: 'W — Wit',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: 'Startwaarde',

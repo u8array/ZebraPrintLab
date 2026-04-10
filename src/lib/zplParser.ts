@@ -78,24 +78,50 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let fhActive = false;
   let fhDelimiter = '_';
 
+  // ^FT baseline correction: FT positions at the text baseline, FO at top-left corner.
+  // The offset must be applied at flush time (after ^A0 sets fontHeight/rotation).
+  let positionIsFT = false;
+
+  const ftCorrectedPos = (): { ox: number; oy: number } => {
+    if (!positionIsFT) return { ox: x, oy: y };
+    switch (fieldType) {
+      case 'text':
+        if (textRot === 'N') return { ox: x, oy: y - textH };
+        if (textRot === 'R') return { ox: x - textH, oy: y };
+        // I (180°) and B (270°): typeset point is at top edge — no offset needed
+        break;
+      case 'code128':
+      case 'code39':
+      case 'ean13':
+        return { ox: x, oy: y - bcHeight };
+      case 'qrcode':
+        return { ox: x, oy: y - qrMag * 25 };
+      case 'datamatrix':
+        return { ox: x, oy: y - dmDim * 20 };
+    }
+    return { ox: x, oy: y };
+  };
+
   const flushField = () => {
     if (!fieldType || pendingFD === null) return;
     const content = fhActive ? decodeFH(pendingFD, fhDelimiter) : pendingFD;
+    const { ox, oy } = ftCorrectedPos();
 
     switch (fieldType) {
       case 'text':
         objects.push(
-          makeObj('text', x, y, {
+          makeObj('text', ox, oy, {
             content,
             fontHeight: textH,
             fontWidth: textW,
             rotation: textRot,
+            reverse: lrActive || undefined,
           } satisfies TextProps),
         );
         break;
       case 'code128':
         objects.push(
-          makeObj('code128', x, y, {
+          makeObj('code128', ox, oy, {
             content,
             height: bcHeight,
             printInterpretation: bcInterp,
@@ -105,7 +131,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         break;
       case 'code39':
         objects.push(
-          makeObj('code39', x, y, {
+          makeObj('code39', ox, oy, {
             content,
             height: bcHeight,
             printInterpretation: bcInterp,
@@ -115,7 +141,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         break;
       case 'ean13':
         objects.push(
-          makeObj('ean13', x, y, {
+          makeObj('ean13', ox, oy, {
             content,
             height: bcHeight,
             printInterpretation: bcInterp,
@@ -127,7 +153,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         const ec = (content[0] ?? 'Q') as QrCodeProps['errorCorrection'];
         const data = content.slice(3); // skip "{ec}A,"
         objects.push(
-          makeObj('qrcode', x, y, {
+          makeObj('qrcode', ox, oy, {
             content: data,
             magnification: qrMag,
             errorCorrection: ec,
@@ -137,7 +163,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       }
       case 'datamatrix':
         objects.push(
-          makeObj('datamatrix', x, y, {
+          makeObj('datamatrix', ox, oy, {
             content,
             dimension: dmDim,
             quality: dmQuality,
@@ -167,11 +193,18 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       }
 
       // ── Field origin ──────────────────────────────────────────────
-      case 'FO':
+      case 'FO': {
+        flushField();
+        x = int(p[0]);
+        y = int(p[1]);
+        positionIsFT = false;
+        break;
+      }
       case 'FT': {
         flushField();
         x = int(p[0]);
         y = int(p[1]);
+        positionIsFT = true;
         break;
       }
 
@@ -244,7 +277,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       }
       case 'FS': {
         flushField();
-        fhActive = false; // ^FH applies only to the current field
+        fhActive = false;
+        positionIsFT = false;
         break;
       }
 
@@ -257,11 +291,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       // ── Graphics ──────────────────────────────────────────────────
       case 'GB': {
         // ^GB{w},{h},{t},{color},{rounding}
-        const w = int(p[0], 10);
-        const h = int(p[1], 10);
+        // ZPL: w=0 or h=0 means "use thickness value" for that dimension
         const t = int(p[2], 3);
-        const rawColor = (p[3] ?? 'B') as 'B' | 'W';
-        const color: 'B' | 'W' = lrActive ? (rawColor === 'B' ? 'W' : 'B') : rawColor;
+        const rawW = int(p[0], t);
+        const rawH = int(p[1], t);
+        const w = rawW === 0 ? t : rawW;
+        const h = rawH === 0 ? t : rawH;
+        const color = (p[3] ?? 'B') as 'B' | 'W';
         const rounding = int(p[4], 0);
 
         // Distinguish line from box: a line has one dimension equal to thickness
@@ -272,6 +308,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               length: w,
               thickness: t,
               color,
+              reverse: lrActive || undefined,
             } satisfies LineProps),
           );
         } else if (w === t && h > t) {
@@ -281,6 +318,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               length: h,
               thickness: t,
               color,
+              reverse: lrActive || undefined,
             } satisfies LineProps),
           );
         } else {
@@ -293,6 +331,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               filled,
               color,
               rounding,
+              reverse: lrActive || undefined,
             } satisfies BoxProps),
           );
         }
@@ -303,8 +342,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         const w = int(p[0], 100);
         const h = int(p[1], 100);
         const t = int(p[2], 3);
-        const rawColor = (p[3] ?? 'B') as 'B' | 'W';
-        const color: 'B' | 'W' = lrActive ? (rawColor === 'B' ? 'W' : 'B') : rawColor;
+        const color = (p[3] ?? 'B') as 'B' | 'W';
         const filled = t >= Math.min(w, h);
         objects.push(
           makeObj('ellipse', x, y, {
@@ -318,14 +356,28 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         break;
       }
 
+      // ── Label print settings ──────────────────────────────────────
+      case 'PQ': {
+        const qty = int(p[0], 0);
+        if (qty > 0) labelConfig.printQuantity = qty;
+        break;
+      }
+      case 'MM': {
+        const mode = (rest[0] ?? '').toUpperCase() as LabelConfig['mediaMode'];
+        if (mode) labelConfig.mediaMode = mode;
+        break;
+      }
+      case 'LS': {
+        const shift = int(rest, 0);
+        if (shift !== 0) labelConfig.labelShift = shift;
+        break;
+      }
+
       // ── Ignored / structural ──────────────────────────────────────
       case 'XA':
       case 'XZ':
       case 'CI': // character set encoding
-      case 'LS': // label shift
-      case 'MM': // media mode
       case 'MT': // media type
-      case 'PQ': // print quantity
         break;
 
       default:

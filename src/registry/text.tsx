@@ -7,6 +7,7 @@ export interface TextProps {
   fontHeight: number;
   fontWidth: number;
   rotation: 'N' | 'R' | 'I' | 'B';
+  reverse?: boolean;
 }
 
 export const text: ObjectTypeDefinition<TextProps> = {
@@ -24,10 +25,12 @@ export const text: ObjectTypeDefinition<TextProps> = {
   toZPL: (obj) => {
     const p = obj.props;
     return [
+      p.reverse ? '^LRY' : '',
       `^FO${obj.x},${obj.y}`,
       `^A0${p.rotation},${p.fontHeight},${p.fontWidth}`,
       `^FD${p.content}^FS`,
-    ].join('');
+      p.reverse ? '^LRN' : '',
+    ].filter(Boolean).join('');
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
@@ -80,6 +83,16 @@ export const text: ObjectTypeDefinition<TextProps> = {
             <option value="B">{t.registry.text.rotationB}</option>
           </select>
         </div>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="accent-accent"
+            checked={p.reverse ?? false}
+            onChange={(e) => onChange({ reverse: e.target.checked })}
+          />
+          <span className={labelCls}>{t.registry.text.reverse}</span>
+        </label>
       </div>
     );
   },

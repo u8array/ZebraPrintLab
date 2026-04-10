@@ -20,12 +20,20 @@ const ar = {
     dpmm8: '8 نقطة/مم — 203 dpi',
     dpmm12: '12 نقطة/مم — 300 dpi',
     dpmm24: '24 نقطة/مم — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: 'ملف',
     importZpl: 'استيراد ZPL',
     exportZpl: 'تصدير ZPL',
+    newDesign: 'تصميم جديد',
     openDesign: 'فتح تصميم',
     saveDesign: 'حفظ تصميم',
     print: 'طباعة',
@@ -54,6 +62,7 @@ const ar = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: 'المحتوى',
@@ -70,6 +79,7 @@ const ar = {
       colorB: 'B — أسود',
       colorW: 'W — أبيض',
       rounding: 'التدوير (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: 'المحتوى',
@@ -117,6 +127,7 @@ const ar = {
       color: 'اللون',
       colorB: 'B — أسود',
       colorW: 'W — أبيض',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: 'القيمة الابتدائية',

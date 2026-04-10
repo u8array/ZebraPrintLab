@@ -8,6 +8,7 @@ export interface LineProps {
   length: number;
   thickness: number;
   color: 'B' | 'W';
+  reverse?: boolean;
 }
 
 export const line: ObjectTypeDefinition<LineProps> = {
@@ -27,14 +28,15 @@ export const line: ObjectTypeDefinition<LineProps> = {
     const t = p.thickness;
     const l = p.length;
     const a = ((p.angle % 360) + 360) % 360; // normalise to [0, 360)
+    const lr = p.reverse ? ['^LRY', '^LRN'] : ['', ''];
 
     // Pure horizontal
     if (a === 0 || a === 180) {
-      return `^FO${obj.x},${obj.y}^GB${l},${t},${t},${p.color},0^FS`;
+      return `${lr[0]}^FO${obj.x},${obj.y}^GB${l},${t},${t},${p.color},0^FS${lr[1]}`;
     }
     // Pure vertical
     if (a === 90 || a === 270) {
-      return `^FO${obj.x},${obj.y}^GB${t},${l},${t},${p.color},0^FS`;
+      return `${lr[0]}^FO${obj.x},${obj.y}^GB${t},${l},${t},${p.color},0^FS${lr[1]}`;
     }
 
     // Diagonal — use ^GD (bounding-box diagonal command)
@@ -43,12 +45,10 @@ export const line: ObjectTypeDefinition<LineProps> = {
     const dy = l * Math.sin(rad);
     const w = Math.max(1, Math.abs(Math.round(dx)));
     const h = Math.max(1, Math.abs(Math.round(dy)));
-    // Orientation: R = / (high end right), L = \ (high end left)
     const orientation = dx * dy >= 0 ? 'L' : 'R';
-    // ^FO must point to the top-left corner of the bounding box
     const boxX = obj.x + (dx < 0 ? Math.round(dx) : 0);
     const boxY = obj.y + (dy < 0 ? Math.round(dy) : 0);
-    return `^FO${boxX},${boxY}^GD${w},${h},${t},${p.color},${orientation}^FS`;
+    return `${lr[0]}^FO${boxX},${boxY}^GD${w},${h},${t},${p.color},${orientation}^FS${lr[1]}`;
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
@@ -102,6 +102,16 @@ export const line: ObjectTypeDefinition<LineProps> = {
             <option value="W">{t.registry.line.colorW}</option>
           </select>
         </div>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="accent-accent"
+            checked={p.reverse ?? false}
+            onChange={(e) => onChange({ reverse: e.target.checked })}
+          />
+          <span className={labelCls}>{t.registry.line.reverse}</span>
+        </label>
       </div>
     );
   },

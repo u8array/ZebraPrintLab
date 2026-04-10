@@ -20,12 +20,20 @@ const sv = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: 'Fil',
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
+    newDesign: 'Nytt design',
     openDesign: 'Öppna design',
     saveDesign: 'Spara design',
     print: 'Skriv ut',
@@ -54,6 +62,7 @@ const sv = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: 'Innehåll',
@@ -70,6 +79,7 @@ const sv = {
       colorB: 'B — Svart',
       colorW: 'W — Vit',
       rounding: 'Avrundning (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: 'Innehåll',
@@ -117,6 +127,7 @@ const sv = {
       color: 'Färg',
       colorB: 'B — Svart',
       colorW: 'W — Vit',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: 'Startvärde',

@@ -20,12 +20,20 @@ const fa = {
     dpmm8: '8 نقطه/میلی‌متر — 203 dpi',
     dpmm12: '12 نقطه/میلی‌متر — 300 dpi',
     dpmm24: '24 نقطه/میلی‌متر — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: 'فایل',
     importZpl: 'وارد کردن ZPL',
     exportZpl: 'خروجی ZPL',
+    newDesign: 'طرح جدید',
     openDesign: 'باز کردن طرح',
     saveDesign: 'ذخیره طرح',
     print: 'چاپ',
@@ -54,6 +62,7 @@ const fa = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: 'محتوا',
@@ -70,6 +79,7 @@ const fa = {
       colorB: 'B — مشکی',
       colorW: 'W — سفید',
       rounding: 'گردی (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: 'محتوا',
@@ -117,6 +127,7 @@ const fa = {
       color: 'رنگ',
       colorB: 'B — مشکی',
       colorW: 'W — سفید',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: 'مقدار شروع',

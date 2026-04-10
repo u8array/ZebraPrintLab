@@ -35,7 +35,9 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
   const x2 = x1 + lenPx * Math.cos(rad);
   const y2 = y1 + lenPx * Math.sin(rad);
 
-  const strokeColor = p.color === 'B' ? '#000000' : '#cccccc';
+  const strokeColor = p.reverse
+    ? (p.color === 'B' ? '#ffffff' : '#000000')
+    : (p.color === 'B' ? '#000000' : '#cccccc');
   const lineStrokeWidth = Math.max(dotsToPx(p.thickness, scale, dpmm), 1);
 
   // Live positions while handles are being dragged (snapped preview)
@@ -195,6 +197,41 @@ function KonvaObjectInner({
     const zplRotationDeg: Record<typeof p.rotation, number> = {
       N: 0, R: 90, I: 180, B: 270,
     };
+
+    if (p.reverse) {
+      const approxW = fontSize * p.content.length * 0.62;
+      const approxH = fontSize * 1.3;
+      return (
+        <Group
+          id={obj.id}
+          x={x}
+          y={y}
+          rotation={zplRotationDeg[p.rotation]}
+          draggable
+          onClick={onSelect}
+          onTap={onSelect}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+        >
+          <Rect
+            width={approxW}
+            height={approxH}
+            fill="#000000"
+            stroke={isSelected ? '#6366f1' : undefined}
+            strokeWidth={isSelected ? 1.5 : 0}
+          />
+          <Text
+            text={p.content}
+            fontSize={fontSize}
+            fontFamily="'Barlow', sans-serif"
+            fontStyle="bold"
+            fill="#ffffff"
+            y={approxH * 0.1}
+          />
+        </Group>
+      );
+    }
+
     return (
       <Text
         id={obj.id}
@@ -382,8 +419,38 @@ function KonvaObjectInner({
     const p = obj.props;
     const w = dotsToPx(p.width, scale, dpmm);
     const h = dotsToPx(p.height, scale, dpmm);
-    const stroke = p.color === 'B' ? '#000000' : '#cccccc';
     const strokeWidth = Math.max(dotsToPx(p.thickness, scale, dpmm), 0.5);
+    const cornerRadius = p.rounding * dotsToPx(Math.min(p.width, p.height) / 8, scale, dpmm);
+
+    if (p.reverse) {
+      // Black background + inverted content
+      const invStroke = p.color === 'B' ? '#ffffff' : '#000000';
+      const invFill = p.filled ? (p.color === 'B' ? '#ffffff' : '#000000') : '#000000';
+      return (
+        <Group
+          id={obj.id}
+          x={x}
+          y={y}
+          draggable
+          onClick={onSelect}
+          onTap={onSelect}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+        >
+          <Rect width={w} height={h} fill="#000000" cornerRadius={cornerRadius} />
+          <Rect
+            width={w}
+            height={h}
+            stroke={isSelected ? '#6366f1' : invStroke}
+            strokeWidth={isSelected ? Math.max(strokeWidth, 1.5) : strokeWidth}
+            fill={invFill}
+            cornerRadius={cornerRadius}
+          />
+        </Group>
+      );
+    }
+
+    const stroke = p.color === 'B' ? '#000000' : '#cccccc';
     const fill = p.filled ? (p.color === 'B' ? '#000000' : '#ffffff') : 'transparent';
     return (
       <Rect
@@ -395,7 +462,7 @@ function KonvaObjectInner({
         stroke={isSelected ? '#6366f1' : stroke}
         strokeWidth={isSelected ? Math.max(strokeWidth, 1.5) : strokeWidth}
         fill={fill}
-        cornerRadius={p.rounding * dotsToPx(Math.min(p.width, p.height) / 8, scale, dpmm)}
+        cornerRadius={cornerRadius}
         draggable
         onClick={onSelect}
         onTap={onSelect}

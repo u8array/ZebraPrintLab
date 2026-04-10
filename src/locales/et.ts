@@ -20,12 +20,20 @@ const et = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: 'Fail',
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
+    newDesign: 'Uus kujundus',
     openDesign: 'Ava kujundus',
     saveDesign: 'Salvesta kujundus',
     print: 'Prindi',
@@ -54,6 +62,7 @@ const et = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: 'Sisu',
@@ -70,6 +79,7 @@ const et = {
       colorB: 'B — Must',
       colorW: 'W — Valge',
       rounding: 'Ümardus (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: 'Sisu',
@@ -117,6 +127,7 @@ const et = {
       color: 'Värvus',
       colorB: 'B — Must',
       colorW: 'W — Valge',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: 'Algväärtus',

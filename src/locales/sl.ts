@@ -20,12 +20,20 @@ const sl = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: 'Datoteka',
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
+    newDesign: 'Nov dizajn',
     openDesign: 'Odpri dizajn',
     saveDesign: 'Shrani dizajn',
     print: 'Natisni',
@@ -54,6 +62,7 @@ const sl = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: 'Vsebina',
@@ -70,6 +79,7 @@ const sl = {
       colorB: 'B — Črna',
       colorW: 'W — Bela',
       rounding: 'Zaobljenje (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: 'Vsebina',
@@ -117,6 +127,7 @@ const sl = {
       color: 'Barva',
       colorB: 'B — Črna',
       colorW: 'W — Bela',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: 'Začetna vrednost',

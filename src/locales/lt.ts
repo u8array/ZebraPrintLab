@@ -20,12 +20,20 @@ const lt = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: 'Failas',
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
+    newDesign: 'Naujas dizainas',
     openDesign: 'Atidaryti dizainą',
     saveDesign: 'Išsaugoti dizainą',
     print: 'Spausdinti',
@@ -54,6 +62,7 @@ const lt = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: 'Turinys',
@@ -70,6 +79,7 @@ const lt = {
       colorB: 'B — Juoda',
       colorW: 'W — Balta',
       rounding: 'Apvalinimas (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: 'Turinys',
@@ -117,6 +127,7 @@ const lt = {
       color: 'Spalva',
       colorB: 'B — Juoda',
       colorW: 'W — Balta',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: 'Pradinė reikšmė',

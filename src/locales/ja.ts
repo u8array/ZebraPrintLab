@@ -20,12 +20,20 @@ const ja = {
     dpmm8: '8 ドット/mm — 203 dpi',
     dpmm12: '12 ドット/mm — 300 dpi',
     dpmm24: '24 ドット/mm — 600 dpi',
+    printQuantity: 'Print quantity',
+    mediaMode: 'Media mode',
+    mediaModeT: 'T — Tear-off',
+    mediaModeV: 'V — Peel-off',
+    mediaModeD: 'D — Cutter',
+    mediaModeK: 'K — Kiosk',
+    labelShift: 'Label shift (dots)',
   },
 
   app: {
     file: 'ファイル',
     importZpl: 'ZPL インポート',
     exportZpl: 'ZPL エクスポート',
+    newDesign: '新しいデザイン',
     openDesign: 'デザインを開く',
     saveDesign: 'デザインを保存',
     print: '印刷',
@@ -54,6 +62,7 @@ const ja = {
       rotationR: '90° (R)',
       rotationI: '180° (I)',
       rotationB: '270° (B)',
+      reverse: 'Invert (^LR)',
     },
     code128: {
       content: 'コンテンツ',
@@ -70,6 +79,7 @@ const ja = {
       colorB: 'B — 黒',
       colorW: 'W — 白',
       rounding: '角丸 (0–8)',
+      reverse: 'Invert (^LR)',
     },
     code39: {
       content: 'コンテンツ',
@@ -117,6 +127,7 @@ const ja = {
       color: '色',
       colorB: 'B — 黒',
       colorW: 'W — 白',
+      reverse: 'Invert (^LR)',
     },
     serial: {
       content: '開始値',
