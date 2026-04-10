@@ -9,6 +9,11 @@ export interface TextProps {
   fontWidth: number;
   rotation: 'N' | 'R' | 'I' | 'B';
   reverse?: boolean;
+  /** ^FB field block properties */
+  blockWidth?: number;
+  blockLines?: number;
+  blockLineSpacing?: number;
+  blockJustify?: 'L' | 'C' | 'R' | 'J';
 }
 
 export const text: ObjectTypeDefinition<TextProps> = {
@@ -25,10 +30,14 @@ export const text: ObjectTypeDefinition<TextProps> = {
 
   toZPL: (obj) => {
     const p = obj.props;
+    const fbCmd = p.blockWidth
+      ? `^FB${p.blockWidth},${p.blockLines ?? 1},${p.blockLineSpacing ?? 0},${p.blockJustify ?? 'L'},0`
+      : '';
     return [
       p.reverse ? '^LRY' : '',
       fieldPos(obj),
       `^A0${p.rotation},${p.fontHeight},${p.fontWidth}`,
+      fbCmd,
       `^FD${p.content}^FS`,
       p.reverse ? '^LRN' : '',
     ].filter(Boolean).join('');
@@ -94,6 +103,70 @@ export const text: ObjectTypeDefinition<TextProps> = {
           />
           <span className={labelCls}>{t.registry.text.reverse}</span>
         </label>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="accent-accent"
+            checked={!!p.blockWidth}
+            onChange={(e) => onChange(e.target.checked
+              ? { blockWidth: 400, blockLines: 3, blockLineSpacing: 0, blockJustify: 'L' }
+              : { blockWidth: undefined, blockLines: undefined, blockLineSpacing: undefined, blockJustify: undefined },
+            )}
+          />
+          <span className={labelCls}>{t.registry.text.fieldBlock}</span>
+        </label>
+
+        {!!p.blockWidth && (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>{t.registry.text.blockWidth}</label>
+                <input
+                  type="number"
+                  className={inputCls}
+                  value={p.blockWidth}
+                  min={1}
+                  onChange={(e) => onChange({ blockWidth: Number(e.target.value) })}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>{t.registry.text.blockLines}</label>
+                <input
+                  type="number"
+                  className={inputCls}
+                  value={p.blockLines ?? 1}
+                  min={1}
+                  onChange={(e) => onChange({ blockLines: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>{t.registry.text.blockJustify}</label>
+                <select
+                  className={inputCls}
+                  value={p.blockJustify ?? 'L'}
+                  onChange={(e) => onChange({ blockJustify: e.target.value as TextProps['blockJustify'] })}
+                >
+                  <option value="L">{t.registry.text.justifyL}</option>
+                  <option value="C">{t.registry.text.justifyC}</option>
+                  <option value="R">{t.registry.text.justifyR}</option>
+                  <option value="J">{t.registry.text.justifyJ}</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>{t.registry.text.blockLineSpacing}</label>
+                <input
+                  type="number"
+                  className={inputCls}
+                  value={p.blockLineSpacing ?? 0}
+                  onChange={(e) => onChange({ blockLineSpacing: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     );
   },

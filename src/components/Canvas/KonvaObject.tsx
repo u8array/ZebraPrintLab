@@ -156,8 +156,86 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
   );
 }
 
+// Separate component so hooks (useState/useEffect) can be used without violating rules-of-hooks.
+function ImageObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSelect, onChange }: Props) {
+  const obj = obj_ as Extract<LabelObject, { type: 'image' }>;
+  const p = obj.props;
+  const cached = getImage(p.imageId);
+  const w = dotsToPx(p.widthDots, scale, dpmm);
+  const h = cached ? w * (cached.height / cached.width) : w;
+  const x = offsetX + dotsToPx(obj.x, scale, dpmm);
+  const y = offsetY + dotsToPx(obj.y, scale, dpmm);
+
+  const [htmlImg, setHtmlImg] = useState<HTMLImageElement | null>(null);
+  useEffect(() => {
+    if (!cached) {
+      setHtmlImg(null); // eslint-disable-line react-hooks/set-state-in-effect
+      return;
+    }
+    let active = true;
+    const img = new window.Image();
+    img.src = cached.dataUrl;
+    img.onload = () => { if (active) setHtmlImg(img); };
+    return () => { active = false; };
+  }, [cached?.dataUrl, cached]);
+
+  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    onChange({ x: pxToDots(e.target.x() - offsetX, scale, dpmm), y: pxToDots(e.target.y() - offsetY, scale, dpmm) });
+  };
+
+  if (htmlImg && cached) {
+    return (
+      <KImage
+        id={obj.id}
+        x={x}
+        y={y}
+        image={htmlImg}
+        width={w}
+        height={h}
+        stroke={isSelected ? '#6366f1' : undefined}
+        strokeWidth={isSelected ? 2 : 0}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragMove}
+      />
+    );
+  }
+
+  return (
+    <Group
+      id={obj.id}
+      x={x}
+      y={y}
+      draggable
+      onClick={onSelect}
+      onTap={onSelect}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragMove}
+    >
+      <Rect
+        width={w}
+        height={h}
+        fill="#f9fafb"
+        stroke={isSelected ? '#6366f1' : '#9ca3af'}
+        strokeWidth={isSelected ? 2 : 1}
+        dash={[4, 2]}
+      />
+      <Text
+        x={6}
+        y={6}
+        text="🖼"
+        fontSize={Math.max(w * 0.3, 12)}
+        fill="#374151"
+      />
+    </Group>
+  );
+}
+
 export function KonvaObject(props_: Props) {
   if (props_.obj.type === 'line') return <LineObject {...props_} />;
+  if (props_.obj.type === 'image') return <ImageObject {...props_} />;
   return <KonvaObjectInner {...props_} />;
 }
 
@@ -191,9 +269,14 @@ function KonvaObjectInner({
       else if (p.rotation === 'R') { displayX += p.fontHeight; }
       else if (p.rotation === 'I') { displayY += p.fontHeight; }
       else if (p.rotation === 'B') { displayX -= p.fontHeight; }
-    } else if (obj.type === 'code128' || obj.type === 'code39' || obj.type === 'ean13') {
+    } else if (obj.type === 'code128' || obj.type === 'code39' || obj.type === 'ean13'
+      || obj.type === 'upca' || obj.type === 'ean8' || obj.type === 'upce'
+      || obj.type === 'interleaved2of5' || obj.type === 'code93') {
       const p = obj.props as { height: number };
       displayY -= p.height;
+    } else if (obj.type === 'pdf417') {
+      const p = obj.props as { rowHeight: number };
+      displayY -= p.rowHeight * 10;
     } else if (obj.type === 'qrcode') {
       const p = obj.props as { magnification: number };
       displayY -= p.magnification * 25;
@@ -378,6 +461,78 @@ function KonvaObjectInner({
     );
   }
 
+  if (obj.type === 'upca' || obj.type === 'ean8' || obj.type === 'upce'
+    || obj.type === 'interleaved2of5' || obj.type === 'code93') {
+    const p = obj.props;
+    const typeLabel: Record<string, string> = {
+      upca: 'UPC-A', ean8: 'EAN-8', upce: 'UPC-E',
+      interleaved2of5: 'I2/5', code93: 'C93',
+    };
+    return (
+      <Group
+        id={obj.id}
+        x={x}
+        y={y}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+      >
+        <Rect
+          width={dotsToPx(270, scale, dpmm)}
+          height={dotsToPx(p.height + 20, scale, dpmm)}
+          fill="#f9fafb"
+          stroke={isSelected ? '#6366f1' : '#9ca3af'}
+          strokeWidth={isSelected ? 2 : 1}
+          dash={isSelected ? undefined : [4, 2]}
+        />
+        <Text
+          x={6}
+          y={6}
+          text={`${typeLabel[obj.type]} | ${p.content} |`}
+          fontSize={Math.max(dotsToPx(14, scale, dpmm), 8)}
+          fill="#374151"
+        />
+      </Group>
+    );
+  }
+
+  if (obj.type === 'pdf417') {
+    const p = obj.props;
+    const w = dotsToPx(p.columns * p.moduleWidth * 17, scale, dpmm);
+    const h = dotsToPx(p.rowHeight * 10, scale, dpmm);
+    return (
+      <Group
+        id={obj.id}
+        x={x}
+        y={y}
+        draggable
+        onClick={onSelect}
+        onTap={onSelect}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+      >
+        <Rect
+          width={Math.max(w, dotsToPx(100, scale, dpmm))}
+          height={Math.max(h, dotsToPx(60, scale, dpmm))}
+          fill="#f9fafb"
+          stroke={isSelected ? '#6366f1' : '#9ca3af'}
+          strokeWidth={isSelected ? 2 : 1}
+          dash={isSelected ? undefined : [4, 2]}
+        />
+        <Text
+          x={6}
+          y={6}
+          text="PDF417"
+          fontSize={Math.max(Math.min(w, h) * 0.3, 8)}
+          fill="#374151"
+          fontStyle="bold"
+        />
+      </Group>
+    );
+  }
+
   if (obj.type === 'qrcode') {
     const p = obj.props;
     const size = dotsToPx(p.magnification * 25, scale, dpmm);
@@ -511,74 +666,6 @@ function KonvaObjectInner({
           });
         }}
       />
-    );
-  }
-
-  if (obj.type === 'image') {
-    const p = obj.props;
-    const cached = getImage(p.imageId);
-    const w = dotsToPx(p.widthDots, scale, dpmm);
-    const h = cached
-      ? w * (cached.height / cached.width)
-      : w;
-
-    // Load the HTMLImageElement for Konva
-    const [htmlImg, setHtmlImg] = useState<HTMLImageElement | null>(null);
-    useEffect(() => {
-      if (!cached) { setHtmlImg(null); return; }
-      const img = new window.Image();
-      img.src = cached.dataUrl;
-      img.onload = () => setHtmlImg(img);
-    }, [cached?.dataUrl]);
-
-    if (htmlImg && cached) {
-      return (
-        <KImage
-          id={obj.id}
-          x={x}
-          y={y}
-          image={htmlImg}
-          width={w}
-          height={h}
-          stroke={isSelected ? '#6366f1' : undefined}
-          strokeWidth={isSelected ? 2 : 0}
-          draggable
-          onClick={onSelect}
-          onTap={onSelect}
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
-        />
-      );
-    }
-
-    // Placeholder when no image loaded
-    return (
-      <Group
-        id={obj.id}
-        x={x}
-        y={y}
-        draggable
-        onClick={onSelect}
-        onTap={onSelect}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-      >
-        <Rect
-          width={w}
-          height={h}
-          fill="#f9fafb"
-          stroke={isSelected ? '#6366f1' : '#9ca3af'}
-          strokeWidth={isSelected ? 2 : 1}
-          dash={[4, 2]}
-        />
-        <Text
-          x={6}
-          y={6}
-          text="🖼"
-          fontSize={Math.max(w * 0.3, 12)}
-          fill="#374151"
-        />
-      </Group>
     );
   }
 

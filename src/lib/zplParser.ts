@@ -10,6 +10,8 @@ import type { BoxProps } from '../registry/box';
 import type { EllipseProps } from '../registry/ellipse';
 import type { LineProps } from '../registry/line';
 import type { ImageProps } from '../registry/image';
+import type { Barcode1DProps } from '../registry/barcode1d';
+import type { Pdf417Props } from '../registry/pdf417';
 import { putImage } from './imageCache';
 
 export interface ParsedZPL {
@@ -174,23 +176,52 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   // ^FT vs ^FO: store position type so we can reproduce exactly in re-export.
   let positionIsFT = false;
 
+  // ^CF (change alphanumeric default font) state
+  let cfHeight = 0;
+  let cfWidth = 0;
+
+  // ^FW (field default rotation) state
+  let fwRotation: TextProps['rotation'] = 'N';
+
+  // ^FB (field block) state — applied to next text field, then reset
+  let fbWidth = 0;
+  let fbLines = 1;
+  let fbSpacing = 0;
+  let fbJustify: TextProps['blockJustify'] = 'L';
+
+  // PDF417 pending parameters
+  let pdfRowHeight = 10;
+  let pdfSecurity = 0;
+  let pdfColumns = 0;
+
   const flushField = () => {
     if (!fieldType || pendingFD === null) return;
     const content = fhActive ? decodeFH(pendingFD, fhDelimiter) : pendingFD;
     const posType: 'FT' | 'FO' = positionIsFT ? 'FT' : 'FO';
 
     switch (fieldType) {
-      case 'text':
-        objects.push(
-          makeObj('text', x, y, {
+      case 'text': {
+        const textProps: TextProps = {
             content,
             fontHeight: textH,
             fontWidth: textW,
             rotation: textRot,
             reverse: (lrActive || frActive) || undefined,
-          } satisfies TextProps, posType),
-        );
+        };
+        if (fbWidth > 0) {
+          textProps.blockWidth = fbWidth;
+          textProps.blockLines = fbLines;
+          textProps.blockLineSpacing = fbSpacing;
+          textProps.blockJustify = fbJustify;
+        }
+        objects.push(makeObj('text', x, y, textProps, posType));
+        // Reset ^FB state after use
+        fbWidth = 0;
+        fbLines = 1;
+        fbSpacing = 0;
+        fbJustify = 'L';
         break;
+      }
       case 'code128':
         objects.push(
           makeObj('code128', x, y, {
@@ -245,6 +276,32 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           } satisfies DataMatrixProps, posType),
         );
         break;
+      case 'upca':
+      case 'ean8':
+      case 'upce':
+      case 'interleaved2of5':
+      case 'code93':
+        objects.push(
+          makeObj(fieldType, x, y, {
+            content,
+            height: bcHeight,
+            moduleWidth: byModuleWidth,
+            printInterpretation: bcInterp,
+            checkDigit: bcCheck,
+          } satisfies Barcode1DProps, posType),
+        );
+        break;
+      case 'pdf417':
+        objects.push(
+          makeObj('pdf417', x, y, {
+            content,
+            rowHeight: pdfRowHeight,
+            securityLevel: pdfSecurity,
+            columns: pdfColumns,
+            moduleWidth: byModuleWidth,
+          } satisfies Pdf417Props, posType),
+        );
+        break;
     }
 
     fieldType = null;
@@ -290,9 +347,45 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       case 'A0': {
         // ^A0{rotation},{height},{width}  e.g. ^A0N,30,0
         fieldType = 'text';
-        textRot = (rest[0] as TextProps['rotation']) ?? 'N';
-        textH = int(p[1], 30);
-        textW = int(p[2], 0);
+        textRot = (rest[0] as TextProps['rotation']) ?? fwRotation;
+        textH = int(p[1], cfHeight || 30);
+        textW = int(p[2], cfWidth || 0);
+        break;
+      }
+
+      // ── Change alphanumeric default font ──────────────────────────
+      case 'CF': {
+        // ^CF{font},{height},{width}  → sets default for fields without ^A
+        cfHeight = int(p[1], cfHeight);
+        cfWidth = int(p[2], cfWidth);
+        break;
+      }
+
+      // ── Field-wide default rotation ───────────────────────────────
+      case 'FW': {
+        // ^FW{rotation}  e.g. ^FWR
+        const fw = (rest[0] ?? 'N').toUpperCase();
+        if (fw === 'N' || fw === 'R' || fw === 'I' || fw === 'B') {
+          fwRotation = fw;
+        }
+        break;
+      }
+
+      // ── Field block ───────────────────────────────────────────────
+      case 'FB': {
+        // ^FB{width},{lines},{lineSpacing},{justify},{hangingIndent}
+        fbWidth = int(p[0], 0);
+        fbLines = int(p[1], 1);
+        fbSpacing = int(p[2], 0);
+        const fbJ = (p[3] ?? 'L').toUpperCase();
+        fbJustify = (fbJ === 'C' || fbJ === 'R' || fbJ === 'J') ? fbJ : 'L';
+        // ^FB also implies text if no ^A was specified
+        if (!fieldType) {
+          fieldType = 'text';
+          textH = cfHeight || 30;
+          textW = cfWidth || 0;
+          textRot = fwRotation;
+        }
         break;
       }
 
@@ -339,6 +432,51 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         fieldType = 'datamatrix';
         dmDim = int(p[1], 5);
         dmQuality = (int(p[2], 200)) as DataMatrixProps['quality'];
+        break;
+      }
+      case 'BU': {
+        // ^BUN,{height},{interp},N,N — UPC-A
+        fieldType = 'upca';
+        bcHeight = int(p[1], byHeight || 100);
+        bcInterp = (p[2] ?? 'Y') === 'Y';
+        break;
+      }
+      case 'B8': {
+        // ^B8N,{height},{interp},N — EAN-8
+        fieldType = 'ean8';
+        bcHeight = int(p[1], byHeight || 100);
+        bcInterp = (p[2] ?? 'Y') === 'Y';
+        break;
+      }
+      case 'B9': {
+        // ^B9N,{height},{interp},N — UPC-E
+        fieldType = 'upce';
+        bcHeight = int(p[1], byHeight || 100);
+        bcInterp = (p[2] ?? 'Y') === 'Y';
+        break;
+      }
+      case 'B2': {
+        // ^B2N,{height},{interp},N,{check} — Interleaved 2 of 5
+        fieldType = 'interleaved2of5';
+        bcHeight = int(p[1], byHeight || 100);
+        bcInterp = (p[2] ?? 'Y') === 'Y';
+        bcCheck = (p[4] ?? 'N') === 'Y';
+        break;
+      }
+      case 'BA': {
+        // ^BAN,{height},{interp},N,{check} — Code 93
+        fieldType = 'code93';
+        bcHeight = int(p[1], byHeight || 100);
+        bcInterp = (p[2] ?? 'Y') === 'Y';
+        bcCheck = (p[4] ?? 'N') === 'Y';
+        break;
+      }
+      case 'B7': {
+        // ^B7N,{rowHeight},{securityLevel},{columns},,, — PDF417
+        fieldType = 'pdf417';
+        pdfRowHeight = int(p[1], 10);
+        pdfSecurity = int(p[2], 0);
+        pdfColumns = int(p[3], 0);
         break;
       }
 
@@ -553,6 +691,23 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         );
         break;
       }
+      case 'GC': {
+        // ^GC{diameter},{thickness},{color}  → circle = ellipse with equal w/h
+        const d = int(p[0], 100);
+        const t = int(p[1], 3);
+        const color = (p[2] ?? 'B') as 'B' | 'W';
+        const filled = t >= d;
+        objects.push(
+          makeObj('ellipse', x, y, {
+            width: d,
+            height: d,
+            thickness: filled ? 3 : t,
+            filled,
+            color,
+          } satisfies EllipseProps),
+        );
+        break;
+      }
 
       // ── Label print settings ──────────────────────────────────────
       case 'PQ': {
@@ -578,9 +733,33 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       case 'MT': // media type
         break;
 
-      default:
+      default: {
+        // ^A{font}{rotation},{height},{width}  — general font command (A-Z, 0-9)
+        if (cmd[0] === 'A' && cmd.length === 2 && cmd !== 'A0') {
+          fieldType = 'text';
+          textRot = (rest[0] as TextProps['rotation']) ?? fwRotation;
+          textH = int(p[1], cfHeight || 30);
+          textW = int(p[2], cfWidth || 0);
+          break;
+        }
+        // ^TB{rotation},{width},{height} — text block (alternative to ^A + ^FB)
+        if (cmd === 'TB') {
+          fieldType = 'text';
+          textRot = (rest[0] as TextProps['rotation']) ?? fwRotation;
+          const tbW = int(p[1], 0);
+          const tbH = int(p[2], 0);
+          textH = cfHeight || 30;
+          textW = cfWidth || 0;
+          if (tbW > 0) {
+            fbWidth = tbW;
+            fbLines = tbH > 0 ? Math.floor(tbH / (textH || 30)) : 1;
+            fbJustify = 'L';
+          }
+          break;
+        }
         // Record unknown commands (excluding pure whitespace tokens)
         if (rest.trim() || cmd.trim()) skipped.push(`^${cmd}${rest}`);
+      }
     }
   }
 
