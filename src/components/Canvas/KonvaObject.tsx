@@ -307,7 +307,7 @@ function KonvaObjectInner({
 
   if (obj.type === 'text') {
     const p = obj.props;
-    const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 0.72, 6);
+    const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 1.15, 6);
     const zplRotationDeg: Record<typeof p.rotation, number> = {
       N: 0, R: 90, I: 180, B: 270,
     };
@@ -337,7 +337,7 @@ function KonvaObjectInner({
           <Text
             text={p.content}
             fontSize={fontSize}
-            fontFamily="'Barlow', sans-serif"
+            fontFamily="'Arimo', sans-serif"
             fontStyle="bold"
             fill="#ffffff"
             y={approxH * 0.1}
@@ -353,7 +353,7 @@ function KonvaObjectInner({
         y={y}
         text={p.content}
         fontSize={fontSize}
-        fontFamily="'Barlow', sans-serif"
+        fontFamily="'Arimo', sans-serif"
         fontStyle="bold"
         rotation={zplRotationDeg[p.rotation]}
         fill="#000000"
@@ -370,7 +370,7 @@ function KonvaObjectInner({
 
   if (obj.type === 'serial') {
     const p = obj.props;
-    const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 0.72, 6);
+    const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 1.15, 6);
     const zplRotationDeg: Record<typeof p.rotation, number> = {
       N: 0, R: 90, I: 180, B: 270,
     };
@@ -381,7 +381,7 @@ function KonvaObjectInner({
         y={y}
         text={`#${p.content}`}
         fontSize={fontSize}
-        fontFamily="'Barlow', sans-serif"
+        fontFamily="'Arimo', sans-serif"
         fontStyle="bold"
         rotation={zplRotationDeg[p.rotation]}
         fill="#000000"
