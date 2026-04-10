@@ -69,6 +69,7 @@ const da = {
       height: 'Højde (punkter)',
       printInterpretation: 'Læsbar for mennesker',
       checkDigit: 'Kontrolciffer',
+      moduleWidth: 'Modulbredde',
     },
     box: {
       width: 'Bredde (punkter)',
@@ -86,6 +87,7 @@ const da = {
       height: 'Højde (punkter)',
       printInterpretation: 'Læsbar for mennesker',
       checkDigit: 'Kontrolciffer',
+      moduleWidth: 'Modulbredde',
     },
     qrcode: {
       content: 'Indhold',
@@ -100,6 +102,7 @@ const da = {
       content: 'Indhold (12 cifre)',
       height: 'Højde (punkter)',
       printInterpretation: 'Læsbar for mennesker',
+      moduleWidth: 'Modulbredde',
     },
     datamatrix: {
       content: 'Indhold',

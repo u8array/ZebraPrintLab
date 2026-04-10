@@ -69,6 +69,7 @@ const de = {
       height: 'Höhe (Punkte)',
       printInterpretation: 'Klartext',
       checkDigit: 'Prüfziffer',
+      moduleWidth: 'Modulbreite',
     },
     box: {
       width: 'Breite (Punkte)',
@@ -86,6 +87,7 @@ const de = {
       height: 'Höhe (Punkte)',
       printInterpretation: 'Klartext',
       checkDigit: 'Prüfziffer',
+      moduleWidth: 'Modulbreite',
     },
     qrcode: {
       content: 'Inhalt',
@@ -100,6 +102,7 @@ const de = {
       content: 'Inhalt (12 Ziffern)',
       height: 'Höhe (Punkte)',
       printInterpretation: 'Klartext',
+      moduleWidth: 'Modulbreite',
     },
     datamatrix: {
       content: 'Inhalt',

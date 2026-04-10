@@ -66,6 +66,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let bcInterp = true;
   let bcCheck = false;
   // ^BY barcode defaults
+  let byModuleWidth = 2;
   let byHeight = 0;
   let qrMag = 4;
   let dmDim = 5;
@@ -124,6 +125,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           makeObj('code128', ox, oy, {
             content,
             height: bcHeight,
+            moduleWidth: byModuleWidth,
             printInterpretation: bcInterp,
             checkDigit: bcCheck,
           } satisfies Code128Props),
@@ -134,6 +136,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           makeObj('code39', ox, oy, {
             content,
             height: bcHeight,
+            moduleWidth: byModuleWidth,
             printInterpretation: bcInterp,
             checkDigit: bcCheck,
           } satisfies Code39Props),
@@ -144,6 +147,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           makeObj('ean13', ox, oy, {
             content,
             height: bcHeight,
+            moduleWidth: byModuleWidth,
             printInterpretation: bcInterp,
           } satisfies Ean13Props),
         );
@@ -221,6 +225,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       // ── Barcode defaults ──────────────────────────────────────────
       case 'BY': {
         // ^BY{module_width},{ratio},{height}
+        byModuleWidth = int(p[0], 2);
         byHeight = int(p[2], 0);
         break;
       }

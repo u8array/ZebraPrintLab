@@ -69,6 +69,7 @@ const et = {
       height: 'Kõrgus (punkti)',
       printInterpretation: 'Inimesele loetav',
       checkDigit: 'Kontrollnumber',
+      moduleWidth: 'Mooduli laius',
     },
     box: {
       width: 'Laius (punkti)',
@@ -86,6 +87,7 @@ const et = {
       height: 'Kõrgus (punkti)',
       printInterpretation: 'Inimesele loetav',
       checkDigit: 'Kontrollnumber',
+      moduleWidth: 'Mooduli laius',
     },
     qrcode: {
       content: 'Sisu',
@@ -100,6 +102,7 @@ const et = {
       content: 'Sisu (12 numbrit)',
       height: 'Kõrgus (punkti)',
       printInterpretation: 'Inimesele loetav',
+      moduleWidth: 'Mooduli laius',
     },
     datamatrix: {
       content: 'Sisu',

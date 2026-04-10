@@ -69,6 +69,7 @@ const tr = {
       height: 'Yükseklik (nokta)',
       printInterpretation: 'İnsan tarafından okunabilir',
       checkDigit: 'Kontrol hanesi',
+      moduleWidth: 'Modül genişliği',
     },
     box: {
       width: 'Genişlik (nokta)',
@@ -86,6 +87,7 @@ const tr = {
       height: 'Yükseklik (nokta)',
       printInterpretation: 'İnsan tarafından okunabilir',
       checkDigit: 'Kontrol hanesi',
+      moduleWidth: 'Modül genişliği',
     },
     qrcode: {
       content: 'İçerik',
@@ -100,6 +102,7 @@ const tr = {
       content: 'İçerik (12 basamak)',
       height: 'Yükseklik (nokta)',
       printInterpretation: 'İnsan tarafından okunabilir',
+      moduleWidth: 'Modül genişliği',
     },
     datamatrix: {
       content: 'İçerik',

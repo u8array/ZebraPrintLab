@@ -5,6 +5,7 @@ import { inputCls, labelCls } from '../components/Properties/styles';
 export interface Code39Props {
   content: string;
   height: number;
+  moduleWidth: number;
   printInterpretation: boolean;
   checkDigit: boolean;
 }
@@ -16,6 +17,7 @@ export const code39: ObjectTypeDefinition<Code39Props> = {
   defaultProps: {
     content: 'CODE39',
     height: 100,
+    moduleWidth: 2,
     printInterpretation: true,
     checkDigit: false,
   },
@@ -26,10 +28,11 @@ export const code39: ObjectTypeDefinition<Code39Props> = {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
     return [
+      p.moduleWidth !== 2 ? `^BY${p.moduleWidth}` : '',
       `^FO${obj.x},${obj.y}`,
       `^B3N,${check},${p.height},${interp},N`,
       `^FD${p.content}^FS`,
-    ].join('');
+    ].filter(Boolean).join('');
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
@@ -54,6 +57,18 @@ export const code39: ObjectTypeDefinition<Code39Props> = {
             value={p.height}
             min={1}
             onChange={(e) => onChange({ height: Number(e.target.value) })}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>{t.registry.code39.moduleWidth}</label>
+          <input
+            type="number"
+            className={inputCls}
+            value={p.moduleWidth}
+            min={1}
+            max={10}
+            onChange={(e) => onChange({ moduleWidth: Number(e.target.value) })}
           />
         </div>
 

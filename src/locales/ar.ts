@@ -69,6 +69,7 @@ const ar = {
       height: 'الارتفاع (نقطة)',
       printInterpretation: 'قابل للقراءة البشرية',
       checkDigit: 'رقم التحقق',
+      moduleWidth: 'عرض الوحدة',
     },
     box: {
       width: 'العرض (نقطة)',
@@ -86,6 +87,7 @@ const ar = {
       height: 'الارتفاع (نقطة)',
       printInterpretation: 'قابل للقراءة البشرية',
       checkDigit: 'رقم التحقق',
+      moduleWidth: 'عرض الوحدة',
     },
     qrcode: {
       content: 'المحتوى',
@@ -100,6 +102,7 @@ const ar = {
       content: 'المحتوى (12 رقم)',
       height: 'الارتفاع (نقطة)',
       printInterpretation: 'قابل للقراءة البشرية',
+      moduleWidth: 'عرض الوحدة',
     },
     datamatrix: {
       content: 'المحتوى',

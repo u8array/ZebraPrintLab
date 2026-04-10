@@ -69,6 +69,7 @@ const nl = {
       height: 'Hoogte (punten)',
       printInterpretation: 'Leesbaar voor mensen',
       checkDigit: 'Controlegetal',
+      moduleWidth: 'Modulebreedte',
     },
     box: {
       width: 'Breedte (punten)',
@@ -86,6 +87,7 @@ const nl = {
       height: 'Hoogte (punten)',
       printInterpretation: 'Leesbaar voor mensen',
       checkDigit: 'Controlegetal',
+      moduleWidth: 'Modulebreedte',
     },
     qrcode: {
       content: 'Inhoud',
@@ -100,6 +102,7 @@ const nl = {
       content: 'Inhoud (12 cijfers)',
       height: 'Hoogte (punten)',
       printInterpretation: 'Leesbaar voor mensen',
+      moduleWidth: 'Modulebreedte',
     },
     datamatrix: {
       content: 'Inhoud',

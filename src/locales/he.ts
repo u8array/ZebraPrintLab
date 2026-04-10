@@ -69,6 +69,7 @@ const he = {
       height: 'גובה (נקודות)',
       printInterpretation: 'קריא לאדם',
       checkDigit: 'ספרת ביקורת',
+      moduleWidth: 'רוחב מודול',
     },
     box: {
       width: 'רוחב (נקודות)',
@@ -86,6 +87,7 @@ const he = {
       height: 'גובה (נקודות)',
       printInterpretation: 'קריא לאדם',
       checkDigit: 'ספרת ביקורת',
+      moduleWidth: 'רוחב מודול',
     },
     qrcode: {
       content: 'תוכן',
@@ -100,6 +102,7 @@ const he = {
       content: 'תוכן (12 ספרות)',
       height: 'גובה (נקודות)',
       printInterpretation: 'קריא לאדם',
+      moduleWidth: 'רוחב מודול',
     },
     datamatrix: {
       content: 'תוכן',

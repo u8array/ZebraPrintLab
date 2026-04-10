@@ -69,6 +69,7 @@ const ja = {
       height: '高さ (ドット)',
       printInterpretation: '人間可読',
       checkDigit: 'チェックデジット',
+      moduleWidth: 'モジュール幅',
     },
     box: {
       width: '幅 (ドット)',
@@ -86,6 +87,7 @@ const ja = {
       height: '高さ (ドット)',
       printInterpretation: '人間可読',
       checkDigit: 'チェックデジット',
+      moduleWidth: 'モジュール幅',
     },
     qrcode: {
       content: 'コンテンツ',
@@ -100,6 +102,7 @@ const ja = {
       content: 'コンテンツ (12桁)',
       height: '高さ (ドット)',
       printInterpretation: '人間可読',
+      moduleWidth: 'モジュール幅',
     },
     datamatrix: {
       content: 'コンテンツ',

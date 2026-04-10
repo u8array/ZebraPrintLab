@@ -69,6 +69,7 @@ const lv = {
       height: 'Augstums (punkti)',
       printInterpretation: 'Cilvēkam lasāms',
       checkDigit: 'Pārbaudes cipars',
+      moduleWidth: 'Moduļa platums',
     },
     box: {
       width: 'Platums (punkti)',
@@ -86,6 +87,7 @@ const lv = {
       height: 'Augstums (punkti)',
       printInterpretation: 'Cilvēkam lasāms',
       checkDigit: 'Pārbaudes cipars',
+      moduleWidth: 'Moduļa platums',
     },
     qrcode: {
       content: 'Saturs',
@@ -100,6 +102,7 @@ const lv = {
       content: 'Saturs (12 cipari)',
       height: 'Augstums (punkti)',
       printInterpretation: 'Cilvēkam lasāms',
+      moduleWidth: 'Moduļa platums',
     },
     datamatrix: {
       content: 'Saturs',

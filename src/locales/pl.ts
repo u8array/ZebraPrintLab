@@ -69,6 +69,7 @@ const pl = {
       height: 'Wysokość (punkty)',
       printInterpretation: 'Czytelny dla człowieka',
       checkDigit: 'Cyfra kontrolna',
+      moduleWidth: 'Szerokość modułu',
     },
     box: {
       width: 'Szerokość (punkty)',
@@ -86,6 +87,7 @@ const pl = {
       height: 'Wysokość (punkty)',
       printInterpretation: 'Czytelny dla człowieka',
       checkDigit: 'Cyfra kontrolna',
+      moduleWidth: 'Szerokość modułu',
     },
     qrcode: {
       content: 'Zawartość',
@@ -100,6 +102,7 @@ const pl = {
       content: 'Zawartość (12 cyfr)',
       height: 'Wysokość (punkty)',
       printInterpretation: 'Czytelny dla człowieka',
+      moduleWidth: 'Szerokość modułu',
     },
     datamatrix: {
       content: 'Zawartość',

@@ -69,6 +69,7 @@ const ko = {
       height: '높이 (점)',
       printInterpretation: '사람이 읽을 수 있는',
       checkDigit: '체크 숫자',
+      moduleWidth: '모듈 너비',
     },
     box: {
       width: '너비 (점)',
@@ -86,6 +87,7 @@ const ko = {
       height: '높이 (점)',
       printInterpretation: '사람이 읽을 수 있는',
       checkDigit: '체크 숫자',
+      moduleWidth: '모듈 너비',
     },
     qrcode: {
       content: '내용',
@@ -100,6 +102,7 @@ const ko = {
       content: '내용 (12자리)',
       height: '높이 (점)',
       printInterpretation: '사람이 읽을 수 있는',
+      moduleWidth: '모듈 너비',
     },
     datamatrix: {
       content: '내용',

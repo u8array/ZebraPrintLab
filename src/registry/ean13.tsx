@@ -5,6 +5,7 @@ import { inputCls, labelCls } from '../components/Properties/styles';
 export interface Ean13Props {
   content: string;        // 12 digits — ZPL appends the check digit automatically
   height: number;
+  moduleWidth: number;
   printInterpretation: boolean;
 }
 
@@ -15,6 +16,7 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
   defaultProps: {
     content: '590123412345',
     height: 100,
+    moduleWidth: 2,
     printInterpretation: true,
   },
   defaultSize: { width: 300, height: 120 },
@@ -23,10 +25,11 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
     const p = obj.props;
     const interp = p.printInterpretation ? 'Y' : 'N';
     return [
+      p.moduleWidth !== 2 ? `^BY${p.moduleWidth}` : '',
       `^FO${obj.x},${obj.y}`,
       `^BEN,${p.height},${interp},N`,
       `^FD${p.content}^FS`,
-    ].join('');
+    ].filter(Boolean).join('');
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
@@ -53,6 +56,18 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
             value={p.height}
             min={1}
             onChange={(e) => onChange({ height: Number(e.target.value) })}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>{t.registry.ean13.moduleWidth}</label>
+          <input
+            type="number"
+            className={inputCls}
+            value={p.moduleWidth}
+            min={1}
+            max={10}
+            onChange={(e) => onChange({ moduleWidth: Number(e.target.value) })}
           />
         </div>
 

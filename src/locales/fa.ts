@@ -69,6 +69,7 @@ const fa = {
       height: 'ارتفاع (نقطه)',
       printInterpretation: 'قابل خواندن توسط انسان',
       checkDigit: 'رقم کنترل',
+      moduleWidth: 'عرض ماژول',
     },
     box: {
       width: 'عرض (نقطه)',
@@ -86,6 +87,7 @@ const fa = {
       height: 'ارتفاع (نقطه)',
       printInterpretation: 'قابل خواندن توسط انسان',
       checkDigit: 'رقم کنترل',
+      moduleWidth: 'عرض ماژول',
     },
     qrcode: {
       content: 'محتوا',
@@ -100,6 +102,7 @@ const fa = {
       content: 'محتوا (12 رقم)',
       height: 'ارتفاع (نقطه)',
       printInterpretation: 'قابل خواندن توسط انسان',
+      moduleWidth: 'عرض ماژول',
     },
     datamatrix: {
       content: 'محتوا',

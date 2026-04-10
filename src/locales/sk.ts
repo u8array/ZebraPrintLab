@@ -69,6 +69,7 @@ const sk = {
       height: 'Výška (body)',
       printInterpretation: 'Čitateľný pre človeka',
       checkDigit: 'Kontrolná číslica',
+      moduleWidth: 'Šírka modulu',
     },
     box: {
       width: 'Šírka (body)',
@@ -86,6 +87,7 @@ const sk = {
       height: 'Výška (body)',
       printInterpretation: 'Čitateľný pre človeka',
       checkDigit: 'Kontrolná číslica',
+      moduleWidth: 'Šírka modulu',
     },
     qrcode: {
       content: 'Obsah',
@@ -100,6 +102,7 @@ const sk = {
       content: 'Obsah (12 číslic)',
       height: 'Výška (body)',
       printInterpretation: 'Čitateľný pre človeka',
+      moduleWidth: 'Šírka modulu',
     },
     datamatrix: {
       content: 'Obsah',

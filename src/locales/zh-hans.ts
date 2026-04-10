@@ -69,6 +69,7 @@ const zhHans = {
       height: '高度 (点)',
       printInterpretation: '人工可读',
       checkDigit: '校验位',
+      moduleWidth: '模块宽度',
     },
     box: {
       width: '宽度 (点)',
@@ -86,6 +87,7 @@ const zhHans = {
       height: '高度 (点)',
       printInterpretation: '人工可读',
       checkDigit: '校验位',
+      moduleWidth: '模块宽度',
     },
     qrcode: {
       content: '内容',
@@ -100,6 +102,7 @@ const zhHans = {
       content: '内容 (12位数字)',
       height: '高度 (点)',
       printInterpretation: '人工可读',
+      moduleWidth: '模块宽度',
     },
     datamatrix: {
       content: '内容',

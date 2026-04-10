@@ -69,6 +69,7 @@ const en = {
       height: 'Height (dots)',
       printInterpretation: 'Human readable',
       checkDigit: 'Check digit',
+      moduleWidth: 'Module width',
     },
     box: {
       width: 'Width (dots)',
@@ -86,6 +87,7 @@ const en = {
       height: 'Height (dots)',
       printInterpretation: 'Human readable',
       checkDigit: 'Check digit',
+      moduleWidth: 'Module width',
     },
     qrcode: {
       content: 'Content',
@@ -100,6 +102,7 @@ const en = {
       content: 'Content (12 digits)',
       height: 'Height (dots)',
       printInterpretation: 'Human readable',
+      moduleWidth: 'Module width',
     },
     datamatrix: {
       content: 'Content',

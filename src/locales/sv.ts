@@ -69,6 +69,7 @@ const sv = {
       height: 'Höjd (punkter)',
       printInterpretation: 'Läsbar för människa',
       checkDigit: 'Kontrollsiffra',
+      moduleWidth: 'Modulbredd',
     },
     box: {
       width: 'Bredd (punkter)',
@@ -86,6 +87,7 @@ const sv = {
       height: 'Höjd (punkter)',
       printInterpretation: 'Läsbar för människa',
       checkDigit: 'Kontrollsiffra',
+      moduleWidth: 'Modulbredd',
     },
     qrcode: {
       content: 'Innehåll',
@@ -100,6 +102,7 @@ const sv = {
       content: 'Innehåll (12 siffror)',
       height: 'Höjd (punkter)',
       printInterpretation: 'Läsbar för människa',
+      moduleWidth: 'Modulbredd',
     },
     datamatrix: {
       content: 'Innehåll',

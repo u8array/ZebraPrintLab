@@ -11,6 +11,7 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
     '^XA',
     `^PW${widthDots}`,
     `^LL${heightDots}`,
+    '^CI28',
   ];
 
   if (label.mediaMode) lines.push(`^MM${label.mediaMode}`);

@@ -69,6 +69,7 @@ const bg = {
       height: 'Височина (точки)',
       printInterpretation: 'Четливо от хора',
       checkDigit: 'Контролна цифра',
+      moduleWidth: 'Ширина на модула',
     },
     box: {
       width: 'Ширина (точки)',
@@ -86,6 +87,7 @@ const bg = {
       height: 'Височина (точки)',
       printInterpretation: 'Четливо от хора',
       checkDigit: 'Контролна цифра',
+      moduleWidth: 'Ширина на модула',
     },
     qrcode: {
       content: 'Съдържание',
@@ -100,6 +102,7 @@ const bg = {
       content: 'Съдържание (12 цифри)',
       height: 'Височина (точки)',
       printInterpretation: 'Четливо от хора',
+      moduleWidth: 'Ширина на модула',
     },
     datamatrix: {
       content: 'Съдържание',

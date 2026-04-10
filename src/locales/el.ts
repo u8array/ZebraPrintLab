@@ -69,6 +69,7 @@ const el = {
       height: 'Ύψος (κουκκίδες)',
       printInterpretation: 'Αναγνώσιμο από άνθρωπο',
       checkDigit: 'Ψηφίο ελέγχου',
+      moduleWidth: 'Πλάτος module',
     },
     box: {
       width: 'Πλάτος (κουκκίδες)',
@@ -86,6 +87,7 @@ const el = {
       height: 'Ύψος (κουκκίδες)',
       printInterpretation: 'Αναγνώσιμο από άνθρωπο',
       checkDigit: 'Ψηφίο ελέγχου',
+      moduleWidth: 'Πλάτος module',
     },
     qrcode: {
       content: 'Περιεχόμενο',
@@ -100,6 +102,7 @@ const el = {
       content: 'Περιεχόμενο (12 ψηφία)',
       height: 'Ύψος (κουκκίδες)',
       printInterpretation: 'Αναγνώσιμο από άνθρωπο',
+      moduleWidth: 'Πλάτος module',
     },
     datamatrix: {
       content: 'Περιεχόμενο',

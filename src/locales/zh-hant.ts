@@ -69,6 +69,7 @@ const zhHant = {
       height: '高度 (點)',
       printInterpretation: '人工可讀',
       checkDigit: '校驗碼',
+      moduleWidth: '模組寬度',
     },
     box: {
       width: '寬度 (點)',
@@ -86,6 +87,7 @@ const zhHant = {
       height: '高度 (點)',
       printInterpretation: '人工可讀',
       checkDigit: '校驗碼',
+      moduleWidth: '模組寬度',
     },
     qrcode: {
       content: '內容',
@@ -100,6 +102,7 @@ const zhHant = {
       content: '內容 (12位數字)',
       height: '高度 (點)',
       printInterpretation: '人工可讀',
+      moduleWidth: '模組寬度',
     },
     datamatrix: {
       content: '內容',

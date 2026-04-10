@@ -69,6 +69,7 @@ const es = {
       height: 'Altura (puntos)',
       printInterpretation: 'Legible por humanos',
       checkDigit: 'Dígito de control',
+      moduleWidth: 'Ancho de módulo',
     },
     box: {
       width: 'Ancho (puntos)',
@@ -86,6 +87,7 @@ const es = {
       height: 'Altura (puntos)',
       printInterpretation: 'Legible por humanos',
       checkDigit: 'Dígito de control',
+      moduleWidth: 'Ancho de módulo',
     },
     qrcode: {
       content: 'Contenido',
@@ -100,6 +102,7 @@ const es = {
       content: 'Contenido (12 dígitos)',
       height: 'Altura (puntos)',
       printInterpretation: 'Legible por humanos',
+      moduleWidth: 'Ancho de módulo',
     },
     datamatrix: {
       content: 'Contenido',

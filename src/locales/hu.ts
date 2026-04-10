@@ -69,6 +69,7 @@ const hu = {
       height: 'Magasság (pont)',
       printInterpretation: 'Ember által olvasható',
       checkDigit: 'Ellenőrzőjegy',
+      moduleWidth: 'Modulszélesség',
     },
     box: {
       width: 'Szélesség (pont)',
@@ -86,6 +87,7 @@ const hu = {
       height: 'Magasság (pont)',
       printInterpretation: 'Ember által olvasható',
       checkDigit: 'Ellenőrzőjegy',
+      moduleWidth: 'Modulszélesség',
     },
     qrcode: {
       content: 'Tartalom',
@@ -100,6 +102,7 @@ const hu = {
       content: 'Tartalom (12 számjegy)',
       height: 'Magasság (pont)',
       printInterpretation: 'Ember által olvasható',
+      moduleWidth: 'Modulszélesség',
     },
     datamatrix: {
       content: 'Tartalom',

@@ -69,6 +69,7 @@ const hr = {
       height: 'Visina (točke)',
       printInterpretation: 'Čitljivo za čovjeka',
       checkDigit: 'Kontrolna znamenka',
+      moduleWidth: 'Širina modula',
     },
     box: {
       width: 'Širina (točke)',
@@ -86,6 +87,7 @@ const hr = {
       height: 'Visina (točke)',
       printInterpretation: 'Čitljivo za čovjeka',
       checkDigit: 'Kontrolna znamenka',
+      moduleWidth: 'Širina modula',
     },
     qrcode: {
       content: 'Sadržaj',
@@ -100,6 +102,7 @@ const hr = {
       content: 'Sadržaj (12 znamenki)',
       height: 'Visina (točke)',
       printInterpretation: 'Čitljivo za čovjeka',
+      moduleWidth: 'Širina modula',
     },
     datamatrix: {
       content: 'Sadržaj',

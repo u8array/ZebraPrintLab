@@ -69,6 +69,7 @@ const cs = {
       height: 'Výška (body)',
       printInterpretation: 'Čitelný pro člověka',
       checkDigit: 'Kontrolní číslice',
+      moduleWidth: 'Šířka modulu',
     },
     box: {
       width: 'Šířka (body)',
@@ -86,6 +87,7 @@ const cs = {
       height: 'Výška (body)',
       printInterpretation: 'Čitelný pro člověka',
       checkDigit: 'Kontrolní číslice',
+      moduleWidth: 'Šířka modulu',
     },
     qrcode: {
       content: 'Obsah',
@@ -100,6 +102,7 @@ const cs = {
       content: 'Obsah (12 číslic)',
       height: 'Výška (body)',
       printInterpretation: 'Čitelný pro člověka',
+      moduleWidth: 'Šířka modulu',
     },
     datamatrix: {
       content: 'Obsah',

@@ -69,6 +69,7 @@ const ro = {
       height: 'Înălțime (puncte)',
       printInterpretation: 'Lizibil de om',
       checkDigit: 'Cifră de control',
+      moduleWidth: 'Lățime modul',
     },
     box: {
       width: 'Lățime (puncte)',
@@ -86,6 +87,7 @@ const ro = {
       height: 'Înălțime (puncte)',
       printInterpretation: 'Lizibil de om',
       checkDigit: 'Cifră de control',
+      moduleWidth: 'Lățime modul',
     },
     qrcode: {
       content: 'Conținut',
@@ -100,6 +102,7 @@ const ro = {
       content: 'Conținut (12 cifre)',
       height: 'Înălțime (puncte)',
       printInterpretation: 'Lizibil de om',
+      moduleWidth: 'Lățime modul',
     },
     datamatrix: {
       content: 'Conținut',

@@ -69,6 +69,7 @@ const lt = {
       height: 'Aukštis (taškai)',
       printInterpretation: 'Žmogui skaitomas',
       checkDigit: 'Tikrinimo skaitmuo',
+      moduleWidth: 'Modulio plotis',
     },
     box: {
       width: 'Plotis (taškai)',
@@ -86,6 +87,7 @@ const lt = {
       height: 'Aukštis (taškai)',
       printInterpretation: 'Žmogui skaitomas',
       checkDigit: 'Tikrinimo skaitmuo',
+      moduleWidth: 'Modulio plotis',
     },
     qrcode: {
       content: 'Turinys',
@@ -100,6 +102,7 @@ const lt = {
       content: 'Turinys (12 skaitmenų)',
       height: 'Aukštis (taškai)',
       printInterpretation: 'Žmogui skaitomas',
+      moduleWidth: 'Modulio plotis',
     },
     datamatrix: {
       content: 'Turinys',

@@ -69,6 +69,7 @@ const fi = {
       height: 'Korkeus (pistettä)',
       printInterpretation: 'Ihmisluettava',
       checkDigit: 'Tarkistusnumero',
+      moduleWidth: 'Moduulin leveys',
     },
     box: {
       width: 'Leveys (pistettä)',
@@ -86,6 +87,7 @@ const fi = {
       height: 'Korkeus (pistettä)',
       printInterpretation: 'Ihmisluettava',
       checkDigit: 'Tarkistusnumero',
+      moduleWidth: 'Moduulin leveys',
     },
     qrcode: {
       content: 'Sisältö',
@@ -100,6 +102,7 @@ const fi = {
       content: 'Sisältö (12 numeroa)',
       height: 'Korkeus (pistettä)',
       printInterpretation: 'Ihmisluettava',
+      moduleWidth: 'Moduulin leveys',
     },
     datamatrix: {
       content: 'Sisältö',

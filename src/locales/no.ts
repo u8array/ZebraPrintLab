@@ -69,6 +69,7 @@ const no = {
       height: 'Høyde (punkter)',
       printInterpretation: 'Lesbar for mennesker',
       checkDigit: 'Kontrollsiffer',
+      moduleWidth: 'Modulbredde',
     },
     box: {
       width: 'Bredde (punkter)',
@@ -86,6 +87,7 @@ const no = {
       height: 'Høyde (punkter)',
       printInterpretation: 'Lesbar for mennesker',
       checkDigit: 'Kontrollsiffer',
+      moduleWidth: 'Modulbredde',
     },
     qrcode: {
       content: 'Innhold',
@@ -100,6 +102,7 @@ const no = {
       content: 'Innhold (12 sifre)',
       height: 'Høyde (punkter)',
       printInterpretation: 'Lesbar for mennesker',
+      moduleWidth: 'Modulbredde',
     },
     datamatrix: {
       content: 'Innhold',
