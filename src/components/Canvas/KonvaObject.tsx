@@ -261,14 +261,17 @@ function KonvaObjectInner({
       // ^FT places the origin at the baseline of the first character.
       // The Konva anchor point after rotation sits at a different corner
       // of the visual bounding box than the ZPL FT baseline origin:
-      //   N (0°):   FT=bottom-left,  Konva=top-left     → shift Y up
-      //   R (90°):  FT=bottom-left,  Konva=top-right    → shift X right
-      //   I (180°): FT=top-right,    Konva=bottom-right  → shift Y down
-      //   B (270°): FT=top-right,    Konva=bottom-left   → shift X left
+      //   N (0°):   FT=bottom-left,  Konva=top-left     → shift Y up by fontHeight
+      //   R (90°):  FT=bottom-left,  Konva=top-right    → shift X right by rendered height
+      //   I (180°): FT=top-right,    Konva=bottom-right  → shift Y down by rendered height
+      //   B (270°): FT=top-right,    Konva=bottom-left   → shift X left by rendered height
+      // For R/I/B the anchor is at the far end of the text, so we must use the actual
+      // Konva-rendered font height (fontHeight / 1.15) — not the raw ZPL fontHeight.
+      const renderedH = p.fontHeight / 1.15;
       if (p.rotation === 'N') { displayY -= p.fontHeight; }
-      else if (p.rotation === 'R') { displayX += p.fontHeight; }
-      else if (p.rotation === 'I') { displayY += p.fontHeight; }
-      else if (p.rotation === 'B') { displayX -= p.fontHeight; }
+      else if (p.rotation === 'R') { displayX += renderedH; }
+      else if (p.rotation === 'I') { displayY += renderedH; }
+      else if (p.rotation === 'B') { displayX -= renderedH; }
     } else if (obj.type === 'code128' || obj.type === 'code39' || obj.type === 'ean13'
       || obj.type === 'upca' || obj.type === 'ean8' || obj.type === 'upce'
       || obj.type === 'interleaved2of5' || obj.type === 'code93') {
