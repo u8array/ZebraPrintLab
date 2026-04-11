@@ -62,7 +62,7 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
         points={[dispX1, dispY1, dispX2, dispY2]}
         stroke={isSelected ? '#6366f1' : strokeColor}
         strokeWidth={lineStrokeWidth}
-        lineCap="round"
+        lineCap="square"
         listening={false}
         globalCompositeOperation={!isSelected && p.reverse ? 'difference' : 'source-over'}
       />
@@ -288,6 +288,17 @@ function KonvaObjectInner({
       displayY -= p.dimension * 20;
     }
   }
+
+  // Konva rotates text around its top-left corner, but ZPL's ^FO anchor
+  // shifts with rotation. 15 dots is an empirically determined fixed offset.
+  if (obj.type === 'text' || obj.type === 'serial') {
+    const p = obj.props as { fontHeight: number; rotation: string };
+    const ROTATION_OFFSET = 15; // dots — empirical canvas/ZPL alignment correction
+    if (p.rotation === 'I') { displayY -= ROTATION_OFFSET; }
+    else if (p.rotation === 'R') { displayX -= ROTATION_OFFSET; }
+    else if (p.rotation === 'B') { displayX += ROTATION_OFFSET; }
+  }
+
   const x = offsetX + dotsToPx(displayX, scale, dpmm);
   const y = offsetY + dotsToPx(displayY, scale, dpmm);
 
