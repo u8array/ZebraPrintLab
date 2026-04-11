@@ -1,7 +1,7 @@
 /**
- * In-memory cache of user-uploaded images, keyed by a stable ID.
- * Images are stored as data-URLs so they survive across renders
- * but NOT across page reloads (intentional — no persistence yet).
+ * Image cache keyed by a stable ID.
+ * Images are stored as data-URLs and persisted to localStorage
+ * so they survive page reloads.
  */
 
 export interface CachedImage {
@@ -15,7 +15,21 @@ export interface CachedImage {
   height: number;
 }
 
+const LS_PREFIX = 'zpl-img-';
+
 const cache = new Map<string, CachedImage>();
+
+// Hydrate from localStorage on module load
+for (let i = 0; i < localStorage.length; i++) {
+  const key = localStorage.key(i);
+  if (!key?.startsWith(LS_PREFIX)) continue;
+  try {
+    const entry = JSON.parse(localStorage.getItem(key)!) as CachedImage;
+    cache.set(entry.id, entry);
+  } catch {
+    // ignore corrupt entries
+  }
+}
 
 export function getImage(id: string): CachedImage | undefined {
   return cache.get(id);
@@ -27,10 +41,16 @@ export function getAllImages(): CachedImage[] {
 
 export function putImage(img: CachedImage): void {
   cache.set(img.id, img);
+  try {
+    localStorage.setItem(LS_PREFIX + img.id, JSON.stringify(img));
+  } catch {
+    // localStorage full — image stays in memory only
+  }
 }
 
 export function removeImage(id: string): void {
   cache.delete(id);
+  localStorage.removeItem(LS_PREFIX + id);
 }
 
 /** Load a File into the cache. Returns the CachedImage entry. */
@@ -48,7 +68,7 @@ export function loadImageFile(file: File): Promise<CachedImage> {
           width: img.naturalWidth,
           height: img.naturalHeight,
         };
-        cache.set(entry.id, entry);
+        putImage(entry);
         resolve(entry);
       };
       img.onerror = () => reject(new Error(`Failed to decode image: ${file.name}`));
