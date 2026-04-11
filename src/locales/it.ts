@@ -1,6 +1,29 @@
 const it = {
   palette: {
     heading: 'Oggetti',
+    groupText: 'Testo',
+    groupCodes: 'Codici',
+    groupShapes: 'Forme',
+  },
+
+  types: {
+    text: 'Testo',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'Codice QR',
+    datamatrix: 'DataMatrix',
+    box: 'Rettangolo',
+    ellipse: 'Ellisse',
+    line: 'Linea',
+    serial: 'Seriale',
+    image: 'Immagine',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 di 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const it = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
+    printQuantity: 'Quantità di stampa',
+    mediaMode: 'Modalità supporto',
+    mediaModeT: 'T — Strappo',
+    mediaModeV: 'V — Spellicolamento',
     mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    mediaModeK: 'K — Chiosco',
+    labelShift: 'Spostamento etichetta (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const it = {
       height: 'Altezza (punti)',
       printInterpretation: "Leggibile dall'uomo",
       moduleWidth: 'Larghezza modulo',
+      placeholder: '12 cifre',
     },
     datamatrix: {
       content: 'Contenuto',
@@ -165,18 +189,21 @@ const it = {
       height: 'Altezza (punti)',
       printInterpretation: 'Leggibile',
       moduleWidth: 'Larghezza modulo',
+      placeholder: '11 cifre',
     },
     ean8: {
       content: 'Contenuto (7 cifre)',
       height: 'Altezza (punti)',
       printInterpretation: 'Leggibile',
       moduleWidth: 'Larghezza modulo',
+      placeholder: '7 cifre',
     },
     upce: {
       content: 'Contenuto (6 cifre)',
       height: 'Altezza (punti)',
       printInterpretation: 'Leggibile',
       moduleWidth: 'Larghezza modulo',
+      placeholder: '6 cifre',
     },
     interleaved2of5: {
       content: 'Contenuto',

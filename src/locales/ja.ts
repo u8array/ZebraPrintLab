@@ -1,6 +1,29 @@
 const ja = {
   palette: {
     heading: 'オブジェクト',
+    groupText: 'テキスト',
+    groupCodes: 'コード',
+    groupShapes: '図形',
+  },
+
+  types: {
+    text: 'テキスト',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QRコード',
+    datamatrix: 'DataMatrix',
+    box: '矩形',
+    ellipse: '楕円',
+    line: '線',
+    serial: 'シリアル',
+    image: '画像',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'インターリーブド 2/5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const ja = {
     dpmm8: '8 ドット/mm — 203 dpi',
     dpmm12: '12 ドット/mm — 300 dpi',
     dpmm24: '24 ドット/mm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: '印刷枚数',
+    mediaMode: 'メディアモード',
+    mediaModeT: 'T — ティアオフ',
+    mediaModeV: 'V — 剥離',
+    mediaModeD: 'D — カッター',
+    mediaModeK: 'K — キオスク',
+    labelShift: 'ラベルシフト (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const ja = {
       height: '高さ (ドット)',
       printInterpretation: '人間可読',
       moduleWidth: 'モジュール幅',
+      placeholder: '12桁',
     },
     datamatrix: {
       content: 'コンテンツ',
@@ -165,18 +189,21 @@ const ja = {
       height: '高さ（ドット）',
       printInterpretation: '可読文字',
       moduleWidth: 'モジュール幅',
+      placeholder: '11桁',
     },
     ean8: {
       content: '内容（7桁）',
       height: '高さ（ドット）',
       printInterpretation: '可読文字',
       moduleWidth: 'モジュール幅',
+      placeholder: '7桁',
     },
     upce: {
       content: '内容（6桁）',
       height: '高さ（ドット）',
       printInterpretation: '可読文字',
       moduleWidth: 'モジュール幅',
+      placeholder: '6桁',
     },
     interleaved2of5: {
       content: '内容',

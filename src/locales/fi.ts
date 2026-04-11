@@ -1,6 +1,29 @@
 const fi = {
   palette: {
     heading: 'Objektit',
+    groupText: 'Teksti',
+    groupCodes: 'Koodit',
+    groupShapes: 'Muodot',
+  },
+
+  types: {
+    text: 'Teksti',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR-koodi',
+    datamatrix: 'DataMatrix',
+    box: 'Suorakulmio',
+    ellipse: 'Ellipsi',
+    line: 'Viiva',
+    serial: 'Sarjanro',
+    image: 'Kuva',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2/5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const fi = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: 'Tulostusmäärä',
+    mediaMode: 'Mediatila',
+    mediaModeT: 'T — Repäisy',
+    mediaModeV: 'V — Irrotus',
+    mediaModeD: 'D — Leikkuri',
+    mediaModeK: 'K — Kioski',
+    labelShift: 'Tarrasiirtymä (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const fi = {
       height: 'Korkeus (pistettä)',
       printInterpretation: 'Ihmisluettava',
       moduleWidth: 'Moduulin leveys',
+      placeholder: '12 numeroa',
     },
     datamatrix: {
       content: 'Sisältö',
@@ -165,18 +189,21 @@ const fi = {
       height: 'Korkeus (pistettä)',
       printInterpretation: 'Luettava',
       moduleWidth: 'Moduulin leveys',
+      placeholder: '11 numeroa',
     },
     ean8: {
       content: 'Sisältö (7 numeroa)',
       height: 'Korkeus (pistettä)',
       printInterpretation: 'Luettava',
       moduleWidth: 'Moduulin leveys',
+      placeholder: '7 numeroa',
     },
     upce: {
       content: 'Sisältö (6 numeroa)',
       height: 'Korkeus (pistettä)',
       printInterpretation: 'Luettava',
       moduleWidth: 'Moduulin leveys',
+      placeholder: '6 numeroa',
     },
     interleaved2of5: {
       content: 'Sisältö',

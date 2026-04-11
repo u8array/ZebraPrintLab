@@ -1,6 +1,29 @@
 const hr = {
   palette: {
     heading: 'Objekti',
+    groupText: 'Tekst',
+    groupCodes: 'Kodovi',
+    groupShapes: 'Oblici',
+  },
+
+  types: {
+    text: 'Tekst',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR kod',
+    datamatrix: 'DataMatrix',
+    box: 'Pravokutnik',
+    ellipse: 'Elipsa',
+    line: 'Linija',
+    serial: 'Serijski br.',
+    image: 'Slika',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 od 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const hr = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
+    printQuantity: 'Količina ispisa',
+    mediaMode: 'Način medija',
+    mediaModeT: 'T — Otkidanje',
+    mediaModeV: 'V — Ljuštenje',
+    mediaModeD: 'D — Rezač',
     mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    labelShift: 'Pomak naljepnice (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const hr = {
       height: 'Visina (točke)',
       printInterpretation: 'Čitljivo za čovjeka',
       moduleWidth: 'Širina modula',
+      placeholder: '12 znamenki',
     },
     datamatrix: {
       content: 'Sadržaj',
@@ -165,18 +189,21 @@ const hr = {
       height: 'Visina (točke)',
       printInterpretation: 'Čitljivo za ljude',
       moduleWidth: 'Širina modula',
+      placeholder: '11 znamenki',
     },
     ean8: {
       content: 'Sadržaj (7 znamenki)',
       height: 'Visina (točke)',
       printInterpretation: 'Čitljivo za ljude',
       moduleWidth: 'Širina modula',
+      placeholder: '7 znamenki',
     },
     upce: {
       content: 'Sadržaj (6 znamenki)',
       height: 'Visina (točke)',
       printInterpretation: 'Čitljivo za ljude',
       moduleWidth: 'Širina modula',
+      placeholder: '6 znamenki',
     },
     interleaved2of5: {
       content: 'Sadržaj',

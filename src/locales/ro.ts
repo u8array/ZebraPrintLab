@@ -1,6 +1,29 @@
 const ro = {
   palette: {
     heading: 'Obiecte',
+    groupText: 'Text',
+    groupCodes: 'Coduri',
+    groupShapes: 'Forme',
+  },
+
+  types: {
+    text: 'Text',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'Cod QR',
+    datamatrix: 'DataMatrix',
+    box: 'Dreptunghi',
+    ellipse: 'Elipsă',
+    line: 'Linie',
+    serial: 'Serie',
+    image: 'Imagine',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 din 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const ro = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
+    printQuantity: 'Cantitate imprimare',
+    mediaMode: 'Mod media',
+    mediaModeT: 'T — Rupere',
+    mediaModeV: 'V — Decolare',
     mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    mediaModeK: 'K — Chioșc',
+    labelShift: 'Deplasare etichetă (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const ro = {
       height: 'Înălțime (puncte)',
       printInterpretation: 'Lizibil de om',
       moduleWidth: 'Lățime modul',
+      placeholder: '12 cifre',
     },
     datamatrix: {
       content: 'Conținut',
@@ -165,18 +189,21 @@ const ro = {
       height: 'Înălțime (puncte)',
       printInterpretation: 'Lizibil',
       moduleWidth: 'Lățime modul',
+      placeholder: '11 cifre',
     },
     ean8: {
       content: 'Conținut (7 cifre)',
       height: 'Înălțime (puncte)',
       printInterpretation: 'Lizibil',
       moduleWidth: 'Lățime modul',
+      placeholder: '7 cifre',
     },
     upce: {
       content: 'Conținut (6 cifre)',
       height: 'Înălțime (puncte)',
       printInterpretation: 'Lizibil',
       moduleWidth: 'Lățime modul',
+      placeholder: '6 cifre',
     },
     interleaved2of5: {
       content: 'Conținut',

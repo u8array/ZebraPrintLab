@@ -6,7 +6,6 @@ export const upca = createBarcode1D({
   icon: 'UPC',
   defaultContent: '01234567890',
   contentMaxLength: 11,
-  contentPlaceholder: '11 digits',
   hasCheckDigit: false,
   localeKey: 'upca',
   zplCommand: (p) => {

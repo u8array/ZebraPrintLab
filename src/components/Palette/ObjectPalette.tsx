@@ -1,6 +1,8 @@
 import { ObjectRegistry, PALETTE_GROUPS } from '../../registry';
+import { useT } from '../../lib/useT';
 
 export function ObjectPalette() {
+  const t = useT();
   const handleDragStart = (e: React.DragEvent, type: string) => {
     e.dataTransfer.setData('objectType', type);
     // Encode the type into the MIME key so it's readable during dragover
@@ -19,7 +21,7 @@ export function ObjectPalette() {
         return (
           <div key={group.key} className="flex flex-col gap-0.5">
             <p className="font-mono text-[10px] font-medium text-muted uppercase tracking-widest px-1 pt-1 pb-1.5">
-              {group.label}
+              {t.palette[group.labelKey]}
             </p>
             {entries.map(([type, def]) => (
               <div
@@ -38,7 +40,7 @@ export function ObjectPalette() {
                   {def.icon}
                 </span>
                 <span className="text-xs text-text">
-                  {def.label}
+                  {(t.types as Record<string, string>)[type] ?? def.label}
                 </span>
               </div>
             ))}

@@ -1,6 +1,29 @@
 const el = {
   palette: {
     heading: 'Αντικείμενα',
+    groupText: 'Κείμενο',
+    groupCodes: 'Κωδικοί',
+    groupShapes: 'Σχήματα',
+  },
+
+  types: {
+    text: 'Κείμενο',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'Κωδικός QR',
+    datamatrix: 'DataMatrix',
+    box: 'Ορθογώνιο',
+    ellipse: 'Έλλειψη',
+    line: 'Γραμμή',
+    serial: 'Σειριακός αρ.',
+    image: 'Εικόνα',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 από 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const el = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: 'Ποσότητα εκτύπωσης',
+    mediaMode: 'Λειτουργία μέσου',
+    mediaModeT: 'T — Σκίσιμο',
+    mediaModeV: 'V — Ξεφλούδισμα',
+    mediaModeD: 'D — Κοπτικό',
+    mediaModeK: 'K — Κιόσκι',
+    labelShift: 'Μετατόπιση ετικέτας (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const el = {
       height: 'Ύψος (κουκκίδες)',
       printInterpretation: 'Αναγνώσιμο από άνθρωπο',
       moduleWidth: 'Πλάτος module',
+      placeholder: '12 ψηφία',
     },
     datamatrix: {
       content: 'Περιεχόμενο',
@@ -165,18 +189,21 @@ const el = {
       height: 'Ύψος (κουκκίδες)',
       printInterpretation: 'Αναγνώσιμο',
       moduleWidth: 'Πλάτος μονάδας',
+      placeholder: '11 ψηφία',
     },
     ean8: {
       content: 'Περιεχόμενο (7 ψηφία)',
       height: 'Ύψος (κουκκίδες)',
       printInterpretation: 'Αναγνώσιμο',
       moduleWidth: 'Πλάτος μονάδας',
+      placeholder: '7 ψηφία',
     },
     upce: {
       content: 'Περιεχόμενο (6 ψηφία)',
       height: 'Ύψος (κουκκίδες)',
       printInterpretation: 'Αναγνώσιμο',
       moduleWidth: 'Πλάτος μονάδας',
+      placeholder: '6 ψηφία',
     },
     interleaved2of5: {
       content: 'Περιεχόμενο',

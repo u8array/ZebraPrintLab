@@ -1,6 +1,29 @@
 const he = {
   palette: {
     heading: 'אובייקטים',
+    groupText: 'טקסט',
+    groupCodes: 'קודים',
+    groupShapes: 'צורות',
+  },
+
+  types: {
+    text: 'טקסט',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'קוד QR',
+    datamatrix: 'DataMatrix',
+    box: 'מלבן',
+    ellipse: 'אליפסה',
+    line: 'קו',
+    serial: 'מס. סידורי',
+    image: 'תמונה',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 מ-5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const he = {
     dpmm8: '8 נקודות/מ"מ — 203 dpi',
     dpmm12: '12 נקודות/מ"מ — 300 dpi',
     dpmm24: '24 נקודות/מ"מ — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: 'כמות הדפסה',
+    mediaMode: 'מצב מדיה',
+    mediaModeT: 'T — קריעה',
+    mediaModeV: 'V — קילוף',
+    mediaModeD: 'D — חותך',
+    mediaModeK: 'K — קיוסק',
+    labelShift: 'הסטת תווית (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const he = {
       height: 'גובה (נקודות)',
       printInterpretation: 'קריא לאדם',
       moduleWidth: 'רוחב מודול',
+      placeholder: '12 ספרות',
     },
     datamatrix: {
       content: 'תוכן',
@@ -165,18 +189,21 @@ const he = {
       height: 'גובה (נקודות)',
       printInterpretation: 'קריא',
       moduleWidth: 'רוחב מודול',
+      placeholder: '11 ספרות',
     },
     ean8: {
       content: 'תוכן (7 ספרות)',
       height: 'גובה (נקודות)',
       printInterpretation: 'קריא',
       moduleWidth: 'רוחב מודול',
+      placeholder: '7 ספרות',
     },
     upce: {
       content: 'תוכן (6 ספרות)',
       height: 'גובה (נקודות)',
       printInterpretation: 'קריא',
       moduleWidth: 'רוחב מודול',
+      placeholder: '6 ספרות',
     },
     interleaved2of5: {
       content: 'תוכן',

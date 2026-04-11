@@ -44,7 +44,7 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
             className={inputCls}
             value={p.content}
             maxLength={12}
-            placeholder="12 digits"
+            placeholder={t.registry.ean13.placeholder}
             onChange={(e) => onChange({ content: e.target.value })}
           />
         </div>

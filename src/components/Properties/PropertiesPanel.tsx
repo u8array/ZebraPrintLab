@@ -23,7 +23,7 @@ export function PropertiesPanel() {
       {/* Type header */}
       <div className="px-3 py-2.5 border-b border-border flex items-center gap-2">
         <span className="font-mono text-xs text-accent">{definition?.icon}</span>
-        <span className="text-xs font-medium text-text">{definition?.label}</span>
+        <span className="text-xs font-medium text-text">{(t.types as Record<string, string>)[obj.type] ?? definition?.label}</span>
         <span className="font-mono text-[10px] text-muted ml-auto truncate">{obj.id.slice(0, 8)}</span>
       </div>
 

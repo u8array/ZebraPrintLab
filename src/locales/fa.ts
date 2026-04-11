@@ -1,6 +1,29 @@
 const fa = {
   palette: {
     heading: 'اشیاء',
+    groupText: 'متن',
+    groupCodes: 'کدها',
+    groupShapes: 'اشکال',
+  },
+
+  types: {
+    text: 'متن',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'کد QR',
+    datamatrix: 'DataMatrix',
+    box: 'مستطیل',
+    ellipse: 'بیضی',
+    line: 'خط',
+    serial: 'شماره سریال',
+    image: 'تصویر',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 از 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const fa = {
     dpmm8: '8 نقطه/میلی‌متر — 203 dpi',
     dpmm12: '12 نقطه/میلی‌متر — 300 dpi',
     dpmm24: '24 نقطه/میلی‌متر — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: 'تعداد چاپ',
+    mediaMode: 'حالت رسانه',
+    mediaModeT: 'T — پاره کردن',
+    mediaModeV: 'V — جدا کردن',
+    mediaModeD: 'D — برش',
+    mediaModeK: 'K — کیوسک',
+    labelShift: 'جابجایی برچسب (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const fa = {
       height: 'ارتفاع (نقطه)',
       printInterpretation: 'قابل خواندن توسط انسان',
       moduleWidth: 'عرض ماژول',
+      placeholder: '12 رقم',
     },
     datamatrix: {
       content: 'محتوا',
@@ -165,18 +189,21 @@ const fa = {
       height: 'ارتفاع (نقطه)',
       printInterpretation: 'قابل خواندن',
       moduleWidth: 'عرض ماژول',
+      placeholder: '11 رقم',
     },
     ean8: {
       content: 'محتوا (۷ رقم)',
       height: 'ارتفاع (نقطه)',
       printInterpretation: 'قابل خواندن',
       moduleWidth: 'عرض ماژول',
+      placeholder: '7 رقم',
     },
     upce: {
       content: 'محتوا (۶ رقم)',
       height: 'ارتفاع (نقطه)',
       printInterpretation: 'قابل خواندن',
       moduleWidth: 'عرض ماژول',
+      placeholder: '6 رقم',
     },
     interleaved2of5: {
       content: 'محتوا',

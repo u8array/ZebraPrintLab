@@ -1,6 +1,29 @@
 const fr = {
   palette: {
     heading: 'Objets',
+    groupText: 'Texte',
+    groupCodes: 'Codes',
+    groupShapes: 'Formes',
+  },
+
+  types: {
+    text: 'Texte',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR Code',
+    datamatrix: 'DataMatrix',
+    box: 'Rectangle',
+    ellipse: 'Ellipse',
+    line: 'Ligne',
+    serial: 'Série',
+    image: 'Image',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Entrelacé 2 parmi 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const fr = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
+    printQuantity: 'Quantité d\'impression',
+    mediaMode: 'Mode média',
+    mediaModeT: 'T — Déchirement',
+    mediaModeV: 'V — Pelage',
     mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    mediaModeK: 'K — Kiosque',
+    labelShift: 'Décalage d\'étiquette (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const fr = {
       height: 'Hauteur (points)',
       printInterpretation: 'Lisible par l\'homme',
       moduleWidth: 'Largeur de module',
+      placeholder: '12 chiffres',
     },
     datamatrix: {
       content: 'Contenu',
@@ -165,18 +189,21 @@ const fr = {
       height: 'Hauteur (points)',
       printInterpretation: 'Lisible',
       moduleWidth: 'Largeur module',
+      placeholder: '11 chiffres',
     },
     ean8: {
       content: 'Contenu (7 chiffres)',
       height: 'Hauteur (points)',
       printInterpretation: 'Lisible',
       moduleWidth: 'Largeur module',
+      placeholder: '7 chiffres',
     },
     upce: {
       content: 'Contenu (6 chiffres)',
       height: 'Hauteur (points)',
       printInterpretation: 'Lisible',
       moduleWidth: 'Largeur module',
+      placeholder: '6 chiffres',
     },
     interleaved2of5: {
       content: 'Contenu',

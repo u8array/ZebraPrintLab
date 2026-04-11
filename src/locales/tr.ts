@@ -1,6 +1,29 @@
 const tr = {
   palette: {
     heading: 'Nesneler',
+    groupText: 'Metin',
+    groupCodes: 'Kodlar',
+    groupShapes: 'Şekiller',
+  },
+
+  types: {
+    text: 'Metin',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR Kodu',
+    datamatrix: 'DataMatrix',
+    box: 'Dikdörtgen',
+    ellipse: 'Elips',
+    line: 'Çizgi',
+    serial: 'Seri No',
+    image: 'Görsel',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2/5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const tr = {
     dpmm8: '8 nokta/mm — 203 dpi',
     dpmm12: '12 nokta/mm — 300 dpi',
     dpmm24: '24 nokta/mm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
+    printQuantity: 'Baskı miktarı',
+    mediaMode: 'Ortam modu',
+    mediaModeT: 'T — Koparma',
+    mediaModeV: 'V — Soyma',
+    mediaModeD: 'D — Kesici',
     mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    labelShift: 'Etiket kaydırma (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const tr = {
       height: 'Yükseklik (nokta)',
       printInterpretation: 'İnsan tarafından okunabilir',
       moduleWidth: 'Modül genişliği',
+      placeholder: '12 rakam',
     },
     datamatrix: {
       content: 'İçerik',
@@ -165,18 +189,21 @@ const tr = {
       height: 'Yükseklik (nokta)',
       printInterpretation: 'Okunabilir',
       moduleWidth: 'Modül genişliği',
+      placeholder: '11 rakam',
     },
     ean8: {
       content: 'İçerik (7 hane)',
       height: 'Yükseklik (nokta)',
       printInterpretation: 'Okunabilir',
       moduleWidth: 'Modül genişliği',
+      placeholder: '7 rakam',
     },
     upce: {
       content: 'İçerik (6 hane)',
       height: 'Yükseklik (nokta)',
       printInterpretation: 'Okunabilir',
       moduleWidth: 'Modül genişliği',
+      placeholder: '6 rakam',
     },
     interleaved2of5: {
       content: 'İçerik',

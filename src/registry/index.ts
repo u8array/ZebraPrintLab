@@ -74,8 +74,8 @@ export const ObjectRegistry: Record<string, ObjectTypeDefinition<any>> = {
   image,
 };
 
-export const PALETTE_GROUPS: { key: ObjectGroup; label: string }[] = [
-  { key: 'text',  label: 'Text' },
-  { key: 'code',  label: 'Codes' },
-  { key: 'shape', label: 'Shapes' },
+export const PALETTE_GROUPS: { key: ObjectGroup; labelKey: 'groupText' | 'groupCodes' | 'groupShapes' }[] = [
+  { key: 'text',  labelKey: 'groupText' },
+  { key: 'code',  labelKey: 'groupCodes' },
+  { key: 'shape', labelKey: 'groupShapes' },
 ];

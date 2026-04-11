@@ -1,6 +1,29 @@
 const et = {
   palette: {
     heading: 'Objektid',
+    groupText: 'Tekst',
+    groupCodes: 'Koodid',
+    groupShapes: 'Kujundid',
+  },
+
+  types: {
+    text: 'Tekst',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR-kood',
+    datamatrix: 'DataMatrix',
+    box: 'Ristkülik',
+    ellipse: 'Ellips',
+    line: 'Joon',
+    serial: 'Seerianr',
+    image: 'Pilt',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2/5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const et = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
+    printQuantity: 'Trükikogus',
+    mediaMode: 'Kandja režiim',
+    mediaModeT: 'T — Rebimine',
+    mediaModeV: 'V — Koorimine',
+    mediaModeD: 'D — Lõikur',
     mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    labelShift: 'Etiketi nihe (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const et = {
       height: 'Kõrgus (punkti)',
       printInterpretation: 'Inimesele loetav',
       moduleWidth: 'Mooduli laius',
+      placeholder: '12 numbrit',
     },
     datamatrix: {
       content: 'Sisu',
@@ -165,18 +189,21 @@ const et = {
       height: 'Kõrgus (punkti)',
       printInterpretation: 'Loetav',
       moduleWidth: 'Mooduli laius',
+      placeholder: '11 numbrit',
     },
     ean8: {
       content: 'Sisu (7 numbrit)',
       height: 'Kõrgus (punkti)',
       printInterpretation: 'Loetav',
       moduleWidth: 'Mooduli laius',
+      placeholder: '7 numbrit',
     },
     upce: {
       content: 'Sisu (6 numbrit)',
       height: 'Kõrgus (punkti)',
       printInterpretation: 'Loetav',
       moduleWidth: 'Mooduli laius',
+      placeholder: '6 numbrit',
     },
     interleaved2of5: {
       content: 'Sisu',

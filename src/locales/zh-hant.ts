@@ -1,6 +1,29 @@
 const zhHant = {
   palette: {
     heading: '物件',
+    groupText: '文字',
+    groupCodes: '條碼',
+    groupShapes: '形狀',
+  },
+
+  types: {
+    text: '文字',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: '二維碼',
+    datamatrix: 'DataMatrix',
+    box: '矩形',
+    ellipse: '橢圓',
+    line: '線條',
+    serial: '序號',
+    image: '圖片',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: '交叉 2/5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const zhHant = {
     dpmm8: '8 點/公釐 — 203 dpi',
     dpmm12: '12 點/公釐 — 300 dpi',
     dpmm24: '24 點/公釐 — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: '列印數量',
+    mediaMode: '介質模式',
+    mediaModeT: 'T — 撕離',
+    mediaModeV: 'V — 剝離',
+    mediaModeD: 'D — 裁刀',
+    mediaModeK: 'K — 自助終端',
+    labelShift: '標籤偏移 (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const zhHant = {
       height: '高度 (點)',
       printInterpretation: '人工可讀',
       moduleWidth: '模組寬度',
+      placeholder: '12 位數字',
     },
     datamatrix: {
       content: '內容',
@@ -165,18 +189,21 @@ const zhHant = {
       height: '高度（點）',
       printInterpretation: '可讀文字',
       moduleWidth: '模組寬度',
+      placeholder: '11 位數字',
     },
     ean8: {
       content: '內容（7位）',
       height: '高度（點）',
       printInterpretation: '可讀文字',
       moduleWidth: '模組寬度',
+      placeholder: '7 位數字',
     },
     upce: {
       content: '內容（6位）',
       height: '高度（點）',
       printInterpretation: '可讀文字',
       moduleWidth: '模組寬度',
+      placeholder: '6 位數字',
     },
     interleaved2of5: {
       content: '內容',

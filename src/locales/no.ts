@@ -1,6 +1,29 @@
 const no = {
   palette: {
     heading: 'Objekter',
+    groupText: 'Tekst',
+    groupCodes: 'Koder',
+    groupShapes: 'Former',
+  },
+
+  types: {
+    text: 'Tekst',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR-kode',
+    datamatrix: 'DataMatrix',
+    box: 'Rektangel',
+    ellipse: 'Ellipse',
+    line: 'Linje',
+    serial: 'Serienr.',
+    image: 'Bilde',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 av 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const no = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
+    printQuantity: 'Utskriftsmengde',
+    mediaMode: 'Mediemodus',
+    mediaModeT: 'T — Avrivning',
+    mediaModeV: 'V — Avskalling',
+    mediaModeD: 'D — Kutter',
     mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    labelShift: 'Etikettforskyvning (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const no = {
       height: 'Høyde (punkter)',
       printInterpretation: 'Lesbar for mennesker',
       moduleWidth: 'Modulbredde',
+      placeholder: '12 siffer',
     },
     datamatrix: {
       content: 'Innhold',
@@ -165,18 +189,21 @@ const no = {
       height: 'Høyde (punkter)',
       printInterpretation: 'Lesbar',
       moduleWidth: 'Modulbredde',
+      placeholder: '11 siffer',
     },
     ean8: {
       content: 'Innhold (7 siffer)',
       height: 'Høyde (punkter)',
       printInterpretation: 'Lesbar',
       moduleWidth: 'Modulbredde',
+      placeholder: '7 siffer',
     },
     upce: {
       content: 'Innhold (6 siffer)',
       height: 'Høyde (punkter)',
       printInterpretation: 'Lesbar',
       moduleWidth: 'Modulbredde',
+      placeholder: '6 siffer',
     },
     interleaved2of5: {
       content: 'Innhold',

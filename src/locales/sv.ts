@@ -1,6 +1,29 @@
 const sv = {
   palette: {
     heading: 'Objekt',
+    groupText: 'Text',
+    groupCodes: 'Koder',
+    groupShapes: 'Former',
+  },
+
+  types: {
+    text: 'Text',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR-kod',
+    datamatrix: 'DataMatrix',
+    box: 'Rektangel',
+    ellipse: 'Ellips',
+    line: 'Linje',
+    serial: 'Serienr.',
+    image: 'Bild',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 av 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const sv = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
+    printQuantity: 'Utskriftsmängd',
+    mediaMode: 'Medieläge',
+    mediaModeT: 'T — Avrivning',
+    mediaModeV: 'V — Avskalning',
+    mediaModeD: 'D — Skärare',
     mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    labelShift: 'Etikettförskjutning (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const sv = {
       height: 'Höjd (punkter)',
       printInterpretation: 'Läsbar för människa',
       moduleWidth: 'Modulbredd',
+      placeholder: '12 siffror',
     },
     datamatrix: {
       content: 'Innehåll',
@@ -165,18 +189,21 @@ const sv = {
       height: 'Höjd (punkter)',
       printInterpretation: 'Läsbar',
       moduleWidth: 'Modulbredd',
+      placeholder: '11 siffror',
     },
     ean8: {
       content: 'Innehåll (7 siffror)',
       height: 'Höjd (punkter)',
       printInterpretation: 'Läsbar',
       moduleWidth: 'Modulbredd',
+      placeholder: '7 siffror',
     },
     upce: {
       content: 'Innehåll (6 siffror)',
       height: 'Höjd (punkter)',
       printInterpretation: 'Läsbar',
       moduleWidth: 'Modulbredd',
+      placeholder: '6 siffror',
     },
     interleaved2of5: {
       content: 'Innehåll',

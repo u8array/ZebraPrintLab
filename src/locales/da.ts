@@ -1,6 +1,29 @@
 const da = {
   palette: {
     heading: 'Objekter',
+    groupText: 'Tekst',
+    groupCodes: 'Koder',
+    groupShapes: 'Former',
+  },
+
+  types: {
+    text: 'Tekst',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR-kode',
+    datamatrix: 'DataMatrix',
+    box: 'Rektangel',
+    ellipse: 'Ellipse',
+    line: 'Linje',
+    serial: 'Serienr.',
+    image: 'Billede',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 af 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const da = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
+    printQuantity: 'Udskriftsmængde',
+    mediaMode: 'Medietilstand',
+    mediaModeT: 'T — Afriv',
+    mediaModeV: 'V — Afpil',
+    mediaModeD: 'D — Skærer',
     mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    labelShift: 'Etiketforskydning (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const da = {
       height: 'Højde (punkter)',
       printInterpretation: 'Læsbar for mennesker',
       moduleWidth: 'Modulbredde',
+      placeholder: '12 cifre',
     },
     datamatrix: {
       content: 'Indhold',
@@ -165,18 +189,21 @@ const da = {
       height: 'Højde (punkter)',
       printInterpretation: 'Læsbar',
       moduleWidth: 'Modulbredde',
+      placeholder: '11 cifre',
     },
     ean8: {
       content: 'Indhold (7 cifre)',
       height: 'Højde (punkter)',
       printInterpretation: 'Læsbar',
       moduleWidth: 'Modulbredde',
+      placeholder: '7 cifre',
     },
     upce: {
       content: 'Indhold (6 cifre)',
       height: 'Højde (punkter)',
       printInterpretation: 'Læsbar',
       moduleWidth: 'Modulbredde',
+      placeholder: '6 cifre',
     },
     interleaved2of5: {
       content: 'Indhold',

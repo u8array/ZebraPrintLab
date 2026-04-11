@@ -1,6 +1,29 @@
 const en = {
   palette: {
     heading: 'Objects',
+    groupText: 'Text',
+    groupCodes: 'Codes',
+    groupShapes: 'Shapes',
+  },
+
+  types: {
+    text: 'Text',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR Code',
+    datamatrix: 'DataMatrix',
+    box: 'Box',
+    ellipse: 'Ellipse',
+    line: 'Line',
+    serial: 'Serial',
+    image: 'Image',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 of 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -112,6 +135,7 @@ const en = {
       height: 'Height (dots)',
       printInterpretation: 'Human readable',
       moduleWidth: 'Module width',
+      placeholder: '12 digits',
     },
     datamatrix: {
       content: 'Content',
@@ -165,18 +189,21 @@ const en = {
       height: 'Height (dots)',
       printInterpretation: 'Human readable',
       moduleWidth: 'Module width',
+      placeholder: '11 digits',
     },
     ean8: {
       content: 'Content (7 digits)',
       height: 'Height (dots)',
       printInterpretation: 'Human readable',
       moduleWidth: 'Module width',
+      placeholder: '7 digits',
     },
     upce: {
       content: 'Content (6 digits)',
       height: 'Height (dots)',
       printInterpretation: 'Human readable',
       moduleWidth: 'Module width',
+      placeholder: '6 digits',
     },
     interleaved2of5: {
       content: 'Content',

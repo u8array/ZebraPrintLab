@@ -1,6 +1,29 @@
 const lt = {
   palette: {
     heading: 'Objektai',
+    groupText: 'Tekstas',
+    groupCodes: 'Kodai',
+    groupShapes: 'Figūros',
+  },
+
+  types: {
+    text: 'Tekstas',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR kodas',
+    datamatrix: 'DataMatrix',
+    box: 'Stačiakampis',
+    ellipse: 'Elipsė',
+    line: 'Linija',
+    serial: 'Serijinis nr.',
+    image: 'Vaizdas',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 iš 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const lt = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: 'Spausdinimo kiekis',
+    mediaMode: 'Laikmenos režimas',
+    mediaModeT: 'T — Nuplėšimas',
+    mediaModeV: 'V — Nulupimas',
+    mediaModeD: 'D — Pjaustuvas',
+    mediaModeK: 'K — Kioskas',
+    labelShift: 'Etiketės poslinkis (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const lt = {
       height: 'Aukštis (taškai)',
       printInterpretation: 'Žmogui skaitomas',
       moduleWidth: 'Modulio plotis',
+      placeholder: '12 skaitmenų',
     },
     datamatrix: {
       content: 'Turinys',
@@ -165,18 +189,21 @@ const lt = {
       height: 'Aukštis (taškai)',
       printInterpretation: 'Skaitomas',
       moduleWidth: 'Modulio plotis',
+      placeholder: '11 skaitmenų',
     },
     ean8: {
       content: 'Turinys (7 skaitmenų)',
       height: 'Aukštis (taškai)',
       printInterpretation: 'Skaitomas',
       moduleWidth: 'Modulio plotis',
+      placeholder: '7 skaitmenys',
     },
     upce: {
       content: 'Turinys (6 skaitmenų)',
       height: 'Aukštis (taškai)',
       printInterpretation: 'Skaitomas',
       moduleWidth: 'Modulio plotis',
+      placeholder: '6 skaitmenys',
     },
     interleaved2of5: {
       content: 'Turinys',

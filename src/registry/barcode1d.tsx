@@ -16,7 +16,6 @@ interface Barcode1DConfig {
   icon: string;
   defaultContent: string;
   contentMaxLength?: number;
-  contentPlaceholder?: string;
   hasCheckDigit: boolean;
   /** Build the ZPL barcode command (e.g. `^BUN,100,Y,N,N`). */
   zplCommand: (p: Barcode1DProps) => string;
@@ -30,6 +29,7 @@ type BarcodeLocale = {
   moduleWidth: string;
   printInterpretation: string;
   checkDigit?: string;
+  placeholder?: string;
 };
 
 export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<Barcode1DProps> {
@@ -68,7 +68,7 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
               className={inputCls}
               value={p.content}
               maxLength={config.contentMaxLength}
-              placeholder={config.contentPlaceholder}
+              placeholder={loc.placeholder}
               onChange={(e) => onChange({ content: e.target.value })}
             />
           </div>

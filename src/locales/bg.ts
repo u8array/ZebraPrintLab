@@ -1,6 +1,29 @@
 const bg = {
   palette: {
     heading: 'Обекти',
+    groupText: 'Текст',
+    groupCodes: 'Кодове',
+    groupShapes: 'Форми',
+  },
+
+  types: {
+    text: 'Текст',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR код',
+    datamatrix: 'DataMatrix',
+    box: 'Правоъгълник',
+    ellipse: 'Елипса',
+    line: 'Линия',
+    serial: 'Сериен №',
+    image: 'Изображение',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 от 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const bg = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: 'Количество за печат',
+    mediaMode: 'Режим на носителя',
+    mediaModeT: 'T — Откъсване',
+    mediaModeV: 'V — Отлепване',
+    mediaModeD: 'D — Резач',
+    mediaModeK: 'K — Киоск',
+    labelShift: 'Отместване на етикета (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const bg = {
       height: 'Височина (точки)',
       printInterpretation: 'Четливо от хора',
       moduleWidth: 'Ширина на модула',
+      placeholder: '12 цифри',
     },
     datamatrix: {
       content: 'Съдържание',
@@ -165,18 +189,21 @@ const bg = {
       height: 'Височина (точки)',
       printInterpretation: 'Четимо',
       moduleWidth: 'Ширина на модул',
+      placeholder: '11 цифри',
     },
     ean8: {
       content: 'Съдържание (7 цифри)',
       height: 'Височина (точки)',
       printInterpretation: 'Четимо',
       moduleWidth: 'Ширина на модул',
+      placeholder: '7 цифри',
     },
     upce: {
       content: 'Съдържание (6 цифри)',
       height: 'Височина (точки)',
       printInterpretation: 'Четимо',
       moduleWidth: 'Ширина на модул',
+      placeholder: '6 цифри',
     },
     interleaved2of5: {
       content: 'Съдържание',

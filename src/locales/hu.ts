@@ -1,6 +1,29 @@
 const hu = {
   palette: {
     heading: 'Objektumok',
+    groupText: 'Szöveg',
+    groupCodes: 'Kódok',
+    groupShapes: 'Alakzatok',
+  },
+
+  types: {
+    text: 'Szöveg',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR-kód',
+    datamatrix: 'DataMatrix',
+    box: 'Téglalap',
+    ellipse: 'Ellipszis',
+    line: 'Vonal',
+    serial: 'Sorszám',
+    image: 'Kép',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2/5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const hu = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: 'Nyomtatási mennyiség',
+    mediaMode: 'Média mód',
+    mediaModeT: 'T — Letépés',
+    mediaModeV: 'V — Lefejtés',
+    mediaModeD: 'D — Vágó',
+    mediaModeK: 'K — Kioszk',
+    labelShift: 'Címke eltolás (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const hu = {
       height: 'Magasság (pont)',
       printInterpretation: 'Ember által olvasható',
       moduleWidth: 'Modulszélesség',
+      placeholder: '12 számjegy',
     },
     datamatrix: {
       content: 'Tartalom',
@@ -165,18 +189,21 @@ const hu = {
       height: 'Magasság (pont)',
       printInterpretation: 'Olvasható',
       moduleWidth: 'Modulszélesség',
+      placeholder: '11 számjegy',
     },
     ean8: {
       content: 'Tartalom (7 számjegy)',
       height: 'Magasság (pont)',
       printInterpretation: 'Olvasható',
       moduleWidth: 'Modulszélesség',
+      placeholder: '7 számjegy',
     },
     upce: {
       content: 'Tartalom (6 számjegy)',
       height: 'Magasság (pont)',
       printInterpretation: 'Olvasható',
       moduleWidth: 'Modulszélesség',
+      placeholder: '6 számjegy',
     },
     interleaved2of5: {
       content: 'Tartalom',

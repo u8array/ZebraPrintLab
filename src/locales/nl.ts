@@ -1,6 +1,29 @@
 const nl = {
   palette: {
     heading: 'Objecten',
+    groupText: 'Tekst',
+    groupCodes: 'Codes',
+    groupShapes: 'Vormen',
+  },
+
+  types: {
+    text: 'Tekst',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR-code',
+    datamatrix: 'DataMatrix',
+    box: 'Rechthoek',
+    ellipse: 'Ellips',
+    line: 'Lijn',
+    serial: 'Serienummer',
+    image: 'Afbeelding',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 van 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const nl = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
+    printQuantity: 'Afdrukoplage',
+    mediaMode: 'Mediamodus',
+    mediaModeT: 'T — Afscheuren',
+    mediaModeV: 'V — Afpellen',
+    mediaModeD: 'D — Snijder',
     mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    labelShift: 'Etiketverschuiving (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const nl = {
       height: 'Hoogte (punten)',
       printInterpretation: 'Leesbaar voor mensen',
       moduleWidth: 'Modulebreedte',
+      placeholder: '12 cijfers',
     },
     datamatrix: {
       content: 'Inhoud',
@@ -165,18 +189,21 @@ const nl = {
       height: 'Hoogte (punten)',
       printInterpretation: 'Leesbaar',
       moduleWidth: 'Modulebreedte',
+      placeholder: '11 cijfers',
     },
     ean8: {
       content: 'Inhoud (7 cijfers)',
       height: 'Hoogte (punten)',
       printInterpretation: 'Leesbaar',
       moduleWidth: 'Modulebreedte',
+      placeholder: '7 cijfers',
     },
     upce: {
       content: 'Inhoud (6 cijfers)',
       height: 'Hoogte (punten)',
       printInterpretation: 'Leesbaar',
       moduleWidth: 'Modulebreedte',
+      placeholder: '6 cijfers',
     },
     interleaved2of5: {
       content: 'Inhoud',

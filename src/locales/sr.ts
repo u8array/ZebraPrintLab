@@ -1,6 +1,29 @@
 const sr = {
   palette: {
     heading: 'Objekti',
+    groupText: 'Текст',
+    groupCodes: 'Кодови',
+    groupShapes: 'Облици',
+  },
+
+  types: {
+    text: 'Текст',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR код',
+    datamatrix: 'DataMatrix',
+    box: 'Правоугаоник',
+    ellipse: 'Елипса',
+    line: 'Линија',
+    serial: 'Серијски бр.',
+    image: 'Слика',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 од 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const sr = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: 'Количина штампе',
+    mediaMode: 'Режим медија',
+    mediaModeT: 'T — Откидање',
+    mediaModeV: 'V — Љуштење',
+    mediaModeD: 'D — Секач',
+    mediaModeK: 'K — Киоск',
+    labelShift: 'Померај етикете (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const sr = {
       height: 'Visina (tačke)',
       printInterpretation: 'Čitljivo za čoveka',
       moduleWidth: 'Širina modula',
+      placeholder: '12 цифара',
     },
     datamatrix: {
       content: 'Sadržaj',
@@ -165,18 +189,21 @@ const sr = {
       height: 'Висина (тачке)',
       printInterpretation: 'Читљиво',
       moduleWidth: 'Ширина модула',
+      placeholder: '11 цифара',
     },
     ean8: {
       content: 'Садржај (7 цифара)',
       height: 'Висина (тачке)',
       printInterpretation: 'Читљиво',
       moduleWidth: 'Ширина модула',
+      placeholder: '7 цифара',
     },
     upce: {
       content: 'Садржај (6 цифара)',
       height: 'Висина (тачке)',
       printInterpretation: 'Читљиво',
       moduleWidth: 'Ширина модула',
+      placeholder: '6 цифара',
     },
     interleaved2of5: {
       content: 'Садржај',

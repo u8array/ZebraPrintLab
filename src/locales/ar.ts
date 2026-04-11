@@ -1,6 +1,29 @@
 const ar = {
   palette: {
     heading: 'العناصر',
+    groupText: 'نص',
+    groupCodes: 'رموز',
+    groupShapes: 'أشكال',
+  },
+
+  types: {
+    text: 'نص',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'رمز QR',
+    datamatrix: 'DataMatrix',
+    box: 'مستطيل',
+    ellipse: 'قطع ناقص',
+    line: 'خط',
+    serial: 'رقم تسلسلي',
+    image: 'صورة',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 من 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const ar = {
     dpmm8: '8 نقطة/مم — 203 dpi',
     dpmm12: '12 نقطة/مم — 300 dpi',
     dpmm24: '24 نقطة/مم — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: 'كمية الطباعة',
+    mediaMode: 'وضع الوسائط',
+    mediaModeT: 'T — تمزيق',
+    mediaModeV: 'V — تقشير',
+    mediaModeD: 'D — قاطع',
+    mediaModeK: 'K — كشك',
+    labelShift: 'إزاحة الملصق (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const ar = {
       height: 'الارتفاع (نقطة)',
       printInterpretation: 'قابل للقراءة البشرية',
       moduleWidth: 'عرض الوحدة',
+      placeholder: '12 رقم',
     },
     datamatrix: {
       content: 'المحتوى',
@@ -165,18 +189,21 @@ const ar = {
       height: 'الارتفاع (نقاط)',
       printInterpretation: 'مقروء',
       moduleWidth: 'عرض الوحدة',
+      placeholder: '11 رقم',
     },
     ean8: {
       content: 'المحتوى (7 أرقام)',
       height: 'الارتفاع (نقاط)',
       printInterpretation: 'مقروء',
       moduleWidth: 'عرض الوحدة',
+      placeholder: '7 أرقام',
     },
     upce: {
       content: 'المحتوى (6 أرقام)',
       height: 'الارتفاع (نقاط)',
       printInterpretation: 'مقروء',
       moduleWidth: 'عرض الوحدة',
+      placeholder: '6 أرقام',
     },
     interleaved2of5: {
       content: 'المحتوى',

@@ -1,6 +1,29 @@
 const sk = {
   palette: {
     heading: 'Objekty',
+    groupText: 'Text',
+    groupCodes: 'Kódy',
+    groupShapes: 'Tvary',
+  },
+
+  types: {
+    text: 'Text',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR kód',
+    datamatrix: 'DataMatrix',
+    box: 'Obdĺžnik',
+    ellipse: 'Elipsa',
+    line: 'Čiara',
+    serial: 'Sériové číslo',
+    image: 'Obrázok',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 z 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const sk = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
+    printQuantity: 'Počet výtlačkov',
+    mediaMode: 'Režim média',
+    mediaModeT: 'T — Odtrhávanie',
+    mediaModeV: 'V — Odlepenie',
+    mediaModeD: 'D — Rezačka',
     mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    labelShift: 'Posun štítka (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const sk = {
       height: 'Výška (body)',
       printInterpretation: 'Čitateľný pre človeka',
       moduleWidth: 'Šírka modulu',
+      placeholder: '12 číslic',
     },
     datamatrix: {
       content: 'Obsah',
@@ -165,18 +189,21 @@ const sk = {
       height: 'Výška (body)',
       printInterpretation: 'Čitateľný pre človeka',
       moduleWidth: 'Šírka modulu',
+      placeholder: '11 číslic',
     },
     ean8: {
       content: 'Obsah (7 číslic)',
       height: 'Výška (body)',
       printInterpretation: 'Čitateľný pre človeka',
       moduleWidth: 'Šírka modulu',
+      placeholder: '7 číslic',
     },
     upce: {
       content: 'Obsah (6 číslic)',
       height: 'Výška (body)',
       printInterpretation: 'Čitateľný pre človeka',
       moduleWidth: 'Šírka modulu',
+      placeholder: '6 číslic',
     },
     interleaved2of5: {
       content: 'Obsah',

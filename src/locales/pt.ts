@@ -1,6 +1,29 @@
 const pt = {
   palette: {
     heading: 'Objetos',
+    groupText: 'Texto',
+    groupCodes: 'Códigos',
+    groupShapes: 'Formas',
+  },
+
+  types: {
+    text: 'Texto',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'Código QR',
+    datamatrix: 'DataMatrix',
+    box: 'Retângulo',
+    ellipse: 'Elipse',
+    line: 'Linha',
+    serial: 'Série',
+    image: 'Imagem',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Intercalado 2 de 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const pt = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
+    printQuantity: 'Quantidade de impressão',
+    mediaMode: 'Modo de mídia',
+    mediaModeT: 'T — Destacar',
+    mediaModeV: 'V — Descolar',
     mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    mediaModeK: 'K — Quiosque',
+    labelShift: 'Deslocamento da etiqueta (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const pt = {
       height: 'Altura (pontos)',
       printInterpretation: 'Legível por humanos',
       moduleWidth: 'Largura do módulo',
+      placeholder: '12 dígitos',
     },
     datamatrix: {
       content: 'Conteúdo',
@@ -165,18 +189,21 @@ const pt = {
       height: 'Altura (pontos)',
       printInterpretation: 'Legível',
       moduleWidth: 'Largura módulo',
+      placeholder: '11 dígitos',
     },
     ean8: {
       content: 'Conteúdo (7 dígitos)',
       height: 'Altura (pontos)',
       printInterpretation: 'Legível',
       moduleWidth: 'Largura módulo',
+      placeholder: '7 dígitos',
     },
     upce: {
       content: 'Conteúdo (6 dígitos)',
       height: 'Altura (pontos)',
       printInterpretation: 'Legível',
       moduleWidth: 'Largura módulo',
+      placeholder: '6 dígitos',
     },
     interleaved2of5: {
       content: 'Conteúdo',

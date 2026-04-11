@@ -1,6 +1,29 @@
 const sl = {
   palette: {
     heading: 'Predmeti',
+    groupText: 'Besedilo',
+    groupCodes: 'Kode',
+    groupShapes: 'Oblike',
+  },
+
+  types: {
+    text: 'Besedilo',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR koda',
+    datamatrix: 'DataMatrix',
+    box: 'Pravokotnik',
+    ellipse: 'Elipsa',
+    line: 'Črta',
+    serial: 'Zaporedna št.',
+    image: 'Slika',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 od 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const sl = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
+    printQuantity: 'Količina tiskanja',
+    mediaMode: 'Način medija',
+    mediaModeT: 'T — Odtrganje',
+    mediaModeV: 'V — Luščenje',
+    mediaModeD: 'D — Rezalnik',
     mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    labelShift: 'Zamik nalepke (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const sl = {
       height: 'Višina (točke)',
       printInterpretation: 'Berljivo za človeka',
       moduleWidth: 'Širina modula',
+      placeholder: '12 števk',
     },
     datamatrix: {
       content: 'Vsebina',
@@ -165,18 +189,21 @@ const sl = {
       height: 'Višina (pike)',
       printInterpretation: 'Berljivo za človeka',
       moduleWidth: 'Širina modula',
+      placeholder: '11 števk',
     },
     ean8: {
       content: 'Vsebina (7 števk)',
       height: 'Višina (pike)',
       printInterpretation: 'Berljivo za človeka',
       moduleWidth: 'Širina modula',
+      placeholder: '7 števk',
     },
     upce: {
       content: 'Vsebina (6 števk)',
       height: 'Višina (pike)',
       printInterpretation: 'Berljivo za človeka',
       moduleWidth: 'Širina modula',
+      placeholder: '6 števk',
     },
     interleaved2of5: {
       content: 'Vsebina',

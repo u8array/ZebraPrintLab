@@ -1,6 +1,29 @@
 const pl = {
   palette: {
     heading: 'Obiekty',
+    groupText: 'Tekst',
+    groupCodes: 'Kody',
+    groupShapes: 'Kształty',
+  },
+
+  types: {
+    text: 'Tekst',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'Kod QR',
+    datamatrix: 'DataMatrix',
+    box: 'Prostokąt',
+    ellipse: 'Elipsa',
+    line: 'Linia',
+    serial: 'Seria',
+    image: 'Obraz',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Interleaved 2 z 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const pl = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
+    printQuantity: 'Ilość wydruków',
+    mediaMode: 'Tryb nośnika',
+    mediaModeT: 'T — Odrywanie',
+    mediaModeV: 'V — Odklejanie',
     mediaModeD: 'D — Cutter',
     mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    labelShift: 'Przesunięcie etykiety (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const pl = {
       height: 'Wysokość (punkty)',
       printInterpretation: 'Czytelny dla człowieka',
       moduleWidth: 'Szerokość modułu',
+      placeholder: '12 cyfr',
     },
     datamatrix: {
       content: 'Zawartość',
@@ -165,18 +189,21 @@ const pl = {
       height: 'Wysokość (punkty)',
       printInterpretation: 'Czytelny',
       moduleWidth: 'Szerokość modułu',
+      placeholder: '11 cyfr',
     },
     ean8: {
       content: 'Zawartość (7 cyfr)',
       height: 'Wysokość (punkty)',
       printInterpretation: 'Czytelny',
       moduleWidth: 'Szerokość modułu',
+      placeholder: '7 cyfr',
     },
     upce: {
       content: 'Zawartość (6 cyfr)',
       height: 'Wysokość (punkty)',
       printInterpretation: 'Czytelny',
       moduleWidth: 'Szerokość modułu',
+      placeholder: '6 cyfr',
     },
     interleaved2of5: {
       content: 'Zawartość',

@@ -1,6 +1,29 @@
 const zhHans = {
   palette: {
     heading: '对象',
+    groupText: '文本',
+    groupCodes: '条码',
+    groupShapes: '形状',
+  },
+
+  types: {
+    text: '文本',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: '二维码',
+    datamatrix: 'DataMatrix',
+    box: '矩形',
+    ellipse: '椭圆',
+    line: '线条',
+    serial: '序列号',
+    image: '图片',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: '交叉 2/5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const zhHans = {
     dpmm8: '8 点/毫米 — 203 dpi',
     dpmm12: '12 点/毫米 — 300 dpi',
     dpmm24: '24 点/毫米 — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: '打印数量',
+    mediaMode: '介质模式',
+    mediaModeT: 'T — 撕离',
+    mediaModeV: 'V — 剥离',
+    mediaModeD: 'D — 切刀',
+    mediaModeK: 'K — 自助终端',
+    labelShift: '标签偏移 (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const zhHans = {
       height: '高度 (点)',
       printInterpretation: '人工可读',
       moduleWidth: '模块宽度',
+      placeholder: '12 位数字',
     },
     datamatrix: {
       content: '内容',
@@ -165,18 +189,21 @@ const zhHans = {
       height: '高度（点）',
       printInterpretation: '可读文字',
       moduleWidth: '模块宽度',
+      placeholder: '11 位数字',
     },
     ean8: {
       content: '内容（7位）',
       height: '高度（点）',
       printInterpretation: '可读文字',
       moduleWidth: '模块宽度',
+      placeholder: '7 位数字',
     },
     upce: {
       content: '内容（6位）',
       height: '高度（点）',
       printInterpretation: '可读文字',
       moduleWidth: '模块宽度',
+      placeholder: '6 位数字',
     },
     interleaved2of5: {
       content: '内容',

@@ -1,6 +1,29 @@
 const ko = {
   palette: {
     heading: '개체',
+    groupText: '텍스트',
+    groupCodes: '코드',
+    groupShapes: '도형',
+  },
+
+  types: {
+    text: '텍스트',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'QR 코드',
+    datamatrix: 'DataMatrix',
+    box: '사각형',
+    ellipse: '타원',
+    line: '선',
+    serial: '일련번호',
+    image: '이미지',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: '인터리브드 2/5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const ko = {
     dpmm8: '8 점/mm — 203 dpi',
     dpmm12: '12 점/mm — 300 dpi',
     dpmm24: '24 점/mm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
-    mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    printQuantity: '인쇄 수량',
+    mediaMode: '미디어 모드',
+    mediaModeT: 'T — 찢어 분리',
+    mediaModeV: 'V — 필 오프',
+    mediaModeD: 'D — 커터',
+    mediaModeK: 'K — 키오스크',
+    labelShift: '라벨 이동 (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const ko = {
       height: '높이 (점)',
       printInterpretation: '사람이 읽을 수 있는',
       moduleWidth: '모듈 너비',
+      placeholder: '12자리',
     },
     datamatrix: {
       content: '내용',
@@ -165,18 +189,21 @@ const ko = {
       height: '높이 (도트)',
       printInterpretation: '판독 가능',
       moduleWidth: '모듈 폭',
+      placeholder: '11자리',
     },
     ean8: {
       content: '내용 (7자리)',
       height: '높이 (도트)',
       printInterpretation: '판독 가능',
       moduleWidth: '모듈 폭',
+      placeholder: '7자리',
     },
     upce: {
       content: '내용 (6자리)',
       height: '높이 (도트)',
       printInterpretation: '판독 가능',
       moduleWidth: '모듈 폭',
+      placeholder: '6자리',
     },
     interleaved2of5: {
       content: '내용',

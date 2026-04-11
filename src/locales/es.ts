@@ -1,6 +1,29 @@
 const es = {
   palette: {
     heading: 'Objetos',
+    groupText: 'Texto',
+    groupCodes: 'Códigos',
+    groupShapes: 'Formas',
+  },
+
+  types: {
+    text: 'Texto',
+    code128: 'Code 128',
+    code39: 'Code 39',
+    ean13: 'EAN-13',
+    qrcode: 'Código QR',
+    datamatrix: 'DataMatrix',
+    box: 'Rectángulo',
+    ellipse: 'Elipse',
+    line: 'Línea',
+    serial: 'Serie',
+    image: 'Imagen',
+    upca: 'UPC-A',
+    ean8: 'EAN-8',
+    upce: 'UPC-E',
+    interleaved2of5: 'Intercalado 2 de 5',
+    code93: 'Code 93',
+    pdf417: 'PDF417',
   },
 
   properties: {
@@ -20,13 +43,13 @@ const es = {
     dpmm8: '8 dpmm — 203 dpi',
     dpmm12: '12 dpmm — 300 dpi',
     dpmm24: '24 dpmm — 600 dpi',
-    printQuantity: 'Print quantity',
-    mediaMode: 'Media mode',
-    mediaModeT: 'T — Tear-off',
-    mediaModeV: 'V — Peel-off',
+    printQuantity: 'Cantidad de impresión',
+    mediaMode: 'Modo de medio',
+    mediaModeT: 'T — Desgarro',
+    mediaModeV: 'V — Pelado',
     mediaModeD: 'D — Cutter',
-    mediaModeK: 'K — Kiosk',
-    labelShift: 'Label shift (dots)',
+    mediaModeK: 'K — Kiosco',
+    labelShift: 'Desplazamiento de etiqueta (dots)',
   },
 
   app: {
@@ -112,6 +135,7 @@ const es = {
       height: 'Altura (puntos)',
       printInterpretation: 'Legible por humanos',
       moduleWidth: 'Ancho de módulo',
+      placeholder: '12 dígitos',
     },
     datamatrix: {
       content: 'Contenido',
@@ -165,18 +189,21 @@ const es = {
       height: 'Altura (puntos)',
       printInterpretation: 'Legible',
       moduleWidth: 'Ancho módulo',
+      placeholder: '11 dígitos',
     },
     ean8: {
       content: 'Contenido (7 dígitos)',
       height: 'Altura (puntos)',
       printInterpretation: 'Legible',
       moduleWidth: 'Ancho módulo',
+      placeholder: '7 dígitos',
     },
     upce: {
       content: 'Contenido (6 dígitos)',
       height: 'Altura (puntos)',
       printInterpretation: 'Legible',
       moduleWidth: 'Ancho módulo',
+      placeholder: '6 dígitos',
     },
     interleaved2of5: {
       content: 'Contenido',

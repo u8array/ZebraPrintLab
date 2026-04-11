@@ -6,7 +6,6 @@ export const ean8 = createBarcode1D({
   icon: 'E8',
   defaultContent: '1234567',
   contentMaxLength: 7,
-  contentPlaceholder: '7 digits',
   hasCheckDigit: false,
   localeKey: 'ean8',
   zplCommand: (p) => {
