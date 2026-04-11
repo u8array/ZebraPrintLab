@@ -266,8 +266,8 @@ function KonvaObjectInner({
       //   I (180°): FT=top-right,    Konva=bottom-right  → shift Y down by rendered height
       //   B (270°): FT=top-right,    Konva=bottom-left   → shift X left by rendered height
       // For R/I/B the anchor is at the far end of the text, so we must use the actual
-      // Konva-rendered font height (fontHeight / 1.15) — not the raw ZPL fontHeight.
-      const renderedH = p.fontHeight / 1.15;
+      // Konva-rendered font height (fontHeight / 1.3) — not the raw ZPL fontHeight.
+      const renderedH = p.fontHeight / 1.3;
       if (p.rotation === 'N') { displayY -= p.fontHeight; }
       else if (p.rotation === 'R') { displayX += renderedH; }
       else if (p.rotation === 'I') { displayY += renderedH; }
@@ -321,7 +321,7 @@ function KonvaObjectInner({
 
   if (obj.type === 'text') {
     const p = obj.props;
-    const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 1.15, 6);
+    const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 1.3, 6);
     const zplRotationDeg: Record<typeof p.rotation, number> = {
       N: 0, R: 90, I: 180, B: 270,
     };
@@ -384,7 +384,7 @@ function KonvaObjectInner({
 
   if (obj.type === 'serial') {
     const p = obj.props;
-    const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 1.15, 6);
+    const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 1.3, 6);
     const zplRotationDeg: Record<typeof p.rotation, number> = {
       N: 0, R: 90, I: 180, B: 270,
     };
