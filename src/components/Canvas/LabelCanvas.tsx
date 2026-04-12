@@ -39,6 +39,12 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
   // track whether the pointer actually moved during a pan gesture
   const didPanRef = useRef(false);
 
+  // Lasso (marquee) selection
+  const [lasso, setLasso] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const lassoRectRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const lassoStartRef = useRef<{ x: number; y: number } | null>(null);
+  const didLassoRef = useRef(false);
+
   // Ghost object shown while dragging any object from the palette
   const [ghost, setGhost] = useState<LabelObject | null>(null);
   const dragEnterCountRef = useRef(0);
@@ -169,19 +175,55 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isPanningRef.current) return;
-    const dx = e.clientX - panStartRef.current.mouseX;
-    const dy = e.clientY - panStartRef.current.mouseY;
-    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) didPanRef.current = true;
-    setPanOffset({
-      x: panStartRef.current.panX + dx,
-      y: panStartRef.current.panY + dy,
-    });
+    // Panning
+    if (isPanningRef.current) {
+      const dx = e.clientX - panStartRef.current.mouseX;
+      const dy = e.clientY - panStartRef.current.mouseY;
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) didPanRef.current = true;
+      setPanOffset({ x: panStartRef.current.panX + dx, y: panStartRef.current.panY + dy });
+    }
+    // Lasso
+    if (lassoStartRef.current && containerRef.current) {
+      const cr = containerRef.current.getBoundingClientRect();
+      const px = e.clientX - cr.left;
+      const py = e.clientY - cr.top;
+      const dx = px - lassoStartRef.current.x;
+      const dy = py - lassoStartRef.current.y;
+      if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+      didLassoRef.current = true;
+      const rect = {
+        x: Math.min(lassoStartRef.current.x, px),
+        y: Math.min(lassoStartRef.current.y, py),
+        w: Math.abs(dx),
+        h: Math.abs(dy),
+      };
+      lassoRectRef.current = rect;
+      setLasso(rect);
+    }
   };
 
   const handleMouseUp = () => {
     isPanningRef.current = false;
     setIsPanning(false);
+    if (!lassoStartRef.current) return;
+    lassoStartRef.current = null;
+    const rect = lassoRectRef.current;
+    lassoRectRef.current = null;
+    setLasso(null);
+    if (!rect || !stageRef.current) return;
+    const stage = stageRef.current;
+    const selected = useLabelStore.getState().objects
+      .filter((obj) => {
+        const node = stage.findOne<Konva.Node>(`#${obj.id}`);
+        if (!node) return false;
+        const box = node.getClientRect({ relativeTo: stage });
+        return (
+          rect.x < box.x + box.width && rect.x + rect.w > box.x &&
+          rect.y < box.y + box.height && rect.y + rect.h > box.y
+        );
+      })
+      .map((obj) => obj.id);
+    selectObjects(selected);
   };
 
   // usable area after reserving space for the ruler
@@ -308,12 +350,23 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
     }
   };
 
+  const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (e.evt.button !== 0 || spaceDown) return;
+    const targetId = e.target.id();
+    // Only start lasso on background (stage or label surface, not on an object)
+    const onObject = useLabelStore.getState().objects.some((o) => o.id === targetId);
+    if (onObject || e.target.getParent()?.className === 'Transformer') return;
+    const pos = stageRef.current?.getPointerPosition();
+    if (!pos) return;
+    lassoStartRef.current = pos;
+    didLassoRef.current = false;
+  };
+
+
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // suppress deselection when the click was the end of a pan gesture
-    if (didPanRef.current) {
-      didPanRef.current = false;
-      return;
-    }
+    // suppress deselection after pan or lasso
+    if (didPanRef.current) { didPanRef.current = false; return; }
+    if (didLassoRef.current) { didLassoRef.current = false; return; }
     if (e.target === e.target.getStage()) selectObjects([]);
   };
 
@@ -393,6 +446,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
           width={containerSize.width}
           height={containerSize.height}
           onClick={handleStageClick}
+          onMouseDown={handleStageMouseDown}
         >
           {/* Object layer */}
           <Layer>
@@ -452,6 +506,21 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
                   dpmm={label.dpmm}
                 />
               </Group>
+            )}
+
+            {/* Lasso selection rectangle */}
+            {lasso && (
+              <Rect
+                x={lasso.x}
+                y={lasso.y}
+                width={lasso.w}
+                height={lasso.h}
+                fill="rgba(99,102,241,0.08)"
+                stroke="#6366f1"
+                strokeWidth={1}
+                dash={[4, 3]}
+                listening={false}
+              />
             )}
 
             <Transformer
