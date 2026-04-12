@@ -11,6 +11,9 @@ import type { LabelObject } from "../../registry";
 import { useColorScheme } from "../../lib/useColorScheme";
 
 const PADDING = 40;
+const BARCODE_1D_TYPES = new Set([
+  'code128', 'code39', 'ean13', 'ean8', 'upca', 'upce', 'interleaved2of5', 'code93',
+]);
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
 const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 4;
@@ -427,6 +430,11 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
             <Transformer
               ref={transformerRef}
               rotateEnabled={false}
+              enabledAnchors={
+                BARCODE_1D_TYPES.has(objects.find((o) => o.id === selectedId)?.type ?? '')
+                  ? ['top-center', 'bottom-center']
+                  : undefined
+              }
               boundBoxFunc={(oldBox, newBox) =>
                 newBox.width < 10 || newBox.height < 10 ? oldBox : newBox
               }
@@ -453,10 +461,18 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
                     ...pos,
                     props: { fontHeight: Math.max(1, snap(Math.round(obj.props.fontHeight * sy))) },
                   });
-                } else if (obj.type === "code128" || obj.type === "code39" || obj.type === "ean13") {
+                } else if (BARCODE_1D_TYPES.has(obj.type)) {
                   updateObject(selectedId, {
                     ...pos,
                     props: { height: Math.max(1, snap(Math.round(obj.props.height * sy))) },
+                  });
+                } else if (obj.type === "pdf417") {
+                  updateObject(selectedId, {
+                    ...pos,
+                    props: {
+                      rowHeight: Math.max(1, snap(Math.round(obj.props.rowHeight * sy))),
+                      moduleWidth: Math.max(1, Math.min(10, Math.round(obj.props.moduleWidth * sx))),
+                    },
                   });
                 } else if (obj.type === "box") {
                   updateObject(selectedId, {

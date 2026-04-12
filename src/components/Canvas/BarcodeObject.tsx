@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import bwipjs from 'bwip-js';
 import { Image as KImage, Group, Rect, Text } from 'react-konva';
 import type Konva from 'konva';
@@ -143,9 +143,6 @@ function getDisplaySize(
 export function BarcodeObject({
   obj, scale, dpmm, offsetX, offsetY, isSelected, onSelect, onChange, snap,
 }: Props) {
-  const [barcodeCanvas, setBarcodeCanvas] = useState<HTMLCanvasElement | null>(null);
-  const [hasError, setHasError] = useState(false);
-
   // Apply ^FT baseline correction (same logic as KonvaObjectInner)
   let displayX = obj.x;
   let displayY = obj.y;
@@ -171,18 +168,19 @@ export function BarcodeObject({
   const bwipOptions = buildBwipOptions(obj);
   const optionsKey = JSON.stringify(bwipOptions);
 
-  useEffect(() => {
-    if (!bwipOptions) return;
+  // bwip-js is synchronous — compute canvas directly in render (no async flash on resize)
+  const barcodeCanvas = useMemo(() => {
+    if (!bwipOptions) return null;
     const canvas = document.createElement('canvas');
     try {
       bwipjs.toCanvas(canvas, bwipOptions as Parameters<typeof bwipjs.toCanvas>[1]);
-      setBarcodeCanvas(canvas); // eslint-disable-line react-hooks/set-state-in-effect
-      setHasError(false);
+      return canvas;
     } catch {
-      setBarcodeCanvas(null);
-      setHasError(true);
+      return null;
     }
   }, [optionsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const hasError = barcodeCanvas === null && bwipOptions !== null;
 
   const snapPos = (sx: number, sy: number) => ({
     x: offsetX + dotsToPx(snap(pxToDots(sx - offsetX, scale, dpmm)), scale, dpmm),
