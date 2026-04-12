@@ -4,7 +4,6 @@ import { LabelCanvas } from "./components/Canvas/LabelCanvas";
 import { PropertiesPanel } from "./components/Properties/PropertiesPanel";
 import { LayersPanel } from "./components/Properties/LayersPanel";
 import { ZPLOutput } from "./components/Output/ZPLOutput";
-import { LabelPreview } from "./components/Output/LabelPreview";
 import { ZplImportModal } from "./components/Output/ZplImportModal";
 import {
   DropdownMenu,
@@ -318,11 +317,8 @@ function App() {
 
       {/* Output panel */}
       <div className="h-52 shrink-0 border-t border-border flex bg-surface">
-        <div className="flex-1 border-r border-border overflow-auto">
+        <div className="flex-1 overflow-auto">
           <ZPLOutput />
-        </div>
-        <div className="w-56 shrink-0 overflow-hidden">
-          <LabelPreview />
         </div>
       </div>
 
