@@ -57,7 +57,6 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
         text: p.content || '0',
         scale: BWIP_SCALE,
         height: 10, // mm — only determines aspect; actual display height set by KonvaImage scale
-        // intentionally no includetext: text is rendered separately by ZPL ^FT fields
       };
     }
     case 'pdf417': {
@@ -109,8 +108,7 @@ function getDisplaySize(
     case 'upce':
     case 'interleaved2of5':
     case 'code93': {
-      // Width: number of modules × moduleWidth dots/module
-      // canvas rendered without includetext so height = bar height only
+      // Width: number of modules × moduleWidth dots/module; height is bar height only
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const w = (canvas.width / BWIP_SCALE) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
@@ -195,6 +193,51 @@ export function BarcodeObject({
 
   if (barcodeCanvas && !hasError) {
     const { w, h } = getDisplaySize(obj, barcodeCanvas, scale, dpmm);
+    const showText = BARCODE_1D_TYPES.has(obj.type) &&
+      (obj.props as { printInterpretation?: boolean }).printInterpretation;
+    const textFontSize = Math.max(dotsToPx(8, scale, dpmm), 7);
+    const content = (obj.props as { content?: string }).content ?? '';
+
+    if (showText) {
+      return (
+        <Group
+          id={obj.id}
+          x={x}
+          y={y}
+          draggable
+          onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+          onTap={() => onSelect(false)}
+          onDragMove={(e) => e.target.position(snapPos(e.target.x(), e.target.y()))}
+          onDragEnd={(e) => onChange({
+            x: pxToDots(e.target.x() - offsetX, scale, dpmm),
+            y: pxToDots(e.target.y() - offsetY, scale, dpmm),
+          })}
+        >
+          <KImage
+            x={0}
+            y={0}
+            image={barcodeCanvas}
+            width={Math.max(w, 1)}
+            height={Math.max(h, 1)}
+            imageSmoothingEnabled={false}
+            stroke={isSelected ? '#6366f1' : undefined}
+            strokeWidth={isSelected ? 2 : 0}
+          />
+          <Text
+            x={0}
+            y={Math.max(h, 1) + 1}
+            width={Math.max(w, 1)}
+            text={content}
+            fontSize={textFontSize}
+            fontFamily="'Courier New', monospace"
+            align="center"
+            fill="#000000"
+            listening={false}
+          />
+        </Group>
+      );
+    }
+
     return (
       <KImage
         id={obj.id}
