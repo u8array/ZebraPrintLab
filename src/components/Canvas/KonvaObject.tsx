@@ -351,7 +351,7 @@ function KonvaObjectInner({
           <Text
             text={p.content}
             fontSize={fontSize}
-            fontFamily="'Arimo', sans-serif"
+            fontFamily="'Roboto Condensed', sans-serif"
             fontStyle="bold"
             fill="#ffffff"
             y={approxH * 0.1}
@@ -367,7 +367,7 @@ function KonvaObjectInner({
         y={y}
         text={p.content}
         fontSize={fontSize}
-        fontFamily="'Arimo', sans-serif"
+        fontFamily="'Roboto Condensed', sans-serif"
         fontStyle="bold"
         rotation={zplRotationDeg[p.rotation]}
         fill="#000000"
@@ -395,7 +395,7 @@ function KonvaObjectInner({
         y={y}
         text={`#${p.content}`}
         fontSize={fontSize}
-        fontFamily="'Arimo', sans-serif"
+        fontFamily="'Roboto Condensed', sans-serif"
         fontStyle="bold"
         rotation={zplRotationDeg[p.rotation]}
         fill="#000000"
