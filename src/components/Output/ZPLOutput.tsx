@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useLabelStore } from '../../store/labelStore';
 import { generateZPL } from '../../lib/zplGenerator';
 import { useT } from '../../lib/useT';
+import { LabelPreviewModal } from './LabelPreview';
 
 export function ZPLOutput() {
   const t = useT();
   const { label, objects } = useLabelStore();
   const [copied, setCopied] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const zpl = objects.length > 0 ? generateZPL(label, objects) : '';
 
@@ -22,13 +24,22 @@ export function ZPLOutput() {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border shrink-0">
         <span className="font-mono text-[10px] text-muted uppercase tracking-widest">{t.output.zplHeading}</span>
-        <button
-          onClick={handleCopy}
-          disabled={!zpl}
-          className="font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-        >
-          {copied ? t.output.copied : t.output.copy}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowPreview(true)}
+            disabled={!zpl}
+            className="font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+          >
+            {t.output.previewHeading}
+          </button>
+          <button
+            onClick={handleCopy}
+            disabled={!zpl}
+            className="font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+          >
+            {copied ? t.output.copied : t.output.copy}
+          </button>
+        </div>
       </div>
 
       <pre className="flex-1 overflow-auto p-3 font-mono text-xs leading-relaxed text-text m-0">
@@ -39,6 +50,7 @@ export function ZPLOutput() {
           : <span className="text-muted">{t.output.noObjects}</span>
         }
       </pre>
+      {showPreview && <LabelPreviewModal onClose={() => setShowPreview(false)} />}
     </div>
   );
 }

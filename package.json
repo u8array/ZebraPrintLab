@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "bwip-js": "^4.9.0",
     "konva": "^10.2.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Circle, Ellipse, Group, Image as KImage, Line as KLine, Rect, Text } from 'react-konva';
+import { BarcodeObject } from './BarcodeObject';
 import type Konva from 'konva';
 import type { LabelObject } from '../../registry';
 import type { LabelObjectBase } from '../../types/ObjectType';
@@ -233,9 +234,15 @@ function ImageObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onS
   );
 }
 
+const BARCODE_TYPES = new Set([
+  'code128', 'code39', 'ean13', 'ean8', 'upca', 'upce',
+  'interleaved2of5', 'code93', 'pdf417', 'qrcode', 'datamatrix',
+]);
+
 export function KonvaObject(props_: Props) {
   if (props_.obj.type === 'line') return <LineObject {...props_} />;
   if (props_.obj.type === 'image') return <ImageObject {...props_} />;
+  if (BARCODE_TYPES.has(props_.obj.type)) return <BarcodeObject {...props_} />;
   return <KonvaObjectInner {...props_} />;
 }
 
@@ -407,211 +414,6 @@ function KonvaObjectInner({
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       />
-    );
-  }
-
-  if (obj.type === 'code128' || obj.type === 'code39') {
-    const p = obj.props;
-    const label = obj.type === 'code128' ? `||| ${p.content} |||` : `| ${p.content} |`;
-    return (
-      <Group
-        id={obj.id}
-        x={x}
-        y={y}
-        draggable
-        onClick={onSelect}
-        onTap={onSelect}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-      >
-        <Rect
-          width={dotsToPx(300, scale, dpmm)}
-          height={dotsToPx(p.height + 20, scale, dpmm)}
-          fill="#f9fafb"
-          stroke={isSelected ? '#6366f1' : '#9ca3af'}
-          strokeWidth={isSelected ? 2 : 1}
-          dash={isSelected ? undefined : [4, 2]}
-        />
-        <Text
-          x={6}
-          y={6}
-          text={label}
-          fontSize={Math.max(dotsToPx(14, scale, dpmm), 8)}
-          fill="#374151"
-        />
-      </Group>
-    );
-  }
-
-  if (obj.type === 'ean13') {
-    const p = obj.props;
-    return (
-      <Group
-        id={obj.id}
-        x={x}
-        y={y}
-        draggable
-        onClick={onSelect}
-        onTap={onSelect}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-      >
-        <Rect
-          width={dotsToPx(270, scale, dpmm)}
-          height={dotsToPx(p.height + 20, scale, dpmm)}
-          fill="#f9fafb"
-          stroke={isSelected ? '#6366f1' : '#9ca3af'}
-          strokeWidth={isSelected ? 2 : 1}
-          dash={isSelected ? undefined : [4, 2]}
-        />
-        <Text
-          x={6}
-          y={6}
-          text={`| ${p.content} |`}
-          fontSize={Math.max(dotsToPx(14, scale, dpmm), 8)}
-          fill="#374151"
-        />
-      </Group>
-    );
-  }
-
-  if (obj.type === 'upca' || obj.type === 'ean8' || obj.type === 'upce'
-    || obj.type === 'interleaved2of5' || obj.type === 'code93') {
-    const p = obj.props;
-    const typeLabel: Record<string, string> = {
-      upca: 'UPC-A', ean8: 'EAN-8', upce: 'UPC-E',
-      interleaved2of5: 'I2/5', code93: 'C93',
-    };
-    return (
-      <Group
-        id={obj.id}
-        x={x}
-        y={y}
-        draggable
-        onClick={onSelect}
-        onTap={onSelect}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-      >
-        <Rect
-          width={dotsToPx(270, scale, dpmm)}
-          height={dotsToPx(p.height + 20, scale, dpmm)}
-          fill="#f9fafb"
-          stroke={isSelected ? '#6366f1' : '#9ca3af'}
-          strokeWidth={isSelected ? 2 : 1}
-          dash={isSelected ? undefined : [4, 2]}
-        />
-        <Text
-          x={6}
-          y={6}
-          text={`${typeLabel[obj.type]} | ${p.content} |`}
-          fontSize={Math.max(dotsToPx(14, scale, dpmm), 8)}
-          fill="#374151"
-        />
-      </Group>
-    );
-  }
-
-  if (obj.type === 'pdf417') {
-    const p = obj.props;
-    const w = dotsToPx(p.columns * p.moduleWidth * 17, scale, dpmm);
-    const h = dotsToPx(p.rowHeight * 10, scale, dpmm);
-    return (
-      <Group
-        id={obj.id}
-        x={x}
-        y={y}
-        draggable
-        onClick={onSelect}
-        onTap={onSelect}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-      >
-        <Rect
-          width={Math.max(w, dotsToPx(100, scale, dpmm))}
-          height={Math.max(h, dotsToPx(60, scale, dpmm))}
-          fill="#f9fafb"
-          stroke={isSelected ? '#6366f1' : '#9ca3af'}
-          strokeWidth={isSelected ? 2 : 1}
-          dash={isSelected ? undefined : [4, 2]}
-        />
-        <Text
-          x={6}
-          y={6}
-          text="PDF417"
-          fontSize={Math.max(Math.min(w, h) * 0.3, 8)}
-          fill="#374151"
-          fontStyle="bold"
-        />
-      </Group>
-    );
-  }
-
-  if (obj.type === 'qrcode') {
-    const p = obj.props;
-    const size = dotsToPx(p.magnification * 25, scale, dpmm);
-    return (
-      <Group
-        id={obj.id}
-        x={x}
-        y={y}
-        draggable
-        onClick={onSelect}
-        onTap={onSelect}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-      >
-        <Rect
-          width={size}
-          height={size}
-          fill="#f9fafb"
-          stroke={isSelected ? '#6366f1' : '#9ca3af'}
-          strokeWidth={isSelected ? 2 : 1}
-          dash={isSelected ? undefined : [4, 2]}
-        />
-        <Text
-          x={6}
-          y={6}
-          text="QR"
-          fontSize={Math.max(size * 0.3, 8)}
-          fill="#374151"
-          fontStyle="bold"
-        />
-      </Group>
-    );
-  }
-
-  if (obj.type === 'datamatrix') {
-    const p = obj.props;
-    const size = dotsToPx(p.dimension * 20, scale, dpmm);
-    return (
-      <Group
-        id={obj.id}
-        x={x}
-        y={y}
-        draggable
-        onClick={onSelect}
-        onTap={onSelect}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-      >
-        <Rect
-          width={size}
-          height={size}
-          fill="#f9fafb"
-          stroke={isSelected ? '#6366f1' : '#9ca3af'}
-          strokeWidth={isSelected ? 2 : 1}
-          dash={isSelected ? undefined : [4, 2]}
-        />
-        <Text
-          x={6}
-          y={6}
-          text="DM"
-          fontSize={Math.max(size * 0.3, 8)}
-          fill="#374151"
-          fontStyle="bold"
-        />
-      </Group>
     );
   }
 
