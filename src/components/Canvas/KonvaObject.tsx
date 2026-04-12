@@ -16,7 +16,7 @@ interface Props {
   offsetX: number;
   offsetY: number;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (addToSelection: boolean) => void;
   onChange: (changes: ObjectChanges) => void;
   snap: (dots: number) => number;
 }
@@ -73,8 +73,8 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
         stroke="transparent"
         strokeWidth={Math.max(lineStrokeWidth, 14)}
         draggable
-        onClick={onSelect}
-        onTap={onSelect}
+        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onTap={() => onSelect(false)}
         onDragMove={(e) => {
           setDragDelta({ x: e.target.x(), y: e.target.y() });
         }}
@@ -196,8 +196,8 @@ function ImageObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onS
         stroke={isSelected ? '#6366f1' : undefined}
         strokeWidth={isSelected ? 2 : 0}
         draggable
-        onClick={onSelect}
-        onTap={onSelect}
+        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onTap={() => onSelect(false)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragMove}
       />
@@ -210,8 +210,8 @@ function ImageObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onS
       x={x}
       y={y}
       draggable
-      onClick={onSelect}
-      onTap={onSelect}
+      onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+      onTap={() => onSelect(false)}
       onDragMove={handleDragMove}
       onDragEnd={handleDragMove}
     >
@@ -343,8 +343,8 @@ function KonvaObjectInner({
           y={y}
           rotation={zplRotationDeg[p.rotation]}
           draggable
-          onClick={onSelect}
-          onTap={onSelect}
+          onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+          onTap={() => onSelect(false)}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
         >
@@ -381,8 +381,8 @@ function KonvaObjectInner({
         stroke={isSelected ? '#6366f1' : undefined}
         strokeWidth={isSelected ? 1 : 0}
         draggable
-        onClick={onSelect}
-        onTap={onSelect}
+        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onTap={() => onSelect(false)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       />
@@ -409,8 +409,8 @@ function KonvaObjectInner({
         stroke={isSelected ? '#6366f1' : undefined}
         strokeWidth={isSelected ? 1 : 0}
         draggable
-        onClick={onSelect}
-        onTap={onSelect}
+        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onTap={() => onSelect(false)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       />
@@ -441,8 +441,8 @@ function KonvaObjectInner({
         fill={fill}
         cornerRadius={cornerRadius}
         draggable
-        onClick={onSelect}
-        onTap={onSelect}
+        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onTap={() => onSelect(false)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
         globalCompositeOperation={!isSelected && p.reverse ? 'difference' : 'source-over'}
@@ -468,8 +468,8 @@ function KonvaObjectInner({
         strokeWidth={isSelected ? Math.max(strokeWidth, 1.5) : strokeWidth}
         fill={fill}
         draggable
-        onClick={onSelect}
-        onTap={onSelect}
+        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onTap={() => onSelect(false)}
         onDragMove={(e) => {
           // Center-anchored: snap the top-left corner, then re-add radius
           const snapped = snapPos(e.target.x() - rx, e.target.y() - ry);

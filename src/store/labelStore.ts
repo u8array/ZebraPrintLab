@@ -22,7 +22,7 @@ export interface CanvasSettings {
 interface LabelState {
   label: LabelConfig;
   objects: LabelObject[];
-  selectedId: string | null;
+  selectedIds: string[];
   locale: LocaleCode;
   canvasSettings: CanvasSettings;
 
@@ -30,7 +30,11 @@ interface LabelState {
   updateObject: (id: string, changes: Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object }) => void;
   removeObject: (id: string) => void;
   duplicateObject: (id: string) => void;
+  duplicateSelectedObjects: () => void;
   selectObject: (id: string | null) => void;
+  toggleSelectObject: (id: string) => void;
+  selectObjects: (ids: string[]) => void;
+  removeSelectedObjects: () => void;
   setLabelConfig: (config: Partial<LabelConfig>) => void;
   setLocale: (locale: LocaleCode) => void;
   setCanvasSettings: (settings: Partial<CanvasSettings>) => void;
@@ -48,7 +52,7 @@ export const useLabelStore = create<LabelState>()(
     (set) => ({
       label: { widthMm: 100, heightMm: 60, dpmm: 8 },
       objects: [],
-      selectedId: null,
+      selectedIds: [],
       locale: detectLocale(),
       canvasSettings: { showGrid: true, snapEnabled: true, snapSizeMm: 1, zoom: 1 },
 
@@ -67,7 +71,7 @@ export const useLabelStore = create<LabelState>()(
 
         set((state) => ({
           objects: [...state.objects, obj],
-          selectedId: obj.id,
+          selectedIds: [obj.id],
         }));
       },
 
@@ -89,7 +93,7 @@ export const useLabelStore = create<LabelState>()(
       removeObject: (id) =>
         set((state) => ({
           objects: state.objects.filter((obj) => obj.id !== id),
-          selectedId: state.selectedId === id ? null : state.selectedId,
+          selectedIds: state.selectedIds.filter((s) => s !== id),
         })),
 
       duplicateObject: (id) =>
@@ -102,10 +106,36 @@ export const useLabelStore = create<LabelState>()(
             x: src.x + 20,
             y: src.y + 20,
           };
-          return { objects: [...state.objects, copy], selectedId: copy.id };
+          return { objects: [...state.objects, copy], selectedIds: [copy.id] };
         }),
 
-      selectObject: (id) => set({ selectedId: id }),
+      duplicateSelectedObjects: () =>
+        set((state) => {
+          if (state.selectedIds.length === 0) return {};
+          const copies: LabelObject[] = state.selectedIds.flatMap((id) => {
+            const src = state.objects.find((o) => o.id === id);
+            if (!src) return [];
+            return [{ ...src, id: crypto.randomUUID(), x: src.x + 20, y: src.y + 20 } as LabelObject];
+          });
+          return { objects: [...state.objects, ...copies], selectedIds: copies.map((c) => c.id) };
+        }),
+
+      selectObject: (id) => set({ selectedIds: id ? [id] : [] }),
+
+      toggleSelectObject: (id) =>
+        set((state) => ({
+          selectedIds: state.selectedIds.includes(id)
+            ? state.selectedIds.filter((s) => s !== id)
+            : [...state.selectedIds, id],
+        })),
+
+      selectObjects: (ids) => set({ selectedIds: ids }),
+
+      removeSelectedObjects: () =>
+        set((state) => ({
+          objects: state.objects.filter((o) => !state.selectedIds.includes(o.id)),
+          selectedIds: [],
+        })),
 
       moveObjectToFront: (id) =>
         set((state) => {
@@ -152,7 +182,7 @@ export const useLabelStore = create<LabelState>()(
           return { objects: objs };
         }),
 
-      loadDesign: (label, objects) => set({ label, objects, selectedId: null }),
+      loadDesign: (label, objects) => set({ label, objects, selectedIds: [] }),
 
       setLabelConfig: (config) =>
         set((state) => ({ label: { ...state.label, ...config } })),

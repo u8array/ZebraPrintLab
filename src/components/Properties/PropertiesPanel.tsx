@@ -7,8 +7,20 @@ import type { LabelConfig } from '../../types/ObjectType';
 
 export function PropertiesPanel() {
   const t = useT();
-  const { objects, selectedId, updateObject, label, setLabelConfig } = useLabelStore();
-  const obj = objects.find((o) => o.id === selectedId);
+  const { objects, selectedIds, updateObject, label, setLabelConfig } = useLabelStore();
+  const obj = objects.find((o) => o.id === selectedIds[0]);
+
+  if (selectedIds.length > 1) {
+    return (
+      <div className="flex flex-col">
+        <div className="px-3 py-2.5 border-b border-border flex items-center gap-2">
+          <span className="font-mono text-xs text-accent">▣</span>
+          <span className="text-xs font-medium text-text">{selectedIds.length} objects selected</span>
+        </div>
+        <p className="px-3 py-3 text-xs text-muted">{t.properties.x} / {t.properties.y}: use arrow keys to move</p>
+      </div>
+    );
+  }
 
   if (!obj) {
     return <LabelConfigPanel label={label} onUpdate={setLabelConfig} />;

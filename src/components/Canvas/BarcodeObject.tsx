@@ -16,7 +16,7 @@ interface Props {
   offsetX: number;
   offsetY: number;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (addToSelection: boolean) => void;
   onChange: (changes: ObjectChanges) => void;
   snap: (dots: number) => number;
 }
@@ -207,8 +207,8 @@ export function BarcodeObject({
         stroke={isSelected ? '#6366f1' : undefined}
         strokeWidth={isSelected ? 2 : 0}
         draggable
-        onClick={onSelect}
-        onTap={onSelect}
+        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onTap={() => onSelect(false)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       />
@@ -224,8 +224,8 @@ export function BarcodeObject({
       x={x}
       y={y}
       draggable
-      onClick={onSelect}
-      onTap={onSelect}
+      onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+      onTap={() => onSelect(false)}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
     >

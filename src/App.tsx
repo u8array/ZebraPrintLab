@@ -43,7 +43,7 @@ function App() {
   const label = useLabelStore((s) => s.label);
   const objects = useLabelStore((s) => s.objects);
   const selectObject = useLabelStore((s) => s.selectObject);
-  const duplicateObject = useLabelStore((s) => s.duplicateObject);
+  const duplicateSelectedObjects = useLabelStore((s) => s.duplicateSelectedObjects);
   const loadDesign = useLabelStore((s) => s.loadDesign);
   const locale = useLabelStore((s) => s.locale);
   const setLocale = useLabelStore((s) => s.setLocale);
@@ -76,8 +76,7 @@ function App() {
       }
       if (mod && e.code === "KeyD") {
         e.preventDefault();
-        const id = useLabelStore.getState().selectedId;
-        if (id) duplicateObject(id);
+        duplicateSelectedObjects();
         return;
       }
       if (inInput) return;
@@ -96,7 +95,7 @@ function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [undo, redo, duplicateObject, setCanvasSettings]);
+  }, [undo, redo, duplicateSelectedObjects, setCanvasSettings]);
 
   const handleNew = () => {
     loadDesign({ widthMm: 100, heightMm: 60, dpmm: 8 }, []);

@@ -7,8 +7,9 @@ export function LayersPanel() {
   const t = useT();
   const {
     objects,
-    selectedId,
+    selectedIds,
     selectObject,
+    toggleSelectObject,
     reorderObject,
   } = useLabelStore();
 
@@ -68,7 +69,7 @@ export function LayersPanel() {
     >
       {reversed.map((obj, i) => {
         const def = ObjectRegistry[obj.type];
-        const isSelected = obj.id === selectedId;
+        const isSelected = selectedIds.includes(obj.id);
         const isDragging = obj.id === dragId;
 
         return (
@@ -86,7 +87,10 @@ export function LayersPanel() {
               onDragEnd={handleDragEnd}
               onDragOver={(e) => handleDragOver(e, i)}
               onDrop={(e) => handleDrop(e, i)}
-              onClick={() => selectObject(obj.id)}
+              onClick={(e) => {
+                if (e.shiftKey || e.ctrlKey || e.metaKey) toggleSelectObject(obj.id);
+                else selectObject(obj.id);
+              }}
               className={`flex items-center gap-2 px-2 py-1.5 cursor-grab active:cursor-grabbing border-b border-border group transition-colors hover:bg-surface-2 ${
                 isSelected ? 'bg-surface-2 border-l-2 border-l-accent' : 'border-l-2 border-l-transparent'
               } ${isDragging ? 'opacity-40' : ''}`}

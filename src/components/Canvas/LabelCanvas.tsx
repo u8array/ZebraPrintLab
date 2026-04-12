@@ -52,7 +52,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
 
   const colors = useColorScheme();
 
-  const { label, objects, selectedId, addObject, updateObject, removeObject, selectObject } =
+  const { label, objects, selectedIds, addObject, updateObject, selectObject, toggleSelectObject, selectObjects } =
     useLabelStore();
 
   useEffect(() => {
@@ -109,20 +109,20 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
     };
   }, []);
 
-  // Delete/Backspace removes the selected object; ignored when focus is inside an input
+  // Delete/Backspace removes all selected objects; ignored when focus is inside an input
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code !== 'Delete' && e.code !== 'Backspace') return;
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      const id = useLabelStore.getState().selectedId;
-      if (!id) return;
+      const { selectedIds: ids } = useLabelStore.getState();
+      if (ids.length === 0) return;
       e.preventDefault();
-      removeObject(id);
+      useLabelStore.getState().removeSelectedObjects();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [removeObject]);
+  }, []);
 
   // arrow keys move the selected object; ignored when focus is inside an input
   useEffect(() => {
@@ -132,8 +132,8 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
-      const id = useLabelStore.getState().selectedId;
-      if (!id) return;
+      const { selectedIds: ids, objects: objs } = useLabelStore.getState();
+      if (ids.length === 0) return;
       e.preventDefault();
 
       // shift = 10 mm, normal = snapSize when snap on, 1 dot when snap off
@@ -143,9 +143,10 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
       const dy =
         e.code === "ArrowDown" ? step : e.code === "ArrowUp" ? -step : 0;
 
-      const obj = useLabelStore.getState().objects.find((o) => o.id === id);
-      if (!obj) return;
-      updateObject(id, { x: obj.x + dx, y: obj.y + dy });
+      ids.forEach((sid) => {
+        const obj = objs.find((o) => o.id === sid);
+        if (obj) updateObject(sid, { x: obj.x + dx, y: obj.y + dy });
+      });
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -208,24 +209,53 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
     id: string,
     changes: Parameters<typeof updateObject>[1],
   ) => {
-    updateObject(id, {
+    const finalChanges = {
       ...changes,
       ...(changes.x !== undefined && { x: snap(changes.x) }),
       ...(changes.y !== undefined && { y: snap(changes.y) }),
-    });
+    };
+    // Multi-select: propagate position delta to all other selected objects.
+    // Read fresh state (getState) to avoid stale closure when multiple DragEnd events
+    // fire simultaneously during a Transformer group drag.
+    const { selectedIds: selIds, objects: currentObjs } = useLabelStore.getState();
+    if (selIds.length > 1 && selIds.includes(id) && (finalChanges.x !== undefined || finalChanges.y !== undefined)) {
+      const srcObj = currentObjs.find((o) => o.id === id);
+      if (srcObj) {
+        const ddx = finalChanges.x !== undefined ? finalChanges.x - srcObj.x : 0;
+        const ddy = finalChanges.y !== undefined ? finalChanges.y - srcObj.y : 0;
+        selIds.forEach((sid) => {
+          if (sid === id) return;
+          const other = currentObjs.find((o) => o.id === sid);
+          if (other) updateObject(sid, { x: other.x + ddx, y: other.y + ddy });
+        });
+      }
+    }
+    updateObject(id, finalChanges);
   };
 
-  // Sync transformer selection whenever the selected object or object list changes
+  // Sync transformer selection whenever selected objects or object list changes
   // Lines use their own endpoint handle — skip the transformer for them
   useEffect(() => {
     if (!transformerRef.current || !stageRef.current) return;
-    const selectedObj = objects.find((o) => o.id === selectedId);
-    const useTransformer = selectedObj && selectedObj.type !== 'line';
-    const node = useTransformer
-      ? stageRef.current.findOne<Konva.Node>(`#${selectedId}`)
-      : null;
-    transformerRef.current.nodes(node ? [node] : []);
-  }, [selectedId, objects]);
+    if (selectedIds.length === 0) {
+      transformerRef.current.nodes([]);
+      return;
+    }
+    if (selectedIds.length === 1) {
+      const selectedObj = objects.find((o) => o.id === selectedIds[0]);
+      const useTransformer = selectedObj && selectedObj.type !== 'line';
+      const node = useTransformer
+        ? stageRef.current.findOne<Konva.Node>(`#${selectedIds[0]}`)
+        : null;
+      transformerRef.current.nodes(node ? [node] : []);
+    } else {
+      const nodes = selectedIds
+        .filter((id) => objects.find((o) => o.id === id)?.type !== 'line')
+        .map((id) => stageRef.current!.findOne<Konva.Node>(`#${id}`))
+        .filter((n): n is Konva.Node => n != null);
+      transformerRef.current.nodes(nodes);
+    }
+  }, [selectedIds, objects]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -284,7 +314,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
       didPanRef.current = false;
       return;
     }
-    if (e.target === e.target.getStage()) selectObject(null);
+    if (e.target === e.target.getStage()) selectObjects([]);
   };
 
   const cursor = isPanning ? "grabbing" : spaceDown ? "grab" : undefined;
@@ -376,7 +406,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
               shadowColor="rgba(0,0,0,0.4)"
               shadowBlur={12}
               shadowOffsetY={2}
-              onClick={() => selectObject(null)}
+              onClick={() => selectObjects([])}
             />
 
             {/* Grid above the label surface, below objects */}
@@ -400,8 +430,8 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
                 dpmm={label.dpmm}
                 offsetX={labelOffsetX}
                 offsetY={labelOffsetY}
-                isSelected={obj.id === selectedId}
-                onSelect={() => selectObject(obj.id)}
+                isSelected={selectedIds.includes(obj.id)}
+                onSelect={(add) => add ? toggleSelectObject(obj.id) : selectObject(obj.id)}
                 onChange={(changes) => handleObjectChange(obj.id, changes)}
                 snap={snap}
               />
@@ -427,18 +457,22 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
             <Transformer
               ref={transformerRef}
               rotateEnabled={false}
+              resizeEnabled={selectedIds.length <= 1}
               enabledAnchors={
-                BARCODE_1D_TYPES.has(objects.find((o) => o.id === selectedId)?.type ?? '')
-                  ? ['top-center', 'bottom-center']
-                  : undefined
+                selectedIds.length > 1
+                  ? []
+                  : BARCODE_1D_TYPES.has(objects.find((o) => o.id === selectedIds[0])?.type ?? '')
+                    ? ['top-center', 'bottom-center']
+                    : undefined
               }
               boundBoxFunc={(oldBox, newBox) =>
                 newBox.width < 10 || newBox.height < 10 ? oldBox : newBox
               }
               onTransformEnd={() => {
-                if (!selectedId || !stageRef.current) return;
+                if (selectedIds.length !== 1 || !selectedIds[0] || !stageRef.current) return;
+                const singleId = selectedIds[0];
                 const node = stageRef.current.findOne<Konva.Node>(
-                  `#${selectedId}`,
+                  `#${singleId}`,
                 );
                 if (!node) return;
                 const sx = node.scaleX();
@@ -447,25 +481,25 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
                 node.scaleY(1);
                 const obj = useLabelStore
                   .getState()
-                  .objects.find((o) => o.id === selectedId);
+                  .objects.find((o) => o.id === singleId);
                 if (!obj) return;
                 const pos = {
                   x: snap(pxToDots(node.x() - labelOffsetX, scale, label.dpmm)),
                   y: snap(pxToDots(node.y() - labelOffsetY, scale, label.dpmm)),
                 };
                 if (obj.type === "text") {
-                  updateObject(selectedId, {
+                  updateObject(singleId, {
                     ...pos,
                     props: { fontHeight: Math.max(1, snap(Math.round(obj.props.fontHeight * sy))) },
                   });
                 } else if (BARCODE_1D_TYPES.has(obj.type)) {
                   const p = obj.props as { height: number };
-                  updateObject(selectedId, {
+                  updateObject(singleId, {
                     ...pos,
                     props: { height: Math.max(1, snap(Math.round(p.height * sy))) },
                   });
                 } else if (obj.type === "pdf417") {
-                  updateObject(selectedId, {
+                  updateObject(singleId, {
                     ...pos,
                     props: {
                       rowHeight: Math.max(1, snap(Math.round(obj.props.rowHeight * sy))),
@@ -473,7 +507,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
                     },
                   });
                 } else if (obj.type === "box") {
-                  updateObject(selectedId, {
+                  updateObject(singleId, {
                     ...pos,
                     props: {
                       width: Math.max(1, snap(Math.round(obj.props.width * sx))),
@@ -481,17 +515,17 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
                     },
                   });
                 } else if (obj.type === "qrcode") {
-                  updateObject(selectedId, {
+                  updateObject(singleId, {
                     ...pos,
                     props: { magnification: Math.max(1, Math.min(10, Math.round(obj.props.magnification * Math.min(sx, sy)))) },
                   });
                 } else if (obj.type === "datamatrix") {
-                  updateObject(selectedId, {
+                  updateObject(singleId, {
                     ...pos,
                     props: { dimension: Math.max(1, Math.min(12, Math.round(obj.props.dimension * Math.min(sx, sy)))) },
                   });
                 } else if (obj.type === "ellipse") {
-                  updateObject(selectedId, {
+                  updateObject(singleId, {
                     ...pos,
                     props: {
                       width:  Math.max(1, snap(Math.round(obj.props.width  * sx))),
