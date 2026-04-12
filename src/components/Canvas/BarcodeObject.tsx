@@ -259,7 +259,7 @@ export function BarcodeObject({
         const xRight13 = (qL13 + 50) * modulePx13; // +3+42+5
         const halfW13 = 42 * modulePx13;
 
-        const textY = Math.max(h, 1) + 1;
+        const textY = Math.max(h, 1) + 4;
         clipLeft = ldW;
         textNodes = [
           <Text key="d0"
@@ -308,7 +308,7 @@ export function BarcodeObject({
         const xRight8 = (qL8 + 36) * modulePx8; // +3+28+5
         const halfW8 = 28 * modulePx8;
 
-        const textY = Math.max(h, 1) + 1;
+        const textY = Math.max(h, 1) + 4;
         // EAN-8: no leading/trailing digit outside image
         textNodes = [
           <Text key="dl"
@@ -350,7 +350,7 @@ export function BarcodeObject({
         const half = halfData * pxPerBwipPx;
         const cW   = centreW  * pxPerBwipPx;
 
-        const textY = Math.max(h, 1) + 1;
+        const textY = Math.max(h, 1) + 4;
         clipLeft = ldW;
         textNodes = [
           // number system digit — floated left of barcode image
@@ -420,7 +420,7 @@ export function BarcodeObject({
         const checkDigit = String((10 - (ckSum % 10)) % 10);
 
         // Center digits over the full barcode image width
-        const textY = Math.max(h, 1) + 1;
+        const textY = Math.max(h, 1) + 4;
         clipLeft = ldW;
         clipRight = ldW;
         textNodes = [
@@ -530,7 +530,7 @@ export function BarcodeObject({
           />
           <Text
             x={0}
-            y={Math.max(h, 1) + 1}
+            y={Math.max(h, 1) + 4}
             width={Math.max(w, 1)}
             text={displayText}
             fontSize={textFontSize}

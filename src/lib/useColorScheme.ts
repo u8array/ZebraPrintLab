@@ -20,9 +20,9 @@ export const DARK_COLORS: CanvasColors = {
   gridSub:        '#d8d8d8',
   rulerBg:        '#161616',
   rulerCorner:    '#111111',
-  rulerMajorTick: '#888888',
-  rulerMinorTick: '#484848',
-  rulerLabel:     '#777777',
+  rulerMajorTick: '#b0b0b0',
+  rulerMinorTick: '#686868',
+  rulerLabel:     '#cccccc',
   rulerSeparator: '#2a2a2a',
 };
 
@@ -33,9 +33,9 @@ export const LIGHT_COLORS: CanvasColors = {
   gridSub:        '#d0d0de',
   rulerBg:        '#f0f0f6',
   rulerCorner:    '#e6e6f0',
-  rulerMajorTick: '#8080a0',
-  rulerMinorTick: '#c0c0d4',
-  rulerLabel:     '#6060a0',
+  rulerMajorTick: '#505070',
+  rulerMinorTick: '#9090b0',
+  rulerLabel:     '#303060',
   rulerSeparator: '#d0d0e0',
 };
 
