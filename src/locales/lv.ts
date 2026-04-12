@@ -55,6 +55,7 @@ const lv = {
   app: {
     file: 'Fails',
     importZpl: 'Import ZPL',
+    importZplFile: 'Importēt ZPL failu',
     exportZpl: 'Export ZPL',
     newDesign: 'Jauns dizains',
     openDesign: 'Atvērt dizainu',

@@ -55,6 +55,7 @@ const sv = {
   app: {
     file: 'Fil',
     importZpl: 'Import ZPL',
+    importZplFile: 'Importera ZPL-fil',
     exportZpl: 'Export ZPL',
     newDesign: 'Nytt design',
     openDesign: 'Öppna design',

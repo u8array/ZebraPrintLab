@@ -55,6 +55,7 @@ const sr = {
   app: {
     file: 'Датотека',
     importZpl: 'Import ZPL',
+    importZplFile: 'Uvezi ZPL datoteku',
     exportZpl: 'Export ZPL',
     newDesign: 'Нови дизајн',
     openDesign: 'Отвори дизајн',

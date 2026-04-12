@@ -55,6 +55,7 @@ const nl = {
   app: {
     file: 'Bestand',
     importZpl: 'Import ZPL',
+    importZplFile: 'ZPL-bestand importeren',
     exportZpl: 'Export ZPL',
     newDesign: 'Nieuw ontwerp',
     openDesign: 'Ontwerp openen',

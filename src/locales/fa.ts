@@ -55,6 +55,7 @@ const fa = {
   app: {
     file: 'فایل',
     importZpl: 'وارد کردن ZPL',
+    importZplFile: 'وارد کردن فایل ZPL',
     exportZpl: 'خروجی ZPL',
     newDesign: 'طرح جدید',
     openDesign: 'باز کردن طرح',

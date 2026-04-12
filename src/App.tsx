@@ -25,6 +25,7 @@ import { useLabelStore, useHistory } from "./store/labelStore";
 import { localeNames } from "./locales";
 import type { LocaleCode } from "./locales";
 import { generateZPL } from "./lib/zplGenerator";
+import { parseZPL } from "./lib/zplParser";
 import { fetchPreview } from "./lib/labelary";
 import type { LabelConfig } from "./types/ObjectType";
 import type { LabelObject } from "./registry";
@@ -101,6 +102,7 @@ function App() {
     "properties",
   );
   const loadInputRef = useRef<HTMLInputElement>(null);
+  const zplFileInputRef = useRef<HTMLInputElement>(null);
 
   const canUndo = pastStates.length > 0;
   const canRedo = futureStates.length > 0;
@@ -180,6 +182,20 @@ function App() {
     };
     reader.readAsText(file);
     // reset so same file can be loaded again
+    e.target.value = "";
+  };
+
+  const handleZplFileLoad = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const zpl = ev.target?.result as string;
+      if (!zpl?.trim()) return;
+      const { labelConfig, objects } = parseZPL(zpl, label.dpmm);
+      loadDesign({ ...label, ...labelConfig }, objects);
+    };
+    reader.readAsText(file);
     e.target.value = "";
   };
 
@@ -276,6 +292,12 @@ function App() {
               {t.app.importZpl}
             </DropdownItem>
             <DropdownItem
+              icon={ArrowUpTrayIcon}
+              onClick={() => zplFileInputRef.current?.click()}
+            >
+              {t.app.importZplFile}
+            </DropdownItem>
+            <DropdownItem
               icon={ArrowDownTrayIcon}
               onClick={handleDownload}
               disabled={!hasObjects}
@@ -312,6 +334,13 @@ function App() {
             accept=".json,application/json"
             className="hidden"
             onChange={handleLoad}
+          />
+          <input
+            ref={zplFileInputRef}
+            type="file"
+            accept=".zpl,text/plain"
+            className="hidden"
+            onChange={handleZplFileLoad}
           />
         </div>
       </header>

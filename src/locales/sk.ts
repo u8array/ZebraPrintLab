@@ -55,6 +55,7 @@ const sk = {
   app: {
     file: 'Súbor',
     importZpl: 'Import ZPL',
+    importZplFile: 'Import súboru ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Nový návrh',
     openDesign: 'Otvoriť návrh',

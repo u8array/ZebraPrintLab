@@ -55,6 +55,7 @@ const el = {
   app: {
     file: 'Αρχείο',
     importZpl: 'Import ZPL',
+    importZplFile: 'Εισαγωγή αρχείου ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Νέο σχέδιο',
     openDesign: 'Άνοιγμα σχεδίου',

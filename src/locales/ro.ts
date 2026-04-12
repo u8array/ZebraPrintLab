@@ -55,6 +55,7 @@ const ro = {
   app: {
     file: 'Fișier',
     importZpl: 'Import ZPL',
+    importZplFile: 'Importă fișier ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Design nou',
     openDesign: 'Deschide design',

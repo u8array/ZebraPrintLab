@@ -55,6 +55,7 @@ const zhHant = {
   app: {
     file: '檔案',
     importZpl: '匯入 ZPL',
+    importZplFile: '匯入 ZPL 檔案',
     exportZpl: '匯出 ZPL',
     newDesign: '新增設計',
     openDesign: '開啟設計',

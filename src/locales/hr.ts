@@ -55,6 +55,7 @@ const hr = {
   app: {
     file: 'Datoteka',
     importZpl: 'Import ZPL',
+    importZplFile: 'Uvezi ZPL datoteku',
     exportZpl: 'Export ZPL',
     newDesign: 'Novi dizajn',
     openDesign: 'Otvori dizajn',

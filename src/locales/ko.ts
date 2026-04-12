@@ -55,6 +55,7 @@ const ko = {
   app: {
     file: '파일',
     importZpl: 'ZPL 가져오기',
+    importZplFile: 'ZPL 파일 가져오기',
     exportZpl: 'ZPL 내보내기',
     newDesign: '새 디자인',
     openDesign: '디자인 열기',

@@ -55,6 +55,7 @@ const ar = {
   app: {
     file: 'ملف',
     importZpl: 'استيراد ZPL',
+    importZplFile: 'استيراد ملف ZPL',
     exportZpl: 'تصدير ZPL',
     newDesign: 'تصميم جديد',
     openDesign: 'فتح تصميم',

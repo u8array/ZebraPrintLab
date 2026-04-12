@@ -55,6 +55,7 @@ const cs = {
   app: {
     file: 'Soubor',
     importZpl: 'Import ZPL',
+    importZplFile: 'Import souboru ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Nový návrh',
     openDesign: 'Otevřít návrh',
