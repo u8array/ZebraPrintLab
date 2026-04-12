@@ -38,9 +38,19 @@ const BCID: Partial<Record<LabelObject['type'], string>> = {
 
 const BWIP_SCALE = 2; // px per module — fixed render resolution
 
-// EAN/UPC barcodes: digits are part of the standard visual — bwip renders them inline.
+// EAN/UPC barcodes: digits are rendered manually via Konva Text nodes.
 // Other 1D types: text is a separate ZPL ^FT field.
 const EAN_UPC_TYPES = new Set(['ean13', 'ean8', 'upca', 'upce']);
+
+/**
+ * Compute EAN/UPC check digit (GS1 modulo-10).
+ * weights alternates between w0 and w1 starting at index 0.
+ */
+function eanCheckDigit(digits: string, w0: number, w1: number): string {
+  let sum = 0;
+  for (let i = 0; i < digits.length; i++) sum += parseInt(digits[i] ?? '0', 10) * (i % 2 === 0 ? w0 : w1);
+  return String((10 - (sum % 10)) % 10);
+}
 
 function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
   const bcid = BCID[obj.type];
@@ -52,15 +62,14 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
     case 'upca':
     case 'upce': {
       const p = obj.props;
-      return {
-        bcid,
-        text: obj.type === 'upce'
-          ? (() => { const r = p.content || '000000'; return r.length === 6 ? `0${r}` : r; })()
-          : (p.content || '0'),
-        scale: BWIP_SCALE,
-        height: 10,
-        // No includetext — digits rendered manually via Konva Text
-      };
+      let text: string;
+      if (obj.type === 'upce') {
+        const r = p.content || '000000';
+        text = r.length === 6 ? `0${r}` : r;
+      } else {
+        text = p.content || '0';
+      }
+      return { bcid, text, scale: BWIP_SCALE, height: 10 };
     }
     case 'code128':
     case 'code39':
@@ -118,13 +127,7 @@ function getDisplaySize(
     case 'ean13':
     case 'ean8':
     case 'upca':
-    case 'upce': {
-      // Scale by moduleWidth; height from obj.props.height (bars only, no inline text)
-      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / BWIP_SCALE) * modulePx;
-      const h = dotsToPx(obj.props.height, scale, dpmm);
-      return { w, h };
-    }
+    case 'upce':
     case 'code128':
     case 'code39':
     case 'interleaved2of5':
@@ -234,7 +237,7 @@ export function BarcodeObject({
       //   Total = 9+3+35+5+35+3+9 = 99 modules → 198 px (but bwip may vary)
       //
       // UPC-E layout:
-      //   9 quiet | 3 start | 6×48 | 6 end | 7 quiet
+      //   9 quiet | 3 start | 6×7=42 data | 6 end | 7 quiet
       //   Total = 9+3+42+6+7 = 67 modules → 134 px
 
       const bwipW = barcodeCanvas.width; // in bwip-px = modules * BWIP_SCALE
@@ -246,10 +249,7 @@ export function BarcodeObject({
 
       if (obj.type === 'ean13') {
         const digits12 = rawContent.replace(/\D/g, '').slice(0, 12).padEnd(12, '0');
-        let sum = 0;
-        for (let i = 0; i < 12; i++) sum += parseInt(digits12[i] ?? '0') * (i % 2 === 0 ? 1 : 3);
-        const check = (10 - (sum % 10)) % 10;
-        const allDigits = digits12 + String(check); // 13 digits
+        const allDigits = digits12 + eanCheckDigit(digits12, 1, 3); // 13 digits
 
         // Derive positions from actual bwip canvas width so quiet-zone variations are handled.
         // Fixed portion (excl. left quiet): 3 start + 42 left + 5 centre + 42 right + 3 end + 7 rquiet = 102
@@ -299,10 +299,7 @@ export function BarcodeObject({
 
       } else if (obj.type === 'ean8') {
         const digits7 = rawContent.replace(/\D/g, '').slice(0, 7).padEnd(7, '0');
-        let sum = 0;
-        for (let i = 0; i < 7; i++) sum += parseInt(digits7[i] ?? '0') * (i % 2 === 0 ? 3 : 1);
-        const check = (10 - (sum % 10)) % 10;
-        const allDigits = digits7 + String(check); // 8 digits
+        const allDigits = digits7 + eanCheckDigit(digits7, 3, 1); // 8 digits
 
         // Fixed portion (excl. left quiet): 3 start + 28 left + 5 centre + 28 right + 3 end + 7 rquiet = 74
         const modulePx8 = BWIP_SCALE * pxPerBwipPx;
@@ -340,10 +337,7 @@ export function BarcodeObject({
 
       } else if (obj.type === 'upca') {
         const digits11 = rawContent.replace(/\D/g, '').slice(0, 11).padEnd(11, '0');
-        let sum = 0;
-        for (let i = 0; i < 11; i++) sum += parseInt(digits11[i] ?? '0') * (i % 2 === 0 ? 3 : 1);
-        const check = (10 - (sum % 10)) % 10;
-        const allDigits = digits11 + String(check); // 12 digits
+        const allDigits = digits11 + eanCheckDigit(digits11, 3, 1); // 12 digits
 
         // UPC-A: 9 quiet | 3 start | 5×7=35 data | 5 centre | 5×7=35 data | 3 end | 9 quiet
         const quietL   =  9 * BWIP_SCALE;
@@ -415,21 +409,17 @@ export function BarcodeObject({
         // Expand UPC-E to 11-digit UPC-A to compute check digit
         const vA = digits6[0] ?? '0', vB = digits6[1] ?? '0', vC = digits6[2] ?? '0';
         const vD = digits6[3] ?? '0', vE = digits6[4] ?? '0', vF = digits6[5] ?? '0';
-        const fi = parseInt(vF);
+        const fi = parseInt(vF, 10);
         let expanded11: string;
         if (fi <= 2)       expanded11 = `0${vA}${vB}${vF}0000${vC}${vD}${vE}`;
         else if (fi === 3) expanded11 = `0${vA}${vB}${vC}00000${vD}${vE}`;
         else if (fi === 4) expanded11 = `0${vA}${vB}${vC}${vD}00000${vE}`;
         else               expanded11 = `0${vA}${vB}${vC}${vD}${vE}${vF}0000`;
         let ckSum = 0;
-        for (let i = 0; i < 11; i++) ckSum += parseInt(expanded11[i] ?? '0') * (i % 2 === 0 ? 3 : 1);
+        for (let i = 0; i < 11; i++) ckSum += parseInt(expanded11[i] ?? '0', 10) * (i % 2 === 0 ? 3 : 1);
         const checkDigit = String((10 - (ckSum % 10)) % 10);
 
-        // Fixed portion (excl. left quiet): 3 start + 42 data + 6 end + 7 rquiet = 58
-        // Center digits over the full barcode image width (quiet zones approximately symmetric)
-        const xDataE = 0;
-        const dataWE = w;
-
+        // Center digits over the full barcode image width
         const textY = Math.max(h, 1) + 1;
         clipLeft = ldW;
         clipRight = ldW;
@@ -446,8 +436,8 @@ export function BarcodeObject({
             listening={false}
           />,
           <Text key="dm"
-            x={xDataE} y={textY}
-            width={dataWE}
+            x={0} y={textY}
+            width={w}
             text={digits6}
             fontSize={textFontSize}
             fontFamily="'Courier New', monospace"
