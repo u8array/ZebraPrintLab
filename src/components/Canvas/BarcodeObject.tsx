@@ -141,7 +141,7 @@ export function BarcodeObject({
   obj, scale, dpmm, offsetX, offsetY, isSelected, onSelect, onChange, snap,
 }: Props) {
   // Apply ^FT baseline correction (same logic as KonvaObjectInner)
-  let displayX = obj.x;
+  const displayX = obj.x;
   let displayY = obj.y;
   if (obj.positionType === 'FT') {
     if (BARCODE_1D_TYPES.has(obj.type)) {
@@ -162,22 +162,20 @@ export function BarcodeObject({
   const x = offsetX + dotsToPx(displayX, scale, dpmm);
   const y = offsetY + dotsToPx(displayY, scale, dpmm);
 
-  const bwipOptions = buildBwipOptions(obj);
-  const optionsKey = JSON.stringify(bwipOptions);
-
   // bwip-js is synchronous — compute canvas directly in render (no async flash on resize)
   const barcodeCanvas = useMemo(() => {
-    if (!bwipOptions) return null;
+    const opts = buildBwipOptions(obj);
+    if (!opts) return null;
     const canvas = document.createElement('canvas');
     try {
-      bwipjs.toCanvas(canvas, bwipOptions as Parameters<typeof bwipjs.toCanvas>[1]);
+      bwipjs.toCanvas(canvas, opts as Parameters<typeof bwipjs.toCanvas>[1]);
       return canvas;
     } catch {
       return null;
     }
-  }, [optionsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [obj]);
 
-  const hasError = barcodeCanvas === null && bwipOptions !== null;
+  const hasError = barcodeCanvas === null && buildBwipOptions(obj) !== null;
 
   const snapPos = (sx: number, sy: number) => ({
     x: offsetX + dotsToPx(snap(pxToDots(sx - offsetX, scale, dpmm)), scale, dpmm),

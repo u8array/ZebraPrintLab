@@ -23,14 +23,14 @@ interface Barcode1DConfig {
   localeKey: string;
 }
 
-type BarcodeLocale = {
+interface BarcodeLocale {
   content: string;
   height: string;
   moduleWidth: string;
   printInterpretation: string;
   checkDigit?: string;
   placeholder?: string;
-};
+}
 
 export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<Barcode1DProps> {
   return {
