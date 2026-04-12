@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { XMarkIcon } from '@heroicons/react/16/solid';
 import { useLabelStore } from '../../store/labelStore';
 import { generateZPL } from '../../lib/zplGenerator';
 import { fetchPreview } from '../../lib/labelary';
@@ -50,9 +51,9 @@ export function LabelPreviewModal({ onClose }: Props) {
           </span>
           <button
             onClick={onClose}
-            className="font-mono text-[10px] text-muted hover:text-accent transition-colors ml-6"
+            className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors ml-6"
           >
-            ✕
+            <XMarkIcon className="w-4 h-4" />
           </button>
         </div>
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CheckIcon, ClipboardDocumentIcon, EyeIcon } from '@heroicons/react/16/solid';
 import { useLabelStore } from '../../store/labelStore';
 import { generateZPL } from '../../lib/zplGenerator';
 import { useT } from '../../lib/useT';
@@ -28,16 +29,21 @@ export function ZPLOutput() {
           <button
             onClick={() => setShowPreview(true)}
             disabled={!zpl}
-            className="font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            title={t.output.previewHeading}
+            className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
           >
+            <EyeIcon className="w-4 h-4" />
             {t.output.previewHeading}
           </button>
           <button
             onClick={handleCopy}
             disabled={!zpl}
-            className="font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            title={t.output.copy}
+            className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
           >
-            {copied ? t.output.copied : t.output.copy}
+            {copied
+              ? <><CheckIcon className="w-4 h-4" />{t.output.copied}</>
+              : <><ClipboardDocumentIcon className="w-4 h-4" />{t.output.copy}</>}
           </button>
         </div>
       </div>
