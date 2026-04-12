@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import bwipjs from 'bwip-js';
+import bwipjs from 'bwip-js/browser';
 import { Image as KImage, Group, Rect, Text } from 'react-konva';
 import type Konva from 'konva';
 import type { LabelObject } from '../../registry';
@@ -168,7 +168,7 @@ export function BarcodeObject({
     if (!opts) return null;
     const canvas = document.createElement('canvas');
     try {
-      bwipjs.toCanvas(canvas, opts as Parameters<typeof bwipjs.toCanvas>[1]);
+      bwipjs.toCanvas(canvas, opts as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
       return canvas;
     } catch {
       return null;

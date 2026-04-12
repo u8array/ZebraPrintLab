@@ -459,9 +459,10 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
                     props: { fontHeight: Math.max(1, snap(Math.round(obj.props.fontHeight * sy))) },
                   });
                 } else if (BARCODE_1D_TYPES.has(obj.type)) {
+                  const p = obj.props as { height: number };
                   updateObject(selectedId, {
                     ...pos,
-                    props: { height: Math.max(1, snap(Math.round(obj.props.height * sy))) },
+                    props: { height: Math.max(1, snap(Math.round(p.height * sy))) },
                   });
                 } else if (obj.type === "pdf417") {
                   updateObject(selectedId, {
