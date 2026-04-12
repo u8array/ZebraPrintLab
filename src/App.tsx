@@ -86,6 +86,8 @@ function App() {
   const objects = useLabelStore((s) => s.objects);
   const selectObject = useLabelStore((s) => s.selectObject);
   const duplicateSelectedObjects = useLabelStore((s) => s.duplicateSelectedObjects);
+  const copySelectedObjects = useLabelStore((s) => s.copySelectedObjects);
+  const pasteObjects = useLabelStore((s) => s.pasteObjects);
   const loadDesign = useLabelStore((s) => s.loadDesign);
   const locale = useLabelStore((s) => s.locale);
   const setLocale = useLabelStore((s) => s.setLocale);
@@ -122,6 +124,16 @@ function App() {
         duplicateSelectedObjects();
         return;
       }
+      if (mod && e.code === "KeyC") {
+        e.preventDefault();
+        copySelectedObjects();
+        return;
+      }
+      if (mod && e.code === "KeyV") {
+        e.preventDefault();
+        pasteObjects();
+        return;
+      }
       if (inInput) return;
       if (e.code === "KeyG") {
         e.preventDefault();
@@ -138,7 +150,7 @@ function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [undo, redo, duplicateSelectedObjects, setCanvasSettings]);
+  }, [undo, redo, duplicateSelectedObjects, copySelectedObjects, pasteObjects, setCanvasSettings]);
 
   const handleNew = () => {
     loadDesign({ widthMm: 100, heightMm: 60, dpmm: 8 }, []);

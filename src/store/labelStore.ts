@@ -7,6 +7,10 @@ import type { LabelObject } from '../registry';
 import { locales } from '../locales';
 import type { LocaleCode } from '../locales';
 
+// Clipboard lives outside Zustand state — no persistence, no undo
+let _clipboard: LabelObject[] = [];
+let _pasteCount = 0;
+
 function detectLocale(): LocaleCode {
   const lang = navigator.language.slice(0, 2).toLowerCase();
   return (lang in locales ? lang : 'en') as LocaleCode;
@@ -31,6 +35,8 @@ interface LabelState {
   removeObject: (id: string) => void;
   duplicateObject: (id: string) => void;
   duplicateSelectedObjects: () => void;
+  copySelectedObjects: () => void;
+  pasteObjects: () => void;
   selectObject: (id: string | null) => void;
   toggleSelectObject: (id: string) => void;
   selectObjects: (ids: string[]) => void;
@@ -117,6 +123,29 @@ export const useLabelStore = create<LabelState>()(
             if (!src) return [];
             return [{ ...src, id: crypto.randomUUID(), x: src.x + 20, y: src.y + 20 } as LabelObject];
           });
+          return { objects: [...state.objects, ...copies], selectedIds: copies.map((c) => c.id) };
+        }),
+
+      copySelectedObjects: () => {
+        const { selectedIds, objects } = useLabelStore.getState();
+        _clipboard = selectedIds.flatMap((id) => {
+          const obj = objects.find((o) => o.id === id);
+          return obj ? [{ ...obj, props: { ...obj.props } } as LabelObject] : [];
+        });
+        _pasteCount = 0;
+      },
+
+      pasteObjects: () =>
+        set((state) => {
+          if (_clipboard.length === 0) return {};
+          _pasteCount += 1;
+          const offset = _pasteCount * 20;
+          const copies: LabelObject[] = _clipboard.map((src) => ({
+            ...src,
+            id: crypto.randomUUID(),
+            x: src.x + offset,
+            y: src.y + offset,
+          } as LabelObject));
           return { objects: [...state.objects, ...copies], selectedIds: copies.map((c) => c.id) };
         }),
 
