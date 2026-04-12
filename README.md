@@ -1,75 +1,135 @@
-# React + TypeScript + Vite
+# ZPL Label Designer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Browser-based ZPL II label editor. Open-source alternative to ZebraDesigner, NiceLabel, and BarTender.
 
-Currently, two official plugins are available:
+**[Try it](https://u8array.github.io/zpl_label_designer/)** · [Report an issue](https://github.com/u8array/zpl_label_designer/issues)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+> Early development. Core editing works, ZPL import is incomplete.
 
-## React Compiler
+---
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+![Screenshot: main editor](_screenshots/editor.png)
+<!-- placeholder: replace with actual screenshot -->
 
-Note: This will impact Vite dev & build performances.
+---
 
-## Expanding the ESLint configuration
+## Usage
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 1. Set up the label
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+The label dimensions and print resolution are shown in the header (`width × height mm · dpmm`). Click on them to adjust.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Common print resolutions: 6 dpmm (152 dpi), 8 dpmm (203 dpi), 12 dpmm (300 dpi), 24 dpmm (600 dpi).
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 2. Add objects
+
+Drag items from the left panel onto the canvas, or click them to add at the center.
+
+Available objects: text, barcodes (Code 128, Code 39, Code 93, I2of5, EAN-13, EAN-8, UPC-A, UPC-E, QR Code, DataMatrix, PDF417), shapes (box, line, ellipse), and images.
+
+### 3. Edit properties
+
+Select an object to configure it in the **Properties** panel on the right: content, size, font, barcode options, etc.
+
+Multiple objects can be selected by holding Shift or drawing a lasso. Position and size changes apply to all selected objects.
+
+### 4. Get the ZPL
+
+The ZPL output panel at the bottom updates in real time. From there:
+
+- **Copy**: copies the ZPL to the clipboard
+- **Preview**: fetches a rendered preview image from [Labelary](https://labelary.com/) (requires internet)
+- **Export**: downloads a `.zpl` file (File menu)
+- **Print**: opens the Labelary preview and triggers the browser print dialog
+
+### Importing existing ZPL
+
+File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file. The parser supports the most common commands (`^A0`, `^B*`, `^GB`, `^GE`, `^GFA`, `^PW`, `^LL`). Unsupported commands are skipped and reported.
+
+### Keyboard shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl+Z` / `Ctrl+Shift+Z` | Undo / Redo |
+| `Ctrl+C` / `Ctrl+V` | Copy / Paste |
+| `Ctrl+D` | Duplicate selection |
+| `Del` / `Backspace` | Delete selection |
+| `G` | Toggle grid |
+| `S` | Toggle snap |
+| Middle mouse / Space+drag | Pan canvas |
+| Scroll | Zoom |
+
+### Saving and loading
+
+Designs can be saved as `.json` (File → Save Design) and reopened later. This preserves all object properties exactly. The `.zpl` export is for sending to a printer and cannot be fully round-tripped back to an editable design.
+
+---
+
+![Screenshot: ZPL output panel and preview](_screenshots/zpl_output.png)
+<!-- placeholder: replace with actual screenshot -->
+
+---
+
+## Features
+
+- Drag, resize, and rotate objects on the canvas
+- Multi-select with lasso or Shift-click
+- Grid with configurable snap
+- Undo / redo history
+- Copy / paste
+- Layers panel with reordering
+- 32 UI languages (auto-detected from browser)
+- Light / dark mode (follows OS setting)
+
+---
+
+## Limitations
+
+- ZPL import does not cover the full ZPL II command set. Complex labels may not import correctly or completely.
+- Label preview requires a connection to `api.labelary.com`.
+- Font rendering on the canvas is an approximation. The visual preview will differ slightly from what a real printer produces.
+- No support for multi-label documents (`^XA...^XZ` repeated).
+
+---
+
+## Development
+
+```bash
+pnpm install
+pnpm dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Requires Node.js ≥ 18 and pnpm. Alternatively use `npm install` / `npm run dev`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm build   # output goes to dist/
 ```
+
+The build output is entirely static and can be served from any web server or file host.
+
+### Tech stack
+
+- [React 19](https://react.dev/) + TypeScript
+- [Vite](https://vite.dev/)
+- [Konva](https://konvajs.org/) / react-konva: canvas rendering
+- [Zustand](https://github.com/pmndrs/zustand) + [zundo](https://github.com/charkour/zundo): state and undo history
+- [bwip-js](https://github.com/metafloor/bwip-js): barcode rendering
+- [Tailwind CSS v4](https://tailwindcss.com/)
+
+### How it works
+
+The editor stores the label as a list of objects in Zustand. On every change, ZPL II is generated client-side by mapping each object to its corresponding ZPL commands. Barcodes are rendered on the canvas using bwip-js. Preview images are fetched from the Labelary API.
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome.
+
+If you find a ZPL file that imports incorrectly, attaching the `.zpl` as an issue attachment is the most useful thing you can do.
+
+---
+
+## License
+
+MIT
