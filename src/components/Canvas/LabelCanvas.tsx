@@ -6,14 +6,11 @@ import { pxToDots } from "../../lib/coordinates";
 import { KonvaObject } from "./KonvaObject";
 import { Grid } from "./Grid";
 import { Ruler, RULER_SIZE } from "./Ruler";
-import { ObjectRegistry } from "../../registry";
+import { ObjectRegistry, BARCODE_1D_TYPES } from "../../registry";
 import type { LabelObject } from "../../registry";
 import { useColorScheme } from "../../lib/useColorScheme";
 
 const PADDING = 40;
-const BARCODE_1D_TYPES = new Set([
-  'code128', 'code39', 'ean13', 'ean8', 'upca', 'upce', 'interleaved2of5', 'code93',
-]);
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
 const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 4;

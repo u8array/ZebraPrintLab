@@ -3,6 +3,7 @@ import bwipjs from 'bwip-js';
 import { Image as KImage, Group, Rect, Text } from 'react-konva';
 import type Konva from 'konva';
 import type { LabelObject } from '../../registry';
+import { BARCODE_1D_TYPES } from '../../registry';
 import type { LabelObjectBase } from '../../types/ObjectType';
 import { dotsToPx, pxToDots } from '../../lib/coordinates';
 
@@ -19,10 +20,6 @@ interface Props {
   onChange: (changes: ObjectChanges) => void;
   snap: (dots: number) => number;
 }
-
-const BARCODE_1D_TYPES = new Set([
-  'code128', 'code39', 'ean13', 'ean8', 'upca', 'upce', 'interleaved2of5', 'code93',
-]);
 
 // Map our registry types to bwip-js bcids
 const BCID: Partial<Record<LabelObject['type'], string>> = {

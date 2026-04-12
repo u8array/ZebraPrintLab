@@ -30,6 +30,14 @@ import type { LabelConfig } from "./types/ObjectType";
 import type { LabelObject } from "./registry";
 import { useT } from "./lib/useT";
 
+function triggerDownload(blob: Blob, filename: string) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 function App() {
   const t = useT();
   const label = useLabelStore((s) => s.label);
@@ -96,12 +104,7 @@ function App() {
 
   const handleSave = () => {
     const data = JSON.stringify({ label, objects }, null, 2);
-    const blob = new Blob([data], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "label.json";
-    a.click();
-    URL.revokeObjectURL(a.href);
+    triggerDownload(new Blob([data], { type: "application/json" }), "label.json");
   };
 
   const handleLoad = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,12 +131,7 @@ function App() {
 
   const handleDownload = () => {
     const zpl = generateZPL(label, objects);
-    const blob = new Blob([zpl], { type: "text/plain" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "label.zpl";
-    a.click();
-    URL.revokeObjectURL(a.href);
+    triggerDownload(new Blob([zpl], { type: "text/plain" }), "label.zpl");
   };
 
   const handlePrint = async () => {

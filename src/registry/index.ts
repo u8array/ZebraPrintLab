@@ -53,6 +53,10 @@ export type LabelObject =
   | (LabelObjectBase & { type: 'code93'; props: Code93Props })
   | (LabelObjectBase & { type: 'pdf417'; props: Pdf417Props });
 
+export const BARCODE_1D_TYPES = new Set([
+  'code128', 'code39', 'ean13', 'ean8', 'upca', 'upce', 'interleaved2of5', 'code93',
+]);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ObjectRegistry: Record<string, ObjectTypeDefinition<any>> = {
   text,
