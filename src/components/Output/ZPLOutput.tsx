@@ -1,11 +1,17 @@
 import { useState } from 'react';
-import { CheckIcon, ClipboardDocumentIcon, EyeIcon } from '@heroicons/react/16/solid';
+import { CheckIcon, ClipboardDocumentIcon, ChevronDownIcon, ChevronUpIcon, EyeIcon } from '@heroicons/react/16/solid';
 import { useLabelStore } from '../../store/labelStore';
 import { generateZPL } from '../../lib/zplGenerator';
 import { useT } from '../../lib/useT';
 import { LabelPreviewModal } from './LabelPreview';
 
-export function ZPLOutput() {
+interface Props {
+  collapsed?: boolean;
+  onCollapse?: () => void;
+  onExpand?: () => void;
+}
+
+export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
   const t = useT();
   const { label, objects } = useLabelStore();
   const [copied, setCopied] = useState(false);
@@ -24,7 +30,16 @@ export function ZPLOutput() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border shrink-0">
-        <span className="font-mono text-[10px] text-muted uppercase tracking-widest">{t.output.zplHeading}</span>
+        <div className="flex items-center gap-2">
+          <button
+            className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors"
+            onClick={collapsed ? onExpand : onCollapse}
+            title={collapsed ? 'Expand' : 'Collapse'}
+          >
+            {collapsed ? <ChevronUpIcon className="w-3.5 h-3.5" /> : <ChevronDownIcon className="w-3.5 h-3.5" />}
+          </button>
+          <span className="font-mono text-[10px] text-muted uppercase tracking-widest">{t.output.zplHeading}</span>
+        </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowPreview(true)}
@@ -48,14 +63,14 @@ export function ZPLOutput() {
         </div>
       </div>
 
-      <pre className="flex-1 overflow-auto p-3 font-mono text-xs leading-relaxed text-text m-0">
+      {!collapsed && <pre className="flex-1 overflow-auto p-3 font-mono text-xs leading-relaxed text-text m-0">
         {zpl
           ? zpl.split('\n').map((line, i) => (
               <ZplLine key={i} line={line} />
             ))
           : <span className="text-muted">{t.output.noObjects}</span>
         }
-      </pre>
+      </pre>}
       {showPreview && <LabelPreviewModal onClose={() => setShowPreview(false)} />}
     </div>
   );

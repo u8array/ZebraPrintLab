@@ -30,6 +30,48 @@ import type { LabelConfig } from "./types/ObjectType";
 import type { LabelObject } from "./registry";
 import { useT } from "./lib/useT";
 
+const OUTPUT_MIN_H = 80;
+const OUTPUT_MAX_H = 600;
+const OUTPUT_DEFAULT_H = 208; // h-52 = 13rem = 208px
+
+function useResizablePanel(defaultH: number) {
+  const [height, setHeight] = useState(defaultH);
+  const [collapsed, setCollapsed] = useState(false);
+  const prevHeightRef = useRef(defaultH);
+  const dragRef = useRef<{ startY: number; startH: number } | null>(null);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    dragRef.current = { startY: e.clientY, startH: collapsed ? OUTPUT_MIN_H : height };
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      const delta = dragRef.current.startY - ev.clientY;
+      const next = Math.min(OUTPUT_MAX_H, Math.max(OUTPUT_MIN_H, dragRef.current.startH + delta));
+      if (next <= OUTPUT_MIN_H) {
+        setCollapsed(true);
+        dragRef.current = null;
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        return;
+      }
+      setCollapsed(false);
+      setHeight(next);
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
+  const collapse = () => { prevHeightRef.current = height; setCollapsed(true); };
+  const expand   = () => { setHeight(OUTPUT_DEFAULT_H); setCollapsed(false); };
+
+  return { height, collapsed, onMouseDown, collapse, expand };
+}
+
 function triggerDownload(blob: Blob, filename: string) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -52,6 +94,7 @@ function App() {
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
   const { showGrid, snapEnabled, snapSizeMm } = canvasSettings;
   const [showZplImport, setShowZplImport] = useState(false);
+  const outputPanel = useResizablePanel(OUTPUT_DEFAULT_H);
   const [rightTab, setRightTab] = useState<"properties" | "layers">(
     "properties",
   );
@@ -313,9 +356,20 @@ function App() {
       </div>
 
       {/* Output panel */}
-      <div className="h-52 shrink-0 border-t border-border flex bg-surface">
-        <div className="flex-1 overflow-auto">
-          <ZPLOutput />
+      <div
+        className="shrink-0 border-t border-border flex flex-col bg-surface"
+        style={{ height: outputPanel.collapsed ? 'auto' : outputPanel.height }}
+      >
+        <div
+          className="h-1.5 shrink-0 cursor-row-resize hover:bg-accent/30 transition-colors"
+          onMouseDown={outputPanel.onMouseDown}
+        />
+        <div className="flex-1 overflow-hidden">
+          <ZPLOutput
+            collapsed={outputPanel.collapsed}
+            onCollapse={outputPanel.collapse}
+            onExpand={outputPanel.expand}
+          />
         </div>
       </div>
 
