@@ -447,7 +447,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
           height={containerSize.height}
           onClick={handleStageClick}
           onMouseDown={handleStageMouseDown}
-          onDragStart={() => { lassoStartRef.current = null; lassoRectRef.current = null; setLasso(null); }}
+          onDragStart={(e) => { lassoStartRef.current = null; lassoRectRef.current = null; setLasso(null); if (isPanningRef.current) e.target.stopDrag(); }}
         >
           {/* Object layer */}
           <Layer>
