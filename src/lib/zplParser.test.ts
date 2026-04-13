@@ -634,3 +634,122 @@ describe('parseZPL â€” example shipping label (integration)', () => {
     expect(props(ca).fontHeight).toBe(190);
   });
 });
+
+// ── ^SN serialization (appears AFTER ^FD) ─────────────────────────────────────
+
+describe('parseZPL — ^SN serialization', () => {
+  it('converts a text field to serial when ^SN follows ^FD', () => {
+    const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FD001^FS\n^SN001,1,Y^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('serial');
+    expect(props(objects[0]).content).toBe('001');
+    expect(props(objects[0]).increment).toBe(1);
+    expect(props(objects[0]).zplMode).toBe('SN');
+  });
+
+  it('picks up increment from ^SN parameters', () => {
+    const { objects } = parseZPL('^XA^FO0,0^A0N,25,0^FD100^FS\n^SN100,5,Y^XZ', 8);
+    expect(props(objects[0]).increment).toBe(5);
+    expect(props(objects[0]).fontHeight).toBe(25);
+  });
+
+  it('preserves font rotation from ^A0', () => {
+    const { objects } = parseZPL('^XA^FO0,0^A0R,30,0^FD001^FS\n^SN001,1,Y^XZ', 8);
+    expect(props(objects[0]).rotation).toBe('R');
+  });
+});
+
+// ── ^SF serialization (appears BEFORE ^FD) ────────────────────────────────────
+
+describe('parseZPL — ^SF serialization', () => {
+  it('creates a serial object when ^SF precedes ^FD', () => {
+    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^SF1,3,Y^FD001^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('serial');
+    expect(props(objects[0]).content).toBe('001');
+    expect(props(objects[0]).increment).toBe(1);
+    expect(props(objects[0]).zplMode).toBe('SF');
+  });
+
+  it('picks up increment from ^SF parameters', () => {
+    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^SF3,3,Y^FD100^FS^XZ', 8);
+    expect(props(objects[0]).increment).toBe(3);
+  });
+});
+
+// ── ~ commands (tilde) ────────────────────────────────────────────────────────
+
+describe('parseZPL — ~ tilde commands', () => {
+  it('tokenizes ~DG as a known command (skipped)', () => {
+    const { skipped } = parseZPL('^XA~DGR:LOGO.GRF,1024,10,FF^XZ', 8);
+    expect(skipped.some((s) => s.startsWith('~DG'))).toBe(true);
+  });
+
+  it('does not create objects for ~DG', () => {
+    const { objects } = parseZPL('^XA~DGR:LOGO.GRF,1024,10,FF^XZ', 8);
+    expect(objects).toHaveLength(0);
+  });
+
+  it('handles mixed ^ and ~ commands', () => {
+    const { objects, skipped } = parseZPL('^XA~DGR:TEST.GRF,10,1,FF^FO10,20^A0N,30,0^FDHello^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(skipped.some((s) => s.startsWith('~DG'))).toBe(true);
+  });
+});
+
+// ── ^IM image reference ───────────────────────────────────────────────────────
+
+describe('parseZPL — ^IM image reference', () => {
+  it('adds ^IM to skipped (cannot load printer images)', () => {
+    const { objects, skipped } = parseZPL('^XA^FO0,0^IMR:LOGO.GRF^FS^XZ', 8);
+    expect(objects).toHaveLength(0);
+    expect(skipped.some((s) => s.startsWith('^IM'))).toBe(true);
+  });
+});
+
+// ── \\& line break in ^FB ─────────────────────────────────────────────────────
+
+describe('parseZPL — \\& line break in ^FB', () => {
+  it('decodes \\& as newline in field block text', () => {
+    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^FB400,3,0,L,0^FDLine 1\\&Line 2\\&Line 3^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).content).toBe('Line 1\nLine 2\nLine 3');
+  });
+
+  it('does not decode \\& outside of ^FB blocks', () => {
+    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^FDNo\\&Break^FS^XZ', 8);
+    expect(props(objects[0]).content).toBe('No\\&Break');
+  });
+});
+
+// ── ^A@ TrueType font fallback ───────────────────────────────────────────────
+
+describe('parseZPL — ^A@ TrueType font fallback', () => {
+  it('imports ^A@ as text with specified height instead of skipping', () => {
+    const { objects, skipped } = parseZPL('^XA^FO10,20^A@N,40,30,E:ARIAL.TTF^FDTrueType^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(props(objects[0]).content).toBe('TrueType');
+    expect(props(objects[0]).fontHeight).toBe(40);
+    // Should NOT be in skipped list
+    expect(skipped.some((s) => s.startsWith('^A@'))).toBe(false);
+  });
+
+  it('falls back to ^CF defaults when ^A@ has no height', () => {
+    const { objects } = parseZPL('^XA^CF0,50^FO0,0^A@N,0,0,E:FONT.TTF^FDFallback^FS^XZ', 8);
+    expect(props(objects[0]).fontHeight).toBe(50);
+  });
+});
+
+// ── ^FO 3rd parameter (justification) ─────────────────────────────────────────
+
+describe('parseZPL — ^FO with justification parameter', () => {
+  it('parses ^FO with a 3rd parameter without errors', () => {
+    const { objects } = parseZPL('^XA^FO100,200,1^A0N,30,0^FDJustified^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.x).toBe(100);
+    expect(objects[0]?.y).toBe(200);
+    expect(props(objects[0]).content).toBe('Justified');
+  });
+});

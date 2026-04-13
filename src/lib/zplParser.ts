@@ -12,6 +12,7 @@ import type { LineProps } from '../registry/line';
 import type { ImageProps } from '../registry/image';
 import type { Barcode1DProps } from '../registry/barcode1d';
 import type { Pdf417Props } from '../registry/pdf417';
+import type { SerialProps } from '../registry/serial';
 import { putImage } from './imageCache';
 
 export interface ParsedZPL {
@@ -21,16 +22,20 @@ export interface ParsedZPL {
   skipped: string[];
 }
 
-// ZPL commands are always exactly 2 characters (letter + letter or letter + digit)
+// ZPL commands start with ^ or ~ followed by 2 characters
 function tokenize(zpl: string): { cmd: string; rest: string }[] {
-  return zpl
-    .split('^')
-    .filter((p) => p.length >= 2)
-    .map((p) => {
-      const cmd = p.slice(0, 2).toUpperCase();
-      const rest = p.slice(2);
-      return { cmd, rest };
-    });
+  const tokens: { cmd: string; rest: string }[] = [];
+  // Split on both ^ and ~ delimiters, preserving the delimiter type
+  const parts = zpl.split(/(?=[\^~])/);
+  for (const part of parts) {
+    if (part.length < 3) continue; // need delimiter + 2-char command
+    const delimiter = part[0];
+    if (delimiter !== '^' && delimiter !== '~') continue;
+    const cmd = part.slice(1, 3).toUpperCase();
+    const rest = part.slice(3);
+    tokens.push({ cmd, rest });
+  }
+  return tokens;
 }
 
 function int(s: string | undefined, fallback = 0): number {
@@ -195,15 +200,42 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let pdfSecurity = 0;
   let pdfColumns = 0;
 
+  // ^SN / ^SF serialization state
+  let snPending = false;
+  let snIncrement = 1;
+  let snMode: SerialProps['zplMode'] = 'SN';
+
   const flushField = () => {
     if (!fieldType || pendingFD === null) return;
     const content = fhActive ? decodeFH(pendingFD, fhDelimiter) : pendingFD;
     const posType: 'FT' | 'FO' = positionIsFT ? 'FT' : 'FO';
 
+    // Decode \& line breaks in ^FB text blocks
+    const decoded = fbWidth > 0 ? content.replace(/\\&/g, '\n') : content;
+
     switch (fieldType) {
       case 'text': {
+        // If ^SF was pending, create a serial object instead of text
+        if (snPending) {
+          objects.push(makeObj('serial', x, y, {
+            content: decoded,
+            increment: snIncrement,
+            fontHeight: textH,
+            fontWidth: textW,
+            rotation: textRot,
+            zplMode: snMode,
+          } satisfies SerialProps, posType));
+          snPending = false;
+          snIncrement = 1;
+          snMode = 'SN';
+          fbWidth = 0;
+          fbLines = 1;
+          fbSpacing = 0;
+          fbJustify = 'L';
+          break;
+        }
         const textProps: TextProps = {
-            content,
+            content: decoded,
             fontHeight: textH,
             fontWidth: textW,
             rotation: textRot,
@@ -332,6 +364,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         frActive = false;
         x = int(p[0]) + lhX;
         y = int(p[1]) + lhY;
+        // 3rd param is justification (0/1/2) — stored but not actively used
         positionIsFT = false;
         break;
       }
@@ -504,6 +537,36 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         flushField();
         fhActive = false;
         positionIsFT = false;
+        break;
+      }
+
+      // ── Serialization ─────────────────────────────────────────────
+      case 'SN': {
+        // ^SN{start},{increment},{leadZero}
+        // Appears AFTER the ^FD for this field — upgrade the last text object to serial
+        const snStart = p[0] ?? '';
+        const snInc = int(p[1], 1);
+        const lastObj = objects[objects.length - 1];
+        if (lastObj && lastObj.type === 'text') {
+          const tp = lastObj.props as unknown as Record<string, unknown>;
+          const serialObj = makeObj('serial', lastObj.x, lastObj.y, {
+            content: snStart || (tp['content'] as string) || '001',
+            increment: snInc,
+            fontHeight: (tp['fontHeight'] as number) ?? 30,
+            fontWidth: (tp['fontWidth'] as number) ?? 0,
+            rotation: (tp['rotation'] as SerialProps['rotation']) ?? 'N',
+            zplMode: 'SN',
+          } satisfies SerialProps, lastObj.positionType);
+          objects[objects.length - 1] = serialObj;
+        }
+        break;
+      }
+      case 'SF': {
+        // ^SF{increment},{padDigits},{leadZero}
+        // Appears BEFORE ^FD — set pending state so flushField creates serial
+        snPending = true;
+        snIncrement = int(p[0], 1);
+        snMode = 'SF';
         break;
       }
 
@@ -735,6 +798,24 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         break;
       }
 
+      // ── Image reference ───────────────────────────────────────────
+      case 'IM': {
+        // ^IM{device}:{name} — references an image stored on the printer.
+        // We can't access printer storage from the browser, so skip with a
+        // descriptive message that helps the user understand what happened.
+        skipped.push(`^IM${rest}`);
+        break;
+      }
+
+      // ── Download Graphics (~DG) ───────────────────────────────────
+      case 'DG': {
+        // ~DG{device}:{name},{totalBytes},{bytesPerRow},{data}
+        // Stores a graphic on the printer. Not relevant for label design
+        // but should not pollute unknown-command warnings.
+        skipped.push(`~DG${rest}`);
+        break;
+      }
+
       // ── Ignored / structural ──────────────────────────────────────
       case 'XA':
       case 'XZ':
@@ -744,6 +825,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         break;
 
       default: {
+        // ^A@{rotation},{height},{width},{drive}:{font} — TrueType font reference
+        // We can't load printer TrueType fonts, but we import as text with best-effort sizing
+        if (cmd === 'A@') {
+          fieldType = 'text';
+          textRot = (rest[0] as TextProps['rotation']) ?? fwRotation;
+          textH = int(p[1]) || cfHeight || 30;
+          textW = int(p[2]) || cfWidth || 0;
+          break;
+        }
         // ^A{font}{rotation},{height},{width}  — general font command (A-Z, 0-9)
         if (cmd[0] === 'A' && cmd.length === 2 && cmd !== 'A0') {
           fieldType = 'text';
