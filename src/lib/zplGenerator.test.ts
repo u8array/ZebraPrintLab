@@ -111,7 +111,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const regenerated = generateZPL(BASE_LABEL, original.objects);
     const reparsed = parseZPL(regenerated, 8);
     const textObj = reparsed.objects.find((o) => o.type === 'text')!;
-    expect((textObj.props as Record<string, unknown>)['content']).toBe('Hello World');
+    expect((textObj.props as unknown as Record<string, unknown>)['content']).toBe('Hello World');
   });
 
   it('preserves barcode content and height through a roundtrip', () => {
@@ -119,7 +119,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const regenerated = generateZPL(BASE_LABEL, original.objects);
     const reparsed = parseZPL(regenerated, 8);
     const barcode = reparsed.objects.find((o) => o.type === 'code128')!;
-    expect((barcode.props as Record<string, unknown>)['content']).toBe('987654');
-    expect((barcode.props as Record<string, unknown>)['height']).toBe(150);
+    expect((barcode.props as unknown as Record<string, unknown>)['content']).toBe('987654');
+    expect((barcode.props as unknown as Record<string, unknown>)['height']).toBe(150);
   });
 });

@@ -5,7 +5,7 @@ import { parseZPL } from './zplParser';
 
 /** Narrow props to a plain record for assertion without depending on registry types. */
 const props = (obj: { props: unknown }): Record<string, unknown> =>
-  obj.props as Record<string, unknown>;
+  obj.props as unknown as Record<string, unknown>;
 
 // ── label config ──────────────────────────────────────────────────────────────
 
@@ -345,7 +345,7 @@ describe('parseZPL — example shipping label (integration)', () => {
 
   it('parses "CA" text with fontHeight 190', () => {
     const { objects } = parseZPL(EXAMPLE_ZPL, 8);
-    const ca = objects.find((o) => o.type === 'text' && (o.props as Record<string, unknown>)['content'] === 'CA')!;
+    const ca = objects.find((o) => o.type === 'text' && (o.props as unknown as Record<string, unknown>)['content'] === 'CA')!;
     expect(ca).toBeDefined();
     expect(props(ca).fontHeight).toBe(190);
   });
