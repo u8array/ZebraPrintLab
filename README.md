@@ -1,6 +1,6 @@
 # ZPL Label Designer
 
-Visual label designer for Zebra printers — runs in the browser, no software to install.
+Visual label designer for Zebra printers. runs in the browser, no software to install.
 
 Design your label on the canvas, then copy or export the ZPL output and send it to your printer. No knowledge of ZPL required.
 
