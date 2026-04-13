@@ -1,6 +1,8 @@
 # ZPL Label Designer
 
-Browser-based ZPL II label editor. Open-source alternative to ZebraDesigner, NiceLabel, and BarTender.
+Visual label designer for Zebra printers — runs in the browser, no software to install.
+
+Design your label on the canvas, then copy or export the ZPL output and send it to your printer. No knowledge of ZPL required.
 
 **[Try it](https://u8array.github.io/zpl_label_designer/)** · [Report an issue](https://github.com/u8array/zpl_label_designer/issues)
 
@@ -8,8 +10,7 @@ Browser-based ZPL II label editor. Open-source alternative to ZebraDesigner, Nic
 
 ---
 
-![Screenshot: main editor](_screenshots/editor.png)
-<!-- placeholder: replace with actual screenshot -->
+<!-- TODO: add screenshot -->
 
 ---
 
@@ -19,13 +20,13 @@ Browser-based ZPL II label editor. Open-source alternative to ZebraDesigner, Nic
 
 The label dimensions and print resolution are shown in the header (`width × height mm · dpmm`). Click on them to adjust.
 
-Common print resolutions: 6 dpmm (152 dpi), 8 dpmm (203 dpi), 12 dpmm (300 dpi), 24 dpmm (600 dpi).
+The print resolution (dpmm = dots per millimeter) must match your printer. Common values: 6 dpmm (152 dpi), 8 dpmm (203 dpi), 12 dpmm (300 dpi), 24 dpmm (600 dpi). Check your printer's manual if unsure — 8 dpmm is the most common.
 
 ### 2. Add objects
 
 Drag items from the left panel onto the canvas, or click them to add at the center.
 
-Available objects: text, serial (auto-incrementing fields), barcodes (Code 128, Code 39, Code 93, I2of5, EAN-13, EAN-8, UPC-A, UPC-E, QR Code, DataMatrix, PDF417), shapes (box, line, ellipse), and images.
+Available objects: text, serial (auto-incrementing number fields), barcodes (Code 128, Code 39, Code 93, I2of5, EAN-13, EAN-8, UPC-A, UPC-E, QR Code, DataMatrix, PDF417), shapes (box, line, ellipse), and images.
 
 ### 3. Edit properties
 
@@ -33,12 +34,12 @@ Select an object to configure it in the **Properties** panel on the right: conte
 
 Multiple objects can be selected by holding Shift or drawing a lasso. Position and size changes apply to all selected objects.
 
-### 4. Get the ZPL
+### 4. Print or export
 
-The ZPL output panel at the bottom updates in real time. From there:
+The **ZPL output** panel at the bottom shows the label as ZPL code — the language Zebra printers understand. It updates in real time as you edit.
 
-- **Copy**: copies the ZPL to the clipboard
-- **Preview**: fetches a rendered preview image from [Labelary](https://labelary.com/) (requires internet)
+- **Copy**: copies the ZPL to the clipboard — paste it into your printer software or send it directly to the printer
+- **Preview**: fetches a rendered preview image from [Labelary](https://labelary.com/)
 - **Export**: downloads a `.zpl` file (File menu)
 - **Print**: opens the Labelary preview and triggers the browser print dialog
 
@@ -69,7 +70,8 @@ Unrecognised commands are skipped and listed in the import report.
 | `G` | Toggle grid |
 | `S` | Toggle snap |
 | Middle mouse / Space+drag | Pan canvas |
-| Scroll | Zoom |
+| Scroll | Pan canvas |
+| Ctrl+Scroll | Zoom |
 
 ### Saving and loading
 
@@ -77,16 +79,11 @@ Designs can be saved as `.json` (File → Save Design) and reopened later. This 
 
 ---
 
-![Screenshot: ZPL output panel and preview](_screenshots/zpl_output.png)
-<!-- placeholder: replace with actual screenshot -->
-
----
-
 ## Features
 
-- Drag, resize, and rotate objects on the canvas
+- Drag and resize objects on the canvas
 - Multi-select with lasso or Shift-click
-- Grid with configurable snap
+- Grid with configurable snap; smart alignment and spacing guides
 - Undo / redo history
 - Copy / paste
 - Layers panel with reordering
@@ -97,9 +94,9 @@ Designs can be saved as `.json` (File → Save Design) and reopened later. This 
 
 ## Limitations
 
-- ZPL import covers the most common commands but not the full ZPL II command set. Labels using printer-stored images (`^IM`), downloaded graphics (`~DG`), or printer-specific extensions may not import completely. TrueType font references (`^A@`) are imported with best-effort sizing using the default font.
+- ZPL import covers the most common commands but not the full ZPL II command set. Labels using printer-stored images, downloaded graphics, or printer-specific extensions may not import completely.
+- Font rendering on the canvas is an approximation. The preview on canvas may look slightly different from what the printer produces. Use the Labelary preview for accurate output.
 - Label preview requires a connection to `api.labelary.com`.
-- Font rendering on the canvas is an approximation using Roboto Condensed, which is arguably the closest available web font to Zebra's proprietary bitmap fonts. Character widths will differ for some glyphs (e.g. `-` renders narrower than Zebra's equivalent). Use the Labelary preview for accurate output.
 - No support for multi-label documents (`^XA...^XZ` repeated).
 
 ---
