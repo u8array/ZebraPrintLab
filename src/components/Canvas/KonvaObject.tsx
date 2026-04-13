@@ -57,7 +57,7 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
   const dispY2 = livePt2?.y ?? (y2 + dy);
 
   return (
-    <Group id={obj.id}>
+    <Group>
       {/* Visible line — tracks both whole-drag and handle-drag live */}
       <KLine
         points={[dispX1, dispY1, dispX2, dispY2]}
@@ -67,8 +67,11 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
         listening={false}
         globalCompositeOperation={!isSelected && p.reverse ? 'difference' : 'source-over'}
       />
-      {/* Wide transparent hit area — handles click-to-select and whole-line drag. */}
+      {/* Wide transparent hit area — handles click-to-select and whole-line drag.
+          id is here (not on the Group) so the Stage snap handler can find this node
+          via e.target.id() and apply object-snap correctly. */}
       <KLine
+        id={obj.id}
         points={[x1, y1, x2, y2]}
         stroke="transparent"
         strokeWidth={Math.max(lineStrokeWidth, 14)}
