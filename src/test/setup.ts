@@ -27,19 +27,55 @@ Object.defineProperty(globalThis, 'navigator', {
   value: { language: 'en-US' } as Partial<Navigator>,
 });
 
-// ── document (canvas stub only – used by ^GFA parser path) ───────────────────
+// ── document (canvas stub – used by ^GFA parser path) ────────────────────────
+
+/** Minimal ImageData stub for canvas operations in Node. */
+class FakeImageData {
+  readonly width: number;
+  readonly height: number;
+  readonly data: Uint8ClampedArray;
+  constructor(width: number, height: number) {
+    this.width = width;
+    this.height = height;
+    this.data = new Uint8ClampedArray(width * height * 4);
+  }
+}
+
+function createFakeCanvas() {
+  let _width = 0;
+  let _height = 0;
+  let _imageData: FakeImageData | null = null;
+
+  const ctx = {
+    createImageData(w: number, h: number): FakeImageData {
+      return new FakeImageData(w, h);
+    },
+    putImageData(data: FakeImageData): void {
+      _imageData = data;
+    },
+    getImageData(sx: number, sy: number, w: number, h: number): FakeImageData {
+      return _imageData ?? new FakeImageData(w, h);
+    },
+    fillRect(): void { /* noop */ },
+    drawImage(): void { /* noop */ },
+    set fillStyle(_v: string) { /* noop */ },
+  };
+
+  return {
+    get width() { return _width; },
+    set width(v: number) { _width = v; },
+    get height() { return _height; },
+    set height(v: number) { _height = v; },
+    getContext: () => ctx,
+    toDataURL: () => 'data:image/png;base64,AAAA',
+  };
+}
+
 Object.defineProperty(globalThis, 'document', {
   configurable: true,
   value: {
     createElement(tag: string): unknown {
-      if (tag === 'canvas') {
-        return {
-          width: 0,
-          height: 0,
-          getContext: () => null,
-          toDataURL: () => 'data:image/png;base64,',
-        };
-      }
+      if (tag === 'canvas') return createFakeCanvas();
       return {};
     },
   } as Partial<Document>,
