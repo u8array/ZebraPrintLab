@@ -3,6 +3,7 @@ import { Stage, Layer, Group, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore } from "../../store/labelStore";
 import { pxToDots } from "../../lib/coordinates";
+import { SNAP_OPTIONS } from "../../lib/units";
 import { KonvaObject } from "./KonvaObject";
 import { Grid } from "./Grid";
 import { Ruler, RULER_SIZE } from "./Ruler";
@@ -415,11 +416,9 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
           disabled={!snapEnabled}
           className="h-6 rounded px-1 text-xs bg-surface-2 border border-border text-text disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <option value={0.5}>0.5mm</option>
-          <option value={1}>1mm</option>
-          <option value={2}>2mm</option>
-          <option value={5}>5mm</option>
-          <option value={10}>10mm</option>
+          {SNAP_OPTIONS[unit].map((o) => (
+            <option key={o.mm} value={o.mm}>{o.label}</option>
+          ))}
         </select>
         <div className="w-px h-3.5 bg-border mx-0.5" />
         <button

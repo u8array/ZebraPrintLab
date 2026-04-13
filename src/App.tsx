@@ -28,7 +28,6 @@ import type { LocaleCode } from "./locales";
 import { generateZPL } from "./lib/zplGenerator";
 import { parseZPL } from "./lib/zplParser";
 import { mmToUnit } from "./lib/units";
-import type { Unit } from "./lib/units";
 import { fetchPreview } from "./lib/labelary";
 import type { LabelConfig } from "./types/ObjectType";
 import type { LabelObject } from "./registry";
@@ -113,10 +112,6 @@ function App() {
   const canvasSettings = useLabelStore((s) => s.canvasSettings);
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
   const { showGrid, snapEnabled, snapSizeMm, unit } = canvasSettings;
-  const cycleUnit = () => {
-    const next: Record<Unit, Unit> = { mm: 'cm', cm: 'in', in: 'mm' };
-    setCanvasSettings({ unit: next[unit] });
-  };
   const [showZplImport, setShowZplImport] = useState(false);
   const outputPanel = useResizablePanel(OUTPUT_DEFAULT_H);
   const [rightTab, setRightTab] = useState<"properties" | "layers">(
@@ -265,13 +260,9 @@ function App() {
             ZPL Designer
           </button>
           <span className="text-border-2 select-none">·</span>
-          <button
-            onClick={cycleUnit}
-            title="Cycle unit (mm / cm / in)"
-            className="font-mono text-xs text-muted hover:text-text transition-colors"
-          >
+          <span className="font-mono text-xs text-muted">
             {mmToUnit(label.widthMm, unit)} × {mmToUnit(label.heightMm, unit)} {unit} · {label.dpmm} dpmm
-          </button>
+          </span>
         </div>
 
         <div className="flex items-center gap-1">

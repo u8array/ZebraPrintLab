@@ -1,14 +1,14 @@
 import { useLabelStore } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
 import { dotsToMm, mmToDots } from '../../lib/coordinates';
-import { mmToUnit, unitToMm, unitLabel, unitStep } from '../../lib/units';
+import { mmToUnit, unitToMm, unitLabel, unitStep, SNAP_DEFAULT_MM } from '../../lib/units';
 import { useT } from '../../lib/useT';
 import { inputCls, labelCls } from './styles';
 import type { LabelConfig } from '../../types/ObjectType';
 
 export function PropertiesPanel() {
   const t = useT();
-  const { objects, selectedIds, updateObject, label, setLabelConfig, canvasSettings } = useLabelStore();
+  const { objects, selectedIds, updateObject, label, setLabelConfig, canvasSettings, setCanvasSettings } = useLabelStore();
   const unit = canvasSettings.unit;
   const obj = objects.find((o) => o.id === selectedIds[0]);
 
@@ -25,7 +25,7 @@ export function PropertiesPanel() {
   }
 
   if (!obj) {
-    return <LabelConfigPanel label={label} onUpdate={setLabelConfig} unit={unit} />;
+    return <LabelConfigPanel label={label} onUpdate={setLabelConfig} unit={unit} onUnitChange={(u) => setCanvasSettings({ unit: u, snapSizeMm: SNAP_DEFAULT_MM[u] })} />;
   }
 
   const definition = ObjectRegistry[obj.type];
@@ -113,9 +113,10 @@ interface LabelConfigPanelProps {
   label: LabelConfig;
   onUpdate: (config: Partial<LabelConfig>) => void;
   unit: import('../../lib/units').Unit;
+  onUnitChange: (unit: import('../../lib/units').Unit) => void;
 }
 
-function LabelConfigPanel({ label, onUpdate, unit }: LabelConfigPanelProps) {
+function LabelConfigPanel({ label, onUpdate, unit, onUnitChange }: LabelConfigPanelProps) {
   const t = useT();
   const matchedPreset = PRESETS.find(
     (p) => p.widthMm === label.widthMm && p.heightMm === label.heightMm && p.dpmm === label.dpmm,
@@ -149,9 +150,24 @@ function LabelConfigPanel({ label, onUpdate, unit }: LabelConfigPanelProps) {
 
         <div className="border-t border-border" />
 
+        <div className="flex items-center justify-between">
+          <span className={labelCls}>{t.label.width} / {t.label.height}</span>
+          <div className="flex rounded overflow-hidden border border-border text-[10px] font-mono">
+            {(['mm', 'cm', 'in'] as const).map((u) => (
+              <button
+                key={u}
+                onClick={() => onUnitChange(u)}
+                className={`px-1.5 py-0.5 transition-colors ${u === unit ? 'bg-accent text-bg' : 'text-muted hover:text-text'}`}
+              >
+                {u}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.label.width} ({unitLabel(unit)})</label>
+            <label className={labelCls}>{t.label.width}</label>
             <input
               type="number"
               className={inputCls}
@@ -162,7 +178,7 @@ function LabelConfigPanel({ label, onUpdate, unit }: LabelConfigPanelProps) {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.label.height} ({unitLabel(unit)})</label>
+            <label className={labelCls}>{t.label.height}</label>
             <input
               type="number"
               className={inputCls}

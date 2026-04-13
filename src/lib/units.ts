@@ -41,6 +41,36 @@ export function rulerTicksMm(scalePxPerMm: number, unit: Unit): { major: number;
   return                         { major: 20, minor: 10 };
 }
 
+export const SNAP_OPTIONS: Record<Unit, { label: string; mm: number }[]> = {
+  mm: [
+    { label: '0.5 mm', mm: 0.5 },
+    { label: '1 mm',   mm: 1 },
+    { label: '2 mm',   mm: 2 },
+    { label: '5 mm',   mm: 5 },
+    { label: '10 mm',  mm: 10 },
+  ],
+  cm: [
+    { label: '0.1 cm', mm: 1 },
+    { label: '0.5 cm', mm: 5 },
+    { label: '1 cm',   mm: 10 },
+    { label: '2 cm',   mm: 20 },
+    { label: '5 cm',   mm: 50 },
+  ],
+  in: [
+    { label: '1/16"', mm: 25.4 / 16 },
+    { label: '1/8"',  mm: 25.4 / 8 },
+    { label: '1/4"',  mm: 25.4 / 4 },
+    { label: '1/2"',  mm: 25.4 / 2 },
+    { label: '1"',    mm: 25.4 },
+  ],
+};
+
+export const SNAP_DEFAULT_MM: Record<Unit, number> = {
+  mm: 1,
+  cm: 5,
+  in: 25.4 / 4,
+};
+
 /** Format a mm value as a ruler label in the current unit. */
 export function rulerLabel(mm: number, unit: Unit): string {
   if (unit === 'in') {
