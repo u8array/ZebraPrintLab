@@ -27,7 +27,7 @@ const da = {
   },
 
   properties: {
-    positionSection: 'Position (mm)',
+    positionSection: 'Position',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const da = {
     heading: 'Etiket',
     preset: 'Skabelon',
     presetCustom: 'Tilpasset',
-    width: 'Bredde (mm)',
-    height: 'Højde (mm)',
+    width: 'Bredde',
+    height: 'Højde',
     dpmm: 'Opløsning',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

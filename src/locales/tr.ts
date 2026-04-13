@@ -27,7 +27,7 @@ const tr = {
   },
 
   properties: {
-    positionSection: 'Konum (mm)',
+    positionSection: 'Konum',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const tr = {
     heading: 'Etiket',
     preset: 'Ön ayar',
     presetCustom: 'Özel',
-    width: 'Genişlik (mm)',
-    height: 'Yükseklik (mm)',
+    width: 'Genişlik',
+    height: 'Yükseklik',
     dpmm: 'Çözünürlük',
     dpmm6: '6 nokta/mm — 152 dpi',
     dpmm8: '8 nokta/mm — 203 dpi',

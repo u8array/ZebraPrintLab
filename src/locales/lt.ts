@@ -27,7 +27,7 @@ const lt = {
   },
 
   properties: {
-    positionSection: 'Padėtis (mm)',
+    positionSection: 'Padėtis',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const lt = {
     heading: 'Etiketė',
     preset: 'Šablonas',
     presetCustom: 'Tinkintas',
-    width: 'Plotis (mm)',
-    height: 'Aukštis (mm)',
+    width: 'Plotis',
+    height: 'Aukštis',
     dpmm: 'Skiriamoji geba',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

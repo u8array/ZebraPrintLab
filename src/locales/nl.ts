@@ -27,7 +27,7 @@ const nl = {
   },
 
   properties: {
-    positionSection: 'Positie (mm)',
+    positionSection: 'Positie',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const nl = {
     heading: 'Etiket',
     preset: 'Voorinstelling',
     presetCustom: 'Aangepast',
-    width: 'Breedte (mm)',
-    height: 'Hoogte (mm)',
+    width: 'Breedte',
+    height: 'Hoogte',
     dpmm: 'Resolutie',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

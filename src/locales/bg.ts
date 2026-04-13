@@ -27,7 +27,7 @@ const bg = {
   },
 
   properties: {
-    positionSection: 'Позиция (mm)',
+    positionSection: 'Позиция',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const bg = {
     heading: 'Етикет',
     preset: 'Шаблон',
     presetCustom: 'Персонализиран',
-    width: 'Ширина (mm)',
-    height: 'Височина (mm)',
+    width: 'Ширина',
+    height: 'Височина',
     dpmm: 'Резолюция',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

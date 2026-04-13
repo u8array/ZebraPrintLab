@@ -27,7 +27,7 @@ const ko = {
   },
 
   properties: {
-    positionSection: '위치 (mm)',
+    positionSection: '위치',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const ko = {
     heading: '레이블',
     preset: '프리셋',
     presetCustom: '사용자 정의',
-    width: '너비 (mm)',
-    height: '높이 (mm)',
+    width: '너비',
+    height: '높이',
     dpmm: '해상도',
     dpmm6: '6 점/mm — 152 dpi',
     dpmm8: '8 점/mm — 203 dpi',

@@ -27,7 +27,7 @@ const it = {
   },
 
   properties: {
-    positionSection: 'Posizione (mm)',
+    positionSection: 'Posizione',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const it = {
     heading: 'Etichetta',
     preset: 'Modello',
     presetCustom: 'Personalizzato',
-    width: 'Larghezza (mm)',
-    height: 'Altezza (mm)',
+    width: 'Larghezza',
+    height: 'Altezza',
     dpmm: 'Risoluzione',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

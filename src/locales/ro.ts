@@ -27,7 +27,7 @@ const ro = {
   },
 
   properties: {
-    positionSection: 'Poziție (mm)',
+    positionSection: 'Poziție',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const ro = {
     heading: 'Etichetă',
     preset: 'Șablon',
     presetCustom: 'Personalizat',
-    width: 'Lățime (mm)',
-    height: 'Înălțime (mm)',
+    width: 'Lățime',
+    height: 'Înălțime',
     dpmm: 'Rezoluție',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

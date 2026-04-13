@@ -27,7 +27,7 @@ const sv = {
   },
 
   properties: {
-    positionSection: 'Position (mm)',
+    positionSection: 'Position',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const sv = {
     heading: 'Etikett',
     preset: 'Mall',
     presetCustom: 'Anpassad',
-    width: 'Bredd (mm)',
-    height: 'Höjd (mm)',
+    width: 'Bredd',
+    height: 'Höjd',
     dpmm: 'Upplösning',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

@@ -27,7 +27,7 @@ const sr = {
   },
 
   properties: {
-    positionSection: 'Položaj (mm)',
+    positionSection: 'Položaj',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const sr = {
     heading: 'Nalepnica',
     preset: 'Predložak',
     presetCustom: 'Prilagođen',
-    width: 'Širina (mm)',
-    height: 'Visina (mm)',
+    width: 'Širina',
+    height: 'Visina',
     dpmm: 'Rezolucija',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

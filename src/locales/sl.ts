@@ -27,7 +27,7 @@ const sl = {
   },
 
   properties: {
-    positionSection: 'Položaj (mm)',
+    positionSection: 'Položaj',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const sl = {
     heading: 'Nalepka',
     preset: 'Predloga',
     presetCustom: 'Po meri',
-    width: 'Širina (mm)',
-    height: 'Višina (mm)',
+    width: 'Širina',
+    height: 'Višina',
     dpmm: 'Ločljivost',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

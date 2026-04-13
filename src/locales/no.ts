@@ -27,7 +27,7 @@ const no = {
   },
 
   properties: {
-    positionSection: 'Posisjon (mm)',
+    positionSection: 'Posisjon',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const no = {
     heading: 'Etikett',
     preset: 'Mal',
     presetCustom: 'Egendefinert',
-    width: 'Bredde (mm)',
-    height: 'Høyde (mm)',
+    width: 'Bredde',
+    height: 'Høyde',
     dpmm: 'Oppløsning',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

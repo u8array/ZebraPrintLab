@@ -27,7 +27,7 @@ const fi = {
   },
 
   properties: {
-    positionSection: 'Sijainti (mm)',
+    positionSection: 'Sijainti',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const fi = {
     heading: 'Etiketti',
     preset: 'Malli',
     presetCustom: 'Mukautettu',
-    width: 'Leveys (mm)',
-    height: 'Korkeus (mm)',
+    width: 'Leveys',
+    height: 'Korkeus',
     dpmm: 'Tarkkuus',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

@@ -27,7 +27,7 @@ const et = {
   },
 
   properties: {
-    positionSection: 'Asukoht (mm)',
+    positionSection: 'Asukoht',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const et = {
     heading: 'Silt',
     preset: 'Mall',
     presetCustom: 'Kohandatud',
-    width: 'Laius (mm)',
-    height: 'Kõrgus (mm)',
+    width: 'Laius',
+    height: 'Kõrgus',
     dpmm: 'Eraldusvõime',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

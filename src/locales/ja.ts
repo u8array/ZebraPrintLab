@@ -27,7 +27,7 @@ const ja = {
   },
 
   properties: {
-    positionSection: '位置 (mm)',
+    positionSection: '位置',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const ja = {
     heading: 'ラベル',
     preset: 'プリセット',
     presetCustom: 'カスタム',
-    width: '幅 (mm)',
-    height: '高さ (mm)',
+    width: '幅',
+    height: '高さ',
     dpmm: '解像度',
     dpmm6: '6 ドット/mm — 152 dpi',
     dpmm8: '8 ドット/mm — 203 dpi',

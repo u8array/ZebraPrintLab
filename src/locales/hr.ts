@@ -27,7 +27,7 @@ const hr = {
   },
 
   properties: {
-    positionSection: 'Položaj (mm)',
+    positionSection: 'Položaj',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const hr = {
     heading: 'Naljepnica',
     preset: 'Predložak',
     presetCustom: 'Prilagođen',
-    width: 'Širina (mm)',
-    height: 'Visina (mm)',
+    width: 'Širina',
+    height: 'Visina',
     dpmm: 'Razlučivost',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

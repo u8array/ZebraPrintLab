@@ -27,7 +27,7 @@ const pl = {
   },
 
   properties: {
-    positionSection: 'Pozycja (mm)',
+    positionSection: 'Pozycja',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const pl = {
     heading: 'Etykieta',
     preset: 'Szablon',
     presetCustom: 'Niestandardowy',
-    width: 'Szerokość (mm)',
-    height: 'Wysokość (mm)',
+    width: 'Szerokość',
+    height: 'Wysokość',
     dpmm: 'Rozdzielczość',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

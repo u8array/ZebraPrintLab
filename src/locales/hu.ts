@@ -27,7 +27,7 @@ const hu = {
   },
 
   properties: {
-    positionSection: 'Pozíció (mm)',
+    positionSection: 'Pozíció',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const hu = {
     heading: 'Címke',
     preset: 'Sablon',
     presetCustom: 'Egyéni',
-    width: 'Szélesség (mm)',
-    height: 'Magasság (mm)',
+    width: 'Szélesség',
+    height: 'Magasság',
     dpmm: 'Felbontás',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

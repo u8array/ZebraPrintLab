@@ -27,7 +27,7 @@ const lv = {
   },
 
   properties: {
-    positionSection: 'Pozīcija (mm)',
+    positionSection: 'Pozīcija',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const lv = {
     heading: 'Etiķete',
     preset: 'Veidne',
     presetCustom: 'Pielāgots',
-    width: 'Platums (mm)',
-    height: 'Augstums (mm)',
+    width: 'Platums',
+    height: 'Augstums',
     dpmm: 'Izšķirtspēja',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

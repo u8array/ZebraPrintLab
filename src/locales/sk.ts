@@ -27,7 +27,7 @@ const sk = {
   },
 
   properties: {
-    positionSection: 'Pozícia (mm)',
+    positionSection: 'Pozícia',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const sk = {
     heading: 'Štítok',
     preset: 'Šablóna',
     presetCustom: 'Vlastný',
-    width: 'Šírka (mm)',
-    height: 'Výška (mm)',
+    width: 'Šírka',
+    height: 'Výška',
     dpmm: 'Rozlíšenie',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

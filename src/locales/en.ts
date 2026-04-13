@@ -27,7 +27,7 @@ const en = {
   },
 
   properties: {
-    positionSection: 'Position (mm)',
+    positionSection: 'Position',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const en = {
     heading: 'Label',
     preset: 'Preset',
     presetCustom: 'Custom',
-    width: 'Width (mm)',
-    height: 'Height (mm)',
+    width: 'Width',
+    height: 'Height',
     dpmm: 'Resolution',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',

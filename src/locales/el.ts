@@ -27,7 +27,7 @@ const el = {
   },
 
   properties: {
-    positionSection: 'Θέση (mm)',
+    positionSection: 'Θέση',
     x: 'X',
     y: 'Y',
   },
@@ -36,8 +36,8 @@ const el = {
     heading: 'Ετικέτα',
     preset: 'Πρότυπο',
     presetCustom: 'Προσαρμοσμένο',
-    width: 'Πλάτος (mm)',
-    height: 'Ύψος (mm)',
+    width: 'Πλάτος',
+    height: 'Ύψος',
     dpmm: 'Ανάλυση',
     dpmm6: '6 dpmm — 152 dpi',
     dpmm8: '8 dpmm — 203 dpi',
