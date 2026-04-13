@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useLabelStore } from './labelStore';
+import type { LabelObject } from '../registry';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -67,9 +68,9 @@ describe('updateObject — props merging', () => {
     // text defaults: content, fontHeight, fontWidth, rotation
     state().updateObject(obj.id, { props: { fontHeight: 99 } });
     const updated = state().objects[0]!;
-    expect((updated.props as Record<string, unknown>).fontHeight).toBe(99);
+    expect((updated.props as unknown as Record<string, unknown>).fontHeight).toBe(99);
     // other props preserved
-    expect((updated.props as Record<string, unknown>).content).toBe('Text');
+    expect((updated.props as unknown as Record<string, unknown>).content).toBe('Text');
   });
 
   it('updates top-level fields (x, y) without touching props', () => {
@@ -77,7 +78,7 @@ describe('updateObject — props merging', () => {
     const obj = state().objects[0]!;
     state().updateObject(obj.id, { x: 999 });
     expect(state().objects[0]!.x).toBe(999);
-    expect((state().objects[0]!.props as Record<string, unknown>).content).toBe('Text');
+    expect((state().objects[0]!.props as unknown as Record<string, unknown>).content).toBe('Text');
   });
 });
 
@@ -287,8 +288,8 @@ describe('loadDesign', () => {
 
     const newLabel = { widthMm: 50, heightMm: 30, dpmm: 12 };
     const newObjects = [
-      { id: 'x1', type: 'box', x: 10, y: 10, rotation: 0, props: { width: 50, height: 50, thickness: 3, filled: false, color: 'B', rounding: 0 } },
-    ] as Parameters<typeof state>['0'] extends never ? never : Parameters<ReturnType<typeof useLabelStore.getState>['loadDesign']>[1];
+      { id: 'x1', type: 'box' as const, x: 10, y: 10, rotation: 0, props: { width: 50, height: 50, thickness: 3, filled: false, color: 'B' as const, rounding: 0 } },
+    ] satisfies LabelObject[];
 
     state().loadDesign(newLabel, newObjects);
     expect(state().label).toEqual(newLabel);
