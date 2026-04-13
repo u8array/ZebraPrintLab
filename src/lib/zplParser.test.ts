@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { parseZPL } from './zplParser';
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+// â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Narrow props to a plain record for assertion without depending on registry types. */
-const props = (obj: { props: unknown }): Record<string, unknown> =>
-  obj.props as unknown as Record<string, unknown>;
+const props = (obj: { props: unknown } | undefined): Record<string, unknown> =>
+  (obj?.props ?? {}) as Record<string, unknown>;
 
-// ── label config ──────────────────────────────────────────────────────────────
+// â”€â”€ label config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — label config', () => {
+describe('parseZPL â€” label config', () => {
   it('parses ^PW and ^LL into mm dimensions at 8 dpmm', () => {
     const { labelConfig } = parseZPL('^XA^PW800^LL600^XZ', 8);
     expect(labelConfig.widthMm).toBe(100);   // 800 dots / 8 dpmm
@@ -33,162 +33,162 @@ describe('parseZPL — label config', () => {
   });
 });
 
-// ── text ──────────────────────────────────────────────────────────────────────
+// â”€â”€ text â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — text via ^A0', () => {
+describe('parseZPL â€” text via ^A0', () => {
   it('creates a text object from an explicit ^A0 command', () => {
     const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FDHello^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     const [obj] = objects;
-    expect(obj!.type).toBe('text');
-    expect(obj!.x).toBe(10);
-    expect(obj!.y).toBe(20);
-    expect(props(obj!).content).toBe('Hello');
-    expect(props(obj!).fontHeight).toBe(30);
-    expect(props(obj!).rotation).toBe('N');
+    expect(obj?.type).toBe('text');
+    expect(obj?.x).toBe(10);
+    expect(obj?.y).toBe(20);
+    expect(props(obj).content).toBe('Hello');
+    expect(props(obj).fontHeight).toBe(30);
+    expect(props(obj).rotation).toBe('N');
   });
 
   it('parses rotation from ^A0', () => {
     const { objects } = parseZPL('^XA^FO0,0^A0R,20,0^FDTilt^FS^XZ', 8);
-    expect(props(objects[0]!).rotation).toBe('R');
+    expect(props(objects[0]).rotation).toBe('R');
   });
 });
 
-describe('parseZPL — text via ^CF (implicit field)', () => {
+describe('parseZPL â€” text via ^CF (implicit field)', () => {
   it('creates text from ^CF + ^FD without an explicit ^A', () => {
     const { objects } = parseZPL('^XA^CF0,60^FO50,50^FDIntershipping, Inc.^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     const [obj] = objects;
-    expect(obj!.type).toBe('text');
-    expect(props(obj!).content).toBe('Intershipping, Inc.');
-    expect(props(obj!).fontHeight).toBe(60);
+    expect(obj?.type).toBe('text');
+    expect(props(obj).content).toBe('Intershipping, Inc.');
+    expect(props(obj).fontHeight).toBe(60);
   });
 
   it('updates fontHeight when ^CF changes between fields', () => {
     const zpl = '^XA^CF0,60^FO0,0^FDFirst^FS^CF0,30^FO0,50^FDSecond^FS^XZ';
     const { objects } = parseZPL(zpl, 8);
     expect(objects).toHaveLength(2);
-    expect(props(objects[0]!).fontHeight).toBe(60);
-    expect(props(objects[1]!).fontHeight).toBe(30);
+    expect(props(objects[0]).fontHeight).toBe(60);
+    expect(props(objects[1]).fontHeight).toBe(30);
   });
 
   it('uses ^CFA font command (non-zero font name) to set height', () => {
-    // ^CFA,30 → cmd='CF', rest='A,30' → height=30
+    // ^CFA,30 â†’ cmd='CF', rest='A,30' â†’ height=30
     const { objects } = parseZPL('^XA^CFA,30^FO0,0^FDText^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(props(objects[0]!).fontHeight).toBe(30);
+    expect(props(objects[0]).fontHeight).toBe(30);
   });
 });
 
-describe('parseZPL — text field position', () => {
+describe('parseZPL â€” text field position', () => {
   it('records positionType FO for ^FO fields', () => {
     const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FDHi^FS^XZ', 8);
-    expect(objects[0]!.positionType).toBe('FO');
+    expect(objects[0]?.positionType).toBe('FO');
   });
 
   it('records positionType FT for ^FT fields', () => {
     const { objects } = parseZPL('^XA^FT10,20^A0N,30,0^FDHi^FS^XZ', 8);
-    expect(objects[0]!.positionType).toBe('FT');
+    expect(objects[0]?.positionType).toBe('FT');
   });
 });
 
-describe('parseZPL — ^LH label home offset', () => {
+describe('parseZPL â€” ^LH label home offset', () => {
   it('adds ^LH offset to all field positions', () => {
     const { objects } = parseZPL('^XA^LH20,10^FO30,40^A0N,30,0^FDText^FS^XZ', 8);
-    expect(objects[0]!.x).toBe(50);  // 30 + 20
-    expect(objects[0]!.y).toBe(50);  // 40 + 10
+    expect(objects[0]?.x).toBe(50);  // 30 + 20
+    expect(objects[0]?.y).toBe(50);  // 40 + 10
   });
 });
 
-// ── ^FR field reverse ─────────────────────────────────────────────────────────
+// â”€â”€ ^FR field reverse â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^FR field reverse', () => {
+describe('parseZPL â€” ^FR field reverse', () => {
   it('sets reverse on a text field when ^FR precedes ^FD', () => {
     const { objects } = parseZPL('^XA^FO0,0^FR^A0N,30,0^FDReversed^FS^XZ', 8);
-    expect(props(objects[0]!).reverse).toBe(true);
+    expect(props(objects[0]).reverse).toBe(true);
   });
 
   it('does not set reverse without ^FR', () => {
     const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^FDNormal^FS^XZ', 8);
-    expect(props(objects[0]!).reverse).toBeFalsy();
+    expect(props(objects[0]).reverse).toBeFalsy();
   });
 });
 
-// ── shapes ────────────────────────────────────────────────────────────────────
+// â”€â”€ shapes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^GB box', () => {
+describe('parseZPL â€” ^GB box', () => {
   it('creates an unfilled box when thickness < min dimension', () => {
     const { objects } = parseZPL('^XA^FO10,20^GB200,100,3,B,0^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     const [obj] = objects;
-    expect(obj!.type).toBe('box');
-    expect(obj!.x).toBe(10);
-    expect(obj!.y).toBe(20);
-    expect(props(obj!).width).toBe(200);
-    expect(props(obj!).height).toBe(100);
-    expect(props(obj!).thickness).toBe(3);
-    expect(props(obj!).filled).toBe(false);
-    expect(props(obj!).color).toBe('B');
-    expect(props(obj!).rounding).toBe(0);
+    expect(obj?.type).toBe('box');
+    expect(obj?.x).toBe(10);
+    expect(obj?.y).toBe(20);
+    expect(props(obj).width).toBe(200);
+    expect(props(obj).height).toBe(100);
+    expect(props(obj).thickness).toBe(3);
+    expect(props(obj).filled).toBe(false);
+    expect(props(obj).color).toBe('B');
+    expect(props(obj).rounding).toBe(0);
   });
 
   it('creates a filled box when thickness equals the smallest dimension', () => {
     const { objects } = parseZPL('^XA^FO0,0^GB100,100,100^FS^XZ', 8);
-    expect(objects[0]!.type).toBe('box');
-    expect(props(objects[0]!).filled).toBe(true);
+    expect(objects[0]?.type).toBe('box');
+    expect(props(objects[0]).filled).toBe(true);
   });
 
   it('creates a box with rounding', () => {
     const { objects } = parseZPL('^XA^FO0,0^GB100,50,3,B,5^FS^XZ', 8);
-    expect(props(objects[0]!).rounding).toBe(5);
+    expect(props(objects[0]).rounding).toBe(5);
   });
 });
 
-describe('parseZPL — ^GB line', () => {
+describe('parseZPL â€” ^GB line', () => {
   it('creates a horizontal line when height equals thickness', () => {
     const { objects } = parseZPL('^XA^FO50,100^GB700,3,3^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     const [obj] = objects;
-    expect(obj!.type).toBe('line');
-    expect(props(obj!).angle).toBe(0);
-    expect(props(obj!).length).toBe(700);
-    expect(props(obj!).thickness).toBe(3);
+    expect(obj?.type).toBe('line');
+    expect(props(obj).angle).toBe(0);
+    expect(props(obj).length).toBe(700);
+    expect(props(obj).thickness).toBe(3);
   });
 
   it('creates a vertical line when width equals thickness', () => {
     const { objects } = parseZPL('^XA^FO100,50^GB3,250,3^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     const [obj] = objects;
-    expect(obj!.type).toBe('line');
-    expect(props(obj!).angle).toBe(90);
-    expect(props(obj!).length).toBe(250);
+    expect(obj?.type).toBe('line');
+    expect(props(obj).angle).toBe(90);
+    expect(props(obj).length).toBe(250);
   });
 });
 
-// ── barcodes ──────────────────────────────────────────────────────────────────
+// â”€â”€ barcodes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^BC Code 128', () => {
+describe('parseZPL â€” ^BC Code 128', () => {
   it('creates a code128 object from ^BC^FD', () => {
     const { objects } = parseZPL('^XA^FO100,50^BCN,200,Y,N,N^FD12345678^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     const [obj] = objects;
-    expect(obj!.type).toBe('code128');
-    expect(props(obj!).content).toBe('12345678');
-    expect(props(obj!).height).toBe(200);
-    expect(props(obj!).printInterpretation).toBe(true);
-    expect(props(obj!).checkDigit).toBe(false);
+    expect(obj?.type).toBe('code128');
+    expect(props(obj).content).toBe('12345678');
+    expect(props(obj).height).toBe(200);
+    expect(props(obj).printInterpretation).toBe(true);
+    expect(props(obj).checkDigit).toBe(false);
   });
 
   it('inherits height from ^BY when ^BC has no explicit height', () => {
     const { objects } = parseZPL('^XA^BY5,2,270^FO100,50^BC^FD12345678^FS^XZ', 8);
-    expect(props(objects[0]!).height).toBe(270);
-    expect(props(objects[0]!).moduleWidth).toBe(5);
+    expect(props(objects[0]).height).toBe(270);
+    expect(props(objects[0]).moduleWidth).toBe(5);
   });
 });
 
-// ── ^FX comment ───────────────────────────────────────────────────────────────
+// â”€â”€ ^FX comment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^FX comment', () => {
+describe('parseZPL â€” ^FX comment', () => {
   it('does not produce objects or skips for ^FX lines', () => {
     const { objects, skipped } = parseZPL(
       '^XA^FX This is a comment^FO10,20^A0N,30,0^FDText^FS^XZ',
@@ -199,260 +199,260 @@ describe('parseZPL — ^FX comment', () => {
   });
 });
 
-// ── ^FH hex encoding ──────────────────────────────────────────────────────────
+// â”€â”€ ^FH hex encoding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^FH hex escape', () => {
+describe('parseZPL â€” ^FH hex escape', () => {
   it('decodes hex-escaped characters in field data', () => {
     // _41 = hex 41 = 'A'
     const { objects } = parseZPL('^XA^FH_^FO0,0^A0N,30,0^FD_41BC^FS^XZ', 8);
-    expect(props(objects[0]!).content).toBe('ABC');
+    expect(props(objects[0]).content).toBe('ABC');
   });
 });
 
-// ── ^FB field block ───────────────────────────────────────────────────────────
+// â”€â”€ ^FB field block â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^FB field block', () => {
+describe('parseZPL â€” ^FB field block', () => {
   it('creates a text object with block properties', () => {
     const { objects } = parseZPL(
       '^XA^FO10,20^A0N,30,0^FB400,3,5,C,0^FDMulti-line text^FS^XZ',
       8,
     );
     expect(objects).toHaveLength(1);
-    expect(props(objects[0]!).blockWidth).toBe(400);
-    expect(props(objects[0]!).blockLines).toBe(3);
-    expect(props(objects[0]!).blockLineSpacing).toBe(5);
-    expect(props(objects[0]!).blockJustify).toBe('C');
+    expect(props(objects[0]).blockWidth).toBe(400);
+    expect(props(objects[0]).blockLines).toBe(3);
+    expect(props(objects[0]).blockLineSpacing).toBe(5);
+    expect(props(objects[0]).blockJustify).toBe('C');
   });
 
   it('resets ^FB state after use (next text has no block)', () => {
     const zpl = '^XA^FO0,0^A0N,30,0^FB400,2,0,L,0^FDFirst^FS^FO0,100^A0N,30,0^FDSecond^FS^XZ';
     const { objects } = parseZPL(zpl, 8);
     expect(objects).toHaveLength(2);
-    expect(props(objects[0]!).blockWidth).toBe(400);
-    expect(props(objects[1]!).blockWidth).toBeUndefined();
+    expect(props(objects[0]).blockWidth).toBe(400);
+    expect(props(objects[1]).blockWidth).toBeUndefined();
   });
 
   it('^FB without ^A creates text using ^CF defaults', () => {
     const { objects } = parseZPL('^XA^CF0,25^FO0,0^FB300,2,0,R,0^FDBlock text^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(props(objects[0]!).fontHeight).toBe(25);
-    expect(props(objects[0]!).blockWidth).toBe(300);
-    expect(props(objects[0]!).blockJustify).toBe('R');
+    expect(props(objects[0]).fontHeight).toBe(25);
+    expect(props(objects[0]).blockWidth).toBe(300);
+    expect(props(objects[0]).blockJustify).toBe('R');
   });
 });
 
-// ── ^TB text block ────────────────────────────────────────────────────────────
+// â”€â”€ ^TB text block â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^TB text block', () => {
+describe('parseZPL â€” ^TB text block', () => {
   it('creates a text object with ^FB-like properties derived from ^TB', () => {
     const { objects } = parseZPL('^XA^CF0,30^FO0,0^TBN,400,120^FDText block^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(props(objects[0]!).content).toBe('Text block');
-    expect(props(objects[0]!).blockWidth).toBe(400);
+    expect(props(objects[0]).content).toBe('Text block');
+    expect(props(objects[0]).blockWidth).toBe(400);
     // 120 / 30 = 4 lines
-    expect(props(objects[0]!).blockLines).toBe(4);
+    expect(props(objects[0]).blockLines).toBe(4);
   });
 });
 
-// ── additional barcode types ──────────────────────────────────────────────────
+// â”€â”€ additional barcode types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^B3 Code 39', () => {
+describe('parseZPL â€” ^B3 Code 39', () => {
   it('creates a code39 object', () => {
     const { objects } = parseZPL('^XA^FO0,0^B3N,N,100,Y,N^FDABC^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('code39');
-    expect(props(objects[0]!).content).toBe('ABC');
-    expect(props(objects[0]!).height).toBe(100);
-    expect(props(objects[0]!).printInterpretation).toBe(true);
+    expect(objects[0]?.type).toBe('code39');
+    expect(props(objects[0]).content).toBe('ABC');
+    expect(props(objects[0]).height).toBe(100);
+    expect(props(objects[0]).printInterpretation).toBe(true);
   });
 });
 
-describe('parseZPL — ^BQ QR Code', () => {
+describe('parseZPL â€” ^BQ QR Code', () => {
   it('creates a qrcode object with error correction and content', () => {
     const { objects } = parseZPL('^XA^FO0,0^BQN,2,6^FDQA,https://example.com^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('qrcode');
-    expect(props(objects[0]!).content).toBe('https://example.com');
-    expect(props(objects[0]!).magnification).toBe(6);
-    expect(props(objects[0]!).errorCorrection).toBe('Q');
+    expect(objects[0]?.type).toBe('qrcode');
+    expect(props(objects[0]).content).toBe('https://example.com');
+    expect(props(objects[0]).magnification).toBe(6);
+    expect(props(objects[0]).errorCorrection).toBe('Q');
   });
 });
 
-describe('parseZPL — ^BX DataMatrix', () => {
+describe('parseZPL â€” ^BX DataMatrix', () => {
   it('creates a datamatrix object', () => {
     const { objects } = parseZPL('^XA^FO0,0^BXN,8,200^FD1234567890^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('datamatrix');
-    expect(props(objects[0]!).content).toBe('1234567890');
-    expect(props(objects[0]!).dimension).toBe(8);
-    expect(props(objects[0]!).quality).toBe(200);
+    expect(objects[0]?.type).toBe('datamatrix');
+    expect(props(objects[0]).content).toBe('1234567890');
+    expect(props(objects[0]).dimension).toBe(8);
+    expect(props(objects[0]).quality).toBe(200);
   });
 });
 
-describe('parseZPL — ^BU UPC-A', () => {
+describe('parseZPL â€” ^BU UPC-A', () => {
   it('creates a upca object', () => {
     const { objects } = parseZPL('^XA^FO0,0^BUN,80,Y,N,N^FD01234567890^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('upca');
-    expect(props(objects[0]!).content).toBe('01234567890');
-    expect(props(objects[0]!).height).toBe(80);
+    expect(objects[0]?.type).toBe('upca');
+    expect(props(objects[0]).content).toBe('01234567890');
+    expect(props(objects[0]).height).toBe(80);
   });
 });
 
-describe('parseZPL — ^B8 EAN-8', () => {
+describe('parseZPL â€” ^B8 EAN-8', () => {
   it('creates an ean8 object', () => {
     const { objects } = parseZPL('^XA^FO0,0^B8N,80,Y^FD12345670^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('ean8');
+    expect(objects[0]?.type).toBe('ean8');
   });
 });
 
-describe('parseZPL — ^B9 UPC-E', () => {
+describe('parseZPL â€” ^B9 UPC-E', () => {
   it('creates a upce object', () => {
     const { objects } = parseZPL('^XA^FO0,0^B9N,80,Y^FD01234565^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('upce');
+    expect(objects[0]?.type).toBe('upce');
   });
 });
 
-describe('parseZPL — ^B2 Interleaved 2 of 5', () => {
+describe('parseZPL â€” ^B2 Interleaved 2 of 5', () => {
   it('creates an interleaved2of5 object', () => {
     const { objects } = parseZPL('^XA^FO0,0^B2N,100,Y,N,Y^FD12345678^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('interleaved2of5');
-    expect(props(objects[0]!).checkDigit).toBe(true);
+    expect(objects[0]?.type).toBe('interleaved2of5');
+    expect(props(objects[0]).checkDigit).toBe(true);
   });
 });
 
-describe('parseZPL — ^BA Code 93', () => {
+describe('parseZPL â€” ^BA Code 93', () => {
   it('creates a code93 object', () => {
     const { objects } = parseZPL('^XA^FO0,0^BAN,100,Y,N,N^FDABC123^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('code93');
+    expect(objects[0]?.type).toBe('code93');
   });
 });
 
-describe('parseZPL — ^B7 PDF417', () => {
+describe('parseZPL â€” ^B7 PDF417', () => {
   it('creates a pdf417 object', () => {
     const { objects } = parseZPL('^XA^FO0,0^B7N,15,3,5,,,^FDTest Data^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('pdf417');
-    expect(props(objects[0]!).content).toBe('Test Data');
-    expect(props(objects[0]!).rowHeight).toBe(15);
-    expect(props(objects[0]!).securityLevel).toBe(3);
-    expect(props(objects[0]!).columns).toBe(5);
+    expect(objects[0]?.type).toBe('pdf417');
+    expect(props(objects[0]).content).toBe('Test Data');
+    expect(props(objects[0]).rowHeight).toBe(15);
+    expect(props(objects[0]).securityLevel).toBe(3);
+    expect(props(objects[0]).columns).toBe(5);
   });
 });
 
-describe('parseZPL — ^BE EAN-13', () => {
+describe('parseZPL â€” ^BE EAN-13', () => {
   it('creates an ean13 object', () => {
     const { objects } = parseZPL('^XA^FO0,0^BEN,100,Y^FD5901234123457^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('ean13');
-    expect(props(objects[0]!).content).toBe('5901234123457');
+    expect(objects[0]?.type).toBe('ean13');
+    expect(props(objects[0]).content).toBe('5901234123457');
   });
 });
 
-// ── additional shape types ────────────────────────────────────────────────────
+// â”€â”€ additional shape types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^GE ellipse', () => {
+describe('parseZPL â€” ^GE ellipse', () => {
   it('creates an unfilled ellipse', () => {
     const { objects } = parseZPL('^XA^FO0,0^GE200,100,3,B^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('ellipse');
-    expect(props(objects[0]!).width).toBe(200);
-    expect(props(objects[0]!).height).toBe(100);
-    expect(props(objects[0]!).filled).toBe(false);
+    expect(objects[0]?.type).toBe('ellipse');
+    expect(props(objects[0]).width).toBe(200);
+    expect(props(objects[0]).height).toBe(100);
+    expect(props(objects[0]).filled).toBe(false);
   });
 
   it('detects a filled ellipse when thickness >= min dimension', () => {
     const { objects } = parseZPL('^XA^FO0,0^GE100,80,80,B^FS^XZ', 8);
-    expect(props(objects[0]!).filled).toBe(true);
+    expect(props(objects[0]).filled).toBe(true);
   });
 });
 
-describe('parseZPL — ^GC circle', () => {
+describe('parseZPL â€” ^GC circle', () => {
   it('creates an ellipse with equal width and height from ^GC', () => {
     const { objects } = parseZPL('^XA^FO0,0^GC100,3,B^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('ellipse');
-    expect(props(objects[0]!).width).toBe(100);
-    expect(props(objects[0]!).height).toBe(100);
-    expect(props(objects[0]!).filled).toBe(false);
+    expect(objects[0]?.type).toBe('ellipse');
+    expect(props(objects[0]).width).toBe(100);
+    expect(props(objects[0]).height).toBe(100);
+    expect(props(objects[0]).filled).toBe(false);
   });
 
   it('creates a filled circle when thickness >= diameter', () => {
     const { objects } = parseZPL('^XA^FO0,0^GC50,50,B^FS^XZ', 8);
-    expect(props(objects[0]!).filled).toBe(true);
+    expect(props(objects[0]).filled).toBe(true);
   });
 });
 
-describe('parseZPL — ^GD diagonal line', () => {
+describe('parseZPL â€” ^GD diagonal line', () => {
   it('creates a line object from a diagonal ^GD command', () => {
     const { objects } = parseZPL('^XA^FO10,20^GD200,100,3,B,L^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('line');
-    expect(props(objects[0]!).thickness).toBe(3);
-    expect(props(objects[0]!).color).toBe('B');
-    // Length should be ~sqrt(200²+100²) ≈ 224
-    const len = props(objects[0]!).length as number;
+    expect(objects[0]?.type).toBe('line');
+    expect(props(objects[0]).thickness).toBe(3);
+    expect(props(objects[0]).color).toBe('B');
+    // Length should be ~sqrt(200Â²+100Â²) â‰ˆ 224
+    const len = props(objects[0]).length as number;
     expect(len).toBeGreaterThan(220);
     expect(len).toBeLessThan(225);
   });
 });
 
-// ── ^GFA graphic field ────────────────────────────────────────────────────────
+// â”€â”€ ^GFA graphic field â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^GFA graphic field', () => {
+describe('parseZPL â€” ^GFA graphic field', () => {
   it('creates an image object from a ^GFA command with uncompressed hex', () => {
-    // 1 byte per row, 2 rows → 2 bytes total, simple hex data
+    // 1 byte per row, 2 rows â†’ 2 bytes total, simple hex data
     const hexData = 'FF00';
     const { objects } = parseZPL(`^XA^FO0,0^GFA,2,2,1,${hexData}^FS^XZ`, 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('image');
-    expect(props(objects[0]!).widthDots).toBe(8); // 1 byte per row × 8 bits
-    expect(props(objects[0]!)._gfaCache).toContain('^GFA,');
+    expect(objects[0]?.type).toBe('image');
+    expect(props(objects[0]).widthDots).toBe(8); // 1 byte per row Ã— 8 bits
+    expect(props(objects[0])._gfaCache).toContain('^GFA,');
   });
 
   it('creates an image object from compressed ^GFA data', () => {
-    // G=1 repeat → "GF" = repeat 'F' once, basically just 'F'
+    // G=1 repeat â†’ "GF" = repeat 'F' once, basically just 'F'
     // bytesPerRow=1, so we need 2 nibbles per row
-    // "GF" = 1×F = "F" → only one nibble, padded to "F0"
-    // Two rows: "GF,GF" should give us 2 rows → totalBytes=2
+    // "GF" = 1Ã—F = "F" â†’ only one nibble, padded to "F0"
+    // Two rows: "GF,GF" should give us 2 rows â†’ totalBytes=2
     const { objects } = parseZPL('^XA^FO0,0^GFA,2,2,1,FF,:^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.type).toBe('image');
+    expect(objects[0]?.type).toBe('image');
   });
 });
 
-// ── ^LR label reverse ─────────────────────────────────────────────────────────
+// â”€â”€ ^LR label reverse â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^LR label reverse', () => {
+describe('parseZPL â€” ^LR label reverse', () => {
   it('sets reverse on text when ^LRY is active', () => {
     const { objects } = parseZPL('^XA^LRY^FO0,0^A0N,30,0^FDReversed^FS^LRN^XZ', 8);
-    expect(props(objects[0]!).reverse).toBe(true);
+    expect(props(objects[0]).reverse).toBe(true);
   });
 
   it('disables reverse after ^LRN', () => {
     const zpl = '^XA^LRY^FO0,0^A0N,30,0^FDFirst^FS^LRN^FO0,50^A0N,30,0^FDSecond^FS^XZ';
     const { objects } = parseZPL(zpl, 8);
-    expect(props(objects[0]!).reverse).toBe(true);
-    expect(props(objects[1]!).reverse).toBeFalsy();
+    expect(props(objects[0]).reverse).toBe(true);
+    expect(props(objects[1]).reverse).toBeFalsy();
   });
 });
 
-// ── ^FW field default rotation ────────────────────────────────────────────────
+// â”€â”€ ^FW field default rotation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^FW field default rotation', () => {
+describe('parseZPL â€” ^FW field default rotation', () => {
   it('applies default rotation to implicit text fields', () => {
     const { objects } = parseZPL('^XA^FWR^CF0,30^FO0,0^FDRotated^FS^XZ', 8);
-    expect(props(objects[0]!).rotation).toBe('R');
+    expect(props(objects[0]).rotation).toBe('R');
   });
 });
 
-// ── ^MM media mode and ^LS label shift ────────────────────────────────────────
+// â”€â”€ ^MM media mode and ^LS label shift â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — ^MM and ^LS', () => {
+describe('parseZPL â€” ^MM and ^LS', () => {
   it('parses media mode', () => {
     const { labelConfig } = parseZPL('^XA^MMT^XZ', 8);
     expect(labelConfig.mediaMode).toBe('T');
@@ -464,9 +464,9 @@ describe('parseZPL — ^MM and ^LS', () => {
   });
 });
 
-// ── edge cases ────────────────────────────────────────────────────────────────
+// â”€â”€ edge cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('parseZPL — edge cases', () => {
+describe('parseZPL â€” edge cases', () => {
   it('returns empty results for empty ZPL', () => {
     const { objects, skipped } = parseZPL('', 8);
     expect(objects).toHaveLength(0);
@@ -482,8 +482,8 @@ describe('parseZPL — edge cases', () => {
   it('handles multiple ^FO without ^FD (bare origins are benign)', () => {
     const { objects } = parseZPL('^XA^FO10,20^FO30,40^A0N,30,0^FDText^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]!.x).toBe(30);
-    expect(objects[0]!.y).toBe(40);
+    expect(objects[0]?.x).toBe(30);
+    expect(objects[0]?.y).toBe(40);
   });
 
   it('supports different dpmm values (12 dpmm / 300 DPI)', () => {
@@ -493,7 +493,7 @@ describe('parseZPL — edge cases', () => {
   });
 });
 
-// ── integration: the example shipping label ───────────────────────────────────
+// â”€â”€ integration: the example shipping label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const EXAMPLE_ZPL = `
 ^XA
@@ -539,7 +539,7 @@ const EXAMPLE_ZPL = `
 ^XZ
 `.trim();
 
-describe('parseZPL — example shipping label (integration)', () => {
+describe('parseZPL â€” example shipping label (integration)', () => {
   it('produces exactly 23 objects', () => {
     const { objects } = parseZPL(EXAMPLE_ZPL, 8);
     expect(objects).toHaveLength(23);
@@ -573,7 +573,7 @@ describe('parseZPL — example shipping label (integration)', () => {
   it('parses the header text with fontHeight 60 (from ^CF0,60)', () => {
     const { objects } = parseZPL(EXAMPLE_ZPL, 8);
     const textObjs = objects.filter((o) => o.type === 'text');
-    const header = textObjs[0]!;
+    const header = textObjs[0];
     expect(props(header).content).toBe('Intershipping, Inc.');
     expect(props(header).fontHeight).toBe(60);
   });
@@ -581,13 +581,13 @@ describe('parseZPL — example shipping label (integration)', () => {
   it('parses subsequent text with fontHeight 30 (after ^CF0,30)', () => {
     const { objects } = parseZPL(EXAMPLE_ZPL, 8);
     const textObjs = objects.filter((o) => o.type === 'text');
-    expect(props(textObjs[1]!).fontHeight).toBe(30);
-    expect(props(textObjs[1]!).content).toBe('1000 Shipping Lane');
+    expect(props(textObjs[1]).fontHeight).toBe(30);
+    expect(props(textObjs[1]).content).toBe('1000 Shipping Lane');
   });
 
   it('parses the Code 128 barcode with height from ^BY', () => {
     const { objects } = parseZPL(EXAMPLE_ZPL, 8);
-    const barcode = objects.find((o) => o.type === 'code128')!;
+    const barcode = objects.find((o) => o.type === 'code128');
     expect(props(barcode).content).toBe('12345678');
     expect(props(barcode).height).toBe(270);   // from ^BY5,2,270
     expect(props(barcode).moduleWidth).toBe(5); // from ^BY5
@@ -597,22 +597,22 @@ describe('parseZPL — example shipping label (integration)', () => {
     const { objects } = parseZPL(EXAMPLE_ZPL, 8);
     const boxes = objects.filter((o) => o.type === 'box');
     // First two logo squares are filled
-    expect(props(boxes[0]!).filled).toBe(true);
-    expect(boxes[0]!.x).toBe(50);
-    expect(boxes[0]!.y).toBe(50);
+    expect(props(boxes[0]).filled).toBe(true);
+    expect(boxes[0]?.x).toBe(50);
+    expect(boxes[0]?.y).toBe(50);
   });
 
   it('marks the second logo box as reversed (^FR)', () => {
     const { objects } = parseZPL(EXAMPLE_ZPL, 8);
     const boxes = objects.filter((o) => o.type === 'box');
-    expect(props(boxes[1]!).reverse).toBe(true);
+    expect(props(boxes[1]).reverse).toBe(true);
   });
 
   it('parses the permit box as unfilled', () => {
     const { objects } = parseZPL(EXAMPLE_ZPL, 8);
     const boxes = objects.filter((o) => o.type === 'box');
-    // permit box: ^FO600,300^GB150,150,3 — thickness=3 < min(150,150) → unfilled
-    const permitBox = boxes.find((b) => b.x === 600 && b.y === 300)!;
+    // permit box: ^FO600,300^GB150,150,3 â€” thickness=3 < min(150,150) â†’ unfilled
+    const permitBox = boxes.find((b) => b.x === 600 && b.y === 300);
     expect(permitBox).toBeDefined();
     expect(props(permitBox).filled).toBe(false);
     expect(props(permitBox).width).toBe(150);
@@ -621,7 +621,7 @@ describe('parseZPL — example shipping label (integration)', () => {
 
   it('parses the bottom container box', () => {
     const { objects } = parseZPL(EXAMPLE_ZPL, 8);
-    const bottomBox = objects.find((o) => o.type === 'box' && o.y === 900)!;
+    const bottomBox = objects.find((o) => o.type === 'box' && o.y === 900);
     expect(bottomBox).toBeDefined();
     expect(props(bottomBox).width).toBe(700);
     expect(props(bottomBox).height).toBe(250);
@@ -629,7 +629,7 @@ describe('parseZPL — example shipping label (integration)', () => {
 
   it('parses "CA" text with fontHeight 190', () => {
     const { objects } = parseZPL(EXAMPLE_ZPL, 8);
-    const ca = objects.find((o) => o.type === 'text' && (o.props as unknown as Record<string, unknown>)['content'] === 'CA')!;
+    const ca = objects.find((o) => o.type === 'text' && (o.props as unknown as Record<string, unknown>)['content'] === 'CA');
     expect(ca).toBeDefined();
     expect(props(ca).fontHeight).toBe(190);
   });

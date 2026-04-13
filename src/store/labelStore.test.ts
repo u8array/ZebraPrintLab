@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useLabelStore } from './labelStore';
 import type { LabelObject } from '../registry';
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+// â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+function defined<T>(val: T | undefined | null): T {
+  expect(val).toBeDefined();
+  return val as T;
+}
 
 /** Reset store to clean state before each test. */
 function reset() {
@@ -21,17 +26,17 @@ function ids() {
   return state().objects.map((o) => o.id);
 }
 
-// ── setup ─────────────────────────────────────────────────────────────────────
+// â”€â”€ setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 beforeEach(() => reset());
 
-// ── addObject ─────────────────────────────────────────────────────────────────
+// â”€â”€ addObject â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('addObject', () => {
   it('creates object with registry defaults and selects it', () => {
     state().addObject('text');
     expect(state().objects).toHaveLength(1);
-    const obj = state().objects[0]!;
+    const obj = defined(state().objects[0]);
     expect(obj.type).toBe('text');
     expect(obj.x).toBe(50); // default position
     expect(obj.y).toBe(50);
@@ -42,8 +47,8 @@ describe('addObject', () => {
 
   it('respects a custom position', () => {
     state().addObject('box', { x: 200, y: 300 });
-    expect(state().objects[0]!.x).toBe(200);
-    expect(state().objects[0]!.y).toBe(300);
+    expect(defined(state().objects[0]).x).toBe(200);
+    expect(defined(state().objects[0]).y).toBe(300);
   });
 
   it('ignores unknown types', () => {
@@ -55,19 +60,19 @@ describe('addObject', () => {
     state().addObject('text');
     state().addObject('text');
     const [a, b] = state().objects;
-    expect(a!.id).not.toBe(b!.id);
+    expect(defined(a).id).not.toBe(defined(b).id);
   });
 });
 
-// ── updateObject (props merging) ──────────────────────────────────────────────
+// â”€â”€ updateObject (props merging) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-describe('updateObject — props merging', () => {
+describe('updateObject â€” props merging', () => {
   it('merges partial props instead of replacing them', () => {
     state().addObject('text');
-    const obj = state().objects[0]!;
+    const obj = defined(state().objects[0]);
     // text defaults: content, fontHeight, fontWidth, rotation
     state().updateObject(obj.id, { props: { fontHeight: 99 } });
-    const updated = state().objects[0]!;
+    const updated = defined(state().objects[0]);
     expect((updated.props as unknown as Record<string, unknown>).fontHeight).toBe(99);
     // other props preserved
     expect((updated.props as unknown as Record<string, unknown>).content).toBe('Text');
@@ -75,19 +80,19 @@ describe('updateObject — props merging', () => {
 
   it('updates top-level fields (x, y) without touching props', () => {
     state().addObject('text');
-    const obj = state().objects[0]!;
+    const obj = defined(state().objects[0]);
     state().updateObject(obj.id, { x: 999 });
-    expect(state().objects[0]!.x).toBe(999);
-    expect((state().objects[0]!.props as unknown as Record<string, unknown>).content).toBe('Text');
+    expect(defined(state().objects[0]).x).toBe(999);
+    expect((defined(state().objects[0]).props as unknown as Record<string, unknown>).content).toBe('Text');
   });
 });
 
-// ── removeObject ──────────────────────────────────────────────────────────────
+// â”€â”€ removeObject â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('removeObject', () => {
   it('removes the object and deselects it', () => {
     state().addObject('text');
-    const id = state().objects[0]!.id;
+    const id = defined(state().objects[0]).id;
     state().selectObject(id);
     state().removeObject(id);
     expect(state().objects).toHaveLength(0);
@@ -95,16 +100,16 @@ describe('removeObject', () => {
   });
 });
 
-// ── duplicateObject ───────────────────────────────────────────────────────────
+// â”€â”€ duplicateObject â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('duplicateObject', () => {
   it('creates a copy offset by +20/+20 with a new id', () => {
     state().addObject('text', { x: 100, y: 100 });
-    const original = state().objects[0]!;
+    const original = defined(state().objects[0]);
     state().duplicateObject(original.id);
 
     expect(state().objects).toHaveLength(2);
-    const copy = state().objects[1]!;
+    const copy = defined(state().objects[1]);
     expect(copy.id).not.toBe(original.id);
     expect(copy.x).toBe(120);
     expect(copy.y).toBe(120);
@@ -113,9 +118,9 @@ describe('duplicateObject', () => {
 
   it('selects only the new copy', () => {
     state().addObject('text');
-    state().duplicateObject(state().objects[0]!.id);
+    state().duplicateObject(defined(state().objects[0]).id);
     expect(state().selectedIds).toHaveLength(1);
-    expect(state().selectedIds[0]).toBe(state().objects[1]!.id);
+    expect(state().selectedIds[0]).toBe(defined(state().objects[1]).id);
   });
 
   it('does nothing for a nonexistent id', () => {
@@ -125,32 +130,32 @@ describe('duplicateObject', () => {
   });
 });
 
-// ── copy / paste ──────────────────────────────────────────────────────────────
+// â”€â”€ copy / paste â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('copy / paste', () => {
   it('paste is a no-op before any copy has happened', () => {
-    // This test MUST run first in this describe — clipboard is module-level.
+    // This test MUST run first in this describe â€” clipboard is module-level.
     state().pasteObjects();
     expect(state().objects).toHaveLength(0);
   });
 
-  it('paste increments offset with each call (+20, +40, …)', () => {
+  it('paste increments offset with each call (+20, +40, â€¦)', () => {
     state().addObject('text', { x: 100, y: 100 });
-    state().selectObject(state().objects[0]!.id);
+    state().selectObject(defined(state().objects[0]).id);
     state().copySelectedObjects();
 
     state().pasteObjects();
     expect(state().objects).toHaveLength(2);
-    expect(state().objects[1]!.x).toBe(120); // +20
+    expect(defined(state().objects[1]).x).toBe(120); // +20
 
     state().pasteObjects();
     expect(state().objects).toHaveLength(3);
-    expect(state().objects[2]!.x).toBe(140); // +40
+    expect(defined(state().objects[2]).x).toBe(140); // +40
   });
 
   it('paste creates new ids (not reusing clipboard ids)', () => {
     state().addObject('text');
-    state().selectObject(state().objects[0]!.id);
+    state().selectObject(defined(state().objects[0]).id);
     state().copySelectedObjects();
     state().pasteObjects();
     state().pasteObjects();
@@ -159,7 +164,7 @@ describe('copy / paste', () => {
   });
 });
 
-// ── selection ─────────────────────────────────────────────────────────────────
+// â”€â”€ selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('toggleSelectObject', () => {
   it('adds to selection, then removes on second call', () => {
@@ -168,14 +173,14 @@ describe('toggleSelectObject', () => {
     const [a, b] = state().objects;
 
     state().selectObject(null); // clear
-    state().toggleSelectObject(a!.id);
-    expect(state().selectedIds).toEqual([a!.id]);
+    state().toggleSelectObject(defined(a).id);
+    expect(state().selectedIds).toEqual([defined(a).id]);
 
-    state().toggleSelectObject(b!.id);
-    expect(state().selectedIds).toEqual([a!.id, b!.id]);
+    state().toggleSelectObject(defined(b).id);
+    expect(state().selectedIds).toEqual([defined(a).id, defined(b).id]);
 
-    state().toggleSelectObject(a!.id);
-    expect(state().selectedIds).toEqual([b!.id]);
+    state().toggleSelectObject(defined(a).id);
+    expect(state().selectedIds).toEqual([defined(b).id]);
   });
 });
 
@@ -188,19 +193,19 @@ describe('removeSelectedObjects', () => {
 
     state().removeSelectedObjects();
     expect(state().objects).toHaveLength(1);
-    expect(state().objects[0]!.type).toBe('line');
+    expect(defined(state().objects[0]).type).toBe('line');
     expect(state().selectedIds).toEqual([]);
   });
 });
 
-// ── reorder ───────────────────────────────────────────────────────────────────
+// â”€â”€ reorder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('moveObjectToFront', () => {
   it('moves the object to the last position in the array', () => {
     state().addObject('text');
     state().addObject('box');
     state().addObject('line');
-    const first = ids()[0]!;
+    const first = defined(ids()[0]);
 
     state().moveObjectToFront(first);
     expect(ids()[2]).toBe(first);
@@ -210,7 +215,7 @@ describe('moveObjectToFront', () => {
     state().addObject('text');
     state().addObject('box');
     const before = ids();
-    state().moveObjectToFront(before[1]!);
+    state().moveObjectToFront(defined(before[1]));
     expect(ids()).toEqual(before);
   });
 });
@@ -220,7 +225,7 @@ describe('moveObjectToBack', () => {
     state().addObject('text');
     state().addObject('box');
     state().addObject('line');
-    const last = ids()[2]!;
+    const last = defined(ids()[2]);
 
     state().moveObjectToBack(last);
     expect(ids()[0]).toBe(last);
@@ -230,7 +235,7 @@ describe('moveObjectToBack', () => {
     state().addObject('text');
     state().addObject('box');
     const before = ids();
-    state().moveObjectToBack(before[0]!);
+    state().moveObjectToBack(defined(before[0]));
     expect(ids()).toEqual(before);
   });
 });
@@ -242,7 +247,7 @@ describe('moveObjectForward', () => {
     state().addObject('line');
     const [a, b, c] = ids();
 
-    state().moveObjectForward(a!);
+    state().moveObjectForward(defined(a));
     expect(ids()).toEqual([b, a, c]);
   });
 });
@@ -254,7 +259,7 @@ describe('moveObjectBackward', () => {
     state().addObject('line');
     const [a, b, c] = ids();
 
-    state().moveObjectBackward(c!);
+    state().moveObjectBackward(defined(c));
     expect(ids()).toEqual([a, c, b]);
   });
 });
@@ -266,7 +271,7 @@ describe('reorderObject', () => {
     state().addObject('line');
     const [a, b, c] = ids();
 
-    state().reorderObject(c!, 0);
+    state().reorderObject(defined(c), 0);
     expect(ids()).toEqual([c, a, b]);
   });
 
@@ -274,17 +279,17 @@ describe('reorderObject', () => {
     state().addObject('text');
     state().addObject('box');
     const before = ids();
-    state().reorderObject(before[1]!, 1);
+    state().reorderObject(defined(before[1]), 1);
     expect(ids()).toEqual(before);
   });
 });
 
-// ── loadDesign ────────────────────────────────────────────────────────────────
+// â”€â”€ loadDesign â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('loadDesign', () => {
   it('replaces label config, objects, and clears selection', () => {
     state().addObject('text');
-    state().selectObject(state().objects[0]!.id);
+    state().selectObject(defined(state().objects[0]).id);
 
     const newLabel = { widthMm: 50, heightMm: 30, dpmm: 12 };
     const newObjects = [
@@ -298,7 +303,7 @@ describe('loadDesign', () => {
   });
 });
 
-// ── setLabelConfig (partial merge) ────────────────────────────────────────────
+// â”€â”€ setLabelConfig (partial merge) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('setLabelConfig', () => {
   it('merges partial config without losing other fields', () => {

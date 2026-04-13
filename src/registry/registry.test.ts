@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { ObjectRegistry } from './index';
 import type { LabelObjectBase } from '../types/ObjectType';
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+// â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+function defined<T>(val: T | undefined | null): T {
+  expect(val).toBeDefined();
+  return val as T;
+}
 
 function makeObj<P extends object>(type: string, props: P, overrides?: Partial<LabelObjectBase>): LabelObjectBase & { props: P } {
   return {
@@ -16,10 +21,10 @@ function makeObj<P extends object>(type: string, props: P, overrides?: Partial<L
   };
 }
 
-// ── text ──────────────────────────────────────────────────────────────────────
+// â”€â”€ text â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('text.toZPL', () => {
-  const def = ObjectRegistry['text']!;
+  const def = defined(ObjectRegistry['text']);
 
   it('emits ^FO, ^A0, ^FD^FS for basic text', () => {
     const zpl = def.toZPL(makeObj('text', {
@@ -61,10 +66,10 @@ describe('text.toZPL', () => {
   });
 });
 
-// ── box ───────────────────────────────────────────────────────────────────────
+// â”€â”€ box â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('box.toZPL', () => {
-  const def = ObjectRegistry['box']!;
+  const def = defined(ObjectRegistry['box']);
 
   it('emits ^GB with correct dimensions for an unfilled box', () => {
     const zpl = def.toZPL(makeObj('box', {
@@ -77,7 +82,7 @@ describe('box.toZPL', () => {
     const zpl = def.toZPL(makeObj('box', {
       width: 200, height: 100, thickness: 3, filled: true, color: 'B', rounding: 0,
     }));
-    // filled → thickness = min(200, 100) = 100
+    // filled â†’ thickness = min(200, 100) = 100
     expect(zpl).toContain('^GB200,100,100,B,0');
   });
 
@@ -89,10 +94,10 @@ describe('box.toZPL', () => {
   });
 });
 
-// ── line ──────────────────────────────────────────────────────────────────────
+// â”€â”€ line â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('line.toZPL', () => {
-  const def = ObjectRegistry['line']!;
+  const def = defined(ObjectRegistry['line']);
 
   it('emits horizontal ^GB for angle 0', () => {
     const zpl = def.toZPL(makeObj('line', {
@@ -116,10 +121,10 @@ describe('line.toZPL', () => {
   });
 });
 
-// ── ellipse ───────────────────────────────────────────────────────────────────
+// â”€â”€ ellipse â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('ellipse.toZPL', () => {
-  const def = ObjectRegistry['ellipse']!;
+  const def = defined(ObjectRegistry['ellipse']);
 
   it('emits ^GE with correct dimensions', () => {
     const zpl = def.toZPL(makeObj('ellipse', {
@@ -136,10 +141,10 @@ describe('ellipse.toZPL', () => {
   });
 });
 
-// ── code128 ───────────────────────────────────────────────────────────────────
+// â”€â”€ code128 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('code128.toZPL', () => {
-  const def = ObjectRegistry['code128']!;
+  const def = defined(ObjectRegistry['code128']);
 
   it('emits ^BC and ^FD', () => {
     const zpl = def.toZPL(makeObj('code128', {
@@ -167,10 +172,10 @@ describe('code128.toZPL', () => {
   });
 });
 
-// ── code39 ────────────────────────────────────────────────────────────────────
+// â”€â”€ code39 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('code39.toZPL', () => {
-  const def = ObjectRegistry['code39']!;
+  const def = defined(ObjectRegistry['code39']);
 
   it('emits ^B3 barcode command', () => {
     const zpl = def.toZPL(makeObj('code39', {
@@ -182,10 +187,10 @@ describe('code39.toZPL', () => {
   });
 });
 
-// ── qrcode ────────────────────────────────────────────────────────────────────
+// â”€â”€ qrcode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('qrcode.toZPL', () => {
-  const def = ObjectRegistry['qrcode']!;
+  const def = defined(ObjectRegistry['qrcode']);
 
   it('emits ^BQ with magnification and ^FD with error correction prefix', () => {
     const zpl = def.toZPL(makeObj('qrcode', {
@@ -196,10 +201,10 @@ describe('qrcode.toZPL', () => {
   });
 });
 
-// ── datamatrix ────────────────────────────────────────────────────────────────
+// â”€â”€ datamatrix â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('datamatrix.toZPL', () => {
-  const def = ObjectRegistry['datamatrix']!;
+  const def = defined(ObjectRegistry['datamatrix']);
 
   it('emits ^BX with dimension and quality', () => {
     const zpl = def.toZPL(makeObj('datamatrix', {
@@ -210,10 +215,10 @@ describe('datamatrix.toZPL', () => {
   });
 });
 
-// ── pdf417 ────────────────────────────────────────────────────────────────────
+// â”€â”€ pdf417 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('pdf417.toZPL', () => {
-  const def = ObjectRegistry['pdf417']!;
+  const def = defined(ObjectRegistry['pdf417']);
 
   it('emits ^B7 with row height, security, and columns', () => {
     const zpl = def.toZPL(makeObj('pdf417', {
@@ -231,10 +236,10 @@ describe('pdf417.toZPL', () => {
   });
 });
 
-// ── serial ────────────────────────────────────────────────────────────────────
+// â”€â”€ serial â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('serial.toZPL', () => {
-  const def = ObjectRegistry['serial']!;
+  const def = defined(ObjectRegistry['serial']);
 
   it('emits ^SN for SN mode', () => {
     const zpl = def.toZPL(makeObj('serial', {
@@ -253,7 +258,7 @@ describe('serial.toZPL', () => {
   });
 });
 
-// ── registry completeness ─────────────────────────────────────────────────────
+// â”€â”€ registry completeness â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 describe('ObjectRegistry', () => {
   const expectedTypes = [
