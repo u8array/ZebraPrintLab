@@ -170,6 +170,7 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
   // Fires on the Stage so it sees the already-grid-snapped node position.
   // Defined as a plain function (same as handleStageClick) — closure reads current values.
   const handleStageDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    if (snapEnabled) return;
     const node = e.target;
     const objId = node.id();
     if (!objId || !stageRef.current) return;
