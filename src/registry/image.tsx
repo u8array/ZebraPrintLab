@@ -62,7 +62,7 @@ function gfaSync(dataUrl: string, widthDots: number, threshold: number): string 
 
 export const image: ObjectTypeDefinition<ImageProps> = {
   label: 'Image',
-  icon: '🖼',
+  icon: 'img',
   group: 'shape',
   defaultProps: {
     imageId: '',
