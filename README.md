@@ -25,7 +25,7 @@ Common print resolutions: 6 dpmm (152 dpi), 8 dpmm (203 dpi), 12 dpmm (300 dpi),
 
 Drag items from the left panel onto the canvas, or click them to add at the center.
 
-Available objects: text, barcodes (Code 128, Code 39, Code 93, I2of5, EAN-13, EAN-8, UPC-A, UPC-E, QR Code, DataMatrix, PDF417), shapes (box, line, ellipse), and images.
+Available objects: text, serial (auto-incrementing fields), barcodes (Code 128, Code 39, Code 93, I2of5, EAN-13, EAN-8, UPC-A, UPC-E, QR Code, DataMatrix, PDF417), shapes (box, line, ellipse), and images.
 
 ### 3. Edit properties
 
@@ -48,10 +48,11 @@ File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 
 The parser covers the most common ZPL II commands:
 
-- **Text:** `^A0`, `^A*` (all bitmap fonts), `^CF`, `^FW`, `^FB`, `^TB`, `^FH` (hex escapes)
+- **Text:** `^A0`, `^A*` (all bitmap fonts), `^A@` (TrueType, best-effort sizing), `^CF`, `^FW`, `^FB` (field block, including `\&` line breaks), `^TB`, `^FH` (hex escapes)
 - **Barcodes:** `^BC` (Code 128), `^B3` (Code 39), `^BA` (Code 93), `^B2` (I2of5), `^BE` (EAN-13), `^B8` (EAN-8), `^BU` (UPC-A), `^B9` (UPC-E), `^BQ` (QR Code), `^BX` (DataMatrix), `^B7` (PDF417)
+- **Serialization:** `^SN`, `^SF` (imported as serial objects)
 - **Graphics:** `^GB` (box/line), `^GE` (ellipse), `^GC` (circle), `^GD` (diagonal line), `^GFA` (bitmap image, including compressed data)
-- **Layout:** `^FO`, `^FT`, `^LH`, `^PW`, `^LL`, `^BY`
+- **Layout:** `^FO` (including justification parameter), `^FT`, `^LH`, `^PW`, `^LL`, `^BY`
 - **Print settings:** `^PQ`, `^MM`, `^LS`
 - **Modifiers:** `^LR` (label reverse), `^FR` (field reverse)
 
@@ -96,7 +97,7 @@ Designs can be saved as `.json` (File → Save Design) and reopened later. This 
 
 ## Limitations
 
-- ZPL import covers the most common commands but not the full ZPL II command set. Labels using scalable fonts (`^A@`), variable data (`^SN`, `^SF`), or printer-specific extensions may not import correctly.
+- ZPL import covers the most common commands but not the full ZPL II command set. Labels using printer-stored images (`^IM`), downloaded graphics (`~DG`), or printer-specific extensions may not import completely. TrueType font references (`^A@`) are imported with best-effort sizing using the default font.
 - Label preview requires a connection to `api.labelary.com`.
 - Font rendering on the canvas is an approximation using Roboto Condensed, which is arguably the closest available web font to Zebra's proprietary bitmap fonts. Character widths will differ for some glyphs (e.g. `-` renders narrower than Zebra's equivalent). Use the Labelary preview for accurate output.
 - No support for multi-label documents (`^XA...^XZ` repeated).

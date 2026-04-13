@@ -5,8 +5,11 @@ import { useLabelStore } from "../../store/labelStore";
 import { pxToDots } from "../../lib/coordinates";
 import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
+import { computeSnap } from "../../lib/snapGuides";
+import type { SnapGuide } from "../../lib/snapGuides";
 import { KonvaObject } from "./KonvaObject";
 import { Grid } from "./Grid";
+import { GuideLines } from "./GuideLines";
 import { Ruler, RULER_SIZE } from "./Ruler";
 import { ObjectRegistry, BARCODE_1D_TYPES } from "../../registry";
 import type { LabelObject } from "../../registry";
@@ -41,6 +44,8 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
   const panStartRef = useRef({ mouseX: 0, mouseY: 0, panX: 0, panY: 0 });
   // track whether the pointer actually moved during a pan gesture
   const didPanRef = useRef(false);
+
+  const [guides, setGuides] = useState<SnapGuide[]>([]);
 
   // Lasso (marquee) selection
   const [lasso, setLasso] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
@@ -161,6 +166,52 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [snapEnabled, snapSizeMm, label.dpmm, updateObject]);
 
+  // Object-snap: applied after grid-snap on every dragmove, single-object only.
+  // Fires on the Stage so it sees the already-grid-snapped node position.
+  // Defined as a plain function (same as handleStageClick) — closure reads current values.
+  const handleStageDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    const node = e.target;
+    const objId = node.id();
+    if (!objId || !stageRef.current) return;
+
+    const { objects: objs } = useLabelStore.getState();
+
+    const obj = objs.find(o => o.id === objId);
+    if (!obj) return;
+
+    const stage = stageRef.current;
+    const dr = node.getClientRect({ relativeTo: stage });
+    const draggedRect = { id: objId, x: dr.x, y: dr.y, width: dr.width, height: dr.height };
+
+    const otherRects = [];
+    for (const o of objs) {
+      if (o.id === objId) continue;
+      const n = stage.findOne<Konva.Node>(`#${o.id}`);
+      if (!n) continue;
+      const r = n.getClientRect({ relativeTo: stage });
+      otherRects.push({ id: o.id, x: r.x, y: r.y, width: r.width, height: r.height });
+    }
+
+    // Add the label itself as a full-size snap target.
+    // This gives 3 anchors per axis: edge-start, center, edge-end.
+    // Passed separately so it doesn't interfere with object-to-object snap filtering.
+    const labelRect = { id: '_lbl', x: labelOffsetX, y: labelOffsetY, width: labelWidthPx, height: labelHeightPx };
+
+    const result = computeSnap(draggedRect, otherRects, undefined, {
+      x: labelOffsetX, y: labelOffsetY, width: labelWidthPx, height: labelHeightPx,
+    }, labelRect);
+    const dx = result.x - dr.x;
+    const dy = result.y - dr.y;
+    if (dx !== 0 || dy !== 0) {
+      node.position({ x: node.x() + dx, y: node.y() + dy });
+    }
+    setGuides(result.guides);
+  };
+
+  const handleStageDragEnd = () => {
+    setGuides([]);
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
     const isMiddle = e.button === 1;
     const isSpaceDrag = e.button === 0 && spaceDown;
@@ -245,6 +296,7 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
     RULER_SIZE + (usableWidth - labelWidthPx) / 2 + panOffset.x;
   const labelOffsetY =
     RULER_SIZE + (usableHeight - labelHeightPx) / 2 + panOffset.y;
+
 
   const snapUnit = Math.round(snapSizeMm * label.dpmm);
   const snap = (dots: number) =>
@@ -449,6 +501,8 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
           onClick={handleStageClick}
           onMouseDown={handleStageMouseDown}
           onDragStart={(e) => { lassoStartRef.current = null; lassoRectRef.current = null; setLasso(null); if (isPanningRef.current) e.target.stopDrag(); }}
+          onDragMove={handleStageDragMove}
+          onDragEnd={handleStageDragEnd}
         >
           {/* Object layer */}
           <Layer>
@@ -524,6 +578,8 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
                 listening={false}
               />
             )}
+
+            <GuideLines guides={guides} />
 
             <Transformer
               ref={transformerRef}
