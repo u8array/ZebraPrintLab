@@ -4,6 +4,7 @@ import type Konva from "konva";
 import { useLabelStore } from "../../store/labelStore";
 import { pxToDots } from "../../lib/coordinates";
 import { SNAP_OPTIONS } from "../../lib/units";
+import type { Unit } from "../../lib/units";
 import { KonvaObject } from "./KonvaObject";
 import { Grid } from "./Grid";
 import { Ruler, RULER_SIZE } from "./Ruler";
@@ -17,7 +18,7 @@ const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 4;
 
 interface Props {
-  unit: import('../../lib/units').Unit;
+  unit: Unit;
   showGrid: boolean;
   onGridToggle: () => void;
   snapEnabled: boolean;
@@ -295,7 +296,7 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
     } else {
       const nodes = selectedIds
         .filter((id) => objects.find((o) => o.id === id)?.type !== 'line')
-        .map((id) => stageRef.current!.findOne<Konva.Node>(`#${id}`))
+        .map((id) => stageRef.current?.findOne<Konva.Node>(`#${id}`))
         .filter((n): n is Konva.Node => n != null);
       transformerRef.current.nodes(nodes);
     }

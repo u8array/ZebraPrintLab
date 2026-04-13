@@ -76,7 +76,7 @@ export function DropdownMenu({ label, children, maxHeight }: MenuProps) {
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 z-50 min-w-[190px] bg-surface border border-border rounded-lg shadow-2xl p-1 overflow-y-auto"
+          className="absolute right-0 top-full mt-1 z-50 min-w-47.5 bg-surface border border-border rounded-lg shadow-2xl p-1 overflow-y-auto"
           style={maxHeight ? { maxHeight } : undefined}
           onClick={() => setOpen(false)}
         >

@@ -24,7 +24,7 @@ for (let i = 0; i < localStorage.length; i++) {
   const key = localStorage.key(i);
   if (!key?.startsWith(LS_PREFIX)) continue;
   try {
-    const entry = JSON.parse(localStorage.getItem(key)!) as CachedImage;
+    const entry = JSON.parse(localStorage.getItem(key) ?? 'null') as CachedImage;
     cache.set(entry.id, entry);
   } catch {
     // ignore corrupt entries

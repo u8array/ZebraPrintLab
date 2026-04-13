@@ -5,7 +5,7 @@
  */
 
 // ── localStorage ──────────────────────────────────────────────────────────────
-const _ls: Record<string, string> = {};
+const _ls: Record<string, string | undefined> = {};
 
 Object.defineProperty(globalThis, 'localStorage', {
   configurable: true,
@@ -16,9 +16,9 @@ Object.defineProperty(globalThis, 'localStorage', {
       return Object.prototype.hasOwnProperty.call(_ls, key) ? (_ls[key] ?? null) : null;
     },
     setItem(key: string, value: string): void { _ls[key] = value; },
-    removeItem(key: string): void { delete _ls[key]; },
-    clear(): void { for (const k of Object.keys(_ls)) delete _ls[k]; },
-  } satisfies Storage,
+    removeItem(key: string): void { _ls[key] = undefined; },
+    clear(): void { for (const k of Object.keys(_ls)) _ls[k] = undefined; },
+  } as Storage,
 });
 
 // ── navigator ─────────────────────────────────────────────────────────────────

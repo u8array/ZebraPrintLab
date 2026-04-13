@@ -3,15 +3,16 @@ import { generateZPL } from './zplGenerator';
 import { parseZPL } from './zplParser';
 import type { LabelConfig } from '../types/ObjectType';
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+function defined<T>(val: T | undefined | null): T {
+  expect(val).toBeDefined();
+  return val as T;
+}
 
 const BASE_LABEL: LabelConfig = {
   widthMm: 100,
   heightMm: 50,
   dpmm: 8,
 };
-
-// ── structure ─────────────────────────────────────────────────────────────────
 
 describe('generateZPL — structure', () => {
   it('wraps output in ^XA and ^XZ', () => {
@@ -22,9 +23,7 @@ describe('generateZPL — structure', () => {
 
   it('emits ^PW and ^LL for the label dimensions', () => {
     const zpl = generateZPL(BASE_LABEL, []);
-    // 100 mm * 8 dpmm = 800 dots
     expect(zpl).toContain('^PW800');
-    // 50 mm * 8 dpmm = 400 dots
     expect(zpl).toContain('^LL400');
   });
 
@@ -58,8 +57,6 @@ describe('generateZPL — structure', () => {
     expect(zpl).toContain('^LS5');
   });
 });
-
-// ── object serialisation ──────────────────────────────────────────────────────
 
 describe('generateZPL — text object', () => {
   it('emits ^FO, ^A0 and ^FD for a text object', () => {
@@ -96,8 +93,6 @@ describe('generateZPL — code128 object', () => {
   });
 });
 
-// ── parse → generate → parse roundtrip ───────────────────────────────────────
-
 describe('generateZPL — parse/generate roundtrip', () => {
   it('preserves object count through a roundtrip', () => {
     const original = parseZPL('^XA^FO10,20^A0N,30,0^FDHello^FS^FO10,60^GB200,5,5^FS^XZ', 8);
@@ -110,7 +105,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const original = parseZPL('^XA^FO10,20^A0N,30,0^FDHello World^FS^XZ', 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
     const reparsed = parseZPL(regenerated, 8);
-    const textObj = reparsed.objects.find((o) => o.type === 'text')!;
+    const textObj = defined(reparsed.objects.find((o) => o.type === 'text'));
     expect((textObj.props as unknown as Record<string, unknown>)['content']).toBe('Hello World');
   });
 
@@ -118,7 +113,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const original = parseZPL('^XA^FO50,50^BCN,150,Y,N,N^FD987654^FS^XZ', 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
     const reparsed = parseZPL(regenerated, 8);
-    const barcode = reparsed.objects.find((o) => o.type === 'code128')!;
+    const barcode = defined(reparsed.objects.find((o) => o.type === 'code128'));
     expect((barcode.props as unknown as Record<string, unknown>)['content']).toBe('987654');
     expect((barcode.props as unknown as Record<string, unknown>)['height']).toBe(150);
   });

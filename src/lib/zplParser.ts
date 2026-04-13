@@ -82,7 +82,7 @@ function decompressGFA(data: string, bytesPerRow: number): string {
   };
 
   while (i < data.length) {
-    const ch = data[i]!;
+    const ch = data[i] ?? '';
 
     if (ch === ',') {
       // Fill rest of row with '0', complete row
@@ -96,19 +96,20 @@ function decompressGFA(data: string, bytesPerRow: number): string {
       i++;
     } else if (ch === ':') {
       // Repeat previous row
-      rows.push(rows.length > 0 ? rows[rows.length - 1]! : '0'.repeat(nibblesPerRow));
+      rows.push(rows.length > 0 ? rows[rows.length - 1] ?? '0'.repeat(nibblesPerRow) : '0'.repeat(nibblesPerRow));
       i++;
     } else if (isCompressChar(ch)) {
       // Accumulate repeat count (lowercase + uppercase can combine)
       let count = repeatCount(ch);
       i++;
-      while (i < data.length && isCompressChar(data[i]!)) {
-        count += repeatCount(data[i]!);
+      while (i < data.length && isCompressChar(data[i] ?? '')) {
+        count += repeatCount(data[i] ?? '');
         i++;
       }
       // Next character is the hex digit to repeat
-      if (i < data.length && isHex(data[i]!)) {
-        currentRow += data[i]!.repeat(count);
+      const nextCh = data[i] ?? '';
+      if (i < data.length && isHex(nextCh)) {
+        currentRow += nextCh.repeat(count);
         i++;
       }
     } else if (isHex(ch)) {
@@ -634,7 +635,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         const canvas = document.createElement('canvas');
         canvas.width = gfWidthDots;
         canvas.height = gfHeightDots;
-        const ctx = canvas.getContext('2d')!;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Could not get 2d context');
         const imgData = ctx.createImageData(gfWidthDots, gfHeightDots);
         const pixels = imgData.data;
 

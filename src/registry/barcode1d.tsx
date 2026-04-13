@@ -58,7 +58,7 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
 
     PropertiesPanel: ({ obj, onChange }) => {
       const t = useT();
-      const loc = (t.registry as unknown as Record<string, BarcodeLocale>)[config.localeKey]!;
+      const loc = (t.registry as unknown as Record<string, BarcodeLocale>)[config.localeKey] ?? {} as BarcodeLocale;
       const p = obj.props;
       return (
         <div className="flex flex-col gap-3">

@@ -46,7 +46,7 @@ export function ZplImportModal({ onClose }: Props) {
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-surface border border-border rounded-lg w-[520px] flex flex-col shadow-2xl max-h-[80vh]">
+      <div className="bg-surface border border-border rounded-lg w-130 flex flex-col shadow-2xl max-h-[80vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
           <span className="font-mono text-xs text-muted uppercase tracking-widest">Import ZPL</span>
@@ -65,7 +65,7 @@ export function ZplImportModal({ onClose }: Props) {
             box/line (^GB), ellipse (^GE). Label dimensions are read from ^PW/^LL.
           </p>
           <textarea
-            className="flex-1 min-h-[240px] bg-surface-2 border border-border rounded px-3 py-2 font-mono text-xs text-text focus:border-accent focus:outline-none resize-none"
+            className="flex-1 min-h-60 bg-surface-2 border border-border rounded px-3 py-2 font-mono text-xs text-text focus:border-accent focus:outline-none resize-none"
             placeholder="^XA&#10;^PW800&#10;^LL480&#10;^FO50,50^A0N,30,0^FDHello World^FS&#10;^XZ"
             value={zpl}
             onChange={(e) => setZpl(e.target.value)}

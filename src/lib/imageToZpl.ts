@@ -40,7 +40,8 @@ export function imageToGFA(
       const canvas = document.createElement('canvas');
       canvas.width = paddedWidth;
       canvas.height = heightDots;
-      const ctx = canvas.getContext('2d')!;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get 2d context');
 
       // White background (ZPL: 0 = white)
       ctx.fillStyle = '#ffffff';

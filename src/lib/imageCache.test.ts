@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { getImage, getAllImages, putImage, removeImage } from './imageCache';
 import type { CachedImage } from './imageCache';
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+function defined<T>(val: T | undefined | null): T {
+  expect(val).toBeDefined();
+  return val as T;
+}
 
 function makeFakeImage(id: string): CachedImage {
   return {
@@ -16,7 +19,6 @@ function makeFakeImage(id: string): CachedImage {
 
 describe('imageCache', () => {
   beforeEach(() => {
-    // Clear any images left over from previous tests
     for (const img of getAllImages()) {
       removeImage(img.id);
     }
@@ -25,11 +27,10 @@ describe('imageCache', () => {
   it('putImage stores and getImage retrieves an image', () => {
     const img = makeFakeImage('test-1');
     putImage(img);
-    const retrieved = getImage('test-1');
-    expect(retrieved).toBeDefined();
-    expect(retrieved!.id).toBe('test-1');
-    expect(retrieved!.name).toBe('test-1.png');
-    expect(retrieved!.dataUrl).toContain('test-1');
+    const retrieved = defined(getImage('test-1'));
+    expect(retrieved.id).toBe('test-1');
+    expect(retrieved.name).toBe('test-1.png');
+    expect(retrieved.dataUrl).toContain('test-1');
   });
 
   it('getImage returns undefined for unknown IDs', () => {
@@ -55,16 +56,15 @@ describe('imageCache', () => {
 
   it('putImage persists to localStorage', () => {
     putImage(makeFakeImage('persist'));
-    const stored = localStorage.getItem('zpl-img-persist');
-    expect(stored).not.toBeNull();
-    const parsed = JSON.parse(stored!);
+    const stored = defined(localStorage.getItem('zpl-img-persist'));
+    const parsed = JSON.parse(stored) as { id: string };
     expect(parsed.id).toBe('persist');
   });
 
   it('overwriting an image replaces the old one', () => {
     putImage(makeFakeImage('ow'));
     putImage({ ...makeFakeImage('ow'), name: 'overwrite.png', width: 50 });
-    const img = getImage('ow')!;
+    const img = defined(getImage('ow'));
     expect(img.name).toBe('overwrite.png');
     expect(img.width).toBe(50);
     expect(getAllImages()).toHaveLength(1);

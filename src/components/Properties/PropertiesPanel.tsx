@@ -2,6 +2,7 @@ import { useLabelStore } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
 import { dotsToMm, mmToDots } from '../../lib/coordinates';
 import { mmToUnit, unitToMm, unitLabel, unitStep, SNAP_DEFAULT_MM } from '../../lib/units';
+import type { Unit } from '../../lib/units';
 import { useT } from '../../lib/useT';
 import { inputCls, labelCls } from './styles';
 import type { LabelConfig } from '../../types/ObjectType';
@@ -112,8 +113,8 @@ const PRESETS: Preset[] = [
 interface LabelConfigPanelProps {
   label: LabelConfig;
   onUpdate: (config: Partial<LabelConfig>) => void;
-  unit: import('../../lib/units').Unit;
-  onUnitChange: (unit: import('../../lib/units').Unit) => void;
+  unit: Unit;
+  onUnitChange: (unit: Unit) => void;
 }
 
 function LabelConfigPanel({ label, onUpdate, unit, onUnitChange }: LabelConfigPanelProps) {

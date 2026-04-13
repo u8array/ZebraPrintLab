@@ -173,7 +173,8 @@ export const useLabelStore = create<LabelState>()(
           const idx = state.objects.findIndex((o) => o.id === id);
           if (idx === -1 || idx === state.objects.length - 1) return {};
           const objs = [...state.objects];
-          objs.push(objs.splice(idx, 1)[0]!);
+          const [moved] = objs.splice(idx, 1);
+          if (moved) objs.push(moved);
           return { objects: objs };
         }),
 
@@ -182,7 +183,8 @@ export const useLabelStore = create<LabelState>()(
           const idx = state.objects.findIndex((o) => o.id === id);
           if (idx <= 0) return {};
           const objs = [...state.objects];
-          objs.unshift(objs.splice(idx, 1)[0]!);
+          const [moved] = objs.splice(idx, 1);
+          if (moved) objs.unshift(moved);
           return { objects: objs };
         }),
 
@@ -191,7 +193,9 @@ export const useLabelStore = create<LabelState>()(
           const idx = state.objects.findIndex((o) => o.id === id);
           if (idx === -1 || idx === state.objects.length - 1) return {};
           const objs = [...state.objects];
-          [objs[idx], objs[idx + 1]] = [objs[idx + 1]!, objs[idx]!];
+          const tmp = objs[idx + 1] as LabelObject;
+          objs[idx + 1] = objs[idx] as LabelObject;
+          objs[idx] = tmp;
           return { objects: objs };
         }),
 
@@ -200,7 +204,9 @@ export const useLabelStore = create<LabelState>()(
           const idx = state.objects.findIndex((o) => o.id === id);
           if (idx <= 0) return {};
           const objs = [...state.objects];
-          [objs[idx], objs[idx - 1]] = [objs[idx - 1]!, objs[idx]!];
+          const tmp = objs[idx - 1] as LabelObject;
+          objs[idx - 1] = objs[idx] as LabelObject;
+          objs[idx] = tmp;
           return { objects: objs };
         }),
 
@@ -209,7 +215,8 @@ export const useLabelStore = create<LabelState>()(
           const objs = [...state.objects];
           const fromIndex = objs.findIndex((o) => o.id === id);
           if (fromIndex === -1 || fromIndex === toIndex) return {};
-          objs.splice(toIndex, 0, objs.splice(fromIndex, 1)[0]!);
+          const [item] = objs.splice(fromIndex, 1);
+          if (item) objs.splice(toIndex, 0, item);
           return { objects: objs };
         }),
 
