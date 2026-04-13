@@ -53,7 +53,7 @@ function createFakeCanvas() {
     putImageData(data: FakeImageData): void {
       _imageData = data;
     },
-    getImageData(sx: number, sy: number, w: number, h: number): FakeImageData {
+    getImageData(_sx: number, _sy: number, w: number, h: number): FakeImageData {
       return _imageData ?? new FakeImageData(w, h);
     },
     fillRect(): void { /* noop */ },
