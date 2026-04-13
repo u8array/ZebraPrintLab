@@ -489,6 +489,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
       // ── Field data / separator ────────────────────────────────────
       case 'FD': {
+        // Implicit text field: ^FD without a prior ^A uses ^CF defaults
+        if (!fieldType) {
+          fieldType = 'text';
+          textH = cfHeight || 30;
+          textW = cfWidth || 0;
+          textRot = fwRotation;
+        }
         pendingFD = rest;
         break;
       }
@@ -731,6 +738,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       case 'XZ':
       case 'CI': // character set encoding
       case 'MT': // media type
+      case 'FX': // comment (ignored until next ^FS)
         break;
 
       default: {
