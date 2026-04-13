@@ -16,6 +16,7 @@ const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 4;
 
 interface Props {
+  unit: import('../../lib/units').Unit;
   showGrid: boolean;
   onGridToggle: () => void;
   snapEnabled: boolean;
@@ -26,7 +27,7 @@ interface Props {
   onZoomChange: (zoom: number) => void;
 }
 
-export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle, snapSizeMm, onSnapSizeChange, zoom, onZoomChange }: Props) {
+export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapToggle, snapSizeMm, onSnapSizeChange, zoom, onZoomChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -618,6 +619,7 @@ export function LabelCanvas({ showGrid, onGridToggle, snapEnabled, onSnapToggle,
               scale={scale}
               canvasWidth={containerSize.width}
               canvasHeight={containerSize.height}
+              unit={unit}
               colors={colors}
             />
           </Layer>

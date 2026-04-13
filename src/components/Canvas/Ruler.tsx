@@ -1,6 +1,8 @@
 import { Group, Rect, Line, Text } from 'react-konva';
 import type { CanvasColors } from '../../lib/useColorScheme';
 import { DARK_COLORS } from '../../lib/useColorScheme';
+import { rulerTicksMm, rulerLabel } from '../../lib/units';
+import type { Unit } from '../../lib/units';
 
 export const RULER_SIZE = 20; // px — width/height of the ruler strip
 
@@ -12,14 +14,8 @@ interface Props {
   scale: number; // px/mm
   canvasWidth: number;
   canvasHeight: number;
+  unit?: Unit;
   colors?: CanvasColors;
-}
-
-// Adaptive tick density: finer steps at higher zoom levels
-function tickStep(scale: number) {
-  if (scale >= 10) return { major: 5, minor: 1 };
-  if (scale >= 5)  return { major: 10, minor: 5 };
-  return { major: 20, minor: 10 };
 }
 
 export function Ruler({
@@ -30,9 +26,10 @@ export function Ruler({
   scale,
   canvasWidth,
   canvasHeight,
+  unit = 'mm',
   colors = DARK_COLORS,
 }: Props) {
-  const { major, minor } = tickStep(scale);
+  const { major, minor } = rulerTicksMm(scale, unit);
   const els: React.ReactElement[] = [];
 
   // ── Backgrounds ───────────────────────────────────────────────
@@ -41,18 +38,21 @@ export function Ruler({
       fill={colors.rulerBg} listening={false} />,
     <Rect key="bg-v" x={0} y={0} width={RULER_SIZE} height={canvasHeight}
       fill={colors.rulerBg} listening={false} />,
-    // corner square covering the overlap of the two strips
     <Rect key="bg-corner" x={0} y={0} width={RULER_SIZE} height={RULER_SIZE}
       fill={colors.rulerCorner} listening={false} />,
   );
 
   // ── Horizontal ruler (top) ─────────────────────────────────────
-  for (let mm = 0; mm <= labelWidthMm; mm += minor) {
+  // iterate in small steps, snap to minor grid
+  const hSteps = Math.ceil(labelWidthMm / minor);
+  for (let i = 0; i <= hSteps; i++) {
+    const mm = Math.round(i * minor * 1000) / 1000;
+    if (mm > labelWidthMm + minor / 2) break;
     const x = labelOffsetX + mm * scale;
-    const isMajor = mm % major === 0;
+    const isMajor = Math.round(mm * 1000) % Math.round(major * 1000) < 1;
     const tickH = isMajor ? 8 : 4;
     els.push(
-      <Line key={`hr-${mm}`}
+      <Line key={`hr-${i}`}
         points={[x, RULER_SIZE - tickH, x, RULER_SIZE]}
         stroke={isMajor ? colors.rulerMajorTick : colors.rulerMinorTick}
         strokeWidth={isMajor ? 1 : 0.5}
@@ -60,9 +60,9 @@ export function Ruler({
     );
     if (isMajor && mm > 0) {
       els.push(
-        <Text key={`ht-${mm}`}
+        <Text key={`ht-${i}`}
           x={x + 2} y={RULER_SIZE - 14}
-          text={`${mm}`}
+          text={rulerLabel(mm, unit)}
           fontSize={8} fill={colors.rulerLabel}
           fontFamily="'IBM Plex Mono', monospace"
           listening={false} />,
@@ -71,12 +71,15 @@ export function Ruler({
   }
 
   // ── Vertical ruler (left) ─────────────────────────────────────
-  for (let mm = 0; mm <= labelHeightMm; mm += minor) {
+  const vSteps = Math.ceil(labelHeightMm / minor);
+  for (let i = 0; i <= vSteps; i++) {
+    const mm = Math.round(i * minor * 1000) / 1000;
+    if (mm > labelHeightMm + minor / 2) break;
     const y = labelOffsetY + mm * scale;
-    const isMajor = mm % major === 0;
+    const isMajor = Math.round(mm * 1000) % Math.round(major * 1000) < 1;
     const tickW = isMajor ? 8 : 4;
     els.push(
-      <Line key={`vr-${mm}`}
+      <Line key={`vr-${i}`}
         points={[RULER_SIZE - tickW, y, RULER_SIZE, y]}
         stroke={isMajor ? colors.rulerMajorTick : colors.rulerMinorTick}
         strokeWidth={isMajor ? 1 : 0.5}
@@ -84,9 +87,9 @@ export function Ruler({
     );
     if (isMajor && mm > 0) {
       els.push(
-        <Text key={`vt-${mm}`}
+        <Text key={`vt-${i}`}
           x={2} y={y + 2}
-          text={`${mm}`}
+          text={rulerLabel(mm, unit)}
           fontSize={8} fill={colors.rulerLabel}
           fontFamily="'IBM Plex Mono', monospace"
           rotation={0}

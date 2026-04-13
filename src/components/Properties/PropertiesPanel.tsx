@@ -1,13 +1,15 @@
 import { useLabelStore } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
 import { dotsToMm, mmToDots } from '../../lib/coordinates';
+import { mmToUnit, unitToMm, unitLabel, unitStep } from '../../lib/units';
 import { useT } from '../../lib/useT';
 import { inputCls, labelCls } from './styles';
 import type { LabelConfig } from '../../types/ObjectType';
 
 export function PropertiesPanel() {
   const t = useT();
-  const { objects, selectedIds, updateObject, label, setLabelConfig } = useLabelStore();
+  const { objects, selectedIds, updateObject, label, setLabelConfig, canvasSettings } = useLabelStore();
+  const unit = canvasSettings.unit;
   const obj = objects.find((o) => o.id === selectedIds[0]);
 
   if (selectedIds.length > 1) {
@@ -23,7 +25,7 @@ export function PropertiesPanel() {
   }
 
   if (!obj) {
-    return <LabelConfigPanel label={label} onUpdate={setLabelConfig} />;
+    return <LabelConfigPanel label={label} onUpdate={setLabelConfig} unit={unit} />;
   }
 
   const definition = ObjectRegistry[obj.type];
@@ -41,18 +43,18 @@ export function PropertiesPanel() {
 
       <div className="p-3 flex flex-col gap-4">
 
-        {/* Position (mm) */}
+        {/* Position */}
         <div className="flex flex-col gap-2">
-          <p className={labelCls}>{t.properties.positionSection}</p>
+          <p className={labelCls}>{t.properties.positionSection} ({unitLabel(unit)})</p>
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
               <label className={labelCls}>{t.properties.x}</label>
               <input
                 type="number"
                 className={inputCls}
-                value={dotsToMm(obj.x, label.dpmm)}
-                step={0.5}
-                onChange={(e) => updateObject(obj.id, { x: mmToDots(Number(e.target.value), label.dpmm) })}
+                value={mmToUnit(dotsToMm(obj.x, label.dpmm), unit)}
+                step={unitStep(unit)}
+                onChange={(e) => updateObject(obj.id, { x: mmToDots(unitToMm(Number(e.target.value), unit), label.dpmm) })}
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -60,9 +62,9 @@ export function PropertiesPanel() {
               <input
                 type="number"
                 className={inputCls}
-                value={dotsToMm(obj.y, label.dpmm)}
-                step={0.5}
-                onChange={(e) => updateObject(obj.id, { y: mmToDots(Number(e.target.value), label.dpmm) })}
+                value={mmToUnit(dotsToMm(obj.y, label.dpmm), unit)}
+                step={unitStep(unit)}
+                onChange={(e) => updateObject(obj.id, { y: mmToDots(unitToMm(Number(e.target.value), unit), label.dpmm) })}
               />
             </div>
           </div>
@@ -110,9 +112,10 @@ const PRESETS: Preset[] = [
 interface LabelConfigPanelProps {
   label: LabelConfig;
   onUpdate: (config: Partial<LabelConfig>) => void;
+  unit: import('../../lib/units').Unit;
 }
 
-function LabelConfigPanel({ label, onUpdate }: LabelConfigPanelProps) {
+function LabelConfigPanel({ label, onUpdate, unit }: LabelConfigPanelProps) {
   const t = useT();
   const matchedPreset = PRESETS.find(
     (p) => p.widthMm === label.widthMm && p.heightMm === label.heightMm && p.dpmm === label.dpmm,
@@ -148,25 +151,25 @@ function LabelConfigPanel({ label, onUpdate }: LabelConfigPanelProps) {
 
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.label.width}</label>
+            <label className={labelCls}>{t.label.width} ({unitLabel(unit)})</label>
             <input
               type="number"
               className={inputCls}
-              value={label.widthMm}
-              min={1}
-              step={0.5}
-              onChange={(e) => onUpdate({ widthMm: Number(e.target.value) })}
+              value={mmToUnit(label.widthMm, unit)}
+              min={mmToUnit(1, unit)}
+              step={unitStep(unit)}
+              onChange={(e) => onUpdate({ widthMm: unitToMm(Number(e.target.value), unit) })}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.label.height}</label>
+            <label className={labelCls}>{t.label.height} ({unitLabel(unit)})</label>
             <input
               type="number"
               className={inputCls}
-              value={label.heightMm}
-              min={1}
-              step={0.5}
-              onChange={(e) => onUpdate({ heightMm: Number(e.target.value) })}
+              value={mmToUnit(label.heightMm, unit)}
+              min={mmToUnit(1, unit)}
+              step={unitStep(unit)}
+              onChange={(e) => onUpdate({ heightMm: unitToMm(Number(e.target.value), unit) })}
             />
           </div>
         </div>

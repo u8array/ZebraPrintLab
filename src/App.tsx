@@ -26,6 +26,8 @@ import { localeNames } from "./locales";
 import type { LocaleCode } from "./locales";
 import { generateZPL } from "./lib/zplGenerator";
 import { parseZPL } from "./lib/zplParser";
+import { mmToUnit } from "./lib/units";
+import type { Unit } from "./lib/units";
 import { fetchPreview } from "./lib/labelary";
 import type { LabelConfig } from "./types/ObjectType";
 import type { LabelObject } from "./registry";
@@ -95,7 +97,11 @@ function App() {
   const { undo, redo, pastStates, futureStates } = useHistory();
   const canvasSettings = useLabelStore((s) => s.canvasSettings);
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
-  const { showGrid, snapEnabled, snapSizeMm } = canvasSettings;
+  const { showGrid, snapEnabled, snapSizeMm, unit } = canvasSettings;
+  const cycleUnit = () => {
+    const next: Record<Unit, Unit> = { mm: 'cm', cm: 'in', in: 'mm' };
+    setCanvasSettings({ unit: next[unit] });
+  };
   const [showZplImport, setShowZplImport] = useState(false);
   const outputPanel = useResizablePanel(OUTPUT_DEFAULT_H);
   const [rightTab, setRightTab] = useState<"properties" | "layers">(
@@ -234,9 +240,13 @@ function App() {
             ZPL Designer
           </button>
           <span className="text-border-2 select-none">·</span>
-          <span className="font-mono text-xs text-muted">
-            {label.widthMm} × {label.heightMm} mm · {label.dpmm} dpmm
-          </span>
+          <button
+            onClick={cycleUnit}
+            title="Cycle unit (mm / cm / in)"
+            className="font-mono text-xs text-muted hover:text-text transition-colors"
+          >
+            {mmToUnit(label.widthMm, unit)} × {mmToUnit(label.heightMm, unit)} {unit} · {label.dpmm} dpmm
+          </button>
         </div>
 
         <div className="flex items-center gap-1">
@@ -353,6 +363,7 @@ function App() {
 
         <main className="flex-1 overflow-hidden">
           <LabelCanvas
+            unit={unit}
             showGrid={showGrid}
             onGridToggle={() => setCanvasSettings({ showGrid: !showGrid })}
             snapEnabled={snapEnabled}

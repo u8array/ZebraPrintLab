@@ -2,6 +2,7 @@ import { create, useStore } from 'zustand';
 import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { LabelConfig, LabelObjectBase } from '../types/ObjectType';
+import type { Unit } from '../lib/units';
 import { ObjectRegistry } from '../registry';
 import type { LabelObject } from '../registry';
 import { locales } from '../locales';
@@ -21,6 +22,7 @@ export interface CanvasSettings {
   snapEnabled: boolean;
   snapSizeMm: number;
   zoom: number;
+  unit: Unit;
 }
 
 interface LabelState {
@@ -60,7 +62,7 @@ export const useLabelStore = create<LabelState>()(
       objects: [],
       selectedIds: [],
       locale: detectLocale(),
-      canvasSettings: { showGrid: true, snapEnabled: true, snapSizeMm: 1, zoom: 1 },
+      canvasSettings: { showGrid: true, snapEnabled: true, snapSizeMm: 1, zoom: 1, unit: 'mm' },
 
       addObject: (type, position = { x: 50, y: 50 }) => {
         const definition = ObjectRegistry[type];
