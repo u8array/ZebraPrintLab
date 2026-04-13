@@ -1,5 +1,6 @@
 import { ObjectRegistry, PALETTE_GROUPS } from '../../registry';
 import { useT } from '../../lib/useT';
+import { DragHandleIcon } from '../ui/DragHandleIcon';
 
 export function ObjectPalette() {
   const t = useT();
@@ -29,13 +30,14 @@ export function ObjectPalette() {
                 draggable
                 onDragStart={(e) => handleDragStart(e, type)}
                 className="
-                  group flex items-center gap-2.5 px-2.5 py-2 rounded
+                  group flex items-center gap-2.5 px-2 py-2 rounded
                   border border-transparent
                   hover:border-border-2 hover:bg-surface-2
                   cursor-grab active:cursor-grabbing select-none
                   transition-colors
                 "
               >
+                <DragHandleIcon className="w-2 h-3.5 shrink-0 text-muted opacity-0 group-hover:opacity-60 transition-opacity" />
                 <span className="font-mono text-[11px] text-accent w-6 text-center shrink-0">
                   {def.icon}
                 </span>

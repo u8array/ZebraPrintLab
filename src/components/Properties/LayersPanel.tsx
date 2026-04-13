@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLabelStore } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
 import { useT } from '../../lib/useT';
+import { DragHandleIcon } from '../ui/DragHandleIcon';
 
 export function LayersPanel() {
   const t = useT();
@@ -95,6 +96,7 @@ export function LayersPanel() {
                 isSelected ? 'bg-surface-2 border-l-2 border-l-accent' : 'border-l-2 border-l-transparent'
               } ${isDragging ? 'opacity-40' : ''}`}
             >
+              <DragHandleIcon className="w-2 h-3.5 shrink-0 text-muted opacity-0 group-hover:opacity-60 transition-opacity" />
               <span className="font-mono text-xs text-accent shrink-0 w-4 text-center">
                 {def?.icon}
               </span>

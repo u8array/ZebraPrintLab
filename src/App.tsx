@@ -10,6 +10,7 @@ import {
   DropdownItem,
   DropdownSeparator,
 } from "./components/ui/DropdownMenu";
+import { GitHubIcon } from "./components/ui/GitHubIcon";
 import {
   ArrowUturnLeftIcon,
   ArrowUturnRightIcon,
@@ -43,16 +44,22 @@ function useResizablePanel(defaultH: number) {
 
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    dragRef.current = { startY: e.clientY, startH: collapsed ? OUTPUT_MIN_H : height };
+    dragRef.current = {
+      startY: e.clientY,
+      startH: collapsed ? OUTPUT_MIN_H : height,
+    };
     const onMove = (ev: MouseEvent) => {
       if (!dragRef.current) return;
       const delta = dragRef.current.startY - ev.clientY;
-      const next = Math.min(OUTPUT_MAX_H, Math.max(OUTPUT_MIN_H, dragRef.current.startH + delta));
+      const next = Math.min(
+        OUTPUT_MAX_H,
+        Math.max(OUTPUT_MIN_H, dragRef.current.startH + delta),
+      );
       if (next <= OUTPUT_MIN_H) {
         setCollapsed(true);
         dragRef.current = null;
-        window.removeEventListener('mousemove', onMove);
-        window.removeEventListener('mouseup', onUp);
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
         return;
       }
       setCollapsed(false);
@@ -60,15 +67,21 @@ function useResizablePanel(defaultH: number) {
     };
     const onUp = () => {
       dragRef.current = null;
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
     };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
   };
 
-  const collapse = () => { prevHeightRef.current = height; setCollapsed(true); };
-  const expand   = () => { setHeight(OUTPUT_DEFAULT_H); setCollapsed(false); };
+  const collapse = () => {
+    prevHeightRef.current = height;
+    setCollapsed(true);
+  };
+  const expand = () => {
+    setHeight(OUTPUT_DEFAULT_H);
+    setCollapsed(false);
+  };
 
   return { height, collapsed, onMouseDown, collapse, expand };
 }
@@ -86,7 +99,9 @@ function App() {
   const label = useLabelStore((s) => s.label);
   const objects = useLabelStore((s) => s.objects);
   const selectObject = useLabelStore((s) => s.selectObject);
-  const duplicateSelectedObjects = useLabelStore((s) => s.duplicateSelectedObjects);
+  const duplicateSelectedObjects = useLabelStore(
+    (s) => s.duplicateSelectedObjects,
+  );
   const copySelectedObjects = useLabelStore((s) => s.copySelectedObjects);
   const pasteObjects = useLabelStore((s) => s.pasteObjects);
   const loadDesign = useLabelStore((s) => s.loadDesign);
@@ -152,7 +167,14 @@ function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [undo, redo, duplicateSelectedObjects, copySelectedObjects, pasteObjects, setCanvasSettings]);
+  }, [
+    undo,
+    redo,
+    duplicateSelectedObjects,
+    copySelectedObjects,
+    pasteObjects,
+    setCanvasSettings,
+  ]);
 
   const handleNew = () => {
     loadDesign({ widthMm: 100, heightMm: 60, dpmm: 8 }, []);
@@ -160,7 +182,10 @@ function App() {
 
   const handleSave = () => {
     const data = JSON.stringify({ label, objects }, null, 2);
-    triggerDownload(new Blob([data], { type: "application/json" }), "label.json");
+    triggerDownload(
+      new Blob([data], { type: "application/json" }),
+      "label.json",
+    );
   };
 
   const handleLoad = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,6 +302,16 @@ function App() {
               ),
             )}
           </DropdownMenu>
+
+          <a
+            href="https://github.com/u8array/zpl_label_designer"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="GitHub"
+            className="p-1.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors"
+          >
+            <GitHubIcon className="w-3.5 h-3.5" />
+          </a>
 
           <div className="w-px h-4 bg-border mx-1" />
 
@@ -399,7 +434,7 @@ function App() {
       {/* Output panel */}
       <div
         className="shrink-0 border-t border-border flex flex-col bg-surface"
-        style={{ height: outputPanel.collapsed ? 'auto' : outputPanel.height }}
+        style={{ height: outputPanel.collapsed ? "auto" : outputPanel.height }}
       >
         <div
           className="h-1.5 shrink-0 cursor-row-resize hover:bg-accent/30 transition-colors"
