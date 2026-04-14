@@ -47,7 +47,7 @@ The **ZPL output** panel at the bottom shows the label as ZPL code (the language
 
 File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 
-> **Round-trip semantics:** Import produces an editable reconstruction of the label, not an exact replica. ZPL encodes printer-side state (font tables, downloaded graphics, exact dot positioning) that has no direct equivalent in the visual model. Simple labels — especially those originally authored in this tool — import cleanly. Complex or machine-generated ZPL may import partially or lose fidelity. The import report lists any commands that were skipped or approximated.
+> **Round-trip semantics:** Import produces an editable reconstruction of the label, not an exact replica. ZPL encodes printer-side state (font tables, downloaded graphics, exact dot positioning) that has no direct equivalent in the visual model. Simple labels (especially those originally authored in this tool) import cleanly. Complex or machine-generated ZPL may import partially or lose fidelity. The import report lists any commands that were skipped or approximated.
 >
 > Use **Save design (.json)** to preserve a lossless, fully editable copy. `.zpl` is a printer output format, not a design source format.
 
@@ -80,7 +80,7 @@ Unrecognized commands are skipped and listed in the import report.
 
 ### Saving and loading
 
-`.json` (File → Save Design) is the canonical design format — it preserves all object properties exactly and can be reopened as a fully editable design. `.zpl` is a printer output format: use it to send to a printer, not as a design source.
+`.json` (File → Save Design) is the canonical design format. It preserves all object properties exactly and can be reopened as a fully editable design. `.zpl` is a printer output format: use it to send to a printer, not as a design source.
 
 ---
 
