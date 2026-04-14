@@ -5,7 +5,6 @@ import { PropertiesPanel } from "./Properties/PropertiesPanel";
 import { LayersPanel } from "./Properties/LayersPanel";
 import { ZPLOutput } from "./Output/ZPLOutput";
 import { ZplImportModal } from "./Output/ZplImportModal";
-import { ImportReportModal } from "./Output/ImportReportModal";
 import {
   DropdownMenu,
   DropdownItem,
@@ -57,14 +56,8 @@ export function AppShell() {
     showZplImport,
     openZplImport,
     closeZplImport,
-    fileImportReport,
-    dismissFileImportReport,
-    fileError,
-    dismissFileError,
     printError,
     dismissPrintError,
-    zplFileInputRef,
-    handleZplFileLoad,
     handleDownload,
     handlePrint,
   } = useZplImportExport();
@@ -147,12 +140,6 @@ export function AppShell() {
               {t.app.importZpl}
             </DropdownItem>
             <DropdownItem
-              icon={ArrowUpTrayIcon}
-              onClick={() => zplFileInputRef.current?.click()}
-            >
-              {t.app.importZplFile}
-            </DropdownItem>
-            <DropdownItem
               icon={ArrowDownTrayIcon}
               onClick={handleDownload}
               disabled={!hasObjects}
@@ -190,22 +177,15 @@ export function AppShell() {
             className="hidden"
             onChange={handleLoad}
           />
-          <input
-            ref={zplFileInputRef}
-            type="file"
-            accept=".zpl,text/plain"
-            className="hidden"
-            onChange={handleZplFileLoad}
-          />
         </div>
       </header>
 
       {/* Notices */}
-      {(loadError ?? fileError ?? printError) && (
+      {(loadError ?? printError) && (
         <div className="shrink-0 flex items-center gap-3 px-4 py-2 bg-red-950/40 border-b border-red-800/50 font-mono text-[10px] text-red-300">
-          <span className="flex-1">{loadError ?? fileError ?? printError}</span>
+          <span className="flex-1">{loadError ?? printError}</span>
           <button
-            onClick={loadError ? dismissLoadError : fileError ? dismissFileError : dismissPrintError}
+            onClick={loadError ? dismissLoadError : dismissPrintError}
             className="text-red-400 hover:text-red-200 transition-colors"
             aria-label="Dismiss"
           >
@@ -282,9 +262,6 @@ export function AppShell() {
       </div>
 
       {showZplImport && <ZplImportModal onClose={closeZplImport} />}
-      {fileImportReport && (
-        <ImportReportModal result={fileImportReport} onClose={dismissFileImportReport} />
-      )}
     </div>
   );
 }

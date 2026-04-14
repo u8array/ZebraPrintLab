@@ -56,7 +56,6 @@ const it = {
   app: {
     file: 'File',
     importZpl: 'Import ZPL',
-    importZplFile: 'Importa file ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Nuovo design',
     openDesign: 'Apri design',

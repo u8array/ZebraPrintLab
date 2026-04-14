@@ -56,7 +56,6 @@ const fi = {
   app: {
     file: 'Tiedosto',
     importZpl: 'Import ZPL',
-    importZplFile: 'Tuo ZPL-tiedosto',
     exportZpl: 'Export ZPL',
     newDesign: 'Uusi rakenne',
     openDesign: 'Avaa rakenne',

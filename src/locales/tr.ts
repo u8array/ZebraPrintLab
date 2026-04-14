@@ -56,7 +56,6 @@ const tr = {
   app: {
     file: 'Dosya',
     importZpl: 'ZPL İçe Aktar',
-    importZplFile: 'ZPL Dosyası İçe Aktar',
     exportZpl: 'ZPL Dışa Aktar',
     newDesign: 'Yeni Tasarım',
     openDesign: 'Tasarım Aç',

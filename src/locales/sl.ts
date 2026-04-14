@@ -56,7 +56,6 @@ const sl = {
   app: {
     file: 'Datoteka',
     importZpl: 'Import ZPL',
-    importZplFile: 'Uvozi datoteko ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Nov dizajn',
     openDesign: 'Odpri dizajn',

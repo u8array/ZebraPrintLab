@@ -56,7 +56,6 @@ const et = {
   app: {
     file: 'Fail',
     importZpl: 'Import ZPL',
-    importZplFile: 'Impordi ZPL-fail',
     exportZpl: 'Export ZPL',
     newDesign: 'Uus kujundus',
     openDesign: 'Ava kujundus',

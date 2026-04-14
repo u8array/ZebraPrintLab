@@ -56,7 +56,6 @@ const he = {
   app: {
     file: 'קובץ',
     importZpl: 'ייבוא ZPL',
-    importZplFile: 'ייבוא קובץ ZPL',
     exportZpl: 'ייצוא ZPL',
     newDesign: 'עיצוב חדש',
     openDesign: 'פתח עיצוב',

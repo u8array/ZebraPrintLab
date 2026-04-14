@@ -56,7 +56,6 @@ const zhHans = {
   app: {
     file: '文件',
     importZpl: '导入 ZPL',
-    importZplFile: '导入 ZPL 文件',
     exportZpl: '导出 ZPL',
     newDesign: '新建设计',
     openDesign: '打开设计',

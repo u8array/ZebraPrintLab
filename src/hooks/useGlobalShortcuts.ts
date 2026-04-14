@@ -20,6 +20,7 @@ export function useGlobalShortcuts() {
         else undo();
         return;
       }
+      if (inInput) return;
       if (mod && e.code === "KeyD") {
         e.preventDefault();
         duplicateSelectedObjects();
@@ -35,7 +36,6 @@ export function useGlobalShortcuts() {
         pasteObjects();
         return;
       }
-      if (inInput) return;
       if (e.code === "KeyG") {
         e.preventDefault();
         setCanvasSettings({ showGrid: !useLabelStore.getState().canvasSettings.showGrid });

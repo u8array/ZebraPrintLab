@@ -56,7 +56,6 @@ const ja = {
   app: {
     file: 'ファイル',
     importZpl: 'ZPL インポート',
-    importZplFile: 'ZPL ファイルをインポート',
     exportZpl: 'ZPL エクスポート',
     newDesign: '新しいデザイン',
     openDesign: 'デザインを開く',

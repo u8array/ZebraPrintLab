@@ -56,7 +56,6 @@ const hu = {
   app: {
     file: 'Fájl',
     importZpl: 'Import ZPL',
-    importZplFile: 'ZPL fájl importálása',
     exportZpl: 'Export ZPL',
     newDesign: 'Új terv',
     openDesign: 'Terv megnyitása',

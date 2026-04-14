@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { XMarkIcon, ClipboardDocumentIcon, CheckIcon } from '@heroicons/react/16/solid';
-import { parseZPL } from '../../lib/zplParser';
+import { useRef, useState } from 'react';
+import { XMarkIcon, ClipboardDocumentIcon, CheckIcon, FolderOpenIcon } from '@heroicons/react/16/solid';
+import { importZplText } from '../../lib/zplImportService';
+import { readFileAsText } from '../../lib/readFile';
 import { useLabelStore } from '../../store/labelStore';
 import { ImportSummaryBody, type ImportResult } from './ImportReportModal';
 
@@ -13,6 +14,7 @@ export function ZplImportModal({ onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const loadDesign = useLabelStore((s) => s.loadDesign);
   const label = useLabelStore((s) => s.label);
 
@@ -23,15 +25,39 @@ export function ZplImportModal({ onClose }: Props) {
       return;
     }
 
-    const { labelConfig, objects, importReport } = parseZPL(zpl, label.dpmm);
+    const { labelConfig, objects: parsedObjects, report } = importZplText(zpl, label.dpmm);
 
-    if (objects.length === 0 && Object.keys(labelConfig).length === 0) {
+    if (parsedObjects.length === 0 && Object.keys(labelConfig).length === 0) {
       setError('No supported objects found in the ZPL code.');
       return;
     }
 
-    loadDesign({ ...label, ...labelConfig }, objects);
-    setResult({ objectCount: objects.length, report: importReport });
+    loadDesign({ ...label, ...labelConfig }, parsedObjects);
+    setResult({ objectCount: parsedObjects.length, report });
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setError(null);
+    let text: string;
+    try {
+      text = await readFileAsText(file);
+    } catch {
+      setError('Could not read the file.');
+      return;
+    }
+
+    if (!text.trim()) {
+      setError('The file appears to be empty.');
+      return;
+    }
+
+    const { labelConfig, objects: parsedObjects, report } = importZplText(text, label.dpmm);
+    loadDesign({ ...label, ...labelConfig }, parsedObjects);
+    setResult({ objectCount: parsedObjects.length, report });
   };
 
   const handleCopy = () => {
@@ -115,25 +141,41 @@ export function ZplImportModal({ onClose }: Props) {
                 onChange={(e) => setZpl(e.target.value)}
                 spellCheck={false}
               />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".zpl,text/plain"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
               {error && (
                 <p className="font-mono text-[10px] text-amber-400 leading-relaxed">{error}</p>
               )}
             </div>
 
-            <div className="flex justify-end gap-2 px-4 py-3 border-t border-border shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border shrink-0">
               <button
-                onClick={onClose}
-                className="px-3 py-1.5 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 font-mono text-[10px] text-muted hover:text-text transition-colors"
               >
-                Cancel
+                <FolderOpenIcon className="w-3.5 h-3.5" />
+                Choose file
               </button>
-              <button
-                onClick={handleImport}
-                disabled={!zpl.trim()}
-                className="px-3 py-1.5 rounded text-xs font-mono bg-accent text-bg hover:opacity-90 disabled:opacity-25 disabled:cursor-not-allowed transition-opacity"
-              >
-                Import
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={onClose}
+                  className="px-3 py-1.5 rounded text-xs font-mono text-muted hover:text-text hover:bg-surface-2 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleImport}
+                  disabled={!zpl.trim()}
+                  className="px-3 py-1.5 rounded text-xs font-mono bg-accent text-bg hover:opacity-90 disabled:opacity-25 disabled:cursor-not-allowed transition-opacity"
+                >
+                  Import
+                </button>
+              </div>
             </div>
           </>
         )}

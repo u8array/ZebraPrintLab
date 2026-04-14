@@ -56,7 +56,6 @@ const bg = {
   app: {
     file: 'Файл',
     importZpl: 'Import ZPL',
-    importZplFile: 'Импортиране на ZPL файл',
     exportZpl: 'Export ZPL',
     newDesign: 'Нов дизайн',
     openDesign: 'Отвори дизайн',

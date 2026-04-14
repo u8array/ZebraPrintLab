@@ -56,7 +56,6 @@ const lt = {
   app: {
     file: 'Failas',
     importZpl: 'Import ZPL',
-    importZplFile: 'Importuoti ZPL failą',
     exportZpl: 'Export ZPL',
     newDesign: 'Naujas dizainas',
     openDesign: 'Atidaryti dizainą',
