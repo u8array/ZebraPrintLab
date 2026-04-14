@@ -21,6 +21,7 @@ import {
   DocumentArrowDownIcon,
   PrinterIcon,
   GlobeAltIcon,
+  XMarkIcon,
 } from "@heroicons/react/16/solid";
 import { useLabelStore, useHistory } from "./store/labelStore";
 import { localeNames } from "./locales";
@@ -113,6 +114,7 @@ function App() {
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
   const { showGrid, snapEnabled, snapSizeMm, unit } = canvasSettings;
   const [showZplImport, setShowZplImport] = useState(false);
+  const [zplFileNotice, setZplFileNotice] = useState<string | null>(null);
   const outputPanel = useResizablePanel(OUTPUT_DEFAULT_H);
   const [rightTab, setRightTab] = useState<"properties" | "layers">(
     "properties",
@@ -218,8 +220,19 @@ function App() {
     reader.onload = (ev) => {
       const zpl = ev.target?.result as string;
       if (!zpl?.trim()) return;
-      const { labelConfig, objects } = parseZPL(zpl, label.dpmm);
-      loadDesign({ ...label, ...labelConfig }, objects);
+      const { labelConfig, objects: parsedObjects, importReport } = parseZPL(zpl, label.dpmm);
+      loadDesign({ ...label, ...labelConfig }, parsedObjects);
+      const parts: string[] = [
+        `Editable reconstruction — ${parsedObjects.length} object${parsedObjects.length !== 1 ? 's' : ''} imported.`,
+      ];
+      if (importReport.partial.length > 0) {
+        parts.push(`Font face not preserved (${importReport.partial.join(', ')}).`);
+      }
+      const skippedCount = importReport.browserLimit.length + importReport.unknown.length;
+      if (skippedCount > 0) {
+        parts.push(`${skippedCount} command${skippedCount !== 1 ? 's' : ''} skipped.`);
+      }
+      setZplFileNotice(parts.join(' '));
     };
     reader.readAsText(file);
     e.target.value = "";
@@ -380,6 +393,20 @@ function App() {
           />
         </div>
       </header>
+
+      {/* ZPL file import notice */}
+      {zplFileNotice && (
+        <div className="shrink-0 flex items-center gap-3 px-4 py-2 bg-amber-950/40 border-b border-amber-800/50 font-mono text-[10px] text-amber-300">
+          <span className="flex-1">{zplFileNotice}</span>
+          <button
+            onClick={() => setZplFileNotice(null)}
+            className="text-amber-400 hover:text-amber-200 transition-colors"
+            aria-label="Dismiss"
+          >
+            <XMarkIcon className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Main area: 3 columns */}
       <div className="flex flex-1 min-h-0">

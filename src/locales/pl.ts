@@ -30,6 +30,7 @@ const pl = {
     positionSection: 'Pozycja',
     x: 'X',
     y: 'Y',
+    comment: 'Komentarz',
   },
 
   label: {

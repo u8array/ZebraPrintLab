@@ -30,6 +30,7 @@ const lv = {
     positionSection: 'Pozīcija',
     x: 'X',
     y: 'Y',
+    comment: 'Komentārs',
   },
 
   label: {

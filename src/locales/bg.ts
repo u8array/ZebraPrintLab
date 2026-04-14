@@ -30,6 +30,7 @@ const bg = {
     positionSection: 'Позиция',
     x: 'X',
     y: 'Y',
+    comment: 'Коментар',
   },
 
   label: {

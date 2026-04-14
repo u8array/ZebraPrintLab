@@ -30,6 +30,7 @@ const he = {
     positionSection: 'מיקום (מ"מ)',
     x: 'X',
     y: 'Y',
+    comment: 'הערה',
   },
 
   label: {

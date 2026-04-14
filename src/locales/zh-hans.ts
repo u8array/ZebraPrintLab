@@ -30,6 +30,7 @@ const zhHans = {
     positionSection: '位置 (毫米)',
     x: 'X',
     y: 'Y',
+    comment: '备注',
   },
 
   label: {

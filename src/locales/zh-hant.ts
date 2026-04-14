@@ -30,6 +30,7 @@ const zhHant = {
     positionSection: '位置 (公釐)',
     x: 'X',
     y: 'Y',
+    comment: '備註',
   },
 
   label: {

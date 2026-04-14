@@ -30,6 +30,7 @@ const el = {
     positionSection: 'Θέση',
     x: 'X',
     y: 'Y',
+    comment: 'Σχόλιο',
   },
 
   label: {

@@ -742,6 +742,74 @@ describe('parseZPL — ^A@ TrueType font fallback', () => {
   });
 });
 
+// ── importReport ─────────────────────────────────────────────────────────────
+
+describe('parseZPL — importReport.partial', () => {
+  it('records ^A@ in importReport.partial (font face not imported)', () => {
+    const { importReport } = parseZPL('^XA^FO0,0^A@N,30,0,E:ARIAL.TTF^FDText^FS^XZ', 8);
+    expect(importReport.partial).toContain('^A@');
+  });
+
+  it('deduplicates ^A@ entries when used multiple times', () => {
+    const zpl = '^XA^FO0,0^A@N,30,0,E:A.TTF^FDFirst^FS^FO0,50^A@N,30,0,E:B.TTF^FDSecond^FS^XZ';
+    const { importReport } = parseZPL(zpl, 8);
+    expect(importReport.partial.filter((e) => e === '^A@')).toHaveLength(1);
+  });
+
+  it('records general ^A{x} font commands (e.g. ^AB) in importReport.partial', () => {
+    const { importReport } = parseZPL('^XA^FO0,0^ABN,30,0^FDText^FS^XZ', 8);
+    expect(importReport.partial.some((e) => e.startsWith('^A'))).toBe(true);
+  });
+
+  it('does not put fully-supported ^A0 in importReport.partial', () => {
+    const { importReport } = parseZPL('^XA^FO0,0^A0N,30,0^FDText^FS^XZ', 8);
+    expect(importReport.partial).toHaveLength(0);
+  });
+});
+
+describe('parseZPL — importReport.browserLimit', () => {
+  it('records ^IM in importReport.browserLimit', () => {
+    const { importReport } = parseZPL('^XA^FO0,0^IMR:LOGO.GRF^FS^XZ', 8);
+    expect(importReport.browserLimit.some((s) => s.startsWith('^IM'))).toBe(true);
+  });
+
+  it('records ~DG in importReport.browserLimit', () => {
+    const { importReport } = parseZPL('^XA~DGR:LOGO.GRF,1024,10,FF^XZ', 8);
+    expect(importReport.browserLimit.some((s) => s.startsWith('~DG'))).toBe(true);
+  });
+
+  it('also keeps ^IM in skipped for backward compatibility', () => {
+    const { skipped, importReport } = parseZPL('^XA^FO0,0^IMR:LOGO.GRF^FS^XZ', 8);
+    expect(skipped.some((s) => s.startsWith('^IM'))).toBe(true);
+    expect(importReport.browserLimit.some((s) => s.startsWith('^IM'))).toBe(true);
+  });
+});
+
+describe('parseZPL — importReport.unknown', () => {
+  it('records unrecognised commands in importReport.unknown', () => {
+    const { importReport } = parseZPL('^XA^XX99^FO0,0^A0N,30,0^FDText^FS^XZ', 8);
+    expect(importReport.unknown.some((s) => s.startsWith('^XX'))).toBe(true);
+  });
+
+  it('also keeps unknown commands in skipped for backward compatibility', () => {
+    const { skipped, importReport } = parseZPL('^XA^XX99^FO0,0^A0N,30,0^FDText^FS^XZ', 8);
+    expect(skipped.some((s) => s.startsWith('^XX'))).toBe(true);
+    expect(importReport.unknown.some((s) => s.startsWith('^XX'))).toBe(true);
+  });
+
+  it('records ^GFB (unsupported GF format) in importReport.unknown', () => {
+    const { importReport } = parseZPL('^XA^FO0,0^GFB,32,32,4,AABBCCDD^FS^XZ', 8);
+    expect(importReport.unknown.some((s) => s.startsWith('^GF'))).toBe(true);
+  });
+
+  it('returns empty importReport for a fully supported label', () => {
+    const { importReport } = parseZPL('^XA^PW800^LL600^FO50,50^A0N,30,0^FDHello^FS^XZ', 8);
+    expect(importReport.partial).toHaveLength(0);
+    expect(importReport.browserLimit).toHaveLength(0);
+    expect(importReport.unknown).toHaveLength(0);
+  });
+});
+
 // ── ^FO 3rd parameter (justification) ─────────────────────────────────────────
 
 describe('parseZPL — ^FO with justification parameter', () => {

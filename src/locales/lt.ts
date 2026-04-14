@@ -30,6 +30,7 @@ const lt = {
     positionSection: 'Padėtis',
     x: 'X',
     y: 'Y',
+    comment: 'Komentaras',
   },
 
   label: {

@@ -30,6 +30,7 @@ const ko = {
     positionSection: '위치',
     x: 'X',
     y: 'Y',
+    comment: '설명',
   },
 
   label: {

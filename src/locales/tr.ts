@@ -30,6 +30,7 @@ const tr = {
     positionSection: 'Konum',
     x: 'X',
     y: 'Y',
+    comment: 'Yorum',
   },
 
   label: {
