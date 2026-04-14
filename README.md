@@ -1,8 +1,8 @@
 # ZPL Label Designer
 
-Visual label designer for Zebra printers. Runs in the browser, no software to install.
+Browser-based label authoring tool for Zebra printers. No software to install.
 
-Design your label on the canvas, then copy or export the ZPL output and send it to your printer. No knowledge of ZPL required.
+Design labels visually and export the ZPL output to your printer. No knowledge of ZPL required.
 
 **[Try it](https://u8array.github.io/zpl_label_designer/)** · [Report an issue](https://github.com/u8array/zpl_label_designer/issues)
 
@@ -47,6 +47,10 @@ The **ZPL output** panel at the bottom shows the label as ZPL code (the language
 
 File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 
+> **Round-trip semantics:** Import produces an editable reconstruction of the label, not an exact replica. ZPL encodes printer-side state (font tables, downloaded graphics, exact dot positioning) that has no direct equivalent in the visual model. Simple labels — especially those originally authored in this tool — import cleanly. Complex or machine-generated ZPL may import partially or lose fidelity. The import report lists any commands that were skipped or approximated.
+>
+> Use **Save design (.json)** to preserve a lossless, fully editable copy. `.zpl` is a printer output format, not a design source format.
+
 The parser covers the most common ZPL II commands:
 
 - **Text:** `^A0`, `^A*` (all bitmap fonts), `^A@` (TrueType, best-effort sizing), `^CF`, `^FW`, `^FB` (field block, including `\&` line breaks), `^TB`, `^FH` (hex escapes)
@@ -64,6 +68,7 @@ Unrecognized commands are skipped and listed in the import report.
 | Shortcut | Action |
 |---|---|
 | `Ctrl+Z` / `Ctrl+Shift+Z` | Undo / Redo |
+| `Ctrl+A` | Select all |
 | `Ctrl+C` / `Ctrl+V` | Copy / Paste |
 | `Ctrl+D` | Duplicate selection |
 | `Del` / `Backspace` | Delete selection |
@@ -75,7 +80,7 @@ Unrecognized commands are skipped and listed in the import report.
 
 ### Saving and loading
 
-Designs can be saved as `.json` (File → Save Design) and reopened later. This preserves all object properties exactly. The `.zpl` export is for sending to a printer and cannot be reimported as an editable design.
+`.json` (File → Save Design) is the canonical design format — it preserves all object properties exactly and can be reopened as a fully editable design. `.zpl` is a printer output format: use it to send to a printer, not as a design source.
 
 ---
 

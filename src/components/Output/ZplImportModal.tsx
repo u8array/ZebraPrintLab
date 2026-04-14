@@ -110,16 +110,12 @@ export function ZplImportModal({ onClose }: Props) {
           <>
             <div className="flex flex-col gap-3 p-4 flex-1 min-h-0">
               <p className="font-mono text-[10px] text-muted leading-relaxed">
-                Paste ZPL II code below. The result is an{' '}
-                <span className="text-amber-400">editable reconstruction</span>{' '}
-                — not an exact replica of the original model. Use{' '}
-                <span className="text-text">Save design (.json)</span> to preserve
-                a lossless copy.
-              </p>
-              <p className="font-mono text-[10px] text-muted leading-relaxed">
-                Supported: text (^A0/^CF), barcodes (^BC, ^B3, ^BE, ^BQ, ^BX, ^BU, ^B8, ^B9,
-                ^B2, ^BA, ^B7), shapes (^GB, ^GD, ^GE, ^GC), images (^GFA),
-                serialisation (^SN, ^SF). Label dimensions from ^PW/^LL.
+                Import produces an{' '}
+                <span className="text-amber-400">editable reconstruction</span>
+                , not an exact replica. Simple labels import cleanly; complex or
+                machine-generated ZPL may lose fidelity. Use{' '}
+                <span className="text-text">Save design (.json)</span> as the
+                lossless source format.
               </p>
               <textarea
                 className="flex-1 min-h-60 bg-surface-2 border border-border rounded px-3 py-2 font-mono text-xs text-text focus:border-accent focus:outline-none resize-none"
