@@ -184,6 +184,15 @@ export function AppShell() {
       {(loadError ?? printError) && (
         <div className="shrink-0 flex items-center gap-3 px-4 py-2 bg-red-950/40 border-b border-red-800/50 font-mono text-[10px] text-red-300">
           <span className="flex-1">{loadError ?? printError}</span>
+          {printError && (
+            <button
+              onClick={handleDownload}
+              className="flex items-center gap-1 text-red-300 hover:text-red-100 transition-colors shrink-0"
+            >
+              <ArrowDownTrayIcon className="w-3.5 h-3.5" />
+              Export ZPL
+            </button>
+          )}
           <button
             onClick={loadError ? dismissLoadError : dismissPrintError}
             className="text-red-400 hover:text-red-200 transition-colors"

@@ -1,12 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { XMarkIcon } from '@heroicons/react/16/solid';
+import { XMarkIcon, ArrowDownTrayIcon } from '@heroicons/react/16/solid';
 import { useLabelStore } from '../../store/labelStore';
 import { generateZPL } from '../../lib/zplGenerator';
-import { fetchPreview } from '../../lib/labelary';
+import { fetchPreview, LabelaryError } from '../../lib/labelary';
+import { triggerDownload } from '../../lib/triggerDownload';
 import { useT } from '../../lib/useT';
 
 interface Props {
   onClose: () => void;
+}
+
+function errorMessage(e: unknown): string {
+  if (e instanceof LabelaryError) {
+    if (e.kind === 'api') return 'Labelary returned an error. Check that the label dimensions and dpmm are valid.';
+    if (e.kind === 'timeout') return 'Labelary did not respond in time.';
+  }
+  return 'Could not reach the Labelary preview service. Check your network connection.';
 }
 
 export function LabelPreviewModal({ onClose }: Props) {
@@ -16,11 +25,11 @@ export function LabelPreviewModal({ onClose }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const urlRef = useRef<string | null>(null);
+  const zplRef = useRef<string>(generateZPL(label, objects));
 
   useEffect(() => {
     let cancelled = false;
-    const zpl = generateZPL(label, objects);
-    fetchPreview(zpl, label)
+    fetchPreview(zplRef.current, label)
       .then((url) => {
         if (cancelled) { URL.revokeObjectURL(url); return; }
         urlRef.current = url;
@@ -29,10 +38,7 @@ export function LabelPreviewModal({ onClose }: Props) {
       })
       .catch((e: unknown) => {
         if (cancelled) return;
-        const msg = e instanceof Error && e.message.includes('API error')
-          ? 'Labelary returned an error. Check that the label dimensions and dpmm are valid.'
-          : 'Could not reach the Labelary preview service. Check your network connection.';
-        setError(msg);
+        setError(errorMessage(e));
         setLoading(false);
       });
     return () => {
@@ -40,6 +46,10 @@ export function LabelPreviewModal({ onClose }: Props) {
       if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDownloadFallback = () => {
+    triggerDownload(new Blob([zplRef.current], { type: 'text/plain' }), 'label.zpl');
+  };
 
   return (
     <div
@@ -67,7 +77,16 @@ export function LabelPreviewModal({ onClose }: Props) {
             <span className="font-mono text-[10px] text-muted animate-pulse">{t.output.loading}</span>
           )}
           {!loading && error && (
-            <span className="font-mono text-[10px] text-amber-400 text-center leading-relaxed max-w-64">{error}</span>
+            <div className="flex flex-col items-center gap-3 max-w-64 text-center">
+              <span className="font-mono text-[10px] text-amber-400 leading-relaxed">{error}</span>
+              <button
+                onClick={handleDownloadFallback}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-mono bg-surface-2 border border-border text-muted hover:text-text hover:border-accent transition-colors"
+              >
+                <ArrowDownTrayIcon className="w-3.5 h-3.5" />
+                Export ZPL instead
+              </button>
+            </div>
           )}
           {!loading && !error && previewUrl && (
             <img

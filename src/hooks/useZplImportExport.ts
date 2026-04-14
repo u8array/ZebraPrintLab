@@ -3,6 +3,7 @@ import { useLabelStore } from "../store/labelStore";
 import { generateZPL } from "../lib/zplGenerator";
 import { printLabel } from "../lib/printPreview";
 import { triggerDownload } from "../lib/triggerDownload";
+import { LabelaryError } from "../lib/labelary";
 
 export function useZplImportExport() {
   const label = useLabelStore((s) => s.label);
@@ -19,10 +20,13 @@ export function useZplImportExport() {
     try {
       await printLabel(label, objects);
     } catch (e) {
-      const msg = e instanceof Error && e.message.includes('API error')
-        ? "Labelary returned an error. Check that the label dimensions and dpmm are valid."
-        : "Could not reach the Labelary preview service. Check your network connection.";
-      setPrintError(msg);
+      if (e instanceof LabelaryError && e.kind === 'api') {
+        setPrintError("Labelary returned an error. Check that the label dimensions and dpmm are valid.");
+      } else if (e instanceof LabelaryError && e.kind === 'timeout') {
+        setPrintError("Labelary did not respond in time.");
+      } else {
+        setPrintError("Could not reach the Labelary preview service. Check your network connection.");
+      }
     }
   };
 
