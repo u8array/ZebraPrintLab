@@ -181,7 +181,7 @@ function ImageObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onS
     img.src = cached.dataUrl;
     img.onload = () => { if (active) setHtmlImg(img); };
     return () => { active = false; };
-  }, [cached?.dataUrl, cached]);
+  }, [cached]);
 
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
     onChange({ x: pxToDots(e.target.x() - offsetX, scale, dpmm), y: pxToDots(e.target.y() - offsetY, scale, dpmm) });

@@ -36,7 +36,7 @@ export interface ObjectTypeDefinition<P extends object = object> {
   defaultProps: P;
   defaultSize: { width: number; height: number };
   toZPL: (obj: LabelObjectBase & { props: P }) => string;
-  PropertiesPanel: React.FC<{
+  PropertiesPanel: React.ComponentType<{
     obj: LabelObjectBase & { props: P };
     onChange: (props: Partial<P>) => void;
   }>;

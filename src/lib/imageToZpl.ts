@@ -62,9 +62,9 @@ export function imageToGFA(
           for (let bit = 0; bit < 8; bit++) {
             const px = byteIdx * 8 + bit;
             const idx = (row * paddedWidth + px) * 4;
-            const r = pixels[idx] ?? 255;
-            const g = pixels[idx + 1] ?? 255;
-            const b = pixels[idx + 2] ?? 255;
+            const r = pixels[idx]!;
+            const g = pixels[idx + 1]!;
+            const b = pixels[idx + 2]!;
             // Luminance (BT.601)
             const lum = 0.299 * r + 0.587 * g + 0.114 * b;
             // In ZPL: 1 = black dot, 0 = white

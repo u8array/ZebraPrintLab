@@ -3,7 +3,8 @@ import { XMarkIcon, ClipboardDocumentIcon, CheckIcon, FolderOpenIcon } from '@he
 import { importZplText } from '../../lib/zplImportService';
 import { readFileAsText } from '../../lib/readFile';
 import { useLabelStore } from '../../store/labelStore';
-import { ImportSummaryBody, type ImportResult } from './ImportReportModal';
+import { formatReportAsText, type ImportResult } from '../../lib/importReport';
+import { ImportSummaryBody } from './ImportReportModal';
 
 interface Props {
   onClose: () => void;
@@ -62,21 +63,7 @@ export function ZplImportModal({ onClose }: Props) {
 
   const handleCopy = () => {
     if (!result) return;
-    const lines = [
-      `ZPL Import Report`,
-      `Objects imported: ${result.objectCount}`,
-      '',
-      ...(result.report.partial.length > 0
-        ? [`Partially imported (${result.report.partial.join(', ')})`]
-        : []),
-      ...(result.report.browserLimit.length > 0
-        ? [`Skipped (printer-only): ${result.report.browserLimit.map((t) => t.split(',')[0]).join(', ')}`]
-        : []),
-      ...(result.report.unknown.length > 0
-        ? [`Skipped (unrecognised): ${result.report.unknown.map((t) => t.split(',')[0]).join(', ')}`]
-        : []),
-    ];
-    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    navigator.clipboard.writeText(formatReportAsText(result)).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });

@@ -39,3 +39,11 @@ export async function fetchPreview(zpl: string, label: LabelConfig): Promise<str
   const blob = await res.blob();
   return URL.createObjectURL(blob);
 }
+
+export function labelaryErrorMessage(e: unknown): string {
+  if (e instanceof LabelaryError) {
+    if (e.kind === 'api') return 'Labelary returned an error. Check that the label dimensions and dpmm are valid.';
+    if (e.kind === 'timeout') return 'Labelary did not respond in time.';
+  }
+  return 'Could not reach the Labelary preview service. Check your network connection.';
+}

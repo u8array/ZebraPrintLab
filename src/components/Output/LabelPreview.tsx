@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { XMarkIcon, ArrowDownTrayIcon } from '@heroicons/react/16/solid';
 import { useLabelStore } from '../../store/labelStore';
 import { generateZPL } from '../../lib/zplGenerator';
-import { fetchPreview, LabelaryError } from '../../lib/labelary';
+import { fetchPreview, labelaryErrorMessage } from '../../lib/labelary';
 import { triggerDownload } from '../../lib/triggerDownload';
 import { useT } from '../../lib/useT';
 
@@ -10,13 +10,6 @@ interface Props {
   onClose: () => void;
 }
 
-function errorMessage(e: unknown): string {
-  if (e instanceof LabelaryError) {
-    if (e.kind === 'api') return 'Labelary returned an error. Check that the label dimensions and dpmm are valid.';
-    if (e.kind === 'timeout') return 'Labelary did not respond in time.';
-  }
-  return 'Could not reach the Labelary preview service. Check your network connection.';
-}
 
 export function LabelPreviewModal({ onClose }: Props) {
   const t = useT();
@@ -38,7 +31,7 @@ export function LabelPreviewModal({ onClose }: Props) {
       })
       .catch((e: unknown) => {
         if (cancelled) return;
-        setError(errorMessage(e));
+        setError(labelaryErrorMessage(e));
         setLoading(false);
       });
     return () => {

@@ -57,7 +57,7 @@ interface LabelState {
 export const useLabelStore = create<LabelState>()(
   temporal(
     persist(
-    (set) => ({
+    (set, get) => ({
       label: { widthMm: 100, heightMm: 60, dpmm: 8 },
       objects: [],
       selectedIds: [],
@@ -129,7 +129,7 @@ export const useLabelStore = create<LabelState>()(
         }),
 
       copySelectedObjects: () => {
-        const { selectedIds, objects } = useLabelStore.getState();
+        const { selectedIds, objects } = get();
         _clipboard = selectedIds.flatMap((id) => {
           const obj = objects.find((o) => o.id === id);
           return obj ? [{ ...obj, props: { ...obj.props } } as LabelObject] : [];
