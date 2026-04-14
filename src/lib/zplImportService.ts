@@ -1,10 +1,11 @@
-import { parseZPL } from "./zplParser";
+import { parseZPL, type ImportReport } from "./zplParser";
 import type { LabelConfig } from "../types/ObjectType";
 import type { LabelObject } from "../registry";
 
 export interface ZplImportResult {
   labelConfig: Partial<LabelConfig>;
   objects: LabelObject[];
+  report: ImportReport;
   notice: string;
 }
 
@@ -22,5 +23,5 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     parts.push(`${skippedCount} command${skippedCount !== 1 ? "s" : ""} skipped.`);
   }
 
-  return { labelConfig, objects, notice: parts.join(" ") };
+  return { labelConfig, objects, report: importReport, notice: parts.join(" ") };
 }

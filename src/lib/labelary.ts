@@ -16,6 +16,8 @@ export async function fetchPreview(
     body: zpl,
   });
 
+  if (!res.ok) throw new Error(`Labelary API error: ${res.status} ${res.statusText}`);
+
   const blob = await res.blob();
   return URL.createObjectURL(blob);
 }

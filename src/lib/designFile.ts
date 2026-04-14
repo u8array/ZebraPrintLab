@@ -20,9 +20,11 @@ export function parseDesignFile(text: string): Result<DesignFile, DesignFileErro
   }
   const result = designFileSchema.safeParse(json);
   if (!result.success) return err("invalid_schema");
-  // props are validated structurally; cast to LabelObject[] is safe
-  // because the registry handles unknown prop shapes at runtime
-  return ok(result.data as DesignFile);
+  // props are validated structurally; double-cast is intentional —
+  // LabelObject[] is a discriminated union with typed props that Zod
+  // cannot verify without per-type schemas, but the registry handles
+  // unknown prop shapes gracefully at runtime.
+  return ok(result.data as unknown as DesignFile);
 }
 
 export function serializeDesign(label: LabelConfig, objects: LabelObject[]): string {

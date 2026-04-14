@@ -1,80 +1,18 @@
 import { useState } from 'react';
-import { XMarkIcon } from '@heroicons/react/16/solid';
-import { parseZPL, type ImportReport } from '../../lib/zplParser';
-import { ZPL_COMMAND_MAP } from '../../lib/zplCommandSupport';
+import { XMarkIcon, ClipboardDocumentIcon, CheckIcon } from '@heroicons/react/16/solid';
+import { parseZPL } from '../../lib/zplParser';
 import { useLabelStore } from '../../store/labelStore';
+import { ImportSummaryBody, type ImportResult } from './ImportReportModal';
 
 interface Props {
   onClose: () => void;
-}
-
-interface ImportResult {
-  objectCount: number;
-  report: ImportReport;
-}
-
-/** Returns the loss description for a partial command code, e.g. "^A@" → font face note. */
-function partialLoss(cmd: string): string {
-  const key = cmd.slice(1); // strip ^
-  // General ^A{x} bitmap fonts share the same loss note as the explicit ^A@ entry
-  const entry = ZPL_COMMAND_MAP.get(key) ?? (key[0] === 'A' ? ZPL_COMMAND_MAP.get('A@') : undefined);
-  return entry?.loss ?? 'imported with limitations';
-}
-
-function ImportSummaryBody({ result }: { result: ImportResult }) {
-  const { objectCount, report } = result;
-  const hasIssues =
-    report.partial.length > 0 ||
-    report.browserLimit.length > 0 ||
-    report.unknown.length > 0;
-
-  // Deduplicate loss descriptions so repeated ^A@ / ^AB don't produce duplicate lines
-  const uniqueLosses = [...new Set(report.partial.map(partialLoss))];
-
-  return (
-    <div className="flex flex-col gap-3 p-4 flex-1 min-h-0">
-      <p className="font-mono text-[10px] text-green-400 leading-relaxed">
-        {objectCount} object{objectCount !== 1 ? 's' : ''} imported as editable reconstruction.
-        The original ZPL model is not preserved — save as .json to keep an exact copy.
-      </p>
-
-      {report.partial.length > 0 && (
-        <div className="font-mono text-[10px] text-amber-400 leading-relaxed">
-          <span className="font-semibold">Partially imported</span>{' '}
-          ({report.partial.join(', ')}):{' '}
-          {uniqueLosses.join('; ')}
-        </div>
-      )}
-
-      {report.browserLimit.length > 0 && (
-        <div className="font-mono text-[10px] text-amber-400 leading-relaxed">
-          <span className="font-semibold">Skipped (printer-only)</span> —{' '}
-          {report.browserLimit.map((t) => t.split(',')[0]).join(', ')}
-        </div>
-      )}
-
-      {report.unknown.length > 0 && (
-        <div className="font-mono text-[10px] text-muted leading-relaxed">
-          <span className="font-semibold">Skipped (unrecognised)</span> —{' '}
-          {report.unknown.length} command{report.unknown.length !== 1 ? 's' : ''} not mapped:{' '}
-          {report.unknown.slice(0, 5).map((t) => t.split(',')[0]).join(', ')}
-          {report.unknown.length > 5 && ` … +${report.unknown.length - 5} more`}
-        </div>
-      )}
-
-      {!hasIssues && (
-        <p className="font-mono text-[10px] text-muted leading-relaxed">
-          All commands recognised — no design information was lost.
-        </p>
-      )}
-    </div>
-  );
 }
 
 export function ZplImportModal({ onClose }: Props) {
   const [zpl, setZpl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [copied, setCopied] = useState(false);
   const loadDesign = useLabelStore((s) => s.loadDesign);
   const label = useLabelStore((s) => s.label);
 
@@ -96,6 +34,28 @@ export function ZplImportModal({ onClose }: Props) {
     setResult({ objectCount: objects.length, report: importReport });
   };
 
+  const handleCopy = () => {
+    if (!result) return;
+    const lines = [
+      `ZPL Import Report`,
+      `Objects imported: ${result.objectCount}`,
+      '',
+      ...(result.report.partial.length > 0
+        ? [`Partially imported (${result.report.partial.join(', ')})`]
+        : []),
+      ...(result.report.browserLimit.length > 0
+        ? [`Skipped (printer-only): ${result.report.browserLimit.map((t) => t.split(',')[0]).join(', ')}`]
+        : []),
+      ...(result.report.unknown.length > 0
+        ? [`Skipped (unrecognised): ${result.report.unknown.map((t) => t.split(',')[0]).join(', ')}`]
+        : []),
+    ];
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
@@ -103,7 +63,6 @@ export function ZplImportModal({ onClose }: Props) {
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-surface border border-border rounded-lg w-130 flex flex-col shadow-2xl max-h-[80vh]">
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
           <span className="font-mono text-xs text-muted uppercase tracking-widest">Import ZPL</span>
           <button
@@ -117,7 +76,15 @@ export function ZplImportModal({ onClose }: Props) {
         {result ? (
           <>
             <ImportSummaryBody result={result} />
-            <div className="flex justify-end px-4 py-3 border-t border-border shrink-0">
+            <div className="flex justify-between items-center px-4 py-3 border-t border-border shrink-0">
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1.5 font-mono text-[10px] text-muted hover:text-text transition-colors"
+              >
+                {copied
+                  ? <><CheckIcon className="w-3.5 h-3.5" /> Copied</>
+                  : <><ClipboardDocumentIcon className="w-3.5 h-3.5" /> Copy report</>}
+              </button>
               <button
                 onClick={onClose}
                 className="px-3 py-1.5 rounded text-xs font-mono bg-accent text-bg hover:opacity-90 transition-opacity"
@@ -128,7 +95,6 @@ export function ZplImportModal({ onClose }: Props) {
           </>
         ) : (
           <>
-            {/* Body */}
             <div className="flex flex-col gap-3 p-4 flex-1 min-h-0">
               <p className="font-mono text-[10px] text-muted leading-relaxed">
                 Paste ZPL II code below. The result is an{' '}
@@ -154,7 +120,6 @@ export function ZplImportModal({ onClose }: Props) {
               )}
             </div>
 
-            {/* Footer */}
             <div className="flex justify-end gap-2 px-4 py-3 border-t border-border shrink-0">
               <button
                 onClick={onClose}

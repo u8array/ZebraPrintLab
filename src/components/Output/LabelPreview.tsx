@@ -14,7 +14,7 @@ export function LabelPreviewModal({ onClose }: Props) {
   const { label, objects } = useLabelStore();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const urlRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -27,8 +27,13 @@ export function LabelPreviewModal({ onClose }: Props) {
         setPreviewUrl(url);
         setLoading(false);
       })
-      .catch(() => {
-        if (!cancelled) { setError(true); setLoading(false); }
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        const msg = e instanceof Error && e.message.includes('API error')
+          ? 'Labelary returned an error. Check that the label dimensions and dpmm are valid.'
+          : 'Could not reach the Labelary preview service. Check your network connection.';
+        setError(msg);
+        setLoading(false);
       });
     return () => {
       cancelled = true;
@@ -62,7 +67,7 @@ export function LabelPreviewModal({ onClose }: Props) {
             <span className="font-mono text-[10px] text-muted animate-pulse">{t.output.loading}</span>
           )}
           {!loading && error && (
-            <span className="font-mono text-[10px] text-muted">{t.output.unavailable}</span>
+            <span className="font-mono text-[10px] text-amber-400 text-center leading-relaxed max-w-64">{error}</span>
           )}
           {!loading && !error && previewUrl && (
             <img

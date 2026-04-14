@@ -5,6 +5,7 @@ import { PropertiesPanel } from "./Properties/PropertiesPanel";
 import { LayersPanel } from "./Properties/LayersPanel";
 import { ZPLOutput } from "./Output/ZPLOutput";
 import { ZplImportModal } from "./Output/ZplImportModal";
+import { ImportReportModal } from "./Output/ImportReportModal";
 import {
   DropdownMenu,
   DropdownItem,
@@ -56,8 +57,12 @@ export function AppShell() {
     showZplImport,
     openZplImport,
     closeZplImport,
-    zplFileNotice,
-    dismissNotice,
+    fileImportReport,
+    dismissFileImportReport,
+    fileError,
+    dismissFileError,
+    printError,
+    dismissPrintError,
     zplFileInputRef,
     handleZplFileLoad,
     handleDownload,
@@ -196,24 +201,12 @@ export function AppShell() {
       </header>
 
       {/* Notices */}
-      {loadError && (
+      {(loadError ?? fileError ?? printError) && (
         <div className="shrink-0 flex items-center gap-3 px-4 py-2 bg-red-950/40 border-b border-red-800/50 font-mono text-[10px] text-red-300">
-          <span className="flex-1">{loadError}</span>
+          <span className="flex-1">{loadError ?? fileError ?? printError}</span>
           <button
-            onClick={dismissLoadError}
+            onClick={loadError ? dismissLoadError : fileError ? dismissFileError : dismissPrintError}
             className="text-red-400 hover:text-red-200 transition-colors"
-            aria-label="Dismiss"
-          >
-            <XMarkIcon className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-      {zplFileNotice && (
-        <div className="shrink-0 flex items-center gap-3 px-4 py-2 bg-amber-950/40 border-b border-amber-800/50 font-mono text-[10px] text-amber-300">
-          <span className="flex-1">{zplFileNotice}</span>
-          <button
-            onClick={dismissNotice}
-            className="text-amber-400 hover:text-amber-200 transition-colors"
             aria-label="Dismiss"
           >
             <XMarkIcon className="w-3.5 h-3.5" />
@@ -289,6 +282,9 @@ export function AppShell() {
       </div>
 
       {showZplImport && <ZplImportModal onClose={closeZplImport} />}
+      {fileImportReport && (
+        <ImportReportModal result={fileImportReport} onClose={dismissFileImportReport} />
+      )}
     </div>
   );
 }
