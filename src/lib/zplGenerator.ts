@@ -17,7 +17,13 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
   if (label.mediaMode) lines.push(`^MM${label.mediaMode}`);
   if (label.labelShift) lines.push(`^LS${label.labelShift}`);
 
-  lines.push(...objects.map((obj) => ObjectRegistry[obj.type]?.toZPL(obj) ?? ''));
+  lines.push(...objects.map((obj) => {
+    const zpl = ObjectRegistry[obj.type]?.toZPL(obj) ?? '';
+    if (!obj.comment) return zpl;
+    // Strip ^ to prevent breaking ZPL structure inside the comment text
+    const safe = obj.comment.replace(/\^/g, '');
+    return `^FX${safe}\n${zpl}`;
+  }));
 
   if (label.printQuantity && label.printQuantity > 1) {
     lines.push(`^PQ${label.printQuantity}`);

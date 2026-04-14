@@ -30,6 +30,7 @@ const sr = {
     positionSection: 'Položaj',
     x: 'X',
     y: 'Y',
+    comment: 'Коментар',
   },
 
   label: {

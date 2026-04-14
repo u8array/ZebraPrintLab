@@ -30,6 +30,7 @@ const it = {
     positionSection: 'Posizione',
     x: 'X',
     y: 'Y',
+    comment: 'Commento',
   },
 
   label: {

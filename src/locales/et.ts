@@ -30,6 +30,7 @@ const et = {
     positionSection: 'Asukoht',
     x: 'X',
     y: 'Y',
+    comment: 'Kommentaar',
   },
 
   label: {

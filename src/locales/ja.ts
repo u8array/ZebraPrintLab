@@ -30,6 +30,7 @@ const ja = {
     positionSection: '位置',
     x: 'X',
     y: 'Y',
+    comment: 'コメント',
   },
 
   label: {

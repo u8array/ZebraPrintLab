@@ -15,11 +15,29 @@ import type { Pdf417Props } from '../registry/pdf417';
 import type { SerialProps } from '../registry/serial';
 import { putImage } from './imageCache';
 
+/**
+ * Categorised import report produced alongside the parsed objects.
+ * Enables the UI to give the user precise, actionable feedback.
+ */
+export interface ImportReport {
+  /** Commands that were imported with known loss (e.g. ^A@ → font face not available in browser).
+   *  An object WAS created; something about it is approximate.  Deduplicated by command code. */
+  partial: string[];
+  /** Commands skipped because they require printer hardware or file storage
+   *  (e.g. ^IM, ~DG). No object was created for these. */
+  browserLimit: string[];
+  /** Commands that were not recognised at all. No object was created for these. */
+  unknown: string[];
+}
+
 export interface ParsedZPL {
   labelConfig: Partial<LabelConfig>;
   objects: LabelObject[];
-  /** Commands that were not recognised / could not be mapped to an object */
+  /** All commands that were not fully imported (browserLimit + unknown).
+   *  Kept for backward compatibility; prefer importReport for categorised access. */
   skipped: string[];
+  /** Categorised breakdown of import fidelity */
+  importReport: ImportReport;
 }
 
 // ZPL commands start with ^ or ~ followed by 2 characters
@@ -43,8 +61,8 @@ function int(s: string | undefined, fallback = 0): number {
   return isNaN(n) ? fallback : n;
 }
 
-function makeObj(type: string, x: number, y: number, props: unknown, positionType?: 'FO' | 'FT'): LabelObject {
-  return { id: crypto.randomUUID(), type, x, y, rotation: 0, positionType, props } as LabelObject;
+function makeObj(type: string, x: number, y: number, props: unknown, positionType?: 'FO' | 'FT', comment?: string): LabelObject {
+  return { id: crypto.randomUUID(), type, x, y, rotation: 0, positionType, comment, props } as unknown as LabelObject;
 }
 
 /** Decode ^FH hex escapes: replaces {delimiter}XX with the character for hex XX */
@@ -145,6 +163,17 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   const objects: LabelObject[] = [];
   const labelConfig: Partial<LabelConfig> = {};
   const skipped: string[] = [];
+  const partialCmds = new Set<string>(); // deduplicates partial-import command codes
+  const browserLimit: string[] = [];
+  const unknown: string[] = [];
+  let pendingComment: string | undefined;
+
+  /** Consume and return the pending ^FX comment, then clear it. */
+  const takeComment = (): string | undefined => {
+    const c = pendingComment;
+    pendingComment = undefined;
+    return c;
+  };
 
   let x = 0;
   let y = 0;
@@ -209,6 +238,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     if (!fieldType || pendingFD === null) return;
     const content = fhActive ? decodeFH(pendingFD, fhDelimiter) : pendingFD;
     const posType: 'FT' | 'FO' = positionIsFT ? 'FT' : 'FO';
+    const comment = takeComment();
 
     // Decode \& line breaks in ^FB text blocks
     const decoded = fbWidth > 0 ? content.replace(/\\&/g, '\n') : content;
@@ -224,7 +254,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             fontWidth: textW,
             rotation: textRot,
             zplMode: snMode,
-          } satisfies SerialProps, posType));
+          } satisfies SerialProps, posType, comment));
           snPending = false;
           snIncrement = 1;
           snMode = 'SN';
@@ -247,7 +277,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           textProps.blockLineSpacing = fbSpacing;
           textProps.blockJustify = fbJustify;
         }
-        objects.push(makeObj('text', x, y, textProps, posType));
+        objects.push(makeObj('text', x, y, textProps, posType, comment));
         // Reset ^FB state after use
         fbWidth = 0;
         fbLines = 1;
@@ -263,7 +293,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             moduleWidth: byModuleWidth,
             printInterpretation: bcInterp,
             checkDigit: bcCheck,
-          } satisfies Code128Props, posType),
+          } satisfies Code128Props, posType, comment),
         );
         break;
       case 'code39':
@@ -274,7 +304,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             moduleWidth: byModuleWidth,
             printInterpretation: bcInterp,
             checkDigit: bcCheck,
-          } satisfies Code39Props, posType),
+          } satisfies Code39Props, posType, comment),
         );
         break;
       case 'ean13':
@@ -284,7 +314,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             height: bcHeight,
             moduleWidth: byModuleWidth,
             printInterpretation: bcInterp,
-          } satisfies Ean13Props, posType),
+          } satisfies Ean13Props, posType, comment),
         );
         break;
       case 'qrcode': {
@@ -296,7 +326,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             content: data,
             magnification: qrMag,
             errorCorrection: ec,
-          } satisfies QrCodeProps, posType),
+          } satisfies QrCodeProps, posType, comment),
         );
         break;
       }
@@ -306,7 +336,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             content,
             dimension: dmDim,
             quality: dmQuality,
-          } satisfies DataMatrixProps, posType),
+          } satisfies DataMatrixProps, posType, comment),
         );
         break;
       case 'upca':
@@ -321,7 +351,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             moduleWidth: byModuleWidth,
             printInterpretation: bcInterp,
             checkDigit: bcCheck,
-          } satisfies Barcode1DProps, posType),
+          } satisfies Barcode1DProps, posType, comment),
         );
         break;
       case 'pdf417':
@@ -332,7 +362,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             securityLevel: pdfSecurity,
             columns: pdfColumns,
             moduleWidth: byModuleWidth,
-          } satisfies Pdf417Props, posType),
+          } satisfies Pdf417Props, posType, comment),
         );
         break;
     }
@@ -556,7 +586,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             fontWidth: (tp['fontWidth'] as number) ?? 0,
             rotation: (tp['rotation'] as SerialProps['rotation']) ?? 'N',
             zplMode: 'SN',
-          } satisfies SerialProps, lastObj.positionType);
+          } satisfies SerialProps, lastObj.positionType, lastObj.comment);
           objects[objects.length - 1] = serialObj;
         }
         break;
@@ -600,6 +630,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         const rounding = int(p[4], 0);
 
         // Distinguish line from box: a line has one dimension equal to thickness
+        const gbComment = takeComment();
         if (h === t && w > t) {
           objects.push(
             makeObj('line', x, y, {
@@ -608,7 +639,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               thickness: t,
               color,
               reverse: (lrActive || frActive) || undefined,
-            } satisfies LineProps),
+            } satisfies LineProps, undefined, gbComment),
           );
         } else if (w === t && h > t) {
           objects.push(
@@ -618,7 +649,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               thickness: t,
               color,
               reverse: (lrActive || frActive) || undefined,
-            } satisfies LineProps),
+            } satisfies LineProps, undefined, gbComment),
           );
         } else {
           const filled = t >= Math.min(w, h);
@@ -631,7 +662,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               color,
               rounding,
               reverse: (lrActive || frActive) || undefined,
-            } satisfies BoxProps),
+            } satisfies BoxProps, undefined, gbComment),
           );
         }
         break;
@@ -661,14 +692,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             thickness: gdT,
             color: gdColor,
             reverse: lrActive || frActive || undefined,
-          } satisfies LineProps),
+          } satisfies LineProps, undefined, takeComment()),
         );
         break;
       }
       case 'GF': {
         // ^GFA,{totalBytes},{totalBytes},{bytesPerRow},{compressedOrHexData}
         const format = rest[0]?.toUpperCase();
-        if (format !== 'A') { skipped.push(`^GF${rest}`); break; }
+        if (format !== 'A') { skipped.push(`^GF${rest}`); unknown.push(`^GF${rest}`); break; }
 
         // Extract params: skip "A," then find 3rd comma to separate params from data
         const gfRest = rest.slice(2); // "total,total,bytesPerRow,data..."
@@ -741,7 +772,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             widthDots: gfWidthDots,
             threshold: 128,
             _gfaCache: gfaCache,
-          } satisfies ImageProps, posType),
+          } satisfies ImageProps, posType, takeComment()),
         );
         break;
       }
@@ -759,7 +790,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             thickness: filled ? 3 : t,
             filled,
             color,
-          } satisfies EllipseProps),
+          } satisfies EllipseProps, undefined, takeComment()),
         );
         break;
       }
@@ -776,7 +807,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             thickness: filled ? 3 : t,
             filled,
             color,
-          } satisfies EllipseProps),
+          } satisfies EllipseProps, undefined, takeComment()),
         );
         break;
       }
@@ -804,6 +835,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         // We can't access printer storage from the browser, so skip with a
         // descriptive message that helps the user understand what happened.
         skipped.push(`^IM${rest}`);
+        browserLimit.push(`^IM${rest}`);
         break;
       }
 
@@ -813,15 +845,34 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         // Stores a graphic on the printer. Not relevant for label design
         // but should not pollute unknown-command warnings.
         skipped.push(`~DG${rest}`);
+        browserLimit.push(`~DG${rest}`);
         break;
       }
 
       // ── Ignored / structural ──────────────────────────────────────
+      // These commands carry no canvas-design information and should be
+      // silently discarded so they do not pollute importReport.unknown.
       case 'XA':
       case 'XZ':
-      case 'CI': // character set encoding
+      case 'FX': // comment — store for attachment to the next field object
+        pendingComment = rest.trim() || undefined;
+        break;
+
+      case 'CI': // character set encoding (^CI28 = UTF-8 is the browser default)
       case 'MT': // media type
-      case 'FX': // comment (ignored until next ^FS)
+      case 'MN': // media handling / notch tracking
+      case 'JA': // applicator / configuration recall
+      case 'JM': // darkness / print settings
+      case 'JC': // calibrate
+      case 'JD': // disable head-cleaning
+      case 'JE': // enable head-cleaning
+      case 'JI': // initialize printer
+      case 'JR': // restore factory defaults
+      case 'JS': // change darkness
+      case 'JU': // update firmware
+      case 'PR': // print rate / speed
+      case 'PM': // part of message
+      case 'PP': // presentati on position
         break;
 
       default: {
@@ -832,6 +883,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           textRot = (rest[0] as TextProps['rotation']) ?? fwRotation;
           textH = int(p[1]) || cfHeight || 30;
           textW = int(p[2]) || cfWidth || 0;
+          partialCmds.add('^A@');
           break;
         }
         // ^A{font}{rotation},{height},{width}  — general font command (A-Z, 0-9)
@@ -840,6 +892,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           textRot = (rest[0] as TextProps['rotation']) ?? fwRotation;
           textH = int(p[1], cfHeight || 30);
           textW = int(p[2], cfWidth || 0);
+          partialCmds.add(`^${cmd}`);
           break;
         }
         // ^TB{rotation},{width},{height} — text block (alternative to ^A + ^FB)
@@ -858,10 +911,23 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           break;
         }
         // Record unknown commands (excluding pure whitespace tokens)
-        if (rest.trim() || cmd.trim()) skipped.push(`^${cmd}${rest}`);
+        if (rest.trim() || cmd.trim()) {
+          const token = `^${cmd}${rest}`;
+          skipped.push(token);
+          unknown.push(token);
+        }
       }
     }
   }
 
-  return { labelConfig, objects, skipped };
+  return {
+    labelConfig,
+    objects,
+    skipped,
+    importReport: {
+      partial: [...partialCmds],
+      browserLimit,
+      unknown,
+    },
+  };
 }

@@ -30,6 +30,7 @@ const fi = {
     positionSection: 'Sijainti',
     x: 'X',
     y: 'Y',
+    comment: 'Kommentti',
   },
 
   label: {

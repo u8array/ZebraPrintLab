@@ -30,6 +30,7 @@ const ro = {
     positionSection: 'Poziție',
     x: 'X',
     y: 'Y',
+    comment: 'Comentariu',
   },
 
   label: {

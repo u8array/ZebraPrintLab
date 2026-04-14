@@ -30,6 +30,7 @@ const hu = {
     positionSection: 'Pozíció',
     x: 'X',
     y: 'Y',
+    comment: 'Megjegyzés',
   },
 
   label: {

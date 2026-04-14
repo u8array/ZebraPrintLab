@@ -30,6 +30,7 @@ const ar = {
     positionSection: 'الموضع (مم)',
     x: 'X',
     y: 'Y',
+    comment: 'تعليق',
   },
 
   label: {

@@ -30,6 +30,7 @@ const nl = {
     positionSection: 'Positie',
     x: 'X',
     y: 'Y',
+    comment: 'Opmerking',
   },
 
   label: {

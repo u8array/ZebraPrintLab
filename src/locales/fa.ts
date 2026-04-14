@@ -30,6 +30,7 @@ const fa = {
     positionSection: 'موقعیت (میلی‌متر)',
     x: 'X',
     y: 'Y',
+    comment: 'توضیح',
   },
 
   label: {

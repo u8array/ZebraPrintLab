@@ -30,6 +30,7 @@ const sk = {
     positionSection: 'Pozícia',
     x: 'X',
     y: 'Y',
+    comment: 'Komentár',
   },
 
   label: {

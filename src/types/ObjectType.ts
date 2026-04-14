@@ -20,6 +20,9 @@ export interface LabelObjectBase {
    *  'FT' = field typeset (baseline), 'FO' = field origin (top-left).
    *  Defaults to 'FO' for new objects. */
   positionType?: 'FO' | 'FT';
+  /** Optional human-readable annotation emitted as ^FX before this field in the ZPL output.
+   *  Carries no print output; for documentation purposes only. */
+  comment?: string;
 }
 
 export type ObjectGroup = 'text' | 'code' | 'shape';
