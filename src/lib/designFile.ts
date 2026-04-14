@@ -4,7 +4,7 @@ import type { LabelObject } from "../registry";
 import { ok, err, type Result } from "./result";
 
 export type DesignFileError = "parse_error" | "invalid_schema";
-export type DesignFile = { label: LabelConfig; objects: LabelObject[] };
+export interface DesignFile { label: LabelConfig; objects: LabelObject[] }
 
 const designFileSchema = z.object({
   label: labelConfigSchema,
