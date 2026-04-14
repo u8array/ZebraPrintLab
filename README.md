@@ -1,12 +1,12 @@
 # ZPL Label Designer
 
-Visual label designer for Zebra printers — runs in the browser, no software to install.
+Visual label designer for Zebra printers. Runs in the browser, no software to install.
 
 Design your label on the canvas, then copy or export the ZPL output and send it to your printer. No knowledge of ZPL required.
 
 **[Try it](https://u8array.github.io/zpl_label_designer/)** · [Report an issue](https://github.com/u8array/zpl_label_designer/issues)
 
-> Early development. Core editing works, ZPL import is incomplete.
+> **Disclaimer:** This project is not affiliated with, endorsed by, or associated with Zebra Technologies Corp. ZPL (Zebra Programming Language) is a trademark of Zebra Technologies. This is an independent open-source tool.
 
 ---
 
@@ -20,7 +20,7 @@ Design your label on the canvas, then copy or export the ZPL output and send it 
 
 The label dimensions and print resolution are shown in the header (`width × height mm · dpmm`). Click on them to adjust.
 
-The print resolution (dpmm = dots per millimeter) must match your printer. Common values: 6 dpmm (152 dpi), 8 dpmm (203 dpi), 12 dpmm (300 dpi), 24 dpmm (600 dpi). Check your printer's manual if unsure — 8 dpmm is the most common.
+The print resolution (dpmm = dots per millimeter) must match your printer. Common values: 6 dpmm (152 dpi), 8 dpmm (203 dpi), 12 dpmm (300 dpi), 24 dpmm (600 dpi). Check your printer's manual if unsure; 8 dpmm is the most common.
 
 ### 2. Add objects
 
@@ -36,9 +36,9 @@ Multiple objects can be selected by holding Shift or drawing a lasso. Position a
 
 ### 4. Print or export
 
-The **ZPL output** panel at the bottom shows the label as ZPL code — the language Zebra printers understand. It updates in real time as you edit.
+The **ZPL output** panel at the bottom shows the label as ZPL code (the language Zebra printers understand). It updates in real time as you edit.
 
-- **Copy**: copies the ZPL to the clipboard — paste it into your printer software or send it directly to the printer
+- **Copy**: copies the ZPL to the clipboard; paste it into your printer software or send it directly to the printer
 - **Preview**: fetches a rendered preview image from [Labelary](https://labelary.com/)
 - **Export**: downloads a `.zpl` file (File menu)
 - **Print**: opens the Labelary preview and triggers the browser print dialog
@@ -57,7 +57,7 @@ The parser covers the most common ZPL II commands:
 - **Print settings:** `^PQ`, `^MM`, `^LS`
 - **Modifiers:** `^LR` (label reverse), `^FR` (field reverse)
 
-Unrecognised commands are skipped and listed in the import report.
+Unrecognized commands are skipped and listed in the import report.
 
 ### Keyboard shortcuts
 
@@ -75,7 +75,7 @@ Unrecognised commands are skipped and listed in the import report.
 
 ### Saving and loading
 
-Designs can be saved as `.json` (File → Save Design) and reopened later. This preserves all object properties exactly. The `.zpl` export is for sending to a printer and cannot be fully round-tripped back to an editable design.
+Designs can be saved as `.json` (File → Save Design) and reopened later. This preserves all object properties exactly. The `.zpl` export is for sending to a printer and cannot be reimported as an editable design.
 
 ---
 
@@ -95,7 +95,7 @@ Designs can be saved as `.json` (File → Save Design) and reopened later. This 
 ## Limitations
 
 - ZPL import covers the most common commands but not the full ZPL II command set. Labels using printer-stored images, downloaded graphics, or printer-specific extensions may not import completely.
-- Font rendering on the canvas is an approximation. The preview on canvas may look slightly different from what the printer produces. Use the Labelary preview for accurate output.
+- Font rendering on the canvas is an approximation of what the printer produces. Use the Labelary preview for accurate output.
 - Label preview requires a connection to `api.labelary.com`.
 - No support for multi-label documents (`^XA...^XZ` repeated).
 
@@ -135,7 +135,7 @@ The editor stores the label as a list of objects in Zustand. On every change, ZP
 
 Issues and pull requests are welcome.
 
-If you find a ZPL file that imports incorrectly, attaching the `.zpl` as an issue attachment is the most useful thing you can do.
+If you find a ZPL file that imports incorrectly, attaching the `.zpl` file to the issue is the most useful thing you can do.
 
 ---
 
