@@ -1,13 +1,14 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useLabelStore } from "../store/labelStore";
 import { triggerDownload } from "../lib/triggerDownload";
-import type { LabelConfig } from "../types/ObjectType";
-import type { LabelObject } from "../registry";
+import { parseDesignFile, serializeDesign, designFileErrors } from "../lib/designFile";
+import { readFileAsText } from "../lib/readFile";
 
 export function useDesignFileActions() {
   const label = useLabelStore((s) => s.label);
   const objects = useLabelStore((s) => s.objects);
   const loadDesign = useLabelStore((s) => s.loadDesign);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const loadInputRef = useRef<HTMLInputElement>(null);
 
   const handleNew = () => {
@@ -15,30 +16,39 @@ export function useDesignFileActions() {
   };
 
   const handleSave = () => {
-    const data = JSON.stringify({ label, objects }, null, 2);
+    const data = serializeDesign(label, objects);
     triggerDownload(new Blob([data], { type: "application/json" }), "label.json");
   };
 
-  const handleLoad = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLoad = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const json = JSON.parse(ev.target?.result as string) as {
-          label: LabelConfig;
-          objects: LabelObject[];
-        };
-        if (json.label && Array.isArray(json.objects)) {
-          loadDesign(json.label, json.objects);
-        }
-      } catch {
-        // invalid file — silently ignore
-      }
-    };
-    reader.readAsText(file);
     e.target.value = "";
+    if (!file) return;
+
+    let text: string;
+    try {
+      text = await readFileAsText(file);
+    } catch {
+      setLoadError(designFileErrors.parse_error);
+      return;
+    }
+    const result = parseDesignFile(text);
+
+    if (!result.ok) {
+      setLoadError(designFileErrors[result.error]);
+      return;
+    }
+
+    setLoadError(null);
+    loadDesign(result.value.label, result.value.objects);
   };
 
-  return { handleNew, handleSave, handleLoad, loadInputRef };
+  return {
+    handleNew,
+    handleSave,
+    handleLoad,
+    loadInputRef,
+    loadError,
+    dismissLoadError: () => setLoadError(null),
+  };
 }

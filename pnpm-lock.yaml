@@ -26,6 +26,9 @@ importers:
       react-konva:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)(konva@10.2.3)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
       zundo:
         specifier: ^2.3.0
         version: 2.3.0(zustand@5.0.12(@types/react@19.2.14)(react@19.2.5))

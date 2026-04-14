@@ -1,29 +1,31 @@
 import type React from 'react';
+import { z } from 'zod';
 
-export interface LabelConfig {
-  widthMm: number;
-  heightMm: number;
-  dpmm: number;
-  printQuantity?: number;
-  mediaMode?: 'T' | 'V' | 'D' | 'K';
-  labelShift?: number;
-}
+export const labelConfigSchema = z.object({
+  widthMm: z.number(),
+  heightMm: z.number(),
+  dpmm: z.number(),
+  printQuantity: z.number().optional(),
+  mediaMode: z.enum(['T', 'V', 'D', 'K']).optional(),
+  labelShift: z.number().optional(),
+});
+
+export type LabelConfig = z.infer<typeof labelConfigSchema>;
 
 /** Common fields shared by every label object, without the typed `props`. */
-export interface LabelObjectBase {
-  id: string;
-  type: string;
-  x: number;
-  y: number;
-  rotation: number;
-  /** How this object's x/y were originally positioned.
-   *  'FT' = field typeset (baseline), 'FO' = field origin (top-left).
-   *  Defaults to 'FO' for new objects. */
-  positionType?: 'FO' | 'FT';
-  /** Optional human-readable annotation emitted as ^FX before this field in the ZPL output.
-   *  Carries no print output; for documentation purposes only. */
-  comment?: string;
-}
+export const labelObjectBaseSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  x: z.number(),
+  y: z.number(),
+  rotation: z.number(),
+  /** 'FT' = field typeset (baseline), 'FO' = field origin (top-left). Defaults to 'FO'. */
+  positionType: z.enum(['FO', 'FT']).optional(),
+  /** Emitted as ^FX before this field in ZPL output. Carries no print output. */
+  comment: z.string().optional(),
+});
+
+export type LabelObjectBase = z.infer<typeof labelObjectBaseSchema>;
 
 export type ObjectGroup = 'text' | 'code' | 'shape';
 
