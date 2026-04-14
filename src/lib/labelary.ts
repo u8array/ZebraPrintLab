@@ -3,9 +3,11 @@ import type { LabelConfig } from '../types/ObjectType';
 const TIMEOUT_MS = 10_000;
 
 export class LabelaryError extends Error {
-  constructor(public readonly kind: 'api' | 'timeout' | 'network', message: string) {
+  readonly kind: 'api' | 'timeout' | 'network';
+  constructor(kind: 'api' | 'timeout' | 'network', message: string) {
     super(message);
     this.name = 'LabelaryError';
+    this.kind = kind;
   }
 }
 
