@@ -37,7 +37,7 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
   industrial2of5: "industrial2of5",
   standard2of5: "code2of5",
   codabar: "rationalizedCodabar",
-  logmars: "logmars",
+  logmars: "code39",
   msi: "msi",
   plessey: "plessey",
   gs1databar: "databaromni",
@@ -95,11 +95,8 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
     case "industrial2of5":
     case "standard2of5":
     case "codabar":
-    case "logmars":
     case "msi":
     case "plessey":
-    case "gs1databar":
-    case "planet":
     case "postal": {
       const p = obj.props;
       return {
@@ -107,6 +104,43 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
         text: p.content || "0",
         scale: BWIP_SCALE,
         height: 10,
+      };
+    }
+    case "logmars": {
+      // LOGMARS is Code 39 with mandatory MOD 43 check digit
+      const p = obj.props;
+      return {
+        bcid,
+        text: p.content || "0",
+        scale: BWIP_SCALE,
+        height: 10,
+        includecheck: true,
+      };
+    }
+    case "gs1databar": {
+      // bwip-js requires (01) AI prefix for GS1 DataBar
+      const p = obj.props;
+      const raw = (p.content || "0").replace(/\D/g, "");
+      const padded = raw.padStart(13, "0").slice(0, 14);
+      return {
+        bcid,
+        text: `(01)${padded}`,
+        scale: BWIP_SCALE,
+        height: 10,
+      };
+    }
+    case "planet": {
+      // USPS PLANET requires 11 or 13 digits (excl. check digit)
+      const p = obj.props;
+      let raw = (p.content || "0").replace(/\D/g, "");
+      if (raw.length < 11) raw = raw.padStart(11, "0");
+      else if (raw.length === 12) raw = raw.padStart(13, "0");
+      return {
+        bcid,
+        text: raw,
+        scale: BWIP_SCALE,
+        height: 10,
+        includecheck: true,
       };
     }
     case "pdf417": {

@@ -4,7 +4,7 @@ export type { Barcode1DProps as PlanetProps } from "./barcode1d";
 export const planet = createBarcode1D({
   label: "Planet Code",
   icon: "✉P",
-  defaultContent: "1234567890",
+  defaultContent: "12345678901",
   hasCheckDigit: false,
   localeKey: "planet",
   zplCommand: (p) => {
