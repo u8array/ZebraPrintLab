@@ -1,10 +1,13 @@
-# ZPL Label Designer
+# ZebraPrintLab
+
+[![Deploy](https://github.com/u8array/ZebraPrintLab/actions/workflows/deploy.yml/badge.svg)](https://github.com/u8array/ZebraPrintLab/actions/workflows/deploy.yml)
+[![PR checks](https://github.com/u8array/ZebraPrintLab/actions/workflows/pr.yml/badge.svg)](https://github.com/u8array/ZebraPrintLab/actions/workflows/pr.yml)
 
 Browser-based label authoring tool for Zebra printers. No software to install.
 
 Design labels visually and export the ZPL output to your printer. No knowledge of ZPL required.
 
-**[Try it](https://u8array.github.io/zpl_label_designer/)** · [Report an issue](https://github.com/u8array/zpl_label_designer/issues)
+**[Try it](https://u8array.github.io/ZebraPrintLab/)** · [Report an issue](https://github.com/u8array/ZebraPrintLab/issues)
 
 > **Disclaimer:** This project is not affiliated with, endorsed by, or associated with Zebra Technologies Corp. ZPL (Zebra Programming Language) is a trademark of Zebra Technologies. This is an independent open-source tool.
 

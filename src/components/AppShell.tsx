@@ -120,7 +120,7 @@ export function AppShell() {
           </DropdownMenu>
 
           <a
-            href="https://github.com/u8array/zpl_label_designer"
+            href="https://github.com/u8array/ZebraPrintLab"
             target="_blank"
             rel="noopener noreferrer"
             title="GitHub"
