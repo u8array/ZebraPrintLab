@@ -201,7 +201,7 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
         text: p.content || " ",
         scale: BWIP_SCALE,
         rowheight: Math.max(
-          1,
+          8,
           Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
         ),
       };
