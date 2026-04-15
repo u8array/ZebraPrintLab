@@ -1,13 +1,23 @@
-import { useState, useEffect } from 'react';
-import { Circle, Ellipse, Group, Image as KImage, Line as KLine, Rect, Text } from 'react-konva';
-import { BarcodeObject } from './BarcodeObject';
-import type Konva from 'konva';
-import type { LabelObject } from '../../registry';
-import type { LabelObjectBase } from '../../types/ObjectType';
-import { dotsToPx, pxToDots } from '../../lib/coordinates';
-import { getImage } from '../../lib/imageCache';
+import { useState, useEffect } from "react";
+import {
+  Circle,
+  Ellipse,
+  Group,
+  Image as KImage,
+  Line as KLine,
+  Rect,
+  Text,
+} from "react-konva";
+import { BarcodeObject } from "./BarcodeObject";
+import type Konva from "konva";
+import type { LabelObject } from "../../registry";
+import type { LabelObjectBase } from "../../types/ObjectType";
+import { dotsToPx, pxToDots } from "../../lib/coordinates";
+import { getImage } from "../../lib/imageCache";
 
-type ObjectChanges = Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object };
+type ObjectChanges = Partial<Omit<LabelObjectBase, "id" | "type">> & {
+  props?: object;
+};
 
 interface Props {
   obj: LabelObject;
@@ -21,11 +31,21 @@ interface Props {
   snap: (dots: number) => number;
 }
 
-type LineLabelObject = Extract<LabelObject, { type: 'line' }>;
+type LineLabelObject = Extract<LabelObject, { type: "line" }>;
 
 // Separate component so hooks (useState) can be used for live endpoint drag
 // Called only after obj.type === 'line' guard in KonvaObject, so the cast is safe.
-function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSelect, onChange, snap }: Props) {
+function LineObject({
+  obj: obj_,
+  scale,
+  dpmm,
+  offsetX,
+  offsetY,
+  isSelected,
+  onSelect,
+  onChange,
+  snap,
+}: Props) {
   const obj = obj_ as LineLabelObject;
   const p = obj.props;
   // All positions are absolute stage coordinates — the Group has no offset.
@@ -38,7 +58,12 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
   const y2 = y1 + lenPx * Math.sin(rad);
 
   // ^LR uses difference blend with white: white over white bg = black, white over black text = white
-  const strokeColor = !isSelected && p.reverse ? '#ffffff' : (p.color === 'B' ? '#000000' : '#cccccc');
+  const strokeColor =
+    !isSelected && p.reverse
+      ? "#ffffff"
+      : p.color === "B"
+        ? "#000000"
+        : "#cccccc";
   const lineStrokeWidth = Math.max(dotsToPx(p.thickness, scale, dpmm), 1);
 
   // Live positions while handles are being dragged (snapped preview)
@@ -46,26 +71,31 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
   const [livePt2, setLivePt2] = useState<{ x: number; y: number } | null>(null);
 
   // Live drag delta while the whole line is being dragged
-  const [dragDelta, setDragDelta] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [dragDelta, setDragDelta] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
   const dx = dragDelta.x;
   const dy = dragDelta.y;
 
   // Visual endpoints: handle-drag overrides whole-line delta
-  const dispX1 = livePt1?.x ?? (x1 + dx);
-  const dispY1 = livePt1?.y ?? (y1 + dy);
-  const dispX2 = livePt2?.x ?? (x2 + dx);
-  const dispY2 = livePt2?.y ?? (y2 + dy);
+  const dispX1 = livePt1?.x ?? x1 + dx;
+  const dispY1 = livePt1?.y ?? y1 + dy;
+  const dispX2 = livePt2?.x ?? x2 + dx;
+  const dispY2 = livePt2?.y ?? y2 + dy;
 
   return (
     <Group>
       {/* Visible line — tracks both whole-drag and handle-drag live */}
       <KLine
         points={[dispX1, dispY1, dispX2, dispY2]}
-        stroke={isSelected ? '#6366f1' : strokeColor}
+        stroke={isSelected ? "#6366f1" : strokeColor}
         strokeWidth={lineStrokeWidth}
         lineCap="square"
         listening={false}
-        globalCompositeOperation={!isSelected && p.reverse ? 'difference' : 'source-over'}
+        globalCompositeOperation={
+          !isSelected && p.reverse ? "difference" : "source-over"
+        }
       />
       {/* Wide transparent hit area — handles click-to-select and whole-line drag.
           id is here (not on the Group) so the Stage snap handler can find this node
@@ -76,7 +106,9 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
         stroke="transparent"
         strokeWidth={Math.max(lineStrokeWidth, 14)}
         draggable
-        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onClick={(e) =>
+          onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)
+        }
         onTap={() => onSelect(false)}
         onDragMove={(e) => {
           setDragDelta({ x: e.target.x(), y: e.target.y() });
@@ -96,16 +128,28 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
         <>
           {/* Start point — dragging moves the origin; end point stays fixed */}
           <Circle
-            x={livePt1?.x ?? (x1 + dx)}
-            y={livePt1?.y ?? (y1 + dy)}
+            x={livePt1?.x ?? x1 + dx}
+            y={livePt1?.y ?? y1 + dy}
             radius={6}
             fill="#6366f1"
             stroke="white"
             strokeWidth={1.5}
             draggable
             onDragMove={(e) => {
-              const snappedX = offsetX + dotsToPx(snap(pxToDots(e.target.x() - offsetX, scale, dpmm)), scale, dpmm);
-              const snappedY = offsetY + dotsToPx(snap(pxToDots(e.target.y() - offsetY, scale, dpmm)), scale, dpmm);
+              const snappedX =
+                offsetX +
+                dotsToPx(
+                  snap(pxToDots(e.target.x() - offsetX, scale, dpmm)),
+                  scale,
+                  dpmm,
+                );
+              const snappedY =
+                offsetY +
+                dotsToPx(
+                  snap(pxToDots(e.target.y() - offsetY, scale, dpmm)),
+                  scale,
+                  dpmm,
+                );
               e.target.position({ x: snappedX, y: snappedY });
               setLivePt1({ x: snappedX, y: snappedY });
             }}
@@ -120,26 +164,43 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
               const dxDots = endDotX - newStartDotX;
               const dyDots = endDotY - newStartDotY;
               const newLen = Math.sqrt(dxDots * dxDots + dyDots * dyDots);
-              const newAngle = Math.round((Math.atan2(dyDots, dxDots) * 180) / Math.PI);
+              const newAngle = Math.round(
+                (Math.atan2(dyDots, dxDots) * 180) / Math.PI,
+              );
               onChange({
                 x: newStartDotX,
                 y: newStartDotY,
-                props: { length: Math.max(1, Math.round(newLen)), angle: newAngle },
+                props: {
+                  length: Math.max(1, Math.round(newLen)),
+                  angle: newAngle,
+                },
               });
             }}
           />
           {/* End point — dragging changes length & angle */}
           <Circle
-            x={livePt2?.x ?? (x2 + dx)}
-            y={livePt2?.y ?? (y2 + dy)}
+            x={livePt2?.x ?? x2 + dx}
+            y={livePt2?.y ?? y2 + dy}
             radius={6}
             fill="#6366f1"
             stroke="white"
             strokeWidth={1.5}
             draggable
             onDragMove={(e) => {
-              const snappedX = offsetX + dotsToPx(snap(pxToDots(e.target.x() - offsetX, scale, dpmm)), scale, dpmm);
-              const snappedY = offsetY + dotsToPx(snap(pxToDots(e.target.y() - offsetY, scale, dpmm)), scale, dpmm);
+              const snappedX =
+                offsetX +
+                dotsToPx(
+                  snap(pxToDots(e.target.x() - offsetX, scale, dpmm)),
+                  scale,
+                  dpmm,
+                );
+              const snappedY =
+                offsetY +
+                dotsToPx(
+                  snap(pxToDots(e.target.y() - offsetY, scale, dpmm)),
+                  scale,
+                  dpmm,
+                );
               e.target.position({ x: snappedX, y: snappedY });
               setLivePt2({ x: snappedX, y: snappedY });
             }}
@@ -150,8 +211,15 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
               const dxDots = pxToDots(snapped.x - offsetX, scale, dpmm) - obj.x;
               const dyDots = pxToDots(snapped.y - offsetY, scale, dpmm) - obj.y;
               const newLen = Math.sqrt(dxDots * dxDots + dyDots * dyDots);
-              const newAngle = Math.round((Math.atan2(dyDots, dxDots) * 180) / Math.PI);
-              onChange({ props: { length: Math.max(1, Math.round(newLen)), angle: newAngle } });
+              const newAngle = Math.round(
+                (Math.atan2(dyDots, dxDots) * 180) / Math.PI,
+              );
+              onChange({
+                props: {
+                  length: Math.max(1, Math.round(newLen)),
+                  angle: newAngle,
+                },
+              });
             }}
           />
         </>
@@ -161,8 +229,17 @@ function LineObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSe
 }
 
 // Separate component so hooks (useState/useEffect) can be used without violating rules-of-hooks.
-function ImageObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onSelect, onChange }: Props) {
-  const obj = obj_ as Extract<LabelObject, { type: 'image' }>;
+function ImageObject({
+  obj: obj_,
+  scale,
+  dpmm,
+  offsetX,
+  offsetY,
+  isSelected,
+  onSelect,
+  onChange,
+}: Props) {
+  const obj = obj_ as Extract<LabelObject, { type: "image" }>;
   const p = obj.props;
   const cached = getImage(p.imageId);
   const w = dotsToPx(p.widthDots, scale, dpmm);
@@ -179,12 +256,19 @@ function ImageObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onS
     let active = true;
     const img = new window.Image();
     img.src = cached.dataUrl;
-    img.onload = () => { if (active) setHtmlImg(img); };
-    return () => { active = false; };
-  }, [cached]);
+    img.onload = () => {
+      if (active) setHtmlImg(img);
+    };
+    return () => {
+      active = false;
+    };
+  }, [cached?.dataUrl, cached]);
 
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
-    onChange({ x: pxToDots(e.target.x() - offsetX, scale, dpmm), y: pxToDots(e.target.y() - offsetY, scale, dpmm) });
+    onChange({
+      x: pxToDots(e.target.x() - offsetX, scale, dpmm),
+      y: pxToDots(e.target.y() - offsetY, scale, dpmm),
+    });
   };
 
   if (htmlImg && cached) {
@@ -196,10 +280,12 @@ function ImageObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onS
         image={htmlImg}
         width={w}
         height={h}
-        stroke={isSelected ? '#6366f1' : undefined}
+        stroke={isSelected ? "#6366f1" : undefined}
         strokeWidth={isSelected ? 2 : 0}
         draggable
-        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onClick={(e) =>
+          onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)
+        }
         onTap={() => onSelect(false)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragMove}
@@ -213,7 +299,9 @@ function ImageObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onS
       x={x}
       y={y}
       draggable
-      onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+      onClick={(e) =>
+        onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)
+      }
       onTap={() => onSelect(false)}
       onDragMove={handleDragMove}
       onDragEnd={handleDragMove}
@@ -222,7 +310,7 @@ function ImageObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onS
         width={w}
         height={h}
         fill="#f9fafb"
-        stroke={isSelected ? '#6366f1' : '#9ca3af'}
+        stroke={isSelected ? "#6366f1" : "#9ca3af"}
         strokeWidth={isSelected ? 2 : 1}
         dash={[4, 2]}
       />
@@ -238,13 +326,35 @@ function ImageObject({ obj: obj_, scale, dpmm, offsetX, offsetY, isSelected, onS
 }
 
 const BARCODE_TYPES = new Set([
-  'code128', 'code39', 'ean13', 'ean8', 'upca', 'upce',
-  'interleaved2of5', 'code93', 'pdf417', 'qrcode', 'datamatrix',
+  "code128",
+  "code39",
+  "ean13",
+  "ean8",
+  "upca",
+  "upce",
+  "interleaved2of5",
+  "code93",
+  "pdf417",
+  "qrcode",
+  "datamatrix",
+  "code11",
+  "industrial2of5",
+  "standard2of5",
+  "codabar",
+  "logmars",
+  "msi",
+  "plessey",
+  "gs1databar",
+  "planet",
+  "postal",
+  "aztec",
+  "micropdf417",
+  "codablock",
 ]);
 
 export function KonvaObject(props_: Props) {
-  if (props_.obj.type === 'line') return <LineObject {...props_} />;
-  if (props_.obj.type === 'image') return <ImageObject {...props_} />;
+  if (props_.obj.type === "line") return <LineObject {...props_} />;
+  if (props_.obj.type === "image") return <ImageObject {...props_} />;
   if (BARCODE_TYPES.has(props_.obj.type)) return <BarcodeObject {...props_} />;
   return <KonvaObjectInner {...props_} />;
 }
@@ -265,8 +375,8 @@ function KonvaObjectInner({
   // We need to convert FT→FO for canvas rendering only.
   let displayX = obj.x;
   let displayY = obj.y;
-  if (obj.positionType === 'FT') {
-    if (obj.type === 'text' || obj.type === 'serial') {
+  if (obj.positionType === "FT") {
+    if (obj.type === "text" || obj.type === "serial") {
       const p = obj.props as { fontHeight: number; rotation: string };
       // ^FT places the origin at the baseline of the first character.
       // The Konva anchor point after rotation sits at a different corner
@@ -278,22 +388,34 @@ function KonvaObjectInner({
       // For R/I/B the anchor is at the far end of the text, so we must use the actual
       // Konva-rendered font height (fontHeight / 1.3) — not the raw ZPL fontHeight.
       const renderedH = p.fontHeight / 1.3;
-      if (p.rotation === 'N') { displayY -= p.fontHeight; }
-      else if (p.rotation === 'R') { displayX += renderedH; }
-      else if (p.rotation === 'I') { displayY += renderedH; }
-      else if (p.rotation === 'B') { displayX -= renderedH; }
-    } else if (obj.type === 'code128' || obj.type === 'code39' || obj.type === 'ean13'
-      || obj.type === 'upca' || obj.type === 'ean8' || obj.type === 'upce'
-      || obj.type === 'interleaved2of5' || obj.type === 'code93') {
+      if (p.rotation === "N") {
+        displayY -= p.fontHeight;
+      } else if (p.rotation === "R") {
+        displayX += renderedH;
+      } else if (p.rotation === "I") {
+        displayY += renderedH;
+      } else if (p.rotation === "B") {
+        displayX -= renderedH;
+      }
+    } else if (
+      obj.type === "code128" ||
+      obj.type === "code39" ||
+      obj.type === "ean13" ||
+      obj.type === "upca" ||
+      obj.type === "ean8" ||
+      obj.type === "upce" ||
+      obj.type === "interleaved2of5" ||
+      obj.type === "code93"
+    ) {
       const p = obj.props as { height: number };
       displayY -= p.height;
-    } else if (obj.type === 'pdf417') {
+    } else if (obj.type === "pdf417") {
       const p = obj.props as { rowHeight: number };
       displayY -= p.rowHeight * 10;
-    } else if (obj.type === 'qrcode') {
+    } else if (obj.type === "qrcode") {
       const p = obj.props as { magnification: number };
       displayY -= p.magnification * 25;
-    } else if (obj.type === 'datamatrix') {
+    } else if (obj.type === "datamatrix") {
       const p = obj.props as { dimension: number };
       displayY -= p.dimension * 20;
     }
@@ -301,12 +423,16 @@ function KonvaObjectInner({
 
   // Konva rotates text around its top-left corner, but ZPL's ^FO anchor
   // shifts with rotation. 15 dots is an empirically determined fixed offset.
-  if (obj.type === 'text' || obj.type === 'serial') {
+  if (obj.type === "text" || obj.type === "serial") {
     const p = obj.props as { fontHeight: number; rotation: string };
     const ROTATION_OFFSET = 15; // dots — empirical canvas/ZPL alignment correction
-    if (p.rotation === 'I') { displayY -= ROTATION_OFFSET; }
-    else if (p.rotation === 'R') { displayX -= ROTATION_OFFSET; }
-    else if (p.rotation === 'B') { displayX += ROTATION_OFFSET; }
+    if (p.rotation === "I") {
+      displayY -= ROTATION_OFFSET;
+    } else if (p.rotation === "R") {
+      displayX -= ROTATION_OFFSET;
+    } else if (p.rotation === "B") {
+      displayX += ROTATION_OFFSET;
+    }
   }
 
   const x = offsetX + dotsToPx(displayX, scale, dpmm);
@@ -314,8 +440,12 @@ function KonvaObjectInner({
 
   // Snap a stage-position to the nearest grid point, returns stage-position.
   const snapPos = (stageX: number, stageY: number) => ({
-    x: offsetX + dotsToPx(snap(pxToDots(stageX - offsetX, scale, dpmm)), scale, dpmm),
-    y: offsetY + dotsToPx(snap(pxToDots(stageY - offsetY, scale, dpmm)), scale, dpmm),
+    x:
+      offsetX +
+      dotsToPx(snap(pxToDots(stageX - offsetX, scale, dpmm)), scale, dpmm),
+    y:
+      offsetY +
+      dotsToPx(snap(pxToDots(stageY - offsetY, scale, dpmm)), scale, dpmm),
   });
 
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -329,11 +459,14 @@ function KonvaObjectInner({
     });
   };
 
-  if (obj.type === 'text') {
+  if (obj.type === "text") {
     const p = obj.props;
     const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 1.3, 6);
     const zplRotationDeg: Record<typeof p.rotation, number> = {
-      N: 0, R: 90, I: 180, B: 270,
+      N: 0,
+      R: 90,
+      I: 180,
+      B: 270,
     };
 
     if (p.reverse) {
@@ -346,7 +479,9 @@ function KonvaObjectInner({
           y={y}
           rotation={zplRotationDeg[p.rotation]}
           draggable
-          onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+          onClick={(e) =>
+            onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)
+          }
           onTap={() => onSelect(false)}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
@@ -355,7 +490,7 @@ function KonvaObjectInner({
             width={approxW}
             height={approxH}
             fill="#000000"
-            stroke={isSelected ? '#6366f1' : undefined}
+            stroke={isSelected ? "#6366f1" : undefined}
             strokeWidth={isSelected ? 1.5 : 0}
           />
           <Text
@@ -381,10 +516,12 @@ function KonvaObjectInner({
         fontStyle="bold"
         rotation={zplRotationDeg[p.rotation]}
         fill="#000000"
-        stroke={isSelected ? '#6366f1' : undefined}
+        stroke={isSelected ? "#6366f1" : undefined}
         strokeWidth={isSelected ? 1 : 0}
         draggable
-        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onClick={(e) =>
+          onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)
+        }
         onTap={() => onSelect(false)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
@@ -392,11 +529,14 @@ function KonvaObjectInner({
     );
   }
 
-  if (obj.type === 'serial') {
+  if (obj.type === "serial") {
     const p = obj.props;
     const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 1.3, 6);
     const zplRotationDeg: Record<typeof p.rotation, number> = {
-      N: 0, R: 90, I: 180, B: 270,
+      N: 0,
+      R: 90,
+      I: 180,
+      B: 270,
     };
     return (
       <Text
@@ -409,10 +549,12 @@ function KonvaObjectInner({
         fontStyle="bold"
         rotation={zplRotationDeg[p.rotation]}
         fill="#000000"
-        stroke={isSelected ? '#6366f1' : undefined}
+        stroke={isSelected ? "#6366f1" : undefined}
         strokeWidth={isSelected ? 1 : 0}
         draggable
-        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onClick={(e) =>
+          onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)
+        }
         onTap={() => onSelect(false)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
@@ -420,18 +562,29 @@ function KonvaObjectInner({
     );
   }
 
-  if (obj.type === 'box') {
+  if (obj.type === "box") {
     const p = obj.props;
     const w = dotsToPx(p.width, scale, dpmm);
     const h = dotsToPx(p.height, scale, dpmm);
     const strokeWidth = Math.max(dotsToPx(p.thickness, scale, dpmm), 0.5);
-    const cornerRadius = p.rounding * dotsToPx(Math.min(p.width, p.height) / 8, scale, dpmm);
+    const cornerRadius =
+      p.rounding * dotsToPx(Math.min(p.width, p.height) / 8, scale, dpmm);
 
     const useReverse = !isSelected && p.reverse;
-    const stroke = useReverse ? '#ffffff' : (p.color === 'B' ? '#000000' : '#cccccc');
+    const stroke = useReverse
+      ? "#ffffff"
+      : p.color === "B"
+        ? "#000000"
+        : "#cccccc";
     const fill = useReverse
-      ? (p.filled ? '#ffffff' : 'transparent')
-      : (p.filled ? (p.color === 'B' ? '#000000' : '#ffffff') : 'transparent');
+      ? p.filled
+        ? "#ffffff"
+        : "transparent"
+      : p.filled
+        ? p.color === "B"
+          ? "#000000"
+          : "#ffffff"
+        : "transparent";
     return (
       <Rect
         id={obj.id}
@@ -439,27 +592,35 @@ function KonvaObjectInner({
         y={y}
         width={w}
         height={h}
-        stroke={isSelected ? '#6366f1' : stroke}
+        stroke={isSelected ? "#6366f1" : stroke}
         strokeWidth={isSelected ? Math.max(strokeWidth, 1.5) : strokeWidth}
         fill={fill}
         cornerRadius={cornerRadius}
         draggable
-        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onClick={(e) =>
+          onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)
+        }
         onTap={() => onSelect(false)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
-        globalCompositeOperation={!isSelected && p.reverse ? 'difference' : 'source-over'}
+        globalCompositeOperation={
+          !isSelected && p.reverse ? "difference" : "source-over"
+        }
       />
     );
   }
 
-  if (obj.type === 'ellipse') {
+  if (obj.type === "ellipse") {
     const p = obj.props;
     const rx = dotsToPx(p.width, scale, dpmm) / 2;
     const ry = dotsToPx(p.height, scale, dpmm) / 2;
-    const stroke = p.color === 'B' ? '#000000' : '#cccccc';
+    const stroke = p.color === "B" ? "#000000" : "#cccccc";
     const strokeWidth = Math.max(dotsToPx(p.thickness, scale, dpmm), 0.5);
-    const fill = p.filled ? (p.color === 'B' ? '#000000' : '#ffffff') : 'transparent';
+    const fill = p.filled
+      ? p.color === "B"
+        ? "#000000"
+        : "#ffffff"
+      : "transparent";
     return (
       <Ellipse
         id={obj.id}
@@ -467,11 +628,13 @@ function KonvaObjectInner({
         y={y + ry}
         radiusX={rx}
         radiusY={ry}
-        stroke={isSelected ? '#6366f1' : stroke}
+        stroke={isSelected ? "#6366f1" : stroke}
         strokeWidth={isSelected ? Math.max(strokeWidth, 1.5) : strokeWidth}
         fill={fill}
         draggable
-        onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+        onClick={(e) =>
+          onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)
+        }
         onTap={() => onSelect(false)}
         onDragMove={(e) => {
           // Center-anchored: snap the top-left corner, then re-add radius
