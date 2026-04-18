@@ -72,7 +72,7 @@ export function AppShell() {
             onClick={() => selectObject(null)}
             className="text-accent font-semibold tracking-tight text-sm hover:opacity-75 transition-opacity"
           >
-            ZPL Designer
+            Zebra Print Lab
           </button>
           <span className="text-border-2 select-none">·</span>
           <span className="font-mono text-xs text-muted">
@@ -120,7 +120,7 @@ export function AppShell() {
           </DropdownMenu>
 
           <a
-            href="https://github.com/u8array/zpl_label_designer"
+            href="https://github.com/u8array/ZebraPrintLab"
             target="_blank"
             rel="noopener noreferrer"
             title="GitHub"

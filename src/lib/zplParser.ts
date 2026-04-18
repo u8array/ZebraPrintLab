@@ -13,6 +13,9 @@ import type { ImageProps } from '../registry/image';
 import type { Barcode1DProps } from '../registry/barcode1d';
 import type { Pdf417Props } from '../registry/pdf417';
 import type { SerialProps } from '../registry/serial';
+import type { AztecProps } from '../registry/aztec';
+import type { MicroPdf417Props } from '../registry/micropdf417';
+import type { CodablockProps } from '../registry/codablock';
 import { putImage } from './imageCache';
 
 /**
@@ -204,6 +207,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let lhX = 0;
   let lhY = 0;
 
+  // ^LT label top (vertical offset applied to all field positions)
+  let ltY = 0;
+
   // ^FH state (field hex indicator)
   let fhActive = false;
   let fhDelimiter = '_';
@@ -228,6 +234,16 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let pdfRowHeight = 10;
   let pdfSecurity = 0;
   let pdfColumns = 0;
+
+  // Aztec pending parameters
+  let aztecMag = 4;
+
+  // MicroPDF417 pending parameters
+  let mpdfRowHeight = 10;
+
+  // CODABLOCK pending parameters
+  let cbRowHeight = 10;
+  let cbSecurity: CodablockProps['securityLevel'] = 'Y';
 
   // ^SN / ^SF serialization state
   let snPending = false;
@@ -265,11 +281,11 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           break;
         }
         const textProps: TextProps = {
-            content: decoded,
-            fontHeight: textH,
-            fontWidth: textW,
-            rotation: textRot,
-            reverse: (lrActive || frActive) || undefined,
+          content: decoded,
+          fontHeight: textH,
+          fontWidth: textW,
+          rotation: textRot,
+          reverse: (lrActive || frActive) || undefined,
         };
         if (fbWidth > 0) {
           textProps.blockWidth = fbWidth;
@@ -344,6 +360,16 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       case 'upce':
       case 'interleaved2of5':
       case 'code93':
+      case 'code11':
+      case 'industrial2of5':
+      case 'standard2of5':
+      case 'codabar':
+      case 'logmars':
+      case 'msi':
+      case 'plessey':
+      case 'gs1databar':
+      case 'planet':
+      case 'postal':
         objects.push(
           makeObj(fieldType, x, y, {
             content,
@@ -363,6 +389,34 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             columns: pdfColumns,
             moduleWidth: byModuleWidth,
           } satisfies Pdf417Props, posType, comment),
+        );
+        break;
+      case 'aztec':
+        objects.push(
+          makeObj('aztec', x, y, {
+            content,
+            magnification: aztecMag,
+            ecLevel: 0,
+          } satisfies AztecProps, posType, comment),
+        );
+        break;
+      case 'micropdf417':
+        objects.push(
+          makeObj('micropdf417', x, y, {
+            content,
+            moduleWidth: byModuleWidth,
+            rowHeight: mpdfRowHeight,
+          } satisfies MicroPdf417Props, posType, comment),
+        );
+        break;
+      case 'codablock':
+        objects.push(
+          makeObj('codablock', x, y, {
+            content,
+            moduleWidth: byModuleWidth,
+            rowHeight: cbRowHeight,
+            securityLevel: cbSecurity,
+          } satisfies CodablockProps, posType, comment),
         );
         break;
     }
@@ -393,7 +447,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         flushField();
         frActive = false;
         x = int(p[0]) + lhX;
-        y = int(p[1]) + lhY;
+        y = int(p[1]) + lhY + ltY;
         // 3rd param is justification (0/1/2) — stored but not actively used
         positionIsFT = false;
         break;
@@ -402,7 +456,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         flushField();
         frActive = false;
         x = int(p[0]) + lhX;
-        y = int(p[1]) + lhY;
+        y = int(p[1]) + lhY + ltY;
         positionIsFT = true;
         break;
       }
@@ -543,6 +597,100 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         pdfColumns = int(p[3], 0);
         break;
       }
+      case 'B1': {
+        // ^B1N,{check},{height},{interp},N — Code 11
+        fieldType = 'code11';
+        bcCheck = (p[1] ?? 'N') === 'Y';
+        bcHeight = int(p[2], byHeight || 100);
+        bcInterp = (p[3] ?? 'Y') === 'Y';
+        break;
+      }
+      case 'BI': {
+        // ^BIN,{height},{interp},N — Industrial 2 of 5
+        fieldType = 'industrial2of5';
+        bcHeight = int(p[1], byHeight || 100);
+        bcInterp = (p[2] ?? 'Y') === 'Y';
+        break;
+      }
+      case 'BJ': {
+        // ^BJN,{height},{interp},N — Standard 2 of 5
+        fieldType = 'standard2of5';
+        bcHeight = int(p[1], byHeight || 100);
+        bcInterp = (p[2] ?? 'Y') === 'Y';
+        break;
+      }
+      case 'BK': {
+        // ^BKN,{check},{height},{interp},N — ANSI Codabar
+        fieldType = 'codabar';
+        bcCheck = (p[1] ?? 'N') === 'Y';
+        bcHeight = int(p[2], byHeight || 100);
+        bcInterp = (p[3] ?? 'Y') === 'Y';
+        break;
+      }
+      case 'BL': {
+        // ^BLN,{height},{interp} — LOGMARS
+        fieldType = 'logmars';
+        bcHeight = int(p[1], byHeight || 100);
+        bcInterp = (p[2] ?? 'N') === 'Y';
+        break;
+      }
+      case 'BM': {
+        // ^BMN,{height},{interp},N,{check} — MSI
+        fieldType = 'msi';
+        bcHeight = int(p[1], byHeight || 100);
+        bcInterp = (p[2] ?? 'Y') === 'Y';
+        bcCheck = (p[4] ?? 'N') === 'Y';
+        break;
+      }
+      case 'BP': {
+        // ^BPN,{check},{height},{interp},N — Plessey
+        fieldType = 'plessey';
+        bcCheck = (p[1] ?? 'N') === 'Y';
+        bcHeight = int(p[2], byHeight || 100);
+        bcInterp = (p[3] ?? 'Y') === 'Y';
+        break;
+      }
+      case 'BR': {
+        // ^BRN,{symbology},{magnification},{separator},{height},{segments} — GS1 Databar
+        fieldType = 'gs1databar';
+        bcHeight = int(p[4], byHeight || 100);
+        byModuleWidth = int(p[2], byModuleWidth);
+        break;
+      }
+      case 'B5': {
+        // ^B5N,{height},{interp},N — Planet Code
+        fieldType = 'planet';
+        bcHeight = int(p[1], byHeight || 100);
+        bcInterp = (p[2] ?? 'Y') === 'Y';
+        break;
+      }
+      case 'BZ': {
+        // ^BZN,{height},{interp},N — POSTAL / POSTNET
+        fieldType = 'postal';
+        bcHeight = int(p[1], byHeight || 100);
+        bcInterp = (p[2] ?? 'Y') === 'Y';
+        break;
+      }
+      case 'B0':
+      case 'BO': {
+        // ^B0N,{magnification},{ecic},{menuSymbol},{numberOfSymbols},{structuredID} — Aztec
+        fieldType = 'aztec';
+        aztecMag = int(p[1], 4);
+        break;
+      }
+      case 'BF': {
+        // ^BFN,{rowHeight} — MicroPDF417
+        fieldType = 'micropdf417';
+        mpdfRowHeight = int(p[1], 10);
+        break;
+      }
+      case 'BB': {
+        // ^BBN,{rowHeight},{security},{numCharsPerRow},{numRows},{mode} — CODABLOCK
+        fieldType = 'codablock';
+        cbRowHeight = int(p[1], 10);
+        cbSecurity = (p[2] ?? 'Y') === 'N' ? 'N' : 'Y';
+        break;
+      }
 
       // ── Field hex indicator ───────────────────────────────────────
       case 'FH': {
@@ -614,6 +762,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       case 'LH': {
         lhX = int(p[0], 0);
         lhY = int(p[1], 0);
+        break;
+      }
+
+      // ── Label top (vertical offset) ───────────────────────────────
+      case 'LT': {
+        ltY = int(rest, 0);
         break;
       }
 
@@ -829,6 +983,17 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         break;
       }
 
+      // ── Browser-limit: printer-specific features ─────────────────
+      case 'CW': // font identifier — assigns alias to printer-resident font
+      case 'FL': // font link — links fonts on printer storage
+      case 'HT': // head test — diagnostic for print head
+      case 'LF': // list fonts — queries printer for installed fonts
+      case 'GS': { // graphic symbol — references printer-internal symbols
+        skipped.push(`^${cmd}${rest}`);
+        browserLimit.push(`^${cmd}${rest}`);
+        break;
+      }
+
       // ── Image reference ───────────────────────────────────────────
       case 'IM': {
         // ^IM{device}:{name} — references an image stored on the printer.
@@ -859,6 +1024,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         break;
 
       case 'CI': // character set encoding (^CI28 = UTF-8 is the browser default)
+      case 'FN': // field number — variable data placeholder (template feature)
+      case 'FV': // field variable — supplies data for ^FN at print time
+      case 'FC': // field clock — inserts date/time (requires printer RTC)
+      case 'FE': // field concatenation — appends data to current field
+      case 'FM': // multiple field origin locations
+      case 'FP': // field parameter — per-character text direction
       case 'MT': // media type
       case 'MN': // media handling / notch tracking
       case 'JA': // applicator / configuration recall
