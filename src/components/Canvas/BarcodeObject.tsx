@@ -379,7 +379,8 @@ export function BarcodeObject({
     const { w, h } = getDisplaySize(obj, barcodeCanvas, scale, dpmm);
     const printInterp = !!(obj.props as { printInterpretation?: boolean })
       .printInterpretation;
-    const textFontSize = Math.max(dotsToPx(7, scale, dpmm), 6);
+    const textFontSize = Math.max(dotsToPx(15, scale, dpmm), 8);
+    const textGap = Math.max(dotsToPx(4, scale, dpmm), 2);
     const rawContent = (obj.props as { content?: string }).content ?? "";
 
     // ── EAN/UPC: manually-positioned digit labels ─────────────────────────
@@ -426,7 +427,7 @@ export function BarcodeObject({
         const xRight13 = (qL13 + 50) * modulePx13; // +3+42+5
         const halfW13 = 42 * modulePx13;
 
-        const textY = Math.max(h, 1) + 4;
+        const textY = Math.max(h, 1) + textGap;
         clipLeft = ldW;
         textNodes = [
           <Text
@@ -483,7 +484,7 @@ export function BarcodeObject({
         const xRight8 = (qL8 + 36) * modulePx8; // +3+28+5
         const halfW8 = 28 * modulePx8;
 
-        const textY = Math.max(h, 1) + 4;
+        const textY = Math.max(h, 1) + textGap;
         // EAN-8: no leading/trailing digit outside image
         textNodes = [
           <Text
@@ -531,7 +532,7 @@ export function BarcodeObject({
         const half = halfData * pxPerBwipPx;
         const cW = centreW * pxPerBwipPx;
 
-        const textY = Math.max(h, 1) + 4;
+        const textY = Math.max(h, 1) + textGap;
         clipLeft = ldW;
         textNodes = [
           // number system digit — floated left of barcode image
@@ -616,7 +617,7 @@ export function BarcodeObject({
         const checkDigit = String((10 - (ckSum % 10)) % 10);
 
         // Center digits over the full barcode image width
-        const textY = Math.max(h, 1) + 4;
+        const textY = Math.max(h, 1) + textGap;
         clipLeft = ldW;
         clipRight = ldW;
         textNodes = [
@@ -670,7 +671,7 @@ export function BarcodeObject({
           clipX={-clipLeft}
           clipY={0}
           clipWidth={Math.max(w, 1) + clipLeft + clipRight}
-          clipHeight={Math.max(h, 1) + textFontSize + 4}
+          clipHeight={Math.max(h, 1) + textFontSize + textGap}
           draggable
           onClick={(e) =>
             onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)
@@ -717,7 +718,7 @@ export function BarcodeObject({
           clipX={0}
           clipY={0}
           clipWidth={Math.max(w, 1)}
-          clipHeight={Math.max(h, 1) + textFontSize + 4}
+          clipHeight={Math.max(h, 1) + textFontSize + textGap}
           draggable
           onClick={(e) =>
             onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)
@@ -745,7 +746,7 @@ export function BarcodeObject({
           />
           <Text
             x={0}
-            y={Math.max(h, 1) + 4}
+            y={Math.max(h, 1) + textGap}
             width={Math.max(w, 1)}
             text={displayText}
             fontSize={textFontSize}
