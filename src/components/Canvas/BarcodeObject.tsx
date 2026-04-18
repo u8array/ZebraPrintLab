@@ -379,8 +379,8 @@ export function BarcodeObject({
     const { w, h } = getDisplaySize(obj, barcodeCanvas, scale, dpmm);
     const printInterp = !!(obj.props as { printInterpretation?: boolean })
       .printInterpretation;
-    const textFontSize = Math.max(dotsToPx(15, scale, dpmm), 8);
-    const textGap = Math.max(dotsToPx(4, scale, dpmm), 2);
+    const textFontSize = Math.max(dotsToPx(20, scale, dpmm), 10);
+    const textGap = Math.max(dotsToPx(5, scale, dpmm), 3);
     const rawContent = (obj.props as { content?: string }).content ?? "";
 
     // ── EAN/UPC: manually-positioned digit labels ─────────────────────────
@@ -477,19 +477,13 @@ export function BarcodeObject({
           .padEnd(7, "0");
         const allDigits = digits7 + eanCheckDigit(digits7, 3, 1); // 8 digits
 
-        // Fixed portion (excl. left quiet): 3 start + 28 left + 5 centre + 28 right + 3 end + 7 rquiet = 74
-        const modulePx8 = BWIP_SCALE * pxPerBwipPx;
-        const qL8 = bwipW / BWIP_SCALE - 74;
-        const xLeft8 = (qL8 + 3) * modulePx8;
-        const xRight8 = (qL8 + 36) * modulePx8; // +3+28+5
-        const halfW8 = 28 * modulePx8;
-
         const textY = Math.max(h, 1) + textGap;
-        // EAN-8: no leading/trailing digit outside image
+        // EAN-8: digits centered in left quarter and right quarter of barcode width
+        const halfW8 = w / 2;
         textNodes = [
           <Text
             key="dl"
-            x={xLeft8}
+            x={0}
             y={textY}
             width={halfW8}
             text={allDigits.slice(0, 4)}
@@ -502,7 +496,7 @@ export function BarcodeObject({
           />,
           <Text
             key="dr"
-            x={xRight8}
+            x={halfW8}
             y={textY}
             width={halfW8}
             text={allDigits.slice(4, 8)}
