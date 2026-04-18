@@ -27,7 +27,7 @@ export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
   toZPL: (obj) => {
     const p = obj.props;
     return [
-      p.moduleWidth !== 2 ? `^BY${p.moduleWidth}` : '',
+      `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^B7N,${p.rowHeight},${p.securityLevel},${p.columns},,,`,
       `^FD${p.content}^FS`,

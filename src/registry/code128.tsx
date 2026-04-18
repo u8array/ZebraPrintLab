@@ -29,7 +29,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
     return [
-      p.moduleWidth !== 2 ? `^BY${p.moduleWidth}` : '',
+      `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BCN,${p.height},${interp},N,${check}`,
       `^FD${p.content}^FS`,

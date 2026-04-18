@@ -26,7 +26,7 @@ export const codablock: ObjectTypeDefinition<CodablockProps> = {
     const p = obj.props;
     // ^BB{orientation},{rowHeight},{security},{numCharsPerRow},{numRows},{mode}
     return [
-      p.moduleWidth !== 2 ? `^BY${p.moduleWidth}` : "",
+      `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BBN,${p.rowHeight},${p.securityLevel}`,
       `^FD${p.content}^FS`,

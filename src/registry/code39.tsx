@@ -29,7 +29,7 @@ export const code39: ObjectTypeDefinition<Code39Props> = {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
     return [
-      p.moduleWidth !== 2 ? `^BY${p.moduleWidth}` : '',
+      `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^B3N,${check},${p.height},${interp},N`,
       `^FD${p.content}^FS`,

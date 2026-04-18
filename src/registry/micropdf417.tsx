@@ -24,7 +24,7 @@ export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
     const p = obj.props;
     // ^BF{orientation},{rowHeight}
     return [
-      p.moduleWidth !== 2 ? `^BY${p.moduleWidth}` : "",
+      `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BFN,${p.rowHeight}`,
       `^FD${p.content}^FS`,

@@ -49,7 +49,7 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
     toZPL: (obj: LabelObjectBase & { props: Barcode1DProps }) => {
       const p = obj.props;
       return [
-        p.moduleWidth !== 2 ? `^BY${p.moduleWidth}` : '',
+        `^BY${p.moduleWidth}`,
         fieldPos(obj),
         config.zplCommand(p),
         `^FD${p.content}^FS`,

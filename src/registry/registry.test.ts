@@ -163,12 +163,12 @@ describe('code128.toZPL', () => {
     expect(zpl).toContain('^BY5');
   });
 
-  it('does not emit ^BY when moduleWidth is default 2', () => {
+  it('always emits ^BY to prevent ZPL state leaking to subsequent barcodes', () => {
     const zpl = def.toZPL(makeObj('code128', {
       content: '123', height: 100, moduleWidth: 2,
       printInterpretation: true, checkDigit: false,
     }));
-    expect(zpl).not.toContain('^BY');
+    expect(zpl).toContain('^BY2');
   });
 });
 

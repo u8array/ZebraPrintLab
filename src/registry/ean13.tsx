@@ -26,7 +26,7 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
     const p = obj.props;
     const interp = p.printInterpretation ? 'Y' : 'N';
     return [
-      p.moduleWidth !== 2 ? `^BY${p.moduleWidth}` : '',
+      `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BEN,${p.height},${interp},N`,
       `^FD${p.content}^FS`,
