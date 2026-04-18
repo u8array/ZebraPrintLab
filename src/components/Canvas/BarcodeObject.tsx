@@ -52,6 +52,23 @@ function eanCheckDigit(digits: string, w0: number, w1: number): string {
   return String((10 - (sum % 10)) % 10);
 }
 
+/**
+ * Encode text as Code 128 subset B using bwip-js raw ^NNN format.
+ * ZPL's ^BC defaults to subset B for printable ASCII content, so using raw
+ * Code B here keeps the designer's module count in sync with Labelary.
+ * Returns null for characters outside Code B range (ASCII 32–126).
+ */
+function toCode128BRaw(text: string): string | null {
+  if (!text) return null;
+  const parts = ['^104']; // Start B
+  for (const ch of text) {
+    const code = ch.charCodeAt(0);
+    if (code < 32 || code > 126) return null;
+    parts.push(`^${String(code - 32).padStart(3, '0')}`);
+  }
+  return parts.join('');
+}
+
 function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
   const bcid = BCID[obj.type];
   if (!bcid) return null;
@@ -71,7 +88,13 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
       }
       return { bcid, text, scale: BWIP_SCALE, height: 10 };
     }
-    case 'code128':
+    case 'code128': {
+      const p = obj.props;
+      const text = p.content || '0';
+      const rawB = toCode128BRaw(text);
+      if (rawB) return { bcid, text: rawB, raw: true, scale: BWIP_SCALE, height: 10 };
+      return { bcid, text, scale: BWIP_SCALE, height: 10 };
+    }
     case 'code39':
     case 'interleaved2of5':
     case 'code93': {

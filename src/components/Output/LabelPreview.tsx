@@ -85,8 +85,13 @@ export function LabelPreviewModal({ onClose }: Props) {
             <img
               src={previewUrl}
               alt="Label preview"
-              className="max-w-full max-h-full object-contain"
-              style={{ imageRendering: 'pixelated' }}
+              style={{
+                width: `${label.widthMm * 4}px`,
+                height: `${label.heightMm * 4}px`,
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+              }}
             />
           )}
         </div>
