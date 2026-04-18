@@ -23,3 +23,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.claude/
+.windsurf/
+.cursor/
+.continue/
+.clinerules/
+.clinerules
+.roo/
+.roorules-*
+.rooignore
+.aider.conf.yml
+*.instructions.*
