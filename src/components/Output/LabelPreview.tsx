@@ -86,11 +86,9 @@ export function LabelPreviewModal({ onClose }: Props) {
               src={previewUrl}
               alt="Label preview"
               style={{
-                width: `${label.widthMm * 4}px`,
-                height: `${label.heightMm * 4}px`,
                 maxWidth: '100%',
                 maxHeight: '100%',
-                objectFit: 'contain',
+                display: 'block',
               }}
             />
           )}

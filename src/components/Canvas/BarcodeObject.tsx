@@ -379,7 +379,8 @@ export function BarcodeObject({
     const { w, h } = getDisplaySize(obj, barcodeCanvas, scale, dpmm);
     const printInterp = !!(obj.props as { printInterpretation?: boolean })
       .printInterpretation;
-    const textFontSize = Math.max(dotsToPx(20, scale, dpmm), 10);
+    const moduleWidth = (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
+    const textFontSize = Math.max(dotsToPx(moduleWidth * 10, scale, dpmm), 6);
     const textGap = Math.max(dotsToPx(5, scale, dpmm), 3);
     const rawContent = (obj.props as { content?: string }).content ?? "";
 
