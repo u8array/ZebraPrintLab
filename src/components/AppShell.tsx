@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { ObjectPalette } from "./Palette/ObjectPalette";
 import { LabelCanvas } from "./Canvas/LabelCanvas";
 import { PropertiesPanel } from "./Properties/PropertiesPanel";
@@ -49,6 +50,10 @@ export function AppShell() {
   const canUndo = pastStates.length > 0;
   const canRedo = futureStates.length > 0;
   const hasObjects = objects.length > 0;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
 
   useGlobalShortcuts();
   const { handleNew, handleSave, handleLoad, loadInputRef, loadError, dismissLoadError } = useDesignFileActions();
@@ -204,6 +209,7 @@ export function AppShell() {
       )}
 
       {/* Main area: 3 columns */}
+      <DndContext sensors={sensors}>
       <div className="flex flex-1 min-h-0">
         <aside className="w-44 shrink-0 border-r border-border bg-surface overflow-y-auto">
           <ObjectPalette />
@@ -251,6 +257,7 @@ export function AppShell() {
           </div>
         </aside>
       </div>
+      </DndContext>
 
       {/* Output panel */}
       <div

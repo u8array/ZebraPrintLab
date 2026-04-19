@@ -1,4 +1,6 @@
-import { useRef, useEffect, useLayoutEffect, useState } from "react";
+import { useRef, useEffect, useLayoutEffect, useState, useCallback } from "react";
+import { useDroppable, useDndMonitor } from "@dnd-kit/core";
+import type { PaletteDragData } from "../../dnd/types";
 import { Stage, Layer, Group, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore } from "../../store/labelStore";
@@ -55,7 +57,6 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
 
   // Ghost object shown while dragging any object from the palette
   const [ghost, setGhost] = useState<LabelObject | null>(null);
-  const dragEnterCountRef = useRef(0);
 
   const zoomIn  = () => onZoomChange(ZOOM_STEPS.find(s => s > zoom) ?? ZOOM_MAX);
   const zoomOut = () => onZoomChange([...ZOOM_STEPS].reverse().find(s => s < zoom) ?? ZOOM_MIN);
@@ -355,56 +356,47 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
     }
   }, [selectedIds, objects]);
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    dragEnterCountRef.current = 0;
-    setGhost(null);
-    const type = e.dataTransfer.getData("objectType");
-    if (!type || !stageRef.current) return;
-    stageRef.current.setPointersPositions(e.nativeEvent);
-    const pos = stageRef.current.getPointerPosition();
-    if (!pos) return;
-    addObject(type, {
-      x: snap(pxToDots(pos.x - labelOffsetX, scale, label.dpmm)),
-      y: snap(pxToDots(pos.y - labelOffsetY, scale, label.dpmm)),
-    });
+  const { setNodeRef: setDropRef } = useDroppable({ id: 'canvas' });
+
+  const pointerToLabelDots = (clientX: number, clientY: number) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    const px = clientX - rect.left;
+    const py = clientY - rect.top;
+    return {
+      x: snap(pxToDots(px - labelOffsetX, scale, label.dpmm)),
+      y: snap(pxToDots(py - labelOffsetY, scale, label.dpmm)),
+    };
   };
 
-  const dragTypeFromEvent = (e: React.DragEvent): string | null => {
-    const hit = Array.from(e.dataTransfer.types).find((t) => t.startsWith('application/x-zpl-type+'));
-    return hit ? hit.slice('application/x-zpl-type+'.length) : null;
-  };
-
-  const handleDragEnter = () => {
-    dragEnterCountRef.current++;
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    const type = dragTypeFromEvent(e);
-    if (!type || !stageRef.current) return;
-    const def = ObjectRegistry[type];
-    if (!def) return;
-    stageRef.current.setPointersPositions(e.nativeEvent);
-    const pos = stageRef.current.getPointerPosition();
-    if (!pos) return;
-    setGhost({
-      id: '__ghost__',
-      type,
-      x: snap(pxToDots(pos.x - labelOffsetX, scale, label.dpmm)),
-      y: snap(pxToDots(pos.y - labelOffsetY, scale, label.dpmm)),
-      rotation: 0,
-      props: def.defaultProps,
-    } as LabelObject);
-  };
-
-  const handleDragLeave = () => {
-    dragEnterCountRef.current--;
-    if (dragEnterCountRef.current <= 0) {
-      dragEnterCountRef.current = 0;
+  useDndMonitor({
+    onDragMove(event) {
+      if (event.over?.id !== 'canvas') { setGhost(null); return; }
+      const { activatorEvent, delta } = event;
+      const ae = activatorEvent as PointerEvent;
+      const pos = pointerToLabelDots(ae.clientX + delta.x, ae.clientY + delta.y);
+      if (!pos) return;
+      const type = (event.active.data.current as PaletteDragData | undefined)?.type;
+      if (!type) return;
+      const def = ObjectRegistry[type];
+      if (!def) return;
+      setGhost({ id: '__ghost__', type, ...pos, rotation: 0, props: def.defaultProps } as LabelObject);
+    },
+    onDragEnd(event) {
       setGhost(null);
-    }
-  };
+      if (event.over?.id !== 'canvas') return;
+      const { activatorEvent, delta } = event;
+      const ae = activatorEvent as PointerEvent;
+      const pos = pointerToLabelDots(ae.clientX + delta.x, ae.clientY + delta.y);
+      if (!pos) return;
+      const type = (event.active.data.current as PaletteDragData | undefined)?.type;
+      if (!type) return;
+      addObject(type, pos);
+    },
+    onDragCancel() {
+      setGhost(null);
+    },
+  });
 
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.evt.button !== 0 || spaceDown) return;
@@ -428,9 +420,14 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
 
   const cursor = isPanning ? "grabbing" : spaceDown ? "grab" : undefined;
 
+  const mergedRef = useCallback((el: HTMLDivElement | null) => {
+    (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+    setDropRef(el);
+  }, [setDropRef]);
+
   return (
     <div
-      ref={containerRef}
+      ref={mergedRef}
       className="w-full h-full relative"
       style={{
         background: colors.canvasBg,
@@ -443,10 +440,6 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
-      onDrop={handleDrop}
-      onDragEnter={handleDragEnter}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
     >
       {/* Bottom-right controls: view options + zoom */}
       <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 bg-surface border border-border rounded px-1 py-0.5">
