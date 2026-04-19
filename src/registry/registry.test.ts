@@ -113,6 +113,24 @@ describe('line.toZPL', () => {
     expect(zpl).toContain('^GB5,300,5,B,0');
   });
 
+  it('emits horizontal ^GB shifted left for angle 180', () => {
+    // obj.x=100, angle=180, length=500 → box must start at x=100-500=-400
+    const zpl = def.toZPL(makeObj('line', {
+      angle: 180, length: 500, thickness: 3, color: 'B',
+    }));
+    expect(zpl).toContain('^FO-400,200');
+    expect(zpl).toContain('^GB500,3,3,B,0');
+  });
+
+  it('emits vertical ^GB shifted up for angle 270', () => {
+    // obj.y=200, angle=270, length=300 → box must start at y=200-300=-100
+    const zpl = def.toZPL(makeObj('line', {
+      angle: 270, length: 300, thickness: 5, color: 'B',
+    }));
+    expect(zpl).toContain('^FO100,-100');
+    expect(zpl).toContain('^GB5,300,5,B,0');
+  });
+
   it('emits ^GD for diagonal angles', () => {
     const zpl = def.toZPL(makeObj('line', {
       angle: 45, length: 200, thickness: 3, color: 'B',

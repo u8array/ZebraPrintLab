@@ -9,7 +9,9 @@ export const msi = createBarcode1D({
   localeKey: "msi",
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
-    const check = p.checkDigit ? "Y" : "N";
-    return `^BMN,${p.height},${interp},N,${check}`;
+    // ^BM format: ^BM[o,e,h,f,g] — check digit (e) comes before height (h)
+    // A=Mod10, B=Mod11, C=Mod10+Mod10, D=Mod11+Mod10, N=none
+    const checkType = p.checkDigit ? "A" : "N";
+    return `^BMN,${checkType},${p.height},${interp},N`;
   },
 });
