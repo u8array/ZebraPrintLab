@@ -1,22 +1,74 @@
 import { useState } from 'react';
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useLabelStore } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
+import type { LabelObject } from '../../registry';
 import { useT } from '../../lib/useT';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 
+interface RowProps {
+  obj: LabelObject;
+  isSelected: boolean;
+  isOver: boolean;
+  onSelect: () => void;
+  onToggle: () => void;
+}
+
+function SortableLayerRow({ obj, isSelected, isOver, onSelect, onToggle }: RowProps) {
+  const def = ObjectRegistry[obj.type];
+  const { attributes, listeners, setNodeRef, isDragging } = useSortable({ id: obj.id });
+
+  return (
+    <>
+      <div
+        className={`h-0.5 mx-2 rounded transition-colors ${isOver ? 'bg-accent' : 'bg-transparent'}`}
+      />
+      <div
+        ref={setNodeRef}
+        style={{ touchAction: 'none' }}
+        {...attributes}
+        {...listeners}
+        onClick={(e) => {
+          if (e.shiftKey || e.ctrlKey || e.metaKey) onToggle();
+          else onSelect();
+        }}
+        className={`
+          flex items-center gap-2 px-2 py-1.5
+          cursor-grab active:cursor-grabbing
+          border-b border-border group transition-colors hover:bg-surface-2
+          ${isSelected ? 'bg-surface-2 border-l-2 border-l-accent' : 'border-l-2 border-l-transparent'}
+          ${isDragging ? 'opacity-40' : ''}
+        `}
+      >
+        <DragHandleIcon className="w-2 h-3.5 shrink-0 text-muted opacity-0 group-hover:opacity-60 transition-opacity" />
+        <span className="font-mono text-xs text-accent shrink-0 w-4 text-center">
+          {def?.icon}
+        </span>
+        <div className="flex flex-col flex-1 min-w-0">
+          <span className="text-xs text-text truncate">{def?.label ?? obj.type}</span>
+          <span className="font-mono text-[9px] text-muted">{obj.id.slice(0, 8)}</span>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function LayersPanel() {
   const t = useT();
-  const {
-    objects,
-    selectedIds,
-    selectObject,
-    toggleSelectObject,
-    reorderObject,
-  } = useLabelStore();
+  const { objects, selectedIds, selectObject, toggleSelectObject, reorderObject } = useLabelStore();
+  const [overId, setOverId] = useState<string | null>(null);
 
-  // Visual index (in reversed list) of the drop target gap
-  const [overIndex, setOverIndex] = useState<number | null>(null);
-  const [dragId, setDragId] = useState<string | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
 
   if (objects.length === 0) {
     return (
@@ -30,93 +82,40 @@ export function LayersPanel() {
   const reversed = [...objects].reverse();
   const n = objects.length;
 
-  const handleDragStart = (e: React.DragEvent, id: string) => {
-    setDragId(id);
-    e.dataTransfer.effectAllowed = 'move';
-    // Prevent the canvas palette drag handler from picking this up
-    e.dataTransfer.setData('text/plain', id);
+  const handleDragOver = ({ over }: DragOverEvent) =>
+    setOverId((over?.id as string) ?? null);
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    setOverId(null);
+    if (!over || active.id === over.id) return;
+    const toVisualIndex = reversed.findIndex((o) => o.id === over.id);
+    reorderObject(active.id as string, n - 1 - toVisualIndex);
   };
 
-  const handleDragOver = (e: React.DragEvent, visualIndex: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setOverIndex(visualIndex);
-  };
-
-  const handleDrop = (e: React.DragEvent, visualIndex: number) => {
-    e.preventDefault();
-    if (!dragId) return;
-    // Convert visual index → array index (reversed list)
-    const toArrayIndex = n - 1 - visualIndex;
-    reorderObject(dragId, toArrayIndex);
-    setOverIndex(null);
-    setDragId(null);
-  };
-
-  const handleDragEnd = () => {
-    setOverIndex(null);
-    setDragId(null);
-  };
+  const handleDragCancel = () => setOverId(null);
 
   return (
-    <div
-      className="flex flex-col"
-      onDragLeave={(e) => {
-        // Only clear when leaving the panel entirely
-        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-          setOverIndex(null);
-        }
-      }}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
-      {reversed.map((obj, i) => {
-        const def = ObjectRegistry[obj.type];
-        const isSelected = selectedIds.includes(obj.id);
-        const isDragging = obj.id === dragId;
-
-        return (
-          <div key={obj.id}>
-            {/* Drop indicator above this row */}
-            <div
-              className={`h-0.5 mx-2 rounded transition-colors ${overIndex === i ? 'bg-accent' : 'bg-transparent'}`}
-              onDragOver={(e) => handleDragOver(e, i)}
-              onDrop={(e) => handleDrop(e, i)}
+      <SortableContext items={reversed.map((o) => o.id)} strategy={verticalListSortingStrategy}>
+        <div className="flex flex-col">
+          {reversed.map((obj) => (
+            <SortableLayerRow
+              key={obj.id}
+              obj={obj}
+              isSelected={selectedIds.includes(obj.id)}
+              isOver={overId === obj.id}
+              onSelect={() => selectObject(obj.id)}
+              onToggle={() => toggleSelectObject(obj.id)}
             />
-
-            <div
-              draggable
-              onDragStart={(e) => handleDragStart(e, obj.id)}
-              onDragEnd={handleDragEnd}
-              onDragOver={(e) => handleDragOver(e, i)}
-              onDrop={(e) => handleDrop(e, i)}
-              onClick={(e) => {
-                if (e.shiftKey || e.ctrlKey || e.metaKey) toggleSelectObject(obj.id);
-                else selectObject(obj.id);
-              }}
-              className={`flex items-center gap-2 px-2 py-1.5 cursor-grab active:cursor-grabbing border-b border-border group transition-colors hover:bg-surface-2 ${
-                isSelected ? 'bg-surface-2 border-l-2 border-l-accent' : 'border-l-2 border-l-transparent'
-              } ${isDragging ? 'opacity-40' : ''}`}
-            >
-              <DragHandleIcon className="w-2 h-3.5 shrink-0 text-muted opacity-0 group-hover:opacity-60 transition-opacity" />
-              <span className="font-mono text-xs text-accent shrink-0 w-4 text-center">
-                {def?.icon}
-              </span>
-
-              <div className="flex flex-col flex-1 min-w-0">
-                <span className="text-xs text-text truncate">{def?.label ?? obj.type}</span>
-                <span className="font-mono text-[9px] text-muted">{obj.id.slice(0, 8)}</span>
-              </div>
-
-            </div>
-          </div>
-        );
-      })}
-
-      {/* Drop indicator after last row */}
-      <div
-        className={`h-0.5 mx-2 rounded transition-colors ${overIndex === n ? 'bg-accent' : 'bg-transparent'}`}
-        onDragOver={(e) => handleDragOver(e, n)}
-        onDrop={(e) => handleDrop(e, n)}
-      />
-    </div>
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
   );
 }
