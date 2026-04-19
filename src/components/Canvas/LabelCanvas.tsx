@@ -58,6 +58,16 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
   // Ghost object shown while dragging any object from the palette
   const [ghost, setGhost] = useState<LabelObject | null>(null);
 
+  // Raw pointer position tracked independently of @dnd-kit's scroll-adjusted delta.
+  // activatorEvent.client + event.delta includes scroll momentum from the palette
+  // sidebar, which causes a proportional drop-position offset on touch devices.
+  const lastPointerRef = useRef({ x: 0, y: 0 });
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => { lastPointerRef.current = { x: e.clientX, y: e.clientY }; };
+    document.addEventListener('pointermove', onMove);
+    return () => document.removeEventListener('pointermove', onMove);
+  }, []);
+
   const zoomIn  = () => onZoomChange(ZOOM_STEPS.find(s => s > zoom) ?? ZOOM_MAX);
   const zoomOut = () => onZoomChange([...ZOOM_STEPS].reverse().find(s => s < zoom) ?? ZOOM_MIN);
   const zoomFit = () => {
@@ -372,9 +382,7 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
   useDndMonitor({
     onDragMove(event) {
       if (event.over?.id !== 'canvas') { setGhost(null); return; }
-      const { activatorEvent, delta } = event;
-      const ae = activatorEvent as PointerEvent;
-      const pos = pointerToLabelDots(ae.clientX + delta.x, ae.clientY + delta.y);
+      const pos = pointerToLabelDots(lastPointerRef.current.x, lastPointerRef.current.y);
       if (!pos) return;
       const type = (event.active.data.current as PaletteDragData | undefined)?.type;
       if (!type) return;
@@ -385,9 +393,7 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
     onDragEnd(event) {
       setGhost(null);
       if (event.over?.id !== 'canvas') return;
-      const { activatorEvent, delta } = event;
-      const ae = activatorEvent as PointerEvent;
-      const pos = pointerToLabelDots(ae.clientX + delta.x, ae.clientY + delta.y);
+      const pos = pointerToLabelDots(lastPointerRef.current.x, lastPointerRef.current.y);
       if (!pos) return;
       const type = (event.active.data.current as PaletteDragData | undefined)?.type;
       if (!type) return;
