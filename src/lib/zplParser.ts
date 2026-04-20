@@ -635,11 +635,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         break;
       }
       case 'BM': {
-        // ^BMN,{height},{interp},N,{check} — MSI
+        // ^BMN,{checkType},{height},{interp},N — MSI
+        // checkType: A=Mod10, B=Mod11, C=Mod10+Mod10, D=Mod11+Mod10, N=none
         fieldType = 'msi';
-        bcHeight = int(p[1], byHeight || 100);
-        bcInterp = (p[2] ?? 'Y') === 'Y';
-        bcCheck = (p[4] ?? 'N') === 'Y';
+        bcCheck = (p[1] ?? 'N') !== 'N';
+        bcHeight = int(p[2], byHeight || 100);
+        bcInterp = (p[3] ?? 'Y') === 'Y';
         break;
       }
       case 'BP': {

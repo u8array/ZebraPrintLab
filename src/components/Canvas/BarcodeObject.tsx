@@ -119,7 +119,15 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
     case "standard2of5":
     case "codabar":
     case "msi":
-    case "plessey":
+    case "plessey": {
+      const p = obj.props;
+      return {
+        bcid,
+        text: p.content || "0",
+        scale: BWIP_SCALE,
+        height: 10,
+      };
+    }
     case "postal": {
       const p = obj.props;
       return {
@@ -242,6 +250,16 @@ function getDisplaySize(
   dpmm: number,
 ): { w: number; h: number } {
   switch (obj.type) {
+    case "msi":
+    case "plessey": {
+      // ZPL/Labelary includes 10 quiet-zone modules on each side of the barcode
+      // field. bwip renders bars only (no quiet zones). Stretch the bwip canvas to
+      // cover bars + both quiet zones so the total canvas width matches Labelary.
+      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
+      const w = (canvas.width / BWIP_SCALE + 20) * modulePx;
+      const h = dotsToPx(obj.props.height, scale, dpmm);
+      return { w, h };
+    }
     case "ean13":
     case "ean8":
     case "upca":
@@ -255,8 +273,6 @@ function getDisplaySize(
     case "standard2of5":
     case "codabar":
     case "logmars":
-    case "msi":
-    case "plessey":
     case "gs1databar":
     case "planet":
     case "postal": {

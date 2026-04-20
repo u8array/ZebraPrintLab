@@ -21,6 +21,13 @@ interface Barcode1DConfig {
   zplCommand: (p: Barcode1DProps) => string;
   /** Locale key under `t.registry[localeKey]`. Must match en.ts shape. */
   localeKey: string;
+  /**
+   * Explicit wide-to-narrow ratio for the ^BY command.
+   * ZPL defaults to 3.0, but some barcode standards (MSI, Plessey) define a
+   * fixed 2:1 ratio, which bwip-js also hardcodes internally. Setting byRatio
+   * here ensures Labelary uses the same ratio as the canvas rendering.
+   */
+  byRatio?: number;
 }
 
 interface BarcodeLocale {
@@ -48,8 +55,11 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
 
     toZPL: (obj: LabelObjectBase & { props: Barcode1DProps }) => {
       const p = obj.props;
+      const byCmd = config.byRatio !== undefined
+        ? `^BY${p.moduleWidth},${config.byRatio}`
+        : `^BY${p.moduleWidth}`;
       return [
-        `^BY${p.moduleWidth}`,
+        byCmd,
         fieldPos(obj),
         config.zplCommand(p),
         `^FD${p.content}^FS`,

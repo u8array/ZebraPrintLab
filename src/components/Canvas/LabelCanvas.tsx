@@ -296,16 +296,26 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
   const usableWidth = containerSize.width - RULER_SIZE;
   const usableHeight = containerSize.height - RULER_SIZE;
 
+  // ^LS shifts all content to the right by labelShift dots. The label rect
+  // grows by that amount so the shifted content is fully visible. Scale and
+  // centering use the original widthMm so zoom level stays stable.
+  const labelShiftMm = (label.labelShift ?? 0) / label.dpmm;
+  const effectiveWidthMm = label.widthMm + labelShiftMm;
+
   const scaleX =
-    usableWidth > 0 ? (usableWidth - PADDING * 2) / label.widthMm : 1;
+    usableWidth > 0 ? (usableWidth - PADDING * 2) / effectiveWidthMm : 1;
   const scaleY =
     usableHeight > 0 ? (usableHeight - PADDING * 2) / label.heightMm : 1;
   const scale = Math.min(scaleX, scaleY) * zoom;
 
-  const labelWidthPx = label.widthMm * scale;
+  const labelWidthPx = effectiveWidthMm * scale;
   const labelHeightPx = label.heightMm * scale;
   const labelOffsetX =
     RULER_SIZE + (usableWidth - labelWidthPx) / 2 + panOffset.x;
+
+  // Objects are shifted right by labelShift so they appear where ^LS places them.
+  const labelShiftPx = labelShiftMm * scale;
+  const objectsOffsetX = labelOffsetX + labelShiftPx;
   const labelOffsetY =
     RULER_SIZE + (usableHeight - labelHeightPx) / 2 + panOffset.y;
 
@@ -374,7 +384,7 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
     const px = clientX - rect.left;
     const py = clientY - rect.top;
     return {
-      x: snap(pxToDots(px - labelOffsetX, scale, label.dpmm)),
+      x: snap(pxToDots(px - objectsOffsetX, scale, label.dpmm)),
       y: snap(pxToDots(py - labelOffsetY, scale, label.dpmm)),
     };
   };
@@ -538,7 +548,7 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
                 obj={obj}
                 scale={scale}
                 dpmm={label.dpmm}
-                offsetX={labelOffsetX}
+                offsetX={objectsOffsetX}
                 offsetY={labelOffsetY}
                 isSelected={selectedIds.includes(obj.id)}
                 onSelect={(add) => add ? toggleSelectObject(obj.id) : selectObject(obj.id)}
@@ -553,7 +563,7 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
                 <KonvaObject
                   obj={ghost}
                   scale={scale}
-                  offsetX={labelOffsetX}
+                  offsetX={objectsOffsetX}
                   offsetY={labelOffsetY}
                   isSelected={false}
                   onSelect={() => { /* ghost */ }}
@@ -611,7 +621,7 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
                   .objects.find((o) => o.id === singleId);
                 if (!obj) return;
                 const pos = {
-                  x: snap(pxToDots(node.x() - labelOffsetX, scale, label.dpmm)),
+                  x: snap(pxToDots(node.x() - objectsOffsetX, scale, label.dpmm)),
                   y: snap(pxToDots(node.y() - labelOffsetY, scale, label.dpmm)),
                 };
                 if (obj.type === "text") {
@@ -670,7 +680,7 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
             <Ruler
               labelOffsetX={labelOffsetX}
               labelOffsetY={labelOffsetY}
-              labelWidthMm={label.widthMm}
+              labelWidthMm={effectiveWidthMm}
               labelHeightMm={label.heightMm}
               scale={scale}
               canvasWidth={containerSize.width}

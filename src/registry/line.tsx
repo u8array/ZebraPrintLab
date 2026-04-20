@@ -1,7 +1,6 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
 
 export interface LineProps {
   /** Angle in degrees, 0 = rightward horizontal, clockwise positive (screen coords). */

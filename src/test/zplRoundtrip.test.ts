@@ -229,6 +229,49 @@ describe('round-trip — ^LH label home offset', () => {
   });
 });
 
+// ── MSI barcode ──────────────────────────────────────────────────────────────
+
+describe('round-trip — MSI barcode', () => {
+  // ^BM format: ^BMN,{checkType},{height},{interp},N
+  // checkType: A=Mod10, B=Mod11, C=Mod10+Mod10, D=Mod11+Mod10, N=none
+  it('parses ^BM height from third parameter (new format)', () => {
+    const { first } = roundtrip(
+      '^XA^PW784^LL264^CI28^BY2^FO0,0^BMN,N,80,Y,N^FD12345678^FS^XZ',
+    );
+    const obj = first.objects[0];
+    expect(obj?.type).toBe('msi');
+    expect(props(obj).height).toBe(80);
+    expect(props(obj).printInterpretation).toBe(true);
+    expect(props(obj).checkDigit).toBe(false);
+    expect(props(obj).moduleWidth).toBe(2);
+  });
+
+  it('parses ^BM check digit flag correctly', () => {
+    const { first } = roundtrip(
+      '^XA^PW400^LL200^BY2^FO0,0^BMN,A,100,N,N^FD12345678^FS^XZ',
+    );
+    expect(props(first.objects[0]).checkDigit).toBe(true);
+    expect(props(first.objects[0]).printInterpretation).toBe(false);
+  });
+
+  it('survives a full round-trip without changing height or check', () => {
+    const { first, second } = roundtrip(
+      '^XA^PW784^LL264^CI28^BY2^FO0,0^BMN,N,80,Y,N^FD12345678^FS^XZ',
+    );
+    expect(props(second.objects[0]).height).toBe(props(first.objects[0]).height);
+    expect(props(second.objects[0]).checkDigit).toBe(props(first.objects[0]).checkDigit);
+  });
+
+  it('generates ^BY with ratio 2 to match bwip-js 2:1 MSI encoding', () => {
+    // MSI standard uses 2:1 wide:narrow ratio; bwip-js hardcodes this.
+    // ZPL ^BY defaults to 3:1, so we must emit ^BY{mw},2 to keep Labelary in sync.
+    const { regenerated } = roundtrip(
+      '^XA^PW784^LL264^CI28^BY2^FO0,0^BMN,N,80,Y,N^FD12345678^FS^XZ',
+    );
+    expect(regenerated).toContain('^BY2,2');
+  });
+});
+
 // ── ^FD content with commas ───────────────────────────────────────────────────
 
 describe('round-trip — comma in ^FD content', () => {
