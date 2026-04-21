@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getFontFamily } from "../../lib/fontCache";
+import { getFontFamily, useFontCacheVersion } from "../../lib/fontCache";
 import {
   Circle,
   Ellipse,
@@ -371,6 +371,7 @@ function KonvaObjectInner({
   onChange,
   snap,
 }: Props) {
+  useFontCacheVersion();
   // If the object was imported with ^FT (baseline position), compute display offset.
   // ^FT positions text at the baseline; ^FO at the top-left corner.
   // We need to convert FT→FO for canvas rendering only.
