@@ -109,6 +109,12 @@ const el = {
       justifyC: 'C — Κέντρο',
       justifyR: 'R — Δεξιά',
       justifyJ: 'J — Πλήρης',
+      printerFont: 'Printer font (^A@)',
+      uploadFont: 'Upload font file',
+      uploadingFont: 'Uploading…',
+      replaceFont: 'Replace font',
+      fontLoaded: 'Font loaded',
+      fontMissing: 'Font not loaded',
     },
     code128: {
       content: 'Περιεχόμενο',

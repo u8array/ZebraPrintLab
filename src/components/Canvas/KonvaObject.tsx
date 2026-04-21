@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getFontFamily } from "../../lib/fontCache";
 import {
   Circle,
   Ellipse,
@@ -397,27 +398,6 @@ function KonvaObjectInner({
       } else if (p.rotation === "B") {
         displayX -= renderedH;
       }
-    } else if (
-      obj.type === "code128" ||
-      obj.type === "code39" ||
-      obj.type === "ean13" ||
-      obj.type === "upca" ||
-      obj.type === "ean8" ||
-      obj.type === "upce" ||
-      obj.type === "interleaved2of5" ||
-      obj.type === "code93"
-    ) {
-      const p = obj.props as { height: number };
-      displayY -= p.height;
-    } else if (obj.type === "pdf417") {
-      const p = obj.props as { rowHeight: number };
-      displayY -= p.rowHeight * 10;
-    } else if (obj.type === "qrcode") {
-      const p = obj.props as { magnification: number };
-      displayY -= p.magnification * 25;
-    } else if (obj.type === "datamatrix") {
-      const p = obj.props as { dimension: number };
-      displayY -= p.dimension * 20;
     }
   }
 
@@ -462,6 +442,9 @@ function KonvaObjectInner({
   if (obj.type === "text") {
     const p = obj.props;
     const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 1.3, 6);
+    const fontFamily = p.printerFontName
+      ? (getFontFamily(p.printerFontName) ?? "'Roboto Condensed', sans-serif")
+      : "'Roboto Condensed', sans-serif";
     const zplRotationDeg: Record<typeof p.rotation, number> = {
       N: 0,
       R: 90,
@@ -496,7 +479,7 @@ function KonvaObjectInner({
           <Text
             text={p.content}
             fontSize={fontSize}
-            fontFamily="'Roboto Condensed', sans-serif"
+            fontFamily={fontFamily}
             fontStyle="bold"
             fill="#ffffff"
             y={approxH * 0.1}
@@ -512,7 +495,7 @@ function KonvaObjectInner({
         y={y}
         text={p.content}
         fontSize={fontSize}
-        fontFamily="'Roboto Condensed', sans-serif"
+        fontFamily={fontFamily}
         fontStyle="bold"
         rotation={zplRotationDeg[p.rotation]}
         fill="#000000"

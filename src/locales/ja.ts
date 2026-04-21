@@ -109,6 +109,12 @@ const ja = {
       justifyC: 'C — 中央揃え',
       justifyR: 'R — 右揃え',
       justifyJ: 'J — 両端揃え',
+      printerFont: 'Printer font (^A@)',
+      uploadFont: 'Upload font file',
+      uploadingFont: 'Uploading…',
+      replaceFont: 'Replace font',
+      fontLoaded: 'Font loaded',
+      fontMissing: 'Font not loaded',
     },
     code128: {
       content: 'コンテンツ',

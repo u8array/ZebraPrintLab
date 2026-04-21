@@ -109,6 +109,12 @@ const ko = {
       justifyC: 'C — 가운데',
       justifyR: 'R — 오른쪽',
       justifyJ: 'J — 균등 배분',
+      printerFont: 'Printer font (^A@)',
+      uploadFont: 'Upload font file',
+      uploadingFont: 'Uploading…',
+      replaceFont: 'Replace font',
+      fontLoaded: 'Font loaded',
+      fontMissing: 'Font not loaded',
     },
     code128: {
       content: '내용',

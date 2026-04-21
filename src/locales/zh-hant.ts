@@ -109,6 +109,12 @@ const zhHant = {
       justifyC: 'C — 置中',
       justifyR: 'R — 靠右',
       justifyJ: 'J — 左右對齊',
+      printerFont: 'Printer font (^A@)',
+      uploadFont: 'Upload font file',
+      uploadingFont: 'Uploading…',
+      replaceFont: 'Replace font',
+      fontLoaded: 'Font loaded',
+      fontMissing: 'Font not loaded',
     },
     code128: {
       content: '內容',

@@ -109,6 +109,12 @@ const cs = {
       justifyC: 'C — Na střed',
       justifyR: 'R — Vpravo',
       justifyJ: 'J — Do bloku',
+      printerFont: 'Printer font (^A@)',
+      uploadFont: 'Upload font file',
+      uploadingFont: 'Uploading…',
+      replaceFont: 'Replace font',
+      fontLoaded: 'Font loaded',
+      fontMissing: 'Font not loaded',
     },
     code128: {
       content: 'Obsah',
