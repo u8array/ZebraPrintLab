@@ -470,16 +470,6 @@ function KonvaObjectInner({
       }
     }
 
-    if (obj.positionType === "FT") {
-      if (obj.type === "box" || obj.type === "ellipse") {
-        const p = obj.props as { height: number; thickness: number };
-        finalY += p.height;
-      } else if (obj.type === "datamatrix") {
-        const p = obj.props as { dimension: number };
-        finalY += p.dimension * 20;
-      }
-    }
-
     onChange({
       x: finalX,
       y: finalY,
