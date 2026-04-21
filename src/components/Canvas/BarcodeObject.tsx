@@ -76,18 +76,20 @@ function eanCheckDigit(digits: string, w0: number, w1: number): string {
  */
 function toCode128BRaw(text: string): string | null {
   if (!text) return null;
-  const parts = ['^104']; // Start B
+  const parts = ["^104"]; // Start B
   for (const ch of text) {
     const code = ch.charCodeAt(0);
     if (code < 32 || code > 126) return null;
-    parts.push(`^${String(code - 32).padStart(3, '0')}`);
+    parts.push(`^${String(code - 32).padStart(3, "0")}`);
   }
-  return parts.join('');
+  return parts.join("");
 }
 
 function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
   const bcid = BCID[obj.type];
   if (!bcid) return null;
+
+  let opts: Record<string, unknown> | null = null;
 
   switch (obj.type) {
     case "ean13":
@@ -102,14 +104,19 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
       } else {
         text = p.content || "0";
       }
-      return { bcid, text, scale: BWIP_SCALE, height: 10 };
+      opts = { bcid, text, scale: BWIP_SCALE, height: 10 };
+      break;
     }
     case "code128": {
       const p = obj.props;
       const text = p.content || "0";
       const rawB = toCode128BRaw(text);
-      if (rawB) return { bcid, text: rawB, raw: true, scale: BWIP_SCALE, height: 10 };
-      return { bcid, text, scale: BWIP_SCALE, height: 10 };
+      if (rawB) {
+        opts = { bcid, text: rawB, raw: true, scale: BWIP_SCALE, height: 10 };
+      } else {
+        opts = { bcid, text, scale: BWIP_SCALE, height: 10 };
+      }
+      break;
     }
     case "code39":
     case "interleaved2of5":
@@ -121,44 +128,48 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
     case "msi":
     case "plessey": {
       const p = obj.props;
-      return {
+      opts = {
         bcid,
         text: p.content || "0",
         scale: BWIP_SCALE,
         height: 10,
       };
+      break;
     }
     case "postal": {
       const p = obj.props;
-      return {
+      opts = {
         bcid,
         text: p.content || "0",
         scale: BWIP_SCALE,
         height: 10,
       };
+      break;
     }
     case "logmars": {
       // LOGMARS is Code 39 with mandatory MOD 43 check digit
       const p = obj.props;
-      return {
+      opts = {
         bcid,
         text: p.content || "0",
         scale: BWIP_SCALE,
         height: 10,
         includecheck: true,
       };
+      break;
     }
     case "gs1databar": {
       // bwip-js requires (01) AI prefix for GS1 DataBar
       const p = obj.props;
       const raw = (p.content || "0").replace(/\D/g, "");
       const padded = raw.padStart(13, "0").slice(0, 14);
-      return {
+      opts = {
         bcid,
         text: `(01)${padded}`,
         scale: BWIP_SCALE,
         height: 10,
       };
+      break;
     }
     case "planet": {
       // USPS PLANET requires 11 or 13 digits (excl. check digit)
@@ -166,17 +177,18 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
       let raw = (p.content || "0").replace(/\D/g, "");
       if (raw.length < 11) raw = raw.padStart(11, "0");
       else if (raw.length === 12) raw = raw.padStart(13, "0");
-      return {
+      opts = {
         bcid,
         text: raw,
         scale: BWIP_SCALE,
         height: 10,
         includecheck: true,
       };
+      break;
     }
     case "pdf417": {
       const p = obj.props;
-      return {
+      opts = {
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
@@ -187,35 +199,39 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
         columns: p.columns || 0,
         eclevel: String(p.securityLevel),
       };
+      break;
     }
     case "qrcode": {
       const p = obj.props;
-      return {
+      opts = {
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
         eclevel: p.errorCorrection,
       };
+      break;
     }
     case "datamatrix": {
       const p = obj.props;
-      return {
+      opts = {
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
       };
+      break;
     }
     case "aztec": {
       const p = obj.props;
-      return {
+      opts = {
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
       };
+      break;
     }
     case "micropdf417": {
       const p = obj.props;
-      return {
+      opts = {
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
@@ -224,10 +240,11 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
           Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
         ),
       };
+      break;
     }
     case "codablock": {
       const p = obj.props;
-      return {
+      opts = {
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
@@ -236,10 +253,13 @@ function buildBwipOptions(obj: LabelObject): Record<string, unknown> | null {
           Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
         ),
       };
+      break;
     }
     default:
       return null;
   }
+
+  return opts;
 }
 
 // Compute Konva display dimensions from the rendered bwip canvas and object props.
@@ -287,19 +307,19 @@ function getDisplaySize(
       return { w: canvas.width * ratio, h: canvas.height * ratio };
     }
     case "qrcode": {
-      // canvas.width / BWIP_SCALE = number of modules; each module = magnification dots
+      // canvas.width / (BWIP_SCALE * 2) = number of modules; bwip-js applies an implicit 2x scale for 2D barcodes
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
-      const size = (canvas.width / BWIP_SCALE) * modulePx;
+      const size = (canvas.width / (BWIP_SCALE * 2)) * modulePx;
       return { w: size, h: size };
     }
     case "datamatrix": {
       const modulePx = dotsToPx(obj.props.dimension, scale, dpmm);
-      const size = (canvas.width / BWIP_SCALE) * modulePx;
+      const size = (canvas.width / (BWIP_SCALE * 2)) * modulePx;
       return { w: size, h: size };
     }
     case "aztec": {
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
-      const size = (canvas.width / BWIP_SCALE) * modulePx;
+      const size = (canvas.width / (BWIP_SCALE * 2)) * modulePx;
       return { w: size, h: size };
     }
     case "micropdf417":
@@ -323,35 +343,6 @@ export function BarcodeObject({
   onChange,
   snap,
 }: Props) {
-  // Apply ^FT baseline correction (same logic as KonvaObjectInner)
-  const displayX = obj.x;
-  let displayY = obj.y;
-  if (obj.positionType === "FT") {
-    if (BARCODE_1D_TYPES.has(obj.type)) {
-      const p = obj.props as { height: number };
-      displayY -= p.height;
-    } else if (
-      obj.type === "pdf417" ||
-      obj.type === "micropdf417" ||
-      obj.type === "codablock"
-    ) {
-      const p = obj.props as { rowHeight: number };
-      displayY -= p.rowHeight * 10;
-    } else if (obj.type === "qrcode") {
-      const p = obj.props as { magnification: number };
-      displayY -= p.magnification * 25;
-    } else if (obj.type === "aztec") {
-      const p = obj.props as { magnification: number };
-      displayY -= p.magnification * 25;
-    } else if (obj.type === "datamatrix") {
-      const p = obj.props as { dimension: number };
-      displayY -= p.dimension * 20;
-    }
-  }
-
-  const x = offsetX + dotsToPx(displayX, scale, dpmm);
-  const y = offsetY + dotsToPx(displayY, scale, dpmm);
-
   // bwip-js is synchronous — compute canvas directly in render (no async flash on resize)
   const { barcodeCanvas, errorMsg } = useMemo(() => {
     const opts = buildBwipOptions(obj);
@@ -371,6 +362,40 @@ export function BarcodeObject({
     }
   }, [obj]);
 
+  let displayW = 0;
+  let displayH = 0;
+  if (barcodeCanvas) {
+    const size = getDisplaySize(obj, barcodeCanvas, scale, dpmm);
+    displayW = size.w;
+    displayH = size.h;
+  }
+
+  // Apply ^FT baseline correction (same logic as KonvaObjectInner)
+  const displayX = obj.x;
+  let displayY = obj.y;
+  if (obj.positionType === "FT") {
+    if (barcodeCanvas) {
+      displayY -= pxToDots(displayH, scale, dpmm);
+    } else if (BARCODE_1D_TYPES.has(obj.type)) {
+      displayY -= (obj.props as { height: number }).height;
+    }
+    if (obj.type === "qrcode") {
+      // Zebra firmware artifact: ^FT for QR codes shifts the symbol up by exactly
+      // 3 modules (= 3 * magnification dots), independent of dpmm or content.
+      // Verified against Labelary API across magnifications 4–10 at 8 and 12 dpmm.
+      // Leading theory: the firmware reserves a dummy text-interpretation bounding
+      // box (as for 1D barcodes) even though QR codes have no human-readable text.
+      displayY -= 3 * (obj.props as { magnification: number }).magnification;
+    }
+  } else if (obj.type === "qrcode") {
+    // Zebra firmware artifact: ^FO QR codes are rendered with a hardcoded +10 dot
+    // Y-offset, independent of magnification and dpmm. Verified against Labelary.
+    displayY += 10;
+  }
+
+  const x = offsetX + dotsToPx(displayX, scale, dpmm);
+  const y = offsetY + dotsToPx(displayY, scale, dpmm);
+
   const snapPos = (sx: number, sy: number) => ({
     x:
       offsetX +
@@ -385,17 +410,32 @@ export function BarcodeObject({
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    let finalY = pxToDots(e.target.y() - offsetY, scale, dpmm);
+    if (obj.positionType === "FT") {
+      if (barcodeCanvas) {
+        finalY += pxToDots(displayH, scale, dpmm);
+      } else if (BARCODE_1D_TYPES.has(obj.type)) {
+        finalY += (obj.props as { height: number }).height;
+      }
+      if (obj.type === "qrcode") {
+        finalY += 3 * (obj.props as { magnification: number }).magnification;
+      }
+    } else if (obj.type === "qrcode") {
+      finalY -= 10;
+    }
     onChange({
       x: pxToDots(e.target.x() - offsetX, scale, dpmm),
-      y: pxToDots(e.target.y() - offsetY, scale, dpmm),
+      y: finalY,
     });
   };
 
   if (barcodeCanvas) {
-    const { w, h } = getDisplaySize(obj, barcodeCanvas, scale, dpmm);
+    const w = displayW;
+    const h = displayH;
     const printInterp = !!(obj.props as { printInterpretation?: boolean })
       .printInterpretation;
-    const moduleWidth = (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
+    const moduleWidth =
+      (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
     const textFontSize = Math.max(dotsToPx(moduleWidth * 10, scale, dpmm), 6);
     const textGap = Math.max(dotsToPx(5, scale, dpmm), 3);
     const rawContent = (obj.props as { content?: string }).content ?? "";
@@ -691,12 +731,7 @@ export function BarcodeObject({
           onDragMove={(e) =>
             e.target.position(snapPos(e.target.x(), e.target.y()))
           }
-          onDragEnd={(e) =>
-            onChange({
-              x: pxToDots(e.target.x() - offsetX, scale, dpmm),
-              y: pxToDots(e.target.y() - offsetY, scale, dpmm),
-            })
-          }
+          onDragEnd={handleDragEnd}
         >
           <KImage
             x={0}
@@ -738,12 +773,7 @@ export function BarcodeObject({
           onDragMove={(e) =>
             e.target.position(snapPos(e.target.x(), e.target.y()))
           }
-          onDragEnd={(e) =>
-            onChange({
-              x: pxToDots(e.target.x() - offsetX, scale, dpmm),
-              y: pxToDots(e.target.y() - offsetY, scale, dpmm),
-            })
-          }
+          onDragEnd={handleDragEnd}
         >
           <KImage
             x={0}
