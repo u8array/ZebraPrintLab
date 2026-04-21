@@ -245,6 +245,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let cbRowHeight = 10;
   let cbSecurity: CodablockProps['securityLevel'] = 'Y';
 
+  // ^A@ pending printer font name (e.g. "ARIAL.TTF")
+  let pendingPrinterFontName: string | undefined;
+
   // ^SN / ^SF serialization state
   let snPending = false;
   let snIncrement = 1;
@@ -286,7 +289,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           fontWidth: textW,
           rotation: textRot,
           reverse: (lrActive || frActive) || undefined,
+          printerFontName: pendingPrinterFontName,
         };
+        pendingPrinterFontName = undefined;
         if (fbWidth > 0) {
           textProps.blockWidth = fbWidth;
           textProps.blockLines = fbLines;
@@ -1055,6 +1060,10 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           textRot = (rest[0] as TextProps['rotation']) ?? fwRotation;
           textH = int(p[1]) || cfHeight || 30;
           textW = int(p[2]) || cfWidth || 0;
+          // Extract font filename from "E:ARIAL.TTF" or "R:FONT.TTF"
+          const fontRef = p[3] ?? '';
+          const colonIdx = fontRef.indexOf(':');
+          pendingPrinterFontName = (colonIdx >= 0 ? fontRef.slice(colonIdx + 1) : fontRef) || undefined;
           partialCmds.add('^A@');
           break;
         }

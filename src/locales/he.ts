@@ -109,6 +109,12 @@ const he = {
       justifyC: 'C — מרכז',
       justifyR: 'R — ימין',
       justifyJ: 'J — מיושר',
+      printerFont: 'Printer font (^A@)',
+      uploadFont: 'Upload font file',
+      uploadingFont: 'Uploading…',
+      replaceFont: 'Replace font',
+      fontLoaded: 'Font loaded',
+      fontMissing: 'Font not loaded',
     },
     code128: {
       content: 'תוכן',

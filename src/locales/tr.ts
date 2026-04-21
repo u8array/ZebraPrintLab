@@ -109,6 +109,12 @@ const tr = {
       justifyC: 'C — Orta',
       justifyR: 'R — Sağ',
       justifyJ: 'J — İki yana',
+      printerFont: 'Printer font (^A@)',
+      uploadFont: 'Upload font file',
+      uploadingFont: 'Uploading…',
+      replaceFont: 'Replace font',
+      fontLoaded: 'Font loaded',
+      fontMissing: 'Font not loaded',
     },
     code128: {
       content: 'İçerik',

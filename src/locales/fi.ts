@@ -109,6 +109,12 @@ const fi = {
       justifyC: 'C — Keskitetty',
       justifyR: 'R — Oikea',
       justifyJ: 'J — Tasattu',
+      printerFont: 'Printer font (^A@)',
+      uploadFont: 'Upload font file',
+      uploadingFont: 'Uploading…',
+      replaceFont: 'Replace font',
+      fontLoaded: 'Font loaded',
+      fontMissing: 'Font not loaded',
     },
     code128: {
       content: 'Sisältö',

@@ -109,6 +109,12 @@ const lt = {
       justifyC: 'C — Centras',
       justifyR: 'R — Dešinė',
       justifyJ: 'J — Abipusė',
+      printerFont: 'Printer font (^A@)',
+      uploadFont: 'Upload font file',
+      uploadingFont: 'Uploading…',
+      replaceFont: 'Replace font',
+      fontLoaded: 'Font loaded',
+      fontMissing: 'Font not loaded',
     },
     code128: {
       content: 'Turinys',

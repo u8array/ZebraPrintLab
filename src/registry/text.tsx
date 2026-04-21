@@ -1,7 +1,9 @@
+import { useRef, useState, useCallback } from 'react';
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
+import { getFont, loadFontFile, useFontCacheVersion } from '../lib/fontCache';
 
 export interface TextProps {
   content: string;
@@ -9,6 +11,8 @@ export interface TextProps {
   fontWidth: number;
   rotation: 'N' | 'R' | 'I' | 'B';
   reverse?: boolean;
+  /** Printer TrueType font filename from ^A@ (e.g. "ARIAL.TTF") */
+  printerFontName?: string;
   /** ^FB field block properties */
   blockWidth?: number;
   blockLines?: number;
@@ -30,13 +34,16 @@ export const text: ObjectTypeDefinition<TextProps> = {
 
   toZPL: (obj) => {
     const p = obj.props;
+    const fontCmd = p.printerFontName
+      ? `^A@${p.rotation},${p.fontHeight},${p.fontWidth},E:${p.printerFontName}`
+      : `^A0${p.rotation},${p.fontHeight},${p.fontWidth}`;
     const fbCmd = p.blockWidth
       ? `^FB${p.blockWidth},${p.blockLines ?? 1},${p.blockLineSpacing ?? 0},${p.blockJustify ?? 'L'},0`
       : '';
     return [
       p.reverse ? '^LRY' : '',
       fieldPos(obj),
-      `^A0${p.rotation},${p.fontHeight},${p.fontWidth}`,
+      fontCmd,
       fbCmd,
       `^FD${p.content}^FS`,
       p.reverse ? '^LRN' : '',
@@ -46,8 +53,61 @@ export const text: ObjectTypeDefinition<TextProps> = {
   PropertiesPanel: ({ obj, onChange }) => {
     const t = useT();
     const p = obj.props;
+    const fileRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    useFontCacheVersion();
+
+    const cachedFont = p.printerFontName ? getFont(p.printerFontName) : undefined;
+    const fontLoaded = !!cachedFont;
+
+    const handleFontUpload = useCallback(async (file: File) => {
+      if (!p.printerFontName) return;
+      setUploading(true);
+      try {
+        await loadFontFile(file, p.printerFontName);
+      } finally {
+        setUploading(false);
+      }
+    }, [p.printerFontName]);
+
     return (
       <div className="flex flex-col gap-3">
+        {p.printerFontName && (
+          <div className="flex flex-col gap-1">
+            <label className={labelCls}>{t.registry.text.printerFont}</label>
+            <span className="text-xs font-mono text-muted">{p.printerFontName}</span>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".ttf,.otf,.TTF,.OTF"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFontUpload(file);
+                e.target.value = '';
+              }}
+            />
+            <button
+              type="button"
+              className="px-3 py-1.5 rounded text-xs font-mono bg-surface-2 border border-border text-text hover:bg-border transition-colors"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading
+                ? t.registry.text.uploadingFont
+                : fontLoaded
+                  ? t.registry.text.replaceFont
+                  : t.registry.text.uploadFont}
+            </button>
+            {fontLoaded && (
+              <span className="text-[10px] text-accent font-mono">{t.registry.text.fontLoaded}</span>
+            )}
+            {!fontLoaded && (
+              <span className="text-[10px] text-muted font-mono">{t.registry.text.fontMissing}</span>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.registry.text.content}</label>
           <input

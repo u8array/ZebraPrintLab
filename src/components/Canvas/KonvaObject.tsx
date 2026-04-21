@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getFontFamily, useFontCacheVersion } from "../../lib/fontCache";
 import {
   Circle,
   Ellipse,
@@ -370,6 +371,7 @@ function KonvaObjectInner({
   onChange,
   snap,
 }: Props) {
+  useFontCacheVersion();
   // If the object was imported with ^FT (baseline position), compute display offset.
   // ^FT positions text at the baseline; ^FO at the top-left corner.
   // We need to convert FT→FO for canvas rendering only.
@@ -462,6 +464,9 @@ function KonvaObjectInner({
   if (obj.type === "text") {
     const p = obj.props;
     const fontSize = Math.max(dotsToPx(p.fontHeight, scale, dpmm) / 1.3, 6);
+    const fontFamily = p.printerFontName
+      ? (getFontFamily(p.printerFontName) ?? "'Roboto Condensed', sans-serif")
+      : "'Roboto Condensed', sans-serif";
     const zplRotationDeg: Record<typeof p.rotation, number> = {
       N: 0,
       R: 90,
@@ -496,7 +501,7 @@ function KonvaObjectInner({
           <Text
             text={p.content}
             fontSize={fontSize}
-            fontFamily="'Roboto Condensed', sans-serif"
+            fontFamily={fontFamily}
             fontStyle="bold"
             fill="#ffffff"
             y={approxH * 0.1}
@@ -512,7 +517,7 @@ function KonvaObjectInner({
         y={y}
         text={p.content}
         fontSize={fontSize}
-        fontFamily="'Roboto Condensed', sans-serif"
+        fontFamily={fontFamily}
         fontStyle="bold"
         rotation={zplRotationDeg[p.rotation]}
         fill="#000000"

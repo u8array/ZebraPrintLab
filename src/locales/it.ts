@@ -109,6 +109,12 @@ const it = {
       justifyC: 'C — Centro',
       justifyR: 'R — Destra',
       justifyJ: 'J — Giustificato',
+      printerFont: 'Printer font (^A@)',
+      uploadFont: 'Upload font file',
+      uploadingFont: 'Uploading…',
+      replaceFont: 'Replace font',
+      fontLoaded: 'Font loaded',
+      fontMissing: 'Font not loaded',
     },
     code128: {
       content: 'Contenuto',

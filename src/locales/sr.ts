@@ -109,6 +109,12 @@ const sr = {
       justifyC: 'C — Центар',
       justifyR: 'R — Десно',
       justifyJ: 'J — Обострано',
+      printerFont: 'Printer font (^A@)',
+      uploadFont: 'Upload font file',
+      uploadingFont: 'Uploading…',
+      replaceFont: 'Replace font',
+      fontLoaded: 'Font loaded',
+      fontMissing: 'Font not loaded',
     },
     code128: {
       content: 'Sadržaj',
