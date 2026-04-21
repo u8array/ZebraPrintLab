@@ -52,6 +52,9 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
 };
 
 const BWIP_SCALE = 2; // px per module — fixed render resolution
+const BWIP_2D_INTERNAL_SCALE = 2; // bwip-js renders 2D matrix codes as 2×2 units/module (PostScript rounding artifact)
+const QR_FO_Y_OFFSET_DOTS = 10;   // Zebra firmware artifact: ^FO QR adds hardcoded 10-dot Y offset
+const QR_FT_MODULE_OFFSET = 3;    // Zebra firmware artifact: ^FT QR shifts symbol up by 3 modules
 
 // EAN/UPC barcodes: digits are rendered manually via Konva Text nodes.
 // Other 1D types: text is a separate ZPL ^FT field.
@@ -307,19 +310,19 @@ function getDisplaySize(
       return { w: canvas.width * ratio, h: canvas.height * ratio };
     }
     case "qrcode": {
-      // canvas.width / (BWIP_SCALE * 2) = number of modules; bwip-js applies an implicit 2x scale for 2D barcodes
+      // canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE) = number of modules
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
-      const size = (canvas.width / (BWIP_SCALE * 2)) * modulePx;
+      const size = (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "datamatrix": {
       const modulePx = dotsToPx(obj.props.dimension, scale, dpmm);
-      const size = (canvas.width / (BWIP_SCALE * 2)) * modulePx;
+      const size = (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "aztec": {
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
-      const size = (canvas.width / (BWIP_SCALE * 2)) * modulePx;
+      const size = (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "micropdf417":
@@ -385,12 +388,12 @@ export function BarcodeObject({
       // Verified against Labelary API across magnifications 4–10 at 8 and 12 dpmm.
       // Leading theory: the firmware reserves a dummy text-interpretation bounding
       // box (as for 1D barcodes) even though QR codes have no human-readable text.
-      displayY -= 3 * (obj.props as { magnification: number }).magnification;
+      displayY -= QR_FT_MODULE_OFFSET * (obj.props as { magnification: number }).magnification;
     }
   } else if (obj.type === "qrcode") {
     // Zebra firmware artifact: ^FO QR codes are rendered with a hardcoded +10 dot
     // Y-offset, independent of magnification and dpmm. Verified against Labelary.
-    displayY += 10;
+    displayY += QR_FO_Y_OFFSET_DOTS;
   }
 
   const x = offsetX + dotsToPx(displayX, scale, dpmm);
@@ -418,10 +421,10 @@ export function BarcodeObject({
         finalY += (obj.props as { height: number }).height;
       }
       if (obj.type === "qrcode") {
-        finalY += 3 * (obj.props as { magnification: number }).magnification;
+        finalY += QR_FT_MODULE_OFFSET * (obj.props as { magnification: number }).magnification;
       }
     } else if (obj.type === "qrcode") {
-      finalY -= 10;
+      finalY -= QR_FO_Y_OFFSET_DOTS;
     }
     onChange({
       x: pxToDots(e.target.x() - offsetX, scale, dpmm),
