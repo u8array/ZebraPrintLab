@@ -455,9 +455,24 @@ function KonvaObjectInner({
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    let finalX = pxToDots(e.target.x() - offsetX, scale, dpmm);
+    let finalY = pxToDots(e.target.y() - offsetY, scale, dpmm);
+
+    if (obj.type === "text" || obj.type === "serial") {
+      const p = obj.props as { fontHeight: number; rotation: string };
+      const ROTATION_OFFSET = 15;
+      if (p.rotation === "I") {
+        finalY += ROTATION_OFFSET;
+      } else if (p.rotation === "R") {
+        finalX += ROTATION_OFFSET;
+      } else if (p.rotation === "B") {
+        finalX -= ROTATION_OFFSET;
+      }
+    }
+
     onChange({
-      x: pxToDots(e.target.x() - offsetX, scale, dpmm),
-      y: pxToDots(e.target.y() - offsetY, scale, dpmm),
+      x: finalX,
+      y: finalY,
     });
   };
 
