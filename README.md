@@ -1,7 +1,6 @@
 # ZebraPrintLab
 
 [![Deploy](https://github.com/u8array/ZebraPrintLab/actions/workflows/deploy.yml/badge.svg)](https://github.com/u8array/ZebraPrintLab/actions/workflows/deploy.yml)
-[![PR checks](https://github.com/u8array/ZebraPrintLab/actions/workflows/pr.yml/badge.svg)](https://github.com/u8array/ZebraPrintLab/actions/workflows/pr.yml)
 
 Browser-based label authoring tool for Zebra printers. No software to install.
 
