@@ -10,13 +10,9 @@ import { describe, it, expect } from 'vitest';
 import { parseZPL } from '../lib/zplParser';
 import { generateZPL } from '../lib/zplGenerator';
 import type { LabelConfig } from '../types/ObjectType';
+import { props } from './helpers';
 
 const BASE: LabelConfig = { widthMm: 100, heightMm: 60, dpmm: 8 };
-
-// ── helpers ─────────────────────────────────────────────────────────────────
-
-const props = (obj: { props: unknown } | undefined): Record<string, unknown> =>
-  (obj?.props ?? {}) as Record<string, unknown>;
 
 function roundtrip(zpl: string, dpmm = 8) {
   const first = parseZPL(zpl, dpmm);
@@ -59,6 +55,8 @@ describe('round-trip — shipping label', () => {
     const { first, second } = roundtrip(SHIPPING_ZPL);
     const bc1 = first.objects.find((o) => o.type === 'code128');
     const bc2 = second.objects.find((o) => o.type === 'code128');
+    expect(bc1).toBeDefined();
+    expect(bc2).toBeDefined();
     expect(props(bc2).content).toBe(props(bc1).content);
     expect(props(bc2).height).toBe(props(bc1).height);
     expect(props(bc2).moduleWidth).toBe(props(bc1).moduleWidth);
@@ -96,6 +94,7 @@ describe('round-trip — QR code label', () => {
     const { first, second } = roundtrip(QR_LABEL_ZPL);
     const qr1 = first.objects.find((o) => o.type === 'qrcode');
     const qr2 = second.objects.find((o) => o.type === 'qrcode');
+    expect(qr1).toBeDefined();
     expect(qr2).toBeDefined();
     expect(props(qr2).content).toBe(props(qr1).content);
     expect(props(qr2).magnification).toBe(props(qr1).magnification);
@@ -134,6 +133,8 @@ describe('round-trip — multi-barcode + shapes label', () => {
     const { first, second } = roundtrip(MULTICODE_ZPL);
     const dm1 = first.objects.find((o) => o.type === 'datamatrix');
     const dm2 = second.objects.find((o) => o.type === 'datamatrix');
+    expect(dm1).toBeDefined();
+    expect(dm2).toBeDefined();
     expect(props(dm2).content).toBe(props(dm1).content);
     expect(props(dm2).dimension).toBe(props(dm1).dimension);
   });
@@ -142,6 +143,8 @@ describe('round-trip — multi-barcode + shapes label', () => {
     const { first, second } = roundtrip(MULTICODE_ZPL);
     const el1 = first.objects.find((o) => o.type === 'ellipse' && props(o).width !== props(o).height);
     const el2 = second.objects.find((o) => o.type === 'ellipse' && props(o).width !== props(o).height);
+    expect(el1).toBeDefined();
+    expect(el2).toBeDefined();
     expect(props(el2).width).toBe(props(el1).width);
     expect(props(el2).height).toBe(props(el1).height);
   });
@@ -161,6 +164,8 @@ describe('round-trip — field block text', () => {
     const { first, second } = roundtrip(BLOCK_TEXT_ZPL);
     const t1 = first.objects.find((o) => o.type === 'text');
     const t2 = second.objects.find((o) => o.type === 'text');
+    expect(t1).toBeDefined();
+    expect(t2).toBeDefined();
     expect(props(t2).blockWidth).toBe(props(t1).blockWidth);
     expect(props(t2).blockJustify).toBe(props(t1).blockJustify);
     expect(props(t2).blockLines).toBe(props(t1).blockLines);
@@ -191,6 +196,8 @@ describe('round-trip — barcode1d types (UPC-A, EAN-8, UPC-E, I2of5, Code93)', 
     const { first, second } = roundtrip(BARCODE1D_ZPL);
     const b1 = first.objects.find((o) => o.type === 'upca');
     const b2 = second.objects.find((o) => o.type === 'upca');
+    expect(b1).toBeDefined();
+    expect(b2).toBeDefined();
     expect(props(b2).content).toBe(props(b1).content);
     expect(props(b2).height).toBe(props(b1).height);
   });
@@ -199,6 +206,8 @@ describe('round-trip — barcode1d types (UPC-A, EAN-8, UPC-E, I2of5, Code93)', 
     const { first, second } = roundtrip(BARCODE1D_ZPL);
     const b1 = first.objects.find((o) => o.type === 'code93');
     const b2 = second.objects.find((o) => o.type === 'code93');
+    expect(b1).toBeDefined();
+    expect(b2).toBeDefined();
     expect(props(b2).content).toBe(props(b1).content);
   });
 });
