@@ -6,7 +6,7 @@ import type { LabelObject } from "../../registry";
 import { BARCODE_1D_TYPES } from "../../registry";
 import type { LabelObjectBase } from "../../types/ObjectType";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
-import { buildBwipOptions, getDisplaySize, eanCheckDigit } from "./bwipHelpers";
+import { buildBwipOptions, getDisplaySize, eanCheckDigit, BWIP_SCALE } from "./bwipHelpers";
 import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET, EAN_UPC_TYPES } from "./bwipConstants";
 
 type ObjectChanges = Partial<Omit<LabelObjectBase, "id" | "type">> & {

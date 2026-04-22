@@ -28,7 +28,7 @@ const BCID: Record<string, string> = {
   codablock: "codablockf",
 };
 
-const BWIP_SCALE = 2;
+export const BWIP_SCALE = 2;
 const BWIP_2D_INTERNAL_SCALE = 2;
 
 export function eanCheckDigit(digits: string, w0: number, w1: number): string {
