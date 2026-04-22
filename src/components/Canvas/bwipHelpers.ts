@@ -1,4 +1,4 @@
-import type { LabelObject } from "../../types/ObjectType";
+import type { LabelObject } from "../../registry";
 import { dotsToPx } from "../../lib/coordinates";
 
 const BCID: Record<string, string> = {
@@ -12,14 +12,14 @@ const BCID: Record<string, string> = {
   code93: "code93",
   code11: "code11",
   industrial2of5: "industrial2of5",
-  standard2of5: "standard2of5",
-  codabar: "codabar",
-  logmars: "logmars",
+  standard2of5: "code2of5",
+  codabar: "rationalizedCodabar",
+  logmars: "code39",
   msi: "msi",
   plessey: "plessey",
-  gs1databar: "gs1databar",
+  gs1databar: "databaromni",
   planet: "planet",
-  postal: "postnet", // approximation for standard zip
+  postal: "postnet",
   pdf417: "pdf417",
   qrcode: "qrcode",
   datamatrix: "datamatrix",
@@ -28,25 +28,29 @@ const BCID: Record<string, string> = {
   codablock: "codablockf",
 };
 
-const BWIP_SCALE = 2; // px per module — fixed render resolution
-const BWIP_2D_INTERNAL_SCALE = 2; // bwip-js renders 2D matrix codes as 2×2 units/module (PostScript rounding artifact)
+const BWIP_SCALE = 2;
+const BWIP_2D_INTERNAL_SCALE = 2;
 
-export function eanCheckDigit(data: string, length: number): string {
+export function eanCheckDigit(digits: string, w0: number, w1: number): string {
   let sum = 0;
-  for (let i = 0; i < length - 1; i++) {
-    sum += parseInt(data[i], 10) * (i % 2 === 0 ? 1 : 3);
-  }
-  return ((10 - (sum % 10)) % 10).toString();
+  for (let i = 0; i < digits.length; i++)
+    sum += parseInt(digits[i] ?? "0", 10) * (i % 2 === 0 ? w0 : w1);
+  return String((10 - (sum % 10)) % 10);
 }
 
-export function toCode128BRaw(content: string): string {
-  // Simple heuristic: just encode as Code B. In real life, might need A/C.
-  const parts: string[] = [];
-  for (let i = 0; i < content.length; i++) {
-    const code = content.charCodeAt(i);
-    // Bwip-js accepts raw values or text. For raw Code128, it has a specific syntax
-    // ^NNN where NNN is the 3-digit class. However, standard text works for basic ascii.
-    parts.push(String.fromCharCode(code));
+/**
+ * Encode text as Code 128 subset B using bwip-js raw ^NNN format.
+ * ZPL's ^BC defaults to subset B for printable ASCII content, so using raw
+ * Code B here keeps the designer's module count in sync with Labelary.
+ * Returns null for characters outside Code B range (ASCII 32–126).
+ */
+export function toCode128BRaw(text: string): string | null {
+  if (!text) return null;
+  const parts = ["^104"]; // Start B
+  for (const ch of text) {
+    const code = ch.charCodeAt(0);
+    if (code < 32 || code > 126) return null;
+    parts.push(`^${String(code - 32).padStart(3, "0")}`);
   }
   return parts.join("");
 }
@@ -57,85 +61,146 @@ export function buildBwipOptions(
   const bcid = BCID[obj.type];
   if (!bcid) return null;
 
-  let opts: Record<string, unknown> = {
-    bcid,
-    paddingwidth: 0,
-    paddingheight: 0,
-  };
+  let opts: Record<string, unknown> | null = null;
 
   switch (obj.type) {
-    case "code128": {
-      const p = obj.props as {
-        content: string;
-        height: number;
-        checkDigit: boolean;
-      };
-      const text = p.content;
-      opts = {
-        ...opts,
-        text,
-        scale: BWIP_SCALE,
-        height: p.height / (8 * BWIP_SCALE), // converting to bwip 'modules'
-      };
-      break;
-    }
-    case "code39": {
-      const p = obj.props as { content: string; height: number };
-      const text = p.content;
-      opts = {
-        ...opts,
-        text,
-        scale: BWIP_SCALE,
-        height: p.height / (8 * BWIP_SCALE),
-      };
-      break;
-    }
     case "ean13":
     case "ean8":
     case "upca":
     case "upce": {
-      const p = obj.props as { content: string; height: number };
+      const p = obj.props;
+      let text: string;
+      if (obj.type === "upce") {
+        const r = p.content || "000000";
+        text = r.length === 6 ? `0${r}` : r;
+      } else {
+        text = p.content || "0";
+      }
+      opts = { bcid, text, scale: BWIP_SCALE, height: 10 };
+      break;
+    }
+    case "code128": {
+      const p = obj.props;
+      const text = p.content || "0";
+      const rawB = toCode128BRaw(text);
+      if (rawB) {
+        opts = { bcid, text: rawB, raw: true, scale: BWIP_SCALE, height: 10 };
+      } else {
+        opts = { bcid, text, scale: BWIP_SCALE, height: 10 };
+      }
+      break;
+    }
+    case "code39":
+    case "interleaved2of5":
+    case "code93":
+    case "code11":
+    case "industrial2of5":
+    case "standard2of5":
+    case "codabar":
+    case "msi":
+    case "plessey": {
+      const p = obj.props;
+      opts = { bcid, text: p.content || "0", scale: BWIP_SCALE, height: 10 };
+      break;
+    }
+    case "postal": {
+      const p = obj.props;
+      opts = { bcid, text: p.content || "0", scale: BWIP_SCALE, height: 10 };
+      break;
+    }
+    case "logmars": {
+      const p = obj.props;
       opts = {
-        ...opts,
-        text: p.content,
+        bcid,
+        text: p.content || "0",
         scale: BWIP_SCALE,
-        height: p.height / (8 * BWIP_SCALE),
+        height: 10,
+        includecheck: true,
+      };
+      break;
+    }
+    case "gs1databar": {
+      const p = obj.props;
+      const raw = (p.content || "0").replace(/\D/g, "");
+      const padded = raw.padStart(13, "0").slice(0, 14);
+      opts = {
+        bcid,
+        text: `(01)${padded}`,
+        scale: BWIP_SCALE,
+        height: 10,
+      };
+      break;
+    }
+    case "planet": {
+      const p = obj.props;
+      let raw = (p.content || "0").replace(/\D/g, "");
+      if (raw.length < 11) raw = raw.padStart(11, "0");
+      else if (raw.length === 12) raw = raw.padStart(13, "0");
+      opts = {
+        bcid,
+        text: raw,
+        scale: BWIP_SCALE,
+        height: 10,
+        includecheck: true,
+      };
+      break;
+    }
+    case "pdf417": {
+      const p = obj.props;
+      opts = {
+        bcid,
+        text: p.content || " ",
+        scale: BWIP_SCALE,
+        rowheight: Math.max(1, Math.round(p.rowHeight / Math.max(p.moduleWidth, 1))),
+        columns: p.columns || 0,
+        eclevel: String(p.securityLevel),
       };
       break;
     }
     case "qrcode": {
-      const p = obj.props as { content: string; magnification: number; errorCorrection: string };
+      const p = obj.props;
       opts = {
-        ...opts,
-        text: p.content,
+        bcid,
+        text: p.content || " ",
         scale: BWIP_SCALE,
         eclevel: p.errorCorrection,
       };
       break;
     }
     case "datamatrix": {
-      const p = obj.props as { content: string };
+      const p = obj.props;
+      opts = { bcid, text: p.content || " ", scale: BWIP_SCALE };
+      break;
+    }
+    case "aztec": {
+      const p = obj.props;
+      opts = { bcid, text: p.content || " ", scale: BWIP_SCALE };
+      break;
+    }
+    case "micropdf417": {
+      const p = obj.props;
       opts = {
-        ...opts,
-        text: p.content,
+        bcid,
+        text: p.content || " ",
         scale: BWIP_SCALE,
+        rowheight: Math.max(1, Math.round(p.rowHeight / Math.max(p.moduleWidth, 1))),
       };
       break;
     }
-    default: {
-      const p = obj.props as { content?: string; height?: number };
+    case "codablock": {
+      const p = obj.props;
       opts = {
-        ...opts,
-        text: p.content || "",
+        bcid,
+        text: p.content || " ",
         scale: BWIP_SCALE,
-        ...(p.height ? { height: p.height / (8 * BWIP_SCALE) } : {}),
+        rowheight: Math.max(8, Math.round(p.rowHeight / Math.max(p.moduleWidth, 1))),
       };
       break;
     }
+    default:
+      return null;
   }
 
-  // Common: we usually disable bwip-js's own text rendering since we want to control it
-  opts.includetext = false;
   return opts;
 }
 
@@ -148,12 +213,21 @@ export function getDisplaySize(
   if (!canvas) return { w: 0, h: 0 };
 
   switch (obj.type) {
-    case "code128":
-    case "code39":
+    case "msi":
+    case "plessey": {
+      // ZPL/Labelary includes 10 quiet-zone modules on each side; bwip renders bars only.
+      // Add 20 modules to cover both quiet zones so canvas width matches Labelary.
+      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
+      const w = (canvas.width / BWIP_SCALE + 20) * modulePx;
+      const h = dotsToPx(obj.props.height, scale, dpmm);
+      return { w, h };
+    }
     case "ean13":
     case "ean8":
     case "upca":
     case "upce":
+    case "code128":
+    case "code39":
     case "interleaved2of5":
     case "code93":
     case "code11":
@@ -161,56 +235,40 @@ export function getDisplaySize(
     case "standard2of5":
     case "codabar":
     case "logmars":
-    case "msi":
-    case "plessey":
     case "gs1databar":
     case "planet":
     case "postal": {
-      // 1D barcodes
-      const p = obj.props as { moduleWidth: number; height: number };
-      const modulePx = dotsToPx(p.moduleWidth, scale, dpmm);
+      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const w = (canvas.width / BWIP_SCALE) * modulePx;
-      const h = dotsToPx(p.height, scale, dpmm);
+      const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
+    case "pdf417": {
+      const ratio = dotsToPx(obj.props.moduleWidth, scale, dpmm) / BWIP_SCALE;
+      return { w: canvas.width * ratio, h: canvas.height * ratio };
+    }
     case "qrcode": {
-      const p = obj.props as { magnification: number };
-      const modulePx = dotsToPx(p.magnification, scale, dpmm);
-      const size =
-        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+      const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
+      const size = (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "datamatrix": {
-      const p = obj.props as { dimension: number };
-      const modulePx = dotsToPx(p.dimension, scale, dpmm);
-      const size =
-        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+      const modulePx = dotsToPx(obj.props.dimension, scale, dpmm);
+      const size = (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "aztec": {
-      const p = obj.props as { magnification: number };
-      const modulePx = dotsToPx(p.magnification, scale, dpmm);
-      const size =
-        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+      const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
+      const size = (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "micropdf417":
-    case "pdf417":
     case "codablock": {
-      // These are multi-row 2D codes, height and width scale independently
-      const p = obj.props as { moduleWidth: number; rowHeight: number };
-      const wPx = dotsToPx(p.moduleWidth, scale, dpmm);
-      const hPx = dotsToPx(p.rowHeight, scale, dpmm);
-
-      // We use ratio logic if needed, but simple scaling is often enough
-      const w = (canvas.width / BWIP_SCALE) * wPx;
-      const h = (canvas.height / BWIP_SCALE) * hPx;
-      return { w, h };
+      const ratio = dotsToPx(obj.props.moduleWidth, scale, dpmm) / BWIP_SCALE;
+      return { w: canvas.width * ratio, h: canvas.height * ratio };
     }
     default: {
-      const w = canvas.width;
-      const h = canvas.height;
-      return { w, h };
+      return { w: canvas.width, h: canvas.height };
     }
   }
 }
