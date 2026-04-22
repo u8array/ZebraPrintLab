@@ -1,7 +1,7 @@
 import type { LabelObject } from "../../registry";
 import { dotsToPx } from "../../lib/coordinates";
 
-const BCID: Record<string, string> = {
+const BCID: Partial<Record<LabelObject["type"], string>> = {
   code128: "code128",
   code39: "code39",
   ean13: "ean13",
