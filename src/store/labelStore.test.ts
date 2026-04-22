@@ -1,13 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useLabelStore } from './labelStore';
 import type { LabelObject } from '../registry';
-
-// â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-function defined<T>(val: T | undefined | null): T {
-  expect(val).toBeDefined();
-  return val as T;
-}
+import { defined, props } from '../test/helpers';
 
 /** Reset store to clean state before each test. */
 function reset() {
@@ -26,11 +20,11 @@ function ids() {
   return state().objects.map((o) => o.id);
 }
 
-// â”€â”€ setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── setup ─────────────────────────────────────────────────────────────────────
 
 beforeEach(() => reset());
 
-// â”€â”€ addObject â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── addObject ─────────────────────────────────────────────────────────────────
 
 describe('addObject', () => {
   it('creates object with registry defaults and selects it', () => {
@@ -64,18 +58,18 @@ describe('addObject', () => {
   });
 });
 
-// â”€â”€ updateObject (props merging) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── updateObject (props merging) ──────────────────────────────────────────────
 
-describe('updateObject â€” props merging', () => {
+describe('updateObject — props merging', () => {
   it('merges partial props instead of replacing them', () => {
     state().addObject('text');
     const obj = defined(state().objects[0]);
     // text defaults: content, fontHeight, fontWidth, rotation
     state().updateObject(obj.id, { props: { fontHeight: 99 } });
     const updated = defined(state().objects[0]);
-    expect((updated.props as unknown as Record<string, unknown>).fontHeight).toBe(99);
+    expect(props(updated).fontHeight).toBe(99);
     // other props preserved
-    expect((updated.props as unknown as Record<string, unknown>).content).toBe('Text');
+    expect(props(updated).content).toBe('Text');
   });
 
   it('updates top-level fields (x, y) without touching props', () => {
@@ -83,11 +77,11 @@ describe('updateObject â€” props merging', () => {
     const obj = defined(state().objects[0]);
     state().updateObject(obj.id, { x: 999 });
     expect(defined(state().objects[0]).x).toBe(999);
-    expect((defined(state().objects[0]).props as unknown as Record<string, unknown>).content).toBe('Text');
+    expect(props(defined(state().objects[0])).content).toBe('Text');
   });
 });
 
-// â”€â”€ removeObject â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── removeObject ──────────────────────────────────────────────────────────────
 
 describe('removeObject', () => {
   it('removes the object and deselects it', () => {
@@ -100,7 +94,7 @@ describe('removeObject', () => {
   });
 });
 
-// â”€â”€ duplicateObject â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── duplicateObject ───────────────────────────────────────────────────────────
 
 describe('duplicateObject', () => {
   it('creates a copy offset by +20/+20 with a new id', () => {
@@ -130,16 +124,21 @@ describe('duplicateObject', () => {
   });
 });
 
-// â”€â”€ copy / paste â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── copy / paste ──────────────────────────────────────────────────────────────
 
 describe('copy / paste', () => {
-  it('paste is a no-op before any copy has happened', () => {
-    // This test MUST run first in this describe â€” clipboard is module-level.
+  beforeEach(() => {
+    // _clipboard and _pasteCount are module-level in the store — reset by copying an empty selection.
+    state().selectObject(null);
+    state().copySelectedObjects();
+  });
+
+  it('paste is a no-op when clipboard is empty', () => {
     state().pasteObjects();
     expect(state().objects).toHaveLength(0);
   });
 
-  it('paste increments offset with each call (+20, +40, â€¦)', () => {
+  it('paste increments offset with each call (+20, +40, …)', () => {
     state().addObject('text', { x: 100, y: 100 });
     state().selectObject(defined(state().objects[0]).id);
     state().copySelectedObjects();
@@ -164,7 +163,7 @@ describe('copy / paste', () => {
   });
 });
 
-// â”€â”€ selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── selection ─────────────────────────────────────────────────────────────────
 
 describe('toggleSelectObject', () => {
   it('adds to selection, then removes on second call', () => {
@@ -198,7 +197,7 @@ describe('removeSelectedObjects', () => {
   });
 });
 
-// â”€â”€ reorder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── reorder ───────────────────────────────────────────────────────────────────
 
 describe('moveObjectToFront', () => {
   it('moves the object to the last position in the array', () => {
@@ -284,7 +283,7 @@ describe('reorderObject', () => {
   });
 });
 
-// â”€â”€ loadDesign â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── loadDesign ────────────────────────────────────────────────────────────────
 
 describe('loadDesign', () => {
   it('replaces label config, objects, and clears selection', () => {
@@ -303,7 +302,7 @@ describe('loadDesign', () => {
   });
 });
 
-// â”€â”€ setLabelConfig (partial merge) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── setLabelConfig (partial merge) ────────────────────────────────────────────
 
 describe('setLabelConfig', () => {
   it('merges partial config without losing other fields', () => {

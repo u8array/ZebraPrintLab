@@ -2,11 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { generateZPL } from './zplGenerator';
 import { parseZPL } from './zplParser';
 import type { LabelConfig } from '../types/ObjectType';
-
-function defined<T>(val: T | undefined | null): T {
-  expect(val).toBeDefined();
-  return val as T;
-}
+import { defined, props } from '../test/helpers';
 
 const BASE_LABEL: LabelConfig = {
   widthMm: 100,
@@ -106,7 +102,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const regenerated = generateZPL(BASE_LABEL, original.objects);
     const reparsed = parseZPL(regenerated, 8);
     const textObj = defined(reparsed.objects.find((o) => o.type === 'text'));
-    expect((textObj.props as unknown as Record<string, unknown>)['content']).toBe('Hello World');
+    expect(props(textObj).content).toBe('Hello World');
   });
 
   it('preserves barcode content and height through a roundtrip', () => {
@@ -114,7 +110,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const regenerated = generateZPL(BASE_LABEL, original.objects);
     const reparsed = parseZPL(regenerated, 8);
     const barcode = defined(reparsed.objects.find((o) => o.type === 'code128'));
-    expect((barcode.props as unknown as Record<string, unknown>)['content']).toBe('987654');
-    expect((barcode.props as unknown as Record<string, unknown>)['height']).toBe(150);
+    expect(props(barcode).content).toBe('987654');
+    expect(props(barcode).height).toBe(150);
   });
 });

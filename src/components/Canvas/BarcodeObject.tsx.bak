@@ -23,7 +23,7 @@ interface Props {
   snap: (dots: number) => number;
 }
 
-import { buildBwipOptions, getDisplaySize, eanCheckDigit } from "./bwipHelpers";
+import { buildBwipOptions, getDisplaySize, eanCheckDigit, toCode128BRaw } from "./bwipHelpers";
 import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET, EAN_UPC_TYPES } from "./bwipConstants";
 export function BarcodeObject({
   obj,
