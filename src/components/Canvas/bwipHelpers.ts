@@ -30,6 +30,9 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
 
 export const BWIP_SCALE = 2;
 const BWIP_2D_INTERNAL_SCALE = 2;
+// bwip reduces PDF417 rowheight to this internal minimum when the requested
+// row count exceeds what the data strictly requires.
+const BWIP_PDF417_MIN_ROWHEIGHT = 3;
 
 /**
  * Compute the optimal bwip render scale for 1D barcodes so that each module
@@ -295,7 +298,7 @@ export function getDisplaySize(
         Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
       );
       const usedSpecified = canvas.height % (specRowheight * BWIP_SCALE) === 0;
-      const effectiveRowheight = usedSpecified ? specRowheight : 3;
+      const effectiveRowheight = usedSpecified ? specRowheight : BWIP_PDF417_MIN_ROWHEIGHT;
       const numRows = canvas.height / (effectiveRowheight * BWIP_SCALE);
       const w =
         (canvas.width / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
