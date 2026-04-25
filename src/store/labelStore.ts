@@ -11,6 +11,8 @@ import type { LocaleCode } from '../locales';
 // Clipboard lives outside Zustand state — no persistence, no undo
 let _clipboard: LabelObject[] = [];
 let _pasteCount = 0;
+// Increments each time duplicateSelectedObjects is called to stagger offsets
+let _duplicateCount = 0;
 
 function detectLocale(): LocaleCode {
   const lang = navigator.language.slice(0, 2).toLowerCase();
@@ -34,6 +36,7 @@ interface LabelState {
 
   addObject: (type: string, position?: { x: number; y: number }) => void;
   updateObject: (id: string, changes: Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object }) => void;
+  updateObjects: (updates: Array<{ id: string; changes: Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object } }>) => void;
   removeObject: (id: string) => void;
   duplicateObject: (id: string) => void;
   duplicateSelectedObjects: () => void;
@@ -98,6 +101,24 @@ export const useLabelStore = create<LabelState>()(
           }),
         })),
 
+      updateObjects: (updates) =>
+        set((state) => {
+          const updateMap = new Map(updates.map((u) => [u.id, u.changes]));
+          return {
+            objects: state.objects.map((obj) => {
+              const changes = updateMap.get(obj.id);
+              if (!changes) return obj;
+              return {
+                ...obj,
+                ...changes,
+                props: changes.props
+                  ? Object.assign({}, obj.props, changes.props)
+                  : obj.props,
+              } as LabelObject;
+            }),
+          };
+        }),
+
       removeObject: (id) =>
         set((state) => ({
           objects: state.objects.filter((obj) => obj.id !== id),
@@ -120,10 +141,12 @@ export const useLabelStore = create<LabelState>()(
       duplicateSelectedObjects: () =>
         set((state) => {
           if (state.selectedIds.length === 0) return {};
+          _duplicateCount += 1;
+          const offset = _duplicateCount * 20;
           const copies: LabelObject[] = state.selectedIds.flatMap((id) => {
             const src = state.objects.find((o) => o.id === id);
             if (!src) return [];
-            return [{ ...src, id: crypto.randomUUID(), x: src.x + 20, y: src.y + 20 } as LabelObject];
+            return [{ ...src, id: crypto.randomUUID(), x: src.x + offset, y: src.y + offset } as LabelObject];
           });
           return { objects: [...state.objects, ...copies], selectedIds: copies.map((c) => c.id) };
         }),
