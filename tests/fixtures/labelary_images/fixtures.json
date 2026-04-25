@@ -2,7 +2,7 @@
   "test_cases": [
     {
       "id": "barcode_code128_standard",
-      "zpl_input": "^XA^BY2^FO50,50^BCN,100,Y,N,N^FD123456^FS^XZ",
+      "zpl_input": "^XA^BY2^FO50,50^BCN,100,N,N,N^FD123456^FS^XZ",
       "expected_bounds": {
         "x": 50,
         "y": 50,
@@ -24,7 +24,7 @@
     },
     {
       "id": "barcode_code128_large_check_digit",
-      "zpl_input": "^XA^BY3^FO20,20^BCN,150,Y,N,Y^FD98765^FS^XZ",
+      "zpl_input": "^XA^BY3^FO20,20^BCN,150,N,N,Y^FD98765^FS^XZ",
       "expected_bounds": {
         "x": 20,
         "y": 20,
@@ -57,7 +57,7 @@
     },
     {
       "id": "barcode_ean13_standard",
-      "zpl_input": "^XA^BY2^FO50,50^BEN,100,Y,N^FD123456789012^FS^XZ",
+      "zpl_input": "^XA^BY2^FO50,50^BEN,100,N,N^FD123456789012^FS^XZ",
       "expected_bounds": {
         "x": 50,
         "y": 50,
@@ -79,7 +79,7 @@
     },
     {
       "id": "barcode_code39_standard",
-      "zpl_input": "^XA^BY2^FO50,50^B3N,N,100,Y,N^FDCODE39^FS^XZ",
+      "zpl_input": "^XA^BY2^FO50,50^B3N,N,100,N,N^FDCODE39^FS^XZ",
       "expected_bounds": {
         "x": 50,
         "y": 50,
@@ -90,14 +90,58 @@
     },
     {
       "id": "barcode_pdf417_standard",
-      "zpl_input": "^XA^BY2^FO50,50^B7N,10,0,0,,,^FDPDF417Test^FS^XZ",
+      "zpl_input": "^XA^BY2^FO50,50^B7N,10,1,4,,,^FD1234567890^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 274,
+        "height": 30
+      },
+      "image_ref": "barcode_pdf417_standard.png"
+    },
+    {
+      "id": "barcode_upca_standard",
+      "zpl_input": "^XA^BY2^FO50,50^BUN,100,N,N,N^FD01234567890^FS^XZ",
       "expected_bounds": {
         "x": 50,
         "y": 50,
         "width": 200,
-        "height": 150
+        "height": 100
       },
-      "image_ref": "barcode_pdf417_standard.png"
+      "image_ref": "barcode_upca_standard.png"
+    },
+    {
+      "id": "barcode_ean8_standard",
+      "zpl_input": "^XA^BY2^FO50,50^B8N,100,N,N^FD1234567^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 200,
+        "height": 100
+      },
+      "image_ref": "barcode_ean8_standard.png"
+    },
+    {
+      "id": "barcode_aztec_standard",
+      "zpl_input": "^XA^FO50,50^B0N,4,N,N,N,N^FDAztec123^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 100,
+        "height": 100
+      },
+      "image_ref": "barcode_aztec_standard.png"
+    },
+    {
+      "id": "barcode_interleaved2of5_standard",
+      "zpl_input": "^XA^BY2^FO50,50^B2N,100,N,N,N^FD12345678^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 200,
+        "height": 100
+      },
+      "image_ref": "barcode_interleaved2of5_standard.png"
     }
   ]
 }

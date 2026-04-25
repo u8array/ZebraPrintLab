@@ -11,6 +11,19 @@ import type { LocaleCode } from '../locales';
 // Clipboard lives outside Zustand state — no persistence, no undo
 let _clipboard: LabelObject[] = [];
 let _pasteCount = 0;
+// Increments each time duplicateSelectedObjects is called to stagger offsets;
+// reset when the user explicitly changes the selection.
+let _duplicateCount = 0;
+
+type ObjectChanges = Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object };
+
+function applyObjectChanges(obj: LabelObject, changes: ObjectChanges): LabelObject {
+  return {
+    ...obj,
+    ...changes,
+    props: changes.props ? Object.assign({}, obj.props, changes.props) : obj.props,
+  } as LabelObject;
+}
 
 function detectLocale(): LocaleCode {
   const lang = navigator.language.slice(0, 2).toLowerCase();
@@ -33,7 +46,8 @@ interface LabelState {
   canvasSettings: CanvasSettings;
 
   addObject: (type: string, position?: { x: number; y: number }) => void;
-  updateObject: (id: string, changes: Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object }) => void;
+  updateObject: (id: string, changes: ObjectChanges) => void;
+  updateObjects: (updates: { id: string; changes: ObjectChanges }[]) => void;
   removeObject: (id: string) => void;
   duplicateObject: (id: string) => void;
   duplicateSelectedObjects: () => void;
@@ -85,18 +99,19 @@ export const useLabelStore = create<LabelState>()(
 
       updateObject: (id, changes) =>
         set((state) => ({
-          objects: state.objects.map((obj) => {
-            if (obj.id !== id) return obj;
-            return {
-              ...obj,
-              ...changes,
-              // merge props, not replace
-              props: changes.props
-                ? Object.assign({}, obj.props, changes.props)
-                : obj.props,
-            } as LabelObject;
-          }),
+          objects: state.objects.map((obj) => obj.id === id ? applyObjectChanges(obj, changes) : obj),
         })),
+
+      updateObjects: (updates) =>
+        set((state) => {
+          const updateMap = new Map(updates.map((u) => [u.id, u.changes]));
+          return {
+            objects: state.objects.map((obj) => {
+              const changes = updateMap.get(obj.id);
+              return changes ? applyObjectChanges(obj, changes) : obj;
+            }),
+          };
+        }),
 
       removeObject: (id) =>
         set((state) => ({
@@ -120,10 +135,12 @@ export const useLabelStore = create<LabelState>()(
       duplicateSelectedObjects: () =>
         set((state) => {
           if (state.selectedIds.length === 0) return {};
+          _duplicateCount += 1;
+          const offset = _duplicateCount * 20;
           const copies: LabelObject[] = state.selectedIds.flatMap((id) => {
             const src = state.objects.find((o) => o.id === id);
             if (!src) return [];
-            return [{ ...src, id: crypto.randomUUID(), x: src.x + 20, y: src.y + 20 } as LabelObject];
+            return [{ ...src, id: crypto.randomUUID(), x: src.x + offset, y: src.y + offset } as LabelObject];
           });
           return { objects: [...state.objects, ...copies], selectedIds: copies.map((c) => c.id) };
         }),
@@ -151,7 +168,10 @@ export const useLabelStore = create<LabelState>()(
           return { objects: [...state.objects, ...copies], selectedIds: copies.map((c) => c.id) };
         }),
 
-      selectObject: (id) => set({ selectedIds: id ? [id] : [] }),
+      selectObject: (id) => {
+        _duplicateCount = 0;
+        set({ selectedIds: id ? [id] : [] });
+      },
 
       toggleSelectObject: (id) =>
         set((state) => ({
@@ -160,7 +180,10 @@ export const useLabelStore = create<LabelState>()(
             : [...state.selectedIds, id],
         })),
 
-      selectObjects: (ids) => set({ selectedIds: ids }),
+      selectObjects: (ids) => {
+        _duplicateCount = 0;
+        set({ selectedIds: ids });
+      },
 
       removeSelectedObjects: () =>
         set((state) => ({

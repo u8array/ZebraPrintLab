@@ -37,7 +37,7 @@ export function BarcodeObject({
 }: Props) {
   // bwip-js is synchronous — compute canvas directly in render (no async flash on resize)
   const { barcodeCanvas, errorMsg } = useMemo(() => {
-    const opts = buildBwipOptions(obj);
+    const opts = buildBwipOptions(obj, scale, dpmm);
     if (!opts) return { barcodeCanvas: null, errorMsg: null };
     const canvas = document.createElement("canvas");
     try {
@@ -52,7 +52,7 @@ export function BarcodeObject({
         errorMsg: e instanceof Error ? e.message : String(e),
       };
     }
-  }, [obj]);
+  }, [obj, scale, dpmm]);
 
   let displayW = 0;
   let displayH = 0;

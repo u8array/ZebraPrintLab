@@ -77,7 +77,7 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
 
   const colors = useColorScheme();
 
-  const { label, objects, selectedIds, addObject, updateObject, selectObject, toggleSelectObject, selectObjects } =
+  const { label, objects, selectedIds, addObject, updateObject, updateObjects, selectObject, toggleSelectObject, selectObjects } =
     useLabelStore();
 
   useEffect(() => {
@@ -168,14 +168,16 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
       const dy =
         e.code === "ArrowDown" ? step : e.code === "ArrowUp" ? -step : 0;
 
-      ids.forEach((sid) => {
-        const obj = objs.find((o) => o.id === sid);
-        if (obj) updateObject(sid, { x: obj.x + dx, y: obj.y + dy });
-      });
+      updateObjects(
+        ids.flatMap((sid) => {
+          const obj = objs.find((o) => o.id === sid);
+          return obj ? [{ id: sid, changes: { x: obj.x + dx, y: obj.y + dy } }] : [];
+        })
+      );
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [snapEnabled, snapSizeMm, label.dpmm, updateObject]);
+  }, [snapEnabled, snapSizeMm, label.dpmm, updateObjects]);
 
   // Object-snap: applied after grid-snap on every dragmove, single-object only.
   // Fires on the Stage so it sees the already-grid-snapped node position.
@@ -342,11 +344,16 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
       if (srcObj) {
         const ddx = finalChanges.x !== undefined ? finalChanges.x - srcObj.x : 0;
         const ddy = finalChanges.y !== undefined ? finalChanges.y - srcObj.y : 0;
-        selIds.forEach((sid) => {
-          if (sid === id) return;
-          const other = currentObjs.find((o) => o.id === sid);
-          if (other) updateObject(sid, { x: other.x + ddx, y: other.y + ddy });
-        });
+        updateObjects([
+          { id, changes: finalChanges },
+          ...selIds
+            .filter((sid) => sid !== id)
+            .flatMap((sid) => {
+              const other = currentObjs.find((o) => o.id === sid);
+              return other ? [{ id: sid, changes: { x: other.x + ddx, y: other.y + ddy } }] : [];
+            }),
+        ]);
+        return;
       }
     }
     updateObject(id, finalChanges);

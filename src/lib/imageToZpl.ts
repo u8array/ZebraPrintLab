@@ -37,14 +37,14 @@ export function imageToGFA(
       const bytesPerRow = Math.ceil(widthDots / 8);
       const paddedWidth = bytesPerRow * 8;
 
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = paddedWidth;
       canvas.height = heightDots;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Could not get 2d context');
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Could not get 2d context");
 
       // White background (ZPL: 0 = white)
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, paddedWidth, heightDots);
 
       // Draw image scaled to target size
@@ -62,26 +62,27 @@ export function imageToGFA(
           for (let bit = 0; bit < 8; bit++) {
             const px = byteIdx * 8 + bit;
             const idx = (row * paddedWidth + px) * 4;
-            const r = pixels[idx]!;
-            const g = pixels[idx + 1]!;
-            const b = pixels[idx + 2]!;
+            const r = pixels[idx] ?? 0;
+            const g = pixels[idx + 1] ?? 0;
+            const b = pixels[idx + 2] ?? 0;
             // Luminance (BT.601)
             const lum = 0.299 * r + 0.587 * g + 0.114 * b;
             // In ZPL: 1 = black dot, 0 = white
             if (lum < threshold) {
-              byte |= (0x80 >> bit);
+              byte |= 0x80 >> bit;
             }
           }
-          hexChars.push(byte.toString(16).toUpperCase().padStart(2, '0'));
+          hexChars.push(byte.toString(16).toUpperCase().padStart(2, "0"));
         }
       }
 
-      const hexData = hexChars.join('');
+      const hexData = hexChars.join("");
       const zpl = `^GFA,${totalBytes},${totalBytes},${bytesPerRow},${hexData}`;
 
       resolve({ zpl, widthDots: paddedWidth, heightDots });
     };
-    img.onerror = () => reject(new Error('Failed to load image for GFA conversion'));
+    img.onerror = () =>
+      reject(new Error("Failed to load image for GFA conversion"));
     img.src = dataUrl;
   });
 }

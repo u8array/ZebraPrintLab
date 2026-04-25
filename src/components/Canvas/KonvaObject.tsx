@@ -399,27 +399,6 @@ function KonvaObjectInner({
       } else if (p.rotation === "B") {
         displayX -= renderedH;
       }
-    } else if (
-      obj.type === "code128" ||
-      obj.type === "code39" ||
-      obj.type === "ean13" ||
-      obj.type === "upca" ||
-      obj.type === "ean8" ||
-      obj.type === "upce" ||
-      obj.type === "interleaved2of5" ||
-      obj.type === "code93"
-    ) {
-      const p = obj.props as { height: number };
-      displayY -= p.height;
-    } else if (obj.type === "pdf417") {
-      const p = obj.props as { rowHeight: number };
-      displayY -= p.rowHeight * 10;
-    } else if (obj.type === "qrcode") {
-      const p = obj.props as { magnification: number };
-      displayY -= p.magnification * 25;
-    } else if (obj.type === "datamatrix") {
-      const p = obj.props as { dimension: number };
-      displayY -= p.dimension * 20;
     }
   }
 
@@ -467,6 +446,25 @@ function KonvaObjectInner({
         finalX += ROTATION_OFFSET;
       } else if (p.rotation === "B") {
         finalX -= ROTATION_OFFSET;
+      }
+    }
+
+    // Inverse of the ^FT display offset applied in the render phase above.
+    // Without this, dragging an ^FT object saves its top-left Konva position
+    // instead of the ZPL baseline coordinate, causing a vertical jump on re-render.
+    if (obj.positionType === "FT") {
+      if (obj.type === "text" || obj.type === "serial") {
+        const p = obj.props as { fontHeight: number; rotation: string };
+        const renderedH = p.fontHeight / 1.3;
+        if (p.rotation === "N") {
+          finalY += p.fontHeight;
+        } else if (p.rotation === "R") {
+          finalX -= renderedH;
+        } else if (p.rotation === "I") {
+          finalY -= renderedH;
+        } else if (p.rotation === "B") {
+          finalX += renderedH;
+        }
       }
     }
 

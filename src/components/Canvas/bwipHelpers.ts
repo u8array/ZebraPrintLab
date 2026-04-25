@@ -23,13 +23,30 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
   pdf417: "pdf417",
   qrcode: "qrcode",
   datamatrix: "datamatrix",
-  aztec: "azteccode",
+  aztec: "azteccodecompact",
   micropdf417: "micropdf417",
   codablock: "codablockf",
 };
 
 export const BWIP_SCALE = 2;
 const BWIP_2D_INTERNAL_SCALE = 2;
+// bwip reduces PDF417 rowheight to this internal minimum when the requested
+// row count exceeds what the data strictly requires.
+const BWIP_PDF417_MIN_ROWHEIGHT = 3;
+
+/**
+ * Compute the optimal bwip render scale for 1D barcodes so that each module
+ * maps to an integer number of display pixels (avoiding anti-aliasing on
+ * non-integer upscaling). Falls back to BWIP_SCALE when display pixels per
+ * module round to zero.
+ */
+export function get1DBwipScale(
+  moduleWidth: number,
+  scale: number,
+  dpmm: number,
+): number {
+  return Math.max(1, Math.round(dotsToPx(moduleWidth, scale, dpmm)));
+}
 
 export function eanCheckDigit(digits: string, w0: number, w1: number): string {
   let sum = 0;
@@ -57,9 +74,19 @@ export function toCode128BRaw(text: string): string | null {
 
 export function buildBwipOptions(
   obj: LabelObject,
+  renderScale?: number,
+  renderDpmm?: number,
 ): Record<string, unknown> | null {
   const bcid = BCID[obj.type];
   if (!bcid) return null;
+
+  // For 1D barcodes, choose an integer-aligned scale so module widths map
+  // exactly to display pixels (no fractional upscaling / anti-aliasing).
+  const mw = (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
+  const scale1D =
+    renderScale != null && renderDpmm != null
+      ? get1DBwipScale(mw, renderScale, renderDpmm)
+      : BWIP_SCALE;
 
   let opts: Record<string, unknown> | null = null;
 
@@ -76,17 +103,19 @@ export function buildBwipOptions(
       } else {
         text = p.content || "0";
       }
-      opts = { bcid, text, scale: BWIP_SCALE, height: 10 };
+      opts = { bcid, text, scale: scale1D, height: 10 };
       break;
     }
     case "code128": {
-      const p = obj.props;
+      const p = obj.props as { content?: string };
       const text = p.content || "0";
+      // Note: ZPL ^BC e=Y (checkDigit) only prints the MOD-10 digit in the
+      // interpretation line — it does NOT append it to the encoded barcode data.
       const rawB = toCode128BRaw(text);
       if (rawB) {
-        opts = { bcid, text: rawB, raw: true, scale: BWIP_SCALE, height: 10 };
+        opts = { bcid, text: rawB, raw: true, scale: scale1D, height: 10 };
       } else {
-        opts = { bcid, text, scale: BWIP_SCALE, height: 10 };
+        opts = { bcid, text, scale: scale1D, height: 10 };
       }
       break;
     }
@@ -100,12 +129,12 @@ export function buildBwipOptions(
     case "msi":
     case "plessey": {
       const p = obj.props;
-      opts = { bcid, text: p.content || "0", scale: BWIP_SCALE, height: 10 };
+      opts = { bcid, text: p.content || "0", scale: scale1D, height: 10 };
       break;
     }
     case "postal": {
       const p = obj.props;
-      opts = { bcid, text: p.content || "0", scale: BWIP_SCALE, height: 10 };
+      opts = { bcid, text: p.content || "0", scale: scale1D, height: 10 };
       break;
     }
     case "logmars": {
@@ -113,7 +142,7 @@ export function buildBwipOptions(
       opts = {
         bcid,
         text: p.content || "0",
-        scale: BWIP_SCALE,
+        scale: scale1D,
         height: 10,
         includecheck: true,
       };
@@ -126,7 +155,7 @@ export function buildBwipOptions(
       opts = {
         bcid,
         text: `(01)${padded}`,
-        scale: BWIP_SCALE,
+        scale: scale1D,
         height: 10,
       };
       break;
@@ -139,7 +168,7 @@ export function buildBwipOptions(
       opts = {
         bcid,
         text: raw,
-        scale: BWIP_SCALE,
+        scale: scale1D,
         height: 10,
         includecheck: true,
       };
@@ -151,9 +180,16 @@ export function buildBwipOptions(
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
-        rowheight: Math.max(1, Math.round(p.rowHeight / Math.max(p.moduleWidth, 1))),
+        rowheight: Math.max(
+          1,
+          Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
+        ),
         columns: p.columns || 0,
-        eclevel: String(p.securityLevel),
+        // ZPL securityLevel 0 = auto, 1–8 = ECC level 0–7.
+        // bwip eclevel 0 = ECC level 0, so the mapping is sec − 1.
+        ...(p.securityLevel > 0
+          ? { eclevel: String(p.securityLevel - 1) }
+          : {}),
       };
       break;
     }
@@ -183,7 +219,10 @@ export function buildBwipOptions(
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
-        rowheight: Math.max(1, Math.round(p.rowHeight / Math.max(p.moduleWidth, 1))),
+        rowheight: Math.max(
+          1,
+          Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
+        ),
       };
       break;
     }
@@ -193,7 +232,10 @@ export function buildBwipOptions(
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
-        rowheight: Math.max(8, Math.round(p.rowHeight / Math.max(p.moduleWidth, 1))),
+        rowheight: Math.max(
+          8,
+          Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
+        ),
       };
       break;
     }
@@ -218,7 +260,8 @@ export function getDisplaySize(
       // ZPL/Labelary includes 10 quiet-zone modules on each side; bwip renders bars only.
       // Add 20 modules to cover both quiet zones so canvas width matches Labelary.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / BWIP_SCALE + 20) * modulePx;
+      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+      const w = (canvas.width / bwipSc + 20) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
@@ -239,27 +282,45 @@ export function getDisplaySize(
     case "planet":
     case "postal": {
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / BWIP_SCALE) * modulePx;
+      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+      const w = (canvas.width / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
     case "pdf417": {
-      const ratio = dotsToPx(obj.props.moduleWidth, scale, dpmm) / BWIP_SCALE;
-      return { w: canvas.width * ratio, h: canvas.height * ratio };
+      const p = obj.props;
+      // bwip reduces rowheight to its internal minimum (3) when more rows are
+      // requested than strictly needed. Detect this by checking divisibility:
+      // if height is a multiple of (specifiedRowheight × BWIP_SCALE) bwip used
+      // the specified value; otherwise it fell back to the minimum of 3.
+      const specRowheight = Math.max(
+        1,
+        Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
+      );
+      const usedSpecified = canvas.height % (specRowheight * BWIP_SCALE) === 0;
+      const effectiveRowheight = usedSpecified ? specRowheight : BWIP_PDF417_MIN_ROWHEIGHT;
+      const numRows = canvas.height / (effectiveRowheight * BWIP_SCALE);
+      const w =
+        (canvas.width / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
+      const h = numRows * dotsToPx(p.rowHeight, scale, dpmm);
+      return { w, h };
     }
     case "qrcode": {
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
-      const size = (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+      const size =
+        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "datamatrix": {
       const modulePx = dotsToPx(obj.props.dimension, scale, dpmm);
-      const size = (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+      const size =
+        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "aztec": {
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
-      const size = (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+      const size =
+        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "micropdf417":
