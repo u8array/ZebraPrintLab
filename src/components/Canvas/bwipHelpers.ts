@@ -31,6 +31,20 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
 export const BWIP_SCALE = 2;
 const BWIP_2D_INTERNAL_SCALE = 2;
 
+/**
+ * Compute the optimal bwip render scale for 1D barcodes so that each module
+ * maps to an integer number of display pixels (avoiding anti-aliasing on
+ * non-integer upscaling). Falls back to BWIP_SCALE when display pixels per
+ * module round to zero.
+ */
+export function get1DBwipScale(
+  moduleWidth: number,
+  scale: number,
+  dpmm: number,
+): number {
+  return Math.max(1, Math.round(dotsToPx(moduleWidth, scale, dpmm)));
+}
+
 export function eanCheckDigit(digits: string, w0: number, w1: number): string {
   let sum = 0;
   for (let i = 0; i < digits.length; i++)
@@ -57,9 +71,19 @@ export function toCode128BRaw(text: string): string | null {
 
 export function buildBwipOptions(
   obj: LabelObject,
+  renderScale?: number,
+  renderDpmm?: number,
 ): Record<string, unknown> | null {
   const bcid = BCID[obj.type];
   if (!bcid) return null;
+
+  // For 1D barcodes, choose an integer-aligned scale so module widths map
+  // exactly to display pixels (no fractional upscaling / anti-aliasing).
+  const mw = (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
+  const scale1D =
+    renderScale != null && renderDpmm != null
+      ? get1DBwipScale(mw, renderScale, renderDpmm)
+      : BWIP_SCALE;
 
   let opts: Record<string, unknown> | null = null;
 
@@ -76,28 +100,19 @@ export function buildBwipOptions(
       } else {
         text = p.content || "0";
       }
-      opts = { bcid, text, scale: BWIP_SCALE, height: 10 };
+      opts = { bcid, text, scale: scale1D, height: 10 };
       break;
     }
     case "code128": {
-      const p = obj.props as { content?: string; checkDigit?: boolean };
-      let text = p.content || "0";
-
-      if (p.checkDigit) {
-        // ZPL ^BC e=Y appends a UCC mod-10 check digit (same GS1 1/3 alternating
-        // weights as EAN). Pre-compute and append so bwip-js encodes the same
-        // data as Labelary.
-        const rawDigits = text.replace(/\D/g, "");
-        if (rawDigits.length > 0) {
-          text += eanCheckDigit(rawDigits, 1, 3);
-        }
-      }
-
+      const p = obj.props as { content?: string };
+      const text = p.content || "0";
+      // Note: ZPL ^BC e=Y (checkDigit) only prints the MOD-10 digit in the
+      // interpretation line — it does NOT append it to the encoded barcode data.
       const rawB = toCode128BRaw(text);
       if (rawB) {
-        opts = { bcid, text: rawB, raw: true, scale: BWIP_SCALE, height: 10 };
+        opts = { bcid, text: rawB, raw: true, scale: scale1D, height: 10 };
       } else {
-        opts = { bcid, text, scale: BWIP_SCALE, height: 10 };
+        opts = { bcid, text, scale: scale1D, height: 10 };
       }
       break;
     }
@@ -111,12 +126,12 @@ export function buildBwipOptions(
     case "msi":
     case "plessey": {
       const p = obj.props;
-      opts = { bcid, text: p.content || "0", scale: BWIP_SCALE, height: 10 };
+      opts = { bcid, text: p.content || "0", scale: scale1D, height: 10 };
       break;
     }
     case "postal": {
       const p = obj.props;
-      opts = { bcid, text: p.content || "0", scale: BWIP_SCALE, height: 10 };
+      opts = { bcid, text: p.content || "0", scale: scale1D, height: 10 };
       break;
     }
     case "logmars": {
@@ -124,7 +139,7 @@ export function buildBwipOptions(
       opts = {
         bcid,
         text: p.content || "0",
-        scale: BWIP_SCALE,
+        scale: scale1D,
         height: 10,
         includecheck: true,
       };
@@ -137,7 +152,7 @@ export function buildBwipOptions(
       opts = {
         bcid,
         text: `(01)${padded}`,
-        scale: BWIP_SCALE,
+        scale: scale1D,
         height: 10,
       };
       break;
@@ -150,7 +165,7 @@ export function buildBwipOptions(
       opts = {
         bcid,
         text: raw,
-        scale: BWIP_SCALE,
+        scale: scale1D,
         height: 10,
         includecheck: true,
       };
@@ -242,7 +257,8 @@ export function getDisplaySize(
       // ZPL/Labelary includes 10 quiet-zone modules on each side; bwip renders bars only.
       // Add 20 modules to cover both quiet zones so canvas width matches Labelary.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / BWIP_SCALE + 20) * modulePx;
+      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+      const w = (canvas.width / bwipSc + 20) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
@@ -263,7 +279,8 @@ export function getDisplaySize(
     case "planet":
     case "postal": {
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / BWIP_SCALE) * modulePx;
+      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+      const w = (canvas.width / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }

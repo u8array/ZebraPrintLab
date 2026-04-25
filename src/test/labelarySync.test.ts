@@ -61,7 +61,7 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       expect(obj.x).toBe(tc.expected_bounds.x);
       expect(obj.y).toBe(tc.expected_bounds.y);
 
-      const opts = buildBwipOptions(obj);
+      const opts = buildBwipOptions(obj, 1, 8);
       expect(opts).not.toBeNull();
 
       const buffer = await new Promise<Buffer>((resolve, reject) => {

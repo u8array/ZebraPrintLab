@@ -33,8 +33,7 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
   describe.each(testCases)("Visual Test: $id", (tc) => {
     // TODO: Fix the following visual mismatches
     const failingTests = [
-      "barcode_code128_large_check_digit", // moduleWidth=3 → 1.5x non-integer upscaling → anti-aliasing
-      "barcode_datamatrix_standard",      // bwip-js and Zebra/Labelary use different DataMatrix encodings for same text
+      "barcode_datamatrix_standard", // bwip-js and Zebra/Labelary use different DataMatrix encodings for same text
     ];
 
     const testFn = failingTests.includes(tc.id) ? it.skip : it;
@@ -47,8 +46,8 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
         throw new Error(`Fixture not found: ${fixturePath}`);
       }
 
-      // 1. Generate bwip-js buffer
-      const opts = buildBwipOptions(obj);
+      // 1. Generate bwip-js buffer (scale=8, dpmm=8 matches Labelary 8dpmm render)
+      const opts = buildBwipOptions(obj, 8, 8);
       expect(opts).not.toBeNull();
 
       const localBwipBuffer = await new Promise<Buffer>((resolve, reject) => {
