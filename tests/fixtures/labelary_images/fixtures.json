@@ -98,6 +98,50 @@
         "height": 150
       },
       "image_ref": "barcode_pdf417_standard.png"
+    },
+    {
+      "id": "barcode_upca_standard",
+      "zpl_input": "^XA^BY2^FO50,50^BUN,100,Y,N,N^FD01234567890^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 200,
+        "height": 100
+      },
+      "image_ref": "barcode_upca_standard.png"
+    },
+    {
+      "id": "barcode_ean8_standard",
+      "zpl_input": "^XA^BY2^FO50,50^B8N,100,Y,N^FD1234567^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 200,
+        "height": 100
+      },
+      "image_ref": "barcode_ean8_standard.png"
+    },
+    {
+      "id": "barcode_aztec_standard",
+      "zpl_input": "^XA^FO50,50^B0N,4,N,N,N,N^FDAztec123^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 100,
+        "height": 100
+      },
+      "image_ref": "barcode_aztec_standard.png"
+    },
+    {
+      "id": "barcode_interleaved2of5_standard",
+      "zpl_input": "^XA^BY2^FO50,50^B2N,100,Y,N,N^FD12345678^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 200,
+        "height": 100
+      },
+      "image_ref": "barcode_interleaved2of5_standard.png"
     }
   ]
 }
