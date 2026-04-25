@@ -44,8 +44,8 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
 
       const localBwipBuffer = await new Promise<Buffer>((resolve, reject) => {
         bwipjs.toBuffer(
-          opts as Parameters<typeof bwipjs.toBuffer>[0],
-          (err: Error | null, png: Buffer) => {
+          opts as unknown as Parameters<typeof bwipjs.toBuffer>[0],
+          (err: string | Error, png: Buffer) => {
             if (err) reject(err);
             else resolve(png);
           },

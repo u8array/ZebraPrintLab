@@ -67,7 +67,7 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       const buffer = await new Promise<Buffer>((resolve, reject) => {
         bwipjs.toBuffer(
           opts as unknown as Parameters<typeof bwipjs.toBuffer>[0],
-          (err: Error | null, png: Buffer) => {
+          (err: string | Error, png: Buffer) => {
             if (err) reject(err);
             else resolve(png);
           },
