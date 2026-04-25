@@ -12,6 +12,7 @@ import {
   buildBwipOptions,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
+import { QR_FO_Y_OFFSET_DOTS } from "../components/Canvas/bwipConstants";
 
 const FIXTURES_DIR = path.resolve(
   process.cwd(),
@@ -33,9 +34,7 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
     // TODO: Fix the following visual mismatches
     const failingTests = [
       "barcode_code128_large_check_digit", // moduleWidth=3 → 1.5x non-integer upscaling → anti-aliasing
-      "barcode_qr_standard",              // bwip-js vs Labelary QR module count divergence
-      "barcode_qr_large_high_ec",         // bwip-js vs Labelary QR module count divergence
-      "barcode_datamatrix_standard",      // non-integer scaling: dimension=5, bwip internal scale=4 → 1.25x
+      "barcode_datamatrix_standard",      // bwip-js and Zebra/Labelary use different DataMatrix encodings for same text
     ];
 
     const testFn = failingTests.includes(tc.id) ? it.skip : it;
@@ -84,7 +83,10 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
         8,
       );
 
-      ctx.drawImage(bwipImage, obj.x, obj.y, displaySize.w, displaySize.h);
+      // Zebra firmware renders ^FO-positioned QR codes with a +10 dot Y offset.
+      // Match production BarcodeObject.tsx behaviour.
+      const drawY = obj.type === "qrcode" ? obj.y + QR_FO_Y_OFFSET_DOTS : obj.y;
+      ctx.drawImage(bwipImage, obj.x, drawY, displaySize.w, displaySize.h);
 
       // 4. Compare with Labelary ref
       const labelaryRef = PNG.sync.read(fs.readFileSync(fixturePath));
