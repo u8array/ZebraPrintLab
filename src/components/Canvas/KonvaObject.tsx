@@ -399,27 +399,6 @@ function KonvaObjectInner({
       } else if (p.rotation === "B") {
         displayX -= renderedH;
       }
-    } else if (
-      obj.type === "code128" ||
-      obj.type === "code39" ||
-      obj.type === "ean13" ||
-      obj.type === "upca" ||
-      obj.type === "ean8" ||
-      obj.type === "upce" ||
-      obj.type === "interleaved2of5" ||
-      obj.type === "code93"
-    ) {
-      const p = obj.props as { height: number };
-      displayY -= p.height;
-    } else if (obj.type === "pdf417") {
-      const p = obj.props as { rowHeight: number };
-      displayY -= p.rowHeight * 10;
-    } else if (obj.type === "qrcode") {
-      const p = obj.props as { magnification: number };
-      displayY -= p.magnification * 25;
-    } else if (obj.type === "datamatrix") {
-      const p = obj.props as { dimension: number };
-      displayY -= p.dimension * 20;
     }
   }
 
@@ -486,23 +465,6 @@ function KonvaObjectInner({
         } else if (p.rotation === "B") {
           finalX += renderedH;
         }
-      } else if (
-        obj.type === "code128" ||
-        obj.type === "code39" ||
-        obj.type === "ean13" ||
-        obj.type === "upca" ||
-        obj.type === "ean8" ||
-        obj.type === "upce" ||
-        obj.type === "interleaved2of5" ||
-        obj.type === "code93"
-      ) {
-        finalY += (obj.props as { height: number }).height;
-      } else if (obj.type === "pdf417") {
-        finalY += (obj.props as { rowHeight: number }).rowHeight * 10;
-      } else if (obj.type === "qrcode") {
-        finalY += (obj.props as { magnification: number }).magnification * 25;
-      } else if (obj.type === "datamatrix") {
-        finalY += (obj.props as { dimension: number }).dimension * 20;
       }
     }
 
