@@ -36,8 +36,6 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
       "barcode_qr_standard",              // bwip-js vs Labelary QR module count divergence
       "barcode_qr_large_high_ec",         // bwip-js vs Labelary QR module count divergence
       "barcode_datamatrix_standard",      // non-integer scaling: dimension=5, bwip internal scale=4 → 1.25x
-      "barcode_pdf417_standard",          // auto-columns: bwip picks 2 cols (206×30px), Labelary picks 1 col (172×100px)
-      "barcode_aztec_standard",           // auto-version: bwip picks 19-module, Labelary picks 15-module Aztec
     ];
 
     const testFn = failingTests.includes(tc.id) ? it.skip : it;

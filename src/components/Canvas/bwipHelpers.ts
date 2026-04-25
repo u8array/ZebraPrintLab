@@ -23,7 +23,7 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
   pdf417: "pdf417",
   qrcode: "qrcode",
   datamatrix: "datamatrix",
-  aztec: "azteccode",
+  aztec: "azteccodecompact",
   micropdf417: "micropdf417",
   codablock: "codablockf",
 };
@@ -167,7 +167,11 @@ export function buildBwipOptions(
           Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
         ),
         columns: p.columns || 0,
-        eclevel: String(p.securityLevel),
+        // ZPL securityLevel 0 = auto, 1–8 = ECC level 0–7.
+        // bwip eclevel 0 = ECC level 0, so the mapping is sec − 1.
+        ...(p.securityLevel > 0
+          ? { eclevel: String(p.securityLevel - 1) }
+          : {}),
       };
       break;
     }
@@ -264,8 +268,22 @@ export function getDisplaySize(
       return { w, h };
     }
     case "pdf417": {
-      const ratio = dotsToPx(obj.props.moduleWidth, scale, dpmm) / BWIP_SCALE;
-      return { w: canvas.width * ratio, h: canvas.height * ratio };
+      const p = obj.props;
+      // bwip reduces rowheight to its internal minimum (3) when more rows are
+      // requested than strictly needed. Detect this by checking divisibility:
+      // if height is a multiple of (specifiedRowheight × BWIP_SCALE) bwip used
+      // the specified value; otherwise it fell back to the minimum of 3.
+      const specRowheight = Math.max(
+        1,
+        Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
+      );
+      const usedSpecified = canvas.height % (specRowheight * BWIP_SCALE) === 0;
+      const effectiveRowheight = usedSpecified ? specRowheight : 3;
+      const numRows = canvas.height / (effectiveRowheight * BWIP_SCALE);
+      const w =
+        (canvas.width / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
+      const h = numRows * dotsToPx(p.rowHeight, scale, dpmm);
+      return { w, h };
     }
     case "qrcode": {
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
