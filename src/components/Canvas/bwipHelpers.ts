@@ -80,8 +80,19 @@ export function buildBwipOptions(
       break;
     }
     case "code128": {
-      const p = obj.props;
-      const text = p.content || "0";
+      const p = obj.props as { content?: string; checkDigit?: boolean };
+      let text = p.content || "0";
+
+      if (p.checkDigit) {
+        // ZPL ^BC e=Y appends a UCC mod-10 check digit (same GS1 1/3 alternating
+        // weights as EAN). Pre-compute and append so bwip-js encodes the same
+        // data as Labelary.
+        const rawDigits = text.replace(/\D/g, "");
+        if (rawDigits.length > 0) {
+          text += eanCheckDigit(rawDigits, 1, 3);
+        }
+      }
+
       const rawB = toCode128BRaw(text);
       if (rawB) {
         opts = { bcid, text: rawB, raw: true, scale: BWIP_SCALE, height: 10 };
@@ -151,7 +162,10 @@ export function buildBwipOptions(
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
-        rowheight: Math.max(1, Math.round(p.rowHeight / Math.max(p.moduleWidth, 1))),
+        rowheight: Math.max(
+          1,
+          Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
+        ),
         columns: p.columns || 0,
         eclevel: String(p.securityLevel),
       };
@@ -183,7 +197,10 @@ export function buildBwipOptions(
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
-        rowheight: Math.max(1, Math.round(p.rowHeight / Math.max(p.moduleWidth, 1))),
+        rowheight: Math.max(
+          1,
+          Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
+        ),
       };
       break;
     }
@@ -193,7 +210,10 @@ export function buildBwipOptions(
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
-        rowheight: Math.max(8, Math.round(p.rowHeight / Math.max(p.moduleWidth, 1))),
+        rowheight: Math.max(
+          8,
+          Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
+        ),
       };
       break;
     }
@@ -249,17 +269,20 @@ export function getDisplaySize(
     }
     case "qrcode": {
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
-      const size = (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+      const size =
+        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "datamatrix": {
       const modulePx = dotsToPx(obj.props.dimension, scale, dpmm);
-      const size = (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+      const size =
+        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "aztec": {
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
-      const size = (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+      const size =
+        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "micropdf417":
