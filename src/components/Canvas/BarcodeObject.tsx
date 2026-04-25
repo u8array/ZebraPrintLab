@@ -52,7 +52,7 @@ export function BarcodeObject({
         errorMsg: e instanceof Error ? e.message : String(e),
       };
     }
-  }, [obj]);
+  }, [obj, scale, dpmm]);
 
   let displayW = 0;
   let displayH = 0;
