@@ -36,7 +36,7 @@ interface LabelState {
 
   addObject: (type: string, position?: { x: number; y: number }) => void;
   updateObject: (id: string, changes: Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object }) => void;
-  updateObjects: (updates: Array<{ id: string; changes: Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object } }>) => void;
+  updateObjects: (updates: { id: string; changes: Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object } }[]) => void;
   removeObject: (id: string) => void;
   duplicateObject: (id: string) => void;
   duplicateSelectedObjects: () => void;
