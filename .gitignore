@@ -13,6 +13,9 @@ dist-ssr
 *.local
 *.local.*
 
+# Test output
+tests/fixtures/__diffs__/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
