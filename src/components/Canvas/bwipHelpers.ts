@@ -1,5 +1,6 @@
 import type { LabelObject } from "../../registry";
 import { dotsToPx } from "../../lib/coordinates";
+import { EAN_TEXT_ZONE_DOTS, MICROPDF417_QUIET_ZONE_ROWS } from "./bwipConstants";
 
 const BCID: Partial<Record<LabelObject["type"], string>> = {
   code128: "code128",
@@ -30,6 +31,26 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
 
 export const BWIP_SCALE = 2;
 const BWIP_2D_INTERNAL_SCALE = 2;
+
+/**
+ * Estimate the number of columns ZPL/Labelary would choose for PDF417 when
+ * columns=0 (auto). Zebra uses a heuristic to keep the symbol somewhat square.
+ * This formula is derived empirically by measuring Labelary outputs for
+ * various content lengths.
+ */
+function estimatePdf417Columns(content: string, securityLevel: number): number {
+  // Rough estimate of codewords: each 2.3 characters ~ 1 codeword.
+  // Security level adds (2^(securityLevel+1)) error correction codewords.
+  const dataCodewords = Math.ceil((content.length || 1) / 2.3);
+  const eccCodewords = Math.pow(2, securityLevel + 1);
+  const totalCodewords = dataCodewords + eccCodewords;
+
+  // Zebra heuristic: columns = floor(sqrt(totalCodewords / 4))
+  // Empirically validated against Labelary at 8dpmm for secLevel 0 and 1,
+  // content lengths 10–49 chars.
+  return Math.max(1, Math.min(30, Math.floor(Math.sqrt(totalCodewords / 4))));
+}
+
 // bwip reduces PDF417 rowheight to this internal minimum when the requested
 // row count exceeds what the data strictly requires.
 const BWIP_PDF417_MIN_ROWHEIGHT = 3;
@@ -176,6 +197,8 @@ export function buildBwipOptions(
     }
     case "pdf417": {
       const p = obj.props;
+      const columns =
+        p.columns || estimatePdf417Columns(p.content, p.securityLevel);
       opts = {
         bcid,
         text: p.content || " ",
@@ -184,12 +207,10 @@ export function buildBwipOptions(
           1,
           Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
         ),
-        columns: p.columns || 0,
-        // ZPL securityLevel 0 = auto, 1–8 = ECC level 0–7.
-        // bwip eclevel 0 = ECC level 0, so the mapping is sec − 1.
-        ...(p.securityLevel > 0
-          ? { eclevel: String(p.securityLevel - 1) }
-          : {}),
+        columns,
+        // ZPL securityLevel 0 = auto → Zebra picks ECC level 0 (minimum).
+        // ZPL securityLevel 1–8 = ECC level 0–7, so the mapping is sec − 1.
+        eclevel: p.securityLevel > 0 ? String(p.securityLevel - 1) : "0",
       };
       break;
     }
@@ -265,19 +286,12 @@ export function getDisplaySize(
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
-    case "ean13":
-    case "ean8":
-    case "upca":
-    case "upce":
     case "code128":
-    case "code39":
-    case "interleaved2of5":
     case "code93":
     case "code11":
     case "industrial2of5":
     case "standard2of5":
     case "codabar":
-    case "logmars":
     case "gs1databar":
     case "planet":
     case "postal": {
@@ -287,21 +301,44 @@ export function getDisplaySize(
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
+    case "ean13":
+    case "ean8":
+    case "upca":
+    case "upce": {
+      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
+      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+      // bwip-js includes an extra module at the end that ZPL/Labelary excludes.
+      const w = (canvas.width / bwipSc - 1) * modulePx;
+      // Labelary always reserves a mandatory text zone below EAN/UPC barcodes
+      // (even with printInterpretation=false). Verified at 8 dpmm: constant 13 dots.
+      const h = dotsToPx(obj.props.height + EAN_TEXT_ZONE_DOTS, scale, dpmm);
+      return { w, h };
+    }
+    case "code39":
+    case "logmars":
+    case "interleaved2of5": {
+      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
+      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+      // bwip-js includes an extra module at the end that ZPL/Labelary excludes.
+      const w = (canvas.width / bwipSc - 1) * modulePx;
+      const h = dotsToPx(obj.props.height, scale, dpmm);
+      return { w, h };
+    }
     case "pdf417": {
       const p = obj.props;
-      // bwip reduces rowheight to its internal minimum (3) when more rows are
-      // requested than strictly needed. Detect this by checking divisibility:
-      // if height is a multiple of (specifiedRowheight × BWIP_SCALE) bwip used
-      // the specified value; otherwise it fell back to the minimum of 3.
-      const specRowheight = Math.max(
-        1,
-        Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
-      );
-      const usedSpecified = canvas.height % (specRowheight * BWIP_SCALE) === 0;
-      const effectiveRowheight = usedSpecified ? specRowheight : BWIP_PDF417_MIN_ROWHEIGHT;
-      const numRows = canvas.height / (effectiveRowheight * BWIP_SCALE);
-      const w =
-        (canvas.width / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
+      // bwip-js uses a fixed internal row height of 3 for pdf417
+      const numRows = canvas.height / (BWIP_PDF417_MIN_ROWHEIGHT * BWIP_SCALE);
+
+      // Width check: bwip-js sometimes adds unexpected padding or uses
+      // different column logic. We force the display width based on the
+      // actual number of columns. PDF417 width in modules is:
+      // 17 * start + 17 * left + 17 * columns + 17 * right + 18 * stop
+      // Total = 17 * (columns + 4) + 1
+      const columns =
+        p.columns || estimatePdf417Columns(p.content, p.securityLevel);
+      const modulesW = 17 * (columns + 4) + 1;
+
+      const w = dotsToPx(modulesW * p.moduleWidth, scale, dpmm);
       const h = numRows * dotsToPx(p.rowHeight, scale, dpmm);
       return { w, h };
     }
@@ -323,10 +360,28 @@ export function getDisplaySize(
         (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
-    case "micropdf417":
+    case "micropdf417": {
+      const p = obj.props;
+      // bwip-js ignores rowheight for micropdf417 and always uses 2 internal pixels per row.
+      // It also adds MICROPDF417_QUIET_ZONE_ROWS quiet-zone rows (top+bottom) to the canvas.
+      const numRows = canvas.height / (BWIP_SCALE * 2) - MICROPDF417_QUIET_ZONE_ROWS;
+      const w =
+        (canvas.width / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
+      const h = numRows * dotsToPx(p.rowHeight, scale, dpmm);
+      return { w, h };
+    }
     case "codablock": {
-      const ratio = dotsToPx(obj.props.moduleWidth, scale, dpmm) / BWIP_SCALE;
-      return { w: canvas.width * ratio, h: canvas.height * ratio };
+      const p = obj.props;
+      const specRowheight = Math.max(
+        8,
+        Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
+      );
+      const w =
+        (canvas.width / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
+      const h =
+        (canvas.height / BWIP_SCALE) *
+        (dotsToPx(p.rowHeight, scale, dpmm) / specRowheight);
+      return { w, h };
     }
     default: {
       return { w: canvas.width, h: canvas.height };

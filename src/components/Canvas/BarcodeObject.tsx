@@ -1,17 +1,22 @@
-import React, { useMemo } from "react";
+import React from "react";
 import bwipjs from "bwip-js/browser";
 import { Image as KImage, Group, Rect, Text } from "react-konva";
 import type Konva from "konva";
 import type { LabelObject } from "../../registry";
 import { BARCODE_1D_TYPES } from "../../registry";
-import type { LabelObjectBase } from "../../types/ObjectType";
+import type { ObjectChanges } from "../../store/labelStore";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
-import { buildBwipOptions, getDisplaySize, eanCheckDigit, BWIP_SCALE } from "./bwipHelpers";
-import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET, EAN_UPC_TYPES } from "./bwipConstants";
-
-type ObjectChanges = Partial<Omit<LabelObjectBase, "id" | "type">> & {
-  props?: object;
-};
+import {
+  buildBwipOptions,
+  getDisplaySize,
+  eanCheckDigit,
+  BWIP_SCALE,
+} from "./bwipHelpers";
+import {
+  QR_FO_Y_OFFSET_DOTS,
+  QR_FT_MODULE_OFFSET,
+  EAN_UPC_TYPES,
+} from "./bwipConstants";
 
 interface Props {
   obj: LabelObject;
@@ -36,23 +41,21 @@ export function BarcodeObject({
   snap,
 }: Props) {
   // bwip-js is synchronous — compute canvas directly in render (no async flash on resize)
-  const { barcodeCanvas, errorMsg } = useMemo(() => {
-    const opts = buildBwipOptions(obj, scale, dpmm);
-    if (!opts) return { barcodeCanvas: null, errorMsg: null };
+  const opts = buildBwipOptions(obj, scale, dpmm);
+  let barcodeCanvas: HTMLCanvasElement | null = null;
+  let errorMsg: string | null = null;
+  if (opts) {
     const canvas = document.createElement("canvas");
     try {
       bwipjs.toCanvas(
         canvas,
         opts as unknown as Parameters<typeof bwipjs.toCanvas>[1],
       );
-      return { barcodeCanvas: canvas, errorMsg: null };
+      barcodeCanvas = canvas;
     } catch (e) {
-      return {
-        barcodeCanvas: null,
-        errorMsg: e instanceof Error ? e.message : String(e),
-      };
+      errorMsg = e instanceof Error ? e.message : String(e);
     }
-  }, [obj, scale, dpmm]);
+  }
 
   let displayW = 0;
   let displayH = 0;
@@ -77,7 +80,9 @@ export function BarcodeObject({
       // Verified against Labelary API across magnifications 4–10 at 8 and 12 dpmm.
       // Leading theory: the firmware reserves a dummy text-interpretation bounding
       // box (as for 1D barcodes) even though QR codes have no human-readable text.
-      displayY -= QR_FT_MODULE_OFFSET * (obj.props as { magnification: number }).magnification;
+      displayY -=
+        QR_FT_MODULE_OFFSET *
+        (obj.props as { magnification: number }).magnification;
     }
   } else if (obj.type === "qrcode") {
     // Zebra firmware artifact: ^FO QR codes are rendered with a hardcoded +10 dot
@@ -110,7 +115,9 @@ export function BarcodeObject({
         finalY += (obj.props as { height: number }).height;
       }
       if (obj.type === "qrcode") {
-        finalY += QR_FT_MODULE_OFFSET * (obj.props as { magnification: number }).magnification;
+        finalY +=
+          QR_FT_MODULE_OFFSET *
+          (obj.props as { magnification: number }).magnification;
       }
     } else if (obj.type === "qrcode") {
       finalY -= QR_FO_Y_OFFSET_DOTS;
@@ -444,10 +451,25 @@ export function BarcodeObject({
     const showText =
       BARCODE_1D_TYPES.has(obj.type) &&
       (obj.props as { printInterpretation?: boolean }).printInterpretation;
-    // Code 39: ZPL always wraps interpretation text with start/stop asterisks
-    const displayText = obj.type === "code39" ? `*${rawContent}*` : rawContent;
+
+    let displayText = rawContent;
+    if (obj.type === "code39") {
+      displayText = `*${rawContent}*`;
+    } else if (obj.type === "logmars") {
+      const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%";
+      let sum = 0;
+      for (const c of rawContent) {
+        const idx = chars.indexOf(c.toUpperCase());
+        if (idx >= 0) sum += idx;
+      }
+      displayText = `${rawContent}${chars[sum % 43] ?? ""}`;
+    }
 
     if (showText) {
+      const isTextAbove = obj.type === "logmars";
+      const imgY = isTextAbove ? textFontSize + textGap : 0;
+      const txtY = isTextAbove ? 0 : Math.max(h, 1) + textGap;
+
       return (
         <Group
           id={obj.id}
@@ -469,7 +491,7 @@ export function BarcodeObject({
         >
           <KImage
             x={0}
-            y={0}
+            y={imgY}
             image={barcodeCanvas}
             width={Math.max(w, 1)}
             height={Math.max(h, 1)}
@@ -479,7 +501,7 @@ export function BarcodeObject({
           />
           <Text
             x={0}
-            y={Math.max(h, 1) + textGap}
+            y={txtY}
             width={Math.max(w, 1)}
             text={displayText}
             fontSize={textFontSize}

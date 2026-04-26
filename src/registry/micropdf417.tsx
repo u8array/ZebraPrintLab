@@ -7,6 +7,7 @@ export interface MicroPdf417Props {
   content: string;
   moduleWidth: number; // bar width in dots
   rowHeight: number; // row height in dots
+  mode: number;
 }
 
 export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
@@ -14,19 +15,20 @@ export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
   icon: "▤",
   group: "code",
   defaultProps: {
-    content: "1234567890",
+    content: "1234",
     moduleWidth: 2,
-    rowHeight: 10,
+    rowHeight: 2,
+    mode: 0,
   },
   defaultSize: { width: 200, height: 100 },
 
   toZPL: (obj) => {
     const p = obj.props;
-    // ^BF{orientation},{rowHeight}
+    // ^BF{orientation},{rowHeight},{mode}
     return [
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
-      `^BFN,${p.rowHeight}`,
+      `^BFN,${p.rowHeight},${p.mode}`,
       `^FD${p.content}^FS`,
     ]
       .filter(Boolean)
@@ -72,6 +74,18 @@ export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
               }
             />
           </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>Mode</label>
+          <input
+            type="number"
+            className={inputCls}
+            value={p.mode}
+            min={0}
+            max={33}
+            onChange={(e) => onChange({ mode: Number(e.target.value) })}
+          />
         </div>
       </div>
     );
