@@ -87,7 +87,7 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
 
       // Verify visual position (top-left of the rendered bounding box in dots).
       // This mimics the positioning logic in BarcodeObject.tsx.
-      let visualX = obj.x;
+      const visualX = obj.x;
       let visualY = obj.y;
 
       if (obj.positionType === "FT") {
@@ -95,7 +95,7 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
         visualY -= displaySize.h * 8;
 
         if (obj.type === "qrcode") {
-          const mag = (obj.props as any).magnification || 1;
+          const mag = (obj.props as { magnification?: number }).magnification ?? 1;
           visualY -= 3 * mag;
         }
       } else {
