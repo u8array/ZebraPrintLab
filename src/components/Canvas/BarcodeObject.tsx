@@ -40,7 +40,6 @@ export function BarcodeObject({
   onChange,
   snap,
 }: Props) {
-  // bwip-js is synchronous — compute canvas directly in render (no async flash on resize)
   const opts = buildBwipOptions(obj, scale, dpmm);
   let barcodeCanvas: HTMLCanvasElement | null = null;
   let errorMsg: string | null = null;

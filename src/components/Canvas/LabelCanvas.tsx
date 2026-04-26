@@ -834,7 +834,6 @@ export function LabelCanvas({
                   y: snap(pxToDots(node.y() - labelOffsetY, scale, label.dpmm)),
                 };
                 if (obj.type === "text") {
-                  transformAnchorRef.current = null;
                   updateObject(singleId, {
                     ...pos,
                     props: {
@@ -845,7 +844,6 @@ export function LabelCanvas({
                     },
                   });
                 } else if (BARCODE_1D_TYPES.has(obj.type)) {
-                  transformAnchorRef.current = null;
                   const p = obj.props as { height: number };
                   updateObject(singleId, {
                     ...pos,
@@ -886,7 +884,6 @@ export function LabelCanvas({
                       ),
                     );
                   }
-                  transformAnchorRef.current = null;
                   updateObject(singleId, {
                     ...pos,
                     props: {
@@ -960,6 +957,7 @@ export function LabelCanvas({
                     },
                   });
                 }
+                transformAnchorRef.current = null;
                 // 'line' is intentionally excluded — it uses its own endpoint handle
               }}
             />

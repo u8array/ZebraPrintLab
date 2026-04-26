@@ -364,7 +364,7 @@ export function getDisplaySize(
       const p = obj.props;
       // bwip-js ignores rowheight for micropdf417 and always uses 2 internal pixels per row.
       // It also adds MICROPDF417_QUIET_ZONE_ROWS quiet-zone rows (top+bottom) to the canvas.
-      const numRows = canvas.height / (BWIP_SCALE * 2) - MICROPDF417_QUIET_ZONE_ROWS;
+      const numRows = Math.max(0, canvas.height / (BWIP_SCALE * 2) - MICROPDF417_QUIET_ZONE_ROWS);
       const w =
         (canvas.width / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
       const h = numRows * dotsToPx(p.rowHeight, scale, dpmm);
