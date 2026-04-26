@@ -879,7 +879,11 @@ export function LabelCanvas({
                   } else {
                     newRowHeight = Math.max(
                       1,
-                      snap(Math.round((obj.props as any).rowHeight * sy)),
+                      snap(
+                        Math.round(
+                          (obj.props as { rowHeight: number }).rowHeight * sy,
+                        ),
+                      ),
                     );
                   }
                   transformAnchorRef.current = null;
@@ -891,7 +895,10 @@ export function LabelCanvas({
                         1,
                         Math.min(
                           10,
-                          Math.round((obj.props as any).moduleWidth * sx),
+                          Math.round(
+                            (obj.props as { moduleWidth: number }).moduleWidth *
+                              sx,
+                          ),
                         ),
                       ),
                     },

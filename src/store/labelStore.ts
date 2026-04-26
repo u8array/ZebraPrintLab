@@ -15,7 +15,7 @@ let _pasteCount = 0;
 // reset when the user explicitly changes the selection.
 let _duplicateCount = 0;
 
-type ObjectChanges = Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object };
+export type ObjectChanges = Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object };
 
 function applyObjectChanges(obj: LabelObject, changes: ObjectChanges): LabelObject {
   return {

@@ -12,13 +12,9 @@ import {
 import { BarcodeObject } from "./BarcodeObject";
 import type Konva from "konva";
 import type { LabelObject } from "../../registry";
-import type { LabelObjectBase } from "../../types/ObjectType";
+import type { ObjectChanges } from "../../store/labelStore";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { getImage } from "../../lib/imageCache";
-
-type ObjectChanges = Partial<Omit<LabelObjectBase, "id" | "type">> & {
-  props?: object;
-};
 
 interface Props {
   obj: LabelObject;
