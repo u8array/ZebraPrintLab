@@ -1,4 +1,4 @@
-import type { ObjectTypeDefinition, ObjectGroup, LabelObjectBase } from '../types/ObjectType';
+import type { ObjectTypeDefinition, LabelObjectBase } from '../types/ObjectType';
 import { text } from './text.tsx';
 import type { TextProps } from './text.tsx';
 import { code128 } from './code128.tsx';
@@ -137,10 +137,3 @@ export const ObjectRegistry: Record<string, ObjectTypeDefinition<any>> = {
   image,
 };
 
-export const PALETTE_GROUPS: { key: ObjectGroup; labelKey: string }[] = [
-  { key: 'text', labelKey: 'groupText' },
-  { key: 'code-1d', labelKey: 'groupCode1d' },
-  { key: 'code-2d', labelKey: 'groupCode2d' },
-  { key: 'code-postal', labelKey: 'groupCodePostal' },
-  { key: 'shape', labelKey: 'groupShapes' },
-];

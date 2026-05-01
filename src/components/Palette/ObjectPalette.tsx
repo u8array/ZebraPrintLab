@@ -1,5 +1,6 @@
 import { useDraggable } from '@dnd-kit/core';
-import { ObjectRegistry, PALETTE_GROUPS } from '../../registry';
+import { ObjectRegistry } from '../../registry';
+import { PALETTE_GROUPS } from './paletteGroups';
 import type { ObjectTypeDefinition } from '../../types/ObjectType';
 import { useT } from '../../lib/useT';
 import { useLabelStore } from '../../store/labelStore';
