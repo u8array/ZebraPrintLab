@@ -26,9 +26,9 @@ The print resolution (dpmm = dots per millimeter) must match your printer. Commo
 
 ### 2. Add objects
 
-Drag items from the left panel onto the canvas, or click them to add at the center.
+Drag items from the left panel onto the canvas, or double-click them to add at the center.
 
-Available objects: text, serial (auto-incrementing number fields), barcodes (Code 128, Code 39, Code 93, I2of5, EAN-13, EAN-8, UPC-A, UPC-E, QR Code, DataMatrix, PDF417), shapes (box, line, ellipse), and images.
+Available objects: text, serial (auto-incrementing number fields), barcodes (Code 128, Code 39, Code 93, Code 11, Interleaved 2 of 5, Standard 2 of 5, Industrial 2 of 5, Codabar, LOGMARS, MSI, Plessey, GS1 Databar, Planet Code, Postal/POSTNET, EAN-13, EAN-8, UPC-A, UPC-E, QR Code, DataMatrix, PDF417, MicroPDF417, Aztec, Codablock F), shapes (box, line, ellipse), and images.
 
 ### 3. Edit properties
 
@@ -56,7 +56,7 @@ File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 The parser covers the most common ZPL II commands:
 
 - **Text:** `^A0`, `^A*` (all bitmap fonts), `^A@` (TrueType, best-effort sizing), `^CF`, `^FW`, `^FB` (field block, including `\&` line breaks), `^TB`, `^FH` (hex escapes)
-- **Barcodes:** `^BC` (Code 128), `^B3` (Code 39), `^BA` (Code 93), `^B2` (I2of5), `^BE` (EAN-13), `^B8` (EAN-8), `^BU` (UPC-A), `^B9` (UPC-E), `^BQ` (QR Code), `^BX` (DataMatrix), `^B7` (PDF417)
+- **Barcodes:** Code 128, Code 39, Code 93, Code 11, Interleaved 2 of 5, Standard 2 of 5, Industrial 2 of 5, Codabar, LOGMARS, MSI, Plessey, GS1 Databar, Planet Code, Postal/POSTNET, EAN-13, EAN-8, UPC-A, UPC-E, QR Code, DataMatrix, PDF417, MicroPDF417, Aztec, Codablock F
 - **Serialization:** `^SN`, `^SF` (imported as serial objects)
 - **Graphics:** `^GB` (box/line), `^GE` (ellipse), `^GC` (circle), `^GD` (diagonal line), `^GFA` (bitmap image, including compressed data)
 - **Layout:** `^FO` (including justification parameter), `^FT`, `^LH`, `^PW`, `^LL`, `^BY`
