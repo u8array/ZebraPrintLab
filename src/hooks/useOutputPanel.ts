@@ -18,7 +18,9 @@ function loadPanelState() {
 function savePanelState(collapsed: boolean, height: number) {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify({ collapsed, height }));
-  } catch {}
+  } catch {
+    // localStorage not available (e.g. private browsing with storage blocked)
+  }
 }
 
 export function useOutputPanel(defaultH = OUTPUT_DEFAULT_H) {
