@@ -2,6 +2,8 @@ import { useDraggable } from '@dnd-kit/core';
 import { ObjectRegistry, PALETTE_GROUPS } from '../../registry';
 import type { ObjectTypeDefinition } from '../../types/ObjectType';
 import { useT } from '../../lib/useT';
+import { useLabelStore } from '../../store/labelStore';
+import { mmToDots } from '../../lib/coordinates';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 import type { PaletteDragData } from '../../dnd/types';
 
@@ -12,10 +14,19 @@ interface PaletteEntryProps {
 
 function PaletteEntry({ type, def }: PaletteEntryProps) {
   const t = useT();
+  const addObject = useLabelStore((s) => s.addObject);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `palette-${type}`,
     data: { type } satisfies PaletteDragData,
   });
+
+  const handleDoubleClick = () => {
+    const { label } = useLabelStore.getState();
+    addObject(type, {
+      x: mmToDots(label.widthMm, label.dpmm) / 2,
+      y: mmToDots(label.heightMm, label.dpmm) / 2,
+    });
+  };
 
   return (
     <div
@@ -23,6 +34,7 @@ function PaletteEntry({ type, def }: PaletteEntryProps) {
       style={{ touchAction: 'none' }}
       {...attributes}
       {...listeners}
+      onDoubleClick={handleDoubleClick}
       className={`
         group flex items-center gap-2.5 px-2 py-2 rounded
         border border-transparent
