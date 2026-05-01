@@ -23,8 +23,8 @@ function PaletteEntry({ type, def }: PaletteEntryProps) {
   const handleDoubleClick = () => {
     const { label } = useLabelStore.getState();
     addObject(type, {
-      x: mmToDots(label.widthMm, label.dpmm) / 2,
-      y: mmToDots(label.heightMm, label.dpmm) / 2,
+      x: Math.round(mmToDots(label.widthMm, label.dpmm) / 2 - def.defaultSize.width / 2),
+      y: Math.round(mmToDots(label.heightMm, label.dpmm) / 2 - def.defaultSize.height / 2),
     });
   };
 
