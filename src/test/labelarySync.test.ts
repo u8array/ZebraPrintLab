@@ -133,7 +133,6 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       const hasBwipSizeMismatch = [
         "code93", "code11",                  // quiet zone narrower than Zebra
         "plessey",                           // different bar encoding algorithm
-        "planet", "postal",                  // different bar structure
       ].includes(obj.type);
 
       if (isEanUpc) {

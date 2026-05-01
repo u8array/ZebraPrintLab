@@ -296,14 +296,27 @@ export function getDisplaySize(
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
-    case "plessey":
-    case "planet":
-    case "postal": {
-      // bwip-js uses a different bar-structure or encoding algorithm than Zebra firmware.
-      // Width is approximate; the visual regression is skipped for these types.
+    case "plessey": {
+      // bwip-js uses a different bar encoding algorithm than Zebra firmware.
+      // Width is approximate; the visual regression is skipped for this type.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
       const w = (canvas.width / bwipSc) * modulePx;
+      const h = dotsToPx(obj.props.height, scale, dpmm);
+      return { w, h };
+    }
+    case "planet":
+    case "postal": {
+      // bwip-js renders postnet/planet bars at 4/3 the width per element of Zebra.
+      // The 0.7525 factor compresses the canvas image horizontally so the displayed
+      // bounding box matches Labelary; the bar pattern is visually distorted.
+      // The factor accounts for both the 3/4 element-width ratio and a small
+      // quiet-zone difference; rounding to dots ensures exact match with Labelary.
+      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
+      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+      const rawPx = (canvas.width / bwipSc) * modulePx * 0.7525;
+      const wDots = Math.round((rawPx / scale) * dpmm);
+      const w = dotsToPx(wDots, scale, dpmm);
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
