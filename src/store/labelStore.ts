@@ -1,7 +1,7 @@
 import { create, useStore } from 'zustand';
 import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { LabelConfig, LabelObjectBase, ObjectChanges } from '../types/ObjectType';
+import type { LabelConfig, ObjectChanges } from '../types/ObjectType';
 import type { Unit } from '../lib/units';
 import { ObjectRegistry } from '../registry';
 import type { LabelObject } from '../registry';
