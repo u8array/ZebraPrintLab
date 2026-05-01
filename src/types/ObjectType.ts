@@ -27,6 +27,8 @@ export const labelObjectBaseSchema = z.object({
 
 export type LabelObjectBase = z.infer<typeof labelObjectBaseSchema>;
 
+export type ObjectChanges = Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object };
+
 export type ObjectGroup = 'text' | 'code-1d' | 'code-2d' | 'code-postal' | 'shape';
 
 export interface ObjectTypeDefinition<P extends object = object> {
@@ -36,6 +38,15 @@ export interface ObjectTypeDefinition<P extends object = object> {
   defaultProps: P;
   defaultSize: { width: number; height: number };
   toZPL: (obj: LabelObjectBase & { props: P }) => string;
+  /**
+   * Optional hook to enforce type-specific invariants on incoming changes
+   * (e.g. clamp out-of-range coordinates). Called before changes are merged
+   * into the object. Pure function — should not have side effects.
+   */
+  normalizeChanges?: (
+    obj: LabelObjectBase & { props: P },
+    changes: ObjectChanges,
+  ) => ObjectChanges;
   PropertiesPanel: React.ComponentType<{
     obj: LabelObjectBase & { props: P };
     onChange: (props: Partial<P>) => void;

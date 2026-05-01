@@ -213,6 +213,44 @@ describe('qrcode.toZPL', () => {
   });
 });
 
+describe('qrcode.normalizeChanges', () => {
+  const def = defined(ObjectRegistry['qrcode']);
+  const normalize = defined(def.normalizeChanges);
+  const baseObj = makeObj('qrcode', {
+    content: 'x', magnification: 4, errorCorrection: 'Q',
+  });
+
+  it('clamps negative y to 0 for ^FO', () => {
+    expect(normalize(baseObj, { y: -10 })).toEqual({ y: 0 });
+    expect(normalize(baseObj, { y: -1 })).toEqual({ y: 0 });
+  });
+
+  it('passes through y >= 0 unchanged', () => {
+    expect(normalize(baseObj, { y: 0 })).toEqual({ y: 0 });
+    expect(normalize(baseObj, { y: 50 })).toEqual({ y: 50 });
+  });
+
+  it('passes through changes without y', () => {
+    const changes = { x: 100 };
+    expect(normalize(baseObj, changes)).toBe(changes);
+  });
+
+  it('does not clamp when positionType is FT (different firmware quirk)', () => {
+    const ftObj = { ...baseObj, positionType: 'FT' as const };
+    expect(normalize(ftObj, { y: -10 })).toEqual({ y: -10 });
+  });
+
+  it('respects positionType in incoming changes (FO → FT switch)', () => {
+    const ftObj = { ...baseObj, positionType: 'FT' as const };
+    expect(normalize(ftObj, { y: -10, positionType: 'FO' })).toEqual({ y: 0, positionType: 'FO' });
+  });
+
+  it('preserves other change fields when clamping', () => {
+    expect(normalize(baseObj, { y: -10, x: 50, rotation: 90 }))
+      .toEqual({ y: 0, x: 50, rotation: 90 });
+  });
+});
+
 // ── datamatrix ────────────────────────────────────────────────────────────────
 
 describe('datamatrix.toZPL', () => {

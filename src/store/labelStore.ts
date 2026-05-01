@@ -1,7 +1,7 @@
 import { create, useStore } from 'zustand';
 import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { LabelConfig, LabelObjectBase } from '../types/ObjectType';
+import type { LabelConfig, LabelObjectBase, ObjectChanges } from '../types/ObjectType';
 import type { Unit } from '../lib/units';
 import { ObjectRegistry } from '../registry';
 import type { LabelObject } from '../registry';
@@ -15,13 +15,15 @@ let _pasteCount = 0;
 // reset when the user explicitly changes the selection.
 let _duplicateCount = 0;
 
-export type ObjectChanges = Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object };
+export type { ObjectChanges };
 
 function applyObjectChanges(obj: LabelObject, changes: ObjectChanges): LabelObject {
+  const normalize = ObjectRegistry[obj.type]?.normalizeChanges;
+  const normalized = normalize ? normalize(obj, changes) : changes;
   return {
     ...obj,
-    ...changes,
-    props: changes.props ? Object.assign({}, obj.props, changes.props) : obj.props,
+    ...normalized,
+    props: normalized.props ? Object.assign({}, obj.props, normalized.props) : obj.props,
   } as LabelObject;
 }
 
