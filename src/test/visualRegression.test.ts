@@ -33,10 +33,16 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
   describe.each(testCases)("Visual Test: $id", (tc) => {
     // TODO: Fix the following visual mismatches
     const failingTests = [
-      "barcode_datamatrix_standard", // bwip-js and Zebra/Labelary use different DataMatrix encodings for same text
-      "barcode_micropdf417_standard", // bwip-js and Zebra produce different column layouts for micropdf417
-      "barcode_codablock_standard", // bwip-js encodes codablock with different parameters than Zebra firmware
-      "barcode_pdf417_auto_ecc", // reference PNG not yet captured from Labelary
+      // bwip-js and Zebra use different DataMatrix codeword selection algorithms.
+      // Both produce valid 18×18 symbols for "DataMatrixTest" but with different cell
+      // patterns (~37 modules differ). Not fixable via bwip options.
+      "barcode_datamatrix_standard",
+      // bwip-js and Zebra use different MicroPDF417 encoding algorithms.
+      // Both produce a 38-module-wide, 11-row symbol but with different cell patterns
+      // (~511 px diff). Encoding options (text/byte/numeric/columns) have no effect.
+      "barcode_micropdf417_standard",
+      // bwip-js encodes codablock with different parameters than Zebra firmware.
+      "barcode_codablock_standard",
     ];
 
     const testFn = failingTests.includes(tc.id) ? it.skip : it;
