@@ -13,7 +13,7 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
   code93: "code93",
   code11: "code11",
   industrial2of5: "industrial2of5",
-  standard2of5: "code2of5",
+  standard2of5: "iata2of5",   // ZPL ^BJ matches bwip IATA 2 of 5, not code2of5
   codabar: "rationalizedCodabar",
   logmars: "code39",
   msi: "msi",
@@ -147,10 +147,16 @@ export function buildBwipOptions(
     case "industrial2of5":
     case "standard2of5":
     case "codabar":
-    case "msi":
     case "plessey": {
       const p = obj.props;
       opts = { bcid, text: p.content || "0", scale: scale1D, height: 10 };
+      break;
+    }
+    case "msi": {
+      const p = obj.props;
+      // Zebra always encodes a Mod10 check digit in MSI regardless of the ^BM e=N
+      // parameter (which only suppresses it in the interpretation line).
+      opts = { bcid, text: p.content || "0", scale: scale1D, height: 10, includecheck: true };
       break;
     }
     case "postal": {
@@ -178,6 +184,8 @@ export function buildBwipOptions(
         text: `(01)${padded}`,
         scale: scale1D,
         height: 10,
+        // Adds 2 quiet-zone rows above and below so canvas height matches Labelary.
+        paddingheight: 2,
       };
       break;
     }
@@ -275,26 +283,41 @@ export function getDisplaySize(
 ): { w: number; h: number } {
   if (!canvas) return { w: 0, h: 0 };
 
+  // bwip-js at bwipSc=1 renders 1 extra pixel; at bwipSc>=2 it renders the exact module
+  // count. The extraPx term corrects for this so formulas stay consistent across scales.
   switch (obj.type) {
-    case "msi":
-    case "plessey": {
-      // ZPL/Labelary includes 10 quiet-zone modules on each side; bwip renders bars only.
-      // Add 20 modules to cover both quiet zones so canvas width matches Labelary.
+    case "code93":
+    case "code11": {
+      // bwip-js renders a narrower quiet zone than Zebra firmware.
+      // Correcting to the Labelary width would stretch bars; return the bwip-natural size.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / bwipSc + 20) * modulePx;
+      const w = (canvas.width / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
-    case "code128":
-    case "code93":
-    case "code11":
-    case "industrial2of5":
-    case "standard2of5":
-    case "codabar":
-    case "gs1databar":
+    case "plessey":
     case "planet":
     case "postal": {
+      // bwip-js uses a different bar-structure or encoding algorithm than Zebra firmware.
+      // Width is approximate; the visual regression is skipped for these types.
+      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
+      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+      const w = (canvas.width / bwipSc) * modulePx;
+      const h = dotsToPx(obj.props.height, scale, dpmm);
+      return { w, h };
+    }
+    case "gs1databar": {
+      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
+      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+      const w = (canvas.width / bwipSc) * modulePx;
+      // Height is symbol-standard fixed (not the ZPL height param).
+      // paddingheight:2 in buildBwipOptions adds the quiet-zone rows so
+      // canvas.height already reflects the correct total height.
+      const h = (canvas.height / bwipSc) * modulePx;
+      return { w, h };
+    }
+    case "code128": {
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
       const w = (canvas.width / bwipSc) * modulePx;
@@ -307,8 +330,6 @@ export function getDisplaySize(
     case "upce": {
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      // bwip-js at bwipSc=1 renders 1 extra pixel (extra module); at bwipSc>=2 it renders
-      // the exact module count. Subtract it only when present to keep width in sync.
       const extraPx = bwipSc === 1 ? 1 : 0;
       const w = ((canvas.width - extraPx) / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
@@ -316,10 +337,13 @@ export function getDisplaySize(
     }
     case "code39":
     case "logmars":
-    case "interleaved2of5": {
+    case "interleaved2of5":
+    case "industrial2of5":
+    case "standard2of5":
+    case "codabar":
+    case "msi": {
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      // Same scale-dependent extra pixel as EAN/UPC.
       const extraPx = bwipSc === 1 ? 1 : 0;
       const w = ((canvas.width - extraPx) / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
