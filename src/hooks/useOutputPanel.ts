@@ -3,10 +3,28 @@ import { useRef, useState } from "react";
 const OUTPUT_MIN_H = 80;
 const OUTPUT_MAX_H = 600;
 export const OUTPUT_DEFAULT_H = 208;
+const LS_KEY = "zpl-output-panel";
+
+function loadPanelState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as { collapsed: boolean; height: number };
+  } catch {
+    return null;
+  }
+}
+
+function savePanelState(collapsed: boolean, height: number) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({ collapsed, height }));
+  } catch {}
+}
 
 export function useOutputPanel(defaultH = OUTPUT_DEFAULT_H) {
-  const [height, setHeight] = useState(defaultH);
-  const [collapsed, setCollapsed] = useState(false);
+  const saved = loadPanelState();
+  const [height, setHeight] = useState(saved?.height ?? defaultH);
+  const [collapsed, setCollapsed] = useState(saved?.collapsed ?? true);
   const dragRef = useRef<{ startY: number; startH: number } | null>(null);
 
   const onMouseDown = (e: React.MouseEvent) => {
@@ -24,6 +42,7 @@ export function useOutputPanel(defaultH = OUTPUT_DEFAULT_H) {
       );
       if (next <= OUTPUT_MIN_H) {
         setCollapsed(true);
+        savePanelState(true, height);
         dragRef.current = null;
         window.removeEventListener("mousemove", onMove);
         window.removeEventListener("mouseup", onUp);
@@ -31,6 +50,7 @@ export function useOutputPanel(defaultH = OUTPUT_DEFAULT_H) {
       }
       setCollapsed(false);
       setHeight(next);
+      savePanelState(false, next);
     };
     const onUp = () => {
       dragRef.current = null;
@@ -41,10 +61,12 @@ export function useOutputPanel(defaultH = OUTPUT_DEFAULT_H) {
     window.addEventListener("mouseup", onUp);
   };
 
-  const collapse = () => setCollapsed(true);
+  const collapse = () => { setCollapsed(true); savePanelState(true, height); };
   const expand = () => {
-    setHeight(OUTPUT_DEFAULT_H);
+    const h = height < OUTPUT_MIN_H ? OUTPUT_DEFAULT_H : height;
+    setHeight(h);
     setCollapsed(false);
+    savePanelState(false, h);
   };
 
   return { height, collapsed, onMouseDown, collapse, expand };
