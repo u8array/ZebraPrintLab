@@ -208,9 +208,9 @@ export function buildBwipOptions(
           Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
         ),
         columns,
-        // ZPL securityLevel 0 = auto → Zebra picks ECC level 0 (minimum).
-        // ZPL securityLevel 1–8 = ECC level 0–7, so the mapping is sec − 1.
-        eclevel: p.securityLevel > 0 ? String(p.securityLevel - 1) : "0",
+        // ZPL securityLevel 0 = auto → ECC level 0 (minimum). 1–8 map directly
+        // to bwip eclevel 1–8 (empirically validated against Labelary).
+        eclevel: String(p.securityLevel),
       };
       break;
     }

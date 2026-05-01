@@ -36,8 +36,7 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
       "barcode_datamatrix_standard", // bwip-js and Zebra/Labelary use different DataMatrix encodings for same text
       "barcode_micropdf417_standard", // bwip-js and Zebra produce different column layouts for micropdf417
       "barcode_codablock_standard", // bwip-js encodes codablock with different parameters than Zebra firmware
-      "barcode_pdf417_auto", // bwip-js selects 8 rows where Labelary/Zebra selects 10
-      "barcode_pdf417_auto_ecc", // same bwip-js/Zebra row count discrepancy; reference PNG not yet captured
+      "barcode_pdf417_auto_ecc", // reference PNG not yet captured from Labelary
     ];
 
     const testFn = failingTests.includes(tc.id) ? it.skip : it;
