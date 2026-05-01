@@ -3,6 +3,10 @@ const no = {
     heading: 'Objekter',
     groupText: 'Tekst',
     groupCodes: 'Koder',
+    groupCodeCommon: 'Vanlige',
+    groupCode1d: '1D Lineær',
+    groupCode2d: '2D Matrise',
+    groupCodePostal: 'Post & Legacy',
     groupShapes: 'Former',
   },
 

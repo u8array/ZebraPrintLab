@@ -3,6 +3,10 @@ const lt = {
     heading: 'Objektai',
     groupText: 'Tekstas',
     groupCodes: 'Kodai',
+    groupCodeCommon: 'Dažniausi',
+    groupCode1d: '1D Tiesinis',
+    groupCode2d: '2D Matrica',
+    groupCodePostal: 'Pašto & Legacy',
     groupShapes: 'Figūros',
   },
 

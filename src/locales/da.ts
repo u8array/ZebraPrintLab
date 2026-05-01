@@ -3,6 +3,10 @@ const da = {
     heading: 'Objekter',
     groupText: 'Tekst',
     groupCodes: 'Koder',
+    groupCodeCommon: 'Almindelige',
+    groupCode1d: '1D Lineær',
+    groupCode2d: '2D Matrix',
+    groupCodePostal: 'Post & Legacy',
     groupShapes: 'Former',
   },
 

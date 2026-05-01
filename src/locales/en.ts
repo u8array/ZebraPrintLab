@@ -3,6 +3,10 @@ const en = {
     heading: 'Objects',
     groupText: 'Text',
     groupCodes: 'Codes',
+    groupCodeCommon: 'Common',
+    groupCode1d: '1D Linear',
+    groupCode2d: '2D Matrix',
+    groupCodePostal: 'Postal & Legacy',
     groupShapes: 'Shapes',
   },
 

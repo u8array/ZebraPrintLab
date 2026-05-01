@@ -7,6 +7,7 @@ export const codabar = createBarcode1D({
   defaultContent: "A12345A",
   hasCheckDigit: true,
   localeKey: "codabar",
+  group: 'code-1d',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     const check = p.checkDigit ? "Y" : "N";

@@ -3,6 +3,10 @@ const sr = {
     heading: 'Objekti',
     groupText: 'Текст',
     groupCodes: 'Кодови',
+    groupCodeCommon: 'Uobičajeni',
+    groupCode1d: '1D Linearni',
+    groupCode2d: '2D Matrica',
+    groupCodePostal: 'Poštanski i Legacy',
     groupShapes: 'Облици',
   },
 

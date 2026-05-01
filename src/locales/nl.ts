@@ -3,6 +3,10 @@ const nl = {
     heading: 'Objecten',
     groupText: 'Tekst',
     groupCodes: 'Codes',
+    groupCodeCommon: 'Veelgebruikt',
+    groupCode1d: '1D Lineair',
+    groupCode2d: '2D Matrix',
+    groupCodePostal: 'Post & Legacy',
     groupShapes: 'Vormen',
   },
 

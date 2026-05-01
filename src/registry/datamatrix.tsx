@@ -12,7 +12,7 @@ export interface DataMatrixProps {
 export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
   label: 'DataMatrix',
   icon: '▦',
-  group: 'code',
+  group: 'code-2d',
   defaultProps: {
     content: '1234567890',
     dimension: 5,

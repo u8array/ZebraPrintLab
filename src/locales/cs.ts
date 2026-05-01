@@ -3,6 +3,10 @@ const cs = {
     heading: 'Objekty',
     groupText: 'Text',
     groupCodes: 'Kódy',
+    groupCodeCommon: 'Běžné',
+    groupCode1d: '1D Lineární',
+    groupCode2d: '2D Maticový',
+    groupCodePostal: 'Poštovní a Legacy',
     groupShapes: 'Tvary',
   },
 

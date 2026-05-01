@@ -3,6 +3,10 @@ const el = {
     heading: 'Αντικείμενα',
     groupText: 'Κείμενο',
     groupCodes: 'Κωδικοί',
+    groupCodeCommon: 'Συνηθισμένα',
+    groupCode1d: '1D Γραμμικός',
+    groupCode2d: '2D Μήτρα',
+    groupCodePostal: 'Ταχυδρομικά & Παλαιά',
     groupShapes: 'Σχήματα',
   },
 

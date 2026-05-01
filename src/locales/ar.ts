@@ -3,6 +3,10 @@ const ar = {
     heading: 'العناصر',
     groupText: 'نص',
     groupCodes: 'رموز',
+    groupCodeCommon: 'شائعة',
+    groupCode1d: 'خطي 1D',
+    groupCode2d: 'مصفوفة 2D',
+    groupCodePostal: 'بريدي وإرث',
     groupShapes: 'أشكال',
   },
 

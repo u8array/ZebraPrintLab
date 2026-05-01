@@ -293,7 +293,7 @@ describe('ObjectRegistry', () => {
   });
 
   it('every registered type has a valid group', () => {
-    const validGroups = new Set(['text', 'code', 'shape']);
+    const validGroups = new Set(['text', 'code-1d', 'code-2d', 'code-postal', 'shape']);
     for (const def of Object.values(ObjectRegistry)) {
       expect(validGroups.has(def.group)).toBe(true);
     }

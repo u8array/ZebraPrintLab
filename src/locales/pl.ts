@@ -3,6 +3,10 @@ const pl = {
     heading: 'Obiekty',
     groupText: 'Tekst',
     groupCodes: 'Kody',
+    groupCodeCommon: 'Popularne',
+    groupCode1d: '1D Liniowy',
+    groupCode2d: '2D Matrycowy',
+    groupCodePostal: 'Pocztowe i Legacy',
     groupShapes: 'Kształty',
   },
 

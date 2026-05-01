@@ -14,7 +14,7 @@ export interface Code39Props {
 export const code39: ObjectTypeDefinition<Code39Props> = {
   label: 'Code 39',
   icon: '|·|',
-  group: 'code',
+  group: 'code-1d',
   defaultProps: {
     content: 'CODE39',
     height: 100,

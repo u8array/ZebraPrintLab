@@ -3,6 +3,10 @@ const et = {
     heading: 'Objektid',
     groupText: 'Tekst',
     groupCodes: 'Koodid',
+    groupCodeCommon: 'Levinud',
+    groupCode1d: '1D Lineaarne',
+    groupCode2d: '2D Maatriks',
+    groupCodePostal: 'Postindeks ja Legacy',
     groupShapes: 'Kujundid',
   },
 

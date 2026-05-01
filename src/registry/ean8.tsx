@@ -8,6 +8,7 @@ export const ean8 = createBarcode1D({
   contentMaxLength: 7,
   hasCheckDigit: false,
   localeKey: 'ean8',
+  group: 'code-1d',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     return `^B8N,${p.height},${interp},N`;

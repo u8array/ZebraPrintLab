@@ -7,6 +7,7 @@ export const code11 = createBarcode1D({
   defaultContent: "12345",
   hasCheckDigit: true,
   localeKey: "code11",
+  group: 'code-1d',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     const check = p.checkDigit ? "Y" : "N";

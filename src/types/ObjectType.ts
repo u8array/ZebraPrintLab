@@ -27,7 +27,7 @@ export const labelObjectBaseSchema = z.object({
 
 export type LabelObjectBase = z.infer<typeof labelObjectBaseSchema>;
 
-export type ObjectGroup = 'text' | 'code' | 'shape';
+export type ObjectGroup = 'text' | 'code-1d' | 'code-2d' | 'code-postal' | 'shape';
 
 export interface ObjectTypeDefinition<P extends object = object> {
   label: string;

@@ -7,6 +7,7 @@ export const plessey = createBarcode1D({
   defaultContent: "12345678",
   hasCheckDigit: true,
   localeKey: "plessey",
+  group: 'code-1d',
   // Plessey uses 2:1 wide:narrow ratio (same as MSI); override ZPL default of 3.0
   byRatio: 2,
   zplCommand: (p) => {

@@ -7,6 +7,7 @@ export const industrial2of5 = createBarcode1D({
   defaultContent: "12345678",
   hasCheckDigit: false,
   localeKey: "industrial2of5",
+  group: 'code-1d',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     return `^BIN,${p.height},${interp},N`;

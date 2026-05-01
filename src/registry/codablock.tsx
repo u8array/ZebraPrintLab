@@ -13,7 +13,7 @@ export interface CodablockProps {
 export const codablock: ObjectTypeDefinition<CodablockProps> = {
   label: "CODABLOCK",
   icon: "▥B",
-  group: "code",
+  group: "code-2d",
   defaultProps: {
     content: "1234567890",
     moduleWidth: 2,

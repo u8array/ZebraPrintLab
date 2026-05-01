@@ -3,6 +3,10 @@ const tr = {
     heading: 'Nesneler',
     groupText: 'Metin',
     groupCodes: 'Kodlar',
+    groupCodeCommon: 'Yaygın',
+    groupCode1d: '1D Doğrusal',
+    groupCode2d: '2D Matris',
+    groupCodePostal: 'Posta ve Eski',
     groupShapes: 'Şekiller',
   },
 

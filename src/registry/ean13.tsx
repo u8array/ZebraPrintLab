@@ -13,7 +13,7 @@ export interface Ean13Props {
 export const ean13: ObjectTypeDefinition<Ean13Props> = {
   label: 'EAN-13',
   icon: 'EAN',
-  group: 'code',
+  group: 'code-1d',
   defaultProps: {
     content: '590123412345',
     height: 100,

@@ -14,7 +14,7 @@ export interface Pdf417Props {
 export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
   label: "PDF417",
   icon: "▥",
-  group: "code",
+  group: "code-2d",
   defaultProps: {
     content: "1234567890",
     rowHeight: 2,

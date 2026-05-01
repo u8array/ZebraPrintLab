@@ -3,6 +3,10 @@ const ja = {
     heading: 'オブジェクト',
     groupText: 'テキスト',
     groupCodes: 'コード',
+    groupCodeCommon: '一般的',
+    groupCode1d: '1Dリニア',
+    groupCode2d: '2Dマトリクス',
+    groupCodePostal: '郵便 & レガシー',
     groupShapes: '図形',
   },
 

@@ -12,7 +12,7 @@ export interface AztecProps {
 export const aztec: ObjectTypeDefinition<AztecProps> = {
   label: "Aztec",
   icon: "◇",
-  group: "code",
+  group: "code-2d",
   defaultProps: {
     content: "1234567890",
     magnification: 4,

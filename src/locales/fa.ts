@@ -3,6 +3,10 @@ const fa = {
     heading: 'اشیاء',
     groupText: 'متن',
     groupCodes: 'کدها',
+    groupCodeCommon: 'رایج',
+    groupCode1d: 'خطی 1D',
+    groupCode2d: 'ماتریسی 2D',
+    groupCodePostal: 'پستی و قدیمی',
     groupShapes: 'اشکال',
   },
 

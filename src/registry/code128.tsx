@@ -14,7 +14,7 @@ export interface Code128Props {
 export const code128: ObjectTypeDefinition<Code128Props> = {
   label: 'Code 128',
   icon: '|||',
-  group: 'code' as const,
+  group: 'code-1d' as const,
   defaultProps: {
     content: '12345678',
     height: 100,

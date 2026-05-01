@@ -3,6 +3,10 @@ const zhHans = {
     heading: '对象',
     groupText: '文本',
     groupCodes: '条码',
+    groupCodeCommon: '常用',
+    groupCode1d: '一维线性',
+    groupCode2d: '二维矩阵',
+    groupCodePostal: '邮政 & 旧式',
     groupShapes: '形状',
   },
 

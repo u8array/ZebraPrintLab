@@ -100,31 +100,36 @@ export const BARCODE_1D_TYPES = new Set([
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ObjectRegistry: Record<string, ObjectTypeDefinition<any>> = {
+  // text
   text,
+  // code-1d (frequency order)
   code128,
-  code39,
   ean13,
   upca,
+  code39,
+  interleaved2of5,
+  gs1databar,
   ean8,
   upce,
-  interleaved2of5,
+  logmars,
   code93,
+  codabar,
   code11,
   industrial2of5,
   standard2of5,
-  codabar,
-  logmars,
   msi,
   plessey,
-  gs1databar,
-  planet,
-  postal,
+  // code-2d (frequency order)
   qrcode,
   datamatrix,
   pdf417,
   aztec,
   micropdf417,
   codablock,
+  // code-postal
+  planet,
+  postal,
+  // shape
   box,
   ellipse,
   line,
@@ -132,8 +137,10 @@ export const ObjectRegistry: Record<string, ObjectTypeDefinition<any>> = {
   image,
 };
 
-export const PALETTE_GROUPS: { key: ObjectGroup; labelKey: 'groupText' | 'groupCodes' | 'groupShapes' }[] = [
+export const PALETTE_GROUPS: { key: ObjectGroup; labelKey: string }[] = [
   { key: 'text', labelKey: 'groupText' },
-  { key: 'code', labelKey: 'groupCodes' },
+  { key: 'code-1d', labelKey: 'groupCode1d' },
+  { key: 'code-2d', labelKey: 'groupCode2d' },
+  { key: 'code-postal', labelKey: 'groupCodePostal' },
   { key: 'shape', labelKey: 'groupShapes' },
 ];

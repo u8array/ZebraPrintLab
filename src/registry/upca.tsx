@@ -8,6 +8,7 @@ export const upca = createBarcode1D({
   contentMaxLength: 11,
   hasCheckDigit: false,
   localeKey: 'upca',
+  group: 'code-1d',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     return `^BUN,${p.height},${interp},N,N`;

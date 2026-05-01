@@ -3,6 +3,10 @@ const sl = {
     heading: 'Predmeti',
     groupText: 'Besedilo',
     groupCodes: 'Kode',
+    groupCodeCommon: 'Pogosti',
+    groupCode1d: '1D Linearni',
+    groupCode2d: '2D Matrica',
+    groupCodePostal: 'Poštni in Legacy',
     groupShapes: 'Oblike',
   },
 

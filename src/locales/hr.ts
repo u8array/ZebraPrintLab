@@ -3,6 +3,10 @@ const hr = {
     heading: 'Objekti',
     groupText: 'Tekst',
     groupCodes: 'Kodovi',
+    groupCodeCommon: 'Uobičajeni',
+    groupCode1d: '1D Linearni',
+    groupCode2d: '2D Matrica',
+    groupCodePostal: 'Poštanski i Legacy',
     groupShapes: 'Oblici',
   },
 

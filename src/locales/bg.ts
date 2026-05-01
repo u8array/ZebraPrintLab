@@ -3,6 +3,10 @@ const bg = {
     heading: 'Обекти',
     groupText: 'Текст',
     groupCodes: 'Кодове',
+    groupCodeCommon: 'Общи',
+    groupCode1d: '1D Линеен',
+    groupCode2d: '2D Матричен',
+    groupCodePostal: 'Пощенски и Legacy',
     groupShapes: 'Форми',
   },
 

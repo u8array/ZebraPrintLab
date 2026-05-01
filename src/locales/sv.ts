@@ -3,6 +3,10 @@ const sv = {
     heading: 'Objekt',
     groupText: 'Text',
     groupCodes: 'Koder',
+    groupCodeCommon: 'Vanliga',
+    groupCode1d: '1D Linjär',
+    groupCode2d: '2D Matris',
+    groupCodePostal: 'Post & Legacy',
     groupShapes: 'Former',
   },
 

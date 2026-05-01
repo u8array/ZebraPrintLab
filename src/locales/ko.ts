@@ -3,6 +3,10 @@ const ko = {
     heading: '개체',
     groupText: '텍스트',
     groupCodes: '코드',
+    groupCodeCommon: '일반',
+    groupCode1d: '1D 선형',
+    groupCode2d: '2D 매트릭스',
+    groupCodePostal: '우편 & 레거시',
     groupShapes: '도형',
   },
 

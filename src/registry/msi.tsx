@@ -7,6 +7,7 @@ export const msi = createBarcode1D({
   defaultContent: "12345678",
   hasCheckDigit: true,
   localeKey: "msi",
+  group: 'code-1d',
   // MSI standard specifies a 2:1 wide:narrow ratio, which bwip-js hardcodes
   // internally. ZPL ^BY defaults to 3.0, so we must override to keep canvas
   // and Labelary preview in sync.

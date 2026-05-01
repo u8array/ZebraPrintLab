@@ -3,6 +3,10 @@ const hu = {
     heading: 'Objektumok',
     groupText: 'Szöveg',
     groupCodes: 'Kódok',
+    groupCodeCommon: 'Általános',
+    groupCode1d: '1D Lineáris',
+    groupCode2d: '2D Mátrix',
+    groupCodePostal: 'Postai és Legacy',
     groupShapes: 'Alakzatok',
   },
 

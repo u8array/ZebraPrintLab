@@ -7,6 +7,7 @@ export const postal = createBarcode1D({
   defaultContent: "12345",
   hasCheckDigit: false,
   localeKey: "postal",
+  group: 'code-postal',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     // ^BZ{orientation},{height},{interp},{startStop}

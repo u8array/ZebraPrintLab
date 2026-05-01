@@ -12,7 +12,7 @@ export interface QrCodeProps {
 export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
   label: 'QR Code',
   icon: '⬚',
-  group: 'code',
+  group: 'code-2d',
   defaultProps: {
     content: 'https://example.com',
     magnification: 4,

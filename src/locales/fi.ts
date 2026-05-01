@@ -3,6 +3,10 @@ const fi = {
     heading: 'Objektit',
     groupText: 'Teksti',
     groupCodes: 'Koodit',
+    groupCodeCommon: 'Yleiset',
+    groupCode1d: '1D Lineaarinen',
+    groupCode2d: '2D Matriisi',
+    groupCodePostal: 'Postit & Legacy',
     groupShapes: 'Muodot',
   },
 

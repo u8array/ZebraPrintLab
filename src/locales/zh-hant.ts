@@ -3,6 +3,10 @@ const zhHant = {
     heading: '物件',
     groupText: '文字',
     groupCodes: '條碼',
+    groupCodeCommon: '常用',
+    groupCode1d: '一維線性',
+    groupCode2d: '二維矩陣',
+    groupCodePostal: '郵政 & 舊式',
     groupShapes: '形狀',
   },
 

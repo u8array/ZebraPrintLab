@@ -7,6 +7,7 @@ export const gs1databar = createBarcode1D({
   defaultContent: "0112345678901",
   hasCheckDigit: false,
   localeKey: "gs1databar",
+  group: 'code-1d',
   zplCommand: (p) => {
     // ^BR{orientation},{symbology},{magnification},{separator},{height},{segments}
     // symbology 1 = omnidirectional

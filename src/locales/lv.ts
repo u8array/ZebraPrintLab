@@ -3,6 +3,10 @@ const lv = {
     heading: 'Objekti',
     groupText: 'Teksts',
     groupCodes: 'Kodi',
+    groupCodeCommon: 'Izplatīti',
+    groupCode1d: '1D Lineārs',
+    groupCode2d: '2D Matrica',
+    groupCodePostal: 'Pasta & Legacy',
     groupShapes: 'Formas',
   },
 

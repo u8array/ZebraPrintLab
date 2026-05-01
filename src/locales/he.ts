@@ -3,6 +3,10 @@ const he = {
     heading: 'אובייקטים',
     groupText: 'טקסט',
     groupCodes: 'קודים',
+    groupCodeCommon: 'נפוצים',
+    groupCode1d: '1D ליניארי',
+    groupCode2d: '2D מטריצה',
+    groupCodePostal: 'דואר ומורשת',
     groupShapes: 'צורות',
   },
 

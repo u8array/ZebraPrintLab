@@ -3,6 +3,10 @@ const pt = {
     heading: 'Objetos',
     groupText: 'Texto',
     groupCodes: 'Códigos',
+    groupCodeCommon: 'Comuns',
+    groupCode1d: '1D Linear',
+    groupCode2d: '2D Matricial',
+    groupCodePostal: 'Postal e Legados',
     groupShapes: 'Formas',
   },
 

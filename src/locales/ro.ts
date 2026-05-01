@@ -3,6 +3,10 @@ const ro = {
     heading: 'Obiecte',
     groupText: 'Text',
     groupCodes: 'Coduri',
+    groupCodeCommon: 'Comune',
+    groupCode1d: '1D Liniar',
+    groupCode2d: '2D Matricial',
+    groupCodePostal: 'Poștal și Legacy',
     groupShapes: 'Forme',
   },
 

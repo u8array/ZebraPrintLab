@@ -1,4 +1,4 @@
-import type { ObjectTypeDefinition, LabelObjectBase } from '../types/ObjectType';
+import type { ObjectTypeDefinition, ObjectGroup, LabelObjectBase } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
@@ -21,6 +21,7 @@ interface Barcode1DConfig {
   zplCommand: (p: Barcode1DProps) => string;
   /** Locale key under `t.registry[localeKey]`. Must match en.ts shape. */
   localeKey: string;
+  group: ObjectGroup;
   /**
    * Explicit wide-to-narrow ratio for the ^BY command.
    * ZPL defaults to 3.0, but some barcode standards (MSI, Plessey) define a
@@ -43,7 +44,7 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
   return {
     label: config.label,
     icon: config.icon,
-    group: 'code',
+    group: config.group,
     defaultProps: {
       content: config.defaultContent,
       height: 100,
