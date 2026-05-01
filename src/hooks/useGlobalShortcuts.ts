@@ -33,6 +33,7 @@ export function useGlobalShortcuts() {
         return;
       }
       if (mod && e.code === "KeyC") {
+        if (window.getSelection()?.toString()) return;
         e.preventDefault();
         copySelectedObjects();
         return;
