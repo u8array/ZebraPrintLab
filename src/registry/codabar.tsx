@@ -4,7 +4,7 @@ export type { Barcode1DProps as CodabarProps } from "./barcode1d";
 export const codabar = createBarcode1D({
   label: "Codabar",
   icon: "CBA",
-  defaultContent: "A12345B",
+  defaultContent: "A12345A",
   hasCheckDigit: true,
   localeKey: "codabar",
   zplCommand: (p) => {
