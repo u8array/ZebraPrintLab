@@ -6,6 +6,7 @@ import {
   buildBwipOptions,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
+import { EAN_TEXT_ZONE_DOTS } from "../components/Canvas/bwipConstants";
 import { ObjectRegistry } from "../registry";
 import { defined } from "./helpers";
 import { testModels } from "./testModels";
@@ -111,7 +112,6 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       expect(displaySize.w).toBeGreaterThan(0);
       expect(displaySize.h).toBeGreaterThan(0);
 
-      // EAN/UPC types include a mandatory text zone in their display height.
       const isEanUpc = ["ean13", "ean8", "upca", "upce"].includes(obj.type);
       const is1DCode = [
         "code128",
@@ -124,8 +124,14 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       );
 
       if (isEanUpc) {
-        // EAN/UPC display height = bar height + mandatory text zone (EAN_TEXT_ZONE_DOTS)
-        expect(displaySize.h * 8).toBeCloseTo(tc.expected_bounds.height, 1);
+        // Known discrepancy: Labelary reserves barHeight + EAN_TEXT_ZONE_DOTS (13 dots)
+        // even with printInterpretation=N. getDisplaySize intentionally returns only the
+        // bar height because the text zone is blank whitespace — bwip does not render it.
+        // expected_bounds.height in fixtures reflects the true Labelary value (barHeight+13).
+        expect(displaySize.h * 8).toBeCloseTo(
+          tc.expected_bounds.height - EAN_TEXT_ZONE_DOTS,
+          1,
+        );
       } else if (is1DCode) {
         expect(displaySize.h).toBe(
           (obj.props as { height: number }).height / 8,
@@ -149,9 +155,13 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       // Codablock is excluded: bwip-js encodes it with different parameters than
       // Zebra firmware, producing a wider symbol. ZPL generation is still verified
       // by the ZPL string test above.
+      // EAN/UPC height is excluded from the strict check — see isEanUpc branch above
+      // for the known EAN_TEXT_ZONE_DOTS discrepancy.
       if (obj.type !== "codablock") {
         expect(displaySize.w * 8).toBeCloseTo(tc.expected_bounds.width, 1);
-        expect(displaySize.h * 8).toBeCloseTo(tc.expected_bounds.height, 1);
+        if (!isEanUpc) {
+          expect(displaySize.h * 8).toBeCloseTo(tc.expected_bounds.height, 1);
+        }
       }
     });
   });

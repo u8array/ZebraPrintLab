@@ -1,6 +1,6 @@
 import type { LabelObject } from "../../registry";
 import { dotsToPx } from "../../lib/coordinates";
-import { EAN_TEXT_ZONE_DOTS, MICROPDF417_QUIET_ZONE_ROWS } from "./bwipConstants";
+import { MICROPDF417_QUIET_ZONE_ROWS } from "./bwipConstants";
 
 const BCID: Partial<Record<LabelObject["type"], string>> = {
   code128: "code128",
@@ -307,11 +307,11 @@ export function getDisplaySize(
     case "upce": {
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      // bwip-js includes an extra module at the end that ZPL/Labelary excludes.
-      const w = (canvas.width / bwipSc - 1) * modulePx;
-      // Labelary always reserves a mandatory text zone below EAN/UPC barcodes
-      // (even with printInterpretation=false). Verified at 8 dpmm: constant 13 dots.
-      const h = dotsToPx(obj.props.height + EAN_TEXT_ZONE_DOTS, scale, dpmm);
+      // bwip-js at bwipSc=1 renders 1 extra pixel (extra module); at bwipSc>=2 it renders
+      // the exact module count. Subtract it only when present to keep width in sync.
+      const extraPx = bwipSc === 1 ? 1 : 0;
+      const w = ((canvas.width - extraPx) / bwipSc) * modulePx;
+      const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
     case "code39":
@@ -319,8 +319,9 @@ export function getDisplaySize(
     case "interleaved2of5": {
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      // bwip-js includes an extra module at the end that ZPL/Labelary excludes.
-      const w = (canvas.width / bwipSc - 1) * modulePx;
+      // Same scale-dependent extra pixel as EAN/UPC.
+      const extraPx = bwipSc === 1 ? 1 : 0;
+      const w = ((canvas.width - extraPx) / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
