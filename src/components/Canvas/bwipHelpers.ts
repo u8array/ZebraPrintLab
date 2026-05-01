@@ -55,6 +55,14 @@ function estimatePdf417Columns(content: string, securityLevel: number): number {
 // row count exceeds what the data strictly requires.
 const BWIP_PDF417_MIN_ROWHEIGHT = 3;
 
+// bwip-js renders postnet/planet bars at 4/3 the per-element width that Zebra
+// firmware uses; this factor compresses the displayed canvas horizontally so
+// the bounding box matches Labelary. Bars appear visually distorted as a result.
+// The 0.0025 deviation from 0.75 (3/4) accounts for a small quiet-zone offset.
+// Empirically derived from Labelary fixtures barcode_planet_standard (12 digits)
+// and barcode_postal_standard (6 digits) at 8dpmm, moduleWidth=2.
+const POSTNET_PLANET_WIDTH_RATIO = 0.7525;
+
 /**
  * Compute the optimal bwip render scale for 1D barcodes so that each module
  * maps to an integer number of display pixels (avoiding anti-aliasing on
@@ -307,14 +315,11 @@ export function getDisplaySize(
     }
     case "planet":
     case "postal": {
-      // bwip-js renders postnet/planet bars at 4/3 the width per element of Zebra.
-      // The 0.7525 factor compresses the canvas image horizontally so the displayed
-      // bounding box matches Labelary; the bar pattern is visually distorted.
-      // The factor accounts for both the 3/4 element-width ratio and a small
-      // quiet-zone difference; rounding to dots ensures exact match with Labelary.
+      // See POSTNET_PLANET_WIDTH_RATIO comment. Rounding to dots ensures exact
+      // match with Labelary fixtures regardless of bwip canvas pixel rounding.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const rawPx = (canvas.width / bwipSc) * modulePx * 0.7525;
+      const rawPx = (canvas.width / bwipSc) * modulePx * POSTNET_PLANET_WIDTH_RATIO;
       const wDots = Math.round((rawPx / scale) * dpmm);
       const w = dotsToPx(wDots, scale, dpmm);
       const h = dotsToPx(obj.props.height, scale, dpmm);
