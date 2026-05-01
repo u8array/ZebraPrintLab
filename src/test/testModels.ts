@@ -254,7 +254,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "A12345B", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "A12345A", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
   },
   barcode_logmars_standard: {
     id: "23",
