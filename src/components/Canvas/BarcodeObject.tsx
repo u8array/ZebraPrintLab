@@ -10,7 +10,9 @@ import {
   buildBwipOptions,
   getDisplaySize,
   eanCheckDigit,
-  BWIP_SCALE,
+  get1DBwipScale,
+  getEanUpcLayout,
+  type EanUpcType,
 } from "./bwipHelpers";
 import {
   QR_FO_Y_OFFSET_DOTS,
@@ -140,27 +142,13 @@ export function BarcodeObject({
 
     // ── EAN/UPC: manually-positioned digit labels ─────────────────────────
     if (EAN_UPC_TYPES.has(obj.type) && printInterp) {
-      // bwip renders at BWIP_SCALE px per module. The canvas pixel width encodes the
-      // exact quiet-zone + bar layout. We scale the bwip canvas 1:1 into [w] pixels.
-      const pxPerBwipPx = w / barcodeCanvas.width; // display-px per bwip-px
-
-      // EAN-13 bwip canvas layout (modules at scale=1):
-      //   11 quiet | 3 start | 6×L-half (42 mod) | 5 centre | 6×R-half (42 mod) | 3 end | 7 quiet
-      //   Total = 11+3+42+5+42+3+7 = 113 modules → * BWIP_SCALE = 226 px (bwip canvas width)
-      //
-      // EAN-8 layout:
-      //   7 quiet | 3 start | 4×L (28 mod) | 5 centre | 4×R (28 mod) | 3 end | 7 quiet
-      //   Total = 7+3+28+5+28+3+7 = 81 modules → 162 px
-      //
-      // UPC-A layout:
-      //   9 quiet | 3 start | 5×L (35 mod) | 5 centre | 5×R (35 mod) | 3 end | 9 quiet
-      //   Total = 9+3+35+5+35+3+9 = 99 modules → 198 px (but bwip may vary)
-      //
-      // UPC-E layout:
-      //   9 quiet | 3 start | 6×7=42 data | 6 end | 7 quiet
-      //   Total = 9+3+42+6+7 = 67 modules → 134 px
-
-      const bwipW = barcodeCanvas.width; // in bwip-px = modules * BWIP_SCALE
+      const bwipSc = get1DBwipScale(moduleWidth, scale, dpmm);
+      const layout = getEanUpcLayout(
+        obj.type as EanUpcType,
+        w,
+        barcodeCanvas.width,
+        bwipSc,
+      );
       const ldW = textFontSize * 1.2; // width reserved for leading/trailing digit
 
       let textNodes: React.ReactNode[] = [];
@@ -174,13 +162,7 @@ export function BarcodeObject({
           .padEnd(12, "0");
         const allDigits = digits12 + eanCheckDigit(digits12, 1, 3); // 13 digits
 
-        // Derive positions from actual bwip canvas width so quiet-zone variations are handled.
-        // Fixed portion (excl. left quiet): 3 start + 42 left + 5 centre + 42 right + 3 end + 7 rquiet = 102
-        const modulePx13 = BWIP_SCALE * pxPerBwipPx;
-        const qL13 = bwipW / BWIP_SCALE - 102; // left quiet zone in modules
-        const xLeft13 = (qL13 + 3) * modulePx13;
-        const xRight13 = (qL13 + 50) * modulePx13; // +3+42+5
-        const halfW13 = 42 * modulePx13;
+        const { xLeft: xLeft13, xRight: xRight13, halfWidth: halfW13 } = layout;
 
         const textY = Math.max(h, 1) + textGap;
         clipLeft = ldW;
@@ -232,13 +214,13 @@ export function BarcodeObject({
           .padEnd(7, "0");
         const allDigits = digits7 + eanCheckDigit(digits7, 3, 1); // 8 digits
 
+        const { xLeft: xLeft8, xRight: xRight8, halfWidth: halfW8 } = layout;
+
         const textY = Math.max(h, 1) + textGap;
-        // EAN-8: digits centered in left quarter and right quarter of barcode width
-        const halfW8 = w / 2;
         textNodes = [
           <Text
             key="dl"
-            x={0}
+            x={xLeft8}
             y={textY}
             width={halfW8}
             text={allDigits.slice(0, 4)}
@@ -251,7 +233,7 @@ export function BarcodeObject({
           />,
           <Text
             key="dr"
-            x={halfW8}
+            x={xRight8}
             y={textY}
             width={halfW8}
             text={allDigits.slice(4, 8)}
@@ -270,16 +252,8 @@ export function BarcodeObject({
           .padEnd(11, "0");
         const allDigits = digits11 + eanCheckDigit(digits11, 3, 1); // 12 digits
 
-        // UPC-A: 9 quiet | 3 start | 5×7=35 data | 5 centre | 5×7=35 data | 3 end | 9 quiet
-        const quietL = 9 * BWIP_SCALE;
-        const guardW = 3 * BWIP_SCALE;
-        const halfData = 35 * BWIP_SCALE;
-        const centreW = 5 * BWIP_SCALE;
-
-        const qL = quietL * pxPerBwipPx;
-        const gW = guardW * pxPerBwipPx;
-        const half = halfData * pxPerBwipPx;
-        const cW = centreW * pxPerBwipPx;
+        const { xLeft: xLeftUpca, xRight: xRightUpca, halfWidth: halfUpca } =
+          layout;
 
         const textY = Math.max(h, 1) + textGap;
         clipLeft = ldW;
@@ -301,9 +275,9 @@ export function BarcodeObject({
           // left 5 digits
           <Text
             key="dl"
-            x={qL + gW}
+            x={xLeftUpca}
             y={textY}
-            width={half}
+            width={halfUpca}
             text={allDigits.slice(1, 6)}
             fontSize={textFontSize}
             fontFamily="'Courier New', monospace"
@@ -315,9 +289,9 @@ export function BarcodeObject({
           // right 5 digits
           <Text
             key="dr"
-            x={qL + gW + half + cW}
+            x={xRightUpca}
             y={textY}
-            width={half}
+            width={halfUpca}
             text={allDigits.slice(6, 11)}
             fontSize={textFontSize}
             fontFamily="'Courier New', monospace"
@@ -365,7 +339,8 @@ export function BarcodeObject({
           ckSum += parseInt(expanded11[i] ?? "0", 10) * (i % 2 === 0 ? 3 : 1);
         const checkDigit = String((10 - (ckSum % 10)) % 10);
 
-        // Center digits over the full barcode image width
+        // UPC-E: 6 digits centered over the data area (modules 3–44 of 51)
+        const { xLeft: xMid, halfWidth: midW } = layout;
         const textY = Math.max(h, 1) + textGap;
         clipLeft = ldW;
         clipRight = ldW;
@@ -385,9 +360,9 @@ export function BarcodeObject({
           />,
           <Text
             key="dm"
-            x={0}
+            x={xMid}
             y={textY}
-            width={w}
+            width={midW}
             text={digits6}
             fontSize={textFontSize}
             fontFamily="'Courier New', monospace"
