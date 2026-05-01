@@ -38,3 +38,5 @@ tests/fixtures/__diffs__/
 .rooignore
 .aider.conf.yml
 *.instructions.*
+
+!tests/fixtures/labelary_images/*.png

@@ -90,4 +90,30 @@ export const testCases: TestCase[] = [
     expected_bounds: { x: 50, y: 50, width: 200, height: 100 },
     image_ref: "barcode_interleaved2of5_standard.png",
   },
+  {
+    id: "barcode_micropdf417_standard",
+    zpl_input: "^XA^BY2^FO50,50^BFN,2,0^FD1234^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 200, height: 100 },
+    image_ref: "barcode_micropdf417_standard.png",
+  },
+  {
+    id: "barcode_codablock_standard",
+    zpl_input: "^XA^BY2^FO50,50^BBN,2,Y^FD1234567890^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 200, height: 100 },
+    image_ref: "barcode_codablock_standard.png",
+  },
+  {
+    id: "barcode_pdf417_auto",
+    zpl_input: "^XA^BY2^FO50,50^B7N,10,1,0,,,^FD1234567890^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 172, height: 100 },
+    image_ref: "barcode_pdf417_auto.png",
+  },
+  {
+    // securityLevel=0 (auto ECC = ECC level 0), columns=0 (auto).
+    // Labelary measures: cols=1, 8 rows → height=32 dots, width=172 dots.
+    id: "barcode_pdf417_auto_ecc",
+    zpl_input: "^XA^BY2^FO50,50^B7N,4,0,0,,,^FD1234567890^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 172, height: 32 },
+    image_ref: "barcode_pdf417_auto_ecc.png",
+  },
 ];

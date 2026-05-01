@@ -1,23 +1,23 @@
-import type { ObjectTypeDefinition } from '../types/ObjectType';
-import { useT } from '../lib/useT';
-import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
+import type { ObjectTypeDefinition } from "../types/ObjectType";
+import { useT } from "../lib/useT";
+import { inputCls, labelCls } from "../components/Properties/styles";
+import { fieldPos } from "./zplHelpers";
 
 export interface Pdf417Props {
   content: string;
   rowHeight: number;
-  securityLevel: number;  // 0–8
-  columns: number;        // 1–30, 0 = auto
+  securityLevel: number; // 0–8
+  columns: number; // 1–30, 0 = auto
   moduleWidth: number;
 }
 
 export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
-  label: 'PDF417',
-  icon: '▥',
-  group: 'code',
+  label: "PDF417",
+  icon: "▥",
+  group: "code",
   defaultProps: {
-    content: '1234567890',
-    rowHeight: 10,
+    content: "1234567890",
+    rowHeight: 2,
     securityLevel: 0,
     columns: 0,
     moduleWidth: 2,
@@ -31,7 +31,9 @@ export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
       fieldPos(obj),
       `^B7N,${p.rowHeight},${p.securityLevel},${p.columns},,,`,
       `^FD${p.content}^FS`,
-    ].filter(Boolean).join('');
+    ]
+      .filter(Boolean)
+      .join("");
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
@@ -68,7 +70,9 @@ export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
               value={p.moduleWidth}
               min={1}
               max={10}
-              onChange={(e) => onChange({ moduleWidth: Number(e.target.value) })}
+              onChange={(e) =>
+                onChange({ moduleWidth: Number(e.target.value) })
+              }
             />
           </div>
         </div>
@@ -82,7 +86,9 @@ export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
               value={p.securityLevel}
               min={0}
               max={8}
-              onChange={(e) => onChange({ securityLevel: Number(e.target.value) })}
+              onChange={(e) =>
+                onChange({ securityLevel: Number(e.target.value) })
+              }
             />
           </div>
           <div className="flex flex-col gap-1">

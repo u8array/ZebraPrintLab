@@ -1,4 +1,10 @@
-import { useRef, useEffect, useLayoutEffect, useState, useCallback } from "react";
+import {
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useCallback,
+} from "react";
 import { useDroppable, useDndMonitor } from "@dnd-kit/core";
 import type { PaletteDragData } from "../../dnd/types";
 import { Stage, Layer, Group, Rect, Transformer } from "react-konva";
@@ -34,10 +40,26 @@ interface Props {
   onZoomChange: (zoom: number) => void;
 }
 
-export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapToggle, snapSizeMm, onSnapSizeChange, zoom, onZoomChange }: Props) {
+export function LabelCanvas({
+  unit,
+  showGrid,
+  onGridToggle,
+  snapEnabled,
+  onSnapToggle,
+  snapSizeMm,
+  onSnapSizeChange,
+  zoom,
+  onZoomChange,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  // Captures the node height and rowHeight at the start of a drag so that
+  // boundBoxFunc uses a fixed step size throughout the entire drag session.
+  const transformAnchorRef = useRef<{
+    nodeHeight: number;
+    rowHeight: number;
+  } | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [spaceDown, setSpaceDown] = useState(false);
@@ -50,8 +72,18 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
   const [guides, setGuides] = useState<SnapGuide[]>([]);
 
   // Lasso (marquee) selection
-  const [lasso, setLasso] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  const lassoRectRef = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [lasso, setLasso] = useState<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null>(null);
+  const lassoRectRef = useRef<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null>(null);
   const lassoStartRef = useRef<{ x: number; y: number } | null>(null);
   const didLassoRef = useRef(false);
 
@@ -63,13 +95,17 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
   // sidebar, which causes a proportional drop-position offset on touch devices.
   const lastPointerRef = useRef({ x: 0, y: 0 });
   useEffect(() => {
-    const onMove = (e: PointerEvent) => { lastPointerRef.current = { x: e.clientX, y: e.clientY }; };
-    document.addEventListener('pointermove', onMove);
-    return () => document.removeEventListener('pointermove', onMove);
+    const onMove = (e: PointerEvent) => {
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    };
+    document.addEventListener("pointermove", onMove);
+    return () => document.removeEventListener("pointermove", onMove);
   }, []);
 
-  const zoomIn  = () => onZoomChange(ZOOM_STEPS.find(s => s > zoom) ?? ZOOM_MAX);
-  const zoomOut = () => onZoomChange([...ZOOM_STEPS].reverse().find(s => s < zoom) ?? ZOOM_MIN);
+  const zoomIn = () =>
+    onZoomChange(ZOOM_STEPS.find((s) => s > zoom) ?? ZOOM_MAX);
+  const zoomOut = () =>
+    onZoomChange([...ZOOM_STEPS].reverse().find((s) => s < zoom) ?? ZOOM_MIN);
   const zoomFit = () => {
     onZoomChange(1);
     setPanOffset({ x: 0, y: 0 });
@@ -77,8 +113,17 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
 
   const colors = useColorScheme();
 
-  const { label, objects, selectedIds, addObject, updateObject, updateObjects, selectObject, toggleSelectObject, selectObjects } =
-    useLabelStore();
+  const {
+    label,
+    objects,
+    selectedIds,
+    addObject,
+    updateObject,
+    updateObjects,
+    selectObject,
+    toggleSelectObject,
+    selectObjects,
+  } = useLabelStore();
 
   useEffect(() => {
     const el = containerRef.current;
@@ -96,8 +141,12 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
   // keep stable refs so the passive:false wheel listener can read current values
   const zoomRef = useRef(zoom);
   const onZoomChangeRef = useRef(onZoomChange);
-  useLayoutEffect(() => { zoomRef.current = zoom; }, [zoom]);
-  useLayoutEffect(() => { onZoomChangeRef.current = onZoomChange; }, [onZoomChange]);
+  useLayoutEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+  useLayoutEffect(() => {
+    onZoomChangeRef.current = onZoomChange;
+  }, [onZoomChange]);
 
   // non-passive wheel: ctrl+scroll → zoom, plain scroll → pan
   useEffect(() => {
@@ -106,7 +155,12 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (e.ctrlKey || e.metaKey) {
-        onZoomChangeRef.current(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomRef.current * (e.deltaY < 0 ? 1.1 : 0.9))));
+        onZoomChangeRef.current(
+          Math.max(
+            ZOOM_MIN,
+            Math.min(ZOOM_MAX, zoomRef.current * (e.deltaY < 0 ? 1.1 : 0.9)),
+          ),
+        );
       } else {
         setPanOffset((p) => ({ x: p.x - e.deltaX, y: p.y - e.deltaY }));
       }
@@ -137,16 +191,16 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
   // Delete/Backspace removes all selected objects; ignored when focus is inside an input
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.code !== 'Delete' && e.code !== 'Backspace') return;
+      if (e.code !== "Delete" && e.code !== "Backspace") return;
       const tag = (e.target as HTMLElement).tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       const { selectedIds: ids } = useLabelStore.getState();
       if (ids.length === 0) return;
       e.preventDefault();
       useLabelStore.getState().removeSelectedObjects();
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   // arrow keys move the selected object; ignored when focus is inside an input
@@ -162,7 +216,11 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
       e.preventDefault();
 
       // shift = 10 mm, normal = snapSize when snap on, 1 dot when snap off
-      const step = e.shiftKey ? label.dpmm * 10 : snapEnabled ? Math.round(snapSizeMm * label.dpmm) : 1;
+      const step = e.shiftKey
+        ? label.dpmm * 10
+        : snapEnabled
+          ? Math.round(snapSizeMm * label.dpmm)
+          : 1;
       const dx =
         e.code === "ArrowRight" ? step : e.code === "ArrowLeft" ? -step : 0;
       const dy =
@@ -171,8 +229,10 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
       updateObjects(
         ids.flatMap((sid) => {
           const obj = objs.find((o) => o.id === sid);
-          return obj ? [{ id: sid, changes: { x: obj.x + dx, y: obj.y + dy } }] : [];
-        })
+          return obj
+            ? [{ id: sid, changes: { x: obj.x + dx, y: obj.y + dy } }]
+            : [];
+        }),
       );
     };
     window.addEventListener("keydown", onKeyDown);
@@ -190,12 +250,18 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
 
     const { objects: objs } = useLabelStore.getState();
 
-    const obj = objs.find(o => o.id === objId);
+    const obj = objs.find((o) => o.id === objId);
     if (!obj) return;
 
     const stage = stageRef.current;
     const dr = node.getClientRect({ relativeTo: stage });
-    const draggedRect = { id: objId, x: dr.x, y: dr.y, width: dr.width, height: dr.height };
+    const draggedRect = {
+      id: objId,
+      x: dr.x,
+      y: dr.y,
+      width: dr.width,
+      height: dr.height,
+    };
 
     const otherRects = [];
     for (const o of objs) {
@@ -203,17 +269,38 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
       const n = stage.findOne<Konva.Node>(`#${o.id}`);
       if (!n) continue;
       const r = n.getClientRect({ relativeTo: stage });
-      otherRects.push({ id: o.id, x: r.x, y: r.y, width: r.width, height: r.height });
+      otherRects.push({
+        id: o.id,
+        x: r.x,
+        y: r.y,
+        width: r.width,
+        height: r.height,
+      });
     }
 
     // Add the label itself as a full-size snap target.
     // This gives 3 anchors per axis: edge-start, center, edge-end.
     // Passed separately so it doesn't interfere with object-to-object snap filtering.
-    const labelRect = { id: '_lbl', x: labelOffsetX, y: labelOffsetY, width: labelWidthPx, height: labelHeightPx };
+    const labelRect = {
+      id: "_lbl",
+      x: labelOffsetX,
+      y: labelOffsetY,
+      width: labelWidthPx,
+      height: labelHeightPx,
+    };
 
-    const result = computeSnap(draggedRect, otherRects, undefined, {
-      x: labelOffsetX, y: labelOffsetY, width: labelWidthPx, height: labelHeightPx,
-    }, labelRect);
+    const result = computeSnap(
+      draggedRect,
+      otherRects,
+      undefined,
+      {
+        x: labelOffsetX,
+        y: labelOffsetY,
+        width: labelWidthPx,
+        height: labelHeightPx,
+      },
+      labelRect,
+    );
     const dx = result.x - dr.x;
     const dy = result.y - dr.y;
     if (dx !== 0 || dy !== 0) {
@@ -248,7 +335,10 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
       const dx = e.clientX - panStartRef.current.mouseX;
       const dy = e.clientY - panStartRef.current.mouseY;
       if (Math.abs(dx) > 2 || Math.abs(dy) > 2) didPanRef.current = true;
-      setPanOffset({ x: panStartRef.current.panX + dx, y: panStartRef.current.panY + dy });
+      setPanOffset({
+        x: panStartRef.current.panX + dx,
+        y: panStartRef.current.panY + dy,
+      });
     }
     // Lasso
     if (lassoStartRef.current && containerRef.current) {
@@ -280,14 +370,17 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
     setLasso(null);
     if (!rect || !stageRef.current) return;
     const stage = stageRef.current;
-    const selected = useLabelStore.getState().objects
-      .filter((obj) => {
+    const selected = useLabelStore
+      .getState()
+      .objects.filter((obj) => {
         const node = stage.findOne<Konva.Node>(`#${obj.id}`);
         if (!node) return false;
         const box = node.getClientRect({ relativeTo: stage });
         return (
-          rect.x < box.x + box.width && rect.x + rect.w > box.x &&
-          rect.y < box.y + box.height && rect.y + rect.h > box.y
+          rect.x < box.x + box.width &&
+          rect.x + rect.w > box.x &&
+          rect.y < box.y + box.height &&
+          rect.y + rect.h > box.y
         );
       })
       .map((obj) => obj.id);
@@ -321,7 +414,6 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
   const labelOffsetY =
     RULER_SIZE + (usableHeight - labelHeightPx) / 2 + panOffset.y;
 
-
   const snapUnit = Math.round(snapSizeMm * label.dpmm);
   const snap = (dots: number) =>
     snapEnabled ? Math.round(dots / snapUnit) * snapUnit : dots;
@@ -338,19 +430,28 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
     // Multi-select: propagate position delta to all other selected objects.
     // Read fresh state (getState) to avoid stale closure when multiple DragEnd events
     // fire simultaneously during a Transformer group drag.
-    const { selectedIds: selIds, objects: currentObjs } = useLabelStore.getState();
-    if (selIds.length > 1 && selIds.includes(id) && (finalChanges.x !== undefined || finalChanges.y !== undefined)) {
+    const { selectedIds: selIds, objects: currentObjs } =
+      useLabelStore.getState();
+    if (
+      selIds.length > 1 &&
+      selIds.includes(id) &&
+      (finalChanges.x !== undefined || finalChanges.y !== undefined)
+    ) {
       const srcObj = currentObjs.find((o) => o.id === id);
       if (srcObj) {
-        const ddx = finalChanges.x !== undefined ? finalChanges.x - srcObj.x : 0;
-        const ddy = finalChanges.y !== undefined ? finalChanges.y - srcObj.y : 0;
+        const ddx =
+          finalChanges.x !== undefined ? finalChanges.x - srcObj.x : 0;
+        const ddy =
+          finalChanges.y !== undefined ? finalChanges.y - srcObj.y : 0;
         updateObjects([
           { id, changes: finalChanges },
           ...selIds
             .filter((sid) => sid !== id)
             .flatMap((sid) => {
               const other = currentObjs.find((o) => o.id === sid);
-              return other ? [{ id: sid, changes: { x: other.x + ddx, y: other.y + ddy } }] : [];
+              return other
+                ? [{ id: sid, changes: { x: other.x + ddx, y: other.y + ddy } }]
+                : [];
             }),
         ]);
         return;
@@ -369,21 +470,21 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
     }
     if (selectedIds.length === 1) {
       const selectedObj = objects.find((o) => o.id === selectedIds[0]);
-      const useTransformer = selectedObj && selectedObj.type !== 'line';
+      const useTransformer = selectedObj && selectedObj.type !== "line";
       const node = useTransformer
         ? stageRef.current.findOne<Konva.Node>(`#${selectedIds[0]}`)
         : null;
       transformerRef.current.nodes(node ? [node] : []);
     } else {
       const nodes = selectedIds
-        .filter((id) => objects.find((o) => o.id === id)?.type !== 'line')
+        .filter((id) => objects.find((o) => o.id === id)?.type !== "line")
         .map((id) => stageRef.current?.findOne<Konva.Node>(`#${id}`))
         .filter((n): n is Konva.Node => n != null);
       transformerRef.current.nodes(nodes);
     }
   }, [selectedIds, objects]);
 
-  const { setNodeRef: setDropRef } = useDroppable({ id: 'canvas' });
+  const { setNodeRef: setDropRef } = useDroppable({ id: "canvas" });
 
   const pointerToLabelDots = (clientX: number, clientY: number) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -398,21 +499,38 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
 
   useDndMonitor({
     onDragMove(event) {
-      if (event.over?.id !== 'canvas') { setGhost(null); return; }
-      const pos = pointerToLabelDots(lastPointerRef.current.x, lastPointerRef.current.y);
+      if (event.over?.id !== "canvas") {
+        setGhost(null);
+        return;
+      }
+      const pos = pointerToLabelDots(
+        lastPointerRef.current.x,
+        lastPointerRef.current.y,
+      );
       if (!pos) return;
-      const type = (event.active.data.current as PaletteDragData | undefined)?.type;
+      const type = (event.active.data.current as PaletteDragData | undefined)
+        ?.type;
       if (!type) return;
       const def = ObjectRegistry[type];
       if (!def) return;
-      setGhost({ id: '__ghost__', type, ...pos, rotation: 0, props: def.defaultProps } as LabelObject);
+      setGhost({
+        id: "__ghost__",
+        type,
+        ...pos,
+        rotation: 0,
+        props: def.defaultProps,
+      } as LabelObject);
     },
     onDragEnd(event) {
       setGhost(null);
-      if (event.over?.id !== 'canvas') return;
-      const pos = pointerToLabelDots(lastPointerRef.current.x, lastPointerRef.current.y);
+      if (event.over?.id !== "canvas") return;
+      const pos = pointerToLabelDots(
+        lastPointerRef.current.x,
+        lastPointerRef.current.y,
+      );
       if (!pos) return;
-      const type = (event.active.data.current as PaletteDragData | undefined)?.type;
+      const type = (event.active.data.current as PaletteDragData | undefined)
+        ?.type;
       if (!type) return;
       addObject(type, pos);
     },
@@ -425,28 +543,39 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
     if (e.evt.button !== 0 || spaceDown) return;
     const targetId = e.target.id();
     // Only start lasso on background (stage or label surface, not on an object)
-    const onObject = useLabelStore.getState().objects.some((o) => o.id === targetId);
-    if (onObject || e.target.getParent()?.className === 'Transformer') return;
+    const onObject = useLabelStore
+      .getState()
+      .objects.some((o) => o.id === targetId);
+    if (onObject || e.target.getParent()?.className === "Transformer") return;
     const pos = stageRef.current?.getPointerPosition();
     if (!pos) return;
     lassoStartRef.current = pos;
     didLassoRef.current = false;
   };
 
-
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     // suppress deselection after pan or lasso
-    if (didPanRef.current) { didPanRef.current = false; return; }
-    if (didLassoRef.current) { didLassoRef.current = false; return; }
+    if (didPanRef.current) {
+      didPanRef.current = false;
+      return;
+    }
+    if (didLassoRef.current) {
+      didLassoRef.current = false;
+      return;
+    }
     if (e.target === e.target.getStage()) selectObjects([]);
   };
 
   const cursor = isPanning ? "grabbing" : spaceDown ? "grab" : undefined;
 
-  const mergedRef = useCallback((el: HTMLDivElement | null) => {
-    (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-    setDropRef(el);
-  }, [setDropRef]);
+  const mergedRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      (containerRef as React.MutableRefObject<HTMLDivElement | null>).current =
+        el;
+      setDropRef(el);
+    },
+    [setDropRef],
+  );
 
   return (
     <div
@@ -454,8 +583,7 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
       className="w-full h-full relative"
       style={{
         background: colors.canvasBg,
-        backgroundImage:
-          `radial-gradient(circle, ${colors.canvasDot} 1px, transparent 1px)`,
+        backgroundImage: `radial-gradient(circle, ${colors.canvasDot} 1px, transparent 1px)`,
         backgroundSize: "24px 24px",
         cursor,
       }}
@@ -469,14 +597,14 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
         <button
           onClick={onGridToggle}
           title="Grid (G)"
-          className={`px-2 h-6 rounded text-xs font-mono transition-colors ${showGrid ? 'text-accent bg-[--color-accent-dim]' : 'text-muted hover:text-text hover:bg-surface-2'}`}
+          className={`px-2 h-6 rounded text-xs font-mono transition-colors ${showGrid ? "text-accent bg-[--color-accent-dim]" : "text-muted hover:text-text hover:bg-surface-2"}`}
         >
           Grid
         </button>
         <button
           onClick={onSnapToggle}
           title="Snap (S)"
-          className={`px-2 h-6 rounded text-xs font-mono transition-colors ${snapEnabled ? 'text-accent bg-[--color-accent-dim]' : 'text-muted hover:text-text hover:bg-surface-2'}`}
+          className={`px-2 h-6 rounded text-xs font-mono transition-colors ${snapEnabled ? "text-accent bg-[--color-accent-dim]" : "text-muted hover:text-text hover:bg-surface-2"}`}
         >
           Snap
         </button>
@@ -487,7 +615,9 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
           className="h-6 rounded px-1 text-xs bg-surface-2 border border-border text-text disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {SNAP_OPTIONS[unit].map((o) => (
-            <option key={o.mm} value={o.mm}>{o.label}</option>
+            <option key={o.mm} value={o.mm}>
+              {o.label}
+            </option>
           ))}
         </select>
         <div className="w-px h-3.5 bg-border mx-0.5" />
@@ -517,7 +647,12 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
           height={containerSize.height}
           onClick={handleStageClick}
           onMouseDown={handleStageMouseDown}
-          onDragStart={(e) => { lassoStartRef.current = null; lassoRectRef.current = null; setLasso(null); if (isPanningRef.current) e.target.stopDrag(); }}
+          onDragStart={(e) => {
+            lassoStartRef.current = null;
+            lassoRectRef.current = null;
+            setLasso(null);
+            if (isPanningRef.current) e.target.stopDrag();
+          }}
           onDragMove={handleStageDragMove}
           onDragEnd={handleStageDragEnd}
         >
@@ -558,7 +693,9 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
                 offsetX={objectsOffsetX}
                 offsetY={labelOffsetY}
                 isSelected={selectedIds.includes(obj.id)}
-                onSelect={(add) => add ? toggleSelectObject(obj.id) : selectObject(obj.id)}
+                onSelect={(add) =>
+                  add ? toggleSelectObject(obj.id) : selectObject(obj.id)
+                }
                 onChange={(changes) => handleObjectChange(obj.id, changes)}
                 snap={snap}
               />
@@ -573,8 +710,12 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
                   offsetX={objectsOffsetX}
                   offsetY={labelOffsetY}
                   isSelected={false}
-                  onSelect={() => { /* ghost */ }}
-                  onChange={() => { /* ghost */ }}
+                  onSelect={() => {
+                    /* ghost */
+                  }}
+                  onChange={() => {
+                    /* ghost */
+                  }}
                   snap={snap}
                   dpmm={label.dpmm}
                 />
@@ -605,15 +746,74 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
               enabledAnchors={
                 selectedIds.length > 1
                   ? []
-                  : BARCODE_1D_TYPES.has(objects.find((o) => o.id === selectedIds[0])?.type ?? '')
-                    ? ['top-center', 'bottom-center']
+                  : BARCODE_1D_TYPES.has(
+                        objects.find((o) => o.id === selectedIds[0])?.type ??
+                          "",
+                      )
+                    ? ["top-center", "bottom-center"]
                     : undefined
               }
-              boundBoxFunc={(oldBox, newBox) =>
-                newBox.width < 10 || newBox.height < 10 ? oldBox : newBox
-              }
+              onTransformStart={() => {
+                const singleId = selectedIds[0];
+                if (!singleId || !stageRef.current) return;
+                const node = stageRef.current.findOne<Konva.Node>(
+                  `#${singleId}`,
+                );
+                if (!node) return;
+                const obj = objects.find((o) => o.id === singleId);
+                if (
+                  obj &&
+                  (obj.type === "pdf417" ||
+                    obj.type === "micropdf417" ||
+                    obj.type === "codablock")
+                ) {
+                  transformAnchorRef.current = {
+                    nodeHeight: node.height(),
+                    rowHeight: (obj.props as { rowHeight: number }).rowHeight,
+                  };
+                } else {
+                  transformAnchorRef.current = null;
+                }
+              }}
+              boundBoxFunc={(oldBox, newBox) => {
+                if (newBox.width < 10 || newBox.height < 10) return oldBox;
+                const dotPx = scale / label.dpmm;
+                // For stacked 2D barcodes, snap to whole rowHeight increments.
+                // stepPx is derived from the initial node height captured at
+                // drag start — NOT from oldBox.height, which changes each call
+                // and would cause the step to drift with each snap.
+                const anchor = transformAnchorRef.current;
+                let stepPx = dotPx;
+                if (
+                  anchor &&
+                  anchor.rowHeight > 0 &&
+                  anchor.nodeHeight > 0
+                ) {
+                  stepPx = anchor.nodeHeight / anchor.rowHeight;
+                }
+                const snapH = (h: number) =>
+                  Math.max(stepPx, Math.round(h / stepPx) * stepPx);
+                const snappedH = snapH(newBox.height);
+                // Detect top-anchor resize: y moved → keep bottom edge fixed.
+                const isTopResize =
+                  Math.abs(newBox.y - oldBox.y) > dotPx * 0.5;
+                if (isTopResize) {
+                  const bottom = oldBox.y + oldBox.height;
+                  return {
+                    ...newBox,
+                    y: bottom - snappedH,
+                    height: snappedH,
+                  };
+                }
+                return { ...newBox, height: snappedH };
+              }}
               onTransformEnd={() => {
-                if (selectedIds.length !== 1 || !selectedIds[0] || !stageRef.current) return;
+                if (
+                  selectedIds.length !== 1 ||
+                  !selectedIds[0] ||
+                  !stageRef.current
+                )
+                  return;
                 const singleId = selectedIds[0];
                 const node = stageRef.current.findOne<Konva.Node>(
                   `#${singleId}`,
@@ -628,55 +828,136 @@ export function LabelCanvas({ unit, showGrid, onGridToggle, snapEnabled, onSnapT
                   .objects.find((o) => o.id === singleId);
                 if (!obj) return;
                 const pos = {
-                  x: snap(pxToDots(node.x() - objectsOffsetX, scale, label.dpmm)),
+                  x: snap(
+                    pxToDots(node.x() - objectsOffsetX, scale, label.dpmm),
+                  ),
                   y: snap(pxToDots(node.y() - labelOffsetY, scale, label.dpmm)),
                 };
                 if (obj.type === "text") {
                   updateObject(singleId, {
                     ...pos,
-                    props: { fontHeight: Math.max(1, snap(Math.round(obj.props.fontHeight * sy))) },
+                    props: {
+                      fontHeight: Math.max(
+                        1,
+                        snap(Math.round(obj.props.fontHeight * sy)),
+                      ),
+                    },
                   });
                 } else if (BARCODE_1D_TYPES.has(obj.type)) {
                   const p = obj.props as { height: number };
                   updateObject(singleId, {
                     ...pos,
-                    props: { height: Math.max(1, snap(Math.round(p.height * sy))) },
+                    props: {
+                      height: Math.max(1, snap(Math.round(p.height * sy))),
+                    },
                   });
-                } else if (obj.type === "pdf417") {
+                } else if (
+                  obj.type === "pdf417" ||
+                  obj.type === "micropdf417" ||
+                  obj.type === "codablock"
+                ) {
+                  // Derive rowHeight from the anchor captured at drag start so
+                  // the final value matches what boundBoxFunc snapped to during
+                  // the drag. Using sy * rowHeight alone drifts when stepPx is
+                  // not an exact integer number of pixels.
+                  const anchor = transformAnchorRef.current;
+                  const scaledH = node.height() * sy;
+                  let newRowHeight: number;
+                  if (
+                    anchor &&
+                    anchor.nodeHeight > 0 &&
+                    anchor.rowHeight > 0
+                  ) {
+                    newRowHeight = Math.max(
+                      1,
+                      Math.round(
+                        (scaledH * anchor.rowHeight) / anchor.nodeHeight,
+                      ),
+                    );
+                  } else {
+                    newRowHeight = Math.max(
+                      1,
+                      snap(
+                        Math.round(
+                          (obj.props as { rowHeight: number }).rowHeight * sy,
+                        ),
+                      ),
+                    );
+                  }
                   updateObject(singleId, {
                     ...pos,
                     props: {
-                      rowHeight: Math.max(1, snap(Math.round(obj.props.rowHeight * sy))),
-                      moduleWidth: Math.max(1, Math.min(10, Math.round(obj.props.moduleWidth * sx))),
+                      rowHeight: newRowHeight,
+                      moduleWidth: Math.max(
+                        1,
+                        Math.min(
+                          10,
+                          Math.round(
+                            (obj.props as { moduleWidth: number }).moduleWidth *
+                              sx,
+                          ),
+                        ),
+                      ),
                     },
                   });
                 } else if (obj.type === "box") {
                   updateObject(singleId, {
                     ...pos,
                     props: {
-                      width: Math.max(1, snap(Math.round(obj.props.width * sx))),
-                      height: Math.max(1, snap(Math.round(obj.props.height * sy))),
+                      width: Math.max(
+                        1,
+                        snap(Math.round(obj.props.width * sx)),
+                      ),
+                      height: Math.max(
+                        1,
+                        snap(Math.round(obj.props.height * sy)),
+                      ),
                     },
                   });
                 } else if (obj.type === "qrcode") {
                   updateObject(singleId, {
                     ...pos,
-                    props: { magnification: Math.max(1, Math.min(10, Math.round(obj.props.magnification * Math.min(sx, sy)))) },
+                    props: {
+                      magnification: Math.max(
+                        1,
+                        Math.min(
+                          10,
+                          Math.round(
+                            obj.props.magnification * Math.min(sx, sy),
+                          ),
+                        ),
+                      ),
+                    },
                   });
                 } else if (obj.type === "datamatrix") {
                   updateObject(singleId, {
                     ...pos,
-                    props: { dimension: Math.max(1, Math.min(12, Math.round(obj.props.dimension * Math.min(sx, sy)))) },
+                    props: {
+                      dimension: Math.max(
+                        1,
+                        Math.min(
+                          12,
+                          Math.round(obj.props.dimension * Math.min(sx, sy)),
+                        ),
+                      ),
+                    },
                   });
                 } else if (obj.type === "ellipse") {
                   updateObject(singleId, {
                     ...pos,
                     props: {
-                      width:  Math.max(1, snap(Math.round(obj.props.width  * sx))),
-                      height: Math.max(1, snap(Math.round(obj.props.height * sy))),
+                      width: Math.max(
+                        1,
+                        snap(Math.round(obj.props.width * sx)),
+                      ),
+                      height: Math.max(
+                        1,
+                        snap(Math.round(obj.props.height * sy)),
+                      ),
                     },
                   });
                 }
+                transformAnchorRef.current = null;
                 // 'line' is intentionally excluded — it uses its own endpoint handle
               }}
             />

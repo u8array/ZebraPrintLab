@@ -6,6 +6,7 @@ import {
   buildBwipOptions,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
+import { EAN_TEXT_ZONE_DOTS } from "../components/Canvas/bwipConstants";
 import { ObjectRegistry } from "../registry";
 import { defined } from "./helpers";
 import { testModels } from "./testModels";
@@ -50,16 +51,14 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
     it("should generate exact ZPL string matching Labelary input", () => {
       const obj = defined(testModels[tc.id]);
       const generator = ObjectRegistry[obj.type]?.toZPL;
-      if (!generator) throw new Error(`Test missing ZPL generator for type: ${obj.type}`);
+      if (!generator)
+        throw new Error(`Test missing ZPL generator for type: ${obj.type}`);
       const generatedZPL = generator(obj);
       expect(`^XA${generatedZPL}^XZ`).toBe(tc.zpl_input);
     });
 
     it("should compute display bounds logically consistent with bwip-js engine", async () => {
       const obj = defined(testModels[tc.id]);
-
-      expect(obj.x).toBe(tc.expected_bounds.x);
-      expect(obj.y).toBe(tc.expected_bounds.y);
 
       const opts = buildBwipOptions(obj, 1, 8);
       expect(opts).not.toBeNull();
@@ -78,21 +77,91 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       const mockCanvas = { width, height } as HTMLCanvasElement;
       const displaySize = getDisplaySize(obj, mockCanvas, 1, 8);
 
+      if (process.env.DEBUG_TESTS) {
+        console.log(`[DEBUG] tc.id: ${tc.id}, type: ${obj.type}`);
+        console.log(`[DEBUG] bwip-js raw size: W=${width}, H=${height}`);
+        console.log(
+          `[DEBUG] displaySize: W=${displaySize.w}, H=${displaySize.h}`,
+        );
+        console.log(`[DEBUG] expectedBounds:`, tc.expected_bounds);
+      }
+
+      // Verify visual position (top-left of the rendered bounding box in dots).
+      // This mimics the positioning logic in BarcodeObject.tsx.
+      const visualX = obj.x;
+      let visualY = obj.y;
+
+      if (obj.positionType === "FT") {
+        // FT positions relative to the baseline.
+        visualY -= displaySize.h * 8;
+
+        if (obj.type === "qrcode") {
+          const mag = (obj.props as { magnification?: number }).magnification ?? 1;
+          visualY -= 3 * mag;
+        }
+      } else {
+        // FO positions relative to top-left, with specific quirks.
+        if (obj.type === "qrcode") {
+          visualY += 10;
+        }
+      }
+
+      expect(visualX).toBe(tc.expected_bounds.x);
+      expect(visualY).toBeCloseTo(tc.expected_bounds.y, 0);
+
       expect(displaySize.w).toBeGreaterThan(0);
       expect(displaySize.h).toBeGreaterThan(0);
 
+      const isEanUpc = ["ean13", "ean8", "upca", "upce"].includes(obj.type);
       const is1DCode = [
-        "code128", "ean13", "code39", "upca", "ean8", "interleaved2of5",
+        "code128",
+        "code39",
+        "interleaved2of5",
       ].includes(obj.type);
       const isSquare2D = ["qrcode", "datamatrix", "aztec"].includes(obj.type);
+      const isStacked2D = ["pdf417", "micropdf417", "codablock"].includes(
+        obj.type,
+      );
 
-      if (is1DCode) {
-        expect(displaySize.h).toBe((obj.props as { height: number }).height / 8);
+      if (isEanUpc) {
+        // Known discrepancy: Labelary reserves barHeight + EAN_TEXT_ZONE_DOTS (13 dots)
+        // even with printInterpretation=N. getDisplaySize intentionally returns only the
+        // bar height because the text zone is blank whitespace — bwip does not render it.
+        // expected_bounds.height in fixtures reflects the true Labelary value (barHeight+13).
+        expect(displaySize.h * 8).toBeCloseTo(
+          tc.expected_bounds.height - EAN_TEXT_ZONE_DOTS,
+          1,
+        );
+      } else if (is1DCode) {
+        expect(displaySize.h).toBe(
+          (obj.props as { height: number }).height / 8,
+        );
       } else if (isSquare2D) {
         expect(displaySize.w).toBeCloseTo(displaySize.h, 2);
-      } else if (obj.type === "pdf417") {
+      } else if (isStacked2D) {
         expect(displaySize.w).toBeGreaterThan(0);
         expect(displaySize.h).toBeGreaterThan(0);
+        if (obj.type !== "codablock") {
+          const rowHeightPx =
+            (obj.props as { rowHeight: number }).rowHeight / 8;
+          const numRows = displaySize.h / rowHeightPx;
+          // Verify that the calculated display height is an exact multiple of the requested row height
+          expect(numRows - Math.round(numRows)).toBeCloseTo(0, 5);
+          expect(Math.round(numRows)).toBeGreaterThan(0);
+        }
+      }
+
+      // Strict bounds check: compare calculated display size with fixture expectations.
+      // Codablock is excluded: bwip-js encodes it with different parameters than
+      // Zebra firmware, producing a wider symbol. ZPL generation is still verified
+      // by the ZPL string test above.
+      // EAN/UPC height is excluded from the strict check — see isEanUpc branch above
+      // for the known EAN_TEXT_ZONE_DOTS discrepancy.
+      if (obj.type !== "codablock") {
+        expect(displaySize.w * 8).toBeCloseTo(tc.expected_bounds.width, 1);
+        if (!isEanUpc) {
+          expect(displaySize.h * 8).toBeCloseTo(tc.expected_bounds.height, 1);
+        }
       }
     });
   });

@@ -17,7 +17,7 @@ export const codablock: ObjectTypeDefinition<CodablockProps> = {
   defaultProps: {
     content: "1234567890",
     moduleWidth: 2,
-    rowHeight: 10,
+    rowHeight: 2,
     securityLevel: "Y",
   },
   defaultSize: { width: 250, height: 120 },
