@@ -353,7 +353,7 @@ const sl = {
     upload: 'Naloži',
     cancel: 'Prekliči',
     delete: 'Izbriši',
-    uploadError: 'Datoteke pisave ni bilo mogoce naloziti',
+    uploadError: 'Datoteke pisave ni bilo mogoče naložiti',
   },
 } as const;
 

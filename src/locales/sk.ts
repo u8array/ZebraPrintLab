@@ -353,7 +353,7 @@ const sk = {
     upload: 'Nahrať',
     cancel: 'Zrušiť',
     delete: 'Odstrániť',
-    uploadError: 'Subor pisma sa nepodarilo nacitat',
+    uploadError: 'Súbor písma sa nepodarilo načítať',
   },
 } as const;
 

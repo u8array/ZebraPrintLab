@@ -353,7 +353,7 @@ const pl = {
     upload: 'Prześlij',
     cancel: 'Anuluj',
     delete: 'Usuń',
-    uploadError: 'Nie mozna zaladowac pliku czcionki',
+    uploadError: 'Nie można załadować pliku czcionki',
   },
 } as const;
 

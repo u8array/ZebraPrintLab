@@ -353,7 +353,7 @@ const lv = {
     upload: 'Augšupielādēt',
     cancel: 'Atcelt',
     delete: 'Dzēst',
-    uploadError: 'Neizdevas ieladet fontu failu',
+    uploadError: 'Neizdevās ielādēt fontu failu',
   },
 } as const;
 

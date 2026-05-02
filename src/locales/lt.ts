@@ -353,7 +353,7 @@ const lt = {
     upload: 'Įkelti',
     cancel: 'Atšaukti',
     delete: 'Ištrinti',
-    uploadError: 'Nepavyko ikelti srifto failo',
+    uploadError: 'Nepavyko įkelti šrifto failo',
   },
 } as const;
 

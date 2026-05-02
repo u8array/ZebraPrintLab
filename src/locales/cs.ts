@@ -353,7 +353,7 @@ const cs = {
     upload: 'Nahrát',
     cancel: 'Zrušit',
     delete: 'Smazat',
-    uploadError: 'Soubor pisma se nepodarilo nacist',
+    uploadError: 'Soubor písma se nepodařilo načíst',
   },
 } as const;
 

@@ -353,7 +353,7 @@ const ar = {
     upload: 'رفع',
     cancel: 'إلغاء',
     delete: 'حذف',
-    uploadError: 'Taazhar takhzeen alfont',
+    uploadError: 'تعذّر تحميل ملف الخط',
   },
 } as const;
 

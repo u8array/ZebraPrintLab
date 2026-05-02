@@ -353,7 +353,7 @@ const bg = {
     upload: 'Качване',
     cancel: 'Отказ',
     delete: 'Изтриване',
-    uploadError: 'Neuspeshno zarejdane na shriftov fail',
+    uploadError: 'Неуспешно зареждане на шрифтов файл',
   },
 } as const;
 

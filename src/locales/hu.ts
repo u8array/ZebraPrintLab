@@ -353,7 +353,7 @@ const hu = {
     upload: 'Feltöltés',
     cancel: 'Mégse',
     delete: 'Törlés',
-    uploadError: 'A betutipus-fajl nem tolthetoe be',
+    uploadError: 'A betűtípus-fájl nem tölthető be',
   },
 } as const;
 

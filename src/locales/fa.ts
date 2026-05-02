@@ -353,7 +353,7 @@ const fa = {
     upload: 'بارگذاری',
     cancel: 'لغو',
     delete: 'حذف',
-    uploadError: 'Bargozari file font momken nabod',
+    uploadError: 'بارگذاری فایل فونت ممکن نبود',
   },
 } as const;
 

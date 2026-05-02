@@ -353,7 +353,7 @@ const he = {
     upload: 'העלה',
     cancel: 'ביטול',
     delete: 'מחק',
-    uploadError: 'Lo nitan letaan et kovezt hagophan',
+    uploadError: 'לא ניתן לטעון את קובץ הגופן',
   },
 } as const;
 
