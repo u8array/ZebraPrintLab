@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import bwipjs from "bwip-js/browser";
 import { Image as KImage, Group, Rect, Text } from "react-konva";
 import type Konva from "konva";
@@ -43,21 +43,17 @@ export function BarcodeObject({
   onChange,
   snap,
 }: Props) {
-  const opts = buildBwipOptions(obj, scale, dpmm);
-  let barcodeCanvas: HTMLCanvasElement | null = null;
-  let errorMsg: string | null = null;
-  if (opts) {
+  const { barcodeCanvas, errorMsg } = useMemo(() => {
+    const opts = buildBwipOptions(obj, scale, dpmm);
+    if (!opts) return { barcodeCanvas: null, errorMsg: null };
     const canvas = document.createElement("canvas");
     try {
-      bwipjs.toCanvas(
-        canvas,
-        opts as unknown as Parameters<typeof bwipjs.toCanvas>[1],
-      );
-      barcodeCanvas = canvas;
+      bwipjs.toCanvas(canvas, opts as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
+      return { barcodeCanvas: canvas, errorMsg: null };
     } catch (e) {
-      errorMsg = e instanceof Error ? e.message : String(e);
+      return { barcodeCanvas: null, errorMsg: e instanceof Error ? e.message : String(e) };
     }
-  }
+  }, [obj, scale, dpmm]);
 
   let displayW = 0;
   let displayH = 0;
