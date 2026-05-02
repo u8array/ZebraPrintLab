@@ -170,7 +170,15 @@ export const useLabelStore = create<LabelState>()(
           return { objects: [...state.objects, ...copies], selectedIds: copies.map((c) => c.id), pasteCount };
         }),
 
-      selectObject: (id) => set({ selectedIds: id ? [id] : [], duplicateCount: 0 }),
+      selectObject: (id) =>
+        set((state) => {
+          const next = id ? [id] : [];
+          const same =
+            state.selectedIds.length === next.length &&
+            state.selectedIds[0] === next[0];
+          if (same && state.duplicateCount === 0) return {};
+          return { selectedIds: next, duplicateCount: 0 };
+        }),
 
       toggleSelectObject: (id) =>
         set((state) => ({
@@ -179,7 +187,14 @@ export const useLabelStore = create<LabelState>()(
             : [...state.selectedIds, id],
         })),
 
-      selectObjects: (ids) => set({ selectedIds: ids, duplicateCount: 0 }),
+      selectObjects: (ids) =>
+        set((state) => {
+          const same =
+            state.selectedIds.length === ids.length &&
+            state.selectedIds.every((id, i) => id === ids[i]);
+          if (same && state.duplicateCount === 0) return {};
+          return { selectedIds: ids, duplicateCount: 0 };
+        }),
 
       removeSelectedObjects: () =>
         set((state) => ({
