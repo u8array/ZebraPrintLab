@@ -8,9 +8,6 @@ import type { LabelObject } from '../registry';
 import { locales } from '../locales';
 import type { LocaleCode } from '../locales';
 
-// Clipboard lives outside Zustand state — no persistence, no undo
-let _clipboard: LabelObject[] = [];
-let _pasteCount = 0;
 // Increments each time duplicateSelectedObjects is called to stagger offsets;
 // reset when the user explicitly changes the selection.
 let _duplicateCount = 0;
@@ -47,6 +44,9 @@ interface LabelState {
   locale: LocaleCode;
   canvasSettings: CanvasSettings;
 
+  clipboard: LabelObject[];
+  pasteCount: number;
+
   addObject: (type: string, position?: { x: number; y: number }) => void;
   updateObject: (id: string, changes: ObjectChanges) => void;
   updateObjects: (updates: { id: string; changes: ObjectChanges }[]) => void;
@@ -77,6 +77,8 @@ export const useLabelStore = create<LabelState>()(
       label: { widthMm: 100, heightMm: 60, dpmm: 8 },
       objects: [],
       selectedIds: [],
+      clipboard: [],
+      pasteCount: 0,
       locale: detectLocale(),
       canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm' },
 
@@ -149,25 +151,25 @@ export const useLabelStore = create<LabelState>()(
 
       copySelectedObjects: () => {
         const { selectedIds, objects } = get();
-        _clipboard = selectedIds.flatMap((id) => {
+        const clipboard = selectedIds.flatMap((id) => {
           const obj = objects.find((o) => o.id === id);
           return obj ? [{ ...obj, props: { ...obj.props } } as LabelObject] : [];
         });
-        _pasteCount = 0;
+        set({ clipboard, pasteCount: 0 });
       },
 
       pasteObjects: () =>
         set((state) => {
-          if (_clipboard.length === 0) return {};
-          _pasteCount += 1;
-          const offset = _pasteCount * 20;
-          const copies: LabelObject[] = _clipboard.map((src) => ({
+          if (state.clipboard.length === 0) return {};
+          const pasteCount = state.pasteCount + 1;
+          const offset = pasteCount * 20;
+          const copies: LabelObject[] = state.clipboard.map((src) => ({
             ...src,
             id: crypto.randomUUID(),
             x: src.x + offset,
             y: src.y + offset,
           } as LabelObject));
-          return { objects: [...state.objects, ...copies], selectedIds: copies.map((c) => c.id) };
+          return { objects: [...state.objects, ...copies], selectedIds: copies.map((c) => c.id), pasteCount };
         }),
 
       selectObject: (id) => {

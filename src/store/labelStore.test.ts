@@ -9,6 +9,8 @@ function reset() {
     label: { widthMm: 100, heightMm: 60, dpmm: 8 },
     objects: [],
     selectedIds: [],
+    clipboard: [],
+    pasteCount: 0,
   });
 }
 
@@ -127,12 +129,6 @@ describe('duplicateObject', () => {
 // ── copy / paste ──────────────────────────────────────────────────────────────
 
 describe('copy / paste', () => {
-  beforeEach(() => {
-    // _clipboard and _pasteCount are module-level in the store — reset by copying an empty selection.
-    state().selectObject(null);
-    state().copySelectedObjects();
-  });
-
   it('paste is a no-op when clipboard is empty', () => {
     state().pasteObjects();
     expect(state().objects).toHaveLength(0);
