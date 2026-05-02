@@ -4,6 +4,7 @@ import { ObjectPalette } from "./Palette/ObjectPalette";
 import { LabelCanvas } from "./Canvas/LabelCanvas";
 import { PropertiesPanel } from "./Properties/PropertiesPanel";
 import { LayersPanel } from "./Properties/LayersPanel";
+import { FontManager } from "./Fonts/FontManager";
 import { ZPLOutput } from "./Output/ZPLOutput";
 import { ZplImportModal } from "./Output/ZplImportModal";
 import {
@@ -45,7 +46,7 @@ export function AppShell() {
   const canvasSettings = useLabelStore((s) => s.canvasSettings);
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
   const { showGrid, snapEnabled, snapSizeMm, unit } = canvasSettings;
-  const [rightTab, setRightTab] = useState<"properties" | "layers">("properties");
+  const [rightTab, setRightTab] = useState<"properties" | "layers" | "fonts">("properties");
 
   const canUndo = pastStates.length > 0;
   const canRedo = futureStates.length > 0;
@@ -251,9 +252,21 @@ export function AppShell() {
             >
               {t.layers.layersTab}
             </button>
+            <button
+              onClick={() => setRightTab("fonts")}
+              className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                rightTab === "fonts"
+                  ? "text-accent border-b-2 border-accent"
+                  : "text-muted hover:text-text"
+              }`}
+            >
+              {t.layers.fontsTab}
+            </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {rightTab === "properties" ? <PropertiesPanel /> : <LayersPanel />}
+            {rightTab === "properties" && <PropertiesPanel />}
+            {rightTab === "layers" && <LayersPanel />}
+            {rightTab === "fonts" && <FontManager />}
           </div>
         </aside>
       </div>

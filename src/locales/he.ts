@@ -80,6 +80,7 @@ const he = {
     print: 'הדפסה',
     propertiesTab: 'מאפיינים',
     layersTab: 'שכבות',
+    fontsTab: 'גופנים',
   },
 
   output: {
@@ -119,6 +120,7 @@ const he = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'ללא',
     },
     code128: {
       content: 'תוכן',
@@ -335,11 +337,23 @@ const he = {
   layers: {
     propertiesTab: 'מאפיינים',
     layersTab: 'שכבות',
+    fontsTab: 'גופנים',
     empty: 'אין אובייקטים על התווית',
     toFront: 'הבא לקדמה',
     forward: 'הבא קדימה',
     backward: 'שלח אחורה',
     toBack: 'שלח לאחור',
+  },
+  fonts: {
+    heading: 'גופנים',
+    noFonts: 'לא נטענו גופנים',
+    addFont: 'הוסף גופן',
+    printerFilename: 'שם קובץ המדפסת',
+    printerFilenamePlaceholder: 'לדוגמה: ARIAL.TTF',
+    upload: 'העלה',
+    cancel: 'ביטול',
+    delete: 'מחק',
+    uploadError: 'לא ניתן לטעון את קובץ הגופן',
   },
 } as const;
 

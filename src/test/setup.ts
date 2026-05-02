@@ -21,6 +21,24 @@ Object.defineProperty(globalThis, 'localStorage', {
   } as Storage,
 });
 
+// ── FileReader ────────────────────────────────────────────────────────────────
+
+class FakeFileReader {
+  result: string | null = null;
+  onload: ((event: { target: FakeFileReader }) => void) | null = null;
+  onerror: ((event: unknown) => void) | null = null;
+
+  readAsDataURL(): void {
+    this.result = 'data:font/truetype;base64,AAAA';
+    this.onload?.({ target: this });
+  }
+}
+
+Object.defineProperty(globalThis, 'FileReader', {
+  configurable: true,
+  value: FakeFileReader,
+});
+
 // ── navigator ─────────────────────────────────────────────────────────────────
 Object.defineProperty(globalThis, 'navigator', {
   configurable: true,

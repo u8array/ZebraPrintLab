@@ -80,6 +80,7 @@ const fa = {
     print: 'چاپ',
     propertiesTab: 'ویژگی‌ها',
     layersTab: 'لایه‌ها',
+    fontsTab: 'فونت‌ها',
   },
 
   output: {
@@ -119,6 +120,7 @@ const fa = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'هیچ‌کدام',
     },
     code128: {
       content: 'محتوا',
@@ -335,11 +337,23 @@ const fa = {
   layers: {
     propertiesTab: 'ویژگی‌ها',
     layersTab: 'لایه‌ها',
+    fontsTab: 'فونت‌ها',
     empty: 'هیچ شیئی روی برچسب نیست',
     toFront: 'آوردن به جلو',
     forward: 'حرکت به جلو',
     backward: 'حرکت به عقب',
     toBack: 'ارسال به عقب',
+  },
+  fonts: {
+    heading: 'فونت‌ها',
+    noFonts: 'هیچ فونتی بارگذاری نشده',
+    addFont: 'افزودن فونت',
+    printerFilename: 'نام فایل چاپگر',
+    printerFilenamePlaceholder: 'مثلاً ARIAL.TTF',
+    upload: 'بارگذاری',
+    cancel: 'لغو',
+    delete: 'حذف',
+    uploadError: 'بارگذاری فایل فونت ممکن نبود',
   },
 } as const;
 

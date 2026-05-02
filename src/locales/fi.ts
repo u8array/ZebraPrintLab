@@ -80,6 +80,7 @@ const fi = {
     print: 'Tulosta',
     propertiesTab: 'Ominaisuudet',
     layersTab: 'Tasot',
+    fontsTab: 'Fontit',
   },
 
   output: {
@@ -119,6 +120,7 @@ const fi = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Ei mitään',
     },
     code128: {
       content: 'Sisältö',
@@ -335,11 +337,23 @@ const fi = {
   layers: {
     propertiesTab: 'Ominaisuudet',
     layersTab: 'Tasot',
+    fontsTab: 'Fontit',
     empty: 'Etiketillä ei ole objekteja',
     toFront: 'Tuo eteen',
     forward: 'Siirrä taso eteenpäin',
     backward: 'Siirrä taso taaksepäin',
     toBack: 'Lähetä taustalle',
+  },
+  fonts: {
+    heading: 'Fontit',
+    noFonts: 'Ei ladattuja fontteja',
+    addFont: 'Lisää fontti',
+    printerFilename: 'Tulostimen tiedostonimi',
+    printerFilenamePlaceholder: 'esim. ARIAL.TTF',
+    upload: 'Lataa',
+    cancel: 'Peruuta',
+    delete: 'Poista',
+    uploadError: 'Fonttitiedostoa ei voitu ladata',
   },
 } as const;
 

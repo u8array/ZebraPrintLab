@@ -80,6 +80,7 @@ const es = {
     print: 'Imprimir',
     propertiesTab: 'Propiedades',
     layersTab: 'Capas',
+    fontsTab: 'Fuentes',
   },
 
   output: {
@@ -119,6 +120,7 @@ const es = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Ninguna',
     },
     code128: {
       content: 'Contenido',
@@ -335,11 +337,23 @@ const es = {
   layers: {
     propertiesTab: 'Propiedades',
     layersTab: 'Capas',
+    fontsTab: 'Fuentes',
     empty: 'No hay objetos en la etiqueta',
     toFront: 'Traer al frente',
     forward: 'Avanzar una capa',
     backward: 'Retroceder una capa',
     toBack: 'Enviar al fondo',
+  },
+  fonts: {
+    heading: 'Fuentes',
+    noFonts: 'No hay fuentes cargadas',
+    addFont: 'Agregar fuente',
+    printerFilename: 'Nombre de archivo de impresora',
+    printerFilenamePlaceholder: 'p. ej. ARIAL.TTF',
+    upload: 'Subir',
+    cancel: 'Cancelar',
+    delete: 'Eliminar',
+    uploadError: 'No se pudo cargar el archivo de fuente',
   },
 } as const;
 

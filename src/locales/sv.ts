@@ -80,6 +80,7 @@ const sv = {
     print: 'Skriv ut',
     propertiesTab: 'Egenskaper',
     layersTab: 'Lager',
+    fontsTab: 'Typsnitt',
   },
 
   output: {
@@ -119,6 +120,7 @@ const sv = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Ingen',
     },
     code128: {
       content: 'Innehåll',
@@ -335,11 +337,23 @@ const sv = {
   layers: {
     propertiesTab: 'Egenskaper',
     layersTab: 'Lager',
+    fontsTab: 'Typsnitt',
     empty: 'Inga objekt på etiketten',
     toFront: 'Flytta längst fram',
     forward: 'Flytta ett lager framåt',
     backward: 'Flytta ett lager bakåt',
     toBack: 'Flytta längst bak',
+  },
+  fonts: {
+    heading: 'Typsnitt',
+    noFonts: 'Inga typsnitt laddade',
+    addFont: 'Lägg till typsnitt',
+    printerFilename: 'Skrivarfilnamn',
+    printerFilenamePlaceholder: 't.ex. ARIAL.TTF',
+    upload: 'Ladda upp',
+    cancel: 'Avbryt',
+    delete: 'Ta bort',
+    uploadError: 'Det gick inte att ladda typsnittsfilen',
   },
 } as const;
 

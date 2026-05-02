@@ -80,6 +80,7 @@ const ja = {
     print: '印刷',
     propertiesTab: 'プロパティ',
     layersTab: 'レイヤー',
+    fontsTab: 'フォント',
   },
 
   output: {
@@ -119,6 +120,7 @@ const ja = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'なし',
     },
     code128: {
       content: 'コンテンツ',
@@ -335,11 +337,23 @@ const ja = {
   layers: {
     propertiesTab: 'プロパティ',
     layersTab: 'レイヤー',
+    fontsTab: 'フォント',
     empty: 'ラベルにオブジェクトがありません',
     toFront: '最前面へ',
     forward: '前面へ',
     backward: '背面へ',
     toBack: '最背面へ',
+  },
+  fonts: {
+    heading: 'フォント',
+    noFonts: 'フォントが読み込まれていません',
+    addFont: 'フォントを追加',
+    printerFilename: 'プリンターファイル名',
+    printerFilenamePlaceholder: '例: ARIAL.TTF',
+    upload: 'アップロード',
+    cancel: 'キャンセル',
+    delete: '削除',
+    uploadError: 'フォントファイルを読み込めませんでした',
   },
 } as const;
 

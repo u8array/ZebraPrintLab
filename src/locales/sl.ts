@@ -80,6 +80,7 @@ const sl = {
     print: 'Natisni',
     propertiesTab: 'Lastnosti',
     layersTab: 'Plasti',
+    fontsTab: 'Pisave',
   },
 
   output: {
@@ -119,6 +120,7 @@ const sl = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Brez',
     },
     code128: {
       content: 'Vsebina',
@@ -335,11 +337,23 @@ const sl = {
   layers: {
     propertiesTab: 'Lastnosti',
     layersTab: 'Plasti',
+    fontsTab: 'Pisave',
     empty: 'Na nalepki ni predmetov',
     toFront: 'Premakni v ospredje',
     forward: 'Premakni eno plast naprej',
     backward: 'Premakni eno plast nazaj',
     toBack: 'Premakni v ozadje',
+  },
+  fonts: {
+    heading: 'Pisave',
+    noFonts: 'Ni naloženih pisav',
+    addFont: 'Dodaj pisavo',
+    printerFilename: 'Ime datoteke tiskalnika',
+    printerFilenamePlaceholder: 'npr. ARIAL.TTF',
+    upload: 'Naloži',
+    cancel: 'Prekliči',
+    delete: 'Izbriši',
+    uploadError: 'Datoteke pisave ni bilo mogoče naložiti',
   },
 } as const;
 

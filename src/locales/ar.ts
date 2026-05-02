@@ -80,6 +80,7 @@ const ar = {
     print: 'طباعة',
     propertiesTab: 'الخصائص',
     layersTab: 'الطبقات',
+    fontsTab: 'الخطوط',
   },
 
   output: {
@@ -119,6 +120,7 @@ const ar = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'لا شيء',
     },
     code128: {
       content: 'المحتوى',
@@ -335,11 +337,23 @@ const ar = {
   layers: {
     propertiesTab: 'الخصائص',
     layersTab: 'الطبقات',
+    fontsTab: 'الخطوط',
     empty: 'لا توجد عناصر على الملصق',
     toFront: 'إحضار للأمام',
     forward: 'تقديم للأمام',
     backward: 'إرسال للخلف',
     toBack: 'إرسال للخلف',
+  },
+  fonts: {
+    heading: 'الخطوط',
+    noFonts: 'لا توجد خطوط محملة',
+    addFont: 'إضافة خط',
+    printerFilename: 'اسم ملف الطابعة',
+    printerFilenamePlaceholder: 'مثال: ARIAL.TTF',
+    upload: 'رفع',
+    cancel: 'إلغاء',
+    delete: 'حذف',
+    uploadError: 'تعذّر تحميل ملف الخط',
   },
 } as const;
 

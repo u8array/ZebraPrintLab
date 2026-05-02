@@ -80,6 +80,7 @@ const sr = {
     print: 'Штампај',
     propertiesTab: 'Својства',
     layersTab: 'Слојеви',
+    fontsTab: 'Фонтови',
   },
 
   output: {
@@ -119,6 +120,7 @@ const sr = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Нема',
     },
     code128: {
       content: 'Sadržaj',
@@ -335,11 +337,23 @@ const sr = {
   layers: {
     propertiesTab: 'Svojstva',
     layersTab: 'Slojevi',
+    fontsTab: 'Фонтови',
     empty: 'Nema objekata na nalepnici',
     toFront: 'Pomeri napred',
     forward: 'Jedan sloj napred',
     backward: 'Jedan sloj nazad',
     toBack: 'Pomeri nazad',
+  },
+  fonts: {
+    heading: 'Фонтови',
+    noFonts: 'Нема учитаних фонтова',
+    addFont: 'Додај фонт',
+    printerFilename: 'Назив датотеке штампача',
+    printerFilenamePlaceholder: 'нпр. ARIAL.TTF',
+    upload: 'Отпреми',
+    cancel: 'Откажи',
+    delete: 'Избриши',
+    uploadError: 'Датотека фонта није могла бити учитана',
   },
 } as const;
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { getFontFamily, useFontCacheVersion } from "../../lib/fontCache";
+import { getFontFamily } from "../../lib/fontCache";
+import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import {
   Circle,
   Ellipse,

@@ -80,6 +80,7 @@ const ko = {
     print: '인쇄',
     propertiesTab: '속성',
     layersTab: '레이어',
+    fontsTab: '글꼴',
   },
 
   output: {
@@ -119,6 +120,7 @@ const ko = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: '없음',
     },
     code128: {
       content: '내용',
@@ -335,11 +337,23 @@ const ko = {
   layers: {
     propertiesTab: '속성',
     layersTab: '레이어',
+    fontsTab: '글꼴',
     empty: '레이블에 개체가 없습니다',
     toFront: '맨 앞으로',
     forward: '앞으로',
     backward: '뒤로',
     toBack: '맨 뒤로',
+  },
+  fonts: {
+    heading: '글꼴',
+    noFonts: '로드된 글꼴 없음',
+    addFont: '글꼴 추가',
+    printerFilename: '프린터 파일명',
+    printerFilenamePlaceholder: '예: ARIAL.TTF',
+    upload: '업로드',
+    cancel: '취소',
+    delete: '삭제',
+    uploadError: '글꼴 파일을 불러올 수 없습니다',
   },
 } as const;
 

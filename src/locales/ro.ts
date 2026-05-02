@@ -80,6 +80,7 @@ const ro = {
     print: 'Imprimă',
     propertiesTab: 'Proprietăți',
     layersTab: 'Straturi',
+    fontsTab: 'Fonturi',
   },
 
   output: {
@@ -119,6 +120,7 @@ const ro = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Niciunul',
     },
     code128: {
       content: 'Conținut',
@@ -335,11 +337,23 @@ const ro = {
   layers: {
     propertiesTab: 'Proprietăți',
     layersTab: 'Straturi',
+    fontsTab: 'Fonturi',
     empty: 'Nu există obiecte pe etichetă',
     toFront: 'Aduce în prim-plan',
     forward: 'Avansare un strat',
     backward: 'Retragere un strat',
     toBack: 'Trimite în fundal',
+  },
+  fonts: {
+    heading: 'Fonturi',
+    noFonts: 'Niciun font încărcat',
+    addFont: 'Adaugă font',
+    printerFilename: 'Nume fișier imprimantă',
+    printerFilenamePlaceholder: 'ex. ARIAL.TTF',
+    upload: 'Încarcă',
+    cancel: 'Anulează',
+    delete: 'Șterge',
+    uploadError: 'Fisierul de font nu a putut fi incarcat',
   },
 } as const;
 

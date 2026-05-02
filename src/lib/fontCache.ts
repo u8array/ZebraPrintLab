@@ -5,8 +5,6 @@
  * so Konva (canvas) can render text using it.
  */
 
-import { useState, useEffect } from 'react';
-
 export interface CachedFont {
   id: string;
   /** Original printer filename e.g. "ARIAL.TTF" (uppercased for lookup) */
@@ -29,13 +27,6 @@ function notify(): void {
 export function subscribe(fn: () => void): () => void {
   listeners.add(fn);
   return () => listeners.delete(fn);
-}
-
-/** Hook: returns a version counter that increments whenever the font cache changes. */
-export function useFontCacheVersion(): number {
-  const [version, setVersion] = useState(0);
-  useEffect(() => subscribe(() => setVersion(v => v + 1)), []);
-  return version;
 }
 
 function printerNameToFamily(name: string): string {
@@ -87,7 +78,7 @@ export async function loadFontFile(file: File, printerName: string): Promise<Cac
     const reader = new FileReader();
     reader.onload = async () => {
       const dataUrl = reader.result as string;
-      const name = printerName.toUpperCase();
+      const name = printerName.toUpperCase().replace(/[^A-Z0-9._]/g, '_');
       const fontFamily = printerNameToFamily(name);
       const entry: CachedFont = { id: crypto.randomUUID(), name, dataUrl, fontFamily };
       cache.set(name, entry);

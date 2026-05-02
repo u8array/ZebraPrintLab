@@ -80,6 +80,7 @@ const hu = {
     print: 'Nyomtatás',
     propertiesTab: 'Tulajdonságok',
     layersTab: 'Rétegek',
+    fontsTab: 'Betűtípusok',
   },
 
   output: {
@@ -119,6 +120,7 @@ const hu = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Nincs',
     },
     code128: {
       content: 'Tartalom',
@@ -335,11 +337,23 @@ const hu = {
   layers: {
     propertiesTab: 'Tulajdonságok',
     layersTab: 'Rétegek',
+    fontsTab: 'Betűtípusok',
     empty: 'Nincsenek objektumok a címkén',
     toFront: 'Előre hozás',
     forward: 'Egy réteggel előre',
     backward: 'Egy réteggel hátra',
     toBack: 'Hátra küldés',
+  },
+  fonts: {
+    heading: 'Betűtípusok',
+    noFonts: 'Nincs betöltött betűtípus',
+    addFont: 'Betűtípus hozzáadása',
+    printerFilename: 'Nyomtató fájlnév',
+    printerFilenamePlaceholder: 'pl. ARIAL.TTF',
+    upload: 'Feltöltés',
+    cancel: 'Mégse',
+    delete: 'Törlés',
+    uploadError: 'A betűtípus-fájl nem tölthető be',
   },
 } as const;
 

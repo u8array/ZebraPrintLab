@@ -80,6 +80,7 @@ const nl = {
     print: 'Afdrukken',
     propertiesTab: 'Eigenschappen',
     layersTab: 'Lagen',
+    fontsTab: 'Lettertypen',
   },
 
   output: {
@@ -119,6 +120,7 @@ const nl = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Geen',
     },
     code128: {
       content: 'Inhoud',
@@ -335,11 +337,23 @@ const nl = {
   layers: {
     propertiesTab: 'Eigenschappen',
     layersTab: 'Lagen',
+    fontsTab: 'Lettertypen',
     empty: 'Geen objecten op het etiket',
     toFront: 'Naar de voorgrond',
     forward: 'Één laag naar voren',
     backward: 'Één laag naar achteren',
     toBack: 'Naar de achtergrond',
+  },
+  fonts: {
+    heading: 'Lettertypen',
+    noFonts: 'Geen lettertypen geladen',
+    addFont: 'Lettertype toevoegen',
+    printerFilename: 'Printerbestandsnaam',
+    printerFilenamePlaceholder: 'bijv. ARIAL.TTF',
+    upload: 'Uploaden',
+    cancel: 'Annuleren',
+    delete: 'Verwijderen',
+    uploadError: 'Lettertypebestand kon niet worden geladen',
   },
 } as const;
 

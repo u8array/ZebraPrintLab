@@ -80,6 +80,7 @@ const fr = {
     print: 'Imprimer',
     propertiesTab: 'Propriétés',
     layersTab: 'Calques',
+    fontsTab: 'Polices',
   },
 
   output: {
@@ -119,6 +120,7 @@ const fr = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Aucune',
     },
     code128: {
       content: 'Contenu',
@@ -335,11 +337,23 @@ const fr = {
   layers: {
     propertiesTab: 'Propriétés',
     layersTab: 'Calques',
+    fontsTab: 'Polices',
     empty: "Aucun objet sur l'étiquette",
     toFront: 'Mettre au premier plan',
     forward: "Avancer d'un calque",
     backward: "Reculer d'un calque",
     toBack: "Envoyer à l'arrière-plan",
+  },
+  fonts: {
+    heading: 'Polices',
+    noFonts: 'Aucune police chargée',
+    addFont: 'Ajouter une police',
+    printerFilename: 'Nom de fichier imprimante',
+    printerFilenamePlaceholder: 'ex. ARIAL.TTF',
+    upload: 'Téléverser',
+    cancel: 'Annuler',
+    delete: 'Supprimer',
+    uploadError: 'Impossible de charger le fichier de police',
   },
 } as const;
 

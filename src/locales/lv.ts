@@ -80,6 +80,7 @@ const lv = {
     print: 'Drukāt',
     propertiesTab: 'Īpašības',
     layersTab: 'Slāņi',
+    fontsTab: 'Fonti',
   },
 
   output: {
@@ -119,6 +120,7 @@ const lv = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Nav',
     },
     code128: {
       content: 'Saturs',
@@ -335,11 +337,23 @@ const lv = {
   layers: {
     propertiesTab: 'Rekvizīti',
     layersTab: 'Slāņi',
+    fontsTab: 'Fonti',
     empty: 'Etiķetē nav objektu',
     toFront: 'Pārvietot uz priekšu',
     forward: 'Pārvietot vienu slāni uz priekšu',
     backward: 'Pārvietot vienu slāni atpakaļ',
     toBack: 'Pārvietot uz aizmuguri',
+  },
+  fonts: {
+    heading: 'Fonti',
+    noFonts: 'Nav ielādētu fontu',
+    addFont: 'Pievienot fontu',
+    printerFilename: 'Printera faila nosaukums',
+    printerFilenamePlaceholder: 'piem. ARIAL.TTF',
+    upload: 'Augšupielādēt',
+    cancel: 'Atcelt',
+    delete: 'Dzēst',
+    uploadError: 'Neizdevās ielādēt fontu failu',
   },
 } as const;
 

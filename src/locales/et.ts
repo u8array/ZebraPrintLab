@@ -80,6 +80,7 @@ const et = {
     print: 'Prindi',
     propertiesTab: 'Omadused',
     layersTab: 'Kihid',
+    fontsTab: 'Fondid',
   },
 
   output: {
@@ -119,6 +120,7 @@ const et = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Puudub',
     },
     code128: {
       content: 'Sisu',
@@ -335,11 +337,23 @@ const et = {
   layers: {
     propertiesTab: 'Omadused',
     layersTab: 'Kihid',
+    fontsTab: 'Fondid',
     empty: 'Sildil pole objekte',
     toFront: 'Too ette',
     forward: 'Liiguta üks kiht ette',
     backward: 'Liiguta üks kiht taha',
     toBack: 'Saada taha',
+  },
+  fonts: {
+    heading: 'Fondid',
+    noFonts: 'Fonte pole laaditud',
+    addFont: 'Lisa font',
+    printerFilename: 'Printeri failinimi',
+    printerFilenamePlaceholder: 'nt. ARIAL.TTF',
+    upload: 'Laadi üles',
+    cancel: 'Tühista',
+    delete: 'Kustuta',
+    uploadError: 'Fondifaili ei saanud laadida',
   },
 } as const;
 
