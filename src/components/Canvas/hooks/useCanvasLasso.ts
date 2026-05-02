@@ -1,13 +1,7 @@
 import { useState, useRef } from "react";
 import type Konva from "konva";
 import { useLabelStore } from "../../../store/labelStore";
-
-interface LassoRect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+import { getIdsIntersectingRect, type LassoRect } from "../lassoGeometry";
 
 interface Options {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -64,22 +58,8 @@ export function useCanvasLasso({ containerRef, stageRef, spaceDown, selectObject
     lassoRectRef.current = null;
     setLasso(null);
     if (!rect || !stageRef.current) return;
-    const stage = stageRef.current;
-    const selected = useLabelStore
-      .getState()
-      .objects.filter((obj) => {
-        const node = stage.findOne<Konva.Node>(`#${obj.id}`);
-        if (!node) return false;
-        const box = node.getClientRect({ relativeTo: stage });
-        return (
-          rect.x < box.x + box.width &&
-          rect.x + rect.w > box.x &&
-          rect.y < box.y + box.height &&
-          rect.y + rect.h > box.y
-        );
-      })
-      .map((obj) => obj.id);
-    selectObjects(selected);
+    const ids = useLabelStore.getState().objects.map((o) => o.id);
+    selectObjects(getIdsIntersectingRect(stageRef.current, ids, rect));
   };
 
   const onStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
