@@ -22,7 +22,9 @@ export async function discoverBrowserPrintDevices(): Promise<BrowserPrintDevice[
   const res = await bpFetch("/available");
   if (!res.ok) throw new Error(`Agent returned ${res.status}`);
   const data: unknown = await res.json();
-  const devices = Array.isArray(data) ? data : (data as Record<string, unknown>).printer;
+  const devices = Array.isArray(data)
+    ? data
+    : (data as Record<string, unknown> | null)?.printer;
   if (!Array.isArray(devices)) return [];
   return devices as BrowserPrintDevice[];
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { XMarkIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../lib/useT";
 import {
@@ -38,13 +38,13 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
   const [bpStatus, setBpStatus] = useState<Status>({ type: "idle" });
   const [discovering, setDiscovering] = useState(false);
 
-  useEffect(() => {
+  function persistNetwork() {
     localStorage.setItem(LS_IP, ip);
     localStorage.setItem(LS_PORT, port);
-    if (selectedUid) localStorage.setItem(LS_PRINTER_UID, selectedUid);
-  }, [ip, port, selectedUid]);
+  }
 
   async function handleNetworkSend() {
+    persistNetwork();
     setNetStatus({ type: "sending" });
     try {
       await sendViaNetwork(ip.trim(), Number(port) || 9100, zpl);
@@ -63,8 +63,10 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
     try {
       const found = await discoverBrowserPrintDevices();
       setDevices(found);
-      if (found.length > 0 && !found.find((d) => d.uid === selectedUid)) {
-        setSelectedUid(found[0].uid);
+      const first = found[0];
+      if (first && !found.find((d) => d.uid === selectedUid)) {
+        setSelectedUid(first.uid);
+        localStorage.setItem(LS_PRINTER_UID, first.uid);
       }
     } catch {
       setBpStatus({ type: "error", message: t.zebraPrint.agentNotFound });
@@ -151,6 +153,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
                   type="text"
                   value={ip}
                   onChange={(e) => setIp(e.target.value)}
+                  onBlur={persistNetwork}
                   placeholder="192.168.1.100"
                   className="bg-bg border border-border rounded px-2 py-1 text-xs font-mono text-text focus:outline-none focus:border-accent"
                 />
@@ -163,6 +166,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
                   type="number"
                   value={port}
                   onChange={(e) => setPort(e.target.value)}
+                  onBlur={persistNetwork}
                   className="bg-bg border border-border rounded px-2 py-1 text-xs font-mono text-text focus:outline-none focus:border-accent"
                 />
               </div>
@@ -190,7 +194,11 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
                 </label>
                 <select
                   value={selectedUid}
-                  onChange={(e) => setSelectedUid(e.target.value)}
+                  onChange={(e) => {
+                    const uid = e.target.value;
+                    setSelectedUid(uid);
+                    localStorage.setItem(LS_PRINTER_UID, uid);
+                  }}
                   disabled={devices.length === 0}
                   className="bg-bg border border-border rounded px-2 py-1 text-xs font-mono text-text focus:outline-none focus:border-accent disabled:opacity-50"
                 >
