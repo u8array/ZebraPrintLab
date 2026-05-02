@@ -39,6 +39,10 @@ export async function sendViaBrowserPrint(
   if (!res.ok) throw new Error(`Agent write failed: ${res.status}`);
 }
 
+export function isConnectionRefused(e: unknown): boolean {
+  return e instanceof TypeError && /refused/i.test(e.message);
+}
+
 // Chrome shows a Private Network Access permission prompt on first use.
 export async function sendViaNetwork(
   ip: string,
@@ -50,14 +54,10 @@ export async function sendViaNetwork(
       method: "POST",
       body: zpl,
       headers: { "Content-Type": "text/plain" },
-      // Short timeout — printer won't send a valid HTTP response
       signal: AbortSignal.timeout(4000),
     });
   } catch (e) {
-    // Timeout/parse errors are expected — the printer never sends a valid HTTP response.
-    // Only re-throw on outright connection refusal (printer unreachable).
-    if (e instanceof TypeError && /refused/i.test(e.message)) {
-      throw e;
-    }
+    // Timeout/abort is expected — printer never sends a valid HTTP response.
+    if (isConnectionRefused(e)) throw e;
   }
 }

@@ -3,6 +3,7 @@ import { XMarkIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../lib/useT";
 import {
   discoverBrowserPrintDevices,
+  isConnectionRefused,
   sendViaBrowserPrint,
   sendViaNetwork,
   type BrowserPrintDevice,
@@ -13,7 +14,7 @@ const LS_PORT = "zebra_print_port";
 const LS_PRINTER_UID = "zebra_print_uid";
 
 type Tab = "network" | "browserprint";
-type Status = { type: "idle" | "sending" | "success" | "error"; message?: string };
+interface Status { type: "idle" | "sending" | "success" | "error"; message?: string }
 
 interface Props {
   zpl: string;
@@ -49,10 +50,9 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
       await sendViaNetwork(ip.trim(), Number(port) || 9100, zpl);
       setNetStatus({ type: "success", message: t.zebraPrint.success });
     } catch (e) {
-      const msg =
-        e instanceof TypeError && /refused/i.test(e.message)
-          ? t.zebraPrint.errorRefused
-          : t.zebraPrint.errorGeneric;
+      const msg = isConnectionRefused(e)
+        ? t.zebraPrint.errorRefused
+        : t.zebraPrint.errorGeneric;
       setNetStatus({ type: "error", message: msg });
     }
   }

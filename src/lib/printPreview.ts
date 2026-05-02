@@ -3,7 +3,7 @@ import { fetchPreview } from "./labelary";
 import type { LabelConfig } from "../types/ObjectType";
 import type { LabelObject } from "../registry";
 
-function buildLoadingHtml(): string {
+export function buildLoadingHtml(): string {
   return `<html><head><style>
     body { margin: 0; display: flex; justify-content: center; align-items: center;
            height: 100vh; font-family: monospace; color: #888; background: #111; }
