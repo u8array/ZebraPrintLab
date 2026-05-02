@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import type Konva from "konva";
 import { pxToDots } from "../../../lib/coordinates";
 import { useLabelStore } from "../../../store/labelStore";
-import { BARCODE_1D_TYPES, STACKED_2D_TYPES } from "../../../registry";
+import { BARCODE_1D_TYPES, STACKED_2D_TYPES, ObjectRegistry } from "../../../registry";
 import type { LabelObject } from "../../../registry";
 import type { ObjectChanges } from "../../../store/labelStore";
 import {
@@ -130,87 +130,29 @@ export function useKonvaTransformer({
     if (!node) return;
     const sx = node.scaleX();
     const sy = node.scaleY();
+    const nodeHeight = node.height();
     node.scaleX(1);
     node.scaleY(1);
     const obj = useLabelStore.getState().objects.find((o) => o.id === singleId);
-    if (!obj) return;
+    if (!obj) {
+      transformAnchorRef.current = null;
+      return;
+    }
     const pos = {
       x: snap(pxToDots(node.x() - objectsOffsetX, scale, dpmm)),
       y: snap(pxToDots(node.y() - labelOffsetY, scale, dpmm)),
     };
-    if (obj.type === "text") {
-      updateObject(singleId, {
-        ...pos,
-        props: { fontHeight: Math.max(1, snap(Math.round(obj.props.fontHeight * sy))) },
+    const commit = ObjectRegistry[obj.type]?.commitTransform;
+    if (commit) {
+      const propChanges = commit(obj, {
+        sx,
+        sy,
+        snap,
+        nodeHeight,
+        anchor: transformAnchorRef.current,
       });
-    } else if (BARCODE_1D_TYPES.has(obj.type)) {
-      const p = obj.props as { height: number };
-      updateObject(singleId, {
-        ...pos,
-        props: { height: Math.max(1, snap(Math.round(p.height * sy))) },
-      });
-    } else if (STACKED_2D_TYPES.has(obj.type)) {
-      // Derive rowHeight from the anchor captured at drag start so the final
-      // value matches what boundBoxFunc snapped to during the drag.
-      const anchor = transformAnchorRef.current;
-      const scaledH = node.height() * sy;
-      let newRowHeight: number;
-      if (anchor && anchor.nodeHeight > 0 && anchor.rowHeight > 0) {
-        newRowHeight = Math.max(1, Math.round((scaledH * anchor.rowHeight) / anchor.nodeHeight));
-      } else {
-        newRowHeight = Math.max(
-          1,
-          snap(Math.round((obj.props as { rowHeight: number }).rowHeight * sy)),
-        );
-      }
-      updateObject(singleId, {
-        ...pos,
-        props: {
-          rowHeight: newRowHeight,
-          moduleWidth: Math.max(
-            1,
-            Math.min(10, Math.round((obj.props as { moduleWidth: number }).moduleWidth * sx)),
-          ),
-        },
-      });
-    } else if (obj.type === "box") {
-      updateObject(singleId, {
-        ...pos,
-        props: {
-          width: Math.max(1, snap(Math.round(obj.props.width * sx))),
-          height: Math.max(1, snap(Math.round(obj.props.height * sy))),
-        },
-      });
-    } else if (obj.type === "qrcode") {
-      updateObject(singleId, {
-        ...pos,
-        props: {
-          magnification: Math.max(
-            1,
-            Math.min(10, Math.round(obj.props.magnification * Math.min(sx, sy))),
-          ),
-        },
-      });
-    } else if (obj.type === "datamatrix") {
-      updateObject(singleId, {
-        ...pos,
-        props: {
-          dimension: Math.max(
-            1,
-            Math.min(12, Math.round(obj.props.dimension * Math.min(sx, sy))),
-          ),
-        },
-      });
-    } else if (obj.type === "ellipse") {
-      updateObject(singleId, {
-        ...pos,
-        props: {
-          width: Math.max(1, snap(Math.round(obj.props.width * sx))),
-          height: Math.max(1, snap(Math.round(obj.props.height * sy))),
-        },
-      });
+      updateObject(singleId, { ...pos, props: propChanges });
     }
-    // 'line' is intentionally excluded — it uses its own endpoint handle
     transformAnchorRef.current = null;
   };
 
