@@ -30,6 +30,7 @@ tests/fixtures/__diffs__/
 .claude/
 .windsurf/
 .cursor/
+.zed/
 .continue/
 .clinerules/
 .clinerules
