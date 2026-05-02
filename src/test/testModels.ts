@@ -264,6 +264,14 @@ export const testModels: Record<string, LabelObject> = {
     rotation: 0,
     props: { content: "LOGMARS1", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
   },
+  barcode_logmars_with_text: {
+    id: "23b",
+    type: "logmars",
+    x: 50,
+    y: 50,
+    rotation: 0,
+    props: { content: "LOGMARS1", height: 100, moduleWidth: 2, printInterpretation: true, checkDigit: false },
+  },
   barcode_msi_standard: {
     id: "24",
     type: "msi",
