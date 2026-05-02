@@ -52,8 +52,6 @@ export function useKonvaTransformer({
   // fixed step size throughout the entire drag session.
   const transformAnchorRef = useRef<{ nodeHeight: number; rowHeight: number } | null>(null);
 
-  // Sync transformer selection whenever selected objects or object list changes.
-  // Lines use their own endpoint handle — skip the transformer for them.
   useEffect(() => {
     if (!transformerRef.current || !stageRef.current) return;
     if (selectedIds.length === 0) {

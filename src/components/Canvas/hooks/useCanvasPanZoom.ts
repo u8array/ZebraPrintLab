@@ -56,6 +56,8 @@ export function useCanvasPanZoom({ zoom, onZoomChange, containerRef }: Options):
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
+  // containerRef is a stable ref object — its identity never changes, so the
+  // effect only needs to run once after mount.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -78,8 +80,8 @@ export function useCanvasPanZoom({ zoom, onZoomChange, containerRef }: Options):
     };
   }, []);
 
-  const zoomIn = () => onZoomChange(ZOOM_STEPS.find((s) => s > zoom) ?? ZOOM_MAX);
-  const zoomOut = () => onZoomChange([...ZOOM_STEPS].reverse().find((s) => s < zoom) ?? ZOOM_MIN);
+  const zoomIn = () => onZoomChange(ZOOM_STEPS.find((s) => s > zoomRef.current) ?? ZOOM_MAX);
+  const zoomOut = () => onZoomChange([...ZOOM_STEPS].reverse().find((s) => s < zoomRef.current) ?? ZOOM_MIN);
   const zoomFit = () => {
     onZoomChange(1);
     setPanOffset({ x: 0, y: 0 });

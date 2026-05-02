@@ -305,7 +305,6 @@ export function LabelCanvas({
     if (e.target === e.target.getStage()) selectObjects([]);
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => onPanMouseDown(e);
   const handleMouseMove = (e: React.MouseEvent) => {
     onPanMouseMove(e);
     onLassoMouseMove(e);
@@ -374,7 +373,7 @@ export function LabelCanvas({
         backgroundSize: "24px 24px",
         cursor,
       }}
-      onMouseDown={handleMouseDown}
+      onMouseDown={onPanMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
