@@ -9,6 +9,7 @@ export function useZplImportExport() {
   const label = useLabelStore((s) => s.label);
   const objects = useLabelStore((s) => s.objects);
   const [showZplImport, setShowZplImport] = useState(false);
+  const [showZebraPrint, setShowZebraPrint] = useState(false);
   const [printError, setPrintError] = useState<string | null>(null);
 
   const handleDownload = () => {
@@ -28,6 +29,10 @@ export function useZplImportExport() {
     showZplImport,
     openZplImport: () => setShowZplImport(true),
     closeZplImport: () => setShowZplImport(false),
+    showZebraPrint,
+    openZebraPrint: () => setShowZebraPrint(true),
+    closeZebraPrint: () => setShowZebraPrint(false),
+    currentZpl: () => generateZPL(label, objects),
     printError,
     dismissPrintError: () => setPrintError(null),
     handleDownload,

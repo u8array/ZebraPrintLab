@@ -7,6 +7,7 @@ import { LayersPanel } from "./Properties/LayersPanel";
 import { FontManager } from "./Fonts/FontManager";
 import { ZPLOutput } from "./Output/ZPLOutput";
 import { ZplImportModal } from "./Output/ZplImportModal";
+import { PrintToZebraDialog } from "./Output/PrintToZebraDialog";
 import {
   DropdownMenu,
   DropdownItem,
@@ -22,6 +23,7 @@ import {
   FolderOpenIcon,
   DocumentArrowDownIcon,
   PrinterIcon,
+  PaperAirplaneIcon,
   GlobeAltIcon,
   XMarkIcon,
 } from "@heroicons/react/16/solid";
@@ -62,6 +64,10 @@ export function AppShell() {
     showZplImport,
     openZplImport,
     closeZplImport,
+    showZebraPrint,
+    openZebraPrint,
+    closeZebraPrint,
+    currentZpl,
     printError,
     dismissPrintError,
     handleDownload,
@@ -173,6 +179,13 @@ export function AppShell() {
               disabled={!hasObjects}
             >
               {t.app.print}
+            </DropdownItem>
+            <DropdownItem
+              icon={PaperAirplaneIcon}
+              onClick={openZebraPrint}
+              disabled={!hasObjects}
+            >
+              {t.app.sendToZebra}
             </DropdownItem>
           </DropdownMenu>
 
@@ -291,6 +304,9 @@ export function AppShell() {
       </div>
 
       {showZplImport && <ZplImportModal onClose={closeZplImport} />}
+      {showZebraPrint && (
+        <PrintToZebraDialog zpl={currentZpl()} onClose={closeZebraPrint} />
+      )}
     </div>
   );
 }
