@@ -786,9 +786,10 @@ describe('parseZPL — importReport.unknown', () => {
     expect(importReport.unknown.some((s) => s.startsWith('^XX'))).toBe(true);
   });
 
-  it('records ^GFB (unsupported GF format) in importReport.unknown', () => {
+  it('records ^GFB (unsupported GF format) in importReport.browserLimit', () => {
     const { importReport } = parseZPL('^XA^FO0,0^GFB,32,32,4,AABBCCDD^FS^XZ', 8);
-    expect(importReport.unknown.some((s) => s.startsWith('^GF'))).toBe(true);
+    expect(importReport.browserLimit.some((s) => s.startsWith('^GF'))).toBe(true);
+    expect(importReport.unknown.some((s) => s.startsWith('^GF'))).toBe(false);
   });
 
   it('returns empty importReport for a fully supported label', () => {

@@ -43,6 +43,8 @@ export interface ParsedZPL {
   importReport: ImportReport;
 }
 
+type Handler = (p: string[], rest: string) => void;
+
 // ZPL commands start with ^ or ~ followed by 2 characters
 function tokenize(zpl: string): { cmd: string; rest: string }[] {
   const tokens: { cmd: string; rest: string }[] = [];
@@ -213,7 +215,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let bcCheck = false;
   // ^BY barcode defaults
   let byModuleWidth = 2;
-  let byHeight = 0;
+  let byHeight = 0; // 0 = no ^BY height; barcode handlers use ||100 as sentinel
   let qrMag = 4;
   let dmDim = 5;
   let dmQuality: DataMatrixProps["quality"] = 200;
@@ -532,16 +534,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   };
 
   // ── Command handler map ────────────────────────────────────────────────────
-  type Handler = (p: string[], rest: string) => void;
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const noop: Handler = () => {};
+  const noop: Handler = () => void 0;
   const resetComment: Handler = (_, rest) => { pendingComment = rest.trim() || undefined; };
-  const mkBrowserLimit = (prefix: string): Handler => (_, rest) => {
-    const tok = `^${prefix}${rest}`;
+  const mkBrowserLimit = (prefix: string, delimiter = "^"): Handler => (_, rest) => {
+    const tok = `${delimiter}${prefix}${rest}`;
     skipped.push(tok);
     browserLimit.push(tok);
   };
+
+  const handleAztec: Handler = (p) => { fieldType = "aztec"; aztecMag = int(p[1], 4); };
 
   const handlers: Record<string, Handler> = {
     // ── Label dimensions ────────────────────────────────────────────────────
@@ -756,9 +757,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       bcHeight = int(p[1], byHeight || 100);
       bcInterp = (p[2] ?? "Y") === "Y";
     },
-    // ^B0N,{magnification},... / ^BON,... — Aztec
-    B0(p) { fieldType = "aztec"; aztecMag = int(p[1], 4); },
-    BO(p) { fieldType = "aztec"; aztecMag = int(p[1], 4); },
+    // ^B0N,{magnification},... / ^BON,... — Aztec (^B0 and ^BO are synonyms)
+    B0: handleAztec,
+    BO: handleAztec,
     // ^BFN,{rowHeight} — MicroPDF417
     BF(p) {
       fieldType = "micropdf417";
@@ -951,8 +952,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       // ^GFA,{totalBytes},{totalBytes},{bytesPerRow},{compressedOrHexData}
       const format = rest[0]?.toUpperCase();
       if (format !== "A") {
+        // Non-A formats (binary, compressed) can't be rendered in the browser
         skipped.push(`^GF${rest}`);
-        unknown.push(`^GF${rest}`);
+        browserLimit.push(`^GF${rest}`);
         return;
       }
 
@@ -1116,11 +1118,35 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     LF: mkBrowserLimit("LF"), // list fonts — queries printer for installed fonts
     GS: mkBrowserLimit("GS"), // graphic symbol — references printer-internal symbols
     IM: mkBrowserLimit("IM"), // image reference — references image stored on printer
-    DG(_, rest) {
-      // ~DG{device}:{name},... — stores a graphic on the printer (note: tilde prefix)
-      const tok = `~DG${rest}`;
-      skipped.push(tok);
-      browserLimit.push(tok);
+    DG: mkBrowserLimit("DG", "~"), // ~DG stores a graphic on the printer (tilde prefix)
+
+    // ── TrueType font / text block ──────────────────────────────────────────
+    // ^A@{rotation},{height},{width},{drive}:{font} — TrueType font reference
+    // Can't load printer TrueType fonts; import as text with best-effort sizing
+    "A@"(p, rest) {
+      fieldType = "text";
+      textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
+      textH = int(p[1]) || cfHeight || 30;
+      textW = int(p[2]) || cfWidth || 0;
+      const fontRef = p[3] ?? "";
+      const colonIdx = fontRef.indexOf(":");
+      pendingPrinterFontName =
+        (colonIdx >= 0 ? fontRef.slice(colonIdx + 1) : fontRef) || undefined;
+      partialCmds.add("^A@");
+    },
+    // ^TB{rotation},{width},{height} — text block (alternative to ^A + ^FB)
+    TB(p, rest) {
+      fieldType = "text";
+      textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
+      const tbW = int(p[1], 0);
+      const tbH = int(p[2], 0);
+      textH = cfHeight || 30;
+      textW = cfWidth || 0;
+      if (tbW > 0) {
+        fbWidth = tbW;
+        fbLines = tbH > 0 ? Math.floor(tbH / (textH || 30)) : 1;
+        fbJustify = "L";
+      }
     },
 
     // ── Ignored / structural ────────────────────────────────────────────────
@@ -1164,45 +1190,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       continue;
     }
 
-    // ^A@{rotation},{height},{width},{drive}:{font} — TrueType font reference
-    // We can't load printer TrueType fonts, but we import as text with best-effort sizing
-    if (cmd === "A@") {
-      fieldType = "text";
-      textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
-      textH = int(p[1]) || cfHeight || 30;
-      textW = int(p[2]) || cfWidth || 0;
-      // Extract font filename from "E:ARIAL.TTF" or "R:FONT.TTF"
-      const fontRef = p[3] ?? "";
-      const colonIdx = fontRef.indexOf(":");
-      pendingPrinterFontName =
-        (colonIdx >= 0 ? fontRef.slice(colonIdx + 1) : fontRef) || undefined;
-      partialCmds.add("^A@");
-      continue;
-    }
-
-    // ^A{font}{rotation},{height},{width}  — general font command (A-Z, 0-9)
-    if (cmd[0] === "A" && cmd.length === 2 && cmd !== "A0") {
+    // ^A{font}{rotation},{height},{width} — general font command (A0 and A@ are in the map;
+    // remaining ^A* variants are dynamic keys that cannot be static map entries).
+    if (cmd[0] === "A" && cmd.length === 2) {
       fieldType = "text";
       textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
       textH = int(p[1], cfHeight || 30);
       textW = int(p[2], cfWidth || 0);
       partialCmds.add(`^${cmd}`);
-      continue;
-    }
-
-    // ^TB{rotation},{width},{height} — text block (alternative to ^A + ^FB)
-    if (cmd === "TB") {
-      fieldType = "text";
-      textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
-      const tbW = int(p[1], 0);
-      const tbH = int(p[2], 0);
-      textH = cfHeight || 30;
-      textW = cfWidth || 0;
-      if (tbW > 0) {
-        fbWidth = tbW;
-        fbLines = tbH > 0 ? Math.floor(tbH / (textH || 30)) : 1;
-        fbJustify = "L";
-      }
       continue;
     }
 
