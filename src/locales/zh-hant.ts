@@ -87,7 +87,7 @@ const zhHant = {
     zplHeading: 'ZPL',
     copy: '複製',
     copied: '✓ 已複製',
-    noObjects: '// 標籤上尚無物件',
+    noObjects: '標籤上尚無物件',
     previewHeading: '預覽',
     loading: '載入中…',
     unavailable: '無法使用',

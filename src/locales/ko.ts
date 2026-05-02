@@ -87,7 +87,7 @@ const ko = {
     zplHeading: 'ZPL',
     copy: '복사',
     copied: '✓ 복사됨',
-    noObjects: '// 레이블에 아직 개체가 없습니다',
+    noObjects: '레이블에 아직 개체가 없습니다',
     previewHeading: '미리보기',
     loading: '로딩 중…',
     unavailable: '사용 불가',

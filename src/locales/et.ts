@@ -87,7 +87,7 @@ const et = {
     zplHeading: 'ZPL',
     copy: 'Kopeeri',
     copied: '✓ Kopeeritud',
-    noObjects: '// Sildil pole veel objekte',
+    noObjects: 'Sildil pole veel objekte',
     previewHeading: 'Eelvaade',
     loading: 'Laadimine…',
     unavailable: 'Pole saadaval',

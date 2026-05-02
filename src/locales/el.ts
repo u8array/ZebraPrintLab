@@ -87,7 +87,7 @@ const el = {
     zplHeading: 'ZPL',
     copy: 'Αντιγραφή',
     copied: '✓ Αντιγράφηκε',
-    noObjects: '// Δεν υπάρχουν ακόμη αντικείμενα στην ετικέτα',
+    noObjects: 'Δεν υπάρχουν ακόμη αντικείμενα στην ετικέτα',
     previewHeading: 'Προεπισκόπηση',
     loading: 'Φόρτωση…',
     unavailable: 'Μη διαθέσιμο',

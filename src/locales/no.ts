@@ -87,7 +87,7 @@ const no = {
     zplHeading: 'ZPL',
     copy: 'Kopier',
     copied: '✓ Kopiert',
-    noObjects: '// Ingen objekter på etiketten ennå',
+    noObjects: 'Ingen objekter på etiketten ennå',
     previewHeading: 'Forhåndsvisning',
     loading: 'Laster…',
     unavailable: 'Utilgjengelig',

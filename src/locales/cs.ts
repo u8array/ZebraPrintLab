@@ -87,7 +87,7 @@ const cs = {
     zplHeading: 'ZPL',
     copy: 'Kopírovat',
     copied: '✓ Zkopírováno',
-    noObjects: '// Na štítku zatím nejsou žádné objekty',
+    noObjects: 'Na štítku zatím nejsou žádné objekty',
     previewHeading: 'Náhled',
     loading: 'Načítání…',
     unavailable: 'Nedostupné',

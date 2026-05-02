@@ -87,7 +87,7 @@ const hu = {
     zplHeading: 'ZPL',
     copy: 'Másolás',
     copied: '✓ Másolva',
-    noObjects: '// Még nincsenek objektumok a címkén',
+    noObjects: 'Még nincsenek objektumok a címkén',
     previewHeading: 'Előnézet',
     loading: 'Betöltés…',
     unavailable: 'Nem elérhető',

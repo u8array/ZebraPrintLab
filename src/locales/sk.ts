@@ -87,7 +87,7 @@ const sk = {
     zplHeading: 'ZPL',
     copy: 'Kopírovať',
     copied: '✓ Skopírované',
-    noObjects: '// Na štítku zatiaľ nie sú žiadne objekty',
+    noObjects: 'Na štítku zatiaľ nie sú žiadne objekty',
     previewHeading: 'Náhľad',
     loading: 'Načítavanie…',
     unavailable: 'Nedostupné',

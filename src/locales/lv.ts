@@ -87,7 +87,7 @@ const lv = {
     zplHeading: 'ZPL',
     copy: 'Kopēt',
     copied: '✓ Nokopēts',
-    noObjects: '// Etiķetē vēl nav objektu',
+    noObjects: 'Etiķetē vēl nav objektu',
     previewHeading: 'Priekšskatījums',
     loading: 'Ielādē…',
     unavailable: 'Nav pieejams',

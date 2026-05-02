@@ -87,7 +87,7 @@ const hr = {
     zplHeading: 'ZPL',
     copy: 'Kopiraj',
     copied: '✓ Kopirano',
-    noObjects: '// Nema objekata na naljepnici',
+    noObjects: 'Nema objekata na naljepnici',
     previewHeading: 'Pregled',
     loading: 'Učitavanje…',
     unavailable: 'Nedostupno',

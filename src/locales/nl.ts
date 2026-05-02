@@ -87,7 +87,7 @@ const nl = {
     zplHeading: 'ZPL',
     copy: 'Kopiëren',
     copied: '✓ Gekopieerd',
-    noObjects: '// Nog geen objecten op het etiket',
+    noObjects: 'Nog geen objecten op het etiket',
     previewHeading: 'Voorbeeld',
     loading: 'Laden…',
     unavailable: 'Niet beschikbaar',

@@ -87,7 +87,7 @@ const ar = {
     zplHeading: 'ZPL',
     copy: 'نسخ',
     copied: '✓ تم النسخ',
-    noObjects: '// لا توجد عناصر على الملصق بعد',
+    noObjects: 'لا توجد عناصر على الملصق بعد',
     previewHeading: 'معاينة',
     loading: 'جارٍ التحميل…',
     unavailable: 'غير متاح',

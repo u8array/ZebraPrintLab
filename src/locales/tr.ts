@@ -87,7 +87,7 @@ const tr = {
     zplHeading: 'ZPL',
     copy: 'Kopyala',
     copied: '✓ Kopyalandı',
-    noObjects: '// Etikette henüz nesne yok',
+    noObjects: 'Etikette henüz nesne yok',
     previewHeading: 'Önizleme',
     loading: 'Yükleniyor…',
     unavailable: 'Kullanılamıyor',

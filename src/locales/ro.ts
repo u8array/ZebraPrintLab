@@ -87,7 +87,7 @@ const ro = {
     zplHeading: 'ZPL',
     copy: 'Copiați',
     copied: '✓ Copiat',
-    noObjects: '// Nu există încă obiecte pe etichetă',
+    noObjects: 'Nu există încă obiecte pe etichetă',
     previewHeading: 'Previzualizare',
     loading: 'Se încarcă…',
     unavailable: 'Indisponibil',

@@ -87,7 +87,7 @@ const lt = {
     zplHeading: 'ZPL',
     copy: 'Kopijuoti',
     copied: '✓ Nukopijuota',
-    noObjects: '// Etiketėje dar nėra objektų',
+    noObjects: 'Etiketėje dar nėra objektų',
     previewHeading: 'Peržiūra',
     loading: 'Įkeliama…',
     unavailable: 'Nepasiekiama',

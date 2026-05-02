@@ -87,7 +87,7 @@ const en = {
     zplHeading: 'ZPL',
     copy: 'Copy',
     copied: '✓ Copied',
-    noObjects: '// No objects on the label yet',
+    noObjects: 'No objects on the label yet',
     previewHeading: 'Preview',
     loading: 'Loading…',
     unavailable: 'Unavailable',

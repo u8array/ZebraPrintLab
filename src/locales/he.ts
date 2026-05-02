@@ -87,7 +87,7 @@ const he = {
     zplHeading: 'ZPL',
     copy: 'העתק',
     copied: '✓ הועתק',
-    noObjects: '// אין אובייקטים על התווית עדיין',
+    noObjects: 'אין אובייקטים על התווית עדיין',
     previewHeading: 'תצוגה מקדימה',
     loading: 'טוען…',
     unavailable: 'לא זמין',

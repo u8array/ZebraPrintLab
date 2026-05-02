@@ -87,7 +87,7 @@ const pl = {
     zplHeading: 'ZPL',
     copy: 'Kopiuj',
     copied: '✓ Skopiowano',
-    noObjects: '// Brak obiektów na etykiecie',
+    noObjects: 'Brak obiektów na etykiecie',
     previewHeading: 'Podgląd',
     loading: 'Ładowanie…',
     unavailable: 'Niedostępny',

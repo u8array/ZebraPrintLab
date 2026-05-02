@@ -87,7 +87,7 @@ const fa = {
     zplHeading: 'ZPL',
     copy: 'کپی',
     copied: '✓ کپی شد',
-    noObjects: '// هنوز هیچ شیئی روی برچسب نیست',
+    noObjects: 'هنوز هیچ شیئی روی برچسب نیست',
     previewHeading: 'پیش‌نمایش',
     loading: 'در حال بارگذاری…',
     unavailable: 'در دسترس نیست',

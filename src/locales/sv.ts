@@ -87,7 +87,7 @@ const sv = {
     zplHeading: 'ZPL',
     copy: 'Kopiera',
     copied: '✓ Kopierat',
-    noObjects: '// Inga objekt på etiketten ännu',
+    noObjects: 'Inga objekt på etiketten ännu',
     previewHeading: 'Förhandsvisning',
     loading: 'Laddar…',
     unavailable: 'Ej tillgänglig',

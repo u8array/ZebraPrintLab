@@ -87,7 +87,7 @@ const fr = {
     zplHeading: 'ZPL',
     copy: 'Copier',
     copied: '✓ Copié',
-    noObjects: "// Pas encore d'objets sur l'étiquette",
+    noObjects: "Pas encore d'objets sur l'étiquette",
     previewHeading: 'Aperçu',
     loading: 'Chargement…',
     unavailable: 'Indisponible',

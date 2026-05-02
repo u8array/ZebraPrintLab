@@ -87,7 +87,7 @@ const pt = {
     zplHeading: 'ZPL',
     copy: 'Copiar',
     copied: '✓ Copiado',
-    noObjects: '// Ainda não há objetos na etiqueta',
+    noObjects: 'Ainda não há objetos na etiqueta',
     previewHeading: 'Pré-visualização',
     loading: 'A carregar…',
     unavailable: 'Indisponível',

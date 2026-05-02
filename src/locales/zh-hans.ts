@@ -87,7 +87,7 @@ const zhHans = {
     zplHeading: 'ZPL',
     copy: '复制',
     copied: '✓ 已复制',
-    noObjects: '// 标签上暂无对象',
+    noObjects: '标签上暂无对象',
     previewHeading: '预览',
     loading: '加载中…',
     unavailable: '不可用',

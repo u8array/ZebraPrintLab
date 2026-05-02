@@ -87,7 +87,7 @@ const fi = {
     zplHeading: 'ZPL',
     copy: 'Kopioi',
     copied: '✓ Kopioitu',
-    noObjects: '// Etiketillä ei ole vielä objekteja',
+    noObjects: 'Etiketillä ei ole vielä objekteja',
     previewHeading: 'Esikatselu',
     loading: 'Ladataan…',
     unavailable: 'Ei saatavilla',

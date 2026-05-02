@@ -87,7 +87,7 @@ const ja = {
     zplHeading: 'ZPL',
     copy: 'コピー',
     copied: '✓ コピーしました',
-    noObjects: '// ラベルにオブジェクトがありません',
+    noObjects: 'ラベルにオブジェクトがありません',
     previewHeading: 'プレビュー',
     loading: '読み込み中…',
     unavailable: '利用不可',

@@ -87,7 +87,7 @@ const da = {
     zplHeading: 'ZPL',
     copy: 'Kopiér',
     copied: '✓ Kopieret',
-    noObjects: '// Ingen objekter på etiketten endnu',
+    noObjects: 'Ingen objekter på etiketten endnu',
     previewHeading: 'Forhåndsvisning',
     loading: 'Indlæser…',
     unavailable: 'Ikke tilgængelig',

@@ -87,7 +87,7 @@ const bg = {
     zplHeading: 'ZPL',
     copy: 'Копирай',
     copied: '✓ Копирано',
-    noObjects: '// Все още няма обекти върху етикета',
+    noObjects: 'Все още няма обекти върху етикета',
     previewHeading: 'Преглед',
     loading: 'Зарежда…',
     unavailable: 'Недостъпно',

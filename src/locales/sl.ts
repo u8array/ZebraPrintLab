@@ -87,7 +87,7 @@ const sl = {
     zplHeading: 'ZPL',
     copy: 'Kopiraj',
     copied: '✓ Kopirano',
-    noObjects: '// Na nalepki še ni predmetov',
+    noObjects: 'Na nalepki še ni predmetov',
     previewHeading: 'Predogled',
     loading: 'Nalaganje…',
     unavailable: 'Ni na voljo',
