@@ -2,6 +2,7 @@ import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
 import { fieldPos } from "./zplHelpers";
+import { commitStacked2DTransform } from "./transformHelpers";
 
 export interface MicroPdf417Props {
   content: string;
@@ -21,6 +22,8 @@ export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
     mode: 0,
   },
   defaultSize: { width: 200, height: 100 },
+
+  commitTransform: commitStacked2DTransform,
 
   toZPL: (obj) => {
     const p = obj.props;

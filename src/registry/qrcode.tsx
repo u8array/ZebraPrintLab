@@ -20,6 +20,13 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
   },
   defaultSize: { width: 200, height: 200 },
 
+  commitTransform: (obj, { sx, sy }) => ({
+    magnification: Math.max(
+      1,
+      Math.min(10, Math.round(obj.props.magnification * Math.min(sx, sy))),
+    ),
+  }),
+
   toZPL: (obj) => {
     const p = obj.props;
     return [

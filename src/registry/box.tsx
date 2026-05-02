@@ -27,6 +27,11 @@ export const box: ObjectTypeDefinition<BoxProps> = {
   },
   defaultSize: { width: 200, height: 100 },
 
+  commitTransform: (obj, { sx, sy, snap }) => ({
+    width: Math.max(1, snap(Math.round(obj.props.width * sx))),
+    height: Math.max(1, snap(Math.round(obj.props.height * sy))),
+  }),
+
   toZPL: (obj) => {
     const p = obj.props;
     const t = p.filled ? Math.min(p.width, p.height) : p.thickness;

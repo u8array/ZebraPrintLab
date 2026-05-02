@@ -24,6 +24,11 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
   },
   defaultSize: { width: 150, height: 100 },
 
+  commitTransform: (obj, { sx, sy, snap }) => ({
+    width: Math.max(1, snap(Math.round(obj.props.width * sx))),
+    height: Math.max(1, snap(Math.round(obj.props.height * sy))),
+  }),
+
   toZPL: (obj) => {
     const p = obj.props;
     const thick = p.filled ? Math.min(p.width, p.height) : p.thickness;
