@@ -446,7 +446,7 @@ export function BarcodeObject({
       // above the group origin into the visual zone above the bars.
       const isTextAbove = obj.type === "logmars";
       const aboveGap = isTextAbove
-        ? dotsToPx(LOGMARS_TEXT_ABOVE_GAP_DOTS, scale, dpmm)
+        ? Math.max(dotsToPx(LOGMARS_TEXT_ABOVE_GAP_DOTS, scale, dpmm), 3)
         : textGap;
       const txtY = isTextAbove ? -(textFontSize + aboveGap) : Math.max(h, 1) + textGap;
       const clipY = isTextAbove ? -(textFontSize + aboveGap) : 0;
