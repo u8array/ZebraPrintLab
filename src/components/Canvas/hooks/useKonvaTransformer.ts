@@ -5,14 +5,12 @@ import { useLabelStore } from "../../../store/labelStore";
 import { BARCODE_1D_TYPES, STACKED_2D_TYPES } from "../../../registry";
 import type { LabelObject } from "../../../registry";
 import type { ObjectChanges } from "../../../store/labelStore";
-
-interface BoundingBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation: number;
-}
+import {
+  snapBoxHeight,
+  pinBottomEdge,
+  isTopAnchorResize,
+  type BoundingBox,
+} from "../transformerGeometry";
 
 interface Options {
   transformerRef: React.RefObject<Konva.Transformer | null>;
@@ -110,21 +108,17 @@ export function useKonvaTransformer({
   const boundBoxFunc = (oldBox: BoundingBox, newBox: BoundingBox): BoundingBox => {
     if (newBox.width < 10 || newBox.height < 10) return oldBox;
     const dotPx = scale / dpmm;
-    // For stacked 2D barcodes, snap to whole rowHeight increments.
-    // stepPx is derived from the initial node height captured at drag start —
-    // NOT from oldBox.height, which changes each call and would cause drift.
+    // For stacked 2D barcodes, snap to whole rowHeight increments. stepPx is
+    // derived from the node height captured at drag start (not oldBox.height,
+    // which mutates each call and would drift).
     const anchor = transformAnchorRef.current;
-    let stepPx = dotPx;
-    if (anchor && anchor.rowHeight > 0 && anchor.nodeHeight > 0) {
-      stepPx = anchor.nodeHeight / anchor.rowHeight;
-    }
-    const snapH = (h: number) => Math.max(stepPx, Math.round(h / stepPx) * stepPx);
-    const snappedH = snapH(newBox.height);
-    // Detect top-anchor resize: y moved → keep bottom edge fixed.
-    const isTopResize = Math.abs(newBox.y - oldBox.y) > dotPx * 0.5;
-    if (isTopResize) {
-      const bottom = oldBox.y + oldBox.height;
-      return { ...newBox, y: bottom - snappedH, height: snappedH };
+    const stepPx =
+      anchor && anchor.rowHeight > 0 && anchor.nodeHeight > 0
+        ? anchor.nodeHeight / anchor.rowHeight
+        : dotPx;
+    const snappedH = snapBoxHeight(newBox.height, stepPx);
+    if (isTopAnchorResize(oldBox, newBox, dotPx * 0.5)) {
+      return pinBottomEdge(oldBox, newBox, snappedH);
     }
     return { ...newBox, height: snappedH };
   };
