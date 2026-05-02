@@ -353,6 +353,7 @@ const da = {
     upload: 'Upload',
     cancel: 'Annuller',
     delete: 'Slet',
+    uploadError: 'Skriftfilen kunne ikke indlaeses',
   },
 } as const;
 

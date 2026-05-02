@@ -353,6 +353,7 @@ const fi = {
     upload: 'Lataa',
     cancel: 'Peruuta',
     delete: 'Poista',
+    uploadError: 'Fonttitiedostoa ei voitu ladata',
   },
 } as const;
 

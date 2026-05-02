@@ -353,6 +353,7 @@ const nl = {
     upload: 'Uploaden',
     cancel: 'Annuleren',
     delete: 'Verwijderen',
+    uploadError: 'Lettertypebestand kon niet worden geladen',
   },
 } as const;
 

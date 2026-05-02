@@ -353,6 +353,7 @@ const et = {
     upload: 'Laadi üles',
     cancel: 'Tühista',
     delete: 'Kustuta',
+    uploadError: 'Fondifaili ei saanud laadida',
   },
 } as const;
 

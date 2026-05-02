@@ -353,6 +353,7 @@ const el = {
     upload: 'Μεταφόρτωση',
     cancel: 'Ακύρωση',
     delete: 'Διαγραφή',
+    uploadError: 'Den borthike na fortothei to arxeio grammatoseidas',
   },
 } as const;
 

@@ -353,6 +353,7 @@ const pt = {
     upload: 'Carregar',
     cancel: 'Cancelar',
     delete: 'Excluir',
+    uploadError: 'Nao foi possivel carregar o arquivo de fonte',
   },
 } as const;
 

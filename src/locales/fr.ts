@@ -353,6 +353,7 @@ const fr = {
     upload: 'Téléverser',
     cancel: 'Annuler',
     delete: 'Supprimer',
+    uploadError: 'Impossible de charger le fichier de police',
   },
 } as const;
 

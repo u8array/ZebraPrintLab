@@ -3,7 +3,8 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
-import { getFont, getAllFonts, loadFontFile, useFontCacheVersion } from '../lib/fontCache';
+import { getFont, getAllFonts, loadFontFile } from '../lib/fontCache';
+import { useFontCacheVersion } from '../hooks/useFontCacheVersion';
 
 export interface TextProps {
   content: string;

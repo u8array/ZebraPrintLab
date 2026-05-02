@@ -353,6 +353,7 @@ const no = {
     upload: 'Last opp',
     cancel: 'Avbryt',
     delete: 'Slett',
+    uploadError: 'Klarte ikke laste inn skriftfilen',
   },
 } as const;
 

@@ -353,6 +353,7 @@ const sr = {
     upload: 'Отпреми',
     cancel: 'Откажи',
     delete: 'Избриши',
+    uploadError: 'Datoteka fonta nije mogla biti ucitana',
   },
 } as const;
 

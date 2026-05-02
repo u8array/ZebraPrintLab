@@ -353,6 +353,7 @@ const bg = {
     upload: 'Качване',
     cancel: 'Отказ',
     delete: 'Изтриване',
+    uploadError: 'Neuspeshno zarejdane na shriftov fail',
   },
 } as const;
 

@@ -353,6 +353,7 @@ const sv = {
     upload: 'Ladda upp',
     cancel: 'Avbryt',
     delete: 'Ta bort',
+    uploadError: 'Det gick inte att ladda typsnittsfilen',
   },
 } as const;
 

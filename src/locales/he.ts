@@ -353,6 +353,7 @@ const he = {
     upload: 'העלה',
     cancel: 'ביטול',
     delete: 'מחק',
+    uploadError: 'Lo nitan letaan et kovezt hagophan',
   },
 } as const;
 

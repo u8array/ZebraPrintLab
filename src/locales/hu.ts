@@ -353,6 +353,7 @@ const hu = {
     upload: 'Feltöltés',
     cancel: 'Mégse',
     delete: 'Törlés',
+    uploadError: 'A betutipus-fajl nem tolthetoe be',
   },
 } as const;
 

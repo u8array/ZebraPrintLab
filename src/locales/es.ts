@@ -353,6 +353,7 @@ const es = {
     upload: 'Subir',
     cancel: 'Cancelar',
     delete: 'Eliminar',
+    uploadError: 'No se pudo cargar el archivo de fuente',
   },
 } as const;
 

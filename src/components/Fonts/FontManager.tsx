@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback } from 'react';
-import { getAllFonts, loadFontFile, removeFont, useFontCacheVersion } from '../../lib/fontCache';
+import { getAllFonts, loadFontFile, removeFont } from '../../lib/fontCache';
+import { useFontCacheVersion } from '../../hooks/useFontCacheVersion';
 import { useT } from '../../lib/useT';
 import { inputCls, labelCls } from '../Properties/styles';
 
@@ -78,13 +79,17 @@ function AddFontForm({ onDone }: AddFontFormProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadFailed, setUploadFailed] = useState(false);
 
   const handleFileChange = useCallback(async (file: File) => {
-    const printerName = name.trim().toUpperCase() || file.name.toUpperCase();
+    const printerName = name.trim() || file.name;
     setUploading(true);
+    setUploadFailed(false);
     try {
       await loadFontFile(file, printerName);
       onDone();
+    } catch {
+      setUploadFailed(true);
     } finally {
       setUploading(false);
     }
@@ -114,6 +119,10 @@ function AddFontForm({ onDone }: AddFontFormProps) {
           e.target.value = '';
         }}
       />
+
+      {uploadFailed && (
+        <p className="text-[10px] font-mono text-red-400">{t.fonts.uploadError}</p>
+      )}
 
       <div className="flex gap-2">
         <button

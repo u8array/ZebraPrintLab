@@ -353,6 +353,7 @@ const zhHant = {
     upload: '上傳',
     cancel: '取消',
     delete: '刪除',
+    uploadError: '無法載入字體檔案',
   },
 } as const;
 

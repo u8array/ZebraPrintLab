@@ -353,6 +353,7 @@ const ko = {
     upload: '업로드',
     cancel: '취소',
     delete: '삭제',
+    uploadError: '글꼴 파일을 불러올 수 없습니다',
   },
 } as const;
 

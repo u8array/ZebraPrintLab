@@ -353,6 +353,7 @@ const ro = {
     upload: 'Încarcă',
     cancel: 'Anulează',
     delete: 'Șterge',
+    uploadError: 'Fisierul de font nu a putut fi incarcat',
   },
 } as const;
 

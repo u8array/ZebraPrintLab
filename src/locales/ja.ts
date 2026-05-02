@@ -353,6 +353,7 @@ const ja = {
     upload: 'アップロード',
     cancel: 'キャンセル',
     delete: '削除',
+    uploadError: 'フォントファイルを読み込めませんでした',
   },
 } as const;
 

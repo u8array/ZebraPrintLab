@@ -353,6 +353,7 @@ const de = {
     upload: 'Hochladen',
     cancel: 'Abbrechen',
     delete: 'Löschen',
+    uploadError: 'Schriftdatei konnte nicht geladen werden',
   },
 } as const;
 

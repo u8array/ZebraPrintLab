@@ -353,6 +353,7 @@ const zhHans = {
     upload: '上传',
     cancel: '取消',
     delete: '删除',
+    uploadError: '无法加载字体文件',
   },
 } as const;
 

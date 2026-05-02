@@ -353,6 +353,7 @@ const tr = {
     upload: 'Yükle',
     cancel: 'İptal',
     delete: 'Sil',
+    uploadError: 'Yazi tipi dosyasi yuklenemedi',
   },
 } as const;
 

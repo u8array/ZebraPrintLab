@@ -353,6 +353,7 @@ const en = {
     upload: 'Upload',
     cancel: 'Cancel',
     delete: 'Delete',
+    uploadError: 'Could not load font file',
   },
 } as const;
 

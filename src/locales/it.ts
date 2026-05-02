@@ -353,6 +353,7 @@ const it = {
     upload: 'Carica',
     cancel: 'Annulla',
     delete: 'Elimina',
+    uploadError: 'Impossibile caricare il file del carattere',
   },
 } as const;
 

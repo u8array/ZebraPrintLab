@@ -353,6 +353,7 @@ const ar = {
     upload: 'رفع',
     cancel: 'إلغاء',
     delete: 'حذف',
+    uploadError: 'Taazhar takhzeen alfont',
   },
 } as const;
 
