@@ -11,6 +11,7 @@ function reset() {
     selectedIds: [],
     clipboard: [],
     pasteCount: 0,
+    duplicateCount: 0,
   });
 }
 

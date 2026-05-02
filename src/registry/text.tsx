@@ -33,6 +33,10 @@ export const text: ObjectTypeDefinition<TextProps> = {
   },
   defaultSize: { width: 200, height: 40 },
 
+  commitTransform: (obj, { sy, snap }) => ({
+    fontHeight: Math.max(1, snap(Math.round(obj.props.fontHeight * sy))),
+  }),
+
   toZPL: (obj) => {
     const p = obj.props;
     const fontCmd = p.printerFontName

@@ -2,6 +2,7 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
+import { clamp } from './transformHelpers';
 
 export interface QrCodeProps {
   content: string;
@@ -19,6 +20,10 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
     errorCorrection: 'Q',
   },
   defaultSize: { width: 200, height: 200 },
+
+  commitTransform: (obj, { sx, sy }) => ({
+    magnification: clamp(1, 10, Math.round(obj.props.magnification * Math.min(sx, sy))),
+  }),
 
   toZPL: (obj) => {
     const p = obj.props;

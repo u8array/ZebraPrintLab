@@ -2,6 +2,7 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
+import { commitWidthHeightTransform } from './transformHelpers';
 
 export interface BoxProps {
   width: number;
@@ -26,6 +27,8 @@ export const box: ObjectTypeDefinition<BoxProps> = {
     rounding: 0,
   },
   defaultSize: { width: 200, height: 100 },
+
+  commitTransform: commitWidthHeightTransform,
 
   toZPL: (obj) => {
     const p = obj.props;

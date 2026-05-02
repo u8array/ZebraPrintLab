@@ -2,6 +2,7 @@ import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
 import { fieldPos } from "./zplHelpers";
+import { commitStacked2DTransform } from "./transformHelpers";
 
 export interface Pdf417Props {
   content: string;
@@ -23,6 +24,8 @@ export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
     moduleWidth: 2,
   },
   defaultSize: { width: 300, height: 150 },
+
+  commitTransform: commitStacked2DTransform,
 
   toZPL: (obj) => {
     const p = obj.props;

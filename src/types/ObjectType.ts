@@ -31,6 +31,19 @@ export type ObjectChanges = Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { pr
 
 export type ObjectGroup = 'text' | 'code-1d' | 'code-2d' | 'code-postal' | 'shape';
 
+export interface TransformContext {
+  /** Konva scaleX from the transform end. */
+  sx: number;
+  /** Konva scaleY from the transform end. */
+  sy: number;
+  /** Snaps a value to the user's grid (identity when snap is disabled). */
+  snap: (n: number) => number;
+  /** Konva node's intrinsic height after scale was reset. Only meaningful for stacked 2D. */
+  nodeHeight: number;
+  /** Captured at drag start; non-null only for stacked 2D barcodes. */
+  anchor: { nodeHeight: number; rowHeight: number } | null;
+}
+
 export interface ObjectTypeDefinition<P extends object = object> {
   label: string;
   icon: string;
@@ -47,6 +60,16 @@ export interface ObjectTypeDefinition<P extends object = object> {
     obj: LabelObjectBase & { props: P },
     changes: ObjectChanges,
   ) => ObjectChanges;
+  /**
+   * Optional. Converts a Konva Transformer scale operation into prop changes
+   * specific to this object type. Called on transform end. If absent, the
+   * object's position is still updated but its size/scale props stay unchanged.
+   * Pure function — should not have side effects.
+   */
+  commitTransform?: (
+    obj: LabelObjectBase & { props: P },
+    ctx: TransformContext,
+  ) => Partial<P>;
   PropertiesPanel: React.ComponentType<{
     obj: LabelObjectBase & { props: P };
     onChange: (props: Partial<P>) => void;

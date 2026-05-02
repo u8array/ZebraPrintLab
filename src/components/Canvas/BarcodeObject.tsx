@@ -49,10 +49,7 @@ export function BarcodeObject({
   if (opts) {
     const canvas = document.createElement("canvas");
     try {
-      bwipjs.toCanvas(
-        canvas,
-        opts as unknown as Parameters<typeof bwipjs.toCanvas>[1],
-      );
+      bwipjs.toCanvas(canvas, opts as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
       barcodeCanvas = canvas;
     } catch (e) {
       errorMsg = e instanceof Error ? e.message : String(e);

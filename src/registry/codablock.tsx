@@ -2,6 +2,7 @@ import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
 import { fieldPos } from "./zplHelpers";
+import { commitStacked2DTransform } from "./transformHelpers";
 
 export interface CodablockProps {
   content: string;
@@ -21,6 +22,8 @@ export const codablock: ObjectTypeDefinition<CodablockProps> = {
     securityLevel: "Y",
   },
   defaultSize: { width: 250, height: 120 },
+
+  commitTransform: commitStacked2DTransform,
 
   toZPL: (obj) => {
     const p = obj.props;

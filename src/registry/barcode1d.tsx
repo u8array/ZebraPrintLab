@@ -54,6 +54,10 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
     },
     defaultSize: { width: 300, height: 120 },
 
+    commitTransform: (obj, { sy, snap }) => ({
+      height: Math.max(1, snap(Math.round(obj.props.height * sy))),
+    }),
+
     toZPL: (obj: LabelObjectBase & { props: Barcode1DProps }) => {
       const p = obj.props;
       const byCmd = config.byRatio !== undefined

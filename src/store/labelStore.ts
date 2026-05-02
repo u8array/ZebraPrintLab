@@ -8,10 +8,6 @@ import type { LabelObject } from '../registry';
 import { locales } from '../locales';
 import type { LocaleCode } from '../locales';
 
-// Increments each time duplicateSelectedObjects is called to stagger offsets;
-// reset when the user explicitly changes the selection.
-let _duplicateCount = 0;
-
 export type { ObjectChanges };
 
 function applyObjectChanges(obj: LabelObject, changes: ObjectChanges): LabelObject {
@@ -46,6 +42,7 @@ interface LabelState {
 
   clipboard: LabelObject[];
   pasteCount: number;
+  duplicateCount: number;
 
   addObject: (type: string, position?: { x: number; y: number }) => void;
   updateObject: (id: string, changes: ObjectChanges) => void;
@@ -79,6 +76,7 @@ export const useLabelStore = create<LabelState>()(
       selectedIds: [],
       clipboard: [],
       pasteCount: 0,
+      duplicateCount: 0,
       locale: detectLocale(),
       canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm' },
 
@@ -139,14 +137,14 @@ export const useLabelStore = create<LabelState>()(
       duplicateSelectedObjects: () =>
         set((state) => {
           if (state.selectedIds.length === 0) return {};
-          _duplicateCount += 1;
-          const offset = _duplicateCount * 20;
+          const duplicateCount = state.duplicateCount + 1;
+          const offset = duplicateCount * 20;
           const copies: LabelObject[] = state.selectedIds.flatMap((id) => {
             const src = state.objects.find((o) => o.id === id);
             if (!src) return [];
             return [{ ...src, id: crypto.randomUUID(), x: src.x + offset, y: src.y + offset } as LabelObject];
           });
-          return { objects: [...state.objects, ...copies], selectedIds: copies.map((c) => c.id) };
+          return { objects: [...state.objects, ...copies], selectedIds: copies.map((c) => c.id), duplicateCount };
         }),
 
       copySelectedObjects: () => {
@@ -172,10 +170,15 @@ export const useLabelStore = create<LabelState>()(
           return { objects: [...state.objects, ...copies], selectedIds: copies.map((c) => c.id), pasteCount };
         }),
 
-      selectObject: (id) => {
-        _duplicateCount = 0;
-        set({ selectedIds: id ? [id] : [] });
-      },
+      selectObject: (id) =>
+        set((state) => {
+          const next = id ? [id] : [];
+          const same =
+            state.selectedIds.length === next.length &&
+            state.selectedIds[0] === next[0];
+          if (same && state.duplicateCount === 0) return {};
+          return { selectedIds: next, duplicateCount: 0 };
+        }),
 
       toggleSelectObject: (id) =>
         set((state) => ({
@@ -184,10 +187,14 @@ export const useLabelStore = create<LabelState>()(
             : [...state.selectedIds, id],
         })),
 
-      selectObjects: (ids) => {
-        _duplicateCount = 0;
-        set({ selectedIds: ids });
-      },
+      selectObjects: (ids) =>
+        set((state) => {
+          const same =
+            state.selectedIds.length === ids.length &&
+            state.selectedIds.every((id, i) => id === ids[i]);
+          if (same && state.duplicateCount === 0) return {};
+          return { selectedIds: ids, duplicateCount: 0 };
+        }),
 
       removeSelectedObjects: () =>
         set((state) => ({
