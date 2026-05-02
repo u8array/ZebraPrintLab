@@ -78,7 +78,7 @@ export async function loadFontFile(file: File, printerName: string): Promise<Cac
     const reader = new FileReader();
     reader.onload = async () => {
       const dataUrl = reader.result as string;
-      const name = printerName.toUpperCase().replace(/\s+/g, '_');
+      const name = printerName.toUpperCase().replace(/[^A-Z0-9._]/g, '_');
       const fontFamily = printerNameToFamily(name);
       const entry: CachedFont = { id: crypto.randomUUID(), name, dataUrl, fontFamily };
       cache.set(name, entry);
