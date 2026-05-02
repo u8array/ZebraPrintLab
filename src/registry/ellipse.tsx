@@ -2,6 +2,7 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
+import { commitWidthHeightTransform } from './transformHelpers';
 
 export interface EllipseProps {
   width: number;
@@ -24,10 +25,7 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
   },
   defaultSize: { width: 150, height: 100 },
 
-  commitTransform: (obj, { sx, sy, snap }) => ({
-    width: Math.max(1, snap(Math.round(obj.props.width * sx))),
-    height: Math.max(1, snap(Math.round(obj.props.height * sy))),
-  }),
+  commitTransform: commitWidthHeightTransform,
 
   toZPL: (obj) => {
     const p = obj.props;
