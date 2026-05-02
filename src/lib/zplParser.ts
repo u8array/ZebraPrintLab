@@ -275,6 +275,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let snIncrement = 1;
   let snMode: SerialProps["zplMode"] = "SN";
 
+  const resetFB = () => { fbWidth = 0; fbLines = 1; fbSpacing = 0; fbJustify = "L"; };
+
   const flushField = () => {
     if (!fieldType || pendingFD === null) return;
     const content = fhActive ? decodeFH(pendingFD, fhDelimiter) : pendingFD;
@@ -308,10 +310,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           snPending = false;
           snIncrement = 1;
           snMode = "SN";
-          fbWidth = 0;
-          fbLines = 1;
-          fbSpacing = 0;
-          fbJustify = "L";
+          resetFB();
           break;
         }
         const textProps: TextProps = {
@@ -319,7 +318,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           fontHeight: textH,
           fontWidth: textW,
           rotation: textRot,
-          reverse: lrActive || frActive || undefined,
+          reverse: getReverseFlag(),
           printerFontName: pendingPrinterFontName,
         };
         pendingPrinterFontName = undefined;
@@ -330,11 +329,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           textProps.blockJustify = fbJustify;
         }
         objects.push(makeObj("text", x, y, textProps, posType, comment));
-        // Reset ^FB state after use
-        fbWidth = 0;
-        fbLines = 1;
-        fbSpacing = 0;
-        fbJustify = "L";
+        resetFB();
         break;
       }
       case "code128":
@@ -544,6 +539,23 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
   const handleAztec: Handler = (p) => { fieldType = "aztec"; aztecMag = int(p[1], 4); };
 
+  // Factory for standard 1D barcode commands that share the same state variables.
+  // hIdx/iIdx/cIdx are the comma-split parameter indices for height/interp/check.
+  const mkBarcode = (
+    type: string,
+    hIdx: number,
+    iIdx: number,
+    iDefault = "Y",
+    cIdx = -1,
+  ): Handler => (p) => {
+    fieldType = type;
+    bcHeight = int(p[hIdx], byHeight || 100);
+    bcInterp = (p[iIdx] ?? iDefault) === "Y";
+    if (cIdx >= 0) bcCheck = (p[cIdx] ?? "N") === "Y";
+  };
+
+  const getReverseFlag = () => (lrActive || frActive) || undefined;
+
   const handlers: Record<string, Handler> = {
     // ── Label dimensions ────────────────────────────────────────────────────
     PW(_, rest) {
@@ -622,68 +634,51 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     },
 
     // ── Barcodes ────────────────────────────────────────────────────────────
-    // ^BCN,{height},{interp},N,{check}
-    BC(p) {
-      fieldType = "code128";
-      bcHeight = int(p[1], byHeight || 100);
-      bcInterp = (p[2] ?? "Y") === "Y";
-      bcCheck = (p[4] ?? "N") === "Y";
-    },
-    // ^B3N,{check},{height},{interp},N
-    B3(p) {
-      fieldType = "code39";
-      bcCheck = (p[1] ?? "N") === "Y";
+    // mkBarcode(type, hIdx, iIdx, iDefault?, cIdx?)
+    // hIdx/iIdx/cIdx = comma-split param positions for height/interp/check
+    BC: mkBarcode("code128",        1, 2, "Y", 4), // ^BCN,h,i,N,c
+    B3: mkBarcode("code39",         2, 3, "Y", 1), // ^B3N,c,h,i,N
+    BE: mkBarcode("ean13",          1, 2),          // ^BEN,h,i,N
+    BU: mkBarcode("upca",           1, 2),          // ^BUN,h,i,N,N
+    B8: mkBarcode("ean8",           1, 2),          // ^B8N,h,i,N
+    B9: mkBarcode("upce",           1, 2),          // ^B9N,h,i,N
+    B2: mkBarcode("interleaved2of5",1, 2, "Y", 4), // ^B2N,h,i,N,c
+    BA: mkBarcode("code93",         1, 2, "Y", 4), // ^BAN,h,i,N,c
+    B1: mkBarcode("code11",         2, 3, "Y", 1), // ^B1N,c,h,i,N
+    BI: mkBarcode("industrial2of5", 1, 2),          // ^BIN,h,i,N
+    BJ: mkBarcode("standard2of5",   1, 2),          // ^BJN,h,i,N
+    BK: mkBarcode("codabar",        2, 3, "Y", 1), // ^BKN,c,h,i,N
+    BL: mkBarcode("logmars",        1, 2, "N"),     // ^BLN,h,i  — interp default N
+    BP: mkBarcode("plessey",        2, 3, "Y", 1), // ^BPN,c,h,i,N
+    B5: mkBarcode("planet",         1, 2),          // ^B5N,h,i,N
+    BZ: mkBarcode("postal",         1, 2),          // ^BZN,h,i,N
+
+    // MSI: check logic is "any letter except N" (not simple "Y") — keep inline
+    // ^BMN,{checkType},{height},{interp},N  (checkType: A/B/C/D=enabled, N=none)
+    BM(p) {
+      fieldType = "msi";
+      bcCheck = (p[1] ?? "N") !== "N";
       bcHeight = int(p[2], byHeight || 100);
       bcInterp = (p[3] ?? "Y") === "Y";
     },
-    // ^BEN,{height},{interp},N
-    BE(p) {
-      fieldType = "ean13";
-      bcHeight = int(p[1], byHeight || 100);
-      bcInterp = (p[2] ?? "Y") === "Y";
+    // GS1 Databar: different param layout, also updates byModuleWidth
+    // ^BRN,{symbology},{magnification},{separator},{height},{segments}
+    BR(p) {
+      fieldType = "gs1databar";
+      bcHeight = int(p[4], byHeight || 100);
+      byModuleWidth = int(p[2], byModuleWidth);
     },
-    // ^BQN,2,{magnification}
+
+    // ^BQN,2,{magnification} — QR Code
     BQ(p) {
       fieldType = "qrcode";
       qrMag = int(p[2], 4);
     },
-    // ^BXN,{dimension},{quality}
+    // ^BXN,{dimension},{quality} — DataMatrix
     BX(p) {
       fieldType = "datamatrix";
       dmDim = int(p[1], 5);
       dmQuality = int(p[2], 200) as DataMatrixProps["quality"];
-    },
-    // ^BUN,{height},{interp},N,N — UPC-A
-    BU(p) {
-      fieldType = "upca";
-      bcHeight = int(p[1], byHeight || 100);
-      bcInterp = (p[2] ?? "Y") === "Y";
-    },
-    // ^B8N,{height},{interp},N — EAN-8
-    B8(p) {
-      fieldType = "ean8";
-      bcHeight = int(p[1], byHeight || 100);
-      bcInterp = (p[2] ?? "Y") === "Y";
-    },
-    // ^B9N,{height},{interp},N — UPC-E
-    B9(p) {
-      fieldType = "upce";
-      bcHeight = int(p[1], byHeight || 100);
-      bcInterp = (p[2] ?? "Y") === "Y";
-    },
-    // ^B2N,{height},{interp},N,{check} — Interleaved 2 of 5
-    B2(p) {
-      fieldType = "interleaved2of5";
-      bcHeight = int(p[1], byHeight || 100);
-      bcInterp = (p[2] ?? "Y") === "Y";
-      bcCheck = (p[4] ?? "N") === "Y";
-    },
-    // ^BAN,{height},{interp},N,{check} — Code 93
-    BA(p) {
-      fieldType = "code93";
-      bcHeight = int(p[1], byHeight || 100);
-      bcInterp = (p[2] ?? "Y") === "Y";
-      bcCheck = (p[4] ?? "N") === "Y";
     },
     // ^B7N,{rowHeight},{securityLevel},{columns},,, — PDF417
     B7(p) {
@@ -691,71 +686,6 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       pdfRowHeight = int(p[1], 10);
       pdfSecurity = int(p[2], 0);
       pdfColumns = int(p[3], 0);
-    },
-    // ^B1N,{check},{height},{interp},N — Code 11
-    B1(p) {
-      fieldType = "code11";
-      bcCheck = (p[1] ?? "N") === "Y";
-      bcHeight = int(p[2], byHeight || 100);
-      bcInterp = (p[3] ?? "Y") === "Y";
-    },
-    // ^BIN,{height},{interp},N — Industrial 2 of 5
-    BI(p) {
-      fieldType = "industrial2of5";
-      bcHeight = int(p[1], byHeight || 100);
-      bcInterp = (p[2] ?? "Y") === "Y";
-    },
-    // ^BJN,{height},{interp},N — Standard 2 of 5
-    BJ(p) {
-      fieldType = "standard2of5";
-      bcHeight = int(p[1], byHeight || 100);
-      bcInterp = (p[2] ?? "Y") === "Y";
-    },
-    // ^BKN,{check},{height},{interp},N — ANSI Codabar
-    BK(p) {
-      fieldType = "codabar";
-      bcCheck = (p[1] ?? "N") === "Y";
-      bcHeight = int(p[2], byHeight || 100);
-      bcInterp = (p[3] ?? "Y") === "Y";
-    },
-    // ^BLN,{height},{interp} — LOGMARS
-    BL(p) {
-      fieldType = "logmars";
-      bcHeight = int(p[1], byHeight || 100);
-      bcInterp = (p[2] ?? "N") === "Y";
-    },
-    // ^BMN,{checkType},{height},{interp},N — MSI
-    // checkType: A=Mod10, B=Mod11, C=Mod10+Mod10, D=Mod11+Mod10, N=none
-    BM(p) {
-      fieldType = "msi";
-      bcCheck = (p[1] ?? "N") !== "N";
-      bcHeight = int(p[2], byHeight || 100);
-      bcInterp = (p[3] ?? "Y") === "Y";
-    },
-    // ^BPN,{check},{height},{interp},N — Plessey
-    BP(p) {
-      fieldType = "plessey";
-      bcCheck = (p[1] ?? "N") === "Y";
-      bcHeight = int(p[2], byHeight || 100);
-      bcInterp = (p[3] ?? "Y") === "Y";
-    },
-    // ^BRN,{symbology},{magnification},{separator},{height},{segments} — GS1 Databar
-    BR(p) {
-      fieldType = "gs1databar";
-      bcHeight = int(p[4], byHeight || 100);
-      byModuleWidth = int(p[2], byModuleWidth);
-    },
-    // ^B5N,{height},{interp},N — Planet Code
-    B5(p) {
-      fieldType = "planet";
-      bcHeight = int(p[1], byHeight || 100);
-      bcInterp = (p[2] ?? "Y") === "Y";
-    },
-    // ^BZN,{height},{interp},N — POSTAL / POSTNET
-    BZ(p) {
-      fieldType = "postal";
-      bcHeight = int(p[1], byHeight || 100);
-      bcInterp = (p[2] ?? "Y") === "Y";
     },
     // ^B0N,{magnification},... / ^BON,... — Aztec (^B0 and ^BO are synonyms)
     B0: handleAztec,
@@ -868,7 +798,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               length: w,
               thickness: t,
               color,
-              reverse: lrActive || frActive || undefined,
+              reverse: getReverseFlag(),
             } satisfies LineProps,
             undefined,
             gbComment,
@@ -885,7 +815,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               length: h,
               thickness: t,
               color,
-              reverse: lrActive || frActive || undefined,
+              reverse: getReverseFlag(),
             } satisfies LineProps,
             undefined,
             gbComment,
@@ -905,7 +835,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               filled,
               color,
               rounding,
-              reverse: lrActive || frActive || undefined,
+              reverse: getReverseFlag(),
             } satisfies BoxProps,
             undefined,
             gbComment,
@@ -941,7 +871,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             length: gdLen,
             thickness: gdT,
             color: gdColor,
-            reverse: lrActive || frActive || undefined,
+            reverse: getReverseFlag(),
           } satisfies LineProps,
           undefined,
           takeComment(),
