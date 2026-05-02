@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { XMarkIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../lib/useT";
 import {
@@ -37,20 +37,11 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
   const [bpStatus, setBpStatus] = useState<Status>({ type: "idle" });
   const [discovering, setDiscovering] = useState(false);
 
-  const ipRef = useRef(ip);
-  const portRef = useRef(port);
-  ipRef.current = ip;
-  portRef.current = port;
-
   useEffect(() => {
     localStorage.setItem(LS_IP, ip);
-  }, [ip]);
-  useEffect(() => {
     localStorage.setItem(LS_PORT, port);
-  }, [port]);
-  useEffect(() => {
     if (selectedUid) localStorage.setItem(LS_PRINTER_UID, selectedUid);
-  }, [selectedUid]);
+  }, [ip, port, selectedUid]);
 
   async function handleNetworkSend() {
     setNetStatus({ type: "sending" });
@@ -103,6 +94,15 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
         ? "text-text border-b border-accent"
         : "text-muted hover:text-text"
     }`;
+
+  function StatusMessage({ status }: { status: Status }) {
+    if (status.type === "idle" || status.type === "sending") return null;
+    return (
+      <p className={`font-mono text-[10px] ${status.type === "success" ? "text-green-400" : "text-red-400"}`}>
+        {status.message}
+      </p>
+    );
+  }
 
   return (
     <div
@@ -176,15 +176,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
               {netStatus.type === "sending" ? t.zebraPrint.sending : t.zebraPrint.send}
             </button>
 
-            {netStatus.type !== "idle" && netStatus.type !== "sending" && (
-              <p
-                className={`font-mono text-[10px] ${
-                  netStatus.type === "success" ? "text-green-400" : "text-red-400"
-                }`}
-              >
-                {netStatus.message}
-              </p>
-            )}
+            <StatusMessage status={netStatus} />
           </div>
         )}
 
@@ -229,15 +221,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
               {bpStatus.type === "sending" ? t.zebraPrint.sending : t.zebraPrint.send}
             </button>
 
-            {bpStatus.type !== "idle" && bpStatus.type !== "sending" && (
-              <p
-                className={`font-mono text-[10px] ${
-                  bpStatus.type === "success" ? "text-green-400" : "text-red-400"
-                }`}
-              >
-                {bpStatus.message}
-              </p>
-            )}
+            <StatusMessage status={bpStatus} />
           </div>
         )}
       </div>

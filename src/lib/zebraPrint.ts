@@ -39,9 +39,7 @@ export async function sendViaBrowserPrint(
   if (!res.ok) throw new Error(`Agent write failed: ${res.status}`);
 }
 
-// Zebra network printers accept raw ZPL on port 9100.
-// The printer ignores HTTP headers and processes ZPL from the body.
-// Chrome shows a Private Network Access prompt when connecting to LAN devices.
+// Chrome shows a Private Network Access permission prompt on first use.
 export async function sendViaNetwork(
   ip: string,
   port: number,
@@ -56,9 +54,9 @@ export async function sendViaNetwork(
       signal: AbortSignal.timeout(4000),
     });
   } catch (e) {
-    // Printers don't send valid HTTP responses, so a network/abort error is expected.
-    // Re-throw only if the connection was outright refused (ECONNREFUSED / ERR_CONNECTION_REFUSED).
-    if (e instanceof TypeError && /refused/i.test((e as TypeError).message)) {
+    // Timeout/parse errors are expected — the printer never sends a valid HTTP response.
+    // Only re-throw on outright connection refusal (printer unreachable).
+    if (e instanceof TypeError && /refused/i.test(e.message)) {
       throw e;
     }
   }
