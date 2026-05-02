@@ -149,7 +149,7 @@ export function toCode128BRaw(text: string): string | null {
 }
 
 export function buildBwipOptions(
-  obj: Pick<LabelObject, "type" | "props">,
+  obj: LabelObject,
   renderScale?: number,
   renderDpmm?: number,
 ): Record<string, unknown> | null {

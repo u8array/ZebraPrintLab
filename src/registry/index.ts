@@ -98,6 +98,8 @@ export const BARCODE_1D_TYPES = new Set([
   'gs1databar', 'planet', 'postal',
 ]);
 
+export const STACKED_2D_TYPES = new Set(['pdf417', 'micropdf417', 'codablock']);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ObjectRegistry: Record<string, ObjectTypeDefinition<any>> = {
   // text

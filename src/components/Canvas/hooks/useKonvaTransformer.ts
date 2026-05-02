@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import type Konva from "konva";
 import { pxToDots } from "../../../lib/coordinates";
 import { useLabelStore } from "../../../store/labelStore";
-import { BARCODE_1D_TYPES } from "../../../registry";
+import { BARCODE_1D_TYPES, STACKED_2D_TYPES } from "../../../registry";
 import type { LabelObject } from "../../../registry";
 import type { ObjectChanges } from "../../../store/labelStore";
 
@@ -97,10 +97,7 @@ export function useKonvaTransformer({
     const node = stageRef.current.findOne<Konva.Node>(`#${singleId}`);
     if (!node) return;
     const obj = objects.find((o) => o.id === singleId);
-    if (
-      obj &&
-      (obj.type === "pdf417" || obj.type === "micropdf417" || obj.type === "codablock")
-    ) {
+    if (obj && STACKED_2D_TYPES.has(obj.type)) {
       transformAnchorRef.current = {
         nodeHeight: node.height(),
         rowHeight: (obj.props as { rowHeight: number }).rowHeight,
@@ -158,7 +155,7 @@ export function useKonvaTransformer({
         ...pos,
         props: { height: Math.max(1, snap(Math.round(p.height * sy))) },
       });
-    } else if (obj.type === "pdf417" || obj.type === "micropdf417" || obj.type === "codablock") {
+    } else if (STACKED_2D_TYPES.has(obj.type)) {
       // Derive rowHeight from the anchor captured at drag start so the final
       // value matches what boundBoxFunc snapped to during the drag.
       const anchor = transformAnchorRef.current;
