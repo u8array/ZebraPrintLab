@@ -2,6 +2,7 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
+import { clamp } from './transformHelpers';
 
 export interface DataMatrixProps {
   content: string;
@@ -21,10 +22,7 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
   defaultSize: { width: 150, height: 150 },
 
   commitTransform: (obj, { sx, sy }) => ({
-    dimension: Math.max(
-      1,
-      Math.min(12, Math.round(obj.props.dimension * Math.min(sx, sy))),
-    ),
+    dimension: clamp(1, 12, Math.round(obj.props.dimension * Math.min(sx, sy))),
   }),
 
   toZPL: (obj) => {
