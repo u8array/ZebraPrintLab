@@ -128,7 +128,7 @@ describe('duplicateObject', () => {
 
 describe('copy / paste', () => {
   beforeEach(() => {
-    // _clipboard and _pasteCount are module-level in the store — reset by copying an empty selection.
+    // Reset clipboard state between tests by copying an empty selection.
     state().selectObject(null);
     state().copySelectedObjects();
   });
