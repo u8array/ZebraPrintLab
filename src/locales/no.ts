@@ -80,6 +80,7 @@ const no = {
     print: 'Skriv ut',
     propertiesTab: 'Egenskaper',
     layersTab: 'Lag',
+    fontsTab: 'Skrifter',
   },
 
   output: {
@@ -119,6 +120,7 @@ const no = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Ingen',
     },
     code128: {
       content: 'Innhold',
@@ -335,11 +337,22 @@ const no = {
   layers: {
     propertiesTab: 'Egenskaper',
     layersTab: 'Lag',
+    fontsTab: 'Skrifter',
     empty: 'Ingen objekter på etiketten',
     toFront: 'Flytt fremst',
     forward: 'Flytt ett lag fremover',
     backward: 'Flytt ett lag bakover',
     toBack: 'Flytt bakerst',
+  },
+  fonts: {
+    heading: 'Skrifter',
+    noFonts: 'Ingen skrifter lastet',
+    addFont: 'Legg til skrift',
+    printerFilename: 'Skriverfilnavn',
+    printerFilenamePlaceholder: 'f.eks. ARIAL.TTF',
+    upload: 'Last opp',
+    cancel: 'Avbryt',
+    delete: 'Slett',
   },
 } as const;
 

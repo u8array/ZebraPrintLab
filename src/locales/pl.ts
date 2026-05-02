@@ -80,6 +80,7 @@ const pl = {
     print: 'Drukuj',
     propertiesTab: 'Właściwości',
     layersTab: 'Warstwy',
+    fontsTab: 'Czcionki',
   },
 
   output: {
@@ -119,6 +120,7 @@ const pl = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Brak',
     },
     code128: {
       content: 'Zawartość',
@@ -335,11 +337,22 @@ const pl = {
   layers: {
     propertiesTab: 'Właściwości',
     layersTab: 'Warstwy',
+    fontsTab: 'Czcionki',
     empty: 'Brak obiektów na etykiecie',
     toFront: 'Przesuń na wierzch',
     forward: 'Przesuń do przodu',
     backward: 'Przesuń do tyłu',
     toBack: 'Przesuń na spód',
+  },
+  fonts: {
+    heading: 'Czcionki',
+    noFonts: 'Brak załadowanych czcionek',
+    addFont: 'Dodaj czcionkę',
+    printerFilename: 'Nazwa pliku drukarki',
+    printerFilenamePlaceholder: 'np. ARIAL.TTF',
+    upload: 'Prześlij',
+    cancel: 'Anuluj',
+    delete: 'Usuń',
   },
 } as const;
 

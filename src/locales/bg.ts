@@ -80,6 +80,7 @@ const bg = {
     print: 'Печат',
     propertiesTab: 'Свойства',
     layersTab: 'Слоеве',
+    fontsTab: 'Шрифтове',
   },
 
   output: {
@@ -119,6 +120,7 @@ const bg = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Няма',
     },
     code128: {
       content: 'Съдържание',
@@ -335,11 +337,22 @@ const bg = {
   layers: {
     propertiesTab: 'Свойства',
     layersTab: 'Слоеве',
+    fontsTab: 'Шрифтове',
     empty: 'Няма обекти върху етикета',
     toFront: 'Премести най-напред',
     forward: 'Премести напред',
     backward: 'Премести назад',
     toBack: 'Премести най-назад',
+  },
+  fonts: {
+    heading: 'Шрифтове',
+    noFonts: 'Няма заредени шрифтове',
+    addFont: 'Добави шрифт',
+    printerFilename: 'Файлово наименование на принтера',
+    printerFilenamePlaceholder: 'напр. ARIAL.TTF',
+    upload: 'Качване',
+    cancel: 'Отказ',
+    delete: 'Изтриване',
   },
 } as const;
 

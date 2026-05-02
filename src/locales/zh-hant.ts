@@ -80,6 +80,7 @@ const zhHant = {
     print: '列印',
     propertiesTab: '屬性',
     layersTab: '圖層',
+    fontsTab: '字體',
   },
 
   output: {
@@ -119,6 +120,7 @@ const zhHant = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: '無',
     },
     code128: {
       content: '內容',
@@ -335,11 +337,22 @@ const zhHant = {
   layers: {
     propertiesTab: '屬性',
     layersTab: '圖層',
+    fontsTab: '字體',
     empty: '標籤上沒有物件',
     toFront: '移至最上層',
     forward: '上移一層',
     backward: '下移一層',
     toBack: '移至最下層',
+  },
+  fonts: {
+    heading: '字體',
+    noFonts: '未載入字體',
+    addFont: '新增字體',
+    printerFilename: '印表機檔名',
+    printerFilenamePlaceholder: '例如 ARIAL.TTF',
+    upload: '上傳',
+    cancel: '取消',
+    delete: '刪除',
   },
 } as const;
 

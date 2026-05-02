@@ -3,7 +3,7 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
-import { getFont, loadFontFile, useFontCacheVersion } from '../lib/fontCache';
+import { getFont, getAllFonts, loadFontFile, useFontCacheVersion } from '../lib/fontCache';
 
 export interface TextProps {
   content: string;
@@ -57,8 +57,9 @@ export const text: ObjectTypeDefinition<TextProps> = {
     const [uploading, setUploading] = useState(false);
     useFontCacheVersion();
 
-    const cachedFont = p.printerFontName ? getFont(p.printerFontName) : undefined;
-    const fontLoaded = !!cachedFont;
+    const loadedFonts = getAllFonts();
+    const fontLoaded = !!p.printerFontName && !!getFont(p.printerFontName);
+    const fontAssignedButMissing = !!p.printerFontName && !fontLoaded;
 
     const handleFontUpload = useCallback(async (file: File) => {
       if (!p.printerFontName) return;
@@ -72,41 +73,49 @@ export const text: ObjectTypeDefinition<TextProps> = {
 
     return (
       <div className="flex flex-col gap-3">
-        {p.printerFontName && (
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.text.printerFont}</label>
-            <span className="text-xs font-mono text-muted">{p.printerFontName}</span>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".ttf,.otf,.TTF,.OTF"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleFontUpload(file);
-                e.target.value = '';
-              }}
-            />
-            <button
-              type="button"
-              className="px-3 py-1.5 rounded text-xs font-mono bg-surface-2 border border-border text-text hover:bg-border transition-colors"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-            >
-              {uploading
-                ? t.registry.text.uploadingFont
-                : fontLoaded
-                  ? t.registry.text.replaceFont
-                  : t.registry.text.uploadFont}
-            </button>
-            {fontLoaded && (
-              <span className="text-[10px] text-accent font-mono">{t.registry.text.fontLoaded}</span>
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>{t.registry.text.printerFont}</label>
+          <select
+            className={inputCls}
+            value={p.printerFontName ?? ''}
+            onChange={(e) => onChange({ printerFontName: e.target.value || undefined })}
+          >
+            <option value="">{t.registry.text.noFont}</option>
+            {loadedFonts.map((f) => (
+              <option key={f.name} value={f.name}>{f.name}</option>
+            ))}
+            {p.printerFontName && !getFont(p.printerFontName) && (
+              <option value={p.printerFontName}>{p.printerFontName}</option>
             )}
-            {!fontLoaded && (
+          </select>
+          {fontLoaded && (
+            <span className="text-[10px] text-accent font-mono">{t.registry.text.fontLoaded}</span>
+          )}
+          {fontAssignedButMissing && (
+            <>
               <span className="text-[10px] text-muted font-mono">{t.registry.text.fontMissing}</span>
-            )}
-          </div>
-        )}
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".ttf,.otf,.TTF,.OTF"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleFontUpload(file);
+                  e.target.value = '';
+                }}
+              />
+              <button
+                type="button"
+                className="px-3 py-1.5 rounded text-xs font-mono bg-surface-2 border border-border text-text hover:bg-border transition-colors"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? t.registry.text.uploadingFont : t.registry.text.uploadFont}
+              </button>
+            </>
+          )}
+        </div>
 
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.registry.text.content}</label>

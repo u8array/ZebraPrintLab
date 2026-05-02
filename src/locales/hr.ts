@@ -80,6 +80,7 @@ const hr = {
     print: 'Ispis',
     propertiesTab: 'Svojstva',
     layersTab: 'Slojevi',
+    fontsTab: 'Fontovi',
   },
 
   output: {
@@ -119,6 +120,7 @@ const hr = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Nema',
     },
     code128: {
       content: 'Sadržaj',
@@ -335,11 +337,22 @@ const hr = {
   layers: {
     propertiesTab: 'Svojstva',
     layersTab: 'Slojevi',
+    fontsTab: 'Fontovi',
     empty: 'Nema objekata na naljepnici',
     toFront: 'Pomakni naprijed',
     forward: 'Jedan sloj naprijed',
     backward: 'Jedan sloj nazad',
     toBack: 'Pomakni nazad',
+  },
+  fonts: {
+    heading: 'Fontovi',
+    noFonts: 'Nema učitanih fontova',
+    addFont: 'Dodaj font',
+    printerFilename: 'Naziv datoteke pisača',
+    printerFilenamePlaceholder: 'npr. ARIAL.TTF',
+    upload: 'Prenesi',
+    cancel: 'Odustani',
+    delete: 'Izbriši',
   },
 } as const;
 

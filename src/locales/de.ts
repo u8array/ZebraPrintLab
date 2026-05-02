@@ -80,6 +80,7 @@ const de = {
     print: 'Drucken',
     propertiesTab: 'Eigenschaften',
     layersTab: 'Ebenen',
+    fontsTab: 'Schriften',
   },
 
   output: {
@@ -119,6 +120,7 @@ const de = {
       replaceFont: 'Schrift ersetzen',
       fontLoaded: 'Schrift geladen',
       fontMissing: 'Schrift nicht geladen',
+      noFont: 'Keine',
     },
     code128: {
       content: 'Inhalt',
@@ -335,11 +337,22 @@ const de = {
   layers: {
     propertiesTab: 'Eigenschaften',
     layersTab: 'Ebenen',
+    fontsTab: 'Schriften',
     empty: 'Keine Objekte auf dem Etikett',
     toFront: 'In den Vordergrund',
     forward: 'Eine Ebene nach vorne',
     backward: 'Eine Ebene nach hinten',
     toBack: 'In den Hintergrund',
+  },
+  fonts: {
+    heading: 'Schriften',
+    noFonts: 'Keine Schriften geladen',
+    addFont: 'Schrift hinzufügen',
+    printerFilename: 'Druckerdateiname',
+    printerFilenamePlaceholder: 'z. B. ARIAL.TTF',
+    upload: 'Hochladen',
+    cancel: 'Abbrechen',
+    delete: 'Löschen',
   },
 } as const;
 

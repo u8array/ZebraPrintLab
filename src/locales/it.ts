@@ -80,6 +80,7 @@ const it = {
     print: 'Stampa',
     propertiesTab: 'Proprietà',
     layersTab: 'Livelli',
+    fontsTab: 'Caratteri',
   },
 
   output: {
@@ -119,6 +120,7 @@ const it = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Nessuno',
     },
     code128: {
       content: 'Contenuto',
@@ -335,11 +337,22 @@ const it = {
   layers: {
     propertiesTab: 'Proprietà',
     layersTab: 'Livelli',
+    fontsTab: 'Caratteri',
     empty: "Nessun oggetto sull'etichetta",
     toFront: 'Porta in primo piano',
     forward: 'Sposta avanti',
     backward: 'Sposta indietro',
     toBack: 'Porta in secondo piano',
+  },
+  fonts: {
+    heading: 'Caratteri',
+    noFonts: 'Nessun carattere caricato',
+    addFont: 'Aggiungi carattere',
+    printerFilename: 'Nome file stampante',
+    printerFilenamePlaceholder: 'es. ARIAL.TTF',
+    upload: 'Carica',
+    cancel: 'Annulla',
+    delete: 'Elimina',
   },
 } as const;
 

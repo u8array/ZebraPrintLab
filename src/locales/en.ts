@@ -80,6 +80,7 @@ const en = {
     print: 'Print',
     propertiesTab: 'Properties',
     layersTab: 'Layers',
+    fontsTab: 'Fonts',
   },
 
   output: {
@@ -119,6 +120,7 @@ const en = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'None',
     },
     code128: {
       content: 'Content',
@@ -335,11 +337,22 @@ const en = {
   layers: {
     propertiesTab: 'Properties',
     layersTab: 'Layers',
+    fontsTab: 'Fonts',
     empty: 'No objects on the label',
     toFront: 'Bring to Front',
     forward: 'Bring Forward',
     backward: 'Send Backward',
     toBack: 'Send to Back',
+  },
+  fonts: {
+    heading: 'Fonts',
+    noFonts: 'No fonts loaded',
+    addFont: 'Add font',
+    printerFilename: 'Printer filename',
+    printerFilenamePlaceholder: 'e.g. ARIAL.TTF',
+    upload: 'Upload',
+    cancel: 'Cancel',
+    delete: 'Delete',
   },
 } as const;
 

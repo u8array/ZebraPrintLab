@@ -80,6 +80,7 @@ const zhHans = {
     print: '打印',
     propertiesTab: '属性',
     layersTab: '图层',
+    fontsTab: '字体',
   },
 
   output: {
@@ -119,6 +120,7 @@ const zhHans = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: '无',
     },
     code128: {
       content: '内容',
@@ -335,11 +337,22 @@ const zhHans = {
   layers: {
     propertiesTab: '属性',
     layersTab: '图层',
+    fontsTab: '字体',
     empty: '标签上没有对象',
     toFront: '置于顶层',
     forward: '上移一层',
     backward: '下移一层',
     toBack: '置于底层',
+  },
+  fonts: {
+    heading: '字体',
+    noFonts: '未加载字体',
+    addFont: '添加字体',
+    printerFilename: '打印机文件名',
+    printerFilenamePlaceholder: '例如 ARIAL.TTF',
+    upload: '上传',
+    cancel: '取消',
+    delete: '删除',
   },
 } as const;
 

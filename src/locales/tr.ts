@@ -80,6 +80,7 @@ const tr = {
     print: 'Yazdır',
     propertiesTab: 'Özellikler',
     layersTab: 'Katmanlar',
+    fontsTab: 'Yazı Tipleri',
   },
 
   output: {
@@ -119,6 +120,7 @@ const tr = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Yok',
     },
     code128: {
       content: 'İçerik',
@@ -335,11 +337,22 @@ const tr = {
   layers: {
     propertiesTab: 'Özellikler',
     layersTab: 'Katmanlar',
+    fontsTab: 'Yazı Tipleri',
     empty: 'Etikette nesne yok',
     toFront: 'Öne Getir',
     forward: 'İleriye Taşı',
     backward: 'Geriye Taşı',
     toBack: 'Arkaya Gönder',
+  },
+  fonts: {
+    heading: 'Yazı Tipleri',
+    noFonts: 'Yüklü yazı tipi yok',
+    addFont: 'Yazı tipi ekle',
+    printerFilename: 'Yazıcı dosya adı',
+    printerFilenamePlaceholder: 'örn. ARIAL.TTF',
+    upload: 'Yükle',
+    cancel: 'İptal',
+    delete: 'Sil',
   },
 } as const;
 

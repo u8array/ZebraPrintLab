@@ -80,6 +80,7 @@ const el = {
     print: 'Εκτύπωση',
     propertiesTab: 'Ιδιότητες',
     layersTab: 'Επίπεδα',
+    fontsTab: 'Γραμματοσειρές',
   },
 
   output: {
@@ -119,6 +120,7 @@ const el = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Καμία',
     },
     code128: {
       content: 'Περιεχόμενο',
@@ -335,11 +337,22 @@ const el = {
   layers: {
     propertiesTab: 'Ιδιότητες',
     layersTab: 'Επίπεδα',
+    fontsTab: 'Γραμματοσειρές',
     empty: 'Δεν υπάρχουν αντικείμενα στην ετικέτα',
     toFront: 'Μεταφορά στο μπροστά',
     forward: 'Ένα επίπεδο μπροστά',
     backward: 'Ένα επίπεδο πίσω',
     toBack: 'Αποστολή στο πίσω',
+  },
+  fonts: {
+    heading: 'Γραμματοσειρές',
+    noFonts: 'Δεν φορτώθηκαν γραμματοσειρές',
+    addFont: 'Προσθήκη γραμματοσειράς',
+    printerFilename: 'Όνομα αρχείου εκτυπωτή',
+    printerFilenamePlaceholder: 'π.χ. ARIAL.TTF',
+    upload: 'Μεταφόρτωση',
+    cancel: 'Ακύρωση',
+    delete: 'Διαγραφή',
   },
 } as const;
 

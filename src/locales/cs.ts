@@ -80,6 +80,7 @@ const cs = {
     print: 'Tisknout',
     propertiesTab: 'Vlastnosti',
     layersTab: 'Vrstvy',
+    fontsTab: 'Písma',
   },
 
   output: {
@@ -119,6 +120,7 @@ const cs = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Žádné',
     },
     code128: {
       content: 'Obsah',
@@ -335,11 +337,22 @@ const cs = {
   layers: {
     propertiesTab: 'Vlastnosti',
     layersTab: 'Vrstvy',
+    fontsTab: 'Písma',
     empty: 'Na štítku nejsou žádné objekty',
     toFront: 'Přenést do popředí',
     forward: 'Posunout dopředu',
     backward: 'Posunout dozadu',
     toBack: 'Odeslat do pozadí',
+  },
+  fonts: {
+    heading: 'Písma',
+    noFonts: 'Žádná písma nenačtena',
+    addFont: 'Přidat písmo',
+    printerFilename: 'Název souboru tiskárny',
+    printerFilenamePlaceholder: 'např. ARIAL.TTF',
+    upload: 'Nahrát',
+    cancel: 'Zrušit',
+    delete: 'Smazat',
   },
 } as const;
 

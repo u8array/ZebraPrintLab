@@ -80,6 +80,7 @@ const lt = {
     print: 'Spausdinti',
     propertiesTab: 'Savybės',
     layersTab: 'Sluoksniai',
+    fontsTab: 'Šriftai',
   },
 
   output: {
@@ -119,6 +120,7 @@ const lt = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Nėra',
     },
     code128: {
       content: 'Turinys',
@@ -335,11 +337,22 @@ const lt = {
   layers: {
     propertiesTab: 'Savybės',
     layersTab: 'Sluoksniai',
+    fontsTab: 'Šriftai',
     empty: 'Etiketėje nėra objektų',
     toFront: 'Perkelti į priekį',
     forward: 'Vienas sluoksnis į priekį',
     backward: 'Vienas sluoksnis atgal',
     toBack: 'Perkelti į galą',
+  },
+  fonts: {
+    heading: 'Šriftai',
+    noFonts: 'Nėra įkeltų šriftų',
+    addFont: 'Pridėti šriftą',
+    printerFilename: 'Spausdintuvo failo pavadinimas',
+    printerFilenamePlaceholder: 'pvz. ARIAL.TTF',
+    upload: 'Įkelti',
+    cancel: 'Atšaukti',
+    delete: 'Ištrinti',
   },
 } as const;
 

@@ -80,6 +80,7 @@ const pt = {
     print: 'Imprimir',
     propertiesTab: 'Propriedades',
     layersTab: 'Camadas',
+    fontsTab: 'Fontes',
   },
 
   output: {
@@ -119,6 +120,7 @@ const pt = {
       replaceFont: 'Replace font',
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
+      noFont: 'Nenhuma',
     },
     code128: {
       content: 'Conteúdo',
@@ -335,11 +337,22 @@ const pt = {
   layers: {
     propertiesTab: 'Propriedades',
     layersTab: 'Camadas',
+    fontsTab: 'Fontes',
     empty: 'Não há objetos na etiqueta',
     toFront: 'Trazer para a frente',
     forward: 'Avançar uma camada',
     backward: 'Recuar uma camada',
     toBack: 'Enviar para o fundo',
+  },
+  fonts: {
+    heading: 'Fontes',
+    noFonts: 'Nenhuma fonte carregada',
+    addFont: 'Adicionar fonte',
+    printerFilename: 'Nome do arquivo da impressora',
+    printerFilenamePlaceholder: 'ex. ARIAL.TTF',
+    upload: 'Carregar',
+    cancel: 'Cancelar',
+    delete: 'Excluir',
   },
 } as const;
 
