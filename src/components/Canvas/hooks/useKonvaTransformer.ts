@@ -52,6 +52,12 @@ export function useKonvaTransformer({
   // fixed step size throughout the entire drag session.
   const transformAnchorRef = useRef<{ nodeHeight: number; rowHeight: number } | null>(null);
 
+  // Stable key of selected object types — avoids re-running on every drag-move
+  // position update (which changes objects but not the types of selected objects).
+  const selectedTypesKey = selectedIds
+    .map((id) => objects.find((o) => o.id === id)?.type ?? "")
+    .join(",");
+
   useEffect(() => {
     if (!transformerRef.current || !stageRef.current) return;
     if (selectedIds.length === 0) {
@@ -72,7 +78,10 @@ export function useKonvaTransformer({
         .filter((n): n is Konva.Node => n != null);
       transformerRef.current.nodes(nodes);
     }
-  }, [selectedIds, objects, stageRef, transformerRef]);
+  // selectedTypesKey encodes the type of every selected object — sufficient to
+  // detect the line/non-line distinction that governs transformer attachment.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIds, selectedTypesKey, stageRef, transformerRef]);
 
   const resizeEnabled = selectedIds.length <= 1;
   const enabledAnchors: string[] | undefined =

@@ -56,10 +56,7 @@ export function useCanvasPanZoom({ zoom, onZoomChange, containerRef }: Options):
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-  // containerRef is a stable ref object — its identity never changes, so the
-  // effect only needs to run once after mount.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [containerRef]);
 
   // space key toggles the grab cursor and enables space+drag panning
   useEffect(() => {
