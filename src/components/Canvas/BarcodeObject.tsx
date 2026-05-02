@@ -43,8 +43,9 @@ export function BarcodeObject({
   onChange,
   snap,
 }: Props) {
+  const { type, props } = obj;
   const { barcodeCanvas, errorMsg } = useMemo(() => {
-    const opts = buildBwipOptions(obj, scale, dpmm);
+    const opts = buildBwipOptions({ type, props }, scale, dpmm);
     if (!opts) return { barcodeCanvas: null, errorMsg: null };
     const canvas = document.createElement("canvas");
     try {
@@ -53,7 +54,7 @@ export function BarcodeObject({
     } catch (e) {
       return { barcodeCanvas: null, errorMsg: e instanceof Error ? e.message : String(e) };
     }
-  }, [obj, scale, dpmm]);
+  }, [type, props, scale, dpmm]);
 
   let displayW = 0;
   let displayH = 0;
