@@ -373,6 +373,7 @@ const he = {
     success: 'ZPL נשלח בהצלחה',
     errorRefused: 'החיבור סורב — בדוק IP ופורט',
     errorGeneric: 'שליחת ZPL נכשלה',
+    httpsWarning: 'הדף נמצא על HTTPS — הדפסה ישירה דרך IP עלולה להיחסם על ידי הדפדפן (תוכן מעורב).',
   },
 } as const;
 

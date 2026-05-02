@@ -373,6 +373,7 @@ const hr = {
     success: 'ZPL uspješno poslan',
     errorRefused: 'Veza odbijena — provjerite IP i port',
     errorGeneric: 'Slanje ZPL-a nije uspjelo',
+    httpsWarning: 'Stranica koristi HTTPS — izravno ispisivanje putem IP-a može biti blokirano od preglednika (mješoviti sadržaj).',
   },
 } as const;
 

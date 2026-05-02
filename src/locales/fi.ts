@@ -373,6 +373,7 @@ const fi = {
     success: 'ZPL lähetetty onnistuneesti',
     errorRefused: 'Yhteys evätty — tarkista IP ja portti',
     errorGeneric: 'ZPL:n lähetys epäonnistui',
+    httpsWarning: 'Sivu on HTTPS:llä — suora IP-tulostus saattaa olla selaimen estämä (sekasisältö).',
   },
 } as const;
 

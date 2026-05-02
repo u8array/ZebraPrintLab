@@ -144,6 +144,11 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
         {/* Network tab */}
         {tab === "network" && (
           <div className="flex flex-col gap-3 p-4">
+            {window.location.protocol === "https:" && (
+              <p className="font-mono text-[10px] text-yellow-400">
+                {t.zebraPrint.httpsWarning}
+              </p>
+            )}
             <div className="flex gap-2">
               <div className="flex-1 flex flex-col gap-1">
                 <label className="font-mono text-[10px] text-muted uppercase tracking-widest">

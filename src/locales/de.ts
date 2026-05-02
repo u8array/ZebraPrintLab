@@ -101,6 +101,7 @@ const de = {
     success: 'ZPL erfolgreich gesendet',
     errorRefused: 'Verbindung abgelehnt — IP und Port prüfen',
     errorGeneric: 'Fehler beim Senden',
+    httpsWarning: 'Seite läuft über HTTPS — direktes IP-Drucken kann vom Browser blockiert werden (Mixed Content).',
   },
 
   output: {

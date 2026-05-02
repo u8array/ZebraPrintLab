@@ -373,6 +373,7 @@ const no = {
     success: 'ZPL sendt',
     errorRefused: 'Tilkobling nektet — sjekk IP og port',
     errorGeneric: 'Sending av ZPL mislyktes',
+    httpsWarning: 'Siden bruker HTTPS — direkte utskrift via IP kan bli blokkert av nettleseren (blandet innhold).',
   },
 } as const;
 

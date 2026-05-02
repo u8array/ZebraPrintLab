@@ -373,6 +373,7 @@ const zhHant = {
     success: 'ZPL 傳送成功',
     errorRefused: '連線遭拒 — 請確認 IP 和連接埠',
     errorGeneric: '傳送 ZPL 失敗',
+    httpsWarning: '頁面在 HTTPS 上 — 瀏覽器可能封鎖直接 IP 列印（混合內容）。',
   },
 } as const;
 

@@ -373,6 +373,7 @@ const lv = {
     success: 'ZPL veikmīgi nosūtīts',
     errorRefused: 'Savienojums atteikts — pārbaudiet IP un portu',
     errorGeneric: 'ZPL nosūtīšana neizdevās',
+    httpsWarning: 'Lapa izmanto HTTPS — tiešā IP drukāšana var tikt bloķēta pārlūkprogrammā (jaukts saturs).',
   },
 } as const;
 

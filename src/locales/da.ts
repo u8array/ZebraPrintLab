@@ -373,6 +373,7 @@ const da = {
     success: 'ZPL sendt',
     errorRefused: 'Forbindelse nægtet — kontroller IP og port',
     errorGeneric: 'Afsendelse af ZPL mislykkedes',
+    httpsWarning: 'Siden bruger HTTPS — direkte udskrivning via IP kan blive blokeret af browseren (blandet indhold).',
   },
 } as const;
 

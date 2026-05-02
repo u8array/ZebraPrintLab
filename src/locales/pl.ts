@@ -373,6 +373,7 @@ const pl = {
     success: 'ZPL wysłany pomyślnie',
     errorRefused: 'Odmowa połączenia — sprawdź IP i port',
     errorGeneric: 'Błąd wysyłania ZPL',
+    httpsWarning: 'Strona używa HTTPS — bezpośrednie drukowanie przez IP może zostać zablokowane przez przeglądarkę (mieszana treść).',
   },
 } as const;
 

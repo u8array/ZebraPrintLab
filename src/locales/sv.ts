@@ -373,6 +373,7 @@ const sv = {
     success: 'ZPL skickades',
     errorRefused: 'Anslutning nekad — kontrollera IP och port',
     errorGeneric: 'Det gick inte att skicka ZPL',
+    httpsWarning: 'Sidan använder HTTPS — direktutskrift via IP kan blockeras av webbläsaren (blandat innehåll).',
   },
 } as const;
 

@@ -373,6 +373,7 @@ const lt = {
     success: 'ZPL sėkmingai išsiųsta',
     errorRefused: 'Ryšys atmestas — patikrinkite IP ir prievadą',
     errorGeneric: 'ZPL siuntimas nepavyko',
+    httpsWarning: 'Puslapis naudoja HTTPS — tiesioginis spausdinimas per IP gali būti užblokuotas naršyklės (mišrus turinys).',
   },
 } as const;
 

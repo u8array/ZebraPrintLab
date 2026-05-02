@@ -373,6 +373,7 @@ const ro = {
     success: 'ZPL trimis cu succes',
     errorRefused: 'Conexiune refuzată — verificați IP şi portul',
     errorGeneric: 'Trimiterea ZPL a eşuat',
+    httpsWarning: 'Pagina este pe HTTPS — imprimarea directă prin IP poate fi blocată de browser (conținut mixt).',
   },
 } as const;
 

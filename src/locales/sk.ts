@@ -373,6 +373,7 @@ const sk = {
     success: 'ZPL úspšne odoslané',
     errorRefused: 'Pripojenie odmietnuté — skontrolujte IP a port',
     errorGeneric: 'Odoslanie ZPL zlyhalo',
+    httpsWarning: 'Stránka beží cez HTTPS — priama tlač cez IP môže byť prehliadačom zablokovaná (zmiešaný obsah).',
   },
 } as const;
 

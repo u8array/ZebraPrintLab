@@ -373,6 +373,7 @@ const cs = {
     success: 'ZPL úspěšně odesláno',
     errorRefused: 'Připojení odmítnuto — zkontrolujte IP a port',
     errorGeneric: 'Odeslání ZPL selhalo',
+    httpsWarning: 'Stránka používá HTTPS — přímý tisk přes IP může být prohlížečem zablokován (smíšený obsah).',
   },
 } as const;
 

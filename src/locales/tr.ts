@@ -373,6 +373,7 @@ const tr = {
     success: 'ZPL başarıyla gönderildi',
     errorRefused: 'Bağlantı reddedildi — IP ve portu kontrol edin',
     errorGeneric: 'ZPL gönderilemedi',
+    httpsWarning: 'Sayfa HTTPS üzerinde — doğrudan IP yazdırma tarayıcı tarafından engellenebilir (karma içerik).',
   },
 } as const;
 

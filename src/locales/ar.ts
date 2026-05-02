@@ -373,6 +373,7 @@ const ar = {
     success: 'تم إرسال ZPL بنجاح',
     errorRefused: 'الاتصال مرفوض — تحقق من IP والمنفذ',
     errorGeneric: 'فشل إرسال ZPL',
+    httpsWarning: 'الصفحة على HTTPS — قد يحظر المتصفح الطباعة المباشرة عبر IP (محتوى مختلط).',
   },
 } as const;
 

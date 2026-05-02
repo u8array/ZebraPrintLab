@@ -373,6 +373,7 @@ const es = {
     success: 'ZPL enviado correctamente',
     errorRefused: 'Conexión rechazada — verifica IP y puerto',
     errorGeneric: 'Error al enviar ZPL',
+    httpsWarning: 'La página está en HTTPS — la impresión directa por IP puede ser bloqueada por el navegador (contenido mixto).',
   },
 } as const;
 

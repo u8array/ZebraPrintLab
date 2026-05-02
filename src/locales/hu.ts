@@ -373,6 +373,7 @@ const hu = {
     success: 'ZPL sikeresen elküldve',
     errorRefused: 'Kapcsolat megtagadva — ellenőrizze az IP-t és a portot',
     errorGeneric: 'ZPL küldése sikertelen',
+    httpsWarning: 'Az oldal HTTPS-en fut — az IP-n keresztüli közvetlen nyomtatást a böngésző blokkolhatja (vegyes tartalom).',
   },
 } as const;
 

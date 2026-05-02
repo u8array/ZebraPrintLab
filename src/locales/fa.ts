@@ -373,6 +373,7 @@ const fa = {
     success: 'ZPL با موفقیت ارسال شد',
     errorRefused: 'اتصال رد شد — IP و پورت را بررسی کنید',
     errorGeneric: 'ارسال ZPL ناموفق بود',
+    httpsWarning: 'صفحه روی HTTPS است — چاپ مستقیم از طریق IP ممکن است توسط مرورگر مسدود شود (محتوای مختلط).',
   },
 } as const;
 

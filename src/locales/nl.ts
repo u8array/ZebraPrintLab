@@ -373,6 +373,7 @@ const nl = {
     success: 'ZPL succesvol verzonden',
     errorRefused: 'Verbinding geweigerd — controleer IP en poort',
     errorGeneric: 'ZPL verzenden mislukt',
+    httpsWarning: 'Pagina gebruikt HTTPS — direct afdrukken via IP kan worden geblokkeerd door de browser (gemengde inhoud).',
   },
 } as const;
 

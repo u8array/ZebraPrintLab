@@ -373,6 +373,7 @@ const et = {
     success: 'ZPL edukalt saadetud',
     errorRefused: 'Ühendus keeldutud — kontrollige IP-d ja porti',
     errorGeneric: 'ZPL saatmine ebaõnnestus',
+    httpsWarning: 'Leht kasutab HTTPS-i — otsene IP-printimistöö võib olla brauseri poolt blokeeritud (segasisaldus).',
   },
 } as const;
 

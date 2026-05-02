@@ -373,6 +373,7 @@ const ko = {
     success: 'ZPL이 전송되었습니다',
     errorRefused: '연결이 거부되었습니다 — IP와 포트를 확인하세요',
     errorGeneric: 'ZPL 전송에 실패했습니다',
+    httpsWarning: '페이지가 HTTPS 상에 있습니다 — 브라우저가 직접 IP 인쇄를 차단할 수 있습니다(혼합 콘텐츠).',
   },
 } as const;
 
