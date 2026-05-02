@@ -17,6 +17,7 @@ import {
 import {
   QR_FO_Y_OFFSET_DOTS,
   QR_FT_MODULE_OFFSET,
+  LOGMARS_TEXT_ABOVE_GAP_DOTS,
   EAN_UPC_TYPES,
 } from "./bwipConstants";
 
@@ -440,9 +441,16 @@ export function BarcodeObject({
     }
 
     if (showText) {
+      // LOGMARS renders the human-readable line above the bars (per spec).
+      // ^FO Y refers to the bar top, so text is drawn at negative y to extend
+      // above the group origin into the visual zone above the bars.
       const isTextAbove = obj.type === "logmars";
-      const imgY = isTextAbove ? textFontSize + textGap : 0;
-      const txtY = isTextAbove ? 0 : Math.max(h, 1) + textGap;
+      const aboveGap = isTextAbove
+        ? dotsToPx(LOGMARS_TEXT_ABOVE_GAP_DOTS, scale, dpmm)
+        : textGap;
+      const txtY = isTextAbove ? -(textFontSize + aboveGap) : Math.max(h, 1) + textGap;
+      const clipY = isTextAbove ? -(textFontSize + aboveGap) : 0;
+      const clipHeight = Math.max(h, 1) + textFontSize + aboveGap;
 
       return (
         <Group
@@ -450,9 +458,9 @@ export function BarcodeObject({
           x={x}
           y={y}
           clipX={0}
-          clipY={0}
+          clipY={clipY}
           clipWidth={Math.max(w, 1)}
-          clipHeight={Math.max(h, 1) + textFontSize + textGap}
+          clipHeight={clipHeight}
           draggable
           onClick={(e) =>
             onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)
@@ -465,7 +473,7 @@ export function BarcodeObject({
         >
           <KImage
             x={0}
-            y={imgY}
+            y={0}
             image={barcodeCanvas}
             width={Math.max(w, 1)}
             height={Math.max(h, 1)}

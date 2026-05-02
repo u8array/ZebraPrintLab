@@ -122,10 +122,11 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       const isStacked2D = ["pdf417", "micropdf417", "codablock"].includes(
         obj.type,
       );
-      // LOGMARS specification mandates a human-readable interpretation line even when
-      // disabled via ZPL parameter. Labelary adds ~20 dots of text zone below the bars.
-      // getDisplaySize returns only the bar height; the text zone is white and does not
-      // affect the visual regression result.
+      // LOGMARS spec places the human-readable line ABOVE the bars. Labelary's
+      // bounding box for ^FO50,50 reports y=50 (bar top, not visual top), and
+      // height includes the bar height plus a ~20 dot text-above zone reserved
+      // even when printInterpretation=N. getDisplaySize returns only the bar
+      // height, so the strict height check is skipped for LOGMARS.
       const hasLogmarsTextZone = obj.type === "logmars";
       // bwip-natural display size diverges from the Labelary reference for these types
       // (quiet zone narrower than Zebra, or fundamentally different bar structure).
