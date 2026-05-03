@@ -35,10 +35,10 @@ export function isTopAnchorResize(
 
 /**
  * Translate a transformed Konva node's coordinate into the model's top-left
- * dot coordinate. Konva's Ellipse positions by its center; everything else
- * by top-left. The visual radius after a Transformer drag is `nodeSize * s`:
- * the node's intrinsic size is unchanged at this point, so only the scale
- * captured before reset reflects the post-drag dimensions.
+ * stage-pixel coordinate. Konva's Ellipse positions by its center; everything
+ * else by top-left. The visual size after a Transformer drag is `nodeSize * s`
+ * (full width / height): the node's intrinsic size is unchanged at this point,
+ * so only the scale captured before reset reflects the post-drag dimensions.
  */
 export function transformNodeTopLeft(
   nodeX: number,
