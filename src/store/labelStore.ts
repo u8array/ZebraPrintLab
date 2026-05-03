@@ -31,6 +31,7 @@ export interface CanvasSettings {
   snapSizeMm: number;
   zoom: number;
   unit: Unit;
+  viewRotation: 0 | 90 | 180 | 270;
 }
 
 interface LabelState {
@@ -78,7 +79,7 @@ export const useLabelStore = create<LabelState>()(
       pasteCount: 0,
       duplicateCount: 0,
       locale: detectLocale(),
-      canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm' },
+      canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm', viewRotation: 0 },
 
       addObject: (type, position = { x: 50, y: 50 }) => {
         const definition = ObjectRegistry[type];

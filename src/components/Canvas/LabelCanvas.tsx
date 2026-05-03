@@ -43,6 +43,8 @@ interface Props {
   onSnapSizeChange: (mm: number) => void;
   zoom: number;
   onZoomChange: (zoom: number) => void;
+  viewRotation: ViewRotation;
+  onViewRotationChange: (rotation: ViewRotation) => void;
 }
 
 export function LabelCanvas({
@@ -55,13 +57,14 @@ export function LabelCanvas({
   onSnapSizeChange,
   zoom,
   onZoomChange,
+  viewRotation,
+  onViewRotationChange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [viewRotation, setViewRotation] = useState<ViewRotation>(0);
-  const rotateView = () => setViewRotation(nextRotation);
+  const rotateView = () => onViewRotationChange(nextRotation(viewRotation));
   const [guides, setGuides] = useState<SnapGuide[]>([]);
   const [ghost, setGhost] = useState<LabelObject | null>(null);
 
@@ -478,7 +481,8 @@ export function LabelCanvas({
         <div className="w-px h-3.5 bg-border mx-0.5" />
         <button
           onClick={rotateView}
-          title="Ansicht drehen"
+          title="Rotate view (R)"
+          aria-label="Rotate view"
           className={`w-6 h-6 flex items-center justify-center text-sm transition-colors ${viewRotation !== 0 ? "text-accent" : "text-muted hover:text-text"}`}
         >
           ↻

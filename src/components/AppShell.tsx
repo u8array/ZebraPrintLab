@@ -240,6 +240,8 @@ export function AppShell() {
             onSnapSizeChange={(v) => setCanvasSettings({ snapSizeMm: v })}
             zoom={canvasSettings.zoom}
             onZoomChange={(v) => setCanvasSettings({ zoom: v })}
+            viewRotation={canvasSettings.viewRotation}
+            onViewRotationChange={(v) => setCanvasSettings({ viewRotation: v })}
           />
         </main>
 
