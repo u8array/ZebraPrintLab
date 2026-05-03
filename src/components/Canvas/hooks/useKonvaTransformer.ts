@@ -1,7 +1,7 @@
 import { useRef, useEffect } from "react";
 import type Konva from "konva";
 import { pxToDots } from "../../../lib/coordinates";
-import { useLabelStore } from "../../../store/labelStore";
+import { useLabelStore, currentObjects } from "../../../store/labelStore";
 import { BARCODE_1D_TYPES, STACKED_2D_TYPES, ObjectRegistry } from "../../../registry";
 import type { LabelObject } from "../../../registry";
 import type { ObjectChanges } from "../../../store/labelStore";
@@ -133,7 +133,7 @@ export function useKonvaTransformer({
     const nodeHeight = node.height();
     node.scaleX(1);
     node.scaleY(1);
-    const obj = useLabelStore.getState().objects.find((o) => o.id === singleId);
+    const obj = currentObjects(useLabelStore.getState()).find((o) => o.id === singleId);
     if (!obj) {
       transformAnchorRef.current = null;
       return;

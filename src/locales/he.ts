@@ -75,6 +75,7 @@ const he = {
     importZpl: 'ייבוא ZPL',
     exportZpl: 'ייצוא ZPL',
     newDesign: 'עיצוב חדש',
+    addPage: 'הוסף דף',
     openDesign: 'פתח עיצוב',
     saveDesign: 'שמור עיצוב',
     print: 'הדפסה כתמונה (דפדפן)',

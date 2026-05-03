@@ -6,17 +6,17 @@ import { readFileAsText } from "../lib/readFile";
 
 export function useDesignFileActions() {
   const label = useLabelStore((s) => s.label);
-  const objects = useLabelStore((s) => s.objects);
+  const pages = useLabelStore((s) => s.pages);
   const loadDesign = useLabelStore((s) => s.loadDesign);
   const [loadError, setLoadError] = useState<string | null>(null);
   const loadInputRef = useRef<HTMLInputElement>(null);
 
   const handleNew = () => {
-    loadDesign({ widthMm: 100, heightMm: 60, dpmm: 8 }, []);
+    loadDesign({ widthMm: 100, heightMm: 60, dpmm: 8 }, [{ objects: [] }]);
   };
 
   const handleSave = () => {
-    const data = serializeDesign(label, objects);
+    const data = serializeDesign(label, pages);
     triggerDownload(new Blob([data], { type: "application/json" }), "label.json");
   };
 
@@ -40,7 +40,7 @@ export function useDesignFileActions() {
     }
 
     setLoadError(null);
-    loadDesign(result.value.label, result.value.objects);
+    loadDesign(result.value.label, result.value.pages);
   };
 
   return {

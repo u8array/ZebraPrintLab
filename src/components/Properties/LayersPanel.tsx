@@ -8,7 +8,7 @@ import {
 } from '@dnd-kit/core';
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useLabelStore } from '../../store/labelStore';
+import { useLabelStore, useCurrentObjects } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
 import type { LabelObject } from '../../registry';
 import { useT } from '../../lib/useT';
@@ -63,7 +63,8 @@ function SortableLayerRow({ obj, isSelected, isOver, onSelect, onToggle }: RowPr
 
 export function LayersPanel() {
   const t = useT();
-  const { objects, selectedIds, selectObject, toggleSelectObject, reorderObject } = useLabelStore();
+  const { selectedIds, selectObject, toggleSelectObject, reorderObject } = useLabelStore();
+  const objects = useCurrentObjects();
   const [overId, setOverId] = useState<string | null>(null);
 
   const sensors = useSensors(

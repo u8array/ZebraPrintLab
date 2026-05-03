@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLabelStore, useHistory } from "../store/labelStore";
+import { useLabelStore, useHistory, currentObjects } from "../store/labelStore";
 import { nextRotation } from "../components/Canvas/rotationGeometry";
 
 export function useGlobalShortcuts() {
@@ -8,6 +8,7 @@ export function useGlobalShortcuts() {
   const pasteObjects = useLabelStore((s) => s.pasteObjects);
   const selectObjects = useLabelStore((s) => s.selectObjects);
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
+  const setCurrentPage = useLabelStore((s) => s.setCurrentPage);
   const { undo, redo } = useHistory();
 
   useEffect(() => {
@@ -25,7 +26,7 @@ export function useGlobalShortcuts() {
       if (inInput) return;
       if (mod && e.code === "KeyA") {
         e.preventDefault();
-        selectObjects(useLabelStore.getState().objects.map((o) => o.id));
+        selectObjects(currentObjects(useLabelStore.getState()).map((o) => o.id));
         return;
       }
       if (mod && e.code === "KeyD") {
@@ -57,8 +58,18 @@ export function useGlobalShortcuts() {
         const current = useLabelStore.getState().canvasSettings.viewRotation;
         setCanvasSettings({ viewRotation: nextRotation(current) });
       }
+      if (e.code === "PageUp") {
+        e.preventDefault();
+        const { currentPageIndex } = useLabelStore.getState();
+        if (currentPageIndex > 0) setCurrentPage(currentPageIndex - 1);
+      }
+      if (e.code === "PageDown") {
+        e.preventDefault();
+        const { currentPageIndex, pages } = useLabelStore.getState();
+        if (currentPageIndex < pages.length - 1) setCurrentPage(currentPageIndex + 1);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [undo, redo, duplicateSelectedObjects, copySelectedObjects, pasteObjects, selectObjects, setCanvasSettings]);
+  }, [undo, redo, duplicateSelectedObjects, copySelectedObjects, pasteObjects, selectObjects, setCanvasSettings, setCurrentPage]);
 }

@@ -75,6 +75,7 @@ const fa = {
     importZpl: 'وارد کردن ZPL',
     exportZpl: 'خروجی ZPL',
     newDesign: 'طرح جدید',
+    addPage: 'افزودن صفحه',
     openDesign: 'باز کردن طرح',
     saveDesign: 'ذخیره طرح',
     print: 'چاپ به عنوان تصویر (مرورگر)',

@@ -75,6 +75,7 @@ const el = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Νέο σχέδιο',
+    addPage: 'Προσθήκη σελίδας',
     openDesign: 'Άνοιγμα σχεδίου',
     saveDesign: 'Αποθήκευση σχεδίου',
     print: 'Εκτύπωση ως εικόνα (πρόγραμμα περιήγησης)',

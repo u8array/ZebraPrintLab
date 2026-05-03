@@ -75,6 +75,7 @@ const hr = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Novi dizajn',
+    addPage: 'Dodaj stranicu',
     openDesign: 'Otvori dizajn',
     saveDesign: 'Spremi dizajn',
     print: 'Ispis kao slika (preglednik)',

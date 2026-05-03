@@ -75,6 +75,7 @@ const sk = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Nový návrh',
+    addPage: 'Pridať stránku',
     openDesign: 'Otvoriť návrh',
     saveDesign: 'Uložiť návrh',
     print: 'Tlač ako obrázok (prehliadač)',

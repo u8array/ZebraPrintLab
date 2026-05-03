@@ -26,15 +26,16 @@ export function ZplImportModal({ onClose }: Props) {
       return;
     }
 
-    const { labelConfig, objects: parsedObjects, report } = importZplText(zpl, label.dpmm);
+    const { labelConfig, pages, report } = importZplText(zpl, label.dpmm);
+    const totalObjects = pages.reduce((s, p) => s + p.objects.length, 0);
 
-    if (parsedObjects.length === 0 && Object.keys(labelConfig).length === 0) {
+    if (totalObjects === 0 && Object.keys(labelConfig).length === 0) {
       setError('No supported objects found in the ZPL code.');
       return;
     }
 
-    loadDesign({ ...label, ...labelConfig }, parsedObjects);
-    setResult({ objectCount: parsedObjects.length, report });
+    loadDesign({ ...label, ...labelConfig }, pages);
+    setResult({ objectCount: totalObjects, report });
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,9 +57,10 @@ export function ZplImportModal({ onClose }: Props) {
       return;
     }
 
-    const { labelConfig, objects: parsedObjects, report } = importZplText(text, label.dpmm);
-    loadDesign({ ...label, ...labelConfig }, parsedObjects);
-    setResult({ objectCount: parsedObjects.length, report });
+    const { labelConfig, pages, report } = importZplText(text, label.dpmm);
+    const totalObjects = pages.reduce((s, p) => s + p.objects.length, 0);
+    loadDesign({ ...label, ...labelConfig }, pages);
+    setResult({ objectCount: totalObjects, report });
   };
 
   const handleCopy = () => {

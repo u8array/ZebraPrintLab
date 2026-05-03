@@ -75,6 +75,7 @@ const hu = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Új terv',
+    addPage: 'Oldal hozzáadása',
     openDesign: 'Terv megnyitása',
     saveDesign: 'Terv mentése',
     print: 'Nyomtatás képként (böngésző)',

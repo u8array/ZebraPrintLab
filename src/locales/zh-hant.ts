@@ -75,6 +75,7 @@ const zhHant = {
     importZpl: '匯入 ZPL',
     exportZpl: '匯出 ZPL',
     newDesign: '新增設計',
+    addPage: '新增頁面',
     openDesign: '開啟設計',
     saveDesign: '儲存設計',
     print: '列印為圖片（瀏覽器）',

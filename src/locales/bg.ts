@@ -75,6 +75,7 @@ const bg = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Нов дизайн',
+    addPage: 'Добавяне на страница',
     openDesign: 'Отвори дизайн',
     saveDesign: 'Запази дизайн',
     print: 'Печат като изображение (браузър)',

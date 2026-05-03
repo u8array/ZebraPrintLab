@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { XMarkIcon, ArrowDownTrayIcon } from '@heroicons/react/16/solid';
-import { useLabelStore } from '../../store/labelStore';
+import { useLabelStore, useCurrentObjects } from '../../store/labelStore';
 import { generateZPL } from '../../lib/zplGenerator';
 import { fetchPreview, labelaryErrorMessage } from '../../lib/labelary';
 import { triggerDownload } from '../../lib/triggerDownload';
@@ -13,7 +13,8 @@ interface Props {
 
 export function LabelPreviewModal({ onClose }: Props) {
   const t = useT();
-  const { label, objects } = useLabelStore();
+  const label = useLabelStore((s) => s.label);
+  const objects = useCurrentObjects();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

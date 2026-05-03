@@ -2,6 +2,15 @@ import { mmToDots } from './coordinates';
 import { ObjectRegistry } from '../registry';
 import type { LabelConfig } from '../types/ObjectType';
 import type { LabelObject } from '../registry';
+import type { Page } from '../store/labelStore';
+
+/**
+ * Concatenates `generateZPL` output for every page. Each page becomes its own
+ * `^XA...^XZ` block; printers process the blocks as separate labels.
+ */
+export function generateMultiPageZPL(label: LabelConfig, pages: Page[]): string {
+  return pages.map((p) => generateZPL(label, p.objects)).join('\n');
+}
 
 export function generateZPL(label: LabelConfig, objects: LabelObject[]): string {
   const widthDots = mmToDots(label.widthMm, label.dpmm);

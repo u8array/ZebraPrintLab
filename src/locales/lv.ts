@@ -75,6 +75,7 @@ const lv = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Jauns dizains',
+    addPage: 'Pievienot lapu',
     openDesign: 'Atvērt dizainu',
     saveDesign: 'Saglabāt dizainu',
     print: 'Drukāt kā attēlu (pārlūks)',

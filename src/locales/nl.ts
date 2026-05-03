@@ -75,6 +75,7 @@ const nl = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Nieuw ontwerp',
+    addPage: 'Pagina toevoegen',
     openDesign: 'Ontwerp openen',
     saveDesign: 'Ontwerp opslaan',
     print: 'Afdrukken als afbeelding (browser)',

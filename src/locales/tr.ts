@@ -75,6 +75,7 @@ const tr = {
     importZpl: 'ZPL İçe Aktar',
     exportZpl: 'ZPL Dışa Aktar',
     newDesign: 'Yeni Tasarım',
+    addPage: 'Sayfa ekle',
     openDesign: 'Tasarım Aç',
     saveDesign: 'Tasarım Kaydet',
     print: 'Görüntü olarak yazdır (tarayıcı)',

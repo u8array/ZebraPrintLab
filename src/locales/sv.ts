@@ -75,6 +75,7 @@ const sv = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Nytt design',
+    addPage: 'Lägg till sida',
     openDesign: 'Öppna design',
     saveDesign: 'Spara design',
     print: 'Skriv ut som bild (webbläsare)',

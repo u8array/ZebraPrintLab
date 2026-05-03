@@ -75,6 +75,7 @@ const lt = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Naujas dizainas',
+    addPage: 'Pridėti puslapį',
     openDesign: 'Atidaryti dizainą',
     saveDesign: 'Išsaugoti dizainą',
     print: 'Spausdinti kaip vaizdą (naršyklė)',

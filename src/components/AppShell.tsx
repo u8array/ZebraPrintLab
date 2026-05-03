@@ -20,6 +20,7 @@ import {
   ArrowUpTrayIcon,
   ArrowDownTrayIcon,
   DocumentPlusIcon,
+  DocumentDuplicateIcon,
   FolderOpenIcon,
   DocumentArrowDownIcon,
   PrinterIcon,
@@ -40,8 +41,9 @@ import { useOutputPanel, OUTPUT_DEFAULT_H } from "../hooks/useOutputPanel";
 export function AppShell() {
   const t = useT();
   const label = useLabelStore((s) => s.label);
-  const objects = useLabelStore((s) => s.objects);
+  const pages = useLabelStore((s) => s.pages);
   const selectObject = useLabelStore((s) => s.selectObject);
+  const addPage = useLabelStore((s) => s.addPage);
   const locale = useLabelStore((s) => s.locale);
   const setLocale = useLabelStore((s) => s.setLocale);
   const { undo, redo, pastStates, futureStates } = useHistory();
@@ -52,7 +54,7 @@ export function AppShell() {
 
   const canUndo = pastStates.length > 0;
   const canRedo = futureStates.length > 0;
-  const hasObjects = objects.length > 0;
+  const hasObjects = pages.some((p) => p.objects.length > 0);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -146,6 +148,9 @@ export function AppShell() {
           <DropdownMenu label={t.app.file}>
             <DropdownItem icon={DocumentPlusIcon} onClick={handleNew}>
               {t.app.newDesign}
+            </DropdownItem>
+            <DropdownItem icon={DocumentDuplicateIcon} onClick={addPage}>
+              {t.app.addPage}
             </DropdownItem>
             <DropdownSeparator />
             <DropdownItem icon={ArrowUpTrayIcon} onClick={openZplImport}>

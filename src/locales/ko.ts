@@ -75,6 +75,7 @@ const ko = {
     importZpl: 'ZPL 가져오기',
     exportZpl: 'ZPL 내보내기',
     newDesign: '새 디자인',
+    addPage: '페이지 추가',
     openDesign: '디자인 열기',
     saveDesign: '디자인 저장',
     print: '이미지로 인쇄 (브라우저)',

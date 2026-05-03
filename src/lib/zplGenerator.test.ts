@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateZPL } from './zplGenerator';
+import { generateZPL, generateMultiPageZPL } from './zplGenerator';
 import { parseZPL } from './zplParser';
 import type { LabelConfig } from '../types/ObjectType';
 import { defined, props } from '../test/helpers';
@@ -86,6 +86,34 @@ describe('generateZPL — code128 object', () => {
     const zpl = generateZPL(BASE_LABEL, objects);
     expect(zpl).toContain('^BC');
     expect(zpl).toContain('^FD12345678^FS');
+  });
+});
+
+describe('generateMultiPageZPL', () => {
+  it('emits one ^XA…^XZ block per page', () => {
+    const zpl = generateMultiPageZPL(BASE_LABEL, [{ objects: [] }, { objects: [] }]);
+    const matches = zpl.match(/\^XA/g) ?? [];
+    expect(matches.length).toBe(2);
+    expect(zpl.match(/\^XZ/g)?.length).toBe(2);
+  });
+
+  it('returns a single ^XA…^XZ block for a single page', () => {
+    const zpl = generateMultiPageZPL(BASE_LABEL, [{ objects: [] }]);
+    expect(zpl.match(/\^XA/g)?.length).toBe(1);
+    expect(zpl.startsWith('^XA')).toBe(true);
+    expect(zpl.endsWith('^XZ')).toBe(true);
+  });
+
+  it('returns an empty string when given an empty page list', () => {
+    expect(generateMultiPageZPL(BASE_LABEL, [])).toBe('');
+  });
+
+  it('preserves per-page objects', () => {
+    const { objects: page1 } = parseZPL('^XA^FO10,20^A0N,30,0^FDOne^FS^XZ', 8);
+    const { objects: page2 } = parseZPL('^XA^FO50,60^A0N,30,0^FDTwo^FS^XZ', 8);
+    const zpl = generateMultiPageZPL(BASE_LABEL, [{ objects: page1 }, { objects: page2 }]);
+    expect(zpl).toContain('^FDOne^FS');
+    expect(zpl).toContain('^FDTwo^FS');
   });
 });
 
