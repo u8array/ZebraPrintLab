@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CheckIcon, ClipboardDocumentIcon, ChevronDownIcon, ChevronUpIcon, EyeIcon } from '@heroicons/react/16/solid';
-import { useLabelStore } from '../../store/labelStore';
+import { useLabelStore, useCurrentObjects } from '../../store/labelStore';
 import { generateZPL } from '../../lib/zplGenerator';
 import { useT } from '../../lib/useT';
 import { LabelPreviewModal } from './LabelPreview';
@@ -13,7 +13,8 @@ interface Props {
 
 export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
   const t = useT();
-  const { label, objects } = useLabelStore();
+  const label = useLabelStore((s) => s.label);
+  const objects = useCurrentObjects();
   const [copied, setCopied] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 

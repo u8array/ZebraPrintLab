@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLabelStore } from "../store/labelStore";
+import { useLabelStore, useCurrentObjects } from "../store/labelStore";
 import { generateZPL } from "../lib/zplGenerator";
 import { printLabel } from "../lib/printPreview";
 import { triggerDownload } from "../lib/triggerDownload";
@@ -7,7 +7,7 @@ import { labelaryErrorMessage } from "../lib/labelary";
 
 export function useZplImportExport() {
   const label = useLabelStore((s) => s.label);
-  const objects = useLabelStore((s) => s.objects);
+  const objects = useCurrentObjects();
   const [showZplImport, setShowZplImport] = useState(false);
   const [showZebraPrint, setShowZebraPrint] = useState(false);
   const [printError, setPrintError] = useState<string | null>(null);

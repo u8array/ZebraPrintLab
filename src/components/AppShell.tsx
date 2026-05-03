@@ -27,7 +27,7 @@ import {
   GlobeAltIcon,
   XMarkIcon,
 } from "@heroicons/react/16/solid";
-import { useLabelStore, useHistory } from "../store/labelStore";
+import { useLabelStore, useHistory, useCurrentObjects } from "../store/labelStore";
 import { localeNames } from "../locales";
 import type { LocaleCode } from "../locales";
 import { mmToUnit } from "../lib/units";
@@ -40,7 +40,7 @@ import { useOutputPanel, OUTPUT_DEFAULT_H } from "../hooks/useOutputPanel";
 export function AppShell() {
   const t = useT();
   const label = useLabelStore((s) => s.label);
-  const objects = useLabelStore((s) => s.objects);
+  const objects = useCurrentObjects();
   const selectObject = useLabelStore((s) => s.selectObject);
   const locale = useLabelStore((s) => s.locale);
   const setLocale = useLabelStore((s) => s.setLocale);

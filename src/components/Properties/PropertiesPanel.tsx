@@ -1,4 +1,4 @@
-import { useLabelStore } from "../../store/labelStore";
+import { useLabelStore, useCurrentObjects } from "../../store/labelStore";
 import { ObjectRegistry } from "../../registry";
 import { dotsToMm, mmToDots } from "../../lib/coordinates";
 import {
@@ -16,7 +16,6 @@ import type { LabelConfig } from "../../types/ObjectType";
 export function PropertiesPanel() {
   const t = useT();
   const {
-    objects,
     selectedIds,
     updateObject,
     label,
@@ -24,6 +23,7 @@ export function PropertiesPanel() {
     canvasSettings,
     setCanvasSettings,
   } = useLabelStore();
+  const objects = useCurrentObjects();
   const unit = canvasSettings.unit;
   const obj = objects.find((o) => o.id === selectedIds[0]);
 

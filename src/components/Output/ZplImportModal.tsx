@@ -33,7 +33,7 @@ export function ZplImportModal({ onClose }: Props) {
       return;
     }
 
-    loadDesign({ ...label, ...labelConfig }, parsedObjects);
+    loadDesign({ ...label, ...labelConfig }, [{ objects: parsedObjects }]);
     setResult({ objectCount: parsedObjects.length, report });
   };
 
@@ -57,7 +57,7 @@ export function ZplImportModal({ onClose }: Props) {
     }
 
     const { labelConfig, objects: parsedObjects, report } = importZplText(text, label.dpmm);
-    loadDesign({ ...label, ...labelConfig }, parsedObjects);
+    loadDesign({ ...label, ...labelConfig }, [{ objects: parsedObjects }]);
     setResult({ objectCount: parsedObjects.length, report });
   };
 

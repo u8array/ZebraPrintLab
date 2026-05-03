@@ -8,7 +8,7 @@ import { useDroppable, useDndMonitor } from "@dnd-kit/core";
 import type { PaletteDragData } from "../../dnd/types";
 import { Stage, Layer, Group, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
-import { useLabelStore } from "../../store/labelStore";
+import { useLabelStore, useCurrentObjects, currentObjects } from "../../store/labelStore";
 import { pxToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
 import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
@@ -85,7 +85,6 @@ export function LabelCanvas({
 
   const {
     label,
-    objects,
     selectedIds,
     addObject,
     updateObject,
@@ -94,6 +93,7 @@ export function LabelCanvas({
     toggleSelectObject,
     selectObjects,
   } = useLabelStore();
+  const objects = useCurrentObjects();
 
   useEffect(() => {
     const el = containerRef.current;
@@ -131,7 +131,9 @@ export function LabelCanvas({
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
-      const { selectedIds: ids, objects: objs } = useLabelStore.getState();
+      const state = useLabelStore.getState();
+      const ids = state.selectedIds;
+      const objs = currentObjects(state);
       if (ids.length === 0) return;
       e.preventDefault();
 
@@ -269,7 +271,9 @@ export function LabelCanvas({
     // Multi-select: propagate position delta to all other selected objects.
     // Read fresh state (getState) to avoid stale closure when multiple DragEnd events
     // fire simultaneously during a Transformer group drag.
-    const { selectedIds: selIds, objects: currentObjs } = useLabelStore.getState();
+    const state = useLabelStore.getState();
+    const selIds = state.selectedIds;
+    const currentObjs = currentObjects(state);
     if (
       selIds.length > 1 &&
       selIds.includes(id) &&
@@ -303,7 +307,7 @@ export function LabelCanvas({
     const objId = node.id();
     if (!objId || !stageRef.current) return;
 
-    const { objects: objs } = useLabelStore.getState();
+    const objs = currentObjects(useLabelStore.getState());
     const obj = objs.find((o) => o.id === objId);
     if (!obj) return;
 

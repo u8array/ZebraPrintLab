@@ -1,18 +1,18 @@
 import { useRef, useState } from "react";
-import { useLabelStore } from "../store/labelStore";
+import { useLabelStore, useCurrentObjects } from "../store/labelStore";
 import { triggerDownload } from "../lib/triggerDownload";
 import { parseDesignFile, serializeDesign, designFileErrors } from "../lib/designFile";
 import { readFileAsText } from "../lib/readFile";
 
 export function useDesignFileActions() {
   const label = useLabelStore((s) => s.label);
-  const objects = useLabelStore((s) => s.objects);
+  const objects = useCurrentObjects();
   const loadDesign = useLabelStore((s) => s.loadDesign);
   const [loadError, setLoadError] = useState<string | null>(null);
   const loadInputRef = useRef<HTMLInputElement>(null);
 
   const handleNew = () => {
-    loadDesign({ widthMm: 100, heightMm: 60, dpmm: 8 }, []);
+    loadDesign({ widthMm: 100, heightMm: 60, dpmm: 8 }, [{ objects: [] }]);
   };
 
   const handleSave = () => {
@@ -40,7 +40,7 @@ export function useDesignFileActions() {
     }
 
     setLoadError(null);
-    loadDesign(result.value.label, result.value.objects);
+    loadDesign(result.value.label, [{ objects: result.value.objects }]);
   };
 
   return {
