@@ -1,12 +1,12 @@
 import { useRef, useState } from "react";
-import { useLabelStore, useCurrentObjects } from "../store/labelStore";
+import { useLabelStore } from "../store/labelStore";
 import { triggerDownload } from "../lib/triggerDownload";
 import { parseDesignFile, serializeDesign, designFileErrors } from "../lib/designFile";
 import { readFileAsText } from "../lib/readFile";
 
 export function useDesignFileActions() {
   const label = useLabelStore((s) => s.label);
-  const objects = useCurrentObjects();
+  const pages = useLabelStore((s) => s.pages);
   const loadDesign = useLabelStore((s) => s.loadDesign);
   const [loadError, setLoadError] = useState<string | null>(null);
   const loadInputRef = useRef<HTMLInputElement>(null);
@@ -16,7 +16,7 @@ export function useDesignFileActions() {
   };
 
   const handleSave = () => {
-    const data = serializeDesign(label, objects);
+    const data = serializeDesign(label, pages);
     triggerDownload(new Blob([data], { type: "application/json" }), "label.json");
   };
 
@@ -40,7 +40,7 @@ export function useDesignFileActions() {
     }
 
     setLoadError(null);
-    loadDesign(result.value.label, [{ objects: result.value.objects }]);
+    loadDesign(result.value.label, result.value.pages);
   };
 
   return {
