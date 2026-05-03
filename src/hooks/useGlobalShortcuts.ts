@@ -2,9 +2,7 @@ import { useEffect } from "react";
 import { useLabelStore, useHistory } from "../store/labelStore";
 
 export function useGlobalShortcuts() {
-  const duplicateSelectedObjects = useLabelStore(
-    (s) => s.duplicateSelectedObjects,
-  );
+  const duplicateSelectedObjects = useLabelStore((s) => s.duplicateSelectedObjects);
   const copySelectedObjects = useLabelStore((s) => s.copySelectedObjects);
   const pasteObjects = useLabelStore((s) => s.pasteObjects);
   const selectObjects = useLabelStore((s) => s.selectObjects);
@@ -47,26 +45,14 @@ export function useGlobalShortcuts() {
       }
       if (e.code === "KeyG") {
         e.preventDefault();
-        setCanvasSettings({
-          showGrid: !useLabelStore.getState().canvasSettings.showGrid,
-        });
+        setCanvasSettings({ showGrid: !useLabelStore.getState().canvasSettings.showGrid });
       }
       if (e.code === "KeyS") {
         e.preventDefault();
-        setCanvasSettings({
-          snapEnabled: !useLabelStore.getState().canvasSettings.snapEnabled,
-        });
+        setCanvasSettings({ snapEnabled: !useLabelStore.getState().canvasSettings.snapEnabled });
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [
-    undo,
-    redo,
-    duplicateSelectedObjects,
-    copySelectedObjects,
-    pasteObjects,
-    selectObjects,
-    setCanvasSettings,
-  ]);
+  }, [undo, redo, duplicateSelectedObjects, copySelectedObjects, pasteObjects, selectObjects, setCanvasSettings]);
 }
