@@ -55,7 +55,10 @@ export function LabelCanvas({
   const transformerRef = useRef<Konva.Transformer>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [viewRotation, setViewRotation] = useState<0 | 90 | 180 | 270>(0);
-  const rotateView = () => setViewRotation((r) => ((r + 90) % 360) as 0 | 90 | 180 | 270);
+  const rotateView = () => {
+    selectObjects([]);
+    setViewRotation((r) => ((r + 90) % 360) as 0 | 90 | 180 | 270);
+  };
   const [guides, setGuides] = useState<SnapGuide[]>([]);
   const [ghost, setGhost] = useState<LabelObject | null>(null);
 
@@ -382,7 +385,7 @@ export function LabelCanvas({
   return (
     <div
       ref={mergedRef}
-      className="w-full h-full relative overflow-hidden"
+      className="w-full h-full relative"
       style={{
         background: colors.canvasBg,
         backgroundImage: `radial-gradient(circle, ${colors.canvasDot} 1px, transparent 1px)`,
@@ -453,14 +456,6 @@ export function LabelCanvas({
           <span className="font-mono text-[10px] text-accent w-6 text-center">{viewRotation}°</span>
         )}
       </div>
-      <div
-        style={{
-          transform: viewRotation !== 0 ? `rotate(${viewRotation}deg)` : undefined,
-          transformOrigin: "center center",
-          transition: "transform 0.25s ease",
-          pointerEvents: viewRotation !== 0 ? "none" : undefined,
-        }}
-      >
       {containerSize.width > 0 && (
         <Stage
           ref={stageRef}
@@ -477,65 +472,80 @@ export function LabelCanvas({
         >
           {/* Object layer */}
           <Layer>
-            {/* Label surface */}
-            <Rect
-              x={labelOffsetX}
-              y={labelOffsetY}
-              width={labelWidthPx}
-              height={labelHeightPx}
-              fill="white"
-              shadowColor="rgba(0,0,0,0.4)"
-              shadowBlur={12}
-              shadowOffsetY={2}
-              onClick={() => selectObjects([])}
-            />
-
-            {showGrid && (
-              <Grid
-                labelOffsetX={labelOffsetX}
-                labelOffsetY={labelOffsetY}
-                labelWidthPx={labelWidthPx}
-                labelHeightPx={labelHeightPx}
-                scale={scale}
-                snapSizeMm={snapSizeMm}
-                colors={colors}
+            {/*
+             * Rotation pivot: x=offsetX=labelCenterX ensures group-local coords
+             * equal screen coords at 0°, so all coordinate math (onTransformEnd,
+             * pointerToLabelDots) stays valid without changes.
+             */}
+            <Group
+              x={labelOffsetX + labelWidthPx / 2}
+              y={labelOffsetY + labelHeightPx / 2}
+              rotation={viewRotation}
+              offsetX={labelOffsetX + labelWidthPx / 2}
+              offsetY={labelOffsetY + labelHeightPx / 2}
+              listening={viewRotation === 0}
+            >
+              <Rect
+                x={labelOffsetX}
+                y={labelOffsetY}
+                width={labelWidthPx}
+                height={labelHeightPx}
+                fill="white"
+                shadowColor="rgba(0,0,0,0.4)"
+                shadowBlur={12}
+                shadowOffsetY={2}
+                onClick={() => selectObjects([])}
               />
-            )}
 
-            {objects.map((obj) => (
-              <KonvaObject
-                key={obj.id}
-                obj={obj}
-                scale={scale}
-                dpmm={label.dpmm}
-                offsetX={objectsOffsetX}
-                offsetY={labelOffsetY}
-                isSelected={selectedIds.includes(obj.id)}
-                onSelect={(add) =>
-                  add ? toggleSelectObject(obj.id) : selectObject(obj.id)
-                }
-                onChange={(changes) => handleObjectChange(obj.id, changes)}
-                snap={snap}
-              />
-            ))}
-
-            {ghost && (
-              <Group opacity={0.5} listening={false}>
-                <KonvaObject
-                  obj={ghost}
+              {showGrid && (
+                <Grid
+                  labelOffsetX={labelOffsetX}
+                  labelOffsetY={labelOffsetY}
+                  labelWidthPx={labelWidthPx}
+                  labelHeightPx={labelHeightPx}
                   scale={scale}
+                  snapSizeMm={snapSizeMm}
+                  colors={colors}
+                />
+              )}
+
+              {objects.map((obj) => (
+                <KonvaObject
+                  key={obj.id}
+                  obj={obj}
+                  scale={scale}
+                  dpmm={label.dpmm}
                   offsetX={objectsOffsetX}
                   offsetY={labelOffsetY}
-                  isSelected={false}
-                  onSelect={() => { /* ghost */ }}
-                  onChange={() => { /* ghost */ }}
+                  isSelected={selectedIds.includes(obj.id)}
+                  onSelect={(add) =>
+                    add ? toggleSelectObject(obj.id) : selectObject(obj.id)
+                  }
+                  onChange={(changes) => handleObjectChange(obj.id, changes)}
                   snap={snap}
-                  dpmm={label.dpmm}
                 />
-              </Group>
-            )}
+              ))}
 
-            {lassoRect && (
+              {ghost && (
+                <Group opacity={0.5} listening={false}>
+                  <KonvaObject
+                    obj={ghost}
+                    scale={scale}
+                    offsetX={objectsOffsetX}
+                    offsetY={labelOffsetY}
+                    isSelected={false}
+                    onSelect={() => { /* ghost */ }}
+                    onChange={() => { /* ghost */ }}
+                    snap={snap}
+                    dpmm={label.dpmm}
+                  />
+                </Group>
+              )}
+            </Group>
+
+            {/* Lasso, guides and transformer stay outside the rotated group
+                (screen-space coordinates, interaction only at 0°) */}
+            {viewRotation === 0 && lassoRect && (
               <Rect
                 x={lassoRect.x}
                 y={lassoRect.y}
@@ -562,23 +572,24 @@ export function LabelCanvas({
             />
           </Layer>
 
-          {/* Ruler — topmost layer, always covers everything */}
-          <Layer listening={false}>
-            <Ruler
-              labelOffsetX={labelOffsetX}
-              labelOffsetY={labelOffsetY}
-              labelWidthMm={effectiveWidthMm}
-              labelHeightMm={label.heightMm}
-              scale={scale}
-              canvasWidth={containerSize.width}
-              canvasHeight={containerSize.height}
-              unit={unit}
-              colors={colors}
-            />
-          </Layer>
+          {/* Ruler — topmost layer; hidden during rotation (axes would be swapped) */}
+          {viewRotation === 0 && (
+            <Layer listening={false}>
+              <Ruler
+                labelOffsetX={labelOffsetX}
+                labelOffsetY={labelOffsetY}
+                labelWidthMm={effectiveWidthMm}
+                labelHeightMm={label.heightMm}
+                scale={scale}
+                canvasWidth={containerSize.width}
+                canvasHeight={containerSize.height}
+                unit={unit}
+                colors={colors}
+              />
+            </Layer>
+          )}
         </Stage>
       )}
-      </div>
     </div>
   );
 }
