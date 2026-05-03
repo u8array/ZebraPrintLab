@@ -4,9 +4,9 @@
 
 [![Deploy](https://github.com/u8array/ZebraPrintLab/actions/workflows/deploy.yml/badge.svg)](https://github.com/u8array/ZebraPrintLab/actions/workflows/deploy.yml)
 
-Browser-based label authoring tool for Zebra printers. No software to install.
+A browser-based visual editor that generates ZPL for Zebra printers.
 
-Design labels visually and export the ZPL output to your printer. No knowledge of ZPL required.
+Writing ZPL by hand is tedious: cryptic commands, dot coordinates, no visual feedback until something comes out of the printer. Zebra Print Lab lets you build labels visually instead. Drag elements onto the canvas, tweak them in the properties panel, then copy or download the ZPL. No installation, no ZPL knowledge required.
 
 **[Try it](https://u8array.github.io/ZebraPrintLab/)** · [Report an issue](https://github.com/u8array/ZebraPrintLab/issues)
 
@@ -30,7 +30,16 @@ The print resolution (dpmm = dots per millimeter) must match your printer. Commo
 
 Drag items from the left panel onto the canvas, or double-click them to add at the center.
 
-Available objects: text, serial (auto-incrementing number fields), barcodes (Code 128, Code 39, Code 93, Code 11, Interleaved 2 of 5, Standard 2 of 5, Industrial 2 of 5, Codabar, LOGMARS, MSI, Plessey, GS1 Databar, Planet Code, Postal/POSTNET, EAN-13, EAN-8, UPC-A, UPC-E, QR Code, DataMatrix, PDF417, MicroPDF417, Aztec, Codablock F), shapes (box, line, ellipse), and images.
+Available objects: text, serial (auto-incrementing number fields), barcodes (24 symbologies including Code 128, QR, DataMatrix, PDF417), shapes (box, line, ellipse), and images.
+
+<details>
+<summary>Full list of supported barcode symbologies</summary>
+
+**1D linear:** Code 128, Code 39, Code 93, Code 11, Interleaved 2 of 5, Standard 2 of 5, Industrial 2 of 5, Codabar, LOGMARS, MSI, Plessey, GS1 Databar, Planet Code, Postal/POSTNET, EAN-13, EAN-8, UPC-A, UPC-E
+
+**2D matrix:** QR Code, DataMatrix, PDF417, MicroPDF417, Aztec, Codablock F
+
+</details>
 
 ### 3. Edit properties
 
@@ -40,9 +49,9 @@ Multiple objects can be selected by holding Shift or drawing a lasso. Position a
 
 ### 4. Print or export
 
-The **ZPL output** panel at the bottom shows the label as ZPL code (the language Zebra printers understand). It updates in real time as you edit.
+The **ZPL output** panel at the bottom shows the generated ZPL. It updates in real time as you edit.
 
-- **Copy**: copies the ZPL to the clipboard; paste it into your printer software or send it directly to the printer
+- **Copy**: copies the ZPL to the clipboard; paste it into your printer software or send it straight to the printer
 - **Preview**: fetches a rendered preview image from [Labelary](https://labelary.com/)
 - **Export**: downloads a `.zpl` file (File menu)
 - **Print**: opens the Labelary preview and triggers the browser print dialog
@@ -51,21 +60,9 @@ The **ZPL output** panel at the bottom shows the label as ZPL code (the language
 
 File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 
-> **Round-trip semantics:** Import produces an editable reconstruction of the label, not an exact replica. ZPL encodes printer-side state (font tables, downloaded graphics, exact dot positioning) that has no direct equivalent in the visual model. Simple labels (especially those originally authored in this tool) import cleanly. Complex or machine-generated ZPL may import partially or lose fidelity. The import report lists any commands that were skipped or approximated.
->
-> Use **Save design (.json)** to preserve a lossless, fully editable copy. `.zpl` is a printer output format, not a design source format.
+> Import is best-effort: simple labels (especially those originally created in this tool) come back cleanly, complex or machine-generated ones may lose detail. Use **Save design (.json)** to keep a fully editable copy. `.zpl` is a printer output format, not a design source.
 
-The parser covers the most common ZPL II commands:
-
-- **Text:** `^A0`, `^A*` (all bitmap fonts), `^A@` (TrueType, best-effort sizing), `^CF`, `^FW`, `^FB` (field block, including `\&` line breaks), `^TB`, `^FH` (hex escapes)
-- **Barcodes:** Code 128, Code 39, Code 93, Code 11, Interleaved 2 of 5, Standard 2 of 5, Industrial 2 of 5, Codabar, LOGMARS, MSI, Plessey, GS1 Databar, Planet Code, Postal/POSTNET, EAN-13, EAN-8, UPC-A, UPC-E, QR Code, DataMatrix, PDF417, MicroPDF417, Aztec, Codablock F
-- **Serialization:** `^SN`, `^SF` (imported as serial objects)
-- **Graphics:** `^GB` (box/line), `^GE` (ellipse), `^GC` (circle), `^GD` (diagonal line), `^GFA` (bitmap image, including compressed data)
-- **Layout:** `^FO` (including justification parameter), `^FT`, `^LH`, `^PW`, `^LL`, `^BY`
-- **Print settings:** `^PQ`, `^MM`, `^LS`
-- **Modifiers:** `^LR` (label reverse), `^FR` (field reverse)
-
-Unrecognized commands are skipped and listed in the import report.
+The parser covers the most common ZPL commands. Anything it doesn't recognize is skipped and listed in the import report.
 
 ### Keyboard shortcuts
 
@@ -85,17 +82,13 @@ Unrecognized commands are skipped and listed in the import report.
 
 ### Saving and loading
 
-`.json` (File → Save Design) is the canonical design format. It preserves all object properties exactly and can be reopened as a fully editable design. `.zpl` is a printer output format: use it to send to a printer, not as a design source.
+Use `.json` (File → Save Design) to save your work. It preserves every object exactly and can be reopened as a fully editable design. `.zpl` is a printer output format: use it to send to a printer, not to save your design.
 
 ---
 
 ## Features
 
-- Drag and resize objects on the canvas
-- Multi-select with lasso or Shift-click
-- Grid with configurable snap; smart alignment and spacing guides
-- Undo / redo history
-- Copy / paste
+- Smart alignment and spacing guides
 - Layers panel with reordering
 - 32 UI languages (auto-detected from browser)
 - Light / dark mode (follows OS setting)
@@ -107,7 +100,7 @@ Unrecognized commands are skipped and listed in the import report.
 - ZPL import covers the most common commands but not the full ZPL II command set. Labels using printer-stored images, downloaded graphics, or printer-specific extensions may not import completely.
 - Font rendering on the canvas is an approximation of what the printer produces. Use the Labelary preview for accurate output.
 - Label preview requires a connection to `api.labelary.com`.
-- No support for multi-label documents (`^XA...^XZ` repeated).
+- No support for multi-label documents (multiple labels in one file).
 
 ---
 
