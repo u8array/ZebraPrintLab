@@ -24,6 +24,7 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
     color: 'B',
   },
   defaultSize: { width: 150, height: 100 },
+  nodeOrigin: 'center',
 
   commitTransform: commitWidthHeightTransform,
 
