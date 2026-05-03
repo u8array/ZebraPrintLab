@@ -55,10 +55,7 @@ export function LabelCanvas({
   const transformerRef = useRef<Konva.Transformer>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [viewRotation, setViewRotation] = useState<0 | 90 | 180 | 270>(0);
-  const rotateView = () => {
-    selectObjects([]);
-    setViewRotation((r) => ((r + 90) % 360) as 0 | 90 | 180 | 270);
-  };
+  const rotateView = () => setViewRotation((r) => ((r + 90) % 360) as 0 | 90 | 180 | 270);
   const [guides, setGuides] = useState<SnapGuide[]>([]);
   const [ghost, setGhost] = useState<LabelObject | null>(null);
 
@@ -507,12 +504,11 @@ export function LabelCanvas({
              * pointerToLabelDots) stays valid without changes.
              */}
             <Group
-              x={labelOffsetX + labelWidthPx / 2}
-              y={labelOffsetY + labelHeightPx / 2}
+              x={labelCenterX}
+              y={labelCenterY}
               rotation={viewRotation}
-              offsetX={labelOffsetX + labelWidthPx / 2}
-              offsetY={labelOffsetY + labelHeightPx / 2}
-              listening={viewRotation === 0}
+              offsetX={labelCenterX}
+              offsetY={labelCenterY}
             >
               <Rect
                 x={labelOffsetX}
