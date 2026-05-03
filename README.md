@@ -76,6 +76,7 @@ The parser covers the most common ZPL commands. Anything it doesn't recognize is
 | `G` | Toggle grid |
 | `S` | Toggle snap |
 | `R` | Rotate view (0° → 90° → 180° → 270°) |
+| `Page Up` / `Page Down` | Previous / Next page |
 | Middle mouse / Space+drag | Pan canvas |
 | Scroll | Pan canvas |
 | Ctrl+Scroll | Zoom |

@@ -24,6 +24,7 @@ import { useColorScheme } from "../../lib/useColorScheme";
 import { useCanvasPanZoom } from "./hooks/useCanvasPanZoom";
 import { useCanvasLasso } from "./hooks/useCanvasLasso";
 import { useKonvaTransformer } from "./hooks/useKonvaTransformer";
+import { PaginationControl } from "./PaginationControl";
 import {
   axisReversal,
   inverseRotateDelta,
@@ -441,6 +442,8 @@ export function LabelCanvas({
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
+      <PaginationControl />
+
       {/* Bottom-right controls: view options + zoom */}
       <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 bg-surface border border-border rounded px-1 py-0.5">
         <button
