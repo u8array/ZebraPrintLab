@@ -3,6 +3,8 @@ import {
   snapBoxHeight,
   pinBottomEdge,
   isTopAnchorResize,
+  transformNodeTopLeft,
+  transformPositionMoved,
 } from "./transformerGeometry";
 
 describe("snapBoxHeight", () => {
@@ -53,5 +55,41 @@ describe("isTopAnchorResize", () => {
 
   it("returns false on bottom-anchor resize (y unchanged)", () => {
     expect(isTopAnchorResize(oldBox, { ...oldBox, height: 80 }, 1)).toBe(false);
+  });
+});
+
+describe("transformNodeTopLeft", () => {
+  it("passes top-left-anchored nodes through unchanged", () => {
+    // Rect / Image / Text use their top-left as the Konva origin.
+    const result = transformNodeTopLeft(100, 50, 200, 100, 1.5, 1, false);
+    expect(result).toEqual({ x: 100, y: 50 });
+  });
+
+  it("subtracts half the visual size for center-anchored nodes (Ellipse)", () => {
+    // Ellipse with intrinsic size 100x80, scaled 2x in both axes.
+    // node.x()/y() are the center; visual radius = nodeSize * scale / 2.
+    const result = transformNodeTopLeft(200, 100, 100, 80, 2, 2, true);
+    expect(result).toEqual({ x: 100, y: 20 });
+  });
+
+  it("uses the captured (pre-reset) node size, not the post-reset one", () => {
+    // Even when scale is no longer 1 conceptually, the formula uses the
+    // intrinsic nodeWidth/nodeHeight times the scale to derive visual size.
+    const result = transformNodeTopLeft(150, 150, 50, 50, 4, 4, true);
+    expect(result.x).toBe(50); // 150 - (50 * 4) / 2 = 150 - 100
+    expect(result.y).toBe(50);
+  });
+});
+
+describe("transformPositionMoved", () => {
+  it("returns false when the position matches within one dot", () => {
+    expect(transformPositionMoved(100, 100)).toBe(false);
+    expect(transformPositionMoved(100.4, 100)).toBe(false);
+    expect(transformPositionMoved(99, 100)).toBe(false);
+  });
+
+  it("returns true once the delta exceeds one dot", () => {
+    expect(transformPositionMoved(102, 100)).toBe(true);
+    expect(transformPositionMoved(80, 100)).toBe(true);
   });
 });

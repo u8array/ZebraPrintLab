@@ -9,6 +9,8 @@ import {
   snapBoxHeight,
   pinBottomEdge,
   isTopAnchorResize,
+  transformNodeTopLeft,
+  transformPositionMoved,
   type BoundingBox,
 } from "../transformerGeometry";
 
@@ -130,6 +132,7 @@ export function useKonvaTransformer({
     if (!node) return;
     const sx = node.scaleX();
     const sy = node.scaleY();
+    const nodeWidth = node.width();
     const nodeHeight = node.height();
     node.scaleX(1);
     node.scaleY(1);
@@ -138,9 +141,23 @@ export function useKonvaTransformer({
       transformAnchorRef.current = null;
       return;
     }
+    const topLeft = transformNodeTopLeft(
+      node.x(),
+      node.y(),
+      nodeWidth,
+      nodeHeight,
+      sx,
+      sy,
+      obj.type === "ellipse",
+    );
+    const rawX = pxToDots(topLeft.x - objectsOffsetX, scale, dpmm);
+    const rawY = pxToDots(topLeft.y - labelOffsetY, scale, dpmm);
+    // Only apply snap to the position when the resize actually moved it
+    // (e.g. dragging the top-left handle). Anchored-corner drags must keep
+    // the original position so off-grid shapes don't snap as a side-effect.
     const pos = {
-      x: snap(pxToDots(node.x() - objectsOffsetX, scale, dpmm)),
-      y: snap(pxToDots(node.y() - labelOffsetY, scale, dpmm)),
+      x: transformPositionMoved(rawX, obj.x) ? snap(rawX) : obj.x,
+      y: transformPositionMoved(rawY, obj.y) ? snap(rawY) : obj.y,
     };
     const commit = ObjectRegistry[obj.type]?.commitTransform;
     if (commit) {

@@ -32,3 +32,38 @@ export function isTopAnchorResize(
 ): boolean {
   return Math.abs(newBox.y - oldBox.y) > thresholdPx;
 }
+
+/**
+ * Translate a transformed Konva node's coordinate into the model's top-left
+ * dot coordinate. Konva's Ellipse positions by its center; everything else
+ * by top-left. The visual radius after a Transformer drag is `nodeSize * s`
+ * because the node's intrinsic size is unchanged at this point — only the
+ * scale captured before reset reflects the post-drag dimensions.
+ */
+export function transformNodeTopLeft(
+  nodeX: number,
+  nodeY: number,
+  nodeWidth: number,
+  nodeHeight: number,
+  sx: number,
+  sy: number,
+  isCenterAnchored: boolean,
+): { x: number; y: number } {
+  const dx = isCenterAnchored ? (nodeWidth * sx) / 2 : 0;
+  const dy = isCenterAnchored ? (nodeHeight * sy) / 2 : 0;
+  return { x: nodeX - dx, y: nodeY - dy };
+}
+
+/**
+ * Decide whether the resize actually moved the object. When the user drags
+ * a handle whose opposite anchor is the top-left, the position is visually
+ * unchanged — applying snap to it would only pull off-grid shapes onto the
+ * grid as a side-effect of resizing. Tolerance is one dot to absorb float
+ * rounding from the screen-pixel <-> dot conversion.
+ */
+export function transformPositionMoved(
+  rawDots: number,
+  previousDots: number,
+): boolean {
+  return Math.abs(rawDots - previousDots) > 1;
+}
