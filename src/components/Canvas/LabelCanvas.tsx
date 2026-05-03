@@ -320,25 +320,31 @@ export function LabelCanvas({
       otherRects.push({ id: o.id, x: r.x, y: r.y, width: r.width, height: r.height });
     }
 
+    // Snap operates in stage (screen) space — getClientRect on rotated
+    // children already accounts for the Group transform, so the label rect
+    // must use visual bounds (not un-rotated labelOffset*).
     const labelRect = {
       id: "_lbl",
-      x: labelOffsetX,
-      y: labelOffsetY,
-      width: labelWidthPx,
-      height: labelHeightPx,
+      x: visualLabelX,
+      y: visualLabelY,
+      width: visualLabelWidthPx,
+      height: visualLabelHeightPx,
     };
 
     const result = computeSnap(
       draggedRect,
       otherRects,
       undefined,
-      { x: labelOffsetX, y: labelOffsetY, width: labelWidthPx, height: labelHeightPx },
+      { x: visualLabelX, y: visualLabelY, width: visualLabelWidthPx, height: visualLabelHeightPx },
       labelRect,
     );
-    const dx = result.x - dr.x;
-    const dy = result.y - dr.y;
-    if (dx !== 0 || dy !== 0) {
-      node.position({ x: node.x() + dx, y: node.y() + dy });
+    // result is in screen space; node.position() is in group-local space, so
+    // the delta needs inverse-rotation back into the un-rotated frame.
+    const screenDx = result.x - dr.x;
+    const screenDy = result.y - dr.y;
+    if (screenDx !== 0 || screenDy !== 0) {
+      const [localDx, localDy] = inverseRotateDelta(screenDx, screenDy, viewRotation);
+      node.position({ x: node.x() + localDx, y: node.y() + localDy });
     }
     setGuides(result.guides);
   };
@@ -577,16 +583,12 @@ export function LabelCanvas({
                   />
                 </Group>
               )}
-
-              {/* Snap guides are computed in un-rotated label space (same
-                  frame as the Group's local coords), so they belong inside
-                  the rotated Group to render correctly at any rotation. */}
-              <GuideLines guides={guides} />
             </Group>
 
-            {/* Lasso & Transformer stay in screen space outside the Group.
-                Lasso intersection uses getClientRect which respects the
-                rotation; the Transformer follows nodes through their
+            {/* Lasso, guides and Transformer live in screen space outside
+                the Group. Lasso intersection uses getClientRect which
+                respects the rotation; snap guides come from computeSnap in
+                stage pixels; the Transformer follows nodes through their
                 accumulated parent transform. */}
             {lassoRect && (
               <Rect
@@ -601,6 +603,8 @@ export function LabelCanvas({
                 listening={false}
               />
             )}
+
+            <GuideLines guides={guides} />
 
             <Transformer
               ref={transformerRef}
