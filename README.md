@@ -64,6 +64,14 @@ File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 
 The parser covers the most common ZPL commands. Anything it doesn't recognize is skipped and listed in the import report.
 
+Multi-label files (several `^XA...^XZ` blocks in one document) are split into separate pages on import; if the blocks have differing dimensions, the first one wins and the import report flags it.
+
+### Multiple labels (pages)
+
+Use the page control at the bottom-center of the canvas to add, switch, and remove pages. Each page is a separate label that shares the same dimensions and dpmm; export and copy emit one `^XA...^XZ` block per page, in order.
+
+Page Up / Page Down navigates between pages.
+
 ### Keyboard shortcuts
 
 | Shortcut | Action |
@@ -102,7 +110,7 @@ Use `.json` (File → Save Design) to save your work. It preserves every object 
 - The canvas is a design preview, not a pixel-perfect simulation: fonts and exact rendering may differ from what the printer produces. Shapes, spacing, and positions should match. For an accurate render, use the **Preview** in the bottom-right panel (powered by Labelary).
 - Label preview requires a connection to `api.labelary.com`.
 - The Labelary preview doesn't render every ZPL feature. Some less common elements (e.g. Codablock F barcodes) may be missing or wrong in the preview even when the actual print is fine.
-- No support for multi-label documents (multiple labels in one file).
+- The Labelary preview shows only the current page; the printed/exported ZPL still contains every page.
 
 ---
 
