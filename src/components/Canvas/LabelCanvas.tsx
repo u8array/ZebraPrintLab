@@ -24,6 +24,12 @@ import { useColorScheme } from "../../lib/useColorScheme";
 import { useCanvasPanZoom } from "./hooks/useCanvasPanZoom";
 import { useCanvasLasso } from "./hooks/useCanvasLasso";
 import { useKonvaTransformer } from "./hooks/useKonvaTransformer";
+import {
+  inverseRotateDelta,
+  isAxisSwapped as isViewAxisSwapped,
+  nextRotation,
+  type ViewRotation,
+} from "./rotationGeometry";
 
 const PADDING = 40;
 
@@ -54,8 +60,8 @@ export function LabelCanvas({
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [viewRotation, setViewRotation] = useState<0 | 90 | 180 | 270>(0);
-  const rotateView = () => setViewRotation((r) => ((r + 90) % 360) as 0 | 90 | 180 | 270);
+  const [viewRotation, setViewRotation] = useState<ViewRotation>(0);
+  const rotateView = () => setViewRotation(nextRotation);
   const [guides, setGuides] = useState<SnapGuide[]>([]);
   const [ghost, setGhost] = useState<LabelObject | null>(null);
 
@@ -131,8 +137,11 @@ export function LabelCanvas({
         : snapEnabled
           ? Math.round(snapSizeMm * label.dpmm)
           : 1;
-      const dx = e.code === "ArrowRight" ? step : e.code === "ArrowLeft" ? -step : 0;
-      const dy = e.code === "ArrowDown" ? step : e.code === "ArrowUp" ? -step : 0;
+      const screenDx = e.code === "ArrowRight" ? step : e.code === "ArrowLeft" ? -step : 0;
+      const screenDy = e.code === "ArrowDown" ? step : e.code === "ArrowUp" ? -step : 0;
+      // Map the visual screen direction to label coordinates so arrow keys
+      // always move the object the way the user sees it on the rotated view.
+      const [dx, dy] = inverseRotateDelta(screenDx, screenDy, viewRotation);
 
       updateObjects(
         ids.flatMap((sid) => {
@@ -143,7 +152,7 @@ export function LabelCanvas({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [snapEnabled, snapSizeMm, label.dpmm, updateObjects]);
+  }, [snapEnabled, snapSizeMm, label.dpmm, updateObjects, viewRotation]);
 
   // usable area after reserving space for the ruler
   const usableWidth = containerSize.width - RULER_SIZE;
@@ -155,11 +164,14 @@ export function LabelCanvas({
   const effectiveWidthMm = label.widthMm + labelShiftMm;
 
   // zoom=1 → 100% → physical label size on screen (96 dpi CSS convention).
-  // fitZoom is the multiplier that makes the label fill the current container.
+  // fitZoom is the multiplier that makes the visually-rotated label fill the
+  // container, so axes swap at 90°/270°.
+  const fitWidthMm = isViewAxisSwapped(viewRotation) ? label.heightMm : effectiveWidthMm;
+  const fitHeightMm = isViewAxisSwapped(viewRotation) ? effectiveWidthMm : label.heightMm;
   const fitZoom = usableWidth > 0 && usableHeight > 0
     ? Math.min(
-        (usableWidth - PADDING * 2) / (effectiveWidthMm * SCREEN_PX_PER_MM),
-        (usableHeight - PADDING * 2) / (label.heightMm * SCREEN_PX_PER_MM),
+        (usableWidth - PADDING * 2) / (fitWidthMm * SCREEN_PX_PER_MM),
+        (usableHeight - PADDING * 2) / (fitHeightMm * SCREEN_PX_PER_MM),
       )
     : 1;
 
@@ -199,13 +211,13 @@ export function LabelCanvas({
   // swaps width/height while the center stays put.
   const labelCenterX = labelOffsetX + labelWidthPx / 2;
   const labelCenterY = labelOffsetY + labelHeightPx / 2;
-  const isAxisSwapped = viewRotation === 90 || viewRotation === 270;
-  const visualLabelWidthPx = isAxisSwapped ? labelHeightPx : labelWidthPx;
-  const visualLabelHeightPx = isAxisSwapped ? labelWidthPx : labelHeightPx;
+  const axisSwapped = isViewAxisSwapped(viewRotation);
+  const visualLabelWidthPx = axisSwapped ? labelHeightPx : labelWidthPx;
+  const visualLabelHeightPx = axisSwapped ? labelWidthPx : labelHeightPx;
   const visualLabelX = labelCenterX - visualLabelWidthPx / 2;
   const visualLabelY = labelCenterY - visualLabelHeightPx / 2;
-  const rulerWidthMm = isAxisSwapped ? label.heightMm : effectiveWidthMm;
-  const rulerHeightMm = isAxisSwapped ? effectiveWidthMm : label.heightMm;
+  const rulerWidthMm = axisSwapped ? label.heightMm : effectiveWidthMm;
+  const rulerHeightMm = axisSwapped ? effectiveWidthMm : label.heightMm;
   const rulerHReversed = viewRotation === 90 || viewRotation === 180;
   const rulerVReversed = viewRotation === 180 || viewRotation === 270;
 
@@ -348,22 +360,15 @@ export function LabelCanvas({
   const pointerToLabelDots = (clientX: number, clientY: number) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return null;
-    let px = clientX - rect.left;
-    let py = clientY - rect.top;
-
-    // Apply inverse view rotation so the pointer maps to label coordinates
-    // even when the view is rotated. Rotates around the label center.
-    if (viewRotation !== 0) {
-      const dx = px - labelCenterX;
-      const dy = py - labelCenterY;
-      const [rx, ry] =
-        viewRotation === 90 ? [dy, -dx]
-        : viewRotation === 180 ? [-dx, -dy]
-        : [-dy, dx]; // 270
-      px = labelCenterX + rx;
-      py = labelCenterY + ry;
-    }
-
+    // Inverse-rotate the pointer around the label center so screen-space
+    // input maps back into the un-rotated label coordinate frame.
+    const [rx, ry] = inverseRotateDelta(
+      clientX - rect.left - labelCenterX,
+      clientY - rect.top - labelCenterY,
+      viewRotation,
+    );
+    const px = labelCenterX + rx;
+    const py = labelCenterY + ry;
     return {
       x: snap(pxToDots(px - objectsOffsetX, scale, label.dpmm)),
       y: snap(pxToDots(py - labelOffsetY, scale, label.dpmm)),
@@ -499,9 +504,11 @@ export function LabelCanvas({
           {/* Object layer */}
           <Layer>
             {/*
-             * Rotation pivot: x=offsetX=labelCenterX ensures group-local coords
-             * equal screen coords at 0°, so all coordinate math (onTransformEnd,
-             * pointerToLabelDots) stays valid without changes.
+             * Rotation pivot: x=offsetX=labelCenterX. At 0° this collapses to
+             * the identity (group-local = screen), and onTransformEnd stays
+             * valid because Konva keeps node.x()/y() in the group's local
+             * (un-rotated) frame during drags. Pointer input (pointerToLabelDots)
+             * is inverse-rotated explicitly since it bypasses Konva.
              */}
             <Group
               x={labelCenterX}
@@ -566,11 +573,17 @@ export function LabelCanvas({
                   />
                 </Group>
               )}
+
+              {/* Snap guides are computed in un-rotated label space (same
+                  frame as the Group's local coords), so they belong inside
+                  the rotated Group to render correctly at any rotation. */}
+              <GuideLines guides={guides} />
             </Group>
 
-            {/* Lasso, guides and transformer stay outside the rotated group
-                (screen-space coordinates). Lasso intersection uses
-                getClientRect, which respects the group rotation. */}
+            {/* Lasso & Transformer stay in screen space outside the Group.
+                Lasso intersection uses getClientRect which respects the
+                rotation; the Transformer follows nodes through their
+                accumulated parent transform. */}
             {lassoRect && (
               <Rect
                 x={lassoRect.x}
@@ -584,8 +597,6 @@ export function LabelCanvas({
                 listening={false}
               />
             )}
-
-            <GuideLines guides={guides} />
 
             <Transformer
               ref={transformerRef}
