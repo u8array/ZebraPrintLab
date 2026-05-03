@@ -1,5 +1,7 @@
 # ZebraPrintLab
 
+<img src="public/favicon.png" alt="Zebra Print Lab logo" width="64" align="right" />
+
 [![Deploy](https://github.com/u8array/ZebraPrintLab/actions/workflows/deploy.yml/badge.svg)](https://github.com/u8array/ZebraPrintLab/actions/workflows/deploy.yml)
 
 Browser-based label authoring tool for Zebra printers. No software to install.
