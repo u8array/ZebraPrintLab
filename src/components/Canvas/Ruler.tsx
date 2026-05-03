@@ -16,6 +16,10 @@ interface Props {
   canvasHeight: number;
   unit?: Unit;
   colors?: CanvasColors;
+  /** When true, horizontal ruler labels count down from labelWidthMm to 0 left-to-right. */
+  horizontalReversed?: boolean;
+  /** When true, vertical ruler labels count down from labelHeightMm to 0 top-to-bottom. */
+  verticalReversed?: boolean;
 }
 
 export function Ruler({
@@ -28,6 +32,8 @@ export function Ruler({
   canvasHeight,
   unit = 'mm',
   colors = DARK_COLORS,
+  horizontalReversed = false,
+  verticalReversed = false,
 }: Props) {
   const { major, minor } = rulerTicksMm(scale, unit);
   const els: React.ReactElement[] = [];
@@ -58,11 +64,12 @@ export function Ruler({
         strokeWidth={isMajor ? 1 : 0.5}
         listening={false} />,
     );
-    if (isMajor && mm > 0) {
+    const displayMm = horizontalReversed ? labelWidthMm - mm : mm;
+    if (isMajor && displayMm > 0 && displayMm <= labelWidthMm) {
       els.push(
         <Text key={`ht-${i}`}
           x={x + 2} y={RULER_SIZE - 14}
-          text={rulerLabel(mm, unit)}
+          text={rulerLabel(displayMm, unit)}
           fontSize={8} fill={colors.rulerLabel}
           fontFamily="'IBM Plex Mono', monospace"
           listening={false} />,
@@ -85,11 +92,12 @@ export function Ruler({
         strokeWidth={isMajor ? 1 : 0.5}
         listening={false} />,
     );
-    if (isMajor && mm > 0) {
+    const displayMm = verticalReversed ? labelHeightMm - mm : mm;
+    if (isMajor && displayMm > 0 && displayMm <= labelHeightMm) {
       els.push(
         <Text key={`vt-${i}`}
           x={2} y={y + 2}
-          text={rulerLabel(mm, unit)}
+          text={rulerLabel(displayMm, unit)}
           fontSize={8} fill={colors.rulerLabel}
           fontFamily="'IBM Plex Mono', monospace"
           rotation={0}

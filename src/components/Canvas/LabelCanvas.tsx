@@ -197,6 +197,21 @@ export function LabelCanvas({
   const objectsOffsetX = labelOffsetX + labelShiftPx;
   const labelOffsetY = RULER_SIZE + (usableHeight - labelHeightPx) / 2 + panOffset.y;
 
+  // Visual label geometry after view rotation (axes swap at 90°/270°).
+  // The Konva Group rotates around the label center, so the visual size
+  // swaps width/height while the center stays put.
+  const labelCenterX = labelOffsetX + labelWidthPx / 2;
+  const labelCenterY = labelOffsetY + labelHeightPx / 2;
+  const isAxisSwapped = viewRotation === 90 || viewRotation === 270;
+  const visualLabelWidthPx = isAxisSwapped ? labelHeightPx : labelWidthPx;
+  const visualLabelHeightPx = isAxisSwapped ? labelWidthPx : labelHeightPx;
+  const visualLabelX = labelCenterX - visualLabelWidthPx / 2;
+  const visualLabelY = labelCenterY - visualLabelHeightPx / 2;
+  const rulerWidthMm = isAxisSwapped ? label.heightMm : effectiveWidthMm;
+  const rulerHeightMm = isAxisSwapped ? effectiveWidthMm : label.heightMm;
+  const rulerHReversed = viewRotation === 90 || viewRotation === 180;
+  const rulerVReversed = viewRotation === 180 || viewRotation === 270;
+
   const snapUnit = Math.round(snapSizeMm * label.dpmm);
   const snap = (dots: number) =>
     snapEnabled ? Math.round(dots / snapUnit) * snapUnit : dots;
@@ -336,8 +351,22 @@ export function LabelCanvas({
   const pointerToLabelDots = (clientX: number, clientY: number) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return null;
-    const px = clientX - rect.left;
-    const py = clientY - rect.top;
+    let px = clientX - rect.left;
+    let py = clientY - rect.top;
+
+    // Apply inverse view rotation so the pointer maps to label coordinates
+    // even when the view is rotated. Rotates around the label center.
+    if (viewRotation !== 0) {
+      const dx = px - labelCenterX;
+      const dy = py - labelCenterY;
+      const [rx, ry] =
+        viewRotation === 90 ? [dy, -dx]
+        : viewRotation === 180 ? [-dx, -dy]
+        : [-dy, dx]; // 270
+      px = labelCenterX + rx;
+      py = labelCenterY + ry;
+    }
+
     return {
       x: snap(pxToDots(px - objectsOffsetX, scale, label.dpmm)),
       y: snap(pxToDots(py - labelOffsetY, scale, label.dpmm)),
@@ -544,8 +573,9 @@ export function LabelCanvas({
             </Group>
 
             {/* Lasso, guides and transformer stay outside the rotated group
-                (screen-space coordinates, interaction only at 0°) */}
-            {viewRotation === 0 && lassoRect && (
+                (screen-space coordinates). Lasso intersection uses
+                getClientRect, which respects the group rotation. */}
+            {lassoRect && (
               <Rect
                 x={lassoRect.x}
                 y={lassoRect.y}
@@ -572,22 +602,23 @@ export function LabelCanvas({
             />
           </Layer>
 
-          {/* Ruler — topmost layer; hidden during rotation (axes would be swapped) */}
-          {viewRotation === 0 && (
-            <Layer listening={false}>
-              <Ruler
-                labelOffsetX={labelOffsetX}
-                labelOffsetY={labelOffsetY}
-                labelWidthMm={effectiveWidthMm}
-                labelHeightMm={label.heightMm}
-                scale={scale}
-                canvasWidth={containerSize.width}
-                canvasHeight={containerSize.height}
-                unit={unit}
-                colors={colors}
-              />
-            </Layer>
-          )}
+          {/* Ruler — topmost layer. Tracks the visually-rotated label edges;
+              labels are reversed when the corresponding axis flips. */}
+          <Layer listening={false}>
+            <Ruler
+              labelOffsetX={visualLabelX}
+              labelOffsetY={visualLabelY}
+              labelWidthMm={rulerWidthMm}
+              labelHeightMm={rulerHeightMm}
+              scale={scale}
+              canvasWidth={containerSize.width}
+              canvasHeight={containerSize.height}
+              unit={unit}
+              colors={colors}
+              horizontalReversed={rulerHReversed}
+              verticalReversed={rulerVReversed}
+            />
+          </Layer>
         </Stage>
       )}
     </div>
