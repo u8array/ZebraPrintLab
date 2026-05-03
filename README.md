@@ -64,13 +64,9 @@ File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 
 The parser covers the most common ZPL commands. Anything it doesn't recognize is skipped and listed in the import report.
 
-Multi-label files (several `^XA...^XZ` blocks in one document) are split into separate pages on import; if the blocks have differing dimensions, the first one wins and the import report flags it.
-
 ### Multiple labels (pages)
 
-Use the page control at the bottom-center of the canvas to add, switch, and remove pages. Each page is a separate label that shares the same dimensions and dpmm; export and copy emit one `^XA...^XZ` block per page, in order.
-
-Page Up / Page Down navigates between pages.
+File menu → **Add page** creates a new page. With multiple pages, the control at the bottom-center of the canvas switches between them and removes them. All pages share the same dimensions; export and import handle each page as a separate label.
 
 ### Keyboard shortcuts
 

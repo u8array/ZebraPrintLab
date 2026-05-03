@@ -7,6 +7,9 @@ export function PaginationControl() {
   const addPage = useLabelStore((s) => s.addPage);
   const removePage = useLabelStore((s) => s.removePage);
 
+  // Hide entirely on single-page documents; "Add page" lives in the File menu.
+  if (pageCount <= 1) return null;
+
   const canPrev = currentPageIndex > 0;
   const canNext = currentPageIndex < pageCount - 1;
   const canRemove = pageCount > 1;

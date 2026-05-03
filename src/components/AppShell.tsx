@@ -20,6 +20,7 @@ import {
   ArrowUpTrayIcon,
   ArrowDownTrayIcon,
   DocumentPlusIcon,
+  DocumentDuplicateIcon,
   FolderOpenIcon,
   DocumentArrowDownIcon,
   PrinterIcon,
@@ -42,6 +43,7 @@ export function AppShell() {
   const label = useLabelStore((s) => s.label);
   const objects = useCurrentObjects();
   const selectObject = useLabelStore((s) => s.selectObject);
+  const addPage = useLabelStore((s) => s.addPage);
   const locale = useLabelStore((s) => s.locale);
   const setLocale = useLabelStore((s) => s.setLocale);
   const { undo, redo, pastStates, futureStates } = useHistory();
@@ -146,6 +148,9 @@ export function AppShell() {
           <DropdownMenu label={t.app.file}>
             <DropdownItem icon={DocumentPlusIcon} onClick={handleNew}>
               {t.app.newDesign}
+            </DropdownItem>
+            <DropdownItem icon={DocumentDuplicateIcon} onClick={addPage}>
+              Add page
             </DropdownItem>
             <DropdownSeparator />
             <DropdownItem icon={ArrowUpTrayIcon} onClick={openZplImport}>
