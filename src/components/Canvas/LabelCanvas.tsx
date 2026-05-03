@@ -183,15 +183,11 @@ export function LabelCanvas({
   // On first mount (once container dimensions are known), initialize zoom to
   // fit so the label is immediately visible regardless of persisted zoom value.
   const didInitRef = useRef(false);
-  const fitZoomRef = useRef(fitZoom);
-  fitZoomRef.current = fitZoom;
-  const onZoomChangeRef = useRef(onZoomChange);
-  onZoomChangeRef.current = onZoomChange;
   useEffect(() => {
     if (didInitRef.current || usableWidth <= 0) return;
     didInitRef.current = true;
-    onZoomChangeRef.current(fitZoomRef.current);
-  }, [usableWidth]);
+    onZoomChange(fitZoom);
+  }, [usableWidth, fitZoom, onZoomChange]);
 
   const {
     panOffset,
