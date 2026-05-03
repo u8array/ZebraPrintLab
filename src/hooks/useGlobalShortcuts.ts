@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLabelStore, useHistory } from "../store/labelStore";
+import { nextRotation } from "../components/Canvas/rotationGeometry";
 
 export function useGlobalShortcuts() {
   const duplicateSelectedObjects = useLabelStore((s) => s.duplicateSelectedObjects);
@@ -50,6 +51,11 @@ export function useGlobalShortcuts() {
       if (e.code === "KeyS") {
         e.preventDefault();
         setCanvasSettings({ snapEnabled: !useLabelStore.getState().canvasSettings.snapEnabled });
+      }
+      if (e.code === "KeyR") {
+        e.preventDefault();
+        const current = useLabelStore.getState().canvasSettings.viewRotation;
+        setCanvasSettings({ viewRotation: nextRotation(current) });
       }
     };
     window.addEventListener("keydown", onKeyDown);

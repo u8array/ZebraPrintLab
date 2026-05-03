@@ -3,6 +3,7 @@ import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { LabelConfig, ObjectChanges } from '../types/ObjectType';
 import type { Unit } from '../lib/units';
+import type { ViewRotation } from '../components/Canvas/rotationGeometry';
 import { ObjectRegistry } from '../registry';
 import type { LabelObject } from '../registry';
 import { locales } from '../locales';
@@ -31,6 +32,7 @@ export interface CanvasSettings {
   snapSizeMm: number;
   zoom: number;
   unit: Unit;
+  viewRotation: ViewRotation;
 }
 
 interface LabelState {
@@ -78,7 +80,7 @@ export const useLabelStore = create<LabelState>()(
       pasteCount: 0,
       duplicateCount: 0,
       locale: detectLocale(),
-      canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm' },
+      canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm', viewRotation: 0 },
 
       addObject: (type, position = { x: 50, y: 50 }) => {
         const definition = ObjectRegistry[type];

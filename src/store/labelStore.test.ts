@@ -12,6 +12,14 @@ function reset() {
     clipboard: [],
     pasteCount: 0,
     duplicateCount: 0,
+    canvasSettings: {
+      showGrid: false,
+      snapEnabled: false,
+      snapSizeMm: 1,
+      zoom: 1,
+      unit: 'mm',
+      viewRotation: 0,
+    },
   });
 }
 
