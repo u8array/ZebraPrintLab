@@ -11,11 +11,16 @@ export interface ZplImportResult {
 
 /**
  * Splits a ZPL stream into one block per `^XA...^XZ` document. Anything before
- * the first `^XA` is discarded.
+ * the first `^XA` is discarded. ZPL commands are case-insensitive per spec.
  */
 function splitIntoLabelBlocks(zpl: string): string[] {
-  const parts = zpl.split('^XA').slice(1);
-  return parts.map((p) => '^XA' + p);
+  // Capture group preserves the matched delimiter so mixed-case (^xa) survives.
+  const parts = zpl.split(/(\^XA)/i).slice(1);
+  const blocks: string[] = [];
+  for (let i = 0; i < parts.length; i += 2) {
+    blocks.push(parts[i] + (parts[i + 1] ?? ''));
+  }
+  return blocks;
 }
 
 export function importZplText(zpl: string, dpmm: number): ZplImportResult {

@@ -70,6 +70,12 @@ describe('importZplText — multi-label', () => {
     const result = importZplText(zpl, 8);
     expect(result.pages).toHaveLength(1);
   });
+
+  it('handles mixed-case ^XA delimiters', () => {
+    const zpl = '^xa^FDone^FS^xz\n^XA^FDtwo^FS^XZ';
+    const result = importZplText(zpl, 8);
+    expect(result.pages).toHaveLength(2);
+  });
 });
 
 describe('importZplText — empty / malformed', () => {
