@@ -75,6 +75,7 @@ const et = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Uus kujundus',
+    addPage: 'Lisa leht',
     openDesign: 'Ava kujundus',
     saveDesign: 'Salvesta kujundus',
     print: 'Prindi pildina (brauser)',

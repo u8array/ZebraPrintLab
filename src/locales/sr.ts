@@ -75,6 +75,7 @@ const sr = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Нови дизајн',
+    addPage: 'Додај страницу',
     openDesign: 'Отвори дизајн',
     saveDesign: 'Сачувај дизајн',
     print: 'Штампање као слика (прегледач)',

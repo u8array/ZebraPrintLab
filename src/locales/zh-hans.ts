@@ -75,6 +75,7 @@ const zhHans = {
     importZpl: '导入 ZPL',
     exportZpl: '导出 ZPL',
     newDesign: '新建设计',
+    addPage: '添加页面',
     openDesign: '打开设计',
     saveDesign: '保存设计',
     print: '打印为图片（浏览器）',

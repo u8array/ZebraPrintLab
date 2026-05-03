@@ -75,6 +75,7 @@ const en = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'New design',
+    addPage: 'Add page',
     openDesign: 'Open design',
     saveDesign: 'Save design',
     print: 'Print as Image (browser)',

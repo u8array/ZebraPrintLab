@@ -75,6 +75,7 @@ const da = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Nyt design',
+    addPage: 'Tilføj side',
     openDesign: 'Åbn design',
     saveDesign: 'Gem design',
     print: 'Udskriv som billede (browser)',

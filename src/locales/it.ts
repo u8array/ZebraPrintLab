@@ -75,6 +75,7 @@ const it = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Nuovo design',
+    addPage: 'Aggiungi pagina',
     openDesign: 'Apri design',
     saveDesign: 'Salva design',
     print: 'Stampa come immagine (browser)',

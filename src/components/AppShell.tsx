@@ -28,7 +28,7 @@ import {
   GlobeAltIcon,
   XMarkIcon,
 } from "@heroicons/react/16/solid";
-import { useLabelStore, useHistory, useCurrentObjects } from "../store/labelStore";
+import { useLabelStore, useHistory } from "../store/labelStore";
 import { localeNames } from "../locales";
 import type { LocaleCode } from "../locales";
 import { mmToUnit } from "../lib/units";
@@ -41,7 +41,7 @@ import { useOutputPanel, OUTPUT_DEFAULT_H } from "../hooks/useOutputPanel";
 export function AppShell() {
   const t = useT();
   const label = useLabelStore((s) => s.label);
-  const objects = useCurrentObjects();
+  const pages = useLabelStore((s) => s.pages);
   const selectObject = useLabelStore((s) => s.selectObject);
   const addPage = useLabelStore((s) => s.addPage);
   const locale = useLabelStore((s) => s.locale);
@@ -54,7 +54,7 @@ export function AppShell() {
 
   const canUndo = pastStates.length > 0;
   const canRedo = futureStates.length > 0;
-  const hasObjects = objects.length > 0;
+  const hasObjects = pages.some((p) => p.objects.length > 0);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -150,7 +150,7 @@ export function AppShell() {
               {t.app.newDesign}
             </DropdownItem>
             <DropdownItem icon={DocumentDuplicateIcon} onClick={addPage}>
-              Add page
+              {t.app.addPage}
             </DropdownItem>
             <DropdownSeparator />
             <DropdownItem icon={ArrowUpTrayIcon} onClick={openZplImport}>

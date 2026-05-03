@@ -75,6 +75,7 @@ const ja = {
     importZpl: 'ZPL インポート',
     exportZpl: 'ZPL エクスポート',
     newDesign: '新しいデザイン',
+    addPage: 'ページを追加',
     openDesign: 'デザインを開く',
     saveDesign: 'デザインを保存',
     print: '画像として印刷（ブラウザ）',

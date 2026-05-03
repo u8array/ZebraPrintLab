@@ -75,6 +75,7 @@ const sl = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Nov dizajn',
+    addPage: 'Dodaj stran',
     openDesign: 'Odpri dizajn',
     saveDesign: 'Shrani dizajn',
     print: 'Natisni kot sliko (brskalnik)',

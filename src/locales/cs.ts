@@ -75,6 +75,7 @@ const cs = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Nový návrh',
+    addPage: 'Přidat stránku',
     openDesign: 'Otevřít návrh',
     saveDesign: 'Uložit návrh',
     print: 'Tisk jako obrázek (prohlížeč)',

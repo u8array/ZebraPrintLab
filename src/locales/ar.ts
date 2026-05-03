@@ -75,6 +75,7 @@ const ar = {
     importZpl: 'استيراد ZPL',
     exportZpl: 'تصدير ZPL',
     newDesign: 'تصميم جديد',
+    addPage: 'إضافة صفحة',
     openDesign: 'فتح تصميم',
     saveDesign: 'حفظ تصميم',
     print: 'طباعة كصورة (المتصفح)',

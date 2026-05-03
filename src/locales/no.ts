@@ -75,6 +75,7 @@ const no = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Nytt design',
+    addPage: 'Legg til side',
     openDesign: 'Åpne design',
     saveDesign: 'Lagre design',
     print: 'Skriv ut som bilde (nettleser)',

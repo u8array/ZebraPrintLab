@@ -75,6 +75,7 @@ const ro = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Design nou',
+    addPage: 'Adaugă pagină',
     openDesign: 'Deschide design',
     saveDesign: 'Salvează design',
     print: 'Tipărire ca imagine (browser)',

@@ -75,6 +75,7 @@ const fi = {
     importZpl: 'Import ZPL',
     exportZpl: 'Export ZPL',
     newDesign: 'Uusi rakenne',
+    addPage: 'Lisää sivu',
     openDesign: 'Avaa rakenne',
     saveDesign: 'Tallenna rakenne',
     print: 'Tulosta kuvana (selain)',
