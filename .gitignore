@@ -41,3 +41,4 @@ tests/fixtures/__diffs__/
 *.instructions.*
 
 !tests/fixtures/labelary_images/*.png
+CLAUDE.md
