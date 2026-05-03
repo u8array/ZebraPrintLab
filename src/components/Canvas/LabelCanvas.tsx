@@ -54,6 +54,8 @@ export function LabelCanvas({
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [viewRotation, setViewRotation] = useState<0 | 90 | 180 | 270>(0);
+  const rotateView = () => setViewRotation((r) => ((r + 90) % 360) as 0 | 90 | 180 | 270);
   const [guides, setGuides] = useState<SnapGuide[]>([]);
   const [ghost, setGhost] = useState<LabelObject | null>(null);
 
@@ -380,7 +382,7 @@ export function LabelCanvas({
   return (
     <div
       ref={mergedRef}
-      className="w-full h-full relative"
+      className="w-full h-full relative overflow-hidden"
       style={{
         background: colors.canvasBg,
         backgroundImage: `radial-gradient(circle, ${colors.canvasDot} 1px, transparent 1px)`,
@@ -439,7 +441,26 @@ export function LabelCanvas({
         >
           +
         </button>
+        <div className="w-px h-3.5 bg-border mx-0.5" />
+        <button
+          onClick={rotateView}
+          title="Ansicht drehen"
+          className={`w-6 h-6 flex items-center justify-center text-sm transition-colors ${viewRotation !== 0 ? "text-accent" : "text-muted hover:text-text"}`}
+        >
+          ↻
+        </button>
+        {viewRotation !== 0 && (
+          <span className="font-mono text-[10px] text-accent w-6 text-center">{viewRotation}°</span>
+        )}
       </div>
+      <div
+        style={{
+          transform: viewRotation !== 0 ? `rotate(${viewRotation}deg)` : undefined,
+          transformOrigin: "center center",
+          transition: "transform 0.25s ease",
+          pointerEvents: viewRotation !== 0 ? "none" : undefined,
+        }}
+      >
       {containerSize.width > 0 && (
         <Stage
           ref={stageRef}
@@ -557,6 +578,7 @@ export function LabelCanvas({
           </Layer>
         </Stage>
       )}
+      </div>
     </div>
   );
 }
