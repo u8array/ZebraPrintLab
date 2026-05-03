@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { inverseRotateDelta, isAxisSwapped, nextRotation } from './rotationGeometry';
+import { axisReversal, inverseRotateDelta, isAxisSwapped, nextRotation } from './rotationGeometry';
 
 describe('inverseRotateDelta', () => {
   it('is identity at 0°', () => {
@@ -44,6 +44,24 @@ describe('isAxisSwapped', () => {
   it('returns true for 90° and 270°', () => {
     expect(isAxisSwapped(90)).toBe(true);
     expect(isAxisSwapped(270)).toBe(true);
+  });
+});
+
+describe('axisReversal', () => {
+  it('returns no reversals at 0°', () => {
+    expect(axisReversal(0)).toEqual({ horizontal: false, vertical: false });
+  });
+
+  it('reverses only horizontal at 90°', () => {
+    expect(axisReversal(90)).toEqual({ horizontal: true, vertical: false });
+  });
+
+  it('reverses both at 180°', () => {
+    expect(axisReversal(180)).toEqual({ horizontal: true, vertical: true });
+  });
+
+  it('reverses only vertical at 270°', () => {
+    expect(axisReversal(270)).toEqual({ horizontal: false, vertical: true });
   });
 });
 

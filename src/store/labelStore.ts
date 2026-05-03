@@ -3,6 +3,7 @@ import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { LabelConfig, ObjectChanges } from '../types/ObjectType';
 import type { Unit } from '../lib/units';
+import type { ViewRotation } from '../components/Canvas/rotationGeometry';
 import { ObjectRegistry } from '../registry';
 import type { LabelObject } from '../registry';
 import { locales } from '../locales';
@@ -31,7 +32,7 @@ export interface CanvasSettings {
   snapSizeMm: number;
   zoom: number;
   unit: Unit;
-  viewRotation: 0 | 90 | 180 | 270;
+  viewRotation: ViewRotation;
 }
 
 interface LabelState {

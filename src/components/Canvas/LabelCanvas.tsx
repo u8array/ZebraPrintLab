@@ -25,8 +25,9 @@ import { useCanvasPanZoom } from "./hooks/useCanvasPanZoom";
 import { useCanvasLasso } from "./hooks/useCanvasLasso";
 import { useKonvaTransformer } from "./hooks/useKonvaTransformer";
 import {
+  axisReversal,
   inverseRotateDelta,
-  isAxisSwapped as isViewAxisSwapped,
+  isAxisSwapped,
   nextRotation,
   type ViewRotation,
 } from "./rotationGeometry";
@@ -169,8 +170,8 @@ export function LabelCanvas({
   // zoom=1 → 100% → physical label size on screen (96 dpi CSS convention).
   // fitZoom is the multiplier that makes the visually-rotated label fill the
   // container, so axes swap at 90°/270°.
-  const fitWidthMm = isViewAxisSwapped(viewRotation) ? label.heightMm : effectiveWidthMm;
-  const fitHeightMm = isViewAxisSwapped(viewRotation) ? effectiveWidthMm : label.heightMm;
+  const fitWidthMm = isAxisSwapped(viewRotation) ? label.heightMm : effectiveWidthMm;
+  const fitHeightMm = isAxisSwapped(viewRotation) ? effectiveWidthMm : label.heightMm;
   const fitZoom = usableWidth > 0 && usableHeight > 0
     ? Math.min(
         (usableWidth - PADDING * 2) / (fitWidthMm * SCREEN_PX_PER_MM),
@@ -214,15 +215,14 @@ export function LabelCanvas({
   // swaps width/height while the center stays put.
   const labelCenterX = labelOffsetX + labelWidthPx / 2;
   const labelCenterY = labelOffsetY + labelHeightPx / 2;
-  const axisSwapped = isViewAxisSwapped(viewRotation);
+  const axisSwapped = isAxisSwapped(viewRotation);
   const visualLabelWidthPx = axisSwapped ? labelHeightPx : labelWidthPx;
   const visualLabelHeightPx = axisSwapped ? labelWidthPx : labelHeightPx;
   const visualLabelX = labelCenterX - visualLabelWidthPx / 2;
   const visualLabelY = labelCenterY - visualLabelHeightPx / 2;
   const rulerWidthMm = axisSwapped ? label.heightMm : effectiveWidthMm;
   const rulerHeightMm = axisSwapped ? effectiveWidthMm : label.heightMm;
-  const rulerHReversed = viewRotation === 90 || viewRotation === 180;
-  const rulerVReversed = viewRotation === 180 || viewRotation === 270;
+  const rulerReversal = axisReversal(viewRotation);
 
   const snapUnit = Math.round(snapSizeMm * label.dpmm);
   const snap = (dots: number) =>
@@ -626,8 +626,8 @@ export function LabelCanvas({
               canvasHeight={containerSize.height}
               unit={unit}
               colors={colors}
-              horizontalReversed={rulerHReversed}
-              verticalReversed={rulerVReversed}
+              horizontalReversed={rulerReversal.horizontal}
+              verticalReversed={rulerReversal.vertical}
             />
           </Layer>
         </Stage>

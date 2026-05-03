@@ -24,6 +24,22 @@ export function isAxisSwapped(rotation: ViewRotation): boolean {
   return rotation === 90 || rotation === 270;
 }
 
+/**
+ * Whether the visual horizontal/vertical axes point opposite to label-space
+ * coordinates at the given view rotation. Used by rulers and any consumer
+ * that displays values along a screen-space axis derived from a label-space
+ * axis.
+ */
+export function axisReversal(rotation: ViewRotation): {
+  horizontal: boolean;
+  vertical: boolean;
+} {
+  return {
+    horizontal: rotation === 90 || rotation === 180,
+    vertical: rotation === 180 || rotation === 270,
+  };
+}
+
 /** The next 90° clockwise step. */
 export function nextRotation(rotation: ViewRotation): ViewRotation {
   return ((rotation + 90) % 360) as ViewRotation;
