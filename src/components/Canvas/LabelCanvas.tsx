@@ -9,7 +9,7 @@ import type { PaletteDragData } from "../../dnd/types";
 import { Stage, Layer, Group, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore } from "../../store/labelStore";
-import { pxToDots } from "../../lib/coordinates";
+import { pxToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
 import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
 import { computeSnap } from "../../lib/snapGuides";
@@ -148,13 +148,27 @@ export function LabelCanvas({
   const usableHeight = containerSize.height - RULER_SIZE;
 
   // ^LS shifts all content to the right by labelShift dots. The label rect
-  // grows by that amount so the shifted content is fully visible. Scale and
-  // centering use the original widthMm so zoom level stays stable.
+  // grows by that amount so the shifted content is fully visible.
   const labelShiftMm = (label.labelShift ?? 0) / label.dpmm;
   const effectiveWidthMm = label.widthMm + labelShiftMm;
 
-  const scaleX = usableWidth > 0 ? (usableWidth - PADDING * 2) / effectiveWidthMm : 1;
-  const scaleY = usableHeight > 0 ? (usableHeight - PADDING * 2) / label.heightMm : 1;
+  // zoom=1 → 100% → physical label size on screen (96 dpi CSS convention).
+  // fitZoom is the multiplier that makes the label fill the current container.
+  const fitZoom = usableWidth > 0 && usableHeight > 0
+    ? Math.min(
+        (usableWidth - PADDING * 2) / (effectiveWidthMm * SCREEN_PX_PER_MM),
+        (usableHeight - PADDING * 2) / (label.heightMm * SCREEN_PX_PER_MM),
+      )
+    : 1;
+
+  // On first mount (once container dimensions are known), initialize zoom to
+  // fit so the label is immediately visible regardless of persisted zoom value.
+  const didInitRef = useRef(false);
+  useEffect(() => {
+    if (didInitRef.current || usableWidth <= 0) return;
+    didInitRef.current = true;
+    onZoomChange(fitZoom);
+  }, [usableWidth, fitZoom, onZoomChange]);
 
   const {
     panOffset,
@@ -168,9 +182,9 @@ export function LabelCanvas({
     onMouseMove: onPanMouseMove,
     onMouseUp: onPanMouseUp,
     cursor,
-  } = useCanvasPanZoom({ zoom, onZoomChange, containerRef });
+  } = useCanvasPanZoom({ zoom, onZoomChange, fitZoom, containerRef });
 
-  const scale = Math.min(scaleX, scaleY) * zoom;
+  const scale = SCREEN_PX_PER_MM * zoom;
   const labelWidthPx = effectiveWidthMm * scale;
   const labelHeightPx = label.heightMm * scale;
   const labelOffsetX = RULER_SIZE + (usableWidth - labelWidthPx) / 2 + panOffset.x;

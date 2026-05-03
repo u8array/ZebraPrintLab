@@ -9,6 +9,7 @@ export { ZOOM_MIN, ZOOM_MAX, ZOOM_STEPS };
 interface Options {
   zoom: number;
   onZoomChange: (zoom: number) => void;
+  fitZoom: number;
   containerRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -27,7 +28,7 @@ export interface PanZoomState {
   cursor: string | undefined;
 }
 
-export function useCanvasPanZoom({ zoom, onZoomChange, containerRef }: Options): PanZoomState {
+export function useCanvasPanZoom({ zoom, onZoomChange, fitZoom, containerRef }: Options): PanZoomState {
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const [spaceDown, setSpaceDown] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
@@ -36,8 +37,10 @@ export function useCanvasPanZoom({ zoom, onZoomChange, containerRef }: Options):
   const didPanRef = useRef(false);
 
   const zoomRef = useRef(zoom);
+  const fitZoomRef = useRef(fitZoom);
   const onZoomChangeRef = useRef(onZoomChange);
   useLayoutEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useLayoutEffect(() => { fitZoomRef.current = fitZoom; }, [fitZoom]);
   useLayoutEffect(() => { onZoomChangeRef.current = onZoomChange; }, [onZoomChange]);
 
   // non-passive wheel: ctrl+scroll → zoom, plain scroll → pan
@@ -80,7 +83,7 @@ export function useCanvasPanZoom({ zoom, onZoomChange, containerRef }: Options):
   const zoomIn = () => onZoomChange(ZOOM_STEPS.find((s) => s > zoomRef.current) ?? ZOOM_MAX);
   const zoomOut = () => onZoomChange([...ZOOM_STEPS].reverse().find((s) => s < zoomRef.current) ?? ZOOM_MIN);
   const zoomFit = () => {
-    onZoomChange(1);
+    onZoomChange(fitZoomRef.current);
     setPanOffset({ x: 0, y: 0 });
   };
 
