@@ -76,6 +76,7 @@ Unrecognized commands are skipped and listed in the import report.
 | `Del` / `Backspace` | Delete selection |
 | `G` | Toggle grid |
 | `S` | Toggle snap |
+| `R` | Rotate view (0° → 90° → 180° → 270°) |
 | Middle mouse / Space+drag | Pan canvas |
 | Scroll | Pan canvas |
 | Ctrl+Scroll | Zoom |

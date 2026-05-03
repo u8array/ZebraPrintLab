@@ -170,8 +170,9 @@ export function LabelCanvas({
   // zoom=1 → 100% → physical label size on screen (96 dpi CSS convention).
   // fitZoom is the multiplier that makes the visually-rotated label fill the
   // container, so axes swap at 90°/270°.
-  const fitWidthMm = isAxisSwapped(viewRotation) ? label.heightMm : effectiveWidthMm;
-  const fitHeightMm = isAxisSwapped(viewRotation) ? effectiveWidthMm : label.heightMm;
+  const axisSwapped = isAxisSwapped(viewRotation);
+  const fitWidthMm = axisSwapped ? label.heightMm : effectiveWidthMm;
+  const fitHeightMm = axisSwapped ? effectiveWidthMm : label.heightMm;
   const fitZoom = usableWidth > 0 && usableHeight > 0
     ? Math.min(
         (usableWidth - PADDING * 2) / (fitWidthMm * SCREEN_PX_PER_MM),
@@ -182,11 +183,15 @@ export function LabelCanvas({
   // On first mount (once container dimensions are known), initialize zoom to
   // fit so the label is immediately visible regardless of persisted zoom value.
   const didInitRef = useRef(false);
+  const fitZoomRef = useRef(fitZoom);
+  fitZoomRef.current = fitZoom;
+  const onZoomChangeRef = useRef(onZoomChange);
+  onZoomChangeRef.current = onZoomChange;
   useEffect(() => {
     if (didInitRef.current || usableWidth <= 0) return;
     didInitRef.current = true;
-    onZoomChange(fitZoom);
-  }, [usableWidth, fitZoom, onZoomChange]);
+    onZoomChangeRef.current(fitZoomRef.current);
+  }, [usableWidth]);
 
   const {
     panOffset,
@@ -215,7 +220,6 @@ export function LabelCanvas({
   // swaps width/height while the center stays put.
   const labelCenterX = labelOffsetX + labelWidthPx / 2;
   const labelCenterY = labelOffsetY + labelHeightPx / 2;
-  const axisSwapped = isAxisSwapped(viewRotation);
   const visualLabelWidthPx = axisSwapped ? labelHeightPx : labelWidthPx;
   const visualLabelHeightPx = axisSwapped ? labelWidthPx : labelHeightPx;
   const visualLabelX = labelCenterX - visualLabelWidthPx / 2;
@@ -335,7 +339,7 @@ export function LabelCanvas({
       draggedRect,
       otherRects,
       undefined,
-      { x: visualLabelX, y: visualLabelY, width: visualLabelWidthPx, height: visualLabelHeightPx },
+      labelRect,
       labelRect,
     );
     // result is in screen space; node.position() is in group-local space, so
