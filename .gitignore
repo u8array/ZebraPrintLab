@@ -13,6 +13,16 @@ dist-ssr
 *.local
 *.local.*
 
+# Environment variables
+.env
+.env.*
+
+# Test coverage
+coverage/
+
+# TypeScript build cache
+*.tsbuildinfo
+
 # Test output
 tests/fixtures/__diffs__/
 
