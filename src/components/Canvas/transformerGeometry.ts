@@ -55,15 +55,21 @@ export function transformNodeTopLeft(
 }
 
 /**
+ * Tolerance for `positionDidMove`. Sized to absorb float rounding from the
+ * screen-pixel <-> dot conversion; anything within this margin counts as
+ * "did not move" so the original integer position is preserved.
+ */
+export const POSITION_MOVE_TOLERANCE_DOTS = 1;
+
+/**
  * Decide whether the resize actually moved the object. When the user drags
  * a handle whose opposite anchor is the top-left, the position is visually
  * unchanged. Without this guard, applying snap to it would pull off-grid
- * shapes onto the grid as a side-effect of resizing. Tolerance is one dot
- * to absorb float rounding from the screen-pixel <-> dot conversion.
+ * shapes onto the grid as a side-effect of resizing.
  */
-export function transformPositionMoved(
+export function positionDidMove(
   rawDots: number,
   previousDots: number,
 ): boolean {
-  return Math.abs(rawDots - previousDots) > 1;
+  return Math.abs(rawDots - previousDots) > POSITION_MOVE_TOLERANCE_DOTS;
 }

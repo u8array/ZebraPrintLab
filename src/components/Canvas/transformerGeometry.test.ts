@@ -4,7 +4,7 @@ import {
   pinBottomEdge,
   isTopAnchorResize,
   transformNodeTopLeft,
-  transformPositionMoved,
+  positionDidMove,
 } from "./transformerGeometry";
 
 describe("snapBoxHeight", () => {
@@ -81,15 +81,15 @@ describe("transformNodeTopLeft", () => {
   });
 });
 
-describe("transformPositionMoved", () => {
-  it("returns false when the position matches within one dot", () => {
-    expect(transformPositionMoved(100, 100)).toBe(false);
-    expect(transformPositionMoved(100.4, 100)).toBe(false);
-    expect(transformPositionMoved(99, 100)).toBe(false);
+describe("positionDidMove", () => {
+  it("returns false when the position matches within the tolerance", () => {
+    expect(positionDidMove(100, 100)).toBe(false);
+    expect(positionDidMove(100.4, 100)).toBe(false);
+    expect(positionDidMove(99, 100)).toBe(false);
   });
 
-  it("returns true once the delta exceeds one dot", () => {
-    expect(transformPositionMoved(102, 100)).toBe(true);
-    expect(transformPositionMoved(80, 100)).toBe(true);
+  it("returns true once the delta exceeds the tolerance", () => {
+    expect(positionDidMove(102, 100)).toBe(true);
+    expect(positionDidMove(80, 100)).toBe(true);
   });
 });

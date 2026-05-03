@@ -50,6 +50,13 @@ export interface ObjectTypeDefinition<P extends object = object> {
   group: ObjectGroup;
   defaultProps: P;
   defaultSize: { width: number; height: number };
+  /**
+   * Origin of the Konva node used to render this type. Defaults to 'top-left'.
+   * Set to 'center' for shapes whose Konva counterpart positions by their
+   * center (e.g. Ellipse), so the transformer can convert the node coordinate
+   * back to the model's top-left convention.
+   */
+  nodeOrigin?: 'center' | 'top-left';
   toZPL: (obj: LabelObjectBase & { props: P }) => string;
   /**
    * Optional hook to enforce type-specific invariants on incoming changes

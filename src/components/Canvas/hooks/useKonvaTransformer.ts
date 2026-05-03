@@ -10,7 +10,7 @@ import {
   pinBottomEdge,
   isTopAnchorResize,
   transformNodeTopLeft,
-  transformPositionMoved,
+  positionDidMove,
   type BoundingBox,
 } from "../transformerGeometry";
 
@@ -141,6 +141,7 @@ export function useKonvaTransformer({
       transformAnchorRef.current = null;
       return;
     }
+    const isCenterAnchored = ObjectRegistry[obj.type]?.nodeOrigin === "center";
     const topLeft = transformNodeTopLeft(
       node.x(),
       node.y(),
@@ -148,7 +149,7 @@ export function useKonvaTransformer({
       nodeHeight,
       sx,
       sy,
-      obj.type === "ellipse",
+      isCenterAnchored,
     );
     const rawX = pxToDots(topLeft.x - objectsOffsetX, scale, dpmm);
     const rawY = pxToDots(topLeft.y - labelOffsetY, scale, dpmm);
@@ -156,8 +157,8 @@ export function useKonvaTransformer({
     // (e.g. dragging the top-left handle). Anchored-corner drags must keep
     // the original position so off-grid shapes don't snap as a side-effect.
     const pos = {
-      x: transformPositionMoved(rawX, obj.x) ? snap(rawX) : obj.x,
-      y: transformPositionMoved(rawY, obj.y) ? snap(rawY) : obj.y,
+      x: positionDidMove(rawX, obj.x) ? snap(rawX) : obj.x,
+      y: positionDidMove(rawY, obj.y) ? snap(rawY) : obj.y,
     };
     const commit = ObjectRegistry[obj.type]?.commitTransform;
     if (commit) {
