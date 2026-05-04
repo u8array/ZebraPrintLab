@@ -33,6 +33,73 @@ interface AxisInfo {
   perpSize: number;
 }
 
+interface AnchorCandidate {
+  /** Anchor position to align against (start, center, or end of the candidate). */
+  value: number;
+  /** Guide line emitted when this anchor wins. */
+  guide: SnapGuide;
+}
+
+/**
+ * The 3 anchors of `other` (start/center/end) as alignment candidates.
+ * Guide spans the perpendicular extent covering both `drag*` and `other`.
+ */
+function objectAnchorCandidates(
+  other: AxisInfo,
+  dragPerp: number,
+  dragPerpSize: number,
+  alignOrientation: 'H' | 'V',
+): AnchorCandidate[] {
+  const oStart = other.pos;
+  const oCenter = other.pos + other.size / 2;
+  const oEnd = other.pos + other.size;
+  const perpFrom = Math.min(dragPerp, other.perp) - 8;
+  const perpTo = Math.max(dragPerp + dragPerpSize, other.perp + other.perpSize) + 8;
+  return [oStart, oCenter, oEnd].map(value => ({
+    value,
+    guide: { orientation: alignOrientation, type: 'align', pos: value, from: perpFrom, to: perpTo },
+  }));
+}
+
+/** The 3 anchors of the label rect (start/center/end) as alignment candidates. */
+function labelAnchorCandidates(
+  labelAxis: AxisInfo,
+  alignOrientation: 'H' | 'V',
+  labelExtent: { from: number; to: number } | undefined,
+): AnchorCandidate[] {
+  const lStart = labelAxis.pos;
+  const lCenter = labelAxis.pos + labelAxis.size / 2;
+  const lEnd = labelAxis.pos + labelAxis.size;
+  const perpFrom = labelExtent ? labelExtent.from : labelAxis.perp;
+  const perpTo = labelExtent ? labelExtent.to : labelAxis.perp + labelAxis.perpSize;
+  return [lStart, lCenter, lEnd].map(value => ({
+    value,
+    guide: { orientation: alignOrientation, type: 'align', pos: value, from: perpFrom, to: perpTo },
+  }));
+}
+
+/**
+ * Keep only the 2 nearest objects per direction from the drag axis. Prevents
+ * snapping to distant objects on the other side of the label, and bounds the
+ * candidate count for performance. Equal-spacing math (drag-only) needs 2 (not
+ * 1) per side because it operates on consecutive pairs.
+ */
+function filterNearby(dragPos: number, dragSize: number, others: AxisInfo[]): AxisInfo[] {
+  const dragEnd = dragPos + dragSize;
+  const leftOf = others
+    .filter(o => o.pos + o.size <= dragPos)
+    .sort((a, b) => (b.pos + b.size) - (a.pos + a.size))
+    .slice(0, 2);
+  const rightOf = others
+    .filter(o => o.pos >= dragEnd)
+    .sort((a, b) => a.pos - b.pos)
+    .slice(0, 2);
+  const overlapping = others.filter(
+    o => o.pos < dragEnd && o.pos + o.size > dragPos,
+  );
+  return [...leftOf, ...overlapping, ...rightOf];
+}
+
 /**
  * Computes object-snap for a dragged rect against stationary rects.
  * All values are stage pixels. Returns the snapped position and guide lines.
@@ -82,22 +149,7 @@ function snapAxis(
   let snapped = drag.pos;
   let guides: SnapGuide[] = [];
 
-  // Keep only the 2 nearest objects per direction from the dragged object's bounding box.
-  // This prevents snapping to distant objects on the other side of the label.
-  // 2 (not 1) because equal spacing needs a consecutive pair in the same direction.
-  // leftOf/rightOf are mutually exclusive with overlapping, so no deduplication needed.
-  const leftOf = others
-    .filter(o => o.pos + o.size <= drag.pos)
-    .sort((a, b) => (b.pos + b.size) - (a.pos + a.size))
-    .slice(0, 2);
-  const rightOf = others
-    .filter(o => o.pos >= drag.pos + drag.size)
-    .sort((a, b) => a.pos - b.pos)
-    .slice(0, 2);
-  const overlapping = others.filter(
-    o => o.pos < drag.pos + drag.size && o.pos + o.size > drag.pos,
-  );
-  const nearby = [...leftOf, ...overlapping, ...rightOf];
+  const nearby = filterNearby(drag.pos, drag.size, others);
 
   function trySnap(newPos: number, newGuides: SnapGuide[]) {
     const d = Math.abs(newPos - drag.pos);
@@ -111,17 +163,12 @@ function snapAxis(
     }
   }
 
-  // Alignment: snap any of 3 drag anchors (start / center / end) to any of 3 other anchors
+  // Alignment: any of 3 drag anchors (start / center / end) → any of 3 other anchors.
+  const dragAnchors = [drag.pos, drag.pos + drag.size / 2, drag.pos + drag.size];
   for (const other of nearby) {
-    const dragAnchors  = [drag.pos,  drag.pos  + drag.size  / 2, drag.pos  + drag.size ];
-    const otherAnchors = [other.pos, other.pos + other.size / 2, other.pos + other.size];
-    for (const da of dragAnchors) {
-      for (const oa of otherAnchors) {
-        const newPos     = drag.pos + (oa - da);
-        // Guide spans between the two objects only (±8px padding)
-        const perpFrom   = Math.min(drag.perp, other.perp) - 8;
-        const perpTo     = Math.max(drag.perp + drag.perpSize, other.perp + other.perpSize) + 8;
-        trySnap(newPos, [{ orientation: alignOrientation, type: 'align', pos: oa, from: perpFrom, to: perpTo }]);
+    for (const cand of objectAnchorCandidates(other, drag.perp, drag.perpSize, alignOrientation)) {
+      for (const da of dragAnchors) {
+        trySnap(drag.pos + (cand.value - da), [cand.guide]);
       }
     }
   }
@@ -169,17 +216,197 @@ function snapAxis(
 
   // Label alignment: snap to label edges and center (separate from object nearest-2 filter)
   if (labelAxis) {
-    const dragAnchors  = [drag.pos, drag.pos + drag.size / 2, drag.pos + drag.size];
-    const lblAnchors   = [labelAxis.pos, labelAxis.pos + labelAxis.size / 2, labelAxis.pos + labelAxis.size];
-    const perpFrom     = labelExtent ? labelExtent.from : labelAxis.perp;
-    const perpTo       = labelExtent ? labelExtent.to   : labelAxis.perp + labelAxis.perpSize;
-    for (const da of dragAnchors) {
-      for (const la of lblAnchors) {
-        const newPos = drag.pos + (la - da);
-        trySnap(newPos, [{ orientation: alignOrientation, type: 'align', pos: la, from: perpFrom, to: perpTo }]);
+    for (const cand of labelAnchorCandidates(labelAxis, alignOrientation, labelExtent)) {
+      for (const da of dragAnchors) {
+        trySnap(drag.pos + (cand.value - da), [cand.guide]);
       }
     }
   }
 
   return { snapped, guides };
+}
+
+// ─── Resize-time snap ────────────────────────────────────────────────────────
+
+export interface ActiveEdges {
+  left: boolean;
+  right: boolean;
+  top: boolean;
+  bottom: boolean;
+}
+
+export interface ResizeSnapResult {
+  /** Snapped bounding-box top-left + size in stage pixels. */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  guides: SnapGuide[];
+}
+
+/**
+ * Derive which edges of `newBox` are moving relative to `oldBox`. Used to
+ * decide which edges should participate in resize-time snapping (the static
+ * edges have nothing to align).
+ */
+export function deriveActiveEdges(
+  oldBox: SnapRect,
+  newBox: SnapRect,
+  tolerance = 0.5,
+): ActiveEdges {
+  return {
+    left: Math.abs(newBox.x - oldBox.x) > tolerance,
+    right: Math.abs((newBox.x + newBox.width) - (oldBox.x + oldBox.width)) > tolerance,
+    top: Math.abs(newBox.y - oldBox.y) > tolerance,
+    bottom: Math.abs((newBox.y + newBox.height) - (oldBox.y + oldBox.height)) > tolerance,
+  };
+}
+
+interface EdgeMatch {
+  /** Distance from the drag edge in px; Infinity = no match. */
+  delta: number;
+  /** Pixel position to snap the active edge to. */
+  pos: number;
+  /** Guides emitted when this match is selected. */
+  guides: SnapGuide[];
+}
+
+/**
+ * Sentinel "no match yet" value. Returns a fresh object so callers can never
+ * accidentally bleed mutations (e.g. pushing into `guides`) into a shared
+ * reference.
+ */
+function noMatch(): EdgeMatch {
+  return { delta: Infinity, pos: 0, guides: [] };
+}
+
+function considerEdge(current: EdgeMatch, candidatePos: number, dragPos: number, guide: SnapGuide, threshold: number): EdgeMatch {
+  const d = Math.abs(candidatePos - dragPos);
+  if (d >= threshold) return current;
+  if (d < current.delta) return { delta: d, pos: candidatePos, guides: [guide] };
+  if (d === current.delta && candidatePos === current.pos) {
+    return { ...current, guides: [...current.guides, guide] };
+  }
+  return current;
+}
+
+interface ResizeAxisInput {
+  /** Active leading edge (left for X, top for Y). */
+  posActive: boolean;
+  /** Active trailing edge (right for X, bottom for Y). */
+  endActive: boolean;
+  /** Current dragged value for the leading edge. */
+  pos: number;
+  /** Current dragged size. */
+  size: number;
+  /** Perpendicular extent of the dragged box, used for guide line spans. */
+  perp: number;
+  perpSize: number;
+}
+
+interface AxisSnapResult {
+  pos: number;
+  size: number;
+  guides: SnapGuide[];
+}
+
+function snapResizeAxis(
+  drag: ResizeAxisInput,
+  others: AxisInfo[],
+  threshold: number,
+  alignOrientation: 'H' | 'V',
+  labelAxis?: AxisInfo,
+  labelExtent?: { from: number; to: number },
+): AxisSnapResult {
+  const dragEnd = drag.pos + drag.size;
+  const nearby = filterNearby(drag.pos, drag.size, others);
+
+  // Resize alignment ignores the dragged center by design — only edges align.
+  const candidates: AnchorCandidate[] = [];
+  for (const o of nearby) {
+    candidates.push(...objectAnchorCandidates(o, drag.perp, drag.perpSize, alignOrientation));
+  }
+  if (labelAxis) {
+    candidates.push(...labelAnchorCandidates(labelAxis, alignOrientation, labelExtent));
+  }
+
+  let leadMatch = noMatch();
+  let endMatch = noMatch();
+  for (const c of candidates) {
+    if (drag.posActive) leadMatch = considerEdge(leadMatch, c.value, drag.pos, c.guide, threshold);
+    if (drag.endActive) endMatch = considerEdge(endMatch, c.value, dragEnd, c.guide, threshold);
+  }
+
+  // Edge matches adjust pos OR size depending on which side is moving.
+  // The applied snap takes whichever edge has the smaller delta — both edges
+  // may have matches, but snapping both simultaneously would fight.
+  let pos = drag.pos;
+  let size = drag.size;
+  const guides: SnapGuide[] = [];
+
+  if (leadMatch.delta < Infinity && leadMatch.delta <= endMatch.delta) {
+    pos = leadMatch.pos;
+    size = dragEnd - pos;
+    guides.push(...leadMatch.guides);
+  } else if (endMatch.delta < Infinity) {
+    size = endMatch.pos - drag.pos;
+    guides.push(...endMatch.guides);
+  }
+
+  return { pos, size, guides };
+}
+
+/**
+ * Computes resize-time snap for a transformer-driven box against stationary
+ * rects. Only the edges in `activeEdges` participate. Returns the adjusted
+ * box and any guide lines to render.
+ *
+ * Distinct from `computeSnap` (drag) because the application is different:
+ * drag shifts the bbox; resize moves a single edge, changing the size.
+ */
+export function computeResizeSnap(
+  newBox: SnapRect,
+  others: SnapRect[],
+  activeEdges: ActiveEdges,
+  threshold = SNAP_THRESHOLD_PX,
+  /** Label bounds used for guide-line spans. */
+  labelBounds?: { x: number; y: number; width: number; height: number },
+  /** Full-size label rect for edge / center anchor matching. */
+  labelRect?: SnapRect,
+): ResizeSnapResult {
+  const xOthers = others.map<AxisInfo>(o => ({ pos: o.x, size: o.width,  perp: o.y, perpSize: o.height }));
+  const yOthers = others.map<AxisInfo>(o => ({ pos: o.y, size: o.height, perp: o.x, perpSize: o.width  }));
+
+  const xLabelExtent = labelBounds ? { from: labelBounds.y, to: labelBounds.y + labelBounds.height } : undefined;
+  const yLabelExtent = labelBounds ? { from: labelBounds.x, to: labelBounds.x + labelBounds.width } : undefined;
+
+  const xLblAxis = labelRect ? { pos: labelRect.x, size: labelRect.width,  perp: labelRect.y, perpSize: labelRect.height } : undefined;
+  const yLblAxis = labelRect ? { pos: labelRect.y, size: labelRect.height, perp: labelRect.x, perpSize: labelRect.width  } : undefined;
+
+  const xResult = snapResizeAxis(
+    {
+      posActive: activeEdges.left,
+      endActive: activeEdges.right,
+      pos: newBox.x, size: newBox.width,
+      perp: newBox.y, perpSize: newBox.height,
+    },
+    xOthers, threshold, 'V', xLblAxis, xLabelExtent,
+  );
+  const yResult = snapResizeAxis(
+    {
+      posActive: activeEdges.top,
+      endActive: activeEdges.bottom,
+      pos: newBox.y, size: newBox.height,
+      perp: newBox.x, perpSize: newBox.width,
+    },
+    yOthers, threshold, 'H', yLblAxis, yLabelExtent,
+  );
+
+  return {
+    x: xResult.pos,
+    y: yResult.pos,
+    width: xResult.size,
+    height: yResult.size,
+    guides: [...xResult.guides, ...yResult.guides],
+  };
 }

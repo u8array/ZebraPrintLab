@@ -14,6 +14,78 @@ import {
   type BoundingBox,
 } from "../transformerGeometry";
 import { modelPositionFromRenderedTopLeft } from "../transformPosition";
+import {
+  computeResizeSnap,
+  deriveActiveEdges,
+  type SnapGuide,
+  type SnapRect,
+} from "../../../lib/snapGuides";
+
+/** Pack a Konva clientRect into the SnapRect shape used by snap helpers. */
+function toSnapRect(id: string, rect: { x: number; y: number; width: number; height: number }): SnapRect {
+  return { id, x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+}
+
+/**
+ * Snapshot every object's stage-space bbox at transform start. Other objects
+ * can't move during a resize, so we cache once and avoid per-tick Konva queries.
+ */
+function captureOtherRects(
+  stage: Konva.Stage,
+  objects: LabelObject[],
+  excludeId: string,
+): SnapRect[] {
+  const result: SnapRect[] = [];
+  for (const o of objects) {
+    if (o.id === excludeId) continue;
+    const n = stage.findOne<Konva.Node>(`#${o.id}`);
+    if (!n) continue;
+    const cr = n.getClientRect({ skipShadow: true, skipStroke: true, relativeTo: stage });
+    result.push(toSnapRect(o.id, cr));
+  }
+  return result;
+}
+
+/**
+ * Phase 1 of resize: snap height to whole rowHeight increments for stacked-2D
+ * barcodes (or to whole dots otherwise), and pin the bottom edge if the resize
+ * originates from the top anchor.
+ */
+function applyHeightSnap(
+  oldBox: BoundingBox,
+  newBox: BoundingBox,
+  dotPx: number,
+  anchor: { nodeHeight: number; rowHeight: number } | null,
+): BoundingBox {
+  const stepPx =
+    anchor && anchor.rowHeight > 0 && anchor.nodeHeight > 0
+      ? anchor.nodeHeight / anchor.rowHeight
+      : dotPx;
+  const snappedH = snapBoxHeight(newBox.height, stepPx);
+  return isTopAnchorResize(oldBox, newBox, dotPx * 0.5)
+    ? pinBottomEdge(oldBox, newBox, snappedH)
+    : { ...newBox, height: snappedH };
+}
+
+/**
+ * Phase 2 of resize: snap moving edges to other objects' / label edges
+ * (object-snap, mirrors drag-time snap). Pure delegation to `computeResizeSnap`
+ * with input shape conversion.
+ */
+function applyResizeObjectSnap(
+  bbox: BoundingBox,
+  startBbox: SnapRect,
+  others: SnapRect[],
+  labelRect: SnapRect,
+): { bbox: BoundingBox; guides: SnapGuide[] } {
+  const draggedRect = toSnapRect(startBbox.id, bbox);
+  const activeEdges = deriveActiveEdges(startBbox, draggedRect);
+  const result = computeResizeSnap(draggedRect, others, activeEdges, undefined, labelRect, labelRect);
+  return {
+    bbox: { x: result.x, y: result.y, width: result.width, height: result.height, rotation: bbox.rotation },
+    guides: result.guides,
+  };
+}
 
 interface Options {
   transformerRef: React.RefObject<Konva.Transformer | null>;
@@ -26,6 +98,12 @@ interface Options {
   labelOffsetY: number;
   snap: (dots: number) => number;
   updateObject: (id: string, changes: ObjectChanges) => void;
+  /** Label rect in stage-screen space, used as a snap target. */
+  labelRect: SnapRect;
+  /** True when grid-snap is OFF — object-snap during resize mirrors drag. */
+  objectSnapEnabled: boolean;
+  /** Pushes resize-time snap guides into the canvas's shared guide state. */
+  setGuides: (guides: SnapGuide[]) => void;
 }
 
 export interface TransformerState {
@@ -48,10 +126,20 @@ export function useKonvaTransformer({
   labelOffsetY,
   snap,
   updateObject,
+  labelRect,
+  objectSnapEnabled,
+  setGuides,
 }: Options): TransformerState {
   // Captures node height and rowHeight at drag start so boundBoxFunc uses a
   // fixed step size throughout the entire drag session.
   const transformAnchorRef = useRef<{ nodeHeight: number; rowHeight: number } | null>(null);
+  // Captures the bbox at transform start so deriveActiveEdges can detect which
+  // edges are moving relative to the start state (oldBox in boundBoxFunc is the
+  // previous frame, which would always look "everything moved").
+  const transformStartBboxRef = useRef<SnapRect | null>(null);
+  // Snapshot of the other objects' bboxes at transform start. Other objects
+  // can't move during a resize, so we avoid re-querying Konva on every tick.
+  const othersSnapshotRef = useRef<SnapRect[]>([]);
 
   // Stable key of selected object types — avoids re-running on every drag-move
   // position update (which changes objects but not the types of selected objects).
@@ -91,6 +179,15 @@ export function useKonvaTransformer({
       : BARCODE_1D_TYPES.has(objects.find((o) => o.id === selectedIds[0])?.type ?? "")
         ? ["top-center", "bottom-center"]
         : undefined;
+  const isFreeResize = enabledAnchors === undefined;
+
+  /** Reset all transform-time state. Idempotent; safe to call from any exit path. */
+  function cleanupTransformState() {
+    transformAnchorRef.current = null;
+    transformStartBboxRef.current = null;
+    othersSnapshotRef.current = [];
+    setGuides([]);
+  }
 
   const onTransformStart = () => {
     const singleId = selectedIds[0];
@@ -98,39 +195,43 @@ export function useKonvaTransformer({
     const node = stageRef.current.findOne<Konva.Node>(`#${singleId}`);
     if (!node) return;
     const obj = objects.find((o) => o.id === singleId);
-    if (obj && STACKED_2D_TYPES.has(obj.type)) {
-      transformAnchorRef.current = {
-        nodeHeight: node.height(),
-        rowHeight: (obj.props as { rowHeight: number }).rowHeight,
-      };
-    } else {
-      transformAnchorRef.current = null;
-    }
+    transformAnchorRef.current = obj && STACKED_2D_TYPES.has(obj.type)
+      ? { nodeHeight: node.height(), rowHeight: (obj.props as { rowHeight: number }).rowHeight }
+      : null;
+    const startRect = node.getClientRect({ skipShadow: true, skipStroke: true, relativeTo: stageRef.current });
+    transformStartBboxRef.current = toSnapRect(singleId, startRect);
+    othersSnapshotRef.current = captureOtherRects(stageRef.current, objects, singleId);
   };
 
   const boundBoxFunc = (oldBox: BoundingBox, newBox: BoundingBox): BoundingBox => {
     if (newBox.width < 10 || newBox.height < 10) return oldBox;
     const dotPx = scale / dpmm;
-    // For stacked 2D barcodes, snap to whole rowHeight increments. stepPx is
-    // derived from the node height captured at drag start (not oldBox.height,
-    // which mutates each call and would drift).
-    const anchor = transformAnchorRef.current;
-    const stepPx =
-      anchor && anchor.rowHeight > 0 && anchor.nodeHeight > 0
-        ? anchor.nodeHeight / anchor.rowHeight
-        : dotPx;
-    const snappedH = snapBoxHeight(newBox.height, stepPx);
-    if (isTopAnchorResize(oldBox, newBox, dotPx * 0.5)) {
-      return pinBottomEdge(oldBox, newBox, snappedH);
+    let bbox = applyHeightSnap(oldBox, newBox, dotPx, transformAnchorRef.current);
+
+    // Object-snap during resize (mirrors drag-time snap). Only fires when
+    // grid-snap is off and the user is doing a free corner-resize — the 1D /
+    // stacked-2D anchor restrictions have their own height math above and
+    // would conflict with edge-driven snapping.
+    const startBbox = transformStartBboxRef.current;
+    if (objectSnapEnabled && isFreeResize && startBbox) {
+      const snapped = applyResizeObjectSnap(bbox, startBbox, othersSnapshotRef.current, labelRect);
+      setGuides(snapped.guides);
+      bbox = snapped.bbox;
     }
-    return { ...newBox, height: snappedH };
+    return bbox;
   };
 
   const onTransformEnd = () => {
-    if (selectedIds.length !== 1 || !selectedIds[0] || !stageRef.current) return;
+    if (selectedIds.length !== 1 || !selectedIds[0] || !stageRef.current) {
+      cleanupTransformState();
+      return;
+    }
     const singleId = selectedIds[0];
     const node = stageRef.current.findOne<Konva.Node>(`#${singleId}`);
-    if (!node) return;
+    if (!node) {
+      cleanupTransformState();
+      return;
+    }
     const sx = node.scaleX();
     const sy = node.scaleY();
     const nodeWidth = node.width();
@@ -139,7 +240,7 @@ export function useKonvaTransformer({
     node.scaleY(1);
     const obj = currentObjects(useLabelStore.getState()).find((o) => o.id === singleId);
     if (!obj) {
-      transformAnchorRef.current = null;
+      cleanupTransformState();
       return;
     }
     const isCenterAnchored = ObjectRegistry[obj.type]?.nodeOrigin === "center";
@@ -175,7 +276,7 @@ export function useKonvaTransformer({
       });
       updateObject(singleId, { ...pos, props: propChanges });
     }
-    transformAnchorRef.current = null;
+    cleanupTransformState();
   };
 
   return {

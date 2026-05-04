@@ -240,6 +240,18 @@ export function LabelCanvas({
     onStageMouseDown,
   } = useCanvasLasso({ containerRef, stageRef, spaceDown, selectObjects });
 
+  // Snap / guide infrastructure used by both drag and resize. The label rect
+  // here matches the visual (rotation-aware) bounds — snap math operates in
+  // stage-screen space, so it must reflect what the user sees, not the
+  // un-rotated layout coordinates.
+  const transformerSnapLabelRect = {
+    id: "_lbl",
+    x: visualLabelX,
+    y: visualLabelY,
+    width: visualLabelWidthPx,
+    height: visualLabelHeightPx,
+  };
+
   const {
     rotateEnabled,
     resizeEnabled,
@@ -258,6 +270,9 @@ export function LabelCanvas({
     labelOffsetY,
     snap,
     updateObject,
+    labelRect: transformerSnapLabelRect,
+    objectSnapEnabled: !snapEnabled,
+    setGuides,
   });
 
   const handleObjectChange = (
