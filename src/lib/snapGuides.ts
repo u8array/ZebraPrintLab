@@ -1,4 +1,6 @@
 export const SNAP_THRESHOLD_PX = 6;
+/** Extra px the alignment guide extends beyond the dragged + matched objects. */
+const GUIDE_PADDING_PX = 8;
 
 export interface SnapRect {
   id: string;
@@ -53,8 +55,8 @@ function objectAnchorCandidates(
   const oStart = other.pos;
   const oCenter = other.pos + other.size / 2;
   const oEnd = other.pos + other.size;
-  const perpFrom = Math.min(dragPerp, other.perp) - 8;
-  const perpTo = Math.max(dragPerp + dragPerpSize, other.perp + other.perpSize) + 8;
+  const perpFrom = Math.min(dragPerp, other.perp) - GUIDE_PADDING_PX;
+  const perpTo = Math.max(dragPerp + dragPerpSize, other.perp + other.perpSize) + GUIDE_PADDING_PX;
   return [oStart, oCenter, oEnd].map(value => ({
     value,
     guide: { orientation: alignOrientation, type: 'align', pos: value, from: perpFrom, to: perpTo },
