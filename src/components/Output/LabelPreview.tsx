@@ -51,10 +51,10 @@ export function LabelPreviewModal({ onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="bg-surface border border-border rounded shadow-lg flex flex-col overflow-hidden max-w-[90vw] max-h-[90vh]"
+        className="bg-surface border border-border-2 rounded shadow-lg flex flex-col overflow-hidden max-w-[90vw] max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-3 py-1.5 border-b border-border shrink-0">
+        <div className="flex items-center justify-between px-3 py-1.5 border-b border-border-2 shrink-0">
           <span className="font-mono text-[10px] text-muted uppercase tracking-widest">
             {t.output.previewHeading}
           </span>
@@ -66,33 +66,35 @@ export function LabelPreviewModal({ onClose }: Props) {
           </button>
         </div>
 
-        <div className="flex-1 flex items-center justify-center p-4 min-h-24 min-w-48">
-          {loading && (
-            <span className="font-mono text-[10px] text-muted animate-pulse">{t.output.loading}</span>
-          )}
-          {!loading && error && (
-            <div className="flex flex-col items-center gap-3 max-w-64 text-center">
-              <span className="font-mono text-[10px] text-amber-400 leading-relaxed">{error}</span>
-              <button
-                onClick={handleDownloadFallback}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-mono bg-surface-2 border border-border text-muted hover:text-text hover:border-accent transition-colors"
-              >
-                <ArrowDownTrayIcon className="w-3.5 h-3.5" />
-                Export ZPL instead
-              </button>
-            </div>
-          )}
-          {!loading && !error && previewUrl && (
-            <img
-              src={previewUrl}
-              alt="Label preview"
-              style={{
-                maxWidth: '100%',
-                maxHeight: '100%',
-                display: 'block',
-              }}
-            />
-          )}
+        {/* Inset preview area: bg-bg gives a clear edge against the surrounding
+            surface (especially in light mode where the label image is white).
+            The outer div scrolls; the inner one stays at least as large as the
+            viewport so small previews are still centered. */}
+        <div className="flex-1 overflow-auto bg-bg min-h-24 min-w-48">
+          <div className="min-h-full min-w-full flex items-center justify-center p-4">
+            {loading && (
+              <span className="font-mono text-[10px] text-muted animate-pulse">{t.output.loading}</span>
+            )}
+            {!loading && error && (
+              <div className="flex flex-col items-center gap-3 max-w-64 text-center">
+                <span className="font-mono text-[10px] text-amber-400 leading-relaxed">{error}</span>
+                <button
+                  onClick={handleDownloadFallback}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-[10px] font-mono bg-surface-2 border border-border text-muted hover:text-text hover:border-accent transition-colors"
+                >
+                  <ArrowDownTrayIcon className="w-3.5 h-3.5" />
+                  Export ZPL instead
+                </button>
+              </div>
+            )}
+            {!loading && !error && previewUrl && (
+              <img
+                src={previewUrl}
+                alt="Label preview"
+                className="block shrink-0"
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
