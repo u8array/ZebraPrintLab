@@ -32,6 +32,8 @@ interface Barcode1DConfig {
   byRatio?: number;
   /** See {@link ObjectTypeDefinition.heightLocked}. */
   heightLocked?: boolean;
+  /** See {@link ObjectTypeDefinition.interpretationLocked}. */
+  interpretationLocked?: boolean;
 }
 
 interface BarcodeLocale {
@@ -52,16 +54,22 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
       content: config.defaultContent,
       height: 100,
       moduleWidth: 2,
-      printInterpretation: true,
+      printInterpretation: !config.interpretationLocked,
       checkDigit: false,
     },
     defaultSize: { width: 300, height: 120 },
     heightLocked: config.heightLocked,
+    interpretationLocked: config.interpretationLocked,
 
     commitTransform: config.heightLocked ? undefined : commitHeightTransform,
 
     toZPL: (obj: LabelObjectBase & { props: Barcode1DProps }) => {
-      const p = obj.props;
+      // Normalize printInterpretation for symbologies that have no HRI in ZPL
+      // (e.g. ^BR). This protects against legacy saved objects that still carry
+      // printInterpretation: true from emitting an out-of-spec interpretation flag.
+      const p = config.interpretationLocked
+        ? { ...obj.props, printInterpretation: false }
+        : obj.props;
       const byCmd = config.byRatio !== undefined
         ? `^BY${p.moduleWidth},${config.byRatio}`
         : `^BY${p.moduleWidth}`;
@@ -115,15 +123,17 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
             />
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              className="accent-accent"
-              checked={p.printInterpretation}
-              onChange={(e) => onChange({ printInterpretation: e.target.checked })}
-            />
-            <span className={labelCls}>{loc.printInterpretation}</span>
-          </label>
+          {!config.interpretationLocked && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="accent-accent"
+                checked={p.printInterpretation}
+                onChange={(e) => onChange({ printInterpretation: e.target.checked })}
+              />
+              <span className={labelCls}>{loc.printInterpretation}</span>
+            </label>
+          )}
 
           {config.hasCheckDigit && (
             <label className="flex items-center gap-2 cursor-pointer">

@@ -3,7 +3,7 @@ import bwipjs from "bwip-js/browser";
 import { Image as KImage, Group, Rect, Text } from "react-konva";
 import type Konva from "konva";
 import type { LabelObject } from "../../registry";
-import { BARCODE_1D_TYPES } from "../../registry";
+import { BARCODE_1D_TYPES, ObjectRegistry } from "../../registry";
 import type { ObjectChanges } from "../../store/labelStore";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import {
@@ -144,8 +144,12 @@ export function BarcodeObject({
   if (barcodeCanvas) {
     const w = displayW;
     const h = displayH;
-    const printInterp = !!(obj.props as { printInterpretation?: boolean })
-      .printInterpretation;
+    // Force-off when the symbology has no HRI in ZPL (e.g. GS1 Databar) — the
+    // canvas must match the print output even if a legacy saved object still
+    // carries printInterpretation: true.
+    const printInterp =
+      !ObjectRegistry[obj.type]?.interpretationLocked &&
+      !!(obj.props as { printInterpretation?: boolean }).printInterpretation;
     const moduleWidth =
       (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
     const textFontSize = Math.max(dotsToPx(moduleWidth * 10, scale, dpmm), 6);
@@ -435,9 +439,7 @@ export function BarcodeObject({
     }
 
     // ── Other 1D: separate Konva Text below bars ──────────────────────────
-    const showText =
-      BARCODE_1D_TYPES.has(obj.type) &&
-      (obj.props as { printInterpretation?: boolean }).printInterpretation;
+    const showText = BARCODE_1D_TYPES.has(obj.type) && printInterp;
 
     let displayText = rawContent;
     if (obj.type === "code39") {

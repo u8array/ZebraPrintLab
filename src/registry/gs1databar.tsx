@@ -12,6 +12,8 @@ export const gs1databar = createBarcode1D({
   // ignore the ^BR height parameter for this variant. Disabling resize and the
   // height input keeps the designer honest about what affects the print.
   heightLocked: true,
+  // ZPL ^BR has no HRI parameter — Labelary never prints text under the bars.
+  interpretationLocked: true,
   zplCommand: (p) => {
     // ^BR{orientation},{symbology},{magnification},{separator},{height},{segments}
     // symbology 1 = omnidirectional
