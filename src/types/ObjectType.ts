@@ -64,6 +64,13 @@ export interface ObjectTypeDefinition<P extends object = object> {
    * read-only — both reflect that the value cannot influence the print output.
    */
   heightLocked?: boolean;
+  /**
+   * True if the symbology has no human-readable interpretation in ZPL output
+   * (e.g. GS1 Databar — `^BR` exposes no HRI parameter and Labelary never
+   * renders text). The properties panel hides the checkbox and the canvas
+   * renderer suppresses the text so the designer matches the print output.
+   */
+  interpretationLocked?: boolean;
   toZPL: (obj: LabelObjectBase & { props: P }) => string;
   /**
    * Optional hook to enforce type-specific invariants on incoming changes
