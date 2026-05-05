@@ -609,6 +609,7 @@ function KonvaObjectInner({
         height={h}
         stroke={isSelected ? "#6366f1" : stroke}
         strokeWidth={isSelected ? Math.max(strokeWidth, 1.5) : strokeWidth}
+        strokeScaleEnabled={false}
         fill={fill}
         cornerRadius={cornerRadius}
         draggable
@@ -645,6 +646,7 @@ function KonvaObjectInner({
         radiusY={ry}
         stroke={isSelected ? "#6366f1" : stroke}
         strokeWidth={isSelected ? Math.max(strokeWidth, 1.5) : strokeWidth}
+        strokeScaleEnabled={false}
         fill={fill}
         draggable
         onClick={(e) =>
