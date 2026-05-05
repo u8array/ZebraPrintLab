@@ -16,6 +16,7 @@ export function inverseRotateDelta(
     case 90:  return [dy, -dx + 0];
     case 180: return [-dx + 0, -dy + 0];
     case 270: return [-dy + 0, dx];
+    default:  return [dx, dy];
   }
 }
 

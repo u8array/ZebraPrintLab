@@ -95,18 +95,24 @@ function updateCurrentObjects(
   };
 }
 
-function migrateLegacy(persistedState: unknown): unknown {
+function migrateLegacy(persistedState: unknown, version: number): unknown {
   if (!persistedState || typeof persistedState !== 'object') return persistedState;
-  const s = persistedState as Record<string, unknown>;
-  // v0 stored `objects` at top level; wrap it into a single page.
-  if (Array.isArray(s.objects) && !Array.isArray(s.pages)) {
-    return {
-      ...s,
-      pages: [{ objects: s.objects }],
-      currentPageIndex: 0,
-    };
+  let s = persistedState as Record<string, unknown>;
+
+  // v0→v1: top-level objects array → pages
+  if (version < 1 && Array.isArray(s.objects) && !Array.isArray(s.pages)) {
+    s = { ...s, pages: [{ objects: s.objects }], currentPageIndex: 0 };
   }
-  return persistedState;
+
+  // v1→v2: viewRotation was added after version 1 shipped; patch it if absent.
+  if (version < 2) {
+    const cs = s.canvasSettings;
+    if (cs && typeof cs === 'object' && !('viewRotation' in cs)) {
+      s = { ...s, canvasSettings: { ...(cs as Record<string, unknown>), viewRotation: 0 } };
+    }
+  }
+
+  return s;
 }
 
 export const useLabelStore = create<LabelState>()(
@@ -411,8 +417,8 @@ export const useLabelStore = create<LabelState>()(
     }),
     {
       name: 'zpl-designer-session',
-      version: 1,
-      migrate: (persistedState) => migrateLegacy(persistedState) as LabelState,
+      version: 2,
+      migrate: (persistedState, version) => migrateLegacy(persistedState, version) as LabelState,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         label: state.label,
