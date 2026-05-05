@@ -16,6 +16,15 @@ const LS_PRINTER_UID = "zebra_print_uid";
 type Tab = "network" | "browserprint";
 interface Status { type: "idle" | "sending" | "success" | "error"; message?: string }
 
+function StatusMessage({ status }: { status: Status }) {
+  if (status.type === "idle" || status.type === "sending") return null;
+  return (
+    <p className={`font-mono text-[10px] ${status.type === "success" ? "text-green-400" : "text-red-400"}`}>
+      {status.message}
+    </p>
+  );
+}
+
 interface Props {
   zpl: string;
   onClose: () => void;
@@ -96,15 +105,6 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
         ? "text-text border-b border-accent"
         : "text-muted hover:text-text"
     }`;
-
-  function StatusMessage({ status }: { status: Status }) {
-    if (status.type === "idle" || status.type === "sending") return null;
-    return (
-      <p className={`font-mono text-[10px] ${status.type === "success" ? "text-green-400" : "text-red-400"}`}>
-        {status.message}
-      </p>
-    );
-  }
 
   return (
     <div
