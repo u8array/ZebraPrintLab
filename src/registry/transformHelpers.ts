@@ -22,6 +22,18 @@ export function commitWidthHeightTransform<P extends WidthHeightProps>(
   } as Partial<P>;
 }
 
+/** Shared commitTransform for 1D barcodes — only the bar height scales (width
+ *  is determined by content + module width, not by the resize anchor). */
+export function commitHeightTransform<P extends { height: number }>(
+  obj: LabelObjectBase & { props: P },
+  ctx: TransformContext,
+): Partial<P> {
+  const { sy, snap } = ctx;
+  return {
+    height: Math.max(1, snap(Math.round(obj.props.height * sy))),
+  } as Partial<P>;
+}
+
 interface Stacked2DProps {
   rowHeight: number;
   moduleWidth: number;
