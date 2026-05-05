@@ -22,6 +22,10 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
   },
   defaultSize: { width: 300, height: 120 },
 
+  commitTransform: (obj, { sy, snap }) => ({
+    height: Math.max(1, snap(Math.round(obj.props.height * sy))),
+  }),
+
   toZPL: (obj) => {
     const p = obj.props;
     const interp = p.printInterpretation ? 'Y' : 'N';

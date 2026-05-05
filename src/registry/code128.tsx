@@ -24,6 +24,10 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
   },
   defaultSize: { width: 300, height: 120 },
 
+  commitTransform: (obj, { sy, snap }) => ({
+    height: Math.max(1, snap(Math.round(obj.props.height * sy))),
+  }),
+
   toZPL: (obj) => {
     const p = obj.props;
     const interp = p.printInterpretation ? 'Y' : 'N';
