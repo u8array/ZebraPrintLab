@@ -96,7 +96,7 @@ export const gs1databar: ObjectTypeDefinition<Gs1DatabarProps> = {
             value={p.symbology}
             onChange={(e) => onChange({ symbology: Number(e.target.value) as Gs1DatabarProps['symbology'] })}
           >
-            {(Object.entries(SYMBOLOGY_LABELS) as [string, string][]).map(([val, name]) => (
+            {Object.entries(SYMBOLOGY_LABELS).map(([val, name]) => (
               <option key={val} value={val}>{name}</option>
             ))}
           </select>

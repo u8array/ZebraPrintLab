@@ -19,6 +19,7 @@ import type { AztecProps } from "../registry/aztec";
 import type { MicroPdf417Props } from "../registry/micropdf417";
 import type { CodablockProps } from "../registry/codablock";
 import { putImage } from "./imageCache";
+import { GS1_DATABAR_DEFAULT_SEGMENTS } from "./gs1";
 
 /**
  * Categorised import report produced alongside the parsed objects.
@@ -717,7 +718,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       bcRotation = readRotation(p[0]);
       byModuleWidth = int(p[2], byModuleWidth);
       gsSymbology = (int(p[1], 1) as Gs1DatabarProps["symbology"]) || 1;
-      gsSegments = p[5] !== undefined ? int(p[5], 22) : undefined;
+      gsSegments = p[5] !== undefined ? int(p[5], GS1_DATABAR_DEFAULT_SEGMENTS) : undefined;
     },
 
     // ^BQN,2,{magnification} — QR Code
