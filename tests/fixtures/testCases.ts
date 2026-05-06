@@ -184,10 +184,44 @@ export const testCases: TestCase[] = [
   },
   {
     id: "barcode_gs1databar_standard",
-    zpl_input: "^XA^BY2^FO50,50^BRN,1,2,2,100,1^FD0112345678901^FS^XZ",
+    zpl_input: "^XA^BY2^FO50,50^BRN,1,2,2,100^FD0112345678901^FS^XZ",
     expected_bounds: { x: 50, y: 50, width: 192, height: 66 },
     image_ref: "barcode_gs1databar_standard.png",
   },
+  {
+    id: "barcode_gs1databar_truncated",
+    zpl_input: "^XA^BY2^FO50,50^BRN,2,2,2,100^FD0112345678901^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 192, height: 26 },
+    image_ref: "barcode_gs1databar_truncated.png",
+  },
+  {
+    id: "barcode_gs1databar_stacked",
+    zpl_input: "^XA^BY2^FO50,50^BRN,3,2,2,100^FD0112345678901^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 100, height: 28 },
+    image_ref: "barcode_gs1databar_stacked.png",
+  },
+  {
+    id: "barcode_gs1databar_stacked_omni",
+    zpl_input: "^XA^BY2^FO50,50^BRN,4,2,2,100^FD0112345678901^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 100, height: 144 },
+    image_ref: "barcode_gs1databar_stacked_omni.png",
+  },
+  {
+    id: "barcode_gs1databar_limited",
+    zpl_input: "^XA^BY2^FO50,50^BRN,5,2,2,100^FD0112345678901^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 148, height: 20 },
+    image_ref: "barcode_gs1databar_limited.png",
+  },
+  {
+    id: "barcode_gs1databar_expanded",
+    zpl_input: "^XA^BY2^FO50,50^BRN,6,2,2,100^FD0112345678901231^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 266, height: 68 },
+    image_ref: "barcode_gs1databar_expanded.png",
+  },
+  // Note: Expanded Stacked (symbology 7) is intentionally not Labelary-validated.
+  // bwip-js requires "(01)…" parens-AI input; Labelary's ^BR sym 7 silently rejects
+  // that format and renders an empty PNG, so dimensions cannot be cross-validated.
+  // The ZPL roundtrip is covered by a unit test in zplGenerator.test.ts.
   {
     id: "barcode_upce_standard",
     zpl_input: "^XA^BY2^FO50,50^B9N,100,N,N^FD012345^FS^XZ",

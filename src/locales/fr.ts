@@ -305,6 +305,8 @@ const fr = {
       height: 'Hauteur (points)',
       printInterpretation: 'Lisible',
       moduleWidth: 'Largeur module',
+      symbology: 'Symbologie',
+      segments: 'Segments par ligne',
     },
     planet: {
       content: 'Contenu',

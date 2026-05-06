@@ -305,6 +305,8 @@ const hr = {
       height: 'Visina (točke)',
       printInterpretation: 'Čitljivo za ljude',
       moduleWidth: 'Širina modula',
+      symbology: 'Simbologija',
+      segments: 'Segmenti po retku',
     },
     planet: {
       content: 'Sadržaj',

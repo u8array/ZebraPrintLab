@@ -305,6 +305,8 @@ const pt = {
       height: 'Altura (pontos)',
       printInterpretation: 'Legível',
       moduleWidth: 'Largura módulo',
+      symbology: 'Simbologia',
+      segments: 'Segmentos por linha',
     },
     planet: {
       content: 'Conteúdo',

@@ -305,6 +305,8 @@ const bg = {
       height: 'Височина (точки)',
       printInterpretation: 'Четимо',
       moduleWidth: 'Ширина на модул',
+      symbology: 'Символика',
+      segments: 'Сегменти на ред',
     },
     planet: {
       content: 'Съдържание',

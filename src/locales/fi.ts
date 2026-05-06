@@ -305,6 +305,8 @@ const fi = {
       height: 'Korkeus (pistettä)',
       printInterpretation: 'Luettava',
       moduleWidth: 'Moduulin leveys',
+      symbology: 'Symboliikka',
+      segments: 'Segmentit per rivi',
     },
     planet: {
       content: 'Sisältö',

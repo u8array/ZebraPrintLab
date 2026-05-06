@@ -305,6 +305,8 @@ const sk = {
       height: 'Výška (body)',
       printInterpretation: 'Čitateľný pre človeka',
       moduleWidth: 'Šírka modulu',
+      symbology: 'Symbolika',
+      segments: 'Segmenty na riadok',
     },
     planet: {
       content: 'Obsah',

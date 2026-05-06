@@ -305,6 +305,8 @@ const ja = {
       height: '高さ（ドット）',
       printInterpretation: '可読文字',
       moduleWidth: 'モジュール幅',
+      symbology: 'シンボル体系',
+      segments: '1行あたりのセグメント数',
     },
     planet: {
       content: '内容',

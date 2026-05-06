@@ -305,6 +305,8 @@ const nl = {
       height: 'Hoogte (punten)',
       printInterpretation: 'Leesbaar',
       moduleWidth: 'Modulebreedte',
+      symbology: 'Symbologie',
+      segments: 'Segmenten per rij',
     },
     planet: {
       content: 'Inhoud',

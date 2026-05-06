@@ -305,6 +305,8 @@ const hu = {
       height: 'Magasság (pont)',
       printInterpretation: 'Olvasható',
       moduleWidth: 'Modulszélesség',
+      symbology: 'Szimbológia',
+      segments: 'Szegmens soronként',
     },
     planet: {
       content: 'Tartalom',

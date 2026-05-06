@@ -305,6 +305,8 @@ const tr = {
       height: 'Yükseklik (nokta)',
       printInterpretation: 'Okunabilir',
       moduleWidth: 'Modül genişliği',
+      symbology: 'Semboloji',
+      segments: 'Satır başına segment',
     },
     planet: {
       content: 'İçerik',

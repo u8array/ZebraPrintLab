@@ -56,8 +56,14 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
       "barcode_code93_standard",
       // bwip-js code11 quiet zone is narrower than Zebra's; same issue as code93.
       "barcode_code11_standard",
-      // bwip-js GS1 DataBar stacking/finder-pattern differs from Zebra firmware.
+      // bwip-js GS1 DataBar stacking/finder-pattern differs from Zebra firmware
+      // for the multi-row variants. Sym 1 (Omnidirectional) matches.
       "barcode_gs1databar_standard",
+      "barcode_gs1databar_truncated",
+      "barcode_gs1databar_stacked",
+      "barcode_gs1databar_stacked_omni",
+      "barcode_gs1databar_limited",
+      "barcode_gs1databar_expanded",
       // 2D encoder discrepancies between bwip-js and Zebra firmware persist
       // through rotation. For QR specifically the rotation appears to shift
       // bwip's chosen mask, widening the diff vs. Labelary even though the

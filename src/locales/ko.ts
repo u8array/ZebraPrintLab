@@ -305,6 +305,8 @@ const ko = {
       height: '높이 (도트)',
       printInterpretation: '판독 가능',
       moduleWidth: '모듈 폭',
+      symbology: '심볼로지',
+      segments: '행당 세그먼트',
     },
     planet: {
       content: '내용',

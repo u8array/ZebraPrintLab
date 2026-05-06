@@ -1,7 +1,24 @@
 import type { LabelObject } from "../../registry";
+import type { Gs1DatabarProps } from "../../registry/gs1databar";
 import { objectRotation } from "../../registry/rotation";
 import { dotsToPx } from "../../lib/coordinates";
+import {
+  GS1_DATABAR_DEFAULT_SEGMENTS,
+  GS1_DATABAR_EXPANDED_SYMBOLOGIES,
+  gtin14WithCheck,
+  wrapGs1AIs,
+} from "../../lib/gs1";
 import { MICROPDF417_QUIET_ZONE_ROWS } from "./bwipConstants";
+
+const GS1_DATABAR_BCID: Record<Gs1DatabarProps["symbology"], string> = {
+  1: "databaromni",
+  2: "databartruncated",
+  3: "databarstacked",
+  4: "databarstackedomni",
+  5: "databarlimited",
+  6: "databarexpanded",
+  7: "databarexpandedstacked",
+};
 
 const BCID: Partial<Record<LabelObject["type"], string>> = {
   code128: "code128",
@@ -19,6 +36,9 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
   logmars: "code39",
   msi: "msi",
   plessey: "plessey",
+  // Placeholder — the actual bcid is resolved per-symbology via
+  // GS1_DATABAR_BCID below. This entry exists only to pass the
+  // `if (!bcid) return null` guard at the top of buildBwipOptions.
   gs1databar: "databaromni",
   planet: "planet",
   postal: "postnet",
@@ -260,15 +280,20 @@ export function buildBwipOptions(
     }
     case "gs1databar": {
       const p = obj.props;
-      const raw = (p.content || "0").replace(/\D/g, "");
-      const padded = raw.padStart(13, "0").slice(0, 14);
+      const sym = p.symbology;
+      const isExpanded = GS1_DATABAR_EXPANDED_SYMBOLOGIES.has(sym);
+      // bwip-js needs (AI)data parens; canonical model stores raw digits.
+      // Sym 1–5 require AI 01 + valid 14-digit GTIN with correct check.
+      const text = isExpanded
+        ? wrapGs1AIs(p.content)
+        : `(01)${gtin14WithCheck(p.content)}`;
       opts = {
-        bcid,
-        text: `(01)${padded}`,
+        bcid: GS1_DATABAR_BCID[sym],
+        text,
         scale: scale1D,
         height: 10,
-        // Adds 2 quiet-zone rows above and below so canvas height matches Labelary.
         paddingheight: 2,
+        ...(sym === 7 ? { segments: p.segments ?? GS1_DATABAR_DEFAULT_SEGMENTS } : {}),
       };
       break;
     }

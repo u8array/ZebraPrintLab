@@ -11,6 +11,7 @@ import type { EllipseProps } from "../registry/ellipse";
 import type { LineProps } from "../registry/line";
 import type { ImageProps } from "../registry/image";
 import type { Barcode1DProps } from "../registry/barcode1d";
+import type { Gs1DatabarProps } from "../registry/gs1databar";
 import type { Pdf417Props } from "../registry/pdf417";
 import type { SerialProps } from "../registry/serial";
 import { isZplRotation, type ZplRotation } from "../registry/rotation";
@@ -18,6 +19,7 @@ import type { AztecProps } from "../registry/aztec";
 import type { MicroPdf417Props } from "../registry/micropdf417";
 import type { CodablockProps } from "../registry/codablock";
 import { putImage } from "./imageCache";
+import { GS1_DATABAR_DEFAULT_SEGMENTS } from "./gs1";
 
 /**
  * Categorised import report produced alongside the parsed objects.
@@ -215,6 +217,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let bcInterp = true;
   let bcCheck = false;
   let bcRotation: ZplRotation = "N";
+  let gsSymbology: Gs1DatabarProps["symbology"] = 1;
+  let gsSegments: number | undefined = undefined;
   // ^BY barcode defaults
   let byModuleWidth = 2;
   let byHeight = 0; // 0 = no ^BY height; barcode handlers use ||100 as sentinel
@@ -440,7 +444,6 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       case "logmars":
       case "msi":
       case "plessey":
-      case "gs1databar":
       case "planet":
       case "postal":
         objects.push(
@@ -456,6 +459,24 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               checkDigit: bcCheck,
               rotation: bcRotation,
             } satisfies Barcode1DProps,
+            posType,
+            comment,
+          ),
+        );
+        break;
+      case "gs1databar":
+        objects.push(
+          makeObj(
+            "gs1databar",
+            x,
+            y,
+            {
+              content,
+              moduleWidth: byModuleWidth,
+              symbology: gsSymbology,
+              segments: gsSegments,
+              rotation: bcRotation,
+            } satisfies Gs1DatabarProps,
             posType,
             comment,
           ),
@@ -691,12 +712,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       bcInterp = (p[3] ?? "Y") === "Y";
     },
     // GS1 Databar: different param layout, also updates byModuleWidth
-    // ^BRN,{symbology},{magnification},{separator},{height},{segments}
+    // ^BRo,{symbology},{magnification},{separator},{height},{segments}
     BR(p) {
       fieldType = "gs1databar";
       bcRotation = readRotation(p[0]);
-      bcHeight = int(p[4], byHeight || 100);
       byModuleWidth = int(p[2], byModuleWidth);
+      gsSymbology = (int(p[1], 1) as Gs1DatabarProps["symbology"]) || 1;
+      gsSegments = p[5] !== undefined ? int(p[5], GS1_DATABAR_DEFAULT_SEGMENTS) : undefined;
     },
 
     // ^BQN,2,{magnification} — QR Code

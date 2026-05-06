@@ -147,6 +147,10 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
         "code93", "code11",                  // quiet zone narrower than Zebra
         "plessey",                           // different bar encoding algorithm
       ].includes(obj.type);
+      // GS1 Databar variants 2–7 use intrinsic heights that bwip-js maps differently
+      // than Zebra firmware. Width agrees, height diverges. Sym 1 (Omnidirectional)
+      // matches and is checked strictly; the others get ZPL-only validation.
+      const isGs1NonOmni = obj.type === "gs1databar" && obj.props.symbology !== 1;
 
       if (isEanUpc && !isQuarterRotated) {
         // Known discrepancy: Labelary reserves barHeight + EAN_TEXT_ZONE_DOTS (13 dots)
@@ -183,7 +187,7 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       //   codablock — bwip-js uses different encoding parameters than Zebra firmware.
       //   hasBwipSizeMismatch — bwip-natural size diverges from Labelary (see above).
       // EAN/UPC and logmars heights are excluded — see isEanUpc/hasLogmarsTextZone above.
-      if (obj.type !== "codablock" && !hasBwipSizeMismatch) {
+      if (obj.type !== "codablock" && !hasBwipSizeMismatch && !isGs1NonOmni) {
         // Quarter-rotated EAN/UPC moves the EAN_TEXT_ZONE_DOTS guard extension
         // onto the width axis instead of the height axis, mirroring the upright
         // height adjustment.

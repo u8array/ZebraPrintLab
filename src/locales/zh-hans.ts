@@ -305,6 +305,8 @@ const zhHans = {
       height: '高度（点）',
       printInterpretation: '可读文字',
       moduleWidth: '模块宽度',
+      symbology: '符号体系',
+      segments: '每行段数',
     },
     planet: {
       content: '内容',

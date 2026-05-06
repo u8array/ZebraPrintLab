@@ -305,6 +305,8 @@ const sr = {
       height: 'Висина (тачке)',
       printInterpretation: 'Читљиво',
       moduleWidth: 'Ширина модула',
+      symbology: 'Симбологија',
+      segments: 'Сегменти по реду',
     },
     planet: {
       content: 'Садржај',
