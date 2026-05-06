@@ -311,30 +311,16 @@ export function BarcodeObject({
             fill="#000000"
             listening={false}
           />,
-          // right 5 digits
+          // right 6 digits (including check digit)
           <Text
             key="dr"
             x={xRightUpca}
             y={textY}
-            width={halfUpca}
-            text={allDigits.slice(6, 11)}
+            width={Math.round(halfUpca * 6 / 5)}
+            text={allDigits.slice(6, 12)}
             fontSize={textFontSize}
             fontFamily="'Courier New', monospace"
             align="center"
-            wrap="none"
-            fill="#000000"
-            listening={false}
-          />,
-          // check digit — outside-right (like leading digit on left)
-          <Text
-            key="dc"
-            x={w + 2}
-            y={textY}
-            width={ldW}
-            text={allDigits[11]}
-            fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
-            align="left"
             wrap="none"
             fill="#000000"
             listening={false}
@@ -621,8 +607,7 @@ export function BarcodeObject({
           textElements = [
             sysNode("sys", all12[0] ?? ""),
             node("left", xLeft, halfW, all12.slice(1, 6)),
-            node("right", xRight, halfW, all12.slice(6, 11)),
-            trailNode("trail", all12[11] ?? ""),
+            node("right", xRight, Math.round(halfW * 6 / 5), all12.slice(6, 12)),
           ];
         } else if (obj.type === "upce") {
           const d6 = rawContent.replace(/\D/g, "").slice(0, 6).padEnd(6, "0");
