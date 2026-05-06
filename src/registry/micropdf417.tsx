@@ -3,12 +3,15 @@ import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
 import { fieldPos, fdField } from "./zplHelpers";
 import { commitStacked2DTransform } from "./transformHelpers";
+import { type ZplRotation } from "./rotation";
+import { RotationSelect } from "../components/Properties/RotationSelect";
 
 export interface MicroPdf417Props {
   content: string;
   moduleWidth: number; // bar width in dots
   rowHeight: number; // row height in dots
   mode: number;
+  rotation: ZplRotation;
 }
 
 export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
@@ -20,6 +23,7 @@ export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
     moduleWidth: 2,
     rowHeight: 2,
     mode: 0,
+    rotation: 'N',
   },
   defaultSize: { width: 200, height: 100 },
 
@@ -31,7 +35,7 @@ export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
     return [
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
-      `^BFN,${p.rowHeight},${p.mode}`,
+      `^BF${p.rotation},${p.rowHeight},${p.mode}`,
       fdField(p.content),
     ]
       .filter(Boolean)
@@ -90,6 +94,8 @@ export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
             onChange={(e) => onChange({ mode: Number(e.target.value) })}
           />
         </div>
+
+        <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
       </div>
     );
   },

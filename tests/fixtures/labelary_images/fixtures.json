@@ -190,80 +190,244 @@
     {
       "id": "barcode_code93_standard",
       "zpl_input": "^XA^BY2^FO50,50^BAN,100,N,N,N^FDCODE93^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 182, "height": 100 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 182,
+        "height": 100
+      },
       "image_ref": "barcode_code93_standard.png"
     },
     {
       "id": "barcode_code11_standard",
       "zpl_input": "^XA^BY2^FO50,50^B1N,N,100,N,N^FD12345^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 178, "height": 100 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 178,
+        "height": 100
+      },
       "image_ref": "barcode_code11_standard.png"
     },
     {
       "id": "barcode_industrial2of5_standard",
       "zpl_input": "^XA^BY2^FO50,50^BIN,100,N,N^FD12345678^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 262, "height": 100 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 262,
+        "height": 100
+      },
       "image_ref": "barcode_industrial2of5_standard.png"
     },
     {
       "id": "barcode_standard2of5_standard",
       "zpl_input": "^XA^BY2^FO50,50^BJN,100,N,N^FD12345678^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 242, "height": 100 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 242,
+        "height": 100
+      },
       "image_ref": "barcode_standard2of5_standard.png"
     },
     {
       "id": "barcode_codabar_standard",
       "zpl_input": "^XA^BY2^FO50,50^BKN,N,100,N,N^FDA12345A^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 174, "height": 100 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 174,
+        "height": 100
+      },
       "image_ref": "barcode_codabar_standard.png"
     },
     {
       "id": "barcode_logmars_standard",
       "zpl_input": "^XA^BY2^FO50,50^BLN,100,N^FDLOGMARS1^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 350, "height": 120 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 350,
+        "height": 120
+      },
       "image_ref": "barcode_logmars_standard.png"
     },
     {
       "id": "barcode_logmars_with_text",
       "zpl_input": "^XA^BY2^FO50,50^BLN,100,Y^FDLOGMARS1^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 350, "height": 120 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 350,
+        "height": 120
+      },
       "image_ref": "barcode_logmars_with_text.png"
     },
     {
       "id": "barcode_msi_standard",
       "zpl_input": "^XA^BY2,2^FO50,50^BMN,N,100,N,N^FD12345678^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 230, "height": 100 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 230,
+        "height": 100
+      },
       "image_ref": "barcode_msi_standard.png"
     },
     {
       "id": "barcode_plessey_standard",
       "zpl_input": "^XA^BY2,2^FO50,50^BPN,N,100,N,N^FD12345678^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 294, "height": 100 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 294,
+        "height": 100
+      },
       "image_ref": "barcode_plessey_standard.png"
     },
     {
       "id": "barcode_planet_standard",
       "zpl_input": "^XA^BY2^FO50,50^B5N,100,N,N^FD12345678901^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 307, "height": 100 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 307,
+        "height": 100
+      },
       "image_ref": "barcode_planet_standard.png"
     },
     {
       "id": "barcode_postal_standard",
       "zpl_input": "^XA^BY2^FO50,50^BZN,100,N,N^FD12345^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 157, "height": 100 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 157,
+        "height": 100
+      },
       "image_ref": "barcode_postal_standard.png"
     },
     {
       "id": "barcode_gs1databar_standard",
       "zpl_input": "^XA^BY2^FO50,50^BRN,1,2,2,100,1^FD0112345678901^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 192, "height": 66 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 192,
+        "height": 66
+      },
       "image_ref": "barcode_gs1databar_standard.png"
     },
     {
       "id": "barcode_upce_standard",
       "zpl_input": "^XA^BY2^FO50,50^B9N,100,N,N^FD012345^FS^XZ",
-      "expected_bounds": { "x": 50, "y": 50, "width": 102, "height": 113 },
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 102,
+        "height": 113
+      },
       "image_ref": "barcode_upce_standard.png"
+    },
+    {
+      "id": "barcode_code128_rot_R",
+      "zpl_input": "^XA^BY2^FO100,100^BCR,100,N,N,N^FD123456^FS^XZ",
+      "expected_bounds": {
+        "x": 100,
+        "y": 100,
+        "width": 100,
+        "height": 202
+      },
+      "image_ref": "barcode_code128_rot_R.png"
+    },
+    {
+      "id": "barcode_code128_rot_I",
+      "zpl_input": "^XA^BY2^FO100,100^BCI,100,N,N,N^FD123456^FS^XZ",
+      "expected_bounds": {
+        "x": 100,
+        "y": 100,
+        "width": 202,
+        "height": 100
+      },
+      "image_ref": "barcode_code128_rot_I.png"
+    },
+    {
+      "id": "barcode_code128_rot_B",
+      "zpl_input": "^XA^BY2^FO100,100^BCB,100,N,N,N^FD123456^FS^XZ",
+      "expected_bounds": {
+        "x": 100,
+        "y": 100,
+        "width": 100,
+        "height": 202
+      },
+      "image_ref": "barcode_code128_rot_B.png"
+    },
+    {
+      "id": "barcode_qr_rot_R",
+      "zpl_input": "^XA^FO100,100^BQR,2,4^FDQA,Hello World^FS^XZ",
+      "expected_bounds": {
+        "x": 100,
+        "y": 110,
+        "width": 84,
+        "height": 84
+      },
+      "image_ref": "barcode_qr_rot_R.png"
+    },
+    {
+      "id": "barcode_datamatrix_rot_R",
+      "zpl_input": "^XA^FO100,100^BXR,5,200^FDDataMatrixTest^FS^XZ",
+      "expected_bounds": {
+        "x": 100,
+        "y": 100,
+        "width": 90,
+        "height": 90
+      },
+      "image_ref": "barcode_datamatrix_rot_R.png"
+    },
+    {
+      "id": "barcode_code39_rot_R",
+      "zpl_input": "^XA^BY2^FO100,100^B3R,N,100,N,N^FDCODE39^FS^XZ",
+      "expected_bounds": {
+        "x": 100,
+        "y": 100,
+        "width": 100,
+        "height": 254
+      },
+      "image_ref": "barcode_code39_rot_R.png"
+    },
+    {
+      "id": "barcode_code39_rot_B",
+      "zpl_input": "^XA^BY2^FO100,100^B3B,N,100,N,N^FDCODE39^FS^XZ",
+      "expected_bounds": {
+        "x": 100,
+        "y": 100,
+        "width": 100,
+        "height": 254
+      },
+      "image_ref": "barcode_code39_rot_B.png"
+    },
+    {
+      "id": "barcode_ean13_rot_R",
+      "zpl_input": "^XA^BY2^FO100,100^BER,100,N,N^FD123456789012^FS^XZ",
+      "expected_bounds": {
+        "x": 87,
+        "y": 100,
+        "width": 113,
+        "height": 190
+      },
+      "image_ref": "barcode_ean13_rot_R.png"
+    },
+    {
+      "id": "barcode_ean13_rot_B",
+      "zpl_input": "^XA^BY2^FO100,100^BEB,100,N,N^FD123456789012^FS^XZ",
+      "expected_bounds": {
+        "x": 100,
+        "y": 100,
+        "width": 113,
+        "height": 190
+      },
+      "image_ref": "barcode_ean13_rot_B.png"
     }
   ]
 }

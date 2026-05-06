@@ -227,6 +227,28 @@ describe('parseZPL — ^FX comment', () => {
   });
 });
 
+// ── barcode rotation ──────────────────────────────────────────────────────────
+
+describe('parseZPL — barcode rotation', () => {
+  it.each([
+    ['^XA^BY2^FO0,0^BCR,100,Y,N,N^FD123^FS^XZ', 'R'],
+    ['^XA^BY2^FO0,0^BCI,100,Y,N,N^FD123^FS^XZ', 'I'],
+    ['^XA^BY2^FO0,0^BCB,100,Y,N,N^FD123^FS^XZ', 'B'],
+    ['^XA^FO0,0^BQR,2,4^FDQA,X^FS^XZ', 'R'],
+    ['^XA^FO0,0^BXB,5,200^FDX^FS^XZ', 'B'],
+    ['^XA^FO0,0^B7I,4,0,0,,,^FDX^FS^XZ', 'I'],
+    ['^XA^FO0,0^B0R,4,N,N,N,N^FDX^FS^XZ', 'R'],
+  ])('reads orientation from %s', (zpl, expected) => {
+    const { objects } = parseZPL(zpl, 8);
+    expect((objects[0]?.props as { rotation?: string }).rotation).toBe(expected);
+  });
+
+  it('defaults to N when orientation is missing or unrecognised', () => {
+    const { objects } = parseZPL('^XA^BY2^FO0,0^BC,100,Y,N,N^FD123^FS^XZ', 8);
+    expect((objects[0]?.props as { rotation?: string }).rotation).toBe('N');
+  });
+});
+
 // ── ^FH hex encoding ──────────────────────────────────────────────────────────
 
 describe('parseZPL — ^FH hex escape', () => {

@@ -13,6 +13,7 @@ import type { ImageProps } from "../registry/image";
 import type { Barcode1DProps } from "../registry/barcode1d";
 import type { Pdf417Props } from "../registry/pdf417";
 import type { SerialProps } from "../registry/serial";
+import { isZplRotation, type ZplRotation } from "../registry/rotation";
 import type { AztecProps } from "../registry/aztec";
 import type { MicroPdf417Props } from "../registry/micropdf417";
 import type { CodablockProps } from "../registry/codablock";
@@ -213,6 +214,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let bcHeight = 100;
   let bcInterp = true;
   let bcCheck = false;
+  let bcRotation: ZplRotation = "N";
   // ^BY barcode defaults
   let byModuleWidth = 2;
   let byHeight = 0; // 0 = no ^BY height; barcode handlers use ||100 as sentinel
@@ -344,6 +346,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               moduleWidth: byModuleWidth,
               printInterpretation: bcInterp,
               checkDigit: bcCheck,
+              rotation: bcRotation,
             } satisfies Code128Props,
             posType,
             comment,
@@ -362,6 +365,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               moduleWidth: byModuleWidth,
               printInterpretation: bcInterp,
               checkDigit: bcCheck,
+              rotation: bcRotation,
             } satisfies Code39Props,
             posType,
             comment,
@@ -379,6 +383,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               height: bcHeight,
               moduleWidth: byModuleWidth,
               printInterpretation: bcInterp,
+              rotation: bcRotation,
             } satisfies Ean13Props,
             posType,
             comment,
@@ -398,6 +403,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               content: data,
               magnification: qrMag,
               errorCorrection: ec,
+              rotation: bcRotation,
             } satisfies QrCodeProps,
             posType,
             comment,
@@ -415,6 +421,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               content,
               dimension: dmDim,
               quality: dmQuality,
+              rotation: bcRotation,
             } satisfies DataMatrixProps,
             posType,
             comment,
@@ -447,6 +454,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               moduleWidth: byModuleWidth,
               printInterpretation: bcInterp,
               checkDigit: bcCheck,
+              rotation: bcRotation,
             } satisfies Barcode1DProps,
             posType,
             comment,
@@ -465,6 +473,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               securityLevel: pdfSecurity,
               columns: pdfColumns,
               moduleWidth: byModuleWidth,
+              rotation: bcRotation,
             } satisfies Pdf417Props,
             posType,
             comment,
@@ -481,6 +490,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               content,
               magnification: aztecMag,
               ecLevel: 0,
+              rotation: bcRotation,
             } satisfies AztecProps,
             posType,
             comment,
@@ -498,6 +508,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               moduleWidth: byModuleWidth,
               rowHeight: mpdfRowHeight,
               mode: 0,
+              rotation: bcRotation,
             } satisfies MicroPdf417Props,
             posType,
             comment,
@@ -515,6 +526,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               moduleWidth: byModuleWidth,
               rowHeight: cbRowHeight,
               securityLevel: cbSecurity,
+              rotation: bcRotation,
             } satisfies CodablockProps,
             posType,
             comment,
@@ -545,7 +557,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     browserLimit.push(tok);
   };
 
-  const handleAztec: Handler = (p) => { fieldType = "aztec"; aztecMag = int(p[1], 4); };
+  const readRotation = (raw: string | undefined): ZplRotation =>
+    raw && isZplRotation(raw) ? raw : "N";
+
+  const handleAztec: Handler = (p) => {
+    fieldType = "aztec";
+    bcRotation = readRotation(p[0]);
+    aztecMag = int(p[1], 4);
+  };
 
   // Factory for standard 1D barcode commands that share the same state variables.
   // hIdx/iIdx/cIdx are the comma-split parameter indices for height/interp/check.
@@ -557,6 +576,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     cIdx = -1,
   ): Handler => (p) => {
     fieldType = type;
+    bcRotation = readRotation(p[0]);
     bcHeight = int(p[hIdx], byHeight || 100);
     bcInterp = (p[iIdx] ?? iDefault) === "Y";
     if (cIdx >= 0) bcCheck = (p[cIdx] ?? "N") === "Y";
@@ -665,6 +685,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // ^BMN,{checkType},{height},{interp},N  (checkType: A/B/C/D=enabled, N=none)
     BM(p) {
       fieldType = "msi";
+      bcRotation = readRotation(p[0]);
       bcCheck = (p[1] ?? "N") !== "N";
       bcHeight = int(p[2], byHeight || 100);
       bcInterp = (p[3] ?? "Y") === "Y";
@@ -673,6 +694,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // ^BRN,{symbology},{magnification},{separator},{height},{segments}
     BR(p) {
       fieldType = "gs1databar";
+      bcRotation = readRotation(p[0]);
       bcHeight = int(p[4], byHeight || 100);
       byModuleWidth = int(p[2], byModuleWidth);
     },
@@ -680,17 +702,20 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // ^BQN,2,{magnification} — QR Code
     BQ(p) {
       fieldType = "qrcode";
+      bcRotation = readRotation(p[0]);
       qrMag = int(p[2], 4);
     },
     // ^BXN,{dimension},{quality} — DataMatrix
     BX(p) {
       fieldType = "datamatrix";
+      bcRotation = readRotation(p[0]);
       dmDim = int(p[1], 5);
       dmQuality = int(p[2], 200) as DataMatrixProps["quality"];
     },
     // ^B7N,{rowHeight},{securityLevel},{columns},,, — PDF417
     B7(p) {
       fieldType = "pdf417";
+      bcRotation = readRotation(p[0]);
       pdfRowHeight = int(p[1], 10);
       pdfSecurity = int(p[2], 0);
       pdfColumns = int(p[3], 0);
@@ -701,11 +726,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // ^BFN,{rowHeight} — MicroPDF417
     BF(p) {
       fieldType = "micropdf417";
+      bcRotation = readRotation(p[0]);
       mpdfRowHeight = int(p[1], 10);
     },
     // ^BBN,{rowHeight},{security},{numCharsPerRow},{numRows},{mode} — CODABLOCK
     BB(p) {
       fieldType = "codablock";
+      bcRotation = readRotation(p[0]);
       cbRowHeight = int(p[1], 10);
       cbSecurity = (p[2] ?? "Y") === "N" ? "N" : "Y";
     },

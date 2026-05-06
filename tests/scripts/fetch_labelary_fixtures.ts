@@ -7,6 +7,10 @@ const FIXTURES_DIR = path.resolve(
   "tests/fixtures/labelary_images",
 );
 
+interface FixtureMapping {
+  test_cases: typeof testCases;
+}
+
 async function fetchLabelaryImage(zpl: string): Promise<Buffer> {
   // Use 8dpmm (203 dpi) and 4x4 inches as standard canvas dimensions
   const url = "http://api.labelary.com/v1/printers/8dpmm/labels/4x4/0/";
@@ -35,10 +39,24 @@ async function main() {
   fs.mkdirSync(FIXTURES_DIR, { recursive: true });
 
   const mappingFile = path.join(FIXTURES_DIR, "fixtures.json");
-  const mappingData = { test_cases: testCases };
-
-  console.log("Writing mapping JSON (fixtures.json)...");
-  fs.writeFileSync(mappingFile, JSON.stringify(mappingData, null, 2), "utf8");
+  // fixtures.json is the source of truth for Labelary-measured bounds. Only
+  // append entries for new test cases — never overwrite existing ones, since
+  // testCases.ts may carry rounded/placeholder bounds that have been refined
+  // by hand or via tests/scripts/measure_bbox.mjs.
+  const existing: FixtureMapping = fs.existsSync(mappingFile)
+    ? JSON.parse(fs.readFileSync(mappingFile, "utf8"))
+    : { test_cases: [] };
+  const knownIds = new Set(existing.test_cases.map((c) => c.id));
+  const additions = testCases.filter((c) => !knownIds.has(c.id));
+  if (additions.length > 0) {
+    const merged = { test_cases: [...existing.test_cases, ...additions] };
+    console.log(
+      `Adding ${additions.length} new entr${additions.length === 1 ? "y" : "ies"} to fixtures.json...`,
+    );
+    fs.writeFileSync(mappingFile, JSON.stringify(merged, null, 2), "utf8");
+  } else {
+    console.log("fixtures.json already covers every test case.");
+  }
 
   console.log("Fetching images from Labelary API...");
   for (const tc of testCases) {

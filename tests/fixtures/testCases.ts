@@ -194,4 +194,69 @@ export const testCases: TestCase[] = [
     expected_bounds: { x: 50, y: 50, width: 102, height: 113 },
     image_ref: "barcode_upce_standard.png",
   },
+
+  // ── Rotation coverage ─────────────────────────────────────────────────────
+  // Bounds measured from the Labelary PNG via tests/scripts/measure_bbox.mjs.
+  // R/B swap width and height of the unrotated symbol; the QR +10 dot Y offset
+  // applies to rotated QR codes too.
+  {
+    id: "barcode_code128_rot_R",
+    zpl_input: "^XA^BY2^FO100,100^BCR,100,N,N,N^FD123456^FS^XZ",
+    expected_bounds: { x: 100, y: 100, width: 100, height: 202 },
+    image_ref: "barcode_code128_rot_R.png",
+  },
+  {
+    id: "barcode_code128_rot_I",
+    zpl_input: "^XA^BY2^FO100,100^BCI,100,N,N,N^FD123456^FS^XZ",
+    expected_bounds: { x: 100, y: 100, width: 202, height: 100 },
+    image_ref: "barcode_code128_rot_I.png",
+  },
+  {
+    id: "barcode_code128_rot_B",
+    zpl_input: "^XA^BY2^FO100,100^BCB,100,N,N,N^FD123456^FS^XZ",
+    expected_bounds: { x: 100, y: 100, width: 100, height: 202 },
+    image_ref: "barcode_code128_rot_B.png",
+  },
+  {
+    id: "barcode_qr_rot_R",
+    zpl_input: "^XA^FO100,100^BQR,2,4^FDQA,Hello World^FS^XZ",
+    expected_bounds: { x: 100, y: 110, width: 84, height: 84 },
+    image_ref: "barcode_qr_rot_R.png",
+  },
+  {
+    id: "barcode_datamatrix_rot_R",
+    zpl_input: "^XA^FO100,100^BXR,5,200^FDDataMatrixTest^FS^XZ",
+    expected_bounds: { x: 100, y: 100, width: 90, height: 90 },
+    image_ref: "barcode_datamatrix_rot_R.png",
+  },
+  // Code39 (^B3) and EAN13 (^BE) use different param orders than Code128's
+  // ^BC, so cover them too. Bounds populated via measure_bbox.mjs.
+  {
+    id: "barcode_code39_rot_R",
+    zpl_input: "^XA^BY2^FO100,100^B3R,N,100,N,N^FDCODE39^FS^XZ",
+    expected_bounds: { x: 100, y: 100, width: 100, height: 254 },
+    image_ref: "barcode_code39_rot_R.png",
+  },
+  {
+    id: "barcode_code39_rot_B",
+    zpl_input: "^XA^BY2^FO100,100^B3B,N,100,N,N^FDCODE39^FS^XZ",
+    expected_bounds: { x: 100, y: 100, width: 100, height: 254 },
+    image_ref: "barcode_code39_rot_B.png",
+  },
+  // EAN13 has extended guard bars that extend past the bar-height baseline.
+  // After R rotation those guards sit LEFT of the FO anchor (ink at x=87 with
+  // FO=100), so the bbox starts to the left of obj.x. The B rotation keeps the
+  // ink within the FO-anchored corner.
+  {
+    id: "barcode_ean13_rot_R",
+    zpl_input: "^XA^BY2^FO100,100^BER,100,N,N^FD123456789012^FS^XZ",
+    expected_bounds: { x: 87, y: 100, width: 113, height: 190 },
+    image_ref: "barcode_ean13_rot_R.png",
+  },
+  {
+    id: "barcode_ean13_rot_B",
+    zpl_input: "^XA^BY2^FO100,100^BEB,100,N,N^FD123456789012^FS^XZ",
+    expected_bounds: { x: 100, y: 100, width: 113, height: 190 },
+    image_ref: "barcode_ean13_rot_B.png",
+  },
 ];

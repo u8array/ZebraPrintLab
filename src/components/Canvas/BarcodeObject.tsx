@@ -10,10 +10,12 @@ import {
   buildBwipOptions,
   getDisplaySize,
   eanCheckDigit,
+  upceCheckDigit,
   get1DBwipScale,
   getEanUpcLayout,
   type EanUpcType,
 } from "./bwipHelpers";
+import { objectRotation } from "../../registry/rotation";
 import {
   QR_FO_Y_OFFSET_DOTS,
   QR_FT_MODULE_OFFSET,
@@ -151,9 +153,12 @@ export function BarcodeObject({
     // Force-off when the symbology has no HRI in ZPL (e.g. GS1 Databar) — the
     // canvas must match the print output even if a legacy saved object still
     // carries printInterpretation: true.
-    const printInterp =
+    const rotation = objectRotation(obj.props);
+    const isUpright = rotation === "N";
+    const printInterpEnabled =
       !ObjectRegistry[obj.type]?.interpretationLocked &&
       !!(obj.props as { printInterpretation?: boolean }).printInterpretation;
+    const printInterp = isUpright && printInterpEnabled;
     const moduleWidth =
       (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
     const textFontSize = Math.max(dotsToPx(moduleWidth * 10, scale, dpmm), 6);
@@ -320,20 +325,6 @@ export function BarcodeObject({
             fill="#000000"
             listening={false}
           />,
-          // check digit — outside-right (like leading digit on left)
-          <Text
-            key="dc"
-            x={w + 2}
-            y={textY}
-            width={ldW}
-            text={allDigits[11]}
-            fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
-            align="left"
-            wrap="none"
-            fill="#000000"
-            listening={false}
-          />,
         ];
       } else if (obj.type === "upce") {
         const digits6 = rawContent
@@ -341,23 +332,7 @@ export function BarcodeObject({
           .slice(0, 6)
           .padEnd(6, "0");
 
-        // Expand UPC-E to 11-digit UPC-A to compute check digit
-        const vA = digits6[0] ?? "0",
-          vB = digits6[1] ?? "0",
-          vC = digits6[2] ?? "0";
-        const vD = digits6[3] ?? "0",
-          vE = digits6[4] ?? "0",
-          vF = digits6[5] ?? "0";
-        const fi = parseInt(vF, 10);
-        let expanded11: string;
-        if (fi <= 2) expanded11 = `0${vA}${vB}${vF}0000${vC}${vD}${vE}`;
-        else if (fi === 3) expanded11 = `0${vA}${vB}${vC}00000${vD}${vE}`;
-        else if (fi === 4) expanded11 = `0${vA}${vB}${vC}${vD}00000${vE}`;
-        else expanded11 = `0${vA}${vB}${vC}${vD}${vE}${vF}0000`;
-        let ckSum = 0;
-        for (let i = 0; i < 11; i++)
-          ckSum += parseInt(expanded11[i] ?? "0", 10) * (i % 2 === 0 ? 3 : 1);
-        const checkDigit = String((10 - (ckSum % 10)) % 10);
+        const checkDigit = upceCheckDigit(digits6);
 
         // UPC-E: 6 digits centered over the data area (modules 3–44 of 51)
         const { xLeft: xMid, halfWidth: midW } = layout;
@@ -444,6 +419,11 @@ export function BarcodeObject({
 
     // ── Other 1D: separate Konva Text below bars ──────────────────────────
     const showText = BARCODE_1D_TYPES.has(obj.type) && printInterp;
+    // Rotated 1D: text overlay rotated to match the barcode orientation.
+    const showRotatedText =
+      !isUpright &&
+      printInterpEnabled &&
+      BARCODE_1D_TYPES.has(obj.type);
 
     let displayText = rawContent;
     if (obj.type === "code39") {
@@ -539,6 +519,147 @@ export function BarcodeObject({
             fill="#000000"
             listening={false}
           />
+        </Group>
+      );
+    }
+
+    // ── Rotated 1D: text overlay rotated alongside the bars ──────────────
+    if (showRotatedText) {
+      // Rotation math (Konva y-down, CW positive):
+      //   R  (rot=90):  local-x→screen-down, local-y→screen-left
+      //   B  (rot=-90): local-x→screen-up,   local-y→screen-right
+      //   I  (rot=180): local-x→screen-left,  local-y→screen-up
+      //
+      // Text "side" for 90°/270°: standard 1D text is below bars in upright,
+      //   so after 90°CW it's on the LEFT; after 270°CW on the RIGHT.
+      //   LOGMARS is mirrored (text above in upright → right for 90°, left for 270°).
+      const isTextAbove = obj.type === "logmars";
+      // x-anchor for R/B (shared by all text nodes for a given rotation)
+      const sideX =
+        rotation === "R"
+          ? isTextAbove ? w + textGap + textFontSize : -textGap
+          : isTextAbove ? -(textGap + textFontSize) : w + textGap;
+      const tRot = rotation === "R" ? 90 : rotation === "I" ? 180 : -90;
+
+      // ── EAN/UPC: reproduce upright digit layout along the rotated axis ──
+      let textElements: React.ReactNode;
+      if (EAN_UPC_TYPES.has(obj.type)) {
+        const bwipSc = get1DBwipScale(moduleWidth, scale, dpmm);
+        // For I: encoding runs horizontally (canvas.width); for R/B: vertically (canvas.height)
+        const encDisplay = rotation === "I" ? w : h;
+        const encCanvas  = rotation === "I" ? barcodeCanvas.width : barcodeCanvas.height;
+        const layout = getEanUpcLayout(obj.type as EanUpcType, encDisplay, encCanvas, bwipSc);
+        const { xLeft, xRight, halfWidth: halfW } = layout;
+        const ldW = textFontSize * 1.2;
+
+        const tStyle = {
+          fontSize: textFontSize,
+          fontFamily: "'Courier New', monospace" as const,
+          wrap: "none" as const,
+          fill: "#000000",
+          listening: false,
+        };
+
+        // Position a text node at `encPos` from barcode start, spanning `size`.
+        // For R: encPos → screen-y downward from top (start=top).
+        // For B: encPos → screen-y upward from bottom (start=bottom), anchor = h - encPos.
+        // For I: encPos → screen-x leftward from right (start=right), anchor-x = w - encPos.
+        const node = (key: string, encPos: number, size: number, text: string) => {
+          const tx = rotation === "I" ? w - encPos : sideX;
+          const ty = rotation === "R" ? encPos : rotation === "B" ? h - encPos : -textGap;
+          return <Text key={key} x={tx} y={ty} rotation={tRot} width={Math.max(size, 1)} text={text} align="center" {...tStyle} />;
+        };
+
+        // Single digit floated BEFORE barcode start (outside the quiet zone).
+        const sysNode = (key: string, text: string) => {
+          // R: above top (y=-ldW); B: below bottom (y=h+ldW); I: right of barcode (x=w+ldW).
+          const tx = rotation === "I" ? w + ldW : sideX;
+          const ty = rotation === "R" ? -ldW : rotation === "B" ? h + ldW : -textGap;
+          return <Text key={key} x={tx} y={ty} rotation={tRot} width={Math.max(ldW, 1)} text={text} align="center" {...tStyle} />;
+        };
+
+        // Single digit floated AFTER barcode end (UPC-A/UPC-E check digit).
+        const trailNode = (key: string, text: string) => {
+          // R: below bottom (y≈encDisplay); B: above top (y≈h-encDisplay); I: left of x=0.
+          const tx = rotation === "I" ? -ldW : sideX;
+          const ty = rotation === "R" ? encDisplay : rotation === "B" ? h - encDisplay : -textGap;
+          return <Text key={key} x={tx} y={ty} rotation={tRot} width={Math.max(ldW, 1)} text={text} align="left" {...tStyle} />;
+        };
+
+        if (obj.type === "ean13") {
+          const d12 = rawContent.replace(/\D/g, "").slice(0, 12).padEnd(12, "0");
+          const all13 = d12 + eanCheckDigit(d12, 1, 3);
+          textElements = [
+            sysNode("sys", all13[0] ?? ""),
+            node("left", xLeft, halfW, all13.slice(1, 7)),
+            node("right", xRight, halfW, all13.slice(7, 13)),
+          ];
+        } else if (obj.type === "ean8") {
+          const d7 = rawContent.replace(/\D/g, "").slice(0, 7).padEnd(7, "0");
+          const all8 = d7 + eanCheckDigit(d7, 3, 1);
+          textElements = [
+            node("left", xLeft, halfW, all8.slice(0, 4)),
+            node("right", xRight, halfW, all8.slice(4, 8)),
+          ];
+        } else if (obj.type === "upca") {
+          const d11 = rawContent.replace(/\D/g, "").slice(0, 11).padEnd(11, "0");
+          const all12 = d11 + eanCheckDigit(d11, 3, 1);
+          textElements = [
+            sysNode("sys", all12[0] ?? ""),
+            node("left", xLeft, halfW, all12.slice(1, 6)),
+            node("right", xRight, halfW, all12.slice(6, 11)),
+          ];
+        } else if (obj.type === "upce") {
+          const d6 = rawContent.replace(/\D/g, "").slice(0, 6).padEnd(6, "0");
+          const ck = upceCheckDigit(d6);
+          textElements = [
+            sysNode("sys", "0"),
+            node("mid", xLeft, halfW, d6),
+            trailNode("trail", ck),
+          ];
+        }
+      } else {
+        // ── Other 1D: single centered text string ──────────────────────────
+        let txtX: number;
+        let txtY: number;
+        let txtWidth: number;
+
+        if (rotation === "R") {
+          txtX = sideX; txtY = 0; txtWidth = h;
+        } else if (rotation === "I") {
+          txtX = w;
+          txtY = isTextAbove ? h + textGap + textFontSize : -textGap;
+          txtWidth = w;
+        } else {
+          txtX = sideX; txtY = h; txtWidth = h;
+        }
+
+        textElements = (
+          <Text
+            x={txtX} y={txtY} rotation={tRot} width={Math.max(txtWidth, 1)}
+            text={displayText} fontSize={textFontSize}
+            fontFamily="'Courier New', monospace"
+            align="center" wrap="none" fill="#000000" listening={false}
+          />
+        );
+      }
+
+      return (
+        <Group
+          id={obj.id} x={x} y={y} draggable
+          onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
+          onTap={() => onSelect(false)}
+          onDragMove={(e) => e.target.position(snapPos(e.target.x(), e.target.y()))}
+          onDragEnd={handleDragEnd}
+        >
+          <KImage x={0} y={0} image={barcodeCanvas}
+            width={Math.max(w, 1)} height={Math.max(h, 1)}
+            imageSmoothingEnabled={false}
+            stroke={isSelected ? "#6366f1" : undefined}
+            strokeWidth={isSelected ? 2 : 0}
+            strokeScaleEnabled={false}
+          />
+          {textElements}
         </Group>
       );
     }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { getEanUpcLayout } from "./bwipHelpers";
+import { buildBwipOptions, getDisplaySize, getEanUpcLayout } from "./bwipHelpers";
+import type { LabelObject } from "../../registry";
 
 describe("getEanUpcLayout", () => {
   // bwip-js native canvas widths (no quiet zones, scale=2):
@@ -65,5 +66,62 @@ describe("getEanUpcLayout", () => {
       expect(l.xLeft).toBe(3);
       expect(l.halfWidth).toBe(42);
     });
+  });
+});
+
+describe("rotation pipeline", () => {
+  // Minimal code128 fixture; only the props used by buildBwipOptions/
+  // getDisplaySize matter for these checks.
+  const baseCode128 = (rotation: "N" | "R" | "I" | "B"): LabelObject =>
+    ({
+      id: "1",
+      type: "code128",
+      x: 0,
+      y: 0,
+      rotation: 0,
+      props: {
+        content: "ABC",
+        height: 100,
+        moduleWidth: 2,
+        printInterpretation: false,
+        checkDigit: false,
+        rotation,
+      },
+    }) as LabelObject;
+
+  it("does not set rotate for N", () => {
+    const opts = buildBwipOptions(baseCode128("N"), 1, 8);
+    expect(opts?.rotate).toBeUndefined();
+  });
+
+  it("forwards R and I unchanged to bwip-js", () => {
+    expect(buildBwipOptions(baseCode128("R"), 1, 8)?.rotate).toBe("R");
+    expect(buildBwipOptions(baseCode128("I"), 1, 8)?.rotate).toBe("I");
+  });
+
+  it("translates ZPL B to bwip L (270° CW)", () => {
+    expect(buildBwipOptions(baseCode128("B"), 1, 8)?.rotate).toBe("L");
+  });
+
+  it("swaps display W and H for quarter rotations", () => {
+    // Pretend bwip produced an unrotated 200x100 bitmap.
+    const fakeCanvas = { width: 200, height: 100 } as HTMLCanvasElement;
+    const upright = getDisplaySize(baseCode128("N"), fakeCanvas, 1, 8);
+    // For R/B, bwip's bitmap is post-rotation (100x200). Pass that and check
+    // the upright dimensions are recovered then re-swapped to visible.
+    const rotatedCanvas = { width: 100, height: 200 } as HTMLCanvasElement;
+    const rotR = getDisplaySize(baseCode128("R"), rotatedCanvas, 1, 8);
+    const rotB = getDisplaySize(baseCode128("B"), rotatedCanvas, 1, 8);
+    expect(rotR.w).toBe(upright.h);
+    expect(rotR.h).toBe(upright.w);
+    expect(rotB.w).toBe(upright.h);
+    expect(rotB.h).toBe(upright.w);
+  });
+
+  it("leaves dimensions untouched for I (180°)", () => {
+    const fakeCanvas = { width: 200, height: 100 } as HTMLCanvasElement;
+    const upright = getDisplaySize(baseCode128("N"), fakeCanvas, 1, 8);
+    const inverted = getDisplaySize(baseCode128("I"), fakeCanvas, 1, 8);
+    expect(inverted).toEqual(upright);
   });
 });

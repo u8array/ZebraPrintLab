@@ -4,6 +4,8 @@ import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdField } from './zplHelpers';
 import { commitHeightTransform } from './transformHelpers';
 import { filterContent, type ContentSpec } from './contentSpec';
+import { type ZplRotation } from './rotation';
+import { RotationSelect } from '../components/Properties/RotationSelect';
 
 export interface Barcode1DProps {
   content: string;
@@ -11,6 +13,7 @@ export interface Barcode1DProps {
   moduleWidth: number;
   printInterpretation: boolean;
   checkDigit: boolean;
+  rotation: ZplRotation;
 }
 
 interface Barcode1DConfig {
@@ -58,6 +61,7 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
       moduleWidth: 2,
       printInterpretation: !config.interpretationLocked,
       checkDigit: false,
+      rotation: 'N',
     },
     defaultSize: { width: 300, height: 120 },
     heightLocked: config.heightLocked,
@@ -148,6 +152,11 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
               <span className={labelCls}>{loc.checkDigit}</span>
             </label>
           )}
+
+          <RotationSelect
+            value={p.rotation}
+            onChange={(rotation) => onChange({ rotation })}
+          />
         </div>
       );
     },

@@ -1,4 +1,5 @@
 import type { LabelObject } from "../../registry";
+import { objectRotation } from "../../registry/rotation";
 import { dotsToPx } from "../../lib/coordinates";
 import { MICROPDF417_QUIET_ZONE_ROWS } from "./bwipConstants";
 
@@ -131,6 +132,18 @@ export function eanCheckDigit(digits: string, w0: number, w1: number): string {
   return String((10 - (sum % 10)) % 10);
 }
 
+/** Compute the UPC-E check digit from the 6 compressed data digits. */
+export function upceCheckDigit(digits6: string): string {
+  const [vA, vB, vC, vD, vE, vF] = digits6.padEnd(6, "0").split("");
+  const fi = parseInt(vF ?? "0", 10);
+  let exp: string;
+  if (fi <= 2) exp = `0${vA}${vB}${vF}0000${vC}${vD}${vE}`;
+  else if (fi === 3) exp = `0${vA}${vB}${vC}00000${vD}${vE}`;
+  else if (fi === 4) exp = `0${vA}${vB}${vC}${vD}00000${vE}`;
+  else exp = `0${vA}${vB}${vC}${vD}${vE}${vF}0000`;
+  return eanCheckDigit(exp, 3, 1);
+}
+
 /**
  * Encode text as Code 128 subset B using bwip-js raw ^NNN format.
  * ZPL's ^BC defaults to subset B for printable ASCII content, so using raw
@@ -163,6 +176,12 @@ export function buildBwipOptions(
     renderScale != null && renderDpmm != null
       ? get1DBwipScale(mw, renderScale, renderDpmm)
       : BWIP_SCALE;
+
+  // bwip-js takes the same N/R/I/B letters ZPL does for symbol orientation;
+  // emitting it post-build means the produced bitmap is already rotated and
+  // its dimensions are the post-rotation extents — no Konva-side rotation math
+  // needed.
+  const rotation = objectRotation(obj.props);
 
   let opts: Record<string, unknown> | null = null;
 
@@ -336,6 +355,16 @@ export function buildBwipOptions(
       return null;
   }
 
+  if (opts && rotation !== "N") {
+    // ZPL uses N/R/I/B (B = 270° CW). bwip-js uses N/R/I/L (L = 90° CCW =
+    // 270° CW). The other three letters mean the same thing in both.
+    opts.rotate = rotation === "B" ? "L" : rotation;
+    // HRI text is handled as a Konva overlay in BarcodeObject (same as for
+    // upright barcodes). Using bwip's includetext would embed text into the
+    // bitmap at bwip's internal scale, making the bitmap taller/wider than the
+    // bar-only dimensions that getDisplaySize computes — causing the KImage to
+    // stretch the bitmap incorrectly and appear blurry/distorted.
+  }
   return opts;
 }
 
@@ -347,6 +376,24 @@ export function getDisplaySize(
 ): { w: number; h: number } {
   if (!canvas) return { w: 0, h: 0 };
 
+  // For 90°/270° rotations, bwip-js produces a bitmap whose width and height
+  // are swapped relative to the upright form. Compute size as if upright (the
+  // existing per-symbology formulas all assume that), then swap at the end.
+  const rotation = objectRotation(obj.props);
+  const isQuarter = rotation === "R" || rotation === "B";
+  const cw = isQuarter ? canvas.height : canvas.width;
+  const ch = isQuarter ? canvas.width : canvas.height;
+  const upright = getUprightDisplaySize(obj, cw, ch, scale, dpmm);
+  return isQuarter ? { w: upright.h, h: upright.w } : upright;
+}
+
+function getUprightDisplaySize(
+  obj: LabelObject,
+  cw: number,
+  ch: number,
+  scale: number,
+  dpmm: number,
+): { w: number; h: number } {
   // bwip-js at bwipSc=1 renders 1 extra pixel; at bwipSc>=2 it renders the exact module
   // count. The extraPx term corrects for this so formulas stay consistent across scales.
   switch (obj.type) {
@@ -356,7 +403,7 @@ export function getDisplaySize(
       // Correcting to the Labelary width would stretch bars; return the bwip-natural size.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / bwipSc) * modulePx;
+      const w = (cw / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
@@ -365,7 +412,7 @@ export function getDisplaySize(
       // Width is approximate; the visual regression is skipped for this type.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / bwipSc) * modulePx;
+      const w = (cw / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
@@ -375,7 +422,7 @@ export function getDisplaySize(
       // match with Labelary fixtures regardless of bwip canvas pixel rounding.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const rawPx = (canvas.width / bwipSc) * modulePx * POSTNET_PLANET_WIDTH_RATIO;
+      const rawPx = (cw / bwipSc) * modulePx * POSTNET_PLANET_WIDTH_RATIO;
       const wDots = Math.round((rawPx / scale) * dpmm);
       const w = dotsToPx(wDots, scale, dpmm);
       const h = dotsToPx(obj.props.height, scale, dpmm);
@@ -384,17 +431,17 @@ export function getDisplaySize(
     case "gs1databar": {
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / bwipSc) * modulePx;
+      const w = (cw / bwipSc) * modulePx;
       // Height is symbol-standard fixed (not the ZPL height param).
       // paddingheight:2 in buildBwipOptions adds the quiet-zone rows so
-      // canvas.height already reflects the correct total height.
-      const h = (canvas.height / bwipSc) * modulePx;
+      // ch already reflects the correct total height.
+      const h = (ch / bwipSc) * modulePx;
       return { w, h };
     }
     case "code128": {
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / bwipSc) * modulePx;
+      const w = (cw / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
@@ -405,7 +452,7 @@ export function getDisplaySize(
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
       const extraPx = bwipSc === 1 ? 1 : 0;
-      const w = ((canvas.width - extraPx) / bwipSc) * modulePx;
+      const w = ((cw - extraPx) / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
@@ -419,14 +466,14 @@ export function getDisplaySize(
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
       const extraPx = bwipSc === 1 ? 1 : 0;
-      const w = ((canvas.width - extraPx) / bwipSc) * modulePx;
+      const w = ((cw - extraPx) / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
     case "pdf417": {
       const p = obj.props;
       // bwip-js uses a fixed internal row height of 3 for pdf417
-      const numRows = canvas.height / (BWIP_PDF417_MIN_ROWHEIGHT * BWIP_SCALE);
+      const numRows = ch / (BWIP_PDF417_MIN_ROWHEIGHT * BWIP_SCALE);
 
       // Width check: bwip-js sometimes adds unexpected padding or uses
       // different column logic. We force the display width based on the
@@ -444,28 +491,28 @@ export function getDisplaySize(
     case "qrcode": {
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
       const size =
-        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+        (cw / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "datamatrix": {
       const modulePx = dotsToPx(obj.props.dimension, scale, dpmm);
       const size =
-        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+        (cw / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "aztec": {
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
       const size =
-        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+        (cw / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "micropdf417": {
       const p = obj.props;
       // bwip-js ignores rowheight for micropdf417 and always uses 2 internal pixels per row.
       // It also adds MICROPDF417_QUIET_ZONE_ROWS quiet-zone rows (top+bottom) to the canvas.
-      const numRows = Math.max(0, canvas.height / (BWIP_SCALE * 2) - MICROPDF417_QUIET_ZONE_ROWS);
+      const numRows = Math.max(0, ch / (BWIP_SCALE * 2) - MICROPDF417_QUIET_ZONE_ROWS);
       const w =
-        (canvas.width / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
+        (cw / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
       const h = numRows * dotsToPx(p.rowHeight, scale, dpmm);
       return { w, h };
     }
@@ -476,14 +523,14 @@ export function getDisplaySize(
         Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
       );
       const w =
-        (canvas.width / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
+        (cw / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
       const h =
-        (canvas.height / BWIP_SCALE) *
+        (ch / BWIP_SCALE) *
         (dotsToPx(p.rowHeight, scale, dpmm) / specRowheight);
       return { w, h };
     }
     default: {
-      return { w: canvas.width, h: canvas.height };
+      return { w: cw, h: ch };
     }
   }
 }

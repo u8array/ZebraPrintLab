@@ -11,6 +11,6 @@ export const planet = createBarcode1D({
   contentSpec: { charset: '0-9' },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
-    return `^B5N,${p.height},${interp},N`;
+    return `^B5${p.rotation},${p.height},${interp},N`;
   },
 });

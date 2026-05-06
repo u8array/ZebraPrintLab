@@ -4,6 +4,8 @@ import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdField } from './zplHelpers';
 import { commitHeightTransform } from './transformHelpers';
 import { filterContent, type ContentSpec } from './contentSpec';
+import { type ZplRotation } from './rotation';
+import { RotationSelect } from '../components/Properties/RotationSelect';
 
 const ean13Spec: ContentSpec = { charset: '0-9', maxLength: 12 };
 
@@ -12,6 +14,7 @@ export interface Ean13Props {
   height: number;
   moduleWidth: number;
   printInterpretation: boolean;
+  rotation: ZplRotation;
 }
 
 export const ean13: ObjectTypeDefinition<Ean13Props> = {
@@ -23,6 +26,7 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
     height: 100,
     moduleWidth: 2,
     printInterpretation: true,
+    rotation: 'N',
   },
   defaultSize: { width: 300, height: 120 },
 
@@ -34,7 +38,7 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
     return [
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
-      `^BEN,${p.height},${interp},N`,
+      `^BE${p.rotation},${p.height},${interp},N`,
       fdField(p.content),
     ].filter(Boolean).join('');
   },
@@ -87,6 +91,8 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
           />
           <span className={labelCls}>{t.registry.ean13.printInterpretation}</span>
         </label>
+
+        <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
       </div>
     );
   },

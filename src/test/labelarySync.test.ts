@@ -8,6 +8,7 @@ import {
 } from "../components/Canvas/bwipHelpers";
 import { EAN_TEXT_ZONE_DOTS } from "../components/Canvas/bwipConstants";
 import { ObjectRegistry } from "../registry";
+import { objectRotation } from "../registry/rotation";
 import { defined } from "./helpers";
 import { testModels } from "./testModels";
 
@@ -86,6 +87,12 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
         console.log(`[DEBUG] expectedBounds:`, tc.expected_bounds);
       }
 
+      // For 90°/270° rotated symbols the visible W and H are swapped, so the
+      // upright-shape assertions on bar height / module direction stop applying.
+      const rotation = objectRotation(obj.props);
+      const isQuarterRotated = rotation === "R" || rotation === "B";
+      const isEanUpc = ["ean13", "ean8", "upca", "upce"].includes(obj.type);
+
       // Verify visual position (top-left of the rendered bounding box in dots).
       // This mimics the positioning logic in BarcodeObject.tsx.
       const visualX = obj.x;
@@ -106,13 +113,18 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
         }
       }
 
-      expect(visualX).toBe(tc.expected_bounds.x);
+      // EAN/UPC have extended guard bars whose visible extent rotates with the
+      // symbol. Under R rotation those guards sit LEFT of the FO anchor, so
+      // the bbox.x is below obj.x. The model still holds obj.x as FO, so the
+      // strict x-equality check is dropped for rotated EAN/UPC.
+      if (!(isEanUpc && isQuarterRotated)) {
+        expect(visualX).toBe(tc.expected_bounds.x);
+      }
       expect(visualY).toBeCloseTo(tc.expected_bounds.y, 0);
 
       expect(displaySize.w).toBeGreaterThan(0);
       expect(displaySize.h).toBeGreaterThan(0);
 
-      const isEanUpc = ["ean13", "ean8", "upca", "upce"].includes(obj.type);
       const is1DCode = [
         "code128",
         "code39",
@@ -136,16 +148,18 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
         "plessey",                           // different bar encoding algorithm
       ].includes(obj.type);
 
-      if (isEanUpc) {
+      if (isEanUpc && !isQuarterRotated) {
         // Known discrepancy: Labelary reserves barHeight + EAN_TEXT_ZONE_DOTS (13 dots)
         // even with printInterpretation=N. getDisplaySize intentionally returns only the
         // bar height because the text zone is blank whitespace — bwip does not render it.
         // expected_bounds.height in fixtures reflects the true Labelary value (barHeight+13).
+        // Under quarter rotation the text zone rotates onto the horizontal axis, so the
+        // bbox height already equals the bar length; the subtraction would be wrong.
         expect(displaySize.h * 8).toBeCloseTo(
           tc.expected_bounds.height - EAN_TEXT_ZONE_DOTS,
           1,
         );
-      } else if (is1DCode) {
+      } else if (is1DCode && !isQuarterRotated) {
         expect(displaySize.h).toBe(
           (obj.props as { height: number }).height / 8,
         );
@@ -170,7 +184,14 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       //   hasBwipSizeMismatch — bwip-natural size diverges from Labelary (see above).
       // EAN/UPC and logmars heights are excluded — see isEanUpc/hasLogmarsTextZone above.
       if (obj.type !== "codablock" && !hasBwipSizeMismatch) {
-        expect(displaySize.w * 8).toBeCloseTo(tc.expected_bounds.width, 1);
+        // Quarter-rotated EAN/UPC moves the EAN_TEXT_ZONE_DOTS guard extension
+        // onto the width axis instead of the height axis, mirroring the upright
+        // height adjustment.
+        const widthAdjust = isEanUpc && isQuarterRotated ? EAN_TEXT_ZONE_DOTS : 0;
+        expect(displaySize.w * 8).toBeCloseTo(
+          tc.expected_bounds.width - widthAdjust,
+          1,
+        );
         if (!isEanUpc && !hasLogmarsTextZone) {
           expect(displaySize.h * 8).toBeCloseTo(tc.expected_bounds.height, 1);
         }

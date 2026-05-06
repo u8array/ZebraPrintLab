@@ -3,6 +3,8 @@ import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdField } from './zplHelpers';
 import { commitHeightTransform } from './transformHelpers';
+import { type ZplRotation } from './rotation';
+import { RotationSelect } from '../components/Properties/RotationSelect';
 
 export interface Code128Props {
   content: string;
@@ -10,6 +12,7 @@ export interface Code128Props {
   moduleWidth: number;
   printInterpretation: boolean;
   checkDigit: boolean;
+  rotation: ZplRotation;
 }
 
 export const code128: ObjectTypeDefinition<Code128Props> = {
@@ -22,6 +25,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
     moduleWidth: 2,
     printInterpretation: true,
     checkDigit: false,
+    rotation: 'N',
   },
   defaultSize: { width: 300, height: 120 },
 
@@ -34,7 +38,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
     return [
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
-      `^BCN,${p.height},${interp},N,${check}`,
+      `^BC${p.rotation},${p.height},${interp},N,${check}`,
       fdField(p.content),
     ].filter(Boolean).join('');
   },
@@ -96,6 +100,8 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
             <span className={labelCls}>{t.registry.code128.checkDigit}</span>
           </label>
         </div>
+
+        <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
       </div>
     );
   },
