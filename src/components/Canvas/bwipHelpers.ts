@@ -2,6 +2,12 @@ import type { LabelObject } from "../../registry";
 import type { Gs1DatabarProps } from "../../registry/gs1databar";
 import { objectRotation } from "../../registry/rotation";
 import { dotsToPx } from "../../lib/coordinates";
+import {
+  GS1_DATABAR_DEFAULT_SEGMENTS,
+  GS1_DATABAR_EXPANDED_SYMBOLOGIES,
+  gtin14WithCheck,
+  wrapGs1AIs,
+} from "../../lib/gs1";
 import { MICROPDF417_QUIET_ZONE_ROWS } from "./bwipConstants";
 
 const GS1_DATABAR_BCID: Record<Gs1DatabarProps["symbology"], string> = {
@@ -13,51 +19,6 @@ const GS1_DATABAR_BCID: Record<Gs1DatabarProps["symbology"], string> = {
   6: "databarexpanded",
   7: "databarexpandedstacked",
 };
-
-// Fixed-length GS1 Application Identifiers used to wrap raw input in parens for
-// bwip-js's databarexpanded(stacked) variants. Labelary accepts the raw form
-// and this lets us keep one canonical content string in the model.
-const GS1_FIXED_AI_LEN: Record<string, number> = {
-  "00": 18, "01": 14, "02": 14, "11": 6, "13": 6, "15": 6, "17": 6, "20": 2,
-};
-
-// Pad to 13 digits and append GTIN-14 check digit. Used for sym 1–5 input
-// where the user can provide a partial GTIN; Labelary auto-completes server-side
-// but bwip-js requires a fully-valid 14-digit number with correct check.
-function gtin14WithCheck(content: string): string {
-  let digits = content.replace(/\D/g, "");
-  if (digits.startsWith("01") && digits.length > 14) digits = digits.slice(2);
-  if (digits.length >= 14) return digits.slice(0, 14);
-  const body = digits.padStart(13, "0");
-  let sum = 0;
-  for (let i = 0; i < 13; i++) {
-    sum += parseInt(body[12 - i] ?? "0", 10) * (i % 2 === 0 ? 3 : 1);
-  }
-  return body + ((10 - (sum % 10)) % 10).toString();
-}
-
-function wrapGs1AIs(content: string): string {
-  if (content.includes("(")) return content;
-  let out = "";
-  let pos = 0;
-  while (pos < content.length) {
-    const ai = content.slice(pos, pos + 2);
-    const len = GS1_FIXED_AI_LEN[ai];
-    if (len === undefined) {
-      // Unknown AI: pass through what's left so bwip-js can surface a helpful error.
-      out += content.slice(pos);
-      break;
-    }
-    let data = content.slice(pos + 2, pos + 2 + len);
-    // Auto-complete GTIN-14 check digit if AI 01 data is short (13 digits).
-    if (ai === "01" && data.length < 14 && /^\d+$/.test(data)) {
-      data = gtin14WithCheck(data);
-    }
-    out += `(${ai})${data}`;
-    pos += 2 + len;
-  }
-  return out;
-}
 
 const BCID: Partial<Record<LabelObject["type"], string>> = {
   code128: "code128",
@@ -75,6 +36,9 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
   logmars: "code39",
   msi: "msi",
   plessey: "plessey",
+  // Placeholder — the actual bcid is resolved per-symbology via
+  // GS1_DATABAR_BCID below. This entry exists only to pass the
+  // `if (!bcid) return null` guard at the top of buildBwipOptions.
   gs1databar: "databaromni",
   planet: "planet",
   postal: "postnet",
@@ -317,22 +281,19 @@ export function buildBwipOptions(
     case "gs1databar": {
       const p = obj.props as Gs1DatabarProps;
       const sym = p.symbology ?? 1;
-      const isExpanded = sym === 6 || sym === 7;
-      let text: string;
-      if (isExpanded) {
-        // bwip-js needs (AI)data parens; canonical model stores raw digits.
-        text = wrapGs1AIs(p.content || "0112345678901231");
-      } else {
-        // Sym 1–5 require AI 01 + valid 14-digit GTIN with correct check.
-        text = `(01)${gtin14WithCheck(p.content || "")}`;
-      }
+      const isExpanded = GS1_DATABAR_EXPANDED_SYMBOLOGIES.has(sym);
+      // bwip-js needs (AI)data parens; canonical model stores raw digits.
+      // Sym 1–5 require AI 01 + valid 14-digit GTIN with correct check.
+      const text = isExpanded
+        ? wrapGs1AIs(p.content || "0112345678901231")
+        : `(01)${gtin14WithCheck(p.content || "")}`;
       opts = {
         bcid: GS1_DATABAR_BCID[sym],
         text,
         scale: scale1D,
         height: 10,
         paddingheight: 2,
-        ...(sym === 7 ? { segments: p.segments ?? 22 } : {}),
+        ...(sym === 7 ? { segments: p.segments ?? GS1_DATABAR_DEFAULT_SEGMENTS } : {}),
       };
       break;
     }

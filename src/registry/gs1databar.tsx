@@ -5,6 +5,10 @@ import { fieldPos, fdField } from './zplHelpers';
 import { filterContent } from './contentSpec';
 import { type ZplRotation } from './rotation';
 import { RotationSelect } from '../components/Properties/RotationSelect';
+import {
+  GS1_DATABAR_DEFAULT_SEGMENTS,
+  GS1_DATABAR_EXPANDED_SYMBOLOGIES,
+} from '../lib/gs1';
 
 export interface Gs1DatabarProps {
   content: string;
@@ -24,9 +28,6 @@ const SYMBOLOGY_LABELS: Record<Gs1DatabarProps['symbology'], string> = {
   7: 'Expanded Stacked',
 };
 
-// Expanded variants accept free-form AI content; others expect digits only.
-const EXPANDED_SYMBOLOGIES = new Set<number>([6, 7]);
-
 export const gs1databar: ObjectTypeDefinition<Gs1DatabarProps> = {
   label: 'GS1 Databar',
   icon: 'GS1',
@@ -44,7 +45,7 @@ export const gs1databar: ObjectTypeDefinition<Gs1DatabarProps> = {
     const p = obj.props;
     // ^BRo,s,m,sep,h[,sg] — segments must only be present for Expanded Stacked (7).
     // Including segments on sym 1–6 makes Labelary stack the symbol (wrong rendering).
-    const segs = p.symbology === 7 ? `,${p.segments ?? 22}` : '';
+    const segs = p.symbology === 7 ? `,${p.segments ?? GS1_DATABAR_DEFAULT_SEGMENTS}` : '';
     // Height hardcoded 100 (firmware overrides for most variants).
     return `^BY${p.moduleWidth}${fieldPos(obj)}^BR${p.rotation},${p.symbology},${p.moduleWidth},2,100${segs}${fdField(p.content)}`;
   },
@@ -53,7 +54,7 @@ export const gs1databar: ObjectTypeDefinition<Gs1DatabarProps> = {
     const t = useT();
     const p = obj.props;
     const loc = t.registry.gs1databar;
-    const isExpanded = EXPANDED_SYMBOLOGIES.has(p.symbology);
+    const isExpanded = GS1_DATABAR_EXPANDED_SYMBOLOGIES.has(p.symbology);
     return (
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
@@ -100,7 +101,7 @@ export const gs1databar: ObjectTypeDefinition<Gs1DatabarProps> = {
             <input
               type="number"
               className={inputCls}
-              value={p.segments ?? 22}
+              value={p.segments ?? GS1_DATABAR_DEFAULT_SEGMENTS}
               min={2}
               max={22}
               step={2}
