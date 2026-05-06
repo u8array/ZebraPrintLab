@@ -8,6 +8,7 @@ import {
 } from "../components/Canvas/bwipHelpers";
 import { EAN_TEXT_ZONE_DOTS } from "../components/Canvas/bwipConstants";
 import { ObjectRegistry } from "../registry";
+import { objectRotation } from "../registry/rotation";
 import { defined } from "./helpers";
 import { testModels } from "./testModels";
 
@@ -124,8 +125,7 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       );
       // For 90°/270° rotated symbols the visible W and H are swapped, so the
       // upright-shape assertions on bar height / module direction stop applying.
-      const rotation =
-        (obj.props as { rotation?: string }).rotation ?? "N";
+      const rotation = objectRotation(obj.props);
       const isQuarterRotated = rotation === "R" || rotation === "B";
       // LOGMARS spec places the human-readable line ABOVE the bars. Labelary's
       // bounding box for ^FO50,50 reports y=50 (bar top, not visual top), and

@@ -371,16 +371,16 @@ export function getDisplaySize(
   // existing per-symbology formulas all assume that), then swap at the end.
   const rotation = objectRotation(obj.props);
   const isQuarter = rotation === "R" || rotation === "B";
-  const uprightCanvas = isQuarter
-    ? ({ width: canvas.height, height: canvas.width } as HTMLCanvasElement)
-    : canvas;
-  const upright = getUprightDisplaySize(obj, uprightCanvas, scale, dpmm);
+  const cw = isQuarter ? canvas.height : canvas.width;
+  const ch = isQuarter ? canvas.width : canvas.height;
+  const upright = getUprightDisplaySize(obj, cw, ch, scale, dpmm);
   return isQuarter ? { w: upright.h, h: upright.w } : upright;
 }
 
 function getUprightDisplaySize(
   obj: LabelObject,
-  canvas: HTMLCanvasElement,
+  cw: number,
+  ch: number,
   scale: number,
   dpmm: number,
 ): { w: number; h: number } {
@@ -393,7 +393,7 @@ function getUprightDisplaySize(
       // Correcting to the Labelary width would stretch bars; return the bwip-natural size.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / bwipSc) * modulePx;
+      const w = (cw / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
@@ -402,7 +402,7 @@ function getUprightDisplaySize(
       // Width is approximate; the visual regression is skipped for this type.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / bwipSc) * modulePx;
+      const w = (cw / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
@@ -412,7 +412,7 @@ function getUprightDisplaySize(
       // match with Labelary fixtures regardless of bwip canvas pixel rounding.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const rawPx = (canvas.width / bwipSc) * modulePx * POSTNET_PLANET_WIDTH_RATIO;
+      const rawPx = (cw / bwipSc) * modulePx * POSTNET_PLANET_WIDTH_RATIO;
       const wDots = Math.round((rawPx / scale) * dpmm);
       const w = dotsToPx(wDots, scale, dpmm);
       const h = dotsToPx(obj.props.height, scale, dpmm);
@@ -421,17 +421,17 @@ function getUprightDisplaySize(
     case "gs1databar": {
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / bwipSc) * modulePx;
+      const w = (cw / bwipSc) * modulePx;
       // Height is symbol-standard fixed (not the ZPL height param).
       // paddingheight:2 in buildBwipOptions adds the quiet-zone rows so
-      // canvas.height already reflects the correct total height.
-      const h = (canvas.height / bwipSc) * modulePx;
+      // ch already reflects the correct total height.
+      const h = (ch / bwipSc) * modulePx;
       return { w, h };
     }
     case "code128": {
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const w = (canvas.width / bwipSc) * modulePx;
+      const w = (cw / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
@@ -442,7 +442,7 @@ function getUprightDisplaySize(
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
       const extraPx = bwipSc === 1 ? 1 : 0;
-      const w = ((canvas.width - extraPx) / bwipSc) * modulePx;
+      const w = ((cw - extraPx) / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
@@ -456,14 +456,14 @@ function getUprightDisplaySize(
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
       const extraPx = bwipSc === 1 ? 1 : 0;
-      const w = ((canvas.width - extraPx) / bwipSc) * modulePx;
+      const w = ((cw - extraPx) / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
     case "pdf417": {
       const p = obj.props;
       // bwip-js uses a fixed internal row height of 3 for pdf417
-      const numRows = canvas.height / (BWIP_PDF417_MIN_ROWHEIGHT * BWIP_SCALE);
+      const numRows = ch / (BWIP_PDF417_MIN_ROWHEIGHT * BWIP_SCALE);
 
       // Width check: bwip-js sometimes adds unexpected padding or uses
       // different column logic. We force the display width based on the
@@ -481,28 +481,28 @@ function getUprightDisplaySize(
     case "qrcode": {
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
       const size =
-        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+        (cw / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "datamatrix": {
       const modulePx = dotsToPx(obj.props.dimension, scale, dpmm);
       const size =
-        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+        (cw / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "aztec": {
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
       const size =
-        (canvas.width / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
+        (cw / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
     }
     case "micropdf417": {
       const p = obj.props;
       // bwip-js ignores rowheight for micropdf417 and always uses 2 internal pixels per row.
       // It also adds MICROPDF417_QUIET_ZONE_ROWS quiet-zone rows (top+bottom) to the canvas.
-      const numRows = Math.max(0, canvas.height / (BWIP_SCALE * 2) - MICROPDF417_QUIET_ZONE_ROWS);
+      const numRows = Math.max(0, ch / (BWIP_SCALE * 2) - MICROPDF417_QUIET_ZONE_ROWS);
       const w =
-        (canvas.width / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
+        (cw / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
       const h = numRows * dotsToPx(p.rowHeight, scale, dpmm);
       return { w, h };
     }
@@ -513,14 +513,14 @@ function getUprightDisplaySize(
         Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
       );
       const w =
-        (canvas.width / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
+        (cw / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
       const h =
-        (canvas.height / BWIP_SCALE) *
+        (ch / BWIP_SCALE) *
         (dotsToPx(p.rowHeight, scale, dpmm) / specRowheight);
       return { w, h };
     }
     default: {
-      return { w: canvas.width, h: canvas.height };
+      return { w: cw, h: ch };
     }
   }
 }
