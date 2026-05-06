@@ -37,7 +37,7 @@ export const serial: ObjectTypeDefinition<SerialProps> = {
       return `${field}^SF${p.increment},${p.content.length},Y^FD${p.content}^FS`;
     }
     // ^SN: start, increment, change-per-label
-    return `${field}^FD${p.content}^FS\n^SN${p.content},${p.increment},Y`;
+    return `${field}^SN${p.content},${p.increment},Y^FD${p.content}^FS`;
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
