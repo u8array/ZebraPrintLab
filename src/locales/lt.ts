@@ -305,6 +305,8 @@ const lt = {
       height: 'Aukštis (taškai)',
       printInterpretation: 'Skaitomas',
       moduleWidth: 'Modulio plotis',
+      symbology: 'Simbolika',
+      segments: 'Segmentai eilutėje',
     },
     planet: {
       content: 'Turinys',

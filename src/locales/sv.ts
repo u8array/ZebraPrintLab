@@ -305,6 +305,8 @@ const sv = {
       height: 'Höjd (punkter)',
       printInterpretation: 'Läsbar',
       moduleWidth: 'Modulbredd',
+      symbology: 'Symbolik',
+      segments: 'Segment per rad',
     },
     planet: {
       content: 'Innehåll',

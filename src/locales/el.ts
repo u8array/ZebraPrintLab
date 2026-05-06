@@ -305,6 +305,8 @@ const el = {
       height: 'Ύψος (κουκκίδες)',
       printInterpretation: 'Αναγνώσιμο',
       moduleWidth: 'Πλάτος μονάδας',
+      symbology: 'Συμβολολογία',
+      segments: 'Τμήματα ανά γραμμή',
     },
     planet: {
       content: 'Περιεχόμενο',

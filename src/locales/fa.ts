@@ -305,6 +305,8 @@ const fa = {
       height: 'ارتفاع (نقطه)',
       printInterpretation: 'قابل خواندن',
       moduleWidth: 'عرض ماژول',
+      symbology: 'نماد‌شناسی',
+      segments: 'بخش در هر ردیف',
     },
     planet: {
       content: 'محتوا',

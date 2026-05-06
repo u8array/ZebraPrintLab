@@ -305,6 +305,8 @@ const sl = {
       height: 'Višina (pike)',
       printInterpretation: 'Berljivo za človeka',
       moduleWidth: 'Širina modula',
+      symbology: 'Simbologija',
+      segments: 'Segmenti na vrstico',
     },
     planet: {
       content: 'Vsebina',

@@ -1,7 +1,18 @@
 import type { LabelObject } from "../../registry";
+import type { Gs1DatabarProps } from "../../registry/gs1databar";
 import { objectRotation } from "../../registry/rotation";
 import { dotsToPx } from "../../lib/coordinates";
 import { MICROPDF417_QUIET_ZONE_ROWS } from "./bwipConstants";
+
+const GS1_DATABAR_BCID: Record<Gs1DatabarProps["symbology"], string> = {
+  1: "databaromni",
+  2: "databartruncated",
+  3: "databarstacked",
+  4: "databarstackedomni",
+  5: "databarlimited",
+  6: "databarexpanded",
+  7: "databarexpandedstacked",
+};
 
 const BCID: Partial<Record<LabelObject["type"], string>> = {
   code128: "code128",
@@ -259,17 +270,25 @@ export function buildBwipOptions(
       break;
     }
     case "gs1databar": {
-      const p = obj.props;
-      const raw = (p.content || "0").replace(/\D/g, "");
-      const padded = raw.padStart(13, "0").slice(0, 14);
-      opts = {
-        bcid,
-        text: `(01)${padded}`,
+      const p = obj.props as Gs1DatabarProps;
+      const sym = p.symbology ?? 1;
+      const isExpanded = sym === 6 || sym === 7;
+      let text: string;
+      if (isExpanded) {
+        text = p.content || "(01)00000000000000";
+      } else {
+        const raw = (p.content || "0").replace(/\D/g, "");
+        text = `(01)${raw.padStart(13, "0").slice(0, 14)}`;
+      }
+      const gs1Opts: Record<string, unknown> = {
+        bcid: GS1_DATABAR_BCID[sym],
+        text,
         scale: scale1D,
         height: 10,
-        // Adds 2 quiet-zone rows above and below so canvas height matches Labelary.
         paddingheight: 2,
       };
+      if (sym === 7) gs1Opts["segments"] = p.segments ?? 22;
+      opts = gs1Opts as typeof opts;
       break;
     }
     case "planet": {

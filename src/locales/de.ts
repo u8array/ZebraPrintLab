@@ -325,6 +325,8 @@ const de = {
       height: 'Höhe (Punkte)',
       printInterpretation: 'Klartext',
       moduleWidth: 'Modulbreite',
+      symbology: 'Symbolik',
+      segments: 'Segmente pro Zeile',
     },
     planet: {
       content: 'Inhalt',

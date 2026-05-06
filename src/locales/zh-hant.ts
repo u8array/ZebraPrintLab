@@ -305,6 +305,8 @@ const zhHant = {
       height: '高度（點）',
       printInterpretation: '可讀文字',
       moduleWidth: '模組寬度',
+      symbology: '符號體系',
+      segments: '每行段數',
     },
     planet: {
       content: '內容',

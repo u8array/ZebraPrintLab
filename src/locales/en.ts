@@ -325,6 +325,8 @@ const en = {
       height: 'Height (dots)',
       printInterpretation: 'Human readable',
       moduleWidth: 'Module width',
+      symbology: 'Symbology',
+      segments: 'Segments per row',
     },
     planet: {
       content: 'Content',

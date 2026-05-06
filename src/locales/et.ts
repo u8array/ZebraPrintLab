@@ -305,6 +305,8 @@ const et = {
       height: 'Kõrgus (punkti)',
       printInterpretation: 'Loetav',
       moduleWidth: 'Mooduli laius',
+      symbology: 'Sümbolika',
+      segments: 'Segmente rea kohta',
     },
     planet: {
       content: 'Sisu',

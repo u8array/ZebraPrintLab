@@ -305,6 +305,8 @@ const he = {
       height: 'גובה (נקודות)',
       printInterpretation: 'קריא',
       moduleWidth: 'רוחב מודול',
+      symbology: 'סימבולוגיה',
+      segments: 'מקטעים לשורה',
     },
     planet: {
       content: 'תוכן',

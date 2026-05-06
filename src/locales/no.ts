@@ -305,6 +305,8 @@ const no = {
       height: 'Høyde (punkter)',
       printInterpretation: 'Lesbar',
       moduleWidth: 'Modulbredde',
+      symbology: 'Symbolikk',
+      segments: 'Segmenter per rad',
     },
     planet: {
       content: 'Innhold',

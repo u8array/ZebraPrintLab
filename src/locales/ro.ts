@@ -305,6 +305,8 @@ const ro = {
       height: 'Înălțime (puncte)',
       printInterpretation: 'Lizibil',
       moduleWidth: 'Lățime modul',
+      symbology: 'Simbologie',
+      segments: 'Segmente pe rând',
     },
     planet: {
       content: 'Conținut',

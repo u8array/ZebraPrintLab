@@ -305,6 +305,8 @@ const cs = {
       height: 'Výška (body)',
       printInterpretation: 'Čitelný pro člověka',
       moduleWidth: 'Šířka modulu',
+      symbology: 'Symbolika',
+      segments: 'Segmenty na řádek',
     },
     planet: {
       content: 'Obsah',

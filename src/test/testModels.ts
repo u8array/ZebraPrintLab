@@ -324,7 +324,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "0112345678901", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
+    props: { content: "0112345678901", moduleWidth: 2, symbology: 1, rotation: "N" },
   },
   barcode_upce_standard: {
     id: "29",

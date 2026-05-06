@@ -305,6 +305,8 @@ const ar = {
       height: 'الارتفاع (نقاط)',
       printInterpretation: 'مقروء',
       moduleWidth: 'عرض الوحدة',
+      symbology: 'الرمزية',
+      segments: 'مقاطع لكل صف',
     },
     planet: {
       content: 'المحتوى',

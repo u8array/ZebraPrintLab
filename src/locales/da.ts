@@ -305,6 +305,8 @@ const da = {
       height: 'Højde (punkter)',
       printInterpretation: 'Læsbar',
       moduleWidth: 'Modulbredde',
+      symbology: 'Symbolik',
+      segments: 'Segmenter per række',
     },
     planet: {
       content: 'Indhold',
