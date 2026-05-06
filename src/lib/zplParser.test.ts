@@ -192,6 +192,39 @@ describe('parseZPL — ^FX comment', () => {
     expect(objects).toHaveLength(1);
     expect(skipped.some((s) => s.startsWith('^FX'))).toBe(false);
   });
+
+  it('attaches a single ^FX to the next object as comment', () => {
+    const { objects } = parseZPL(
+      '^XA^FXTop section^FO10,20^A0N,30,0^FDText^FS^XZ',
+      8,
+    );
+    expect(objects[0].comment).toBe('Top section');
+  });
+
+  it('joins consecutive ^FX lines with a newline', () => {
+    const { objects } = parseZPL(
+      '^XA^FXLine 1^FXLine 2^FO10,20^A0N,30,0^FDText^FS^XZ',
+      8,
+    );
+    expect(objects[0].comment).toBe('Line 1\nLine 2');
+  });
+
+  it('does not bleed comments across ^XA boundaries', () => {
+    const { objects } = parseZPL(
+      '^XA^FXOnly first^XZ^XA^FO10,20^A0N,30,0^FDText^FS^XZ',
+      8,
+    );
+    expect(objects[0].comment).toBeUndefined();
+  });
+
+  it('does not reattach a consumed comment to a later object', () => {
+    const { objects } = parseZPL(
+      '^XA^FXOnly first^FO10,20^A0N,30,0^FDFirst^FS^FO10,60^A0N,30,0^FDSecond^FS^XZ',
+      8,
+    );
+    expect(objects[0].comment).toBe('Only first');
+    expect(objects[1].comment).toBeUndefined();
+  });
 });
 
 // ── ^FH hex encoding ──────────────────────────────────────────────────────────

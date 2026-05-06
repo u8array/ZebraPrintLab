@@ -531,6 +531,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   // ── Command handler map ────────────────────────────────────────────────────
   const noop: Handler = () => void 0;
   const resetComment: Handler = (_, rest) => { pendingComment = rest.trim() || undefined; };
+  // Hand-written ZPL often splits a logical comment across several `^FX` lines
+  // before the field they describe. Accumulate them so each line survives on
+  // the imported object's comment field; XA/XZ still reset at label boundaries.
+  const appendComment: Handler = (_, rest) => {
+    const next = rest.trim();
+    if (!next) return;
+    pendingComment = pendingComment ? `${pendingComment}\n${next}` : next;
+  };
   const mkBrowserLimit = (prefix: string, delimiter = "^"): Handler => (_, rest) => {
     const tok = `${delimiter}${prefix}${rest}`;
     skipped.push(tok);
@@ -1083,8 +1091,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // ^XA / ^XZ: label start/end — reset pending comment via empty rest
     XA: resetComment,
     XZ: resetComment,
-    // ^FX: comment field — store for attachment to the next field object
-    FX: resetComment,
+    // ^FX: comment field — accumulate across consecutive ^FX lines so the
+    // assembled text reaches the next field object as one multi-line comment.
+    FX: appendComment,
 
     // These commands carry no canvas-design information and are silently
     // discarded so they do not pollute importReport.unknown.
