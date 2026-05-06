@@ -556,6 +556,7 @@ export function BarcodeObject({
       const tRot = rotation === "R" ? 90 : rotation === "I" ? 180 : -90;
 
       // ── EAN/UPC: reproduce upright digit layout along the rotated axis ──
+      let textElements: React.ReactNode;
       if (EAN_UPC_TYPES.has(obj.type)) {
         const bwipSc = get1DBwipScale(moduleWidth, scale, dpmm);
         // For I: encoding runs horizontally (canvas.width); for R/B: vertically (canvas.height)
@@ -599,12 +600,10 @@ export function BarcodeObject({
           return <Text key={key} x={tx} y={ty} rotation={tRot} width={Math.max(ldW, 1)} text={text} align="left" {...tStyle} />;
         };
 
-        let eanNodes: React.ReactNode[] = [];
-
         if (obj.type === "ean13") {
           const d12 = rawContent.replace(/\D/g, "").slice(0, 12).padEnd(12, "0");
           const all13 = d12 + eanCheckDigit(d12, 1, 3);
-          eanNodes = [
+          textElements = [
             sysNode("sys", all13[0] ?? ""),
             node("left", xLeft, halfW, all13.slice(1, 7)),
             node("right", xRight, halfW, all13.slice(7, 13)),
@@ -612,14 +611,14 @@ export function BarcodeObject({
         } else if (obj.type === "ean8") {
           const d7 = rawContent.replace(/\D/g, "").slice(0, 7).padEnd(7, "0");
           const all8 = d7 + eanCheckDigit(d7, 3, 1);
-          eanNodes = [
+          textElements = [
             node("left", xLeft, halfW, all8.slice(0, 4)),
             node("right", xRight, halfW, all8.slice(4, 8)),
           ];
         } else if (obj.type === "upca") {
           const d11 = rawContent.replace(/\D/g, "").slice(0, 11).padEnd(11, "0");
           const all12 = d11 + eanCheckDigit(d11, 3, 1);
-          eanNodes = [
+          textElements = [
             sysNode("sys", all12[0] ?? ""),
             node("left", xLeft, halfW, all12.slice(1, 6)),
             node("right", xRight, halfW, all12.slice(6, 11)),
@@ -628,46 +627,36 @@ export function BarcodeObject({
         } else if (obj.type === "upce") {
           const d6 = rawContent.replace(/\D/g, "").slice(0, 6).padEnd(6, "0");
           const ck = upceCheckDigit(d6);
-          eanNodes = [
+          textElements = [
             sysNode("sys", "0"),
             node("mid", xLeft, halfW, d6),
             trailNode("trail", ck),
           ];
         }
-
-        return (
-          <Group
-            id={obj.id} x={x} y={y} draggable
-            onClick={(e) => onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)}
-            onTap={() => onSelect(false)}
-            onDragMove={(e) => e.target.position(snapPos(e.target.x(), e.target.y()))}
-            onDragEnd={handleDragEnd}
-          >
-            <KImage x={0} y={0} image={barcodeCanvas}
-              width={Math.max(w, 1)} height={Math.max(h, 1)}
-              imageSmoothingEnabled={false}
-              stroke={isSelected ? "#6366f1" : undefined}
-              strokeWidth={isSelected ? 2 : 0}
-              strokeScaleEnabled={false}
-            />
-            {eanNodes}
-          </Group>
-        );
-      }
-
-      // ── Other 1D: single centered text string ────────────────────────────
-      let txtX: number;
-      let txtY: number;
-      let txtWidth: number;
-
-      if (rotation === "R") {
-        txtX = sideX; txtY = 0; txtWidth = h;
-      } else if (rotation === "I") {
-        txtX = w;
-        txtY = isTextAbove ? h + textGap + textFontSize : -textGap;
-        txtWidth = w;
       } else {
-        txtX = sideX; txtY = h; txtWidth = h;
+        // ── Other 1D: single centered text string ──────────────────────────
+        let txtX: number;
+        let txtY: number;
+        let txtWidth: number;
+
+        if (rotation === "R") {
+          txtX = sideX; txtY = 0; txtWidth = h;
+        } else if (rotation === "I") {
+          txtX = w;
+          txtY = isTextAbove ? h + textGap + textFontSize : -textGap;
+          txtWidth = w;
+        } else {
+          txtX = sideX; txtY = h; txtWidth = h;
+        }
+
+        textElements = (
+          <Text
+            x={txtX} y={txtY} rotation={tRot} width={Math.max(txtWidth, 1)}
+            text={displayText} fontSize={textFontSize}
+            fontFamily="'Courier New', monospace"
+            align="center" wrap="none" fill="#000000" listening={false}
+          />
+        );
       }
 
       return (
@@ -685,12 +674,7 @@ export function BarcodeObject({
             strokeWidth={isSelected ? 2 : 0}
             strokeScaleEnabled={false}
           />
-          <Text
-            x={txtX} y={txtY} rotation={tRot} width={Math.max(txtWidth, 1)}
-            text={displayText} fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
-            align="center" wrap="none" fill="#000000" listening={false}
-          />
+          {textElements}
         </Group>
       );
     }
