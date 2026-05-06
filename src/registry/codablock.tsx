@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
-import { fieldPos } from "./zplHelpers";
+import { fieldPos, fdField } from "./zplHelpers";
 import { commitStacked2DTransform } from "./transformHelpers";
 
 export interface CodablockProps {
@@ -32,7 +32,7 @@ export const codablock: ObjectTypeDefinition<CodablockProps> = {
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BBN,${p.rowHeight},${p.securityLevel}`,
-      `^FD${p.content}^FS`,
+      fdField(p.content),
     ]
       .filter(Boolean)
       .join("");

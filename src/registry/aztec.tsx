@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
-import { fieldPos } from "./zplHelpers";
+import { fieldPos, fdField } from "./zplHelpers";
 
 export interface AztecProps {
   content: string;
@@ -27,7 +27,7 @@ export const aztec: ObjectTypeDefinition<AztecProps> = {
     return [
       fieldPos(obj),
       `^B0N,${p.magnification},N,N,N,N`,
-      `^FD${p.content}^FS`,
+      fdField(p.content),
     ].join("");
   },
 

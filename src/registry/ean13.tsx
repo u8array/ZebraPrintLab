@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
+import { fieldPos, fdField } from './zplHelpers';
 import { commitHeightTransform } from './transformHelpers';
 
 export interface Ean13Props {
@@ -32,7 +32,7 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BEN,${p.height},${interp},N`,
-      `^FD${p.content}^FS`,
+      fdField(p.content),
     ].filter(Boolean).join('');
   },
 

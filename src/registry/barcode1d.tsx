@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition, ObjectGroup, LabelObjectBase } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
+import { fieldPos, fdField } from './zplHelpers';
 import { commitHeightTransform } from './transformHelpers';
 
 export interface Barcode1DProps {
@@ -77,7 +77,7 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
         byCmd,
         fieldPos(obj),
         config.zplCommand(p),
-        `^FD${p.content}^FS`,
+        fdField(p.content),
       ].filter(Boolean).join('');
     },
 

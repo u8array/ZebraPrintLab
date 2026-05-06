@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
-import { fieldPos } from "./zplHelpers";
+import { fieldPos, fdField } from "./zplHelpers";
 import { commitStacked2DTransform } from "./transformHelpers";
 
 export interface Pdf417Props {
@@ -33,7 +33,7 @@ export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^B7N,${p.rowHeight},${p.securityLevel},${p.columns},,,`,
-      `^FD${p.content}^FS`,
+      fdField(p.content),
     ]
       .filter(Boolean)
       .join("");
