@@ -467,13 +467,19 @@ export function BarcodeObject({
       displayText = `${rawContent}${chars[sum % 43] ?? ""}`;
     } else if (obj.type === "ean13") {
       const d = rawContent.replace(/\D/g, "").slice(0, 12).padEnd(12, "0");
-      displayText = d + eanCheckDigit(d, 1, 3);
+      const ck = eanCheckDigit(d, 1, 3);
+      // "5  901234 123457" — system digit, 2 spaces, left 6, space, right 5 + check
+      displayText = `${d[0]}  ${d.slice(1, 7)} ${d.slice(7)}${ck}`;
     } else if (obj.type === "ean8") {
       const d = rawContent.replace(/\D/g, "").slice(0, 7).padEnd(7, "0");
-      displayText = d + eanCheckDigit(d, 3, 1);
+      const ck = eanCheckDigit(d, 3, 1);
+      // "5901 2345"
+      displayText = `${d.slice(0, 4)} ${d.slice(4)}${ck}`;
     } else if (obj.type === "upca") {
       const d = rawContent.replace(/\D/g, "").slice(0, 11).padEnd(11, "0");
-      displayText = d + eanCheckDigit(d, 3, 1);
+      const ck = eanCheckDigit(d, 3, 1);
+      // "1  23456 78901 6" — system digit, left 5, right 5, check digit
+      displayText = `${d[0]}  ${d.slice(1, 6)} ${d.slice(6)} ${ck}`;
     } else if (obj.type === "upce") {
       const digits6 = rawContent.replace(/\D/g, "").slice(0, 6).padEnd(6, "0");
       const [vA, vB, vC, vD, vE, vF] = digits6.split("");
@@ -486,7 +492,8 @@ export function BarcodeObject({
       let ckSum = 0;
       for (let i = 0; i < 11; i++)
         ckSum += parseInt(exp[i] ?? "0", 10) * (i % 2 === 0 ? 3 : 1);
-      displayText = `0${digits6}${(10 - (ckSum % 10)) % 10}`;
+      // "0  123456 7" — system 0, 6 data digits, check digit
+      displayText = `0  ${digits6} ${(10 - (ckSum % 10)) % 10}`;
     }
 
     if (showText) {
