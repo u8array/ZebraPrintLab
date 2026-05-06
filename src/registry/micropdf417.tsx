@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
-import { fieldPos } from "./zplHelpers";
+import { fieldPos, fdField } from "./zplHelpers";
 import { commitStacked2DTransform } from "./transformHelpers";
 
 export interface MicroPdf417Props {
@@ -32,7 +32,7 @@ export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BFN,${p.rowHeight},${p.mode}`,
-      `^FD${p.content}^FS`,
+      fdField(p.content),
     ]
       .filter(Boolean)
       .join("");

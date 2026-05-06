@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
+import { fieldPos, fdField } from './zplHelpers';
 import { clamp } from './transformHelpers';
 
 export interface DataMatrixProps {
@@ -30,7 +30,7 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
     return [
       fieldPos(obj),
       `^BXN,${p.dimension},${p.quality}`,
-      `^FD${p.content}^FS`,
+      fdField(p.content),
     ].join('');
   },
 

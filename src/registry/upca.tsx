@@ -5,10 +5,10 @@ export const upca = createBarcode1D({
   label: 'UPC-A',
   icon: 'UPC',
   defaultContent: '01234567890',
-  contentMaxLength: 11,
   hasCheckDigit: false,
   localeKey: 'upca',
   group: 'code-1d',
+  contentSpec: { charset: '0-9', maxLength: 11 },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     return `^BUN,${p.height},${interp},N,N`;

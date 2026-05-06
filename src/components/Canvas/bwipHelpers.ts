@@ -204,7 +204,15 @@ export function buildBwipOptions(
     case "codabar":
     case "plessey": {
       const p = obj.props;
-      opts = { bcid, text: p.content || "0", scale: scale1D, height: 10 };
+      // Code39/Codabar/Plessey only encode uppercase letters. Zebra firmware
+      // (and Labelary) silently uppercase lowercase input; bwip-js does not and
+      // throws instead, which would crash the canvas for any imported ZPL with
+      // lowercase content. Uppercase here so the lib matches firmware behaviour
+      // without rewriting the user's source.
+      const needsUpper = obj.type === "code39" || obj.type === "codabar" || obj.type === "plessey";
+      const raw = p.content || "0";
+      const text = needsUpper ? raw.toUpperCase() : raw;
+      opts = { bcid, text, scale: scale1D, height: 10 };
       break;
     }
     case "msi": {
@@ -221,9 +229,10 @@ export function buildBwipOptions(
     }
     case "logmars": {
       const p = obj.props;
+      // LOGMARS is a Code39 subset; same uppercase rule applies.
       opts = {
         bcid,
-        text: p.content || "0",
+        text: (p.content || "0").toUpperCase(),
         scale: scale1D,
         height: 10,
         includecheck: true,

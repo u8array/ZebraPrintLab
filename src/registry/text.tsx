@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
+import { fieldPos, fdField } from './zplHelpers';
 import { getFont, getAllFonts, loadFontFile } from '../lib/fontCache';
 import { useFontCacheVersion } from '../hooks/useFontCacheVersion';
 
@@ -50,7 +50,7 @@ export const text: ObjectTypeDefinition<TextProps> = {
       fieldPos(obj),
       fontCmd,
       fbCmd,
-      `^FD${p.content}^FS`,
+      fdField(p.content),
       p.reverse ? '^LRN' : '',
     ].filter(Boolean).join('');
   },

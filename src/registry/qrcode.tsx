@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
+import { fieldPos, fdField } from './zplHelpers';
 import { clamp } from './transformHelpers';
 
 export interface QrCodeProps {
@@ -30,7 +30,7 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
     return [
       fieldPos(obj),
       `^BQN,2,${p.magnification}`,
-      `^FD${p.errorCorrection}A,${p.content}^FS`,
+      fdField(`${p.errorCorrection}A,${p.content}`),
     ].join('');
   },
 

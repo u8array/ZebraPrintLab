@@ -66,7 +66,11 @@ export function BarcodeObject({
       bwipjs.toCanvas(canvas, opts as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
       barcodeCanvas = canvas;
     } catch (e) {
-      errorMsg = e instanceof Error ? e.message : String(e);
+      const raw = e instanceof Error ? e.message : String(e);
+      // bwip-js prefixes its errors like `bwip-js: bwipp.code39badCharacter: ...`
+      // Strip the library/identifier head so the placeholder shows only the
+      // human-readable reason.
+      errorMsg = raw.replace(/^bwip-js:\s*/i, '').replace(/^bwipp\.[^:]+:\s*/i, '');
     }
   }
 
@@ -589,9 +593,13 @@ export function BarcodeObject({
       <Text
         x={6}
         y={6}
+        width={fbW - 12}
+        height={fbH - 12}
+        wrap="word"
+        ellipsis
         text={errorMsg ? `⚠ ${errorMsg}` : obj.type}
         fontSize={Math.max(dotsToPx(10, scale, dpmm), 8)}
-        fill="#374151"
+        fill={errorMsg ? "#b91c1c" : "#374151"}
       />
     </Group>
   );

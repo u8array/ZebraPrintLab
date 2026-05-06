@@ -8,6 +8,7 @@ export const interleaved2of5 = createBarcode1D({
   hasCheckDigit: true,
   localeKey: 'interleaved2of5',
   group: 'code-1d',
+  contentSpec: { charset: '0-9' },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';

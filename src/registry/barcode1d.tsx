@@ -1,8 +1,9 @@
 import type { ObjectTypeDefinition, ObjectGroup, LabelObjectBase } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
+import { fieldPos, fdField } from './zplHelpers';
 import { commitHeightTransform } from './transformHelpers';
+import { filterContent, type ContentSpec } from './contentSpec';
 
 export interface Barcode1DProps {
   content: string;
@@ -16,7 +17,6 @@ interface Barcode1DConfig {
   label: string;
   icon: string;
   defaultContent: string;
-  contentMaxLength?: number;
   hasCheckDigit: boolean;
   /** Build the ZPL barcode command (e.g. `^BUN,100,Y,N,N`). */
   zplCommand: (p: Barcode1DProps) => string;
@@ -34,6 +34,8 @@ interface Barcode1DConfig {
   heightLocked?: boolean;
   /** See {@link ObjectTypeDefinition.interpretationLocked}. */
   interpretationLocked?: boolean;
+  /** Restrict allowed input characters; see {@link ContentSpec}. */
+  contentSpec?: ContentSpec;
 }
 
 interface BarcodeLocale {
@@ -77,7 +79,7 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
         byCmd,
         fieldPos(obj),
         config.zplCommand(p),
-        `^FD${p.content}^FS`,
+        fdField(p.content),
       ].filter(Boolean).join('');
     },
 
@@ -92,9 +94,9 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
             <input
               className={inputCls}
               value={p.content}
-              maxLength={config.contentMaxLength}
+              maxLength={config.contentSpec?.maxLength}
               placeholder={loc.placeholder}
-              onChange={(e) => onChange({ content: e.target.value })}
+              onChange={(e) => onChange({ content: filterContent(e.target.value, config.contentSpec) })}
             />
           </div>
 

@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
+import { fieldPos, fdField } from './zplHelpers';
 import { commitHeightTransform } from './transformHelpers';
 
 export interface Code128Props {
@@ -35,7 +35,7 @@ export const code128: ObjectTypeDefinition<Code128Props> = {
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BCN,${p.height},${interp},N,${check}`,
-      `^FD${p.content}^FS`,
+      fdField(p.content),
     ].filter(Boolean).join('');
   },
 

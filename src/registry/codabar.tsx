@@ -8,6 +8,7 @@ export const codabar = createBarcode1D({
   hasCheckDigit: true,
   localeKey: "codabar",
   group: 'code-1d',
+  contentSpec: { charset: '0-9A-Da-d\\-$:/.+' },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     const check = p.checkDigit ? "Y" : "N";

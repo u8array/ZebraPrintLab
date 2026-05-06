@@ -1,8 +1,11 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
+import { fieldPos, fdField } from './zplHelpers';
 import { commitHeightTransform } from './transformHelpers';
+import { filterContent, type ContentSpec } from './contentSpec';
+
+const ean13Spec: ContentSpec = { charset: '0-9', maxLength: 12 };
 
 export interface Ean13Props {
   content: string;        // 12 digits — ZPL appends the check digit automatically
@@ -32,7 +35,7 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BEN,${p.height},${interp},N`,
-      `^FD${p.content}^FS`,
+      fdField(p.content),
     ].filter(Boolean).join('');
   },
 
@@ -48,7 +51,7 @@ export const ean13: ObjectTypeDefinition<Ean13Props> = {
             value={p.content}
             maxLength={12}
             placeholder={t.registry.ean13.placeholder}
-            onChange={(e) => onChange({ content: e.target.value })}
+            onChange={(e) => onChange({ content: filterContent(e.target.value, ean13Spec) })}
           />
         </div>
 

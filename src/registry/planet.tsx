@@ -8,6 +8,7 @@ export const planet = createBarcode1D({
   hasCheckDigit: false,
   localeKey: "planet",
   group: 'code-postal',
+  contentSpec: { charset: '0-9' },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     return `^B5N,${p.height},${interp},N`;

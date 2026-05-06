@@ -2,6 +2,9 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
+import { filterContent, type ContentSpec } from './contentSpec';
+
+const serialSpec: ContentSpec = { charset: '0-9A-Za-z' };
 
 export interface SerialProps {
   content: string;
@@ -48,7 +51,7 @@ export const serial: ObjectTypeDefinition<SerialProps> = {
             <input
               className={inputCls}
               value={p.content}
-              onChange={(e) => onChange({ content: e.target.value })}
+              onChange={(e) => onChange({ content: filterContent(e.target.value, serialSpec) })}
             />
           </div>
           <div className="flex flex-col gap-1">

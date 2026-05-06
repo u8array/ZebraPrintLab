@@ -8,6 +8,7 @@ export const logmars = createBarcode1D({
   hasCheckDigit: false,
   localeKey: "logmars",
   group: 'code-1d',
+  contentSpec: { charset: '0-9A-Za-z\\-. $/+%' },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     return `^BLN,${p.height},${interp}`;
