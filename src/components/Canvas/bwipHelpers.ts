@@ -1,4 +1,5 @@
 import type { LabelObject } from "../../registry";
+import { objectRotation } from "../../registry/rotation";
 import { dotsToPx } from "../../lib/coordinates";
 import { MICROPDF417_QUIET_ZONE_ROWS } from "./bwipConstants";
 
@@ -168,7 +169,7 @@ export function buildBwipOptions(
   // emitting it post-build means the produced bitmap is already rotated and
   // its dimensions are the post-rotation extents — no Konva-side rotation math
   // needed.
-  const rotation = (obj.props as { rotation?: string }).rotation ?? "N";
+  const rotation = objectRotation(obj.props);
 
   let opts: Record<string, unknown> | null = null;
 

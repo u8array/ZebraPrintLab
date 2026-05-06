@@ -14,6 +14,7 @@ import {
   getEanUpcLayout,
   type EanUpcType,
 } from "./bwipHelpers";
+import { objectRotation } from "../../registry/rotation";
 import {
   QR_FO_Y_OFFSET_DOTS,
   QR_FT_MODULE_OFFSET,
@@ -153,7 +154,7 @@ export function BarcodeObject({
     // carries printInterpretation: true.
     // Manual HRI overlays only run for upright barcodes; when rotated, bwip-js
     // bakes the text into the bitmap (see bwipHelpers).
-    const isUpright = ((obj.props as { rotation?: string }).rotation ?? "N") === "N";
+    const isUpright = objectRotation(obj.props) === "N";
     const printInterp =
       isUpright &&
       !ObjectRegistry[obj.type]?.interpretationLocked &&
