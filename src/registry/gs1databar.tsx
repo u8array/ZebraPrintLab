@@ -18,6 +18,14 @@ export interface Gs1DatabarProps {
   rotation: ZplRotation;
 }
 
+// ZPL ^BR height parameter. Zebra firmware overrides this with each variant's
+// intrinsic bar height for sym 1–5; only Expanded Stacked (sym 7) uses it as
+// per-row height. Hardcoded because heightLocked: true forbids resizing.
+const ZPL_HEIGHT_PLACEHOLDER = 100;
+
+// GS1 standard variant names. Kept in source rather than i18n because the spec
+// defines them as proper nouns (matches the convention used for barcode-type
+// labels like "GS1 Databar", "PDF417" in src/locales).
 const SYMBOLOGY_LABELS: Record<Gs1DatabarProps['symbology'], string> = {
   1: 'Omnidirectional',
   2: 'Truncated',
@@ -46,8 +54,7 @@ export const gs1databar: ObjectTypeDefinition<Gs1DatabarProps> = {
     // ^BRo,s,m,sep,h[,sg] — segments must only be present for Expanded Stacked (7).
     // Including segments on sym 1–6 makes Labelary stack the symbol (wrong rendering).
     const segs = p.symbology === 7 ? `,${p.segments ?? GS1_DATABAR_DEFAULT_SEGMENTS}` : '';
-    // Height hardcoded 100 (firmware overrides for most variants).
-    return `^BY${p.moduleWidth}${fieldPos(obj)}^BR${p.rotation},${p.symbology},${p.moduleWidth},2,100${segs}${fdField(p.content)}`;
+    return `^BY${p.moduleWidth}${fieldPos(obj)}^BR${p.rotation},${p.symbology},${p.moduleWidth},2,${ZPL_HEIGHT_PLACEHOLDER}${segs}${fdField(p.content)}`;
   },
 
   PropertiesPanel: ({ obj, onChange }) => {

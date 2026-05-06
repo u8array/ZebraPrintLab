@@ -150,8 +150,7 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       // GS1 Databar variants 2–7 use intrinsic heights that bwip-js maps differently
       // than Zebra firmware. Width agrees, height diverges. Sym 1 (Omnidirectional)
       // matches and is checked strictly; the others get ZPL-only validation.
-      const isGs1NonOmni = obj.type === "gs1databar"
-        && (obj.props as { symbology?: number }).symbology !== 1;
+      const isGs1NonOmni = obj.type === "gs1databar" && obj.props.symbology !== 1;
 
       if (isEanUpc && !isQuarterRotated) {
         // Known discrepancy: Labelary reserves barHeight + EAN_TEXT_ZONE_DOTS (13 dots)

@@ -279,14 +279,14 @@ export function buildBwipOptions(
       break;
     }
     case "gs1databar": {
-      const p = obj.props as Gs1DatabarProps;
-      const sym = p.symbology ?? 1;
+      const p = obj.props;
+      const sym = p.symbology;
       const isExpanded = GS1_DATABAR_EXPANDED_SYMBOLOGIES.has(sym);
       // bwip-js needs (AI)data parens; canonical model stores raw digits.
       // Sym 1–5 require AI 01 + valid 14-digit GTIN with correct check.
       const text = isExpanded
-        ? wrapGs1AIs(p.content || "0112345678901231")
-        : `(01)${gtin14WithCheck(p.content || "")}`;
+        ? wrapGs1AIs(p.content)
+        : `(01)${gtin14WithCheck(p.content)}`;
       opts = {
         bcid: GS1_DATABAR_BCID[sym],
         text,
