@@ -114,7 +114,8 @@ export const gs1databar: ObjectTypeDefinition<Gs1DatabarProps> = {
               step={2}
               onChange={(e) => {
                 const v = Number(e.target.value);
-                onChange({ segments: v % 2 === 0 ? v : v + 1 });
+                const even = v % 2 === 0 ? v : v + 1;
+                onChange({ segments: Math.max(2, Math.min(22, even)) });
               }}
             />
           </div>
