@@ -3,6 +3,8 @@ import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
 import { fieldPos, fdField } from "./zplHelpers";
 import { commitStacked2DTransform } from "./transformHelpers";
+import { type ZplRotation } from "./rotation";
+import { RotationSelect } from "../components/Properties/RotationSelect";
 
 export interface Pdf417Props {
   content: string;
@@ -10,6 +12,7 @@ export interface Pdf417Props {
   securityLevel: number; // 0–8
   columns: number; // 1–30, 0 = auto
   moduleWidth: number;
+  rotation: ZplRotation;
 }
 
 export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
@@ -22,6 +25,7 @@ export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
     securityLevel: 0,
     columns: 0,
     moduleWidth: 2,
+    rotation: 'N',
   },
   defaultSize: { width: 300, height: 150 },
 
@@ -32,7 +36,7 @@ export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
     return [
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
-      `^B7N,${p.rowHeight},${p.securityLevel},${p.columns},,,`,
+      `^B7${p.rotation},${p.rowHeight},${p.securityLevel},${p.columns},,,`,
       fdField(p.content),
     ]
       .filter(Boolean)
@@ -106,6 +110,8 @@ export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
             />
           </div>
         </div>
+
+        <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
       </div>
     );
   },

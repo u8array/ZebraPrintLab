@@ -11,6 +11,6 @@ export const ean8 = createBarcode1D({
   contentSpec: { charset: '0-9', maxLength: 7 },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
-    return `^B8N,${p.height},${interp},N`;
+    return `^B8${p.rotation},${p.height},${interp},N`;
   },
 });

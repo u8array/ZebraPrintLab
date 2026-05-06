@@ -4,6 +4,8 @@ import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdField } from './zplHelpers';
 import { commitHeightTransform } from './transformHelpers';
 import { filterContent, type ContentSpec } from './contentSpec';
+import { type ZplRotation } from './rotation';
+import { RotationSelect } from '../components/Properties/RotationSelect';
 
 const code39Spec: ContentSpec = { charset: '0-9A-Za-z\\-. $/+%' };
 
@@ -13,6 +15,7 @@ export interface Code39Props {
   moduleWidth: number;
   printInterpretation: boolean;
   checkDigit: boolean;
+  rotation: ZplRotation;
 }
 
 export const code39: ObjectTypeDefinition<Code39Props> = {
@@ -25,6 +28,7 @@ export const code39: ObjectTypeDefinition<Code39Props> = {
     moduleWidth: 2,
     printInterpretation: true,
     checkDigit: false,
+    rotation: 'N',
   },
   defaultSize: { width: 300, height: 120 },
 
@@ -37,7 +41,7 @@ export const code39: ObjectTypeDefinition<Code39Props> = {
     return [
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
-      `^B3N,${check},${p.height},${interp},N`,
+      `^B3${p.rotation},${check},${p.height},${interp},N`,
       fdField(p.content),
     ].filter(Boolean).join('');
   },
@@ -99,6 +103,8 @@ export const code39: ObjectTypeDefinition<Code39Props> = {
             <span className={labelCls}>{t.registry.code39.checkDigit}</span>
           </label>
         </div>
+
+        <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
       </div>
     );
   },

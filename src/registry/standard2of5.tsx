@@ -11,6 +11,6 @@ export const standard2of5 = createBarcode1D({
   contentSpec: { charset: '0-9' },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
-    return `^BJN,${p.height},${interp},N`;
+    return `^BJ${p.rotation},${p.height},${interp},N`;
   },
 });

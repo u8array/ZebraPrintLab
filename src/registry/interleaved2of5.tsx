@@ -12,6 +12,6 @@ export const interleaved2of5 = createBarcode1D({
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
-    return `^B2N,${p.height},${interp},N,${check}`;
+    return `^B2${p.rotation},${p.height},${interp},N,${check}`;
   },
 });

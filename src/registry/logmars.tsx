@@ -11,6 +11,6 @@ export const logmars = createBarcode1D({
   contentSpec: { charset: '0-9A-Za-z\\-. $/+%' },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
-    return `^BLN,${p.height},${interp}`;
+    return `^BL${p.rotation},${p.height},${interp}`;
   },
 });

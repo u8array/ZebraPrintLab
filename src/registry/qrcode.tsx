@@ -3,11 +3,14 @@ import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdField } from './zplHelpers';
 import { clamp } from './transformHelpers';
+import { type ZplRotation } from './rotation';
+import { RotationSelect } from '../components/Properties/RotationSelect';
 
 export interface QrCodeProps {
   content: string;
   magnification: number;       // 1–10, dot size per module
   errorCorrection: 'H' | 'Q' | 'M' | 'L';
+  rotation: ZplRotation;
 }
 
 export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
@@ -18,6 +21,7 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
     content: 'https://example.com',
     magnification: 4,
     errorCorrection: 'Q',
+    rotation: 'N',
   },
   defaultSize: { width: 200, height: 200 },
 
@@ -29,7 +33,7 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
     const p = obj.props;
     return [
       fieldPos(obj),
-      `^BQN,2,${p.magnification}`,
+      `^BQ${p.rotation},2,${p.magnification}`,
       fdField(`${p.errorCorrection}A,${p.content}`),
     ].join('');
   },
@@ -84,6 +88,8 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
             <option value="H">{t.registry.qrcode.ecH}</option>
           </select>
         </div>
+
+        <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
       </div>
     );
   },

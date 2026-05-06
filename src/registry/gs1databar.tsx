@@ -18,6 +18,6 @@ export const gs1databar = createBarcode1D({
   zplCommand: (p) => {
     // ^BR{orientation},{symbology},{magnification},{separator},{height},{segments}
     // symbology 1 = omnidirectional
-    return `^BRN,1,${p.moduleWidth},2,${p.height},1`;
+    return `^BR${p.rotation},1,${p.moduleWidth},2,${p.height},1`;
   },
 });

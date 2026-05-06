@@ -11,6 +11,6 @@ export const upca = createBarcode1D({
   contentSpec: { charset: '0-9', maxLength: 11 },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
-    return `^BUN,${p.height},${interp},N,N`;
+    return `^BU${p.rotation},${p.height},${interp},N,N`;
   },
 });

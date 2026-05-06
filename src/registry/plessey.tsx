@@ -14,6 +14,6 @@ export const plessey = createBarcode1D({
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     const check = p.checkDigit ? "Y" : "N";
-    return `^BPN,${check},${p.height},${interp},N`;
+    return `^BP${p.rotation},${check},${p.height},${interp},N`;
   },
 });

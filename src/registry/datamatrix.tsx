@@ -3,11 +3,14 @@ import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdField } from './zplHelpers';
 import { clamp } from './transformHelpers';
+import { type ZplRotation } from './rotation';
+import { RotationSelect } from '../components/Properties/RotationSelect';
 
 export interface DataMatrixProps {
   content: string;
   dimension: number;   // module size in dots (1–12)
   quality: 0 | 50 | 80 | 140 | 200;  // 0 = auto
+  rotation: ZplRotation;
 }
 
 export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
@@ -18,6 +21,7 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
     content: '1234567890',
     dimension: 5,
     quality: 200,
+    rotation: 'N',
   },
   defaultSize: { width: 150, height: 150 },
 
@@ -29,7 +33,7 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
     const p = obj.props;
     return [
       fieldPos(obj),
-      `^BXN,${p.dimension},${p.quality}`,
+      `^BX${p.rotation},${p.dimension},${p.quality}`,
       fdField(p.content),
     ].join('');
   },
@@ -74,6 +78,8 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
             <option value={200}>{t.registry.datamatrix.quality200}</option>
           </select>
         </div>
+
+        <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
       </div>
     );
   },

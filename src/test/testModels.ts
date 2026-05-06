@@ -13,6 +13,7 @@ export const testModels: Record<string, LabelObject> = {
       moduleWidth: 2,
       printInterpretation: false,
       checkDigit: false,
+      rotation: "N",
     },
   },
   barcode_code128_small_no_text: {
@@ -27,6 +28,7 @@ export const testModels: Record<string, LabelObject> = {
       moduleWidth: 1,
       printInterpretation: false,
       checkDigit: false,
+      rotation: "N",
     },
   },
   barcode_code128_large_check_digit: {
@@ -41,6 +43,7 @@ export const testModels: Record<string, LabelObject> = {
       moduleWidth: 3,
       printInterpretation: false,
       checkDigit: true,
+      rotation: "N",
     },
   },
   barcode_qr_standard: {
@@ -49,7 +52,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "Hello World", magnification: 4, errorCorrection: "Q" },
+    props: { content: "Hello World", magnification: 4, errorCorrection: "Q", rotation: "N" },
   },
   barcode_qr_large_high_ec: {
     id: "5",
@@ -61,6 +64,7 @@ export const testModels: Record<string, LabelObject> = {
       content: "Zebra Print Lab QR Code Testing",
       magnification: 8,
       errorCorrection: "H",
+      rotation: "N",
     },
   },
   barcode_ean13_standard: {
@@ -74,6 +78,7 @@ export const testModels: Record<string, LabelObject> = {
       height: 100,
       moduleWidth: 2,
       printInterpretation: false,
+      rotation: "N",
     },
   },
   barcode_datamatrix_standard: {
@@ -82,7 +87,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "DataMatrixTest", dimension: 5, quality: 200 },
+    props: { content: "DataMatrixTest", dimension: 5, quality: 200, rotation: "N" },
   },
   barcode_code39_standard: {
     id: "8",
@@ -96,6 +101,7 @@ export const testModels: Record<string, LabelObject> = {
       moduleWidth: 2,
       printInterpretation: false,
       checkDigit: false,
+      rotation: "N",
     },
   },
   barcode_pdf417_standard: {
@@ -110,6 +116,7 @@ export const testModels: Record<string, LabelObject> = {
       securityLevel: 1,
       columns: 4,
       moduleWidth: 2,
+      rotation: "N",
     },
   },
   barcode_upca_standard: {
@@ -124,6 +131,7 @@ export const testModels: Record<string, LabelObject> = {
       moduleWidth: 2,
       printInterpretation: false,
       checkDigit: false,
+      rotation: "N",
     },
   },
   barcode_ean8_standard: {
@@ -138,6 +146,7 @@ export const testModels: Record<string, LabelObject> = {
       moduleWidth: 2,
       printInterpretation: false,
       checkDigit: false,
+      rotation: "N",
     },
   },
   barcode_aztec_standard: {
@@ -146,7 +155,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "Aztec123", magnification: 4, ecLevel: 0 },
+    props: { content: "Aztec123", magnification: 4, ecLevel: 0, rotation: "N" },
   },
   barcode_interleaved2of5_standard: {
     id: "13",
@@ -160,6 +169,7 @@ export const testModels: Record<string, LabelObject> = {
       moduleWidth: 2,
       printInterpretation: false,
       checkDigit: false,
+      rotation: "N",
     },
   },
   barcode_micropdf417_standard: {
@@ -173,6 +183,7 @@ export const testModels: Record<string, LabelObject> = {
       moduleWidth: 2,
       rowHeight: 2,
       mode: 0,
+      rotation: "N",
     },
   },
   barcode_codablock_standard: {
@@ -186,6 +197,7 @@ export const testModels: Record<string, LabelObject> = {
       moduleWidth: 2,
       rowHeight: 2,
       securityLevel: "Y",
+      rotation: "N",
     },
   },
   barcode_pdf417_auto: {
@@ -200,6 +212,7 @@ export const testModels: Record<string, LabelObject> = {
       securityLevel: 1,
       columns: 0,
       moduleWidth: 2,
+      rotation: "N",
     },
   },
   barcode_pdf417_auto_ecc: {
@@ -214,6 +227,7 @@ export const testModels: Record<string, LabelObject> = {
       securityLevel: 0,
       columns: 0,
       moduleWidth: 2,
+      rotation: "N",
     },
   },
   barcode_code93_standard: {
@@ -222,7 +236,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "CODE93", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "CODE93", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
   },
   barcode_code11_standard: {
     id: "19",
@@ -230,7 +244,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "12345", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "12345", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
   },
   barcode_industrial2of5_standard: {
     id: "20",
@@ -238,7 +252,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "12345678", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "12345678", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
   },
   barcode_standard2of5_standard: {
     id: "21",
@@ -246,7 +260,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "12345678", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "12345678", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
   },
   barcode_codabar_standard: {
     id: "22",
@@ -254,7 +268,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "A12345A", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "A12345A", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
   },
   barcode_logmars_standard: {
     id: "23",
@@ -262,7 +276,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "LOGMARS1", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "LOGMARS1", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
   },
   barcode_logmars_with_text: {
     id: "23b",
@@ -270,7 +284,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "LOGMARS1", height: 100, moduleWidth: 2, printInterpretation: true, checkDigit: false },
+    props: { content: "LOGMARS1", height: 100, moduleWidth: 2, printInterpretation: true, checkDigit: false, rotation: "N" },
   },
   barcode_msi_standard: {
     id: "24",
@@ -278,7 +292,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "12345678", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "12345678", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
   },
   barcode_plessey_standard: {
     id: "25",
@@ -286,7 +300,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "12345678", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "12345678", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
   },
   barcode_planet_standard: {
     id: "26",
@@ -294,7 +308,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "12345678901", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "12345678901", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
   },
   barcode_postal_standard: {
     id: "27",
@@ -302,7 +316,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "12345", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "12345", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
   },
   barcode_gs1databar_standard: {
     id: "28",
@@ -310,7 +324,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "0112345678901", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "0112345678901", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
   },
   barcode_upce_standard: {
     id: "29",
@@ -318,6 +332,6 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "012345", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false },
+    props: { content: "012345", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
   },
 };

@@ -178,7 +178,7 @@ describe('code128.toZPL', () => {
   it('emits ^BC and ^FD', () => {
     const zpl = def.toZPL(makeObj('code128', {
       content: 'ABCDEF', height: 100, moduleWidth: 2,
-      printInterpretation: true, checkDigit: false,
+      printInterpretation: true, checkDigit: false, rotation: 'N',
     }));
     expect(zpl).toContain('^BCN,100,Y,N,N');
     expect(zpl).toContain('^FDABCDEF^FS');
@@ -187,7 +187,7 @@ describe('code128.toZPL', () => {
   it('emits ^BY when moduleWidth is not 2', () => {
     const zpl = def.toZPL(makeObj('code128', {
       content: '123', height: 100, moduleWidth: 5,
-      printInterpretation: true, checkDigit: false,
+      printInterpretation: true, checkDigit: false, rotation: 'N',
     }));
     expect(zpl).toContain('^BY5');
   });
@@ -195,9 +195,30 @@ describe('code128.toZPL', () => {
   it('always emits ^BY to prevent ZPL state leaking to subsequent barcodes', () => {
     const zpl = def.toZPL(makeObj('code128', {
       content: '123', height: 100, moduleWidth: 2,
-      printInterpretation: true, checkDigit: false,
+      printInterpretation: true, checkDigit: false, rotation: 'N',
     }));
     expect(zpl).toContain('^BY2');
+  });
+});
+
+// ── rotation ──────────────────────────────────────────────────────────────────
+
+describe('barcode rotation in ZPL output', () => {
+  type Rot = 'N' | 'R' | 'I' | 'B';
+  it.each<[string, string, Rot, Record<string, unknown>]>([
+    ['code128',    '^BCR,', 'R', { height: 100, moduleWidth: 2, printInterpretation: true, checkDigit: false }],
+    ['code39',     '^B3I,', 'I', { height: 100, moduleWidth: 2, printInterpretation: true, checkDigit: false }],
+    ['ean13',      '^BEB,', 'B', { height: 100, moduleWidth: 2, printInterpretation: true }],
+    ['qrcode',     '^BQR,', 'R', { magnification: 4, errorCorrection: 'Q' }],
+    ['datamatrix', '^BXI,', 'I', { dimension: 5, quality: 200 }],
+    ['pdf417',     '^B7B,', 'B', { rowHeight: 4, securityLevel: 0, columns: 0, moduleWidth: 2 }],
+    ['aztec',      '^B0R,', 'R', { magnification: 4, ecLevel: 0 }],
+    ['codabar',    '^BKR,', 'R', { height: 100, moduleWidth: 2, printInterpretation: true, checkDigit: false }],
+  ])('%s emits orientation in command param', (type, expected, rotation, baseProps) => {
+    const def = defined(ObjectRegistry[type]);
+    const content = type === 'ean13' ? '590123412345' : 'X';
+    const zpl = def.toZPL(makeObj(type, { content, ...baseProps, rotation }));
+    expect(zpl).toContain(expected);
   });
 });
 
@@ -209,7 +230,7 @@ describe('code39.toZPL', () => {
   it('emits ^B3 barcode command', () => {
     const zpl = def.toZPL(makeObj('code39', {
       content: 'ABC', height: 100, moduleWidth: 2,
-      printInterpretation: true, checkDigit: false,
+      printInterpretation: true, checkDigit: false, rotation: 'N',
     }));
     expect(zpl).toContain('^B3');
     expect(zpl).toContain('^FDABC^FS');
@@ -223,7 +244,7 @@ describe('qrcode.toZPL', () => {
 
   it('emits ^BQ with magnification and ^FD with error correction prefix', () => {
     const zpl = def.toZPL(makeObj('qrcode', {
-      content: 'https://example.com', magnification: 6, errorCorrection: 'Q',
+      content: 'https://example.com', magnification: 6, errorCorrection: 'Q', rotation: 'N',
     }));
     expect(zpl).toContain('^BQN,2,6');
     expect(zpl).toContain('^FDQA,https://example.com^FS');
@@ -234,7 +255,7 @@ describe('qrcode.normalizeChanges', () => {
   const def = defined(ObjectRegistry['qrcode']);
   const normalize = defined(def.normalizeChanges);
   const baseObj = makeObj('qrcode', {
-    content: 'x', magnification: 4, errorCorrection: 'Q',
+    content: 'x', magnification: 4, errorCorrection: 'Q', rotation: 'N',
   });
 
   it('clamps negative y to 0 for ^FO', () => {
@@ -275,7 +296,7 @@ describe('datamatrix.toZPL', () => {
 
   it('emits ^BX with dimension and quality', () => {
     const zpl = def.toZPL(makeObj('datamatrix', {
-      content: 'DM123', dimension: 8, quality: 200,
+      content: 'DM123', dimension: 8, quality: 200, rotation: 'N',
     }));
     expect(zpl).toContain('^BXN,8,200');
     expect(zpl).toContain('^FDDM123^FS');
@@ -289,7 +310,7 @@ describe('pdf417.toZPL', () => {
 
   it('emits ^B7 with row height, security, and columns', () => {
     const zpl = def.toZPL(makeObj('pdf417', {
-      content: 'PDF', rowHeight: 10, securityLevel: 2, columns: 4, moduleWidth: 2,
+      content: 'PDF', rowHeight: 10, securityLevel: 2, columns: 4, moduleWidth: 2, rotation: 'N',
     }));
     expect(zpl).toContain('^B7N,10,2,4,,,');
     expect(zpl).toContain('^FDPDF^FS');
@@ -297,7 +318,7 @@ describe('pdf417.toZPL', () => {
 
   it('emits ^BY when moduleWidth is not 2', () => {
     const zpl = def.toZPL(makeObj('pdf417', {
-      content: 'X', rowHeight: 10, securityLevel: 0, columns: 0, moduleWidth: 3,
+      content: 'X', rowHeight: 10, securityLevel: 0, columns: 0, moduleWidth: 3, rotation: 'N',
     }));
     expect(zpl).toContain('^BY3');
   });

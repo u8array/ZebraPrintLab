@@ -3,12 +3,15 @@ import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
 import { fieldPos, fdField } from "./zplHelpers";
 import { commitStacked2DTransform } from "./transformHelpers";
+import { type ZplRotation } from "./rotation";
+import { RotationSelect } from "../components/Properties/RotationSelect";
 
 export interface CodablockProps {
   content: string;
   moduleWidth: number; // bar width in dots
   rowHeight: number; // row height in dots
   securityLevel: "Y" | "N"; // security check
+  rotation: ZplRotation;
 }
 
 export const codablock: ObjectTypeDefinition<CodablockProps> = {
@@ -20,6 +23,7 @@ export const codablock: ObjectTypeDefinition<CodablockProps> = {
     moduleWidth: 2,
     rowHeight: 2,
     securityLevel: "Y",
+    rotation: 'N',
   },
   defaultSize: { width: 250, height: 120 },
 
@@ -31,7 +35,7 @@ export const codablock: ObjectTypeDefinition<CodablockProps> = {
     return [
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
-      `^BBN,${p.rowHeight},${p.securityLevel}`,
+      `^BB${p.rotation},${p.rowHeight},${p.securityLevel}`,
       fdField(p.content),
     ]
       .filter(Boolean)
@@ -90,6 +94,8 @@ export const codablock: ObjectTypeDefinition<CodablockProps> = {
           />
           <span className={labelCls}>{loc.security}</span>
         </label>
+
+        <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
       </div>
     );
   },

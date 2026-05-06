@@ -12,6 +12,6 @@ export const postal = createBarcode1D({
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     // ^BZ{orientation},{height},{interp},{startStop}
-    return `^BZN,${p.height},${interp},N`;
+    return `^BZ${p.rotation},${p.height},${interp},N`;
   },
 });

@@ -11,6 +11,6 @@ export const code93 = createBarcode1D({
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
-    return `^BAN,${p.height},${interp},N,${check}`;
+    return `^BA${p.rotation},${p.height},${interp},N,${check}`;
   },
 });

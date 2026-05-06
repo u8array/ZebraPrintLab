@@ -12,6 +12,6 @@ export const codabar = createBarcode1D({
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     const check = p.checkDigit ? "Y" : "N";
-    return `^BKN,${check},${p.height},${interp},N`;
+    return `^BK${p.rotation},${check},${p.height},${interp},N`;
   },
 });
