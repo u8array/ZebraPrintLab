@@ -1,3 +1,4 @@
+import { InformationCircleIcon } from "@heroicons/react/16/solid";
 import { useLabelStore, useCurrentObjects } from "../../store/labelStore";
 import { ObjectRegistry } from "../../registry";
 import { stripZplCommandChars } from "../../registry/zplHelpers";
@@ -12,6 +13,7 @@ import {
 import type { Unit } from "../../lib/units";
 import { useT } from "../../lib/useT";
 import { parseIntOrUndef } from "../../lib/inputParse";
+import { CollapsibleSection } from "../ui/CollapsibleSection";
 import { inputCls, labelCls } from "./styles";
 import type { LabelConfig } from "../../types/ObjectType";
 
@@ -355,19 +357,18 @@ function LabelConfigPanel({
           />
         </div>
 
-        <div className="border-t border-border" />
-
-        <p className={labelCls}>{t.label.printerSettingsHeading}</p>
-
+        <CollapsibleSection
+          id="label-printer-settings"
+          title={t.label.printerSettingsHeading}
+          defaultOpen={false}
+        >
         <div className="flex flex-col gap-1">
           <label className={labelCls}>
             {t.label.printSpeed}
-            <span
-              className="ml-1 cursor-help opacity-60"
+            <InformationCircleIcon
+              className="w-3.5 h-3.5 ml-1 inline-block align-text-bottom text-muted cursor-help"
               title={t.label.printSpeedHint}
-            >
-              ⓘ
-            </span>
+            />
           </label>
           <input
             type="number"
@@ -384,12 +385,10 @@ function LabelConfigPanel({
         <div className="flex flex-col gap-1">
           <label className={labelCls}>
             {t.label.darkness}
-            <span
-              className="ml-1 cursor-help opacity-60"
+            <InformationCircleIcon
+              className="w-3.5 h-3.5 ml-1 inline-block align-text-bottom text-muted cursor-help"
               title={t.label.darknessHint}
-            >
-              ⓘ
-            </span>
+            />
           </label>
           <input
             type="number"
@@ -475,6 +474,7 @@ function LabelConfigPanel({
             </div>
           </div>
         </div>
+        </CollapsibleSection>
       </div>
     </div>
   );

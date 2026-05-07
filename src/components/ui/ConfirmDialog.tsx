@@ -30,7 +30,14 @@ export function ConfirmDialog({
       if (e.key === 'Escape') onCancel();
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // Lock background scroll while the modal is open so the dialog stays
+    // visually anchored and the user cannot drift past it.
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = originalOverflow;
+    };
   }, [onCancel]);
 
   const confirmCls = destructive
@@ -46,10 +53,18 @@ export function ConfirmDialog({
       onClick={onCancel}
     >
       <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-describedby="confirm-dialog-message"
         className="bg-surface border border-border rounded shadow-lg flex flex-col w-[400px] max-w-[95vw]"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="px-5 py-5 text-xs text-text leading-relaxed">{message}</p>
+        <p
+          id="confirm-dialog-message"
+          className="px-5 py-5 text-xs text-text leading-relaxed"
+        >
+          {message}
+        </p>
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-border">
           <button
             type="button"
