@@ -78,7 +78,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             autoFocus={!destructive}
-            className={`px-4 py-1.5 rounded text-xs font-mono whitespace-nowrap ${confirmCls} transition-opacity`}
+            className={`px-4 py-1.5 rounded text-xs font-mono whitespace-nowrap ${confirmCls} transition`}
           >
             {confirmLabel}
           </button>
