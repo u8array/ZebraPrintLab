@@ -105,9 +105,8 @@ const de = {
     layersTab: 'Ebenen',
     fontsTab: 'Schriften',
     themeToggle: 'Design wechseln',
-    themeSystem: 'Design: System',
-    themeLight: 'Design: hell',
-    themeDark: 'Design: dunkel',
+    themeLight: 'Helles Design',
+    themeDark: 'Dunkles Design',
   },
 
   zebraPrint: {

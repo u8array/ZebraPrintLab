@@ -105,9 +105,8 @@ const es = {
     layersTab: 'Capas',
     fontsTab: 'Fuentes',
     themeToggle: 'Cambiar tema',
-    themeSystem: 'Tema: sistema',
-    themeLight: 'Tema: claro',
-    themeDark: 'Tema: oscuro',
+    themeLight: 'Tema claro',
+    themeDark: 'Tema oscuro',
   },
 
   output: {

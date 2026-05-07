@@ -105,9 +105,8 @@ const sl = {
     layersTab: 'Plasti',
     fontsTab: 'Pisave',
     themeToggle: 'Preklopi temo',
-    themeSystem: 'Tema: sistem',
-    themeLight: 'Tema: svetla',
-    themeDark: 'Tema: temna',
+    themeLight: 'Svetla tema',
+    themeDark: 'Temna tema',
   },
 
   output: {

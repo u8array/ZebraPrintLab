@@ -105,9 +105,8 @@ const bg = {
     layersTab: 'Слоеве',
     fontsTab: 'Шрифтове',
     themeToggle: 'Превключване на темата',
-    themeSystem: 'Тема: системна',
-    themeLight: 'Тема: светла',
-    themeDark: 'Тема: тъмна',
+    themeLight: 'Светла тема',
+    themeDark: 'Тъмна тема',
   },
 
   output: {

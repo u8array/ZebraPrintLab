@@ -105,9 +105,8 @@ const he = {
     layersTab: 'שכבות',
     fontsTab: 'גופנים',
     themeToggle: 'החלפת ערכת נושא',
-    themeSystem: 'ערכת נושא: מערכת',
-    themeLight: 'ערכת נושא: בהיר',
-    themeDark: 'ערכת נושא: כהה',
+    themeLight: 'ערכת נושא בהירה',
+    themeDark: 'ערכת נושא כהה',
   },
 
   output: {

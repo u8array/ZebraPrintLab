@@ -105,9 +105,8 @@ const cs = {
     layersTab: 'Vrstvy',
     fontsTab: 'Písma',
     themeToggle: 'Přepnout motiv',
-    themeSystem: 'Motiv: systémový',
-    themeLight: 'Motiv: světlý',
-    themeDark: 'Motiv: tmavý',
+    themeLight: 'Světlý motiv',
+    themeDark: 'Tmavý motiv',
   },
 
   output: {

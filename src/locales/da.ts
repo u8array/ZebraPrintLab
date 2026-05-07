@@ -105,9 +105,8 @@ const da = {
     layersTab: 'Lag',
     fontsTab: 'Skrifttyper',
     themeToggle: 'Skift tema',
-    themeSystem: 'Tema: system',
-    themeLight: 'Tema: lyst',
-    themeDark: 'Tema: mørkt',
+    themeLight: 'Lyst tema',
+    themeDark: 'Mørkt tema',
   },
 
   output: {

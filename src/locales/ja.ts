@@ -105,9 +105,8 @@ const ja = {
     layersTab: 'レイヤー',
     fontsTab: 'フォント',
     themeToggle: 'テーマを切り替える',
-    themeSystem: 'テーマ: システム',
-    themeLight: 'テーマ: ライト',
-    themeDark: 'テーマ: ダーク',
+    themeLight: 'ライトテーマ',
+    themeDark: 'ダークテーマ',
   },
 
   output: {

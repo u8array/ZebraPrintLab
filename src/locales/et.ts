@@ -105,9 +105,8 @@ const et = {
     layersTab: 'Kihid',
     fontsTab: 'Fondid',
     themeToggle: 'Vaheta teemat',
-    themeSystem: 'Teema: süsteem',
-    themeLight: 'Teema: hele',
-    themeDark: 'Teema: tume',
+    themeLight: 'Hele teema',
+    themeDark: 'Tume teema',
   },
 
   output: {

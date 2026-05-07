@@ -105,9 +105,8 @@ const nl = {
     layersTab: 'Lagen',
     fontsTab: 'Lettertypen',
     themeToggle: 'Thema wisselen',
-    themeSystem: 'Thema: systeem',
-    themeLight: 'Thema: licht',
-    themeDark: 'Thema: donker',
+    themeLight: 'Licht thema',
+    themeDark: 'Donker thema',
   },
 
   output: {

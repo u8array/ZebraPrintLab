@@ -105,9 +105,8 @@ const fi = {
     layersTab: 'Tasot',
     fontsTab: 'Fontit',
     themeToggle: 'Vaihda teema',
-    themeSystem: 'Teema: järjestelmä',
-    themeLight: 'Teema: vaalea',
-    themeDark: 'Teema: tumma',
+    themeLight: 'Vaalea teema',
+    themeDark: 'Tumma teema',
   },
 
   output: {

@@ -105,9 +105,8 @@ const tr = {
     layersTab: 'Katmanlar',
     fontsTab: 'Yazı Tipleri',
     themeToggle: 'Temayı değiştir',
-    themeSystem: 'Tema: sistem',
-    themeLight: 'Tema: açık',
-    themeDark: 'Tema: koyu',
+    themeLight: 'Açık tema',
+    themeDark: 'Koyu tema',
   },
 
   output: {

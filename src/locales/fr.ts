@@ -105,9 +105,8 @@ const fr = {
     layersTab: 'Calques',
     fontsTab: 'Polices',
     themeToggle: 'Changer de thème',
-    themeSystem: 'Thème : système',
-    themeLight: 'Thème : clair',
-    themeDark: 'Thème : sombre',
+    themeLight: 'Thème clair',
+    themeDark: 'Thème sombre',
   },
 
   output: {

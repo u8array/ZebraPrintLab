@@ -105,9 +105,8 @@ const el = {
     layersTab: 'Επίπεδα',
     fontsTab: 'Γραμματοσειρές',
     themeToggle: 'Εναλλαγή θέματος',
-    themeSystem: 'Θέμα: σύστημα',
-    themeLight: 'Θέμα: ανοιχτό',
-    themeDark: 'Θέμα: σκοτεινό',
+    themeLight: 'Ανοιχτό θέμα',
+    themeDark: 'Σκοτεινό θέμα',
   },
 
   output: {

@@ -105,9 +105,8 @@ const ar = {
     layersTab: 'الطبقات',
     fontsTab: 'الخطوط',
     themeToggle: 'تبديل المظهر',
-    themeSystem: 'المظهر: النظام',
-    themeLight: 'المظهر: فاتح',
-    themeDark: 'المظهر: داكن',
+    themeLight: 'مظهر فاتح',
+    themeDark: 'مظهر داكن',
   },
 
   output: {

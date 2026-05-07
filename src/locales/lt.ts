@@ -105,9 +105,8 @@ const lt = {
     layersTab: 'Sluoksniai',
     fontsTab: 'Šriftai',
     themeToggle: 'Perjungti temą',
-    themeSystem: 'Tema: sistema',
-    themeLight: 'Tema: šviesi',
-    themeDark: 'Tema: tamsi',
+    themeLight: 'Šviesi tema',
+    themeDark: 'Tamsi tema',
   },
 
   output: {

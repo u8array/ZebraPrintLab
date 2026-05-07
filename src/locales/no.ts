@@ -105,9 +105,8 @@ const no = {
     layersTab: 'Lag',
     fontsTab: 'Skrifter',
     themeToggle: 'Bytt tema',
-    themeSystem: 'Tema: system',
-    themeLight: 'Tema: lyst',
-    themeDark: 'Tema: mørkt',
+    themeLight: 'Lyst tema',
+    themeDark: 'Mørkt tema',
   },
 
   output: {

@@ -45,6 +45,18 @@ Object.defineProperty(globalThis, 'navigator', {
   value: { language: 'en-US' } as Partial<Navigator>,
 });
 
+// ── window (matchMedia is read at store init for the initial theme) ──────────
+Object.defineProperty(globalThis, 'window', {
+  configurable: true,
+  value: {
+    matchMedia: () => ({
+      matches: false,
+      addEventListener: () => { /* noop */ },
+      removeEventListener: () => { /* noop */ },
+    }),
+  } as unknown as Window,
+});
+
 // ── document (canvas stub – used by ^GFA parser path) ────────────────────────
 
 /** Minimal ImageData stub for canvas operations in Node. */

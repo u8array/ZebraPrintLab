@@ -105,9 +105,8 @@ const pt = {
     layersTab: 'Camadas',
     fontsTab: 'Fontes',
     themeToggle: 'Alternar tema',
-    themeSystem: 'Tema: sistema',
-    themeLight: 'Tema: claro',
-    themeDark: 'Tema: escuro',
+    themeLight: 'Tema claro',
+    themeDark: 'Tema escuro',
   },
 
   output: {

@@ -29,7 +29,6 @@ import {
   XMarkIcon,
   SunIcon,
   MoonIcon,
-  ComputerDesktopIcon,
 } from "@heroicons/react/16/solid";
 import { useLabelStore, useHistory } from "../store/labelStore";
 import { localeNames } from "../locales";
@@ -53,12 +52,9 @@ export function AppShell() {
   const setTheme = useLabelStore((s) => s.setTheme);
 
   // Bridge the theme preference to <html data-theme> so the CSS variables in
-  // index.css pick it up. 'system' clears the attribute and lets the
-  // prefers-color-scheme media query take over.
+  // index.css pick it up.
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'system') root.removeAttribute('data-theme');
-    else root.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
   const { undo, redo, pastStates, futureStates } = useHistory();
   const canvasSettings = useLabelStore((s) => s.canvasSettings);
@@ -131,27 +127,12 @@ export function AppShell() {
           <div className="w-px h-4 bg-border mx-1" />
 
           <button
-            onClick={() => {
-              const next: Record<typeof theme, typeof theme> = {
-                system: "light",
-                light: "dark",
-                dark: "system",
-              };
-              setTheme(next[theme]);
-            }}
-            title={
-              theme === "system"
-                ? t.app.themeSystem
-                : theme === "light"
-                  ? t.app.themeLight
-                  : t.app.themeDark
-            }
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            title={theme === "dark" ? t.app.themeLight : t.app.themeDark}
             aria-label={t.app.themeToggle}
             className="p-1.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors"
           >
-            {theme === "system" ? (
-              <ComputerDesktopIcon className="w-3.5 h-3.5" />
-            ) : theme === "light" ? (
+            {theme === "dark" ? (
               <SunIcon className="w-3.5 h-3.5" />
             ) : (
               <MoonIcon className="w-3.5 h-3.5" />

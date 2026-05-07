@@ -30,6 +30,12 @@ function detectLocale(): LocaleCode {
   return (lang in locales ? lang : 'en') as LocaleCode;
 }
 
+function detectInitialTheme(): 'light' | 'dark' {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
+}
+
 export interface CanvasSettings {
   showGrid: boolean;
   snapEnabled: boolean;
@@ -39,7 +45,7 @@ export interface CanvasSettings {
   viewRotation: ViewRotation;
 }
 
-export type ThemePreference = 'system' | 'light' | 'dark';
+export type ThemePreference = 'light' | 'dark';
 
 interface LabelState {
   label: LabelConfig;
@@ -47,7 +53,8 @@ interface LabelState {
   currentPageIndex: number;
   selectedIds: string[];
   locale: LocaleCode;
-  /** UI theme override; 'system' defers to the OS prefers-color-scheme. */
+  /** UI theme. Initial value seeded from prefers-color-scheme; once toggled
+   *  the explicit choice persists. */
   theme: ThemePreference;
   canvasSettings: CanvasSettings;
 
@@ -117,6 +124,12 @@ function migrateLegacy(persistedState: unknown, version: number): unknown {
     }
   }
 
+  // theme briefly accepted 'system' on a feature branch; resolve any leftover
+  // legacy value to the matching concrete preference at load time.
+  if (s.theme === 'system' || (s.theme !== 'light' && s.theme !== 'dark')) {
+    delete s.theme;
+  }
+
   return s;
 }
 
@@ -132,7 +145,7 @@ export const useLabelStore = create<LabelState>()(
       pasteCount: 0,
       duplicateCount: 0,
       locale: detectLocale(),
-      theme: 'system' as ThemePreference,
+      theme: detectInitialTheme(),
       canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm', viewRotation: 0 },
 
       addObject: (type, position = { x: 50, y: 50 }) => {

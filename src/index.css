@@ -15,9 +15,10 @@
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
-/* Light palette: applied either via the OS preference (when no explicit
-   override is set on <html data-theme>) or by `data-theme="light"`. The
-   `data-theme="dark"` override falls through to the dark defaults above. */
+/* Light palette: applied via `data-theme="light"`. The store seeds the
+   initial theme from prefers-color-scheme on first load and persists the
+   user's explicit choice afterwards, so an OS media-query fallback would
+   only fight with the cached preference. */
 :root[data-theme="light"] {
   --color-bg:        #f4f4f8;
   --color-surface:   #ffffff;
@@ -28,20 +29,6 @@
   --color-muted:     #8080a8;
   --color-accent:    #d97706;
   --color-accent-dim:#fef3c7;
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]):not([data-theme="light"]) {
-    --color-bg:        #f4f4f8;
-    --color-surface:   #ffffff;
-    --color-surface-2: #ececf3;
-    --color-border:    #dcdce8;
-    --color-border-2:  #c8c8d8;
-    --color-text:      #1a1a2e;
-    --color-muted:     #8080a8;
-    --color-accent:    #d97706;
-    --color-accent-dim:#fef3c7;
-  }
 }
 
 *, *::before, *::after {

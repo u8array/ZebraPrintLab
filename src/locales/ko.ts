@@ -105,9 +105,8 @@ const ko = {
     layersTab: '레이어',
     fontsTab: '글꼴',
     themeToggle: '테마 전환',
-    themeSystem: '테마: 시스템',
-    themeLight: '테마: 라이트',
-    themeDark: '테마: 다크',
+    themeLight: '라이트 테마',
+    themeDark: '다크 테마',
   },
 
   output: {

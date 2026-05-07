@@ -105,9 +105,8 @@ const sv = {
     layersTab: 'Lager',
     fontsTab: 'Typsnitt',
     themeToggle: 'Växla tema',
-    themeSystem: 'Tema: system',
-    themeLight: 'Tema: ljust',
-    themeDark: 'Tema: mörkt',
+    themeLight: 'Ljust tema',
+    themeDark: 'Mörkt tema',
   },
 
   output: {
