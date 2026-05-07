@@ -12,6 +12,23 @@ export function snapBoxHeight(height: number, stepPx: number): number {
 }
 
 /**
+ * Forces newBox to be square while keeping the anchor corner pinned.
+ *
+ * Konva does not expose the active anchor to boundBoxFunc, so it is inferred
+ * from which oldBox edges moved: an edge that did not move is the pinned
+ * side. The new size is the larger of the two requested deltas, so either
+ * axis the user pulls drives the resize.
+ */
+export function forceSquareBox(oldBox: BoundingBox, newBox: BoundingBox): BoundingBox {
+  const leftMoved = Math.abs(newBox.x - oldBox.x) > 0.001;
+  const topMoved = Math.abs(newBox.y - oldBox.y) > 0.001;
+  const size = Math.max(Math.abs(newBox.width), Math.abs(newBox.height));
+  const x = leftMoved ? oldBox.x + oldBox.width - size : oldBox.x;
+  const y = topMoved ? oldBox.y + oldBox.height - size : oldBox.y;
+  return { ...newBox, x, y, width: size, height: size };
+}
+
+/**
  * Adjust newBox so its bottom edge stays at oldBox's bottom (top-anchor resize)
  * with a height of snappedH. Used when the user drags the top handle.
  */

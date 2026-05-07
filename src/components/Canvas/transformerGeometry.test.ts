@@ -5,6 +5,7 @@ import {
   isTopAnchorResize,
   transformNodeTopLeft,
   positionDidMove,
+  forceSquareBox,
 } from "./transformerGeometry";
 
 describe("snapBoxHeight", () => {
@@ -91,5 +92,39 @@ describe("positionDidMove", () => {
   it("returns true once the delta exceeds the tolerance", () => {
     expect(positionDidMove(102, 100)).toBe(true);
     expect(positionDidMove(80, 100)).toBe(true);
+  });
+});
+
+describe("forceSquareBox", () => {
+  const oldBox = { x: 100, y: 100, width: 50, height: 50, rotation: 0 };
+
+  it("clamps to max axis when dragging the bottom-right corner", () => {
+    const newBox = { x: 100, y: 100, width: 80, height: 60, rotation: 0 };
+    expect(forceSquareBox(oldBox, newBox)).toEqual({
+      x: 100, y: 100, width: 80, height: 80, rotation: 0,
+    });
+  });
+
+  it("pins the bottom-right corner when dragging the top-left", () => {
+    const newBox = { x: 70, y: 80, width: 80, height: 70, rotation: 0 };
+    // Bottom-right of oldBox = (150, 150). Square of size 80 must end there.
+    expect(forceSquareBox(oldBox, newBox)).toEqual({
+      x: 70, y: 70, width: 80, height: 80, rotation: 0,
+    });
+  });
+
+  it("pins the bottom-left corner when dragging the top-right", () => {
+    const newBox = { x: 100, y: 80, width: 70, height: 70, rotation: 0 };
+    expect(forceSquareBox(oldBox, newBox)).toEqual({
+      x: 100, y: 80, width: 70, height: 70, rotation: 0,
+    });
+  });
+
+  it("pins the top-right corner when dragging the bottom-left", () => {
+    const newBox = { x: 80, y: 100, width: 70, height: 70, rotation: 0 };
+    // Top-right of oldBox = (150, 100). Square of size 70 stays there.
+    expect(forceSquareBox(oldBox, newBox)).toEqual({
+      x: 80, y: 100, width: 70, height: 70, rotation: 0,
+    });
   });
 });

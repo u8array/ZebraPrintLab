@@ -77,6 +77,13 @@ export interface ObjectTypeDefinition<P extends object = object> {
    * renderer suppresses the text so the designer matches the print output.
    */
   interpretationLocked?: boolean;
+  /**
+   * True if the shape requires a 1:1 aspect ratio (e.g. circle: a single
+   * diameter). The transformer restricts to corner anchors and forces the
+   * resize bbox to stay square so visual feedback during drag matches the
+   * uniform `commitTransform` applied on release.
+   */
+  uniformScale?: boolean;
   toZPL: (obj: LabelObjectBase & { props: P }) => string;
   /**
    * Optional hook to enforce type-specific invariants on incoming changes

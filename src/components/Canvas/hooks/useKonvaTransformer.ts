@@ -11,6 +11,7 @@ import {
   isTopAnchorResize,
   transformNodeTopLeft,
   positionDidMove,
+  forceSquareBox,
   type BoundingBox,
 } from "../transformerGeometry";
 import { modelPositionFromRenderedTopLeft } from "../transformPosition";
@@ -194,6 +195,7 @@ export function useKonvaTransformer({
     selectedIds.length === 1
       ? objects.find((o) => o.id === selectedIds[0])?.type ?? ""
       : "";
+  const isUniformScale = !!ObjectRegistry[singleType]?.uniformScale;
   const enabledAnchors: string[] | undefined =
     selectedIds.length > 1
       ? []
@@ -201,7 +203,9 @@ export function useKonvaTransformer({
         ? []
         : BARCODE_1D_TYPES.has(singleType)
           ? ["top-center", "bottom-center"]
-          : undefined;
+          : isUniformScale
+            ? ["top-left", "top-right", "bottom-left", "bottom-right"]
+            : undefined;
   const isFreeResize = enabledAnchors === undefined;
 
   /** Reset all transform-time state. Idempotent; safe to call from any exit path. */
@@ -228,6 +232,7 @@ export function useKonvaTransformer({
 
   const boundBoxFunc = (oldBox: BoundingBox, newBox: BoundingBox): BoundingBox => {
     if (newBox.width < 10 || newBox.height < 10) return oldBox;
+    if (isUniformScale) newBox = forceSquareBox(oldBox, newBox);
     const dotPx = scale / dpmm;
     let bbox = applyHeightSnap(oldBox, newBox, dotPx, transformAnchorRef.current);
 
