@@ -124,12 +124,6 @@ function migrateLegacy(persistedState: unknown, version: number): unknown {
     }
   }
 
-  // theme briefly accepted 'system' on a feature branch; resolve any leftover
-  // legacy value to the matching concrete preference at load time.
-  if (s.theme === 'system' || (s.theme !== 'light' && s.theme !== 'dark')) {
-    delete s.theme;
-  }
-
   return s;
 }
 
