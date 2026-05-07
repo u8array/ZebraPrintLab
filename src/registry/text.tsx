@@ -6,6 +6,7 @@ import { fieldPos, fdField } from './zplHelpers';
 import { getFont, getAllFonts, loadFontFile } from '../lib/fontCache';
 import { useFontCacheVersion } from '../hooks/useFontCacheVersion';
 import { RotationSelect } from '../components/Properties/RotationSelect';
+import { NumberInput } from '../components/Properties/NumberInput';
 
 export interface TextProps {
   content: string;
@@ -133,26 +134,18 @@ export const text: ObjectTypeDefinition<TextProps> = {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.text.fontHeight}</label>
-            <input
-              type="number"
-              className={inputCls}
-              value={p.fontHeight}
-              min={1}
-              onChange={(e) => onChange({ fontHeight: Number(e.target.value) })}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.text.fontWidth}</label>
-            <input
-              type="number"
-              className={inputCls}
-              value={p.fontWidth}
-              min={0}
-              onChange={(e) => onChange({ fontWidth: Number(e.target.value) })}
-            />
-          </div>
+          <NumberInput
+            label={t.registry.text.fontHeight}
+            value={p.fontHeight}
+            min={1}
+            onChange={(fontHeight) => onChange({ fontHeight })}
+          />
+          <NumberInput
+            label={t.registry.text.fontWidth}
+            value={p.fontWidth}
+            min={0}
+            onChange={(fontWidth) => onChange({ fontWidth })}
+          />
         </div>
 
         <RotationSelect
