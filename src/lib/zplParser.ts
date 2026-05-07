@@ -645,10 +645,10 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // ── Change alphanumeric default font ────────────────────────────────────
     // ^CF{font},{height},{width}  → sets default for fields without ^A
     CF(p) {
-      cfHeight = int(p[1], cfHeight);
-      cfWidth = int(p[2], cfWidth);
       const fontId = (p[0] ?? "").trim();
       const explicitHeight = parseInt(p[1] ?? "", 10);
+      cfHeight = isNaN(explicitHeight) ? cfHeight : explicitHeight;
+      cfWidth = int(p[2], cfWidth);
       if (fontId && !isNaN(explicitHeight) && explicitHeight > 0) {
         labelConfig.defaultFont = { fontId, height: explicitHeight };
       }
