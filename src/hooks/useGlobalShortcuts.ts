@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLabelStore, useHistory, currentObjects } from "../store/labelStore";
+import { useLabelStore, useHistory, getCurrentObjects } from "../store/labelStore";
 import { nextRotation } from "../components/Canvas/rotationGeometry";
 
 export function useGlobalShortcuts() {
@@ -26,7 +26,7 @@ export function useGlobalShortcuts() {
       if (inInput) return;
       if (mod && e.code === "KeyA") {
         e.preventDefault();
-        selectObjects(currentObjects(useLabelStore.getState()).map((o) => o.id));
+        selectObjects(getCurrentObjects().map((o) => o.id));
         return;
       }
       if (mod && e.code === "KeyD") {

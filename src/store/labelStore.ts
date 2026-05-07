@@ -457,5 +457,10 @@ export const useLabelStore = create<LabelState>()(
 
 export const useCurrentObjects = () => useLabelStore(currentObjects);
 
+/** Non-reactive sibling of `useCurrentObjects` for use inside event handlers
+ *  and callbacks where a one-time read is wanted. */
+export const getCurrentObjects = (): LabelObject[] =>
+  currentObjects(useLabelStore.getState());
+
 // Undo / redo
 export const useHistory = () => useStore(useLabelStore.temporal);

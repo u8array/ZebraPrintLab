@@ -8,7 +8,7 @@ import { useDroppable, useDndMonitor } from "@dnd-kit/core";
 import type { PaletteDragData } from "../../dnd/types";
 import { Stage, Layer, Group, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
-import { useLabelStore, useCurrentObjects, currentObjects } from "../../store/labelStore";
+import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects } from "../../store/labelStore";
 import { pxToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
 import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
@@ -325,8 +325,7 @@ export function LabelCanvas({
     const objId = node.id();
     if (!objId || !stageRef.current) return;
 
-    const objs = currentObjects(useLabelStore.getState());
-    const obj = objs.find((o) => o.id === objId);
+    const obj = getCurrentObjects().find((o) => o.id === objId);
     if (!obj) return;
 
     const stage = stageRef.current;

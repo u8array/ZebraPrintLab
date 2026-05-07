@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import type Konva from "konva";
-import { useLabelStore, currentObjects } from "../../../store/labelStore";
+import { getCurrentObjects } from "../../../store/labelStore";
 import { getIdsIntersectingRect, type LassoRect } from "../lassoGeometry";
 
 interface Options {
@@ -58,14 +58,14 @@ export function useCanvasLasso({ containerRef, stageRef, spaceDown, selectObject
     lassoRectRef.current = null;
     setLasso(null);
     if (!rect || !stageRef.current) return;
-    const ids = currentObjects(useLabelStore.getState()).map((o) => o.id);
+    const ids = getCurrentObjects().map((o) => o.id);
     selectObjects(getIdsIntersectingRect(stageRef.current, ids, rect));
   };
 
   const onStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.evt.button !== 0 || spaceDown) return;
     const targetId = e.target.id();
-    const onObject = currentObjects(useLabelStore.getState()).some((o) => o.id === targetId);
+    const onObject = getCurrentObjects().some((o) => o.id === targetId);
     if (onObject || e.target.getParent()?.className === "Transformer") return;
     const pos = stageRef.current?.getPointerPosition();
     if (!pos) return;
