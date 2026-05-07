@@ -93,6 +93,7 @@ const pl = {
     exportZpl: 'Export ZPL',
     newDesign: 'Nowy projekt',
     addPage: 'Dodaj stronę',
+    deletePageConfirm: 'Usunąć bieżącą stronę? Tej operacji nie można cofnąć.',
     openDesign: 'Otwórz projekt',
     saveDesign: 'Zapisz projekt',
     print: 'Drukuj jako obraz (przeglądarka)',

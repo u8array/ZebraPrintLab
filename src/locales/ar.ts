@@ -93,6 +93,7 @@ const ar = {
     exportZpl: 'تصدير ZPL',
     newDesign: 'تصميم جديد',
     addPage: 'إضافة صفحة',
+    deletePageConfirm: 'حذف الصفحة الحالية؟ لا يمكن التراجع عن هذا الإجراء.',
     openDesign: 'فتح تصميم',
     saveDesign: 'حفظ تصميم',
     print: 'طباعة كصورة (المتصفح)',

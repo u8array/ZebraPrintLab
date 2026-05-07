@@ -93,6 +93,7 @@ const zhHant = {
     exportZpl: '匯出 ZPL',
     newDesign: '新增設計',
     addPage: '新增頁面',
+    deletePageConfirm: '刪除目前頁面？此操作無法復原。',
     openDesign: '開啟設計',
     saveDesign: '儲存設計',
     print: '列印為圖片（瀏覽器）',

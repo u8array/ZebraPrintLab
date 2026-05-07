@@ -93,6 +93,7 @@ const sr = {
     exportZpl: 'Export ZPL',
     newDesign: 'Нови дизајн',
     addPage: 'Додај страницу',
+    deletePageConfirm: 'Обрисати тренутну страницу? Ова радња се не може опозвати.',
     openDesign: 'Отвори дизајн',
     saveDesign: 'Сачувај дизајн',
     print: 'Штампање као слика (прегледач)',

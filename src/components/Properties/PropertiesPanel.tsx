@@ -360,7 +360,15 @@ function LabelConfigPanel({
         <p className={labelCls}>{t.label.printerSettingsHeading}</p>
 
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.label.printSpeed}</label>
+          <label className={labelCls}>
+            {t.label.printSpeed}
+            <span
+              className="ml-1 cursor-help opacity-60"
+              title={t.label.printSpeedHint}
+            >
+              ⓘ
+            </span>
+          </label>
           <input
             type="number"
             className={inputCls}
@@ -371,11 +379,18 @@ function LabelConfigPanel({
               onUpdate({ printSpeed: parseIntOrUndef(e.target.value) })
             }
           />
-          <p className="text-[10px] text-muted">{t.label.printSpeedHint}</p>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.label.darkness}</label>
+          <label className={labelCls}>
+            {t.label.darkness}
+            <span
+              className="ml-1 cursor-help opacity-60"
+              title={t.label.darknessHint}
+            >
+              ⓘ
+            </span>
+          </label>
           <input
             type="number"
             className={inputCls}
@@ -386,7 +401,6 @@ function LabelConfigPanel({
               onUpdate({ darkness: parseIntOrUndef(e.target.value) })
             }
           />
-          <p className="text-[10px] text-muted">{t.label.darknessHint}</p>
         </div>
 
         <div className="flex flex-col gap-1">

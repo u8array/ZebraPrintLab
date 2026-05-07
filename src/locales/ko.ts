@@ -93,6 +93,7 @@ const ko = {
     exportZpl: 'ZPL 내보내기',
     newDesign: '새 디자인',
     addPage: '페이지 추가',
+    deletePageConfirm: '현재 페이지를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.',
     openDesign: '디자인 열기',
     saveDesign: '디자인 저장',
     print: '이미지로 인쇄 (브라우저)',

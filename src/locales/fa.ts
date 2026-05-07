@@ -93,6 +93,7 @@ const fa = {
     exportZpl: 'خروجی ZPL',
     newDesign: 'طرح جدید',
     addPage: 'افزودن صفحه',
+    deletePageConfirm: 'صفحه فعلی حذف شود؟ این عمل قابل بازگشت نیست.',
     openDesign: 'باز کردن طرح',
     saveDesign: 'ذخیره طرح',
     print: 'چاپ به عنوان تصویر (مرورگر)',

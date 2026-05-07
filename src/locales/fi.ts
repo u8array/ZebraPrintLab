@@ -93,6 +93,7 @@ const fi = {
     exportZpl: 'Export ZPL',
     newDesign: 'Uusi rakenne',
     addPage: 'Lisää sivu',
+    deletePageConfirm: 'Poistetaanko nykyinen sivu? Tätä ei voi kumota.',
     openDesign: 'Avaa rakenne',
     saveDesign: 'Tallenna rakenne',
     print: 'Tulosta kuvana (selain)',

@@ -93,6 +93,7 @@ const sk = {
     exportZpl: 'Export ZPL',
     newDesign: 'Nový návrh',
     addPage: 'Pridať stránku',
+    deletePageConfirm: 'Odstrániť aktuálnu stránku? Túto akciu nie je možné vrátiť späť.',
     openDesign: 'Otvoriť návrh',
     saveDesign: 'Uložiť návrh',
     print: 'Tlač ako obrázok (prehliadač)',

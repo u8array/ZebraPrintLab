@@ -93,6 +93,7 @@ const bg = {
     exportZpl: 'Export ZPL',
     newDesign: 'Нов дизайн',
     addPage: 'Добавяне на страница',
+    deletePageConfirm: 'Изтриване на текущата страница? Действието е необратимо.',
     openDesign: 'Отвори дизайн',
     saveDesign: 'Запази дизайн',
     print: 'Печат като изображение (браузър)',

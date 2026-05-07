@@ -93,6 +93,7 @@ const sv = {
     exportZpl: 'Export ZPL',
     newDesign: 'Nytt design',
     addPage: 'Lägg till sida',
+    deletePageConfirm: 'Ta bort aktuell sida? Detta kan inte ångras.',
     openDesign: 'Öppna design',
     saveDesign: 'Spara design',
     print: 'Skriv ut som bild (webbläsare)',

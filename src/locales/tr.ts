@@ -93,6 +93,7 @@ const tr = {
     exportZpl: 'ZPL Dışa Aktar',
     newDesign: 'Yeni Tasarım',
     addPage: 'Sayfa ekle',
+    deletePageConfirm: 'Geçerli sayfa silinsin mi? Bu işlem geri alınamaz.',
     openDesign: 'Tasarım Aç',
     saveDesign: 'Tasarım Kaydet',
     print: 'Görüntü olarak yazdır (tarayıcı)',

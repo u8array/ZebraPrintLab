@@ -93,6 +93,7 @@ const es = {
     exportZpl: 'Export ZPL',
     newDesign: 'Nuevo diseño',
     addPage: 'Añadir página',
+    deletePageConfirm: '¿Eliminar la página actual? Esta acción no se puede deshacer.',
     openDesign: 'Abrir diseño',
     saveDesign: 'Guardar diseño',
     print: 'Imprimir como imagen (navegador)',

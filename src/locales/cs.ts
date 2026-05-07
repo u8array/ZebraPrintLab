@@ -93,6 +93,7 @@ const cs = {
     exportZpl: 'Export ZPL',
     newDesign: 'Nový návrh',
     addPage: 'Přidat stránku',
+    deletePageConfirm: 'Smazat aktuální stránku? Tuto akci nelze vrátit zpět.',
     openDesign: 'Otevřít návrh',
     saveDesign: 'Uložit návrh',
     print: 'Tisk jako obrázek (prohlížeč)',

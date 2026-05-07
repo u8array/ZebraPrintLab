@@ -93,6 +93,7 @@ const hu = {
     exportZpl: 'Export ZPL',
     newDesign: 'Új terv',
     addPage: 'Oldal hozzáadása',
+    deletePageConfirm: 'Törli az aktuális oldalt? Ez nem vonható vissza.',
     openDesign: 'Terv megnyitása',
     saveDesign: 'Terv mentése',
     print: 'Nyomtatás képként (böngésző)',

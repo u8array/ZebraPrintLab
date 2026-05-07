@@ -93,6 +93,7 @@ const sl = {
     exportZpl: 'Export ZPL',
     newDesign: 'Nov dizajn',
     addPage: 'Dodaj stran',
+    deletePageConfirm: 'Izbrišem trenutno stran? Tega dejanja ni mogoče razveljaviti.',
     openDesign: 'Odpri dizajn',
     saveDesign: 'Shrani dizajn',
     print: 'Natisni kot sliko (brskalnik)',

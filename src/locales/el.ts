@@ -93,6 +93,7 @@ const el = {
     exportZpl: 'Export ZPL',
     newDesign: 'Νέο σχέδιο',
     addPage: 'Προσθήκη σελίδας',
+    deletePageConfirm: 'Διαγραφή της τρέχουσας σελίδας; Αυτή η ενέργεια δεν αναιρείται.',
     openDesign: 'Άνοιγμα σχεδίου',
     saveDesign: 'Αποθήκευση σχεδίου',
     print: 'Εκτύπωση ως εικόνα (πρόγραμμα περιήγησης)',

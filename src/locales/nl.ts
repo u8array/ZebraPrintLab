@@ -93,6 +93,7 @@ const nl = {
     exportZpl: 'Export ZPL',
     newDesign: 'Nieuw ontwerp',
     addPage: 'Pagina toevoegen',
+    deletePageConfirm: 'Huidige pagina verwijderen? Dit kan niet ongedaan worden gemaakt.',
     openDesign: 'Ontwerp openen',
     saveDesign: 'Ontwerp opslaan',
     print: 'Afdrukken als afbeelding (browser)',

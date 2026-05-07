@@ -93,6 +93,7 @@ const lv = {
     exportZpl: 'Export ZPL',
     newDesign: 'Jauns dizains',
     addPage: 'Pievienot lapu',
+    deletePageConfirm: 'Dzēst pašreizējo lapu? Šo darbību nevar atsaukt.',
     openDesign: 'Atvērt dizainu',
     saveDesign: 'Saglabāt dizainu',
     print: 'Drukāt kā attēlu (pārlūks)',

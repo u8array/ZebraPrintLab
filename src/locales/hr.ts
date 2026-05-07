@@ -93,6 +93,7 @@ const hr = {
     exportZpl: 'Export ZPL',
     newDesign: 'Novi dizajn',
     addPage: 'Dodaj stranicu',
+    deletePageConfirm: 'Izbrisati trenutnu stranicu? Ovu radnju nije moguće poništiti.',
     openDesign: 'Otvori dizajn',
     saveDesign: 'Spremi dizajn',
     print: 'Ispis kao slika (preglednik)',

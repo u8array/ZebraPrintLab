@@ -93,6 +93,7 @@ const ro = {
     exportZpl: 'Export ZPL',
     newDesign: 'Design nou',
     addPage: 'Adaugă pagină',
+    deletePageConfirm: 'Ștergeți pagina curentă? Această acțiune nu poate fi anulată.',
     openDesign: 'Deschide design',
     saveDesign: 'Salvează design',
     print: 'Tipărire ca imagine (browser)',

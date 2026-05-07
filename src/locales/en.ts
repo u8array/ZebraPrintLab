@@ -93,6 +93,7 @@ const en = {
     exportZpl: 'Export ZPL',
     newDesign: 'New design',
     addPage: 'Add page',
+    deletePageConfirm: 'Delete the current page? This cannot be undone.',
     openDesign: 'Open design',
     saveDesign: 'Save design',
     print: 'Print as Image (browser)',

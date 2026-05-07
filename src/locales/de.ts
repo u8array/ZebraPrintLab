@@ -93,6 +93,7 @@ const de = {
     exportZpl: 'Export ZPL',
     newDesign: 'Neues Design',
     addPage: 'Seite hinzufügen',
+    deletePageConfirm: 'Aktuelle Seite löschen? Das kann nicht rückgängig gemacht werden.',
     openDesign: 'Design öffnen',
     saveDesign: 'Design speichern',
     print: 'Als Bild drucken (Browser)',

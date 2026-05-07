@@ -93,6 +93,7 @@ const zhHans = {
     exportZpl: '导出 ZPL',
     newDesign: '新建设计',
     addPage: '添加页面',
+    deletePageConfirm: '删除当前页面？此操作无法撤消。',
     openDesign: '打开设计',
     saveDesign: '保存设计',
     print: '打印为图片（浏览器）',

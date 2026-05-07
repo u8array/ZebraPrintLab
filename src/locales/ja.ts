@@ -93,6 +93,7 @@ const ja = {
     exportZpl: 'ZPL エクスポート',
     newDesign: '新しいデザイン',
     addPage: 'ページを追加',
+    deletePageConfirm: '現在のページを削除しますか? この操作は元に戻せません。',
     openDesign: 'デザインを開く',
     saveDesign: 'デザインを保存',
     print: '画像として印刷（ブラウザ）',

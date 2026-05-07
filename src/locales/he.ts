@@ -93,6 +93,7 @@ const he = {
     exportZpl: 'ייצוא ZPL',
     newDesign: 'עיצוב חדש',
     addPage: 'הוסף דף',
+    deletePageConfirm: 'למחוק את הדף הנוכחי? לא ניתן לבטל פעולה זו.',
     openDesign: 'פתח עיצוב',
     saveDesign: 'שמור עיצוב',
     print: 'הדפסה כתמונה (דפדפן)',

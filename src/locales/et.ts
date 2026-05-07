@@ -93,6 +93,7 @@ const et = {
     exportZpl: 'Export ZPL',
     newDesign: 'Uus kujundus',
     addPage: 'Lisa leht',
+    deletePageConfirm: 'Kustuta praegune leht? Seda toimingut ei saa tagasi võtta.',
     openDesign: 'Ava kujundus',
     saveDesign: 'Salvesta kujundus',
     print: 'Prindi pildina (brauser)',

@@ -93,6 +93,7 @@ const da = {
     exportZpl: 'Export ZPL',
     newDesign: 'Nyt design',
     addPage: 'Tilføj side',
+    deletePageConfirm: 'Slet den aktuelle side? Dette kan ikke fortrydes.',
     openDesign: 'Åbn design',
     saveDesign: 'Gem design',
     print: 'Udskriv som billede (browser)',
