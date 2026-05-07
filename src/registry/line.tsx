@@ -1,5 +1,6 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
+import { clampMin } from '../lib/inputParse';
 import { inputCls, labelCls } from '../components/Properties/styles';
 
 export interface LineProps {
@@ -70,7 +71,7 @@ export const line: ObjectTypeDefinition<LineProps> = {
               className={inputCls}
               value={p.length}
               min={1}
-              onChange={(e) => onChange({ length: Number(e.target.value) })}
+              onChange={(e) => onChange({ length: clampMin(e.target.value, 1) })}
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -93,7 +94,7 @@ export const line: ObjectTypeDefinition<LineProps> = {
             className={inputCls}
             value={p.thickness}
             min={1}
-            onChange={(e) => onChange({ thickness: Number(e.target.value) })}
+            onChange={(e) => onChange({ thickness: clampMin(e.target.value, 1) })}
           />
         </div>
 

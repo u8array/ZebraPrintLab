@@ -11,6 +11,7 @@ import {
 } from "../../lib/units";
 import type { Unit } from "../../lib/units";
 import { useT } from "../../lib/useT";
+import { parseIntOrUndef } from "../../lib/inputParse";
 import { inputCls, labelCls } from "./styles";
 import type { LabelConfig } from "../../types/ObjectType";
 
@@ -463,10 +464,4 @@ function LabelConfigPanel({
       </div>
     </div>
   );
-}
-
-function parseIntOrUndef(raw: string): number | undefined {
-  if (raw.trim() === "") return undefined;
-  const n = parseInt(raw, 10);
-  return isNaN(n) ? undefined : n;
 }

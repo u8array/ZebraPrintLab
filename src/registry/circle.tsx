@@ -1,5 +1,6 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
+import { clampMin } from '../lib/inputParse';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
 
@@ -52,7 +53,7 @@ export const circle: ObjectTypeDefinition<CircleProps> = {
             className={inputCls}
             value={p.diameter}
             min={1}
-            onChange={(e) => onChange({ diameter: Number(e.target.value) })}
+            onChange={(e) => onChange({ diameter: clampMin(e.target.value, 1) })}
           />
         </div>
 
@@ -74,7 +75,7 @@ export const circle: ObjectTypeDefinition<CircleProps> = {
               className={inputCls}
               value={p.thickness}
               min={1}
-              onChange={(e) => onChange({ thickness: Number(e.target.value) })}
+              onChange={(e) => onChange({ thickness: clampMin(e.target.value, 1) })}
             />
           </div>
         )}

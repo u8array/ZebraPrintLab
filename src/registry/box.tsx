@@ -3,6 +3,7 @@ import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
 import { commitWidthHeightTransform } from './transformHelpers';
+import { clampMin } from '../lib/inputParse';
 
 export interface BoxProps {
   width: number;
@@ -55,7 +56,7 @@ export const box: ObjectTypeDefinition<BoxProps> = {
               className={inputCls}
               value={p.width}
               min={1}
-              onChange={(e) => onChange({ width: Number(e.target.value) })}
+              onChange={(e) => onChange({ width: clampMin(e.target.value, 1) })}
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -65,7 +66,7 @@ export const box: ObjectTypeDefinition<BoxProps> = {
               className={inputCls}
               value={p.height}
               min={1}
-              onChange={(e) => onChange({ height: Number(e.target.value) })}
+              onChange={(e) => onChange({ height: clampMin(e.target.value, 1) })}
             />
           </div>
         </div>
@@ -88,7 +89,7 @@ export const box: ObjectTypeDefinition<BoxProps> = {
               className={inputCls}
               value={p.thickness}
               min={1}
-              onChange={(e) => onChange({ thickness: Number(e.target.value) })}
+              onChange={(e) => onChange({ thickness: clampMin(e.target.value, 1) })}
             />
           </div>
         )}
@@ -113,7 +114,7 @@ export const box: ObjectTypeDefinition<BoxProps> = {
               value={p.rounding}
               min={0}
               max={8}
-              onChange={(e) => onChange({ rounding: Number(e.target.value) })}
+              onChange={(e) => onChange({ rounding: clampMin(e.target.value, 0) })}
             />
           </div>
         </div>

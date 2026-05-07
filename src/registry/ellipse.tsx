@@ -3,6 +3,7 @@ import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
 import { commitWidthHeightTransform } from './transformHelpers';
+import { clampMin } from '../lib/inputParse';
 
 export interface EllipseProps {
   width: number;
@@ -51,7 +52,7 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
               className={inputCls}
               value={p.width}
               min={1}
-              onChange={(e) => onChange({ width: Number(e.target.value) })}
+              onChange={(e) => onChange({ width: clampMin(e.target.value, 1) })}
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -61,7 +62,7 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
               className={inputCls}
               value={p.height}
               min={1}
-              onChange={(e) => onChange({ height: Number(e.target.value) })}
+              onChange={(e) => onChange({ height: clampMin(e.target.value, 1) })}
             />
           </div>
         </div>
@@ -84,7 +85,7 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
               className={inputCls}
               value={p.thickness}
               min={1}
-              onChange={(e) => onChange({ thickness: Number(e.target.value) })}
+              onChange={(e) => onChange({ thickness: clampMin(e.target.value, 1) })}
             />
           </div>
         )}
