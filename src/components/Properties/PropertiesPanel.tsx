@@ -305,8 +305,10 @@ function LabelConfigPanel({
           </select>
         </div>
 
-        <div className="border-t border-border" />
-
+        <CollapsibleSection
+          id="label-output"
+          title={t.label.outputHeading}
+        >
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.label.mediaMode}</label>
           <select
@@ -356,6 +358,7 @@ function LabelConfigPanel({
             }
           />
         </div>
+        </CollapsibleSection>
 
         <CollapsibleSection
           id="label-printer-settings"
