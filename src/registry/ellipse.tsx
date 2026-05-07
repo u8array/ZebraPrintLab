@@ -1,9 +1,9 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
+import { NumberInput } from '../components/Properties/NumberInput';
 import { fieldPos } from './zplHelpers';
 import { commitWidthHeightTransform } from './transformHelpers';
-import { clampMin } from '../lib/inputParse';
 
 export interface EllipseProps {
   width: number;
@@ -45,26 +45,18 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
     return (
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-2">
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.ellipse.width}</label>
-            <input
-              type="number"
-              className={inputCls}
-              value={p.width}
-              min={1}
-              onChange={(e) => onChange({ width: clampMin(e.target.value, 1) })}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.ellipse.height}</label>
-            <input
-              type="number"
-              className={inputCls}
-              value={p.height}
-              min={1}
-              onChange={(e) => onChange({ height: clampMin(e.target.value, 1) })}
-            />
-          </div>
+          <NumberInput
+            label={t.registry.ellipse.width}
+            value={p.width}
+            min={1}
+            onChange={(width) => onChange({ width })}
+          />
+          <NumberInput
+            label={t.registry.ellipse.height}
+            value={p.height}
+            min={1}
+            onChange={(height) => onChange({ height })}
+          />
         </div>
 
         <label className="flex items-center gap-2 cursor-pointer">
@@ -78,16 +70,12 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
         </label>
 
         {!p.filled && (
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.ellipse.thickness}</label>
-            <input
-              type="number"
-              className={inputCls}
-              value={p.thickness}
-              min={1}
-              onChange={(e) => onChange({ thickness: clampMin(e.target.value, 1) })}
-            />
-          </div>
+          <NumberInput
+            label={t.registry.ellipse.thickness}
+            value={p.thickness}
+            min={1}
+            onChange={(thickness) => onChange({ thickness })}
+          />
         )}
 
         <div className="flex flex-col gap-1">

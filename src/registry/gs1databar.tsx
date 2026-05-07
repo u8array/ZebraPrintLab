@@ -5,6 +5,7 @@ import { fieldPos, fdField } from './zplHelpers';
 import { filterContent } from './contentSpec';
 import { type ZplRotation } from './rotation';
 import { RotationSelect } from '../components/Properties/RotationSelect';
+import { NumberInput } from '../components/Properties/NumberInput';
 import {
   GS1_DATABAR_DEFAULT_SEGMENTS,
   GS1_DATABAR_EXPANDED_SYMBOLOGIES,
@@ -77,17 +78,13 @@ export const gs1databar: ObjectTypeDefinition<Gs1DatabarProps> = {
           />
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{loc.moduleWidth}</label>
-          <input
-            type="number"
-            className={inputCls}
-            value={p.moduleWidth}
-            min={1}
-            max={10}
-            onChange={(e) => onChange({ moduleWidth: Number(e.target.value) })}
-          />
-        </div>
+        <NumberInput
+          label={loc.moduleWidth}
+          value={p.moduleWidth}
+          min={1}
+          max={10}
+          onChange={(moduleWidth) => onChange({ moduleWidth })}
+        />
 
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{loc.symbology}</label>

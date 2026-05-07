@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
-import { clampMin } from '../lib/inputParse';
 import { inputCls, labelCls } from '../components/Properties/styles';
+import { NumberInput } from '../components/Properties/NumberInput';
 import { fieldPos } from './zplHelpers';
 
 export interface CircleProps {
@@ -46,16 +46,12 @@ export const circle: ObjectTypeDefinition<CircleProps> = {
     const p = obj.props;
     return (
       <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.circle.diameter}</label>
-          <input
-            type="number"
-            className={inputCls}
-            value={p.diameter}
-            min={1}
-            onChange={(e) => onChange({ diameter: clampMin(e.target.value, 1) })}
-          />
-        </div>
+        <NumberInput
+          label={t.registry.circle.diameter}
+          value={p.diameter}
+          min={1}
+          onChange={(diameter) => onChange({ diameter })}
+        />
 
         <label className="flex items-center gap-2 cursor-pointer">
           <input
@@ -68,16 +64,12 @@ export const circle: ObjectTypeDefinition<CircleProps> = {
         </label>
 
         {!p.filled && (
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.circle.thickness}</label>
-            <input
-              type="number"
-              className={inputCls}
-              value={p.thickness}
-              min={1}
-              onChange={(e) => onChange({ thickness: clampMin(e.target.value, 1) })}
-            />
-          </div>
+          <NumberInput
+            label={t.registry.circle.thickness}
+            value={p.thickness}
+            min={1}
+            onChange={(thickness) => onChange({ thickness })}
+          />
         )}
 
         <div className="flex flex-col gap-1">

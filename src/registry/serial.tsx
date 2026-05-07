@@ -56,16 +56,12 @@ export const serial: ObjectTypeDefinition<SerialProps> = {
               onChange={(e) => onChange({ content: filterContent(e.target.value, serialSpec) })}
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.serial.increment}</label>
-            <input
-              type="number"
-              className={inputCls}
-              value={p.increment}
-              min={1}
-              onChange={(e) => onChange({ increment: Number(e.target.value) })}
-            />
-          </div>
+          <NumberInput
+            label={t.registry.serial.increment}
+            value={p.increment}
+            min={1}
+            onChange={(increment) => onChange({ increment })}
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-2">

@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
-import { clampMin } from '../lib/inputParse';
 import { inputCls, labelCls } from '../components/Properties/styles';
+import { NumberInput } from '../components/Properties/NumberInput';
 
 export interface LineProps {
   /** Angle in degrees, 0 = rightward horizontal, clockwise positive (screen coords). */
@@ -64,39 +64,27 @@ export const line: ObjectTypeDefinition<LineProps> = {
     return (
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-2">
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.line.length}</label>
-            <input
-              type="number"
-              className={inputCls}
-              value={p.length}
-              min={1}
-              onChange={(e) => onChange({ length: clampMin(e.target.value, 1) })}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.line.angle}</label>
-            <input
-              type="number"
-              className={inputCls}
-              value={p.angle}
-              min={-359}
-              max={359}
-              onChange={(e) => onChange({ angle: Number(e.target.value) })}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.line.thickness}</label>
-          <input
-            type="number"
-            className={inputCls}
-            value={p.thickness}
+          <NumberInput
+            label={t.registry.line.length}
+            value={p.length}
             min={1}
-            onChange={(e) => onChange({ thickness: clampMin(e.target.value, 1) })}
+            onChange={(length) => onChange({ length })}
+          />
+          <NumberInput
+            label={t.registry.line.angle}
+            value={p.angle}
+            min={-359}
+            max={359}
+            onChange={(angle) => onChange({ angle })}
           />
         </div>
+
+        <NumberInput
+          label={t.registry.line.thickness}
+          value={p.thickness}
+          min={1}
+          onChange={(thickness) => onChange({ thickness })}
+        />
 
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.registry.line.color}</label>
