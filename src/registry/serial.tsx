@@ -3,6 +3,7 @@ import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
 import { filterContent, type ContentSpec } from './contentSpec';
+import { RotationSelect } from '../components/Properties/RotationSelect';
 
 const serialSpec: ContentSpec = { charset: '0-9A-Za-z' };
 
@@ -89,19 +90,10 @@ export const serial: ObjectTypeDefinition<SerialProps> = {
           </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.serial.rotation}</label>
-          <select
-            className={inputCls}
-            value={p.rotation}
-            onChange={(e) => onChange({ rotation: e.target.value as SerialProps['rotation'] })}
-          >
-            <option value="N">{t.registry.text.rotationN}</option>
-            <option value="R">{t.registry.text.rotationR}</option>
-            <option value="I">{t.registry.text.rotationI}</option>
-            <option value="B">{t.registry.text.rotationB}</option>
-          </select>
-        </div>
+        <RotationSelect
+          value={p.rotation}
+          onChange={(rotation) => onChange({ rotation })}
+        />
 
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.registry.serial.zplMode}</label>

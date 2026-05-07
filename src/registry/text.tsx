@@ -5,6 +5,7 @@ import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdField } from './zplHelpers';
 import { getFont, getAllFonts, loadFontFile } from '../lib/fontCache';
 import { useFontCacheVersion } from '../hooks/useFontCacheVersion';
+import { RotationSelect } from '../components/Properties/RotationSelect';
 
 export interface TextProps {
   content: string;
@@ -154,19 +155,10 @@ export const text: ObjectTypeDefinition<TextProps> = {
           </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.text.rotation}</label>
-          <select
-            className={inputCls}
-            value={p.rotation}
-            onChange={(e) => onChange({ rotation: e.target.value as TextProps['rotation'] })}
-          >
-            <option value="N">{t.registry.text.rotationN}</option>
-            <option value="R">{t.registry.text.rotationR}</option>
-            <option value="I">{t.registry.text.rotationI}</option>
-            <option value="B">{t.registry.text.rotationB}</option>
-          </select>
-        </div>
+        <RotationSelect
+          value={p.rotation}
+          onChange={(rotation) => onChange({ rotation })}
+        />
 
         <label className="flex items-center gap-2 cursor-pointer">
           <input
