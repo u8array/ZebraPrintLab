@@ -103,7 +103,12 @@ export const BARCODE_1D_TYPES = new Set([
 
 export const STACKED_2D_TYPES = new Set(['pdf417', 'micropdf417', 'codablock']);
 
-export const ObjectRegistry: Record<string, ObjectTypeDefinition> = {
+// `any` is necessary here: each registry entry is an `ObjectTypeDefinition<P>`
+// with a different concrete `P`. Using `object` instead of `any` triggers
+// function-parameter contravariance (toZPL expects a specific props shape),
+// which TS rejects under strict.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const ObjectRegistry: Record<string, ObjectTypeDefinition<any>> = {
   // text
   text,
   // code-1d (frequency order)

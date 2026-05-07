@@ -325,7 +325,8 @@ export function LabelCanvas({
     const objId = node.id();
     if (!objId || !stageRef.current) return;
 
-    const obj = getCurrentObjects().find((o) => o.id === objId);
+    const objs = getCurrentObjects();
+    const obj = objs.find((o) => o.id === objId);
     if (!obj) return;
 
     const stage = stageRef.current;
