@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { TrashIcon } from "@heroicons/react/16/solid";
 import { useLabelStore } from "../../store/labelStore";
 import { useT } from "../../lib/useT";
+import { ConfirmDialog } from "../ui/ConfirmDialog";
 
 export function PaginationControl() {
   const t = useT();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const pageCount = useLabelStore((s) => s.pages.length);
   const currentPageIndex = useLabelStore((s) => s.currentPageIndex);
   const setCurrentPage = useLabelStore((s) => s.setCurrentPage);
@@ -14,12 +17,6 @@ export function PaginationControl() {
 
   const canPrev = currentPageIndex > 0;
   const canNext = currentPageIndex < pageCount - 1;
-
-  const handleDelete = () => {
-    if (window.confirm(t.app.deletePageConfirm)) {
-      removePage(currentPageIndex);
-    }
-  };
 
   return (
     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-surface border border-border rounded px-1 py-0.5">
@@ -46,13 +43,26 @@ export function PaginationControl() {
       </button>
       <div className="w-px h-3.5 bg-border mx-0.5" />
       <button
-        onClick={handleDelete}
+        onClick={() => setConfirmOpen(true)}
         title="Delete current page"
         aria-label="Delete current page"
         className="w-6 h-6 flex items-center justify-center text-muted hover:text-red-400 transition-colors"
       >
         <TrashIcon className="w-3.5 h-3.5" />
       </button>
+      {confirmOpen && (
+        <ConfirmDialog
+          message={t.app.deletePageConfirm}
+          confirmLabel={t.app.deletePage}
+          cancelLabel={t.app.cancel}
+          destructive
+          onConfirm={() => {
+            removePage(currentPageIndex);
+            setConfirmOpen(false);
+          }}
+          onCancel={() => setConfirmOpen(false)}
+        />
+      )}
     </div>
   );
 }
