@@ -104,6 +104,10 @@ const zhHans = {
     propertiesTab: '属性',
     layersTab: '图层',
     fontsTab: '字体',
+    themeToggle: '切换主题',
+    themeSystem: '主题：跟随系统',
+    themeLight: '主题：浅色',
+    themeDark: '主题：深色',
   },
 
   output: {

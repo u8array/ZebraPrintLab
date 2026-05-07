@@ -104,6 +104,10 @@ const cs = {
     propertiesTab: 'Vlastnosti',
     layersTab: 'Vrstvy',
     fontsTab: 'Písma',
+    themeToggle: 'Přepnout motiv',
+    themeSystem: 'Motiv: systémový',
+    themeLight: 'Motiv: světlý',
+    themeDark: 'Motiv: tmavý',
   },
 
   output: {

@@ -104,6 +104,10 @@ const pl = {
     propertiesTab: 'Właściwości',
     layersTab: 'Warstwy',
     fontsTab: 'Czcionki',
+    themeToggle: 'Przełącz motyw',
+    themeSystem: 'Motyw: systemowy',
+    themeLight: 'Motyw: jasny',
+    themeDark: 'Motyw: ciemny',
   },
 
   output: {

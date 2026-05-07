@@ -104,6 +104,10 @@ const et = {
     propertiesTab: 'Omadused',
     layersTab: 'Kihid',
     fontsTab: 'Fondid',
+    themeToggle: 'Vaheta teemat',
+    themeSystem: 'Teema: süsteem',
+    themeLight: 'Teema: hele',
+    themeDark: 'Teema: tume',
   },
 
   output: {

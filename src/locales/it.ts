@@ -104,6 +104,10 @@ const it = {
     propertiesTab: 'Proprietà',
     layersTab: 'Livelli',
     fontsTab: 'Caratteri',
+    themeToggle: 'Cambia tema',
+    themeSystem: 'Tema: sistema',
+    themeLight: 'Tema: chiaro',
+    themeDark: 'Tema: scuro',
   },
 
   output: {

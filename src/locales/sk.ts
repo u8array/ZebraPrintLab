@@ -104,6 +104,10 @@ const sk = {
     propertiesTab: 'Vlastnosti',
     layersTab: 'Vrstvy',
     fontsTab: 'Písma',
+    themeToggle: 'Prepnúť motív',
+    themeSystem: 'Motív: systémový',
+    themeLight: 'Motív: svetlý',
+    themeDark: 'Motív: tmavý',
   },
 
   output: {

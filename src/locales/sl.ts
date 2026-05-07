@@ -104,6 +104,10 @@ const sl = {
     propertiesTab: 'Lastnosti',
     layersTab: 'Plasti',
     fontsTab: 'Pisave',
+    themeToggle: 'Preklopi temo',
+    themeSystem: 'Tema: sistem',
+    themeLight: 'Tema: svetla',
+    themeDark: 'Tema: temna',
   },
 
   output: {

@@ -104,6 +104,10 @@ const zhHant = {
     propertiesTab: '屬性',
     layersTab: '圖層',
     fontsTab: '字體',
+    themeToggle: '切換主題',
+    themeSystem: '主題：跟隨系統',
+    themeLight: '主題：淺色',
+    themeDark: '主題：深色',
   },
 
   output: {
