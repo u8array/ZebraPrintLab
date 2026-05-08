@@ -15,6 +15,9 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
   const t = useT();
   const label = useLabelStore((s) => s.label);
   const pages = useLabelStore((s) => s.pages);
+  // Direct gate check — Preview is the path to the privacy notice, so the
+  // button must be reachable before acknowledgement. Other Labelary callers
+  // (AppShell.Print, LabelPreview.fetch) use the stricter canCallLabelary.
   const labelaryEnabled = useLabelStore((s) => s.thirdParty.labelary);
   const [copied, setCopied] = useState(false);
   const [showPreview, setShowPreview] = useState(false);

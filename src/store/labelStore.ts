@@ -66,8 +66,10 @@ interface LabelState {
    *  the explicit choice persists. */
   theme: ThemePreference;
   canvasSettings: CanvasSettings;
-  /** Per-service gates for third-party network calls. Initial defaults come
-   *  from build-time env (see thirdPartyDefaults); user choices persist. */
+  /** Per-service gates for third-party network calls. Sourced from build-time
+   *  env on every load (see thirdPartyDefaults) and intentionally not in
+   *  partialize — until a settings UI lets users explicitly opt in/out, the
+   *  build is authoritative. */
   thirdParty: { labelary: boolean };
   /** Whether the user has dismissed the one-time Labelary privacy notice. */
   labelaryNoticeAcknowledged: boolean;
