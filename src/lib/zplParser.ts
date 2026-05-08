@@ -1217,8 +1217,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // current decoder and surface as a partial import.
     CI: (p) => {
       const enc = ciToEncoding(int(p[0]));
-      if (enc.supported) fhDecoder = getDecoder(enc.label);
-      else partialCmds.add(`^CI${int(p[0])}`);
+      fhDecoder = getDecoder(enc.label);
+      if (!enc.supported) partialCmds.add(`^CI${int(p[0])}`);
     },
 
     // These commands carry no canvas-design information and are silently

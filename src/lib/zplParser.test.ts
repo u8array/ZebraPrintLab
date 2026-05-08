@@ -305,9 +305,20 @@ describe('parseZPL — ^FH hex escape', () => {
   });
 
   it('reports unsupported ^CI N as partial import', () => {
-    // ^CI50 is not a real Zebra encoding — falls back to current decoder
+    // ^CI50 is not a real Zebra encoding — falls back to UTF-8 default
     const { importReport } = parseZPL('^XA^CI50^FH_^FO0,0^A0N,30,0^FDx^FS^XZ', 8);
     expect(importReport.partial).toContain('^CI50');
+  });
+
+  it('resets decoder to UTF-8 default on unsupported ^CI', () => {
+    // After ^CI27 sets CP1252, an unknown ^CI50 must fall back to UTF-8
+    // (not keep CP1252) so behaviour is predictable.
+    const zpl =
+      '^XA^CI27^FH_^FO0,0^A0N,30,0^FD_E4^FS' +
+      '^CI50^FH_^FO0,50^A0N,30,0^FD_C3_A4^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(props(objects[0]).content).toBe('ä');  // CP1252
+    expect(props(objects[1]).content).toBe('ä');  // UTF-8 (after reset)
   });
 });
 
