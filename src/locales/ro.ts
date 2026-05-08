@@ -118,6 +118,11 @@ const ro = {
     loading: 'Se încarcă…',
     unavailable: 'Indisponibil',
     previewEmpty: 'Previzualizarea apare\ndupă modificări',
+    previewProvider: 'Previzualizare prin api.labelary.com',
+    previewNoticeTitle: 'Notificare de confidențialitate',
+    previewNoticeBody: 'Previzualizarea este generată de serviciul extern api.labelary.com. Întregul ZPL al etichetei, inclusiv datele sensibile, este trimis prin rețea.',
+    previewNoticePrivacyLink: 'Informații despre confidențialitate Labelary',
+    previewNoticeAcknowledge: 'Am înțeles, continuă',
   },
 
   registry: {

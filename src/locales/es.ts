@@ -118,6 +118,11 @@ const es = {
     loading: 'Cargando…',
     unavailable: 'No disponible',
     previewEmpty: 'La vista previa aparece\ntras los cambios',
+    previewProvider: 'Vista previa vía api.labelary.com',
+    previewNoticeTitle: 'Aviso de privacidad',
+    previewNoticeBody: 'La previsualización se genera mediante el servicio externo api.labelary.com. Se envía el ZPL completo de la etiqueta, incluidos los datos sensibles.',
+    previewNoticePrivacyLink: 'Información de privacidad de Labelary',
+    previewNoticeAcknowledge: 'Entendido, continuar',
   },
 
   registry: {

@@ -118,6 +118,11 @@ const ja = {
     loading: '読み込み中…',
     unavailable: '利用不可',
     previewEmpty: '変更後にプレビューが\n表示されます',
+    previewProvider: 'api.labelary.com 経由のプレビュー',
+    previewNoticeTitle: 'プライバシーに関する通知',
+    previewNoticeBody: 'プレビューは外部サービス api.labelary.com で生成されます。機密データを含むラベル全体の ZPL がネットワーク経由で送信されます。',
+    previewNoticePrivacyLink: 'Labelary のプライバシー情報',
+    previewNoticeAcknowledge: '了解しました、続行',
   },
 
   registry: {

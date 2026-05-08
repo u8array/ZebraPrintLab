@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { XMarkIcon, ArrowDownTrayIcon } from '@heroicons/react/16/solid';
-import { useLabelStore, useCurrentObjects } from '../../store/labelStore';
+import { useLabelStore, useCurrentObjects, canCallLabelary } from '../../store/labelStore';
 import { generateZPL } from '../../lib/zplGenerator';
 import { fetchPreview, labelaryErrorMessage } from '../../lib/labelary';
 import { triggerDownload } from '../../lib/triggerDownload';
@@ -15,31 +15,42 @@ export function LabelPreviewModal({ onClose }: Props) {
   const t = useT();
   const label = useLabelStore((s) => s.label);
   const objects = useCurrentObjects();
+  const noticeAcknowledged = useLabelStore((s) => s.labelaryNoticeAcknowledged);
+  const acknowledgeLabelaryNotice = useLabelStore((s) => s.acknowledgeLabelaryNotice);
+  // Same gate as every other Labelary consumer (Print, …) — single source
+  // of truth in the store. The modal opens only when the gate is on, so in
+  // practice this resolves to noticeAcknowledged here, but we route through
+  // the shared selector to stay in lockstep with future call sites.
+  const canFetch = useLabelStore(canCallLabelary);
+
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const urlRef = useRef<string | null>(null);
   const zplRef = useRef<string>(generateZPL(label, objects));
+  // Derived: fetch is in flight while we have neither result nor error yet.
+  const loading = canFetch && !previewUrl && !error;
 
   useEffect(() => {
+    if (!canFetch) return;
     let cancelled = false;
     fetchPreview(zplRef.current, label)
       .then((url) => {
         if (cancelled) { URL.revokeObjectURL(url); return; }
         urlRef.current = url;
         setPreviewUrl(url);
-        setLoading(false);
       })
       .catch((e: unknown) => {
         if (cancelled) return;
         setError(labelaryErrorMessage(e));
-        setLoading(false);
       });
     return () => {
       cancelled = true;
       if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // `label` and the generated ZPL are intentionally captured once at mount
+    // (via zplRef): the preview should reflect the snapshot the user saw when
+    // they opened the modal, not refetch when the canvas changes underneath.
+  }, [canFetch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDownloadFallback = () => {
     triggerDownload(new Blob([zplRef.current], { type: 'text/plain' }), 'label.zpl');
@@ -72,10 +83,30 @@ export function LabelPreviewModal({ onClose }: Props) {
             viewport so small previews are still centered. */}
         <div className="flex-1 overflow-auto bg-bg min-h-24 min-w-48">
           <div className="min-h-full min-w-full flex items-center justify-center p-4">
-            {loading && (
+            {!noticeAcknowledged && (
+              <div className="flex flex-col gap-3 max-w-80 text-center font-mono text-[10px] text-muted leading-relaxed">
+                <span className="text-text uppercase tracking-widest">{t.output.previewNoticeTitle}</span>
+                <span>{t.output.previewNoticeBody}</span>
+                <a
+                  href="https://labelary.com/privacy.html"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-accent hover:underline"
+                >
+                  {t.output.previewNoticePrivacyLink}
+                </a>
+                <button
+                  onClick={acknowledgeLabelaryNotice}
+                  className="self-center mt-1 px-3 py-1.5 rounded text-[10px] font-mono bg-surface-2 border border-border text-text hover:border-accent transition-colors"
+                >
+                  {t.output.previewNoticeAcknowledge}
+                </button>
+              </div>
+            )}
+            {canFetch && loading && (
               <span className="font-mono text-[10px] text-muted animate-pulse">{t.output.loading}</span>
             )}
-            {!loading && error && (
+            {canFetch && !loading && error && (
               <div className="flex flex-col items-center gap-3 max-w-64 text-center">
                 <span className="font-mono text-[10px] text-amber-400 leading-relaxed">{error}</span>
                 <button
@@ -87,7 +118,7 @@ export function LabelPreviewModal({ onClose }: Props) {
                 </button>
               </div>
             )}
-            {!loading && !error && previewUrl && (
+            {canFetch && !loading && !error && previewUrl && (
               <img
                 src={previewUrl}
                 alt="Label preview"
@@ -95,6 +126,17 @@ export function LabelPreviewModal({ onClose }: Props) {
               />
             )}
           </div>
+        </div>
+
+        <div className="px-3 py-1 border-t border-border-2 shrink-0 text-center">
+          <a
+            href="https://labelary.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="font-mono text-[9px] text-muted hover:text-accent transition-colors"
+          >
+            {t.output.previewProvider}
+          </a>
         </div>
       </div>
     </div>

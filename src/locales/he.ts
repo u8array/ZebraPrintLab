@@ -118,6 +118,11 @@ const he = {
     loading: 'טוען…',
     unavailable: 'לא זמין',
     previewEmpty: 'התצוגה המקדימה מופיעה\nלאחר שינויים',
+    previewProvider: 'תצוגה מקדימה דרך api.labelary.com',
+    previewNoticeTitle: 'הודעת פרטיות',
+    previewNoticeBody: 'התצוגה המקדימה מופקת על ידי השירות החיצוני api.labelary.com. ה-ZPL המלא של התווית, כולל נתונים רגישים, נשלח ברשת.',
+    previewNoticePrivacyLink: 'מידע פרטיות של Labelary',
+    previewNoticeAcknowledge: 'הבנתי, המשך',
   },
 
   registry: {

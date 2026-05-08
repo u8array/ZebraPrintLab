@@ -118,6 +118,11 @@ const ko = {
     loading: '로딩 중…',
     unavailable: '사용 불가',
     previewEmpty: '변경 후 미리보기가\n표시됩니다',
+    previewProvider: 'api.labelary.com을(를) 통한 미리 보기',
+    previewNoticeTitle: '개인정보 보호 고지',
+    previewNoticeBody: '미리 보기는 외부 서비스 api.labelary.com에서 생성됩니다. 민감한 데이터를 포함한 전체 라벨 ZPL이 네트워크를 통해 전송됩니다.',
+    previewNoticePrivacyLink: 'Labelary 개인정보 보호 정보',
+    previewNoticeAcknowledge: '이해했습니다, 계속',
   },
 
   registry: {

@@ -15,6 +15,10 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
   const t = useT();
   const label = useLabelStore((s) => s.label);
   const pages = useLabelStore((s) => s.pages);
+  // Direct gate check — Preview is the path to the privacy notice, so the
+  // button must be reachable before acknowledgement. Other Labelary callers
+  // (AppShell.Print, LabelPreview.fetch) use the stricter canCallLabelary.
+  const labelaryEnabled = useLabelStore((s) => s.thirdParty.labelary);
   const [copied, setCopied] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -43,15 +47,17 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
           <span className="font-mono text-[10px] text-muted uppercase tracking-widest">{t.output.zplHeading}</span>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowPreview(true)}
-            disabled={!zpl}
-            title={t.output.previewHeading}
-            className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-          >
-            <EyeIcon className="w-4 h-4" />
-            {t.output.previewHeading}
-          </button>
+          {labelaryEnabled && (
+            <button
+              onClick={() => setShowPreview(true)}
+              disabled={!zpl}
+              title={t.output.previewHeading}
+              className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            >
+              <EyeIcon className="w-4 h-4" />
+              {t.output.previewHeading}
+            </button>
+          )}
           <button
             onClick={handleCopy}
             disabled={!zpl}

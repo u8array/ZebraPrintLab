@@ -36,6 +36,15 @@ function detectInitialTheme(): 'light' | 'dark' {
     : 'light';
 }
 
+/** Build-time defaults for third-party services. Vite injects VITE_THIRD_PARTY_*
+ *  env values; missing values fall back to enabled. Tauri/Docker builds can flip
+ *  the default by setting VITE_THIRD_PARTY_LABELARY=false in their build env. */
+function thirdPartyDefaults(): { labelary: boolean } {
+  return {
+    labelary: import.meta.env.VITE_THIRD_PARTY_LABELARY !== 'false',
+  };
+}
+
 export interface CanvasSettings {
   showGrid: boolean;
   snapEnabled: boolean;
@@ -57,6 +66,13 @@ interface LabelState {
    *  the explicit choice persists. */
   theme: ThemePreference;
   canvasSettings: CanvasSettings;
+  /** Per-service gates for third-party network calls. Sourced from build-time
+   *  env on every load (see thirdPartyDefaults) and intentionally not in
+   *  partialize — until a settings UI lets users explicitly opt in/out, the
+   *  build is authoritative. */
+  thirdParty: { labelary: boolean };
+  /** Whether the user has dismissed the one-time Labelary privacy notice. */
+  labelaryNoticeAcknowledged: boolean;
 
   clipboard: LabelObject[];
   pasteCount: number;
@@ -77,6 +93,8 @@ interface LabelState {
   setLabelConfig: (config: Partial<LabelConfig>) => void;
   setLocale: (locale: LocaleCode) => void;
   setTheme: (theme: ThemePreference) => void;
+  setThirdPartyEnabled: (service: 'labelary', enabled: boolean) => void;
+  acknowledgeLabelaryNotice: () => void;
   setCanvasSettings: (settings: Partial<CanvasSettings>) => void;
   loadDesign: (label: LabelConfig, pages: Page[]) => void;
   moveObjectForward: (id: string) => void;
@@ -95,6 +113,12 @@ type PageState = Pick<LabelState, 'pages' | 'currentPageIndex'>;
 
 export const currentObjects = (state: PageState): LabelObject[] =>
   state.pages[state.currentPageIndex]?.objects ?? [];
+
+/** True when a Labelary network call is permitted: the gate is on AND the
+ *  user has seen the privacy notice. Single source of truth so every UI
+ *  consumer (Preview, Print, …) stays in lockstep. */
+export const canCallLabelary = (s: LabelState): boolean =>
+  s.thirdParty.labelary && s.labelaryNoticeAcknowledged;
 
 function updateCurrentObjects(
   state: PageState,
@@ -140,6 +164,8 @@ export const useLabelStore = create<LabelState>()(
       duplicateCount: 0,
       locale: detectLocale(),
       theme: detectInitialTheme(),
+      thirdParty: thirdPartyDefaults(),
+      labelaryNoticeAcknowledged: false,
       canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm', viewRotation: 0 },
 
       addObject: (type, position = { x: 50, y: 50 }) => {
@@ -362,6 +388,11 @@ export const useLabelStore = create<LabelState>()(
 
       setTheme: (theme) => set({ theme }),
 
+      setThirdPartyEnabled: (service, enabled) =>
+        set((state) => ({ thirdParty: { ...state.thirdParty, [service]: enabled } })),
+
+      acknowledgeLabelaryNotice: () => set({ labelaryNoticeAcknowledged: true }),
+
       setCanvasSettings: (settings) =>
         set((state) => ({ canvasSettings: { ...state.canvasSettings, ...settings } })),
 
@@ -441,6 +472,11 @@ export const useLabelStore = create<LabelState>()(
         currentPageIndex: state.currentPageIndex,
         locale: state.locale,
         theme: state.theme,
+        // thirdParty intentionally NOT persisted: until a settings UI lets
+        // users explicitly opt in/out, the build-time env (VITE_THIRD_PARTY_*)
+        // is authoritative on every load. Persisting now would freeze the
+        // first run's env value and quietly defeat later build flips.
+        labelaryNoticeAcknowledged: state.labelaryNoticeAcknowledged,
         canvasSettings: state.canvasSettings,
       }),
     }

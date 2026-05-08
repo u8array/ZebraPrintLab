@@ -118,6 +118,11 @@ const pl = {
     loading: 'Ładowanie…',
     unavailable: 'Niedostępny',
     previewEmpty: 'Podgląd pojawi się\npo zmianach',
+    previewProvider: 'Podgląd przez api.labelary.com',
+    previewNoticeTitle: 'Informacja o prywatności',
+    previewNoticeBody: 'Podgląd jest renderowany przez zewnętrzny serwis api.labelary.com. Cały ZPL etykiety, włącznie z danymi wrażliwymi, jest wysyłany przez sieć.',
+    previewNoticePrivacyLink: 'Informacje o prywatności Labelary',
+    previewNoticeAcknowledge: 'Rozumiem, kontynuuj',
   },
 
   registry: {

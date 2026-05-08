@@ -138,6 +138,11 @@ const de = {
     loading: 'Lädt…',
     unavailable: 'Nicht verfügbar',
     previewEmpty: 'Vorschau erscheint\nnach Änderungen',
+    previewProvider: 'Vorschau über api.labelary.com',
+    previewNoticeTitle: 'Datenschutzhinweis',
+    previewNoticeBody: 'Die Vorschau wird vom externen Dienst api.labelary.com erstellt. Dabei wird das vollständige Label-ZPL inklusive sensibler Daten übertragen.',
+    previewNoticePrivacyLink: 'Labelary-Datenschutzhinweise',
+    previewNoticeAcknowledge: 'Verstanden, fortfahren',
   },
 
   registry: {

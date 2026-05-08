@@ -138,6 +138,11 @@ const en = {
     loading: 'Loading…',
     unavailable: 'Unavailable',
     previewEmpty: 'Preview appears\nafter changes',
+    previewProvider: 'Preview via api.labelary.com',
+    previewNoticeTitle: 'Privacy notice',
+    previewNoticeBody: 'Preview rendering is performed by the external service api.labelary.com. The full label ZPL, including any sensitive data, is sent over the network.',
+    previewNoticePrivacyLink: 'Labelary privacy information',
+    previewNoticeAcknowledge: 'Got it, continue',
   },
 
   registry: {

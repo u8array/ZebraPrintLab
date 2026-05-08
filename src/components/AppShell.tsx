@@ -30,7 +30,7 @@ import {
   SunIcon,
   MoonIcon,
 } from "@heroicons/react/16/solid";
-import { useLabelStore, useHistory } from "../store/labelStore";
+import { useLabelStore, useHistory, canCallLabelary } from "../store/labelStore";
 import { localeNames } from "../locales";
 import type { LocaleCode } from "../locales";
 import { mmToUnit } from "../lib/units";
@@ -50,6 +50,7 @@ export function AppShell() {
   const setLocale = useLabelStore((s) => s.setLocale);
   const theme = useLabelStore((s) => s.theme);
   const setTheme = useLabelStore((s) => s.setTheme);
+  const labelaryReady = useLabelStore(canCallLabelary);
 
   // Bridge the theme preference to <html data-theme> so the CSS variables in
   // index.css pick it up.
@@ -201,13 +202,19 @@ export function AppShell() {
               {t.app.saveDesign}
             </DropdownItem>
             <DropdownSeparator />
-            <DropdownItem
-              icon={PrinterIcon}
-              onClick={handlePrint}
-              disabled={!hasObjects}
-            >
-              {t.app.print}
-            </DropdownItem>
+            {/* Print also routes through Labelary. Until the user has seen
+                the privacy notice (shown only via the Preview modal), Print
+                is hidden so the very first Labelary call cannot bypass the
+                disclosure. After acknowledgement Print stays available. */}
+            {labelaryReady && (
+              <DropdownItem
+                icon={PrinterIcon}
+                onClick={handlePrint}
+                disabled={!hasObjects}
+              >
+                {t.app.print}
+              </DropdownItem>
+            )}
             <DropdownItem
               icon={PaperAirplaneIcon}
               onClick={openZebraPrint}

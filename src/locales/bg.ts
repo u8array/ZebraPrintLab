@@ -118,6 +118,11 @@ const bg = {
     loading: 'Зарежда…',
     unavailable: 'Недостъпно',
     previewEmpty: 'Преглед се появява\nслед промени',
+    previewProvider: 'Преглед чрез api.labelary.com',
+    previewNoticeTitle: 'Известие за поверителност',
+    previewNoticeBody: 'Прегледът се изобразява от външната услуга api.labelary.com. Целият ZPL на етикета, включително чувствителните данни, се изпраща през мрежата.',
+    previewNoticePrivacyLink: 'Информация за поверителност на Labelary',
+    previewNoticeAcknowledge: 'Разбрах, продължи',
   },
 
   registry: {

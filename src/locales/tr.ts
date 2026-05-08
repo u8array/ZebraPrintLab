@@ -118,6 +118,11 @@ const tr = {
     loading: 'Yükleniyor…',
     unavailable: 'Kullanılamıyor',
     previewEmpty: 'Önizleme değişikliklerden\nsonra görüntülenir',
+    previewProvider: 'api.labelary.com üzerinden önizleme',
+    previewNoticeTitle: 'Gizlilik bildirimi',
+    previewNoticeBody: 'Önizleme, harici api.labelary.com hizmeti tarafından oluşturulur. Hassas veriler dahil etiketin tamamı ZPL olarak ağ üzerinden gönderilir.',
+    previewNoticePrivacyLink: 'Labelary gizlilik bilgileri',
+    previewNoticeAcknowledge: 'Anladım, devam et',
   },
 
   registry: {

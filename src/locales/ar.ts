@@ -118,6 +118,11 @@ const ar = {
     loading: 'جارٍ التحميل…',
     unavailable: 'غير متاح',
     previewEmpty: 'تظهر المعاينة\nبعد إجراء تغييرات',
+    previewProvider: 'معاينة عبر api.labelary.com',
+    previewNoticeTitle: 'إشعار الخصوصية',
+    previewNoticeBody: 'يتم إنشاء المعاينة بواسطة الخدمة الخارجية api.labelary.com. يتم إرسال ZPL الكامل للملصق، بما في ذلك أي بيانات حساسة، عبر الشبكة.',
+    previewNoticePrivacyLink: 'معلومات خصوصية Labelary',
+    previewNoticeAcknowledge: 'فهمت، تابع',
   },
 
   registry: {

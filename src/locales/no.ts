@@ -118,6 +118,11 @@ const no = {
     loading: 'Laster…',
     unavailable: 'Utilgjengelig',
     previewEmpty: 'Forhåndsvisning vises\netter endringer',
+    previewProvider: 'Forhåndsvisning via api.labelary.com',
+    previewNoticeTitle: 'Personvernmelding',
+    previewNoticeBody: 'Forhåndsvisningen genereres av den eksterne tjenesten api.labelary.com. Hele etikettens ZPL, inkludert sensitive data, sendes over nettverket.',
+    previewNoticePrivacyLink: 'Labelary personverninformasjon',
+    previewNoticeAcknowledge: 'Forstått, fortsett',
   },
 
   registry: {

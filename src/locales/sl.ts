@@ -118,6 +118,11 @@ const sl = {
     loading: 'Nalaganje…',
     unavailable: 'Ni na voljo',
     previewEmpty: 'Predogled se prikaže\npo spremembah',
+    previewProvider: 'Predogled prek api.labelary.com',
+    previewNoticeTitle: 'Obvestilo o zasebnosti',
+    previewNoticeBody: 'Predogled ustvari zunanja storitev api.labelary.com. Celoten ZPL etikete, vključno z občutljivimi podatki, se pošlje po omrežju.',
+    previewNoticePrivacyLink: 'Informacije o zasebnosti Labelary',
+    previewNoticeAcknowledge: 'Razumem, nadaljuj',
   },
 
   registry: {

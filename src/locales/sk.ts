@@ -118,6 +118,11 @@ const sk = {
     loading: 'Načítavanie…',
     unavailable: 'Nedostupné',
     previewEmpty: 'Náhľad sa zobrazí\npo úpravách',
+    previewProvider: 'Náhľad cez api.labelary.com',
+    previewNoticeTitle: 'Upozornenie o ochrane údajov',
+    previewNoticeBody: 'Náhľad sa generuje pomocou externej služby api.labelary.com. Celý ZPL štítku, vrátane citlivých údajov, sa odosiela cez sieť.',
+    previewNoticePrivacyLink: 'Informácie o ochrane údajov Labelary',
+    previewNoticeAcknowledge: 'Rozumiem, pokračovať',
   },
 
   registry: {
