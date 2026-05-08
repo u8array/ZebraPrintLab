@@ -101,10 +101,13 @@ const fhDecoder = new TextDecoder("utf-8");
 function decodeFH(text: string, delimiter: string): string {
   const escaped = delimiter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const runRe = new RegExp(`(?:${escaped}[0-9A-Fa-f]{2})+`, "g");
+  const stride = delimiter.length + 2;
   return text.replace(runRe, (run) => {
-    const pairRe = new RegExp(`${escaped}([0-9A-Fa-f]{2})`, "g");
-    const bytes = Array.from(run.matchAll(pairRe), ([, hex]) => parseInt(hex ?? "0", 16));
-    return fhDecoder.decode(new Uint8Array(bytes));
+    const bytes = new Uint8Array(run.length / stride);
+    for (let i = 0, b = 0; i < run.length; i += stride, b++) {
+      bytes[b] = parseInt(run.slice(i + delimiter.length, i + stride), 16);
+    }
+    return fhDecoder.decode(bytes);
   });
 }
 
