@@ -2,14 +2,17 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdField } from './zplHelpers';
-import { clamp } from './transformHelpers';
+import { commitUniformScaleTransform } from './transformHelpers';
 import { type ZplRotation } from './rotation';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 
+const DIMENSION_MIN = 1;
+const DIMENSION_MAX = 12;
+
 export interface DataMatrixProps {
   content: string;
-  dimension: number;   // module size in dots (1–12)
+  dimension: number;   // module size in dots
   quality: 0 | 50 | 80 | 140 | 200;  // 0 = auto
   rotation: ZplRotation;
 }
@@ -26,9 +29,7 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
   },
   defaultSize: { width: 150, height: 150 },
 
-  commitTransform: (obj, { sx, sy }) => ({
-    dimension: clamp(1, 12, Math.round(obj.props.dimension * Math.min(sx, sy))),
-  }),
+  commitTransform: commitUniformScaleTransform('dimension', DIMENSION_MIN, DIMENSION_MAX),
 
   toZPL: (obj) => {
     const p = obj.props;
@@ -56,8 +57,8 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
         <NumberInput
           label={t.registry.datamatrix.dimension}
           value={p.dimension}
-          min={1}
-          max={12}
+          min={DIMENSION_MIN}
+          max={DIMENSION_MAX}
           onChange={(dimension) => onChange({ dimension })}
         />
 

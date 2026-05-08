@@ -414,4 +414,14 @@ describe('ObjectRegistry', () => {
       expect(validGroups.has(def.group)).toBe(true);
     }
   });
+
+  // 2D codes are always resizable on the canvas — without commitTransform a
+  // drag-resize silently has no effect (this was the aztec regression).
+  // Every code-2d entry must declare a commit handler.
+  it('every code-2d type has a commitTransform handler', () => {
+    for (const [key, def] of Object.entries(ObjectRegistry)) {
+      if (def.group !== 'code-2d') continue;
+      expect(def.commitTransform, `${key} is missing commitTransform`).toBeDefined();
+    }
+  });
 });

@@ -2,13 +2,21 @@ import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
 import { fieldPos, fdField } from "./zplHelpers";
+import { commitUniformScaleTransform } from "./transformHelpers";
 import { type ZplRotation } from "./rotation";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { NumberInput } from "../components/Properties/NumberInput";
 
+const MAGNIFICATION_MIN = 1;
+const MAGNIFICATION_MAX = 10;
+const EC_LEVEL_MIN = 0;
+// NumberInput can't express the discontinuous AztecProps domain — use the
+// highest valid value (Rune = 300) as the upper bound.
+const EC_LEVEL_MAX = 300;
+
 export interface AztecProps {
   content: string;
-  magnification: number; // 1–10, module size in dots
+  magnification: number; // module size in dots
   ecLevel: number; // 0=default, 1-99=error correction %, 101-104=compact, 201-232=full, 300=rune
   rotation: ZplRotation;
 }
@@ -24,6 +32,8 @@ export const aztec: ObjectTypeDefinition<AztecProps> = {
     rotation: 'N',
   },
   defaultSize: { width: 200, height: 200 },
+
+  commitTransform: commitUniformScaleTransform('magnification', MAGNIFICATION_MIN, MAGNIFICATION_MAX),
 
   toZPL: (obj) => {
     const p = obj.props;
@@ -55,16 +65,16 @@ export const aztec: ObjectTypeDefinition<AztecProps> = {
         <NumberInput
           label={loc.magnification}
           value={p.magnification}
-          min={1}
-          max={10}
+          min={MAGNIFICATION_MIN}
+          max={MAGNIFICATION_MAX}
           onChange={(magnification) => onChange({ magnification })}
         />
 
         <NumberInput
           label={loc.ecLevel}
           value={p.ecLevel}
-          min={0}
-          max={232}
+          min={EC_LEVEL_MIN}
+          max={EC_LEVEL_MAX}
           onChange={(ecLevel) => onChange({ ecLevel })}
         />
 

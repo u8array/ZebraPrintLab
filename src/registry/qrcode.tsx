@@ -2,14 +2,17 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdField } from './zplHelpers';
-import { clamp } from './transformHelpers';
+import { commitUniformScaleTransform } from './transformHelpers';
 import { type ZplRotation } from './rotation';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 
+const MAGNIFICATION_MIN = 1;
+const MAGNIFICATION_MAX = 10;
+
 export interface QrCodeProps {
   content: string;
-  magnification: number;       // 1–10, dot size per module
+  magnification: number;       // dot size per module
   errorCorrection: 'H' | 'Q' | 'M' | 'L';
   rotation: ZplRotation;
 }
@@ -26,9 +29,7 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
   },
   defaultSize: { width: 200, height: 200 },
 
-  commitTransform: (obj, { sx, sy }) => ({
-    magnification: clamp(1, 10, Math.round(obj.props.magnification * Math.min(sx, sy))),
-  }),
+  commitTransform: commitUniformScaleTransform('magnification', MAGNIFICATION_MIN, MAGNIFICATION_MAX),
 
   toZPL: (obj) => {
     const p = obj.props;
@@ -67,8 +68,8 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
         <NumberInput
           label={t.registry.qrcode.magnification}
           value={p.magnification}
-          min={1}
-          max={10}
+          min={MAGNIFICATION_MIN}
+          max={MAGNIFICATION_MAX}
           onChange={(magnification) => onChange({ magnification })}
         />
 
