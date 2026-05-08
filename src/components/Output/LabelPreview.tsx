@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { XMarkIcon, ArrowDownTrayIcon } from '@heroicons/react/16/solid';
-import { useLabelStore, useCurrentObjects } from '../../store/labelStore';
+import { useLabelStore, useCurrentObjects, canCallLabelary } from '../../store/labelStore';
 import { generateZPL } from '../../lib/zplGenerator';
 import { fetchPreview, labelaryErrorMessage } from '../../lib/labelary';
 import { triggerDownload } from '../../lib/triggerDownload';
@@ -17,11 +17,11 @@ export function LabelPreviewModal({ onClose }: Props) {
   const objects = useCurrentObjects();
   const noticeAcknowledged = useLabelStore((s) => s.labelaryNoticeAcknowledged);
   const acknowledgeLabelaryNotice = useLabelStore((s) => s.acknowledgeLabelaryNotice);
-
-  // The modal entry point is hidden when the labelary gate is off
-  // (see ZPLOutput), so reaching this component means the gate is on.
-  // The first-run notice gates the network call until acknowledged.
-  const canFetch = noticeAcknowledged;
+  // Same gate as every other Labelary consumer (Print, …) — single source
+  // of truth in the store. The modal opens only when the gate is on, so in
+  // practice this resolves to noticeAcknowledged here, but we route through
+  // the shared selector to stay in lockstep with future call sites.
+  const canFetch = useLabelStore(canCallLabelary);
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

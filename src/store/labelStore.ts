@@ -112,6 +112,12 @@ type PageState = Pick<LabelState, 'pages' | 'currentPageIndex'>;
 export const currentObjects = (state: PageState): LabelObject[] =>
   state.pages[state.currentPageIndex]?.objects ?? [];
 
+/** True when a Labelary network call is permitted: the gate is on AND the
+ *  user has seen the privacy notice. Single source of truth so every UI
+ *  consumer (Preview, Print, …) stays in lockstep. */
+export const canCallLabelary = (s: LabelState): boolean =>
+  s.thirdParty.labelary && s.labelaryNoticeAcknowledged;
+
 function updateCurrentObjects(
   state: PageState,
   fn: (objects: LabelObject[]) => LabelObject[]
