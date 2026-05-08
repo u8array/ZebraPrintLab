@@ -429,6 +429,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               height: bcHeight,
               moduleWidth: byModuleWidth,
               printInterpretation: bcInterp,
+              checkDigit: false, // EAN-13 has no user-controlled check digit (^BE auto-appends).
               rotation: bcRotation,
             } satisfies Ean13Props,
             posType,

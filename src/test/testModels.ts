@@ -78,6 +78,7 @@ export const testModels: Record<string, LabelObject> = {
       height: 100,
       moduleWidth: 2,
       printInterpretation: false,
+      checkDigit: false,
       rotation: "N",
     },
   },
@@ -438,7 +439,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 100,
     y: 100,
     rotation: 0,
-    props: { content: "123456789012", height: 100, moduleWidth: 2, printInterpretation: false, rotation: "R" },
+    props: { content: "123456789012", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "R" },
   },
   barcode_ean13_rot_B: {
     id: "rot9",
@@ -446,6 +447,6 @@ export const testModels: Record<string, LabelObject> = {
     x: 100,
     y: 100,
     rotation: 0,
-    props: { content: "123456789012", height: 100, moduleWidth: 2, printInterpretation: false, rotation: "B" },
+    props: { content: "123456789012", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "B" },
   },
 };

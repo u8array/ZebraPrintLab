@@ -1,101 +1,16 @@
-import type { ObjectTypeDefinition } from '../types/ObjectType';
-import { useT } from '../lib/useT';
-import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos, fdField } from './zplHelpers';
-import { commitHeightTransform } from './transformHelpers';
-import { type ZplRotation } from './rotation';
-import { RotationSelect } from '../components/Properties/RotationSelect';
-import { NumberInput } from '../components/Properties/NumberInput';
+import { createBarcode1D } from './barcode1d';
+export type { Barcode1DProps as Code128Props } from './barcode1d';
 
-export interface Code128Props {
-  content: string;
-  height: number;
-  moduleWidth: number;
-  printInterpretation: boolean;
-  checkDigit: boolean;
-  rotation: ZplRotation;
-}
-
-export const code128: ObjectTypeDefinition<Code128Props> = {
+export const code128 = createBarcode1D({
   label: 'Code 128',
   icon: '|||',
-  group: 'code-1d' as const,
-  defaultProps: {
-    content: '12345678',
-    height: 100,
-    moduleWidth: 2,
-    printInterpretation: true,
-    checkDigit: false,
-    rotation: 'N',
-  },
-  defaultSize: { width: 300, height: 120 },
-
-  commitTransform: commitHeightTransform,
-
-  toZPL: (obj) => {
-    const p = obj.props;
+  defaultContent: '12345678',
+  hasCheckDigit: true,
+  locale: (t) => t.registry.code128,
+  group: 'code-1d',
+  zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
-    return [
-      `^BY${p.moduleWidth}`,
-      fieldPos(obj),
-      `^BC${p.rotation},${p.height},${interp},N,${check}`,
-      fdField(p.content),
-    ].filter(Boolean).join('');
+    return `^BC${p.rotation},${p.height},${interp},N,${check}`;
   },
-
-  PropertiesPanel: ({ obj, onChange }) => {
-    const t = useT();
-    const p = obj.props;
-    return (
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.code128.content}</label>
-          <input
-            className={inputCls}
-            value={p.content}
-            onChange={(e) => onChange({ content: e.target.value })}
-          />
-        </div>
-
-        <NumberInput
-          label={t.registry.code128.height}
-          value={p.height}
-          min={1}
-          onChange={(height) => onChange({ height })}
-        />
-
-        <NumberInput
-          label={t.registry.code128.moduleWidth}
-          value={p.moduleWidth}
-          min={1}
-          max={10}
-          onChange={(moduleWidth) => onChange({ moduleWidth })}
-        />
-
-        <div className="flex flex-col gap-2">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              className="accent-accent"
-              checked={p.printInterpretation}
-              onChange={(e) => onChange({ printInterpretation: e.target.checked })}
-            />
-            <span className={labelCls}>{t.registry.code128.printInterpretation}</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              className="accent-accent"
-              checked={p.checkDigit}
-              onChange={(e) => onChange({ checkDigit: e.target.checked })}
-            />
-            <span className={labelCls}>{t.registry.code128.checkDigit}</span>
-          </label>
-        </div>
-
-        <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
-      </div>
-    );
-  },
-};
+});
