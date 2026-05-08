@@ -2,7 +2,7 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdField } from './zplHelpers';
-import { clamp } from './transformHelpers';
+import { commitUniformScaleTransform } from './transformHelpers';
 import { type ZplRotation } from './rotation';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
@@ -26,9 +26,7 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
   },
   defaultSize: { width: 200, height: 200 },
 
-  commitTransform: (obj, { sx, sy }) => ({
-    magnification: clamp(1, 10, Math.round(obj.props.magnification * Math.min(sx, sy))),
-  }),
+  commitTransform: commitUniformScaleTransform<'magnification', QrCodeProps>('magnification', 1, 10),
 
   toZPL: (obj) => {
     const p = obj.props;

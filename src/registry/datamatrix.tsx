@@ -2,7 +2,7 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdField } from './zplHelpers';
-import { clamp } from './transformHelpers';
+import { commitUniformScaleTransform } from './transformHelpers';
 import { type ZplRotation } from './rotation';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
@@ -26,9 +26,7 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
   },
   defaultSize: { width: 150, height: 150 },
 
-  commitTransform: (obj, { sx, sy }) => ({
-    dimension: clamp(1, 12, Math.round(obj.props.dimension * Math.min(sx, sy))),
-  }),
+  commitTransform: commitUniformScaleTransform<'dimension', DataMatrixProps>('dimension', 1, 12),
 
   toZPL: (obj) => {
     const p = obj.props;

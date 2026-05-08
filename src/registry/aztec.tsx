@@ -2,6 +2,7 @@ import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
 import { fieldPos, fdField } from "./zplHelpers";
+import { commitUniformScaleTransform } from "./transformHelpers";
 import { type ZplRotation } from "./rotation";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { NumberInput } from "../components/Properties/NumberInput";
@@ -24,6 +25,8 @@ export const aztec: ObjectTypeDefinition<AztecProps> = {
     rotation: 'N',
   },
   defaultSize: { width: 200, height: 200 },
+
+  commitTransform: commitUniformScaleTransform<'magnification', AztecProps>('magnification', 1, 10),
 
   toZPL: (obj) => {
     const p = obj.props;

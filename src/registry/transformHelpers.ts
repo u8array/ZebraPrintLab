@@ -5,6 +5,22 @@ export function clamp(min: number, max: number, value: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+/**
+ * Factory for commitTransform on uniformly-scaling 2D codes (QR, Aztec,
+ * DataMatrix): a single integer module-size prop scales by min(sx, sy)
+ * and clamps to [min, max]. The prop name and range vary per code, so they
+ * are closed over at registry-definition time.
+ */
+export function commitUniformScaleTransform<
+  K extends string,
+  P extends Record<K, number>,
+>(propName: K, min: number, max: number) {
+  return (obj: LabelObjectBase & { props: P }, ctx: TransformContext): Partial<P> => {
+    const next = clamp(min, max, Math.round(obj.props[propName] * Math.min(ctx.sx, ctx.sy)));
+    return { [propName]: next } as Partial<P>;
+  };
+}
+
 interface WidthHeightProps {
   width: number;
   height: number;
