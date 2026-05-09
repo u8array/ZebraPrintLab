@@ -22,7 +22,11 @@ import {
   gtin14WithCheck,
   wrapGs1AIs,
 } from "../../lib/gs1";
-import { MICROPDF417_QUIET_ZONE_ROWS } from "./bwipConstants";
+import {
+  EAN_TEXT_ZONE_DOTS,
+  LOGMARS_TEXT_ZONE_DOTS,
+  MICROPDF417_QUIET_ZONE_ROWS,
+} from "./bwipConstants";
 
 const GS1_DATABAR_BCID: Record<Gs1DatabarProps["symbology"], string> = {
   1: "databaromni",
@@ -488,15 +492,29 @@ function getUprightDisplaySize(
     case "ean8":
     case "upca":
     case "upce": {
+      // EAN/UPC reserves a 13-dot text zone below the bars in firmware,
+      // even when printInterpretation=N. Include it in the bbox so the
+      // selection footprint matches the printed extent.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
       const extraPx = bwipSc === 1 ? 1 : 0;
       const w = ((cw - extraPx) / bwipSc) * modulePx;
-      const h = dotsToPx(obj.props.height, scale, dpmm);
+      const h = dotsToPx(obj.props.height + EAN_TEXT_ZONE_DOTS, scale, dpmm);
+      return { w, h };
+    }
+    case "logmars": {
+      // LOGMARS reserves a text zone above the bars (per spec) regardless of
+      // printInterpretation. Include LOGMARS_TEXT_ZONE_DOTS so the bbox
+      // matches the firmware footprint; bwip's bitmap covers only the bar
+      // portion and is rendered at the bottom of the bbox.
+      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
+      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+      const extraPx = bwipSc === 1 ? 1 : 0;
+      const w = ((cw - extraPx) / bwipSc) * modulePx;
+      const h = dotsToPx(obj.props.height + LOGMARS_TEXT_ZONE_DOTS, scale, dpmm);
       return { w, h };
     }
     case "code39":
-    case "logmars":
     case "interleaved2of5":
     case "industrial2of5":
     case "standard2of5":

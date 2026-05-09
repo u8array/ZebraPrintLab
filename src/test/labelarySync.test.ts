@@ -6,7 +6,6 @@ import {
   buildBwipOptions,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
-import { EAN_TEXT_ZONE_DOTS } from "../components/Canvas/bwipConstants";
 import { ObjectRegistry } from "../registry";
 import { objectRotation } from "../registry/rotation";
 import { defined } from "./helpers";
@@ -134,12 +133,8 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       const isStacked2D = ["pdf417", "micropdf417", "codablock"].includes(
         obj.type,
       );
-      // LOGMARS spec places the human-readable line ABOVE the bars. Labelary's
-      // bounding box for ^FO50,50 reports y=50 (bar top, not visual top), and
-      // height includes the bar height plus a ~20 dot text-above zone reserved
-      // even when printInterpretation=N. getDisplaySize returns only the bar
-      // height, so the strict height check is skipped for LOGMARS.
-      const hasLogmarsTextZone = obj.type === "logmars";
+      // LOGMARS and EAN/UPC have firmware-reserved text zones now included
+      // in getDisplaySize's bbox, so they pass the strict height check below.
       // bwip-natural display size diverges from the Labelary reference for these types
       // (quiet zone narrower than Zebra, or fundamentally different bar structure).
       // The strict bounds check is skipped; ZPL generation is still verified above.
@@ -153,16 +148,9 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       const isGs1NonOmni = obj.type === "gs1databar" && obj.props.symbology !== 1;
 
       if (isEanUpc && !isQuarterRotated) {
-        // Known discrepancy: Labelary reserves barHeight + EAN_TEXT_ZONE_DOTS (13 dots)
-        // even with printInterpretation=N. getDisplaySize intentionally returns only the
-        // bar height because the text zone is blank whitespace — bwip does not render it.
-        // expected_bounds.height in fixtures reflects the true Labelary value (barHeight+13).
-        // Under quarter rotation the text zone rotates onto the horizontal axis, so the
-        // bbox height already equals the bar length; the subtraction would be wrong.
-        expect(displaySize.h * 8).toBeCloseTo(
-          tc.expected_bounds.height - EAN_TEXT_ZONE_DOTS,
-          1,
-        );
+        // EAN_TEXT_ZONE_DOTS (13) is now included in getDisplaySize, so the
+        // bbox height matches expected_bounds.height directly.
+        expect(displaySize.h * 8).toBeCloseTo(tc.expected_bounds.height, 1);
       } else if (is1DCode && !isQuarterRotated) {
         expect(displaySize.h).toBe(
           (obj.props as { height: number }).height / 8,
@@ -186,17 +174,10 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       // Excluded types:
       //   codablock — bwip-js uses different encoding parameters than Zebra firmware.
       //   hasBwipSizeMismatch — bwip-natural size diverges from Labelary (see above).
-      // EAN/UPC and logmars heights are excluded — see isEanUpc/hasLogmarsTextZone above.
+      //   isGs1NonOmni — GS1 Databar stacked variants 2–7 height divergence.
       if (obj.type !== "codablock" && !hasBwipSizeMismatch && !isGs1NonOmni) {
-        // Quarter-rotated EAN/UPC moves the EAN_TEXT_ZONE_DOTS guard extension
-        // onto the width axis instead of the height axis, mirroring the upright
-        // height adjustment.
-        const widthAdjust = isEanUpc && isQuarterRotated ? EAN_TEXT_ZONE_DOTS : 0;
-        expect(displaySize.w * 8).toBeCloseTo(
-          tc.expected_bounds.width - widthAdjust,
-          1,
-        );
-        if (!isEanUpc && !hasLogmarsTextZone) {
+        expect(displaySize.w * 8).toBeCloseTo(tc.expected_bounds.width, 1);
+        if (!isEanUpc) {
           expect(displaySize.h * 8).toBeCloseTo(tc.expected_bounds.height, 1);
         }
       }

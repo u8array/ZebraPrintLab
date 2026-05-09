@@ -10,6 +10,11 @@ export const EAN_TEXT_ZONE_DOTS = 13;
 // wider than the standard textGap used for text below other 1D barcodes.
 export const LOGMARS_TEXT_ABOVE_GAP_DOTS = 10;
 
+// Total LOGMARS text-zone reserved by firmware (regardless of printInterpretation):
+// glyph height + LOGMARS_TEXT_ABOVE_GAP_DOTS. Empirically 20 dots — used as part
+// of the ZPL-correct bbox so selection-handles match the printed footprint.
+export const LOGMARS_TEXT_ZONE_DOTS = 20;
+
 // bwip-js adds 3 quiet-zone rows to MicroPDF417 canvas output.
 export const MICROPDF417_QUIET_ZONE_ROWS = 3;
 
