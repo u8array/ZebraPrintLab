@@ -20,13 +20,13 @@
    user's explicit choice afterwards, so an OS media-query fallback would
    only fight with the cached preference. */
 :root[data-theme="light"] {
-  --color-bg:        #f4f4f8;
-  --color-surface:   #ffffff;
-  --color-surface-2: #ececf3;
-  --color-border:    #dcdce8;
-  --color-border-2:  #c8c8d8;
-  --color-text:      #1a1a2e;
-  --color-muted:     #8080a8;
+  --color-bg:        #e4e4e7;
+  --color-surface:   #fafafa;
+  --color-surface-2: #f4f4f5;
+  --color-border:    #d4d4d8;
+  --color-border-2:  #a1a1aa;
+  --color-text:      #18181b;
+  --color-muted:     #52525b;
   --color-accent:    #d97706;
   --color-accent-dim:#fef3c7;
 }

@@ -72,7 +72,7 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
         </div>
       </div>
 
-      {!collapsed && <pre className="flex-1 overflow-auto p-3 font-mono text-xs leading-relaxed text-text m-0">
+      {!collapsed && <pre className="flex-1 overflow-auto p-3 font-mono text-xs leading-relaxed text-text m-0 bg-surface">
         {zpl
           ? zpl.split('\n').map((line, i) => (
               <ZplLine key={i} line={line} />

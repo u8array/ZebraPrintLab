@@ -95,7 +95,7 @@ export function AppShell() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-bg text-text font-sans">
       {/* Header */}
-      <header className="h-11 shrink-0 flex items-center justify-between px-4 border-b border-border bg-surface">
+      <header className="h-11 shrink-0 flex items-center justify-between px-4 border-b border-border bg-surface-2">
         <div className="flex items-center gap-3">
           <button
             onClick={() => selectObject(null)}
@@ -329,7 +329,7 @@ export function AppShell() {
 
       {/* Output panel */}
       <div
-        className="shrink-0 border-t border-border flex flex-col bg-surface"
+        className="shrink-0 border-t border-border flex flex-col bg-surface-2"
         style={{ height: outputPanel.collapsed ? "auto" : outputPanel.height }}
       >
         <div
