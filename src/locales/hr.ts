@@ -52,6 +52,9 @@ const hr = {
     multipleSelectedFmt: 'Odabrano objekata: {n}',
     multipleSelectedHint: 'strelicama pomičeš',
     visualApproxHint: 'Vizualni prikaz je približan; dimenzije odgovaraju ZPL ispisu',
+    alignCenterH: 'Centriraj vodoravno na naljepnici',
+    alignCenterV: 'Centriraj okomito na naljepnici',
+    alignCenterBoth: 'Centriraj na naljepnici',
   },
 
   label: {

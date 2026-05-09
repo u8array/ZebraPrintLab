@@ -52,6 +52,9 @@ const tr = {
     multipleSelectedFmt: '{n} nesne seçildi',
     multipleSelectedHint: 'oklarla taşı',
     visualApproxHint: 'Görsel render yaklaşıktır; boyutlar ZPL çıktısıyla eşleşir',
+    alignCenterH: 'Etikette yatay ortala',
+    alignCenterV: 'Etikette dikey ortala',
+    alignCenterBoth: 'Etikete ortala',
   },
 
   label: {

@@ -52,6 +52,9 @@ const de = {
     multipleSelectedFmt: '{n} Objekte ausgewählt',
     multipleSelectedHint: 'Pfeiltasten zum Verschieben',
     visualApproxHint: 'Visuelle Darstellung näherungsweise; Maße entsprechen dem ZPL-Druck',
+    alignCenterH: 'Horizontal auf Label zentrieren',
+    alignCenterV: 'Vertikal auf Label zentrieren',
+    alignCenterBoth: 'Auf Label zentrieren',
   },
 
   label: {

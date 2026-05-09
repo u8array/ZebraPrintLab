@@ -52,6 +52,9 @@ const zhHans = {
     multipleSelectedFmt: '已选择 {n} 个对象',
     multipleSelectedHint: '方向键移动',
     visualApproxHint: '视觉渲染为近似值；尺寸与 ZPL 打印输出一致',
+    alignCenterH: '在标签上水平居中',
+    alignCenterV: '在标签上垂直居中',
+    alignCenterBoth: '在标签上居中',
   },
 
   label: {

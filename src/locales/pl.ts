@@ -52,6 +52,9 @@ const pl = {
     multipleSelectedFmt: 'Wybrano obiektów: {n}',
     multipleSelectedHint: 'strzałki przesuwają',
     visualApproxHint: 'Renderowanie wizualne jest przybliżone; wymiary odpowiadają wydrukowi ZPL',
+    alignCenterH: 'Wyśrodkuj poziomo na etykiecie',
+    alignCenterV: 'Wyśrodkuj pionowo na etykiecie',
+    alignCenterBoth: 'Wyśrodkuj na etykiecie',
   },
 
   label: {

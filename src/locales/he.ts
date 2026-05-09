@@ -52,6 +52,9 @@ const he = {
     multipleSelectedFmt: '{n} פריטים נבחרו',
     multipleSelectedHint: 'מקשי החצים מזיזים',
     visualApproxHint: 'התצוגה החזותית מקורבת; הממדים תואמים את הדפסת ה-ZPL',
+    alignCenterH: 'מרכז אופקית במדבקה',
+    alignCenterV: 'מרכז אנכית במדבקה',
+    alignCenterBoth: 'מרכז במדבקה',
   },
 
   label: {

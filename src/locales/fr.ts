@@ -52,6 +52,9 @@ const fr = {
     multipleSelectedFmt: '{n} objets sélectionnés',
     multipleSelectedHint: 'flèches pour déplacer',
     visualApproxHint: 'Rendu visuel approximatif ; les dimensions correspondent à l\'impression ZPL',
+    alignCenterH: 'Centrer horizontalement sur l\'étiquette',
+    alignCenterV: 'Centrer verticalement sur l\'étiquette',
+    alignCenterBoth: 'Centrer sur l\'étiquette',
   },
 
   label: {

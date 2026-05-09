@@ -52,6 +52,9 @@ const fa = {
     multipleSelectedFmt: '{n} مورد انتخاب شده',
     multipleSelectedHint: 'با کلیدهای جهت‌دار جابه‌جا کنید',
     visualApproxHint: 'نمایش بصری تقریبی است؛ ابعاد با چاپ ZPL مطابقت دارد',
+    alignCenterH: 'وسط‌چین افقی روی برچسب',
+    alignCenterV: 'وسط‌چین عمودی روی برچسب',
+    alignCenterBoth: 'وسط‌چین برچسب',
   },
 
   label: {

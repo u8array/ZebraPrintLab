@@ -52,6 +52,9 @@ const sr = {
     multipleSelectedFmt: 'Изабрано објеката: {n}',
     multipleSelectedHint: 'стрелицама померај',
     visualApproxHint: 'Визуелни приказ је приближан; димензије одговарају ZPL отиску',
+    alignCenterH: 'Хоризонтално центрирање на етикети',
+    alignCenterV: 'Вертикално центрирање на етикети',
+    alignCenterBoth: 'Центрирање на етикети',
   },
 
   label: {

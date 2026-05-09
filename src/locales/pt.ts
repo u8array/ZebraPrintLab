@@ -52,6 +52,9 @@ const pt = {
     multipleSelectedFmt: '{n} objetos selecionados',
     multipleSelectedHint: 'setas para mover',
     visualApproxHint: 'Renderização visual aproximada; as dimensões correspondem à impressão ZPL',
+    alignCenterH: 'Centralizar horizontalmente no rótulo',
+    alignCenterV: 'Centralizar verticalmente no rótulo',
+    alignCenterBoth: 'Centralizar no rótulo',
   },
 
   label: {

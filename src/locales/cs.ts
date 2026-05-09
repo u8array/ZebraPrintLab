@@ -52,6 +52,9 @@ const cs = {
     multipleSelectedFmt: 'Vybráno objektů: {n}',
     multipleSelectedHint: 'šipkami posunete',
     visualApproxHint: 'Vizuální zobrazení je přibližné; rozměry odpovídají tisku ZPL',
+    alignCenterH: 'Vystředit vodorovně na štítku',
+    alignCenterV: 'Vystředit svisle na štítku',
+    alignCenterBoth: 'Vystředit na štítku',
   },
 
   label: {

@@ -52,6 +52,9 @@ const lt = {
     multipleSelectedFmt: 'Pasirinkta objektų: {n}',
     multipleSelectedHint: 'rodyklėmis perkeli',
     visualApproxHint: 'Vaizdavimas apytikslis; matmenys atitinka ZPL spaudinį',
+    alignCenterH: 'Centruoti horizontaliai etiketėje',
+    alignCenterV: 'Centruoti vertikaliai etiketėje',
+    alignCenterBoth: 'Centruoti etiketėje',
   },
 
   label: {

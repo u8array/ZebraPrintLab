@@ -52,6 +52,9 @@ const no = {
     multipleSelectedFmt: '{n} objekter valgt',
     multipleSelectedHint: 'piltaster flytter',
     visualApproxHint: 'Visuell gjengivelse er omtrentlig; dimensjonene samsvarer med ZPL-utskriften',
+    alignCenterH: 'Sentrer horisontalt på etiketten',
+    alignCenterV: 'Sentrer vertikalt på etiketten',
+    alignCenterBoth: 'Sentrer på etiketten',
   },
 
   label: {

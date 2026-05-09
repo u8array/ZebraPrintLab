@@ -52,6 +52,9 @@ const ro = {
     multipleSelectedFmt: '{n} obiecte selectate',
     multipleSelectedHint: 'săgeți pentru mutare',
     visualApproxHint: 'Randarea vizuală este aproximativă; dimensiunile corespund tipăririi ZPL',
+    alignCenterH: 'Centrează orizontal pe etichetă',
+    alignCenterV: 'Centrează vertical pe etichetă',
+    alignCenterBoth: 'Centrează pe etichetă',
   },
 
   label: {

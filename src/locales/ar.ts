@@ -52,6 +52,9 @@ const ar = {
     multipleSelectedFmt: '{n} عناصر مختارة',
     multipleSelectedHint: 'استخدم أسهم الاتجاه للتحريك',
     visualApproxHint: 'العرض المرئي تقريبي؛ الأبعاد تطابق طباعة ZPL',
+    alignCenterH: 'توسيط أفقياً على الملصق',
+    alignCenterV: 'توسيط رأسياً على الملصق',
+    alignCenterBoth: 'توسيط على الملصق',
   },
 
   label: {

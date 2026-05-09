@@ -52,6 +52,9 @@ const sv = {
     multipleSelectedFmt: '{n} objekt markerade',
     multipleSelectedHint: 'pilar för att flytta',
     visualApproxHint: 'Visuell återgivning är ungefärlig; måtten matchar ZPL-utskriften',
+    alignCenterH: 'Centrera horisontellt på etikett',
+    alignCenterV: 'Centrera vertikalt på etikett',
+    alignCenterBoth: 'Centrera på etikett',
   },
 
   label: {

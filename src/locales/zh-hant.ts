@@ -52,6 +52,9 @@ const zhHant = {
     multipleSelectedFmt: '已選擇 {n} 個物件',
     multipleSelectedHint: '方向鍵移動',
     visualApproxHint: '視覺呈現為近似值；尺寸與 ZPL 列印輸出一致',
+    alignCenterH: '於標籤水平置中',
+    alignCenterV: '於標籤垂直置中',
+    alignCenterBoth: '於標籤置中',
   },
 
   label: {

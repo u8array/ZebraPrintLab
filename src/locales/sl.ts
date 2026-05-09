@@ -52,6 +52,9 @@ const sl = {
     multipleSelectedFmt: 'Izbranih objektov: {n}',
     multipleSelectedHint: 's puščicami premikaš',
     visualApproxHint: 'Vizualni prikaz je približen; mere se ujemajo s tiskom ZPL',
+    alignCenterH: 'Vodoravno sredinsko poravnaj na etiketi',
+    alignCenterV: 'Navpično sredinsko poravnaj na etiketi',
+    alignCenterBoth: 'Sredinsko poravnaj na etiketi',
   },
 
   label: {

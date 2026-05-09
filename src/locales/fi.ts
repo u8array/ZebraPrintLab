@@ -52,6 +52,9 @@ const fi = {
     multipleSelectedFmt: '{n} objektia valittu',
     multipleSelectedHint: 'nuolinäppäimillä siirrät',
     visualApproxHint: 'Visuaalinen esitys on likimääräinen; mitat vastaavat ZPL-tulostetta',
+    alignCenterH: 'Keskitä vaakasuunnassa etikettiin',
+    alignCenterV: 'Keskitä pystysuunnassa etikettiin',
+    alignCenterBoth: 'Keskitä etikettiin',
   },
 
   label: {

@@ -1,5 +1,8 @@
+import type { RefObject } from "react";
 import { InformationCircleIcon } from "@heroicons/react/16/solid";
 import { useLabelStore, useCurrentObjects } from "../../store/labelStore";
+import type { LabelCanvasHandle } from "../Canvas/LabelCanvas";
+import type { AlignAxis } from "../../lib/alignment";
 import { ObjectRegistry } from "../../registry";
 import { BWIP_VISUAL_APPROX_TYPES } from "../Canvas/bwipConstants";
 import { stripZplCommandChars } from "../../registry/zplHelpers";
@@ -15,10 +18,19 @@ import type { Unit } from "../../lib/units";
 import { useT } from "../../lib/useT";
 import { parseIntOrUndef } from "../../lib/inputParse";
 import { CollapsibleSection } from "../ui/CollapsibleSection";
+import { AlignButtons } from "./AlignButtons";
 import { inputCls, labelCls } from "./styles";
 import type { LabelConfig } from "../../types/ObjectType";
 
-export function PropertiesPanel() {
+interface PropertiesPanelProps {
+  /** Imperative handle on the canvas — used for actions that need live render
+   *  bboxes (alignment, future zoom-to-selection, etc.). Required so the
+   *  type system forces the caller to wire it up; the inner null-check on
+   *  `.current` only covers the brief window before LabelCanvas mounts. */
+  canvasRef: RefObject<LabelCanvasHandle | null>;
+}
+
+export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
   const t = useT();
   const {
     selectedIds,
@@ -31,6 +43,8 @@ export function PropertiesPanel() {
   const objects = useCurrentObjects();
   const unit = canvasSettings.unit;
   const obj = objects.find((o) => o.id === selectedIds[0]);
+  const handleAlign = (axis: AlignAxis) =>
+    canvasRef.current?.alignSelectionToLabel(axis);
 
   if (selectedIds.length > 1) {
     return (
@@ -41,9 +55,12 @@ export function PropertiesPanel() {
             {t.properties.multipleSelectedFmt.replace('{n}', String(selectedIds.length))}
           </span>
         </div>
-        <p className="px-3 py-3 text-xs text-muted">
-          {t.properties.x} / {t.properties.y}: {t.properties.multipleSelectedHint}
-        </p>
+        <div className="px-3 py-3 flex flex-col gap-3">
+          <p className="text-xs text-muted">
+            {t.properties.x} / {t.properties.y}: {t.properties.multipleSelectedHint}
+          </p>
+          <AlignButtons onAlign={handleAlign} />
+        </div>
       </div>
     );
   }
@@ -127,6 +144,7 @@ export function PropertiesPanel() {
               />
             </div>
           </div>
+          <AlignButtons onAlign={handleAlign} />
         </div>
 
         <div className="border-t border-border" />

@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { ObjectPalette } from "./Palette/ObjectPalette";
 import { LabelCanvas } from "./Canvas/LabelCanvas";
+import type { LabelCanvasHandle } from "./Canvas/LabelCanvas";
 import { PropertiesPanel } from "./Properties/PropertiesPanel";
 import { LayersPanel } from "./Properties/LayersPanel";
 import { FontManager } from "./Fonts/FontManager";
@@ -91,6 +92,9 @@ export function AppShell() {
     handlePrint,
   } = useZplImportExport();
   const outputPanel = useOutputPanel(OUTPUT_DEFAULT_H);
+  // Imperative handle to the canvas for actions PropertiesPanel needs live
+  // render bboxes for (e.g. align-to-label centring).
+  const canvasRef = useRef<LabelCanvasHandle>(null);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-bg text-text font-sans">
@@ -271,6 +275,7 @@ export function AppShell() {
 
         <main className="flex-1 overflow-hidden">
           <LabelCanvas
+            ref={canvasRef}
             unit={unit}
             showGrid={showGrid}
             onGridToggle={() => setCanvasSettings({ showGrid: !showGrid })}
@@ -319,7 +324,7 @@ export function AppShell() {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {rightTab === "properties" && <PropertiesPanel />}
+            {rightTab === "properties" && <PropertiesPanel canvasRef={canvasRef} />}
             {rightTab === "layers" && <LayersPanel />}
             {rightTab === "fonts" && <FontManager />}
           </div>

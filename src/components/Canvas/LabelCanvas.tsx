@@ -1,4 +1,7 @@
 import {
+  forwardRef,
+  useImperativeHandle,
+  useMemo,
   useRef,
   useEffect,
   useState,
@@ -14,6 +17,8 @@ import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
 import { computeSnap } from "../../lib/snapGuides";
 import type { SnapGuide } from "../../lib/snapGuides";
+import { computeGroupCenterDelta } from "../../lib/alignment";
+import type { AlignAxis } from "../../lib/alignment";
 import { KonvaObject } from "./KonvaObject";
 import { Grid } from "./Grid";
 import { GuideLines } from "./GuideLines";
@@ -50,7 +55,14 @@ interface Props {
   onViewRotationChange: (rotation: ViewRotation) => void;
 }
 
-export function LabelCanvas({
+/** Imperative actions sibling components (PropertiesPanel) need from the
+ *  canvas. The canvas owns the live render bboxes via Konva — co-locating
+ *  the action with the data avoids round-tripping through the store. */
+export interface LabelCanvasHandle {
+  alignSelectionToLabel: (axis: AlignAxis) => void;
+}
+
+export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCanvas({
   unit,
   showGrid,
   onGridToggle,
@@ -62,7 +74,7 @@ export function LabelCanvas({
   onZoomChange,
   viewRotation,
   onViewRotationChange,
-}: Props) {
+}, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -246,13 +258,73 @@ export function LabelCanvas({
   // here matches the visual (rotation-aware) bounds — snap math operates in
   // stage-screen space, so it must reflect what the user sees, not the
   // un-rotated layout coordinates.
-  const transformerSnapLabelRect = {
-    id: "_lbl",
-    x: visualLabelX,
-    y: visualLabelY,
-    width: visualLabelWidthPx,
-    height: visualLabelHeightPx,
-  };
+  const transformerSnapLabelRect = useMemo(
+    () => ({
+      id: "_lbl",
+      x: visualLabelX,
+      y: visualLabelY,
+      width: visualLabelWidthPx,
+      height: visualLabelHeightPx,
+    }),
+    [visualLabelX, visualLabelY, visualLabelWidthPx, visualLabelHeightPx],
+  );
+
+  // Imperative align-to-label: PropertiesPanel calls this directly via the
+  // forwarded ref. Co-located with the render data — measure each selected
+  // node's rendered bbox via Konva clientRect (single source of truth for
+  // type-specific footprints like text baselines / barcode text-zones),
+  // compute the centre-delta in screen px, map back through view rotation
+  // and px-per-dot to model coordinates.
+  useImperativeHandle(
+    ref,
+    () => ({
+      alignSelectionToLabel: (axis) => {
+        const stage = stageRef.current;
+        if (!stage) return;
+        const state = useLabelStore.getState();
+        const ids = state.selectedIds;
+        if (ids.length === 0) return;
+        const objs = currentObjects(state);
+
+        const boxes = ids.flatMap((id) => {
+          const node = stage.findOne<Konva.Node>(`#${id}`);
+          if (!node) return [];
+          const r = node.getClientRect({ relativeTo: stage });
+          return [{ id, x: r.x, y: r.y, width: r.width, height: r.height }];
+        });
+        if (boxes.length === 0) return;
+
+        const { dx: screenDx, dy: screenDy } = computeGroupCenterDelta(
+          boxes,
+          transformerSnapLabelRect,
+          axis,
+        );
+        if (screenDx === 0 && screenDy === 0) return;
+
+        const [layoutDx, layoutDy] = inverseRotateDelta(
+          screenDx,
+          screenDy,
+          viewRotation,
+        );
+        // Round to integer dots — matches the `mmToDots` convention used by
+        // PropertiesPanel inputs and keeps the store's x/y invariant so ZPL
+        // emit doesn't see fractional coordinates.
+        const pxPerDot = scale / label.dpmm;
+        const dxDots = Math.round(layoutDx / pxPerDot);
+        const dyDots = Math.round(layoutDy / pxPerDot);
+
+        const updates = ids.flatMap((id) => {
+          const obj = objs.find((o) => o.id === id);
+          if (!obj) return [];
+          return [
+            { id, changes: { x: obj.x + dxDots, y: obj.y + dyDots } },
+          ];
+        });
+        if (updates.length > 0) updateObjects(updates);
+      },
+    }),
+    [transformerSnapLabelRect, scale, label.dpmm, viewRotation, updateObjects],
+  );
 
   const {
     rotateEnabled,
@@ -673,4 +745,4 @@ export function LabelCanvas({
       )}
     </div>
   );
-}
+});

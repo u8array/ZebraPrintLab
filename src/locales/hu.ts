@@ -52,6 +52,9 @@ const hu = {
     multipleSelectedFmt: '{n} objektum kijelölve',
     multipleSelectedHint: 'nyilakkal mozgasd',
     visualApproxHint: 'A vizuális megjelenítés közelítő; a méretek megegyeznek a ZPL nyomtatással',
+    alignCenterH: 'Vízszintesen középre a címkén',
+    alignCenterV: 'Függőlegesen középre a címkén',
+    alignCenterBoth: 'Igazítás a címkén középre',
   },
 
   label: {

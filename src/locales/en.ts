@@ -52,6 +52,9 @@ const en = {
     multipleSelectedFmt: '{n} objects selected',
     multipleSelectedHint: 'use arrow keys to move',
     visualApproxHint: 'Visual rendering approximate; dimensions match the ZPL print',
+    alignCenterH: 'Center horizontally on label',
+    alignCenterV: 'Center vertically on label',
+    alignCenterBoth: 'Center on label',
   },
 
   label: {

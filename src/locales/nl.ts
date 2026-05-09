@@ -52,6 +52,9 @@ const nl = {
     multipleSelectedFmt: '{n} objecten geselecteerd',
     multipleSelectedHint: 'pijltoetsen om te verplaatsen',
     visualApproxHint: 'Visuele weergave bij benadering; afmetingen komen overeen met de ZPL-afdruk',
+    alignCenterH: 'Horizontaal op label centreren',
+    alignCenterV: 'Verticaal op label centreren',
+    alignCenterBoth: 'Op label centreren',
   },
 
   label: {

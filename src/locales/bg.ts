@@ -52,6 +52,9 @@ const bg = {
     multipleSelectedFmt: 'Избрани обекти: {n}',
     multipleSelectedHint: 'със стрелките местиш',
     visualApproxHint: 'Визуалното изобразяване е приблизително; размерите съответстват на ZPL отпечатъка',
+    alignCenterH: 'Хоризонтално центриране върху етикета',
+    alignCenterV: 'Вертикално центриране върху етикета',
+    alignCenterBoth: 'Центриране върху етикета',
   },
 
   label: {

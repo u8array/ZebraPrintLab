@@ -52,6 +52,9 @@ const et = {
     multipleSelectedFmt: '{n} objekti valitud',
     multipleSelectedHint: 'nooltega liigutad',
     visualApproxHint: 'Visuaalne kuva on ligikaudne; mõõtmed vastavad ZPL-väljatrükile',
+    alignCenterH: 'Keskjoonda sildil rõhtsalt',
+    alignCenterV: 'Keskjoonda sildil püstiselt',
+    alignCenterBoth: 'Keskjoonda sildil',
   },
 
   label: {

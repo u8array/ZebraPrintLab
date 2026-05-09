@@ -52,6 +52,9 @@ const lv = {
     multipleSelectedFmt: 'Atlasīti {n} objekti',
     multipleSelectedHint: 'ar bultiņām pārvietot',
     visualApproxHint: 'Vizuālais attēlojums ir aptuvens; izmēri atbilst ZPL izdrukai',
+    alignCenterH: 'Centrēt horizontāli uz etiķetes',
+    alignCenterV: 'Centrēt vertikāli uz etiķetes',
+    alignCenterBoth: 'Centrēt uz etiķetes',
   },
 
   label: {

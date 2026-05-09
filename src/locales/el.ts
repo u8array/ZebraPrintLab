@@ -52,6 +52,9 @@ const el = {
     multipleSelectedFmt: '{n} αντικείμενα επιλέχθηκαν',
     multipleSelectedHint: 'τα βέλη μετακινούν',
     visualApproxHint: 'Η οπτική απόδοση είναι κατά προσέγγιση· οι διαστάσεις αντιστοιχούν στην εκτύπωση ZPL',
+    alignCenterH: 'Οριζόντιο κεντράρισμα στην ετικέτα',
+    alignCenterV: 'Κατακόρυφο κεντράρισμα στην ετικέτα',
+    alignCenterBoth: 'Κεντράρισμα στην ετικέτα',
   },
 
   label: {

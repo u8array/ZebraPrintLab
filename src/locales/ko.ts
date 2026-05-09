@@ -52,6 +52,9 @@ const ko = {
     multipleSelectedFmt: '{n}개 항목 선택됨',
     multipleSelectedHint: '화살표 키로 이동',
     visualApproxHint: '시각적 표시는 근사치이며, 치수는 ZPL 인쇄와 일치합니다',
+    alignCenterH: '라벨에서 가로 가운데 정렬',
+    alignCenterV: '라벨에서 세로 가운데 정렬',
+    alignCenterBoth: '라벨 가운데 정렬',
   },
 
   label: {
