@@ -19,9 +19,10 @@ export function hydrateLocalStoragePrefix<T>(
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!key?.startsWith(prefix)) continue;
+    const raw = localStorage.getItem(key);
+    if (raw === null) continue;
     try {
-      const entry = JSON.parse(localStorage.getItem(key) ?? "null") as T;
-      accept(entry);
+      accept(JSON.parse(raw) as T);
     } catch {
       // ignore corrupt entries
     }
