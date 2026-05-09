@@ -1,4 +1,7 @@
 import {
+  forwardRef,
+  useImperativeHandle,
+  useMemo,
   useRef,
   useEffect,
   useState,
@@ -15,6 +18,7 @@ import type { Unit } from "../../lib/units";
 import { computeSnap } from "../../lib/snapGuides";
 import type { SnapGuide } from "../../lib/snapGuides";
 import { computeGroupCenterDelta } from "../../lib/alignment";
+import type { AlignAxis } from "../../lib/alignment";
 import { KonvaObject } from "./KonvaObject";
 import { Grid } from "./Grid";
 import { GuideLines } from "./GuideLines";
@@ -51,7 +55,14 @@ interface Props {
   onViewRotationChange: (rotation: ViewRotation) => void;
 }
 
-export function LabelCanvas({
+/** Imperative actions sibling components (PropertiesPanel) need from the
+ *  canvas. The canvas owns the live render bboxes via Konva — co-locating
+ *  the action with the data avoids round-tripping through the store. */
+export interface LabelCanvasHandle {
+  alignSelectionToLabel: (axis: AlignAxis) => void;
+}
+
+export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCanvas({
   unit,
   showGrid,
   onGridToggle,
@@ -63,7 +74,7 @@ export function LabelCanvas({
   onZoomChange,
   viewRotation,
   onViewRotationChange,
-}: Props) {
+}, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -98,7 +109,6 @@ export function LabelCanvas({
     selectObjects,
   } = useLabelStore();
   const objects = useCurrentObjects();
-  const alignmentRequest = useLabelStore((s) => s.alignmentRequest);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -248,63 +258,70 @@ export function LabelCanvas({
   // here matches the visual (rotation-aware) bounds — snap math operates in
   // stage-screen space, so it must reflect what the user sees, not the
   // un-rotated layout coordinates.
-  const transformerSnapLabelRect = {
-    id: "_lbl",
-    x: visualLabelX,
-    y: visualLabelY,
-    width: visualLabelWidthPx,
-    height: visualLabelHeightPx,
-  };
+  const transformerSnapLabelRect = useMemo(
+    () => ({
+      id: "_lbl",
+      x: visualLabelX,
+      y: visualLabelY,
+      width: visualLabelWidthPx,
+      height: visualLabelHeightPx,
+    }),
+    [visualLabelX, visualLabelY, visualLabelWidthPx, visualLabelHeightPx],
+  );
 
-  // Align-to-label intent: PropertiesPanel bumps `alignmentRequest.serial`,
-  // we measure the rendered group bbox via stage-clientRect, compute the
-  // centre-delta in screen px, then map to model dots. Stage measurement is
-  // the single source of truth — text/barcode/etc. have type-specific
-  // footprints (text-zone, baseline shift) that the model alone can't
-  // represent.
-  useEffect(() => {
-    if (!alignmentRequest) return;
-    const stage = stageRef.current;
-    if (!stage) return;
-    const state = useLabelStore.getState();
-    const ids = state.selectedIds;
-    if (ids.length === 0) return;
-    const objs = currentObjects(state);
+  // Imperative align-to-label: PropertiesPanel calls this directly via the
+  // forwarded ref. Co-located with the render data — measure each selected
+  // node's rendered bbox via Konva clientRect (single source of truth for
+  // type-specific footprints like text baselines / barcode text-zones),
+  // compute the centre-delta in screen px, map back through view rotation
+  // and px-per-dot to model coordinates.
+  useImperativeHandle(
+    ref,
+    () => ({
+      alignSelectionToLabel: (axis) => {
+        const stage = stageRef.current;
+        if (!stage) return;
+        const state = useLabelStore.getState();
+        const ids = state.selectedIds;
+        if (ids.length === 0) return;
+        const objs = currentObjects(state);
 
-    const boxes = ids.flatMap((id) => {
-      const node = stage.findOne<Konva.Node>(`#${id}`);
-      if (!node) return [];
-      const r = node.getClientRect({ relativeTo: stage });
-      return [{ id, x: r.x, y: r.y, width: r.width, height: r.height }];
-    });
-    if (boxes.length === 0) return;
+        const boxes = ids.flatMap((id) => {
+          const node = stage.findOne<Konva.Node>(`#${id}`);
+          if (!node) return [];
+          const r = node.getClientRect({ relativeTo: stage });
+          return [{ id, x: r.x, y: r.y, width: r.width, height: r.height }];
+        });
+        if (boxes.length === 0) return;
 
-    const { dx: screenDx, dy: screenDy } = computeGroupCenterDelta(
-      boxes,
-      transformerSnapLabelRect,
-      alignmentRequest.axis,
-    );
-    if (screenDx === 0 && screenDy === 0) return;
+        const { dx: screenDx, dy: screenDy } = computeGroupCenterDelta(
+          boxes,
+          transformerSnapLabelRect,
+          axis,
+        );
+        if (screenDx === 0 && screenDy === 0) return;
 
-    // Stage-screen → model dots: inverse-rotate into the un-rotated layout
-    // frame, then divide by px-per-dot. Mirrors handleStageDragMove's path.
-    const [layoutDx, layoutDy] = inverseRotateDelta(screenDx, screenDy, viewRotation);
-    const pxPerDot = scale / label.dpmm;
-    const dxDots = layoutDx / pxPerDot;
-    const dyDots = layoutDy / pxPerDot;
+        const [layoutDx, layoutDy] = inverseRotateDelta(
+          screenDx,
+          screenDy,
+          viewRotation,
+        );
+        const pxPerDot = scale / label.dpmm;
+        const dxDots = layoutDx / pxPerDot;
+        const dyDots = layoutDy / pxPerDot;
 
-    const updates = ids.flatMap((id) => {
-      const obj = objs.find((o) => o.id === id);
-      if (!obj) return [];
-      return [{ id, changes: { x: obj.x + dxDots, y: obj.y + dyDots } }];
-    });
-    if (updates.length > 0) updateObjects(updates);
-    // No need to clear alignmentRequest — the next click bumps `serial`.
-    // Effect intentionally only depends on alignmentRequest: we want to fire
-    // when the user clicks a button, not every time the canvas pans/zooms.
-    // The other values are read fresh from the closure on each fire.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [alignmentRequest]);
+        const updates = ids.flatMap((id) => {
+          const obj = objs.find((o) => o.id === id);
+          if (!obj) return [];
+          return [
+            { id, changes: { x: obj.x + dxDots, y: obj.y + dyDots } },
+          ];
+        });
+        if (updates.length > 0) updateObjects(updates);
+      },
+    }),
+    [transformerSnapLabelRect, scale, label.dpmm, viewRotation, updateObjects],
+  );
 
   const {
     rotateEnabled,
@@ -725,4 +742,4 @@ export function LabelCanvas({
       )}
     </div>
   );
-}
+});

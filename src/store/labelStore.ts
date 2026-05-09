@@ -2,7 +2,6 @@ import { create, useStore } from 'zustand';
 import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { LabelConfig, ObjectChanges } from '../types/ObjectType';
-import type { AlignAxis } from '../lib/alignment';
 import type { Unit } from '../lib/units';
 import type { ViewRotation } from '../components/Canvas/rotationGeometry';
 import { ObjectRegistry } from '../registry';
@@ -78,13 +77,6 @@ interface LabelState {
   clipboard: LabelObject[];
   pasteCount: number;
 
-  /** Transient intent to centre the current selection on the label. The
-   *  canvas owns the live render bboxes (via Konva), so PropertiesPanel
-   *  bumps `serial` to fire the request and the canvas effect performs the
-   *  geometry. Intentionally not persisted; the field exists only as the
-   *  store-as-event-bus channel. */
-  alignmentRequest: { axis: AlignAxis; serial: number } | null;
-
   addObject: (type: string, position?: { x: number; y: number }) => void;
   updateObject: (id: string, changes: ObjectChanges) => void;
   updateObjects: (updates: { id: string; changes: ObjectChanges }[]) => void;
@@ -97,7 +89,6 @@ interface LabelState {
   toggleSelectObject: (id: string) => void;
   selectObjects: (ids: string[]) => void;
   removeSelectedObjects: () => void;
-  requestAlignment: (axis: AlignAxis) => void;
   setLabelConfig: (config: Partial<LabelConfig>) => void;
   setLocale: (locale: LocaleCode) => void;
   setTheme: (theme: ThemePreference) => void;
@@ -198,7 +189,6 @@ export const useLabelStore = create<LabelState>()(
       selectedIds: [],
       clipboard: [],
       pasteCount: 0,
-      alignmentRequest: null,
       locale: detectLocale(),
       theme: detectInitialTheme(),
       thirdParty: thirdPartyDefaults(),
@@ -326,18 +316,6 @@ export const useLabelStore = create<LabelState>()(
         set((state) => ({
           ...updateCurrentObjects(state, (objs) => objs.filter((o) => !state.selectedIds.includes(o.id))),
           selectedIds: [],
-        })),
-
-      requestAlignment: (axis) =>
-        set((state) => ({
-          alignmentRequest: {
-            axis,
-            // Bumping the serial each call lets the canvas effect re-fire
-            // even when the same axis is requested twice in a row (effects
-            // skip identical state). The value itself is meaningless beyond
-            // change detection.
-            serial: (state.alignmentRequest?.serial ?? 0) + 1,
-          },
         })),
 
       moveObjectToFront: (id) =>

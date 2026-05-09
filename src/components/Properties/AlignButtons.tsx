@@ -1,4 +1,3 @@
-import { useLabelStore } from "../../store/labelStore";
 import { useT } from "../../lib/useT";
 import type { AlignAxis } from "../../lib/alignment";
 
@@ -38,13 +37,13 @@ const BUTTON_CLS =
   "p-1.5 rounded border border-border text-muted hover:text-text hover:bg-surface-2 transition-colors";
 
 /**
- * Three-button row that requests an align-to-label centring of the current
- * selection. The canvas owns the live render bboxes (Konva), so we just emit
- * the intent — see LabelCanvas for the geometry.
+ * Three-button row that centres the current selection on the label. Pure
+ * presentation: the caller supplies the imperative `onAlign` handler so the
+ * component stays decoupled from the canvas (which owns the live render
+ * bboxes).
  */
-export function AlignButtons() {
+export function AlignButtons({ onAlign }: { onAlign: (axis: AlignAxis) => void }) {
   const t = useT();
-  const requestAlignment = useLabelStore((s) => s.requestAlignment);
 
   const buttons: { axis: AlignAxis; title: string; Icon: typeof CenterHIcon }[] = [
     { axis: "h",    title: t.properties.alignCenterH,    Icon: CenterHIcon },
@@ -61,7 +60,7 @@ export function AlignButtons() {
           className={BUTTON_CLS}
           title={title}
           aria-label={title}
-          onClick={() => requestAlignment(axis)}
+          onClick={() => onAlign(axis)}
         >
           <Icon className="w-3.5 h-3.5" />
         </button>
