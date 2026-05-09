@@ -1,37 +1,6 @@
 import { useT } from "../../lib/useT";
 import type { AlignAxis } from "../../lib/alignment";
-
-interface IconProps {
-  className?: string;
-}
-
-function CenterHIcon({ className }: IconProps) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true" className={className}>
-      <line x1="8" y1="1.5" x2="8" y2="14.5" strokeDasharray="2 2" strokeWidth="1" />
-      <rect x="3" y="5" width="10" height="6" strokeWidth="1" />
-    </svg>
-  );
-}
-
-function CenterVIcon({ className }: IconProps) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true" className={className}>
-      <line x1="1.5" y1="8" x2="14.5" y2="8" strokeDasharray="2 2" strokeWidth="1" />
-      <rect x="5" y="3" width="6" height="10" strokeWidth="1" />
-    </svg>
-  );
-}
-
-function CenterBothIcon({ className }: IconProps) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true" className={className}>
-      <line x1="8" y1="1.5" x2="8" y2="14.5" strokeDasharray="2 2" strokeWidth="1" />
-      <line x1="1.5" y1="8" x2="14.5" y2="8" strokeDasharray="2 2" strokeWidth="1" />
-      <rect x="5" y="5" width="6" height="6" strokeWidth="1" />
-    </svg>
-  );
-}
+import { CenterHIcon, CenterVIcon, CenterBothIcon } from "./AlignIcons";
 
 const BUTTON_CLS =
   "p-1.5 rounded border border-border text-muted hover:text-text hover:bg-surface-2 transition-colors";
