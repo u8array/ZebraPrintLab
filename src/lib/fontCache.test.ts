@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getFont, getFontFamily, getAllFonts, loadFontFile, removeFont, subscribe } from './fontCache';
+import {
+  getFont,
+  getFontFamily,
+  getAllFonts,
+  loadFontFile,
+  removeFont,
+  subscribe,
+  MAX_FONT_BYTES,
+} from './fontCache';
 
 function clearCache(): void {
   for (const font of getAllFonts()) {
@@ -119,5 +127,21 @@ describe('fontCache', () => {
     unsubscribe();
     await loadFontFile(makeFakeFile('arial.ttf'), 'ARIAL.TTF');
     expect(listener).not.toHaveBeenCalled();
+  });
+
+  // ── validation ────────────────────────────────────────────────────────────────
+
+  it('loadFontFile rejects files without a TTF/OTF extension', async () => {
+    const file = new File(['x'], 'arial.woff2', { type: 'font/woff2' });
+    await expect(loadFontFile(file, 'ARIAL.WOFF2')).rejects.toThrow(/Not a TTF\/OTF font/);
+  });
+
+  it('loadFontFile rejects files above the byte cap', async () => {
+    const oversized = new File(
+      [new Uint8Array(MAX_FONT_BYTES + 1)],
+      'big.ttf',
+      { type: 'font/ttf' },
+    );
+    await expect(loadFontFile(oversized, 'BIG.TTF')).rejects.toThrow(/too large/);
   });
 });

@@ -17,6 +17,12 @@ export interface CachedImage {
 
 const LS_PREFIX = 'zpl-img-';
 
+/** Hard cap on a single image's source bytes. localStorage quota across all
+ *  origins is ~5 MiB; capping per-image at 2 MiB stops one oversized drop
+ *  from filling the entire cache. The UI's `accept="image/*"` is a hint
+ *  only — this is the authoritative limit. */
+export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
 const cache = new Map<string, CachedImage>();
 
 // Hydrate from localStorage on module load
@@ -53,8 +59,15 @@ export function removeImage(id: string): void {
   localStorage.removeItem(LS_PREFIX + id);
 }
 
-/** Load a File into the cache. Returns the CachedImage entry. */
-export function loadImageFile(file: File): Promise<CachedImage> {
+/** Load a File into the cache. Returns the CachedImage entry. Rejects on
+ *  non-image MIME type, oversized files, or decode failures. */
+export async function loadImageFile(file: File): Promise<CachedImage> {
+  if (!file.type.startsWith('image/')) {
+    throw new Error(`Not an image: ${file.name}`);
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error(`Image too large: ${file.name} (${file.size} bytes, max ${MAX_IMAGE_BYTES})`);
+  }
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {

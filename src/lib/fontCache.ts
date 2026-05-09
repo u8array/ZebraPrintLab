@@ -16,6 +16,14 @@ export interface CachedFont {
 }
 
 const LS_PREFIX = 'zpl-font-';
+
+/** Hard cap on a single font file. Browser MIME types for fonts are
+ *  inconsistent (TTF often arrives as `application/octet-stream` or empty);
+ *  we accept by extension and rely on this byte cap to bound damage. */
+export const MAX_FONT_BYTES = 4 * 1024 * 1024;
+
+const FONT_EXT_RE = /\.(ttf|otf)$/i;
+
 const cache = new Map<string, CachedFont>();
 const listeners = new Set<() => void>();
 
@@ -72,8 +80,15 @@ export function getAllFonts(): CachedFont[] {
   return [...cache.values()];
 }
 
-/** Load a TTF/OTF File into the cache under the given printer font name. */
+/** Load a TTF/OTF File into the cache under the given printer font name.
+ *  Rejects on non-TTF/OTF extension or oversized files. */
 export async function loadFontFile(file: File, printerName: string): Promise<CachedFont> {
+  if (!FONT_EXT_RE.test(file.name)) {
+    throw new Error(`Not a TTF/OTF font: ${file.name}`);
+  }
+  if (file.size > MAX_FONT_BYTES) {
+    throw new Error(`Font too large: ${file.name} (${file.size} bytes, max ${MAX_FONT_BYTES})`);
+  }
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async () => {
