@@ -12,6 +12,7 @@ import {
   upceCheckDigit,
   get1DBwipScale,
   getEanUpcLayout,
+  type BarcodeDisplaySize,
   type EanUpcType,
 } from "./bwipHelpers";
 import { objectRotation } from "../../registry/rotation";
@@ -69,56 +70,53 @@ export function BarcodeObject({
     }
   }
 
-  let displayW = 0;
-  let displayH = 0;
-  let barW = 0;
-  let barH = 0;
-  let barLeftPx = 0;
-  let barTopPx = 0;
-  if (barcodeCanvas) {
-    const size = getDisplaySize(obj, barcodeCanvas, scale, dpmm);
-    displayW = size.w;
-    displayH = size.h;
-    barW = size.barW;
-    barH = size.barH;
-    barLeftPx = size.barLeftPx;
-    barTopPx = size.barTopPx;
-  }
+  // Single object holding the full ZPL footprint (w/h) and the bar
+  // sub-rectangle (barW/barH/barLeftPx/barTopPx). Defaults zero out
+  // when the bwip canvas hasn't rendered yet.
+  const dim: BarcodeDisplaySize = barcodeCanvas
+    ? getDisplaySize(obj, barcodeCanvas, scale, dpmm)
+    : { w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0 };
 
-  // Apply ^FT baseline correction (same logic as KonvaObjectInner). The
-  // FT origin sits at the bar baseline (bar bottom in upright), so we
-  // shift up by barH — not displayH — because the text zone extends
-  // BELOW the baseline, not into the bars.
-  const displayX = obj.x;
-  let displayY = obj.y;
-  if (obj.positionType === "FT") {
+  // Y delta in dots between the FT baseline (bar bottom) and the bbox
+  // top-left, plus the QR-specific firmware offset. Used forward in the
+  // render path and inverted in the drag-end handler.
+  //   FT-positioned: subtract this from FT.y to get bbox-top-Y
+  //   FO-positioned: zero except for QR's +10-dot artifact
+  // Computed once and reused so render and drag-end stay in lockstep.
+  const ftYShiftDots = (() => {
+    let d = 0;
     if (barcodeCanvas) {
-      displayY -= pxToDots(barH, scale, dpmm);
+      d += pxToDots(dim.barH, scale, dpmm);
     } else if (BARCODE_1D_TYPES.has(obj.type)) {
-      displayY -= (obj.props as { height: number }).height;
+      d += (obj.props as { height: number }).height;
     }
     if (obj.type === "qrcode") {
-      // Zebra firmware artifact: ^FT for QR codes shifts the symbol up by exactly
+      // Zebra firmware artifact: ^FT for QR shifts the symbol up by exactly
       // 3 modules (= 3 * magnification dots), independent of dpmm or content.
-      // Verified against Labelary API across magnifications 4–10 at 8 and 12 dpmm.
-      // Leading theory: the firmware reserves a dummy text-interpretation bounding
-      // box (as for 1D barcodes) even though QR codes have no human-readable text.
-      displayY -=
-        QR_FT_MODULE_OFFSET *
+      // Verified against Labelary across magnifications 4–10 at 8 and 12 dpmm.
+      // Leading theory: firmware reserves a dummy text-interpretation bbox
+      // even though QR codes have no human-readable text.
+      d += QR_FT_MODULE_OFFSET *
         (obj.props as { magnification: number }).magnification;
     }
-  } else if (obj.type === "qrcode") {
-    // Zebra firmware artifact: ^FO QR codes are rendered with a hardcoded +10 dot
-    // Y-offset, independent of magnification and dpmm. Verified against Labelary.
-    displayY += QR_FO_Y_OFFSET_DOTS;
-  }
+    return d;
+  })();
+
+  // Zebra firmware artifact: ^FO QR codes render with a hardcoded +10-dot
+  // Y-offset, independent of magnification and dpmm. Verified via Labelary.
+  const foYShiftDots = obj.type === "qrcode" ? QR_FO_Y_OFFSET_DOTS : 0;
+
+  const displayX = obj.x;
+  const displayY = obj.positionType === "FT"
+    ? obj.y - ftYShiftDots
+    : obj.y + foYShiftDots;
 
   // Bars draw at FO; bbox top-left shifts by (-barLeftPx, -barTopPx)
   // when the text zone extends LEFT/ABOVE the bars (rotated EAN/UPC,
   // inverted EAN/UPC/LOGMARS). The Konva Group is positioned at bbox
   // top-left and KImage offsets back to land bars at FO.
-  const x = offsetX + dotsToPx(displayX, scale, dpmm) - barLeftPx;
-  const y = offsetY + dotsToPx(displayY, scale, dpmm) - barTopPx;
+  const x = offsetX + dotsToPx(displayX, scale, dpmm) - dim.barLeftPx;
+  const y = offsetY + dotsToPx(displayY, scale, dpmm) - dim.barTopPx;
 
   const snapPos = (sx: number, sy: number) => ({
     x:
@@ -134,39 +132,36 @@ export function BarcodeObject({
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    // Group origin is at bbox top-left; FO/FT semantics are anchored at
-    // the bars, so we recover the saved coords by adding back the bbox
-    // shift (barLeftPx/barTopPx, in pixels) before converting to dots.
-    const finalX = pxToDots(e.target.x() + barLeftPx - offsetX, scale, dpmm);
-    let finalY = pxToDots(e.target.y() + barTopPx - offsetY, scale, dpmm);
-    if (obj.positionType === "FT") {
-      // FT baseline = bar bottom, not bbox bottom — add barH only.
-      if (barcodeCanvas) {
-        finalY += pxToDots(barH, scale, dpmm);
-      } else if (BARCODE_1D_TYPES.has(obj.type)) {
-        finalY += (obj.props as { height: number }).height;
-      }
-      if (obj.type === "qrcode") {
-        finalY +=
-          QR_FT_MODULE_OFFSET *
-          (obj.props as { magnification: number }).magnification;
-      }
-    } else if (obj.type === "qrcode") {
-      finalY -= QR_FO_Y_OFFSET_DOTS;
-    }
+    // Inverse of the render-path math: Group origin is bbox top-left,
+    // FO/FT semantics anchor at the bars, so we add back the bbox shift
+    // (barLeftPx/barTopPx) before converting pixels to dots, then undo
+    // the FT/FO Y-shift to recover the saved obj.x/obj.y.
+    const finalX = pxToDots(
+      e.target.x() + dim.barLeftPx - offsetX,
+      scale,
+      dpmm,
+    );
+    const yDots = pxToDots(
+      e.target.y() + dim.barTopPx - offsetY,
+      scale,
+      dpmm,
+    );
+    const finalY = obj.positionType === "FT"
+      ? yDots + ftYShiftDots
+      : yDots - foYShiftDots;
     onChange({ x: finalX, y: finalY });
   };
 
   if (barcodeCanvas) {
-    const w = displayW;
-    const h = displayH;
+    const w = dim.w;
+    const h = dim.h;
     // Bitmap is drawn at the bar sub-rectangle of the bbox so the bars
     // render at their true height. The text-zone padding (which side
     // depends on rotation) stays empty inside the bbox.
-    const bw = Math.max(barW, 1);
-    const bh = Math.max(barH, 1);
-    const btX = barLeftPx;
-    const btY = barTopPx;
+    const bw = Math.max(dim.barW, 1);
+    const bh = Math.max(dim.barH, 1);
+    const btX = dim.barLeftPx;
+    const btY = dim.barTopPx;
     // Force-off when the symbology has no HRI in ZPL (e.g. GS1 Databar) — the
     // canvas must match the print output even if a legacy saved object still
     // carries printInterpretation: true.
