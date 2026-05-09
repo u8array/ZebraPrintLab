@@ -1,0 +1,204 @@
+import { useState } from "react";
+import { Circle, Group, Line as KLine } from "react-konva";
+import type { LabelObject } from "../../registry";
+import { dotsToPx, pxToDots } from "../../lib/coordinates";
+import type { KonvaObjectProps } from "./konvaObjectProps";
+
+type LineLabelObject = Extract<LabelObject, { type: "line" }>;
+type Props = Omit<KonvaObjectProps, "obj"> & { obj: LineLabelObject };
+
+/** Line renderer. Hosted as its own component so hooks (useState for
+ *  live endpoint drag) can run conditionally per object type without
+ *  violating rules-of-hooks. The dispatcher in KonvaObject narrows
+ *  `obj` before passing — no runtime cast needed here. */
+export function LineObject({
+  obj,
+  scale,
+  dpmm,
+  offsetX,
+  offsetY,
+  isSelected,
+  onSelect,
+  onChange,
+  snap,
+}: Props) {
+  const p = obj.props;
+  // All positions are absolute stage coordinates — the Group has no offset.
+  // This eliminates any parent-child draggable conflict.
+  const x1 = offsetX + dotsToPx(obj.x, scale, dpmm);
+  const y1 = offsetY + dotsToPx(obj.y, scale, dpmm);
+  const rad = (p.angle * Math.PI) / 180;
+  const lenPx = dotsToPx(p.length, scale, dpmm);
+  const x2 = x1 + lenPx * Math.cos(rad);
+  const y2 = y1 + lenPx * Math.sin(rad);
+
+  // ^LR uses difference blend with white: white over white bg = black, white over black text = white
+  const strokeColor =
+    !isSelected && p.reverse
+      ? "#ffffff"
+      : p.color === "B"
+        ? "#000000"
+        : "#cccccc";
+  const lineStrokeWidth = Math.max(dotsToPx(p.thickness, scale, dpmm), 1);
+
+  // Live positions while handles are being dragged (snapped preview)
+  const [livePt1, setLivePt1] = useState<{ x: number; y: number } | null>(null);
+  const [livePt2, setLivePt2] = useState<{ x: number; y: number } | null>(null);
+
+  // Live drag delta while the whole line is being dragged
+  const [dragDelta, setDragDelta] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
+  const dx = dragDelta.x;
+  const dy = dragDelta.y;
+
+  // Visual endpoints: handle-drag overrides whole-line delta
+  const dispX1 = livePt1?.x ?? x1 + dx;
+  const dispY1 = livePt1?.y ?? y1 + dy;
+  const dispX2 = livePt2?.x ?? x2 + dx;
+  const dispY2 = livePt2?.y ?? y2 + dy;
+
+  return (
+    <Group>
+      {/* Visible line — tracks both whole-drag and handle-drag live */}
+      <KLine
+        points={[dispX1, dispY1, dispX2, dispY2]}
+        stroke={isSelected ? "#6366f1" : strokeColor}
+        strokeWidth={lineStrokeWidth}
+        lineCap="square"
+        listening={false}
+        globalCompositeOperation={
+          !isSelected && p.reverse ? "difference" : "source-over"
+        }
+      />
+      {/* Wide transparent hit area — handles click-to-select and whole-line drag.
+          id is here (not on the Group) so the Stage snap handler can find this node
+          via e.target.id() and apply object-snap correctly. */}
+      <KLine
+        id={obj.id}
+        points={[x1, y1, x2, y2]}
+        stroke="transparent"
+        strokeWidth={Math.max(lineStrokeWidth, 14)}
+        draggable
+        onClick={(e) =>
+          onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey)
+        }
+        onTap={() => onSelect(false)}
+        onDragMove={(e) => {
+          setDragDelta({ x: e.target.x(), y: e.target.y() });
+        }}
+        onDragEnd={(e) => {
+          const deltaXPx = e.target.x();
+          const deltaYPx = e.target.y();
+          e.target.position({ x: 0, y: 0 });
+          setDragDelta({ x: 0, y: 0 });
+          onChange({
+            x: obj.x + pxToDots(deltaXPx, scale, dpmm),
+            y: obj.y + pxToDots(deltaYPx, scale, dpmm),
+          });
+        }}
+      />
+      {isSelected && (
+        <>
+          {/* Start point — dragging moves the origin; end point stays fixed */}
+          <Circle
+            x={livePt1?.x ?? x1 + dx}
+            y={livePt1?.y ?? y1 + dy}
+            radius={6}
+            fill="#6366f1"
+            stroke="white"
+            strokeWidth={1.5}
+            draggable
+            onDragMove={(e) => {
+              const snappedX =
+                offsetX +
+                dotsToPx(
+                  snap(pxToDots(e.target.x() - offsetX, scale, dpmm)),
+                  scale,
+                  dpmm,
+                );
+              const snappedY =
+                offsetY +
+                dotsToPx(
+                  snap(pxToDots(e.target.y() - offsetY, scale, dpmm)),
+                  scale,
+                  dpmm,
+                );
+              e.target.position({ x: snappedX, y: snappedY });
+              setLivePt1({ x: snappedX, y: snappedY });
+            }}
+            onDragEnd={(e) => {
+              const snapped = livePt1 ?? { x: e.target.x(), y: e.target.y() };
+              e.target.position({ x: x1 + dx, y: y1 + dy });
+              setLivePt1(null);
+              const newStartDotX = pxToDots(snapped.x - offsetX, scale, dpmm);
+              const newStartDotY = pxToDots(snapped.y - offsetY, scale, dpmm);
+              const endDotX = pxToDots(x2 - offsetX, scale, dpmm);
+              const endDotY = pxToDots(y2 - offsetY, scale, dpmm);
+              const dxDots = endDotX - newStartDotX;
+              const dyDots = endDotY - newStartDotY;
+              const newLen = Math.sqrt(dxDots * dxDots + dyDots * dyDots);
+              const newAngle = Math.round(
+                (Math.atan2(dyDots, dxDots) * 180) / Math.PI,
+              );
+              onChange({
+                x: newStartDotX,
+                y: newStartDotY,
+                props: {
+                  length: Math.max(1, Math.round(newLen)),
+                  angle: newAngle,
+                },
+              });
+            }}
+          />
+          {/* End point — dragging changes length & angle */}
+          <Circle
+            x={livePt2?.x ?? x2 + dx}
+            y={livePt2?.y ?? y2 + dy}
+            radius={6}
+            fill="#6366f1"
+            stroke="white"
+            strokeWidth={1.5}
+            draggable
+            onDragMove={(e) => {
+              const snappedX =
+                offsetX +
+                dotsToPx(
+                  snap(pxToDots(e.target.x() - offsetX, scale, dpmm)),
+                  scale,
+                  dpmm,
+                );
+              const snappedY =
+                offsetY +
+                dotsToPx(
+                  snap(pxToDots(e.target.y() - offsetY, scale, dpmm)),
+                  scale,
+                  dpmm,
+                );
+              e.target.position({ x: snappedX, y: snappedY });
+              setLivePt2({ x: snappedX, y: snappedY });
+            }}
+            onDragEnd={(e) => {
+              const snapped = livePt2 ?? { x: e.target.x(), y: e.target.y() };
+              e.target.position({ x: x2 + dx, y: y2 + dy });
+              setLivePt2(null);
+              const dxDots = pxToDots(snapped.x - offsetX, scale, dpmm) - obj.x;
+              const dyDots = pxToDots(snapped.y - offsetY, scale, dpmm) - obj.y;
+              const newLen = Math.sqrt(dxDots * dxDots + dyDots * dyDots);
+              const newAngle = Math.round(
+                (Math.atan2(dyDots, dxDots) * 180) / Math.PI,
+              );
+              onChange({
+                props: {
+                  length: Math.max(1, Math.round(newLen)),
+                  angle: newAngle,
+                },
+              });
+            }}
+          />
+        </>
+      )}
+    </Group>
+  );
+}
