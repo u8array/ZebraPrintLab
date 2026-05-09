@@ -164,6 +164,36 @@ describe("getDisplaySize gs1databar sym 7 fallback", () => {
   });
 });
 
+describe("buildBwipOptions gs1databar Expanded fallback", () => {
+  // AI 01 + 11 numeric digits is not a valid GTIN-14 element string. Zebra
+  // firmware emits General Compaction (~149 modules) rather than Method 1
+  // padding. We route bwip-js through `(99)` so the rendered width matches.
+  const obj = (content: string): LabelObject => ({
+    id: "1",
+    type: "gs1databar",
+    x: 0,
+    y: 0,
+    rotation: 0,
+    props: {
+      content,
+      moduleWidth: 2,
+      symbology: 6,
+      segments: 22,
+      rotation: "N",
+    },
+  });
+
+  it("re-routes AI 01 + 11-digit fragment through (99) wrap", () => {
+    const opts = buildBwipOptions(obj("0112345678901"), 1, 8);
+    expect(opts?.text).toBe("(99)0112345678901");
+  });
+
+  it("keeps valid AI 01 GTIN-14 input on the standard wrap path", () => {
+    const opts = buildBwipOptions(obj("0112345678901231"), 1, 8);
+    expect(opts?.text).toBe("(01)12345678901231");
+  });
+});
+
 describe("getDisplaySize coverage (ZPL-first policy)", () => {
   // Static parse of bwipHelpers.ts: every barcode type registered via BCID
   // must have an explicit `case "type":` in getUprightDisplaySize, otherwise

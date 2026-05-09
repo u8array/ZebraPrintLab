@@ -32,6 +32,27 @@ import {
   PLESSEY_BWIP_TO_ZEBRA_WIDTH_RATIO,
 } from "./bwipConstants";
 
+/**
+ * AI 01 followed by exactly 11 numeric digits (13 chars total) is not a valid
+ * GTIN-14 element string. Zebra firmware does NOT pad it to Method 1; it falls
+ * back to General Compaction (~149 modules at 8dpmm). bwip-js with `(01)<padded>`
+ * would force Method 1 (~133 modules), so we re-route through `(99)` to get
+ * General Compaction encoding too. Empirical cutoff (probed against Labelary).
+ */
+function isAi01ElevenDigitFragment(content: string): boolean {
+  return /^01\d{11}$/.test(content);
+}
+
+/**
+ * Bwip-js text for GS1 DataBar Expanded — wraps raw AI input in parens and
+ * routes the empirically-known length-mismatch case (AI 01 + 11 digits) through
+ * `(99)` so the rendered bitmap width matches Zebra firmware's print output.
+ */
+function gs1ExpandedBwipText(content: string): string {
+  if (isAi01ElevenDigitFragment(content)) return `(99)${content}`;
+  return wrapGs1AIs(content);
+}
+
 const GS1_DATABAR_BCID: Record<Gs1DatabarProps["symbology"], string> = {
   1: "databaromni",
   2: "databartruncated",
@@ -307,7 +328,7 @@ export function buildBwipOptions(
       // bwip-js needs (AI)data parens; canonical model stores raw digits.
       // Sym 1–5 require AI 01 + valid 14-digit GTIN with correct check.
       const text = isExpanded
-        ? wrapGs1AIs(p.content)
+        ? gs1ExpandedBwipText(p.content)
         : `(01)${gtin14WithCheck(p.content)}`;
       opts = {
         bcid: GS1_DATABAR_BCID[sym],

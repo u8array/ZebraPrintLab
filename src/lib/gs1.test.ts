@@ -36,8 +36,8 @@ describe("wrapGs1AIs", () => {
   });
 
   it("auto-completes the GTIN check digit when AI 01 data is short", () => {
-    // 11 digits after "01" → padded to 13 + check = 14
-    const out = wrapGs1AIs("0112345678901");
+    // 9 digits after "01" → padded to 13 + check = 14
+    const out = wrapGs1AIs("01123456789");
     expect(out.startsWith("(01)")).toBe(true);
     expect(out.slice(4)).toHaveLength(14);
   });
