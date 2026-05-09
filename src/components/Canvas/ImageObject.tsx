@@ -22,6 +22,7 @@ export function ImageObject({
   isSelected,
   onSelect,
   onChange,
+  snap,
 }: Props) {
   const p = obj.props;
   const cached = getImage(p.imageId);
@@ -54,7 +55,21 @@ export function ImageObject({
     };
   }, [cached]);
 
+  // Snap during drag for visual feedback; commit only on dragEnd so
+  // the store doesn't update on every mouse pixel. Mirrors the
+  // pattern KonvaObjectInner uses for shape/text objects.
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    e.target.position({
+      x:
+        offsetX +
+        dotsToPx(snap(pxToDots(e.target.x() - offsetX, scale, dpmm)), scale, dpmm),
+      y:
+        offsetY +
+        dotsToPx(snap(pxToDots(e.target.y() - offsetY, scale, dpmm)), scale, dpmm),
+    });
+  };
+
+  const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     onChange({
       x: pxToDots(e.target.x() - offsetX, scale, dpmm),
       y: pxToDots(e.target.y() - offsetY, scale, dpmm),
@@ -78,7 +93,7 @@ export function ImageObject({
         }
         onTap={() => onSelect(false)}
         onDragMove={handleDragMove}
-        onDragEnd={handleDragMove}
+        onDragEnd={handleDragEnd}
       />
     );
   }
@@ -94,7 +109,7 @@ export function ImageObject({
       }
       onTap={() => onSelect(false)}
       onDragMove={handleDragMove}
-      onDragEnd={handleDragMove}
+      onDragEnd={handleDragEnd}
     >
       <Rect
         width={w}
