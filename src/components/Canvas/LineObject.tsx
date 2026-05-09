@@ -86,13 +86,15 @@ export function LineObject({
         }
         onTap={() => onSelect(false)}
         onDragMove={(e) => {
-          // Snap the whole-line delta in dot space, then mirror back
-          // to pixels — same idiom the endpoint handles use, and
-          // keeps the line consistent with shape/text/image drag.
-          const deltaXPx =
-            dotsToPx(snap(pxToDots(e.target.x(), scale, dpmm)), scale, dpmm);
-          const deltaYPx =
-            dotsToPx(snap(pxToDots(e.target.y(), scale, dpmm)), scale, dpmm);
+          // Snap the absolute start-point position to the grid (not
+          // the delta), then derive the delta to apply. Snapping the
+          // delta would let an off-grid line stay off-grid forever;
+          // shapes, text and the endpoint handles in this same
+          // component all snap absolute, so the line should too.
+          const newX = snap(obj.x + pxToDots(e.target.x(), scale, dpmm));
+          const newY = snap(obj.y + pxToDots(e.target.y(), scale, dpmm));
+          const deltaXPx = dotsToPx(newX - obj.x, scale, dpmm);
+          const deltaYPx = dotsToPx(newY - obj.y, scale, dpmm);
           e.target.position({ x: deltaXPx, y: deltaYPx });
           setDragDelta({ x: deltaXPx, y: deltaYPx });
         }}
