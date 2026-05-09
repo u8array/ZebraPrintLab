@@ -28,7 +28,7 @@ export const DARK_COLORS: CanvasColors = {
 
 export const LIGHT_COLORS: CanvasColors = {
   canvasBg:       '#e4e4e7',
-  canvasDot:      '#c4c4c8',
+  canvasDot:      '#dcdce0',
   gridLine:       '#a1a1aa',
   gridSub:        '#d4d4d8',
   rulerBg:        '#f4f4f5',
