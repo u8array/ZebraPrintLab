@@ -65,6 +65,11 @@ export function BarcodeObject({
   if (opts) {
     const canvas = document.createElement("canvas");
     try {
+      // buildBwipOptions returns Record<string, unknown> on purpose: the
+      // option fields differ across barcode types (ean13 vs code128 vs …)
+      // and per-type narrowing would duplicate the switch already in
+      // buildBwipOptions. bwip-js' toCanvas signature uses a strict
+      // literal-string union, so the structural cast bridges the two.
       bwipjs.toCanvas(canvas, opts as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
       barcodeCanvas = canvas;
     } catch (e) {
