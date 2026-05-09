@@ -175,6 +175,13 @@ export function BarcodeObject({
       !ObjectRegistry[obj.type]?.interpretationLocked &&
       !!(obj.props as { printInterpretation?: boolean }).printInterpretation;
     const printInterp = isUpright && printInterpEnabled;
+    // Cross-type access: this block runs for every barcode and reads moduleWidth
+    // generically (textFontSize is computed for HRI text rendering downstream).
+    // Unlike buildBwipOptions, this function isn't switch-structured by obj.type,
+    // so per-case narrowing would require restructuring the whole block. The
+    // cast + fallback stays as the documented boundary between cross-type code
+    // and the per-type required-typed schemas (2D types without moduleWidth fall
+    // through with the default; their branches don't render HRI text anyway).
     const moduleWidth =
       (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
     const textFontSize = Math.max(dotsToPx(moduleWidth * 10, scale, dpmm), 6);

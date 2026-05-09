@@ -188,6 +188,23 @@ export function get1DBwipScale(
   return Math.max(1, Math.round(dotsToPx(moduleWidth, scale, dpmm)));
 }
 
+/**
+ * Render-scale for 1D barcodes: integer-aligned per-module scale when the
+ * caller supplies the canvas scale + dpmm, otherwise the BWIP_SCALE default.
+ * Wrapping the branch lets per-type cases pass their own (narrowed,
+ * required-typed) `moduleWidth` instead of going through a cast at the
+ * generic top of buildBwipOptions.
+ */
+function bwipScale1D(
+  moduleWidth: number,
+  renderScale: number | undefined,
+  renderDpmm: number | undefined,
+): number {
+  return renderScale != null && renderDpmm != null
+    ? get1DBwipScale(moduleWidth, renderScale, renderDpmm)
+    : BWIP_SCALE;
+}
+
 export function eanCheckDigit(digits: string, w0: number, w1: number): string {
   let sum = 0;
   for (let i = 0; i < digits.length; i++)
@@ -232,14 +249,6 @@ export function buildBwipOptions(
   const bcid = BCID[obj.type];
   if (!bcid) return null;
 
-  // For 1D barcodes, choose an integer-aligned scale so module widths map
-  // exactly to display pixels (no fractional upscaling / anti-aliasing).
-  const mw = (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
-  const scale1D =
-    renderScale != null && renderDpmm != null
-      ? get1DBwipScale(mw, renderScale, renderDpmm)
-      : BWIP_SCALE;
-
   // bwip-js takes the same N/R/I/B letters ZPL does for symbol orientation;
   // emitting it post-build means the produced bitmap is already rotated and
   // its dimensions are the post-rotation extents — no Konva-side rotation math
@@ -254,6 +263,7 @@ export function buildBwipOptions(
     case "upca":
     case "upce": {
       const p = obj.props;
+      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
       let text: string;
       if (obj.type === "upce") {
         const r = p.content || "000000";
@@ -261,19 +271,20 @@ export function buildBwipOptions(
       } else {
         text = p.content || "0";
       }
-      opts = { bcid, text, scale: scale1D, height: 10 };
+      opts = { bcid, text, scale, height: 10 };
       break;
     }
     case "code128": {
-      const p = obj.props as { content?: string };
+      const p = obj.props;
+      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
       const text = p.content || "0";
       // Note: ZPL ^BC e=Y (checkDigit) only prints the MOD-10 digit in the
       // interpretation line — it does NOT append it to the encoded barcode data.
       const rawB = toCode128BRaw(text);
       if (rawB) {
-        opts = { bcid, text: rawB, raw: true, scale: scale1D, height: 10 };
+        opts = { bcid, text: rawB, raw: true, scale, height: 10 };
       } else {
-        opts = { bcid, text, scale: scale1D, height: 10 };
+        opts = { bcid, text, scale, height: 10 };
       }
       break;
     }
@@ -286,6 +297,7 @@ export function buildBwipOptions(
     case "codabar":
     case "plessey": {
       const p = obj.props;
+      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
       // Code39/Codabar/Plessey only encode uppercase letters. Zebra firmware
       // (and Labelary) silently uppercase lowercase input; bwip-js does not and
       // throws instead, which would crash the canvas for any imported ZPL with
@@ -294,28 +306,31 @@ export function buildBwipOptions(
       const needsUpper = obj.type === "code39" || obj.type === "codabar" || obj.type === "plessey";
       const raw = p.content || "0";
       const text = needsUpper ? raw.toUpperCase() : raw;
-      opts = { bcid, text, scale: scale1D, height: 10 };
+      opts = { bcid, text, scale, height: 10 };
       break;
     }
     case "msi": {
       const p = obj.props;
+      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
       // Zebra always encodes a Mod10 check digit in MSI regardless of the ^BM e=N
       // parameter (which only suppresses it in the interpretation line).
-      opts = { bcid, text: p.content || "0", scale: scale1D, height: 10, includecheck: true };
+      opts = { bcid, text: p.content || "0", scale, height: 10, includecheck: true };
       break;
     }
     case "postal": {
       const p = obj.props;
-      opts = { bcid, text: p.content || "0", scale: scale1D, height: 10 };
+      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
+      opts = { bcid, text: p.content || "0", scale, height: 10 };
       break;
     }
     case "logmars": {
       const p = obj.props;
+      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
       // LOGMARS is a Code39 subset; same uppercase rule applies.
       opts = {
         bcid,
         text: (p.content || "0").toUpperCase(),
-        scale: scale1D,
+        scale,
         height: 10,
         includecheck: true,
       };
@@ -323,6 +338,7 @@ export function buildBwipOptions(
     }
     case "gs1databar": {
       const p = obj.props;
+      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
       const sym = p.symbology;
       const isExpanded = GS1_DATABAR_EXPANDED_SYMBOLOGIES.has(sym);
       // bwip-js needs (AI)data parens; canonical model stores raw digits.
@@ -333,7 +349,7 @@ export function buildBwipOptions(
       opts = {
         bcid: GS1_DATABAR_BCID[sym],
         text,
-        scale: scale1D,
+        scale,
         height: 10,
         paddingheight: 2,
         ...(sym === 7 ? { segments: p.segments ?? GS1_DATABAR_DEFAULT_SEGMENTS } : {}),
@@ -342,13 +358,14 @@ export function buildBwipOptions(
     }
     case "planet": {
       const p = obj.props;
+      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
       let raw = (p.content || "0").replace(/\D/g, "");
       if (raw.length < 11) raw = raw.padStart(11, "0");
       else if (raw.length === 12) raw = raw.padStart(13, "0");
       opts = {
         bcid,
         text: raw,
-        scale: scale1D,
+        scale,
         height: 10,
         includecheck: true,
       };
