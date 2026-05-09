@@ -38,7 +38,7 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
           <button
-            className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors"
+            className="p-0.5 rounded text-muted hover:text-text hover:bg-border transition-colors"
             onClick={collapsed ? onExpand : onCollapse}
             title={collapsed ? t.app.expand : t.app.collapse}
             aria-label={collapsed ? t.app.expand : t.app.collapse}
@@ -72,7 +72,7 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
         </div>
       </div>
 
-      {!collapsed && <pre className="flex-1 overflow-auto p-3 font-mono text-xs leading-relaxed text-text m-0">
+      {!collapsed && <pre className="flex-1 overflow-auto p-3 font-mono text-xs leading-relaxed text-text m-0 bg-surface">
         {zpl
           ? zpl.split('\n').map((line, i) => (
               <ZplLine key={i} line={line} />

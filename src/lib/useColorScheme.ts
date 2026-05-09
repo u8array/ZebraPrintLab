@@ -27,16 +27,16 @@ export const DARK_COLORS: CanvasColors = {
 };
 
 export const LIGHT_COLORS: CanvasColors = {
-  canvasBg:       '#ededf3',
-  canvasDot:      '#bebecf',
-  gridLine:       '#b0b0c4',
-  gridSub:        '#d0d0de',
-  rulerBg:        '#f0f0f6',
-  rulerCorner:    '#e6e6f0',
-  rulerMajorTick: '#505070',
-  rulerMinorTick: '#9090b0',
-  rulerLabel:     '#303060',
-  rulerSeparator: '#d0d0e0',
+  canvasBg:       '#e4e4e7',
+  canvasDot:      '#dcdce0',
+  gridLine:       '#a1a1aa',
+  gridSub:        '#d4d4d8',
+  rulerBg:        '#f4f4f5',
+  rulerCorner:    '#e4e4e7',
+  rulerMajorTick: '#3f3f46',
+  rulerMinorTick: '#71717a',
+  rulerLabel:     '#27272a',
+  rulerSeparator: '#d4d4d8',
 };
 
 export function useColorScheme(): CanvasColors {
