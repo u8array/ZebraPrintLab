@@ -162,6 +162,10 @@ export function BarcodeObject({
     const bh = Math.max(dim.barH, 1);
     const btX = dim.barLeftPx;
     const btY = dim.barTopPx;
+    // Konva crop prop is undefined when no cropping is needed; passing it
+    // selectively skips bwip's internal padding (e.g. GS1 DataBar's
+    // paddingheight rows) so bars fill the bbox at firmware-correct height.
+    const bitmapCrop = dim.bitmapCrop;
     // Force-off when the symbology has no HRI in ZPL (e.g. GS1 Databar) — the
     // canvas must match the print output even if a legacy saved object still
     // carries printInterpretation: true.
@@ -417,6 +421,7 @@ export function BarcodeObject({
             x={btX}
             y={btY}
             image={barcodeCanvas}
+            crop={bitmapCrop}
             width={bw}
             height={bh}
             imageSmoothingEnabled={false}
@@ -524,6 +529,7 @@ export function BarcodeObject({
             x={btX}
             y={btY}
             image={barcodeCanvas}
+            crop={bitmapCrop}
             width={bw}
             height={bh}
             imageSmoothingEnabled={false}
@@ -686,7 +692,7 @@ export function BarcodeObject({
             width={Math.max(w, 1)} height={Math.max(h, 1)}
             fill="transparent" listening={false}
           />
-          <KImage x={btX} y={btY} image={barcodeCanvas}
+          <KImage x={btX} y={btY} image={barcodeCanvas} crop={bitmapCrop}
             width={bw} height={bh}
             imageSmoothingEnabled={false}
             stroke={isSelected ? "#6366f1" : undefined}
@@ -728,6 +734,7 @@ export function BarcodeObject({
           x={btX}
           y={btY}
           image={barcodeCanvas}
+          crop={bitmapCrop}
           width={bw}
           height={bh}
           imageSmoothingEnabled={false}

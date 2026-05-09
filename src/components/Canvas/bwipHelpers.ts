@@ -436,6 +436,12 @@ export interface BarcodeDisplaySize {
   barH: number;
   barLeftPx: number;
   barTopPx: number;
+  /** Sub-rect of the bwip-js canvas to render (in source pixel coords).
+   *  Lets the renderer skip bwip's internal padding, e.g. the
+   *  paddingheight pad on GS1 DataBar that would otherwise leave the
+   *  bars proportionally shorter than the firmware-reserved bbox.
+   *  Undefined = use the full canvas. */
+  bitmapCrop?: { x: number; y: number; width: number; height: number };
 }
 
 /** Firmware-reserved text-zone height in dots, keyed by symbology. The
@@ -457,7 +463,9 @@ export function getDisplaySize(
   dpmm: number,
 ): BarcodeDisplaySize {
   if (!canvas) {
-    return { w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0 };
+    return {
+      w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0,
+    };
   }
 
   // For 90°/270° rotations, bwip-js produces a bitmap whose width and height
@@ -497,7 +505,27 @@ export function getDisplaySize(
     }
   }
 
-  return { w, h, barW, barH, barLeftPx, barTopPx };
+  // GS1 DataBar opts include `paddingheight: 2`, which adds whitespace
+  // rows on top and bottom of the bwip canvas. Without cropping them out,
+  // the bitmap drawn at displayH leaves the bars proportionally shorter
+  // than the spec-correct height. Zebra firmware fills the full reserved
+  // height with bars; mirror that by cropping the source bitmap to the
+  // bar-only rows.
+  let bitmapCrop: BarcodeDisplaySize["bitmapCrop"];
+  if (obj.type === "gs1databar") {
+    const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+    const padPx = 2 * bwipSc; // paddingheight=2 × bwip scale per side
+    if (canvas.height > 2 * padPx) {
+      bitmapCrop = {
+        x: 0,
+        y: padPx,
+        width: canvas.width,
+        height: canvas.height - 2 * padPx,
+      };
+    }
+  }
+
+  return { w, h, barW, barH, barLeftPx, barTopPx, bitmapCrop };
 }
 
 function getUprightDisplaySize(
