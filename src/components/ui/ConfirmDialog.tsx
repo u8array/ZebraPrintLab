@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface ConfirmDialogProps {
   message: string;
@@ -25,20 +26,18 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, onCancel);
+
+  // Lock background scroll while the modal is open so the dialog stays
+  // visually anchored and the user cannot drift past it.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel();
-    };
-    window.addEventListener('keydown', onKey);
-    // Lock background scroll while the modal is open so the dialog stays
-    // visually anchored and the user cannot drift past it.
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
-      window.removeEventListener('keydown', onKey);
       document.body.style.overflow = originalOverflow;
     };
-  }, [onCancel]);
+  }, []);
 
   const confirmCls = destructive
     ? 'bg-red-500 text-white hover:bg-red-600'
@@ -49,6 +48,7 @@ export function ConfirmDialog({
   // `position: fixed` and miscentre the modal).
   return createPortal(
     <div
+      ref={containerRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onCancel}
     >
