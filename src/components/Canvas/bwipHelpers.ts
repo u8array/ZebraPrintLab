@@ -1,3 +1,17 @@
+/**
+ * ZPL-FIRST SIZING POLICY
+ *
+ * The designer is a layout tool, not a scanner. `getDisplaySize` maps the
+ * bwip-js intrinsic canvas size to the ZPL-correct display pixels so the
+ * displayed bbox matches what Zebra firmware will print. Bar patterns may
+ * look slightly distorted because bwip-js' rendering algorithm differs.
+ *
+ * Per-symbology rationale (especially for the deliberately-not-corrected
+ * cases code93, code11, plessey) is in the inline comments at each `case`
+ * block in getUprightDisplaySize. The static-parse test in
+ * bwipHelpers.test.ts ensures every BCID-registered type has a case.
+ */
+
 import type { LabelObject } from "../../registry";
 import type { Gs1DatabarProps } from "../../registry/gs1databar";
 import { objectRotation } from "../../registry/rotation";

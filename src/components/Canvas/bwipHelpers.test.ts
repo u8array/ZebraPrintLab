@@ -1,4 +1,7 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { buildBwipOptions, getDisplaySize, getEanUpcLayout } from "./bwipHelpers";
 import type { LabelObject } from "../../registry";
 
@@ -123,5 +126,29 @@ describe("rotation pipeline", () => {
     const upright = getDisplaySize(baseCode128("N"), fakeCanvas, 1, 8);
     const inverted = getDisplaySize(baseCode128("I"), fakeCanvas, 1, 8);
     expect(inverted).toEqual(upright);
+  });
+});
+
+describe("getDisplaySize coverage (ZPL-first policy)", () => {
+  // Static parse of bwipHelpers.ts: every barcode type registered via BCID
+  // must have an explicit `case "type":` in getUprightDisplaySize, otherwise
+  // the default fallback returns bwip-natural pixels and silently violates
+  // the ZPL-first sizing policy.
+  it("every BCID-registered type has an explicit case (no silent default)", () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const src = readFileSync(resolve(here, "bwipHelpers.ts"), "utf-8");
+
+    const bcidBlock = /const BCID:[^=]*=\s*\{([\s\S]*?)\};/.exec(src);
+    expect(bcidBlock, "BCID literal not found in source").toBeTruthy();
+    const bcidKeys = [...(bcidBlock?.[1] ?? "").matchAll(/^\s*(\w+):\s*"/gm)]
+      .map((m) => m[1] ?? "");
+
+    const fnBlock = /function getUprightDisplaySize\([\s\S]*?^\}/m.exec(src);
+    expect(fnBlock, "getUprightDisplaySize body not found").toBeTruthy();
+    const caseLabels = [...(fnBlock?.[0] ?? "").matchAll(/case "(\w+)":/g)]
+      .map((m) => m[1] ?? "");
+
+    const missing = bcidKeys.filter((k) => !caseLabels.includes(k));
+    expect(missing, `Missing explicit case for: ${missing.join(", ")}`).toEqual([]);
   });
 });
