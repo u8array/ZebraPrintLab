@@ -114,8 +114,10 @@ export const currentObjects = (state: PageState): LabelObject[] =>
   state.pages[state.currentPageIndex]?.objects ?? [];
 
 /** True when a Labelary network call is permitted: the gate is on AND the
- *  user has seen the privacy notice. Single source of truth so every UI
- *  consumer (Preview, Print, …) stays in lockstep. */
+ *  user has seen the privacy notice. Kept as a documented invariant; UI
+ *  buttons read `thirdParty.labelary` and `labelaryNoticeAcknowledged`
+ *  separately because they need to distinguish "hide" (gate off) from
+ *  "show notice first" (gate on, not yet acknowledged). */
 export const canCallLabelary = (s: LabelState): boolean =>
   s.thirdParty.labelary && s.labelaryNoticeAcknowledged;
 

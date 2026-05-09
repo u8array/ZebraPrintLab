@@ -30,7 +30,8 @@ import {
   SunIcon,
   MoonIcon,
 } from "@heroicons/react/16/solid";
-import { useLabelStore, useHistory, canCallLabelary } from "../store/labelStore";
+import { useLabelStore, useHistory } from "../store/labelStore";
+import { LabelaryNoticeModal } from "./Output/LabelaryNoticeModal";
 import { localeNames } from "../locales";
 import type { LocaleCode } from "../locales";
 import { mmToUnit } from "../lib/units";
@@ -50,7 +51,9 @@ export function AppShell() {
   const setLocale = useLabelStore((s) => s.setLocale);
   const theme = useLabelStore((s) => s.theme);
   const setTheme = useLabelStore((s) => s.setTheme);
-  const labelaryReady = useLabelStore(canCallLabelary);
+  const labelaryEnabled = useLabelStore((s) => s.thirdParty.labelary);
+  const noticeAcknowledged = useLabelStore((s) => s.labelaryNoticeAcknowledged);
+  const [showPrintNotice, setShowPrintNotice] = useState(false);
 
   // Bridge the theme preference to <html data-theme> so the CSS variables in
   // index.css pick it up.
@@ -202,14 +205,13 @@ export function AppShell() {
               {t.app.saveDesign}
             </DropdownItem>
             <DropdownSeparator />
-            {/* Print also routes through Labelary. Until the user has seen
-                the privacy notice (shown only via the Preview modal), Print
-                is hidden so the very first Labelary call cannot bypass the
-                disclosure. After acknowledgement Print stays available. */}
-            {labelaryReady && (
+            {/* Print routes through Labelary. The button is shown whenever
+                the Labelary gate is on; clicking it before the notice has
+                been acknowledged opens the disclosure first, then prints. */}
+            {labelaryEnabled && (
               <DropdownItem
                 icon={PrinterIcon}
-                onClick={handlePrint}
+                onClick={() => (noticeAcknowledged ? handlePrint() : setShowPrintNotice(true))}
                 disabled={!hasObjects}
               >
                 {t.app.print}
@@ -343,6 +345,15 @@ export function AppShell() {
       {showZplImport && <ZplImportModal onClose={closeZplImport} />}
       {showZebraPrint && (
         <PrintToZebraDialog zpl={currentZpl()} onClose={closeZebraPrint} />
+      )}
+      {showPrintNotice && (
+        <LabelaryNoticeModal
+          onClose={() => setShowPrintNotice(false)}
+          onContinue={() => {
+            setShowPrintNotice(false);
+            handlePrint();
+          }}
+        />
       )}
     </div>
   );

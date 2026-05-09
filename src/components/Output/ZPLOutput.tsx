@@ -4,6 +4,7 @@ import { useLabelStore } from '../../store/labelStore';
 import { generateMultiPageZPL } from '../../lib/zplGenerator';
 import { useT } from '../../lib/useT';
 import { LabelPreviewModal } from './LabelPreview';
+import { LabelaryNoticeModal } from './LabelaryNoticeModal';
 
 interface Props {
   collapsed?: boolean;
@@ -15,12 +16,11 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
   const t = useT();
   const label = useLabelStore((s) => s.label);
   const pages = useLabelStore((s) => s.pages);
-  // Direct gate check — Preview is the path to the privacy notice, so the
-  // button must be reachable before acknowledgement. Other Labelary callers
-  // (AppShell.Print, LabelPreview.fetch) use the stricter canCallLabelary.
   const labelaryEnabled = useLabelStore((s) => s.thirdParty.labelary);
+  const noticeAcknowledged = useLabelStore((s) => s.labelaryNoticeAcknowledged);
   const [copied, setCopied] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showNotice, setShowNotice] = useState(false);
 
   const hasObjects = pages.some((p) => p.objects.length > 0);
   const zpl = hasObjects ? generateMultiPageZPL(label, pages) : '';
@@ -49,7 +49,7 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
         <div className="flex items-center gap-3">
           {labelaryEnabled && (
             <button
-              onClick={() => setShowPreview(true)}
+              onClick={() => (noticeAcknowledged ? setShowPreview(true) : setShowNotice(true))}
               disabled={!zpl}
               title={t.output.previewHeading}
               className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
@@ -79,6 +79,15 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
           : <span className="text-muted">{t.output.noObjects}</span>
         }
       </pre>}
+      {showNotice && (
+        <LabelaryNoticeModal
+          onClose={() => setShowNotice(false)}
+          onContinue={() => {
+            setShowNotice(false);
+            setShowPreview(true);
+          }}
+        />
+      )}
       {showPreview && <LabelPreviewModal onClose={() => setShowPreview(false)} />}
     </div>
   );
