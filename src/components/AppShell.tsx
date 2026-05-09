@@ -114,7 +114,8 @@ export function AppShell() {
           <button
             onClick={() => undo()}
             disabled={!canUndo}
-            title="Undo (⌘Z)"
+            title={`${t.app.undo} (⌘Z)`}
+            aria-label={t.app.undo}
             className="p-1.5 rounded text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
           >
             <ArrowUturnLeftIcon className="w-3.5 h-3.5" />
@@ -122,7 +123,8 @@ export function AppShell() {
           <button
             onClick={() => redo()}
             disabled={!canRedo}
-            title="Redo (⌘⇧Z)"
+            title={`${t.app.redo} (⌘⇧Z)`}
+            aria-label={t.app.redo}
             className="p-1.5 rounded text-muted hover:text-text hover:bg-surface-2 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
           >
             <ArrowUturnRightIcon className="w-3.5 h-3.5" />

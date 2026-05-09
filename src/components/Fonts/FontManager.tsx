@@ -61,6 +61,7 @@ function FontEntry({ name }: FontEntryProps) {
         onClick={() => removeFont(name)}
         className="opacity-0 group-hover:opacity-100 font-mono text-[10px] text-muted hover:text-red-400 transition-all px-1"
         title={t.fonts.delete}
+        aria-label={t.fonts.delete}
       >
         ×
       </button>

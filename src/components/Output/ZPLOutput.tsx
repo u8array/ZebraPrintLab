@@ -40,7 +40,8 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
           <button
             className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors"
             onClick={collapsed ? onExpand : onCollapse}
-            title={collapsed ? 'Expand' : 'Collapse'}
+            title={collapsed ? t.app.expand : t.app.collapse}
+            aria-label={collapsed ? t.app.expand : t.app.collapse}
           >
             {collapsed ? <ChevronUpIcon className="w-3.5 h-3.5" /> : <ChevronDownIcon className="w-3.5 h-3.5" />}
           </button>
