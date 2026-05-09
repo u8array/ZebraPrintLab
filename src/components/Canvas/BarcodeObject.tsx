@@ -512,6 +512,19 @@ export function BarcodeObject({
           onTransform={handleTransform}
           onTransformEnd={handleTransformEnd}
         >
+          {/* Invisible rect spanning the full ZPL footprint so the Group's
+              getClientRect picks up the text-zone reservation. The HRI Text
+              node has getSelfRect=0 (excluded from bbox to keep resize
+              anchored at the bars), so without this rect the bbox would
+              shrink to barH only. */}
+          <Rect
+            x={0}
+            y={0}
+            width={Math.max(w, 1)}
+            height={Math.max(h, 1)}
+            fill="transparent"
+            listening={false}
+          />
           <KImage
             x={btX}
             y={btY}
@@ -669,6 +682,15 @@ export function BarcodeObject({
           onDragMove={(e) => e.target.position(snapPos(e.target.x(), e.target.y()))}
           onDragEnd={handleDragEnd}
         >
+          {/* Full-bbox invisible rect — same role as in the upright/showText
+              branch: the rotated HRI Text overlay sits outside the bars and
+              its position varies per rotation, so the Group's auto-bbox
+              would not necessarily span the full ZPL footprint. */}
+          <Rect
+            x={0} y={0}
+            width={Math.max(w, 1)} height={Math.max(h, 1)}
+            fill="transparent" listening={false}
+          />
           <KImage x={btX} y={btY} image={barcodeCanvas}
             width={bw} height={bh}
             imageSmoothingEnabled={false}
