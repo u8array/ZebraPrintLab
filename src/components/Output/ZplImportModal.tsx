@@ -5,12 +5,14 @@ import { readFileAsText } from '../../lib/readFile';
 import { useLabelStore } from '../../store/labelStore';
 import { formatReportAsText, type ImportResult } from '../../lib/importReport';
 import { ImportSummaryBody } from './ImportReportModal';
+import { useT } from '../../lib/useT';
 
 interface Props {
   onClose: () => void;
 }
 
 export function ZplImportModal({ onClose }: Props) {
+  const t = useT();
   const [zpl, setZpl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -76,12 +78,16 @@ export function ZplImportModal({ onClose }: Props) {
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="zpl-import-title"
     >
       <div className="bg-surface border border-border rounded-lg w-130 flex flex-col shadow-2xl max-h-[80vh]">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-          <span className="font-mono text-xs text-muted uppercase tracking-widest">Import ZPL</span>
+          <span id="zpl-import-title" className="font-mono text-xs text-muted uppercase tracking-widest">Import ZPL</span>
           <button
             onClick={onClose}
+            aria-label={t.app.close}
             className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors"
           >
             <XMarkIcon className="w-4 h-4" />

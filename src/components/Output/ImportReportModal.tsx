@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { XMarkIcon, ClipboardDocumentIcon, CheckIcon } from '@heroicons/react/16/solid';
 import { partialLoss, formatReportAsText } from '../../lib/importReport';
 import type { ImportResult } from '../../lib/importReport';
+import { useT } from '../../lib/useT';
 
 export type { ImportResult };
 
@@ -55,6 +56,7 @@ interface Props {
 }
 
 export function ImportReportModal({ result, onClose }: Props) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -69,12 +71,16 @@ export function ImportReportModal({ result, onClose }: Props) {
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="import-report-title"
     >
       <div className="bg-surface border border-border rounded-lg w-130 flex flex-col shadow-2xl max-h-[80vh]">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-          <span className="font-mono text-xs text-muted uppercase tracking-widest">Import Report</span>
+          <span id="import-report-title" className="font-mono text-xs text-muted uppercase tracking-widest">Import Report</span>
           <button
             onClick={onClose}
+            aria-label={t.app.close}
             className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors"
           >
             <XMarkIcon className="w-4 h-4" />

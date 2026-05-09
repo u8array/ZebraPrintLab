@@ -110,6 +110,9 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="zebra-print-title"
     >
       <div
         className="bg-surface border border-border rounded shadow-lg flex flex-col w-[420px] max-w-[95vw]"
@@ -117,11 +120,12 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-1.5 border-b border-border shrink-0">
-          <span className="font-mono text-[10px] text-muted uppercase tracking-widest">
+          <span id="zebra-print-title" className="font-mono text-[10px] text-muted uppercase tracking-widest">
             {t.zebraPrint.heading}
           </span>
           <button
             onClick={onClose}
+            aria-label={t.app.close}
             className="p-1 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors"
           >
             <XMarkIcon className="w-3.5 h-3.5" />
