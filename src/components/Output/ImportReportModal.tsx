@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { XMarkIcon, ClipboardDocumentIcon, CheckIcon } from '@heroicons/react/16/solid';
 import { partialLoss, formatReportAsText } from '../../lib/importReport';
 import type { ImportResult } from '../../lib/importReport';
 import { useT } from '../../lib/useT';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export type { ImportResult };
 
@@ -57,6 +58,8 @@ interface Props {
 
 export function ImportReportModal({ result, onClose }: Props) {
   const t = useT();
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, onClose);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -68,6 +71,7 @@ export function ImportReportModal({ result, onClose }: Props) {
 
   return (
     <div
+      ref={containerRef}
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}

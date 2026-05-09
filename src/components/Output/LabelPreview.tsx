@@ -5,6 +5,7 @@ import { generateZPL } from '../../lib/zplGenerator';
 import { fetchPreview, labelaryErrorMessage } from '../../lib/labelary';
 import { triggerDownload } from '../../lib/triggerDownload';
 import { useT } from '../../lib/useT';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface Props {
   onClose: () => void;
@@ -23,7 +24,10 @@ export function LabelPreviewModal({ onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const urlRef = useRef<string | null>(null);
   const zplRef = useRef<string>(generateZPL(label, objects));
+  const containerRef = useRef<HTMLDivElement>(null);
   const loading = !previewUrl && !error;
+
+  useFocusTrap(containerRef, onClose);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,6 +56,7 @@ export function LabelPreviewModal({ onClose }: Props) {
 
   return (
     <div
+      ref={containerRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onClose}
       role="dialog"

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { XMarkIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../lib/useT";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 import {
   discoverBrowserPrintDevices,
   isConnectionRefused,
@@ -32,6 +33,8 @@ interface Props {
 
 export function PrintToZebraDialog({ zpl, onClose }: Props) {
   const t = useT();
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, onClose);
   const [tab, setTab] = useState<Tab>("network");
 
   // Network tab state
@@ -108,6 +111,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
 
   return (
     <div
+      ref={containerRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onClose}
       role="dialog"

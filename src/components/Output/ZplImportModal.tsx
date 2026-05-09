@@ -6,6 +6,7 @@ import { useLabelStore } from '../../store/labelStore';
 import { formatReportAsText, type ImportResult } from '../../lib/importReport';
 import { ImportSummaryBody } from './ImportReportModal';
 import { useT } from '../../lib/useT';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface Props {
   onClose: () => void;
@@ -13,6 +14,8 @@ interface Props {
 
 export function ZplImportModal({ onClose }: Props) {
   const t = useT();
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, onClose);
   const [zpl, setZpl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -75,6 +78,7 @@ export function ZplImportModal({ onClose }: Props) {
 
   return (
     <div
+      ref={containerRef}
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.6)' }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}

@@ -1,6 +1,8 @@
+import { useRef } from 'react';
 import { XMarkIcon } from '@heroicons/react/16/solid';
 import { useLabelStore } from '../../store/labelStore';
 import { useT } from '../../lib/useT';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface Props {
   /** Called after the modal flipped the store flag, so callers only need
@@ -18,6 +20,8 @@ interface Props {
 export function LabelaryNoticeModal({ onContinue, onClose }: Props) {
   const t = useT();
   const acknowledgeLabelaryNotice = useLabelStore((s) => s.acknowledgeLabelaryNotice);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, onClose);
 
   const handleContinue = () => {
     acknowledgeLabelaryNotice();
@@ -26,6 +30,7 @@ export function LabelaryNoticeModal({ onContinue, onClose }: Props) {
 
   return (
     <div
+      ref={containerRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onClose}
       role="dialog"
