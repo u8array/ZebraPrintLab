@@ -216,15 +216,36 @@ export function LineObject({
         listening={false}
         globalCompositeOperation={isReverse ? "difference" : "source-over"}
       />
-      {isSelected && (
-        <KLine
-          points={[dispX1, dispY1, dispX2, dispY2]}
-          stroke={colors.selection}
-          strokeWidth={lineStrokeWidth}
-          lineCap="butt"
-          listening={false}
-        />
-      )}
+      {isSelected && (() => {
+        // Outline the line with two parallel selection-coloured strokes
+        // offset perpendicular to the body. Drawing alongside (not on
+        // top) keeps the body's difference-blend intact for reverse
+        // lines and matches the Illustrator-style stroke selection
+        // affordance. Guarded against zero-length (degenerate) lines.
+        const len = Math.hypot(dispX2 - dispX1, dispY2 - dispY1);
+        if (len === 0) return null;
+        const off = lineStrokeWidth / 2 + 1;
+        const px = (-(dispY2 - dispY1) / len) * off;
+        const py = ((dispX2 - dispX1) / len) * off;
+        return (
+          <>
+            <KLine
+              points={[dispX1 + px, dispY1 + py, dispX2 + px, dispY2 + py]}
+              stroke={colors.selection}
+              strokeWidth={1}
+              lineCap="butt"
+              listening={false}
+            />
+            <KLine
+              points={[dispX1 - px, dispY1 - py, dispX2 - px, dispY2 - py]}
+              stroke={colors.selection}
+              strokeWidth={1}
+              lineCap="butt"
+              listening={false}
+            />
+          </>
+        );
+      })()}
       {/* Wide transparent hit area — handles click-to-select and whole-line drag.
           id is here (not on the Group) so the Stage snap handler can find this node
           via e.target.id() and apply object-snap correctly. */}
