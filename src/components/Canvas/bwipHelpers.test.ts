@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { buildBwipOptions, getDisplaySize, getEanUpcLayout } from "./bwipHelpers";
+import { buildBwipOptions, getDisplaySize, getEanUpcLayout, parseZplCode128Escapes } from "./bwipHelpers";
 import type { LabelObject } from "../../registry";
 
 describe("getEanUpcLayout", () => {
@@ -217,3 +217,79 @@ describe("getDisplaySize coverage (ZPL-first policy)", () => {
     expect(missing, `Missing explicit case for: ${missing.join(", ")}`).toEqual([]);
   });
 });
+
+describe("parseZplCode128Escapes", () => {
+  it("returns null for plain ASCII (no escape sequences)", () => {
+    expect(parseZplCode128Escapes("ABC123")).toBeNull();
+    expect(parseZplCode128Escapes("")).toBeNull();
+  });
+
+  it("translates >5 to FNC1", () => {
+    expect(parseZplCode128Escapes("AB>5CD")).toBe("AB^FNC1CD");
+  });
+
+  it("translates >9 (Code C + FNC1) to FNC1 — bwip auto-mode handles the C switch", () => {
+    expect(parseZplCode128Escapes(">91234")).toBe("^FNC11234");
+  });
+
+  it("translates >6/>7/>8 to FNC2/FNC3/FNC4", () => {
+    expect(parseZplCode128Escapes("A>6B")).toBe("A^FNC2B");
+    expect(parseZplCode128Escapes("A>7B")).toBe("A^FNC3B");
+    expect(parseZplCode128Escapes("A>8B")).toBe("A^FNC4B");
+  });
+
+  it("translates >0 to a literal `>`", () => {
+    expect(parseZplCode128Escapes("A>0B>5")).toBe("A>B^FNC1");
+  });
+
+  it("drops >: and >; (subset switches — bwip auto-mode picks the subset)", () => {
+    expect(parseZplCode128Escapes("A>:B>;C>5")).toBe("ABC^FNC1");
+  });
+
+  it("doubles literal `^` so bwip parsefnc does not treat it as an escape", () => {
+    expect(parseZplCode128Escapes("A^B>5")).toBe("A^^B^FNC1");
+  });
+
+  it("handles the reported case STRSTR>5… with auto Code-C compaction", () => {
+    // Without translation: 21 raw Subset-B symbols.
+    // After translation: bwip sees STRSTR + FNC1 + 16 digits, auto-switches
+    // to Code C for the digit run → ~15 data symbols, matching firmware.
+    expect(parseZplCode128Escapes("STRSTR>52316094000242201"))
+      .toBe("STRSTR^FNC12316094000242201");
+  });
+});
+
+describe("buildBwipOptions code128 escape handling", () => {
+  const code128 = (content: string): LabelObject =>
+    ({
+      id: "1",
+      type: "code128",
+      x: 0,
+      y: 0,
+      rotation: 0,
+      props: {
+        content,
+        height: 100,
+        moduleWidth: 2,
+        printInterpretation: false,
+        checkDigit: false,
+        rotation: "N",
+      },
+    }) as LabelObject;
+
+  it("uses raw Subset-B mode for plain ASCII content (existing behaviour)", () => {
+    const opts = buildBwipOptions(code128("ABC123"), 1, 8);
+    expect(opts?.raw).toBe(true);
+    expect(opts?.parsefnc).toBeUndefined();
+    expect(typeof opts?.text).toBe("string");
+    expect((opts?.text as string).startsWith("^104")).toBe(true);
+  });
+
+  it("switches to parsefnc auto-mode when ZPL escape sequences are present", () => {
+    const opts = buildBwipOptions(code128("STRSTR>52316094000242201"), 1, 8);
+    expect(opts?.parsefnc).toBe(true);
+    expect(opts?.raw).toBeUndefined();
+    expect(opts?.text).toBe("STRSTR^FNC12316094000242201");
+  });
+});
+

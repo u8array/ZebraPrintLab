@@ -241,6 +241,52 @@ export function toCode128BRaw(text: string): string | null {
   return parts.join("");
 }
 
+/**
+ * Translate ZPL ^BC field-data escape sequences (`>X`) into bwip-js parsefnc
+ * syntax. Returns null when no recognized escape is present so the caller can
+ * stay on the existing raw-Subset-B path.
+ *
+ * ZPL Code 128 escapes (Zebra ZPL II Programming Guide):
+ *   >0 → literal `>`
+ *   >5 → FNC1
+ *   >6 → FNC2
+ *   >7 → FNC3
+ *   >8 → FNC4
+ *   >9 → invoke Code C with FNC1 (bwip auto-mode switches to C for digit runs,
+ *        so FNC1 alone is a sufficient translation)
+ *   >: → switch to Subset B (dropped; bwip auto-mode chooses the subset)
+ *   >; → switch to Subset A (dropped; bwip auto-mode chooses the subset)
+ *
+ * Without this translation, `STRSTR>52316094000242201` is rendered as 21 raw
+ * Subset-B symbols, while the firmware reads `>5` as FNC1 and switches to
+ * Subset C for the 16 trailing digits — yielding ~15 symbols and a much
+ * narrower bbox. The mismatch is what users observe as "Länge stimmt nicht".
+ */
+export function parseZplCode128Escapes(text: string): string | null {
+  if (!/>[05-9:;]/.test(text)) return null;
+  let out = "";
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    // bwip parsefnc treats `^` as escape char; double it for a literal `^`.
+    if (ch === "^") { out += "^^"; continue; }
+    if (ch === ">" && i + 1 < text.length) {
+      const next = text[i + 1];
+      switch (next) {
+        case "0": out += ">"; i++; continue;
+        case "5":
+        case "9": out += "^FNC1"; i++; continue;
+        case "6": out += "^FNC2"; i++; continue;
+        case "7": out += "^FNC3"; i++; continue;
+        case "8": out += "^FNC4"; i++; continue;
+        case ":":
+        case ";": i++; continue; // subset switch — bwip auto-mode handles it
+      }
+    }
+    out += ch;
+  }
+  return out;
+}
+
 export function buildBwipOptions(
   obj: LabelObject,
   renderScale?: number,
@@ -280,6 +326,15 @@ export function buildBwipOptions(
       const text = p.content || "0";
       // Note: ZPL ^BC e=Y (checkDigit) only prints the MOD-10 digit in the
       // interpretation line — it does NOT append it to the encoded barcode data.
+      // ZPL escape sequences (e.g. `>5` for FNC1, `>9` for Code-C switch with
+      // FNC1) require parsefnc auto-mode so bwip emits the same compact symbol
+      // count Zebra firmware does. Plain ASCII falls through to the raw Code B
+      // path which keeps the existing module count behaviour unchanged.
+      const escaped = parseZplCode128Escapes(text);
+      if (escaped !== null) {
+        opts = { bcid, text: escaped, parsefnc: true, scale, height: 10 };
+        break;
+      }
       const rawB = toCode128BRaw(text);
       if (rawB) {
         opts = { bcid, text: rawB, raw: true, scale, height: 10 };
