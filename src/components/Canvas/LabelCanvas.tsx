@@ -673,6 +673,25 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                   }
                   onChange={(changes) => handleObjectChange(obj.id, changes)}
                   snap={snap}
+                  getOthersSnapshot={
+                    snapEnabled
+                      ? undefined
+                      : () => {
+                          const stage = stageRef.current;
+                          if (!stage) return [];
+                          const rects = [];
+                          for (const o of getCurrentObjects()) {
+                            if (o.id === obj.id) continue;
+                            const n = stage.findOne<Konva.Node>(`#${o.id}`);
+                            if (!n) continue;
+                            const r = n.getClientRect({ relativeTo: stage });
+                            rects.push({ id: o.id, x: r.x, y: r.y, width: r.width, height: r.height });
+                          }
+                          return rects;
+                        }
+                  }
+                  labelRect={transformerSnapLabelRect}
+                  setGuides={setGuides}
                 />
               ))}
 

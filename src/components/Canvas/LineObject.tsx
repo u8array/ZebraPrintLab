@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Group, Line as KLine, Rect } from "react-konva";
+import type Konva from "konva";
 import type { LabelObject } from "../../registry";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { constrainLine, type ConstrainMode } from "../../lib/lineConstrain";
 import { useColorScheme } from "../../lib/useColorScheme";
+import { computeSnap, type SnapRect } from "../../lib/snapGuides";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 
 /** Endpoint-handle visuals — small white square with a thin selection
@@ -29,6 +31,9 @@ export function LineObject({
   onSelect,
   onChange,
   snap,
+  getOthersSnapshot,
+  labelRect,
+  setGuides,
 }: Props) {
   const p = obj.props;
   const colors = useColorScheme();
@@ -76,6 +81,85 @@ export function LineObject({
   // Figma-style auto-snap (±5° tolerance to the nearest 45° step).
   const resolveMode = (shift: boolean): ConstrainMode =>
     shift ? "shift" : "autoSnap";
+
+  // Cache the other-objects snapshot for the duration of a single endpoint
+  // drag — captured lazily on the first onDragMove and cleared on
+  // onDragEnd. Avoids re-querying every Konva node's clientRect per frame.
+  const othersSnapshotRef = useRef<SnapRect[] | null>(null);
+
+  /**
+   * Run the projected endpoint position through object-snap (other shapes'
+   * edges + label edges). Skips when shift is held — the user-explicit
+   * 45°-step constraint would otherwise fight the snap-nudge.
+   *
+   * The snap pipeline (othersSnapshot, labelRect, returned guides) is in
+   * stage-screen coords. The line's own drag math is in label-group local
+   * coords (which coincide with stage at viewRotation=0 but diverge under
+   * rotation). The `parent` Konva node is used to convert local↔stage so
+   * the snap stays correct in rotated views.
+   */
+  function snapEndpoint(
+    localPx: { x: number; y: number },
+    shift: boolean,
+    parent: Konva.Node | null,
+  ): { x: number; y: number } {
+    if (shift || !getOthersSnapshot || !labelRect || !setGuides || !parent) {
+      setGuides?.([]);
+      return localPx;
+    }
+    if (othersSnapshotRef.current === null) {
+      othersSnapshotRef.current = getOthersSnapshot();
+    }
+    const transform = parent.getAbsoluteTransform();
+    const stagePx = transform.point(localPx);
+    const result = computeSnap(
+      { id: obj.id, x: stagePx.x, y: stagePx.y, width: 0, height: 0 },
+      othersSnapshotRef.current,
+      undefined,
+      labelRect,
+      labelRect,
+    );
+    setGuides(result.guides);
+    const back = transform.copy().invert().point({ x: result.x, y: result.y });
+    return { x: back.x, y: back.y };
+  }
+
+  function clearSnap() {
+    othersSnapshotRef.current = null;
+    setGuides?.([]);
+  }
+
+  /**
+   * Full endpoint-drag pipeline: axis constraint → object snap → final
+   * geometry derivation. Returns the same shape as `project` so call
+   * sites stay symmetric; the snapped endpoint may sit slightly off the
+   * axis the constraint chose, which is the standard Figma compromise
+   * (snap nudges trump the auto-snap step, but shift still locks).
+   */
+  function endpointDrag(
+    cursorXPx: number,
+    cursorYPx: number,
+    anchorXDots: number,
+    anchorYDots: number,
+    forStart: boolean,
+    shift: boolean,
+    parent: Konva.Node | null,
+  ) {
+    const projected = project(cursorXPx, cursorYPx, anchorXDots, anchorYDots, forStart, shift);
+    const snappedPx = snapEndpoint(projected.movingPx, shift, parent);
+    const snappedDotX = pxToDots(snappedPx.x - offsetX, scale, dpmm);
+    const snappedDotY = pxToDots(snappedPx.y - offsetY, scale, dpmm);
+    const dxDots = forStart ? anchorXDots - snappedDotX : snappedDotX - anchorXDots;
+    const dyDots = forStart ? anchorYDots - snappedDotY : snappedDotY - anchorYDots;
+    const g = constrainLine(dxDots, dyDots, "free");
+    return {
+      length: g.length,
+      angle: g.angle,
+      movingDotX: snappedDotX,
+      movingDotY: snappedDotY,
+      movingPx: snappedPx,
+    };
+  }
 
   // Project the cursor (`cursorPx`) toward the line endpoint that should
   // stay fixed (`anchorDots`), returning both the constrained line geometry
@@ -191,13 +275,14 @@ export function LineObject({
             onDragMove={(e) => {
               const endDotX = pxToDots(x2 - offsetX, scale, dpmm);
               const endDotY = pxToDots(y2 - offsetY, scale, dpmm);
-              const r = project(
+              const r = endpointDrag(
                 e.target.x() + HANDLE_HIT_SIZE / 2,
                 e.target.y() + HANDLE_HIT_SIZE / 2,
                 endDotX,
                 endDotY,
                 true,
                 e.evt.shiftKey,
+                e.target.getParent(),
               );
               e.target.position({
                 x: r.movingPx.x - HANDLE_HIT_SIZE / 2,
@@ -217,14 +302,16 @@ export function LineObject({
               setLivePt1(null);
               const endDotX = pxToDots(x2 - offsetX, scale, dpmm);
               const endDotY = pxToDots(y2 - offsetY, scale, dpmm);
-              const r = project(
+              const r = endpointDrag(
                 cursor.x,
                 cursor.y,
                 endDotX,
                 endDotY,
                 true,
                 e.evt.shiftKey,
+                e.target.getParent(),
               );
+              clearSnap();
               onChange({
                 x: r.movingDotX,
                 y: r.movingDotY,
@@ -251,13 +338,14 @@ export function LineObject({
             fill="transparent"
             draggable
             onDragMove={(e) => {
-              const r = project(
+              const r = endpointDrag(
                 e.target.x() + HANDLE_HIT_SIZE / 2,
                 e.target.y() + HANDLE_HIT_SIZE / 2,
                 obj.x,
                 obj.y,
                 false,
                 e.evt.shiftKey,
+                e.target.getParent(),
               );
               e.target.position({
                 x: r.movingPx.x - HANDLE_HIT_SIZE / 2,
@@ -275,14 +363,16 @@ export function LineObject({
                 y: y2 + dy - HANDLE_HIT_SIZE / 2,
               });
               setLivePt2(null);
-              const r = project(
+              const r = endpointDrag(
                 cursor.x,
                 cursor.y,
                 obj.x,
                 obj.y,
                 false,
                 e.evt.shiftKey,
+                e.target.getParent(),
               );
+              clearSnap();
               onChange({ props: { length: r.length, angle: r.angle } });
             }}
           />

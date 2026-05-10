@@ -1,6 +1,7 @@
 import type Konva from "konva";
 import type { LabelObject } from "../../registry";
 import type { ObjectChanges } from "../../store/labelStore";
+import type { SnapGuide, SnapRect } from "../../lib/snapGuides";
 
 /**
  * Click / tap handlers shared across every per-type renderer. Click reads
@@ -36,4 +37,12 @@ export interface KonvaObjectProps {
   onSelect: (addToSelection: boolean) => void;
   onChange: (changes: ObjectChanges) => void;
   snap: (dots: number) => number;
+  /** Snap-guide hooks used by line endpoint resize. Other shapes route
+   *  through Konva's Transformer (useKonvaTransformer's boundBoxFunc)
+   *  which has its own snap pipeline; lines manage their own endpoint
+   *  drag and use these instead. Optional so per-type renderers without
+   *  custom resize handles can ignore them. */
+  getOthersSnapshot?: () => SnapRect[];
+  labelRect?: SnapRect;
+  setGuides?: (guides: SnapGuide[]) => void;
 }
