@@ -240,6 +240,7 @@ const fr = {
       colorB: 'B — Noir',
       colorW: 'W — Blanc',
       reverse: 'Invert',
+      orientation: 'Orientation',
     },
     serial: {
       content: 'Valeur de départ',

@@ -240,6 +240,7 @@ const et = {
       colorB: 'B — Must',
       colorW: 'W — Valge',
       reverse: 'Invert',
+      orientation: 'Suund',
     },
     serial: {
       content: 'Algväärtus',

@@ -240,6 +240,7 @@ const ko = {
       colorB: 'B — 검정',
       colorW: 'W — 흰색',
       reverse: 'Invert',
+      orientation: '방향',
     },
     serial: {
       content: '시작 값',

@@ -240,6 +240,7 @@ const sv = {
       colorB: 'B — Svart',
       colorW: 'W — Vit',
       reverse: 'Invert',
+      orientation: 'Riktning',
     },
     serial: {
       content: 'Startvärde',

@@ -240,6 +240,7 @@ const fa = {
       colorB: 'B — مشکی',
       colorW: 'W — سفید',
       reverse: 'Invert',
+      orientation: 'جهت',
     },
     serial: {
       content: 'مقدار شروع',

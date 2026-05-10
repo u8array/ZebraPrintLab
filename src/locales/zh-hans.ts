@@ -240,6 +240,7 @@ const zhHans = {
       colorB: 'B — 黑色',
       colorW: 'W — 白色',
       reverse: 'Invert',
+      orientation: '方向',
     },
     serial: {
       content: '起始值',

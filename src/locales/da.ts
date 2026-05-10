@@ -240,6 +240,7 @@ const da = {
       colorB: 'B — Sort',
       colorW: 'W — Hvid',
       reverse: 'Invert',
+      orientation: 'Retning',
     },
     serial: {
       content: 'Startværdi',

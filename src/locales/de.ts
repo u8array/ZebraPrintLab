@@ -261,6 +261,7 @@ const de = {
       colorB: 'B — Schwarz',
       colorW: 'W — Weiß',
       reverse: 'Invertieren',
+      orientation: 'Ausrichtung',
     },
     serial: {
       content: 'Startwert',

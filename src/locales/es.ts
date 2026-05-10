@@ -240,6 +240,7 @@ const es = {
       colorB: 'B — Negro',
       colorW: 'W — Blanco',
       reverse: 'Invert',
+      orientation: 'Orientación',
     },
     serial: {
       content: 'Valor inicial',

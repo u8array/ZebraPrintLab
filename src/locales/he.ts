@@ -240,6 +240,7 @@ const he = {
       colorB: 'B — שחור',
       colorW: 'W — לבן',
       reverse: 'Invert',
+      orientation: 'כיוון',
     },
     serial: {
       content: 'ערך התחלתי',

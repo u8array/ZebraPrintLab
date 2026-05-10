@@ -240,6 +240,7 @@ const nl = {
       colorB: 'B — Zwart',
       colorW: 'W — Wit',
       reverse: 'Invert',
+      orientation: 'Oriëntatie',
     },
     serial: {
       content: 'Startwaarde',

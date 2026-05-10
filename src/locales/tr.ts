@@ -240,6 +240,7 @@ const tr = {
       colorB: 'B — Siyah',
       colorW: 'W — Beyaz',
       reverse: 'Invert',
+      orientation: 'Yön',
     },
     serial: {
       content: 'Başlangıç değeri',

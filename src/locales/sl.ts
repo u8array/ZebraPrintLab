@@ -240,6 +240,7 @@ const sl = {
       colorB: 'B — Črna',
       colorW: 'W — Bela',
       reverse: 'Invert',
+      orientation: 'Usmerjenost',
     },
     serial: {
       content: 'Začetna vrednost',

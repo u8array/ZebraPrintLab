@@ -240,6 +240,7 @@ const fi = {
       colorB: 'B — Musta',
       colorW: 'W — Valkoinen',
       reverse: 'Invert',
+      orientation: 'Suunta',
     },
     serial: {
       content: 'Aloitusarvo',

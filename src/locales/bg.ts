@@ -240,6 +240,7 @@ const bg = {
       colorB: 'B — Черен',
       colorW: 'W — Бял',
       reverse: 'Invert',
+      orientation: 'Ориентация',
     },
     serial: {
       content: 'Начална стойност',

@@ -240,6 +240,7 @@ const lv = {
       colorB: 'B — Melna',
       colorW: 'W — Balta',
       reverse: 'Invert',
+      orientation: 'Orientācija',
     },
     serial: {
       content: 'Sākumvērtība',

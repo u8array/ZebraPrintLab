@@ -240,6 +240,7 @@ const hr = {
       colorB: 'B — Crna',
       colorW: 'W — Bijela',
       reverse: 'Invert',
+      orientation: 'Orijentacija',
     },
     serial: {
       content: 'Početna vrijednost',

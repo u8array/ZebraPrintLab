@@ -240,6 +240,7 @@ const lt = {
       colorB: 'B — Juoda',
       colorW: 'W — Balta',
       reverse: 'Invert',
+      orientation: 'Kryptis',
     },
     serial: {
       content: 'Pradinė reikšmė',

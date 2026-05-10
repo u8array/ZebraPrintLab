@@ -240,6 +240,7 @@ const ar = {
       colorB: 'B — أسود',
       colorW: 'W — أبيض',
       reverse: 'Invert',
+      orientation: 'الاتجاه',
     },
     serial: {
       content: 'القيمة الابتدائية',

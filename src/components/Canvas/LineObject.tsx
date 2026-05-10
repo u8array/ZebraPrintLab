@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Circle, Group, Line as KLine } from "react-konva";
 import type { LabelObject } from "../../registry";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
+import { constrainLine, type ConstrainMode } from "../../lib/lineConstrain";
 import type { KonvaObjectProps } from "./konvaObjectProps";
 
 type LineLabelObject = Extract<LabelObject, { type: "line" }>;
@@ -58,6 +59,51 @@ export function LineObject({
   const dispY1 = livePt1?.y ?? y1 + dy;
   const dispX2 = livePt2?.x ?? x2 + dx;
   const dispY2 = livePt2?.y ?? y2 + dy;
+
+  // Shift forces the user-explicit 45°-step constraint; otherwise we use
+  // Figma-style auto-snap (±5° tolerance to the nearest 45° step).
+  const resolveMode = (shift: boolean): ConstrainMode =>
+    shift ? "shift" : "autoSnap";
+
+  // Project the cursor (`cursorPx`) toward the line endpoint that should
+  // stay fixed (`anchorDots`), returning both the constrained line geometry
+  // and the new "moving" endpoint in display pixels. `forStart=true` means
+  // the user is dragging the START handle, so the geometry is computed from
+  // new-start → fixed-end and the new start is `end - projected_delta`.
+  // `forStart=false` is the END-handle case: start stays fixed, the new
+  // end follows the projection from start.
+  function project(
+    cursorXPx: number,
+    cursorYPx: number,
+    anchorXDots: number,
+    anchorYDots: number,
+    forStart: boolean,
+    shift: boolean,
+  ) {
+    const cursorXDots = snap(pxToDots(cursorXPx - offsetX, scale, dpmm));
+    const cursorYDots = snap(pxToDots(cursorYPx - offsetY, scale, dpmm));
+    // dx/dy is always the line direction (start → end), so for a
+    // start-handle drag we flip the input vector.
+    const inputDx = forStart
+      ? anchorXDots - cursorXDots
+      : cursorXDots - anchorXDots;
+    const inputDy = forStart
+      ? anchorYDots - cursorYDots
+      : cursorYDots - anchorYDots;
+    const g = constrainLine(inputDx, inputDy, resolveMode(shift));
+    const movingDotX = forStart ? anchorXDots - g.dx : anchorXDots + g.dx;
+    const movingDotY = forStart ? anchorYDots - g.dy : anchorYDots + g.dy;
+    return {
+      length: g.length,
+      angle: g.angle,
+      movingDotX,
+      movingDotY,
+      movingPx: {
+        x: offsetX + dotsToPx(movingDotX, scale, dpmm),
+        y: offsetY + dotsToPx(movingDotY, scale, dpmm),
+      },
+    };
+  }
 
   return (
     <Group>
@@ -121,44 +167,37 @@ export function LineObject({
             strokeWidth={1.5}
             draggable
             onDragMove={(e) => {
-              const snappedX =
-                offsetX +
-                dotsToPx(
-                  snap(pxToDots(e.target.x() - offsetX, scale, dpmm)),
-                  scale,
-                  dpmm,
-                );
-              const snappedY =
-                offsetY +
-                dotsToPx(
-                  snap(pxToDots(e.target.y() - offsetY, scale, dpmm)),
-                  scale,
-                  dpmm,
-                );
-              e.target.position({ x: snappedX, y: snappedY });
-              setLivePt1({ x: snappedX, y: snappedY });
-            }}
-            onDragEnd={(e) => {
-              const snapped = livePt1 ?? { x: e.target.x(), y: e.target.y() };
-              e.target.position({ x: x1 + dx, y: y1 + dy });
-              setLivePt1(null);
-              const newStartDotX = pxToDots(snapped.x - offsetX, scale, dpmm);
-              const newStartDotY = pxToDots(snapped.y - offsetY, scale, dpmm);
               const endDotX = pxToDots(x2 - offsetX, scale, dpmm);
               const endDotY = pxToDots(y2 - offsetY, scale, dpmm);
-              const dxDots = endDotX - newStartDotX;
-              const dyDots = endDotY - newStartDotY;
-              const newLen = Math.sqrt(dxDots * dxDots + dyDots * dyDots);
-              const newAngle = Math.round(
-                (Math.atan2(dyDots, dxDots) * 180) / Math.PI,
+              const r = project(
+                e.target.x(),
+                e.target.y(),
+                endDotX,
+                endDotY,
+                true,
+                e.evt.shiftKey,
+              );
+              e.target.position(r.movingPx);
+              setLivePt1(r.movingPx);
+            }}
+            onDragEnd={(e) => {
+              const cursor = livePt1 ?? { x: e.target.x(), y: e.target.y() };
+              e.target.position({ x: x1 + dx, y: y1 + dy });
+              setLivePt1(null);
+              const endDotX = pxToDots(x2 - offsetX, scale, dpmm);
+              const endDotY = pxToDots(y2 - offsetY, scale, dpmm);
+              const r = project(
+                cursor.x,
+                cursor.y,
+                endDotX,
+                endDotY,
+                true,
+                e.evt.shiftKey,
               );
               onChange({
-                x: newStartDotX,
-                y: newStartDotY,
-                props: {
-                  length: Math.max(1, Math.round(newLen)),
-                  angle: newAngle,
-                },
+                x: r.movingDotX,
+                y: r.movingDotY,
+                props: { length: r.length, angle: r.angle },
               });
             }}
           />
@@ -172,39 +211,30 @@ export function LineObject({
             strokeWidth={1.5}
             draggable
             onDragMove={(e) => {
-              const snappedX =
-                offsetX +
-                dotsToPx(
-                  snap(pxToDots(e.target.x() - offsetX, scale, dpmm)),
-                  scale,
-                  dpmm,
-                );
-              const snappedY =
-                offsetY +
-                dotsToPx(
-                  snap(pxToDots(e.target.y() - offsetY, scale, dpmm)),
-                  scale,
-                  dpmm,
-                );
-              e.target.position({ x: snappedX, y: snappedY });
-              setLivePt2({ x: snappedX, y: snappedY });
+              const r = project(
+                e.target.x(),
+                e.target.y(),
+                obj.x,
+                obj.y,
+                false,
+                e.evt.shiftKey,
+              );
+              e.target.position(r.movingPx);
+              setLivePt2(r.movingPx);
             }}
             onDragEnd={(e) => {
-              const snapped = livePt2 ?? { x: e.target.x(), y: e.target.y() };
+              const cursor = livePt2 ?? { x: e.target.x(), y: e.target.y() };
               e.target.position({ x: x2 + dx, y: y2 + dy });
               setLivePt2(null);
-              const dxDots = pxToDots(snapped.x - offsetX, scale, dpmm) - obj.x;
-              const dyDots = pxToDots(snapped.y - offsetY, scale, dpmm) - obj.y;
-              const newLen = Math.sqrt(dxDots * dxDots + dyDots * dyDots);
-              const newAngle = Math.round(
-                (Math.atan2(dyDots, dxDots) * 180) / Math.PI,
+              const r = project(
+                cursor.x,
+                cursor.y,
+                obj.x,
+                obj.y,
+                false,
+                e.evt.shiftKey,
               );
-              onChange({
-                props: {
-                  length: Math.max(1, Math.round(newLen)),
-                  angle: newAngle,
-                },
-              });
+              onChange({ props: { length: r.length, angle: r.angle } });
             }}
           />
         </>

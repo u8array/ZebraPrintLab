@@ -240,6 +240,7 @@ const ja = {
       colorB: 'B — 黒',
       colorW: 'W — 白',
       reverse: 'Invert',
+      orientation: '方向',
     },
     serial: {
       content: '開始値',

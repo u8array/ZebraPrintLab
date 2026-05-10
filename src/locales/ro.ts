@@ -240,6 +240,7 @@ const ro = {
       colorB: 'B — Negru',
       colorW: 'W — Alb',
       reverse: 'Invert',
+      orientation: 'Orientare',
     },
     serial: {
       content: 'Valoare inițială',

@@ -261,6 +261,7 @@ const en = {
       colorB: 'B — Black',
       colorW: 'W — White',
       reverse: 'Invert',
+      orientation: 'Orientation',
     },
     serial: {
       content: 'Start value',

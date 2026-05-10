@@ -240,6 +240,7 @@ const cs = {
       colorB: 'B — Černá',
       colorW: 'W — Bílá',
       reverse: 'Invert',
+      orientation: 'Orientace',
     },
     serial: {
       content: 'Počáteční hodnota',

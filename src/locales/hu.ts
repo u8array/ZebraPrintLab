@@ -240,6 +240,7 @@ const hu = {
       colorB: 'B — Fekete',
       colorW: 'W — Fehér',
       reverse: 'Invert',
+      orientation: 'Tájolás',
     },
     serial: {
       content: 'Kezdőérték',

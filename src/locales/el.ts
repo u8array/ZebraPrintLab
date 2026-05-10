@@ -240,6 +240,7 @@ const el = {
       colorB: 'B — Μαύρο',
       colorW: 'W — Λευκό',
       reverse: 'Invert',
+      orientation: 'Προσανατολισμός',
     },
     serial: {
       content: 'Αρχική τιμή',
