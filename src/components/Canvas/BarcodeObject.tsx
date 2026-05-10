@@ -50,6 +50,17 @@ export function BarcodeObject({
     }
   }, []);
 
+  // Multi-text HRI variants (EAN/UPC digits) are wrapped in a Group whose
+  // getClientRect is overridden to zero, so the parent barcode Group's
+  // bbox collapses to the bar image only. Same intent as setTextRef but
+  // applied at the group level: avoids threading the ref through 10+
+  // individual Text components.
+  const excludeGroupFromBbox = useCallback((node: Konva.Group | null) => {
+    if (node) {
+      node.getClientRect = () => ({ x: 0, y: 0, width: 0, height: 0 });
+    }
+  }, []);
+
   const opts = buildBwipOptions(obj, scale, dpmm);
   let barcodeCanvas: HTMLCanvasElement | null = null;
   let errorMsg: string | null = null;
@@ -435,7 +446,7 @@ export function BarcodeObject({
             strokeWidth={isSelected ? 2 : 0}
             strokeScaleEnabled={false}
           />
-          {textNodes}
+          {textNodes.length > 0 && <Group ref={excludeGroupFromBbox}>{textNodes}</Group>}
         </Group>
       );
     }
@@ -515,19 +526,11 @@ export function BarcodeObject({
           onTransform={handleTransform}
           onTransformEnd={handleTransformEnd}
         >
-          {/* Invisible rect spanning the full ZPL footprint so the Group's
-              getClientRect picks up the text-zone reservation. The HRI Text
-              node has getSelfRect=0 (excluded from bbox to keep resize
-              anchored at the bars), so without this rect the bbox would
-              shrink to barH only. */}
-          <Rect
-            x={0}
-            y={0}
-            width={Math.max(w, 1)}
-            height={Math.max(h, 1)}
-            fill="transparent"
-            listening={false}
-          />
+          {/* No invisible footprint rect: bbox shrinks to the bars (HRI
+              Text node has getSelfRect=0 already). The firmware text-zone
+              reservation stays implicit — it only matters for print
+              output, not for canvas selection / smart-align, where the
+              user expects the visual focus to sit on the bars. */}
           <KImage
             x={btX}
             y={btY}
@@ -685,15 +688,6 @@ export function BarcodeObject({
           onDragMove={(e) => e.target.position(snapPos(e.target.x(), e.target.y()))}
           onDragEnd={handleDragEnd}
         >
-          {/* Full-bbox invisible rect — same role as in the upright/showText
-              branch: the rotated HRI Text overlay sits outside the bars and
-              its position varies per rotation, so the Group's auto-bbox
-              would not necessarily span the full ZPL footprint. */}
-          <Rect
-            x={0} y={0}
-            width={Math.max(w, 1)} height={Math.max(h, 1)}
-            fill="transparent" listening={false}
-          />
           <KImage x={btX} y={btY} image={barcodeCanvas} crop={bitmapCrop}
             width={bw} height={bh}
             imageSmoothingEnabled={false}
@@ -701,7 +695,9 @@ export function BarcodeObject({
             strokeWidth={isSelected ? 2 : 0}
             strokeScaleEnabled={false}
           />
-          {textElements}
+          {textElements && (
+            <Group ref={excludeGroupFromBbox}>{textElements}</Group>
+          )}
         </Group>
       );
     }
@@ -721,14 +717,6 @@ export function BarcodeObject({
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       >
-        <Rect
-          x={0}
-          y={0}
-          width={Math.max(w, 1)}
-          height={Math.max(h, 1)}
-          fill="transparent"
-          listening={false}
-        />
         <KImage
           x={btX}
           y={btY}

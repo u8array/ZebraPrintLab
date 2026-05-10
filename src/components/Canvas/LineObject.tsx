@@ -5,7 +5,7 @@ import type { LabelObject } from "../../registry";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { constrainLine, type ConstrainMode } from "../../lib/lineConstrain";
 import { useColorScheme } from "../../lib/useColorScheme";
-import { computeSnap, type SnapRect } from "../../lib/snapGuides";
+import { computePointSnap, type SnapRect } from "../../lib/snapGuides";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 
 /** Endpoint-handle visuals — small white square with a thin selection
@@ -162,11 +162,10 @@ export function LineObject({
     }
     const transform = parent.getAbsoluteTransform();
     const stagePx = transform.point(localPx);
-    const result = computeSnap(
-      { id: obj.id, x: stagePx.x, y: stagePx.y, width: 0, height: 0 },
+    const result = computePointSnap(
+      stagePx,
       othersSnapshotRef.current,
       undefined,
-      labelRect,
       labelRect,
     );
     setGuides(result.guides);

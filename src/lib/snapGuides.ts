@@ -2,6 +2,81 @@ export const SNAP_THRESHOLD_PX = 6;
 /** Extra px the alignment guide extends beyond the dragged + matched objects. */
 const GUIDE_PADDING_PX = 8;
 
+/**
+ * Edge-only point snap used for line endpoint resize. Unlike computeSnap,
+ * which treats the drag as a sized rect and considers other shapes'
+ * centres as snap targets (sensible for whole-object alignment, weird
+ * for endpoint alignment — picking the middle of a neighbour line as a
+ * snap target produces the "snaps to 50%" artefact users reported).
+ * Considers only edges of others + the label rect.
+ */
+export function computePointSnap(
+  point: { x: number; y: number },
+  others: SnapRect[],
+  threshold = SNAP_THRESHOLD_PX,
+  labelRect?: SnapRect,
+): { x: number; y: number; guides: SnapGuide[] } {
+  const snapAxisPt = (
+    drag: number,
+    dragPerp: number,
+    axis: 'x' | 'y',
+  ): { value: number; guides: SnapGuide[] } => {
+    let bestDelta = Infinity;
+    let bestValue = drag;
+    let bestGuides: SnapGuide[] = [];
+    const consider = (target: number, perpFrom: number, perpTo: number) => {
+      const d = Math.abs(target - drag);
+      if (d > threshold || d > bestDelta) return;
+      const guideOrientation: 'H' | 'V' = axis === 'x' ? 'V' : 'H';
+      const guide: SnapGuide = {
+        orientation: guideOrientation,
+        type: 'align',
+        pos: target,
+        from: Math.min(dragPerp, perpFrom) - GUIDE_PADDING_PX,
+        to: Math.max(dragPerp, perpTo) + GUIDE_PADDING_PX,
+      };
+      if (d < bestDelta) {
+        // Strictly closer — replace the best candidate.
+        bestDelta = d;
+        bestValue = target;
+        bestGuides = [guide];
+      } else if (target === bestValue) {
+        // Same edge value at the same distance — accumulate so each
+        // contributing object draws its own guide line.
+        bestGuides.push(guide);
+      }
+    };
+    for (const o of others) {
+      const startEdge = axis === 'x' ? o.x : o.y;
+      const endEdge = startEdge + (axis === 'x' ? o.width : o.height);
+      const perpStart = axis === 'x' ? o.y : o.x;
+      const perpEnd = perpStart + (axis === 'x' ? o.height : o.width);
+      consider(startEdge, perpStart, perpEnd);
+      consider(endEdge, perpStart, perpEnd);
+    }
+    if (labelRect) {
+      // Label edges *and* center are valid endpoint snap targets. Centre
+      // is intentionally only allowed for the label (not for other
+      // objects) — endpoint alignment to a neighbour's midpoint produced
+      // the "50 %" artefact this helper was created to avoid.
+      const startEdge = axis === 'x' ? labelRect.x : labelRect.y;
+      const size = axis === 'x' ? labelRect.width : labelRect.height;
+      const endEdge = startEdge + size;
+      const center = startEdge + size / 2;
+      const perpStart = axis === 'x' ? labelRect.y : labelRect.x;
+      const perpEnd = perpStart + (axis === 'x' ? labelRect.height : labelRect.width);
+      consider(startEdge, perpStart, perpEnd);
+      consider(center, perpStart, perpEnd);
+      consider(endEdge, perpStart, perpEnd);
+    }
+    return { value: bestValue, guides: bestGuides };
+  };
+
+  const xRes = snapAxisPt(point.x, point.y, 'x');
+  const yRes = snapAxisPt(point.y, point.x, 'y');
+  return { x: xRes.value, y: yRes.value, guides: [...xRes.guides, ...yRes.guides] };
+}
+
 export interface SnapRect {
   id: string;
   x: number;
