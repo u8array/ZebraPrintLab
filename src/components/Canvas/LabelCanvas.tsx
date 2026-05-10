@@ -394,6 +394,21 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     : null;
   const stepRotation = singleSelected ? getStepRotation(singleSelected) : null;
   const [rotationBtnPos, setRotationBtnPos] = useState<{ x: number; y: number } | null>(null);
+  // Hide the rotate affordance during an active drag / transform — the
+  // button's position is React-state-driven and would otherwise lag behind
+  // the live Konva node until the interaction ends.
+  const [isInteracting, setIsInteracting] = useState(false);
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const start = () => setIsInteracting(true);
+    const end = () => setIsInteracting(false);
+    stage.on("dragstart.rotbtn transformstart.rotbtn", start);
+    stage.on("dragend.rotbtn transformend.rotbtn", end);
+    return () => {
+      stage.off("dragstart.rotbtn transformstart.rotbtn dragend.rotbtn transformend.rotbtn");
+    };
+  }, []);
   useLayoutEffect(() => {
     if (!singleSelected || !stepRotation) {
       setRotationBtnPos(null);
@@ -804,7 +819,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               ignoreStroke
             />
 
-            {rotationBtnPos && (
+            {rotationBtnPos && !isInteracting && (
               <RotationButton
                 x={rotationBtnPos.x}
                 y={rotationBtnPos.y}

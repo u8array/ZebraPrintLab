@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Group, Circle, Path } from "react-konva";
 import type Konva from "konva";
 
@@ -32,17 +32,32 @@ const ICON_OFFSET = 12; // 24x24 viewBox → centre at (12, 12)
 
 export function RotationButton({ x, y, color, onClick }: Props) {
   const [hover, setHover] = useState(false);
+  // Track the stage we set a cursor on so unmount-while-hovering can still
+  // clean up (onMouseLeave never fires in that case — e.g. user hits Delete
+  // or Esc while the cursor is over the button).
+  const cursorStageRef = useRef<Konva.Stage | null>(null);
 
   const cursorIn = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const stage = e.target.getStage();
-    if (stage) stage.container().style.cursor = "pointer";
+    if (stage) {
+      stage.container().style.cursor = "pointer";
+      cursorStageRef.current = stage;
+    }
     setHover(true);
   };
   const cursorOut = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const stage = e.target.getStage();
     if (stage) stage.container().style.cursor = "";
+    cursorStageRef.current = null;
     setHover(false);
   };
+
+  useEffect(() => {
+    return () => {
+      const stage = cursorStageRef.current;
+      if (stage) stage.container().style.cursor = "";
+    };
+  }, []);
 
   return (
     <Group
