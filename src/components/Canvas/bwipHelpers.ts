@@ -252,8 +252,9 @@ export function toCode128BRaw(text: string): string | null {
  *   >6 → FNC2
  *   >7 → FNC3
  *   >8 → FNC4
- *   >9 → invoke Code C with FNC1 (bwip auto-mode switches to C for digit runs,
- *        so FNC1 alone is a sufficient translation)
+ *   >9 → invoke Code C; inserts FNC1 only when it is the first character
+ *        of the field (per ZPL II manual). Mid-string `>9` is just a
+ *        subset switch which bwip auto-mode handles for digit runs.
  *   >: → switch to Subset B (dropped; bwip auto-mode chooses the subset)
  *   >; → switch to Subset A (dropped; bwip auto-mode chooses the subset)
  *
@@ -273,11 +274,11 @@ export function parseZplCode128Escapes(text: string): string | null {
       const next = text[i + 1];
       switch (next) {
         case "0": out += ">"; i++; continue;
-        case "5":
-        case "9": out += "^FNC1"; i++; continue;
+        case "5": out += "^FNC1"; i++; continue;
         case "6": out += "^FNC2"; i++; continue;
         case "7": out += "^FNC3"; i++; continue;
         case "8": out += "^FNC4"; i++; continue;
+        case "9": if (i === 0) out += "^FNC1"; i++; continue;
         case ":":
         case ";": i++; continue; // subset switch — bwip auto-mode handles it
       }

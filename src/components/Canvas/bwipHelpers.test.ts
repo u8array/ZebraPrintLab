@@ -228,8 +228,11 @@ describe("parseZplCode128Escapes", () => {
     expect(parseZplCode128Escapes("AB>5CD")).toBe("AB^FNC1CD");
   });
 
-  it("translates >9 (Code C + FNC1) to FNC1 — bwip auto-mode handles the C switch", () => {
+  it("translates >9 to FNC1 only at the start of the field (per ZPL spec)", () => {
     expect(parseZplCode128Escapes(">91234")).toBe("^FNC11234");
+    // Mid-string >9 is just a Code-C invocation; bwip auto-mode picks C
+    // for the digit run, so we drop the escape entirely.
+    expect(parseZplCode128Escapes("A>9123")).toBe("A123");
   });
 
   it("translates >6/>7/>8 to FNC2/FNC3/FNC4", () => {
@@ -248,6 +251,12 @@ describe("parseZplCode128Escapes", () => {
 
   it("doubles literal `^` so bwip parsefnc does not treat it as an escape", () => {
     expect(parseZplCode128Escapes("A^B>5")).toBe("A^^B^FNC1");
+  });
+
+  it("leaves trailing `>` and unknown `>X` literal — matches firmware behaviour", () => {
+    expect(parseZplCode128Escapes("abc>")).toBeNull();
+    // `>z` is not a defined ZPL escape; Zebra treats it as literal `>z`.
+    expect(parseZplCode128Escapes("a>z>5")).toBe("a>z^FNC1");
   });
 
   it("handles the reported case STRSTR>5… with auto Code-C compaction", () => {
