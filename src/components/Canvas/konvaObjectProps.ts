@@ -41,8 +41,10 @@ export interface KonvaObjectProps {
    *  through Konva's Transformer (useKonvaTransformer's boundBoxFunc)
    *  which has its own snap pipeline; lines manage their own endpoint
    *  drag and use these instead. Optional so per-type renderers without
-   *  custom resize handles can ignore them. */
-  getOthersSnapshot?: () => SnapRect[];
+   *  custom resize handles can ignore them. `getOthersSnapshot` takes
+   *  the consumer's id so a single stable function can serve every
+   *  renderer without per-object closure allocations. */
+  getOthersSnapshot?: (excludeId: string) => SnapRect[];
   labelRect?: SnapRect;
   setGuides?: (guides: SnapGuide[]) => void;
 }

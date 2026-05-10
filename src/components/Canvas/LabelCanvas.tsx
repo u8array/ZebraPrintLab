@@ -250,6 +250,24 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const snap = (dots: number) =>
     snapEnabled ? Math.round(dots / snapUnit) * snapUnit : dots;
 
+  // Stable across renders — every consumer that needs a snap snapshot
+  // calls this with its own id. Defined once (vs. per-object in the
+  // KonvaObject map) so a 60Hz dragmove that re-renders LabelCanvas
+  // doesn't churn N closures per frame.
+  const getOthersSnapshot = useCallback((excludeId: string) => {
+    const stage = stageRef.current;
+    if (!stage) return [];
+    const rects = [];
+    for (const o of getCurrentObjects()) {
+      if (o.id === excludeId) continue;
+      const n = stage.findOne<Konva.Node>(`#${o.id}`);
+      if (!n) continue;
+      const r = n.getClientRect({ relativeTo: stage });
+      rects.push({ id: o.id, x: r.x, y: r.y, width: r.width, height: r.height });
+    }
+    return rects;
+  }, []);
+
   const {
     lasso: lassoRect,
     consumeDidLasso,
@@ -673,23 +691,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                   }
                   onChange={(changes) => handleObjectChange(obj.id, changes)}
                   snap={snap}
-                  getOthersSnapshot={
-                    snapEnabled
-                      ? undefined
-                      : () => {
-                          const stage = stageRef.current;
-                          if (!stage) return [];
-                          const rects = [];
-                          for (const o of getCurrentObjects()) {
-                            if (o.id === obj.id) continue;
-                            const n = stage.findOne<Konva.Node>(`#${o.id}`);
-                            if (!n) continue;
-                            const r = n.getClientRect({ relativeTo: stage });
-                            rects.push({ id: o.id, x: r.x, y: r.y, width: r.width, height: r.height });
-                          }
-                          return rects;
-                        }
-                  }
+                  getOthersSnapshot={snapEnabled ? undefined : getOthersSnapshot}
                   labelRect={transformerSnapLabelRect}
                   setGuides={setGuides}
                 />

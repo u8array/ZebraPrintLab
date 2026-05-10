@@ -108,7 +108,7 @@ export function LineObject({
       return localPx;
     }
     if (othersSnapshotRef.current === null) {
-      othersSnapshotRef.current = getOthersSnapshot();
+      othersSnapshotRef.current = getOthersSnapshot(obj.id);
     }
     const transform = parent.getAbsoluteTransform();
     const stagePx = transform.point(localPx);
