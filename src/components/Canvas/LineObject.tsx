@@ -14,6 +14,56 @@ import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 const HANDLE_VISIBLE_SIZE = 7;
 const HANDLE_HIT_SIZE = 14;
 
+/**
+ * Selection outline for a line — two parallel selection-coloured strokes
+ * offset perpendicular to the body. Drawing alongside (not on top) keeps
+ * the body's difference-blend intact for reverse (^LRY) lines and matches
+ * the Illustrator-style stroke selection affordance. Returns null for
+ * zero-length lines (degenerate input).
+ *
+ * Offset breakdown for a 1 px visual gap between body and selection edges:
+ *   bodyStrokeWidth / 2 — half of the body (centre → body edge)
+ *   0.5                 — half of the 1 px selection stroke
+ *                         (centre → selection's body-side edge)
+ *   1                   — actual gap requested between the two adjacent
+ *                         edges
+ */
+function LineSelectionOutline({
+  x1, y1, x2, y2,
+  bodyStrokeWidth,
+  color,
+}: {
+  x1: number; y1: number; x2: number; y2: number;
+  bodyStrokeWidth: number;
+  color: string;
+}) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len === 0) return null;
+  const off = bodyStrokeWidth / 2 + 1.5;
+  const px = (-dy / len) * off;
+  const py = (dx / len) * off;
+  return (
+    <>
+      <KLine
+        points={[x1 + px, y1 + py, x2 + px, y2 + py]}
+        stroke={color}
+        strokeWidth={1}
+        lineCap="butt"
+        listening={false}
+      />
+      <KLine
+        points={[x1 - px, y1 - py, x2 - px, y2 - py]}
+        stroke={color}
+        strokeWidth={1}
+        lineCap="butt"
+        listening={false}
+      />
+    </>
+  );
+}
+
 type LineLabelObject = Extract<LabelObject, { type: "line" }>;
 type Props = Omit<KonvaObjectProps, "obj"> & { obj: LineLabelObject };
 
@@ -216,36 +266,16 @@ export function LineObject({
         listening={false}
         globalCompositeOperation={isReverse ? "difference" : "source-over"}
       />
-      {isSelected && (() => {
-        // Outline the line with two parallel selection-coloured strokes
-        // offset perpendicular to the body. Drawing alongside (not on
-        // top) keeps the body's difference-blend intact for reverse
-        // lines and matches the Illustrator-style stroke selection
-        // affordance. Guarded against zero-length (degenerate) lines.
-        const len = Math.hypot(dispX2 - dispX1, dispY2 - dispY1);
-        if (len === 0) return null;
-        const off = lineStrokeWidth / 2 + 1;
-        const px = (-(dispY2 - dispY1) / len) * off;
-        const py = ((dispX2 - dispX1) / len) * off;
-        return (
-          <>
-            <KLine
-              points={[dispX1 + px, dispY1 + py, dispX2 + px, dispY2 + py]}
-              stroke={colors.selection}
-              strokeWidth={1}
-              lineCap="butt"
-              listening={false}
-            />
-            <KLine
-              points={[dispX1 - px, dispY1 - py, dispX2 - px, dispY2 - py]}
-              stroke={colors.selection}
-              strokeWidth={1}
-              lineCap="butt"
-              listening={false}
-            />
-          </>
-        );
-      })()}
+      {isSelected && (
+        <LineSelectionOutline
+          x1={dispX1}
+          y1={dispY1}
+          x2={dispX2}
+          y2={dispY2}
+          bodyStrokeWidth={lineStrokeWidth}
+          color={colors.selection}
+        />
+      )}
       {/* Wide transparent hit area — handles click-to-select and whole-line drag.
           id is here (not on the Group) so the Stage snap handler can find this node
           via e.target.id() and apply object-snap correctly. */}
