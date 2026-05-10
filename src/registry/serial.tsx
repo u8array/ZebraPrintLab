@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
+import { fieldPos, fdField } from './zplHelpers';
 import { filterContent, type ContentSpec } from './contentSpec';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
@@ -34,12 +34,17 @@ export const serial: ObjectTypeDefinition<SerialProps> = {
   toZPL: (obj) => {
     const p = obj.props;
     const field = `${fieldPos(obj)}^A0${p.rotation},${p.fontHeight},${p.fontWidth}`;
+    // Re-apply the input charset filter at emit time so ZPL-imported content
+    // (which bypasses the in-app filter) can't smuggle ^/~ into the ^SN start
+    // parameter or comma-split the parameter list. fdField additionally
+    // hex-escapes any survivors in the FD payload — belt and suspenders.
+    const safe = filterContent(p.content, serialSpec);
     if (p.zplMode === 'SF') {
       // ^SF: increment, pad-digits (derived from content length), change-per-label
-      return `${field}^SF${p.increment},${p.content.length},Y^FD${p.content}^FS`;
+      return `${field}^SF${p.increment},${safe.length},Y${fdField(safe)}`;
     }
     // ^SN: start, increment, change-per-label
-    return `${field}^SN${p.content},${p.increment},Y^FD${p.content}^FS`;
+    return `${field}^SN${safe},${p.increment},Y${fdField(safe)}`;
   },
 
   PropertiesPanel: ({ obj, onChange }) => {

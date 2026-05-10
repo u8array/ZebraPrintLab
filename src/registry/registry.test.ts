@@ -384,6 +384,26 @@ describe('serial.toZPL', () => {
     expect(zpl).toContain('^SF1,3,Y');
     expect(zpl).toContain('^FD001^FS');
   });
+
+  it('strips ^/~ and other non-charset chars from ZPL-imported content', () => {
+    // contentSpec restricts to alphanumerics at input; toZPL re-applies the
+    // filter so ZPL-imported designs can't smuggle ^ (command), ~ (format),
+    // or , (parameter separator) into the ^SN start parameter or FD payload.
+    const zpl = def.toZPL(makeObj('serial', {
+      content: 'a^b,c', increment: 1, fontHeight: 30, fontWidth: 0, rotation: 'N', zplMode: 'SN',
+    }));
+    expect(zpl).toContain('^SNabc,1,Y^FDabc^FS');
+  });
+
+  it('uses sanitized length for ^SF pad-digits', () => {
+    // Pad-digits must match the actually-emitted FD payload, not the raw
+    // (pre-sanitisation) content length.
+    const zpl = def.toZPL(makeObj('serial', {
+      content: 'ab^cd', increment: 1, fontHeight: 30, fontWidth: 0, rotation: 'N', zplMode: 'SF',
+    }));
+    // 'ab^cd' → 'abcd' (4 chars after stripping ^)
+    expect(zpl).toContain('^SF1,4,Y^FDabcd^FS');
+  });
 });
 
 // ── registry completeness ─────────────────────────────────────────────────────

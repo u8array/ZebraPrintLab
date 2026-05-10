@@ -5,6 +5,8 @@
  * so Konva (canvas) can render text using it.
  */
 
+import { hydrateLocalStoragePrefix, safeLocalStorageSet } from "./localStorageBucket";
+
 export interface CachedFont {
   id: string;
   /** Original printer filename e.g. "ARIAL.TTF" (uppercased for lookup) */
@@ -16,6 +18,14 @@ export interface CachedFont {
 }
 
 const LS_PREFIX = 'zpl-font-';
+
+/** Hard cap on a single font file. Browser MIME types for fonts are
+ *  inconsistent (TTF often arrives as `application/octet-stream` or empty);
+ *  we accept by extension and rely on this byte cap to bound damage. */
+export const MAX_FONT_BYTES = 4 * 1024 * 1024;
+
+const FONT_EXT_RE = /\.(ttf|otf)$/i;
+
 const cache = new Map<string, CachedFont>();
 const listeners = new Set<() => void>();
 
@@ -44,19 +54,11 @@ async function registerFontFace(entry: CachedFont): Promise<void> {
   }
 }
 
-// Hydrate from localStorage on module load
-for (let i = 0; i < localStorage.length; i++) {
-  const key = localStorage.key(i);
-  if (!key?.startsWith(LS_PREFIX)) continue;
-  try {
-    const entry = JSON.parse(localStorage.getItem(key) ?? 'null') as CachedFont;
-    cache.set(entry.name, entry);
-    // Re-register fonts asynchronously — canvas renders after React mounts
-    void registerFontFace(entry);
-  } catch {
-    // ignore corrupt entries
-  }
-}
+hydrateLocalStoragePrefix<CachedFont>(LS_PREFIX, (entry) => {
+  cache.set(entry.name, entry);
+  // Re-register asynchronously — canvas renders after React mounts.
+  void registerFontFace(entry);
+});
 
 /** Look up a cached font by printer filename (case-insensitive). */
 export function getFont(printerName: string): CachedFont | undefined {
@@ -72,8 +74,15 @@ export function getAllFonts(): CachedFont[] {
   return [...cache.values()];
 }
 
-/** Load a TTF/OTF File into the cache under the given printer font name. */
+/** Load a TTF/OTF File into the cache under the given printer font name.
+ *  Rejects on non-TTF/OTF extension or oversized files. */
 export async function loadFontFile(file: File, printerName: string): Promise<CachedFont> {
+  if (!FONT_EXT_RE.test(file.name)) {
+    throw new Error(`Not a TTF/OTF font: ${file.name}`);
+  }
+  if (file.size > MAX_FONT_BYTES) {
+    throw new Error(`Font too large: ${file.name} (${file.size} bytes, max ${MAX_FONT_BYTES})`);
+  }
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async () => {
@@ -82,11 +91,7 @@ export async function loadFontFile(file: File, printerName: string): Promise<Cac
       const fontFamily = printerNameToFamily(name);
       const entry: CachedFont = { id: crypto.randomUUID(), name, dataUrl, fontFamily };
       cache.set(name, entry);
-      try {
-        localStorage.setItem(LS_PREFIX + name, JSON.stringify(entry));
-      } catch {
-        // localStorage full — font stays in memory only
-      }
+      safeLocalStorageSet(LS_PREFIX + name, JSON.stringify(entry));
       await registerFontFace(entry);
       notify();
       resolve(entry);

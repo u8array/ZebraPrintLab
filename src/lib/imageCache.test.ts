@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getImage, getAllImages, putImage, removeImage } from './imageCache';
+import {
+  getImage,
+  getAllImages,
+  putImage,
+  removeImage,
+  loadImageFile,
+  MAX_IMAGE_BYTES,
+} from './imageCache';
 import type { CachedImage } from './imageCache';
 
 function makeFakeImage(id: string): CachedImage {
@@ -65,5 +72,20 @@ describe('imageCache', () => {
     expect(img.name).toBe('overwrite.png');
     expect(img.width).toBe(50);
     expect(getAllImages()).toHaveLength(1);
+  });
+
+  it('loadImageFile rejects non-image MIME types', async () => {
+    const file = new File(['hello'], 'bad.txt', { type: 'text/plain' });
+    await expect(loadImageFile(file)).rejects.toThrow(/Not an image/);
+  });
+
+  it('loadImageFile rejects files above the byte cap', async () => {
+    // File constructor accepts size from chunks; pad with a buffer larger than cap.
+    const oversized = new File(
+      [new Uint8Array(MAX_IMAGE_BYTES + 1)],
+      'big.png',
+      { type: 'image/png' },
+    );
+    await expect(loadImageFile(oversized)).rejects.toThrow(/too large/);
   });
 });

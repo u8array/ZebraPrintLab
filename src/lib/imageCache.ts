@@ -4,6 +4,8 @@
  * so they survive page reloads.
  */
 
+import { hydrateLocalStoragePrefix, safeLocalStorageSet } from "./localStorageBucket";
+
 export interface CachedImage {
   id: string;
   name: string;
@@ -17,19 +19,17 @@ export interface CachedImage {
 
 const LS_PREFIX = 'zpl-img-';
 
+/** Hard cap on a single image's source bytes. localStorage quota across all
+ *  origins is ~5 MiB; capping per-image at 2 MiB stops one oversized drop
+ *  from filling the entire cache. The UI's `accept="image/*"` is a hint
+ *  only — this is the authoritative limit. */
+export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
 const cache = new Map<string, CachedImage>();
 
-// Hydrate from localStorage on module load
-for (let i = 0; i < localStorage.length; i++) {
-  const key = localStorage.key(i);
-  if (!key?.startsWith(LS_PREFIX)) continue;
-  try {
-    const entry = JSON.parse(localStorage.getItem(key) ?? 'null') as CachedImage;
-    cache.set(entry.id, entry);
-  } catch {
-    // ignore corrupt entries
-  }
-}
+hydrateLocalStoragePrefix<CachedImage>(LS_PREFIX, (entry) => {
+  cache.set(entry.id, entry);
+});
 
 export function getImage(id: string): CachedImage | undefined {
   return cache.get(id);
@@ -41,11 +41,7 @@ export function getAllImages(): CachedImage[] {
 
 export function putImage(img: CachedImage): void {
   cache.set(img.id, img);
-  try {
-    localStorage.setItem(LS_PREFIX + img.id, JSON.stringify(img));
-  } catch {
-    // localStorage full — image stays in memory only
-  }
+  safeLocalStorageSet(LS_PREFIX + img.id, JSON.stringify(img));
 }
 
 export function removeImage(id: string): void {
@@ -53,8 +49,15 @@ export function removeImage(id: string): void {
   localStorage.removeItem(LS_PREFIX + id);
 }
 
-/** Load a File into the cache. Returns the CachedImage entry. */
-export function loadImageFile(file: File): Promise<CachedImage> {
+/** Load a File into the cache. Returns the CachedImage entry. Rejects on
+ *  non-image MIME type, oversized files, or decode failures. */
+export async function loadImageFile(file: File): Promise<CachedImage> {
+  if (!file.type.startsWith('image/')) {
+    throw new Error(`Not an image: ${file.name}`);
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error(`Image too large: ${file.name} (${file.size} bytes, max ${MAX_IMAGE_BYTES})`);
+  }
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
