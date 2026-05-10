@@ -38,6 +38,7 @@ import {
   nextRotation,
   type ViewRotation,
 } from "./rotationGeometry";
+import { useAltClickCycle } from "./hooks/useAltClickCycle";
 
 const PADDING = 40;
 
@@ -122,6 +123,10 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  // Alt+click cycles selection through stacked objects so users can reach
+  // shapes hidden behind a filled (or inverted) form.
+  useAltClickCycle({ containerRef, stageRef, selectObject });
 
   // Delete/Backspace removes all selected objects; ignored when focus is inside an input
   useEffect(() => {
