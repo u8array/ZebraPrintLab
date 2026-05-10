@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isZplRotation, objectRotation, ZPL_ROTATIONS } from "./rotation";
+import { getStepRotation, isZplRotation, nextZplRotation, objectRotation, ZPL_ROTATIONS } from "./rotation";
 
 describe("isZplRotation", () => {
   it("accepts the four ZPL letters", () => {
@@ -27,5 +27,27 @@ describe("objectRotation", () => {
     expect(objectRotation({ rotation: undefined })).toBe("N");
     expect(objectRotation({ rotation: "L" })).toBe("N");
     expect(objectRotation({ rotation: "garbage" })).toBe("N");
+  });
+});
+
+describe("nextZplRotation", () => {
+  it("cycles N → R → I → B → N", () => {
+    expect(nextZplRotation("N")).toBe("R");
+    expect(nextZplRotation("R")).toBe("I");
+    expect(nextZplRotation("I")).toBe("B");
+    expect(nextZplRotation("B")).toBe("N");
+  });
+});
+
+describe("getStepRotation", () => {
+  it("returns the rotation letter for step-rotation objects", () => {
+    expect(getStepRotation({ props: { rotation: "R" } })).toBe("R");
+    expect(getStepRotation({ props: { rotation: "N" } })).toBe("N");
+  });
+
+  it("returns null when the object has no rotation prop or an invalid value", () => {
+    expect(getStepRotation({ props: {} })).toBeNull();
+    expect(getStepRotation({ props: { rotation: "L" } })).toBeNull();
+    expect(getStepRotation({ props: { rotation: 90 } })).toBeNull();
   });
 });

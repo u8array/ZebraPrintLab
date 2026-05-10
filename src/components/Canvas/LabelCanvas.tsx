@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useEffect,
@@ -39,8 +40,17 @@ import {
   type ViewRotation,
 } from "./rotationGeometry";
 import { useAltClickCycle } from "./hooks/useAltClickCycle";
+import { RotationButton } from "./RotationButton";
+import {
+  getStepRotation,
+  nextZplRotation,
+} from "../../registry/rotation";
 
 const PADDING = 40;
+// Quick-rotate button: horizontal gap from the selected node's right edge
+// (stage px), and a small vertical bias so it lines up with the visual top.
+const ROTATE_BUTTON_GAP_PX = 16;
+const ROTATE_BUTTON_TOP_OFFSET_PX = -2;
 
 interface Props {
   unit: Unit;
@@ -372,6 +382,58 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     setGuides,
     viewRotation,
   });
+
+  // Quick 90°-rotation button overlay. Only step-rotation objects (those
+  // with a `rotation: N|R|I|B` prop — text, serial, all barcodes) get the
+  // affordance; box/ellipse/circle/line/image rotate freely via the
+  // Transformer or have no rotation. Positioned at the visual top-right
+  // corner of the selected node, derived from getClientRect so it tracks
+  // the rendered bbox through both object-rotation and viewRotation.
+  const singleSelected = selectedIds.length === 1
+    ? objects.find((o) => o.id === selectedIds[0]) ?? null
+    : null;
+  const stepRotation = singleSelected ? getStepRotation(singleSelected) : null;
+  const [rotationBtnPos, setRotationBtnPos] = useState<{ x: number; y: number } | null>(null);
+  // Hide the rotate affordance during an active drag / transform — the
+  // button's position is React-state-driven and would otherwise lag behind
+  // the live Konva node until the interaction ends.
+  const [isInteracting, setIsInteracting] = useState(false);
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const start = () => setIsInteracting(true);
+    const end = () => setIsInteracting(false);
+    stage.on("dragstart.rotbtn transformstart.rotbtn", start);
+    stage.on("dragend.rotbtn transformend.rotbtn", end);
+    return () => {
+      stage.off("dragstart.rotbtn transformstart.rotbtn dragend.rotbtn transformend.rotbtn");
+    };
+  }, []);
+  useLayoutEffect(() => {
+    if (!singleSelected || !stepRotation) {
+      setRotationBtnPos(null);
+      return;
+    }
+    const stage = stageRef.current;
+    if (!stage) return;
+    const node = stage.findOne(`#${singleSelected.id}`);
+    if (!node) {
+      setRotationBtnPos(null);
+      return;
+    }
+    const rect = node.getClientRect({ relativeTo: stage, skipStroke: true });
+    setRotationBtnPos({
+      x: rect.x + rect.width + ROTATE_BUTTON_GAP_PX,
+      y: rect.y + ROTATE_BUTTON_TOP_OFFSET_PX,
+    });
+  }, [singleSelected, stepRotation, scale, viewRotation]);
+
+  const handleRotateStep = () => {
+    if (!singleSelected || !stepRotation) return;
+    updateObject(singleSelected.id, {
+      props: { rotation: nextZplRotation(stepRotation) },
+    });
+  };
 
   const handleObjectChange = (
     id: string,
@@ -756,6 +818,15 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               // jumps under pxToDots rounding.
               ignoreStroke
             />
+
+            {rotationBtnPos && !isInteracting && (
+              <RotationButton
+                x={rotationBtnPos.x}
+                y={rotationBtnPos.y}
+                color={colors.selection}
+                onClick={handleRotateStep}
+              />
+            )}
           </Layer>
 
           {/* Ruler — topmost layer. Tracks the visually-rotated label edges;
