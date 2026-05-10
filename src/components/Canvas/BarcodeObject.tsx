@@ -446,7 +446,7 @@ export function BarcodeObject({
             strokeWidth={isSelected ? 2 : 0}
             strokeScaleEnabled={false}
           />
-          {textNodes && <Group ref={excludeGroupFromBbox}>{textNodes}</Group>}
+          {textNodes.length > 0 && <Group ref={excludeGroupFromBbox}>{textNodes}</Group>}
         </Group>
       );
     }
@@ -695,7 +695,9 @@ export function BarcodeObject({
             strokeWidth={isSelected ? 2 : 0}
             strokeScaleEnabled={false}
           />
-          {textElements && <Group ref={excludeGroupFromBbox}>{textElements}</Group>}
+          {Array.isArray(textElements) && textElements.length > 0 && (
+            <Group ref={excludeGroupFromBbox}>{textElements}</Group>
+          )}
         </Group>
       );
     }

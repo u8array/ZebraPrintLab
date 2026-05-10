@@ -23,20 +23,28 @@ export function computePointSnap(
   ): { value: number; guides: SnapGuide[] } => {
     let bestDelta = Infinity;
     let bestValue = drag;
-    let bestGuide: SnapGuide | null = null;
+    let bestGuides: SnapGuide[] = [];
     const consider = (target: number, perpFrom: number, perpTo: number) => {
       const d = Math.abs(target - drag);
-      if (d > threshold || d >= bestDelta) return;
-      bestDelta = d;
-      bestValue = target;
+      if (d > threshold || d > bestDelta) return;
       const guideOrientation: 'H' | 'V' = axis === 'x' ? 'V' : 'H';
-      bestGuide = {
+      const guide: SnapGuide = {
         orientation: guideOrientation,
         type: 'align',
         pos: target,
         from: Math.min(dragPerp, perpFrom) - GUIDE_PADDING_PX,
         to: Math.max(dragPerp, perpTo) + GUIDE_PADDING_PX,
       };
+      if (d < bestDelta) {
+        // Strictly closer — replace the best candidate.
+        bestDelta = d;
+        bestValue = target;
+        bestGuides = [guide];
+      } else if (target === bestValue) {
+        // Same edge value at the same distance — accumulate so each
+        // contributing object draws its own guide line.
+        bestGuides.push(guide);
+      }
     };
     for (const o of others) {
       const startEdge = axis === 'x' ? o.x : o.y;
@@ -54,7 +62,7 @@ export function computePointSnap(
       consider(startEdge, perpStart, perpEnd);
       consider(endEdge, perpStart, perpEnd);
     }
-    return { value: bestValue, guides: bestGuide ? [bestGuide] : [] };
+    return { value: bestValue, guides: bestGuides };
   };
 
   const xRes = snapAxisPt(point.x, point.y, 'x');
