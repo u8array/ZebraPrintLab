@@ -318,12 +318,13 @@ export function useKonvaTransformer({
     const renderedXDots = pxToDots(topLeft.x - objectsOffsetX, scale, dpmm);
     const renderedYDots = pxToDots(topLeft.y - labelOffsetY, scale, dpmm);
     // For FT-anchored 1D barcodes, model.y is the bar baseline — needs the
-    // post-resize bar height to convert from the bbox top back. height is
-    // in ZPL dots directly, so scaling it by sy gives the new bar height
-    // before commit rounding (close enough for the position math).
+    // post-resize bar height to convert from the bbox top back. Pipe the
+    // scaled height through the same snap() commitBarcodeWidthHeight-
+    // Transform uses so the baseline math sees the *committed* value and
+    // there's no 1-dot drift between the two pathways.
     const newBarHeightDots =
       obj.positionType === "FT" && BARCODE_1D_TYPES.has(obj.type)
-        ? Math.max(1, Math.round((obj.props as { height: number }).height * sy))
+        ? Math.max(1, snap(Math.round((obj.props as { height: number }).height * sy)))
         : undefined;
     // Invert per-type render offsets (e.g. QR's hardcoded +10 dot Y) so the
     // stored model position matches what BarcodeObject.handleDragEnd produces.
