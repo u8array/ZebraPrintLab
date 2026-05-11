@@ -50,6 +50,26 @@ export function commitHeightTransform<P extends { height: number }>(
   } as Partial<P>;
 }
 
+/**
+ * commitTransform for 1D barcodes that also expose `moduleWidth`. Vertical
+ * drag scales bar height (sy), horizontal drag scales the module width (sx);
+ * the latter is clamped to the ZPL `^BY` range [1, 10]. The boundBoxFunc
+ * snaps the bbox to integer-moduleWidth widths during the drag, so this
+ * commit just records the final integer step.
+ */
+export function commitBarcodeWidthHeightTransform<
+  P extends { height: number; moduleWidth: number },
+>(
+  obj: LabelObjectBase & { props: P },
+  ctx: TransformContext,
+): Partial<P> {
+  const { sx, sy, snap } = ctx;
+  return {
+    height: Math.max(1, snap(Math.round(obj.props.height * sy))),
+    moduleWidth: clamp(1, 10, Math.round(obj.props.moduleWidth * sx)),
+  } as Partial<P>;
+}
+
 interface Stacked2DProps {
   rowHeight: number;
   moduleWidth: number;

@@ -3,7 +3,7 @@ import { useT } from '../lib/useT';
 import type { Translations } from '../locales';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdField } from './zplHelpers';
-import { commitHeightTransform } from './transformHelpers';
+import { commitBarcodeWidthHeightTransform } from './transformHelpers';
 import { filterContent, type ContentSpec } from './contentSpec';
 import { type ZplRotation } from './rotation';
 import { RotationSelect } from '../components/Properties/RotationSelect';
@@ -71,7 +71,13 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
     heightLocked: config.heightLocked,
     interpretationLocked: config.interpretationLocked,
 
-    commitTransform: config.heightLocked ? undefined : commitHeightTransform,
+    // Width-locked symbologies (currently just heightLocked = true ones like
+    // GS1 DataBar) keep undefined so the transformer is disabled entirely.
+    // Otherwise the bar height scales with sy and the module width scales
+    // with sx (clamped to [1, 10] in commitBarcodeWidthHeightTransform).
+    commitTransform: config.heightLocked
+      ? undefined
+      : commitBarcodeWidthHeightTransform,
 
     toZPL: (obj: LabelObjectBase & { props: Barcode1DProps }) => {
       // Normalize printInterpretation for symbologies that have no HRI in ZPL

@@ -14,6 +14,7 @@ import {
   type BoundingBox,
 } from "../transformerGeometry";
 import { modelPositionFromRenderedTopLeft } from "../transformPosition";
+import { clamp } from "../../../registry/transformHelpers";
 import {
   computeResizeSnap,
   deriveActiveEdges,
@@ -122,6 +123,11 @@ export function useKonvaTransformer({
   // Captures node height and rowHeight at drag start so boundBoxFunc uses a
   // fixed step size throughout the entire drag session.
   const transformAnchorRef = useRef<{ nodeHeight: number; rowHeight: number } | null>(null);
+  // 1D-barcode width anchor: pixels per one unit of moduleWidth at drag
+  // start, so boundBoxFunc can snap newBox.width to integer-moduleWidth
+  // multiples (the resulting visual: the bbox jumps by one module-pixel
+  // step whenever the cursor crosses a module boundary).
+  const barcodeAnchorRef = useRef<{ widthPerModule: number } | null>(null);
   // Captures the bbox at transform start so deriveActiveEdges can detect which
   // edges are moving relative to the start state (oldBox in boundBoxFunc is the
   // previous frame, which would always look "everything moved").
@@ -190,7 +196,16 @@ export function useKonvaTransformer({
       : ObjectRegistry[singleType]?.heightLocked
         ? []
         : BARCODE_1D_TYPES.has(singleType)
-          ? ["top-center", "bottom-center"]
+          ? [
+              "top-center",
+              "bottom-center",
+              // middle-left / middle-right drag the module-width axis.
+              // The bar count is fixed by content, so the resulting width
+              // snaps to integer-moduleWidth multiples in boundBoxFunc and
+              // is committed via commitBarcodeWidthHeightTransform.
+              "middle-left",
+              "middle-right",
+            ]
           : isUniformScale
             ? ["top-left", "top-right", "bottom-left", "bottom-right"]
             : undefined;
@@ -199,6 +214,7 @@ export function useKonvaTransformer({
   /** Reset all transform-time state. Idempotent; safe to call from any exit path. */
   function cleanupTransformState() {
     transformAnchorRef.current = null;
+    barcodeAnchorRef.current = null;
     transformStartBboxRef.current = null;
     othersSnapshotRef.current = [];
     setGuides([]);
@@ -213,6 +229,19 @@ export function useKonvaTransformer({
     transformAnchorRef.current = obj && STACKED_2D_TYPES.has(obj.type)
       ? { nodeHeight: node.height(), rowHeight: (obj.props as { rowHeight: number }).rowHeight }
       : null;
+    // 1D barcodes derive widthPerModule from the rendered node width and
+    // the stored moduleWidth: the bar count is content-determined and
+    // stays constant for the duration of the drag, so a single division
+    // gives us the px-per-step we need in boundBoxFunc.
+    if (obj && BARCODE_1D_TYPES.has(obj.type) && !ObjectRegistry[obj.type]?.heightLocked) {
+      const moduleWidth = (obj.props as { moduleWidth: number }).moduleWidth;
+      const nodeWidth = node.width();
+      barcodeAnchorRef.current = moduleWidth > 0 && nodeWidth > 0
+        ? { widthPerModule: nodeWidth / moduleWidth }
+        : null;
+    } else {
+      barcodeAnchorRef.current = null;
+    }
     // startBbox is captured lazily on the first boundBoxFunc call — Konva
     // passes those bboxes in the transformer's frame, which on rotated
     // parents differs from getClientRect's stage frame.
@@ -250,6 +279,17 @@ export function useKonvaTransformer({
       };
     }
     const startBbox = transformStartBboxRef.current;
+    // 1D-barcode width snap: replace the cursor-following width with the
+    // closest integer-moduleWidth-multiple width. The active edge logic
+    // downstream (pinInactiveEdges) shifts x so the held edge stays put.
+    if (barcodeAnchorRef.current) {
+      const step = barcodeAnchorRef.current.widthPerModule;
+      if (step > 0) {
+        const rawModules = newBox.width / step;
+        const snappedModules = clamp(1, 10, Math.round(rawModules));
+        newBox = { ...newBox, width: snappedModules * step };
+      }
+    }
     let bbox = applyHeightSnap(oldBox, newBox, dotPx, transformAnchorRef.current);
     if (objectSnapEnabled && isFreeResize && startBbox) {
       const snapped = applyResizeObjectSnap(bbox, startBbox, othersSnapshotRef.current, labelRect);
