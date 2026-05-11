@@ -38,15 +38,23 @@ export function commitWidthHeightTransform<P extends WidthHeightProps>(
   } as Partial<P>;
 }
 
-/** Shared commitTransform for 1D barcodes — only the bar height scales (width
- *  is determined by content + module width, not by the resize anchor). */
-export function commitHeightTransform<P extends { height: number }>(
+/**
+ * commitTransform for 1D barcodes. Vertical drag scales bar height (sy),
+ * horizontal drag scales the module width (sx) — the latter is clamped
+ * to the ZPL `^BY` range [1, 10]. During the drag the bitmap stretches
+ * free-form for visual feedback; this commit rounds the result to a
+ * valid integer moduleWidth on release.
+ */
+export function commitBarcodeWidthHeightTransform<
+  P extends { height: number; moduleWidth: number },
+>(
   obj: LabelObjectBase & { props: P },
   ctx: TransformContext,
 ): Partial<P> {
-  const { sy, snap } = ctx;
+  const { sx, sy, snap } = ctx;
   return {
     height: Math.max(1, snap(Math.round(obj.props.height * sy))),
+    moduleWidth: clamp(1, 10, Math.round(obj.props.moduleWidth * sx)),
   } as Partial<P>;
 }
 

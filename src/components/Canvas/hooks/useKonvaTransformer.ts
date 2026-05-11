@@ -190,7 +190,17 @@ export function useKonvaTransformer({
       : ObjectRegistry[singleType]?.heightLocked
         ? []
         : BARCODE_1D_TYPES.has(singleType)
-          ? ["top-center", "bottom-center"]
+          ? [
+              "top-center",
+              "bottom-center",
+              // middle-left / middle-right drag the module-width axis.
+              // The bar count is fixed by content, so the resulting width
+              // is rounded to a valid ZPL ^BY moduleWidth (1..10) in
+              // commitBarcodeWidthHeightTransform on release; during the
+              // drag the bitmap stretches free-form for visual feedback.
+              "middle-left",
+              "middle-right",
+            ]
           : isUniformScale
             ? ["top-left", "top-right", "bottom-left", "bottom-right"]
             : undefined;
@@ -307,9 +317,23 @@ export function useKonvaTransformer({
     );
     const renderedXDots = pxToDots(topLeft.x - objectsOffsetX, scale, dpmm);
     const renderedYDots = pxToDots(topLeft.y - labelOffsetY, scale, dpmm);
+    // For FT-anchored 1D barcodes, model.y is the bar baseline — needs the
+    // post-resize bar height to convert from the bbox top back. Pipe the
+    // scaled height through the same snap() commitBarcodeWidthHeight-
+    // Transform uses so the baseline math sees the *committed* value and
+    // there's no 1-dot drift between the two pathways.
+    const newBarHeightDots =
+      obj.positionType === "FT" && BARCODE_1D_TYPES.has(obj.type)
+        ? Math.max(1, snap(Math.round((obj.props as { height: number }).height * sy)))
+        : undefined;
     // Invert per-type render offsets (e.g. QR's hardcoded +10 dot Y) so the
     // stored model position matches what BarcodeObject.handleDragEnd produces.
-    const modelPos = modelPositionFromRenderedTopLeft(obj, renderedXDots, renderedYDots);
+    const modelPos = modelPositionFromRenderedTopLeft(
+      obj,
+      renderedXDots,
+      renderedYDots,
+      newBarHeightDots,
+    );
     // Only apply snap when the resize actually moved the position
     // (e.g. dragging the top-left handle). Anchored-corner drags must keep
     // the original position so off-grid shapes don't snap as a side-effect.
