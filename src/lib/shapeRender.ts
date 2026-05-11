@@ -119,7 +119,7 @@ export function renderShape(
           obj.x, obj.y,
           obj.x + ddx, obj.y + ddy,
           t,
-        ) as [number, number, number, number, number, number, number, number];
+        );
         ctx.beginPath();
         ctx.moveTo(v0x, v0y);
         ctx.lineTo(v1x, v1y);

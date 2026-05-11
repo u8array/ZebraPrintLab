@@ -52,11 +52,19 @@ export function outlineInset(
   };
 }
 
+/** Four (x, y) vertices in the flat order Konva.Line and 2D canvas
+ *  paths both consume. Tuple-typed so callers can destructure without
+ *  any `as`-cast or non-null-assertion noise. */
+export type ParallelogramPoints = [
+  number, number,
+  number, number,
+  number, number,
+  number, number,
+];
+
 /**
  * Four parallelogram vertices for a ^GD diagonal line spanning the bbox
- * from (ax, ay) to (bx, by) with thickness t. Returns the vertices as a
- * flat `[x0, y0, x1, y1, ...]` list — the encoding both Konva.Line and
- * `CanvasRenderingContext2D.moveTo/lineTo` consume.
+ * from (ax, ay) to (bx, by) with thickness t.
  *
  * The conceptual line runs along the polygon's *left long edge*; the
  * other long edge is offset by +t in x. This is the same convention as
@@ -68,7 +76,7 @@ export function diagonalPolygonPoints(
   bx: number,
   by: number,
   t: number,
-): number[] {
+): ParallelogramPoints {
   const ddx = bx - ax;
   const ddy = by - ay;
   const w = Math.abs(ddx);
