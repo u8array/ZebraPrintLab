@@ -11,10 +11,9 @@ describe('text position transforms', () => {
       expect(r).toEqual({ x: 100, y: 170 });
     });
 
-    it('applies only the rotation offset under FO', () => {
-      // FO + I → no FT correction, rotation offset dy = -15.
+    it('returns the input verbatim under FO', () => {
       const r = objectToDisplay(100, 200, { fontHeight: 30, rotation: 'I' }, 'FO');
-      expect(r).toEqual({ x: 100, y: 185 });
+      expect(r).toEqual({ x: 100, y: 200 });
     });
 
     it('treats undefined positionType like FO', () => {
@@ -22,11 +21,10 @@ describe('text position transforms', () => {
       expect(r).toEqual({ x: 100, y: 200 });
     });
 
-    it('combines FT correction and rotation offset for I', () => {
-      // FT I: dy = renderedH (30/1.3 ≈ 23.077). Rotation offset I: dy -15.
+    it('applies the FT correction for I (renderedH = fontHeight / ratio)', () => {
       const r = objectToDisplay(100, 200, { fontHeight: 30, rotation: 'I' }, 'FT');
       expect(r.x).toBeCloseTo(100);
-      expect(r.y).toBeCloseTo(200 + 30 / 1.3 - 15);
+      expect(r.y).toBeCloseTo(200 + 30 / 1.3);
     });
   });
 
