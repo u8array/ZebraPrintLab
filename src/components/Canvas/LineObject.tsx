@@ -109,6 +109,24 @@ export function LineObject({
       : "#cccccc";
   const lineStrokeWidth = Math.max(dotsToPx(p.thickness, scale, dpmm), 1);
 
+  // Option-A geometry (mirrors src/lib/shapeRender.ts): axis-aligned lines
+  // map to ^GB bands that extrude thickness *downward* (horizontal) or
+  // *rightward* (vertical) from (obj.x, obj.y) — not perpendicular to the
+  // direction the way a centred-stroke Konva line would. Shift the visible
+  // body by t/2 along the appropriate axis so the band fills y..y+t (or
+  // x..x+t) exactly. Handles stay at the conceptual endpoints (band's
+  // start corner) — this is the affordance the user agreed to.
+  //
+  // Diagonals fall back to centred-stroke for now (visually wrong vs.
+  // ^GD's parallelogram, tracked under shape-pixel-tests TODO). They'll
+  // be replaced with a closed Konva.Line polygon in a follow-up commit.
+  const normalizedAngle = ((p.angle % 360) + 360) % 360;
+  const isHorizontal = normalizedAngle === 0 || normalizedAngle === 180;
+  const isVertical = normalizedAngle === 90 || normalizedAngle === 270;
+  const halfStrokePx = lineStrokeWidth / 2;
+  const visualShiftX = isVertical ? halfStrokePx : 0;
+  const visualShiftY = isHorizontal ? halfStrokePx : 0;
+
   // Live positions while handles are being dragged (snapped preview)
   const [livePt1, setLivePt1] = useState<{ x: number; y: number } | null>(null);
   const [livePt2, setLivePt2] = useState<{ x: number; y: number } | null>(null);
@@ -258,7 +276,12 @@ export function LineObject({
           those pixels. Stays in reverse mode even when selected so the
           inversion visualisation isn't masked. */}
       <KLine
-        points={[dispX1, dispY1, dispX2, dispY2]}
+        points={[
+          dispX1 + visualShiftX,
+          dispY1 + visualShiftY,
+          dispX2 + visualShiftX,
+          dispY2 + visualShiftY,
+        ]}
         stroke={strokeColor}
         strokeWidth={lineStrokeWidth}
         lineCap="butt"
@@ -267,20 +290,27 @@ export function LineObject({
       />
       {isSelected && (
         <LineSelectionOutline
-          x1={dispX1}
-          y1={dispY1}
-          x2={dispX2}
-          y2={dispY2}
+          x1={dispX1 + visualShiftX}
+          y1={dispY1 + visualShiftY}
+          x2={dispX2 + visualShiftX}
+          y2={dispY2 + visualShiftY}
           bodyStrokeWidth={lineStrokeWidth}
           color={colors.selection}
         />
       )}
       {/* Wide transparent hit area — handles click-to-select and whole-line drag.
           id is here (not on the Group) so the Stage snap handler can find this node
-          via e.target.id() and apply object-snap correctly. */}
+          via e.target.id() and apply object-snap correctly. The hit area is
+          shifted along with the visible body so clicks register where the
+          user sees the line. */}
       <KLine
         id={obj.id}
-        points={[x1, y1, x2, y2]}
+        points={[
+          x1 + visualShiftX,
+          y1 + visualShiftY,
+          x2 + visualShiftX,
+          y2 + visualShiftY,
+        ]}
         stroke="transparent"
         strokeWidth={Math.max(lineStrokeWidth, 14)}
         draggable
