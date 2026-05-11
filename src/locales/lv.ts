@@ -97,6 +97,8 @@ const lv = {
   app: {
     file: 'Fails',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Saglabāt esošās lapas',
+    chooseFile: 'Izvēlēties failu',
     exportZpl: 'Export ZPL',
     newDesign: 'Jauns dizains',
     addPage: 'Pievienot lapu',

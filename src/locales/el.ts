@@ -97,6 +97,8 @@ const el = {
   app: {
     file: 'Αρχείο',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Διατήρηση υπαρχουσών σελίδων',
+    chooseFile: 'Επιλογή αρχείου',
     exportZpl: 'Export ZPL',
     newDesign: 'Νέο σχέδιο',
     addPage: 'Προσθήκη σελίδας',

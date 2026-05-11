@@ -97,6 +97,8 @@ const ko = {
   app: {
     file: '파일',
     importZpl: 'ZPL 가져오기',
+    keepExistingPages: '기존 페이지 유지',
+    chooseFile: '파일 선택',
     exportZpl: 'ZPL 내보내기',
     newDesign: '새 디자인',
     addPage: '페이지 추가',

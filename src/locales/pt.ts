@@ -97,6 +97,8 @@ const pt = {
   app: {
     file: 'Arquivo',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Manter páginas existentes',
+    chooseFile: 'Escolher ficheiro',
     exportZpl: 'Export ZPL',
     newDesign: 'Novo design',
     addPage: 'Adicionar página',

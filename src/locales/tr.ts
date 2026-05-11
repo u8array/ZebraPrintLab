@@ -97,6 +97,8 @@ const tr = {
   app: {
     file: 'Dosya',
     importZpl: 'ZPL İçe Aktar',
+    keepExistingPages: 'Mevcut sayfaları koru',
+    chooseFile: 'Dosya seç',
     exportZpl: 'ZPL Dışa Aktar',
     newDesign: 'Yeni Tasarım',
     addPage: 'Sayfa ekle',

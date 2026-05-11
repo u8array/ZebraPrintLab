@@ -97,6 +97,8 @@ const cs = {
   app: {
     file: 'Soubor',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Zachovat stávající stránky',
+    chooseFile: 'Vybrat soubor',
     exportZpl: 'Export ZPL',
     newDesign: 'Nový návrh',
     addPage: 'Přidat stránku',

@@ -97,6 +97,8 @@ const pl = {
   app: {
     file: 'Plik',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Zachowaj istniejące strony',
+    chooseFile: 'Wybierz plik',
     exportZpl: 'Export ZPL',
     newDesign: 'Nowy projekt',
     addPage: 'Dodaj stronę',

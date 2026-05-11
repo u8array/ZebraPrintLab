@@ -97,6 +97,8 @@ const fi = {
   app: {
     file: 'Tiedosto',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Säilytä olemassa olevat sivut',
+    chooseFile: 'Valitse tiedosto',
     exportZpl: 'Export ZPL',
     newDesign: 'Uusi rakenne',
     addPage: 'Lisää sivu',

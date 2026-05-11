@@ -97,6 +97,8 @@ const ro = {
   app: {
     file: 'Fișier',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Păstrează paginile existente',
+    chooseFile: 'Alege fișier',
     exportZpl: 'Export ZPL',
     newDesign: 'Design nou',
     addPage: 'Adaugă pagină',

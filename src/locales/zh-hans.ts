@@ -97,6 +97,8 @@ const zhHans = {
   app: {
     file: '文件',
     importZpl: '导入 ZPL',
+    keepExistingPages: '保留现有页面',
+    chooseFile: '选择文件',
     exportZpl: '导出 ZPL',
     newDesign: '新建设计',
     addPage: '添加页面',

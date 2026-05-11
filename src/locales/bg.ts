@@ -97,6 +97,8 @@ const bg = {
   app: {
     file: 'Файл',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Запазване на съществуващите страници',
+    chooseFile: 'Избор на файл',
     exportZpl: 'Export ZPL',
     newDesign: 'Нов дизайн',
     addPage: 'Добавяне на страница',

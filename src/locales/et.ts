@@ -97,6 +97,8 @@ const et = {
   app: {
     file: 'Fail',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Säilita olemasolevad lehed',
+    chooseFile: 'Vali fail',
     exportZpl: 'Export ZPL',
     newDesign: 'Uus kujundus',
     addPage: 'Lisa leht',

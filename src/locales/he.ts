@@ -97,6 +97,8 @@ const he = {
   app: {
     file: 'קובץ',
     importZpl: 'ייבוא ZPL',
+    keepExistingPages: 'שמור על דפים קיימים',
+    chooseFile: 'בחר קובץ',
     exportZpl: 'ייצוא ZPL',
     newDesign: 'עיצוב חדש',
     addPage: 'הוסף דף',

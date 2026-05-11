@@ -97,6 +97,8 @@ const ar = {
   app: {
     file: 'ملف',
     importZpl: 'استيراد ZPL',
+    keepExistingPages: 'الاحتفاظ بالصفحات الحالية',
+    chooseFile: 'اختيار ملف',
     exportZpl: 'تصدير ZPL',
     newDesign: 'تصميم جديد',
     addPage: 'إضافة صفحة',

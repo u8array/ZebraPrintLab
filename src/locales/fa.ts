@@ -97,6 +97,8 @@ const fa = {
   app: {
     file: 'فایل',
     importZpl: 'وارد کردن ZPL',
+    keepExistingPages: 'حفظ صفحات موجود',
+    chooseFile: 'انتخاب فایل',
     exportZpl: 'خروجی ZPL',
     newDesign: 'طرح جدید',
     addPage: 'افزودن صفحه',

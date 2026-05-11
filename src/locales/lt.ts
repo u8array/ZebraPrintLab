@@ -97,6 +97,8 @@ const lt = {
   app: {
     file: 'Failas',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Išsaugoti esamus puslapius',
+    chooseFile: 'Pasirinkti failą',
     exportZpl: 'Export ZPL',
     newDesign: 'Naujas dizainas',
     addPage: 'Pridėti puslapį',

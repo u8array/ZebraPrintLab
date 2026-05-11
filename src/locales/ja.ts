@@ -97,6 +97,8 @@ const ja = {
   app: {
     file: 'ファイル',
     importZpl: 'ZPL インポート',
+    keepExistingPages: '既存のページを保持',
+    chooseFile: 'ファイルを選択',
     exportZpl: 'ZPL エクスポート',
     newDesign: '新しいデザイン',
     addPage: 'ページを追加',

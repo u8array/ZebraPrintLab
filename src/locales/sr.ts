@@ -97,6 +97,8 @@ const sr = {
   app: {
     file: 'Датотека',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Задржи постојеће странице',
+    chooseFile: 'Изабери датотеку',
     exportZpl: 'Export ZPL',
     newDesign: 'Нови дизајн',
     addPage: 'Додај страницу',

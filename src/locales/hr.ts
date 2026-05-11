@@ -97,6 +97,8 @@ const hr = {
   app: {
     file: 'Datoteka',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Zadrži postojeće stranice',
+    chooseFile: 'Odaberi datoteku',
     exportZpl: 'Export ZPL',
     newDesign: 'Novi dizajn',
     addPage: 'Dodaj stranicu',

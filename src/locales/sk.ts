@@ -97,6 +97,8 @@ const sk = {
   app: {
     file: 'Súbor',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Zachovať existujúce stránky',
+    chooseFile: 'Vybrať súbor',
     exportZpl: 'Export ZPL',
     newDesign: 'Nový návrh',
     addPage: 'Pridať stránku',

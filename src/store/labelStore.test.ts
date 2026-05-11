@@ -355,6 +355,39 @@ describe('loadDesign', () => {
   });
 });
 
+// ── appendPages ───────────────────────────────────────────────────────────────
+
+describe('appendPages', () => {
+  const sampleObject: LabelObject = {
+    id: 'imp1',
+    type: 'box',
+    x: 5,
+    y: 5,
+    rotation: 0,
+    props: { width: 20, height: 20, thickness: 1, filled: false, color: 'B', rounding: 0 },
+  };
+
+  it('appends pages, keeps the existing label config, and focuses the first appended page', () => {
+    state().addObject('text');
+    const originalLabel = state().label;
+    state().selectObject(defined(objs()[0]).id);
+
+    state().appendPages([{ objects: [sampleObject] }, { objects: [] }]);
+
+    expect(state().label).toEqual(originalLabel);
+    expect(state().pages).toHaveLength(3);
+    expect(state().currentPageIndex).toBe(1);
+    expect(state().selectedIds).toEqual([]);
+  });
+
+  it('is a no-op when given an empty pages array', () => {
+    state().addObject('text');
+    const before = state().pages;
+    state().appendPages([]);
+    expect(state().pages).toBe(before);
+  });
+});
+
 // ── setLabelConfig (partial merge) ────────────────────────────────────────────
 
 describe('setLabelConfig', () => {

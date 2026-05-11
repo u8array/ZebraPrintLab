@@ -97,6 +97,8 @@ const hu = {
   app: {
     file: 'Fájl',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Meglévő oldalak megtartása',
+    chooseFile: 'Fájl kiválasztása',
     exportZpl: 'Export ZPL',
     newDesign: 'Új terv',
     addPage: 'Oldal hozzáadása',

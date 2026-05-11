@@ -97,6 +97,8 @@ const sv = {
   app: {
     file: 'Fil',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Behåll befintliga sidor',
+    chooseFile: 'Välj fil',
     exportZpl: 'Export ZPL',
     newDesign: 'Nytt design',
     addPage: 'Lägg till sida',

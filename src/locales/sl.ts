@@ -97,6 +97,8 @@ const sl = {
   app: {
     file: 'Datoteka',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Ohrani obstoječe strani',
+    chooseFile: 'Izberi datoteko',
     exportZpl: 'Export ZPL',
     newDesign: 'Nov dizajn',
     addPage: 'Dodaj stran',

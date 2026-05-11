@@ -97,6 +97,7 @@ interface LabelState {
   acknowledgeLabelaryNotice: () => void;
   setCanvasSettings: (settings: Partial<CanvasSettings>) => void;
   loadDesign: (label: LabelConfig, pages: Page[]) => void;
+  appendPages: (pages: Page[]) => void;
   moveObjectForward: (id: string) => void;
   moveObjectBackward: (id: string) => void;
   moveObjectToFront: (id: string) => void;
@@ -398,6 +399,21 @@ export const useLabelStore = create<LabelState>()(
           pages: pages.length > 0 ? pages : [{ objects: [] }],
           currentPageIndex: 0,
           selectedIds: [],
+        }),
+
+      // Append-mode counterpart to loadDesign: keeps the current label
+      // config (the user opted into the existing design's dimensions /
+      // dpmm) and just tacks the imported pages onto the end of the
+      // page list, switching focus to the first appended page.
+      appendPages: (pages) =>
+        set((state) => {
+          if (pages.length === 0) return {};
+          const newPages = [...state.pages, ...pages];
+          return {
+            pages: newPages,
+            currentPageIndex: state.pages.length,
+            selectedIds: [],
+          };
         }),
 
       setLabelConfig: (config) =>

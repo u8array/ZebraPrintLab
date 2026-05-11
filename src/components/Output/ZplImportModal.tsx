@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { XMarkIcon, ClipboardDocumentIcon, CheckIcon, FolderOpenIcon } from '@heroicons/react/16/solid';
 import { importZplText } from '../../lib/zplImportService';
 import { readFileAsText } from '../../lib/readFile';
-import { useLabelStore } from '../../store/labelStore';
+import { useLabelStore, type Page } from '../../store/labelStore';
+import type { LabelConfig } from '../../types/ObjectType';
 import { formatReportAsText, type ImportResult } from '../../lib/importReport';
 import { ImportSummaryBody } from './ImportReportModal';
 import { useT } from '../../lib/useT';
@@ -18,9 +19,30 @@ export function ZplImportModal({ onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [appendMode, setAppendMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loadDesign = useLabelStore((s) => s.loadDesign);
+  const appendPages = useLabelStore((s) => s.appendPages);
   const label = useLabelStore((s) => s.label);
+  const pages = useLabelStore((s) => s.pages);
+
+  // Append-mode only makes sense when there is something to append *to*.
+  // On a fresh designer (one empty page) we hide the toggle entirely
+  // because the resulting [empty, imported] state would just be clutter
+  // the user has to clean up manually.
+  const hasExistingContent =
+    pages.length > 1 || (pages[0]?.objects.length ?? 0) > 0;
+
+  const applyImport = (labelConfig: Partial<LabelConfig>, importedPages: Page[]) => {
+    if (appendMode && hasExistingContent) {
+      // Keep the current label config — the user opted to keep the
+      // existing design's dimensions, so any imported ^PW/^LL is
+      // intentionally discarded.
+      appendPages(importedPages);
+    } else {
+      loadDesign({ ...label, ...labelConfig }, importedPages);
+    }
+  };
 
   const handleImport = () => {
     setError(null);
@@ -29,15 +51,15 @@ export function ZplImportModal({ onClose }: Props) {
       return;
     }
 
-    const { labelConfig, pages, report } = importZplText(zpl, label.dpmm);
-    const totalObjects = pages.reduce((s, p) => s + p.objects.length, 0);
+    const { labelConfig, pages: importedPages, report } = importZplText(zpl, label.dpmm);
+    const totalObjects = importedPages.reduce((s, p) => s + p.objects.length, 0);
 
     if (totalObjects === 0 && Object.keys(labelConfig).length === 0) {
       setError('No supported objects found in the ZPL code.');
       return;
     }
 
-    loadDesign({ ...label, ...labelConfig }, pages);
+    applyImport(labelConfig, importedPages);
     setResult({ objectCount: totalObjects, report });
   };
 
@@ -60,9 +82,9 @@ export function ZplImportModal({ onClose }: Props) {
       return;
     }
 
-    const { labelConfig, pages, report } = importZplText(text, label.dpmm);
-    const totalObjects = pages.reduce((s, p) => s + p.objects.length, 0);
-    loadDesign({ ...label, ...labelConfig }, pages);
+    const { labelConfig, pages: importedPages, report } = importZplText(text, label.dpmm);
+    const totalObjects = importedPages.reduce((s, p) => s + p.objects.length, 0);
+    applyImport(labelConfig, importedPages);
     setResult({ objectCount: totalObjects, report });
   };
 
@@ -142,13 +164,26 @@ export function ZplImportModal({ onClose }: Props) {
           </div>
 
           <div className="flex items-center justify-between px-4 py-3 border-t border-border shrink-0">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 font-mono text-[10px] text-muted hover:text-text transition-colors"
-            >
-              <FolderOpenIcon className="w-3.5 h-3.5" />
-              Choose file
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 font-mono text-[10px] text-muted hover:text-text transition-colors"
+              >
+                <FolderOpenIcon className="w-3.5 h-3.5" />
+                {t.app.chooseFile}
+              </button>
+              {hasExistingContent && (
+                <label className="flex items-center gap-1.5 cursor-pointer font-mono text-[10px] text-muted hover:text-text transition-colors">
+                  <input
+                    type="checkbox"
+                    className="accent-accent"
+                    checked={appendMode}
+                    onChange={(e) => setAppendMode(e.target.checked)}
+                  />
+                  {t.app.keepExistingPages}
+                </label>
+              )}
+            </div>
             <div className="flex gap-2">
               <button
                 onClick={onClose}

@@ -97,6 +97,8 @@ const zhHant = {
   app: {
     file: '檔案',
     importZpl: '匯入 ZPL',
+    keepExistingPages: '保留現有頁面',
+    chooseFile: '選擇檔案',
     exportZpl: '匯出 ZPL',
     newDesign: '新增設計',
     addPage: '新增頁面',

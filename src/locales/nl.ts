@@ -97,6 +97,8 @@ const nl = {
   app: {
     file: 'Bestand',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Bestaande pagina\'s behouden',
+    chooseFile: 'Bestand kiezen',
     exportZpl: 'Export ZPL',
     newDesign: 'Nieuw ontwerp',
     addPage: 'Pagina toevoegen',

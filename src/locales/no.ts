@@ -97,6 +97,8 @@ const no = {
   app: {
     file: 'Fil',
     importZpl: 'Import ZPL',
+    keepExistingPages: 'Behold eksisterende sider',
+    chooseFile: 'Velg fil',
     exportZpl: 'Export ZPL',
     newDesign: 'Nytt design',
     addPage: 'Legg til side',
