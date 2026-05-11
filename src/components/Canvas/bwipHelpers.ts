@@ -605,17 +605,33 @@ export function getDisplaySize(
   // than the spec-correct height. Zebra firmware fills the full reserved
   // height with bars; mirror that by cropping the source bitmap to the
   // bar-only rows.
+  //
+  // Rotation flips which axis the padding sits on. For N / I the padding
+  // is on top/bottom of the bitmap as bwip produced it; for R / B (bwip
+  // rotated 90° CW / CCW respectively) the same rows end up on the
+  // left/right edges, so the crop must run along the x-axis instead.
   let bitmapCrop: BarcodeDisplaySize["bitmapCrop"];
   if (obj.type === "gs1databar") {
     const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
     const padPx = 2 * bwipSc; // paddingheight=2 × bwip scale per side
-    if (canvas.height > 2 * padPx) {
-      bitmapCrop = {
-        x: 0,
-        y: padPx,
-        width: canvas.width,
-        height: canvas.height - 2 * padPx,
-      };
+    if (isQuarter) {
+      if (canvas.width > 2 * padPx) {
+        bitmapCrop = {
+          x: padPx,
+          y: 0,
+          width: canvas.width - 2 * padPx,
+          height: canvas.height,
+        };
+      }
+    } else {
+      if (canvas.height > 2 * padPx) {
+        bitmapCrop = {
+          x: 0,
+          y: padPx,
+          width: canvas.width,
+          height: canvas.height - 2 * padPx,
+        };
+      }
     }
   }
 
