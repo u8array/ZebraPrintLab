@@ -109,27 +109,21 @@ export function LineObject({
       : "#cccccc";
   const lineStrokeWidth = Math.max(dotsToPx(p.thickness, scale, dpmm), 1);
 
-  // Option-A geometry (mirrors src/lib/shapeRender.ts): axis-aligned lines
-  // map to ^GB bands that extrude thickness *downward* (horizontal) or
-  // *rightward* (vertical) from (obj.x, obj.y) — not perpendicular to the
-  // direction the way a centred-stroke Konva line would. Shift the visible
-  // body by t/2 along the appropriate axis so the band fills y..y+t (or
-  // x..x+t) exactly. Handles stay at the conceptual endpoints (band's
-  // start corner) — this is the affordance the user agreed to.
+  // Option-A geometry (mirrors src/lib/shapeRender.ts):
+  //   - Axis-aligned lines map to ^GB and extrude thickness downward
+  //     (horizontal) or rightward (vertical) from (obj.x, obj.y) — the
+  //     visible body is shifted by t/2 along that axis so the band fills
+  //     y..y+t / x..x+t exactly. Handles stay at the band's start corner.
+  //   - Diagonal lines map to ^GD: the conceptual line is the left long
+  //     edge of a parallelogram and thickness extrudes purely in +x. The
+  //     diagonalPolygonPoints helper builds the four vertices.
   //
-  // Diagonal lines map to ^GD, which Zebra renders as a parallelogram
-  // with horizontal short sides (flat top/bottom, pointy left/right
-  // ends, thickness extruded vertically downward from the diagonal
-  // centreline). A centred Konva stroke does not match that shape, so
-  // the diagonal branch below builds an explicit closed polygon mirror-
-  // ing renderShape's ^GD math.
-  const normalizedAngle = ((p.angle % 360) + 360) % 360;
-  const isHorizontal = normalizedAngle === 0 || normalizedAngle === 180;
-  const isVertical = normalizedAngle === 90 || normalizedAngle === 270;
-  const isAxisAligned = isHorizontal || isVertical;
+  // The axis-aligned / diagonal pick is derived from the *live* display
+  // endpoints rather than `p.angle` (which only updates on dragEnd).
+  // Otherwise dragging a near-horizontal endpoint shows the body locked
+  // to the horizontal band until release, then snaps to the parallelo-
+  // gram — a visible jump the user noticed.
   const halfStrokePx = lineStrokeWidth / 2;
-  const visualShiftX = isVertical ? halfStrokePx : 0;
-  const visualShiftY = isHorizontal ? halfStrokePx : 0;
 
   /**
    * Build the four ^GD parallelogram vertices in stage-px from arbitrary
@@ -186,6 +180,18 @@ export function LineObject({
   const dispY1 = livePt1?.y ?? y1 + dy;
   const dispX2 = livePt2?.x ?? x2 + dx;
   const dispY2 = livePt2?.y ?? y2 + dy;
+
+  // Half-pixel epsilon: constrainLine's auto-snap commits 45°-step
+  // positions where ddx/ddy land exactly on axis-aligned values, but
+  // float math can leave a tiny residue. <0.5 px collapses to "the
+  // pixel grid sees this as axis-aligned" without false-positives.
+  const ddxDisp = dispX2 - dispX1;
+  const ddyDisp = dispY2 - dispY1;
+  const isHorizontal = Math.abs(ddyDisp) < 0.5;
+  const isVertical = Math.abs(ddxDisp) < 0.5;
+  const isAxisAligned = isHorizontal || isVertical;
+  const visualShiftX = isVertical ? halfStrokePx : 0;
+  const visualShiftY = isHorizontal ? halfStrokePx : 0;
 
   // Shift forces the user-explicit 45°-step constraint; otherwise we use
   // Figma-style auto-snap (±5° tolerance to the nearest 45° step).
