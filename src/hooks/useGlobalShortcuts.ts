@@ -9,6 +9,7 @@ export function useGlobalShortcuts() {
   const selectObjects = useLabelStore((s) => s.selectObjects);
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
   const setCurrentPage = useLabelStore((s) => s.setCurrentPage);
+  const updateObjects = useLabelStore((s) => s.updateObjects);
   const { undo, redo } = useHistory();
 
   useEffect(() => {
@@ -45,6 +46,17 @@ export function useGlobalShortcuts() {
         pasteObjects();
         return;
       }
+      if (mod && e.code === "KeyL") {
+        // Ctrl+L locks the current selection, Ctrl+Shift+L unlocks. No-op
+        // for an empty selection so the browser's default address-bar
+        // focus binding stays intact when nothing is selected.
+        const ids = useLabelStore.getState().selectedIds;
+        if (ids.length === 0) return;
+        e.preventDefault();
+        const locked = !e.shiftKey;
+        updateObjects(ids.map((id) => ({ id, changes: { locked } })));
+        return;
+      }
       if (e.code === "KeyG") {
         e.preventDefault();
         setCanvasSettings({ showGrid: !useLabelStore.getState().canvasSettings.showGrid });
@@ -71,5 +83,5 @@ export function useGlobalShortcuts() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [undo, redo, duplicateSelectedObjects, copySelectedObjects, pasteObjects, selectObjects, setCanvasSettings, setCurrentPage]);
+  }, [undo, redo, duplicateSelectedObjects, copySelectedObjects, pasteObjects, selectObjects, setCanvasSettings, setCurrentPage, updateObjects]);
 }

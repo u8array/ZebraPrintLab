@@ -8,6 +8,7 @@ import {
 } from '@dnd-kit/core';
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { EyeIcon, EyeSlashIcon, LockClosedIcon, LockOpenIcon } from '@heroicons/react/16/solid';
 import { useLabelStore, useCurrentObjects } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
 import type { LabelObject } from '../../registry';
@@ -20,11 +21,38 @@ interface RowProps {
   isOver: boolean;
   onSelect: () => void;
   onToggle: () => void;
+  onToggleLock: () => void;
+  onToggleVisible: () => void;
+  tLock: string;
+  tUnlock: string;
+  tShow: string;
+  tHide: string;
 }
 
-function SortableLayerRow({ obj, isSelected, isOver, onSelect, onToggle }: RowProps) {
+function SortableLayerRow({
+  obj,
+  isSelected,
+  isOver,
+  onSelect,
+  onToggle,
+  onToggleLock,
+  onToggleVisible,
+  tLock,
+  tUnlock,
+  tShow,
+  tHide,
+}: RowProps) {
   const def = ObjectRegistry[obj.type];
-  const { attributes, listeners, setNodeRef, isDragging } = useSortable({ id: obj.id });
+  const isLocked = !!obj.locked;
+  const isHidden = obj.visible === false;
+  // Locked rows opt out of @dnd-kit's sortable listeners so the drag handle
+  // can't reorder them; the row stays clickable for selection / toggles.
+  const { attributes, listeners, setNodeRef, isDragging } = useSortable({
+    id: obj.id,
+    disabled: isLocked,
+  });
+
+  const stopRowClick = (e: React.MouseEvent) => e.stopPropagation();
 
   return (
     <>
@@ -35,20 +63,23 @@ function SortableLayerRow({ obj, isSelected, isOver, onSelect, onToggle }: RowPr
         ref={setNodeRef}
         style={{ touchAction: 'none' }}
         {...attributes}
-        {...listeners}
+        {...(isLocked ? {} : listeners)}
         onClick={(e) => {
           if (e.shiftKey || e.ctrlKey || e.metaKey) onToggle();
           else onSelect();
         }}
         className={`
           flex items-center gap-2 px-2 py-1.5
-          cursor-grab active:cursor-grabbing
+          ${isLocked ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'}
           border-b border-border group transition-colors hover:bg-surface-2
           ${isSelected ? 'bg-surface-2 border-l-2 border-l-accent' : 'border-l-2 border-l-transparent'}
           ${isDragging ? 'opacity-40' : ''}
+          ${isHidden ? 'opacity-50' : ''}
         `}
       >
-        <DragHandleIcon className="w-2 h-3.5 shrink-0 text-muted opacity-0 group-hover:opacity-60 transition-opacity" />
+        <DragHandleIcon
+          className={`w-2 h-3.5 shrink-0 text-muted transition-opacity ${isLocked ? 'opacity-0' : 'opacity-0 group-hover:opacity-60'}`}
+        />
         <span className="font-mono text-xs text-accent shrink-0 w-4 text-center">
           {def?.icon}
         </span>
@@ -56,6 +87,26 @@ function SortableLayerRow({ obj, isSelected, isOver, onSelect, onToggle }: RowPr
           <span className="text-xs text-text truncate">{def?.label ?? obj.type}</span>
           <span className="font-mono text-[9px] text-muted">{obj.id.slice(0, 8)}</span>
         </div>
+        <button
+          type="button"
+          onPointerDown={stopRowClick}
+          onClick={(e) => { stopRowClick(e); onToggleVisible(); }}
+          title={isHidden ? tShow : tHide}
+          aria-label={isHidden ? tShow : tHide}
+          className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${isHidden ? 'text-accent' : 'text-muted opacity-0 group-hover:opacity-100'} hover:text-text hover:bg-surface`}
+        >
+          {isHidden ? <EyeSlashIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
+        </button>
+        <button
+          type="button"
+          onPointerDown={stopRowClick}
+          onClick={(e) => { stopRowClick(e); onToggleLock(); }}
+          title={isLocked ? tUnlock : tLock}
+          aria-label={isLocked ? tUnlock : tLock}
+          className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${isLocked ? 'text-accent' : 'text-muted opacity-0 group-hover:opacity-100'} hover:text-text hover:bg-surface`}
+        >
+          {isLocked ? <LockClosedIcon className="w-3.5 h-3.5" /> : <LockOpenIcon className="w-3.5 h-3.5" />}
+        </button>
       </div>
     </>
   );
@@ -63,8 +114,26 @@ function SortableLayerRow({ obj, isSelected, isOver, onSelect, onToggle }: RowPr
 
 export function LayersPanel() {
   const t = useT();
-  const { selectedIds, selectObject, toggleSelectObject, reorderObject } = useLabelStore();
+  const { selectedIds, selectObject, toggleSelectObject, reorderObject, updateObjects } = useLabelStore();
   const objects = useCurrentObjects();
+
+  /** Figma-style bulk pattern: a per-row toggle on a row that's part of the
+   *  active selection broadcasts to every selected object; clicking a row
+   *  outside the selection acts only on that row. The new value is derived
+   *  from the *clicked* object so the user gets the visual flip they
+   *  initiated even when the rest of the selection was in mixed states. */
+  const toggleField = (clickedId: string, field: 'locked' | 'visible') => {
+    const clicked = objects.find((o) => o.id === clickedId);
+    if (!clicked) return;
+    const currentlyOn = field === 'locked' ? !!clicked.locked : clicked.visible !== false;
+    const targets = selectedIds.includes(clickedId) ? selectedIds : [clickedId];
+    // `locked` flips false ↔ true; `visible` flips true ↔ false. Both are
+    // simply the inverse of the clicked row's current state — broadcast as
+    // the same value to every target so the bulk action is predictable
+    // (mixed-state selections all converge on the flipped value).
+    const nextValue = !currentlyOn;
+    updateObjects(targets.map((id) => ({ id, changes: { [field]: nextValue } })));
+  };
   const [overId, setOverId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -113,6 +182,12 @@ export function LayersPanel() {
               isOver={overId === obj.id}
               onSelect={() => selectObject(obj.id)}
               onToggle={() => toggleSelectObject(obj.id)}
+              onToggleLock={() => toggleField(obj.id, 'locked')}
+              onToggleVisible={() => toggleField(obj.id, 'visible')}
+              tLock={t.layers.lock}
+              tUnlock={t.layers.unlock}
+              tShow={t.layers.show}
+              tHide={t.layers.hide}
             />
           ))}
         </div>

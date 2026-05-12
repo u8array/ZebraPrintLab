@@ -29,6 +29,18 @@ export const labelObjectBaseSchema = z.object({
   positionType: z.enum(['FO', 'FT']).optional(),
   /** Emitted as ^FX before this field in ZPL output. Carries no print output. */
   comment: z.string().optional(),
+  /** When true, blocks position/size/prop edits, drag, resize and deletion.
+   *  Editor still allows selection and toggling of locked/visible/includeInExport
+   *  themselves so the lock can be released. Persisted; not exported to ZPL. */
+  locked: z.boolean().optional(),
+  /** When false, the object is omitted from the canvas render. Distinct from
+   *  includeInExport so a designer can hide reference geometry while still
+   *  shipping it. Defaults to true. */
+  visible: z.boolean().optional(),
+  /** When false, the object is skipped during ZPL generation. Distinct from
+   *  visible so a designer can preview placement without shipping. Defaults
+   *  to true. */
+  includeInExport: z.boolean().optional(),
 });
 
 export type LabelObjectBase = z.infer<typeof labelObjectBaseSchema>;

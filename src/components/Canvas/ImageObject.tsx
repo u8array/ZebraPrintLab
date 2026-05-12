@@ -94,7 +94,7 @@ export function ImageObject({
         height={h}
         stroke={isSelected ? colors.selection : undefined}
         strokeWidth={isSelected ? 2 : 0}
-        draggable
+        draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
@@ -107,7 +107,7 @@ export function ImageObject({
       id={obj.id}
       x={x}
       y={y}
-      draggable
+      draggable={!obj.locked}
       {...selectionHandlers(onSelect)}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}

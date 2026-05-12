@@ -380,7 +380,7 @@ export function LineObject({
         ]}
         stroke="transparent"
         strokeWidth={Math.max(lineStrokeWidth, 14)}
-        draggable
+        draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         onDragMove={(e) => {
           // Snap the absolute start-point position to the grid (not
@@ -418,7 +418,7 @@ export function LineObject({
             width={HANDLE_HIT_SIZE}
             height={HANDLE_HIT_SIZE}
             fill="transparent"
-            draggable
+            draggable={!obj.locked}
             onDragMove={(e) => {
               const endDotX = pxToDots(x2 - offsetX, scale, dpmm);
               const endDotY = pxToDots(y2 - offsetY, scale, dpmm);
@@ -483,7 +483,7 @@ export function LineObject({
             width={HANDLE_HIT_SIZE}
             height={HANDLE_HIT_SIZE}
             fill="transparent"
-            draggable
+            draggable={!obj.locked}
             onDragMove={(e) => {
               const r = endpointDrag(
                 e.target.x() + HANDLE_HIT_SIZE / 2,
@@ -542,7 +542,7 @@ export function LineObject({
             width={HANDLE_HIT_SIZE}
             height={HANDLE_HIT_SIZE}
             fill="transparent"
-            draggable
+            draggable={!obj.locked}
             onDragMove={(e) => {
               const cursorX = e.target.x() + HANDLE_HIT_SIZE / 2;
               const cursorY = e.target.y() + HANDLE_HIT_SIZE / 2;

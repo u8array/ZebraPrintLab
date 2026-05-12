@@ -41,10 +41,11 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
   }
   if (label.labelShift) lines.push(`^LS${label.labelShift}`);
 
-  lines.push(...objects.map((obj) => {
+  lines.push(...objects.flatMap((obj) => {
+    if (obj.includeInExport === false) return [];
     const zpl = ObjectRegistry[obj.type]?.toZPL(obj) ?? '';
-    if (!obj.comment) return zpl;
-    return `^FX${stripZplCommandChars(obj.comment)}\n${zpl}`;
+    if (!obj.comment) return [zpl];
+    return [`^FX${stripZplCommandChars(obj.comment)}\n${zpl}`];
   }));
 
   if (label.printQuantity && label.printQuantity > 1) {
