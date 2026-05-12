@@ -6,6 +6,7 @@ import {
   nextCycleIndex,
   type CycleAnchor,
 } from "../altClickCycle";
+import { objectIdsAtPoint } from "../hitTesting";
 
 interface Options {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -34,29 +35,11 @@ export function useAltClickCycle({ containerRef, stageRef, selectObject }: Optio
       if (!stage) return;
       const rect = el.getBoundingClientRect();
       const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      // Use Konva's own hit-graph: it accounts for view rotation, pan
-      // offset, per-shape transforms and the listening flag, all of
-      // which our own bbox math would have to mirror by hand.
-      const intersections = stage.getAllIntersections(point);
-      if (intersections.length === 0) return;
+      // Konva's own hit-graph respects view rotation, pan offset,
+      // per-shape transforms and the listening flag — far cheaper than
+      // mirroring all of that in our own bbox math.
       const objIds = new Set(getCurrentObjects().map((o) => o.id));
-      const hits: string[] = [];
-      const seen = new Set<string>();
-      for (const shape of intersections) {
-        // Walk up to the registered object Group (each KonvaObject sets
-        // `id={obj.id}` on its outer Group; intersections may land on a
-        // child Rect/Text/etc.).
-        let n: Konva.Node | null = shape;
-        while (n) {
-          const id = n.id();
-          if (id && objIds.has(id) && !seen.has(id)) {
-            hits.push(id);
-            seen.add(id);
-            break;
-          }
-          n = n.getParent();
-        }
-      }
+      const hits = objectIdsAtPoint(stage, point, objIds);
       if (hits.length === 0) return;
       e.stopPropagation();
       e.preventDefault();

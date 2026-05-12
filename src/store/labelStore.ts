@@ -338,15 +338,15 @@ export const useLabelStore = create<LabelState>()(
       removeSelectedObjects: () =>
         set((state) => {
           const sel = new Set(state.selectedIds);
+          const objs = currentObjects(state);
           // Locked objects survive a Delete keystroke / bulk-remove; the
           // multi-select clears down to whichever locked items remain.
-          const removable = (o: LabelObject) => sel.has(o.id) && !o.locked;
+          const lockedIds = objs.flatMap((o) => sel.has(o.id) && o.locked ? [o.id] : []);
           return {
-            ...updateCurrentObjects(state, (objs) => objs.filter((o) => !removable(o))),
-            selectedIds: state.selectedIds.filter((id) => {
-              const obj = currentObjects(state).find((o) => o.id === id);
-              return obj?.locked;
-            }),
+            ...updateCurrentObjects(state, (curr) =>
+              curr.filter((o) => !sel.has(o.id) || o.locked),
+            ),
+            selectedIds: lockedIds,
           };
         }),
 

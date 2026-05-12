@@ -13,6 +13,7 @@ import { useLabelStore, useCurrentObjects } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
 import type { LabelObject } from '../../registry';
 import { useT } from '../../lib/useT';
+import { buildBulkToggleUpdates, type ToggleField } from '../../lib/bulkToggle';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 
 interface RowProps {
@@ -116,29 +117,15 @@ export function LayersPanel() {
   const t = useT();
   const { selectedIds, selectObject, toggleSelectObject, reorderObject, updateObjects } = useLabelStore();
   const objects = useCurrentObjects();
-
-  /** Figma-style bulk pattern: a per-row toggle on a row that's part of the
-   *  active selection broadcasts to every selected object; clicking a row
-   *  outside the selection acts only on that row. The new value is derived
-   *  from the *clicked* object so the user gets the visual flip they
-   *  initiated even when the rest of the selection was in mixed states. */
-  const toggleField = (clickedId: string, field: 'locked' | 'visible') => {
-    const clicked = objects.find((o) => o.id === clickedId);
-    if (!clicked) return;
-    const currentlyOn = field === 'locked' ? !!clicked.locked : clicked.visible !== false;
-    const targets = selectedIds.includes(clickedId) ? selectedIds : [clickedId];
-    // `locked` flips false ↔ true; `visible` flips true ↔ false. Both are
-    // simply the inverse of the clicked row's current state — broadcast as
-    // the same value to every target so the bulk action is predictable
-    // (mixed-state selections all converge on the flipped value).
-    const nextValue = !currentlyOn;
-    updateObjects(targets.map((id) => ({ id, changes: { [field]: nextValue } })));
-  };
   const [overId, setOverId] = useState<string | null>(null);
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
+
+  const toggleField = (clickedId: string, field: ToggleField) => {
+    const updates = buildBulkToggleUpdates(objects, selectedIds, clickedId, field);
+    if (updates.length > 0) updateObjects(updates);
+  };
 
   if (objects.length === 0) {
     return (

@@ -27,6 +27,7 @@ import { Ruler, RULER_SIZE } from "./Ruler";
 import { ObjectRegistry } from "../../registry";
 import type { LabelObject } from "../../registry";
 import { useColorScheme } from "../../lib/useColorScheme";
+import { objectIdsAtPoint } from "./hitTesting";
 import { useT } from "../../lib/useT";
 import { useCanvasPanZoom } from "./hooks/useCanvasPanZoom";
 import { useCanvasLasso } from "./hooks/useCanvasLasso";
@@ -538,14 +539,15 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
 
   /**
    * Click-passthrough for locked objects (Figma idiom). The locked node
-   * still receives the click (`listening=true` so Alt+click cycle keeps
-   * working), but its onSelect routes here instead of selecting itself.
+   * still listens (so the Alt+click cycle keeps reaching it), but its
+   * onSelect routes here instead of selecting itself. The next non-locked
+   * hit at the same point wins; if nothing's left, treat as background.
    *
-   * Resolve what's under the same pointer: getAllIntersections returns the
-   * stack at that point in z-order, top first. Walk each hit up to the
-   * registered Konva id (matches the alt-click-cycle pattern in
-   * useAltClickCycle), drop locked ids, pick the first survivor. If
-   * nothing's left, treat as background click and clear the selection.
+   * Pointer source is `lastPointerRef` rather than the original click
+   * event because `onSelect` deliberately drops the event to keep the
+   * KonvaObjectProps surface narrow. The document-level pointermove
+   * listener updates the ref every frame, so by the time the click
+   * handler fires the ref is at the click position.
    */
   const handleLockedClick = (add: boolean) => {
     const stage = stageRef.current;
@@ -556,19 +558,13 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       y: lastPointerRef.current.y - cr.top,
     };
     const nonLocked = new Set(
-      getCurrentObjects().filter((o) => !o.locked).map((o) => o.id),
+      getCurrentObjects().flatMap((o) => o.locked ? [] : [o.id]),
     );
-    for (const shape of stage.getAllIntersections(point)) {
-      let n: Konva.Node | null = shape;
-      while (n) {
-        const id = n.id();
-        if (id && nonLocked.has(id)) {
-          if (add) toggleSelectObject(id);
-          else selectObject(id);
-          return;
-        }
-        n = n.getParent();
-      }
+    const hit = objectIdsAtPoint(stage, point, nonLocked)[0];
+    if (hit) {
+      if (add) toggleSelectObject(hit);
+      else selectObject(hit);
+      return;
     }
     if (!add) selectObjects([]);
   };
