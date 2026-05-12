@@ -427,7 +427,7 @@ export function BarcodeObject({
           clipY={0}
           clipWidth={Math.max(w, 1) + clipLeft + clipRight}
           clipHeight={Math.max(h, 1) + textFontSize + textGap}
-          draggable
+          draggable={!obj.locked}
           {...selectionHandlers(onSelect)}
           onDragMove={(e) =>
             e.target.position(snapPos(e.target.x(), e.target.y()))
@@ -517,7 +517,7 @@ export function BarcodeObject({
           id={obj.id}
           x={x}
           y={y}
-          draggable
+          draggable={!obj.locked}
           {...selectionHandlers(onSelect)}
           onDragMove={(e) =>
             e.target.position(snapPos(e.target.x(), e.target.y()))
@@ -712,7 +712,7 @@ export function BarcodeObject({
         id={obj.id}
         x={x}
         y={y}
-        draggable
+        draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
@@ -741,7 +741,7 @@ export function BarcodeObject({
       id={obj.id}
       x={x}
       y={y}
-      draggable
+      draggable={!obj.locked}
       {...selectionHandlers(onSelect)}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}

@@ -58,7 +58,11 @@ export function useCanvasLasso({ containerRef, stageRef, spaceDown, selectObject
     lassoRectRef.current = null;
     setLasso(null);
     if (!rect || !stageRef.current) return;
-    const ids = getCurrentObjects().map((o) => o.id);
+    // Figma-style: locked objects opt out of lasso selection — they can't
+    // be moved or transformed, so grabbing them into a marquee selection
+    // would make the post-lasso drag feel dead. Direct click and the
+    // LayersPanel still target locked items, so bulk-unlock stays possible.
+    const ids = getCurrentObjects().flatMap((o) => o.locked ? [] : [o.id]);
     selectObjects(getIdsIntersectingRect(stageRef.current, ids, rect));
   };
 

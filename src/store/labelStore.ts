@@ -16,7 +16,18 @@ export interface Page {
   objects: LabelObject[];
 }
 
+/** Meta fields that remain editable on a locked object so the user can
+ *  release the lock or annotate without unlocking first. Everything else
+ *  (position, props, rotation, positionType) is blocked. */
+const LOCK_BYPASS_KEYS = new Set(['locked', 'visible', 'includeInExport', 'comment']);
+
+function isLockBypass(changes: ObjectChanges): boolean {
+  const keys = Object.keys(changes);
+  return keys.length > 0 && keys.every((k) => LOCK_BYPASS_KEYS.has(k));
+}
+
 function applyObjectChanges(obj: LabelObject, changes: ObjectChanges): LabelObject {
+  if (obj.locked && !isLockBypass(changes)) return obj;
   const normalize = ObjectRegistry[obj.type]?.normalizeChanges;
   const normalized = normalize ? normalize(obj, changes) : changes;
   return {
@@ -241,10 +252,14 @@ export const useLabelStore = create<LabelState>()(
         }),
 
       removeObject: (id) =>
-        set((state) => ({
-          ...updateCurrentObjects(state, (objs) => objs.filter((obj) => obj.id !== id)),
-          selectedIds: state.selectedIds.filter((s) => s !== id),
-        })),
+        set((state) => {
+          const obj = currentObjects(state).find((o) => o.id === id);
+          if (obj?.locked) return {};
+          return {
+            ...updateCurrentObjects(state, (objs) => objs.filter((o) => o.id !== id)),
+            selectedIds: state.selectedIds.filter((s) => s !== id),
+          };
+        }),
 
       duplicateObject: (id) =>
         set((state) => {
@@ -321,10 +336,19 @@ export const useLabelStore = create<LabelState>()(
         }),
 
       removeSelectedObjects: () =>
-        set((state) => ({
-          ...updateCurrentObjects(state, (objs) => objs.filter((o) => !state.selectedIds.includes(o.id))),
-          selectedIds: [],
-        })),
+        set((state) => {
+          const sel = new Set(state.selectedIds);
+          const objs = currentObjects(state);
+          // Locked objects survive a Delete keystroke / bulk-remove; the
+          // multi-select clears down to whichever locked items remain.
+          const lockedIds = objs.flatMap((o) => sel.has(o.id) && o.locked ? [o.id] : []);
+          return {
+            ...updateCurrentObjects(state, (curr) =>
+              curr.filter((o) => !sel.has(o.id) || o.locked),
+            ),
+            selectedIds: lockedIds,
+          };
+        }),
 
       moveObjectToFront: (id) =>
         set((state) => {

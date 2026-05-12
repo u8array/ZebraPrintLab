@@ -170,6 +170,44 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
             }
           />
         </div>
+
+        {/* Lock — paired with the LayersPanel lock icon; mirroring it here
+            so a user already in PropertiesPanel can flip lock state without
+            jumping panels. Lock itself is a meta-field bypass in the store,
+            so the checkbox stays interactive even when the object is locked. */}
+        <label className="flex items-center gap-2 text-xs text-text cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={!!obj.locked}
+            onChange={(e) =>
+              updateObject(obj.id, { locked: e.target.checked || undefined })
+            }
+          />
+          <span>{t.properties.lock}</span>
+          <InformationCircleIcon
+            className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0"
+            title={t.properties.lockHint}
+          />
+        </label>
+
+        {/* Include in ZPL output — paired with the LayersPanel eye toggle:
+            visible controls editor render, includeInExport controls ZPL
+            emission. Stored as undefined when on so default state stays
+            absent from persisted JSON. */}
+        <label className="flex items-center gap-2 text-xs text-text cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={obj.includeInExport !== false}
+            onChange={(e) =>
+              updateObject(obj.id, { includeInExport: e.target.checked ? undefined : false })
+            }
+          />
+          <span>{t.properties.includeInExport}</span>
+          <InformationCircleIcon
+            className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0"
+            title={t.properties.includeInExportHint}
+          />
+        </label>
       </div>
     </div>
   );

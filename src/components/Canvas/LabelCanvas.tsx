@@ -27,6 +27,7 @@ import { Ruler, RULER_SIZE } from "./Ruler";
 import { ObjectRegistry } from "../../registry";
 import type { LabelObject } from "../../registry";
 import { useColorScheme } from "../../lib/useColorScheme";
+import { objectIdsAtPoint } from "./hitTesting";
 import { useT } from "../../lib/useT";
 import { useCanvasPanZoom } from "./hooks/useCanvasPanZoom";
 import { useCanvasLasso } from "./hooks/useCanvasLasso";
@@ -182,7 +183,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       updateObjects(
         ids.flatMap((sid) => {
           const obj = objs.find((o) => o.id === sid);
-          return obj ? [{ id: sid, changes: { x: obj.x + dx, y: obj.y + dy } }] : [];
+          if (!obj || obj.locked) return [];
+          return [{ id: sid, changes: { x: obj.x + dx, y: obj.y + dy } }];
         }),
       );
     };
@@ -535,6 +537,38 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     if (e.target === e.target.getStage()) selectObjects([]);
   };
 
+  /**
+   * Click-passthrough for locked objects (Figma idiom). The locked node
+   * still listens (so the Alt+click cycle keeps reaching it), but its
+   * onSelect routes here instead of selecting itself. The next non-locked
+   * hit at the same point wins; if nothing's left, treat as background.
+   *
+   * Pointer source is `lastPointerRef` rather than the original click
+   * event because `onSelect` deliberately drops the event to keep the
+   * KonvaObjectProps surface narrow. The document-level pointermove
+   * listener updates the ref every frame, so by the time the click
+   * handler fires the ref is at the click position.
+   */
+  const handleLockedClick = (add: boolean) => {
+    const stage = stageRef.current;
+    const cr = containerRef.current?.getBoundingClientRect();
+    if (!stage || !cr) return;
+    const point = {
+      x: lastPointerRef.current.x - cr.left,
+      y: lastPointerRef.current.y - cr.top,
+    };
+    const nonLocked = new Set(
+      getCurrentObjects().flatMap((o) => o.locked ? [] : [o.id]),
+    );
+    const hit = objectIdsAtPoint(stage, point, nonLocked)[0];
+    if (hit) {
+      if (add) toggleSelectObject(hit);
+      else selectObject(hit);
+      return;
+    }
+    if (!add) selectObjects([]);
+  };
+
   const handleMouseMove = (e: React.MouseEvent) => {
     onPanMouseMove(e);
     onLassoMouseMove(e);
@@ -737,7 +771,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 />
               )}
 
-              {objects.map((obj) => (
+              {objects.map((obj) => obj.visible === false ? null : (
                 <KonvaObject
                   key={obj.id}
                   obj={obj}
@@ -746,9 +780,11 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                   offsetX={objectsOffsetX}
                   offsetY={labelOffsetY}
                   isSelected={selectedIds.includes(obj.id)}
-                  onSelect={(add) =>
-                    add ? toggleSelectObject(obj.id) : selectObject(obj.id)
-                  }
+                  onSelect={(add) => {
+                    if (obj.locked) handleLockedClick(add);
+                    else if (add) toggleSelectObject(obj.id);
+                    else selectObject(obj.id);
+                  }}
                   onChange={(changes) => handleObjectChange(obj.id, changes)}
                   snap={snap}
                   getOthersSnapshot={snapEnabled ? undefined : getOthersSnapshot}

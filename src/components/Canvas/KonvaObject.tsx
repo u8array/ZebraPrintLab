@@ -193,7 +193,7 @@ function KonvaObjectInner({
           x={x}
           y={y}
           rotation={zplRotationDeg[p.rotation]}
-          draggable
+          draggable={!obj.locked}
           {...selectionHandlers(onSelect)}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
@@ -230,7 +230,7 @@ function KonvaObjectInner({
         fill="#000000"
         stroke={isSelected ? colors.selection : undefined}
         strokeWidth={isSelected ? 1 : 0}
-        draggable
+        draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
@@ -263,7 +263,7 @@ function KonvaObjectInner({
         fill="#000000"
         stroke={isSelected ? colors.selection : undefined}
         strokeWidth={isSelected ? 1 : 0}
-        draggable
+        draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
@@ -342,7 +342,7 @@ function KonvaObjectInner({
         id={obj.id}
         x={x}
         y={y}
-        draggable
+        draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
@@ -410,7 +410,7 @@ function KonvaObjectInner({
         }
         strokeScaleEnabled={false}
         fill={fill}
-        draggable
+        draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         onDragMove={(e) => {
           // Center-anchored: snap the top-left corner, then re-add radius
@@ -457,7 +457,7 @@ function KonvaObjectInner({
         }
         strokeScaleEnabled={false}
         fill={fill}
-        draggable
+        draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         onDragMove={(e) => {
           const snapped = snapPos(e.target.x() - r, e.target.y() - r);

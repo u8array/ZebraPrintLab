@@ -52,6 +52,20 @@ describe('generateZPL — structure', () => {
     const zpl = generateZPL({ ...BASE_LABEL, labelShift: 5 }, []);
     expect(zpl).toContain('^LS5');
   });
+
+  it('omits objects with includeInExport=false', () => {
+    const objs = [
+      { id: 'a', type: 'text', x: 10, y: 10, rotation: 0, props: { content: 'KEEP', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: false } },
+      { id: 'b', type: 'text', x: 20, y: 20, rotation: 0, includeInExport: false, props: { content: 'DROP', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: false } },
+    // Casting around the registry's discriminated union — the generator only
+    // reads obj.type / obj.includeInExport / obj.comment, the shape per type
+    // is exercised by registry tests.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any;
+    const zpl = generateZPL(BASE_LABEL, objs);
+    expect(zpl).toContain('KEEP');
+    expect(zpl).not.toContain('DROP');
+  });
 });
 
 describe('generateZPL — printer params', () => {

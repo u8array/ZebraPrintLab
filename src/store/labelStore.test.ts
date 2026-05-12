@@ -107,6 +107,69 @@ describe('removeObject', () => {
   });
 });
 
+// ── locking ───────────────────────────────────────────────────────────────────
+
+describe('lock', () => {
+  it('blocks position changes on a locked object', () => {
+    state().addObject('text', { x: 100, y: 100 });
+    const id = defined(objs()[0]).id;
+    state().updateObject(id, { locked: true });
+    state().updateObject(id, { x: 999, y: 999 });
+    expect(defined(objs()[0]).x).toBe(100);
+    expect(defined(objs()[0]).y).toBe(100);
+  });
+
+  it('blocks prop changes on a locked object', () => {
+    state().addObject('text');
+    const id = defined(objs()[0]).id;
+    state().updateObject(id, { locked: true });
+    state().updateObject(id, { props: { fontHeight: 99 } });
+    expect(props(defined(objs()[0])).fontHeight).not.toBe(99);
+  });
+
+  it('allows the lock itself to be toggled off', () => {
+    state().addObject('text');
+    const id = defined(objs()[0]).id;
+    state().updateObject(id, { locked: true });
+    state().updateObject(id, { locked: false });
+    state().updateObject(id, { x: 500 });
+    expect(defined(objs()[0]).x).toBe(500);
+  });
+
+  it('allows visibility, includeInExport and comment edits while locked', () => {
+    state().addObject('text');
+    const id = defined(objs()[0]).id;
+    state().updateObject(id, { locked: true });
+    state().updateObject(id, { visible: false });
+    state().updateObject(id, { includeInExport: false });
+    state().updateObject(id, { comment: 'note' });
+    const o = defined(objs()[0]);
+    expect(o.visible).toBe(false);
+    expect(o.includeInExport).toBe(false);
+    expect(o.comment).toBe('note');
+  });
+
+  it('protects locked objects from removeObject', () => {
+    state().addObject('text');
+    const id = defined(objs()[0]).id;
+    state().updateObject(id, { locked: true });
+    state().removeObject(id);
+    expect(objs()).toHaveLength(1);
+  });
+
+  it('protects locked objects from removeSelectedObjects but removes unlocked siblings', () => {
+    state().addObject('text', { x: 0, y: 0 });
+    state().addObject('text', { x: 10, y: 10 });
+    const lockedId = defined(objs()[0]).id;
+    const otherId = defined(objs()[1]).id;
+    state().updateObject(lockedId, { locked: true });
+    state().selectObjects([lockedId, otherId]);
+    state().removeSelectedObjects();
+    expect(ids()).toEqual([lockedId]);
+    expect(state().selectedIds).toEqual([lockedId]);
+  });
+});
+
 // ── duplicateObject ───────────────────────────────────────────────────────────
 
 describe('duplicateObject', () => {

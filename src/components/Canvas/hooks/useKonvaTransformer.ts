@@ -156,15 +156,17 @@ export function useKonvaTransformer({
     }
     if (selectedIds.length === 1) {
       const selectedObj = objects.find((o) => o.id === selectedIds[0]);
-      const useTransformer = selectedObj && selectedObj.type !== "line";
+      const useTransformer =
+        selectedObj && selectedObj.type !== "line" && !selectedObj.locked;
       const node = useTransformer
         ? stageRef.current.findOne<Konva.Node>(`#${selectedIds[0]}`)
         : null;
       transformerRef.current.nodes(node ? [node] : []);
     } else {
       const nodes = selectedIds
-        .filter((id) => objects.find((o) => o.id === id)?.type !== "line")
-        .map((id) => stageRef.current?.findOne<Konva.Node>(`#${id}`))
+        .map((id) => objects.find((o) => o.id === id))
+        .filter((o): o is LabelObject => !!o && o.type !== "line" && !o.locked)
+        .map((o) => stageRef.current?.findOne<Konva.Node>(`#${o.id}`))
         .filter((n): n is Konva.Node => n != null);
       transformerRef.current.nodes(nodes);
     }
@@ -178,11 +180,12 @@ export function useKonvaTransformer({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIds, selectedTypesKey, selectedSignature, stageRef, transformerRef]);
 
-  const resizeEnabled = selectedIds.length <= 1;
-  const singleType =
+  const singleSelected =
     selectedIds.length === 1
-      ? objects.find((o) => o.id === selectedIds[0])?.type ?? ""
-      : "";
+      ? objects.find((o) => o.id === selectedIds[0])
+      : undefined;
+  const resizeEnabled = selectedIds.length <= 1 && !singleSelected?.locked;
+  const singleType = singleSelected?.type ?? "";
   const isUniformScale = !!ObjectRegistry[singleType]?.uniformScale;
   const enabledAnchors: string[] | undefined =
     selectedIds.length > 1
