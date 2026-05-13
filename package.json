@@ -18,9 +18,9 @@
     "@heroicons/react": "^2.2.0",
     "bwip-js": "^4.10.1",
     "konva": "^10.3.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-konva": "^19.2.3",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-konva": "^19.2.4",
     "zod": "^4.4.3",
     "zundo": "^2.3.0",
     "zustand": "^5.0.13"
@@ -30,9 +30,9 @@
     "@eslint/js": "^9.39.4",
     "@napi-rs/canvas": "^1.0.0",
     "@rolldown/plugin-babel": "^0.2.3",
-    "@tailwindcss/vite": "^4.2.4",
+    "@tailwindcss/vite": "^4.3.0",
     "@types/babel__core": "^7.20.5",
-    "@types/node": "^24.12.2",
+    "@types/node": "^24.12.4",
     "@types/pixelmatch": "^5.2.6",
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19.2.14",
@@ -45,10 +45,10 @@
     "globals": "^17.6.0",
     "pixelmatch": "^7.2.0",
     "pngjs": "^7.0.0",
-    "tailwindcss": "^4.2.4",
+    "tailwindcss": "^4.3.0",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.10",
-    "vitest": "^4.1.5"
+    "typescript-eslint": "^8.59.3",
+    "vite": "^8.0.12",
+    "vitest": "^4.1.6"
   }
 }
