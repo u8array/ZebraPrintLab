@@ -1,4 +1,4 @@
-import { parseZPL, type ImportFinding, type ImportReport } from "./zplParser";
+import { parseZPL, type ImportFinding, type ImportFindingKind, type ImportReport } from "./zplParser";
 import type { LabelConfig } from "../types/ObjectType";
 import type { LabelObject } from "../registry";
 
@@ -50,14 +50,17 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     }
   });
 
+  // Bucket views deduplicate by command code to match the JSDoc contract on
+  // ImportReport (see zplParser.ts). The per-occurrence model lives in
+  // `findings`; consumers that only need the set of distinct affected
+  // commands read these buckets unchanged.
+  const dedupBy = (kind: ImportFindingKind) =>
+    [...new Set(findings.filter((f) => f.kind === kind).map((f) => f.command))];
   const report: ImportReport = {
     findings,
-    // Bucket views stay per-occurrence too (no Set dedup): the modal lists
-    // findings one-per-row so it can navigate to each affected page, and
-    // legacy text reports / parser tests read these arrays unchanged.
-    partial: findings.filter((f) => f.kind === 'partial').map((f) => f.command),
-    browserLimit: findings.filter((f) => f.kind === 'browserLimit').map((f) => f.command),
-    unknown: findings.filter((f) => f.kind === 'unknown').map((f) => f.command),
+    partial: dedupBy('partial'),
+    browserLimit: dedupBy('browserLimit'),
+    unknown: dedupBy('unknown'),
   };
 
   return { labelConfig, pages, report };

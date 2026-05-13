@@ -1,6 +1,5 @@
 import { describeFinding } from '../../lib/importReport';
-import type { ImportResult } from '../../lib/importReport';
-import type { ImportFinding, ImportFindingKind } from '../../lib/zplParser';
+import type { ImportFinding, ImportFindingKind, ImportResult } from '../../lib/importReport';
 
 export type { ImportResult };
 

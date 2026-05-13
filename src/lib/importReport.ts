@@ -1,5 +1,10 @@
-import type { ImportFinding, ImportReport } from './zplParser';
+import type { ImportFinding, ImportFindingKind, ImportReport } from './zplParser';
 import { ZPL_COMMAND_MAP } from './zplCommandSupport';
+
+// Re-export the parser-side domain types so UI code talks to the report
+// surface through this module exclusively instead of reaching into the
+// parser for type imports.
+export type { ImportFinding, ImportFindingKind, ImportReport };
 
 export interface ImportResult {
   objectCount: number;
