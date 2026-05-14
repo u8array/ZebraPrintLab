@@ -3,6 +3,7 @@ import {
   DndContext,
   PointerSensor,
   closestCenter,
+  useDroppable,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -28,6 +29,12 @@ import { DragHandleIcon } from '../ui/DragHandleIcon';
 /** Sentinel container id for the top-level objects list. Group containers
  *  use the group's own id, so the root needs a value that can't collide. */
 const ROOT_CONTAINER = '__root__';
+
+/** Droppable id for the implicit drop zone rendered after the last row.
+ *  Lets the user pull a child out of a group by dragging downward past
+ *  the bottom of the panel — without this, the bottom-most element has
+ *  no row below it to use as a drop target. */
+const BOTTOM_DROP_ZONE = '__bottom_drop__';
 
 interface FlatRow {
   obj: LabelObject;
@@ -210,6 +217,21 @@ function LayerRow({
   );
 }
 
+function BottomDropZone({ active }: { active: boolean }) {
+  const { setNodeRef } = useDroppable({ id: BOTTOM_DROP_ZONE });
+  // 12px is enough to be a comfortable hit target without adding visible
+  // panel padding. Highlights softly while a drag is hovering it so the
+  // user sees the extract-to-top-level affordance.
+  return (
+    <div
+      ref={setNodeRef}
+      className={`h-3 mx-2 mt-0.5 rounded transition-colors ${
+        active ? 'bg-accent/30 outline outline-1 outline-accent/60' : 'bg-transparent'
+      }`}
+    />
+  );
+}
+
 export function LayersPanel() {
   const t = useT();
   const {
@@ -266,6 +288,15 @@ export function LayersPanel() {
     setOverId(null);
     if (!over || active.id === over.id) return;
     const activeId = active.id as string;
+
+    // Bottom drop zone: move the active to the very bottom of the
+    // top-level list (data index 0 in display-reversed terms). Lets a
+    // user extract a child by dragging downward past the last row.
+    if (over.id === BOTTOM_DROP_ZONE) {
+      reparentObject(activeId, { parentId: null, index: 0 });
+      return;
+    }
+
     const overRow = rowsById.get(over.id as string);
     if (!overRow) return;
 
@@ -380,6 +411,7 @@ export function LayersPanel() {
               tUngroupLabel={t.layers.ungroup}
             />
           ))}
+          <BottomDropZone active={overId === BOTTOM_DROP_ZONE} />
         </div>
       </SortableContext>
     </DndContext>
