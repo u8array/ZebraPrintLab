@@ -59,7 +59,11 @@ interface RowProps {
   containerId: string;
   isSelected: boolean;
   isExpanded: boolean;
+  /** Highlight the row body — used for "drop into this group". */
   isDropTarget: boolean;
+  /** Show an accent line above this row — used for sibling drops so the
+   *  user sees the exact landing slot before releasing. */
+  showInsertionLine: boolean;
   onSelect: () => void;
   onToggle: () => void;
   onToggleLock: () => void;
@@ -83,6 +87,7 @@ function LayerRow({
   isSelected,
   isExpanded,
   isDropTarget,
+  showInsertionLine,
   onSelect,
   onToggle,
   onToggleLock,
@@ -108,8 +113,18 @@ function LayerRow({
     disabled: isLocked,
   });
   const stopRowClick = (e: React.MouseEvent) => e.stopPropagation();
+  // Indent the insertion line so it visually aligns with the indented
+  // row, signalling that the drop will land at that nesting level.
+  const linePadLeft = depth > 0 ? depth * 16 + 16 : 8;
 
   return (
+    <>
+      <div
+        className={`h-0.5 mr-2 rounded transition-colors ${
+          showInsertionLine ? 'bg-accent' : 'bg-transparent'
+        }`}
+        style={{ marginLeft: linePadLeft }}
+      />
     <div
       ref={setNodeRef}
       style={{ touchAction: 'none', paddingLeft: depth > 0 ? depth * 16 + 8 : undefined }}
@@ -191,6 +206,7 @@ function LayerRow({
         {isLocked ? <LockClosedIcon className="w-3.5 h-3.5" /> : <LockOpenIcon className="w-3.5 h-3.5" />}
       </button>
     </div>
+    </>
   );
 }
 
@@ -296,15 +312,23 @@ export function LayersPanel() {
 
   const handleDragCancel = () => setOverId(null);
 
-  // The collapsed group that the active drag is currently over, if any.
-  // Used to render a "drop into" highlight on that single row.
-  const dropIntoTargetId = (() => {
-    if (!overId) return null;
-    const r = rowsById.get(overId);
-    if (!r || !isGroup(r.obj)) return null;
-    if (expandedIds.has(r.obj.id)) return null;
-    return r.obj.id;
-  })();
+  // While dragging, `overId` is the row the cursor is currently on top
+  // of. Translate that into one of two visual modes:
+  //
+  //   dropIntoTargetId – the row's body gets an outline because the
+  //     drop will dive INTO it (collapsed group case).
+  //   insertionLineRowId – the row gets a thin accent line above it
+  //     because the drop will land as a sibling immediately before it
+  //     (in display order). Suppressed when the active is already at
+  //     that exact slot, so the indicator only shows when releasing
+  //     would actually change the model.
+  const overRow = overId ? rowsById.get(overId) ?? null : null;
+  const dropIntoTargetId =
+    overRow && isGroup(overRow.obj) && !expandedIds.has(overRow.obj.id)
+      ? overRow.obj.id
+      : null;
+  const insertionLineRowId =
+    overRow && !dropIntoTargetId ? overRow.obj.id : null;
 
   return (
     <DndContext
@@ -325,6 +349,7 @@ export function LayersPanel() {
               isSelected={selectedIds.includes(obj.id)}
               isExpanded={expandedIds.has(obj.id)}
               isDropTarget={dropIntoTargetId === obj.id}
+              showInsertionLine={insertionLineRowId === obj.id}
               onSelect={() => selectObject(obj.id)}
               onToggle={() => toggleSelectObject(obj.id)}
               onToggleLock={() => toggleField(obj.id, 'locked')}
