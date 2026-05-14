@@ -189,13 +189,14 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
         <div className="border-t border-border" />
 
         {TypePanel && (
-          <TypePanel
-            obj={obj}
-            onChange={(props) => updateObject(obj.id, { props })}
-          />
+          <>
+            <TypePanel
+              obj={obj}
+              onChange={(props) => updateObject(obj.id, { props })}
+            />
+            <div className="border-t border-border" />
+          </>
         )}
-
-        <div className="border-t border-border" />
 
         {/* Comment (^FX) */}
         <div className="flex flex-col gap-1">
