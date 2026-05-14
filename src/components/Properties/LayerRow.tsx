@@ -30,6 +30,9 @@ export interface LayerRowProps {
   /** Show an accent line above this row — used for sibling drops so the
    *  user sees the exact landing slot before releasing. */
   showInsertionLine: boolean;
+  /** Add a small bottom gap because the next row in display order leaves
+   *  this row's container (depth drops). Visually closes the group. */
+  isContainerEnd: boolean;
   /** Visual depth at which to render the insertion line. Diverges from
    *  the row's own depth while the user drags horizontally to climb out
    *  of a deeply nested container. */
@@ -54,6 +57,7 @@ export function LayerRow({
   isDropTarget,
   showInsertionLine,
   insertionLineDepth,
+  isContainerEnd,
   onSelect,
   onToggle,
   onToggleLock,
@@ -135,6 +139,7 @@ export function LayerRow({
         ${isDragging ? 'opacity-40' : ''}
         ${isHidden ? 'opacity-50' : ''}
         ${isDropTarget ? 'bg-accent/15 outline outline-1 outline-accent/60' : ''}
+        ${isContainerEnd ? 'mb-1' : ''}
       `}
     >
       {/* Indent guide lines: one fixed-width spacer per ancestor level,

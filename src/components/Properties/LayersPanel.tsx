@@ -112,7 +112,7 @@ export function LayersPanel() {
       ) : (
         <SortableContext items={allRowIds} strategy={verticalListSortingStrategy}>
           <div ref={panelRef} className="flex flex-col">
-            {rows.map(({ obj, depth, containerId }) => (
+            {rows.map(({ obj, depth, containerId }, i) => (
               <LayerRow
                 key={obj.id}
                 obj={obj}
@@ -125,6 +125,13 @@ export function LayersPanel() {
                 showInsertionLine={preview.insertionLineRowId === obj.id}
                 insertionLineDepth={
                   preview.insertionLineRowId === obj.id ? preview.insertionLineDepth : null
+                }
+                // The next row leaving a deeper container marks the
+                // boundary: add a small bottom gap so the user sees the
+                // group "close" before the next sibling at the parent
+                // level begins.
+                isContainerEnd={
+                  depth > 0 && (rows[i + 1]?.depth ?? -1) < depth
                 }
                 onSelect={() => selectObject(obj.id)}
                 onToggle={() => toggleSelectObject(obj.id)}
