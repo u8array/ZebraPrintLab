@@ -125,17 +125,27 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
 
   // Render path operates on visible leaves only: groups emit no node of
   // their own (v1 has no group transform), and a group with visible=false
-  // hides its whole subtree.
+  // hides its whole subtree. Lock cascades the same way — a leaf inside
+  // a locked group is stamped as effectively locked so the per-leaf
+  // draggable / locked-click checks all see one consistent value
+  // without each consumer having to walk ancestors.
   const visibleLeaves = useMemo(() => {
     const out: LabelObject[] = [];
-    const walk = (nodes: LabelObject[]) => {
+    const walk = (nodes: LabelObject[], inheritedLocked: boolean, inheritedHidden: boolean) => {
       for (const n of nodes) {
-        if (n.visible === false) continue;
-        if (isGroup(n)) walk(n.children);
-        else out.push(n);
+        const locked = inheritedLocked || !!n.locked;
+        const hidden = inheritedHidden || n.visible === false;
+        if (hidden) continue;
+        if (isGroup(n)) {
+          walk(n.children, locked, hidden);
+        } else {
+          // Preserve object identity when nothing was inherited so React
+          // memoisation keeps unaffected leaves stable across renders.
+          out.push(locked && !n.locked ? ({ ...n, locked: true } as LabelObject) : n);
+        }
       }
     };
-    walk(objects);
+    walk(objects, false, false);
     return out;
   }, [objects]);
 
@@ -207,9 +217,13 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       // always move the object the way the user sees it on the rotated view.
       const [dx, dy] = inverseRotateDelta(screenDx, screenDy, viewRotation);
 
+      // Expand so arrow keys move every leaf of a selected group, not
+      // the group node itself (whose x/y is conventionally 0 and has no
+      // effect on rendered children).
+      const expanded = expandSelection(objs, ids);
       updateObjects(
-        ids.flatMap((sid) => {
-          const obj = objs.find((o) => o.id === sid);
+        expanded.flatMap((sid) => {
+          const obj = findObjectById(objs, sid);
           if (!obj || obj.locked) return [];
           return [{ id: sid, changes: { x: obj.x + dx, y: obj.y + dy } }];
         }),
@@ -347,8 +361,12 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
         const ids = state.selectedIds;
         if (ids.length === 0) return;
         const objs = currentObjects(state);
+        // Konva nodes only exist for leaves; align operates on the
+        // measured rendered bboxes, so expand any selected group to its
+        // leaf ids and feed those into the Konva lookup.
+        const attachable = expandSelection(objs, ids);
 
-        const boxes = ids.flatMap((id) => {
+        const boxes = attachable.flatMap((id) => {
           const node = stage.findOne<Konva.Node>(`#${id}`);
           if (!node) return [];
           const r = node.getClientRect({ relativeTo: stage });
@@ -375,8 +393,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
         const dxDots = Math.round(layoutDx / pxPerDot);
         const dyDots = Math.round(layoutDy / pxPerDot);
 
-        const updates = ids.flatMap((id) => {
-          const obj = objs.find((o) => o.id === id);
+        const updates = attachable.flatMap((id) => {
+          const obj = findObjectById(objs, id);
           if (!obj) return [];
           return [
             { id, changes: { x: obj.x + dxDots, y: obj.y + dyDots } },
@@ -815,7 +833,13 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                     // surfaces the outermost containing group as the
                     // selection target. Top-level leaves pass through.
                     const target = selectionTargetId(objects, obj.id);
-                    if (obj.locked) handleLockedClick(add);
+                    // Lock cascades from the group: a click on a child
+                    // of a locked group routes through handleLockedClick
+                    // (so the next non-locked hit wins) instead of
+                    // selecting through to a leaf the user can't move.
+                    const targetObj =
+                      target === obj.id ? obj : findObjectById(objects, target);
+                    if (targetObj?.locked) handleLockedClick(add);
                     else if (add) toggleSelectObject(target);
                     else selectObject(target);
                   }}
