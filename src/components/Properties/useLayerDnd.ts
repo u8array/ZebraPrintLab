@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core';
 import { isGroup, findObjectById, findAncestors } from '../../types/Group';
+import type { GroupObject } from '../../types/Group';
 import type { LabelObject } from '../../registry';
 
 /** Sentinel container id for the top-level objects list. Group containers
@@ -95,6 +96,14 @@ function resolveDropTarget(
   };
 }
 
+/** A group becomes a "drop into" target when it has no expanded children
+ *  to drop between — either collapsed, or expanded but empty. Used by
+ *  both the live preview and the on-release commit so the two stay in
+ *  lockstep; without this helper a change in one would silently drift. */
+function shouldDropInto(group: GroupObject, expandedIds: Set<string>): boolean {
+  return !expandedIds.has(group.id) || group.children.length === 0;
+}
+
 interface DropPreview {
   /** Row whose body should be outlined as a "drop into" target. */
   dropIntoTargetId: string | null;
@@ -177,12 +186,7 @@ export function useLayerDnd({
     const overRow = rowsById.get(over.id as string);
     if (!overRow) return;
 
-    // "Drop into group" target: a group that has no expanded children
-    // to drop between — either collapsed, or expanded but empty.
-    if (
-      isGroup(overRow.obj) &&
-      (!expandedIds.has(overRow.obj.id) || overRow.obj.children.length === 0)
-    ) {
+    if (isGroup(overRow.obj) && shouldDropInto(overRow.obj, expandedIds)) {
       reparentObject(activeId, {
         parentId: overRow.obj.id,
         index: overRow.obj.children.length,
@@ -232,10 +236,7 @@ export function useLayerDnd({
     if (!overRow) {
       return { dropIntoTargetId: null, insertionLineRowId: null, insertionLineDepth: null };
     }
-    if (
-      isGroup(overRow.obj) &&
-      (!expandedIds.has(overRow.obj.id) || overRow.obj.children.length === 0)
-    ) {
+    if (isGroup(overRow.obj) && shouldDropInto(overRow.obj, expandedIds)) {
       return {
         dropIntoTargetId: overRow.obj.id,
         insertionLineRowId: null,
