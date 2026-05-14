@@ -63,21 +63,29 @@ function climbContainer(
   return { containerId: current, overObj };
 }
 
+/** Quantise a cursor X (panel-relative) into an indent depth. Used by
+ *  the drop-mode resolver and `resolveDropTarget` so cursor position is
+ *  read through one mapping. */
+function cursorDepthFor(dragCursorX: number | null, fallback: number): number {
+  return dragCursorX !== null
+    ? Math.max(0, Math.floor((dragCursorX - INDENT_DEAD_ZONE) / INDENT_STEP))
+    : fallback;
+}
+
 /**
- * Resolve the cursor position + over-row into the actual drop target:
- * which container to write into, which row the insertion sits above (for
- * the visual line), and at which visual depth the line sits. Pure
- * function so the same logic powers both the live preview and the
- * on-release write.
+ * Resolve the cursor position + over-row into the actual sibling drop
+ * target: which container to write into, which row the insertion sits
+ * above (for the visual line), and at which visual depth the line
+ * sits. Pure function — used by both the live preview and the
+ * on-release commit. Drop-into-group decisions live in
+ * `resolveDropMode` above this.
  */
 function resolveDropTarget(
   objects: LabelObject[],
   overRow: FlatRow,
   dragCursorX: number | null,
 ): { targetParent: string | null; overObj: LabelObject; effectiveDepth: number } {
-  const cursorDepth = dragCursorX !== null
-    ? Math.max(0, Math.floor((dragCursorX - INDENT_DEAD_ZONE) / INDENT_STEP))
-    : overRow.depth;
+  const cursorDepth = cursorDepthFor(dragCursorX, overRow.depth);
   const effectiveDepth = Math.min(cursorDepth, overRow.depth);
   const levels = overRow.depth - effectiveDepth;
   if (levels === 0) {
@@ -112,13 +120,49 @@ function shouldDropInto(
   return cursorDepth > groupDepth;
 }
 
-/** Quantise a cursor X (panel-relative) into an indent depth. Mirrors
- *  resolveDropTarget's math so the two never disagree on what depth
- *  the user is targeting. */
-function cursorDepthFor(dragCursorX: number | null, fallback: number): number {
-  return dragCursorX !== null
-    ? Math.max(0, Math.floor((dragCursorX - INDENT_DEAD_ZONE) / INDENT_STEP))
-    : fallback;
+/** Discriminated drop outcome: either we're filling a group (into) or
+ *  inserting beside an existing row at some effective depth (sibling).
+ *  One representation that both `onDragEnd` and the preview memo match
+ *  against, so the commit and the rendered indicator can never drift. */
+type DropMode =
+  | { kind: 'into'; group: GroupObject }
+  | {
+      kind: 'sibling';
+      targetParent: string | null;
+      overObj: LabelObject;
+      effectiveDepth: number;
+    };
+
+/** Single home for "where is the drop going" — used by the commit
+ *  path and the preview derivation alike. */
+function resolveDropMode(
+  objects: LabelObject[],
+  overRow: FlatRow,
+  dragCursorX: number | null,
+  expandedIds: Set<string>,
+): DropMode {
+  const cursorDepth = cursorDepthFor(dragCursorX, overRow.depth);
+  if (
+    isGroup(overRow.obj) &&
+    shouldDropInto(overRow.obj, overRow.depth, expandedIds, cursorDepth)
+  ) {
+    return { kind: 'into', group: overRow.obj };
+  }
+  const slot = resolveDropTarget(objects, overRow, dragCursorX);
+  return { kind: 'sibling', ...slot };
+}
+
+/** Resolve a parent id (or null for root) into the child array to
+ *  splice into. Returns null when the id doesn't name a group — the
+ *  layers panel shouldn't produce this, but a defensive return keeps
+ *  the commit path from picking up bogus state. */
+function containerChildrenOf(
+  objects: LabelObject[],
+  parentId: string | null,
+): LabelObject[] | null {
+  if (parentId === null) return objects;
+  const parent = findObjectById(objects, parentId);
+  return parent && isGroup(parent) ? parent.children : null;
 }
 
 interface DropPreview {
@@ -214,31 +258,21 @@ export function useLayerDnd({
     const activeId = active.id as string;
     const overRow = rowsById.get(over.id as string);
     if (!overRow) return;
-
-    const cursorDepth = cursorDepthFor(dragCursorX, overRow.depth);
-    if (
-      isGroup(overRow.obj) &&
-      shouldDropInto(overRow.obj, overRow.depth, expandedIds, cursorDepth)
-    ) {
+    const mode = resolveDropMode(objects, overRow, dragCursorX, expandedIds);
+    if (mode.kind === 'into') {
       reparentObject(activeId, {
-        parentId: overRow.obj.id,
-        index: overRow.obj.children.length,
+        parentId: mode.group.id,
+        index: mode.group.children.length,
       });
       return;
     }
-
-    const { targetParent, overObj } = resolveDropTarget(objects, overRow, dragCursorX);
-    // Pure no-op (cursor stayed on its own row, no climb) → exit. If
-    // indent climbing produced an ancestor as the effective over, the
-    // drop still proceeds even when active === over at the row level.
+    // Sibling drop. Pure no-op (cursor stayed on its own row, no
+    // climb) → exit. If indent climbing produced an ancestor as the
+    // effective over, the drop still proceeds even when active ===
+    // over at the row level.
+    const { targetParent, overObj } = mode;
     if (overObj.id === activeId) return;
-
-    const containerChildren = targetParent === null
-      ? objects
-      : (() => {
-          const g = findObjectById(objects, targetParent);
-          return g && isGroup(g) ? g.children : null;
-        })();
+    const containerChildren = containerChildrenOf(objects, targetParent);
     if (!containerChildren) return;
     const overDataIndex = containerChildren.findIndex((c) => c.id === overObj.id);
     if (overDataIndex === -1) return;
@@ -247,36 +281,29 @@ export function useLayerDnd({
     // over's slot in data order and over (and everything above it in
     // data) shifts up by one. In display (reversed) terms, active lands
     // at the visual position over was at and over moves one row up.
-    // The previous '+1 when active above over' branch made the bottom
-    // slot (data index 0) unreachable and produced a no-op when the
-    // drop crossed exactly one neighbour.
     reparentObject(activeId, { parentId: targetParent, index: overDataIndex });
   };
 
-  // Derive preview from the same resolution path used by the commit
-  // logic above, so the rendered line / outline is guaranteed to match
-  // where a release would land.
+  // Derive preview from the same resolveDropMode path used on commit,
+  // so the rendered line / outline is guaranteed to match where a
+  // release would land.
   const preview = useMemo<DropPreview>(() => {
     const overRow = overId ? rowsById.get(overId) ?? null : null;
     if (!overRow) {
       return { dropIntoTargetId: null, insertionLineRowId: null, insertionLineDepth: null };
     }
-    const cursorDepth = cursorDepthFor(dragCursorX, overRow.depth);
-    if (
-      isGroup(overRow.obj) &&
-      shouldDropInto(overRow.obj, overRow.depth, expandedIds, cursorDepth)
-    ) {
+    const mode = resolveDropMode(objects, overRow, dragCursorX, expandedIds);
+    if (mode.kind === 'into') {
       return {
-        dropIntoTargetId: overRow.obj.id,
+        dropIntoTargetId: mode.group.id,
         insertionLineRowId: null,
         insertionLineDepth: null,
       };
     }
-    const slot = resolveDropTarget(objects, overRow, dragCursorX);
     return {
       dropIntoTargetId: null,
-      insertionLineRowId: slot.overObj.id,
-      insertionLineDepth: slot.effectiveDepth,
+      insertionLineRowId: mode.overObj.id,
+      insertionLineDepth: mode.effectiveDepth,
     };
     // rowsById is the projection of rows, so depending on it covers
     // expand/collapse reshuffles without needing rows as a separate dep.
