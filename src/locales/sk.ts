@@ -406,6 +406,7 @@ const sk = {
     toBack: 'Odoslať do pozadia',
     lock: 'Uzamknúť',
     unlock: 'Odomknúť',
+    ungroup: 'Zrušiť skupinu',
     show: 'Zobraziť',
     hide: 'Skryť',
   },

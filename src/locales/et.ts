@@ -406,6 +406,7 @@ const et = {
     toBack: 'Saada taha',
     lock: 'Lukusta',
     unlock: 'Eemalda lukk',
+    ungroup: 'Tühista rühm',
     show: 'Näita',
     hide: 'Peida',
   },

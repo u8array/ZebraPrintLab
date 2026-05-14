@@ -406,6 +406,7 @@ const es = {
     toBack: 'Enviar al fondo',
     lock: 'Bloquear',
     unlock: 'Desbloquear',
+    ungroup: 'Desagrupar',
     show: 'Mostrar',
     hide: 'Ocultar',
   },

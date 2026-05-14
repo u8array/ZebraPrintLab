@@ -406,6 +406,7 @@ const sr = {
     toBack: 'Pomeri nazad',
     lock: 'Закључај',
     unlock: 'Откључај',
+    ungroup: 'Razgrupiši',
     show: 'Прикажи',
     hide: 'Сакриј',
   },

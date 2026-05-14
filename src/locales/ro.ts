@@ -406,6 +406,7 @@ const ro = {
     toBack: 'Trimite în fundal',
     lock: 'Blochează',
     unlock: 'Deblochează',
+    ungroup: 'Anulează grupare',
     show: 'Afișează',
     hide: 'Ascunde',
   },

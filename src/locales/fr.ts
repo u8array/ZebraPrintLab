@@ -406,6 +406,7 @@ const fr = {
     toBack: "Envoyer à l'arrière-plan",
     lock: 'Verrouiller',
     unlock: 'Déverrouiller',
+    ungroup: 'Dégrouper',
     show: 'Afficher',
     hide: 'Masquer',
   },

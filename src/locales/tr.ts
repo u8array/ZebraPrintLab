@@ -406,6 +406,7 @@ const tr = {
     toBack: 'Arkaya Gönder',
     lock: 'Kilitle',
     unlock: 'Kilidi aç',
+    ungroup: 'Grubu çöz',
     show: 'Göster',
     hide: 'Gizle',
   },

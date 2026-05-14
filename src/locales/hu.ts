@@ -406,6 +406,7 @@ const hu = {
     toBack: 'Hátra küldés',
     lock: 'Zárolás',
     unlock: 'Feloldás',
+    ungroup: 'Csoport bontása',
     show: 'Megjelenítés',
     hide: 'Elrejtés',
   },

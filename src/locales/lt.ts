@@ -406,6 +406,7 @@ const lt = {
     toBack: 'Perkelti į galą',
     lock: 'Užrakinti',
     unlock: 'Atrakinti',
+    ungroup: 'Išgrupuoti',
     show: 'Rodyti',
     hide: 'Slėpti',
   },

@@ -406,6 +406,7 @@ const sv = {
     toBack: 'Flytta längst bak',
     lock: 'Lås',
     unlock: 'Lås upp',
+    ungroup: 'Dela upp',
     show: 'Visa',
     hide: 'Dölj',
   },

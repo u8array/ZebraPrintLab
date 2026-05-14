@@ -406,6 +406,7 @@ const ja = {
     toBack: '最背面へ',
     lock: 'ロック',
     unlock: 'ロック解除',
+    ungroup: 'グループ解除',
     show: '表示',
     hide: '非表示',
   },

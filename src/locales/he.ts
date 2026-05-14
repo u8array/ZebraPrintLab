@@ -406,6 +406,7 @@ const he = {
     toBack: 'שלח לאחור',
     lock: 'נעל',
     unlock: 'בטל נעילה',
+    ungroup: 'ביטול קיבוץ',
     show: 'הצג',
     hide: 'הסתר',
   },

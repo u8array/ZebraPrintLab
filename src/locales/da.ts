@@ -406,6 +406,7 @@ const da = {
     toBack: 'Send til baggrunden',
     lock: 'Lås',
     unlock: 'Lås op',
+    ungroup: 'Ophæv gruppering',
     show: 'Vis',
     hide: 'Skjul',
   },

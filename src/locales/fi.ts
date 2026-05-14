@@ -406,6 +406,7 @@ const fi = {
     toBack: 'Lähetä taustalle',
     lock: 'Lukitse',
     unlock: 'Avaa lukitus',
+    ungroup: 'Poista ryhmittely',
     show: 'Näytä',
     hide: 'Piilota',
   },

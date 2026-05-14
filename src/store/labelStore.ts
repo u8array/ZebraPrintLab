@@ -109,6 +109,10 @@ interface LabelState {
   /** Replaces every selected top-level group with its children, splicing
    *  them in at the group's former index. No-op on non-group selections. */
   ungroup: () => void;
+  /** Like `ungroup`, but operates on an explicit id list instead of the
+   *  active selection. Used by the layers panel's per-row ungroup
+   *  button so the user doesn't have to select the group first. */
+  ungroupIds: (ids: readonly string[]) => void;
   setLabelConfig: (config: Partial<LabelConfig>) => void;
   setLocale: (locale: LocaleCode) => void;
   setTheme: (theme: ThemePreference) => void;
@@ -407,12 +411,14 @@ export const useLabelStore = create<LabelState>()(
           };
         }),
 
-      ungroup: () =>
+      ungroup: () => get().ungroupIds(get().selectedIds),
+
+      ungroupIds: (ids) =>
         set((state) => {
-          const sel = new Set(state.selectedIds);
+          const wanted = new Set(ids);
           const objs = currentObjects(state);
           const targets = objs.flatMap((o) =>
-            sel.has(o.id) && isGroup(o) && !o.locked ? [o] : [],
+            wanted.has(o.id) && isGroup(o) && !o.locked ? [o] : [],
           );
           if (targets.length === 0) return {};
           const targetIds = new Set(targets.map((g) => g.id));

@@ -406,6 +406,7 @@ const zhHant = {
     toBack: '移至最下層',
     lock: '鎖定',
     unlock: '解鎖',
+    ungroup: '取消群組',
     show: '顯示',
     hide: '隱藏',
   },

@@ -427,6 +427,7 @@ const en = {
     toBack: 'Send to Back',
     lock: 'Lock',
     unlock: 'Unlock',
+    ungroup: 'Ungroup',
     show: 'Show',
     hide: 'Hide',
   },

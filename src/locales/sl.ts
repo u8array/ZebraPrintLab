@@ -406,6 +406,7 @@ const sl = {
     toBack: 'Premakni v ozadje',
     lock: 'Zakleni',
     unlock: 'Odkleni',
+    ungroup: 'Razdruži',
     show: 'Prikaži',
     hide: 'Skrij',
   },

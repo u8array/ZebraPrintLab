@@ -406,6 +406,7 @@ const hr = {
     toBack: 'Pomakni nazad',
     lock: 'Zaključaj',
     unlock: 'Otključaj',
+    ungroup: 'Razgrupiraj',
     show: 'Prikaži',
     hide: 'Sakrij',
   },

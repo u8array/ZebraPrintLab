@@ -406,6 +406,7 @@ const no = {
     toBack: 'Flytt bakerst',
     lock: 'Lås',
     unlock: 'Lås opp',
+    ungroup: 'Del opp',
     show: 'Vis',
     hide: 'Skjul',
   },

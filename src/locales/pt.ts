@@ -406,6 +406,7 @@ const pt = {
     toBack: 'Enviar para o fundo',
     lock: 'Bloquear',
     unlock: 'Desbloquear',
+    ungroup: 'Desagrupar',
     show: 'Mostrar',
     hide: 'Ocultar',
   },

@@ -406,6 +406,7 @@ const cs = {
     toBack: 'Odeslat do pozadí',
     lock: 'Uzamknout',
     unlock: 'Odemknout',
+    ungroup: 'Zrušit skupinu',
     show: 'Zobrazit',
     hide: 'Skrýt',
   },

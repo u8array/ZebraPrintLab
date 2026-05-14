@@ -718,4 +718,19 @@ describe('ungroup', () => {
     expect(objs()).toHaveLength(1);
     expect(isGroup(defined(objs()[0]))).toBe(true);
   });
+
+  it('ungroupIds operates on the passed list, not the current selection', () => {
+    state().addObject('text');
+    state().addObject('box');
+    const [a, b] = objs();
+    state().selectObjects([defined(a).id, defined(b).id]);
+    state().groupSelection();
+    const gid = defined(state().selectedIds[0]);
+    // Move selection elsewhere; the layers-panel button calls ungroupIds
+    // without changing what the user has selected.
+    state().selectObject(null);
+    state().ungroupIds([gid]);
+    expect(objs()).toHaveLength(2);
+    expect(objs().every((o) => !isGroup(o))).toBe(true);
+  });
 });

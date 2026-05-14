@@ -406,6 +406,7 @@ const nl = {
     toBack: 'Naar de achtergrond',
     lock: 'Vergrendelen',
     unlock: 'Ontgrendelen',
+    ungroup: 'Groepering opheffen',
     show: 'Tonen',
     hide: 'Verbergen',
   },

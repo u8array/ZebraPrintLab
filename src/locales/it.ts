@@ -406,6 +406,7 @@ const it = {
     toBack: 'Porta in secondo piano',
     lock: 'Blocca',
     unlock: 'Sblocca',
+    ungroup: 'Separa',
     show: 'Mostra',
     hide: 'Nascondi',
   },

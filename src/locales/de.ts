@@ -427,6 +427,7 @@ const de = {
     toBack: 'In den Hintergrund',
     lock: 'Sperren',
     unlock: 'Entsperren',
+    ungroup: 'Gruppierung aufheben',
     show: 'Einblenden',
     hide: 'Ausblenden',
   },

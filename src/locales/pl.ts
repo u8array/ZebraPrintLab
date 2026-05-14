@@ -406,6 +406,7 @@ const pl = {
     toBack: 'Przesuń na spód',
     lock: 'Zablokuj',
     unlock: 'Odblokuj',
+    ungroup: 'Rozgrupuj',
     show: 'Pokaż',
     hide: 'Ukryj',
   },

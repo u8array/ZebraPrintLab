@@ -406,6 +406,7 @@ const lv = {
     toBack: 'Pārvietot uz aizmuguri',
     lock: 'Bloķēt',
     unlock: 'Atbloķēt',
+    ungroup: 'Atgrupēt',
     show: 'Rādīt',
     hide: 'Slēpt',
   },

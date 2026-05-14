@@ -406,6 +406,7 @@ const ko = {
     toBack: '맨 뒤로',
     lock: '잠금',
     unlock: '잠금 해제',
+    ungroup: '그룹 해제',
     show: '표시',
     hide: '숨기기',
   },

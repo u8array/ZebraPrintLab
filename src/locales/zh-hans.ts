@@ -406,6 +406,7 @@ const zhHans = {
     toBack: '置于底层',
     lock: '锁定',
     unlock: '解锁',
+    ungroup: '取消组合',
     show: '显示',
     hide: '隐藏',
   },
