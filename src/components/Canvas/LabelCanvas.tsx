@@ -13,7 +13,7 @@ import type { PaletteDragData } from "../../dnd/types";
 import { Stage, Layer, Group, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects } from "../../store/labelStore";
-import { isGroup } from "../../types/Group";
+import { isGroup, getAllLeaves, expandSelection, selectionTargetId, findObjectById } from "../../types/Group";
 import { pxToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
 import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
@@ -138,6 +138,16 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     walk(objects);
     return out;
   }, [objects]);
+
+  // Konva-side machinery (transformer, snap snapshots) lives on leaves;
+  // groups have no node of their own. Expanding the selection here is
+  // what makes "click a child → group is selected" feel like a Figma
+  // multi-drag without a second drag pathway.
+  const allLeaves = useMemo(() => getAllLeaves(objects), [objects]);
+  const attachableIds = useMemo(
+    () => expandSelection(objects, selectedIds),
+    [objects, selectedIds],
+  );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -388,8 +398,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   } = useKonvaTransformer({
     transformerRef,
     stageRef,
-    selectedIds,
-    objects,
+    selectedIds: attachableIds,
+    objects: allLeaves,
     scale,
     dpmm: label.dpmm,
     objectsOffsetX,
@@ -464,15 +474,18 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     // Multi-select: propagate position delta to all other selected objects.
     // Read fresh state (getState) to avoid stale closure when multiple DragEnd events
     // fire simultaneously during a Transformer group drag.
+    // expandSelection lets a selected group behave like a multi-selection
+    // of its leaves here, so dragging one leaf moves the whole group via
+    // the same delta-propagation path used by shift-click selections.
     const state = useLabelStore.getState();
-    const selIds = state.selectedIds;
     const currentObjs = currentObjects(state);
+    const selIds = expandSelection(currentObjs, state.selectedIds);
     if (
       selIds.length > 1 &&
       selIds.includes(id) &&
       (finalChanges.x !== undefined || finalChanges.y !== undefined)
     ) {
-      const srcObj = currentObjs.find((o) => o.id === id);
+      const srcObj = findObjectById(currentObjs, id);
       if (srcObj) {
         const ddx = finalChanges.x !== undefined ? finalChanges.x - srcObj.x : 0;
         const ddy = finalChanges.y !== undefined ? finalChanges.y - srcObj.y : 0;
@@ -481,7 +494,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
           ...selIds
             .filter((sid) => sid !== id)
             .flatMap((sid) => {
-              const other = currentObjs.find((o) => o.id === sid);
+              const other = findObjectById(currentObjs, sid);
               return other
                 ? [{ id: sid, changes: { x: other.x + ddx, y: other.y + ddy } }]
                 : [];
@@ -501,7 +514,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     if (!objId || !stageRef.current) return;
 
     const objs = getCurrentObjects();
-    const obj = objs.find((o) => o.id === objId);
+    const obj = findObjectById(objs, objId);
     if (!obj) return;
 
     const stage = stageRef.current;
@@ -509,7 +522,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     const draggedRect = { id: objId, x: dr.x, y: dr.y, width: dr.width, height: dr.height };
 
     const otherRects = [];
-    for (const o of objs) {
+    for (const o of getAllLeaves(objs)) {
       if (o.id === objId) continue;
       const n = stage.findOne<Konva.Node>(`#${o.id}`);
       if (!n) continue;
@@ -796,11 +809,15 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                   dpmm={label.dpmm}
                   offsetX={objectsOffsetX}
                   offsetY={labelOffsetY}
-                  isSelected={selectedIds.includes(obj.id)}
+                  isSelected={attachableIds.includes(obj.id)}
                   onSelect={(add) => {
+                    // Auto-select-parent: clicking a child of a group
+                    // surfaces the outermost containing group as the
+                    // selection target. Top-level leaves pass through.
+                    const target = selectionTargetId(objects, obj.id);
                     if (obj.locked) handleLockedClick(add);
-                    else if (add) toggleSelectObject(obj.id);
-                    else selectObject(obj.id);
+                    else if (add) toggleSelectObject(target);
+                    else selectObject(target);
                   }}
                   onChange={(changes) => handleObjectChange(obj.id, changes)}
                   snap={snap}

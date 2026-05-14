@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import type Konva from "konva";
 import { getCurrentObjects } from "../../../store/labelStore";
+import { getAllLeaves, selectionTargetId, findObjectById, isGroup } from "../../../types/Group";
 import { getIdsIntersectingRect, type LassoRect } from "../lassoGeometry";
 
 interface Options {
@@ -62,8 +63,21 @@ export function useCanvasLasso({ containerRef, stageRef, spaceDown, selectObject
     // be moved or transformed, so grabbing them into a marquee selection
     // would make the post-lasso drag feel dead. Direct click and the
     // LayersPanel still target locked items, so bulk-unlock stays possible.
-    const ids = getCurrentObjects().flatMap((o) => o.locked ? [] : [o.id]);
-    selectObjects(getIdsIntersectingRect(stageRef.current, ids, rect));
+    // Leaves are the only Konva-rendered things; intersect on those, then
+    // map each captured leaf to its outermost group so a lasso over a
+    // grouped child surfaces the group as the selection unit.
+    const objects = getCurrentObjects();
+    const leafIds = getAllLeaves(objects).flatMap((o) => {
+      if (o.locked) return [];
+      const top = findObjectById(objects, selectionTargetId(objects, o.id));
+      // A top-level group's lock cascades to its descendants for the
+      // purposes of lasso selection.
+      if (top && isGroup(top) && top.locked) return [];
+      return [o.id];
+    });
+    const hits = getIdsIntersectingRect(stageRef.current, leafIds, rect);
+    const promoted = new Set(hits.map((id) => selectionTargetId(objects, id)));
+    selectObjects([...promoted]);
   };
 
   const onStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {

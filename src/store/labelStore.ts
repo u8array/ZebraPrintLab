@@ -6,7 +6,7 @@ import type { Unit } from '../lib/units';
 import type { ViewRotation } from '../components/Canvas/rotationGeometry';
 import { ObjectRegistry } from '../registry';
 import type { LabelObject } from '../registry';
-import { isGroup, type GroupObject } from '../types/Group';
+import { isGroup, mapObjectById, type GroupObject } from '../types/Group';
 import { locales } from '../locales';
 import type { LocaleCode } from '../locales';
 import { isDefaultLabelaryHost } from '../lib/labelary';
@@ -244,18 +244,22 @@ export const useLabelStore = create<LabelState>()(
       updateObject: (id, changes) =>
         set((state) =>
           updateCurrentObjects(state, (objs) =>
-            objs.map((obj) => obj.id === id ? applyObjectChanges(obj, changes) : obj)
-          )
+            mapObjectById(objs, id, (obj) => applyObjectChanges(obj, changes)),
+          ),
         ),
 
       updateObjects: (updates) =>
         set((state) => {
-          const updateMap = new Map(updates.map((u) => [u.id, u.changes]));
+          // Apply updates one at a time through mapObjectById so leaves
+          // nested inside groups receive the same treatment as top-level
+          // objects. The list of updates is small in practice (typically
+          // the active selection) so the O(updates × tree) cost is fine.
           return updateCurrentObjects(state, (objs) =>
-            objs.map((obj) => {
-              const changes = updateMap.get(obj.id);
-              return changes ? applyObjectChanges(obj, changes) : obj;
-            })
+            updates.reduce(
+              (acc, { id, changes }) =>
+                mapObjectById(acc, id, (obj) => applyObjectChanges(obj, changes)),
+              objs,
+            ),
           );
         }),
 

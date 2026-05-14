@@ -5,6 +5,7 @@ import { getCurrentObjects } from "../../../store/labelStore";
 import { BARCODE_1D_TYPES, STACKED_2D_TYPES, ObjectRegistry } from "../../../registry";
 import type { LabelObject } from "../../../registry";
 import type { ObjectChanges } from "../../../store/labelStore";
+import { findObjectById } from "../../../types/Group";
 import {
   applyHeightSnap,
   pinInactiveEdges,
@@ -303,7 +304,7 @@ export function useKonvaTransformer({
     const nodeHeight = node.height();
     node.scaleX(1);
     node.scaleY(1);
-    const obj = getCurrentObjects().find((o) => o.id === singleId);
+    const obj = findObjectById(getCurrentObjects(), singleId);
     if (!obj) {
       cleanupTransformState();
       return;

@@ -5,6 +5,8 @@ import {
   getAllLeaves,
   findObjectById,
   findAncestors,
+  selectionTargetId,
+  expandSelection,
   type GroupObject,
 } from './Group';
 import type { LabelObject } from '../registry';
@@ -97,6 +99,49 @@ describe('Group helpers', () => {
 
     it('returns empty for missing ids', () => {
       expect(findAncestors([leaf('a')], 'missing')).toEqual([]);
+    });
+  });
+
+  describe('selectionTargetId', () => {
+    it('passes top-level leaves through unchanged', () => {
+      expect(selectionTargetId([leaf('a')], 'a')).toBe('a');
+    });
+
+    it('promotes a clicked child to its outermost group', () => {
+      const tree = [group('g1', [group('g2', [leaf('deep')])])];
+      expect(selectionTargetId(tree, 'deep')).toBe('g1');
+    });
+
+    it('returns the id itself when not found (no surprises for callers)', () => {
+      expect(selectionTargetId([leaf('a')], 'missing')).toBe('missing');
+    });
+  });
+
+  describe('expandSelection', () => {
+    it('passes leaf ids through unchanged', () => {
+      expect(expandSelection([leaf('a'), leaf('b')], ['a'])).toEqual(['a']);
+    });
+
+    it('expands a group id to its leaf descendants', () => {
+      const tree = [group('g', [leaf('x'), leaf('y')])];
+      expect(expandSelection(tree, ['g'])).toEqual(['x', 'y']);
+    });
+
+    it('expands nested groups depth-first', () => {
+      const tree = [group('g', [leaf('a'), group('inner', [leaf('b')])])];
+      expect(expandSelection(tree, ['g'])).toEqual(['a', 'b']);
+    });
+
+    it('handles mixed leaf + group selection', () => {
+      const tree: ReturnType<typeof leaf | typeof group>[] = [
+        leaf('a'),
+        group('g', [leaf('b'), leaf('c')]),
+      ];
+      expect(expandSelection(tree, ['a', 'g'])).toEqual(['a', 'b', 'c']);
+    });
+
+    it('silently drops unknown ids', () => {
+      expect(expandSelection([leaf('a')], ['missing'])).toEqual([]);
     });
   });
 });

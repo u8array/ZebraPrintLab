@@ -655,6 +655,35 @@ describe('groupSelection', () => {
   });
 });
 
+describe('updateObject — leaves inside groups', () => {
+  it('reaches into a group to update a nested leaf', () => {
+    state().addObject('text', { x: 10, y: 10 });
+    state().addObject('box', { x: 50, y: 50 });
+    const [a, b] = objs();
+    state().selectObjects([defined(a).id, defined(b).id]);
+    state().groupSelection();
+    state().updateObject(defined(a).id, { x: 999 });
+    // Group still at top level; updated leaf is found via tree walk.
+    const grp = defined(objs()[0]);
+    if (!isGroup(grp)) throw new Error('expected group');
+    const updated = grp.children.find((c) => c.id === defined(a).id);
+    expect(defined(updated).x).toBe(999);
+  });
+
+  it('keeps unrelated leaves and siblings unchanged', () => {
+    state().addObject('text');
+    state().addObject('box');
+    const [a, b] = objs();
+    state().selectObjects([defined(a).id, defined(b).id]);
+    state().groupSelection();
+    state().updateObject(defined(a).id, { x: 123 });
+    const grp = defined(objs()[0]);
+    if (!isGroup(grp)) throw new Error('expected group');
+    const sibling = grp.children.find((c) => c.id === defined(b).id);
+    expect(defined(sibling).x).toBe(50); // default position from addObject
+  });
+});
+
 describe('ungroup', () => {
   it('replaces a selected group with its children at the same position', () => {
     state().addObject('text');
