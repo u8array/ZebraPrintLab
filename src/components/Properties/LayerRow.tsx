@@ -76,21 +76,30 @@ export function LayerRow({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  // Cancellation flag so the blur that fires when the input unmounts
+  // on Escape doesn't sneak through commitEdit and persist the draft
+  // the user wanted to discard.
+  const cancellingRef = useRef(false);
 
   useEffect(() => {
     if (editing) inputRef.current?.select();
   }, [editing]);
 
   const beginEdit = () => {
+    cancellingRef.current = false;
     setDraft(obj.name ?? '');
     setEditing(true);
   };
   const commitEdit = () => {
+    if (cancellingRef.current) return;
     const trimmed = draft.trim();
     if ((obj.name ?? '') !== trimmed) onRename(trimmed || undefined);
     setEditing(false);
   };
-  const cancelEdit = () => setEditing(false);
+  const cancelEdit = () => {
+    cancellingRef.current = true;
+    setEditing(false);
+  };
   const defaultLabel = groupRow ? t.types.group : (def?.label ?? obj.type);
   const displayName = obj.name ?? defaultLabel;
   // Show the child count next to a collapsed group's name so the user can
