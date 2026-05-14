@@ -269,12 +269,14 @@ export function LayersPanel() {
     const overRow = rowsById.get(over.id as string);
     if (!overRow) return;
 
-    // Dropping on a collapsed group: treat as "drop into" so the user
-    // can move things into a group without expanding it first. Expanded
-    // groups don't need this — the user can drop directly onto any
-    // child row inside, which lands the item inside the group via the
-    // sibling code path below.
-    if (isGroup(overRow.obj) && !expandedIds.has(overRow.obj.id)) {
+    // "Drop into group" target: a group that has no expanded children
+    // to drop between — either collapsed, or expanded but empty.
+    // Otherwise the user can drop on any child row inside, which lands
+    // the item inside the group via the sibling code path below.
+    if (
+      isGroup(overRow.obj) &&
+      (!expandedIds.has(overRow.obj.id) || overRow.obj.children.length === 0)
+    ) {
       reparentObject(activeId, {
         parentId: overRow.obj.id,
         index: overRow.obj.children.length,
@@ -282,12 +284,14 @@ export function LayersPanel() {
       return;
     }
 
-    // Sibling case: place active where over currently sits in its
-    // container, in data order. The layers panel displays containers
-    // reversed (topmost row = last in array), so a "drop above over"
-    // in display = "after over in data order"; using over's own data
-    // index produces that effect because the existing occupant shifts
-    // down one position in data order (up one in display).
+    // Sibling case: active lands in the gap ABOVE over in display order,
+    // which matches the rendered insertion line. The panel reverses
+    // each container (topmost row = last in array), so the gap above
+    // over in display sits right AFTER over in data order. After
+    // detaching active from a same-container source, over's effective
+    // data index drops by one when active was previously above over in
+    // data; the conditional below adjusts for that so the final
+    // landing slot stays the visual gap the user saw.
     const targetParent = overRow.containerId === ROOT_CONTAINER
       ? null
       : overRow.containerId;
@@ -298,16 +302,24 @@ export function LayersPanel() {
           return g && isGroup(g) ? g.children : null;
         })();
     if (!containerChildren) return;
-    let dataIndex = containerChildren.findIndex((c) => c.id === overRow.obj.id);
-    if (dataIndex === -1) return;
-    // Same-container moves shift indices: if active currently sits
-    // before over in data order, detaching it drops over's index by 1.
+    const overDataIndex = containerChildren.findIndex(
+      (c) => c.id === overRow.obj.id,
+    );
+    if (overDataIndex === -1) return;
     const activeRow = rowsById.get(activeId);
-    if (activeRow && activeRow.containerId === overRow.containerId) {
-      const activeDataIndex = containerChildren.findIndex((c) => c.id === activeId);
-      if (activeDataIndex >= 0 && activeDataIndex < dataIndex) dataIndex -= 1;
+    const sameContainer =
+      activeRow?.containerId === overRow.containerId;
+    let insertionIndex: number;
+    if (sameContainer) {
+      const activeDataIndex = containerChildren.findIndex(
+        (c) => c.id === activeId,
+      );
+      insertionIndex =
+        activeDataIndex < overDataIndex ? overDataIndex : overDataIndex + 1;
+    } else {
+      insertionIndex = overDataIndex + 1;
     }
-    reparentObject(activeId, { parentId: targetParent, index: dataIndex });
+    reparentObject(activeId, { parentId: targetParent, index: insertionIndex });
   };
 
   const handleDragCancel = () => setOverId(null);
@@ -324,7 +336,9 @@ export function LayersPanel() {
   //     would actually change the model.
   const overRow = overId ? rowsById.get(overId) ?? null : null;
   const dropIntoTargetId =
-    overRow && isGroup(overRow.obj) && !expandedIds.has(overRow.obj.id)
+    overRow &&
+    isGroup(overRow.obj) &&
+    (!expandedIds.has(overRow.obj.id) || overRow.obj.children.length === 0)
       ? overRow.obj.id
       : null;
   const insertionLineRowId =
