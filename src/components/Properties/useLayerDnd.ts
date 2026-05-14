@@ -92,12 +92,33 @@ function resolveDropTarget(
   };
 }
 
-/** A group becomes a "drop into" target when it has no expanded children
- *  to drop between — either collapsed, or expanded but empty. Used by
- *  both the live preview and the on-release commit so the two stay in
- *  lockstep; without this helper a change in one would silently drift. */
-function shouldDropInto(group: GroupObject, expandedIds: Set<string>): boolean {
-  return !expandedIds.has(group.id) || group.children.length === 0;
+/** Decide whether a drop on a group's row should land INSIDE the group
+ *  (filling its children) vs. as a sibling of the group. Empty groups
+ *  always treat the drop as "into" because there's no sibling-only
+ *  affordance to populate them. Collapsed non-empty groups use the
+ *  cursor's indent depth: if the user has pulled the cursor deeper
+ *  than the group's own row, they're aiming "inside"; otherwise the
+ *  drop becomes a sibling, which is what lets the user place an item
+ *  immediately above a collapsed group. Expanded groups never accept
+ *  a drop-into here — the user drops on a child to land beside it. */
+function shouldDropInto(
+  group: GroupObject,
+  groupDepth: number,
+  expandedIds: Set<string>,
+  cursorDepth: number,
+): boolean {
+  if (group.children.length === 0) return true;
+  if (expandedIds.has(group.id)) return false;
+  return cursorDepth > groupDepth;
+}
+
+/** Quantise a cursor X (panel-relative) into an indent depth. Mirrors
+ *  resolveDropTarget's math so the two never disagree on what depth
+ *  the user is targeting. */
+function cursorDepthFor(dragCursorX: number | null, fallback: number): number {
+  return dragCursorX !== null
+    ? Math.max(0, Math.floor((dragCursorX - INDENT_DEAD_ZONE) / INDENT_STEP))
+    : fallback;
 }
 
 interface DropPreview {
@@ -194,7 +215,11 @@ export function useLayerDnd({
     const overRow = rowsById.get(over.id as string);
     if (!overRow) return;
 
-    if (isGroup(overRow.obj) && shouldDropInto(overRow.obj, expandedIds)) {
+    const cursorDepth = cursorDepthFor(dragCursorX, overRow.depth);
+    if (
+      isGroup(overRow.obj) &&
+      shouldDropInto(overRow.obj, overRow.depth, expandedIds, cursorDepth)
+    ) {
       reparentObject(activeId, {
         parentId: overRow.obj.id,
         index: overRow.obj.children.length,
@@ -217,23 +242,15 @@ export function useLayerDnd({
     if (!containerChildren) return;
     const overDataIndex = containerChildren.findIndex((c) => c.id === overObj.id);
     if (overDataIndex === -1) return;
-    // Drops land in the gap ABOVE overObj in display order (= directly
-    // after overObj in data order). Same-container moves shift the
-    // effective index down by one when active was previously above
-    // over in data.
-    const activeRow = rowsById.get(activeId);
-    const activeContainer = activeRow?.containerId ?? null;
-    const targetContainerId = targetParent ?? ROOT_CONTAINER;
-    const sameContainer = activeContainer === targetContainerId;
-    let insertionIndex: number;
-    if (sameContainer) {
-      const activeDataIndex = containerChildren.findIndex((c) => c.id === activeId);
-      insertionIndex =
-        activeDataIndex < overDataIndex ? overDataIndex : overDataIndex + 1;
-    } else {
-      insertionIndex = overDataIndex + 1;
-    }
-    reparentObject(activeId, { parentId: targetParent, index: insertionIndex });
+    // Insertion index = over's data index, always. Since reparentObject
+    // detaches the active before inserting, this means active replaces
+    // over's slot in data order and over (and everything above it in
+    // data) shifts up by one. In display (reversed) terms, active lands
+    // at the visual position over was at and over moves one row up.
+    // The previous '+1 when active above over' branch made the bottom
+    // slot (data index 0) unreachable and produced a no-op when the
+    // drop crossed exactly one neighbour.
+    reparentObject(activeId, { parentId: targetParent, index: overDataIndex });
   };
 
   // Derive preview from the same resolution path used by the commit
@@ -244,7 +261,11 @@ export function useLayerDnd({
     if (!overRow) {
       return { dropIntoTargetId: null, insertionLineRowId: null, insertionLineDepth: null };
     }
-    if (isGroup(overRow.obj) && shouldDropInto(overRow.obj, expandedIds)) {
+    const cursorDepth = cursorDepthFor(dragCursorX, overRow.depth);
+    if (
+      isGroup(overRow.obj) &&
+      shouldDropInto(overRow.obj, overRow.depth, expandedIds, cursorDepth)
+    ) {
       return {
         dropIntoTargetId: overRow.obj.id,
         insertionLineRowId: null,
