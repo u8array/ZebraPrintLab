@@ -10,6 +10,7 @@ import {
   detachObjectById,
   isSelfOrDescendant,
   canGroupSelection,
+  mapObjectById,
   type GroupObject,
 } from './Group';
 import type { LabelObject } from '../registry';
@@ -197,6 +198,38 @@ describe('Group helpers', () => {
     it('returns true when one of several selected items is groupable', () => {
       const locked = { ...leaf('a'), locked: true };
       expect(canGroupSelection([locked, leaf('b')], ['a', 'b'])).toBe(true);
+    });
+  });
+
+  describe('mapObjectById', () => {
+    it('applies the mapper to the matching node', () => {
+      const tree = [leaf('a'), leaf('b')];
+      const next = mapObjectById(tree, 'a', (o) => ({ ...o, x: 99 }));
+      expect(next[0]?.x).toBe(99);
+      expect(next[1]).toBe(tree[1]); // sibling unchanged
+    });
+
+    it('preserves the top-level array reference when no id matches', () => {
+      const tree = [leaf('a'), leaf('b')];
+      const next = mapObjectById(tree, 'missing', (o) => ({ ...o, x: 99 }));
+      expect(next).toBe(tree);
+    });
+
+    it('preserves untouched group subtrees by reference', () => {
+      const inner = leaf('inside');
+      const tree = [group('g1', [inner]), group('g2', [leaf('other')])];
+      const next = mapObjectById(tree, 'inside', (o) => ({ ...o, x: 5 }));
+      // g2 wasn't touched — its node identity stays.
+      expect(next[1]).toBe(tree[1]);
+      // g1 is rebuilt (its children array changed), but the unchanged
+      // sibling inside g1 — there's none — would also keep identity.
+      expect(next[0]).not.toBe(tree[0]);
+    });
+
+    it('preserves the array reference when the mapper returns the same node', () => {
+      const tree = [leaf('a')];
+      const next = mapObjectById(tree, 'a', (o) => o);
+      expect(next).toBe(tree);
     });
   });
 

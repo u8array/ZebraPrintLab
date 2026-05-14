@@ -92,19 +92,35 @@ export function selectionTargetId(objects: LabelObject[], id: string): string {
  * Returns a new tree with the node identified by `id` replaced by
  * `mapper(node)`. Walks recursively into groups so this is the one
  * code path the store needs to mutate either top-level objects or
- * leaves nested inside groups. Unmatched leaves keep their object
- * identity so per-object React memoisation still works.
+ * leaves nested inside groups.
+ *
+ * Identity-preserving: subtrees that don't contain the target id —
+ * and the top-level array itself when no match is found — keep their
+ * original references. That lets React memoisation skip unaffected
+ * branches when a single leaf updates.
  */
 export function mapObjectById(
   objects: LabelObject[],
   id: string,
   mapper: (obj: LabelObject) => LabelObject,
 ): LabelObject[] {
-  return objects.map((o) => {
-    if (o.id === id) return mapper(o);
-    if (isGroup(o)) return { ...o, children: mapObjectById(o.children, id, mapper) };
+  let changed = false;
+  const next = objects.map((o) => {
+    if (o.id === id) {
+      const updated = mapper(o);
+      if (updated !== o) changed = true;
+      return updated;
+    }
+    if (isGroup(o)) {
+      const nextChildren = mapObjectById(o.children, id, mapper);
+      if (nextChildren !== o.children) {
+        changed = true;
+        return { ...o, children: nextChildren };
+      }
+    }
     return o;
   });
+  return changed ? next : objects;
 }
 
 /**

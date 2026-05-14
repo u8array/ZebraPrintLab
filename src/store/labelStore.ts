@@ -318,19 +318,26 @@ export const useLabelStore = create<LabelState>()(
         set((state) => {
           if (updates.length === 0) return {};
           // Single tree walk that applies every queued change in one
-          // pass. The previous reduce-over-mapObjectById approach was
-          // O(updates × tree) and fired per frame during multi-object
-          // drag; this is O(tree).
+          // pass: O(tree) instead of O(updates × tree). Identity-
+          // preserving — subtrees with no matching id keep their
+          // reference so React memoisation can skip them.
           const updateMap = new Map(updates.map((u) => [u.id, u.changes]));
-          const applyUpdates = (nodes: LabelObject[]): LabelObject[] =>
-            nodes.map((n) => {
+          const applyUpdates = (nodes: LabelObject[]): LabelObject[] => {
+            let changed = false;
+            const next = nodes.map((n) => {
               const changes = updateMap.get(n.id);
-              const updated = changes ? applyObjectChanges(n, changes) : n;
+              let updated = changes ? applyObjectChanges(n, changes) : n;
               if (isGroup(updated)) {
-                return { ...updated, children: applyUpdates(updated.children) };
+                const nextChildren = applyUpdates(updated.children);
+                if (nextChildren !== updated.children) {
+                  updated = { ...updated, children: nextChildren };
+                }
               }
+              if (updated !== n) changed = true;
               return updated;
             });
+            return changed ? next : nodes;
+          };
           return updateCurrentObjects(state, (objs) => applyUpdates(objs));
         }),
 
