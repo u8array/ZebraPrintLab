@@ -42,6 +42,7 @@ const et = {
     aztec: 'Aztec',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    group: 'Rühm',
   },
 
   properties: {

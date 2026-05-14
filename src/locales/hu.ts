@@ -42,6 +42,7 @@ const hu = {
     aztec: 'Aztec',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    group: 'Csoport',
   },
 
   properties: {

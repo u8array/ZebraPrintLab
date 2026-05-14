@@ -42,6 +42,7 @@ const zhHans = {
     aztec: 'Aztec',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    group: '组',
   },
 
   properties: {

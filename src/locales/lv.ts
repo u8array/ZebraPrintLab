@@ -42,6 +42,7 @@ const lv = {
     aztec: 'Aztec',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    group: 'Grupa',
   },
 
   properties: {

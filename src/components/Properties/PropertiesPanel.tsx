@@ -80,13 +80,16 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
 
   const definition = ObjectRegistry[obj.type];
   const TypePanel = definition?.PropertiesPanel;
+  // Groups intentionally have no registry entry; surface a folder-shape
+  // glyph here so the header reads as something rather than blank.
+  const icon = obj.type === 'group' ? '⊞' : definition?.icon;
 
   return (
     <div className="flex flex-col">
       {/* Type header */}
       <div className="px-3 py-2.5 border-b border-border flex items-center gap-2">
         <span className="font-mono text-xs text-accent">
-          {definition?.icon}
+          {icon}
         </span>
         <span className="text-xs font-medium text-text">
           {(t.types as Record<string, string>)[obj.type] ?? definition?.label}

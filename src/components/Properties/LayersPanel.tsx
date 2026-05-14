@@ -28,6 +28,7 @@ interface RowProps {
   tUnlock: string;
   tShow: string;
   tHide: string;
+  tGroup: string;
 }
 
 function SortableLayerRow({
@@ -42,8 +43,10 @@ function SortableLayerRow({
   tUnlock,
   tShow,
   tHide,
+  tGroup,
 }: RowProps) {
   const def = ObjectRegistry[obj.type];
+  const isGroupRow = obj.type === 'group';
   const isLocked = !!obj.locked;
   const isHidden = obj.visible === false;
   // Locked rows opt out of @dnd-kit's sortable listeners so the drag handle
@@ -82,10 +85,12 @@ function SortableLayerRow({
           className={`w-2 h-3.5 shrink-0 text-muted transition-opacity ${isLocked ? 'opacity-0' : 'opacity-0 group-hover:opacity-60'}`}
         />
         <span className="font-mono text-xs text-accent shrink-0 w-4 text-center">
-          {def?.icon}
+          {isGroupRow ? '⊞' : def?.icon}
         </span>
         <div className="flex flex-col flex-1 min-w-0">
-          <span className="text-xs text-text truncate">{def?.label ?? obj.type}</span>
+          <span className="text-xs text-text truncate">
+            {isGroupRow ? tGroup : (def?.label ?? obj.type)}
+          </span>
           <span className="font-mono text-[9px] text-muted">{obj.id.slice(0, 8)}</span>
         </div>
         <button
@@ -175,6 +180,7 @@ export function LayersPanel() {
               tUnlock={t.layers.unlock}
               tShow={t.layers.show}
               tHide={t.layers.hide}
+              tGroup={t.types.group}
             />
           ))}
         </div>

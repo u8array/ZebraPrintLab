@@ -42,6 +42,7 @@ const fi = {
     aztec: 'Aztec',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    group: 'Ryhmä',
   },
 
   properties: {

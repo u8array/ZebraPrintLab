@@ -42,6 +42,7 @@ const ja = {
     aztec: 'Aztec',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    group: 'グループ',
   },
 
   properties: {

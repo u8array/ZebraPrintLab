@@ -42,6 +42,7 @@ const zhHant = {
     aztec: 'Aztec',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    group: '群組',
   },
 
   properties: {
