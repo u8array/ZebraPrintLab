@@ -84,14 +84,6 @@ interface RowProps {
   onToggleVisible: () => void;
   onToggleExpand: () => void;
   onUngroup: () => void;
-  tLock: string;
-  tUnlock: string;
-  tShow: string;
-  tHide: string;
-  tGroup: string;
-  tExpand: string;
-  tCollapse: string;
-  tUngroupLabel: string;
 }
 
 function LayerRow({
@@ -109,15 +101,8 @@ function LayerRow({
   onToggleVisible,
   onToggleExpand,
   onUngroup,
-  tLock,
-  tUnlock,
-  tShow,
-  tHide,
-  tGroup,
-  tExpand,
-  tCollapse,
-  tUngroupLabel,
 }: RowProps) {
+  const t = useT();
   const def = ObjectRegistry[obj.type];
   const groupRow = isGroup(obj);
   const isLocked = !!obj.locked;
@@ -168,8 +153,8 @@ function LayerRow({
           type="button"
           onPointerDown={stopRowClick}
           onClick={(e) => { stopRowClick(e); onToggleExpand(); }}
-          title={isExpanded ? tCollapse : tExpand}
-          aria-label={isExpanded ? tCollapse : tExpand}
+          title={isExpanded ? t.app.collapse : t.app.expand}
+          aria-label={isExpanded ? t.app.collapse : t.app.expand}
           aria-expanded={isExpanded}
           className="w-4 h-4 flex items-center justify-center rounded text-muted hover:text-text hover:bg-surface shrink-0"
         >
@@ -185,7 +170,7 @@ function LayerRow({
       </span>
       <div className="flex flex-col flex-1 min-w-0">
         <span className="text-xs text-text truncate">
-          {groupRow ? tGroup : (def?.label ?? obj.type)}
+          {groupRow ? t.types.group : (def?.label ?? obj.type)}
         </span>
         <span className="font-mono text-[9px] text-muted">{obj.id.slice(0, 8)}</span>
       </div>
@@ -194,8 +179,8 @@ function LayerRow({
           type="button"
           onPointerDown={stopRowClick}
           onClick={(e) => { stopRowClick(e); onUngroup(); }}
-          title={tUngroupLabel}
-          aria-label={tUngroupLabel}
+          title={t.layers.ungroup}
+          aria-label={t.layers.ungroup}
           className="w-5 h-5 flex items-center justify-center rounded transition-colors text-muted opacity-0 group-hover:opacity-100 hover:text-text hover:bg-surface"
         >
           <LinkSlashIcon className="w-3.5 h-3.5" />
@@ -205,8 +190,8 @@ function LayerRow({
         type="button"
         onPointerDown={stopRowClick}
         onClick={(e) => { stopRowClick(e); onToggleVisible(); }}
-        title={isHidden ? tShow : tHide}
-        aria-label={isHidden ? tShow : tHide}
+        title={isHidden ? t.layers.show : t.layers.hide}
+        aria-label={isHidden ? t.layers.show : t.layers.hide}
         className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${isHidden ? 'text-accent' : 'text-muted opacity-0 group-hover:opacity-100'} hover:text-text hover:bg-surface`}
       >
         {isHidden ? <EyeSlashIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
@@ -215,8 +200,8 @@ function LayerRow({
         type="button"
         onPointerDown={stopRowClick}
         onClick={(e) => { stopRowClick(e); onToggleLock(); }}
-        title={isLocked ? tUnlock : tLock}
-        aria-label={isLocked ? tUnlock : tLock}
+        title={isLocked ? t.layers.unlock : t.layers.lock}
+        aria-label={isLocked ? t.layers.unlock : t.layers.lock}
         className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${isLocked ? 'text-accent' : 'text-muted opacity-0 group-hover:opacity-100'} hover:text-text hover:bg-surface`}
       >
         {isLocked ? <LockClosedIcon className="w-3.5 h-3.5" /> : <LockOpenIcon className="w-3.5 h-3.5" />}
@@ -467,14 +452,6 @@ export function LayersPanel() {
               onToggleVisible={() => toggleField(obj.id, 'visible')}
               onToggleExpand={() => toggleExpand(obj.id)}
               onUngroup={() => ungroupIds([obj.id])}
-              tLock={t.layers.lock}
-              tUnlock={t.layers.unlock}
-              tShow={t.layers.show}
-              tHide={t.layers.hide}
-              tGroup={t.types.group}
-              tExpand={t.app.expand}
-              tCollapse={t.app.collapse}
-              tUngroupLabel={t.layers.ungroup}
             />
           ))}
         </div>
