@@ -358,7 +358,7 @@ export function LayersPanel() {
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     clearDragState();
-    if (!over || active.id === over.id) return;
+    if (!over) return;
     const activeId = active.id as string;
     const overRow = rowsById.get(over.id as string);
     if (!overRow) return;
@@ -383,6 +383,12 @@ export function LayersPanel() {
     // out of nested groups; the resolveDropTarget call already did the
     // ancestor walk and gave us the effective over row.
     const { targetParent, overObj } = resolveDropTarget(overRow);
+    // True no-op only when the effective over is the active row itself
+    // — that means cursor didn't climb out of the row's own container,
+    // so dropping is a self-on-self with no depth change. If indent
+    // climbing produced an ancestor overObj, the drop still proceeds
+    // even when active === over at the row level.
+    if (overObj.id === activeId) return;
     const containerChildren = targetParent === null
       ? objects
       : (() => {
