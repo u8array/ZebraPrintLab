@@ -200,7 +200,11 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
 
         <div className="border-t border-border" />
 
-        {TypePanel && (
+        {/* Per-type panel: only leaves have a registry entry, so TypePanel
+            is never present for groups. The isGroup guard narrows obj for
+            TypeScript at the call site since registry panels expect the
+            leaf shape (props field present). */}
+        {TypePanel && !groupRow && (
           <>
             <TypePanel
               obj={obj}

@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { buildBwipOptions, getDisplaySize, getEanUpcLayout, parseZplCode128Escapes } from "./bwipHelpers";
-import type { LabelObject } from "../../registry";
+import type { LeafObject } from "../../registry";
+type LabelObject = LeafObject;
 
 describe("getEanUpcLayout", () => {
   // bwip-js native canvas widths (no quiet zones, scale=2):

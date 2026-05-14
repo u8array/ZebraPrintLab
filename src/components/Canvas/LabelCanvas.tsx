@@ -26,7 +26,7 @@ import { Grid } from "./Grid";
 import { GuideLines } from "./GuideLines";
 import { Ruler, RULER_SIZE } from "./Ruler";
 import { ObjectRegistry } from "../../registry";
-import type { LabelObject } from "../../registry";
+import type { LabelObject, LeafObject } from "../../registry";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { objectIdsAtPoint } from "./hitTesting";
 import { useT } from "../../lib/useT";
@@ -94,7 +94,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const rotateView = () => onViewRotationChange(nextRotation(viewRotation));
   const [guides, setGuides] = useState<SnapGuide[]>([]);
-  const [ghost, setGhost] = useState<LabelObject | null>(null);
+  const [ghost, setGhost] = useState<LeafObject | null>(null);
 
   // Raw pointer position tracked independently of @dnd-kit's scroll-adjusted delta.
   // activatorEvent.client + event.delta includes scroll momentum from the palette
@@ -130,7 +130,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // draggable / locked-click checks all see one consistent value
   // without each consumer having to walk ancestors.
   const visibleLeaves = useMemo(() => {
-    const out: LabelObject[] = [];
+    const out: LeafObject[] = [];
     const walk = (nodes: LabelObject[], inheritedLocked: boolean, inheritedHidden: boolean) => {
       for (const n of nodes) {
         const locked = inheritedLocked || !!n.locked;
@@ -141,7 +141,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
         } else {
           // Preserve object identity when nothing was inherited so React
           // memoisation keeps unaffected leaves stable across renders.
-          out.push(locked && !n.locked ? ({ ...n, locked: true } as LabelObject) : n);
+          out.push(locked && !n.locked ? ({ ...n, locked: true } as LeafObject) : n);
         }
       }
     };
@@ -656,7 +656,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       if (!type) return;
       const def = ObjectRegistry[type];
       if (!def) return;
-      setGhost({ id: "__ghost__", type, ...pos, rotation: 0, props: def.defaultProps } as LabelObject);
+      setGhost({ id: "__ghost__", type, ...pos, rotation: 0, props: def.defaultProps } as LeafObject);
     },
     onDragEnd(event) {
       setGhost(null);

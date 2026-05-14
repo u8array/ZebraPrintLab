@@ -12,7 +12,7 @@
  * bwipHelpers.test.ts ensures every BCID-registered type has a case.
  */
 
-import type { LabelObject } from "../../registry";
+import type { LabelObject, LeafObject } from "../../registry";
 import type { Gs1DatabarProps } from "../../registry/gs1databar";
 import { objectRotation } from "../../registry/rotation";
 import { dotsToPx } from "../../lib/coordinates";
@@ -290,7 +290,7 @@ export function parseZplCode128Escapes(text: string): string | null {
 }
 
 export function buildBwipOptions(
-  obj: LabelObject,
+  obj: LeafObject,
   renderScale?: number,
   renderDpmm?: number,
 ): Record<string, unknown> | null {
@@ -552,7 +552,7 @@ const TEXT_ZONE_DOTS_BY_TYPE: Partial<Record<LabelObject["type"], number>> = {
 };
 
 export function getDisplaySize(
-  obj: LabelObject,
+  obj: LeafObject,
   canvas: HTMLCanvasElement,
   scale: number,
   dpmm: number,
@@ -637,7 +637,7 @@ export function getDisplaySize(
 }
 
 function getUprightDisplaySize(
-  obj: LabelObject,
+  obj: LeafObject,
   cw: number,
   ch: number,
   scale: number,

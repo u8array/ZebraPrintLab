@@ -3,9 +3,9 @@ import type Konva from "konva";
 import { pxToDots } from "../../../lib/coordinates";
 import { getCurrentObjects } from "../../../store/labelStore";
 import { BARCODE_1D_TYPES, STACKED_2D_TYPES, ObjectRegistry } from "../../../registry";
-import type { LabelObject } from "../../../registry";
+import type { LeafObject } from "../../../registry";
 import type { ObjectChanges } from "../../../store/labelStore";
-import { findObjectById } from "../../../types/Group";
+import { findObjectById, isGroup } from "../../../types/Group";
 import {
   applyHeightSnap,
   pinInactiveEdges,
@@ -38,7 +38,7 @@ function toSnapRect(id: string, rect: { x: number; y: number; width: number; hei
  */
 function captureOtherRects(
   stage: Konva.Stage,
-  objects: LabelObject[],
+  objects: LeafObject[],
   excludeId: string,
 ): SnapRect[] {
   const result: SnapRect[] = [];
@@ -76,7 +76,7 @@ interface Options {
   transformerRef: React.RefObject<Konva.Transformer | null>;
   stageRef: React.RefObject<Konva.Stage | null>;
   selectedIds: string[];
-  objects: LabelObject[];
+  objects: LeafObject[];
   scale: number;
   dpmm: number;
   objectsOffsetX: number;
@@ -166,7 +166,7 @@ export function useKonvaTransformer({
     } else {
       const nodes = selectedIds
         .map((id) => objects.find((o) => o.id === id))
-        .filter((o): o is LabelObject => !!o && o.type !== "line" && !o.locked)
+        .filter((o): o is LeafObject => !!o && o.type !== "line" && !o.locked)
         .map((o) => stageRef.current?.findOne<Konva.Node>(`#${o.id}`))
         .filter((n): n is Konva.Node => n != null);
       transformerRef.current.nodes(nodes);
@@ -305,7 +305,7 @@ export function useKonvaTransformer({
     node.scaleX(1);
     node.scaleY(1);
     const obj = findObjectById(getCurrentObjects(), singleId);
-    if (!obj) {
+    if (!obj || isGroup(obj)) {
       cleanupTransformState();
       return;
     }

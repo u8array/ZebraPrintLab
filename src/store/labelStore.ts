@@ -36,6 +36,12 @@ function isLockBypass(changes: ObjectChanges): boolean {
 
 function applyObjectChanges(obj: LabelObject, changes: ObjectChanges): LabelObject {
   if (obj.locked && !isLockBypass(changes)) return obj;
+  if (isGroup(obj)) {
+    // Groups have no registry entry (no normalize hook) and no props to
+    // merge — apply top-level changes only. Children stay untouched;
+    // tree updates reach them through their own mapObjectById call.
+    return { ...obj, ...changes } as LabelObject;
+  }
   const normalize = ObjectRegistry[obj.type]?.normalizeChanges;
   const normalized = normalize ? normalize(obj, changes) : changes;
   return {
@@ -206,6 +212,20 @@ function buildOffsetCopies(objs: LabelObject[], ids: readonly string[]): LabelOb
   return ids.flatMap((id) => {
     const src = byId.get(id);
     if (!src) return [];
+    // Groups don't carry props and need their children's ids regenerated
+    // recursively so the duplicate doesn't collide with the original
+    // (mapObjectById would otherwise hit the first match and ignore the
+    // second). Leaves: shallow-clone props to avoid sharing the
+    // reference with future mutators.
+    if (isGroup(src)) {
+      return [{
+        ...src,
+        id: crypto.randomUUID(),
+        x: src.x + DUPLICATE_OFFSET_DOTS,
+        y: src.y + DUPLICATE_OFFSET_DOTS,
+        children: cloneChildrenFresh(src.children),
+      }];
+    }
     return [{
       ...src,
       id: crypto.randomUUID(),
@@ -213,6 +233,22 @@ function buildOffsetCopies(objs: LabelObject[], ids: readonly string[]): LabelOb
       y: src.y + DUPLICATE_OFFSET_DOTS,
       props: { ...src.props },
     } as LabelObject];
+  });
+}
+
+/** Deep-clone a children list with fresh ids and shallow-cloned props on
+ *  every leaf. Recurses through nested groups. Used by duplicate flows
+ *  so a duplicated subtree has no id collisions with the source. */
+function cloneChildrenFresh(children: LabelObject[]): LabelObject[] {
+  return children.map((c) => {
+    if (isGroup(c)) {
+      return {
+        ...c,
+        id: crypto.randomUUID(),
+        children: cloneChildrenFresh(c.children),
+      };
+    }
+    return { ...c, id: crypto.randomUUID(), props: { ...c.props } } as LabelObject;
   });
 }
 
@@ -328,7 +364,14 @@ export const useLabelStore = create<LabelState>()(
         const objs = currentObjects(state);
         const clipboard = state.selectedIds.flatMap((id) => {
           const obj = objs.find((o) => o.id === id);
-          return obj ? [{ ...obj, props: { ...obj.props } } as LabelObject] : [];
+          if (!obj) return [];
+          if (isGroup(obj)) {
+            // Clone children too so a later paste produces an
+            // independent subtree (paste regenerates the top-level id
+            // but expects descendants ready to be inserted as-is).
+            return [{ ...obj, children: cloneChildrenFresh(obj.children) }];
+          }
+          return [{ ...obj, props: { ...obj.props } } as LabelObject];
         });
         set({ clipboard, pasteCount: 0 });
       },
@@ -654,11 +697,20 @@ export const useLabelStore = create<LabelState>()(
           const source = state.pages[index];
           if (!source) return {};
           const cloned: Page = {
-            objects: source.objects.map((o) => ({
-              ...o,
-              id: crypto.randomUUID(),
-              props: { ...o.props },
-            } as LabelObject)),
+            objects: source.objects.map((o) => {
+              if (isGroup(o)) {
+                return {
+                  ...o,
+                  id: crypto.randomUUID(),
+                  children: cloneChildrenFresh(o.children),
+                };
+              }
+              return {
+                ...o,
+                id: crypto.randomUUID(),
+                props: { ...o.props },
+              } as LabelObject;
+            }),
           };
           const insertAt = index + 1;
           const newPages = [

@@ -1,5 +1,5 @@
 import type Konva from "konva";
-import type { LabelObject } from "../../registry";
+import type { LeafObject } from "../../registry";
 import type { ObjectChanges } from "../../store/labelStore";
 import type { SnapGuide, SnapRect } from "../../lib/snapGuides";
 
@@ -22,13 +22,12 @@ export function selectionHandlers(onSelect: (add: boolean) => void): {
 }
 
 /** Shared props for the per-type renderers under KonvaObject (LineObject,
- *  ImageObject, BarcodeObject, KonvaObjectInner). LineObject and
- *  ImageObject re-narrow `obj` at the type level via `Omit & { obj: ... }`
- *  and the dispatcher passes the narrowed value explicitly; BarcodeObject
- *  and KonvaObjectInner currently take the wide LabelObject and narrow
- *  internally. */
+ *  ImageObject, BarcodeObject, KonvaObjectInner). Per-type renderers
+ *  always receive a leaf — groups have no Konva counterpart and the
+ *  dispatcher in LabelCanvas filters them out before mapping. Typed as
+ *  LeafObject here so the renderers can reach .props without narrowing. */
 export interface KonvaObjectProps {
-  obj: LabelObject;
+  obj: LeafObject;
   scale: number;
   dpmm: number;
   offsetX: number;

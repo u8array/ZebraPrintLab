@@ -51,7 +51,7 @@ describe('addObject', () => {
     expect(obj.x).toBe(50); // default position
     expect(obj.y).toBe(50);
     expect(obj.rotation).toBe(0);
-    expect(obj.props).toHaveProperty('content');
+    expect(props(obj)).toHaveProperty('content');
     expect(state().selectedIds).toEqual([obj.id]);
   });
 

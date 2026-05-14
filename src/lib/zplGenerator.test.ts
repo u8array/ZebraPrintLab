@@ -285,7 +285,7 @@ function textLeaf(id: string, content: string): LabelObject {
     y: 0,
     rotation: 0,
     props: { content, fontHeight: 20, fontWidth: 0, font: '0', interpretation: false },
-  } as LabelObject;
+  } as unknown as LabelObject;
 }
 
 function group(id: string, children: LabelObject[], extras: Partial<GroupObject> = {}): GroupObject {

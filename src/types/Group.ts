@@ -1,4 +1,4 @@
-import type { LabelObject } from '../registry';
+import type { LabelObject, LeafObject } from '../registry';
 import type { LabelObjectBase } from './ObjectType';
 
 /**
@@ -35,8 +35,8 @@ export function* walkObjects(objects: LabelObject[]): Iterable<LabelObject> {
 }
 
 /** Flat list of every leaf descendant of `objects`. Skips group nodes themselves. */
-export function getAllLeaves(objects: LabelObject[]): LabelObject[] {
-  const out: LabelObject[] = [];
+export function getAllLeaves(objects: LabelObject[]): LeafObject[] {
+  const out: LeafObject[] = [];
   for (const obj of walkObjects(objects)) {
     if (!isGroup(obj)) out.push(obj);
   }

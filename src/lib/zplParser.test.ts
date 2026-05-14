@@ -240,12 +240,12 @@ describe('parseZPL — barcode rotation', () => {
     ['^XA^FO0,0^B0R,4,N,N,N,N^FDX^FS^XZ', 'R'],
   ])('reads orientation from %s', (zpl, expected) => {
     const { objects } = parseZPL(zpl, 8);
-    expect((objects[0]?.props as { rotation?: string }).rotation).toBe(expected);
+    expect((props(objects[0]) as { rotation?: string }).rotation).toBe(expected);
   });
 
   it('defaults to N when orientation is missing or unrecognised', () => {
     const { objects } = parseZPL('^XA^BY2^FO0,0^BC,100,Y,N,N^FD123^FS^XZ', 8);
-    expect((objects[0]?.props as { rotation?: string }).rotation).toBe('N');
+    expect((props(objects[0]) as { rotation?: string }).rotation).toBe('N');
   });
 });
 

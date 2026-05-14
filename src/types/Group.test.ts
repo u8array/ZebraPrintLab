@@ -15,6 +15,9 @@ import {
 import type { LabelObject } from '../registry';
 
 function leaf(id: string): LabelObject {
+  // The tree helpers under test only inspect id / type / children, never
+  // type-specific props. Cast through unknown so the test fixture can
+  // stay minimal instead of carrying a full TextProps shape.
   return {
     id,
     type: 'text',
@@ -22,7 +25,7 @@ function leaf(id: string): LabelObject {
     y: 0,
     rotation: 0,
     props: { text: '', fontHeight: 20, font: '0', interpretation: false },
-  } as LabelObject;
+  } as unknown as LabelObject;
 }
 
 function group(id: string, children: LabelObject[]): GroupObject {
