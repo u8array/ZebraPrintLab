@@ -1,12 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  DndContext,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core';
+import { useMemo, useState } from 'react';
+import { DndContext } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import {
   EyeIcon,
@@ -20,48 +13,11 @@ import {
 import { useLabelStore, useCurrentObjects } from '../../store/labelStore';
 import { ObjectRegistry } from '../../registry';
 import type { LabelObject } from '../../registry';
-import { isGroup, walkObjects, findObjectById, findAncestors } from '../../types/Group';
+import { isGroup, walkObjects } from '../../types/Group';
 import { useT } from '../../lib/useT';
 import { buildBulkToggleUpdates, type ToggleField } from '../../lib/bulkToggle';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
-
-/** Sentinel container id for the top-level objects list. Group containers
- *  use the group's own id, so the root needs a value that can't collide. */
-const ROOT_CONTAINER = '__root__';
-
-/** Horizontal pixels per nesting level — matches the row's own paddingLeft
- *  step so the insertion line lines up visually with the target row's
- *  content column. Changing this means changing the row indent too. */
-const INDENT_STEP = 16;
-
-/** Pixel bias subtracted from the cursor X before quantising to depth so a
- *  user has to drag a little before the target depth changes. Tuned to feel
- *  like Figma's "you mean it" threshold. */
-const INDENT_DEAD_ZONE = 6;
-
-interface FlatRow {
-  obj: LabelObject;
-  depth: number;
-  containerId: string;
-}
-
-/** Walk the tree depth-first, reversed at each level so the topmost item
- *  (last in the array = front-most in render order) appears first in the
- *  panel. Each row carries its container id so drag-and-drop can decide
- *  whether a move is a sibling reorder or a cross-container reparent. */
-function buildFlatRows(objects: LabelObject[], expanded: Set<string>): FlatRow[] {
-  const out: FlatRow[] = [];
-  const walk = (nodes: LabelObject[], depth: number, containerId: string) => {
-    for (let i = nodes.length - 1; i >= 0; i--) {
-      const obj = nodes[i];
-      if (!obj) continue;
-      out.push({ obj, depth, containerId });
-      if (isGroup(obj) && expanded.has(obj.id)) walk(obj.children, depth + 1, obj.id);
-    }
-  };
-  walk(objects, 0, ROOT_CONTAINER);
-  return out;
-}
+import { buildFlatRows, useLayerDnd, INDENT_STEP, type FlatRow } from './useLayerDnd';
 
 interface RowProps {
   obj: LabelObject;
@@ -222,30 +178,7 @@ export function LayersPanel() {
     reparentObject,
   } = useLabelStore();
   const objects = useCurrentObjects();
-  const [overId, setOverId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  // Cursor X within the panel during a drag — drives indent-style depth
-  // selection so dragging left climbs out of a container the same way
-  // Figma / VSCode tree views handle it. Tracked via a document-level
-  // pointermove listener that runs while a drag is active because
-  // dnd-kit's activatorEvent / delta path is not always available
-  // (e.g. activator events are sometimes synthesised without clientX).
-  const [dragCursorX, setDragCursorX] = useState<number | null>(null);
-  const [dragActive, setDragActive] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!dragActive) return;
-    const onMove = (e: PointerEvent) => {
-      const rect = panelRef.current?.getBoundingClientRect();
-      if (rect) setDragCursorX(e.clientX - rect.left);
-    };
-    document.addEventListener('pointermove', onMove);
-    return () => document.removeEventListener('pointermove', onMove);
-  }, [dragActive]);
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-  );
 
   const allNodes = useMemo(() => [...walkObjects(objects)], [objects]);
   const rows = useMemo(() => buildFlatRows(objects, expandedIds), [objects, expandedIds]);
@@ -254,6 +187,17 @@ export function LayersPanel() {
     for (const r of rows) m.set(r.obj.id, r);
     return m;
   }, [rows]);
+
+  const {
+    sensors,
+    collisionDetection,
+    panelRef,
+    onDragStart,
+    onDragOver,
+    onDragEnd,
+    onDragCancel,
+    preview,
+  } = useLayerDnd({ objects, rowsById, expandedIds, reparentObject });
 
   const toggleField = (clickedId: string, field: ToggleField) => {
     const updates = buildBulkToggleUpdates(allNodes, selectedIds, clickedId, field);
@@ -269,57 +213,6 @@ export function LayersPanel() {
     });
   };
 
-  /**
-   * Walk up the container chain by N levels. Returns the container at the
-   * target depth and the group node that lives AT that climbed level — the
-   * latter is the row whose visual position the insertion will sit above.
-   */
-  const climbContainer = (
-    fromContainerId: string,
-    levels: number,
-  ): { containerId: string; overObj: LabelObject | null } => {
-    if (levels <= 0) return { containerId: fromContainerId, overObj: null };
-    let current = fromContainerId;
-    let overObj: LabelObject | null = null;
-    for (let i = 0; i < levels && current !== ROOT_CONTAINER; i++) {
-      const groupNode = findObjectById(objects, current);
-      if (!groupNode) break;
-      overObj = groupNode;
-      const ancestors = findAncestors(objects, current);
-      const parent = ancestors[ancestors.length - 1];
-      current = parent ? parent.id : ROOT_CONTAINER;
-    }
-    return { containerId: current, overObj };
-  };
-
-  /**
-   * Resolve the cursor position + over-row into the actual drop target:
-   * which container to write into, which row the insertion sits above
-   * (for the visual line), and at which visual depth the line sits.
-   * Returns null when there's nothing actionable (no over, depth mismatch).
-   */
-  const resolveDropTarget = (overRow: FlatRow): {
-    targetParent: string | null;
-    overObj: LabelObject;
-    effectiveDepth: number;
-  } => {
-    const cursorDepth = dragCursorX !== null
-      ? Math.max(0, Math.floor((dragCursorX - INDENT_DEAD_ZONE) / INDENT_STEP))
-      : overRow.depth;
-    const effectiveDepth = Math.min(cursorDepth, overRow.depth);
-    const levels = overRow.depth - effectiveDepth;
-    if (levels === 0) {
-      const parent = overRow.containerId === ROOT_CONTAINER ? null : overRow.containerId;
-      return { targetParent: parent, overObj: overRow.obj, effectiveDepth };
-    }
-    const climbed = climbContainer(overRow.containerId, levels);
-    return {
-      targetParent: climbed.containerId === ROOT_CONTAINER ? null : climbed.containerId,
-      overObj: climbed.overObj ?? overRow.obj,
-      effectiveDepth,
-    };
-  };
-
   if (objects.length === 0) {
     return (
       <div className="p-4 text-center text-muted text-xs mt-6">
@@ -330,106 +223,14 @@ export function LayersPanel() {
 
   const allRowIds = rows.map((r) => r.obj.id);
 
-  const handleDragStart = () => setDragActive(true);
-
-  const handleDragOver = ({ over }: DragOverEvent) =>
-    setOverId((over?.id as string) ?? null);
-
-  const clearDragState = () => {
-    setOverId(null);
-    setDragCursorX(null);
-    setDragActive(false);
-  };
-
-  const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    clearDragState();
-    if (!over) return;
-    const activeId = active.id as string;
-    const overRow = rowsById.get(over.id as string);
-    if (!overRow) return;
-
-    // "Drop into group" target: a group that has no expanded children
-    // to drop between — either collapsed, or expanded but empty. The
-    // indent-drag path is skipped here because there's no "land beside"
-    // semantic on an empty container; the only meaningful drop is INTO.
-    if (
-      isGroup(overRow.obj) &&
-      (!expandedIds.has(overRow.obj.id) || overRow.obj.children.length === 0)
-    ) {
-      reparentObject(activeId, {
-        parentId: overRow.obj.id,
-        index: overRow.obj.children.length,
-      });
-      return;
-    }
-
-    // Indent-aware sibling drop: the cursor's X position selects how
-    // deep in the container chain the drop lands. Dragging left climbs
-    // out of nested groups; the resolveDropTarget call already did the
-    // ancestor walk and gave us the effective over row.
-    const { targetParent, overObj } = resolveDropTarget(overRow);
-    // True no-op only when the effective over is the active row itself
-    // — that means cursor didn't climb out of the row's own container,
-    // so dropping is a self-on-self with no depth change. If indent
-    // climbing produced an ancestor overObj, the drop still proceeds
-    // even when active === over at the row level.
-    if (overObj.id === activeId) return;
-    const containerChildren = targetParent === null
-      ? objects
-      : (() => {
-          const g = findObjectById(objects, targetParent);
-          return g && isGroup(g) ? g.children : null;
-        })();
-    if (!containerChildren) return;
-    const overDataIndex = containerChildren.findIndex((c) => c.id === overObj.id);
-    if (overDataIndex === -1) return;
-    // Drops land in the gap ABOVE overObj in display order (= directly
-    // after overObj in data order). Same-container moves shift the
-    // effective index down by one when active was previously above
-    // over in data — without the shift the row would end up one slot
-    // off from where the insertion line implied.
-    const activeRow = rowsById.get(activeId);
-    const activeContainer = activeRow?.containerId ?? null;
-    const targetContainerId = targetParent ?? ROOT_CONTAINER;
-    const sameContainer = activeContainer === targetContainerId;
-    let insertionIndex: number;
-    if (sameContainer) {
-      const activeDataIndex = containerChildren.findIndex((c) => c.id === activeId);
-      insertionIndex =
-        activeDataIndex < overDataIndex ? overDataIndex : overDataIndex + 1;
-    } else {
-      insertionIndex = overDataIndex + 1;
-    }
-    reparentObject(activeId, { parentId: targetParent, index: insertionIndex });
-  };
-
-  const handleDragCancel = () => clearDragState();
-
-  // While dragging, `overId` is the row the cursor is currently on top
-  // of. resolveDropTarget translates that plus the cursor X into the
-  // actual drop slot — the row whose gap-above will host the insertion
-  // line, and the depth at which the line should sit.
-  const overRow = overId ? rowsById.get(overId) ?? null : null;
-  const dropIntoTargetId =
-    overRow &&
-    isGroup(overRow.obj) &&
-    (!expandedIds.has(overRow.obj.id) || overRow.obj.children.length === 0)
-      ? overRow.obj.id
-      : null;
-  const previewSlot = overRow && !dropIntoTargetId
-    ? resolveDropTarget(overRow)
-    : null;
-  const insertionLineRowId = previewSlot?.overObj.id ?? null;
-  const insertionLineDepth = previewSlot?.effectiveDepth ?? null;
-
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
+      collisionDetection={collisionDetection}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
+      onDragCancel={onDragCancel}
     >
       <SortableContext items={allRowIds} strategy={verticalListSortingStrategy}>
         <div ref={panelRef} className="flex flex-col">
@@ -441,10 +242,10 @@ export function LayersPanel() {
               containerId={containerId}
               isSelected={selectedIds.includes(obj.id)}
               isExpanded={expandedIds.has(obj.id)}
-              isDropTarget={dropIntoTargetId === obj.id}
-              showInsertionLine={insertionLineRowId === obj.id}
+              isDropTarget={preview.dropIntoTargetId === obj.id}
+              showInsertionLine={preview.insertionLineRowId === obj.id}
               insertionLineDepth={
-                insertionLineRowId === obj.id ? insertionLineDepth : null
+                preview.insertionLineRowId === obj.id ? preview.insertionLineDepth : null
               }
               onSelect={() => selectObject(obj.id)}
               onToggle={() => toggleSelectObject(obj.id)}
