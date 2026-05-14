@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -6,12 +6,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import type {
-  DragEndEvent,
-  DragMoveEvent,
-  DragOverEvent,
-  DragStartEvent,
-} from '@dnd-kit/core';
+import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import {
   EyeIcon,
@@ -246,10 +241,23 @@ export function LayersPanel() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   // Cursor X within the panel during a drag — drives indent-style depth
   // selection so dragging left climbs out of a container the same way
-  // Figma / VSCode tree views handle it.
+  // Figma / VSCode tree views handle it. Tracked via a document-level
+  // pointermove listener that runs while a drag is active because
+  // dnd-kit's activatorEvent / delta path is not always available
+  // (e.g. activator events are sometimes synthesised without clientX).
   const [dragCursorX, setDragCursorX] = useState<number | null>(null);
-  const dragStartScreenXRef = useRef<number | null>(null);
+  const [dragActive, setDragActive] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!dragActive) return;
+    const onMove = (e: PointerEvent) => {
+      const rect = panelRef.current?.getBoundingClientRect();
+      if (rect) setDragCursorX(e.clientX - rect.left);
+    };
+    document.addEventListener('pointermove', onMove);
+    return () => document.removeEventListener('pointermove', onMove);
+  }, [dragActive]);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
@@ -337,24 +345,7 @@ export function LayersPanel() {
 
   const allRowIds = rows.map((r) => r.obj.id);
 
-  const handleDragStart = (e: DragStartEvent) => {
-    const native = e.activatorEvent;
-    if (
-      native &&
-      typeof (native as PointerEvent).clientX === 'number'
-    ) {
-      dragStartScreenXRef.current = (native as PointerEvent).clientX;
-    }
-  };
-
-  const handleDragMove = (e: DragMoveEvent) => {
-    const startX = dragStartScreenXRef.current;
-    const panelEl = panelRef.current;
-    if (startX === null || !panelEl) return;
-    const screenX = startX + e.delta.x;
-    const rect = panelEl.getBoundingClientRect();
-    setDragCursorX(screenX - rect.left);
-  };
+  const handleDragStart = () => setDragActive(true);
 
   const handleDragOver = ({ over }: DragOverEvent) =>
     setOverId((over?.id as string) ?? null);
@@ -362,7 +353,7 @@ export function LayersPanel() {
   const clearDragState = () => {
     setOverId(null);
     setDragCursorX(null);
-    dragStartScreenXRef.current = null;
+    setDragActive(false);
   };
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
@@ -445,7 +436,6 @@ export function LayersPanel() {
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
