@@ -50,4 +50,8 @@ describe("getStepRotation", () => {
     expect(getStepRotation({ props: { rotation: "L" } })).toBeNull();
     expect(getStepRotation({ props: { rotation: 90 } })).toBeNull();
   });
+
+  it("returns null for objects without props (e.g. groups)", () => {
+    expect(getStepRotation({})).toBeNull();
+  });
 });

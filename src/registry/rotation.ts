@@ -31,11 +31,12 @@ export function nextZplRotation(r: ZplRotation): ZplRotation {
 /**
  * Returns the object's step-rotation if it has one, else `null`. Step-rotation
  * objects (text, serial, all barcodes) declare a `rotation: 'N'|'R'|'I'|'B'`
- * prop; box/ellipse/circle/line/image do not. Lets callers gate UI affordances
- * (e.g. the canvas quick-rotate button) without inspecting `props` shapes
- * themselves.
+ * prop; box/ellipse/circle/line/image do not, and groups carry no `props`
+ * at all. Lets callers gate UI affordances (e.g. the canvas quick-rotate
+ * button) without inspecting `props` shapes themselves.
  */
-export function getStepRotation(obj: { props: object }): ZplRotation | null {
+export function getStepRotation(obj: { props?: object }): ZplRotation | null {
+  if (!obj.props) return null;
   const r = (obj.props as { rotation?: unknown }).rotation;
   return typeof r === 'string' && isZplRotation(r) ? r : null;
 }
