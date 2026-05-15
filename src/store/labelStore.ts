@@ -337,6 +337,7 @@ export const useLabelStore = create<LabelState>()(
       canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm', viewRotation: 0 },
 
       addObject: (type, position = { x: 50, y: 50 }) => {
+        if (selectPreviewLocksEditor(get())) return;
         const definition = ObjectRegistry[type];
         if (!definition) return;
 
@@ -357,6 +358,7 @@ export const useLabelStore = create<LabelState>()(
 
       updateObject: (id, changes) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const ancestorLocked = findAncestors(objs, id).some((g) => !!g.locked);
           return updateCurrentObjects(state, (curr) =>
@@ -368,6 +370,7 @@ export const useLabelStore = create<LabelState>()(
 
       updateObjects: (updates) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (updates.length === 0) return {};
           // Single tree walk that applies every queued change in one
           // pass: O(tree) instead of O(updates × tree). Identity-
@@ -403,6 +406,7 @@ export const useLabelStore = create<LabelState>()(
 
       removeObject: (id) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const obj = currentObjects(state).find((o) => o.id === id);
           if (obj?.locked) return {};
           return {
@@ -413,6 +417,7 @@ export const useLabelStore = create<LabelState>()(
 
       duplicateObject: (id) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const copies = buildOffsetCopies(currentObjects(state), [id]);
           if (copies.length === 0) return {};
           return {
@@ -423,6 +428,7 @@ export const useLabelStore = create<LabelState>()(
 
       duplicateSelectedObjects: () =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (state.selectedIds.length === 0) return {};
           const copies = buildOffsetCopies(currentObjects(state), state.selectedIds);
           return {
@@ -433,6 +439,9 @@ export const useLabelStore = create<LabelState>()(
 
       copySelectedObjects: () => {
         const state = get();
+        // Copy doesn't mutate the design, but the clipboard write would
+        // create a confusing "I copied something during preview" state.
+        if (selectPreviewLocksEditor(state)) return;
         const objs = currentObjects(state);
         const clipboard = state.selectedIds.flatMap((id) => {
           const obj = objs.find((o) => o.id === id);
@@ -450,6 +459,7 @@ export const useLabelStore = create<LabelState>()(
 
       pasteObjects: () =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (state.clipboard.length === 0) return {};
           const pasteCount = state.pasteCount + 1;
           const offset = pasteCount * DUPLICATE_OFFSET_DOTS;
@@ -494,6 +504,7 @@ export const useLabelStore = create<LabelState>()(
 
       removeSelectedObjects: () =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const sel = new Set(state.selectedIds);
           const objs = currentObjects(state);
           // Locked objects survive a Delete keystroke / bulk-remove; the
@@ -509,6 +520,7 @@ export const useLabelStore = create<LabelState>()(
 
       groupSelection: () =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const sel = new Set(state.selectedIds);
           // Only consider top-level objects of the current page. Nested
@@ -554,6 +566,7 @@ export const useLabelStore = create<LabelState>()(
 
       reparentObject: (id, target) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           // Forbid cycles: moving a group into itself or one of its
           // descendants would orphan the rest of the tree.
@@ -584,6 +597,7 @@ export const useLabelStore = create<LabelState>()(
 
       addGroup: () =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const group: GroupObject = {
             id: crypto.randomUUID(),
             type: 'group',
@@ -602,6 +616,7 @@ export const useLabelStore = create<LabelState>()(
 
       ungroupIds: (ids) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const wanted = new Set(ids);
           const objs = currentObjects(state);
           const targets = objs.flatMap((o) =>
@@ -627,6 +642,7 @@ export const useLabelStore = create<LabelState>()(
 
       moveObjectToFront: (id) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const idx = objs.findIndex((o) => o.id === id);
           if (idx === -1 || idx === objs.length - 1) return {};
@@ -640,6 +656,7 @@ export const useLabelStore = create<LabelState>()(
 
       moveObjectToBack: (id) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const idx = objs.findIndex((o) => o.id === id);
           if (idx <= 0) return {};
@@ -653,6 +670,7 @@ export const useLabelStore = create<LabelState>()(
 
       moveObjectForward: (id) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const idx = objs.findIndex((o) => o.id === id);
           if (idx === -1 || idx === objs.length - 1) return {};
@@ -667,6 +685,7 @@ export const useLabelStore = create<LabelState>()(
 
       moveObjectBackward: (id) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const idx = objs.findIndex((o) => o.id === id);
           if (idx <= 0) return {};
@@ -681,6 +700,7 @@ export const useLabelStore = create<LabelState>()(
 
       reorderObject: (id, toIndex) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const fromIndex = objs.findIndex((o) => o.id === id);
           if (fromIndex === -1 || fromIndex === toIndex) return {};
@@ -693,11 +713,14 @@ export const useLabelStore = create<LabelState>()(
         }),
 
       loadDesign: (label, pages) =>
-        set({
-          label,
-          pages: pages.length > 0 ? pages : [{ objects: [] }],
-          currentPageIndex: 0,
-          selectedIds: [],
+        set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
+          return {
+            label,
+            pages: pages.length > 0 ? pages : [{ objects: [] }],
+            currentPageIndex: 0,
+            selectedIds: [],
+          };
         }),
 
       // Append-mode counterpart to loadDesign: keeps the current label
@@ -706,6 +729,7 @@ export const useLabelStore = create<LabelState>()(
       // page list, switching focus to the first appended page.
       appendPages: (pages) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (pages.length === 0) return {};
           const newPages = [...state.pages, ...pages];
           return {
@@ -716,7 +740,10 @@ export const useLabelStore = create<LabelState>()(
         }),
 
       setLabelConfig: (config) =>
-        set((state) => ({ label: { ...state.label, ...config } })),
+        set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
+          return { label: { ...state.label, ...config } };
+        }),
 
       setLocale: (locale) => set({ locale }),
 
@@ -732,6 +759,7 @@ export const useLabelStore = create<LabelState>()(
 
       addPage: () =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const insertAt = state.currentPageIndex + 1;
           const newPages = [
             ...state.pages.slice(0, insertAt),
@@ -747,6 +775,7 @@ export const useLabelStore = create<LabelState>()(
 
       removePage: (index) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (state.pages.length <= 1) return {};
           if (index < 0 || index >= state.pages.length) return {};
           const newPages = state.pages.filter((_, i) => i !== index);
@@ -765,6 +794,7 @@ export const useLabelStore = create<LabelState>()(
 
       duplicatePage: (index) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (index < 0 || index >= state.pages.length) return {};
           const source = state.pages[index];
           if (!source) return {};
@@ -799,6 +829,7 @@ export const useLabelStore = create<LabelState>()(
 
       setCurrentPage: (index) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (index < 0 || index >= state.pages.length) return {};
           if (index === state.currentPageIndex) return {};
           return { currentPageIndex: index, selectedIds: [] };
@@ -873,5 +904,20 @@ export const useCurrentObjects = () => useLabelStore(currentObjects);
 export const getCurrentObjects = (): LabelObject[] =>
   currentObjects(useLabelStore.getState());
 
-// Undo / redo
-export const useHistory = () => useStore(useLabelStore.temporal);
+// Undo / redo. Wrapping zundo's hook so undo/redo become no-ops while
+// the preview overlay is locking the editor. Header buttons read
+// `canUndo`/`canRedo` from `pastStates`/`futureStates` — those keep
+// reporting truthful values, so a separate UI check (or button
+// disabled-state) still wins for visual feedback. The wrapper here is
+// the load-bearing safety net for any caller that goes straight to
+// `useHistory().undo()`.
+const noopHistoryAction = () => {
+  /* preview lock: no-op so undo/redo never replay state under a frozen
+   * Labelary snapshot. */
+};
+export const useHistory = () => {
+  const history = useStore(useLabelStore.temporal);
+  const locked = useLabelStore(selectPreviewLocksEditor);
+  if (!locked) return history;
+  return { ...history, undo: noopHistoryAction, redo: noopHistoryAction };
+};
