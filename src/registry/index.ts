@@ -66,7 +66,7 @@ import type { CodablockProps } from './codablock.tsx';
  *  literal `type` discriminator and that type's props. Used to compose
  *  `LeafObject` so adding a new registry entry is a one-line union
  *  extension instead of a 60-character repetition. */
-type Leaf<T extends string, P> = LabelObjectBase & { type: T; props: P };
+type Leaf<T extends string, P extends object> = LabelObjectBase & { type: T; props: P };
 
 /** Leaf objects: every registry-backed type. These render to ZPL and
  *  have a PropertiesPanel. The tree-level union `LabelObject` (which
