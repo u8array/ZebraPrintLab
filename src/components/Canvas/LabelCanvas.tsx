@@ -194,6 +194,21 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // shapes hidden behind a filled (or inverted) form.
   useAltClickCycle({ containerRef, stageRef, selectObject });
 
+  // Escape exits preview mode. Stays bound globally (not just to the
+  // canvas) so the user can return to the editor from anywhere — and
+  // the existing useGlobalShortcuts already short-circuits the rest of
+  // its bindings while preview locks, so there's no collision risk.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== 'Escape') return;
+      if (!selectPreviewLocksEditor(useLabelStore.getState())) return;
+      e.preventDefault();
+      useLabelStore.getState().exitPreviewMode();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   // Delete/Backspace removes all selected objects; ignored when focus is inside an input
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -720,7 +735,11 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
         background: colors.canvasBg,
         backgroundImage: `radial-gradient(circle, ${colors.canvasDot} 1px, transparent 1px)`,
         backgroundSize: "24px 24px",
-        cursor,
+        // `not-allowed` while the preview overlay is locking the editor:
+        // signals at the user's locus of attention (the canvas itself)
+        // that editing is paused, instead of relying on the toolbar button
+        // alone for state feedback.
+        cursor: previewLocks ? 'not-allowed' : cursor,
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
