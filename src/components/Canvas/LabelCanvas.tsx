@@ -858,9 +858,14 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 width={labelWidthPx}
                 height={labelHeightPx}
                 fill="white"
-                shadowColor="rgba(0,0,0,0.4)"
-                shadowBlur={12}
-                shadowOffsetY={2}
+                // Preview overlay swaps the default drop-shadow for a
+                // symmetric amber glow so the paper itself carries the
+                // mode indicator at the user's locus of attention. Same
+                // amber the app uses for Labelary-related warnings, so
+                // the colour language stays consistent.
+                shadowColor={previewLocks ? 'rgba(251, 191, 36, 0.55)' : 'rgba(0,0,0,0.4)'}
+                shadowBlur={previewLocks ? 28 : 12}
+                shadowOffsetY={previewLocks ? 0 : 2}
                 onClick={() => selectObjects([])}
               />
 
