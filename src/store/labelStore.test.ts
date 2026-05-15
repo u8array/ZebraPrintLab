@@ -12,6 +12,7 @@ function reset() {
     selectedIds: [],
     clipboard: [],
     pasteCount: 0,
+    previewMode: { status: 'idle' },
     canvasSettings: {
       showGrid: false,
       snapEnabled: false,
@@ -850,6 +851,96 @@ describe('ungroup', () => {
       const leafId = setupLockedGroup();
       state().updateObject(leafId, { visible: false });
       expect(childLeaf().visible).toBe(false);
+    });
+  });
+
+  describe('preview lock blocks design mutations', () => {
+    function enterPreview() {
+      // Push the store directly into the active state — the real
+      // `enterPreviewMode` would talk to Labelary and can't run in tests.
+      useLabelStore.setState({
+        previewMode: { status: 'active', url: 'blob:test' },
+      });
+    }
+
+    it('blocks addObject', () => {
+      enterPreview();
+      state().addObject('text');
+      expect(objs()).toHaveLength(0);
+    });
+
+    it('blocks updateObject', () => {
+      state().addObject('text');
+      const id = defined(objs()[0]).id;
+      const before = defined(objs()[0]).x;
+      enterPreview();
+      state().updateObject(id, { x: before + 100 });
+      expect(defined(objs()[0]).x).toBe(before);
+    });
+
+    it('blocks updateObjects', () => {
+      state().addObject('text');
+      const id = defined(objs()[0]).id;
+      const before = defined(objs()[0]).x;
+      enterPreview();
+      state().updateObjects([{ id, changes: { x: before + 100 } }]);
+      expect(defined(objs()[0]).x).toBe(before);
+    });
+
+    it('blocks removeSelectedObjects', () => {
+      state().addObject('text');
+      const id = defined(objs()[0]).id;
+      state().selectObject(id);
+      enterPreview();
+      state().removeSelectedObjects();
+      expect(objs()).toHaveLength(1);
+    });
+
+    it('blocks groupSelection', () => {
+      state().addObject('text');
+      state().addObject('box');
+      state().selectObjects(objs().map((o) => o.id));
+      enterPreview();
+      state().groupSelection();
+      expect(objs().some(isGroup)).toBe(false);
+    });
+
+    it('blocks setLabelConfig', () => {
+      const before = state().label.widthMm;
+      enterPreview();
+      state().setLabelConfig({ widthMm: before + 50 });
+      expect(state().label.widthMm).toBe(before);
+    });
+
+    it('blocks setCurrentPage', () => {
+      state().addPage();
+      const before = state().currentPageIndex;
+      enterPreview();
+      state().setCurrentPage(0);
+      expect(state().currentPageIndex).toBe(before);
+    });
+
+    it('blocks pasteObjects', () => {
+      state().addObject('text');
+      state().selectObjects([defined(objs()[0]).id]);
+      state().copySelectedObjects();
+      enterPreview();
+      state().pasteObjects();
+      expect(objs()).toHaveLength(1);
+    });
+
+    it('does not block selection actions (selecting is harmless)', () => {
+      state().addObject('text');
+      const id = defined(objs()[0]).id;
+      enterPreview();
+      state().selectObject(id);
+      expect(state().selectedIds).toEqual([id]);
+    });
+
+    it('does not block exitPreviewMode', () => {
+      enterPreview();
+      state().exitPreviewMode();
+      expect(state().previewMode.status).toBe('idle');
     });
   });
 });

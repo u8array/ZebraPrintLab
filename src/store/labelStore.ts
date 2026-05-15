@@ -17,7 +17,8 @@ import {
 } from '../types/Group';
 import { locales } from '../locales';
 import type { LocaleCode } from '../locales';
-import { isDefaultLabelaryHost } from '../lib/labelary';
+import { isDefaultLabelaryHost, fetchPreview, labelaryErrorMessage } from '../lib/labelary';
+import { generateZPL } from '../lib/zplGenerator';
 
 export type { ObjectChanges };
 
@@ -103,6 +104,18 @@ export interface CanvasSettings {
 
 export type ThemePreference = 'light' | 'dark';
 
+/** Labelary-backed canvas overlay. While `active`, the canvas renders
+ *  the Labelary-rendered PNG in place of the editor objects so the user
+ *  can A/B compare design vs. printed output at the same scale. The
+ *  fetch happens on entry and the snapshot is frozen for the lifetime
+ *  of the active session — no live refresh — because the comparison
+ *  loses meaning if the underlying design shifts under it. */
+export type PreviewMode =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'active'; url: string }
+  | { status: 'error'; error: string };
+
 interface LabelState {
   label: LabelConfig;
   pages: Page[];
@@ -120,6 +133,11 @@ interface LabelState {
   thirdParty: { labelary: boolean };
   /** Whether the user has dismissed the one-time Labelary privacy notice. */
   labelaryNoticeAcknowledged: boolean;
+
+  /** State of the Labelary canvas overlay. `idle` is the editor default;
+   *  `loading`/`active`/`error` mean the comparison overlay is in play and
+   *  editor surfaces should be visually locked. */
+  previewMode: PreviewMode;
 
   clipboard: LabelObject[];
   pasteCount: number;
@@ -175,6 +193,15 @@ interface LabelState {
   removePage: (index: number) => void;
   duplicatePage: (index: number) => void;
   setCurrentPage: (index: number) => void;
+
+  /** Start a preview session: render the current page's objects to ZPL,
+   *  fetch the Labelary PNG, swap status to `active` on success or
+   *  `error` on failure. Should only be called when `previewMode.status`
+   *  is `idle` or `error` (the toggle button enforces this). */
+  enterPreviewMode: () => Promise<void>;
+  /** End a preview session: revoke the cached blob URL and reset to
+   *  `idle`. Safe to call from any non-`idle` status. */
+  exitPreviewMode: () => void;
 }
 
 type PageState = Pick<LabelState, 'pages' | 'currentPageIndex'>;
@@ -195,6 +222,14 @@ export const canCallLabelary = (s: LabelState): boolean =>
  *  controls the endpoint and no third-party disclosure is needed. */
 export const selectLabelaryNoticeRequired = (s: LabelState): boolean =>
   isDefaultLabelaryHost() && !s.labelaryNoticeAcknowledged;
+
+/** True while the preview overlay is taking input away from the editor —
+ *  i.e. the canvas Stage should not accept pointer events. Loading and
+ *  active both qualify (loading blocks edits so the snapshot we're about
+ *  to show isn't already stale); error and idle return false so the user
+ *  can keep working after dismissing a failure. */
+export const selectPreviewLocksEditor = (s: LabelState): boolean =>
+  s.previewMode.status === 'loading' || s.previewMode.status === 'active';
 
 function updateCurrentObjects(
   state: PageState,
@@ -298,9 +333,11 @@ export const useLabelStore = create<LabelState>()(
       theme: detectInitialTheme(),
       thirdParty: thirdPartyDefaults(),
       labelaryNoticeAcknowledged: false,
+      previewMode: { status: 'idle' },
       canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm', viewRotation: 0 },
 
       addObject: (type, position = { x: 50, y: 50 }) => {
+        if (selectPreviewLocksEditor(get())) return;
         const definition = ObjectRegistry[type];
         if (!definition) return;
 
@@ -321,6 +358,7 @@ export const useLabelStore = create<LabelState>()(
 
       updateObject: (id, changes) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const ancestorLocked = findAncestors(objs, id).some((g) => !!g.locked);
           return updateCurrentObjects(state, (curr) =>
@@ -332,6 +370,7 @@ export const useLabelStore = create<LabelState>()(
 
       updateObjects: (updates) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (updates.length === 0) return {};
           // Single tree walk that applies every queued change in one
           // pass: O(tree) instead of O(updates × tree). Identity-
@@ -367,6 +406,7 @@ export const useLabelStore = create<LabelState>()(
 
       removeObject: (id) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const obj = currentObjects(state).find((o) => o.id === id);
           if (obj?.locked) return {};
           return {
@@ -377,6 +417,7 @@ export const useLabelStore = create<LabelState>()(
 
       duplicateObject: (id) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const copies = buildOffsetCopies(currentObjects(state), [id]);
           if (copies.length === 0) return {};
           return {
@@ -387,6 +428,7 @@ export const useLabelStore = create<LabelState>()(
 
       duplicateSelectedObjects: () =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (state.selectedIds.length === 0) return {};
           const copies = buildOffsetCopies(currentObjects(state), state.selectedIds);
           return {
@@ -397,6 +439,9 @@ export const useLabelStore = create<LabelState>()(
 
       copySelectedObjects: () => {
         const state = get();
+        // Copy doesn't mutate the design, but the clipboard write would
+        // create a confusing "I copied something during preview" state.
+        if (selectPreviewLocksEditor(state)) return;
         const objs = currentObjects(state);
         const clipboard = state.selectedIds.flatMap((id) => {
           const obj = objs.find((o) => o.id === id);
@@ -414,6 +459,7 @@ export const useLabelStore = create<LabelState>()(
 
       pasteObjects: () =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (state.clipboard.length === 0) return {};
           const pasteCount = state.pasteCount + 1;
           const offset = pasteCount * DUPLICATE_OFFSET_DOTS;
@@ -458,6 +504,7 @@ export const useLabelStore = create<LabelState>()(
 
       removeSelectedObjects: () =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const sel = new Set(state.selectedIds);
           const objs = currentObjects(state);
           // Locked objects survive a Delete keystroke / bulk-remove; the
@@ -473,6 +520,7 @@ export const useLabelStore = create<LabelState>()(
 
       groupSelection: () =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const sel = new Set(state.selectedIds);
           // Only consider top-level objects of the current page. Nested
@@ -518,6 +566,7 @@ export const useLabelStore = create<LabelState>()(
 
       reparentObject: (id, target) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           // Forbid cycles: moving a group into itself or one of its
           // descendants would orphan the rest of the tree.
@@ -548,6 +597,7 @@ export const useLabelStore = create<LabelState>()(
 
       addGroup: () =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const group: GroupObject = {
             id: crypto.randomUUID(),
             type: 'group',
@@ -566,6 +616,7 @@ export const useLabelStore = create<LabelState>()(
 
       ungroupIds: (ids) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const wanted = new Set(ids);
           const objs = currentObjects(state);
           const targets = objs.flatMap((o) =>
@@ -591,6 +642,7 @@ export const useLabelStore = create<LabelState>()(
 
       moveObjectToFront: (id) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const idx = objs.findIndex((o) => o.id === id);
           if (idx === -1 || idx === objs.length - 1) return {};
@@ -604,6 +656,7 @@ export const useLabelStore = create<LabelState>()(
 
       moveObjectToBack: (id) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const idx = objs.findIndex((o) => o.id === id);
           if (idx <= 0) return {};
@@ -617,6 +670,7 @@ export const useLabelStore = create<LabelState>()(
 
       moveObjectForward: (id) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const idx = objs.findIndex((o) => o.id === id);
           if (idx === -1 || idx === objs.length - 1) return {};
@@ -631,6 +685,7 @@ export const useLabelStore = create<LabelState>()(
 
       moveObjectBackward: (id) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const idx = objs.findIndex((o) => o.id === id);
           if (idx <= 0) return {};
@@ -645,6 +700,7 @@ export const useLabelStore = create<LabelState>()(
 
       reorderObject: (id, toIndex) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const objs = currentObjects(state);
           const fromIndex = objs.findIndex((o) => o.id === id);
           if (fromIndex === -1 || fromIndex === toIndex) return {};
@@ -657,11 +713,14 @@ export const useLabelStore = create<LabelState>()(
         }),
 
       loadDesign: (label, pages) =>
-        set({
-          label,
-          pages: pages.length > 0 ? pages : [{ objects: [] }],
-          currentPageIndex: 0,
-          selectedIds: [],
+        set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
+          return {
+            label,
+            pages: pages.length > 0 ? pages : [{ objects: [] }],
+            currentPageIndex: 0,
+            selectedIds: [],
+          };
         }),
 
       // Append-mode counterpart to loadDesign: keeps the current label
@@ -670,6 +729,7 @@ export const useLabelStore = create<LabelState>()(
       // page list, switching focus to the first appended page.
       appendPages: (pages) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (pages.length === 0) return {};
           const newPages = [...state.pages, ...pages];
           return {
@@ -680,7 +740,10 @@ export const useLabelStore = create<LabelState>()(
         }),
 
       setLabelConfig: (config) =>
-        set((state) => ({ label: { ...state.label, ...config } })),
+        set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
+          return { label: { ...state.label, ...config } };
+        }),
 
       setLocale: (locale) => set({ locale }),
 
@@ -696,6 +759,7 @@ export const useLabelStore = create<LabelState>()(
 
       addPage: () =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           const insertAt = state.currentPageIndex + 1;
           const newPages = [
             ...state.pages.slice(0, insertAt),
@@ -711,6 +775,7 @@ export const useLabelStore = create<LabelState>()(
 
       removePage: (index) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (state.pages.length <= 1) return {};
           if (index < 0 || index >= state.pages.length) return {};
           const newPages = state.pages.filter((_, i) => i !== index);
@@ -729,6 +794,7 @@ export const useLabelStore = create<LabelState>()(
 
       duplicatePage: (index) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (index < 0 || index >= state.pages.length) return {};
           const source = state.pages[index];
           if (!source) return {};
@@ -763,9 +829,42 @@ export const useLabelStore = create<LabelState>()(
 
       setCurrentPage: (index) =>
         set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
           if (index < 0 || index >= state.pages.length) return {};
           if (index === state.currentPageIndex) return {};
           return { currentPageIndex: index, selectedIds: [] };
+        }),
+
+      enterPreviewMode: async () => {
+        const state = get();
+        if (state.previewMode.status === 'loading' || state.previewMode.status === 'active') {
+          return;
+        }
+        set({ previewMode: { status: 'loading' } });
+        const objs = currentObjects(state);
+        const zpl = generateZPL(state.label, objs);
+        try {
+          const url = await fetchPreview(zpl, state.label);
+          // Avoid clobbering an exit that happened while the request was in
+          // flight — if the user toggled off, the loading state is gone.
+          if (get().previewMode.status !== 'loading') {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          set({ previewMode: { status: 'active', url } });
+        } catch (e) {
+          if (get().previewMode.status !== 'loading') return;
+          set({ previewMode: { status: 'error', error: labelaryErrorMessage(e) } });
+        }
+      },
+
+      exitPreviewMode: () =>
+        set((state) => {
+          if (state.previewMode.status === 'active') {
+            URL.revokeObjectURL(state.previewMode.url);
+          }
+          if (state.previewMode.status === 'idle') return {};
+          return { previewMode: { status: 'idle' } };
         }),
     }),
     {
@@ -805,5 +904,20 @@ export const useCurrentObjects = () => useLabelStore(currentObjects);
 export const getCurrentObjects = (): LabelObject[] =>
   currentObjects(useLabelStore.getState());
 
-// Undo / redo
-export const useHistory = () => useStore(useLabelStore.temporal);
+// Undo / redo. Wrapping zundo's hook so undo/redo become no-ops while
+// the preview overlay is locking the editor. Header buttons read
+// `canUndo`/`canRedo` from `pastStates`/`futureStates` — those keep
+// reporting truthful values, so a separate UI check (or button
+// disabled-state) still wins for visual feedback. The wrapper here is
+// the load-bearing safety net for any caller that goes straight to
+// `useHistory().undo()`.
+const noopHistoryAction = () => {
+  /* preview lock: no-op so undo/redo never replay state under a frozen
+   * Labelary snapshot. */
+};
+export const useHistory = () => {
+  const history = useStore(useLabelStore.temporal);
+  const locked = useLabelStore(selectPreviewLocksEditor);
+  if (!locked) return history;
+  return { ...history, undo: noopHistoryAction, redo: noopHistoryAction };
+};

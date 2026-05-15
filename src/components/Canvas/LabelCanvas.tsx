@@ -10,9 +10,9 @@ import {
 } from "react";
 import { useDroppable, useDndMonitor } from "@dnd-kit/core";
 import type { PaletteDragData } from "../../dnd/types";
-import { Stage, Layer, Group, Rect, Transformer } from "react-konva";
+import { Stage, Layer, Group, Image as KImage, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
-import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects } from "../../store/labelStore";
+import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects, selectPreviewLocksEditor } from "../../store/labelStore";
 import { isGroup, getAllLeaves, expandSelection, selectionTargetId, findObjectById, type LabelObject } from "../../types/Group";
 import { pxToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
 import { SNAP_OPTIONS } from "../../lib/units";
@@ -122,6 +122,27 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     selectObjects,
   } = useLabelStore();
   const objects = useCurrentObjects();
+  const previewMode = useLabelStore((s) => s.previewMode);
+  const previewLocks = useLabelStore(selectPreviewLocksEditor);
+  const exitPreviewMode = useLabelStore((s) => s.exitPreviewMode);
+
+  // Load the Labelary blob URL into an HTMLImageElement so react-konva's
+  // `Image` node can draw it. Decoding before mount avoids a one-frame
+  // flash of empty space when the user toggles preview on.
+  const [previewImg, setPreviewImg] = useState<HTMLImageElement | null>(null);
+  const previewUrl = previewMode.status === 'active' ? previewMode.url : null;
+  useEffect(() => {
+    if (!previewUrl) {
+      setPreviewImg(null);
+      return;
+    }
+    const img = new window.Image();
+    img.onload = () => setPreviewImg(img);
+    img.src = previewUrl;
+    return () => {
+      img.onload = null;
+    };
+  }, [previewUrl]);
 
   // Render path operates on visible leaves only: groups emit no node of
   // their own (v1 has no group transform), and a group with visible=false
@@ -173,12 +194,30 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // shapes hidden behind a filled (or inverted) form.
   useAltClickCycle({ containerRef, stageRef, selectObject });
 
+  // Escape exits preview mode. Stays bound globally (not just to the
+  // canvas) so the user can return to the editor from anywhere — and
+  // the existing useGlobalShortcuts already short-circuits the rest of
+  // its bindings while preview locks, so there's no collision risk.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== 'Escape') return;
+      if (!selectPreviewLocksEditor(useLabelStore.getState())) return;
+      e.preventDefault();
+      useLabelStore.getState().exitPreviewMode();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   // Delete/Backspace removes all selected objects; ignored when focus is inside an input
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code !== "Delete" && e.code !== "Backspace") return;
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      // Preview overlay shows a frozen Labelary snapshot; editing while
+      // it's active would silently drift the comparison out of sync.
+      if (selectPreviewLocksEditor(useLabelStore.getState())) return;
       const { selectedIds: ids } = useLabelStore.getState();
       if (ids.length === 0) return;
       e.preventDefault();
@@ -197,6 +236,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
       const state = useLabelStore.getState();
+      if (selectPreviewLocksEditor(state)) return;
       const ids = state.selectedIds;
       const objs = currentObjects(state);
       if (ids.length === 0) return;
@@ -577,6 +617,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const handleStageDragEnd = () => setGuides([]);
 
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (previewLocks) return;
     if (consumeDidPan()) return;
     if (consumeDidLasso()) return;
     if (e.target === e.target.getStage()) selectObjects([]);
@@ -615,12 +656,18 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    if (previewLocks) return;
     onPanMouseMove(e);
     onLassoMouseMove(e);
   };
   const handleMouseUp = () => {
+    if (previewLocks) return;
     onPanMouseUp();
     onLassoMouseUp();
+  };
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (previewLocks) return;
+    onPanMouseDown(e);
   };
 
   const pointerToLabelDots = (clientX: number, clientY: number) => {
@@ -643,7 +690,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
 
   useDndMonitor({
     onDragMove(event) {
-      if (event.over?.id !== "canvas") {
+      if (previewLocks || event.over?.id !== "canvas") {
         setGhost(null);
         return;
       }
@@ -657,6 +704,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     },
     onDragEnd(event) {
       setGhost(null);
+      if (previewLocks) return;
       if (event.over?.id !== "canvas") return;
       const pos = pointerToLabelDots(lastPointerRef.current.x, lastPointerRef.current.y);
       if (!pos) return;
@@ -687,13 +735,44 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
         background: colors.canvasBg,
         backgroundImage: `radial-gradient(circle, ${colors.canvasDot} 1px, transparent 1px)`,
         backgroundSize: "24px 24px",
-        cursor,
+        // `not-allowed` while the preview overlay is locking the editor:
+        // signals at the user's locus of attention (the canvas itself)
+        // that editing is paused, instead of relying on the toolbar button
+        // alone for state feedback.
+        cursor: previewLocks ? 'not-allowed' : cursor,
       }}
-      onMouseDown={onPanMouseDown}
+      onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
+      {/* Preview-mode overlays. Loading is shown DOM-side because
+          the Konva Image can't render before the bitmap decoded; the
+          error banner stays inside the canvas region so the user can
+          dismiss it without leaving the canvas viewport. */}
+      {previewMode.status === 'loading' && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-bg/40 pointer-events-none">
+          <span className="font-mono text-[10px] text-muted animate-pulse">
+            {t.output.loading}
+          </span>
+        </div>
+      )}
+      {previewMode.status === 'error' && (
+        <div className="absolute inset-x-0 top-3 z-20 flex justify-center px-3 pointer-events-none">
+          <div className="bg-surface border border-amber-500/60 rounded px-3 py-1.5 max-w-md flex items-center gap-3 pointer-events-auto">
+            <span className="font-mono text-[10px] text-amber-400 leading-relaxed flex-1">
+              {previewMode.error}
+            </span>
+            <button
+              onClick={exitPreviewMode}
+              className="font-mono text-[10px] text-muted hover:text-text transition-colors shrink-0"
+            >
+              {t.app.close}
+            </button>
+          </div>
+        </div>
+      )}
+
       <PaginationControl />
 
       {label.printOrientation === "I" && (
@@ -798,9 +877,14 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 width={labelWidthPx}
                 height={labelHeightPx}
                 fill="white"
-                shadowColor="rgba(0,0,0,0.4)"
-                shadowBlur={12}
-                shadowOffsetY={2}
+                // Preview overlay swaps the default drop-shadow for a
+                // symmetric amber glow so the paper itself carries the
+                // mode indicator at the user's locus of attention. Same
+                // amber the app uses for Labelary-related warnings, so
+                // the colour language stays consistent.
+                shadowColor={previewLocks ? 'rgba(251, 191, 36, 0.55)' : 'rgba(0,0,0,0.4)'}
+                shadowBlur={previewLocks ? 28 : 12}
+                shadowOffsetY={previewLocks ? 0 : 2}
                 onClick={() => selectObjects([])}
               />
 
@@ -816,39 +900,57 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 />
               )}
 
-              {visibleLeaves.map((obj) => (
-                <KonvaObject
-                  key={obj.id}
-                  obj={obj}
-                  scale={scale}
-                  dpmm={label.dpmm}
-                  offsetX={objectsOffsetX}
-                  offsetY={labelOffsetY}
-                  isSelected={attachableIds.includes(obj.id)}
-                  onSelect={(add) => {
-                    // Auto-select-parent: clicking a child of a group
-                    // surfaces the outermost containing group as the
-                    // selection target. Top-level leaves pass through.
-                    const target = selectionTargetId(objects, obj.id);
-                    // Lock cascades from the group: a click on a child
-                    // of a locked group routes through handleLockedClick
-                    // (so the next non-locked hit wins) instead of
-                    // selecting through to a leaf the user can't move.
-                    const targetObj =
-                      target === obj.id ? obj : findObjectById(objects, target);
-                    if (targetObj?.locked) handleLockedClick(add);
-                    else if (add) toggleSelectObject(target);
-                    else selectObject(target);
-                  }}
-                  onChange={(changes) => handleObjectChange(obj.id, changes)}
-                  snap={snap}
-                  getOthersSnapshot={snapEnabled ? undefined : getOthersSnapshot}
-                  labelRect={transformerSnapLabelRect}
-                  setGuides={setGuides}
-                />
-              ))}
+              {/* Preview overlay replaces the editor leaves entirely so the
+                  user sees exactly what Labelary would render at the same
+                  scale and position. Falls back to nothing during loading
+                  (loading spinner is rendered as a DOM overlay outside the
+                  Konva stage), so neither view briefly blinks through. */}
+              {previewLocks ? (
+                previewImg && (
+                  <KImage
+                    image={previewImg}
+                    x={labelOffsetX}
+                    y={labelOffsetY}
+                    width={labelWidthPx}
+                    height={labelHeightPx}
+                    listening={false}
+                  />
+                )
+              ) : (
+                visibleLeaves.map((obj) => (
+                  <KonvaObject
+                    key={obj.id}
+                    obj={obj}
+                    scale={scale}
+                    dpmm={label.dpmm}
+                    offsetX={objectsOffsetX}
+                    offsetY={labelOffsetY}
+                    isSelected={attachableIds.includes(obj.id)}
+                    onSelect={(add) => {
+                      // Auto-select-parent: clicking a child of a group
+                      // surfaces the outermost containing group as the
+                      // selection target. Top-level leaves pass through.
+                      const target = selectionTargetId(objects, obj.id);
+                      // Lock cascades from the group: a click on a child
+                      // of a locked group routes through handleLockedClick
+                      // (so the next non-locked hit wins) instead of
+                      // selecting through to a leaf the user can't move.
+                      const targetObj =
+                        target === obj.id ? obj : findObjectById(objects, target);
+                      if (targetObj?.locked) handleLockedClick(add);
+                      else if (add) toggleSelectObject(target);
+                      else selectObject(target);
+                    }}
+                    onChange={(changes) => handleObjectChange(obj.id, changes)}
+                    snap={snap}
+                    getOthersSnapshot={snapEnabled ? undefined : getOthersSnapshot}
+                    labelRect={transformerSnapLabelRect}
+                    setGuides={setGuides}
+                  />
+                ))
+              )}
 
-              {ghost && (
+              {!previewLocks && ghost && (
                 <Group opacity={0.5} listening={false}>
                   <KonvaObject
                     obj={ghost}
@@ -870,7 +972,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 respects the rotation; snap guides come from computeSnap in
                 stage pixels; the Transformer follows nodes through their
                 accumulated parent transform. */}
-            {lassoRect && (
+            {!previewLocks && lassoRect && (
               <Rect
                 x={lassoRect.x}
                 y={lassoRect.y}
@@ -884,31 +986,33 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               />
             )}
 
-            <GuideLines guides={guides} />
+            {!previewLocks && <GuideLines guides={guides} />}
 
-            <Transformer
-              ref={transformerRef}
-              rotateEnabled={rotateEnabled}
-              resizeEnabled={resizeEnabled}
-              enabledAnchors={enabledAnchors}
-              onTransformStart={onTransformStart}
-              boundBoxFunc={boundBoxFunc}
-              onTransformEnd={onTransformEnd}
-              // Match the per-shape selection stroke and the line endpoint
-              // handles so all selection visuals share one colour.
-              borderStroke={colors.selection}
-              anchorStroke={colors.selection}
-              anchorFill="#ffffff"
-              anchorSize={7}
-              anchorStrokeWidth={1}
-              // Exclude selection stroke from the bbox; otherwise scale-aware
-              // stroke padding leaks into the resize math and produces sub-dot
-              // drift in node.x()/y() that surfaces as 1-dot ZPL coordinate
-              // jumps under pxToDots rounding.
-              ignoreStroke
-            />
+            {!previewLocks && (
+              <Transformer
+                ref={transformerRef}
+                rotateEnabled={rotateEnabled}
+                resizeEnabled={resizeEnabled}
+                enabledAnchors={enabledAnchors}
+                onTransformStart={onTransformStart}
+                boundBoxFunc={boundBoxFunc}
+                onTransformEnd={onTransformEnd}
+                // Match the per-shape selection stroke and the line endpoint
+                // handles so all selection visuals share one colour.
+                borderStroke={colors.selection}
+                anchorStroke={colors.selection}
+                anchorFill="#ffffff"
+                anchorSize={7}
+                anchorStrokeWidth={1}
+                // Exclude selection stroke from the bbox; otherwise scale-aware
+                // stroke padding leaks into the resize math and produces sub-dot
+                // drift in node.x()/y() that surfaces as 1-dot ZPL coordinate
+                // jumps under pxToDots rounding.
+                ignoreStroke
+              />
+            )}
 
-            {rotationBtnPos && (
+            {!previewLocks && rotationBtnPos && (
               <RotationButton
                 ref={rotationBtnRef}
                 x={rotationBtnPos.x}

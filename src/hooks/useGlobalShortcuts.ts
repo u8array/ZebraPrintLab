@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLabelStore, useHistory, getCurrentObjects } from "../store/labelStore";
+import { useLabelStore, useHistory, getCurrentObjects, selectPreviewLocksEditor } from "../store/labelStore";
 import { nextRotation } from "../components/Canvas/rotationGeometry";
 
 export function useGlobalShortcuts() {
@@ -16,6 +16,11 @@ export function useGlobalShortcuts() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      // Preview overlay freezes the design at activation time; every
+      // shortcut here either edits the model or changes the selection
+      // /page, both of which would visibly drift away from the frozen
+      // snapshot. Block them wholesale.
+      if (selectPreviewLocksEditor(useLabelStore.getState())) return;
       const tag = (e.target as HTMLElement).tagName;
       const inInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
       const mod = e.metaKey || e.ctrlKey;
