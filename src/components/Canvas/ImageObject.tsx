@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Group, Image as KImage, Rect, Text } from "react-konva";
 import type Konva from "konva";
-import type { LabelObject } from "../../registry";
+import type { LabelObject } from "../../types/Group";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { getImage } from "../../lib/imageCache";
 import { useColorScheme } from "../../lib/useColorScheme";

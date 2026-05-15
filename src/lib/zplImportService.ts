@@ -1,6 +1,6 @@
 import { parseZPL, type ImportFinding, type ImportFindingKind, type ImportReport } from "./zplParser";
 import type { LabelConfig } from "../types/ObjectType";
-import type { LabelObject } from "../registry";
+import type { LabelObject } from "../types/Group";
 
 export interface ZplImportResult {
   labelConfig: Partial<LabelConfig>;

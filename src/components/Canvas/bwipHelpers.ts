@@ -12,7 +12,8 @@
  * bwipHelpers.test.ts ensures every BCID-registered type has a case.
  */
 
-import type { LabelObject, LeafObject } from "../../registry";
+import type { LeafObject } from "../../registry";
+import type { LabelObject } from "../../types/Group";
 import type { Gs1DatabarProps } from "../../registry/gs1databar";
 import { objectRotation } from "../../registry/rotation";
 import { dotsToPx } from "../../lib/coordinates";

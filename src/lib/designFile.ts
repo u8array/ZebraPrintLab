@@ -1,22 +1,33 @@
 import { z } from "zod";
 import { labelConfigSchema, labelObjectBaseSchema, type LabelConfig } from "../types/ObjectType";
-import type { LabelObject } from "../registry";
+import type { LabelObject } from "../types/Group";
 import { ok, err, type Result } from "./result";
 
 export type DesignFileError = "parse_error" | "invalid_schema";
 export interface DesignFilePage { objects: LabelObject[] }
 export interface DesignFile { label: LabelConfig; pages: DesignFilePage[] }
 
-// Leaves carry `props`; groups carry `children` instead and skip `props`.
-// Both shapes share the base fields. `children` is recursive so the
-// validator descends into nested groups too — the lazy wrap is what
-// lets the schema reference itself.
-const labelObjectSchema: z.ZodType<unknown> = z.lazy(() =>
+// Two distinct shapes share the base fields:
+//   * leaves carry `props` and have no `children`,
+//   * groups carry `children` and have no `props` (their `type` is 'group').
+// Split into separate schemas so a leaf missing its `props` or a group
+// missing its `children` fails validation. `groupSchema` is wrapped in
+// z.lazy so the recursion through `labelObjectSchema` resolves.
+const leafSchema = labelObjectBaseSchema.extend({
+  type: z.string().refine((t) => t !== 'group', {
+    message: "Leaf objects cannot have type 'group'",
+  }),
+  props: z.record(z.string(), z.unknown()),
+});
+
+const groupSchema: z.ZodType<unknown> = z.lazy(() =>
   labelObjectBaseSchema.extend({
-    props: z.record(z.string(), z.unknown()).optional(),
-    children: z.array(labelObjectSchema).optional(),
+    type: z.literal('group'),
+    children: z.array(labelObjectSchema),
   }),
 );
+
+const labelObjectSchema: z.ZodType<unknown> = z.union([groupSchema, leafSchema]);
 
 const pageSchema = z.object({ objects: z.array(labelObjectSchema) });
 

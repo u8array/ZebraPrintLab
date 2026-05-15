@@ -12,8 +12,8 @@ import {
   canGroupSelection,
   mapObjectById,
   type GroupObject,
+  type LabelObject,
 } from './Group';
-import type { LabelObject } from '../registry';
 
 function leaf(id: string): LabelObject {
   // The tree helpers under test only inspect id / type / children, never

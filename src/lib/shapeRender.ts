@@ -1,4 +1,4 @@
-import type { LabelObject } from "../registry";
+import type { LabelObject } from "../types/Group";
 import { diagonalPolygonPoints } from "./shapeGeometry";
 
 /** Inward-extruded ^GE / ^GC ring or solid disc, shared by ellipse and

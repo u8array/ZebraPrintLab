@@ -1,7 +1,7 @@
 import { generateZPL } from "./zplGenerator";
 import { fetchPreview } from "./labelary";
 import type { LabelConfig } from "../types/ObjectType";
-import type { LabelObject } from "../registry";
+import type { LabelObject } from "../types/Group";
 
 export function buildLoadingHtml(): string {
   return `<html><head><style>

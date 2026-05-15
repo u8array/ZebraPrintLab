@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { pickAngle, line } from "./line";
-import type { LabelObject } from "./index";
+import type { LabelObject } from "../types/Group";
 
 const makeLine = (overrides: Partial<{
   x: number; y: number; angle: number; length: number; thickness: number;

@@ -1,8 +1,7 @@
 import { useState, useRef } from "react";
 import type Konva from "konva";
 import { getCurrentObjects } from "../../../store/labelStore";
-import type { LabelObject } from "../../../registry";
-import { isGroup } from "../../../types/Group";
+import { isGroup, type LabelObject } from "../../../types/Group";
 import { getIdsIntersectingRect, type LassoRect } from "../lassoGeometry";
 
 interface Options {
