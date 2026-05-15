@@ -3,7 +3,6 @@ import { CheckIcon, ClipboardDocumentIcon, ChevronDownIcon, ChevronUpIcon, EyeIc
 import { useLabelStore, selectLabelaryNoticeRequired } from '../../store/labelStore';
 import { generateMultiPageZPL } from '../../lib/zplGenerator';
 import { useT } from '../../lib/useT';
-import { LabelPreviewModal } from './LabelPreview';
 import { LabelaryNoticeModal } from './LabelaryNoticeModal';
 
 interface Props {
@@ -18,12 +17,29 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
   const pages = useLabelStore((s) => s.pages);
   const labelaryEnabled = useLabelStore((s) => s.thirdParty.labelary);
   const noticeRequired = useLabelStore(selectLabelaryNoticeRequired);
+  const previewMode = useLabelStore((s) => s.previewMode);
+  const enterPreviewMode = useLabelStore((s) => s.enterPreviewMode);
+  const exitPreviewMode = useLabelStore((s) => s.exitPreviewMode);
   const [copied, setCopied] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
   const [showNotice, setShowNotice] = useState(false);
 
   const hasObjects = pages.some((p) => p.objects.length > 0);
   const zpl = hasObjects ? generateMultiPageZPL(label, pages) : '';
+
+  const previewActive =
+    previewMode.status === 'loading' || previewMode.status === 'active';
+
+  const togglePreview = () => {
+    if (previewActive) {
+      exitPreviewMode();
+      return;
+    }
+    if (noticeRequired) {
+      setShowNotice(true);
+      return;
+    }
+    void enterPreviewMode();
+  };
 
   const handleCopy = () => {
     if (!zpl) return;
@@ -50,10 +66,15 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
         <div className="flex items-center gap-3">
           {labelaryEnabled && (
             <button
-              onClick={() => (noticeRequired ? setShowNotice(true) : setShowPreview(true))}
-              disabled={!zpl}
+              onClick={togglePreview}
+              disabled={!zpl && !previewActive}
               title={t.output.previewHeading}
-              className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+              aria-pressed={previewActive}
+              className={`flex items-center gap-1 font-mono text-[10px] disabled:opacity-25 disabled:cursor-not-allowed transition-colors ${
+                previewActive
+                  ? 'text-accent hover:text-text'
+                  : 'text-muted hover:text-accent'
+              }`}
             >
               <EyeIcon className="w-4 h-4" />
               {t.output.previewHeading}
@@ -85,11 +106,10 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
           onClose={() => setShowNotice(false)}
           onContinue={() => {
             setShowNotice(false);
-            setShowPreview(true);
+            void enterPreviewMode();
           }}
         />
       )}
-      {showPreview && <LabelPreviewModal onClose={() => setShowPreview(false)} />}
     </div>
   );
 }

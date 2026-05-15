@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { TrashIcon } from "@heroicons/react/16/solid";
-import { useLabelStore } from "../../store/labelStore";
+import { useLabelStore, selectPreviewLocksEditor } from "../../store/labelStore";
 import { useT } from "../../lib/useT";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 
@@ -11,12 +11,16 @@ export function PaginationControl() {
   const currentPageIndex = useLabelStore((s) => s.currentPageIndex);
   const setCurrentPage = useLabelStore((s) => s.setCurrentPage);
   const removePage = useLabelStore((s) => s.removePage);
+  const previewLocks = useLabelStore(selectPreviewLocksEditor);
 
   // Hide entirely on single-page documents; adding pages lives in the File menu.
   if (pageCount <= 1) return null;
 
-  const canPrev = currentPageIndex > 0;
-  const canNext = currentPageIndex < pageCount - 1;
+  // The preview overlay caches a snapshot of the current page; switching
+  // pages or deleting one would either invalidate the comparison or
+  // pull the rug from under it.
+  const canPrev = !previewLocks && currentPageIndex > 0;
+  const canNext = !previewLocks && currentPageIndex < pageCount - 1;
 
   return (
     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-surface border border-border rounded px-1 py-0.5">
@@ -44,9 +48,10 @@ export function PaginationControl() {
       <div className="w-px h-3.5 bg-border mx-0.5" />
       <button
         onClick={() => setConfirmOpen(true)}
+        disabled={previewLocks}
         title="Delete current page"
         aria-label="Delete current page"
-        className="w-6 h-6 flex items-center justify-center text-muted hover:text-red-400 transition-colors"
+        className="w-6 h-6 flex items-center justify-center text-muted hover:text-red-400 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
       >
         <TrashIcon className="w-3.5 h-3.5" />
       </button>

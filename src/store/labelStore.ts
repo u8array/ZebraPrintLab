@@ -17,7 +17,8 @@ import {
 } from '../types/Group';
 import { locales } from '../locales';
 import type { LocaleCode } from '../locales';
-import { isDefaultLabelaryHost } from '../lib/labelary';
+import { isDefaultLabelaryHost, fetchPreview, labelaryErrorMessage } from '../lib/labelary';
+import { generateZPL } from '../lib/zplGenerator';
 
 export type { ObjectChanges };
 
@@ -103,6 +104,18 @@ export interface CanvasSettings {
 
 export type ThemePreference = 'light' | 'dark';
 
+/** Labelary-backed canvas overlay. While `active`, the canvas renders
+ *  the Labelary-rendered PNG in place of the editor objects so the user
+ *  can A/B compare design vs. printed output at the same scale. The
+ *  fetch happens on entry and the snapshot is frozen for the lifetime
+ *  of the active session — no live refresh — because the comparison
+ *  loses meaning if the underlying design shifts under it. */
+export type PreviewMode =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'active'; url: string }
+  | { status: 'error'; error: string };
+
 interface LabelState {
   label: LabelConfig;
   pages: Page[];
@@ -120,6 +133,11 @@ interface LabelState {
   thirdParty: { labelary: boolean };
   /** Whether the user has dismissed the one-time Labelary privacy notice. */
   labelaryNoticeAcknowledged: boolean;
+
+  /** State of the Labelary canvas overlay. `idle` is the editor default;
+   *  `loading`/`active`/`error` mean the comparison overlay is in play and
+   *  editor surfaces should be visually locked. */
+  previewMode: PreviewMode;
 
   clipboard: LabelObject[];
   pasteCount: number;
@@ -175,6 +193,15 @@ interface LabelState {
   removePage: (index: number) => void;
   duplicatePage: (index: number) => void;
   setCurrentPage: (index: number) => void;
+
+  /** Start a preview session: render the current page's objects to ZPL,
+   *  fetch the Labelary PNG, swap status to `active` on success or
+   *  `error` on failure. Should only be called when `previewMode.status`
+   *  is `idle` or `error` (the toggle button enforces this). */
+  enterPreviewMode: () => Promise<void>;
+  /** End a preview session: revoke the cached blob URL and reset to
+   *  `idle`. Safe to call from any non-`idle` status. */
+  exitPreviewMode: () => void;
 }
 
 type PageState = Pick<LabelState, 'pages' | 'currentPageIndex'>;
@@ -195,6 +222,14 @@ export const canCallLabelary = (s: LabelState): boolean =>
  *  controls the endpoint and no third-party disclosure is needed. */
 export const selectLabelaryNoticeRequired = (s: LabelState): boolean =>
   isDefaultLabelaryHost() && !s.labelaryNoticeAcknowledged;
+
+/** True while the preview overlay is taking input away from the editor —
+ *  i.e. the canvas Stage should not accept pointer events. Loading and
+ *  active both qualify (loading blocks edits so the snapshot we're about
+ *  to show isn't already stale); error and idle return false so the user
+ *  can keep working after dismissing a failure. */
+export const selectPreviewLocksEditor = (s: LabelState): boolean =>
+  s.previewMode.status === 'loading' || s.previewMode.status === 'active';
 
 function updateCurrentObjects(
   state: PageState,
@@ -298,6 +333,7 @@ export const useLabelStore = create<LabelState>()(
       theme: detectInitialTheme(),
       thirdParty: thirdPartyDefaults(),
       labelaryNoticeAcknowledged: false,
+      previewMode: { status: 'idle' },
       canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm', viewRotation: 0 },
 
       addObject: (type, position = { x: 50, y: 50 }) => {
@@ -766,6 +802,38 @@ export const useLabelStore = create<LabelState>()(
           if (index < 0 || index >= state.pages.length) return {};
           if (index === state.currentPageIndex) return {};
           return { currentPageIndex: index, selectedIds: [] };
+        }),
+
+      enterPreviewMode: async () => {
+        const state = get();
+        if (state.previewMode.status === 'loading' || state.previewMode.status === 'active') {
+          return;
+        }
+        set({ previewMode: { status: 'loading' } });
+        const objs = currentObjects(state);
+        const zpl = generateZPL(state.label, objs);
+        try {
+          const url = await fetchPreview(zpl, state.label);
+          // Avoid clobbering an exit that happened while the request was in
+          // flight — if the user toggled off, the loading state is gone.
+          if (get().previewMode.status !== 'loading') {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          set({ previewMode: { status: 'active', url } });
+        } catch (e) {
+          if (get().previewMode.status !== 'loading') return;
+          set({ previewMode: { status: 'error', error: labelaryErrorMessage(e) } });
+        }
+      },
+
+      exitPreviewMode: () =>
+        set((state) => {
+          if (state.previewMode.status === 'active') {
+            URL.revokeObjectURL(state.previewMode.url);
+          }
+          if (state.previewMode.status === 'idle') return {};
+          return { previewMode: { status: 'idle' } };
         }),
     }),
     {
