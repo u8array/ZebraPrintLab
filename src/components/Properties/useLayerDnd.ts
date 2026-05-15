@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core';
 import { isGroup, findObjectById, findAncestors } from '../../types/Group';
-import type { GroupObject } from '../../types/Group';
-import type { LabelObject } from '../../registry';
+import type { GroupObject, LabelObject } from '../../types/Group';
 import { INDENT_STEP } from './layerLayout';
 
 /** Sentinel container id for the top-level objects list. Group containers

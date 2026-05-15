@@ -13,7 +13,7 @@ import type { PaletteDragData } from "../../dnd/types";
 import { Stage, Layer, Group, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects } from "../../store/labelStore";
-import { isGroup, getAllLeaves, expandSelection, selectionTargetId, findObjectById } from "../../types/Group";
+import { isGroup, getAllLeaves, expandSelection, selectionTargetId, findObjectById, type LabelObject } from "../../types/Group";
 import { pxToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
 import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
@@ -26,7 +26,7 @@ import { Grid } from "./Grid";
 import { GuideLines } from "./GuideLines";
 import { Ruler, RULER_SIZE } from "./Ruler";
 import { ObjectRegistry } from "../../registry";
-import type { LabelObject, LeafObject } from "../../registry";
+import type { LeafObject } from "../../registry";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { objectIdsAtPoint } from "./hitTesting";
 import { useT } from "../../lib/useT";
@@ -131,21 +131,18 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // without each consumer having to walk ancestors.
   const visibleLeaves = useMemo(() => {
     const out: LeafObject[] = [];
-    const walk = (nodes: LabelObject[], inheritedLocked: boolean, inheritedHidden: boolean) => {
+    const walk = (nodes: LabelObject[], inheritedLocked: boolean) => {
       for (const n of nodes) {
+        if (n.visible === false) continue;
         const locked = inheritedLocked || !!n.locked;
-        const hidden = inheritedHidden || n.visible === false;
-        if (hidden) continue;
         if (isGroup(n)) {
-          walk(n.children, locked, hidden);
+          walk(n.children, locked);
         } else {
-          // Preserve object identity when nothing was inherited so React
-          // memoisation keeps unaffected leaves stable across renders.
           out.push(locked && !n.locked ? ({ ...n, locked: true } as LeafObject) : n);
         }
       }
     };
-    walk(objects, false, false);
+    walk(objects, false);
     return out;
   }, [objects]);
 

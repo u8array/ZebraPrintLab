@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useLabelStore, currentObjects } from './labelStore';
-import type { LabelObject } from '../registry';
-import { isGroup } from '../types/Group';
+import { isGroup, type LabelObject } from '../types/Group';
 import { defined, props } from '../test/helpers';
 
 /** Reset store to clean state before each test. */
@@ -813,5 +812,44 @@ describe('ungroup', () => {
     state().ungroupIds([gid]);
     expect(objs()).toHaveLength(2);
     expect(objs().every((o) => !isGroup(o))).toBe(true);
+  });
+
+  describe('lock cascade', () => {
+    /** Set up "one text leaf inside a locked group" and return the leaf id. */
+    function setupLockedGroup(): string {
+      state().addObject('text');
+      const leafId = defined(objs()[0]).id;
+      state().selectObject(leafId);
+      state().groupSelection();
+      const gid = defined(state().selectedIds[0]);
+      state().updateObject(gid, { locked: true });
+      return leafId;
+    }
+
+    function childLeaf(): LabelObject {
+      const g = defined(objs()[0]);
+      if (!isGroup(g)) throw new Error('expected group');
+      return defined(g.children[0]);
+    }
+
+    it('blocks position changes on a child of a locked group via updateObject', () => {
+      const leafId = setupLockedGroup();
+      const before = childLeaf().x;
+      state().updateObject(leafId, { x: before + 50 });
+      expect(childLeaf().x).toBe(before);
+    });
+
+    it('blocks position changes on a child of a locked group via updateObjects', () => {
+      const leafId = setupLockedGroup();
+      const before = childLeaf().x;
+      state().updateObjects([{ id: leafId, changes: { x: before + 50 } }]);
+      expect(childLeaf().x).toBe(before);
+    });
+
+    it('still allows bypass keys (visible, locked) on a child of a locked group', () => {
+      const leafId = setupLockedGroup();
+      state().updateObject(leafId, { visible: false });
+      expect(childLeaf().visible).toBe(false);
+    });
   });
 });

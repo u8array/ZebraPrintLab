@@ -1,4 +1,5 @@
-import { BARCODE_1D_TYPES, type LabelObject } from "../../registry";
+import { BARCODE_1D_TYPES } from "../../registry";
+import type { LabelObject } from "../../types/Group";
 import { QR_FO_Y_OFFSET_DOTS } from "./bwipConstants";
 
 /**

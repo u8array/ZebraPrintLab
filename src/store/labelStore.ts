@@ -5,14 +5,15 @@ import type { LabelConfig, ObjectChanges } from '../types/ObjectType';
 import type { Unit } from '../lib/units';
 import type { ViewRotation } from '../components/Canvas/rotationGeometry';
 import { ObjectRegistry } from '../registry';
-import type { LabelObject } from '../registry';
 import {
   isGroup,
   mapObjectById,
   detachObjectById,
   findObjectById,
+  findAncestors,
   isSelfOrDescendant,
   type GroupObject,
+  type LabelObject,
 } from '../types/Group';
 import { locales } from '../locales';
 import type { LocaleCode } from '../locales';
@@ -34,8 +35,19 @@ function isLockBypass(changes: ObjectChanges): boolean {
   return keys.length > 0 && keys.every((k) => LOCK_BYPASS_KEYS.has(k));
 }
 
-function applyObjectChanges(obj: LabelObject, changes: ObjectChanges): LabelObject {
-  if (obj.locked && !isLockBypass(changes)) return obj;
+function applyObjectChanges(
+  obj: LabelObject,
+  changes: ObjectChanges,
+  ancestorLocked = false,
+): LabelObject {
+  // Lock cascades from any ancestor group: a leaf inside a locked group
+  // accepts only bypass keys (locked / visible / includeInExport /
+  // comment / name) so the user can still toggle visibility or release
+  // the lock from the layers panel. Load-bearing — `expandSelection`-
+  // driven callers (arrow-key nudges, shift-multi-drag) target the
+  // group's leaf children directly and would otherwise sidestep the
+  // group's own `locked` flag.
+  if ((obj.locked || ancestorLocked) && !isLockBypass(changes)) return obj;
   if (isGroup(obj)) {
     // Groups have no registry entry (no normalize hook) and no props to
     // merge — apply top-level changes only. Children stay untouched;
@@ -308,11 +320,15 @@ export const useLabelStore = create<LabelState>()(
       },
 
       updateObject: (id, changes) =>
-        set((state) =>
-          updateCurrentObjects(state, (objs) =>
-            mapObjectById(objs, id, (obj) => applyObjectChanges(obj, changes)),
-          ),
-        ),
+        set((state) => {
+          const objs = currentObjects(state);
+          const ancestorLocked = findAncestors(objs, id).some((g) => !!g.locked);
+          return updateCurrentObjects(state, (curr) =>
+            mapObjectById(curr, id, (obj) =>
+              applyObjectChanges(obj, changes, ancestorLocked),
+            ),
+          );
+        }),
 
       updateObjects: (updates) =>
         set((state) => {
@@ -320,15 +336,23 @@ export const useLabelStore = create<LabelState>()(
           // Single tree walk that applies every queued change in one
           // pass: O(tree) instead of O(updates × tree). Identity-
           // preserving — subtrees with no matching id keep their
-          // reference so React memoisation can skip them.
+          // reference so React memoisation can skip them. The walk
+          // carries inheritedLocked so a leaf inside a locked group
+          // sees the cascade without each call re-traversing ancestors.
           const updateMap = new Map(updates.map((u) => [u.id, u.changes]));
-          const applyUpdates = (nodes: LabelObject[]): LabelObject[] => {
+          const applyUpdates = (
+            nodes: LabelObject[],
+            inheritedLocked: boolean,
+          ): LabelObject[] => {
             let changed = false;
             const next = nodes.map((n) => {
               const changes = updateMap.get(n.id);
-              let updated = changes ? applyObjectChanges(n, changes) : n;
+              let updated = changes
+                ? applyObjectChanges(n, changes, inheritedLocked)
+                : n;
               if (isGroup(updated)) {
-                const nextChildren = applyUpdates(updated.children);
+                const childLocked = inheritedLocked || !!updated.locked;
+                const nextChildren = applyUpdates(updated.children, childLocked);
                 if (nextChildren !== updated.children) {
                   updated = { ...updated, children: nextChildren };
                 }
@@ -338,7 +362,7 @@ export const useLabelStore = create<LabelState>()(
             });
             return changed ? next : nodes;
           };
-          return updateCurrentObjects(state, (objs) => applyUpdates(objs));
+          return updateCurrentObjects(state, (objs) => applyUpdates(objs, false));
         }),
 
       removeObject: (id) =>

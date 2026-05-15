@@ -2,8 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { generateZPL, generateMultiPageZPL } from './zplGenerator';
 import { parseZPL } from './zplParser';
 import type { LabelConfig } from '../types/ObjectType';
-import type { LabelObject } from '../registry';
-import type { GroupObject } from '../types/Group';
+import type { GroupObject, LabelObject } from '../types/Group';
 import { defined, props } from '../test/helpers';
 
 const BASE_LABEL: LabelConfig = {

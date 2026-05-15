@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Group, Line as KLine, Rect } from "react-konva";
 import type Konva from "konva";
-import type { LabelObject } from "../../registry";
+import type { LabelObject } from "../../types/Group";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { constrainLine, type ConstrainMode } from "../../lib/lineConstrain";
 import { useColorScheme } from "../../lib/useColorScheme";

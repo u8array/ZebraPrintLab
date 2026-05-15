@@ -1,5 +1,5 @@
 import type { LabelConfig } from "../types/ObjectType";
-import type { LabelObject } from "../registry";
+import type { LabelObject } from "../types/Group";
 import type { TextProps } from "../registry/text";
 import type { Code128Props } from "../registry/code128";
 import type { Code39Props } from "../registry/code39";

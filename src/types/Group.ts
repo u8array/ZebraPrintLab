@@ -1,4 +1,4 @@
-import type { LabelObject, LeafObject } from '../registry';
+import type { LeafObject } from '../registry';
 import type { LabelObjectBase } from './ObjectType';
 
 /**
@@ -15,6 +15,14 @@ export type GroupObject = LabelObjectBase & {
   type: 'group';
   children: LabelObject[];
 };
+
+/** Any node in the object tree: either a registry-backed leaf or a
+ *  structural group container. Most code paths operate on this; use
+ *  `isGroup` to narrow. Lives next to `GroupObject` (rather than next
+ *  to `LeafObject` in the registry) because the type composes the two
+ *  and the tree-walking helpers in this module are its primary
+ *  consumers — keeping it here breaks the registry ↔ types cycle. */
+export type LabelObject = LeafObject | GroupObject;
 
 export function isGroup(obj: LabelObject): obj is GroupObject {
   return obj.type === 'group';

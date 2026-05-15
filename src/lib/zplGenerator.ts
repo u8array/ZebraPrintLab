@@ -2,9 +2,8 @@ import { mmToDots } from './coordinates';
 import { ObjectRegistry } from '../registry';
 import { stripZplCommandChars } from '../registry/zplHelpers';
 import type { LabelConfig } from '../types/ObjectType';
-import type { LabelObject } from '../registry';
 import type { Page } from '../store/labelStore';
-import { isGroup } from '../types/Group';
+import { isGroup, type LabelObject } from '../types/Group';
 
 /**
  * Concatenates `generateZPL` output for every page. Each page becomes its own
