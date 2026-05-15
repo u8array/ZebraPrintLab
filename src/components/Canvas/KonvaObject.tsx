@@ -13,6 +13,7 @@ import {
   displayToObject,
   ZPL_FONT_HEIGHT_TO_CSS_RATIO,
 } from "./textPositionTransforms";
+import { measureInkWidthPx } from "./measureTextDots";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 
 type Props = KonvaObjectProps;
@@ -126,13 +127,39 @@ function KonvaObjectInner({
 }: Props) {
   useFontCacheVersion();
   const colors = useColorScheme();
-  // For text/serial, ^FT (baseline) needs converting to Konva's top-left
-  // anchor and the rotation introduces a 15-dot alignment offset. The
-  // helper handles both; non-text types pass through unchanged.
-  const display =
-    obj.type === "text" || obj.type === "serial"
-      ? objectToDisplay(obj.x, obj.y, obj.props, obj.positionType)
-      : { x: obj.x, y: obj.y };
+  // For text/serial, the saved (x, y) is the ZPL anchor (^FO cap-top or
+  // ^FT baseline). Konva renders from the EM-top-left and rotates the
+  // whole node around that anchor, so the shift table in
+  // textPositionTransforms moves the Konva anchor so the rendered bbox
+  // lands where Labelary draws it. I and B FO rotations consume the
+  // actual ink width (measured against the rendered font).
+  let inkWidthDots = 0;
+  let display = { x: obj.x, y: obj.y };
+  if (obj.type === "text" || obj.type === "serial") {
+    const p = obj.props;
+    const content = obj.type === "serial" ? `#${p.content}` : p.content;
+    const printerFontName =
+      obj.type === "text" ? obj.props.printerFontName : undefined;
+    const fontFamily = printerFontName
+      ? (getFontFamily(printerFontName) ?? "'PrintLab ZPL', sans-serif")
+      : "'PrintLab ZPL', sans-serif";
+    const scaleX = p.fontWidth > 0 ? p.fontWidth / p.fontHeight : 1;
+    // measureText returns width in the same unit as the supplied
+    // fontSize, so passing fontHeight in dots gives ink width in dots.
+    inkWidthDots =
+      measureInkWidthPx(
+        content,
+        p.fontHeight / ZPL_FONT_HEIGHT_TO_CSS_RATIO,
+        fontFamily,
+      ) * scaleX;
+    display = objectToDisplay(
+      obj.x,
+      obj.y,
+      obj.props,
+      obj.positionType,
+      inkWidthDots,
+    );
+  }
 
   const x = offsetX + dotsToPx(display.x, scale, dpmm);
   const y = offsetY + dotsToPx(display.y, scale, dpmm);
@@ -159,7 +186,13 @@ function KonvaObjectInner({
     // ZPL coordinate and re-render would jump.
     const final =
       obj.type === "text" || obj.type === "serial"
-        ? displayToObject(draggedX, draggedY, obj.props, obj.positionType)
+        ? displayToObject(
+            draggedX,
+            draggedY,
+            obj.props,
+            obj.positionType,
+            inkWidthDots,
+          )
         : { x: draggedX, y: draggedY };
 
     onChange({
@@ -175,8 +208,8 @@ function KonvaObjectInner({
       6,
     );
     const fontFamily = p.printerFontName
-      ? (getFontFamily(p.printerFontName) ?? "'Roboto Condensed', sans-serif")
-      : "'Roboto Condensed', sans-serif";
+      ? (getFontFamily(p.printerFontName) ?? "'PrintLab ZPL', sans-serif")
+      : "'PrintLab ZPL', sans-serif";
     const zplRotationDeg: Record<typeof p.rotation, number> = {
       N: 0,
       R: 90,
@@ -184,8 +217,13 @@ function KonvaObjectInner({
       B: 270,
     };
 
+    // ZPL `^A0,h,w` lets `w` differ from `h` to stretch each glyph
+    // horizontally. `w=0` is Zebra shorthand for "match the height".
+    // Konva mirrors this with a scaleX on the text node: the FO anchor
+    // stays at (x, y) but the rendered glyphs occupy (w/h)·advance.
+    const fontScaleX = p.fontWidth > 0 ? p.fontWidth / p.fontHeight : 1;
     if (p.reverse) {
-      const approxW = fontSize * p.content.length * 0.62;
+      const approxW = fontSize * p.content.length * 0.62 * fontScaleX;
       const approxH = fontSize * 1.3;
       return (
         <Group
@@ -210,6 +248,7 @@ function KonvaObjectInner({
             fontSize={fontSize}
             fontFamily={fontFamily}
             fontStyle="bold"
+            scaleX={fontScaleX}
             fill="#ffffff"
             y={approxH * 0.1}
           />
@@ -226,6 +265,7 @@ function KonvaObjectInner({
         fontSize={fontSize}
         fontFamily={fontFamily}
         fontStyle="bold"
+        scaleX={fontScaleX}
         rotation={zplRotationDeg[p.rotation]}
         fill="#000000"
         stroke={isSelected ? colors.selection : undefined}
@@ -244,6 +284,7 @@ function KonvaObjectInner({
       dotsToPx(p.fontHeight, scale, dpmm) / ZPL_FONT_HEIGHT_TO_CSS_RATIO,
       6,
     );
+    const fontScaleX = p.fontWidth > 0 ? p.fontWidth / p.fontHeight : 1;
     const zplRotationDeg: Record<typeof p.rotation, number> = {
       N: 0,
       R: 90,
@@ -257,8 +298,9 @@ function KonvaObjectInner({
         y={y}
         text={`#${p.content}`}
         fontSize={fontSize}
-        fontFamily="'Roboto Condensed', sans-serif"
+        fontFamily="'PrintLab ZPL', sans-serif"
         fontStyle="bold"
+        scaleX={fontScaleX}
         rotation={zplRotationDeg[p.rotation]}
         fill="#000000"
         stroke={isSelected ? colors.selection : undefined}

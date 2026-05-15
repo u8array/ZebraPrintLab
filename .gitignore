@@ -26,6 +26,7 @@ coverage/
 # Test output
 tests/fixtures/__diffs__/
 tests/fixtures/__shape_diffs__/
+tests/fixtures/__text_diffs__/
 
 # Editor directories and files
 .vscode/*
@@ -51,6 +52,4 @@ tests/fixtures/__shape_diffs__/
 .aider.conf.yml
 *.instructions.*
 
-!tests/fixtures/labelary_images/*.png
-!tests/fixtures/labelary_shape_images/*.png
 CLAUDE.md
