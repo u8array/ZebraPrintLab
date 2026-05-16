@@ -1,4 +1,6 @@
 import type { LabelConfig } from "../types/ObjectType";
+import { zplAnchorToModel } from "../components/Canvas/textPositionTransforms";
+import { computeTextRenderMetrics } from "../components/Canvas/textRenderMetrics";
 import type { LabelObject } from "../types/Group";
 import type { TextProps } from "../registry/text";
 import type { Code128Props } from "../registry/code128";
@@ -21,7 +23,7 @@ import type { CodablockProps } from "../registry/codablock";
 import { putImage } from "./imageCache";
 import { GS1_DATABAR_DEFAULT_SEGMENTS } from "./gs1";
 
-export type ImportFindingKind = 'partial' | 'browserLimit' | 'unknown';
+export type ImportFindingKind = "partial" | "browserLimit" | "unknown";
 
 /**
  * One import finding. Created per-occurrence so each entry can be navigated
@@ -148,7 +150,11 @@ function getDecoder(label: string): TextDecoder {
  * we collect contiguous pairs into a Uint8Array and run one TextDecoder pass
  * per run. Invalid byte sequences become U+FFFD (decoder default).
  */
-function decodeFH(text: string, delimiter: string, decoder: TextDecoder): string {
+function decodeFH(
+  text: string,
+  delimiter: string,
+  decoder: TextDecoder,
+): string {
   const escaped = delimiter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const runRe = new RegExp(`(?:${escaped}[0-9A-Fa-f]{2})+`, "g");
   const stride = delimiter.length + 2;
@@ -350,11 +356,18 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let snIncrement = 1;
   let snMode: SerialProps["zplMode"] = "SN";
 
-  const resetFB = () => { fbWidth = 0; fbLines = 1; fbSpacing = 0; fbJustify = "L"; };
+  const resetFB = () => {
+    fbWidth = 0;
+    fbLines = 1;
+    fbSpacing = 0;
+    fbJustify = "L";
+  };
 
   const flushField = () => {
     if (!fieldType || pendingFD === null) return;
-    const content = fhActive ? decodeFH(pendingFD, fhDelimiter, fhDecoder) : pendingFD;
+    const content = fhActive
+      ? decodeFH(pendingFD, fhDelimiter, fhDecoder)
+      : pendingFD;
     const posType: "FT" | "FO" = positionIsFT ? "FT" : "FO";
     const comment = takeComment();
 
@@ -363,13 +376,31 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
     switch (fieldType) {
       case "text": {
+        // ZPL anchors ^FO at cap-top and ^FT at baseline; our internal
+        // model stores the Konva render position (EM-top-left) so editor
+        // interactions stay shift-free. The FO/I and FO/B shifts also
+        // need the rendered ink width — measure it the same way the
+        // renderer does so the round-trip stays exact.
+        const { inkWidthDots } = computeTextRenderMetrics({
+          content: snPending ? `#${decoded}` : decoded,
+          fontHeight: textH,
+          fontWidth: textW,
+          printerFontName: pendingPrinterFontName,
+        });
+        const modelPos = zplAnchorToModel(
+          x,
+          y,
+          { fontHeight: textH, rotation: textRot },
+          posType,
+          inkWidthDots,
+        );
         // If ^SF was pending, create a serial object instead of text
         if (snPending) {
           objects.push(
             makeObj(
               "serial",
-              x,
-              y,
+              modelPos.x,
+              modelPos.y,
               {
                 content: decoded,
                 increment: snIncrement,
@@ -403,7 +434,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           textProps.blockLineSpacing = fbSpacing;
           textProps.blockJustify = fbJustify;
         }
-        objects.push(makeObj("text", x, y, textProps, posType, comment));
+        objects.push(
+          makeObj("text", modelPos.x, modelPos.y, textProps, posType, comment),
+        );
         resetFB();
         break;
       }
@@ -633,7 +666,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
   // ── Command handler map ────────────────────────────────────────────────────
   const noop: Handler = () => void 0;
-  const resetComment: Handler = (_, rest) => { pendingComment = rest.trim() || undefined; };
+  const resetComment: Handler = (_, rest) => {
+    pendingComment = rest.trim() || undefined;
+  };
   // Hand-written ZPL often splits a logical comment across several `^FX` lines
   // before the field they describe. Accumulate them so each line survives on
   // the imported object's comment field; XA/XZ still reset at label boundaries.
@@ -642,11 +677,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     if (!next) return;
     pendingComment = pendingComment ? `${pendingComment}\n${next}` : next;
   };
-  const mkBrowserLimit = (prefix: string, delimiter = "^"): Handler => (_, rest) => {
-    const tok = `${delimiter}${prefix}${rest}`;
-    skipped.push(tok);
-    browserLimit.push(tok);
-  };
+  const mkBrowserLimit =
+    (prefix: string, delimiter = "^"): Handler =>
+    (_, rest) => {
+      const tok = `${delimiter}${prefix}${rest}`;
+      skipped.push(tok);
+      browserLimit.push(tok);
+    };
 
   const readRotation = (raw: string | undefined): ZplRotation =>
     raw && isZplRotation(raw) ? raw : "N";
@@ -659,21 +696,23 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
   // Factory for standard 1D barcode commands that share the same state variables.
   // hIdx/iIdx/cIdx are the comma-split parameter indices for height/interp/check.
-  const mkBarcode = (
-    type: string,
-    hIdx: number,
-    iIdx: number,
-    iDefault = "Y",
-    cIdx = -1,
-  ): Handler => (p) => {
-    fieldType = type;
-    bcRotation = readRotation(p[0]);
-    bcHeight = int(p[hIdx], byHeight || 100);
-    bcInterp = (p[iIdx] ?? iDefault) === "Y";
-    if (cIdx >= 0) bcCheck = (p[cIdx] ?? "N") === "Y";
-  };
+  const mkBarcode =
+    (
+      type: string,
+      hIdx: number,
+      iIdx: number,
+      iDefault = "Y",
+      cIdx = -1,
+    ): Handler =>
+    (p) => {
+      fieldType = type;
+      bcRotation = readRotation(p[0]);
+      bcHeight = int(p[hIdx], byHeight || 100);
+      bcInterp = (p[iIdx] ?? iDefault) === "Y";
+      if (cIdx >= 0) bcCheck = (p[cIdx] ?? "N") === "Y";
+    };
 
-  const getReverseFlag = () => (lrActive || frActive) || undefined;
+  const getReverseFlag = () => lrActive || frActive || undefined;
 
   const handlers: Record<string, Handler> = {
     // ── Label dimensions ────────────────────────────────────────────────────
@@ -761,22 +800,22 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // ── Barcodes ────────────────────────────────────────────────────────────
     // mkBarcode(type, hIdx, iIdx, iDefault?, cIdx?)
     // hIdx/iIdx/cIdx = comma-split param positions for height/interp/check
-    BC: mkBarcode("code128",        1, 2, "Y", 4), // ^BCN,h,i,N,c
-    B3: mkBarcode("code39",         2, 3, "Y", 1), // ^B3N,c,h,i,N
-    BE: mkBarcode("ean13",          1, 2),          // ^BEN,h,i,N
-    BU: mkBarcode("upca",           1, 2),          // ^BUN,h,i,N,N
-    B8: mkBarcode("ean8",           1, 2),          // ^B8N,h,i,N
-    B9: mkBarcode("upce",           1, 2),          // ^B9N,h,i,N
-    B2: mkBarcode("interleaved2of5",1, 2, "Y", 4), // ^B2N,h,i,N,c
-    BA: mkBarcode("code93",         1, 2, "Y", 4), // ^BAN,h,i,N,c
-    B1: mkBarcode("code11",         2, 3, "Y", 1), // ^B1N,c,h,i,N
-    BI: mkBarcode("industrial2of5", 1, 2),          // ^BIN,h,i,N
-    BJ: mkBarcode("standard2of5",   1, 2),          // ^BJN,h,i,N
-    BK: mkBarcode("codabar",        2, 3, "Y", 1), // ^BKN,c,h,i,N
-    BL: mkBarcode("logmars",        1, 2, "N"),     // ^BLN,h,i  — interp default N
-    BP: mkBarcode("plessey",        2, 3, "Y", 1), // ^BPN,c,h,i,N
-    B5: mkBarcode("planet",         1, 2),          // ^B5N,h,i,N
-    BZ: mkBarcode("postal",         1, 2),          // ^BZN,h,i,N
+    BC: mkBarcode("code128", 1, 2, "Y", 4), // ^BCN,h,i,N,c
+    B3: mkBarcode("code39", 2, 3, "Y", 1), // ^B3N,c,h,i,N
+    BE: mkBarcode("ean13", 1, 2), // ^BEN,h,i,N
+    BU: mkBarcode("upca", 1, 2), // ^BUN,h,i,N,N
+    B8: mkBarcode("ean8", 1, 2), // ^B8N,h,i,N
+    B9: mkBarcode("upce", 1, 2), // ^B9N,h,i,N
+    B2: mkBarcode("interleaved2of5", 1, 2, "Y", 4), // ^B2N,h,i,N,c
+    BA: mkBarcode("code93", 1, 2, "Y", 4), // ^BAN,h,i,N,c
+    B1: mkBarcode("code11", 2, 3, "Y", 1), // ^B1N,c,h,i,N
+    BI: mkBarcode("industrial2of5", 1, 2), // ^BIN,h,i,N
+    BJ: mkBarcode("standard2of5", 1, 2), // ^BJN,h,i,N
+    BK: mkBarcode("codabar", 2, 3, "Y", 1), // ^BKN,c,h,i,N
+    BL: mkBarcode("logmars", 1, 2, "N"), // ^BLN,h,i  — interp default N
+    BP: mkBarcode("plessey", 2, 3, "Y", 1), // ^BPN,c,h,i,N
+    B5: mkBarcode("planet", 1, 2), // ^B5N,h,i,N
+    BZ: mkBarcode("postal", 1, 2), // ^BZN,h,i,N
 
     // MSI: check logic is "any letter except N" (not simple "Y") — keep inline
     // ^BMN,{checkType},{height},{interp},N  (checkType: A/B/C/D=enabled, N=none)
@@ -794,7 +833,10 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       bcRotation = readRotation(p[0]);
       byModuleWidth = int(p[2], byModuleWidth);
       gsSymbology = (int(p[1], 1) as Gs1DatabarProps["symbology"]) || 1;
-      gsSegments = p[5] !== undefined ? int(p[5], GS1_DATABAR_DEFAULT_SEGMENTS) : undefined;
+      gsSegments =
+        p[5] !== undefined
+          ? int(p[5], GS1_DATABAR_DEFAULT_SEGMENTS)
+          : undefined;
     },
 
     // ^BQN,2,{magnification} — QR Code
@@ -894,8 +936,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     },
 
     // ── Label reverse / field reverse ───────────────────────────────────────
-    LR(_, rest) { lrActive = rest.toUpperCase().startsWith("Y"); },
-    FR() { frActive = true; },
+    LR(_, rest) {
+      lrActive = rest.toUpperCase().startsWith("Y");
+    },
+    FR() {
+      frActive = true;
+    },
 
     // ── Label home (origin offset) ──────────────────────────────────────────
     LH(p) {
@@ -904,7 +950,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     },
 
     // ── Label top (vertical offset) ─────────────────────────────────────────
-    LT(_, rest) { ltY = int(rest, 0); },
+    LT(_, rest) {
+      ltY = int(rest, 0);
+    },
 
     // ── Graphics ────────────────────────────────────────────────────────────
     GB(p) {
@@ -1066,8 +1114,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       for (let row = 0; row < gfHeightDots; row++) {
         for (let byteIdx = 0; byteIdx < gfBytesPerRow; byteIdx++) {
           const hexOffset = (row * gfBytesPerRow + byteIdx) * 2;
-          const byte =
-            parseInt(gfHex.slice(hexOffset, hexOffset + 2), 16) || 0;
+          const byte = parseInt(gfHex.slice(hexOffset, hexOffset + 2), 16) || 0;
           for (let bit = 0; bit < 8; bit++) {
             const px = byteIdx * 8 + bit;
             const idx = (row * gfWidthDots + px) * 4;
@@ -1304,9 +1351,19 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   // here; `zplImportService.importZplText` fills it once it knows which
   // ^XA…^XZ block this came from.
   const findings: ImportFinding[] = [
-    ...[...partialCmds].map((command): ImportFinding => ({ kind: 'partial', command, pageIndex: 0 })),
-    ...browserLimit.map((command): ImportFinding => ({ kind: 'browserLimit', command, pageIndex: 0 })),
-    ...unknown.map((command): ImportFinding => ({ kind: 'unknown', command, pageIndex: 0 })),
+    ...[...partialCmds].map(
+      (command): ImportFinding => ({ kind: "partial", command, pageIndex: 0 }),
+    ),
+    ...browserLimit.map(
+      (command): ImportFinding => ({
+        kind: "browserLimit",
+        command,
+        pageIndex: 0,
+      }),
+    ),
+    ...unknown.map(
+      (command): ImportFinding => ({ kind: "unknown", command, pageIndex: 0 }),
+    ),
   ];
 
   return {

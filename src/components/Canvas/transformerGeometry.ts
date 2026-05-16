@@ -110,6 +110,7 @@ export function applyHeightSnap(
  */
 export const POSITION_MOVE_TOLERANCE_DOTS = 1;
 
+
 export interface ActiveEdgeFlags {
   left: boolean;
   right: boolean;

@@ -1,0 +1,116 @@
+import { describe, it, expect, beforeAll } from 'vitest';
+import * as fs from 'fs';
+import * as path from 'path';
+import { createCanvas, GlobalFonts } from '@napi-rs/canvas';
+import pixelmatch from 'pixelmatch';
+import { PNG } from 'pngjs';
+import { textTestCases } from '../../tests/fixtures/textTestCases';
+
+/**
+ * Text rendering visual regression.
+ *
+ * Both sides load the SAME font (our PrintLabZPL-Bold.ttf):
+ *   - Labelary uploaded it via /v1/fonts before generating the fixtures
+ *     (see tests/scripts/fetch_labelary_text_fixtures.ts).
+ *   - The local render here registers the TTF with @napi-rs/canvas.
+ *
+ * That removes glyph-design variance from the diff entirely. The
+ * residual pixels are anti-aliasing edges between Labelary's renderer
+ * and @napi-rs/canvas's renderer, which is small enough to flag real
+ * regressions without flapping on noise.
+ *
+ * Production uses `ZPL_FONT_HEIGHT_TO_CSS_RATIO = 1.0`, i.e. canvas
+ * fontSize equals ZPL fontHeight directly. The test mirrors that so
+ * the regression catches anything that breaks the live render path.
+ */
+const FIXTURES_DIR = path.resolve(
+  process.cwd(),
+  'tests/fixtures/labelary_text_images',
+);
+const DIFF_DIR = path.resolve(process.cwd(), 'tests/fixtures/__text_diffs__');
+const FONT_PATH = path.resolve(process.cwd(), 'src/assets/fonts/PrintLabZPL-Bold.ttf');
+
+const CANVAS_PX = 812; // 4x4 inch at 8 dpmm — matches the fixture canvas.
+const FONT_FAMILY = 'PrintLab ZPL';
+
+/** Diff allowance. With both sides loading the same TTF the remaining
+ *  delta is anti-aliasing edge variance between the renderers — sized
+ *  with the glyph perimeter rather than the area, so a flat ceiling
+ *  generous enough for the largest case in the matrix still leaves an
+ *  order of magnitude of headroom before a real regression (wrong font
+ *  loaded, wrong fontSize, wrong rotation) breaches it. Measured high
+ *  watermark across the current suite is ~5700; an actual regression
+ *  produces >20000 even at small fontHeights. */
+const ALLOWED_PX_DIFF = 8000;
+
+if (!fs.existsSync(DIFF_DIR)) {
+  fs.mkdirSync(DIFF_DIR, { recursive: true });
+}
+
+describe('Text Visual Regression — PrintLab ZPL on both sides', () => {
+  beforeAll(() => {
+    if (!fs.existsSync(FONT_PATH)) {
+      throw new Error(`Font file missing at ${FONT_PATH}.`);
+    }
+    GlobalFonts.registerFromPath(FONT_PATH, FONT_FAMILY);
+  });
+
+  it('has fixtures (run fetch_labelary_text_fixtures.ts if this fails)', () => {
+    expect(textTestCases.length).toBeGreaterThan(0);
+    for (const tc of textTestCases) {
+      const fixture = path.join(FIXTURES_DIR, `${tc.id}.png`);
+      expect(
+        fs.existsSync(fixture),
+        `Missing fixture ${tc.id}.png — run tests/scripts/fetch_labelary_text_fixtures.ts`,
+      ).toBe(true);
+    }
+  });
+
+  describe.each(textTestCases)('Text: $id', (tc) => {
+    it('matches Labelary within anti-aliasing tolerance', () => {
+      // Local render: PrintLab ZPL at fontSize = fontHeight, anchored
+      // at the same FO origin as the fixture. Production sets
+      // `textBaseline = 'top'` implicitly via Konva.Text's anchor model,
+      // so we mirror that here.
+      const canvas = createCanvas(CANVAS_PX, CANVAS_PX);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, CANVAS_PX, CANVAS_PX);
+      ctx.fillStyle = 'black';
+      ctx.font = `bold ${tc.fontHeight}px "${FONT_FAMILY}"`;
+      ctx.textBaseline = 'top';
+      ctx.fillText(tc.text, tc.x, tc.y);
+      const localPng = PNG.sync.read(canvas.toBuffer('image/png'));
+
+      const fixtureBuf = fs.readFileSync(path.join(FIXTURES_DIR, `${tc.id}.png`));
+      const fixturePng = PNG.sync.read(fixtureBuf);
+      expect(fixturePng.width).toBe(CANVAS_PX);
+      expect(fixturePng.height).toBe(CANVAS_PX);
+
+      const diff = new PNG({ width: CANVAS_PX, height: CANVAS_PX });
+      const diffCount = pixelmatch(
+        fixturePng.data,
+        localPng.data,
+        diff.data,
+        CANVAS_PX,
+        CANVAS_PX,
+        { threshold: 0.1 },
+      );
+
+      if (diffCount > ALLOWED_PX_DIFF) {
+        // Write the diff and local PNGs so a CI failure is debuggable
+        // without re-running the script locally.
+        fs.writeFileSync(
+          path.join(DIFF_DIR, `${tc.id}_diff.png`),
+          PNG.sync.write(diff),
+        );
+        fs.writeFileSync(
+          path.join(DIFF_DIR, `${tc.id}_local.png`),
+          canvas.toBuffer('image/png'),
+        );
+      }
+
+      expect(diffCount).toBeLessThanOrEqual(ALLOWED_PX_DIFF);
+    });
+  });
+});

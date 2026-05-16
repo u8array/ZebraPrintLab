@@ -1,18 +1,19 @@
-import { useRef, useState, useCallback } from 'react';
-import type { ObjectTypeDefinition } from '../types/ObjectType';
-import { useT } from '../lib/useT';
-import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos, fdField } from './zplHelpers';
-import { getFont, getAllFonts, loadFontFile } from '../lib/fontCache';
-import { useFontCacheVersion } from '../hooks/useFontCacheVersion';
-import { RotationSelect } from '../components/Properties/RotationSelect';
-import { NumberInput } from '../components/Properties/NumberInput';
+import { useRef, useState, useCallback } from "react";
+import type { ObjectTypeDefinition } from "../types/ObjectType";
+import { useT } from "../lib/useT";
+import { inputCls, labelCls } from "../components/Properties/styles";
+import { textFieldPos, fdField } from "./zplHelpers";
+import { effectiveScale } from "./transformHelpers";
+import { getFont, getAllFonts, loadFontFile } from "../lib/fontCache";
+import { useFontCacheVersion } from "../hooks/useFontCacheVersion";
+import { RotationSelect } from "../components/Properties/RotationSelect";
+import { NumberInput } from "../components/Properties/NumberInput";
 
 export interface TextProps {
   content: string;
   fontHeight: number;
   fontWidth: number;
-  rotation: 'N' | 'R' | 'I' | 'B';
+  rotation: "N" | "R" | "I" | "B";
   reverse?: boolean;
   /** Printer TrueType font filename from ^A@ (e.g. "ARIAL.TTF") */
   printerFontName?: string;
@@ -20,24 +21,36 @@ export interface TextProps {
   blockWidth?: number;
   blockLines?: number;
   blockLineSpacing?: number;
-  blockJustify?: 'L' | 'C' | 'R' | 'J';
+  blockJustify?: "L" | "C" | "R" | "J";
 }
 
 export const text: ObjectTypeDefinition<TextProps> = {
-  label: 'Text',
-  icon: 'T',
-  group: 'text' as const,
+  label: "Text",
+  icon: "T",
+  group: "text" as const,
   defaultProps: {
-    content: 'Text',
+    content: "Text",
     fontHeight: 30,
     fontWidth: 0,
-    rotation: 'N',
+    rotation: "N",
   },
   defaultSize: { width: 200, height: 40 },
-
-  commitTransform: (obj, { sy, snap }) => ({
-    fontHeight: Math.max(1, snap(Math.round(obj.props.fontHeight * sy))),
-  }),
+  // Rectangle resize: corner drag updates fontHeight from sy and
+  // fontWidth from sx independently. fontWidth=0 in storage is the
+  // Zebra default meaning "match height"; in that case the effective
+  // pre-resize width equals fontHeight, so we scale that derived value
+  // by sx and persist the result. `effectiveScale` flips sx/sy for R/B
+  // rotations so the user's screen-vertical drag stays attached to
+  // fontHeight regardless of how Konva orients the glyphs.
+  commitTransform: (obj, ctx) => {
+    const oldH = obj.props.fontHeight;
+    const oldW = obj.props.fontWidth > 0 ? obj.props.fontWidth : oldH;
+    const { esx, esy } = effectiveScale(obj.props.rotation, ctx);
+    return {
+      fontHeight: Math.max(1, ctx.snap(Math.round(oldH * esy))),
+      fontWidth: Math.max(1, ctx.snap(Math.round(oldW * esx))),
+    };
+  },
 
   toZPL: (obj) => {
     const p = obj.props;
@@ -45,16 +58,18 @@ export const text: ObjectTypeDefinition<TextProps> = {
       ? `^A@${p.rotation},${p.fontHeight},${p.fontWidth},E:${p.printerFontName}`
       : `^A0${p.rotation},${p.fontHeight},${p.fontWidth}`;
     const fbCmd = p.blockWidth
-      ? `^FB${p.blockWidth},${p.blockLines ?? 1},${p.blockLineSpacing ?? 0},${p.blockJustify ?? 'L'},0`
-      : '';
+      ? `^FB${p.blockWidth},${p.blockLines ?? 1},${p.blockLineSpacing ?? 0},${p.blockJustify ?? "L"},0`
+      : "";
     return [
-      p.reverse ? '^LRY' : '',
-      fieldPos(obj),
+      p.reverse ? "^LRY" : "",
+      textFieldPos(obj),
       fontCmd,
       fbCmd,
       fdField(p.content),
-      p.reverse ? '^LRN' : '',
-    ].filter(Boolean).join('');
+      p.reverse ? "^LRN" : "",
+    ]
+      .filter(Boolean)
+      .join("");
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
@@ -68,15 +83,18 @@ export const text: ObjectTypeDefinition<TextProps> = {
     const fontLoaded = !!p.printerFontName && !!getFont(p.printerFontName);
     const fontAssignedButMissing = !!p.printerFontName && !fontLoaded;
 
-    const handleFontUpload = useCallback(async (file: File) => {
-      if (!p.printerFontName) return;
-      setUploading(true);
-      try {
-        await loadFontFile(file, p.printerFontName);
-      } finally {
-        setUploading(false);
-      }
-    }, [p.printerFontName]);
+    const handleFontUpload = useCallback(
+      async (file: File) => {
+        if (!p.printerFontName) return;
+        setUploading(true);
+        try {
+          await loadFontFile(file, p.printerFontName);
+        } finally {
+          setUploading(false);
+        }
+      },
+      [p.printerFontName],
+    );
 
     return (
       <div className="flex flex-col gap-3">
@@ -84,23 +102,31 @@ export const text: ObjectTypeDefinition<TextProps> = {
           <label className={labelCls}>{t.registry.text.printerFont}</label>
           <select
             className={inputCls}
-            value={p.printerFontName ?? ''}
-            onChange={(e) => onChange({ printerFontName: e.target.value || undefined })}
+            value={p.printerFontName ?? ""}
+            onChange={(e) =>
+              onChange({ printerFontName: e.target.value || undefined })
+            }
           >
             <option value="">{t.registry.text.noFont}</option>
             {loadedFonts.map((f) => (
-              <option key={f.name} value={f.name}>{f.name}</option>
+              <option key={f.name} value={f.name}>
+                {f.name}
+              </option>
             ))}
             {p.printerFontName && !getFont(p.printerFontName) && (
               <option value={p.printerFontName}>{p.printerFontName}</option>
             )}
           </select>
           {fontLoaded && (
-            <span className="text-[10px] text-accent font-mono">{t.registry.text.fontLoaded}</span>
+            <span className="text-[10px] text-accent font-mono">
+              {t.registry.text.fontLoaded}
+            </span>
           )}
           {fontAssignedButMissing && (
             <>
-              <span className="text-[10px] text-muted font-mono">{t.registry.text.fontMissing}</span>
+              <span className="text-[10px] text-muted font-mono">
+                {t.registry.text.fontMissing}
+              </span>
               <input
                 ref={fileRef}
                 type="file"
@@ -109,7 +135,7 @@ export const text: ObjectTypeDefinition<TextProps> = {
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) void handleFontUpload(file);
-                  e.target.value = '';
+                  e.target.value = "";
                 }}
               />
               <button
@@ -118,7 +144,9 @@ export const text: ObjectTypeDefinition<TextProps> = {
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
               >
-                {uploading ? t.registry.text.uploadingFont : t.registry.text.uploadFont}
+                {uploading
+                  ? t.registry.text.uploadingFont
+                  : t.registry.text.uploadFont}
               </button>
             </>
           )}
@@ -168,10 +196,23 @@ export const text: ObjectTypeDefinition<TextProps> = {
             type="checkbox"
             className="accent-accent"
             checked={!!p.blockWidth}
-            onChange={(e) => onChange(e.target.checked
-              ? { blockWidth: 400, blockLines: 3, blockLineSpacing: 0, blockJustify: 'L' }
-              : { blockWidth: undefined, blockLines: undefined, blockLineSpacing: undefined, blockJustify: undefined },
-            )}
+            onChange={(e) =>
+              onChange(
+                e.target.checked
+                  ? {
+                      blockWidth: 400,
+                      blockLines: 3,
+                      blockLineSpacing: 0,
+                      blockJustify: "L",
+                    }
+                  : {
+                      blockWidth: undefined,
+                      blockLines: undefined,
+                      blockLineSpacing: undefined,
+                      blockJustify: undefined,
+                    },
+              )
+            }
           />
           <span className={labelCls}>{t.registry.text.fieldBlock}</span>
         </label>
@@ -194,11 +235,17 @@ export const text: ObjectTypeDefinition<TextProps> = {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-1">
-                <label className={labelCls}>{t.registry.text.blockJustify}</label>
+                <label className={labelCls}>
+                  {t.registry.text.blockJustify}
+                </label>
                 <select
                   className={inputCls}
-                  value={p.blockJustify ?? 'L'}
-                  onChange={(e) => onChange({ blockJustify: e.target.value as TextProps['blockJustify'] })}
+                  value={p.blockJustify ?? "L"}
+                  onChange={(e) =>
+                    onChange({
+                      blockJustify: e.target.value as TextProps["blockJustify"],
+                    })
+                  }
                 >
                   <option value="L">{t.registry.text.justifyL}</option>
                   <option value="C">{t.registry.text.justifyC}</option>

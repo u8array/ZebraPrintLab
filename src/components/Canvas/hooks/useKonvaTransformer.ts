@@ -14,7 +14,10 @@ import {
   forceSquareBox,
   type BoundingBox,
 } from "../transformerGeometry";
-import { modelPositionFromRenderedTopLeft } from "../transformPosition";
+import {
+  modelPositionFromRenderedTopLeft,
+  renderedTopLeftFromModel,
+} from "../transformPosition";
 import {
   computeResizeSnap,
   deriveActiveEdges,
@@ -330,20 +333,26 @@ export function useKonvaTransformer({
       obj.positionType === "FT" && BARCODE_1D_TYPES.has(obj.type)
         ? Math.max(1, snap(Math.round((obj.props as { height: number }).height * sy)))
         : undefined;
-    // Invert per-type render offsets (e.g. QR's hardcoded +10 dot Y) so the
-    // stored model position matches what BarcodeObject.handleDragEnd produces.
+    // Invert per-type render offsets (e.g. QR's hardcoded +10 dot Y) so
+    // the stored model position matches what each per-type
+    // handleDragEnd / render path produces. Text/serial render at
+    // obj.x/y directly, so they pass through unchanged.
     const modelPos = modelPositionFromRenderedTopLeft(
       obj,
       renderedXDots,
       renderedYDots,
       newBarHeightDots,
     );
-    // Only apply snap when the resize actually moved the position
-    // (e.g. dragging the top-left handle). Anchored-corner drags must keep
-    // the original position so off-grid shapes don't snap as a side-effect.
+    // Only apply snap when the resize actually moved the anchor handle.
+    // Compare in *rendered* space — for types whose render path applies
+    // a shift (text, QR, FT barcodes), comparing the rendered top-left
+    // to obj.x/y directly always trips (shift ≠ 0 in baseline), so snap
+    // fires on every anchored-corner resize and pulls the visible
+    // corner to a grid point the user didn't ask for.
+    const oldRendered = renderedTopLeftFromModel(obj);
     const pos = {
-      x: positionDidMove(modelPos.x, obj.x) ? snap(modelPos.x) : obj.x,
-      y: positionDidMove(modelPos.y, obj.y) ? snap(modelPos.y) : obj.y,
+      x: positionDidMove(renderedXDots, oldRendered.x) ? snap(modelPos.x) : obj.x,
+      y: positionDidMove(renderedYDots, oldRendered.y) ? snap(modelPos.y) : obj.y,
     };
     const commit = ObjectRegistry[obj.type]?.commitTransform;
     if (commit) {

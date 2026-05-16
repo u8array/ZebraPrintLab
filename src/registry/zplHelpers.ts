@@ -1,9 +1,37 @@
-import type { LabelObjectBase } from '../types/ObjectType';
+import type { LabelObjectBase } from "../types/ObjectType";
+import { modelToZplAnchor } from "../components/Canvas/textPositionTransforms";
+import { getTextRenderMetrics } from "../components/Canvas/textRenderMetrics";
+import type { LabelObject } from "../types/Group";
 
 /** Emit `^FT` or `^FO` depending on how the object was originally positioned. */
 export function fieldPos(obj: LabelObjectBase): string {
-  const cmd = obj.positionType === 'FT' ? 'FT' : 'FO';
+  const cmd = obj.positionType === "FT" ? "FT" : "FO";
   return `^${cmd}${obj.x},${obj.y}`;
+}
+
+interface TextLikeObjForFieldPos extends LabelObjectBase {
+  props: { fontHeight: number; rotation: "N" | "R" | "I" | "B" };
+}
+
+/** Emit `^FT` or `^FO` for text/serial objects. obj.x/y is stored as the
+ *  Konva render position (EM top-left); the ZPL anchor (cap-top for ^FO,
+ *  baseline for ^FT) sits a rotation- and positionType-dependent offset
+ *  away. This conversion happens here so editor interactions stay in a
+ *  single coord system. */
+export function textFieldPos(obj: TextLikeObjForFieldPos): string {
+  const cmd = obj.positionType === "FT" ? "FT" : "FO";
+  const metrics = getTextRenderMetrics(obj as unknown as LabelObject);
+  const a = modelToZplAnchor(
+    obj.x,
+    obj.y,
+    obj.props,
+    obj.positionType,
+    metrics?.inkWidthDots ?? 0,
+  );
+  // Round to integer dots: ZPL ^FO/^FT take integer coordinates and the
+  // shift math adds non-trivial fractional residue that the printer
+  // firmware would truncate anyway.
+  return `^${cmd}${Math.round(a.x)},${Math.round(a.y)}`;
 }
 
 /**
@@ -13,14 +41,16 @@ export function fieldPos(obj: LabelObjectBase): string {
  * surrounding command.
  */
 export function stripZplCommandChars(s: string): string {
-  return s.replace(/[\^~]/g, '');
+  return s.replace(/[\^~]/g, "");
 }
 
-const FH_DELIM = '_';
+const FH_DELIM = "_";
 const NEEDS_FH = /[\^~]/;
 
 function hex(ch: string): string {
-  return FH_DELIM + ch.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0');
+  return (
+    FH_DELIM + ch.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")
+  );
 }
 
 /**

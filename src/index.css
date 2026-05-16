@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+/* PrintLab ZPL Bold: derivative of Roboto Condensed (Apache 2.0) whose
+   per-glyph advance widths and vertical scale were adjusted to match
+   Zebra firmware's CG Triumvirate Condensed Bold layout. Family
+   renamed per the Apache trademark clause. See
+   src/assets/fonts/NOTICE.md for the full attribution. */
+@font-face {
+  font-family: 'PrintLab ZPL';
+  src: url('./assets/fonts/PrintLabZPL-Bold.woff2') format('woff2'),
+       url('./assets/fonts/PrintLabZPL-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-bg:        #141414;
   --color-surface:   #1f1f1f;

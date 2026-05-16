@@ -1,5 +1,5 @@
 import { BARCODE_1D_TYPES } from "../../registry";
-import type { LabelObject } from "../../types/Group";
+import type { LeafObject } from "../../registry";
 import { QR_FO_Y_OFFSET_DOTS } from "./bwipConstants";
 
 /**
@@ -15,15 +15,16 @@ import { QR_FO_Y_OFFSET_DOTS } from "./bwipConstants";
  *   commits the bar TOP as the new obj.y and the next render shifts the
  *   barcode up by another bar-height.
  *
- * Used by onTransformEnd to mirror the rendered→model conversion that
- * BarcodeObject.handleDragEnd performs for drag.
- *
- * Note: QR-FT correction is not yet implemented (the additional firmware
- * 3-module offset would need a separate code path); FT resize on QR still
- * drifts.
+ * Text/serial pass through unchanged. obj.x/y is the position of the
+ * unrotated wrapper Group around the (possibly rotated) inner Text. On
+ * resize the Konva transformer pins the opposite corner of the Group's
+ * axis-aligned clientRect — so obj.x/y naturally tracks the visible
+ * pinned corner, the ZPL anchor offset is recomputed from the new
+ * fontHeight at I/O time, and the round-trip stays exact. No inversion
+ * needed here.
  */
 export function modelPositionFromRenderedTopLeft(
-  obj: LabelObject,
+  obj: LeafObject,
   renderedXDots: number,
   renderedYDots: number,
   newBarHeightDots?: number,
@@ -39,4 +40,19 @@ export function modelPositionFromRenderedTopLeft(
     return { x: renderedXDots, y: renderedYDots + newBarHeightDots };
   }
   return { x: renderedXDots, y: renderedYDots };
+}
+
+/** Inverse of `modelPositionFromRenderedTopLeft`: model → rendered. */
+export function renderedTopLeftFromModel(obj: LeafObject): {
+  x: number;
+  y: number;
+} {
+  if (obj.type === "qrcode" && obj.positionType !== "FT") {
+    return { x: obj.x, y: obj.y + QR_FO_Y_OFFSET_DOTS };
+  }
+  if (obj.positionType === "FT" && BARCODE_1D_TYPES.has(obj.type)) {
+    const h = (obj.props as { height: number }).height;
+    return { x: obj.x, y: obj.y - h };
+  }
+  return { x: obj.x, y: obj.y };
 }

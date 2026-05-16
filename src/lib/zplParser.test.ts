@@ -36,8 +36,11 @@ describe('parseZPL — text via ^A0', () => {
     expect(objects).toHaveLength(1);
     const [obj] = objects;
     expect(obj?.type).toBe('text');
-    expect(obj?.x).toBe(10);
-    expect(obj?.y).toBe(20);
+    // obj.x/y is the Konva render position (EM-top-left); the parsed ^FO
+    // gives the ZPL cap-top anchor. For N/h=30 they differ by
+    // (0.234 - 0.08) * 30 = 4.62 dots in Y.
+    expect(obj?.x).toBeCloseTo(10);
+    expect(obj?.y).toBeCloseTo(20 - 4.62);
     expect(props(obj).content).toBe('Hello');
     expect(props(obj).fontHeight).toBe(30);
     expect(props(obj).rotation).toBe('N');
@@ -90,8 +93,10 @@ describe('parseZPL — text field position', () => {
 describe('parseZPL — ^LH label home offset', () => {
   it('adds ^LH offset to all field positions', () => {
     const { objects } = parseZPL('^XA^LH20,10^FO30,40^A0N,30,0^FDText^FS^XZ', 8);
-    expect(objects[0]?.x).toBe(50);  // 30 + 20
-    expect(objects[0]?.y).toBe(50);  // 40 + 10
+    // obj.x = (^FO.x + ^LH.x) - zplAnchorDelta.x; obj.y similar.
+    // For FO/N h=30: dx=0, dy=4.62.
+    expect(objects[0]?.x).toBeCloseTo(50);  // 30 + 20
+    expect(objects[0]?.y).toBeCloseTo(50 - 4.62);  // 40 + 10 - shift
   });
 });
 
@@ -634,8 +639,9 @@ describe('parseZPL — edge cases', () => {
   it('handles multiple ^FO without ^FD (bare origins are benign)', () => {
     const { objects } = parseZPL('^XA^FO10,20^FO30,40^A0N,30,0^FDText^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]?.x).toBe(30);
-    expect(objects[0]?.y).toBe(40);
+    // FO/N h=30 → obj.y = 40 - 4.62.
+    expect(objects[0]?.x).toBeCloseTo(30);
+    expect(objects[0]?.y).toBeCloseTo(40 - 4.62);
   });
 
   it('supports different dpmm values (12 dpmm / 300 DPI)', () => {
@@ -985,8 +991,8 @@ describe('parseZPL — ^FO with justification parameter', () => {
   it('parses ^FO with a 3rd parameter without errors', () => {
     const { objects } = parseZPL('^XA^FO100,200,1^A0N,30,0^FDJustified^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]?.x).toBe(100);
-    expect(objects[0]?.y).toBe(200);
+    expect(objects[0]?.x).toBeCloseTo(100);
+    expect(objects[0]?.y).toBeCloseTo(200 - 4.62);
     expect(props(objects[0]).content).toBe('Justified');
   });
 });

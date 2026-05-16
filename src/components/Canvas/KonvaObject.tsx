@@ -1,4 +1,3 @@
-import { getFontFamily } from "../../lib/fontCache";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { Circle, Ellipse, Group, Rect, Text } from "react-konva";
 import { BarcodeObject } from "./BarcodeObject";
@@ -8,11 +7,8 @@ import type Konva from "konva";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { outlineInset } from "../../lib/shapeGeometry";
 import { useColorScheme } from "../../lib/useColorScheme";
-import {
-  objectToDisplay,
-  displayToObject,
-  ZPL_FONT_HEIGHT_TO_CSS_RATIO,
-} from "./textPositionTransforms";
+import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "./textPositionTransforms";
+import { getTextRenderMetrics } from "./textRenderMetrics";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 
 type Props = KonvaObjectProps;
@@ -124,18 +120,29 @@ function KonvaObjectInner({
   onChange,
   snap,
 }: Props) {
-  useFontCacheVersion();
+  const fontVersion = useFontCacheVersion();
   const colors = useColorScheme();
-  // For text/serial, ^FT (baseline) needs converting to Konva's top-left
-  // anchor and the rotation introduces a 15-dot alignment offset. The
-  // helper handles both; non-text types pass through unchanged.
-  const display =
-    obj.type === "text" || obj.type === "serial"
-      ? objectToDisplay(obj.x, obj.y, obj.props, obj.positionType)
-      : { x: obj.x, y: obj.y };
+  // obj.x/y is the Konva render position (top-left of the EM bbox) —
+  // identical to what every other shape stores. The ZPL anchor (^FO
+  // cap-top / ^FT baseline) lives at obj.x/y + zplAnchorDelta and is
+  // applied only at the I/O boundary by zplGenerator / zplParser, so
+  // every in-editor interaction (drag, resize, snap, smart-align) sees
+  // a shape-agnostic single coordinate system.
+  const baseMetrics = getTextRenderMetrics(obj);
+  const textMetrics =
+    baseMetrics && (obj.type === "text" || obj.type === "serial")
+      ? {
+          ...baseMetrics,
+          fontSizePx: Math.max(
+            dotsToPx(obj.props.fontHeight, scale, dpmm) /
+              ZPL_FONT_HEIGHT_TO_CSS_RATIO,
+            6,
+          ),
+        }
+      : null;
 
-  const x = offsetX + dotsToPx(display.x, scale, dpmm);
-  const y = offsetY + dotsToPx(display.y, scale, dpmm);
+  const x = offsetX + dotsToPx(obj.x, scale, dpmm);
+  const y = offsetY + dotsToPx(obj.y, scale, dpmm);
 
   // Snap a stage-position to the nearest grid point, returns stage-position.
   const snapPos = (stageX: number, stageY: number) => ({
@@ -152,31 +159,15 @@ function KonvaObjectInner({
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    const draggedX = pxToDots(e.target.x() - offsetX, scale, dpmm);
-    const draggedY = pxToDots(e.target.y() - offsetY, scale, dpmm);
-    // Inverse of the FT/rotation correction applied at render: without
-    // it, drag would save the Konva top-left position instead of the
-    // ZPL coordinate and re-render would jump.
-    const final =
-      obj.type === "text" || obj.type === "serial"
-        ? displayToObject(draggedX, draggedY, obj.props, obj.positionType)
-        : { x: draggedX, y: draggedY };
-
     onChange({
-      x: final.x,
-      y: final.y,
+      x: pxToDots(e.target.x() - offsetX, scale, dpmm),
+      y: pxToDots(e.target.y() - offsetY, scale, dpmm),
     });
   };
 
-  if (obj.type === "text") {
+  if ((obj.type === "text" || obj.type === "serial") && textMetrics) {
     const p = obj.props;
-    const fontSize = Math.max(
-      dotsToPx(p.fontHeight, scale, dpmm) / ZPL_FONT_HEIGHT_TO_CSS_RATIO,
-      6,
-    );
-    const fontFamily = p.printerFontName
-      ? (getFontFamily(p.printerFontName) ?? "'Roboto Condensed', sans-serif")
-      : "'Roboto Condensed', sans-serif";
+    const { content, fontFamily, fontScaleX, fontSizePx } = textMetrics;
     const zplRotationDeg: Record<typeof p.rotation, number> = {
       N: 0,
       R: 90,
@@ -184,9 +175,16 @@ function KonvaObjectInner({
       B: 270,
     };
 
-    if (p.reverse) {
-      const approxW = fontSize * p.content.length * 0.62;
-      const approxH = fontSize * 1.3;
+    if (obj.type === "text" && obj.props.reverse) {
+      // ZPL `^A0,h,w` lets `w` differ from `h` to stretch each glyph
+      // horizontally. `w=0` is Zebra shorthand for "match the height".
+      // Konva mirrors this with a scaleX on the text node: the FO anchor
+      // stays at (x, y) but the rendered glyphs occupy (w/h)·advance.
+      // Use the measured ink width (already in dot space, mirrored to
+      // CSS px via dotsToPx) so the inverted background bbox tracks the
+      // actual rendered text rather than a length-based guess.
+      const approxW = dotsToPx(textMetrics.inkWidthDots, scale, dpmm);
+      const approxH = fontSizePx * 1.3;
       return (
         <Group
           id={obj.id}
@@ -206,10 +204,16 @@ function KonvaObjectInner({
             strokeWidth={isSelected ? 1.5 : 0}
           />
           <Text
-            text={p.content}
-            fontSize={fontSize}
+            // Force re-mount on font-cache changes so Konva's internal
+            // text-width cache is dropped; otherwise a width measured
+            // before @font-face finished loading sticks and the rotated
+            // bbox lands a few dots off.
+            key={fontVersion}
+            text={content}
+            fontSize={fontSizePx}
             fontFamily={fontFamily}
             fontStyle="bold"
+            scaleX={fontScaleX}
             fill="#ffffff"
             y={approxH * 0.1}
           />
@@ -217,57 +221,40 @@ function KonvaObjectInner({
       );
     }
 
+    // Wrap in an unrotated Group with the rotated Text inside so the
+    // Konva node carrying obj.id (which the Transformer attaches to) is
+    // axis-aligned even when ZPL rotation is R/I/B. Same trick that lets
+    // box / ellipse resize cleanly: the transformer math runs on an
+    // axis-aligned bbox, with the inner rotation just changing how the
+    // glyphs paint within that bbox. Without this, Konva.Text's rotation
+    // attached directly to the transformer's node makes resize math
+    // produce drift, runaway scale, and 1e15-class numbers on commit.
     return (
-      <Text
+      <Group
         id={obj.id}
         x={x}
         y={y}
-        text={p.content}
-        fontSize={fontSize}
-        fontFamily={fontFamily}
-        fontStyle="bold"
-        rotation={zplRotationDeg[p.rotation]}
-        fill="#000000"
-        stroke={isSelected ? colors.selection : undefined}
-        strokeWidth={isSelected ? 1 : 0}
         draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
-      />
-    );
-  }
-
-  if (obj.type === "serial") {
-    const p = obj.props;
-    const fontSize = Math.max(
-      dotsToPx(p.fontHeight, scale, dpmm) / ZPL_FONT_HEIGHT_TO_CSS_RATIO,
-      6,
-    );
-    const zplRotationDeg: Record<typeof p.rotation, number> = {
-      N: 0,
-      R: 90,
-      I: 180,
-      B: 270,
-    };
-    return (
-      <Text
-        id={obj.id}
-        x={x}
-        y={y}
-        text={`#${p.content}`}
-        fontSize={fontSize}
-        fontFamily="'Roboto Condensed', sans-serif"
-        fontStyle="bold"
-        rotation={zplRotationDeg[p.rotation]}
-        fill="#000000"
-        stroke={isSelected ? colors.selection : undefined}
-        strokeWidth={isSelected ? 1 : 0}
-        draggable={!obj.locked}
-        {...selectionHandlers(onSelect)}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-      />
+      >
+        <Text
+          // See note above re fontVersion + Konva's text-width cache.
+          key={fontVersion}
+          x={0}
+          y={0}
+          text={content}
+          fontSize={fontSizePx}
+          fontFamily={fontFamily}
+          fontStyle="bold"
+          scaleX={fontScaleX}
+          rotation={zplRotationDeg[p.rotation]}
+          fill="#000000"
+          stroke={isSelected ? colors.selection : undefined}
+          strokeWidth={isSelected ? 1 : 0}
+        />
+      </Group>
     );
   }
 

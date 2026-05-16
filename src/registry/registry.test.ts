@@ -24,7 +24,10 @@ describe('text.toZPL', () => {
     const zpl = def.toZPL(makeObj('text', {
       content: 'Hello', fontHeight: 30, fontWidth: 0, rotation: 'N',
     }));
-    expect(zpl).toContain('^FO100,200');
+    // obj is at (100, 200) — the Konva render position. The emitted ^FO
+    // shifts to the ZPL cap-top anchor: for N h=30, dy = 30 * 0.154 = 4.62,
+    // rounded to integer dots = 5 ⇒ 200 + 5 = 205.
+    expect(zpl).toContain('^FO100,205');
     expect(zpl).toContain('^A0N,30,0');
     expect(zpl).toContain('^FDHello^FS');
   });
@@ -33,7 +36,9 @@ describe('text.toZPL', () => {
     const zpl = def.toZPL(makeObj('text', {
       content: 'Hi', fontHeight: 20, fontWidth: 0, rotation: 'N',
     }, { positionType: 'FT' }));
-    expect(zpl).toContain('^FT100,200');
+    // FT shifts to the baseline: for N h=20, dy = 20 * 0.92 = 18.4,
+    // rounded to integer dots = 18 ⇒ 200 + 18 = 218.
+    expect(zpl).toContain('^FT100,218');
   });
 
   it('emits ^LRY / ^LRN when reverse is true', () => {
