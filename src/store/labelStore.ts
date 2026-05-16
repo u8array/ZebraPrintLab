@@ -887,15 +887,18 @@ export const useLabelStore = create<LabelState>()(
         }
         set({ previewMode: { status: 'loading' } });
         // Two checks guard against settling a stale request: the status
-        // check catches an exit that happened during the fetch; the ZPL
-        // recheck catches the harder case where the user exited AND
-        // re-entered with a different design (so status is `loading`
-        // again — but for a different request whose result we mustn't
-        // overwrite). The captured `zpl` is the key for this request;
-        // anything else means the result no longer matches the state.
+        // check catches an exit that happened during the fetch; the
+        // reference-equality check catches the harder case where the
+        // user exited AND re-entered with a different design (so status
+        // is `loading` again — but for a different request whose result
+        // we mustn't overwrite). The store mutates label and objects
+        // immutably, so a reference change is the cheapest, most
+        // precise way to detect a divergent state — no string rebuild
+        // needed, and a page switch is caught too (different array).
         const isStale = (): boolean =>
           get().previewMode.status !== 'loading' ||
-          generateZPL(get().label, currentObjects(get())) !== zpl;
+          get().label !== state.label ||
+          currentObjects(get()) !== objs;
         try {
           const url = await fetchPreview(zpl, state.label);
           if (isStale()) {
