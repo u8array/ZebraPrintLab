@@ -995,6 +995,50 @@ describe('ungroup', () => {
       expect(activeUrl()).toBe(firstUrl);
     });
 
+    it('discards a stale in-flight fetch when the user exits, edits, and re-enters', async () => {
+      // Scenario: user opens preview (fetch 1 in flight), exits, mutates
+      // design, opens preview again (fetch 2 in flight). Without the
+      // stale-fetch guard, fetch 1 resolves while status is `loading`
+      // (from fetch 2) and would overwrite state with the previous
+      // design's URL.
+      const labelary = await import('../lib/labelary');
+      const fetchSpy = vi.mocked(labelary.fetchPreview);
+      fetchSpy.mockClear();
+
+      // Hand-controlled promises so we can interleave the two fetches.
+      type Resolver = (url: string) => void;
+      const noop: Resolver = () => undefined;
+      let resolveFirst: Resolver = noop;
+      let resolveSecond: Resolver = noop;
+      fetchSpy.mockImplementationOnce(
+        () => new Promise<string>((r) => (resolveFirst = r)),
+      );
+      fetchSpy.mockImplementationOnce(
+        () => new Promise<string>((r) => (resolveSecond = r)),
+      );
+
+      const first = state().enterPreviewMode();
+      state().exitPreviewMode();
+      state().addObject('text'); // changes the ZPL
+      const second = state().enterPreviewMode();
+
+      resolveFirst('blob:stale-1');
+      await first;
+
+      // Status must still be `loading` for fetch 2 — fetch 1's URL was
+      // for the previous design and must have been discarded + revoked.
+      expect(state().previewMode.status).toBe('loading');
+      expect(vi.mocked(globalThis.URL.revokeObjectURL)).toHaveBeenCalledWith(
+        'blob:stale-1',
+      );
+
+      resolveSecond('blob:fresh-2');
+      await second;
+
+      expect(state().previewMode.status).toBe('active');
+      expect(activeUrl()).toBe('blob:fresh-2');
+    });
+
     it('re-fetches and revokes the stale URL when the ZPL changes', async () => {
       const labelary = await import('../lib/labelary');
       const fetchSpy = vi.mocked(labelary.fetchPreview);

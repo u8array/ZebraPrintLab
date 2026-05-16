@@ -886,18 +886,26 @@ export const useLabelStore = create<LabelState>()(
           return;
         }
         set({ previewMode: { status: 'loading' } });
+        // Two checks guard against settling a stale request: the status
+        // check catches an exit that happened during the fetch; the ZPL
+        // recheck catches the harder case where the user exited AND
+        // re-entered with a different design (so status is `loading`
+        // again — but for a different request whose result we mustn't
+        // overwrite). The captured `zpl` is the key for this request;
+        // anything else means the result no longer matches the state.
+        const isStale = (): boolean =>
+          get().previewMode.status !== 'loading' ||
+          generateZPL(get().label, currentObjects(get())) !== zpl;
         try {
           const url = await fetchPreview(zpl, state.label);
-          // Avoid clobbering an exit that happened while the request was in
-          // flight — if the user toggled off, the loading state is gone.
-          if (get().previewMode.status !== 'loading') {
+          if (isStale()) {
             URL.revokeObjectURL(url);
             return;
           }
           previewCache.set(zpl, url);
           set({ previewMode: { status: 'active', url } });
         } catch (e) {
-          if (get().previewMode.status !== 'loading') return;
+          if (isStale()) return;
           set({ previewMode: { status: 'error', error: labelaryErrorMessage(e) } });
         }
       },
