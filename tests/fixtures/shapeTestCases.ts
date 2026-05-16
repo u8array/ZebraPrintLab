@@ -289,29 +289,21 @@ export const shapeTestCases: ShapeTestCase[] = [
     image_ref: "shape_line_diag_steep.png",
   },
 
-  // Reverse-print (^LRY) cases — Zebra firmware inverts each ink pixel
-  // produced by the wrapped field against whatever was already on the
-  // label. For a filled black ^GB on a white background that means the
-  // rect's interior turns into a white knockout. renderShape has to
-  // honour this or the editor will keep showing the inverse-marked field
-  // as plain black while Labelary prints it as a knockout.
-  //
-  // The 101×92 dimensions reproduce a user-reported case where the
-  // filled box's bottom edge aligned with a separate thin line in the
-  // editor but Labelary rendered the rect a couple of dots taller —
-  // exposing an off-by-one in the inset / height math.
+  // Dimension-promotion cases for ^GB rects where thickness exceeds an
+  // axis. Zebra firmware extrudes solid fields out to `max(w, t)` /
+  // `max(h, t)`; renderShape used to draw the literal `w × h` and miss
+  // the strip along the affected edge. Each case picks a different
+  // axis so a regression touching only one branch is caught.
   {
     id: "shape_box_thickness_exceeds_height",
     obj: {
       id: "20",
       type: "box",
-      // ^GB101,92,101: thickness (101) > height (92). Zebra firmware
-      // promotes the rendered dimensions to max(w,t) × max(h,t), so the
-      // visible field is 101×101 rather than the literal 101×92. Our
-      // renderShape used to clamp to "filled w×h" without the height
-      // promotion, leaving a ~10-dot strip missing along the bottom
-      // edge. Reverse=true mirrors the user-reported ZPL but doesn't
-      // affect geometry (^LRY only inverts ink colour).
+      // ^GB101,92,101: thickness > height → rect grows downward by
+      // (t - h) = 9 dots. Reproduces the user-reported case where the
+      // editor's box bottom was 9 dots above Labelary's. Reverse=true
+      // mirrors the original ZPL; ^LRY only inverts ink colour and
+      // does not affect geometry.
       x: 144,
       y: 160,
       rotation: 0,
@@ -319,5 +311,38 @@ export const shapeTestCases: ShapeTestCase[] = [
     },
     zpl_input: "^XA^LRY^FO144,160^GB101,92,101,B,0^FS^LRN^XZ",
     image_ref: "shape_box_thickness_exceeds_height.png",
+  },
+  {
+    id: "shape_box_thickness_exceeds_width",
+    obj: {
+      id: "21",
+      type: "box",
+      // ^GB80,150,120: thickness > width → rect grows rightward by
+      // (t - w) = 40 dots. Symmetric of the above; catches a fix that
+      // only handles the height axis.
+      x: 100,
+      y: 100,
+      rotation: 0,
+      props: { width: 80, height: 150, thickness: 120, filled: false, color: "B", rounding: 0 },
+    },
+    zpl_input: "^XA^FO100,100^GB80,150,120,B,0^FS^XZ",
+    image_ref: "shape_box_thickness_exceeds_width.png",
+  },
+  {
+    id: "shape_box_thickness_exceeds_both",
+    obj: {
+      id: "22",
+      type: "box",
+      // ^GB60,40,90: thickness exceeds both axes → 90×90 square.
+      // Square is the firmware's documented "create a square" form
+      // (w, h, t all equal); the promotion path must collapse to that
+      // shape when t pulls both axes up to the same value.
+      x: 100,
+      y: 100,
+      rotation: 0,
+      props: { width: 60, height: 40, thickness: 90, filled: false, color: "B", rounding: 0 },
+    },
+    zpl_input: "^XA^FO100,100^GB60,40,90,B,0^FS^XZ",
+    image_ref: "shape_box_thickness_exceeds_both.png",
   },
 ];

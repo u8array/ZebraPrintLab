@@ -38,8 +38,9 @@ export const box: ObjectTypeDefinition<BoxProps> = {
     // stored thickness is below the firmware's solid threshold; this
     // keeps a user-driven "make this solid" intent in the printed
     // output even if they never bumped the thickness slider.
+    const solidThreshold = Math.min(p.width, p.height);
     const t = p.filled
-      ? Math.max(p.thickness, Math.min(p.width, p.height))
+      ? Math.max(p.thickness, solidThreshold)
       : p.thickness;
     return [
       p.reverse ? '^LRY' : '',
