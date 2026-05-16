@@ -1012,7 +1012,11 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             {
               width: w,
               height: h,
-              thickness: filled ? 3 : t,
+              // Preserve the original thickness so a ZPL round-trip is
+              // lossless and the renderer can apply Zebra's dimension
+              // promotion (`max(w,t) × max(h,t)`) for fields where
+              // thickness exceeds the smaller axis.
+              thickness: t,
               filled,
               color,
               rounding,

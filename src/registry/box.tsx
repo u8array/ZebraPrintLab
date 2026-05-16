@@ -33,7 +33,15 @@ export const box: ObjectTypeDefinition<BoxProps> = {
 
   toZPL: (obj) => {
     const p = obj.props;
-    const t = p.filled ? Math.min(p.width, p.height) : p.thickness;
+    // Emit `thickness` verbatim so a ZPL round-trip is lossless. Only
+    // floor it up to `min(w,h)` when the user toggled `filled` but the
+    // stored thickness is below the firmware's solid threshold; this
+    // keeps a user-driven "make this solid" intent in the printed
+    // output even if they never bumped the thickness slider.
+    const solidThreshold = Math.min(p.width, p.height);
+    const t = p.filled
+      ? Math.max(p.thickness, solidThreshold)
+      : p.thickness;
     return [
       p.reverse ? '^LRY' : '',
       fieldPos(obj),
