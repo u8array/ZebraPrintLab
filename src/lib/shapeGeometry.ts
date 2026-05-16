@@ -41,19 +41,22 @@ export function outlineInset(
   h: number,
   t: number,
   filled: boolean,
+  /** When true, a solid-rendered field extends to `max(w, t) × max(h, t)`.
+   *  This per-axis promotion is documented for ^GB rects only ("horizontal
+   *  line" rule and its vertical mirror); ^GE / ^GC just collapse to solid
+   *  at their declared bbox dimensions, so callers from those code paths
+   *  leave this off. Pure single-axis lines hit a different parser branch
+   *  and never reach this helper. */
+  promoteFilled = false,
 ): OutlineInset {
   const clampsToFilled = !filled && t * 2 >= Math.min(w, h);
   const renderFilled = filled || clampsToFilled;
-  // Per-axis dimension promotion for solid rects: when the user-typed
-  // thickness exceeds an axis the printed field grows to thickness on
-  // that axis (Zebra firmware extrudes the outline outward in that
-  // case rather than clipping it to the declared bbox). Pure single-
-  // axis lines hit a different parser branch and are stored as `line`
-  // objects, so this only fires for ^GB rects where t > w or t > h.
+  const fillW = promoteFilled ? Math.max(w, t) : w;
+  const fillH = promoteFilled ? Math.max(h, t) : h;
   return {
     offset: renderFilled ? 0 : t / 2,
-    width: renderFilled ? Math.max(w, t) : Math.max(0, w - t),
-    height: renderFilled ? Math.max(h, t) : Math.max(0, h - t),
+    width: renderFilled ? fillW : Math.max(0, w - t),
+    height: renderFilled ? fillH : Math.max(0, h - t),
     renderFilled,
   };
 }

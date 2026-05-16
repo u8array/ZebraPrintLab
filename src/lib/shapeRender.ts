@@ -75,12 +75,12 @@ export function renderShape(
       // to validate against; the current fixtures all use rounding=0
       // so the four-band approach below is exact.
       const t = Math.max(1, p.thickness);
-      const geom = outlineInset(p.width, p.height, t, p.filled);
+      // promoteFilled=true: ^GB rects extrude solid fields to
+      // max(w,t) × max(h,t) (Zebra "horizontal line" rule). Without it,
+      // a 101×92 rect declared with thickness 101 would be drawn 9 dots
+      // short along its bottom edge compared to Labelary.
+      const geom = outlineInset(p.width, p.height, t, p.filled, true);
       if (geom.renderFilled) {
-        // `geom.width` / `geom.height` already account for the Zebra
-        // `^GB w,h,t` per-axis dimension promotion (max(w,t), max(h,t))
-        // so a thickness exceeding height or width extrudes the rendered
-        // field accordingly, matching Labelary.
         ctx.fillStyle = color;
         ctx.fillRect(obj.x, obj.y, geom.width, geom.height);
         return;

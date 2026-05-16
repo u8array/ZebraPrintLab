@@ -271,7 +271,11 @@ function KonvaObjectInner({
     // stroke on the inset rect places the band exactly inside the
     // declared bbox; the firmware's clamp-to-solid rule is handled by
     // `renderFilled`.
-    const insetGeom = outlineInset(w, h, strokeWidth, p.filled);
+    // promoteFilled=true: see note in shapeRender.ts — ^GB rects extrude
+    // their solid fill to max(w,t) × max(h,t) per Zebra firmware. The
+    // ellipse / circle branches below leave this off because ^GE / ^GC
+    // collapse to solid at their declared bbox without promotion.
+    const insetGeom = outlineInset(w, h, strokeWidth, p.filled, true);
     const renderFilled = insetGeom.renderFilled;
     const insetCornerRadius = renderFilled
       ? cornerRadius
