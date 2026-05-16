@@ -1,5 +1,5 @@
 import type { LabelObject } from "../types/Group";
-import { diagonalPolygonPoints } from "./shapeGeometry";
+import { diagonalPolygonPoints, outlineInset } from "./shapeGeometry";
 
 /** Inward-extruded ^GE / ^GC ring or solid disc, shared by ellipse and
  *  circle. Extracted so the two registry types — which carry different
@@ -74,18 +74,15 @@ export function renderShape(
       // evenodd fill once we have a Labelary fixture with rounding>0
       // to validate against; the current fixtures all use rounding=0
       // so the four-band approach below is exact.
-      if (p.filled) {
-        ctx.fillStyle = color;
-        ctx.fillRect(obj.x, obj.y, p.width, p.height);
-        return;
-      }
       const t = Math.max(1, p.thickness);
-      // Outline that extrudes inward — clamps to filled rect when the
-      // outline would meet itself in the middle (Zebra firmware does the
-      // same: ^GB with thickness >= min(w, h)/2 renders solid).
-      if (t * 2 >= Math.min(p.width, p.height)) {
+      const geom = outlineInset(p.width, p.height, t, p.filled);
+      if (geom.renderFilled) {
+        // `geom.width` / `geom.height` already account for the Zebra
+        // `^GB w,h,t` per-axis dimension promotion (max(w,t), max(h,t))
+        // so a thickness exceeding height or width extrudes the rendered
+        // field accordingly, matching Labelary.
         ctx.fillStyle = color;
-        ctx.fillRect(obj.x, obj.y, p.width, p.height);
+        ctx.fillRect(obj.x, obj.y, geom.width, geom.height);
         return;
       }
       // Four filled bands (top, bottom, left, right) avoid the

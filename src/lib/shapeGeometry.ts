@@ -44,10 +44,15 @@ export function outlineInset(
 ): OutlineInset {
   const clampsToFilled = !filled && t * 2 >= Math.min(w, h);
   const renderFilled = filled || clampsToFilled;
+  // Zebra ^GB documents a "horizontal line" as `h <= t, w > t` rendered
+  // at full thickness (w × t), and symmetrically for vertical. Apply the
+  // same per-axis promotion here so a filled rect whose declared height
+  // is below thickness ends up at max(h, t) — Labelary does this and
+  // the editor must follow or thick boxes look short.
   return {
     offset: renderFilled ? 0 : t / 2,
-    width: renderFilled ? w : Math.max(0, w - t),
-    height: renderFilled ? h : Math.max(0, h - t),
+    width: renderFilled ? Math.max(w, t) : Math.max(0, w - t),
+    height: renderFilled ? Math.max(h, t) : Math.max(0, h - t),
     renderFilled,
   };
 }
