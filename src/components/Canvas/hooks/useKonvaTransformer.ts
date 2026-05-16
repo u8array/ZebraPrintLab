@@ -305,15 +305,8 @@ export function useKonvaTransformer({
       cleanupTransformState();
       return;
     }
-    let sx = node.scaleX();
-    let sy = node.scaleY();
-    // Konva occasionally returns absurd scales on rotated nodes when the
-    // transformer's internal bbox math hits a near-zero divisor. Without a
-    // sanity clamp these propagate into fontHeight * sy and the saved ZPL
-    // ends up with 1e15-class coordinates. Clamp to a generous-but-finite
-    // range — any real resize is well within (0.01, 100).
-    if (!Number.isFinite(sx) || sx <= 0 || sx > 100) sx = 1;
-    if (!Number.isFinite(sy) || sy <= 0 || sy > 100) sy = 1;
+    const sx = node.scaleX();
+    const sy = node.scaleY();
     const nodeWidth = node.width();
     const nodeHeight = node.height();
     node.scaleX(1);
