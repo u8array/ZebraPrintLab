@@ -496,6 +496,11 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     // the drag at full frame rate; React state is kept in sync so a
     // subsequent re-render (selection change, scale, etc.) starts from
     // the latest position instead of snapping back.
+    //
+    // Listeners attach to the node itself, not to the stage: Konva's
+    // `transform` event (fired per-frame during a resize) does NOT
+    // bubble, so a stage-level listener would only catch `dragmove`
+    // and the button would freeze in place until the user released.
     const update = () => {
       const rect = node.getClientRect({ relativeTo: stage, skipStroke: true });
       const x = rect.x + rect.width + ROTATE_BUTTON_GAP_PX;
@@ -504,9 +509,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       setRotationBtnPos({ x, y });
     };
     update();
-    stage.on("dragmove.rotbtn transform.rotbtn", update);
+    node.on("dragmove.rotbtn transform.rotbtn", update);
     return () => {
-      stage.off("dragmove.rotbtn transform.rotbtn");
+      node.off("dragmove.rotbtn transform.rotbtn");
     };
   }, [singleSelected, stepRotation, scale, viewRotation]);
 
