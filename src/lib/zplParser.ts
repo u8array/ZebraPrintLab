@@ -1,4 +1,5 @@
 import type { LabelConfig } from "../types/ObjectType";
+import { zplAnchorToModel } from "../components/Canvas/textPositionTransforms";
 import type { LabelObject } from "../types/Group";
 import type { TextProps } from "../registry/text";
 import type { Code128Props } from "../registry/code128";
@@ -363,13 +364,22 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
     switch (fieldType) {
       case "text": {
+        // ZPL anchors ^FO at cap-top and ^FT at baseline; our internal
+        // model stores the Konva render position (EM-top-left) so editor
+        // interactions stay shift-free. Convert here at import.
+        const modelPos = zplAnchorToModel(
+          x,
+          y,
+          { fontHeight: textH, rotation: textRot },
+          posType,
+        );
         // If ^SF was pending, create a serial object instead of text
         if (snPending) {
           objects.push(
             makeObj(
               "serial",
-              x,
-              y,
+              modelPos.x,
+              modelPos.y,
               {
                 content: decoded,
                 increment: snIncrement,
@@ -403,7 +413,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           textProps.blockLineSpacing = fbSpacing;
           textProps.blockJustify = fbJustify;
         }
-        objects.push(makeObj("text", x, y, textProps, posType, comment));
+        objects.push(makeObj("text", modelPos.x, modelPos.y, textProps, posType, comment));
         resetFB();
         break;
       }

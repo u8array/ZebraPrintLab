@@ -14,7 +14,10 @@ import {
   forceSquareBox,
   type BoundingBox,
 } from "../transformerGeometry";
-import { modelPositionFromRenderedTopLeft } from "../transformPosition";
+import {
+  modelPositionFromRenderedTopLeft,
+  renderedTopLeftFromModel,
+} from "../transformPosition";
 import {
   computeResizeSnap,
   deriveActiveEdges,
@@ -265,6 +268,10 @@ export function useKonvaTransformer({
     }
     const startBbox = transformStartBboxRef.current;
     let bbox = applyHeightSnap(oldBox, newBox, dotPx, transformAnchorRef.current);
+    // For text/serial, Konva's bbox is the EM-box (ascender + cap + descender).
+    // Smart-align should target the *visible* glyph corners — otherwise the
+    // guide hits the EM-edge while the user sees the cap a few dots away.
+    // Translate to visible-glyph space around the snap call, then back.
     if (objectSnapEnabled && isFreeResize && startBbox) {
       const snapped = applyResizeObjectSnap(bbox, startBbox, othersSnapshotRef.current, labelRect);
       setGuides(snapped.guides);
@@ -298,8 +305,15 @@ export function useKonvaTransformer({
       cleanupTransformState();
       return;
     }
-    const sx = node.scaleX();
-    const sy = node.scaleY();
+    let sx = node.scaleX();
+    let sy = node.scaleY();
+    // Konva occasionally returns absurd scales on rotated nodes when the
+    // transformer's internal bbox math hits a near-zero divisor. Without a
+    // sanity clamp these propagate into fontHeight * sy and the saved ZPL
+    // ends up with 1e15-class coordinates. Clamp to a generous-but-finite
+    // range — any real resize is well within (0.01, 100).
+    if (!Number.isFinite(sx) || sx <= 0 || sx > 100) sx = 1;
+    if (!Number.isFinite(sy) || sy <= 0 || sy > 100) sy = 1;
     const nodeWidth = node.width();
     const nodeHeight = node.height();
     node.scaleX(1);
@@ -330,20 +344,26 @@ export function useKonvaTransformer({
       obj.positionType === "FT" && BARCODE_1D_TYPES.has(obj.type)
         ? Math.max(1, snap(Math.round((obj.props as { height: number }).height * sy)))
         : undefined;
-    // Invert per-type render offsets (e.g. QR's hardcoded +10 dot Y) so the
-    // stored model position matches what BarcodeObject.handleDragEnd produces.
+    // Invert per-type render offsets (e.g. QR's hardcoded +10 dot Y) so
+    // the stored model position matches what each per-type
+    // handleDragEnd / render path produces. Text/serial render at
+    // obj.x/y directly, so they pass through unchanged.
     const modelPos = modelPositionFromRenderedTopLeft(
       obj,
       renderedXDots,
       renderedYDots,
       newBarHeightDots,
     );
-    // Only apply snap when the resize actually moved the position
-    // (e.g. dragging the top-left handle). Anchored-corner drags must keep
-    // the original position so off-grid shapes don't snap as a side-effect.
+    // Only apply snap when the resize actually moved the anchor handle.
+    // Compare in *rendered* space — for types whose render path applies
+    // a shift (text, QR, FT barcodes), comparing the rendered top-left
+    // to obj.x/y directly always trips (shift ≠ 0 in baseline), so snap
+    // fires on every anchored-corner resize and pulls the visible
+    // corner to a grid point the user didn't ask for.
+    const oldRendered = renderedTopLeftFromModel(obj);
     const pos = {
-      x: positionDidMove(modelPos.x, obj.x) ? snap(modelPos.x) : obj.x,
-      y: positionDidMove(modelPos.y, obj.y) ? snap(modelPos.y) : obj.y,
+      x: positionDidMove(renderedXDots, oldRendered.x) ? snap(modelPos.x) : obj.x,
+      y: positionDidMove(renderedYDots, oldRendered.y) ? snap(modelPos.y) : obj.y,
     };
     const commit = ObjectRegistry[obj.type]?.commitTransform;
     if (commit) {

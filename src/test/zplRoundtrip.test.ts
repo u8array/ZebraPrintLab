@@ -225,11 +225,13 @@ const LH_OFFSET_ZPL = `
 
 describe('round-trip — ^LH label home offset', () => {
   it('bakes the ^LH offset into absolute object positions', () => {
-    // After import the LH offset is merged into x/y — objects sit at FO+LH
+    // After import the LH offset is merged into x/y — objects sit at FO+LH.
+    // Text additionally subtracts the ZPL-anchor-to-EM shift so obj.x/y
+    // is the Konva render position. For ^A0N h=25 FO: dy = 25 * 0.154 = 3.85.
     const { first } = roundtrip(LH_OFFSET_ZPL);
     const text = first.objects.find((o) => o.type === 'text');
-    expect(text?.x).toBe(100); // 70 + 30
-    expect(text?.y).toBe(100); // 80 + 20
+    expect(text?.x).toBeCloseTo(100); // 70 + 30
+    expect(text?.y).toBeCloseTo(100 - 3.85); // 80 + 20 - shift
   });
 
   it('preserves object positions across the round-trip', () => {
@@ -294,6 +296,50 @@ describe('round-trip — comma in ^FD content', () => {
 });
 
 // ── real-world Zebra Designer header commands ─────────────────────────────────
+
+// ── text rotation × positionType byte-exact round-trip ─────────────────────
+//
+// Regression guard for the model-vs-ZPL coordinate split: obj.x/y is the
+// Konva render position (EM-top-left); the ZPL emit / parse pair adds /
+// subtracts a rotation- and positionType-dependent offset. If those two
+// functions drift apart, the rendered Konva position no longer matches
+// the printed ZPL anchor for rotated text — invisibly, until preview /
+// print catches it. This loops every rotation × {FO, FT} combination at
+// realistic fontHeights and asserts the original ZPL bytes survive a
+// parse → generate cycle.
+
+describe('round-trip — text rotation × positionType preservation', () => {
+  for (const pos of ['FO', 'FT'] as const) {
+    for (const rot of ['N', 'R', 'I', 'B'] as const) {
+      for (const fontHeight of [20, 30, 50, 87]) {
+        it(`preserves ^${pos} x,y for rotation ${rot} h=${fontHeight}`, () => {
+          const inputZpl =
+            `^XA^${pos}123,456^A0${rot},${fontHeight},0^FDHello^FS^XZ`;
+          const { regenerated } = roundtrip(inputZpl);
+          // The emitted ZPL must contain the same ^FO/^FT coordinates and
+          // ^A0 declaration as the input — anything else means the
+          // model↔ZPL shift drifted between parser and generator.
+          expect(regenerated).toContain(`^${pos}123,456`);
+          expect(regenerated).toContain(`^A0${rot},${fontHeight},0`);
+        });
+      }
+    }
+  }
+
+  it('preserves coordinates through two parse-generate cycles', () => {
+    const inputZpl =
+      '^XA^FT100,200^A0R,30,0^FDA^FS^FO50,80^A0I,40,0^FDB^FS^XZ';
+    const { regenerated, second } = roundtrip(inputZpl);
+    // Second-pass parse of the regenerated ZPL must produce the same
+    // objects (obj.x/y unchanged) as the first.
+    const { first } = roundtrip(inputZpl);
+    expect(second.objects.map((o) => [o.x, o.y])).toEqual(
+      first.objects.map((o) => [o.x, o.y]),
+    );
+    expect(regenerated).toContain('^FT100,200');
+    expect(regenerated).toContain('^FO50,80');
+  });
+});
 
 describe('parseZPL — real-world structural commands are silently ignored', () => {
   // Labels produced by Zebra Designer / ZPL II tools commonly begin with a

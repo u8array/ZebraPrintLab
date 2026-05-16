@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos, fdField } from './zplHelpers';
+import { textFieldPos, fdField } from './zplHelpers';
 import { getFont, getAllFonts, loadFontFile } from '../lib/fontCache';
 import { useFontCacheVersion } from '../hooks/useFontCacheVersion';
 import { RotationSelect } from '../components/Properties/RotationSelect';
@@ -34,10 +34,19 @@ export const text: ObjectTypeDefinition<TextProps> = {
     rotation: 'N',
   },
   defaultSize: { width: 200, height: 40 },
-
-  commitTransform: (obj, { sy, snap }) => ({
-    fontHeight: Math.max(1, snap(Math.round(obj.props.fontHeight * sy))),
-  }),
+  // Rectangle resize: corner drag updates fontHeight from sy and
+  // fontWidth from sx independently. fontWidth=0 in storage is the
+  // Zebra default meaning "match height"; in that case the effective
+  // pre-resize width equals fontHeight, so we scale that derived value
+  // by sx and persist the result.
+  commitTransform: (obj, { sx, sy, snap }) => {
+    const oldH = obj.props.fontHeight;
+    const oldW = obj.props.fontWidth > 0 ? obj.props.fontWidth : oldH;
+    return {
+      fontHeight: Math.max(1, snap(Math.round(oldH * sy))),
+      fontWidth: Math.max(1, snap(Math.round(oldW * sx))),
+    };
+  },
 
   toZPL: (obj) => {
     const p = obj.props;
@@ -49,7 +58,7 @@ export const text: ObjectTypeDefinition<TextProps> = {
       : '';
     return [
       p.reverse ? '^LRY' : '',
-      fieldPos(obj),
+      textFieldPos(obj),
       fontCmd,
       fbCmd,
       fdField(p.content),

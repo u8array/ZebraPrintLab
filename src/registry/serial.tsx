@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos, fdField } from './zplHelpers';
+import { textFieldPos, fdField } from './zplHelpers';
 import { filterContent, type ContentSpec } from './contentSpec';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
@@ -30,10 +30,19 @@ export const serial: ObjectTypeDefinition<SerialProps> = {
     zplMode: 'SN',
   },
   defaultSize: { width: 100, height: 30 },
+  // Rectangle resize matching text.tsx — see notes there.
+  commitTransform: (obj, { sx, sy, snap }) => {
+    const oldH = obj.props.fontHeight;
+    const oldW = obj.props.fontWidth > 0 ? obj.props.fontWidth : oldH;
+    return {
+      fontHeight: Math.max(1, snap(Math.round(oldH * sy))),
+      fontWidth: Math.max(1, snap(Math.round(oldW * sx))),
+    };
+  },
 
   toZPL: (obj) => {
     const p = obj.props;
-    const field = `${fieldPos(obj)}^A0${p.rotation},${p.fontHeight},${p.fontWidth}`;
+    const field = `${textFieldPos(obj)}^A0${p.rotation},${p.fontHeight},${p.fontWidth}`;
     // Re-apply the input charset filter at emit time so ZPL-imported content
     // (which bypasses the in-app filter) can't smuggle ^/~ into the ^SN start
     // parameter or comma-split the parameter list. fdField additionally
