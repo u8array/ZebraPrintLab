@@ -268,10 +268,6 @@ export function useKonvaTransformer({
     }
     const startBbox = transformStartBboxRef.current;
     let bbox = applyHeightSnap(oldBox, newBox, dotPx, transformAnchorRef.current);
-    // For text/serial, Konva's bbox is the EM-box (ascender + cap + descender).
-    // Smart-align should target the *visible* glyph corners — otherwise the
-    // guide hits the EM-edge while the user sees the cap a few dots away.
-    // Translate to visible-glyph space around the snap call, then back.
     if (objectSnapEnabled && isFreeResize && startBbox) {
       const snapped = applyResizeObjectSnap(bbox, startBbox, othersSnapshotRef.current, labelRect);
       setGuides(snapped.guides);
