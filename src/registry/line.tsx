@@ -125,7 +125,17 @@ export const line: ObjectTypeDefinition<LineProps> = {
             label={t.registry.line.length}
             value={p.length}
             min={1}
-            onChange={(length) => onChange({ length })}
+            // Shrinking length below the current thickness would land
+            // the model in the ^GB promotion regime where t > length
+            // prints `t × t`; auto-clamp thickness down to match the
+            // new length, mirroring the endpoint-handle drag.
+            onChange={(length) =>
+              onChange(
+                length < p.thickness
+                  ? { length, thickness: length }
+                  : { length },
+              )
+            }
           />
           <NumberInput
             label={t.registry.line.angle}
@@ -140,6 +150,10 @@ export const line: ObjectTypeDefinition<LineProps> = {
           label={t.registry.line.thickness}
           value={p.thickness}
           min={1}
+          // Capped at length so the ZPL output stays out of the ^GB
+          // promotion regime (max(w, t) × max(h, t)), where the printer
+          // would extend the line beyond its declared length.
+          max={p.length}
           onChange={(thickness) => onChange({ thickness })}
         />
 

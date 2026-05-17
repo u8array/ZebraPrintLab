@@ -115,7 +115,7 @@ export function LineObject({
   // time without any one-frame delay on release.
   const [liveThicknessDots, setLiveThicknessDots] = useState<number | null>(null);
   const effectiveThicknessDots = liveThicknessDots ?? p.thickness;
-  const lineStrokeWidth = Math.max(dotsToPx(effectiveThicknessDots, scale, dpmm), 1);
+  const rawStrokePx = Math.max(dotsToPx(effectiveThicknessDots, scale, dpmm), 1);
 
   // Option-A geometry (mirrors src/lib/shapeRender.ts):
   //   - Axis-aligned lines map to ^GB and extrude thickness downward
@@ -131,8 +131,6 @@ export function LineObject({
   // Otherwise dragging a near-horizontal endpoint shows the body locked
   // to the horizontal band until release, then snaps to the parallelo-
   // gram — a visible jump the user noticed.
-  const halfStrokePx = lineStrokeWidth / 2;
-
 
   // Live positions while handles are being dragged (snapped preview)
   const [livePt1, setLivePt1] = useState<{ x: number; y: number } | null>(null);
@@ -151,6 +149,16 @@ export function LineObject({
   const dispY1 = livePt1?.y ?? y1 + dy;
   const dispX2 = livePt2?.x ?? x2 + dx;
   const dispY2 = livePt2?.y ?? y2 + dy;
+
+  // Mid-drag, an endpoint can be pulled inside the current thickness; the
+  // onDragEnd commit then snaps thickness down to the new length, which
+  // would look like a sudden band shrink on release. Cap the visual stroke
+  // at the live endpoint distance so the band always tracks the t ≤ length
+  // invariant we commit to. In steady state the data model already
+  // satisfies this, so the cap is a no-op.
+  const visualLenPx = Math.hypot(dispX2 - dispX1, dispY2 - dispY1);
+  const lineStrokeWidth = Math.min(rawStrokePx, visualLenPx);
+  const halfStrokePx = lineStrokeWidth / 2;
 
   // Half-pixel epsilon: constrainLine's auto-snap commits 45°-step
   // positions where ddx/ddy land exactly on axis-aligned values, but
@@ -459,10 +467,18 @@ export function LineObject({
                 e.target.getParent(),
               );
               clearSnap();
+              // Shrinking the line below the current thickness would
+              // push the ZPL into the `^GB` promotion regime (t > length
+              // → printed `t × t`); cap thickness to the new length so
+              // the model preserves the t ≤ length invariant.
               onChange({
                 x: r.movingDotX,
                 y: r.movingDotY,
-                props: { length: r.length, angle: r.angle },
+                props: {
+                  length: r.length,
+                  angle: r.angle,
+                  thickness: Math.min(p.thickness, r.length),
+                },
               });
             }}
           />
@@ -520,7 +536,13 @@ export function LineObject({
                 e.target.getParent(),
               );
               clearSnap();
-              onChange({ props: { length: r.length, angle: r.angle } });
+              onChange({
+                props: {
+                  length: r.length,
+                  angle: r.angle,
+                  thickness: Math.min(p.thickness, r.length),
+                },
+              });
             }}
           />
           <Rect
@@ -549,9 +571,13 @@ export function LineObject({
               const extPx = isHorizontal
                 ? cursorY - lineCenterY
                 : cursorX - lineCenterX;
-              const newT = Math.max(
-                1,
-                Math.round(pxToDots(extPx, scale, dpmm)),
+              // Cap at p.length so the line never enters the ZPL ^GB
+              // promotion regime where thickness exceeds length and
+              // Labelary would print `t × t` rather than the band the
+              // user is dragging.
+              const newT = Math.min(
+                p.length,
+                Math.max(1, Math.round(pxToDots(extPx, scale, dpmm))),
               );
               setLiveThicknessDots(newT);
               // Pin the Rect to the (possibly-clamped) anchor so
