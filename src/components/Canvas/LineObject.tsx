@@ -459,10 +459,18 @@ export function LineObject({
                 e.target.getParent(),
               );
               clearSnap();
+              // Shrinking the line below the current thickness would
+              // push the ZPL into the `^GB` promotion regime (t > length
+              // → printed `t × t`); cap thickness to the new length so
+              // the model preserves the t ≤ length invariant.
               onChange({
                 x: r.movingDotX,
                 y: r.movingDotY,
-                props: { length: r.length, angle: r.angle },
+                props: {
+                  length: r.length,
+                  angle: r.angle,
+                  thickness: Math.min(p.thickness, r.length),
+                },
               });
             }}
           />
@@ -520,7 +528,13 @@ export function LineObject({
                 e.target.getParent(),
               );
               clearSnap();
-              onChange({ props: { length: r.length, angle: r.angle } });
+              onChange({
+                props: {
+                  length: r.length,
+                  angle: r.angle,
+                  thickness: Math.min(p.thickness, r.length),
+                },
+              });
             }}
           />
           <Rect
@@ -549,9 +563,13 @@ export function LineObject({
               const extPx = isHorizontal
                 ? cursorY - lineCenterY
                 : cursorX - lineCenterX;
-              const newT = Math.max(
-                1,
-                Math.round(pxToDots(extPx, scale, dpmm)),
+              // Cap at p.length so the line never enters the ZPL ^GB
+              // promotion regime where thickness exceeds length and
+              // Labelary would print `t × t` rather than the band the
+              // user is dragging.
+              const newT = Math.min(
+                p.length,
+                Math.max(1, Math.round(pxToDots(extPx, scale, dpmm))),
               );
               setLiveThicknessDots(newT);
               // Pin the Rect to the (possibly-clamped) anchor so

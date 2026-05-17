@@ -124,7 +124,10 @@ export const line: ObjectTypeDefinition<LineProps> = {
           <NumberInput
             label={t.registry.line.length}
             value={p.length}
-            min={1}
+            // Floored at thickness for the same reason thickness is
+            // capped at length below: keeps the model out of the ^GB
+            // promotion regime where t > length prints `t × t`.
+            min={p.thickness}
             onChange={(length) => onChange({ length })}
           />
           <NumberInput
@@ -140,6 +143,10 @@ export const line: ObjectTypeDefinition<LineProps> = {
           label={t.registry.line.thickness}
           value={p.thickness}
           min={1}
+          // Capped at length so the ZPL output stays out of the ^GB
+          // promotion regime (max(w, t) × max(h, t)), where the printer
+          // would extend the line beyond its declared length.
+          max={p.length}
           onChange={(thickness) => onChange({ thickness })}
         />
 
