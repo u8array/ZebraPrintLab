@@ -236,32 +236,35 @@ describe('generateZPL — printer params', () => {
     expect(zpl).toContain('^CWB,E:OK.TTF');
   });
 
-  it('rewrites ^A@ font refs to ^A{alias} when a ^CW mapping exists', () => {
-    const text: LabelObject = {
-      id: 't1',
-      type: 'text',
-      x: 10,
-      y: 10,
-      rotation: 0,
-      props: {
-        content: 'hi',
-        rotation: 'N',
-        fontHeight: 30,
-        fontWidth: 0,
-        printerFontName: 'ARIAL.TTF',
-      },
-    };
-    const zpl = generateZPL(
-      {
-        ...BASE_LABEL,
-        customFonts: [{ alias: 'M', path: 'E:ARIAL.TTF' }],
-      },
-      [text],
-    );
-    expect(zpl).toContain('^CWM,E:ARIAL.TTF');
-    expect(zpl).toContain('^AMN,30,0');
-    expect(zpl).not.toContain('^A@N,30,0,E:ARIAL.TTF');
-  });
+  it.each(['N', 'R', 'I', 'B'] as const)(
+    'rewrites ^A@%s to ^A{alias} when a matching ^CW mapping exists',
+    (rotation) => {
+      const text: LabelObject = {
+        id: 't1',
+        type: 'text',
+        x: 10,
+        y: 10,
+        rotation: 0,
+        props: {
+          content: 'hi',
+          rotation,
+          fontHeight: 30,
+          fontWidth: 0,
+          printerFontName: 'ARIAL.TTF',
+        },
+      };
+      const zpl = generateZPL(
+        {
+          ...BASE_LABEL,
+          customFonts: [{ alias: 'M', path: 'E:ARIAL.TTF' }],
+        },
+        [text],
+      );
+      expect(zpl).toContain('^CWM,E:ARIAL.TTF');
+      expect(zpl).toContain(`^AM${rotation},30,0`);
+      expect(zpl).not.toContain(`^A@${rotation},30,0,E:ARIAL.TTF`);
+    },
+  );
 
   it('leaves ^A@ verbose when no matching ^CW alias is defined', () => {
     const text: LabelObject = {
