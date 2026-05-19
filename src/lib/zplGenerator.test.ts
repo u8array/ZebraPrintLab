@@ -103,6 +103,47 @@ describe('generateZPL — printer params', () => {
     expect(generateZPL(BASE_LABEL, [])).not.toContain('^PO');
   });
 
+  const boxAt = (x: number, y: number): LabelObject => ({
+    id: '1',
+    type: 'box',
+    x,
+    y,
+    rotation: 0,
+    props: { width: 50, height: 20, thickness: 1, filled: false, color: 'B', rounding: 0 },
+  });
+
+  it('emits ^LH and shifts field FOs to compensate', () => {
+    const zpl = generateZPL(
+      { ...BASE_LABEL, labelHomeX: 20, labelHomeY: 10 },
+      [boxAt(50, 80)],
+    );
+    expect(zpl).toContain('^LH20,10');
+    expect(zpl).toContain('^FO30,70');
+  });
+
+  it('emits ^LT and shifts field Y to compensate', () => {
+    const zpl = generateZPL({ ...BASE_LABEL, labelTop: 15 }, [boxAt(50, 80)]);
+    expect(zpl).toContain('^LT15');
+    expect(zpl).toContain('^FO50,65');
+  });
+
+  it('clamps shifted FO at 0 when offset exceeds field position', () => {
+    const zpl = generateZPL(
+      { ...BASE_LABEL, labelHomeX: 30, labelHomeY: 20 },
+      [boxAt(10, 5)],
+    );
+    expect(zpl).toContain('^FO0,0');
+  });
+
+  it('emits ^CF with width as third positional param', () => {
+    expect(
+      generateZPL(
+        { ...BASE_LABEL, defaultFontId: 'A', defaultFontHeight: 30, defaultFontWidth: 20 },
+        [],
+      ),
+    ).toContain('^CFA,30,20');
+  });
+
   it('emits ^PM when mirror is set', () => {
     expect(generateZPL({ ...BASE_LABEL, mirror: 'Y' }, [])).toContain('^PMY');
     expect(generateZPL({ ...BASE_LABEL, mirror: 'N' }, [])).toContain('^PMN');
@@ -218,8 +259,10 @@ describe('generateZPL — printer params', () => {
     expect(idx('^MTT')).toBeLessThan(idx('^PR6'));
     expect(idx('^PR6')).toBeLessThan(idx('^MD10'));
     expect(idx('^MD10')).toBeLessThan(idx('^POI'));
-    expect(idx('^POI')).toBeLessThan(idx('^CF0,30'));
-    expect(idx('^CF0,30')).toBeLessThan(idx('^LS5'));
+    // Geometry offsets (^LH/^LT/^LS) group before the default font (^CF)
+    // so the header reads media → printer params → geometry → font.
+    expect(idx('^POI')).toBeLessThan(idx('^LS5'));
+    expect(idx('^LS5')).toBeLessThan(idx('^CF0,30'));
   });
 });
 

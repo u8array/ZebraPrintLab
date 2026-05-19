@@ -756,11 +756,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     CF(p) {
       const fontId = (p[0] ?? "").trim();
       const explicitHeight = parseInt(p[1] ?? "", 10);
+      const explicitWidth = parseInt(p[2] ?? "", 10);
       cfHeight = isNaN(explicitHeight) ? cfHeight : explicitHeight;
-      cfWidth = int(p[2], cfWidth);
+      cfWidth = isNaN(explicitWidth) ? cfWidth : explicitWidth;
       if (fontId) labelConfig.defaultFontId = fontId;
       if (!isNaN(explicitHeight) && explicitHeight > 0) {
         labelConfig.defaultFontHeight = explicitHeight;
+      }
+      if (!isNaN(explicitWidth) && explicitWidth >= 0) {
+        labelConfig.defaultFontWidth = explicitWidth;
       }
     },
 

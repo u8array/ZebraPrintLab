@@ -14,6 +14,14 @@ export const labelConfigSchema = z.object({
   overridePauseCount: z.enum(['Y', 'N']).optional(),
   mediaMode: z.enum(['T', 'V', 'D', 'K']).optional(),
   labelShift: z.number().optional(),
+  /** ^LH x: horizontal origin offset emitted at export. Field FOs are
+   *  shifted accordingly so the on-screen layout equals the print result. */
+  labelHomeX: z.number().int().min(0).optional(),
+  /** ^LH y: vertical origin offset emitted at export. See labelHomeX. */
+  labelHomeY: z.number().int().min(0).optional(),
+  /** ^LT y: label top shift emitted at export. Same compensation semantics
+   *  as labelHomeY. Zebra supports -120..+120. */
+  labelTop: z.number().int().min(-120).max(120).optional(),
   printSpeed: z.number().int().min(2).max(14).optional(),
   /** ^PR p2: slew (inter-label) speed. */
   slewSpeed: z.number().int().min(2).max(14).optional(),
@@ -28,6 +36,8 @@ export const labelConfigSchema = z.object({
   mirror: z.enum(['Y', 'N']).optional(),
   defaultFontId: z.string().min(1).optional(),
   defaultFontHeight: z.number().int().positive().optional(),
+  /** ^CF width param. Spec allows 0 → printer auto-derives from height. */
+  defaultFontWidth: z.number().int().min(0).optional(),
 });
 
 export type LabelConfig = z.infer<typeof labelConfigSchema>;

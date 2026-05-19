@@ -53,16 +53,45 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
   if (label.darkness !== undefined) lines.push(`^MD${label.darkness}`);
   if (label.printOrientation) lines.push(`^PO${label.printOrientation}`);
   if (label.mirror) lines.push(`^PM${label.mirror}`);
-  // ^CF parameters are individually optional per Zebra spec: ^CF0 sets the
-  // font only, ^CF,30 sets the height only. Preserves round-trip fidelity
-  // when an imported label used a partial command.
-  if (label.defaultFontId || label.defaultFontHeight !== undefined) {
+  // Geometry offsets ────────────────────────────────────────────────────────
+  // ^LH / ^LT — origin offsets. The internal model stores absolute field
+  // coords; the emit path below subtracts the offsets from each field's
+  // (x, y) so the printed result matches what the user sees in the editor.
+  const homeX = label.labelHomeX ?? 0;
+  const homeY = label.labelHomeY ?? 0;
+  const top = label.labelTop ?? 0;
+  if (homeX !== 0 || homeY !== 0) lines.push(`^LH${homeX},${homeY}`);
+  if (top !== 0) lines.push(`^LT${top}`);
+  if (label.labelShift) lines.push(`^LS${label.labelShift}`);
+
+  // Default font ────────────────────────────────────────────────────────────
+  // ^CF f,h,w — emit each part when set.
+  if (
+    label.defaultFontId ||
+    label.defaultFontHeight !== undefined ||
+    label.defaultFontWidth !== undefined
+  ) {
     const id = label.defaultFontId ?? "";
     const height =
       label.defaultFontHeight !== undefined ? `,${label.defaultFontHeight}` : "";
-    lines.push(`^CF${id}${height}`);
+    const width =
+      label.defaultFontWidth !== undefined ? `,${label.defaultFontWidth}` : "";
+    lines.push(`^CF${id}${height}${width}`);
   }
-  if (label.labelShift) lines.push(`^LS${label.labelShift}`);
+
+  // Apply ^LH/^LT compensation: subtract the offsets from each leaf's
+  // (x, y) before delegating to the registry. Clamp at 0 — Zebra rejects
+  // negative ^FO. Group containers recurse; their children's coords are
+  // absolute in the model so the same shift applies per leaf. Skip the
+  // copy entirely when no offset is active.
+  const shiftLeaf = (obj: LabelObject): LabelObject => {
+    if (isGroup(obj)) return { ...obj, children: obj.children.map(shiftLeaf) };
+    return {
+      ...obj,
+      x: Math.max(0, obj.x - homeX),
+      y: Math.max(0, obj.y - homeY - top),
+    };
+  };
 
   // Groups are structural only — they emit no ZPL of their own. A group
   // with includeInExport=false cascades the skip to its whole subtree;
@@ -75,7 +104,11 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
       ? [`^FX${stripZplCommandChars(obj.comment)}\n${zpl}`]
       : [zpl];
   };
-  lines.push(...objects.flatMap(emitLeaf));
+  const shifted =
+    homeX !== 0 || homeY !== 0 || top !== 0
+      ? objects.map(shiftLeaf)
+      : objects;
+  lines.push(...shifted.flatMap(emitLeaf));
 
   // ^PQ q,p,r,o — emit if quantity > 1 OR any extended param is set.
   // Defaults follow the Zebra spec: q=1, p=0, r=0, o=N.

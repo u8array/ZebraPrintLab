@@ -23,6 +23,11 @@ import { AlignButtons } from "./AlignButtons";
 import { inputCls, labelCls } from "./styles";
 import type { LabelConfig } from "../../types/ObjectType";
 
+/** Built-in alphanumeric font IDs the Zebra firmware ships with. Used as
+ *  suggestions for ^CF — the input stays free-text so user-defined ^CW
+ *  aliases (single letters) can still be entered. */
+const ZPL_BUILTIN_FONT_IDS = ['0', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
+
 interface PropertiesPanelProps {
   /** Imperative handle on the canvas — used for actions that need live render
    *  bboxes (alignment, future zoom-to-selection, etc.). Required so the
@@ -454,6 +459,61 @@ function LabelConfigPanel({
         </div>
 
         <div className="flex flex-col gap-1">
+          <label className={labelCls}>
+            {t.label.offsetsHeading}
+            <InformationCircleIcon
+              className="w-3.5 h-3.5 ml-1 inline-block align-text-bottom text-muted cursor-help"
+              title={t.label.offsetsHint}
+            />
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.labelHomeX}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                value={label.labelHomeX ?? ""}
+                min={0}
+                onChange={(e) =>
+                  onUpdate({ labelHomeX: parseIntOrUndef(e.target.value) })
+                }
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.labelHomeY}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                value={label.labelHomeY ?? ""}
+                min={0}
+                onChange={(e) =>
+                  onUpdate({ labelHomeY: parseIntOrUndef(e.target.value) })
+                }
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.labelTop}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                value={label.labelTop ?? ""}
+                min={-120}
+                max={120}
+                onChange={(e) =>
+                  onUpdate({ labelTop: parseIntOrUndef(e.target.value) })
+                }
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.label.labelShift}</label>
           <input
             type="number"
@@ -520,7 +580,10 @@ function LabelConfigPanel({
           />
         </div>
 
-        <label className="flex items-center gap-2 text-xs">
+        <label
+          className="flex items-center gap-2 text-xs"
+          title={t.label.overridePauseCountHint}
+        >
           <input
             type="checkbox"
             checked={label.overridePauseCount === "Y"}
@@ -689,7 +752,7 @@ function LabelConfigPanel({
 
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.label.defaultFont}</label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <div className="flex flex-col gap-1">
               <label className="text-[10px] text-muted">
                 {t.label.defaultFontId}
@@ -698,6 +761,7 @@ function LabelConfigPanel({
                 type="text"
                 className={inputCls}
                 maxLength={2}
+                list="zpl-default-font-ids"
                 value={label.defaultFontId ?? ""}
                 onChange={(e) =>
                   onUpdate({ defaultFontId: e.target.value || undefined })
@@ -720,11 +784,32 @@ function LabelConfigPanel({
                 }
               />
             </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.defaultFontWidth}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                min={0}
+                value={label.defaultFontWidth ?? ""}
+                onChange={(e) =>
+                  onUpdate({
+                    defaultFontWidth: parseIntOrUndef(e.target.value),
+                  })
+                }
+              />
+            </div>
           </div>
         </div>
         </div>
         </CollapsibleSection>
       </div>
+      <datalist id="zpl-default-font-ids">
+        {ZPL_BUILTIN_FONT_IDS.map((id) => (
+          <option key={id} value={id} />
+        ))}
+      </datalist>
     </div>
   );
 }

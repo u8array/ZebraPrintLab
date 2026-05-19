@@ -624,6 +624,13 @@ describe('parseZPL — printer params', () => {
     expect(parseZPL('^XA^PMN^XZ', 8).labelConfig.mirror).toBe('N');
   });
 
+  it('parses ^CF width into defaultFontWidth', () => {
+    const { labelConfig } = parseZPL('^XA^CFA,30,20^XZ', 8);
+    expect(labelConfig.defaultFontId).toBe('A');
+    expect(labelConfig.defaultFontHeight).toBe(30);
+    expect(labelConfig.defaultFontWidth).toBe(20);
+  });
+
   it('parses ~SD instant darkness', () => {
     expect(parseZPL('~SD07^XA^XZ', 8).labelConfig.instantDarkness).toBe(7);
     expect(parseZPL('~SD30^XA^XZ', 8).labelConfig.instantDarkness).toBe(30);
