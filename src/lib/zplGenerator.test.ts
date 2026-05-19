@@ -127,12 +127,17 @@ describe('generateZPL — printer params', () => {
     expect(zpl).toContain('^FO50,65');
   });
 
-  it('clamps shifted FO at 0 when offset exceeds field position', () => {
+  it('drops fields whose offset-adjusted origin would be negative', () => {
+    // Clamping would silently relocate the box into the visible area,
+    // breaking WYSIWYG; emitting negative ^FO is undefined per ZPL spec
+    // and printer-dependent. The conservative choice is to omit the
+    // field — analogous to a layer outside the artboard in a design tool.
     const zpl = generateZPL(
       { ...BASE_LABEL, labelHomeX: 30, labelHomeY: 20 },
       [boxAt(10, 5)],
     );
-    expect(zpl).toContain('^FO0,0');
+    expect(zpl).not.toContain('^GB');
+    expect(zpl).not.toContain('^FO');
   });
 
   it('emits ^CF with width as third positional param', () => {

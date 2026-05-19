@@ -83,17 +83,18 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
   }
 
   // Apply ^LH/^LT compensation: subtract the offsets from each leaf's
-  // (x, y) before delegating to the registry. Clamp at 0 — Zebra rejects
-  // negative ^FO. Group containers recurse; their children's coords are
-  // absolute in the model so the same shift applies per leaf. Skip the
-  // copy entirely when no offset is active.
-  const shiftLeaf = (obj: LabelObject): LabelObject => {
-    if (isGroup(obj)) return { ...obj, children: obj.children.map(shiftLeaf) };
-    return {
-      ...obj,
-      x: Math.max(0, obj.x - homeX),
-      y: Math.max(0, obj.y - homeY - top),
-    };
+  // (x, y) before delegating to the registry. Leaves whose origin would
+  // land negative are dropped from emission — Zebra rejects negative ^FO
+  // and clamping would silently relocate them into the visible area,
+  // breaking the editor's WYSIWYG promise. Groups recurse; their children
+  // store absolute coords so the same shift applies per leaf.
+  const shiftLeaf = (obj: LabelObject): LabelObject[] => {
+    if (isGroup(obj)) {
+      return [{ ...obj, children: obj.children.flatMap(shiftLeaf) }];
+    }
+    const x = obj.x - homeX;
+    const y = obj.y - homeY - top;
+    return x < 0 || y < 0 ? [] : [{ ...obj, x, y }];
   };
 
   // Groups are structural only — they emit no ZPL of their own. A group
@@ -109,7 +110,7 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
   };
   const shifted =
     homeX !== 0 || homeY !== 0 || top !== 0
-      ? objects.map(shiftLeaf)
+      ? objects.flatMap(shiftLeaf)
       : objects;
   lines.push(...shifted.flatMap(emitLeaf));
 
