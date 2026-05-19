@@ -3,10 +3,12 @@ import { getAllFonts, loadFontFile, removeFont } from '../../lib/fontCache';
 import { useFontCacheVersion } from '../../hooks/useFontCacheVersion';
 import { useLabelStore } from '../../store/labelStore';
 import { useT } from '../../lib/useT';
+import {
+  DEFAULT_FONT_DRIVE,
+  normalizeAlias,
+  upsertCustomFontMapping,
+} from '../../lib/customFonts';
 import { inputCls, labelCls } from '../Properties/styles';
-import type { CustomFontMapping } from '../../types/ObjectType';
-
-const ALIAS_CHAR_RE = /[^A-Z0-9]/g;
 
 export function FontManager() {
   const t = useT();
@@ -24,12 +26,11 @@ export function FontManager() {
   for (const m of customFonts ?? []) aliasByPath.set(m.path, m.alias);
 
   const setAlias = (path: string, rawAlias: string) => {
-    const alias = rawAlias.toUpperCase().replace(ALIAS_CHAR_RE, '').slice(0, 1);
-    const list = customFonts ?? [];
-    const withoutThis = list.filter((m) => m.path !== path);
-    const next: CustomFontMapping[] = alias
-      ? [...withoutThis, { alias, path }]
-      : withoutThis;
+    const next = upsertCustomFontMapping(
+      customFonts,
+      path,
+      normalizeAlias(rawAlias),
+    );
     setLabelConfig({ customFonts: next.length > 0 ? next : undefined });
   };
 
@@ -45,7 +46,7 @@ export function FontManager() {
 
       <div className="flex flex-col gap-1">
         {fonts.map((font) => {
-          const path = `E:${font.name}`;
+          const path = `${DEFAULT_FONT_DRIVE}${font.name}`;
           return (
             <FontEntry
               key={font.name}
@@ -85,14 +86,14 @@ function FontEntry({ name, alias, onAliasChange }: FontEntryProps) {
   const t = useT();
 
   return (
-    <div className="group grid grid-cols-[1rem_1fr_2rem_auto] items-center gap-2 px-2 py-1.5 rounded border border-transparent hover:border-border-2 hover:bg-surface-2 transition-colors">
+    <div className="group grid grid-cols-[1rem_1fr_3rem_auto] items-center gap-2 px-2 py-1.5 rounded border border-transparent hover:border-border-2 hover:bg-surface-2 transition-colors">
       <span className="font-mono text-[11px] text-accent text-center">F</span>
       <span className="font-mono text-xs text-text truncate">{name}</span>
       <input
         type="text"
         className={`${inputCls} text-center`}
         maxLength={1}
-        placeholder="?"
+        placeholder="A-Z"
         title={alias ? t.fonts.aliasAssigned : t.fonts.aliasHint}
         value={alias}
         onChange={(e) => onAliasChange(e.target.value)}

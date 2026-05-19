@@ -7,11 +7,11 @@ import { CollapsibleSection } from "../ui/CollapsibleSection";
 import { useT } from "../../lib/useT";
 import { getAllFonts } from "../../lib/fontCache";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
+import { normalizeAlias, DEFAULT_FONT_DRIVE } from "../../lib/customFonts";
 import { inputCls } from "./styles";
 import type { CustomFontMapping } from "../../types/ObjectType";
 
 const PATHS_DATALIST_ID = "zpl-custom-font-paths";
-const ALIAS_CHAR_RE = /[^A-Z0-9]/g;
 
 /** Standard Zebra storage drive prefixes. Surfaced as datalist hints so
  *  users new to ZPL discover the path syntax without reading the spec.
@@ -35,7 +35,9 @@ export function CustomFontsSection({
   // useFontCacheVersion triggers a re-render whenever the font cache
   // changes; the React Compiler handles memoisation downstream.
   useFontCacheVersion();
-  const uploadedPaths = getAllFonts().map((f) => `E:${f.name}`);
+  const uploadedPaths = getAllFonts().map(
+    (f) => `${DEFAULT_FONT_DRIVE}${f.name}`,
+  );
 
   // Count alias occurrences so duplicates can be flagged inline. Empty
   // aliases never count as duplicates of each other.
@@ -102,11 +104,7 @@ export function CustomFontsSection({
                 aria-invalid={dup || undefined}
                 value={m.alias}
                 onChange={(e) =>
-                  updateAt(i, {
-                    alias: e.target.value
-                      .toUpperCase()
-                      .replace(ALIAS_CHAR_RE, ""),
-                  })
+                  updateAt(i, { alias: normalizeAlias(e.target.value) })
                 }
               />
               <input
