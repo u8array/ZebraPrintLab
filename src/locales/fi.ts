@@ -121,6 +121,14 @@ const fi = {
     defaultFontId: 'Fontti',
     defaultFontHeight: 'Korkeus (pisteet)',
     defaultFontWidth: 'Leveys (dots)',
+    customFontsHeading: 'Mukautetut fontit',
+    customFontsHint: 'Aliakset tulostimeen tallennetuille fonteille.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Yksi merkki: A-Z tai 0-9',
+    customFontsDuplicateAlias: 'Toistuva alias, vain viimeinen määritys vaikuttaa.',
+    customFontsPath: 'Fonttitiedosto (esim. E:ARIAL.TTF)',
+    customFontsAdd: 'Lisää määritys',
+    customFontsRemove: 'Poista',
   },
 
   app: {
@@ -440,7 +448,13 @@ const fi = {
     upload: 'Lataa',
     cancel: 'Peruuta',
     delete: 'Poista',
+    deleteConfirm: 'Poista tämä fontti suunnittelusta?',
     uploadError: 'Fonttitiedostoa ei voitu ladata',
+    aliasHint: 'ZPL-alias tälle etiketille (1 merkki, A-Z tai 0-9)',
+    aliasAssigned: 'Tälle etiketille määritetty ZPL-alias',
+    manualMappingsHeading: 'Fontit tulostimessa',
+    manualMappingsHint: 'Viittaa fontteihin, jotka ovat jo tulostimessa mutta joita ei ole ladattu tänne.',
+    addManualMapping: 'Lisää tulostimen fontti',
   },
   zebraPrint: {
     heading: 'Lähetä Zebra-tulostimelle',

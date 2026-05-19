@@ -308,6 +308,11 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   // ^LT label top (vertical offset applied to all field positions)
   let ltY = 0;
 
+  // ^CW alias→path mappings. Single-character aliases that resolve
+  // ^A{alias} field references back to the original font path. Built
+  // as the parser walks the header, consulted on each ^A{X} encounter.
+  const fontAliases = new Map<string, string>();
+
   // ^FH state (field hex indicator)
   let fhActive = false;
   let fhDelimiter = "_";
@@ -1286,8 +1291,24 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       }
     },
 
+    // ^CW {alias},{path} — register an alias for a printer-resident font.
+    // Subsequent ^A{alias} fields resolve to {path} via the fontAliases
+    // map. The mapping is also persisted on labelConfig so the generator
+    // can re-emit it on round-trip. Upsert by alias mirrors the
+    // Map-set semantics of fontAliases: a later ^CW for the same alias
+    // replaces the earlier mapping rather than accumulating duplicates.
+    CW(p) {
+      const alias = (p[0] ?? "").trim().toUpperCase();
+      const path = (p[1] ?? "").trim();
+      if (!/^[A-Z0-9]$/.test(alias) || !path) return;
+      fontAliases.set(alias, path);
+      const list = (labelConfig.customFonts ?? []).filter(
+        (m) => m.alias !== alias,
+      );
+      labelConfig.customFonts = [...list, { alias, path }];
+    },
+
     // ── Browser-limit: printer-specific features ────────────────────────────
-    CW: mkBrowserLimit("CW"), // font identifier — assigns alias to printer-resident font
     FL: mkBrowserLimit("FL"), // font link — links fonts on printer storage
     HT: mkBrowserLimit("HT"), // head test — diagnostic for print head
     LF: mkBrowserLimit("LF"), // list fonts — queries printer for installed fonts
@@ -1378,7 +1399,17 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
       textH = int(p[1], cfHeight || 30);
       textW = int(p[2], cfWidth || 0);
-      partialCmds.add(`^${cmd}`);
+      // Resolve the font letter via the ^CW alias table if known; the
+      // path is stored verbatim with its drive prefix (e.g. "E:FOO.TTF"),
+      // so strip the "X:" segment before handing it to the text object.
+      const aliasPath = fontAliases.get(cmd[1] ?? "");
+      if (aliasPath) {
+        const colonIdx = aliasPath.indexOf(":");
+        pendingPrinterFontName =
+          (colonIdx >= 0 ? aliasPath.slice(colonIdx + 1) : aliasPath) || undefined;
+      } else {
+        partialCmds.add(`^${cmd}`);
+      }
       continue;
     }
 

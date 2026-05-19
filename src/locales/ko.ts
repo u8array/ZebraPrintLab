@@ -121,6 +121,14 @@ const ko = {
     defaultFontId: '글꼴',
     defaultFontHeight: '높이 (도트)',
     defaultFontWidth: '너비 (dots)',
+    customFontsHeading: '사용자 글꼴',
+    customFontsHint: '프린터에 저장된 글꼴의 별칭입니다.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: '한 글자: A-Z 또는 0-9',
+    customFontsDuplicateAlias: '중복된 별칭, 마지막 매핑만 적용됩니다.',
+    customFontsPath: '글꼴 파일 (예: E:ARIAL.TTF)',
+    customFontsAdd: '매핑 추가',
+    customFontsRemove: '제거',
   },
 
   app: {
@@ -440,7 +448,13 @@ const ko = {
     upload: '업로드',
     cancel: '취소',
     delete: '삭제',
+    deleteConfirm: '이 글꼴을 디자인에서 제거하시겠습니까?',
     uploadError: '글꼴 파일을 불러올 수 없습니다',
+    aliasHint: '이 라벨의 ZPL 별칭 (1 글자, A-Z 또는 0-9)',
+    aliasAssigned: '이 라벨에 할당된 ZPL 별칭',
+    manualMappingsHeading: '프린터 내 글꼴',
+    manualMappingsHint: '프린터에 이미 있지만 여기에 업로드되지 않은 글꼴을 참조합니다.',
+    addManualMapping: '프린터 글꼴 추가',
   },
   zebraPrint: {
     heading: 'Zebra 프린터로 전송',

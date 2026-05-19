@@ -121,6 +121,14 @@ const pl = {
     defaultFontId: 'Czcionka',
     defaultFontHeight: 'Wysokość (punkty)',
     defaultFontWidth: 'Szerokość (dots)',
+    customFontsHeading: 'Niestandardowe czcionki',
+    customFontsHint: 'Aliasy dla czcionek zapisanych w pamięci drukarki.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Jeden znak: A-Z lub 0-9',
+    customFontsDuplicateAlias: 'Zduplikowany alias, działa tylko ostatnie mapowanie.',
+    customFontsPath: 'Plik czcionki (np. E:ARIAL.TTF)',
+    customFontsAdd: 'Dodaj mapowanie',
+    customFontsRemove: 'Usuń',
   },
 
   app: {
@@ -440,7 +448,13 @@ const pl = {
     upload: 'Prześlij',
     cancel: 'Anuluj',
     delete: 'Usuń',
+    deleteConfirm: 'Usunąć tę czcionkę z projektu?',
     uploadError: 'Nie można załadować pliku czcionki',
+    aliasHint: 'Alias ZPL dla tej etykiety (1 znak, A-Z lub 0-9)',
+    aliasAssigned: 'Przypisany alias ZPL dla tej etykiety',
+    manualMappingsHeading: 'Czcionki w pamięci drukarki',
+    manualMappingsHint: 'Odwołuje się do czcionek już w drukarce, niewgranych tutaj.',
+    addManualMapping: 'Dodaj czcionkę drukarki',
   },
   zebraPrint: {
     heading: 'Wyślij do drukarki Zebra',

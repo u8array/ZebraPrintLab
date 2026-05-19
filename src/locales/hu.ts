@@ -121,6 +121,14 @@ const hu = {
     defaultFontId: 'Betűtípus',
     defaultFontHeight: 'Magasság (pontok)',
     defaultFontWidth: 'Szélesség (dots)',
+    customFontsHeading: 'Egyéni betűtípusok',
+    customFontsHint: 'Aliasok a nyomtatón tárolt betűtípusokhoz.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Egy karakter: A-Z vagy 0-9',
+    customFontsDuplicateAlias: 'Ismétlődő alias, csak az utolsó hozzárendelés érvényes.',
+    customFontsPath: 'Betűtípusfájl (pl. E:ARIAL.TTF)',
+    customFontsAdd: 'Hozzárendelés hozzáadása',
+    customFontsRemove: 'Eltávolítás',
   },
 
   app: {
@@ -440,7 +448,13 @@ const hu = {
     upload: 'Feltöltés',
     cancel: 'Mégse',
     delete: 'Törlés',
+    deleteConfirm: 'Eltávolítja ezt a betűtípust a tervből?',
     uploadError: 'A betűtípus-fájl nem tölthető be',
+    aliasHint: 'ZPL alias ehhez a címkéhez (1 karakter, A-Z vagy 0-9)',
+    aliasAssigned: 'Hozzárendelt ZPL alias ehhez a címkéhez',
+    manualMappingsHeading: 'Betűtípusok a nyomtatón',
+    manualMappingsHint: 'Hivatkozás a nyomtatón már lévő, itt fel nem töltött betűtípusokra.',
+    addManualMapping: 'Nyomtató betűtípus hozzáadása',
   },
   zebraPrint: {
     heading: 'Küldés Zebra nyomtatóra',

@@ -121,6 +121,14 @@ const bg = {
     defaultFontId: 'Шрифт',
     defaultFontHeight: 'Височина (точки)',
     defaultFontWidth: 'Ширина (dots)',
+    customFontsHeading: 'Персонализирани шрифтове',
+    customFontsHint: 'Псевдоними за шрифтове, съхранени в принтера.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Един знак: A-Z или 0-9',
+    customFontsDuplicateAlias: 'Дублиран псевдоним, действа само последното съпоставяне.',
+    customFontsPath: 'Файл с шрифт (напр. E:ARIAL.TTF)',
+    customFontsAdd: 'Добави съпоставяне',
+    customFontsRemove: 'Премахни',
   },
 
   app: {
@@ -440,7 +448,13 @@ const bg = {
     upload: 'Качване',
     cancel: 'Отказ',
     delete: 'Изтриване',
+    deleteConfirm: 'Премахване на този шрифт от дизайна?',
     uploadError: 'Неуспешно зареждане на шрифтов файл',
+    aliasHint: 'ZPL псевдоним за този етикет (1 знак, A-Z или 0-9)',
+    aliasAssigned: 'Зададен ZPL псевдоним за този етикет',
+    manualMappingsHeading: 'Шрифтове в принтера',
+    manualMappingsHint: 'Препратка към шрифтове, които вече са в принтера, но не са качени тук.',
+    addManualMapping: 'Добави шрифт на принтера',
   },
   zebraPrint: {
     heading: 'Изпрати към принтер Zebra',

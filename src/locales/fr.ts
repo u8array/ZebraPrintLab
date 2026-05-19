@@ -121,6 +121,14 @@ const fr = {
     defaultFontId: 'Police',
     defaultFontHeight: 'Hauteur (points)',
     defaultFontWidth: 'Largeur (dots)',
+    customFontsHeading: 'Polices personnalisées',
+    customFontsHint: 'Alias pour les polices stockées sur l\'imprimante.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Un seul caractère : A-Z ou 0-9',
+    customFontsDuplicateAlias: 'Alias en double, seul le dernier mappage est appliqué.',
+    customFontsPath: 'Fichier de police (ex. E:ARIAL.TTF)',
+    customFontsAdd: 'Ajouter un mappage',
+    customFontsRemove: 'Supprimer',
   },
 
   app: {
@@ -440,7 +448,13 @@ const fr = {
     upload: 'Téléverser',
     cancel: 'Annuler',
     delete: 'Supprimer',
+    deleteConfirm: 'Retirer cette police du design ?',
     uploadError: 'Impossible de charger le fichier de police',
+    aliasHint: 'Alias ZPL pour cette étiquette (1 caractère, A-Z ou 0-9)',
+    aliasAssigned: 'Alias ZPL assigné pour cette étiquette',
+    manualMappingsHeading: 'Polices résidentes',
+    manualMappingsHint: 'Référencer des polices déjà présentes sur l\'imprimante mais non téléversées ici.',
+    addManualMapping: 'Ajouter une police d\'imprimante',
   },
   zebraPrint: {
     heading: 'Envoyer à l’imprimante Zebra',

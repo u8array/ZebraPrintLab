@@ -121,6 +121,14 @@ const he = {
     defaultFontId: 'גופן',
     defaultFontHeight: 'גובה (נקודות)',
     defaultFontWidth: 'רוחב (dots)',
+    customFontsHeading: 'גופנים מותאמים',
+    customFontsHint: 'כינויים לגופנים השמורים במדפסת.',
+    customFontsAlias: 'מזהה',
+    customFontsAliasHint: 'תו אחד: A-Z או 0-9',
+    customFontsDuplicateAlias: 'כינוי כפול, רק המיפוי האחרון מיושם.',
+    customFontsPath: 'קובץ גופן (לדוגמה E:ARIAL.TTF)',
+    customFontsAdd: 'הוסף מיפוי',
+    customFontsRemove: 'הסר',
   },
 
   app: {
@@ -440,7 +448,13 @@ const he = {
     upload: 'העלה',
     cancel: 'ביטול',
     delete: 'מחק',
+    deleteConfirm: 'להסיר גופן זה מהעיצוב?',
     uploadError: 'לא ניתן לטעון את קובץ הגופן',
+    aliasHint: 'כינוי ZPL לתווית זו (תו אחד, A-Z או 0-9)',
+    aliasAssigned: 'כינוי ZPL מוקצה לתווית זו',
+    manualMappingsHeading: 'גופנים השמורים במדפסת',
+    manualMappingsHint: 'התייחסות לגופנים שכבר נמצאים במדפסת ולא הועלו כאן.',
+    addManualMapping: 'הוסף גופן מדפסת',
   },
   zebraPrint: {
     heading: 'שלח למדפסת Zebra',

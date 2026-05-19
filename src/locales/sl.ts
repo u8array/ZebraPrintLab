@@ -121,6 +121,14 @@ const sl = {
     defaultFontId: 'Pisava',
     defaultFontHeight: 'Višina (točke)',
     defaultFontWidth: 'Širina (dots)',
+    customFontsHeading: 'Pisave po meri',
+    customFontsHint: 'Vzdevki za pisave shranjene v tiskalniku.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'En znak: A-Z ali 0-9',
+    customFontsDuplicateAlias: 'Podvojen vzdevek, uveljavi se le zadnja preslikava.',
+    customFontsPath: 'Datoteka pisave (npr. E:ARIAL.TTF)',
+    customFontsAdd: 'Dodaj preslikavo',
+    customFontsRemove: 'Odstrani',
   },
 
   app: {
@@ -440,7 +448,13 @@ const sl = {
     upload: 'Naloži',
     cancel: 'Prekliči',
     delete: 'Izbriši',
+    deleteConfirm: 'Odstrani to pisavo iz oblikovanja?',
     uploadError: 'Datoteke pisave ni bilo mogoče naložiti',
+    aliasHint: 'ZPL vzdevek za to etiketo (1 znak, A-Z ali 0-9)',
+    aliasAssigned: 'Dodeljen ZPL vzdevek za to etiketo',
+    manualMappingsHeading: 'Pisave v tiskalniku',
+    manualMappingsHint: 'Sklicevanje na pisave, ki so že v tiskalniku, vendar tukaj niso naložene.',
+    addManualMapping: 'Dodaj pisavo tiskalnika',
   },
   zebraPrint: {
     heading: 'Pošlji na tiskalnik Zebra',

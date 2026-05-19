@@ -121,6 +121,14 @@ const el = {
     defaultFontId: 'Γραμματοσειρά',
     defaultFontHeight: 'Ύψος (κουκκίδες)',
     defaultFontWidth: 'Πλάτος (dots)',
+    customFontsHeading: 'Προσαρμοσμένες γραμματοσειρές',
+    customFontsHint: 'Ψευδώνυμα για γραμματοσειρές αποθηκευμένες στον εκτυπωτή.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Ένας χαρακτήρας: A-Z ή 0-9',
+    customFontsDuplicateAlias: 'Διπλό ψευδώνυμο, εφαρμόζεται μόνο η τελευταία αντιστοίχιση.',
+    customFontsPath: 'Αρχείο γραμματοσειράς (π.χ. E:ARIAL.TTF)',
+    customFontsAdd: 'Προσθήκη αντιστοίχισης',
+    customFontsRemove: 'Αφαίρεση',
   },
 
   app: {
@@ -440,7 +448,13 @@ const el = {
     upload: 'Μεταφόρτωση',
     cancel: 'Ακύρωση',
     delete: 'Διαγραφή',
+    deleteConfirm: 'Αφαίρεση αυτής της γραμματοσειράς από τη σχεδίαση;',
     uploadError: 'Δεν ήταν δυνατή η φόρτωση του αρχείου γραμματοσειράς',
+    aliasHint: 'Ψευδώνυμο ZPL για αυτή την ετικέτα (1 χαρακτήρας, A-Z ή 0-9)',
+    aliasAssigned: 'Εκχωρημένο ψευδώνυμο ZPL για αυτή την ετικέτα',
+    manualMappingsHeading: 'Γραμματοσειρές στον εκτυπωτή',
+    manualMappingsHint: 'Αναφορά σε γραμματοσειρές που βρίσκονται ήδη στον εκτυπωτή αλλά δεν έχουν μεταφορτωθεί εδώ.',
+    addManualMapping: 'Προσθήκη γραμματοσειράς εκτυπωτή',
   },
   zebraPrint: {
     heading: 'Αποστολή σε εκτυπωτή Zebra',

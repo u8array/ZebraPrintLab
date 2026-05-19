@@ -121,6 +121,14 @@ const et = {
     defaultFontId: 'Font',
     defaultFontHeight: 'Kõrgus (punktid)',
     defaultFontWidth: 'Laius (dots)',
+    customFontsHeading: 'Kohandatud fondid',
+    customFontsHint: 'Aliased printeris salvestatud fontidele.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Üks märk: A-Z või 0-9',
+    customFontsDuplicateAlias: 'Korduv alias, kehtib ainult viimane vastendus.',
+    customFontsPath: 'Fondifail (nt E:ARIAL.TTF)',
+    customFontsAdd: 'Lisa vastendus',
+    customFontsRemove: 'Eemalda',
   },
 
   app: {
@@ -440,7 +448,13 @@ const et = {
     upload: 'Laadi üles',
     cancel: 'Tühista',
     delete: 'Kustuta',
+    deleteConfirm: 'Eemaldada see font kujundusest?',
     uploadError: 'Fondifaili ei saanud laadida',
+    aliasHint: 'ZPL alias selle sildi jaoks (1 märk, A-Z või 0-9)',
+    aliasAssigned: 'Sellele sildile määratud ZPL alias',
+    manualMappingsHeading: 'Printeri fondid',
+    manualMappingsHint: 'Viide printeris juba olevatele fontidele, mida pole siia üles laaditud.',
+    addManualMapping: 'Lisa printeri font',
   },
   zebraPrint: {
     heading: 'Saada Zebra printerile',

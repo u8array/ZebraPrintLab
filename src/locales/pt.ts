@@ -121,6 +121,14 @@ const pt = {
     defaultFontId: 'Fonte',
     defaultFontHeight: 'Altura (pontos)',
     defaultFontWidth: 'Largura (dots)',
+    customFontsHeading: 'Fontes personalizadas',
+    customFontsHint: 'Aliases para fontes armazenadas na impressora.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Um único caractere: A-Z ou 0-9',
+    customFontsDuplicateAlias: 'Alias duplicado, só o último mapeamento é aplicado.',
+    customFontsPath: 'Arquivo de fonte (ex. E:ARIAL.TTF)',
+    customFontsAdd: 'Adicionar mapeamento',
+    customFontsRemove: 'Remover',
   },
 
   app: {
@@ -440,7 +448,13 @@ const pt = {
     upload: 'Carregar',
     cancel: 'Cancelar',
     delete: 'Excluir',
+    deleteConfirm: 'Remover esta fonte do design?',
     uploadError: 'Não foi possível carregar o arquivo de fonte',
+    aliasHint: 'Alias ZPL para esta etiqueta (1 caractere, A-Z ou 0-9)',
+    aliasAssigned: 'Alias ZPL atribuído a esta etiqueta',
+    manualMappingsHeading: 'Fontes residentes na impressora',
+    manualMappingsHint: 'Referencia fontes já presentes na impressora mas não enviadas aqui.',
+    addManualMapping: 'Adicionar fonte da impressora',
   },
   zebraPrint: {
     heading: 'Enviar para impressora Zebra',

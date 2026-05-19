@@ -121,6 +121,14 @@ const no = {
     defaultFontId: 'Skrift',
     defaultFontHeight: 'Høyde (punkter)',
     defaultFontWidth: 'Bredde (dots)',
+    customFontsHeading: 'Egendefinerte skrifter',
+    customFontsHint: 'Aliaser for skrifter som ligger på skriveren.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Ett tegn: A-Z eller 0-9',
+    customFontsDuplicateAlias: 'Duplisert alias, kun siste mapping gjelder.',
+    customFontsPath: 'Skriftfil (f.eks. E:ARIAL.TTF)',
+    customFontsAdd: 'Legg til mapping',
+    customFontsRemove: 'Fjern',
   },
 
   app: {
@@ -440,7 +448,13 @@ const no = {
     upload: 'Last opp',
     cancel: 'Avbryt',
     delete: 'Slett',
+    deleteConfirm: 'Fjern denne skriften fra designet?',
     uploadError: 'Klarte ikke laste inn skriftfilen',
+    aliasHint: 'ZPL-alias for denne etiketten (1 tegn, A-Z eller 0-9)',
+    aliasAssigned: 'Tilordnet ZPL-alias for denne etiketten',
+    manualMappingsHeading: 'Skrifter på skriveren',
+    manualMappingsHint: 'Referer til skrifter som allerede ligger på skriveren, men ikke er lastet opp her.',
+    addManualMapping: 'Legg til skriverskrift',
   },
   zebraPrint: {
     heading: 'Send til Zebra-skriver',

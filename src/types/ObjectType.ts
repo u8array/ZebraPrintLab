@@ -1,6 +1,14 @@
 import type React from 'react';
 import { z } from 'zod';
 
+/** A single ^CW mapping: a 1-character alias [A-Z0-9] paired with a font
+ *  path on the printer's storage (e.g. "E:ARIAL.TTF"). */
+export const customFontMappingSchema = z.object({
+  alias: z.string().regex(/^[A-Z0-9]$/),
+  path: z.string().min(1),
+});
+export type CustomFontMapping = z.infer<typeof customFontMappingSchema>;
+
 export const labelConfigSchema = z.object({
   widthMm: z.number(),
   heightMm: z.number(),
@@ -38,6 +46,10 @@ export const labelConfigSchema = z.object({
   defaultFontHeight: z.number().int().positive().optional(),
   /** ^CF width param. Spec allows 0 → printer auto-derives from height. */
   defaultFontWidth: z.number().int().min(0).optional(),
+  /** ^CW alias→path mappings emitted at the top of the label. Each entry
+   *  registers a single-char identifier ([A-Z0-9]) that ^A{alias} fields
+   *  can reference instead of the verbose ^A@…E:font.TTF form. */
+  customFonts: z.array(customFontMappingSchema).optional(),
 });
 
 export type LabelConfig = z.infer<typeof labelConfigSchema>;

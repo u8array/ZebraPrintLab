@@ -121,6 +121,14 @@ const sk = {
     defaultFontId: 'Písmo',
     defaultFontHeight: 'Výška (body)',
     defaultFontWidth: 'Šírka (dots)',
+    customFontsHeading: 'Vlastné písma',
+    customFontsHint: 'Aliasy pre písma uložené v tlačiarni.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Jeden znak: A-Z alebo 0-9',
+    customFontsDuplicateAlias: 'Duplicitný alias, uplatní sa iba posledné mapovanie.',
+    customFontsPath: 'Súbor písma (napr. E:ARIAL.TTF)',
+    customFontsAdd: 'Pridať mapovanie',
+    customFontsRemove: 'Odstrániť',
   },
 
   app: {
@@ -440,7 +448,13 @@ const sk = {
     upload: 'Nahrať',
     cancel: 'Zrušiť',
     delete: 'Odstrániť',
+    deleteConfirm: 'Odstrániť toto písmo z návrhu?',
     uploadError: 'Súbor písma sa nepodarilo načítať',
+    aliasHint: 'ZPL alias pre tento štítok (1 znak, A-Z alebo 0-9)',
+    aliasAssigned: 'Priradený ZPL alias pre tento štítok',
+    manualMappingsHeading: 'Písma uložené v tlačiarni',
+    manualMappingsHint: 'Odkaz na písma, ktoré sú už v tlačiarni, ale tu nie sú nahrané.',
+    addManualMapping: 'Pridať písmo tlačiarne',
   },
   zebraPrint: {
     heading: 'Odoslať na tlačiareň Zebra',

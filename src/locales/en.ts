@@ -121,6 +121,14 @@ const en = {
     defaultFontId: 'Font',
     defaultFontHeight: 'Height (dots)',
     defaultFontWidth: 'Width (dots)',
+    customFontsHeading: 'Custom fonts',
+    customFontsHint: 'Aliases for fonts stored on the printer.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Single character: A-Z or 0-9',
+    customFontsDuplicateAlias: 'Duplicate alias, only the last mapping takes effect.',
+    customFontsPath: 'Font file (e.g. E:ARIAL.TTF)',
+    customFontsAdd: 'Add mapping',
+    customFontsRemove: 'Remove',
   },
 
   app: {
@@ -461,7 +469,13 @@ const en = {
     upload: 'Upload',
     cancel: 'Cancel',
     delete: 'Delete',
+    deleteConfirm: 'Remove this font from the design?',
     uploadError: 'Could not load font file',
+    aliasHint: 'ZPL alias for this label (1 char, A-Z or 0-9)',
+    aliasAssigned: 'Assigned ZPL alias for this label',
+    manualMappingsHeading: 'Printer-resident fonts',
+    manualMappingsHint: 'Reference fonts already on the printer that are not uploaded here.',
+    addManualMapping: 'Add printer font',
   },
 } as const;
 

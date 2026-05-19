@@ -197,6 +197,118 @@ describe('generateZPL — printer params', () => {
     expect(zpl).not.toContain('^CFA,');
   });
 
+  it('emits one ^CW per custom font mapping', () => {
+    const zpl = generateZPL(
+      {
+        ...BASE_LABEL,
+        customFonts: [
+          { alias: 'M', path: 'E:ARIAL.TTF' },
+          { alias: 'B', path: 'E:BOLD.TTF' },
+        ],
+      },
+      [],
+    );
+    expect(zpl).toContain('^CWM,E:ARIAL.TTF');
+    expect(zpl).toContain('^CWB,E:BOLD.TTF');
+  });
+
+  it('omits ^CW when customFonts is absent or empty', () => {
+    expect(generateZPL(BASE_LABEL, [])).not.toContain('^CW');
+    expect(
+      generateZPL({ ...BASE_LABEL, customFonts: [] }, []),
+    ).not.toContain('^CW');
+  });
+
+  it('skips ^CW entries with empty alias or path', () => {
+    const zpl = generateZPL(
+      {
+        ...BASE_LABEL,
+        customFonts: [
+          { alias: '', path: 'E:ORPHAN.TTF' },
+          { alias: 'A', path: '' },
+          { alias: 'B', path: 'E:OK.TTF' },
+        ],
+      },
+      [],
+    );
+    expect(zpl).not.toContain('^CW,');
+    expect(zpl).not.toContain('^CWA,\n');
+    expect(zpl).toContain('^CWB,E:OK.TTF');
+  });
+
+  it.each(['N', 'R', 'I', 'B'] as const)(
+    'rewrites ^A@%s to ^A{alias} when a matching ^CW mapping exists',
+    (rotation) => {
+      const text: LabelObject = {
+        id: 't1',
+        type: 'text',
+        x: 10,
+        y: 10,
+        rotation: 0,
+        props: {
+          content: 'hi',
+          rotation,
+          fontHeight: 30,
+          fontWidth: 0,
+          printerFontName: 'ARIAL.TTF',
+        },
+      };
+      const zpl = generateZPL(
+        {
+          ...BASE_LABEL,
+          customFonts: [{ alias: 'M', path: 'E:ARIAL.TTF' }],
+        },
+        [text],
+      );
+      expect(zpl).toContain('^CWM,E:ARIAL.TTF');
+      expect(zpl).toContain(`^AM${rotation},30,0`);
+      expect(zpl).not.toContain(`^A@${rotation},30,0,E:ARIAL.TTF`);
+    },
+  );
+
+  it('rewrites ^A@ refs across any drive prefix the path uses', () => {
+    // The path is whatever the customFonts entry stores. Even if our
+    // text emit only ever writes E:, an imported label could carry
+    // R: / A: / B: paths that still need to be matched on re-emit.
+    const rRef = '^XA^FO0,0^A@N,30,0,R:FOO.TTF^FDhi^FS^XZ';
+    const aliasByPath: Record<string, string> = { 'R:FOO.TTF': 'Q' };
+    const rewritten = rRef.replace(
+      /\^A@([NIRB]),(\d+),(\d+),([A-Z]:[^^\n]+?)(?=\^|\n|$)/g,
+      (full, rot, h, w, path) => {
+        const alias = aliasByPath[path];
+        return alias ? `^A${alias}${rot},${h},${w}` : full;
+      },
+    );
+    expect(rewritten).toContain('^AQN,30,0');
+    expect(rewritten).not.toContain('^A@N,30,0,R:FOO.TTF');
+  });
+
+  it('leaves ^A@ verbose when no matching ^CW alias is defined', () => {
+    const text: LabelObject = {
+      id: 't1',
+      type: 'text',
+      x: 10,
+      y: 10,
+      rotation: 0,
+      props: {
+        content: 'hi',
+        rotation: 'N',
+        fontHeight: 30,
+        fontWidth: 0,
+        printerFontName: 'ORPHAN.TTF',
+      },
+    };
+    const zpl = generateZPL(
+      {
+        ...BASE_LABEL,
+        customFonts: [{ alias: 'M', path: 'E:OTHER.TTF' }],
+      },
+      [text],
+    );
+    expect(zpl).toContain('^A@N,30,0,E:ORPHAN.TTF');
+    expect(zpl).not.toContain('^AMN,30,0');
+  });
+
   it('emits ^PM when mirror is set', () => {
     expect(generateZPL({ ...BASE_LABEL, mirror: 'Y' }, [])).toContain('^PMY');
     expect(generateZPL({ ...BASE_LABEL, mirror: 'N' }, [])).toContain('^PMN');

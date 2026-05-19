@@ -121,6 +121,14 @@ const it = {
     defaultFontId: 'Carattere',
     defaultFontHeight: 'Altezza (punti)',
     defaultFontWidth: 'Larghezza (dots)',
+    customFontsHeading: 'Font personalizzati',
+    customFontsHint: 'Alias per i font memorizzati sulla stampante.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Un solo carattere: A-Z o 0-9',
+    customFontsDuplicateAlias: 'Alias duplicato — solo l\'ultima mappatura ha effetto.',
+    customFontsPath: 'File del font (es. E:ARIAL.TTF)',
+    customFontsAdd: 'Aggiungi mappatura',
+    customFontsRemove: 'Rimuovi',
   },
 
   app: {
@@ -440,7 +448,13 @@ const it = {
     upload: 'Carica',
     cancel: 'Annulla',
     delete: 'Elimina',
+    deleteConfirm: 'Rimuovere questo font dal design?',
     uploadError: 'Impossibile caricare il file del carattere',
+    aliasHint: 'Alias ZPL per questa etichetta (1 carattere, A-Z o 0-9)',
+    aliasAssigned: 'Alias ZPL assegnato a questa etichetta',
+    manualMappingsHeading: 'Font residenti sulla stampante',
+    manualMappingsHint: 'Riferimento a font già presenti sulla stampante ma non caricati qui.',
+    addManualMapping: 'Aggiungi font della stampante',
   },
   zebraPrint: {
     heading: 'Invia a stampante Zebra',

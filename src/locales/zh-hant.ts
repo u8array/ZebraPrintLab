@@ -121,6 +121,14 @@ const zhHant = {
     defaultFontId: '字型',
     defaultFontHeight: '高度 (點)',
     defaultFontWidth: '寬度 (dots)',
+    customFontsHeading: '自訂字型',
+    customFontsHint: '為印表機中已有的字型設定別名。',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: '單一字元：A-Z 或 0-9',
+    customFontsDuplicateAlias: '重複別名, 僅最後一個對應生效。',
+    customFontsPath: '字型檔案 (例如 E:ARIAL.TTF)',
+    customFontsAdd: '新增對應',
+    customFontsRemove: '移除',
   },
 
   app: {
@@ -440,7 +448,13 @@ const zhHant = {
     upload: '上傳',
     cancel: '取消',
     delete: '刪除',
+    deleteConfirm: '從設計中移除此字型？',
     uploadError: '無法載入字體檔案',
+    aliasHint: '此標籤的 ZPL 別名 (1 字元, A-Z 或 0-9)',
+    aliasAssigned: '此標籤的已指派 ZPL 別名',
+    manualMappingsHeading: '印表機內建字型',
+    manualMappingsHint: '參照印表機中已有但未在此上傳的字型。',
+    addManualMapping: '新增印表機字型',
   },
   zebraPrint: {
     heading: '傳送至 Zebra 印表機',

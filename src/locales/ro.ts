@@ -121,6 +121,14 @@ const ro = {
     defaultFontId: 'Font',
     defaultFontHeight: 'Înălțime (puncte)',
     defaultFontWidth: 'Lățime (dots)',
+    customFontsHeading: 'Fonturi personalizate',
+    customFontsHint: 'Aliasuri pentru fonturile stocate pe imprimantă.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Un singur caracter: A-Z sau 0-9',
+    customFontsDuplicateAlias: 'Alias duplicat, doar ultima mapare are efect.',
+    customFontsPath: 'Fișier font (ex. E:ARIAL.TTF)',
+    customFontsAdd: 'Adaugă mapare',
+    customFontsRemove: 'Elimină',
   },
 
   app: {
@@ -440,7 +448,13 @@ const ro = {
     upload: 'Încarcă',
     cancel: 'Anulează',
     delete: 'Șterge',
+    deleteConfirm: 'Eliminați acest font din design?',
     uploadError: 'Fisierul de font nu a putut fi incarcat',
+    aliasHint: 'Alias ZPL pentru această etichetă (1 caracter, A-Z sau 0-9)',
+    aliasAssigned: 'Alias ZPL atribuit acestei etichete',
+    manualMappingsHeading: 'Fonturi din imprimantă',
+    manualMappingsHint: 'Referință la fonturi deja prezente pe imprimantă, neîncărcate aici.',
+    addManualMapping: 'Adaugă font imprimantă',
   },
   zebraPrint: {
     heading: 'Trimite la imprimanta Zebra',

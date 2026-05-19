@@ -64,6 +64,18 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
   if (top !== 0) lines.push(`^LT${top}`);
   if (label.labelShift) lines.push(`^LS${label.labelShift}`);
 
+  // Custom font mappings ────────────────────────────────────────────────────
+  // ^CW assigns a single-char alias to a font path on the printer's
+  // storage, so subsequent ^A{alias} fields can reference it without
+  // restating the full E:font.TTF path. Skip mappings with an empty
+  // alias or path — these come from in-progress UI rows and would emit
+  // malformed ^CW lines that the printer drops silently.
+  if (label.customFonts?.length) {
+    for (const f of label.customFonts) {
+      if (f.alias && f.path) lines.push(`^CW${f.alias},${f.path}`);
+    }
+  }
+
   // Default font ────────────────────────────────────────────────────────────
   // ^CF f,h,w — positional. Empty slots stay empty (^CFA,,20 sets font A
   // and width 20, leaving height untouched). Trailing empty slots are
@@ -129,5 +141,25 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
 
   lines.push('^XZ');
 
-  return lines.join('\n');
+  // Rewrite ^A@...{drive}:NAME.TTF references to ^A{alias} for paths
+  // that the user has registered via ^CW. The ^CW lines are already
+  // in the header, so the printer resolves the short form against the
+  // alias table. Saves bytes and surfaces the user's alias choices in
+  // the output. The drive prefix pattern is open ([A-Z]:) so the
+  // rewrite keeps working if text emit ever supports non-E drives.
+  const aliasByPath = new Map<string, string>();
+  for (const m of label.customFonts ?? []) {
+    if (m.alias) aliasByPath.set(m.path, m.alias);
+  }
+  let output = lines.join('\n');
+  if (aliasByPath.size > 0) {
+    output = output.replace(
+      /\^A@([NIRB]),(\d+),(\d+),([A-Z]:[^^\n]+?)(?=\^|\n|$)/g,
+      (full, rot, h, w, path) => {
+        const alias = aliasByPath.get(path);
+        return alias ? `^A${alias}${rot},${h},${w}` : full;
+      },
+    );
+  }
+  return output;
 }

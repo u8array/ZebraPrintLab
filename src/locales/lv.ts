@@ -121,6 +121,14 @@ const lv = {
     defaultFontId: 'Fonts',
     defaultFontHeight: 'Augstums (punkti)',
     defaultFontWidth: 'Platums (dots)',
+    customFontsHeading: 'Pielāgotie fonti',
+    customFontsHint: 'Aliasi printerī saglabātajiem fontiem.',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: 'Viena rakstzīme: A-Z vai 0-9',
+    customFontsDuplicateAlias: 'Dublēts aliass, darbojas tikai pēdējā piesaiste.',
+    customFontsPath: 'Fonta fails (piem., E:ARIAL.TTF)',
+    customFontsAdd: 'Pievienot piesaisti',
+    customFontsRemove: 'Noņemt',
   },
 
   app: {
@@ -440,7 +448,13 @@ const lv = {
     upload: 'Augšupielādēt',
     cancel: 'Atcelt',
     delete: 'Dzēst',
+    deleteConfirm: 'Vai noņemt šo fontu no dizaina?',
     uploadError: 'Neizdevās ielādēt fontu failu',
+    aliasHint: 'ZPL aliass šai etiķetei (1 rakstzīme, A-Z vai 0-9)',
+    aliasAssigned: 'Šai etiķetei piešķirts ZPL aliass',
+    manualMappingsHeading: 'Printera fonti',
+    manualMappingsHint: 'Atsauce uz fontiem, kas jau ir printerī, bet nav augšupielādēti šeit.',
+    addManualMapping: 'Pievienot printera fontu',
   },
   zebraPrint: {
     heading: 'Sūtīt uz Zebra printeri',

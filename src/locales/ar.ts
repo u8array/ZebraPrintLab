@@ -121,6 +121,14 @@ const ar = {
     defaultFontId: 'الخط',
     defaultFontHeight: 'الارتفاع (نقاط)',
     defaultFontWidth: 'العرض (dots)',
+    customFontsHeading: 'خطوط مخصصة',
+    customFontsHint: 'أسماء مستعارة للخطوط المخزنة في الطابعة.',
+    customFontsAlias: 'المعرف',
+    customFontsAliasHint: 'حرف واحد: A-Z أو 0-9',
+    customFontsDuplicateAlias: 'معرف مكرر, يُطبَّق التعيين الأخير فقط.',
+    customFontsPath: 'ملف الخط (مثال: E:ARIAL.TTF)',
+    customFontsAdd: 'إضافة تعيين',
+    customFontsRemove: 'إزالة',
   },
 
   app: {
@@ -440,7 +448,13 @@ const ar = {
     upload: 'رفع',
     cancel: 'إلغاء',
     delete: 'حذف',
+    deleteConfirm: 'إزالة هذا الخط من التصميم؟',
     uploadError: 'تعذّر تحميل ملف الخط',
+    aliasHint: 'اسم مستعار ZPL لهذا الملصق (حرف واحد، A-Z أو 0-9)',
+    aliasAssigned: 'الاسم المستعار ZPL المعيَّن لهذا الملصق',
+    manualMappingsHeading: 'خطوط الطابعة المقيمة',
+    manualMappingsHint: 'إشارة إلى خطوط موجودة بالفعل على الطابعة لم يتم رفعها هنا.',
+    addManualMapping: 'إضافة خط طابعة',
   },
   zebraPrint: {
     heading: 'إرسال إلى طابعة Zebra',

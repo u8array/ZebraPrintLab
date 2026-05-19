@@ -121,6 +121,14 @@ const zhHans = {
     defaultFontId: '字体',
     defaultFontHeight: '高度 (点)',
     defaultFontWidth: '宽度 (dots)',
+    customFontsHeading: '自定义字体',
+    customFontsHint: '为打印机中已有的字体设置别名。',
+    customFontsAlias: 'ID',
+    customFontsAliasHint: '单个字符：A-Z 或 0-9',
+    customFontsDuplicateAlias: '重复别名, 仅最后一个映射生效。',
+    customFontsPath: '字体文件 (例如 E:ARIAL.TTF)',
+    customFontsAdd: '添加映射',
+    customFontsRemove: '移除',
   },
 
   app: {
@@ -440,7 +448,13 @@ const zhHans = {
     upload: '上传',
     cancel: '取消',
     delete: '删除',
+    deleteConfirm: '从设计中移除此字体？',
     uploadError: '无法加载字体文件',
+    aliasHint: '此标签的 ZPL 别名 (1 字符, A-Z 或 0-9)',
+    aliasAssigned: '此标签的已分配 ZPL 别名',
+    manualMappingsHeading: '打印机内置字体',
+    manualMappingsHint: '引用打印机中已有但未在此上传的字体。',
+    addManualMapping: '添加打印机字体',
   },
   zebraPrint: {
     heading: '发送到 Zebra 打印机',
