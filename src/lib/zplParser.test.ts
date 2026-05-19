@@ -604,6 +604,38 @@ describe('parseZPL — printer params', () => {
     expect(labelConfig.printSpeed).toBeUndefined();
   });
 
+  it('parses ^PR with slew and backfeed', () => {
+    const { labelConfig } = parseZPL('^XA^PR6,8,4^XZ', 8);
+    expect(labelConfig.printSpeed).toBe(6);
+    expect(labelConfig.slewSpeed).toBe(8);
+    expect(labelConfig.backfeedSpeed).toBe(4);
+  });
+
+  it('parses extended ^PQ params', () => {
+    const { labelConfig } = parseZPL('^XA^PQ5,2,3,Y^XZ', 8);
+    expect(labelConfig.printQuantity).toBe(5);
+    expect(labelConfig.pauseCount).toBe(2);
+    expect(labelConfig.replicates).toBe(3);
+    expect(labelConfig.overridePauseCount).toBe('Y');
+  });
+
+  it('parses ^PM mirror', () => {
+    expect(parseZPL('^XA^PMY^XZ', 8).labelConfig.mirror).toBe('Y');
+    expect(parseZPL('^XA^PMN^XZ', 8).labelConfig.mirror).toBe('N');
+  });
+
+  it('parses ^CF width into defaultFontWidth', () => {
+    const { labelConfig } = parseZPL('^XA^CFA,30,20^XZ', 8);
+    expect(labelConfig.defaultFontId).toBe('A');
+    expect(labelConfig.defaultFontHeight).toBe(30);
+    expect(labelConfig.defaultFontWidth).toBe(20);
+  });
+
+  it('parses ~SD instant darkness', () => {
+    expect(parseZPL('~SD07^XA^XZ', 8).labelConfig.instantDarkness).toBe(7);
+    expect(parseZPL('~SD30^XA^XZ', 8).labelConfig.instantDarkness).toBe(30);
+  });
+
   it('parses ^MD darkness including 0', () => {
     expect(parseZPL('^XA^MD0^XZ', 8).labelConfig.darkness).toBe(0);
     expect(parseZPL('^XA^MD15^XZ', 8).labelConfig.darkness).toBe(15);

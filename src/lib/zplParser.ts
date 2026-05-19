@@ -756,11 +756,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     CF(p) {
       const fontId = (p[0] ?? "").trim();
       const explicitHeight = parseInt(p[1] ?? "", 10);
+      const explicitWidth = parseInt(p[2] ?? "", 10);
       cfHeight = isNaN(explicitHeight) ? cfHeight : explicitHeight;
-      cfWidth = int(p[2], cfWidth);
+      cfWidth = isNaN(explicitWidth) ? cfWidth : explicitWidth;
       if (fontId) labelConfig.defaultFontId = fontId;
       if (!isNaN(explicitHeight) && explicitHeight > 0) {
         labelConfig.defaultFontHeight = explicitHeight;
+      }
+      if (!isNaN(explicitWidth) && explicitWidth >= 0) {
+        labelConfig.defaultFontWidth = explicitWidth;
       }
     },
 
@@ -1219,6 +1223,19 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     PQ(p) {
       const qty = int(p[0], 0);
       if (qty > 0) labelConfig.printQuantity = qty;
+      // ^PQ q,p,r,o — preserve extended params when present.
+      if (p.length > 1) {
+        const pause = int(p[1], 0);
+        if (pause >= 0 && pause <= 99999999) labelConfig.pauseCount = pause;
+      }
+      if (p.length > 2) {
+        const reps = int(p[2], 0);
+        if (reps >= 0 && reps <= 99999999) labelConfig.replicates = reps;
+      }
+      if (p.length > 3) {
+        const o = (p[3] ?? "").toUpperCase();
+        if (o === "Y" || o === "N") labelConfig.overridePauseCount = o;
+      }
     },
     MM(_, rest) {
       const mode = (rest[0] ?? "").toUpperCase() as LabelConfig["mediaMode"];
@@ -1231,6 +1248,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     PR(p) {
       const speed = int(p[0], 0);
       if (speed >= 2 && speed <= 14) labelConfig.printSpeed = speed;
+      if (p.length > 1) {
+        const slew = int(p[1], 0);
+        if (slew >= 2 && slew <= 14) labelConfig.slewSpeed = slew;
+      }
+      if (p.length > 2) {
+        const bf = int(p[2], 0);
+        if (bf >= 2 && bf <= 14) labelConfig.backfeedSpeed = bf;
+      }
     },
     MD(_, rest) {
       // Direct parse: int() falls back to 0 on NaN, which would conflate
@@ -1247,6 +1272,18 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     PO(_, rest) {
       const po = (rest[0] ?? "").toUpperCase();
       if (po === "N" || po === "I") labelConfig.printOrientation = po;
+    },
+    PM(_, rest) {
+      const m = (rest[0] ?? "").toUpperCase();
+      if (m === "Y" || m === "N") labelConfig.mirror = m;
+    },
+    // ~SD — instant darkness set (00..30). Tilde-prefix; the tokenizer
+    // drops the delimiter, so we accept this as the canonical SD handler.
+    SD(_, rest) {
+      const parsed = parseInt(rest, 10);
+      if (!isNaN(parsed) && parsed >= 0 && parsed <= 30) {
+        labelConfig.instantDarkness = parsed;
+      }
     },
 
     // ── Browser-limit: printer-specific features ────────────────────────────
@@ -1322,7 +1359,6 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     JR: noop, // restore factory defaults
     JS: noop, // change darkness
     JU: noop, // update firmware
-    PM: noop, // part of message
     PP: noop, // presentation position
   };
 

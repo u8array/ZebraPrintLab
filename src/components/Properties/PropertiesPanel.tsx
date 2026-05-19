@@ -23,6 +23,11 @@ import { AlignButtons } from "./AlignButtons";
 import { inputCls, labelCls } from "./styles";
 import type { LabelConfig } from "../../types/ObjectType";
 
+/** Built-in alphanumeric font IDs the Zebra firmware ships with. Used as
+ *  suggestions for ^CF — the input stays free-text so user-defined ^CW
+ *  aliases (single letters) can still be entered. */
+const ZPL_BUILTIN_FONT_IDS = ['0', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const;
+
 interface PropertiesPanelProps {
   /** Imperative handle on the canvas — used for actions that need live render
    *  bboxes (alignment, future zoom-to-selection, etc.). Required so the
@@ -430,7 +435,9 @@ function LabelConfigPanel({
         <CollapsibleSection
           id="label-output"
           title={t.label.outputHeading}
+          defaultOpen={false}
         >
+        <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.label.mediaMode}</label>
           <select
@@ -449,6 +456,61 @@ function LabelConfigPanel({
             <option value="D">{t.label.mediaModeD}</option>
             <option value="K">{t.label.mediaModeK}</option>
           </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>
+            {t.label.offsetsHeading}
+            <InformationCircleIcon
+              className="w-3.5 h-3.5 ml-1 inline-block align-text-bottom text-muted cursor-help"
+              title={t.label.offsetsHint}
+            />
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.labelHomeX}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                value={label.labelHomeX ?? ""}
+                min={0}
+                onChange={(e) =>
+                  onUpdate({ labelHomeX: parseIntOrUndef(e.target.value) })
+                }
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.labelHomeY}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                value={label.labelHomeY ?? ""}
+                min={0}
+                onChange={(e) =>
+                  onUpdate({ labelHomeY: parseIntOrUndef(e.target.value) })
+                }
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.labelTop}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                value={label.labelTop ?? ""}
+                min={-120}
+                max={120}
+                onChange={(e) =>
+                  onUpdate({ labelTop: parseIntOrUndef(e.target.value) })
+                }
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">
@@ -480,6 +542,60 @@ function LabelConfigPanel({
             }
           />
         </div>
+
+        </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          id="label-quantity-advanced"
+          title={t.label.quantityAdvancedHeading}
+          defaultOpen={false}
+        >
+        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>{t.label.pauseCount}</label>
+          <input
+            type="number"
+            className={inputCls}
+            value={label.pauseCount ?? ""}
+            min={0}
+            max={99999999}
+            onChange={(e) =>
+              onUpdate({ pauseCount: parseIntOrUndef(e.target.value) })
+            }
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>{t.label.replicates}</label>
+          <input
+            type="number"
+            className={inputCls}
+            value={label.replicates ?? ""}
+            min={0}
+            max={99999999}
+            onChange={(e) =>
+              onUpdate({ replicates: parseIntOrUndef(e.target.value) })
+            }
+          />
+        </div>
+
+        <label
+          className="flex items-center gap-2 text-xs"
+          title={t.label.overridePauseCountHint}
+        >
+          <input
+            type="checkbox"
+            checked={label.overridePauseCount === "Y"}
+            onChange={(e) =>
+              onUpdate({
+                overridePauseCount: e.target.checked ? "Y" : undefined,
+              })
+            }
+          />
+          {t.label.overridePauseCount}
+        </label>
+        </div>
         </CollapsibleSection>
 
         <CollapsibleSection
@@ -487,44 +603,104 @@ function LabelConfigPanel({
           title={t.label.printerSettingsHeading}
           defaultOpen={false}
         >
+        <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <label className={labelCls}>
-            {t.label.printSpeed}
+            {t.label.speedHeading}
             <InformationCircleIcon
               className="w-3.5 h-3.5 ml-1 inline-block align-text-bottom text-muted cursor-help"
               title={t.label.printSpeedHint}
             />
           </label>
-          <input
-            type="number"
-            className={inputCls}
-            value={label.printSpeed ?? ""}
-            min={2}
-            max={14}
-            onChange={(e) =>
-              onUpdate({ printSpeed: parseIntOrUndef(e.target.value) })
-            }
-          />
+          <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.speedPrint}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                value={label.printSpeed ?? ""}
+                min={2}
+                max={14}
+                onChange={(e) =>
+                  onUpdate({ printSpeed: parseIntOrUndef(e.target.value) })
+                }
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.speedSlew}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                value={label.slewSpeed ?? ""}
+                min={2}
+                max={14}
+                onChange={(e) =>
+                  onUpdate({ slewSpeed: parseIntOrUndef(e.target.value) })
+                }
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.speedBackfeed}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                value={label.backfeedSpeed ?? ""}
+                min={2}
+                max={14}
+                onChange={(e) =>
+                  onUpdate({ backfeedSpeed: parseIntOrUndef(e.target.value) })
+                }
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">
           <label className={labelCls}>
-            {t.label.darkness}
+            {t.label.darknessHeading}
             <InformationCircleIcon
               className="w-3.5 h-3.5 ml-1 inline-block align-text-bottom text-muted cursor-help"
               title={t.label.darknessHint}
             />
           </label>
-          <input
-            type="number"
-            className={inputCls}
-            value={label.darkness ?? ""}
-            min={-30}
-            max={30}
-            onChange={(e) =>
-              onUpdate({ darkness: parseIntOrUndef(e.target.value) })
-            }
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.darknessPermanent}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                value={label.darkness ?? ""}
+                min={-30}
+                max={30}
+                onChange={(e) =>
+                  onUpdate({ darkness: parseIntOrUndef(e.target.value) })
+                }
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.darknessInstant}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                value={label.instantDarkness ?? ""}
+                min={0}
+                max={30}
+                onChange={(e) =>
+                  onUpdate({ instantDarkness: parseIntOrUndef(e.target.value) })
+                }
+              />
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">
@@ -562,11 +738,21 @@ function LabelConfigPanel({
             <option value="N">{t.label.printOrientationN}</option>
             <option value="I">{t.label.printOrientationI}</option>
           </select>
+          <label className="flex items-center gap-2 text-xs mt-1">
+            <input
+              type="checkbox"
+              checked={label.mirror === "Y"}
+              onChange={(e) =>
+                onUpdate({ mirror: e.target.checked ? "Y" : undefined })
+              }
+            />
+            {t.label.mirror}
+          </label>
         </div>
 
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.label.defaultFont}</label>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <div className="flex flex-col gap-1">
               <label className="text-[10px] text-muted">
                 {t.label.defaultFontId}
@@ -575,6 +761,7 @@ function LabelConfigPanel({
                 type="text"
                 className={inputCls}
                 maxLength={2}
+                list="zpl-default-font-ids"
                 value={label.defaultFontId ?? ""}
                 onChange={(e) =>
                   onUpdate({ defaultFontId: e.target.value || undefined })
@@ -597,10 +784,32 @@ function LabelConfigPanel({
                 }
               />
             </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted">
+                {t.label.defaultFontWidth}
+              </label>
+              <input
+                type="number"
+                className={inputCls}
+                min={0}
+                value={label.defaultFontWidth ?? ""}
+                onChange={(e) =>
+                  onUpdate({
+                    defaultFontWidth: parseIntOrUndef(e.target.value),
+                  })
+                }
+              />
+            </div>
           </div>
+        </div>
         </div>
         </CollapsibleSection>
       </div>
+      <datalist id="zpl-default-font-ids">
+        {ZPL_BUILTIN_FONT_IDS.map((id) => (
+          <option key={id} value={id} />
+        ))}
+      </datalist>
     </div>
   );
 }

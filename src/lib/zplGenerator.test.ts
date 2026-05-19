@@ -103,6 +103,172 @@ describe('generateZPL — printer params', () => {
     expect(generateZPL(BASE_LABEL, [])).not.toContain('^PO');
   });
 
+  const boxAt = (x: number, y: number): LabelObject => ({
+    id: '1',
+    type: 'box',
+    x,
+    y,
+    rotation: 0,
+    props: { width: 50, height: 20, thickness: 1, filled: false, color: 'B', rounding: 0 },
+  });
+
+  it('emits ^LH and shifts field FOs to compensate', () => {
+    const zpl = generateZPL(
+      { ...BASE_LABEL, labelHomeX: 20, labelHomeY: 10 },
+      [boxAt(50, 80)],
+    );
+    expect(zpl).toContain('^LH20,10');
+    expect(zpl).toContain('^FO30,70');
+  });
+
+  it('emits ^LT and shifts field Y to compensate', () => {
+    const zpl = generateZPL({ ...BASE_LABEL, labelTop: 15 }, [boxAt(50, 80)]);
+    expect(zpl).toContain('^LT15');
+    expect(zpl).toContain('^FO50,65');
+  });
+
+  it('drops fields whose offset-adjusted origin would be negative', () => {
+    // Clamping would silently relocate the box into the visible area,
+    // breaking WYSIWYG; emitting negative ^FO is undefined per ZPL spec
+    // and printer-dependent. The conservative choice is to omit the
+    // field — analogous to a layer outside the artboard in a design tool.
+    const zpl = generateZPL(
+      { ...BASE_LABEL, labelHomeX: 30, labelHomeY: 20 },
+      [boxAt(10, 5)],
+    );
+    expect(zpl).not.toContain('^GB');
+    expect(zpl).not.toContain('^FO');
+  });
+
+  it('drops a field when only one axis would go negative', () => {
+    // labelHomeY exceeds obj.y → y < 0 alone is enough to drop the leaf.
+    const zpl = generateZPL(
+      { ...BASE_LABEL, labelHomeX: 0, labelHomeY: 50 },
+      [boxAt(100, 10)],
+    );
+    expect(zpl).not.toContain('^GB');
+  });
+
+  it('drops only the clipped children of a group, keeping the rest', () => {
+    const group: GroupObject = {
+      id: 'g1',
+      type: 'group',
+      x: 0,
+      y: 0,
+      rotation: 0,
+      children: [boxAt(10, 5), boxAt(100, 100)],
+    };
+    const zpl = generateZPL(
+      { ...BASE_LABEL, labelHomeX: 30, labelHomeY: 20 },
+      [group],
+    );
+    // First child clips out, second survives at shifted FO.
+    expect(zpl).toContain('^FO70,80');
+    expect(zpl.match(/\^FO/g)?.length).toBe(1);
+  });
+
+  it('emits ^CF with width as third positional param', () => {
+    expect(
+      generateZPL(
+        { ...BASE_LABEL, defaultFontId: 'A', defaultFontHeight: 30, defaultFontWidth: 20 },
+        [],
+      ),
+    ).toContain('^CFA,30,20');
+  });
+
+  it('emits ^CF with empty middle slot when only id + width are set', () => {
+    expect(
+      generateZPL(
+        { ...BASE_LABEL, defaultFontId: 'A', defaultFontWidth: 20 },
+        [],
+      ),
+    ).toContain('^CFA,,20');
+  });
+
+  it('emits ^CF with two empty slots when only width is set', () => {
+    expect(
+      generateZPL({ ...BASE_LABEL, defaultFontWidth: 20 }, []),
+    ).toContain('^CF,,20');
+  });
+
+  it('trims trailing empty ^CF slots', () => {
+    const zpl = generateZPL({ ...BASE_LABEL, defaultFontId: 'A' }, []);
+    expect(zpl).toContain('^CFA');
+    expect(zpl).not.toContain('^CFA,');
+  });
+
+  it('emits ^PM when mirror is set', () => {
+    expect(generateZPL({ ...BASE_LABEL, mirror: 'Y' }, [])).toContain('^PMY');
+    expect(generateZPL({ ...BASE_LABEL, mirror: 'N' }, [])).toContain('^PMN');
+    expect(generateZPL(BASE_LABEL, [])).not.toContain('^PM');
+  });
+
+  it('emits ~SD before ^XA with zero-padded value', () => {
+    const zpl = generateZPL({ ...BASE_LABEL, instantDarkness: 7 }, []);
+    expect(zpl.startsWith('~SD07\n^XA')).toBe(true);
+    expect(generateZPL({ ...BASE_LABEL, instantDarkness: 30 }, []))
+      .toContain('~SD30');
+  });
+
+  it('emits ^PR when only slew or backfeed is set (printSpeed undefined)', () => {
+    expect(generateZPL({ ...BASE_LABEL, slewSpeed: 8 }, [])).toContain('^PR8');
+    // backfeed-only: ZPL has no positional skip, so slew slot repeats the
+    // (defaulted) print speed. Documented asymmetry — see roundtrip test.
+    expect(
+      generateZPL({ ...BASE_LABEL, backfeedSpeed: 4 }, []),
+    ).toContain('^PR4,4,4');
+  });
+
+  it('emits ^PR with slew and backfeed when set', () => {
+    expect(
+      generateZPL({ ...BASE_LABEL, printSpeed: 6, slewSpeed: 8 }, []),
+    ).toContain('^PR6,8');
+    // backfeed without slew → slew defaults to printSpeed so position is
+    // preserved.
+    expect(
+      generateZPL({ ...BASE_LABEL, printSpeed: 6, backfeedSpeed: 4 }, []),
+    ).toContain('^PR6,6,4');
+    expect(
+      generateZPL(
+        { ...BASE_LABEL, printSpeed: 6, slewSpeed: 8, backfeedSpeed: 4 },
+        [],
+      ),
+    ).toContain('^PR6,8,4');
+  });
+
+  it('^PR backfeed-only does not roundtrip cleanly (slew gets populated)', () => {
+    // Documented asymmetry: ZPL has no positional skip, so on emit the slew
+    // slot is filled with the print speed. On reparse, slewSpeed becomes
+    // defined even though it was undefined in the source. If this is ever
+    // changed to a normaliser-on-input approach, update both the generator
+    // and this test.
+    const original: LabelConfig = {
+      ...BASE_LABEL,
+      printSpeed: 6,
+      backfeedSpeed: 4,
+    };
+    const zpl = generateZPL(original, []);
+    const { labelConfig } = parseZPL(zpl, 8);
+    expect(labelConfig.printSpeed).toBe(6);
+    expect(labelConfig.slewSpeed).toBe(6);
+    expect(labelConfig.backfeedSpeed).toBe(4);
+  });
+
+  it('emits ^PQ with extended params when any are set', () => {
+    expect(
+      generateZPL({ ...BASE_LABEL, printQuantity: 5, pauseCount: 2 }, []),
+    ).toContain('^PQ5,2,0,N');
+    expect(
+      generateZPL(
+        { ...BASE_LABEL, printQuantity: 1, replicates: 3 },
+        [],
+      ),
+    ).toContain('^PQ1,0,3,N');
+    expect(
+      generateZPL({ ...BASE_LABEL, overridePauseCount: 'Y' }, []),
+    ).toContain('^PQ1,0,0,Y');
+  });
+
   it('emits ^CF when both defaultFontId and defaultFontHeight are set', () => {
     const zpl = generateZPL(
       { ...BASE_LABEL, defaultFontId: '0', defaultFontHeight: 30 },
@@ -146,8 +312,10 @@ describe('generateZPL — printer params', () => {
     expect(idx('^MTT')).toBeLessThan(idx('^PR6'));
     expect(idx('^PR6')).toBeLessThan(idx('^MD10'));
     expect(idx('^MD10')).toBeLessThan(idx('^POI'));
-    expect(idx('^POI')).toBeLessThan(idx('^CF0,30'));
-    expect(idx('^CF0,30')).toBeLessThan(idx('^LS5'));
+    // Geometry offsets (^LH/^LT/^LS) group before the default font (^CF)
+    // so the header reads media → printer params → geometry → font.
+    expect(idx('^POI')).toBeLessThan(idx('^LS5'));
+    expect(idx('^LS5')).toBeLessThan(idx('^CF0,30'));
   });
 });
 
