@@ -465,6 +465,8 @@ const ar = {
     builtinPreviewsHeading: 'معاينات الخطوط المدمجة',
     builtinPreviewsHint: 'اربط ملف TTF محلي بمعرف خط مدمج (0، A-H) لكي يعرض المحرر شكل هذا الخط فعليا. لا يتم إصداره إلى ZPL.',
     addBuiltinPreview: 'ربط خط مدمج',
+    builtinPreviewsTeaser: 'تريد رؤية كيف تبدو الخطوط المدمجة؟ راجع القسم أدناه.',
+    usedAsPreview: 'معاينة لـ',
     noPreviewFont: 'اختر خطًا…',
   },
   zebraPrint: {

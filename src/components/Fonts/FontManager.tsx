@@ -196,6 +196,12 @@ export function FontManager() {
           const path = uploadedFontPath(font.name);
           const alias = aliasByPath.get(path) ?? '';
           const entry = (customFonts ?? []).find((m) => m.path === path);
+          // Cross-section visibility: list every built-in alias that
+          // pins this TTF as a preview binding. Lets the user see why
+          // the file is "important" before they hit delete.
+          const previewAliases = builtinPreviews
+            .filter((m) => m.previewFontName === font.name)
+            .map((m) => m.alias);
           return (
             <FontEntry
               key={font.name}
@@ -203,6 +209,7 @@ export function FontManager() {
               alias={alias}
               duplicate={isDuplicateAlias(alias)}
               embedInZpl={entry?.embedInZpl ?? false}
+              previewAliases={previewAliases}
               onAliasChange={(v) => setAliasForPath(path, v)}
               onEmbedChange={(v) => toggleEmbedForPath(path, v)}
               onRequestDelete={() => setPendingDelete(font.name)}
@@ -236,10 +243,16 @@ export function FontManager() {
         />
       </CollapsibleSection>
 
+      {fonts.length > 0 && builtinPreviews.length === 0 && (
+        <p className="text-[11px] text-muted px-1 leading-relaxed">
+          {t.fonts.builtinPreviewsTeaser}
+        </p>
+      )}
+
       <CollapsibleSection
         id="fonts-builtin-previews"
         title={t.fonts.builtinPreviewsHeading}
-        defaultOpen={false}
+        defaultOpen={builtinPreviews.length > 0}
       >
         <BuiltinPreviewSection
           mappings={builtinPreviews}
@@ -286,6 +299,8 @@ interface FontEntryProps {
   alias: string;
   duplicate: boolean;
   embedInZpl: boolean;
+  /** Built-in font IDs that map to this TTF as a preview binding. */
+  previewAliases: string[];
   onAliasChange: (next: string) => void;
   onEmbedChange: (next: boolean) => void;
   onRequestDelete: () => void;
@@ -296,6 +311,7 @@ function FontEntry({
   alias,
   duplicate,
   embedInZpl,
+  previewAliases,
   onAliasChange,
   onEmbedChange,
   onRequestDelete,
@@ -373,6 +389,15 @@ function FontEntry({
       {overridesBuiltin && (
         <p className="text-[10px] text-amber-500 leading-snug pl-1">
           {t.fonts.builtinAliasWarning}
+        </p>
+      )}
+      {previewAliases.length > 0 && (
+        <p
+          className="text-[10px] text-muted leading-snug pl-1"
+          title={t.fonts.builtinPreviewsHeading}
+        >
+          {t.fonts.usedAsPreview}{' '}
+          <span className="font-mono">{previewAliases.join(', ')}</span>
         </p>
       )}
     </div>

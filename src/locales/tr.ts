@@ -465,6 +465,8 @@ const tr = {
     builtinPreviewsHeading: 'Yerleşik yazı tipi önizlemeleri',
     builtinPreviewsHint: 'Yerel bir TTF dosyasını yerleşik bir yazı tipi kimliğine (0, A-H) bağlayın, böylece editör o yazı tipinin gerçekte nasıl göründüğünü gösterir. ZPL\'ye yayılmaz.',
     addBuiltinPreview: 'Yerleşik yazı tipi bağla',
+    builtinPreviewsTeaser: 'Yerleşik yazı tiplerinin nasıl göründüğünü görmek ister misiniz? Aşağıdaki bölüme bakın.',
+    usedAsPreview: 'önizleme',
     noPreviewFont: 'Bir yazı tipi seç…',
   },
   zebraPrint: {

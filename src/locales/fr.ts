@@ -465,6 +465,8 @@ const fr = {
     builtinPreviewsHeading: 'Aperçus des polices intégrées',
     builtinPreviewsHint: 'Lie un TTF local à un ID de police intégrée (0, A-H) pour que l\'éditeur montre à quoi ressemble vraiment cette police. Non émis dans ZPL.',
     addBuiltinPreview: 'Lier police intégrée',
+    builtinPreviewsTeaser: 'Voir à quoi ressemblent les polices intégrées ? Voir la section ci-dessous.',
+    usedAsPreview: 'aperçu pour',
     noPreviewFont: 'Choisir une police…',
   },
   zebraPrint: {

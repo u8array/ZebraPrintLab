@@ -465,6 +465,8 @@ const fa = {
     builtinPreviewsHeading: 'پیش‌نمایش قلم‌های داخلی',
     builtinPreviewsHint: 'یک فایل TTF محلی را به یک شناسه قلم داخلی (0، A-H) متصل کنید تا ویرایشگر شکل واقعی آن قلم را نشان دهد. به ZPL منتشر نمی‌شود.',
     addBuiltinPreview: 'اتصال قلم داخلی',
+    builtinPreviewsTeaser: 'می‌خواهید ببینید قلم‌های داخلی چگونه به نظر می‌رسند؟ به بخش زیر مراجعه کنید.',
+    usedAsPreview: 'پیش‌نمایش برای',
     noPreviewFont: 'یک قلم انتخاب کنید…',
   },
   zebraPrint: {

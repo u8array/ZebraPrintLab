@@ -465,6 +465,8 @@ const it = {
     builtinPreviewsHeading: 'Anteprime caratteri integrati',
     builtinPreviewsHint: 'Associa un TTF locale a un ID di carattere integrato (0, A-H) in modo che l\'editor mostri come appare realmente quel carattere. Non emesso in ZPL.',
     addBuiltinPreview: 'Associa carattere integrato',
+    builtinPreviewsTeaser: 'Vuoi vedere come appaiono i caratteri integrati? Vedi sezione sotto.',
+    usedAsPreview: 'anteprima per',
     noPreviewFont: 'Scegli un carattere…',
   },
   zebraPrint: {

@@ -465,6 +465,8 @@ const he = {
     builtinPreviewsHeading: 'תצוגות מקדימות של גופנים מובנים',
     builtinPreviewsHint: 'קשר קובץ TTF מקומי לזיהוי גופן מובנה (0, A-H) כדי שהעורך יציג כיצד הגופן באמת נראה. לא נפלט ל-ZPL.',
     addBuiltinPreview: 'קשר גופן מובנה',
+    builtinPreviewsTeaser: 'רוצה לראות איך נראים גופנים מובנים? ראה את הסעיף למטה.',
+    usedAsPreview: 'תצוגה עבור',
     noPreviewFont: 'בחר גופן…',
   },
   zebraPrint: {

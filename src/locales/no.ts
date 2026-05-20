@@ -465,6 +465,8 @@ const no = {
     builtinPreviewsHeading: 'Forhåndsvisninger av innebygde skrifter',
     builtinPreviewsHint: 'Bind en lokal TTF til en innebygd skrift-ID (0, A-H) slik at editoren viser hvordan skriften faktisk ser ut. Sendes ikke til ZPL.',
     addBuiltinPreview: 'Bind innebygd skrift',
+    builtinPreviewsTeaser: 'Vil du se hvordan innebygde skrifter ser ut? Se seksjonen nedenfor.',
+    usedAsPreview: 'visning for',
     noPreviewFont: 'Velg en skrift…',
   },
   zebraPrint: {

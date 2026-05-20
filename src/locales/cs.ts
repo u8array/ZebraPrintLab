@@ -465,6 +465,8 @@ const cs = {
     builtinPreviewsHeading: 'Náhledy vestavěných písem',
     builtinPreviewsHint: 'Přiřaďte místní TTF k vestavěnému ID písma (0, A-H), aby editor ukazoval, jak písmo skutečně vypadá. Nevysílá se do ZPL.',
     addBuiltinPreview: 'Přiřadit vestavěné písmo',
+    builtinPreviewsTeaser: 'Chcete vidět, jak vypadají vestavěná písma? Viz sekce níže.',
+    usedAsPreview: 'náhled pro',
     noPreviewFont: 'Vyberte písmo…',
   },
   zebraPrint: {

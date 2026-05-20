@@ -465,6 +465,8 @@ const et = {
     builtinPreviewsHeading: 'Sisseehitatud fontide eelvaated',
     builtinPreviewsHint: 'Seo kohalik TTF sisseehitatud fondi ID-ga (0, A-H), et redaktor näitaks, milline see font tegelikult välja näeb. Ei edastata ZPL-i.',
     addBuiltinPreview: 'Seo sisseehitatud font',
+    builtinPreviewsTeaser: 'Kas tahad näha, kuidas sisseehitatud fondid välja näevad? Vaata allolevat jaotist.',
+    usedAsPreview: 'eelvaade',
     noPreviewFont: 'Vali font…',
   },
   zebraPrint: {

@@ -465,6 +465,8 @@ const nl = {
     builtinPreviewsHeading: 'Voorvertoningen van ingebouwde lettertypen',
     builtinPreviewsHint: 'Koppel een lokale TTF aan een ingebouwd lettertype-ID (0, A-H) zodat de editor toont hoe dat lettertype er echt uitziet. Wordt niet naar ZPL gestuurd.',
     addBuiltinPreview: 'Ingebouwd lettertype koppelen',
+    builtinPreviewsTeaser: 'Wil je zien hoe ingebouwde lettertypen eruitzien? Zie de sectie hieronder.',
+    usedAsPreview: 'voorvertoning voor',
     noPreviewFont: 'Kies een lettertype…',
   },
   zebraPrint: {

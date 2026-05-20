@@ -465,6 +465,8 @@ const fi = {
     builtinPreviewsHeading: 'Sisäänrakennettujen fonttien esikatselut',
     builtinPreviewsHint: 'Sido paikallinen TTF sisäänrakennettuun fontti-ID:hen (0, A-H), jotta editori näyttää miltä fontti todella näyttää. Ei lähetetä ZPL:ään.',
     addBuiltinPreview: 'Sido sisäänrakennettu fontti',
+    builtinPreviewsTeaser: 'Haluatko nähdä, miltä sisäänrakennetut fontit näyttävät? Katso alla oleva osio.',
+    usedAsPreview: 'esikatselu',
     noPreviewFont: 'Valitse fontti…',
   },
   zebraPrint: {

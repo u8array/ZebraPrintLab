@@ -465,6 +465,8 @@ const zhHans = {
     builtinPreviewsHeading: '内置字体预览',
     builtinPreviewsHint: '将本地TTF绑定到内置字体ID（0、A-H），使编辑器显示该字体的实际外观。不会发送到ZPL。',
     addBuiltinPreview: '绑定内置字体',
+    builtinPreviewsTeaser: '想看内置字体的样子？请参见下方区块。',
+    usedAsPreview: '预览',
     noPreviewFont: '选择字体…',
   },
   zebraPrint: {

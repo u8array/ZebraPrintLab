@@ -486,6 +486,8 @@ const en = {
     builtinPreviewsHeading: 'Built-in font previews',
     builtinPreviewsHint: 'Bind a local TTF to a built-in font ID (0, A-H) so the editor shows what that font actually looks like. Not emitted to ZPL.',
     addBuiltinPreview: 'Bind built-in font',
+    builtinPreviewsTeaser: 'Want to see what built-in fonts render like? See the section below.',
+    usedAsPreview: 'preview for',
     noPreviewFont: 'Pick a font…',
   },
 } as const;

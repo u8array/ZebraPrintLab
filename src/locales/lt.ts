@@ -465,6 +465,8 @@ const lt = {
     builtinPreviewsHeading: 'Įmontuotų šriftų peržiūros',
     builtinPreviewsHint: 'Susiekite vietinį TTF su įmontuoto šrifto ID (0, A-H), kad redaktorius rodytų, kaip tas šriftas iš tikrųjų atrodo. Neperduodama į ZPL.',
     addBuiltinPreview: 'Susieti įmontuotą šriftą',
+    builtinPreviewsTeaser: 'Norite pamatyti, kaip atrodo įmontuoti šriftai? Žiūrėkite skyrių žemiau.',
+    usedAsPreview: 'peržiūra',
     noPreviewFont: 'Pasirinkite šriftą…',
   },
   zebraPrint: {

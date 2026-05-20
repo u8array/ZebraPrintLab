@@ -465,6 +465,8 @@ const ja = {
     builtinPreviewsHeading: '内蔵フォントのプレビュー',
     builtinPreviewsHint: 'ローカルTTFを内蔵フォントID（0、A-H）にバインドして、エディタでそのフォントの実際の見た目を表示します。ZPLには出力されません。',
     addBuiltinPreview: '内蔵フォントをバインド',
+    builtinPreviewsTeaser: '内蔵フォントの表示を確認しますか？下のセクションを参照してください。',
+    usedAsPreview: 'プレビュー',
     noPreviewFont: 'フォントを選択…',
   },
   zebraPrint: {

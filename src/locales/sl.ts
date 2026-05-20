@@ -465,6 +465,8 @@ const sl = {
     builtinPreviewsHeading: 'Predogledi vgrajenih pisav',
     builtinPreviewsHint: 'Povežite lokalno TTF datoteko z vgrajenim ID-jem pisave (0, A-H), da urejevalnik prikaže, kako ta pisava dejansko izgleda. Ni oddano v ZPL.',
     addBuiltinPreview: 'Poveži vgrajeno pisavo',
+    builtinPreviewsTeaser: 'Želite videti, kako izgledajo vgrajene pisave? Glejte spodnji razdelek.',
+    usedAsPreview: 'predogled za',
     noPreviewFont: 'Izberite pisavo…',
   },
   zebraPrint: {

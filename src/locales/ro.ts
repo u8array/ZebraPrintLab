@@ -465,6 +465,8 @@ const ro = {
     builtinPreviewsHeading: 'Previzualizări fonturi integrate',
     builtinPreviewsHint: 'Leagă un TTF local de un ID de font integrat (0, A-H) pentru ca editorul să arate cum arată cu adevărat acel font. Nu este emis în ZPL.',
     addBuiltinPreview: 'Leagă font integrat',
+    builtinPreviewsTeaser: 'Vrei să vezi cum arată fonturile integrate? Vezi secțiunea de mai jos.',
+    usedAsPreview: 'previzualizare',
     noPreviewFont: 'Alege un font…',
   },
   zebraPrint: {

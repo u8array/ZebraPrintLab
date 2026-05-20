@@ -465,6 +465,8 @@ const sk = {
     builtinPreviewsHeading: 'Náhľady vstavaných písiem',
     builtinPreviewsHint: 'Priraďte miestny TTF k vstavanému ID písma (0, A-H), aby editor zobrazoval, ako toto písmo skutočne vyzerá. Nevysiela sa do ZPL.',
     addBuiltinPreview: 'Priradiť vstavané písmo',
+    builtinPreviewsTeaser: 'Chcete vidieť, ako vyzerajú vstavané písma? Pozrite si sekciu nižšie.',
+    usedAsPreview: 'náhľad pre',
     noPreviewFont: 'Vyberte písmo…',
   },
   zebraPrint: {

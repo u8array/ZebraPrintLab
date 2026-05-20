@@ -465,6 +465,8 @@ const bg = {
     builtinPreviewsHeading: 'Прегледи на вградени шрифтове',
     builtinPreviewsHint: 'Свържете локален TTF с вграден ID на шрифт (0, A-H), за да показва редакторът как изглежда този шрифт. Не се излъчва в ZPL.',
     addBuiltinPreview: 'Свържи вграден шрифт',
+    builtinPreviewsTeaser: 'Искате да видите как изглеждат вградените шрифтове? Виж секцията по-долу.',
+    usedAsPreview: 'преглед за',
     noPreviewFont: 'Изберете шрифт…',
   },
   zebraPrint: {

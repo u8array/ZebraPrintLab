@@ -465,6 +465,8 @@ const hu = {
     builtinPreviewsHeading: 'Beépített betűtípus előnézetek',
     builtinPreviewsHint: 'Köss össze egy helyi TTF-et egy beépített betűtípus-azonosítóval (0, A-H), hogy a szerkesztő mutassa, hogyan néz ki valójában az a betűtípus. Nem kerül ZPL-be.',
     addBuiltinPreview: 'Beépített betűtípus kötése',
+    builtinPreviewsTeaser: 'Szeretnéd látni, hogyan néznek ki a beépített betűtípusok? Lásd az alábbi szakaszt.',
+    usedAsPreview: 'előnézet',
     noPreviewFont: 'Válassz betűtípust…',
   },
   zebraPrint: {

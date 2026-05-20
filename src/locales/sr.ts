@@ -465,6 +465,8 @@ const sr = {
     builtinPreviewsHeading: 'Прегледи уграђених фонтова',
     builtinPreviewsHint: 'Повежите локални TTF са уграђеним ID-јем фонта (0, A-H) тако да уредник прикаже како тај фонт заиста изгледа. Не емитује се у ZPL.',
     addBuiltinPreview: 'Повежи уграђени фонт',
+    builtinPreviewsTeaser: 'Желите да видите како изгледају уграђени фонтови? Погледајте секцију испод.',
+    usedAsPreview: 'преглед за',
     noPreviewFont: 'Изаберите фонт…',
   },
   zebraPrint: {

@@ -465,6 +465,8 @@ const ko = {
     builtinPreviewsHeading: '내장 글꼴 미리보기',
     builtinPreviewsHint: '로컬 TTF를 내장 글꼴 ID(0, A-H)에 바인딩하면 편집기에 해당 글꼴의 실제 모양이 표시됩니다. ZPL에 출력되지 않습니다.',
     addBuiltinPreview: '내장 글꼴 바인딩',
+    builtinPreviewsTeaser: '내장 글꼴이 어떻게 보이는지 확인하시겠습니까? 아래 섹션을 참조하세요.',
+    usedAsPreview: '미리보기',
     noPreviewFont: '글꼴 선택…',
   },
   zebraPrint: {

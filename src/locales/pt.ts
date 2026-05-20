@@ -465,6 +465,8 @@ const pt = {
     builtinPreviewsHeading: 'Pré-visualizações de fontes integradas',
     builtinPreviewsHint: 'Vincule um TTF local a um ID de fonte integrada (0, A-H) para que o editor mostre como essa fonte realmente parece. Não emitido para ZPL.',
     addBuiltinPreview: 'Vincular fonte integrada',
+    builtinPreviewsTeaser: 'Quer ver como as fontes integradas aparecem? Veja a seção abaixo.',
+    usedAsPreview: 'pré-visualização para',
     noPreviewFont: 'Escolha uma fonte…',
   },
   zebraPrint: {

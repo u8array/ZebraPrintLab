@@ -465,6 +465,8 @@ const pl = {
     builtinPreviewsHeading: 'Podglądy wbudowanych czcionek',
     builtinPreviewsHint: 'Powiąż lokalny TTF z wbudowanym ID czcionki (0, A-H), aby edytor pokazywał, jak naprawdę wygląda ta czcionka. Nie jest wysyłane do ZPL.',
     addBuiltinPreview: 'Powiąż wbudowaną czcionkę',
+    builtinPreviewsTeaser: 'Chcesz zobaczyć, jak wyglądają wbudowane czcionki? Zobacz sekcję poniżej.',
+    usedAsPreview: 'podgląd dla',
     noPreviewFont: 'Wybierz czcionkę…',
   },
   zebraPrint: {

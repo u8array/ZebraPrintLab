@@ -465,6 +465,8 @@ const lv = {
     builtinPreviewsHeading: 'Iebūvēto fontu priekšskatījumi',
     builtinPreviewsHint: 'Saistīt vietējo TTF ar iebūvētu fonta ID (0, A-H), lai redaktors parādītu, kā šis fonts patiesībā izskatās. Netiek izvadīts uz ZPL.',
     addBuiltinPreview: 'Saistīt iebūvēto fontu',
+    builtinPreviewsTeaser: 'Vēlaties redzēt, kā izskatās iebūvētie fonti? Skatiet sadaļu zemāk.',
+    usedAsPreview: 'priekšskatījums',
     noPreviewFont: 'Izvēlieties fontu…',
   },
   zebraPrint: {
