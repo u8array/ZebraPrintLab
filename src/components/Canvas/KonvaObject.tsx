@@ -403,7 +403,6 @@ function KonvaObjectInner({
     const h = dotsToPx(p.height, scale, dpmm);
     const rx = w / 2;
     const ry = h / 2;
-    const stroke = p.color === "B" ? "#000000" : "#cccccc";
     const strokeWidth = Math.max(dotsToPx(p.thickness, scale, dpmm), 0.5);
     // Option-A geometry — same outlineInset() definition as the box
     // path so the firmware's clamp-to-solid rule stays consistent
@@ -412,14 +411,25 @@ function KonvaObjectInner({
     const renderFilled = insetGeom.renderFilled;
     const insetRx = insetGeom.width / 2;
     const insetRy = insetGeom.height / 2;
-    const fill = renderFilled
-      ? p.color === "B"
-        ? "#000000"
+    // Reverse rendering mirrors the box path (see the long comment
+    // there). The difference-blend produces the print-correct knockout
+    // both on the white label and over any darker shape underneath;
+    // the fill / stroke swap keeps a thick outline ellipse from
+    // banding when filled + reverse coincide.
+    const isReverse = !!p.reverse;
+    const shapeColor = p.color === "B" ? "#000000" : "#cccccc";
+    const stroke = isReverse
+      ? renderFilled
+        ? "transparent"
         : "#ffffff"
-      : "transparent";
-    // Group-at-top-left wrapper mirrors the box path: keeps the body's
-    // own stroke + thickness while a separate EllipseSelectionOverlay
-    // traces the outer bbox in the selection colour.
+      : shapeColor;
+    const fill = isReverse
+      ? renderFilled
+        ? "#ffffff"
+        : "transparent"
+      : renderFilled
+        ? shapeColor
+        : "transparent";
     return (
       <Group
         id={obj.id}
@@ -439,6 +449,7 @@ function KonvaObjectInner({
           strokeWidth={renderFilled ? 0 : strokeWidth}
           strokeScaleEnabled={false}
           fill={fill}
+          globalCompositeOperation={isReverse ? "difference" : "source-over"}
         />
         {isSelected && (
           <EllipseSelectionOverlay rx={rx} ry={ry} color={colors.selection} />
