@@ -456,6 +456,8 @@ const fi = {
     uploadError: 'Fonttitiedostoa ei voitu ladata',
     aliasHint: 'ZPL-alias tälle etiketille (1 merkki, A-Z tai 0-9)',
     aliasAssigned: 'Tälle etiketille määritetty ZPL-alias',
+    embedInZpl: 'Lähetä ZPL:n mukana',
+    embedInZplHint: 'Lähettää ~DY:n, jotta tulostin (ja Labelary) saavat tämän fontin etiketin mukana. Vaatii aliaksen.',
     manualMappingsHeading: 'Fontit tulostimessa',
     manualMappingsHint: 'Viittaa fontteihin, jotka ovat jo tulostimessa mutta joita ei ole ladattu tänne.',
     addManualMapping: 'Lisää tulostimen fontti',

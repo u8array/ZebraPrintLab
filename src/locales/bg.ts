@@ -456,6 +456,8 @@ const bg = {
     uploadError: 'Неуспешно зареждане на шрифтов файл',
     aliasHint: 'ZPL псевдоним за този етикет (1 знак, A-Z или 0-9)',
     aliasAssigned: 'Зададен ZPL псевдоним за този етикет',
+    embedInZpl: 'Изпращай със ZPL',
+    embedInZplHint: 'Излъчва ~DY, така че принтерът (и Labelary) да получат този шрифт с етикета. Изисква псевдоним.',
     manualMappingsHeading: 'Шрифтове в принтера',
     manualMappingsHint: 'Препратка към шрифтове, които вече са в принтера, но не са качени тук.',
     addManualMapping: 'Добави шрифт на принтера',

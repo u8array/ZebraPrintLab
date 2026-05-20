@@ -456,6 +456,8 @@ const pt = {
     uploadError: 'Não foi possível carregar o arquivo de fonte',
     aliasHint: 'Alias ZPL para esta etiqueta (1 caractere, A-Z ou 0-9)',
     aliasAssigned: 'Alias ZPL atribuído a esta etiqueta',
+    embedInZpl: 'Enviar com ZPL',
+    embedInZplHint: 'Emite ~DY para que a impressora (e Labelary) recebam esta fonte com o rótulo. Requer um alias.',
     manualMappingsHeading: 'Fontes residentes na impressora',
     manualMappingsHint: 'Referencia fontes já presentes na impressora mas não enviadas aqui.',
     addManualMapping: 'Adicionar fonte da impressora',

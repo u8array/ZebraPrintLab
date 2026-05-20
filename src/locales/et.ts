@@ -456,6 +456,8 @@ const et = {
     uploadError: 'Fondifaili ei saanud laadida',
     aliasHint: 'ZPL alias selle sildi jaoks (1 märk, A-Z või 0-9)',
     aliasAssigned: 'Sellele sildile määratud ZPL alias',
+    embedInZpl: 'Saada koos ZPL-iga',
+    embedInZplHint: 'Edastab ~DY, et printer (ja Labelary) saaks selle fondi koos sildiga. Vajab varjunime.',
     manualMappingsHeading: 'Printeri fondid',
     manualMappingsHint: 'Viide printeris juba olevatele fontidele, mida pole siia üles laaditud.',
     addManualMapping: 'Lisa printeri font',

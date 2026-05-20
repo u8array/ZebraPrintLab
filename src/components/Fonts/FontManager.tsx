@@ -61,8 +61,40 @@ export function FontManager() {
   };
 
   const setAliasForPath = (path: string, rawAlias: string) => {
+    // For uploaded fonts the entry should also bind the local TTF for
+    // canvas preview: derive `previewFontName` from the path so the
+    // generator / parser / renderer all share one source of truth.
+    // upsertCustomFontMapping already handles the alias upsert; we
+    // augment the resulting entry with the preview-binding here.
+    const alias = normalizeAlias(rawAlias);
+    const next = upsertCustomFontMapping(customFonts, path, alias);
+    if (alias) {
+      const entry = next.find((m) => m.path === path);
+      if (entry && uploadedNames.has(path.slice(DEFAULT_FONT_DRIVE.length))) {
+        entry.previewFontName = path.slice(DEFAULT_FONT_DRIVE.length);
+      }
+    }
+    replaceList(next);
+  };
+
+  const toggleEmbedForPath = (path: string, embed: boolean) => {
+    const list = customFonts ?? [];
     replaceList(
-      upsertCustomFontMapping(customFonts, path, normalizeAlias(rawAlias)),
+      list.map((m) =>
+        m.path === path
+          ? embed
+            ? {
+                ...m,
+                embedInZpl: true,
+                // ~DY needs the TTF bytes from fontCache; the upload
+                // row implies the binding, so pin previewFontName too
+                // (idempotent when already set).
+                previewFontName:
+                  m.previewFontName ?? path.slice(DEFAULT_FONT_DRIVE.length),
+              }
+            : { ...m, embedInZpl: undefined }
+          : m,
+      ),
     );
   };
 
@@ -114,13 +146,16 @@ export function FontManager() {
         {fonts.map((font) => {
           const path = uploadedFontPath(font.name);
           const alias = aliasByPath.get(path) ?? '';
+          const entry = (customFonts ?? []).find((m) => m.path === path);
           return (
             <FontEntry
               key={font.name}
               name={font.name}
               alias={alias}
               duplicate={isDuplicateAlias(alias)}
+              embedInZpl={entry?.embedInZpl ?? false}
               onAliasChange={(v) => setAliasForPath(path, v)}
+              onEmbedChange={(v) => toggleEmbedForPath(path, v)}
               onRequestDelete={() => setPendingDelete(font.name)}
             />
           );
@@ -184,7 +219,9 @@ interface FontEntryProps {
   name: string;
   alias: string;
   duplicate: boolean;
+  embedInZpl: boolean;
   onAliasChange: (next: string) => void;
+  onEmbedChange: (next: boolean) => void;
   onRequestDelete: () => void;
 }
 
@@ -192,13 +229,20 @@ function FontEntry({
   name,
   alias,
   duplicate,
+  embedInZpl,
   onAliasChange,
+  onEmbedChange,
   onRequestDelete,
 }: FontEntryProps) {
   const t = useT();
+  // The embed toggle is only meaningful once an alias is in place —
+  // ~DY without a matching ^CW would dump bytes onto the printer that
+  // no field can reference. Disable + tooltip when alias is empty so
+  // the constraint is visible instead of silently failing at emit.
+  const embedDisabled = !alias;
 
   return (
-    <div className="group grid grid-cols-[1fr_3rem_auto] items-center gap-2 px-2 py-1.5 rounded border border-transparent hover:border-border-2 hover:bg-surface-2 transition-colors">
+    <div className="group grid grid-cols-[1fr_3rem_auto_auto] items-center gap-2 px-2 py-1.5 rounded border border-transparent hover:border-border-2 hover:bg-surface-2 transition-colors">
       <span
         className="font-mono text-xs text-text truncate"
         title={name}
@@ -221,6 +265,21 @@ function FontEntry({
         value={alias}
         onChange={(e) => onAliasChange(e.target.value)}
       />
+      <label
+        className={`flex items-center gap-1 text-[10px] font-mono ${
+          embedDisabled ? 'text-muted opacity-40 cursor-not-allowed' : 'text-muted hover:text-text cursor-pointer'
+        }`}
+        title={t.fonts.embedInZplHint}
+      >
+        <input
+          type="checkbox"
+          className="accent-accent"
+          checked={embedInZpl && !embedDisabled}
+          disabled={embedDisabled}
+          onChange={(e) => onEmbedChange(e.target.checked)}
+        />
+        {t.fonts.embedInZpl}
+      </label>
       <button
         type="button"
         onClick={onRequestDelete}

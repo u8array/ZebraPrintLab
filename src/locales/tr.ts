@@ -456,6 +456,8 @@ const tr = {
     uploadError: 'Yazı tipi dosyası yüklenemedi',
     aliasHint: 'Bu etiket için ZPL takma adı (1 karakter, A-Z veya 0-9)',
     aliasAssigned: 'Bu etikete atanmış ZPL takma adı',
+    embedInZpl: 'ZPL ile gönder',
+    embedInZplHint: 'Yazıcının (ve Labelary\'nin) bu yazı tipini etiketle birlikte alması için ~DY yayar. Bir takma ad gerektirir.',
     manualMappingsHeading: 'Yazıcıda kayıtlı yazı tipleri',
     manualMappingsHint: 'Yazıcıda zaten bulunan ancak buraya yüklenmemiş yazı tiplerine referans verir.',
     addManualMapping: 'Yazıcı yazı tipi ekle',

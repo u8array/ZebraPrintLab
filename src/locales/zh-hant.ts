@@ -456,6 +456,8 @@ const zhHant = {
     uploadError: '無法載入字體檔案',
     aliasHint: '此標籤的 ZPL 別名 (1 字元, A-Z 或 0-9)',
     aliasAssigned: '此標籤的已指派 ZPL 別名',
+    embedInZpl: '隨ZPL一起發送',
+    embedInZplHint: '發出 ~DY 使印表機（和 Labelary）隨標籤接收此字型。需要別名。',
     manualMappingsHeading: '印表機內建字型',
     manualMappingsHint: '參照印表機中已有但未在此上傳的字型。',
     addManualMapping: '新增印表機字型',

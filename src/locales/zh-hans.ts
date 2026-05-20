@@ -456,6 +456,8 @@ const zhHans = {
     uploadError: '无法加载字体文件',
     aliasHint: '此标签的 ZPL 别名 (1 字符, A-Z 或 0-9)',
     aliasAssigned: '此标签的已分配 ZPL 别名',
+    embedInZpl: '随ZPL一起发送',
+    embedInZplHint: '发出 ~DY 使打印机（和 Labelary）随标签接收此字体。需要别名。',
     manualMappingsHeading: '打印机内置字体',
     manualMappingsHint: '引用打印机中已有但未在此上传的字体。',
     addManualMapping: '添加打印机字体',

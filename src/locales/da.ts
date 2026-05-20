@@ -456,6 +456,8 @@ const da = {
     uploadError: 'Skriftfilen kunne ikke indlaeses',
     aliasHint: 'ZPL-alias for denne etiket (1 tegn, A-Z eller 0-9)',
     aliasAssigned: 'Tildelt ZPL-alias for denne etiket',
+    embedInZpl: 'Send med ZPL',
+    embedInZplHint: 'Sender ~DY, så printeren (og Labelary) modtager skrifttypen sammen med etiketten. Kræver et alias.',
     manualMappingsHeading: 'Skrifttyper på printeren',
     manualMappingsHint: 'Reference til skrifttyper, der allerede er på printeren, men ikke uploadet her.',
     addManualMapping: 'Tilføj printerskrifttype',

@@ -477,6 +477,8 @@ const en = {
     uploadError: 'Could not load font file',
     aliasHint: 'ZPL alias for this label (1 char, A-Z or 0-9)',
     aliasAssigned: 'Assigned ZPL alias for this label',
+    embedInZpl: 'Ship with ZPL',
+    embedInZplHint: 'Emit ~DY so the printer (and Labelary) receive this font with the label. Requires an alias.',
     manualMappingsHeading: 'Printer-resident fonts',
     manualMappingsHint: 'Reference fonts already on the printer that are not uploaded here.',
     addManualMapping: 'Add printer font',

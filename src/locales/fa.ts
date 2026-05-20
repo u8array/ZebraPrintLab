@@ -456,6 +456,8 @@ const fa = {
     uploadError: 'بارگذاری فایل فونت ممکن نبود',
     aliasHint: 'نام مستعار ZPL برای این برچسب (1 حرف، A-Z یا 0-9)',
     aliasAssigned: 'نام مستعار ZPL اختصاص‌داده‌شده برای این برچسب',
+    embedInZpl: 'ارسال با ZPL',
+    embedInZplHint: '~DY منتشر می‌کند تا چاپگر (و Labelary) این قلم را با برچسب دریافت کنند. نیاز به نام مستعار دارد.',
     manualMappingsHeading: 'فونت‌های موجود در چاپگر',
     manualMappingsHint: 'ارجاع به فونت‌هایی که از قبل روی چاپگر هستند و اینجا بارگذاری نشده‌اند.',
     addManualMapping: 'افزودن فونت چاپگر',

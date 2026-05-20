@@ -456,6 +456,8 @@ const pl = {
     uploadError: 'Nie można załadować pliku czcionki',
     aliasHint: 'Alias ZPL dla tej etykiety (1 znak, A-Z lub 0-9)',
     aliasAssigned: 'Przypisany alias ZPL dla tej etykiety',
+    embedInZpl: 'Wyślij z ZPL',
+    embedInZplHint: 'Emituje ~DY, aby drukarka (i Labelary) otrzymały tę czcionkę wraz z etykietą. Wymaga aliasu.',
     manualMappingsHeading: 'Czcionki w pamięci drukarki',
     manualMappingsHint: 'Odwołuje się do czcionek już w drukarce, niewgranych tutaj.',
     addManualMapping: 'Dodaj czcionkę drukarki',

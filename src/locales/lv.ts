@@ -456,6 +456,8 @@ const lv = {
     uploadError: 'Neizdevās ielādēt fontu failu',
     aliasHint: 'ZPL aliass šai etiķetei (1 rakstzīme, A-Z vai 0-9)',
     aliasAssigned: 'Šai etiķetei piešķirts ZPL aliass',
+    embedInZpl: 'Sūtīt ar ZPL',
+    embedInZplHint: 'Izvada ~DY, lai printeris (un Labelary) saņemtu šo fontu kopā ar etiķeti. Nepieciešams aizstājvārds.',
     manualMappingsHeading: 'Printera fonti',
     manualMappingsHint: 'Atsauce uz fontiem, kas jau ir printerī, bet nav augšupielādēti šeit.',
     addManualMapping: 'Pievienot printera fontu',
