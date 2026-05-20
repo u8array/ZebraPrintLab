@@ -15,8 +15,16 @@ export interface TextProps {
   fontWidth: number;
   rotation: "N" | "R" | "I" | "B";
   reverse?: boolean;
-  /** Printer TrueType font filename from ^A@ (e.g. "ARIAL.TTF") */
+  /** Printer-stored TrueType font filename. Round-trips with the
+   *  `^A@{rot},{h},{w},E:NAME.TTF` form when the field references a
+   *  printer-resident font directly by path. Mutually exclusive with
+   *  `fontId`; if both happen to be set, `fontId` wins at emit. */
   printerFontName?: string;
+  /** Single-character font identifier ([0-9A-Z]) referencing a built-in
+   *  Zebra font (0, A-H) or a ^CW alias registered on the label. Emits
+   *  the short `^A{id}{rot},{h},{w}` form. Mutually exclusive with
+   *  `printerFontName`. */
+  fontId?: string;
   /** ^FB field block properties */
   blockWidth?: number;
   blockLines?: number;

@@ -349,7 +349,7 @@ function LabelConfigPanel({
   // the referenced path so a bare letter is not mistaken for a built-in.
   const aliasPaths = new Map<string, string>();
   for (const m of label.customFonts ?? []) {
-    if (m.alias) aliasPaths.set(m.alias, m.path);
+    if (m.alias && m.path) aliasPaths.set(m.alias, m.path);
   }
   const fontIdOptions = Array.from(
     new Set([

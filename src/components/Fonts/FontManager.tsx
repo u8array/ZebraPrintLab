@@ -41,6 +41,7 @@ export function FontManager() {
   const aliasByPath = new Map<string, string>();
   const manualMappings: CustomFontMapping[] = [];
   for (const m of customFonts ?? []) {
+    if (!m.path) continue;
     aliasByPath.set(m.path, m.alias);
     const isUploadedPath =
       m.path.startsWith(DEFAULT_FONT_DRIVE) &&
@@ -278,16 +279,20 @@ function ManualMappingsSection({
       <p className="text-xs text-muted px-1 leading-relaxed">{hint}</p>
       {mappings.map((m) => {
         const dup = isDuplicateAlias(m.alias);
+        // Manual mappings always carry a path (preview-only entries
+        // live elsewhere). The empty string fallback only keeps TS happy
+        // and never reaches the user — the row is suppressed upstream.
+        const path = m.path ?? '';
         // Key: stable across edits as long as alias and path don't
         // change at the same time. For fresh empty rows the auto-
         // assigned alias from nextFreeAlias is unique per row, which
         // gives a stable identity until the user types a path.
-        const rowKey = m.path || `__alias__${m.alias}`;
+        const rowKey = path || `__alias__${m.alias}`;
         return (
           <div
             key={rowKey}
             className="grid grid-cols-[3rem_1fr_auto] gap-2 items-center"
-            onBlur={(e) => handleBlur(e, m.path, m.alias)}
+            onBlur={(e) => handleBlur(e, path, m.alias)}
           >
             <input
               type="text"
@@ -301,20 +306,20 @@ function ManualMappingsSection({
               }
               aria-invalid={dup || undefined}
               value={m.alias}
-              onChange={(e) => onUpdate(m.path, { alias: e.target.value })}
+              onChange={(e) => onUpdate(path, { alias: e.target.value })}
             />
             <input
               type="text"
               className={inputCls}
               list={PATHS_DATALIST_ID}
               placeholder={t.label.customFontsPath}
-              value={m.path}
-              onChange={(e) => onUpdate(m.path, { path: e.target.value })}
+              value={path}
+              onChange={(e) => onUpdate(path, { path: e.target.value })}
             />
             <button
               type="button"
               className="p-1 text-muted hover:text-text"
-              onClick={() => onRemove(m.path)}
+              onClick={() => onRemove(path)}
               aria-label={t.label.customFontsRemove}
             >
               <TrashIcon className="w-3.5 h-3.5" />

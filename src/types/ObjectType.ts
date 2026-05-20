@@ -1,12 +1,42 @@
 import type React from 'react';
 import { z } from 'zod';
 
-/** A single ^CW mapping: a 1-character alias [A-Z0-9] paired with a font
- *  path on the printer's storage (e.g. "E:ARIAL.TTF"). */
-export const customFontMappingSchema = z.object({
-  alias: z.string().regex(/^[A-Z0-9]$/),
-  path: z.string().min(1),
-});
+/** A single font mapping. Three row shapes are supported so the editor
+ *  can stay 1:1 with what the printer renders:
+ *
+ *  1. **Printer-resident custom font** — `path` set, optional
+ *     `previewFontName`. Emits `^CW{alias},{path}` so the printer
+ *     resolves `^A{alias}` against the path. With `previewFontName`
+ *     also set the canvas renders that TTF; with `embedInZpl` true the
+ *     TTF bytes ship in the ZPL stream via `~DY`.
+ *  2. **Built-in font preview binding** — alias is one of `0` / `A-H`
+ *     (the fonts every Zebra printer ships with), `path` left empty,
+ *     `previewFontName` points at an uploaded TTF. No `^CW` is emitted;
+ *     the binding is cosmetic so the canvas can show what the built-in
+ *     glyphs actually look like.
+ *  3. **Manual printer-resident font** — `path` set, no upload. User
+ *     declares "this alias maps to a file already on the printer";
+ *     canvas falls back to PrintLab ZPL because it has no bytes.
+ *
+ *  `embedInZpl` toggles a `~DY{path}` upload of the local TTF bytes so
+ *  the printer (and Labelary, if it honours `~DY`) renders with the
+ *  uploaded font even when the file is not yet on the device. Requires
+ *  both `path` and `previewFontName`. */
+export const customFontMappingSchema = z
+  .object({
+    alias: z.string().regex(/^[A-Z0-9]$/),
+    path: z.string().min(1).optional(),
+    previewFontName: z.string().min(1).optional(),
+    embedInZpl: z.boolean().optional(),
+  })
+  .refine((m) => !!m.path || !!m.previewFontName, {
+    message:
+      "Custom font mapping needs at least a printer path or a preview TTF",
+  })
+  .refine((m) => !m.embedInZpl || (!!m.path && !!m.previewFontName), {
+    message:
+      "embedInZpl requires both a printer path (~DY target) and a preview TTF (~DY bytes)",
+  });
 export type CustomFontMapping = z.infer<typeof customFontMappingSchema>;
 
 export const labelConfigSchema = z.object({

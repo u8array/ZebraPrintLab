@@ -149,7 +149,7 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
   // rewrite keeps working if text emit ever supports non-E drives.
   const aliasByPath = new Map<string, string>();
   for (const m of label.customFonts ?? []) {
-    if (m.alias) aliasByPath.set(m.path, m.alias);
+    if (m.alias && m.path) aliasByPath.set(m.path, m.alias);
   }
   let output = lines.join('\n');
   if (aliasByPath.size > 0) {
