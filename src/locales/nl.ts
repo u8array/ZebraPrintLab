@@ -461,6 +461,10 @@ const nl = {
     manualMappingsHeading: 'Lettertypen op de printer',
     manualMappingsHint: 'Verwijs naar lettertypen die al op de printer staan maar hier niet zijn geüpload.',
     addManualMapping: 'Printerlettertype toevoegen',
+    builtinPreviewsHeading: 'Voorvertoningen van ingebouwde lettertypen',
+    builtinPreviewsHint: 'Koppel een lokale TTF aan een ingebouwd lettertype-ID (0, A-H) zodat de editor toont hoe dat lettertype er echt uitziet. Wordt niet naar ZPL gestuurd.',
+    addBuiltinPreview: 'Ingebouwd lettertype koppelen',
+    noPreviewFont: 'Kies een lettertype…',
   },
   zebraPrint: {
     heading: 'Verzenden naar Zebra-printer',

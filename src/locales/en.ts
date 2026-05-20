@@ -482,6 +482,10 @@ const en = {
     manualMappingsHeading: 'Printer-resident fonts',
     manualMappingsHint: 'Reference fonts already on the printer that are not uploaded here.',
     addManualMapping: 'Add printer font',
+    builtinPreviewsHeading: 'Built-in font previews',
+    builtinPreviewsHint: 'Bind a local TTF to a built-in font ID (0, A-H) so the editor shows what that font actually looks like. Not emitted to ZPL.',
+    addBuiltinPreview: 'Bind built-in font',
+    noPreviewFont: 'Pick a font…',
   },
 } as const;
 

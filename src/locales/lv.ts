@@ -461,6 +461,10 @@ const lv = {
     manualMappingsHeading: 'Printera fonti',
     manualMappingsHint: 'Atsauce uz fontiem, kas jau ir printerī, bet nav augšupielādēti šeit.',
     addManualMapping: 'Pievienot printera fontu',
+    builtinPreviewsHeading: 'Iebūvēto fontu priekšskatījumi',
+    builtinPreviewsHint: 'Saistīt vietējo TTF ar iebūvētu fonta ID (0, A-H), lai redaktors parādītu, kā šis fonts patiesībā izskatās. Netiek izvadīts uz ZPL.',
+    addBuiltinPreview: 'Saistīt iebūvēto fontu',
+    noPreviewFont: 'Izvēlieties fontu…',
   },
   zebraPrint: {
     heading: 'Sūtīt uz Zebra printeri',

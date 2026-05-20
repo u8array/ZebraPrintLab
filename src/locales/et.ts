@@ -461,6 +461,10 @@ const et = {
     manualMappingsHeading: 'Printeri fondid',
     manualMappingsHint: 'Viide printeris juba olevatele fontidele, mida pole siia üles laaditud.',
     addManualMapping: 'Lisa printeri font',
+    builtinPreviewsHeading: 'Sisseehitatud fontide eelvaated',
+    builtinPreviewsHint: 'Seo kohalik TTF sisseehitatud fondi ID-ga (0, A-H), et redaktor näitaks, milline see font tegelikult välja näeb. Ei edastata ZPL-i.',
+    addBuiltinPreview: 'Seo sisseehitatud font',
+    noPreviewFont: 'Vali font…',
   },
   zebraPrint: {
     heading: 'Saada Zebra printerile',

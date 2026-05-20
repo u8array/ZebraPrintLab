@@ -461,6 +461,10 @@ const fi = {
     manualMappingsHeading: 'Fontit tulostimessa',
     manualMappingsHint: 'Viittaa fontteihin, jotka ovat jo tulostimessa mutta joita ei ole ladattu tänne.',
     addManualMapping: 'Lisää tulostimen fontti',
+    builtinPreviewsHeading: 'Sisäänrakennettujen fonttien esikatselut',
+    builtinPreviewsHint: 'Sido paikallinen TTF sisäänrakennettuun fontti-ID:hen (0, A-H), jotta editori näyttää miltä fontti todella näyttää. Ei lähetetä ZPL:ään.',
+    addBuiltinPreview: 'Sido sisäänrakennettu fontti',
+    noPreviewFont: 'Valitse fontti…',
   },
   zebraPrint: {
     heading: 'Lähetä Zebra-tulostimelle',

@@ -461,6 +461,10 @@ const it = {
     manualMappingsHeading: 'Font residenti sulla stampante',
     manualMappingsHint: 'Riferimento a font già presenti sulla stampante ma non caricati qui.',
     addManualMapping: 'Aggiungi font della stampante',
+    builtinPreviewsHeading: 'Anteprime caratteri integrati',
+    builtinPreviewsHint: 'Associa un TTF locale a un ID di carattere integrato (0, A-H) in modo che l\'editor mostri come appare realmente quel carattere. Non emesso in ZPL.',
+    addBuiltinPreview: 'Associa carattere integrato',
+    noPreviewFont: 'Scegli un carattere…',
   },
   zebraPrint: {
     heading: 'Invia a stampante Zebra',

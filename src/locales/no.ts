@@ -461,6 +461,10 @@ const no = {
     manualMappingsHeading: 'Skrifter på skriveren',
     manualMappingsHint: 'Referer til skrifter som allerede ligger på skriveren, men ikke er lastet opp her.',
     addManualMapping: 'Legg til skriverskrift',
+    builtinPreviewsHeading: 'Forhåndsvisninger av innebygde skrifter',
+    builtinPreviewsHint: 'Bind en lokal TTF til en innebygd skrift-ID (0, A-H) slik at editoren viser hvordan skriften faktisk ser ut. Sendes ikke til ZPL.',
+    addBuiltinPreview: 'Bind innebygd skrift',
+    noPreviewFont: 'Velg en skrift…',
   },
   zebraPrint: {
     heading: 'Send til Zebra-skriver',

@@ -461,6 +461,10 @@ const sr = {
     manualMappingsHeading: 'Фонтови на штампачу',
     manualMappingsHint: 'Референца на фонтове који се већ налазе на штампачу, али нису пренети овде.',
     addManualMapping: 'Додај фонт штампача',
+    builtinPreviewsHeading: 'Прегледи уграђених фонтова',
+    builtinPreviewsHint: 'Повежите локални TTF са уграђеним ID-јем фонта (0, A-H) тако да уредник прикаже како тај фонт заиста изгледа. Не емитује се у ZPL.',
+    addBuiltinPreview: 'Повежи уграђени фонт',
+    noPreviewFont: 'Изаберите фонт…',
   },
   zebraPrint: {
     heading: 'Пошаљи на Zebra штампач',

@@ -461,6 +461,10 @@ const fa = {
     manualMappingsHeading: 'فونت‌های موجود در چاپگر',
     manualMappingsHint: 'ارجاع به فونت‌هایی که از قبل روی چاپگر هستند و اینجا بارگذاری نشده‌اند.',
     addManualMapping: 'افزودن فونت چاپگر',
+    builtinPreviewsHeading: 'پیش‌نمایش قلم‌های داخلی',
+    builtinPreviewsHint: 'یک فایل TTF محلی را به یک شناسه قلم داخلی (0، A-H) متصل کنید تا ویرایشگر شکل واقعی آن قلم را نشان دهد. به ZPL منتشر نمی‌شود.',
+    addBuiltinPreview: 'اتصال قلم داخلی',
+    noPreviewFont: 'یک قلم انتخاب کنید…',
   },
   zebraPrint: {
     heading: 'ارسال به چاپگر Zebra',

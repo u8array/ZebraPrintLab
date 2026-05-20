@@ -461,6 +461,10 @@ const lt = {
     manualMappingsHeading: 'Spausdintuve esantys šriftai',
     manualMappingsHint: 'Nuoroda į spausdintuve jau esančius šriftus, kurie čia neįkelti.',
     addManualMapping: 'Pridėti spausdintuvo šriftą',
+    builtinPreviewsHeading: 'Įmontuotų šriftų peržiūros',
+    builtinPreviewsHint: 'Susiekite vietinį TTF su įmontuoto šrifto ID (0, A-H), kad redaktorius rodytų, kaip tas šriftas iš tikrųjų atrodo. Neperduodama į ZPL.',
+    addBuiltinPreview: 'Susieti įmontuotą šriftą',
+    noPreviewFont: 'Pasirinkite šriftą…',
   },
   zebraPrint: {
     heading: 'Siųsti į Zebra spausdintuvą',

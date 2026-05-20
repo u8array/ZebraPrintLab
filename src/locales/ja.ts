@@ -461,6 +461,10 @@ const ja = {
     manualMappingsHeading: 'プリンター内蔵フォント',
     manualMappingsHint: 'プリンターに既にあるがここにアップロードされていないフォントを参照します。',
     addManualMapping: 'プリンターフォントを追加',
+    builtinPreviewsHeading: '内蔵フォントのプレビュー',
+    builtinPreviewsHint: 'ローカルTTFを内蔵フォントID（0、A-H）にバインドして、エディタでそのフォントの実際の見た目を表示します。ZPLには出力されません。',
+    addBuiltinPreview: '内蔵フォントをバインド',
+    noPreviewFont: 'フォントを選択…',
   },
   zebraPrint: {
     heading: 'Zebra プリンターへ送信',

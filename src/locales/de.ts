@@ -482,6 +482,10 @@ const de = {
     manualMappingsHeading: 'Schriften auf dem Drucker',
     manualMappingsHint: 'Schriften referenzieren, die schon auf dem Drucker liegen, aber hier nicht hochgeladen sind.',
     addManualMapping: 'Drucker-Schrift hinzufügen',
+    builtinPreviewsHeading: 'Vorschau für Drucker-Standardschriften',
+    builtinPreviewsHint: 'Bindet eine lokale TTF an eine eingebaute Schrift-ID (0, A-H), damit der Editor zeigt, wie diese Schrift wirklich aussieht. Wird nicht ins ZPL emittiert.',
+    addBuiltinPreview: 'Eingebaute Schrift binden',
+    noPreviewFont: 'Schrift wählen …',
   },
 } as const;
 

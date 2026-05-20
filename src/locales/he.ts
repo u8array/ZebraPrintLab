@@ -461,6 +461,10 @@ const he = {
     manualMappingsHeading: 'גופנים השמורים במדפסת',
     manualMappingsHint: 'התייחסות לגופנים שכבר נמצאים במדפסת ולא הועלו כאן.',
     addManualMapping: 'הוסף גופן מדפסת',
+    builtinPreviewsHeading: 'תצוגות מקדימות של גופנים מובנים',
+    builtinPreviewsHint: 'קשר קובץ TTF מקומי לזיהוי גופן מובנה (0, A-H) כדי שהעורך יציג כיצד הגופן באמת נראה. לא נפלט ל-ZPL.',
+    addBuiltinPreview: 'קשר גופן מובנה',
+    noPreviewFont: 'בחר גופן…',
   },
   zebraPrint: {
     heading: 'שלח למדפסת Zebra',

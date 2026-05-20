@@ -461,6 +461,10 @@ const fr = {
     manualMappingsHeading: 'Polices résidentes',
     manualMappingsHint: 'Référencer des polices déjà présentes sur l\'imprimante mais non téléversées ici.',
     addManualMapping: 'Ajouter une police d\'imprimante',
+    builtinPreviewsHeading: 'Aperçus des polices intégrées',
+    builtinPreviewsHint: 'Lie un TTF local à un ID de police intégrée (0, A-H) pour que l\'éditeur montre à quoi ressemble vraiment cette police. Non émis dans ZPL.',
+    addBuiltinPreview: 'Lier police intégrée',
+    noPreviewFont: 'Choisir une police…',
   },
   zebraPrint: {
     heading: 'Envoyer à l’imprimante Zebra',

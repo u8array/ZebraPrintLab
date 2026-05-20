@@ -461,6 +461,10 @@ const sl = {
     manualMappingsHeading: 'Pisave v tiskalniku',
     manualMappingsHint: 'Sklicevanje na pisave, ki so že v tiskalniku, vendar tukaj niso naložene.',
     addManualMapping: 'Dodaj pisavo tiskalnika',
+    builtinPreviewsHeading: 'Predogledi vgrajenih pisav',
+    builtinPreviewsHint: 'Povežite lokalno TTF datoteko z vgrajenim ID-jem pisave (0, A-H), da urejevalnik prikaže, kako ta pisava dejansko izgleda. Ni oddano v ZPL.',
+    addBuiltinPreview: 'Poveži vgrajeno pisavo',
+    noPreviewFont: 'Izberite pisavo…',
   },
   zebraPrint: {
     heading: 'Pošlji na tiskalnik Zebra',

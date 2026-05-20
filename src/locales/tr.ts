@@ -461,6 +461,10 @@ const tr = {
     manualMappingsHeading: 'Yazıcıda kayıtlı yazı tipleri',
     manualMappingsHint: 'Yazıcıda zaten bulunan ancak buraya yüklenmemiş yazı tiplerine referans verir.',
     addManualMapping: 'Yazıcı yazı tipi ekle',
+    builtinPreviewsHeading: 'Yerleşik yazı tipi önizlemeleri',
+    builtinPreviewsHint: 'Yerel bir TTF dosyasını yerleşik bir yazı tipi kimliğine (0, A-H) bağlayın, böylece editör o yazı tipinin gerçekte nasıl göründüğünü gösterir. ZPL\'ye yayılmaz.',
+    addBuiltinPreview: 'Yerleşik yazı tipi bağla',
+    noPreviewFont: 'Bir yazı tipi seç…',
   },
   zebraPrint: {
     heading: 'Zebra yazıcıya gönder',

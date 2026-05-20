@@ -461,6 +461,10 @@ const da = {
     manualMappingsHeading: 'Skrifttyper på printeren',
     manualMappingsHint: 'Reference til skrifttyper, der allerede er på printeren, men ikke uploadet her.',
     addManualMapping: 'Tilføj printerskrifttype',
+    builtinPreviewsHeading: 'Visning af indbyggede skrifttyper',
+    builtinPreviewsHint: 'Bind en lokal TTF til et indbygget skrift-ID (0, A-H), så editoren viser, hvordan skriften faktisk ser ud. Sendes ikke til ZPL.',
+    addBuiltinPreview: 'Bind indbygget skrifttype',
+    noPreviewFont: 'Vælg en skrifttype…',
   },
   zebraPrint: {
     heading: 'Send til Zebra-printer',

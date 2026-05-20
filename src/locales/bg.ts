@@ -461,6 +461,10 @@ const bg = {
     manualMappingsHeading: 'Шрифтове в принтера',
     manualMappingsHint: 'Препратка към шрифтове, които вече са в принтера, но не са качени тук.',
     addManualMapping: 'Добави шрифт на принтера',
+    builtinPreviewsHeading: 'Прегледи на вградени шрифтове',
+    builtinPreviewsHint: 'Свържете локален TTF с вграден ID на шрифт (0, A-H), за да показва редакторът как изглежда този шрифт. Не се излъчва в ZPL.',
+    addBuiltinPreview: 'Свържи вграден шрифт',
+    noPreviewFont: 'Изберете шрифт…',
   },
   zebraPrint: {
     heading: 'Изпрати към принтер Zebra',

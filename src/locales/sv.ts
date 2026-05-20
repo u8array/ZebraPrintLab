@@ -461,6 +461,10 @@ const sv = {
     manualMappingsHeading: 'Typsnitt i skrivaren',
     manualMappingsHint: 'Referera till typsnitt som redan finns på skrivaren men inte är uppladdade här.',
     addManualMapping: 'Lägg till skrivartypsnitt',
+    builtinPreviewsHeading: 'Förhandsvisningar av inbyggda typsnitt',
+    builtinPreviewsHint: 'Bind ett lokalt TTF till ett inbyggt typsnitts-ID (0, A-H) så att editorn visar hur det typsnittet faktiskt ser ut. Sänds inte till ZPL.',
+    addBuiltinPreview: 'Bind inbyggt typsnitt',
+    noPreviewFont: 'Välj ett typsnitt…',
   },
   zebraPrint: {
     heading: 'Skicka till Zebra-skrivare',

@@ -461,6 +461,10 @@ const cs = {
     manualMappingsHeading: 'Písma uložená v tiskárně',
     manualMappingsHint: 'Odkaz na písma, která jsou již v tiskárně, ale zde nejsou nahrána.',
     addManualMapping: 'Přidat písmo tiskárny',
+    builtinPreviewsHeading: 'Náhledy vestavěných písem',
+    builtinPreviewsHint: 'Přiřaďte místní TTF k vestavěnému ID písma (0, A-H), aby editor ukazoval, jak písmo skutečně vypadá. Nevysílá se do ZPL.',
+    addBuiltinPreview: 'Přiřadit vestavěné písmo',
+    noPreviewFont: 'Vyberte písmo…',
   },
   zebraPrint: {
     heading: 'Odeslat na tiskárnu Zebra',

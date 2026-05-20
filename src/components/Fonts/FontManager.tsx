@@ -6,6 +6,7 @@ import { useLabelStore } from '../../store/labelStore';
 import { useT } from '../../lib/useT';
 import {
   DEFAULT_FONT_DRIVE,
+  ZPL_BUILTIN_FONT_IDS,
   ZPL_DRIVE_PREFIXES,
   nextFreeAlias,
   normalizeAlias,
@@ -34,14 +35,21 @@ export function FontManager() {
 
   const uploadedNames = new Set(fonts.map((f) => f.name));
 
-  // Partition customFonts: mappings whose path resolves to an uploaded
-  // font are reflected inline on that font row; the rest live in the
-  // printer-resident sub-section. Aliases are namespaced globally per
-  // label, so duplicate detection runs across both lists.
+  // Partition customFonts into three buckets matched to the three UI
+  // sections. The same source list feeds all three views; entries are
+  // routed by shape: path → uploaded vs. manual, no path → built-in
+  // preview binding. Aliases stay globally unique across the label,
+  // so duplicate detection runs over the full list.
   const aliasByPath = new Map<string, string>();
   const manualMappings: CustomFontMapping[] = [];
+  const builtinPreviews: CustomFontMapping[] = [];
   for (const m of customFonts ?? []) {
-    if (!m.path) continue;
+    if (!m.path) {
+      // No path → ^CW is not emitted; the mapping exists only to bind
+      // a local TTF to a built-in font ID for canvas preview.
+      builtinPreviews.push(m);
+      continue;
+    }
     aliasByPath.set(m.path, m.alias);
     const isUploadedPath =
       m.path.startsWith(DEFAULT_FONT_DRIVE) &&
@@ -130,6 +138,46 @@ export function FontManager() {
     ]);
   };
 
+  const addBuiltinPreview = () => {
+    // Pick the first built-in id that does not already have a binding
+    // so the new row lands on a usable default. If every built-in is
+    // already bound, fall back to "0" — the user can edit it.
+    const takenAliases = new Set(
+      (customFonts ?? [])
+        .filter((m) => !m.path)
+        .map((m) => m.alias),
+    );
+    const next =
+      ZPL_BUILTIN_FONT_IDS.find((id) => !takenAliases.has(id)) ?? '0';
+    replaceList([...(customFonts ?? []), { alias: next, previewFontName: '' }]);
+  };
+
+  // Built-in-preview rows are keyed by alias (one binding per ID).
+  const updateBuiltinPreview = (
+    currentAlias: string,
+    patch: Partial<CustomFontMapping>,
+  ) => {
+    const list = customFonts ?? [];
+    replaceList(
+      list.map((m) =>
+        m.alias === currentAlias && !m.path
+          ? {
+              alias: patch.alias !== undefined
+                ? normalizeAlias(patch.alias) || m.alias
+                : m.alias,
+              previewFontName: patch.previewFontName ?? m.previewFontName,
+            }
+          : m,
+      ),
+    );
+  };
+
+  const removeBuiltinPreview = (alias: string) => {
+    replaceList(
+      (customFonts ?? []).filter((m) => !(m.alias === alias && !m.path)),
+    );
+  };
+
   const uploadedPaths = fonts.map((f) => uploadedFontPath(f.name));
 
   return (
@@ -184,6 +232,23 @@ export function FontManager() {
           onUpdate={updateManualAt}
           onRemove={removeByPath}
           onAdd={addManual}
+        />
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        id="fonts-builtin-previews"
+        title={t.fonts.builtinPreviewsHeading}
+        defaultOpen={false}
+      >
+        <BuiltinPreviewSection
+          mappings={builtinPreviews}
+          uploadedFonts={fonts.map((f) => f.name)}
+          hint={t.fonts.builtinPreviewsHint}
+          addLabel={t.fonts.addBuiltinPreview}
+          isDuplicateAlias={isDuplicateAlias}
+          onUpdate={updateBuiltinPreview}
+          onRemove={removeBuiltinPreview}
+          onAdd={addBuiltinPreview}
         />
       </CollapsibleSection>
 
@@ -379,6 +444,96 @@ function ManualMappingsSection({
               type="button"
               className="p-1 text-muted hover:text-text"
               onClick={() => onRemove(path)}
+              aria-label={t.label.customFontsRemove}
+            >
+              <TrashIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        );
+      })}
+      <button type="button" className={addBtnCls} onClick={onAdd}>
+        <PlusIcon className="w-3 h-3 text-accent" />
+        {addLabel}
+      </button>
+    </div>
+  );
+}
+
+// ── BuiltinPreviewSection ─────────────────────────────────────────────────────
+
+interface BuiltinPreviewSectionProps {
+  mappings: CustomFontMapping[];
+  uploadedFonts: string[];
+  hint: string;
+  addLabel: string;
+  isDuplicateAlias: (alias: string) => boolean;
+  onUpdate: (currentAlias: string, patch: Partial<CustomFontMapping>) => void;
+  onRemove: (alias: string) => void;
+  onAdd: () => void;
+}
+
+function BuiltinPreviewSection({
+  mappings,
+  uploadedFonts,
+  hint,
+  addLabel,
+  isDuplicateAlias,
+  onUpdate,
+  onRemove,
+  onAdd,
+}: BuiltinPreviewSectionProps) {
+  const t = useT();
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs text-muted px-1 leading-relaxed">{hint}</p>
+      {mappings.map((m) => {
+        const dup = isDuplicateAlias(m.alias);
+        return (
+          <div
+            key={m.alias}
+            className="grid grid-cols-[4rem_1fr_auto] gap-2 items-center"
+          >
+            <select
+              className={`${inputCls} ${dup ? 'border-red-500' : ''}`}
+              aria-invalid={dup || undefined}
+              value={m.alias}
+              onChange={(e) =>
+                onUpdate(m.alias, { alias: e.target.value })
+              }
+            >
+              {ZPL_BUILTIN_FONT_IDS.map((id) => (
+                <option key={id} value={id}>
+                  {id}
+                </option>
+              ))}
+            </select>
+            <select
+              className={inputCls}
+              value={m.previewFontName ?? ''}
+              onChange={(e) =>
+                onUpdate(m.alias, {
+                  previewFontName: e.target.value || undefined,
+                })
+              }
+            >
+              <option value="">{t.fonts.noPreviewFont}</option>
+              {uploadedFonts.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+              {/* If a previously-saved binding references a font that
+                  was since removed, surface it so the user can see /
+                  re-bind it instead of silently dropping the entry. */}
+              {m.previewFontName && !uploadedFonts.includes(m.previewFontName) && (
+                <option value={m.previewFontName}>{m.previewFontName}</option>
+              )}
+            </select>
+            <button
+              type="button"
+              className="p-1 text-muted hover:text-text"
+              onClick={() => onRemove(m.alias)}
               aria-label={t.label.customFontsRemove}
             >
               <TrashIcon className="w-3.5 h-3.5" />

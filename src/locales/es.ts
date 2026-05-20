@@ -461,6 +461,10 @@ const es = {
     manualMappingsHeading: 'Fuentes residentes en la impresora',
     manualMappingsHint: 'Referencia a fuentes ya presentes en la impresora pero no cargadas aquí.',
     addManualMapping: 'Añadir fuente de impresora',
+    builtinPreviewsHeading: 'Previsualizaciones de fuentes integradas',
+    builtinPreviewsHint: 'Asocia un TTF local a un ID de fuente integrada (0, A-H) para que el editor muestre cómo se ve realmente esa fuente. No se emite a ZPL.',
+    addBuiltinPreview: 'Vincular fuente integrada',
+    noPreviewFont: 'Elige una fuente…',
   },
   zebraPrint: {
     heading: 'Enviar a impresora Zebra',

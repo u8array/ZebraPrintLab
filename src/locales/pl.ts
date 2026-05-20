@@ -461,6 +461,10 @@ const pl = {
     manualMappingsHeading: 'Czcionki w pamięci drukarki',
     manualMappingsHint: 'Odwołuje się do czcionek już w drukarce, niewgranych tutaj.',
     addManualMapping: 'Dodaj czcionkę drukarki',
+    builtinPreviewsHeading: 'Podglądy wbudowanych czcionek',
+    builtinPreviewsHint: 'Powiąż lokalny TTF z wbudowanym ID czcionki (0, A-H), aby edytor pokazywał, jak naprawdę wygląda ta czcionka. Nie jest wysyłane do ZPL.',
+    addBuiltinPreview: 'Powiąż wbudowaną czcionkę',
+    noPreviewFont: 'Wybierz czcionkę…',
   },
   zebraPrint: {
     heading: 'Wyślij do drukarki Zebra',

@@ -461,6 +461,10 @@ const ro = {
     manualMappingsHeading: 'Fonturi din imprimantă',
     manualMappingsHint: 'Referință la fonturi deja prezente pe imprimantă, neîncărcate aici.',
     addManualMapping: 'Adaugă font imprimantă',
+    builtinPreviewsHeading: 'Previzualizări fonturi integrate',
+    builtinPreviewsHint: 'Leagă un TTF local de un ID de font integrat (0, A-H) pentru ca editorul să arate cum arată cu adevărat acel font. Nu este emis în ZPL.',
+    addBuiltinPreview: 'Leagă font integrat',
+    noPreviewFont: 'Alege un font…',
   },
   zebraPrint: {
     heading: 'Trimite la imprimanta Zebra',

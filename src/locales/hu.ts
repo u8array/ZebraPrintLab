@@ -461,6 +461,10 @@ const hu = {
     manualMappingsHeading: 'Betűtípusok a nyomtatón',
     manualMappingsHint: 'Hivatkozás a nyomtatón már lévő, itt fel nem töltött betűtípusokra.',
     addManualMapping: 'Nyomtató betűtípus hozzáadása',
+    builtinPreviewsHeading: 'Beépített betűtípus előnézetek',
+    builtinPreviewsHint: 'Köss össze egy helyi TTF-et egy beépített betűtípus-azonosítóval (0, A-H), hogy a szerkesztő mutassa, hogyan néz ki valójában az a betűtípus. Nem kerül ZPL-be.',
+    addBuiltinPreview: 'Beépített betűtípus kötése',
+    noPreviewFont: 'Válassz betűtípust…',
   },
   zebraPrint: {
     heading: 'Küldés Zebra nyomtatóra',

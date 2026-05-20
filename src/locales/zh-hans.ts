@@ -461,6 +461,10 @@ const zhHans = {
     manualMappingsHeading: '打印机内置字体',
     manualMappingsHint: '引用打印机中已有但未在此上传的字体。',
     addManualMapping: '添加打印机字体',
+    builtinPreviewsHeading: '内置字体预览',
+    builtinPreviewsHint: '将本地TTF绑定到内置字体ID（0、A-H），使编辑器显示该字体的实际外观。不会发送到ZPL。',
+    addBuiltinPreview: '绑定内置字体',
+    noPreviewFont: '选择字体…',
   },
   zebraPrint: {
     heading: '发送到 Zebra 打印机',

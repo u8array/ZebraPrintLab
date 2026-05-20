@@ -461,6 +461,10 @@ const ko = {
     manualMappingsHeading: '프린터 내 글꼴',
     manualMappingsHint: '프린터에 이미 있지만 여기에 업로드되지 않은 글꼴을 참조합니다.',
     addManualMapping: '프린터 글꼴 추가',
+    builtinPreviewsHeading: '내장 글꼴 미리보기',
+    builtinPreviewsHint: '로컬 TTF를 내장 글꼴 ID(0, A-H)에 바인딩하면 편집기에 해당 글꼴의 실제 모양이 표시됩니다. ZPL에 출력되지 않습니다.',
+    addBuiltinPreview: '내장 글꼴 바인딩',
+    noPreviewFont: '글꼴 선택…',
   },
   zebraPrint: {
     heading: 'Zebra 프린터로 전송',

@@ -461,6 +461,10 @@ const ar = {
     manualMappingsHeading: 'خطوط الطابعة المقيمة',
     manualMappingsHint: 'إشارة إلى خطوط موجودة بالفعل على الطابعة لم يتم رفعها هنا.',
     addManualMapping: 'إضافة خط طابعة',
+    builtinPreviewsHeading: 'معاينات الخطوط المدمجة',
+    builtinPreviewsHint: 'اربط ملف TTF محلي بمعرف خط مدمج (0، A-H) لكي يعرض المحرر شكل هذا الخط فعليا. لا يتم إصداره إلى ZPL.',
+    addBuiltinPreview: 'ربط خط مدمج',
+    noPreviewFont: 'اختر خطًا…',
   },
   zebraPrint: {
     heading: 'إرسال إلى طابعة Zebra',

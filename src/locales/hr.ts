@@ -461,6 +461,10 @@ const hr = {
     manualMappingsHeading: 'Fontovi na pisaču',
     manualMappingsHint: 'Referenca na fontove koji se već nalaze na pisaču, ali nisu prenijeti ovdje.',
     addManualMapping: 'Dodaj font pisača',
+    builtinPreviewsHeading: 'Pregledi ugrađenih fontova',
+    builtinPreviewsHint: 'Povežite lokalni TTF s ugrađenim ID-om fonta (0, A-H) tako da uređivač prikazuje kako taj font zaista izgleda. Ne emitira se u ZPL.',
+    addBuiltinPreview: 'Poveži ugrađeni font',
+    noPreviewFont: 'Odaberite font…',
   },
   zebraPrint: {
     heading: 'Pošalji na Zebra pisač',
