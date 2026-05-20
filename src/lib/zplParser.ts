@@ -325,9 +325,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   // ^FT vs ^FO: store position type so we can reproduce exactly in re-export.
   let positionIsFT = false;
 
-  // ^CF (change alphanumeric default font) state
+  // ^CF (change alphanumeric default font) state. cfFontId tracks the
+  // font character so the ^A handler can suppress redundant fontId
+  // assignments — a text field whose ^A repeats the ^CF font is the
+  // generator's way of saying "use the label default", and we want the
+  // model to reflect that rather than pinning the alias on every field.
   let cfHeight = 0;
   let cfWidth = 0;
+  let cfFontId: string | undefined;
 
   // ^FW (field default rotation) state
   let fwRotation: TextProps["rotation"] = "N";
@@ -355,6 +360,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
   // ^A@ pending printer font name (e.g. "ARIAL.TTF")
   let pendingPrinterFontName: string | undefined;
+  // ^A{id} pending font identifier (e.g. "M", "0"). Mutually exclusive
+  // with pendingPrinterFontName at field flush; both reset after use.
+  let pendingFontId: string | undefined;
 
   // ^SN / ^SF serialization state
   let snPending = false;
@@ -431,8 +439,10 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           rotation: textRot,
           reverse: getReverseFlag(),
           printerFontName: pendingPrinterFontName,
+          fontId: pendingFontId,
         };
         pendingPrinterFontName = undefined;
+        pendingFontId = undefined;
         if (fbWidth > 0) {
           textProps.blockWidth = fbWidth;
           textProps.blockLines = fbLines;
@@ -754,6 +764,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
       textH = int(p[1], cfHeight || 30);
       textW = int(p[2], cfWidth || 0);
+      // Set fontId="0" only when the current ^CF is not already 0 —
+      // otherwise the field is just repeating the label default, and
+      // we keep fontId undefined so the model says "use the default".
+      // When no ^CF has fired, "0" is the historical baseline both the
+      // generator and the printer fall back to, so it counts as default.
+      pendingFontId = cfFontId && cfFontId !== "0" ? "0" : undefined;
     },
 
     // ── Change alphanumeric default font ────────────────────────────────────
@@ -764,7 +780,10 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       const explicitWidth = parseInt(p[2] ?? "", 10);
       cfHeight = isNaN(explicitHeight) ? cfHeight : explicitHeight;
       cfWidth = isNaN(explicitWidth) ? cfWidth : explicitWidth;
-      if (fontId) labelConfig.defaultFontId = fontId;
+      if (fontId) {
+        labelConfig.defaultFontId = fontId;
+        cfFontId = fontId;
+      }
       if (!isNaN(explicitHeight) && explicitHeight > 0) {
         labelConfig.defaultFontHeight = explicitHeight;
       }
@@ -1399,15 +1418,21 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
       textH = int(p[1], cfHeight || 30);
       textW = int(p[2], cfWidth || 0);
-      // Resolve the font letter via the ^CW alias table if known; the
-      // path is stored verbatim with its drive prefix (e.g. "E:FOO.TTF"),
-      // so strip the "X:" segment before handing it to the text object.
-      const aliasPath = fontAliases.get(cmd[1] ?? "");
-      if (aliasPath) {
-        const colonIdx = aliasPath.indexOf(":");
-        pendingPrinterFontName =
-          (colonIdx >= 0 ? aliasPath.slice(colonIdx + 1) : aliasPath) || undefined;
+      const fontChar = cmd[1] ?? "";
+      // Round-trip semantics: when the font character matches the
+      // current ^CF, treat the field as "use the label default" and
+      // leave pendingFontId undefined so the model carries no per-field
+      // override. Otherwise pin the alias on the field so re-emitting
+      // produces the same ^A{id} short form. Unknown aliases (no ^CW
+      // and not a built-in) still go through — the printer would fall
+      // back to font 0 at print, but storing the user's choice keeps
+      // the import lossless for editing.
+      if (cfFontId && fontChar === cfFontId) {
+        pendingFontId = undefined;
       } else {
+        pendingFontId = fontChar;
+      }
+      if (!fontAliases.has(fontChar) && !"0ABCDEFGH".includes(fontChar)) {
         partialCmds.add(`^${cmd}`);
       }
       continue;
