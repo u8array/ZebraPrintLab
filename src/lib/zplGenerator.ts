@@ -33,8 +33,9 @@ function formatDownloadObject(m: CustomFontMapping): string | undefined {
   // Only TTF/OTF are uploaded today; both map to extension code T
   // (TrueType is the only TTF-family identifier in the spec).
   if (ext !== 'TTF' && ext !== 'OTF') return undefined;
-  let hex = '';
-  for (const b of bytes) hex += b.toString(16).padStart(2, '0').toUpperCase();
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
   return `~DY${drive}${stem},A,T,${bytes.length},,${hex}`;
 }
 

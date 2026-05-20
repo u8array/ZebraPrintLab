@@ -1395,7 +1395,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       }
       const bytes = new Uint8Array(size);
       for (let i = 0; i < size; i++) {
-        const byteHex = data.substr(i * 2, 2);
+        const byteHex = data.slice(i * 2, i * 2 + 2);
         const b = parseInt(byteHex, 16);
         if (isNaN(b)) {
           browserLimit.push(`~DY${rest.slice(0, 80)}…`);
