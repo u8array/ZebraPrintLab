@@ -113,6 +113,7 @@ export function FontManager() {
       list.map((m) =>
         m.path === path
           ? {
+              ...m,
               alias:
                 patch.alias !== undefined
                   ? normalizeAlias(patch.alias)
@@ -163,6 +164,7 @@ export function FontManager() {
       list.map((m) =>
         m.alias === currentAlias && !m.path
           ? {
+              ...m,
               alias: patch.alias !== undefined
                 ? normalizeAlias(patch.alias) || m.alias
                 : m.alias,
