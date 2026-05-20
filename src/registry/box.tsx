@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
+import { fieldPos, wrapReverse } from './zplHelpers';
 import { commitWidthHeightTransform } from './transformHelpers';
 import { NumberInput } from '../components/Properties/NumberInput';
 
@@ -42,13 +42,10 @@ export const box: ObjectTypeDefinition<BoxProps> = {
     const t = p.filled
       ? Math.max(p.thickness, solidThreshold)
       : p.thickness;
-    return [
-      p.reverse ? '^LRY' : '',
-      fieldPos(obj),
-      `^GB${p.width},${p.height},${t},${p.color},${p.rounding}`,
-      '^FS',
-      p.reverse ? '^LRN' : '',
-    ].filter(Boolean).join('');
+    return wrapReverse(
+      p.reverse,
+      `${fieldPos(obj)}^GB${p.width},${p.height},${t},${p.color},${p.rounding}^FS`,
+    );
   },
 
   PropertiesPanel: ({ obj, onChange }) => {

@@ -3,6 +3,7 @@ import { useT } from '../lib/useT';
 import { useLabelStore } from '../store/labelStore';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { NumberInput } from '../components/Properties/NumberInput';
+import { wrapReverse } from './zplHelpers';
 
 export interface LineProps {
   /** Angle in degrees, 0 = rightward horizontal, clockwise positive (screen coords). */
@@ -85,21 +86,26 @@ export const line: ObjectTypeDefinition<LineProps> = {
     const t = p.thickness;
     const l = p.length;
     const a = ((p.angle % 360) + 360) % 360; // normalise to [0, 360)
-    const lr = p.reverse ? ['^LRY', '^LRN'] : ['', ''];
 
     // Pure horizontal — angle 180 means the line extends LEFT from (obj.x, obj.y),
     // so the ^GB box must start at (obj.x - l) to overlap the same pixels.
     if (a === 0 || a === 180) {
       const bx = a === 180 ? obj.x - l : obj.x;
       const cmd = obj.positionType === 'FT' ? 'FT' : 'FO';
-      return `${lr[0]}^${cmd}${bx},${obj.y}^GB${l},${t},${t},${p.color},0^FS${lr[1]}`;
+      return wrapReverse(
+        p.reverse,
+        `^${cmd}${bx},${obj.y}^GB${l},${t},${t},${p.color},0^FS`,
+      );
     }
     // Pure vertical — angle 270 means the line extends UP from (obj.x, obj.y),
     // so the ^GB box must start at (obj.x, obj.y - l).
     if (a === 90 || a === 270) {
       const by = a === 270 ? obj.y - l : obj.y;
       const cmd = obj.positionType === 'FT' ? 'FT' : 'FO';
-      return `${lr[0]}^${cmd}${obj.x},${by}^GB${t},${l},${t},${p.color},0^FS${lr[1]}`;
+      return wrapReverse(
+        p.reverse,
+        `^${cmd}${obj.x},${by}^GB${t},${l},${t},${p.color},0^FS`,
+      );
     }
 
     // Diagonal — use ^GD (bounding-box diagonal command)
@@ -111,7 +117,10 @@ export const line: ObjectTypeDefinition<LineProps> = {
     const orientation = dx * dy >= 0 ? 'L' : 'R';
     const boxX = obj.x + (dx < 0 ? Math.round(dx) : 0);
     const boxY = obj.y + (dy < 0 ? Math.round(dy) : 0);
-    return `${lr[0]}^FO${boxX},${boxY}^GD${w},${h},${t},${p.color},${orientation}^FS${lr[1]}`;
+    return wrapReverse(
+      p.reverse,
+      `^FO${boxX},${boxY}^GD${w},${h},${t},${p.color},${orientation}^FS`,
+    );
   },
 
   PropertiesPanel: ({ obj, onChange }) => {

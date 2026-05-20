@@ -6,6 +6,7 @@ import { ImageObject } from "./ImageObject";
 import type Konva from "konva";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { outlineInset } from "../../lib/shapeGeometry";
+import { reverseShapeStyle } from "./reverseShapeStyle";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { useLabelStore } from "../../store/labelStore";
 import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "./textPositionTransforms";
@@ -312,42 +313,15 @@ function KonvaObjectInner({
       ? cornerRadius
       : Math.max(0, cornerRadius - strokeWidth / 2);
 
-    // Inverted (^LRY) regions print as a knockout. The difference-blend
-    // body renders print-correctly: on the white label it produces black
-    // (white-on-white inverted = black ink in print), and over darker
-    // shapes it inverts those pixels — matching what Zebra firmware
-    // actually prints. The body keeps that mode even while selected so
-    // the inversion visualisation doesn't disappear and hide whatever
-    // is layered behind. The selection outline is rendered as a separate
-    // overlay rect with normal blending.
-    //
-    // Special-cases:
-    //  - reverse + filled drops the body stroke. Konva renders fill then
-    //    stroke; with the difference blend the fill flips the destination
-    //    to black and the (white) stroke then flips back to white inside
-    //    the rect, producing a b/w/b banding artefact. The stroke and
-    //    fill carry the same colour anyway so dropping it is visually
-    //    identical without the artefact.
-    //  - colour W filled (non-reverse) uses the light-grey shape colour
-    //    for the fill too, otherwise white-on-white would make filled
-    //    and outlined indistinguishable on canvas.
-    const isReverse = !!p.reverse;
-    const shapeColor = p.color === "B" ? "#000000" : "#cccccc";
-    // `renderFilled` includes the firmware clamp-to-solid case, so a
-    // very-thick outline picks the filled fill/stroke pair instead of
-    // collapsing into a degenerate inset rect.
-    const stroke = isReverse
-      ? renderFilled
-        ? "transparent"
-        : "#ffffff"
-      : shapeColor;
-    const fill = isReverse
-      ? renderFilled
-        ? "#ffffff"
-        : "transparent"
-      : renderFilled
-        ? shapeColor
-        : "transparent";
+    // Inverted (^LRY) paint is delegated to reverseShapeStyle so box
+    // and ellipse share the same colour rules — the helper covers the
+    // stroke/fill swap for filled outlines (banding workaround) and
+    // the difference-blend that produces the print-correct knockout.
+    const { stroke, fill, globalCompositeOperation } = reverseShapeStyle(
+      p.reverse,
+      p.color,
+      renderFilled,
+    );
     // Wrap body + selection overlay in a draggable Group so both move
     // together during a drag — without this the selection-stroke rect
     // stays at the start position while the body translates, leaving a
@@ -379,7 +353,7 @@ function KonvaObjectInner({
           strokeScaleEnabled={false}
           fill={fill}
           cornerRadius={insetCornerRadius}
-          globalCompositeOperation={isReverse ? "difference" : "source-over"}
+          globalCompositeOperation={globalCompositeOperation}
         />
         {isSelected && (
           <SelectionOverlay
@@ -411,25 +385,11 @@ function KonvaObjectInner({
     const renderFilled = insetGeom.renderFilled;
     const insetRx = insetGeom.width / 2;
     const insetRy = insetGeom.height / 2;
-    // Reverse rendering mirrors the box path (see the long comment
-    // there). The difference-blend produces the print-correct knockout
-    // both on the white label and over any darker shape underneath;
-    // the fill / stroke swap keeps a thick outline ellipse from
-    // banding when filled + reverse coincide.
-    const isReverse = !!p.reverse;
-    const shapeColor = p.color === "B" ? "#000000" : "#cccccc";
-    const stroke = isReverse
-      ? renderFilled
-        ? "transparent"
-        : "#ffffff"
-      : shapeColor;
-    const fill = isReverse
-      ? renderFilled
-        ? "#ffffff"
-        : "transparent"
-      : renderFilled
-        ? shapeColor
-        : "transparent";
+    const { stroke, fill, globalCompositeOperation } = reverseShapeStyle(
+      p.reverse,
+      p.color,
+      renderFilled,
+    );
     return (
       <Group
         id={obj.id}
@@ -449,7 +409,7 @@ function KonvaObjectInner({
           strokeWidth={renderFilled ? 0 : strokeWidth}
           strokeScaleEnabled={false}
           fill={fill}
-          globalCompositeOperation={isReverse ? "difference" : "source-over"}
+          globalCompositeOperation={globalCompositeOperation}
         />
         {isSelected && (
           <EllipseSelectionOverlay rx={rx} ry={ry} color={colors.selection} />

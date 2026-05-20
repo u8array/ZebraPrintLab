@@ -2,7 +2,7 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { NumberInput } from '../components/Properties/NumberInput';
-import { fieldPos } from './zplHelpers';
+import { fieldPos, wrapReverse } from './zplHelpers';
 import { commitWidthHeightTransform } from './transformHelpers';
 
 export interface EllipseProps {
@@ -59,13 +59,7 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
       p.width === p.height
         ? `^GC${p.width},${thick},${p.color}`
         : `^GE${p.width},${p.height},${thick},${p.color}`;
-    return [
-      p.reverse ? '^LRY' : '',
-      fieldPos(obj),
-      cmd,
-      '^FS',
-      p.reverse ? '^LRN' : '',
-    ].filter(Boolean).join('');
+    return wrapReverse(p.reverse, `${fieldPos(obj)}${cmd}^FS`);
   },
 
   PropertiesPanel: ({ obj, onChange }) => {

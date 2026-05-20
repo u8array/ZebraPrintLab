@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from "react";
 import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
-import { textFieldPos, fdField, resolveFontCmd } from "./zplHelpers";
+import { textFieldPos, fdField, resolveFontCmd, wrapReverse } from "./zplHelpers";
 import { effectiveScale } from "./transformHelpers";
 import { getFont, loadFontFile } from "../lib/fontCache";
 import { getAvailableFontIds, stripDrivePrefix } from "../lib/customFonts";
@@ -68,16 +68,10 @@ export const text: ObjectTypeDefinition<TextProps> = {
     const fbCmd = p.blockWidth
       ? `^FB${p.blockWidth},${p.blockLines ?? 1},${p.blockLineSpacing ?? 0},${p.blockJustify ?? "L"},0`
       : "";
-    return [
-      p.reverse ? "^LRY" : "",
-      textFieldPos(obj),
-      fontCmd,
-      fbCmd,
-      fdField(p.content),
-      p.reverse ? "^LRN" : "",
-    ]
+    const body = [textFieldPos(obj), fontCmd, fbCmd, fdField(p.content)]
       .filter(Boolean)
       .join("");
+    return wrapReverse(p.reverse, body);
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
