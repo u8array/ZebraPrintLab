@@ -1,5 +1,7 @@
+import { resolvePreviewFontName } from "../../lib/customFonts";
 import { getFontFamily } from "../../lib/fontCache";
 import type { LabelObject } from "../../types/Group";
+import type { LabelConfig } from "../../types/ObjectType";
 import { measureInkWidthPx } from "./measureTextDots";
 import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "./textPositionTransforms";
 
@@ -53,21 +55,36 @@ export function computeTextRenderMetrics(input: TextMetricsInput): TextRenderMet
 /** Object-shaped wrapper used by the renderer and the resize commit
  *  path. `fontHeightOverride` lets the resize commit see the
  *  to-be-written fontHeight before it lands in obj.props.
- *  `defaultPrinterFontName` is the canvas-only fallback for text
- *  objects without their own `printerFontName`; see
- *  `TextMetricsInput.defaultPrinterFontName`. */
+ *
+ *  `label` is the canvas-only context used to resolve preview fonts.
+ *  Priority order matches the generator's `^A` priority:
+ *    1. text-level `fontId` → preview TTF for that alias
+ *    2. text-level `printerFontName` (legacy filename form)
+ *    3. label `defaultFontId` → preview TTF for the global default
+ *  The emit path (`textFieldPos`) and the parser intentionally call
+ *  this without `label`, so their ink-width measurements stay
+ *  PrintLab-ZPL based and the ZPL round-trip is unaffected. */
 export function getTextRenderMetrics(
   obj: LabelObject,
   fontHeightOverride?: number,
-  defaultPrinterFontName?: string,
+  label?: Pick<LabelConfig, "customFonts" | "defaultFontId">,
 ): TextRenderMetrics | null {
   if (obj.type !== "text" && obj.type !== "serial") return null;
   const p = obj.props;
+  const fieldFontId = obj.type === "text" ? obj.props.fontId : undefined;
+  const fieldPrinterFontName =
+    obj.type === "text" ? obj.props.printerFontName : undefined;
+  const printerFontName = label
+    ? (resolvePreviewFontName(label, fieldFontId) ?? fieldPrinterFontName)
+    : fieldPrinterFontName;
+  const defaultPrinterFontName = label
+    ? resolvePreviewFontName(label, label.defaultFontId)
+    : undefined;
   return computeTextRenderMetrics({
     content: obj.type === "serial" ? `#${p.content}` : p.content,
     fontHeight: fontHeightOverride ?? p.fontHeight,
     fontWidth: p.fontWidth,
-    printerFontName: obj.type === "text" ? obj.props.printerFontName : undefined,
+    printerFontName,
     defaultPrinterFontName,
   });
 }

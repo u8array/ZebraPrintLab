@@ -5,7 +5,6 @@ import { LineObject } from "./LineObject";
 import { ImageObject } from "./ImageObject";
 import type Konva from "konva";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
-import { resolveDefaultPrinterFontName } from "../../lib/customFonts";
 import { outlineInset } from "../../lib/shapeGeometry";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { useLabelStore } from "../../store/labelStore";
@@ -148,21 +147,19 @@ function KonvaObjectInner({
 }: Props) {
   const fontVersion = useFontCacheVersion();
   const colors = useColorScheme();
-  // Canvas-only preview of the label-wide default font: if ^CF points
-  // at a ^CW alias whose path resolves to an uploaded font, text/serial
-  // fields without their own `printerFontName` render in that font.
-  // The ZPL emit/parse paths intentionally ignore this fallback so the
-  // round-trip stays PrintLab-ZPL based.
-  const defaultPrinterFontName = useLabelStore((s) =>
-    resolveDefaultPrinterFontName(s.label),
-  );
+  // Pass the whole label config so the metrics helper can resolve
+  // either a per-field `fontId` or the label-wide `defaultFontId` to
+  // an uploaded preview TTF. ZPL emit/parse intentionally call the
+  // metrics without `label`, so their ink-width stays PrintLab-ZPL
+  // based and the round-trip is unaffected.
+  const label = useLabelStore((s) => s.label);
   // obj.x/y is the Konva render position (top-left of the EM bbox) —
   // identical to what every other shape stores. The ZPL anchor (^FO
   // cap-top / ^FT baseline) lives at obj.x/y + zplAnchorDelta and is
   // applied only at the I/O boundary by zplGenerator / zplParser, so
   // every in-editor interaction (drag, resize, snap, smart-align) sees
   // a shape-agnostic single coordinate system.
-  const baseMetrics = getTextRenderMetrics(obj, undefined, defaultPrinterFontName);
+  const baseMetrics = getTextRenderMetrics(obj, undefined, label);
   const textMetrics =
     baseMetrics && (obj.type === "text" || obj.type === "serial")
       ? {
