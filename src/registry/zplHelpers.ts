@@ -9,6 +9,14 @@ export function fieldPos(obj: LabelObjectBase): string {
   return `^${cmd}${obj.x},${obj.y}`;
 }
 
+/** Wrap a field body in `^LRY` / `^LRN` when `reverse` is true. Field-
+ *  level inversion: every shape / text type that supports a `reverse`
+ *  prop emits via this helper so the wrap shape stays consistent and
+ *  parser-symmetric (the parser's ^LR state flips back at ^LRN). */
+export function wrapReverse(reverse: boolean | undefined, body: string): string {
+  return reverse ? `^LRY${body}^LRN` : body;
+}
+
 interface TextLikeObjForFieldPos extends LabelObjectBase {
   props: { fontHeight: number; rotation: "N" | "R" | "I" | "B" };
 }

@@ -2,7 +2,7 @@ import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { NumberInput } from '../components/Properties/NumberInput';
-import { fieldPos } from './zplHelpers';
+import { fieldPos, wrapReverse } from './zplHelpers';
 import { commitWidthHeightTransform } from './transformHelpers';
 
 export interface EllipseProps {
@@ -11,10 +11,15 @@ export interface EllipseProps {
   thickness: number;
   filled: boolean;
   color: 'B' | 'W';
-  /** When true, resize keeps width === height. Set by the "Circle"
-   *  palette entry and by the parser when an object round-trips through
-   *  ^GC. Used by the transformer to force uniform scale anchors. */
+  /** When true, resize keeps width === height. Set by the parser when
+   *  an object round-trips through ^GC, by the "Circle" Properties-
+   *  Panel toggle, or by the user. The transformer reads this to
+   *  force uniform scale anchors. */
   lockAspect?: boolean;
+  /** Field-level inversion via `^LRY`/`^LRN` wrap on emit. Round-trips
+   *  through the parser's `^LR` state and matches the box/line/text
+   *  reverse semantics. */
+  reverse?: boolean;
 }
 
 export const ellipse: ObjectTypeDefinition<EllipseProps> = {
@@ -54,7 +59,7 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
       p.width === p.height
         ? `^GC${p.width},${thick},${p.color}`
         : `^GE${p.width},${p.height},${thick},${p.color}`;
-    return [fieldPos(obj), cmd, `^FS`].join('');
+    return wrapReverse(p.reverse, `${fieldPos(obj)}${cmd}^FS`);
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
@@ -90,6 +95,32 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
           <input
             type="checkbox"
             className="accent-accent"
+            checked={p.lockAspect ?? false}
+            onChange={(e) => {
+              if (e.target.checked) {
+                // Enabling lockAspect: collapse to the smaller axis so
+                // the resulting circle fits inside the current ellipse
+                // bbox. Picking max instead would push the shape past
+                // the user's prior visual extent on one axis, which is
+                // surprising; min keeps the move strictly inward.
+                const d = Math.min(p.width, p.height);
+                onChange({ lockAspect: true, width: d, height: d });
+              } else {
+                // Disabling: drop the flag (undefined keeps the model
+                // shape parser-emitted props share — they never carry
+                // an explicit `false`). Dimensions stay put so the
+                // user can adjust them independently from here.
+                onChange({ lockAspect: undefined });
+              }
+            }}
+          />
+          <span className={labelCls}>{t.registry.ellipse.lockAspect}</span>
+        </label>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="accent-accent"
             checked={p.filled}
             onChange={(e) => onChange({ filled: e.target.checked })}
           />
@@ -116,6 +147,16 @@ export const ellipse: ObjectTypeDefinition<EllipseProps> = {
             <option value="W">{t.registry.ellipse.colorW}</option>
           </select>
         </div>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="accent-accent"
+            checked={p.reverse ?? false}
+            onChange={(e) => onChange({ reverse: e.target.checked })}
+          />
+          <span className={labelCls}>{t.registry.ellipse.reverse}</span>
+        </label>
       </div>
     );
   },

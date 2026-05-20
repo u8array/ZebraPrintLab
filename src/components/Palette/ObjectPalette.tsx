@@ -1,7 +1,6 @@
 import { useDraggable } from '@dnd-kit/core';
 import { ObjectRegistry } from '../../registry';
 import { PALETTE_GROUPS } from './paletteGroups';
-import { VIRTUAL_PALETTE_ENTRIES, type VirtualPaletteEntry } from './virtualEntries';
 import type { ObjectGroup } from '../../types/ObjectType';
 import { useT } from '../../lib/useT';
 import { useLabelStore } from '../../store/labelStore';
@@ -76,7 +75,7 @@ function resolveEntries(
   group: ObjectGroup,
   types: Record<string, string>,
 ): ResolvedEntry[] {
-  const registry = Object.entries(ObjectRegistry)
+  return Object.entries(ObjectRegistry)
     .filter(([, def]) => def.group === group)
     .map(([type, def]): ResolvedEntry => ({
       id: type,
@@ -85,17 +84,6 @@ function resolveEntries(
       label: types[type] ?? def.label,
       defaultSize: def.defaultSize,
     }));
-  const virtual = VIRTUAL_PALETTE_ENTRIES
-    .filter((v) => v.group === group)
-    .map((v: VirtualPaletteEntry): ResolvedEntry => ({
-      id: v.id,
-      type: v.type,
-      icon: v.icon,
-      label: types[v.labelKey] ?? v.fallbackLabel,
-      defaultSize: v.defaultSize,
-      propsOverride: v.propsOverride,
-    }));
-  return [...registry, ...virtual];
 }
 
 export function ObjectPalette() {
