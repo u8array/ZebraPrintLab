@@ -223,6 +223,10 @@ const en = {
       fontLoaded: 'Font loaded',
       fontMissing: 'Font not loaded',
       noFont: 'None',
+      useLabelDefault: '(use label default)',
+      builtinSuffix: '(built-in)',
+      fontAdvanced: 'Advanced',
+      fontFilenameLabel: 'Font path (^A@)',
     },
     code128: {
       content: 'Content',
@@ -473,9 +477,17 @@ const en = {
     uploadError: 'Could not load font file',
     aliasHint: 'ZPL alias for this label (1 char, A-Z or 0-9)',
     aliasAssigned: 'Assigned ZPL alias for this label',
+    builtinAliasWarning: 'Overrides built-in printer font. Use "Built-in font previews" for editor-only binding.',
+    embedInZpl: 'Send with print job',
+    embedInZplHint: 'Ship the font bytes inside the ZPL stream (~DY). Use when the printer does not already have the file. Requires an alias.',
     manualMappingsHeading: 'Printer-resident fonts',
     manualMappingsHint: 'Reference fonts already on the printer that are not uploaded here.',
     addManualMapping: 'Add printer font',
+    builtinPreviewsHeading: 'Built-in font previews',
+    builtinPreviewsHint: 'Bind a local TTF to a built-in font ID (0, A-H) so the editor shows what that font actually looks like. Not emitted to ZPL.',
+    addBuiltinPreview: 'Bind built-in font',
+    usedAsPreview: 'preview for',
+    noPreviewFont: 'Pick a font…',
   },
 } as const;
 

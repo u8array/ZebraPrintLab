@@ -631,7 +631,11 @@ describe('parseZPL — printer params', () => {
     expect(labelConfig.defaultFontWidth).toBe(20);
   });
 
-  it('parses ^CW mapping and resolves ^A{alias} to the printer font', () => {
+  it('parses ^CW mapping and pins ^A{alias} as the field-level fontId', () => {
+    // The ^CW mapping lives in labelConfig.customFonts; the text field
+    // only carries the alias char so re-emitting produces the same
+    // short ^A{id} form. printerFontName remains undefined — that field
+    // is for the long ^A@,…E:NAME.TTF form, not for alias-based refs.
     const { labelConfig, objects } = parseZPL(
       '^XA^CWM,E:ARIAL.TTF^FO10,10^AMN,30,0^FDHi^FS^XZ',
       8,
@@ -640,7 +644,20 @@ describe('parseZPL — printer params', () => {
       { alias: 'M', path: 'E:ARIAL.TTF' },
     ]);
     expect(objects).toHaveLength(1);
-    expect(props(objects[0]).printerFontName).toBe('ARIAL.TTF');
+    expect(props(objects[0]).fontId).toBe('M');
+    expect(props(objects[0]).printerFontName).toBeUndefined();
+  });
+
+  it('drops fontId for ^A{id} matching the active ^CF (default semantics)', () => {
+    // ^CFM then ^AMN repeats the default font. The model says
+    // "field uses the label default" by leaving fontId undefined, and
+    // the generator's default-fallback branch restores the ^AM emit.
+    const { objects } = parseZPL(
+      '^XA^CFM,30,0^FO10,10^AMN,30,0^FDHi^FS^XZ',
+      8,
+    );
+    expect(props(objects[0]).fontId).toBeUndefined();
+    expect(props(objects[0]).printerFontName).toBeUndefined();
   });
 
   it('ignores invalid ^CW arguments', () => {
@@ -992,8 +1009,20 @@ describe('parseZPL — importReport.partial', () => {
     expect(importReport.partial.filter((e) => e === '^A@')).toHaveLength(1);
   });
 
-  it('records general ^A{x} font commands (e.g. ^AB) in importReport.partial', () => {
+  it('does not flag built-in ^A{letter} fonts (A-H) as partial', () => {
+    // ^AB references the built-in Zebra font B — the parser pins it on
+    // the field as fontId="B" and the generator re-emits the short
+    // form, so the import is lossless and stays out of partial.
     const { importReport } = parseZPL('^XA^FO0,0^ABN,30,0^FDText^FS^XZ', 8);
+    expect(importReport.partial.some((e) => e.startsWith('^A'))).toBe(false);
+  });
+
+  it('flags ^A{alias} as partial when the alias has no ^CW mapping', () => {
+    // ^AM without a preceding ^CWM is a dangling reference: the model
+    // captures fontId="M" so editing stays lossless, but we surface a
+    // partial-import warning because the rendered output will fall
+    // back to font 0 on the printer.
+    const { importReport } = parseZPL('^XA^FO0,0^AMN,30,0^FDText^FS^XZ', 8);
     expect(importReport.partial.some((e) => e.startsWith('^A'))).toBe(true);
   });
 

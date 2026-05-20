@@ -74,6 +74,75 @@ export function getAllFonts(): CachedFont[] {
   return [...cache.values()];
 }
 
+/** Return the raw TTF/OTF bytes for a cached font, or undefined when
+ *  the font is unknown. Decoded on demand from the persisted data URL
+ *  so the cache stores only one representation. Used by the `~DY`
+ *  emitter to ship the bytes inside the ZPL stream — both the printer
+ *  and Labelary then resolve the font without a separate upload. */
+export function getFontBytes(printerName: string): Uint8Array | undefined {
+  const entry = cache.get(printerName.toUpperCase());
+  if (!entry) return undefined;
+  const commaIdx = entry.dataUrl.indexOf(",");
+  if (commaIdx < 0) return undefined;
+  const base64 = entry.dataUrl.slice(commaIdx + 1);
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/** Load raw TTF/OTF bytes into the cache. Mirrors `loadFontFile` but
+ *  starts from a `Uint8Array` rather than a `File`, which is what the
+ *  ZPL parser hands over after decoding a `~DY` payload. */
+export async function loadFontBytes(
+  bytes: Uint8Array,
+  printerName: string,
+): Promise<CachedFont> {
+  const entry = registerBytes(bytes, printerName);
+  await registerFontFace(entry);
+  notify();
+  return entry;
+}
+
+/** Synchronous counterpart of `loadFontBytes` used by the ZPL parser,
+ *  which can't await per-token. Populates the cache immediately so
+ *  subsequent measurement and emit calls see the font, and kicks off
+ *  `FontFace.load()` in the background. The canvas re-renders on the
+ *  next font-version tick once the FontFace resolves. */
+export function loadFontBytesSync(
+  bytes: Uint8Array,
+  printerName: string,
+): CachedFont {
+  const entry = registerBytes(bytes, printerName);
+  void registerFontFace(entry).then(notify);
+  notify();
+  return entry;
+}
+
+function registerBytes(bytes: Uint8Array, printerName: string): CachedFont {
+  if (bytes.length > MAX_FONT_BYTES) {
+    throw new Error(
+      `Font too large: ${printerName} (${bytes.length} bytes, max ${MAX_FONT_BYTES})`,
+    );
+  }
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  const dataUrl = `data:font/truetype;base64,${btoa(binary)}`;
+  const name = printerName.toUpperCase().replace(/[^A-Z0-9._]/g, "_");
+  const fontFamily = printerNameToFamily(name);
+  const entry: CachedFont = {
+    id: crypto.randomUUID(),
+    name,
+    dataUrl,
+    fontFamily,
+  };
+  cache.set(name, entry);
+  safeLocalStorageSet(LS_PREFIX + name, JSON.stringify(entry));
+  return entry;
+}
+
 /** Load a TTF/OTF File into the cache under the given printer font name.
  *  Rejects on non-TTF/OTF extension or oversized files. */
 export async function loadFontFile(file: File, printerName: string): Promise<CachedFont> {

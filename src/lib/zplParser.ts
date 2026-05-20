@@ -1,4 +1,4 @@
-import type { LabelConfig } from "../types/ObjectType";
+import type { CustomFontMapping, LabelConfig } from "../types/ObjectType";
 import { zplAnchorToModel } from "../components/Canvas/textPositionTransforms";
 import { computeTextRenderMetrics } from "../components/Canvas/textRenderMetrics";
 import type { LabelObject } from "../types/Group";
@@ -21,6 +21,8 @@ import type { AztecProps } from "../registry/aztec";
 import type { MicroPdf417Props } from "../registry/micropdf417";
 import type { CodablockProps } from "../registry/codablock";
 import { putImage } from "./imageCache";
+import { loadFontBytesSync } from "./fontCache";
+import { ZPL_BUILTIN_FONT_LETTERS } from "./customFonts";
 import { GS1_DATABAR_DEFAULT_SEGMENTS } from "./gs1";
 
 export type ImportFindingKind = "partial" | "browserLimit" | "unknown";
@@ -313,6 +315,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   // as the parser walks the header, consulted on each ^A{X} encounter.
   const fontAliases = new Map<string, string>();
 
+  // Paths that arrived via ~DY in this stream. Used so a subsequent
+  // ^CW for the same path flips the mapping's `embedInZpl` flag —
+  // round-trip stability: emit then re-parse should preserve the
+  // user's "ship the bytes" intent.
+  const downloadedFontPaths = new Set<string>();
+
   // ^FH state (field hex indicator)
   let fhActive = false;
   let fhDelimiter = "_";
@@ -325,9 +333,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   // ^FT vs ^FO: store position type so we can reproduce exactly in re-export.
   let positionIsFT = false;
 
-  // ^CF (change alphanumeric default font) state
+  // ^CF (change alphanumeric default font) state. cfFontId tracks the
+  // font character so the ^A handler can suppress redundant fontId
+  // assignments — a text field whose ^A repeats the ^CF font is the
+  // generator's way of saying "use the label default", and we want the
+  // model to reflect that rather than pinning the alias on every field.
   let cfHeight = 0;
   let cfWidth = 0;
+  let cfFontId: string | undefined;
 
   // ^FW (field default rotation) state
   let fwRotation: TextProps["rotation"] = "N";
@@ -355,6 +368,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
   // ^A@ pending printer font name (e.g. "ARIAL.TTF")
   let pendingPrinterFontName: string | undefined;
+  // ^A{id} pending font identifier (e.g. "M", "0"). Mutually exclusive
+  // with pendingPrinterFontName at field flush; both reset after use.
+  let pendingFontId: string | undefined;
 
   // ^SN / ^SF serialization state
   let snPending = false;
@@ -431,8 +447,10 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           rotation: textRot,
           reverse: getReverseFlag(),
           printerFontName: pendingPrinterFontName,
+          fontId: pendingFontId,
         };
         pendingPrinterFontName = undefined;
+        pendingFontId = undefined;
         if (fbWidth > 0) {
           textProps.blockWidth = fbWidth;
           textProps.blockLines = fbLines;
@@ -754,6 +772,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
       textH = int(p[1], cfHeight || 30);
       textW = int(p[2], cfWidth || 0);
+      // Set fontId="0" only when the current ^CF is not already 0 —
+      // otherwise the field is just repeating the label default, and
+      // we keep fontId undefined so the model says "use the default".
+      // When no ^CF has fired, "0" is the historical baseline both the
+      // generator and the printer fall back to, so it counts as default.
+      pendingFontId = cfFontId && cfFontId !== "0" ? "0" : undefined;
     },
 
     // ── Change alphanumeric default font ────────────────────────────────────
@@ -764,7 +788,10 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       const explicitWidth = parseInt(p[2] ?? "", 10);
       cfHeight = isNaN(explicitHeight) ? cfHeight : explicitHeight;
       cfWidth = isNaN(explicitWidth) ? cfWidth : explicitWidth;
-      if (fontId) labelConfig.defaultFontId = fontId;
+      if (fontId) {
+        labelConfig.defaultFontId = fontId;
+        cfFontId = fontId;
+      }
       if (!isNaN(explicitHeight) && explicitHeight > 0) {
         labelConfig.defaultFontHeight = explicitHeight;
       }
@@ -1305,7 +1332,92 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       const list = (labelConfig.customFonts ?? []).filter(
         (m) => m.alias !== alias,
       );
-      labelConfig.customFonts = [...list, { alias, path }];
+      const entry: CustomFontMapping = { alias, path };
+      if (downloadedFontPaths.has(path)) {
+        // The bytes already shipped via ~DY earlier in the stream;
+        // surface that intent on the model so re-emit will ~DY again.
+        entry.embedInZpl = true;
+        // The fontCache key is the filename portion of the path
+        // (drive prefix stripped), matching how ~DY registers fonts.
+        const colonIdx = path.indexOf(":");
+        const filename = colonIdx >= 0 ? path.slice(colonIdx + 1) : path;
+        if (filename) entry.previewFontName = filename;
+      }
+      labelConfig.customFonts = [...list, entry];
+    },
+
+    // ── ~DY downloaded TrueType payload ─────────────────────────────────────
+    // ~DY{drive}:{name},{fmt},{ext},{size},{bpr},{data}
+    // Decodes ASCII hex (format 'A') TTF/OTF bytes into the font cache
+    // so the canvas can preview the embedded font without a separate
+    // upload. The path reconstruction (stem + extension code) round-
+    // trips the same form the generator emits. Non-TTF extensions and
+    // non-hex formats are left untouched and fall through to the
+    // browser-limit bucket so the user sees what was dropped.
+    DY(_p, rest) {
+      // Parse manually because the data segment can be hundreds of
+      // KB of hex; we want to avoid splitting that into the rest of
+      // the params array. Param layout up to and including bytes-per-
+      // row is fixed-arity, so we walk commas until we've found 5.
+      const c: number[] = [];
+      for (let i = 0; i < rest.length && c.length < 5; i++) {
+        if (rest[i] === ",") c.push(i);
+      }
+      if (c.length < 5) {
+        browserLimit.push(`~DY${rest}`);
+        return;
+      }
+      const [c0, c1, c2, c3, c4] = c;
+      if (
+        c0 === undefined ||
+        c1 === undefined ||
+        c2 === undefined ||
+        c3 === undefined ||
+        c4 === undefined
+      ) {
+        browserLimit.push(`~DY${rest}`);
+        return;
+      }
+      const path = rest.slice(0, c0);
+      const fmt = rest.slice(c0 + 1, c1).toUpperCase();
+      const extCode = rest.slice(c1 + 1, c2).toUpperCase();
+      const size = parseInt(rest.slice(c2 + 1, c3), 10);
+      const data = rest.slice(c4 + 1);
+      // Only ASCII-hex TTF/OTF imports are supported. Z64 / compressed
+      // payloads need a CRC-checked decoder and stay out of scope.
+      if (fmt !== "A" || (extCode !== "T" && extCode !== "B")) {
+        browserLimit.push(`~DY${rest.slice(0, 80)}…`);
+        return;
+      }
+      if (!path || isNaN(size) || size <= 0 || data.length < size * 2) {
+        browserLimit.push(`~DY${rest.slice(0, 80)}…`);
+        return;
+      }
+      const bytes = new Uint8Array(size);
+      for (let i = 0; i < size; i++) {
+        const byteHex = data.slice(i * 2, i * 2 + 2);
+        const b = parseInt(byteHex, 16);
+        if (isNaN(b)) {
+          browserLimit.push(`~DY${rest.slice(0, 80)}…`);
+          return;
+        }
+        bytes[i] = b;
+      }
+      // Reconstruct the full filename with extension so the registered
+      // name matches what ^CW points at. Generator emits "{stem}" with
+      // the extension stripped, so we re-attach based on the code.
+      const ext = extCode === "T" ? ".TTF" : ".BIN";
+      const filename = path.includes(".")
+        ? path.slice(path.lastIndexOf(":") + 1)
+        : `${path.slice(path.indexOf(":") + 1)}${ext}`;
+      const fullPath = path.includes(".") ? path : `${path}${ext}`;
+      try {
+        loadFontBytesSync(bytes, filename);
+        downloadedFontPaths.add(fullPath);
+      } catch {
+        // Oversized or otherwise unloadable — surface as browser-limit.
+        browserLimit.push(`~DY${path}`);
+      }
     },
 
     // ── Browser-limit: printer-specific features ────────────────────────────
@@ -1399,15 +1511,24 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
       textH = int(p[1], cfHeight || 30);
       textW = int(p[2], cfWidth || 0);
-      // Resolve the font letter via the ^CW alias table if known; the
-      // path is stored verbatim with its drive prefix (e.g. "E:FOO.TTF"),
-      // so strip the "X:" segment before handing it to the text object.
-      const aliasPath = fontAliases.get(cmd[1] ?? "");
-      if (aliasPath) {
-        const colonIdx = aliasPath.indexOf(":");
-        pendingPrinterFontName =
-          (colonIdx >= 0 ? aliasPath.slice(colonIdx + 1) : aliasPath) || undefined;
+      const fontChar = cmd[1] ?? "";
+      // Round-trip semantics: when the font character matches the
+      // current ^CF, treat the field as "use the label default" and
+      // leave pendingFontId undefined so the model carries no per-field
+      // override. Otherwise pin the alias on the field so re-emitting
+      // produces the same ^A{id} short form. Unknown aliases (no ^CW
+      // and not a built-in) still go through — the printer would fall
+      // back to font 0 at print, but storing the user's choice keeps
+      // the import lossless for editing.
+      if (cfFontId && fontChar === cfFontId) {
+        pendingFontId = undefined;
       } else {
+        pendingFontId = fontChar;
+      }
+      if (
+        !fontAliases.has(fontChar) &&
+        !ZPL_BUILTIN_FONT_LETTERS.includes(fontChar)
+      ) {
         partialCmds.add(`^${cmd}`);
       }
       continue;

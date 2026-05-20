@@ -1,9 +1,43 @@
 import { mmToDots } from './coordinates';
 import { ObjectRegistry } from '../registry';
 import { stripZplCommandChars } from '../registry/zplHelpers';
-import type { LabelConfig } from '../types/ObjectType';
+import type { CustomFontMapping, LabelConfig } from '../types/ObjectType';
 import type { Page } from '../store/labelStore';
 import { isGroup, type LabelObject } from '../types/Group';
+import { getFontBytes } from './fontCache';
+
+/** Format a `~DY` line for one embedded font mapping. The Zebra `~DY`
+ *  command syntax splits the path: `~DY{drive}:{name},{fmt},{ext},
+ *  {totalBytes},{bytesPerRow},{data}`. For TTF we always use ASCII hex
+ *  (`A`/`T`) — universally supported across firmware revisions and
+ *  Labelary, even though it doubles the payload. `bytesPerRow` is
+ *  irrelevant for fonts, left empty.
+ *
+ *  Returns undefined when the mapping doesn't qualify (no embed flag,
+ *  no preview TTF, no path, or the font cache has no bytes for the
+ *  referenced TTF). Skipping is preferred over throwing because a
+ *  partial label is still useful — the printer-side path may already
+ *  exist on the device. */
+function formatDownloadObject(m: CustomFontMapping): string | undefined {
+  if (!m.embedInZpl || !m.path || !m.previewFontName) return undefined;
+  const bytes = getFontBytes(m.previewFontName);
+  if (!bytes) return undefined;
+  // Split "E:NAME.TTF" → drive "E:", stem "NAME", ext "TTF" → ZPL ext code "T".
+  const colonIdx = m.path.indexOf(':');
+  if (colonIdx < 0) return undefined;
+  const drive = m.path.slice(0, colonIdx + 1);
+  const filename = m.path.slice(colonIdx + 1);
+  const dotIdx = filename.lastIndexOf('.');
+  const stem = dotIdx >= 0 ? filename.slice(0, dotIdx) : filename;
+  const ext = dotIdx >= 0 ? filename.slice(dotIdx + 1).toUpperCase() : '';
+  // Only TTF/OTF are uploaded today; both map to extension code T
+  // (TrueType is the only TTF-family identifier in the spec).
+  if (ext !== 'TTF' && ext !== 'OTF') return undefined;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0'))
+    .join('')
+    .toUpperCase();
+  return `~DY${drive}${stem},A,T,${bytes.length},,${hex}`;
+}
 
 /**
  * Concatenates `generateZPL` output for every page. Each page becomes its own
@@ -18,6 +52,16 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
   const heightDots = mmToDots(label.heightMm, label.dpmm);
 
   const lines: string[] = [];
+
+  // ~DY ships embedded font bytes BEFORE the label block. Like ~SD it is
+  // a tilde-prefix immediate command; the printer (and Labelary) writes
+  // the file into storage and the following ^XA…^XZ resolves ^CW/^A
+  // against it. Without ~DY the alias would dangle on Labelary because
+  // the device has no other channel to receive the TTF.
+  for (const m of label.customFonts ?? []) {
+    const line = formatDownloadObject(m);
+    if (line) lines.push(line);
+  }
 
   // ~SD is a tilde-prefix command that takes effect immediately on receipt,
   // independently of the label block. Emit it before ^XA so the darkness
@@ -115,7 +159,7 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
   const emitLeaf = (obj: LabelObject): string[] => {
     if (obj.includeInExport === false) return [];
     if (isGroup(obj)) return obj.children.flatMap(emitLeaf);
-    const zpl = ObjectRegistry[obj.type]?.toZPL(obj) ?? '';
+    const zpl = ObjectRegistry[obj.type]?.toZPL(obj, { label }) ?? '';
     return obj.comment
       ? [`^FX${stripZplCommandChars(obj.comment)}\n${zpl}`]
       : [zpl];
@@ -149,7 +193,7 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
   // rewrite keeps working if text emit ever supports non-E drives.
   const aliasByPath = new Map<string, string>();
   for (const m of label.customFonts ?? []) {
-    if (m.alias) aliasByPath.set(m.path, m.alias);
+    if (m.alias && m.path) aliasByPath.set(m.path, m.alias);
   }
   let output = lines.join('\n');
   if (aliasByPath.size > 0) {

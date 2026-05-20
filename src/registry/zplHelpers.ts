@@ -1,4 +1,4 @@
-import type { LabelObjectBase } from "../types/ObjectType";
+import type { LabelObjectBase, ZplEmitContext } from "../types/ObjectType";
 import { modelToZplAnchor } from "../components/Canvas/textPositionTransforms";
 import { getTextRenderMetrics } from "../components/Canvas/textRenderMetrics";
 import type { LabelObject } from "../types/Group";
@@ -11,6 +11,38 @@ export function fieldPos(obj: LabelObjectBase): string {
 
 interface TextLikeObjForFieldPos extends LabelObjectBase {
   props: { fontHeight: number; rotation: "N" | "R" | "I" | "B" };
+}
+
+/** Build the `^A…` font command for a text-like field. Priority order:
+ *  explicit `fontId` (short `^A{id}` form) → explicit `printerFontName`
+ *  (long `^A@,…E:NAME.TTF` form) → label-wide `defaultFontId` from
+ *  `ctx.label` → `^A0` (the historical baseline). The default-fallback
+ *  branch is what gives `^CF` user-visible effect: ZPL has no "use the
+ *  ^CF font" syntax for per-field ^A, so we splice the default ID in at
+ *  emit time. Without `ctx`, falls straight through to `^A0`, which
+ *  matches the behaviour direct test callers have always seen. */
+export function resolveFontCmd(
+  props: {
+    rotation: "N" | "R" | "I" | "B";
+    fontHeight: number;
+    fontWidth: number;
+    fontId?: string;
+    printerFontName?: string;
+  },
+  ctx?: ZplEmitContext,
+): string {
+  const { rotation, fontHeight, fontWidth, fontId, printerFontName } = props;
+  if (fontId) {
+    return `^A${fontId}${rotation},${fontHeight},${fontWidth}`;
+  }
+  if (printerFontName) {
+    return `^A@${rotation},${fontHeight},${fontWidth},E:${printerFontName}`;
+  }
+  const defaultId = ctx?.label.defaultFontId;
+  if (defaultId) {
+    return `^A${defaultId}${rotation},${fontHeight},${fontWidth}`;
+  }
+  return `^A0${rotation},${fontHeight},${fontWidth}`;
 }
 
 /** Emit `^FT` or `^FO` for text/serial objects. obj.x/y is stored as the

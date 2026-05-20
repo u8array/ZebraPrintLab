@@ -223,6 +223,10 @@ const de = {
       fontLoaded: 'Schrift geladen',
       fontMissing: 'Schrift nicht geladen',
       noFont: 'Keine',
+      useLabelDefault: '(Label-Standard verwenden)',
+      builtinSuffix: '(eingebaut)',
+      fontAdvanced: 'Erweitert',
+      fontFilenameLabel: 'Schriftpfad (^A@)',
     },
     code128: {
       content: 'Inhalt',
@@ -473,9 +477,17 @@ const de = {
     uploadError: 'Schriftdatei konnte nicht geladen werden',
     aliasHint: 'ZPL-Alias für dieses Label (1 Zeichen, A-Z oder 0-9)',
     aliasAssigned: 'Zugewiesener ZPL-Alias für dieses Label',
+    builtinAliasWarning: 'Überschreibt eingebaute Drucker-Schrift. Für reine Editor-Bindung „Vorschau für Drucker-Standardschriften" nutzen.',
+    embedInZpl: 'Mit dem Druckjob mitsenden',
+    embedInZplHint: 'Schickt die Schrift-Bytes im ZPL-Stream mit (~DY). Sinnvoll, wenn der Drucker die Datei noch nicht hat. Alias erforderlich.',
     manualMappingsHeading: 'Schriften auf dem Drucker',
     manualMappingsHint: 'Schriften referenzieren, die schon auf dem Drucker liegen, aber hier nicht hochgeladen sind.',
     addManualMapping: 'Drucker-Schrift hinzufügen',
+    builtinPreviewsHeading: 'Vorschau für Drucker-Standardschriften',
+    builtinPreviewsHint: 'Bindet eine lokale TTF an eine eingebaute Schrift-ID (0, A-H), damit der Editor zeigt, wie diese Schrift wirklich aussieht. Wird nicht ins ZPL emittiert.',
+    addBuiltinPreview: 'Eingebaute Schrift binden',
+    usedAsPreview: 'Vorschau für',
+    noPreviewFont: 'Schrift wählen …',
   },
 } as const;
 

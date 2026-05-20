@@ -219,6 +219,100 @@ describe('generateZPL — printer params', () => {
     ).not.toContain('^CW');
   });
 
+  it('emits ~DY before ^XA when embedInZpl is true and bytes are cached', async () => {
+    const { loadFontBytes, removeFont } = await import('./fontCache');
+    // Tiny fake TTF — content does not need to be valid for the emit
+    // path to pick up the bytes; the formatter just hex-encodes them.
+    const bytes = new Uint8Array([0x00, 0x01, 0xff, 0xab]);
+    await loadFontBytes(bytes, 'EMBED.TTF');
+    try {
+      const zpl = generateZPL(
+        {
+          ...BASE_LABEL,
+          customFonts: [
+            {
+              alias: 'M',
+              path: 'E:EMBED.TTF',
+              previewFontName: 'EMBED.TTF',
+              embedInZpl: true,
+            },
+          ],
+        },
+        [],
+      );
+      const dyIdx = zpl.indexOf('~DY');
+      const xaIdx = zpl.indexOf('^XA');
+      expect(dyIdx).toBeGreaterThanOrEqual(0);
+      expect(dyIdx).toBeLessThan(xaIdx);
+      // ~DYE:EMBED,A,T,4,,0001FFAB — stem strips the extension, ext code
+      // is T (TTF), bytes count is the original length, hex is uppercase.
+      expect(zpl).toContain('~DYE:EMBED,A,T,4,,0001FFAB');
+    } finally {
+      removeFont('EMBED.TTF');
+    }
+  });
+
+  it('skips ~DY when embedInZpl is false', () => {
+    const zpl = generateZPL(
+      {
+        ...BASE_LABEL,
+        customFonts: [
+          { alias: 'M', path: 'E:X.TTF', previewFontName: 'X.TTF' },
+        ],
+      },
+      [],
+    );
+    expect(zpl).not.toContain('~DY');
+  });
+
+  it('round-trips embedInZpl: ~DY emit → ~DY parse preserves the flag', async () => {
+    const { loadFontBytes, removeFont } = await import('./fontCache');
+    const bytes = new Uint8Array([0xab, 0xcd, 0xef, 0x12]);
+    await loadFontBytes(bytes, 'ROUND.TTF');
+    try {
+      const zpl = generateZPL(
+        {
+          ...BASE_LABEL,
+          customFonts: [
+            {
+              alias: 'M',
+              path: 'E:ROUND.TTF',
+              previewFontName: 'ROUND.TTF',
+              embedInZpl: true,
+            },
+          ],
+        },
+        [],
+      );
+      const { labelConfig } = parseZPL(zpl, 8);
+      const m = labelConfig.customFonts?.[0];
+      expect(m?.alias).toBe('M');
+      expect(m?.path).toBe('E:ROUND.TTF');
+      expect(m?.embedInZpl).toBe(true);
+      expect(m?.previewFontName).toBe('ROUND.TTF');
+    } finally {
+      removeFont('ROUND.TTF');
+    }
+  });
+
+  it('skips ~DY when bytes are not cached', () => {
+    const zpl = generateZPL(
+      {
+        ...BASE_LABEL,
+        customFonts: [
+          {
+            alias: 'M',
+            path: 'E:MISSING.TTF',
+            previewFontName: 'MISSING.TTF',
+            embedInZpl: true,
+          },
+        ],
+      },
+      [],
+    );
+    expect(zpl).not.toContain('~DY');
+  });
+
   it('skips ^CW entries with empty alias or path', () => {
     const zpl = generateZPL(
       {

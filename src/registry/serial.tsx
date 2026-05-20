@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
-import { textFieldPos, fdField } from "./zplHelpers";
+import { textFieldPos, fdField, resolveFontCmd } from "./zplHelpers";
 import { effectiveScale } from "./transformHelpers";
 import { filterContent, type ContentSpec } from "./contentSpec";
 import { RotationSelect } from "../components/Properties/RotationSelect";
@@ -42,9 +42,9 @@ export const serial: ObjectTypeDefinition<SerialProps> = {
     };
   },
 
-  toZPL: (obj) => {
+  toZPL: (obj, ctx) => {
     const p = obj.props;
-    const field = `${textFieldPos(obj)}^A0${p.rotation},${p.fontHeight},${p.fontWidth}`;
+    const field = `${textFieldPos(obj)}${resolveFontCmd(p, ctx)}`;
     // Re-apply the input charset filter at emit time so ZPL-imported content
     // (which bypasses the in-app filter) can't smuggle ^/~ into the ^SN start
     // parameter or comma-split the parameter list. fdField additionally

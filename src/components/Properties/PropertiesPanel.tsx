@@ -22,7 +22,10 @@ import { CollapsibleSection } from "../ui/CollapsibleSection";
 import { AlignButtons } from "./AlignButtons";
 import { inputCls, labelCls } from "./styles";
 import type { LabelConfig } from "../../types/ObjectType";
-import { ZPL_BUILTIN_FONT_IDS } from "../../lib/customFonts";
+import {
+  getAvailableFontIds,
+  stripDrivePrefix,
+} from "../../lib/customFonts";
 
 interface PropertiesPanelProps {
   /** Imperative handle on the canvas — used for actions that need live render
@@ -343,28 +346,17 @@ function LabelConfigPanel({
     onUpdate({ widthMm: p.widthMm, heightMm: p.heightMm, dpmm: p.dpmm });
   };
 
-  // ^CF / ^A suggestions: built-in font letters plus every alias the
-  // user has registered via ^CW. Set-based dedup keeps user-overridden
-  // built-ins from appearing twice. The label on custom aliases shows
-  // the referenced path so a bare letter is not mistaken for a built-in.
-  const aliasPaths = new Map<string, string>();
-  for (const m of label.customFonts ?? []) {
-    if (m.alias) aliasPaths.set(m.alias, m.path);
-  }
-  const fontIdOptions = Array.from(
-    new Set([
-      ...ZPL_BUILTIN_FONT_IDS,
-      ...aliasPaths.keys(),
-    ]),
-  ).map((id) => {
-    const path = aliasPaths.get(id);
-    // Strip the drive prefix (E:, R:, ...) from the display label;
-    // the full path stays in the underlying customFonts entry and is
-    // emitted verbatim to ZPL.
-    return {
-      value: id,
-      label: path ? path.replace(/^[A-Z]:/, '') : undefined,
-    };
+  // ^CF / ^A suggestions: the shared resolver returns the same union
+  // (built-ins + every ^CW alias + every built-in preview binding) the
+  // per-text font dropdown uses, so the global default selector and
+  // the per-field selector show identical labels. A preview TTF wins
+  // over the printer path in the suffix because it is what the canvas
+  // is actually rendering with.
+  const fontIdOptions = getAvailableFontIds(label).map((opt) => {
+    const previewName =
+      opt.previewFontName ??
+      (opt.path ? stripDrivePrefix(opt.path) : undefined);
+    return { value: opt.id, label: previewName };
   });
 
   return (

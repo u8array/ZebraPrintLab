@@ -80,6 +80,44 @@ describe('text.toZPL', () => {
     }));
     expect(zpl).toContain('^A@R,30,0,E:HELVETICA.TTF');
   });
+
+  it('emits ^A{fontId} short form when fontId is set', () => {
+    const zpl = def.toZPL(makeObj('text', {
+      content: 'A', fontHeight: 30, fontWidth: 0, rotation: 'N', fontId: 'M',
+    }));
+    expect(zpl).toContain('^AMN,30,0');
+    expect(zpl).not.toContain('^A0');
+    expect(zpl).not.toContain('^A@');
+  });
+
+  it('fontId wins over printerFontName when both are set', () => {
+    const zpl = def.toZPL(makeObj('text', {
+      content: 'A', fontHeight: 30, fontWidth: 0, rotation: 'N',
+      fontId: 'M', printerFontName: 'ARIAL.TTF',
+    }));
+    expect(zpl).toContain('^AMN,30,0');
+    expect(zpl).not.toContain('^A@');
+  });
+
+  it('uses label.defaultFontId as fallback when no field-level font is set', () => {
+    const labelWithDefault: Parameters<typeof def.toZPL>[1] = {
+      label: { widthMm: 100, heightMm: 60, dpmm: 8, defaultFontId: 'M' },
+    };
+    const zpl = def.toZPL(
+      makeObj('text', { content: 'A', fontHeight: 30, fontWidth: 0, rotation: 'N' }),
+      labelWithDefault,
+    );
+    expect(zpl).toContain('^AMN,30,0');
+    expect(zpl).not.toContain('^A0');
+  });
+
+  it('keeps ^A0 fallback when neither field nor label sets a font', () => {
+    const zpl = def.toZPL(
+      makeObj('text', { content: 'A', fontHeight: 30, fontWidth: 0, rotation: 'N' }),
+      { label: { widthMm: 100, heightMm: 60, dpmm: 8 } },
+    );
+    expect(zpl).toContain('^A0N,30,0');
+  });
 });
 
 // ── box ───────────────────────────────────────────────────────────────────────
@@ -382,6 +420,17 @@ describe('serial.toZPL', () => {
     }));
     expect(zpl).toContain('^SF1,3,Y');
     expect(zpl).toContain('^FD001^FS');
+  });
+
+  it('honours label.defaultFontId in the ^A fallback', () => {
+    const zpl = def.toZPL(
+      makeObj('serial', {
+        content: '001', increment: 1, fontHeight: 30, fontWidth: 0, rotation: 'N', zplMode: 'SN',
+      }),
+      { label: { widthMm: 100, heightMm: 60, dpmm: 8, defaultFontId: 'M' } },
+    );
+    expect(zpl).toContain('^AMN,30,0');
+    expect(zpl).not.toContain('^A0');
   });
 
   it('strips ^/~ and other non-charset chars from ZPL-imported content', () => {

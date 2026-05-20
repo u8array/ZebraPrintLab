@@ -1,12 +1,42 @@
 import type React from 'react';
 import { z } from 'zod';
 
-/** A single ^CW mapping: a 1-character alias [A-Z0-9] paired with a font
- *  path on the printer's storage (e.g. "E:ARIAL.TTF"). */
-export const customFontMappingSchema = z.object({
-  alias: z.string().regex(/^[A-Z0-9]$/),
-  path: z.string().min(1),
-});
+/** A single font mapping. Three row shapes are supported so the editor
+ *  can stay 1:1 with what the printer renders:
+ *
+ *  1. **Printer-resident custom font** — `path` set, optional
+ *     `previewFontName`. Emits `^CW{alias},{path}` so the printer
+ *     resolves `^A{alias}` against the path. With `previewFontName`
+ *     also set the canvas renders that TTF; with `embedInZpl` true the
+ *     TTF bytes ship in the ZPL stream via `~DY`.
+ *  2. **Built-in font preview binding** — alias is one of `0` / `A-H`
+ *     (the fonts every Zebra printer ships with), `path` left empty,
+ *     `previewFontName` points at an uploaded TTF. No `^CW` is emitted;
+ *     the binding is cosmetic so the canvas can show what the built-in
+ *     glyphs actually look like.
+ *  3. **Manual printer-resident font** — `path` set, no upload. User
+ *     declares "this alias maps to a file already on the printer";
+ *     canvas falls back to PrintLab ZPL because it has no bytes.
+ *
+ *  Both `path` and `previewFontName` allow empty strings: while the user
+ *  is editing a fresh row the value may transiently be blank, and we
+ *  want that state to survive a persist/rehydrate round-trip so the
+ *  reload lands on the same row instead of dropping it. Completeness
+ *  ("at least one of the two is non-empty") is enforced at emit time
+ *  via the existing `if (m.alias && m.path)` guards in zplGenerator —
+ *  not as a schema-level refine, because the schema fronts the
+ *  persisted store and the store has to allow in-progress edits. */
+export const customFontMappingSchema = z
+  .object({
+    alias: z.string().regex(/^[A-Z0-9]$/),
+    path: z.string().optional(),
+    previewFontName: z.string().optional(),
+    embedInZpl: z.boolean().optional(),
+  })
+  .refine((m) => !m.embedInZpl || (!!m.path && !!m.previewFontName), {
+    message:
+      "embedInZpl requires both a printer path (~DY target) and a preview TTF (~DY bytes)",
+  });
 export type CustomFontMapping = z.infer<typeof customFontMappingSchema>;
 
 export const labelConfigSchema = z.object({
@@ -103,6 +133,15 @@ export interface TransformContext {
   anchor: { nodeHeight: number; rowHeight: number } | null;
 }
 
+/** Context passed to `toZPL` so leaf emit functions can reach
+ *  label-wide state (default font ID, ^CW alias map, etc.). Optional —
+ *  most types ignore it; only text/serial currently care about the
+ *  default font fallback. Tests calling `toZPL` directly can omit
+ *  `ctx` and get the no-default-context branch. */
+export interface ZplEmitContext {
+  label: LabelConfig;
+}
+
 export interface ObjectTypeDefinition<P extends object = object> {
   label: string;
   icon: string;
@@ -132,7 +171,7 @@ export interface ObjectTypeDefinition<P extends object = object> {
    * instance of the type (e.g. QR / DataMatrix).
    */
   uniformScale?: boolean | ((props: P) => boolean);
-  toZPL: (obj: LabelObjectBase & { props: P }) => string;
+  toZPL: (obj: LabelObjectBase & { props: P }, ctx?: ZplEmitContext) => string;
   /**
    * Optional hook to enforce type-specific invariants on incoming changes
    * (e.g. clamp out-of-range coordinates). Called before changes are merged
