@@ -19,7 +19,6 @@ const fi = {
     datamatrix: 'DataMatrix',
     box: 'Suorakulmio',
     ellipse: 'Ellipsi',
-    circle: 'Ympyrä',
     line: 'Viiva',
     serial: 'Sarjanro',
     image: 'Kuva',

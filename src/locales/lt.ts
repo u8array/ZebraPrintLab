@@ -19,7 +19,6 @@ const lt = {
     datamatrix: 'DataMatrix',
     box: 'Stačiakampis',
     ellipse: 'Elipsė',
-    circle: 'Apskritimas',
     line: 'Linija',
     serial: 'Serijinis nr.',
     image: 'Vaizdas',

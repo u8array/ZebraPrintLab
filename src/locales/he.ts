@@ -19,7 +19,6 @@ const he = {
     datamatrix: 'DataMatrix',
     box: 'מלבן',
     ellipse: 'אליפסה',
-    circle: 'עיגול',
     line: 'קו',
     serial: 'מס. סידורי',
     image: 'תמונה',

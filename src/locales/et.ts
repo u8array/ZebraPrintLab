@@ -19,7 +19,6 @@ const et = {
     datamatrix: 'DataMatrix',
     box: 'Ristkülik',
     ellipse: 'Ellips',
-    circle: 'Ring',
     line: 'Joon',
     serial: 'Seerianr',
     image: 'Pilt',

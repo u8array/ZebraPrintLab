@@ -19,7 +19,6 @@ const zhHans = {
     datamatrix: 'DataMatrix',
     box: '矩形',
     ellipse: '椭圆',
-    circle: '圆',
     line: '线条',
     serial: '序列号',
     image: '图片',

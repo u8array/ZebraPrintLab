@@ -19,7 +19,6 @@ const hr = {
     datamatrix: 'DataMatrix',
     box: 'Pravokutnik',
     ellipse: 'Elipsa',
-    circle: 'Krug',
     line: 'Linija',
     serial: 'Serijski br.',
     image: 'Slika',

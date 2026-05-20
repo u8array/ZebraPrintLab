@@ -19,7 +19,6 @@ const en = {
     datamatrix: 'DataMatrix',
     box: 'Box',
     ellipse: 'Ellipse',
-    circle: 'Circle',
     line: 'Line',
     serial: 'Serial',
     image: 'Image',

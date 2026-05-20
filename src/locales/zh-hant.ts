@@ -19,7 +19,6 @@ const zhHant = {
     datamatrix: 'DataMatrix',
     box: '矩形',
     ellipse: '橢圓',
-    circle: '圓',
     line: '線條',
     serial: '序號',
     image: '圖片',

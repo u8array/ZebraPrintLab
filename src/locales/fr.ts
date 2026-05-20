@@ -19,7 +19,6 @@ const fr = {
     datamatrix: 'DataMatrix',
     box: 'Rectangle',
     ellipse: 'Ellipse',
-    circle: 'Cercle',
     line: 'Ligne',
     serial: 'Série',
     image: 'Image',

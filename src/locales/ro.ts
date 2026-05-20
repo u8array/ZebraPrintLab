@@ -19,7 +19,6 @@ const ro = {
     datamatrix: 'DataMatrix',
     box: 'Dreptunghi',
     ellipse: 'Elipsă',
-    circle: 'Cerc',
     line: 'Linie',
     serial: 'Serie',
     image: 'Imagine',

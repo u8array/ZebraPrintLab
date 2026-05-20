@@ -19,7 +19,6 @@ const nl = {
     datamatrix: 'DataMatrix',
     box: 'Rechthoek',
     ellipse: 'Ellips',
-    circle: 'Cirkel',
     line: 'Lijn',
     serial: 'Serienummer',
     image: 'Afbeelding',

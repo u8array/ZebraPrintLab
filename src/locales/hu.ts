@@ -19,7 +19,6 @@ const hu = {
     datamatrix: 'DataMatrix',
     box: 'Téglalap',
     ellipse: 'Ellipszis',
-    circle: 'Kör',
     line: 'Vonal',
     serial: 'Sorszám',
     image: 'Kép',

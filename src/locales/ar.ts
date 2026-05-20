@@ -19,7 +19,6 @@ const ar = {
     datamatrix: 'DataMatrix',
     box: 'مستطيل',
     ellipse: 'قطع ناقص',
-    circle: 'دائرة',
     line: 'خط',
     serial: 'رقم تسلسلي',
     image: 'صورة',

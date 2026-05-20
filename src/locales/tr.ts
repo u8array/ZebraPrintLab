@@ -19,7 +19,6 @@ const tr = {
     datamatrix: 'DataMatrix',
     box: 'Dikdörtgen',
     ellipse: 'Elips',
-    circle: 'Daire',
     line: 'Çizgi',
     serial: 'Seri No',
     image: 'Görsel',

@@ -19,7 +19,6 @@ const ja = {
     datamatrix: 'DataMatrix',
     box: '矩形',
     ellipse: '楕円',
-    circle: '円',
     line: '線',
     serial: 'シリアル',
     image: '画像',

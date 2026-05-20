@@ -19,7 +19,6 @@ const sv = {
     datamatrix: 'DataMatrix',
     box: 'Rektangel',
     ellipse: 'Ellips',
-    circle: 'Cirkel',
     line: 'Linje',
     serial: 'Serienr.',
     image: 'Bild',

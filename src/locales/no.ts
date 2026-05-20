@@ -19,7 +19,6 @@ const no = {
     datamatrix: 'DataMatrix',
     box: 'Rektangel',
     ellipse: 'Ellipse',
-    circle: 'Sirkel',
     line: 'Linje',
     serial: 'Serienr.',
     image: 'Bilde',

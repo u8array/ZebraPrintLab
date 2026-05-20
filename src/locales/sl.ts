@@ -19,7 +19,6 @@ const sl = {
     datamatrix: 'DataMatrix',
     box: 'Pravokotnik',
     ellipse: 'Elipsa',
-    circle: 'Krog',
     line: 'Črta',
     serial: 'Zaporedna št.',
     image: 'Slika',

@@ -19,7 +19,6 @@ const de = {
     datamatrix: 'DataMatrix',
     box: 'Box',
     ellipse: 'Ellipse',
-    circle: 'Kreis',
     line: 'Linie',
     serial: 'Seriennummer',
     image: 'Bild',

@@ -19,7 +19,6 @@ const lv = {
     datamatrix: 'DataMatrix',
     box: 'Taisnstūris',
     ellipse: 'Elipse',
-    circle: 'Aplis',
     line: 'Līnija',
     serial: 'Sērijas nr.',
     image: 'Attēls',

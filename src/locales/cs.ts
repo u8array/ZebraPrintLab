@@ -19,7 +19,6 @@ const cs = {
     datamatrix: 'DataMatrix',
     box: 'Obdélník',
     ellipse: 'Elipsa',
-    circle: 'Kruh',
     line: 'Čára',
     serial: 'Sériové číslo',
     image: 'Obrázek',

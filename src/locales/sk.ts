@@ -19,7 +19,6 @@ const sk = {
     datamatrix: 'DataMatrix',
     box: 'Obdĺžnik',
     ellipse: 'Elipsa',
-    circle: 'Kruh',
     line: 'Čiara',
     serial: 'Sériové číslo',
     image: 'Obrázok',

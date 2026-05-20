@@ -19,7 +19,6 @@ const fa = {
     datamatrix: 'DataMatrix',
     box: 'مستطیل',
     ellipse: 'بیضی',
-    circle: 'دایره',
     line: 'خط',
     serial: 'شماره سریال',
     image: 'تصویر',

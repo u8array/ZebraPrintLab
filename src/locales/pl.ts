@@ -19,7 +19,6 @@ const pl = {
     datamatrix: 'DataMatrix',
     box: 'Prostokąt',
     ellipse: 'Elipsa',
-    circle: 'Okrąg',
     line: 'Linia',
     serial: 'Seria',
     image: 'Obraz',

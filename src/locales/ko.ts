@@ -19,7 +19,6 @@ const ko = {
     datamatrix: 'DataMatrix',
     box: '사각형',
     ellipse: '타원',
-    circle: '원',
     line: '선',
     serial: '일련번호',
     image: '이미지',

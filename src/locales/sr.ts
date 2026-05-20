@@ -19,7 +19,6 @@ const sr = {
     datamatrix: 'DataMatrix',
     box: 'Правоугаоник',
     ellipse: 'Елипса',
-    circle: 'Круг',
     line: 'Линија',
     serial: 'Серијски бр.',
     image: 'Слика',

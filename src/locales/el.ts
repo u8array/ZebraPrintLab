@@ -19,7 +19,6 @@ const el = {
     datamatrix: 'DataMatrix',
     box: 'Ορθογώνιο',
     ellipse: 'Έλλειψη',
-    circle: 'Κύκλος',
     line: 'Γραμμή',
     serial: 'Σειριακός αρ.',
     image: 'Εικόνα',

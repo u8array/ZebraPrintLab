@@ -19,7 +19,6 @@ const bg = {
     datamatrix: 'DataMatrix',
     box: 'Правоъгълник',
     ellipse: 'Елипса',
-    circle: 'Кръг',
     line: 'Линия',
     serial: 'Сериен №',
     image: 'Изображение',
