@@ -682,6 +682,18 @@ describe('parseZPL — ~DY + ^XG graphic upload/recall', () => {
     expect(importReport.browserLimit).toHaveLength(0);
   });
 
+  it('resolves ^XG even when the .GRF suffix is omitted', () => {
+    // Labelary accepts `^XGR:LOGO,1,1` for an upload stored as
+    // `R:LOGO.GRF`; the map lookup must normalise both forms.
+    const zpl =
+      `~DYR:LOGO,A,G,4,1,00FFFF00\n` +
+      `^XA^FO50,80^XGR:LOGO,1,1^FS^XZ`;
+    const { objects, importReport } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).storedAs).toEqual({ device: 'R', name: 'LOGO' });
+    expect(importReport.browserLimit).toHaveLength(0);
+  });
+
   it('^XG without a preceding ~DY surfaces as browserLimit', () => {
     const zpl = `^XA^FO0,0^XGR:MISSING.GRF,1,1^FS^XZ`;
     const { objects, importReport } = parseZPL(zpl, 8);

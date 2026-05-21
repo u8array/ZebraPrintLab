@@ -1473,11 +1473,22 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       // re-emit produces the same upload+recall pair.
       const firstComma = rest.indexOf(",");
       const xgPath = firstComma === -1 ? rest : rest.slice(0, firstComma);
-      const uploaded = downloadedGraphics.get(xgPath);
-      const parsed = parseStoragePath(xgPath);
-      if (!uploaded || !parsed) {
+      const surfaceXgFailure = (): void => {
         skipped.push(`^XG${rest}`);
         browserLimit.push(`^XG${rest}`);
+      };
+      // ^XG omitting the `.GRF` suffix is valid ZPL (Labelary accepts
+      // `^XGR:LOGO,…` for an upload stored as `R:LOGO.GRF`). Normalise
+      // through the storage-path helpers so the map lookup matches the
+      // canonical key the ~DY side wrote.
+      const parsed = parseStoragePath(xgPath);
+      if (!parsed) {
+        surfaceXgFailure();
+        return;
+      }
+      const uploaded = downloadedGraphics.get(formatStoragePath(parsed, true));
+      if (!uploaded) {
+        surfaceXgFailure();
         return;
       }
       const posType: "FT" | "FO" = positionIsFT ? "FT" : "FO";

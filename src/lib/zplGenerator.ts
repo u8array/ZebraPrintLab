@@ -67,7 +67,9 @@ function flattenObjects(objects: LabelObject[]): LabelObject[] {
  *  skips, the image then emits inline ^GF instead. */
 function formatGraphicUpload(p: ImageProps): string | undefined {
   if (!p.storedAs || !p._gfaCache) return undefined;
-  const m = /^\^GF([ABC]),(\d+),(\d+),(\d+),([\s\S]*)$/.exec(p._gfaCache);
+  // The two byte-count headers are optional in `^GF` (firmware accepts
+  // `^GFA,,,bpr,DATA`), so `\d*` rather than `\d+` matches both forms.
+  const m = /^\^GF([ABC]),(\d*),(\d*),(\d+),([\s\S]*)$/.exec(p._gfaCache);
   if (!m) return undefined;
   const format = m[1];
   const total = m[2];
