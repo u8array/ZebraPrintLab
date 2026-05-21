@@ -20,6 +20,7 @@ import { isZplRotation, type ZplRotation } from "../registry/rotation";
 import type { AztecProps } from "../registry/aztec";
 import type { MicroPdf417Props } from "../registry/micropdf417";
 import type { CodablockProps } from "../registry/codablock";
+import { unzlibSync } from "fflate";
 import { putImage } from "./imageCache";
 import { loadFontBytesSync } from "./fontCache";
 import { ZPL_BUILTIN_FONT_LETTERS } from "./customFonts";
@@ -167,6 +168,157 @@ function decodeFH(
     }
     return decoder.decode(bytes);
   });
+}
+
+/** Characters of a `^GF`/`~DY` payload retained in browserLimit/skipped
+ *  findings; rest is replaced with an ellipsis so a single multi-KB
+ *  base64 blob doesn't drown out the import report. */
+const IMPORT_FINDING_PAYLOAD_LIMIT = 80;
+
+const CRC16_POLY = 0x1021;
+const CRC16_MSB_MASK = 0x8000; // 1 << 15
+const CRC16_MASK = 0xffff;
+const BITS_PER_BYTE = 8;
+
+/**
+ * CRC-16/XMODEM (poly 0x1021, init 0x0000, no reflect, no xorout) —
+ * Zebra's ZB64/ZB16 wrapper uses this variant. Computed over the base64
+ * (or hex) payload between the `:B64:`/`:Z64:` prefix and the trailing
+ * `:CRC` suffix. (Note: this is *not* CRC-16/CCITT-FALSE, which uses
+ * init=0xFFFF — empirically verified against Labelary: payloads with the
+ * XMODEM CRC are accepted, CCITT-FALSE CRC is rejected.)
+ */
+function crc16Xmodem(s: string): number {
+  let crc = 0;
+  for (const ch of s) {
+    crc ^= ch.charCodeAt(0) << BITS_PER_BYTE;
+    for (let j = 0; j < BITS_PER_BYTE; j++) {
+      crc = (crc & CRC16_MSB_MASK)
+        ? ((crc << 1) ^ CRC16_POLY) & CRC16_MASK
+        : (crc << 1) & CRC16_MASK;
+    }
+  }
+  return crc;
+}
+
+type GfWrapperKind = "b64" | "z64";
+
+interface GfWrapperDecoded {
+  kind: GfWrapperKind;
+  /** Raw decoded bytes — for `:Z64:` this is still zlib-compressed. */
+  bytes: Uint8Array;
+  /** True if the trailing CRC matches the base64 payload. */
+  crcOk: boolean;
+}
+
+/** CRC-16 emitted as 4 uppercase hex chars in the `:B64:`/`:Z64:` trailer. */
+const CRC_HEX_DIGITS = 4;
+// \s in the base64 char class tolerates the line-break-every-N-chars
+// formatting that some ZPL generators apply to long ^GF payloads.
+const GF_WRAPPER_RE = new RegExp(
+  `^:(B64|Z64):([A-Za-z0-9+/=\\s]+):([0-9A-Fa-f]{${CRC_HEX_DIGITS}})$`,
+);
+
+/** Decode a base64 string to bytes; empty array on malformed input. */
+function base64ToBytes(b64: string): Uint8Array {
+  let bin: string;
+  try {
+    bin = atob(b64);
+  } catch {
+    return new Uint8Array(0);
+  }
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes;
+}
+
+/**
+ * Parse a `:B64:<base64>:<crc>` or `:Z64:<base64>:<crc>` wrapper. Returns
+ * null if the payload doesn't carry a wrapper. Used inside `^GFA`/`^GFB`/
+ * `^GFC` where Zebra firmware accepts the same envelope. The CRC is
+ * computed over the base64 string (CRC-16/XMODEM) and surfaced as a flag
+ * rather than a hard reject — printers tolerate mismatches, and we'd
+ * rather render a slightly-suspect graphic than silently drop it.
+ *
+ * `payload.trim()` because real-world ZPL is often line-broken between
+ * commands; the tokenizer keeps the trailing newline on `rest`, and an
+ * un-trimmed regex with a `$` anchor would miss every wrapper-in-the-wild.
+ */
+function parseGfWrapper(payload: string): GfWrapperDecoded | null {
+  const m = GF_WRAPPER_RE.exec(payload.trim());
+  if (!m) return null;
+  // atob and the CRC both fail on embedded whitespace — strip after match
+  // so the wrapper-form regex above can stay permissive for line-broken
+  // payloads but the downstream decoders see pure base64.
+  const b64 = (m[2] ?? "").replace(/\s/g, "");
+  const declaredCrc = parseInt(m[3] ?? "0", 16);
+  return {
+    kind: (m[1] ?? "").toLowerCase() as GfWrapperKind,
+    bytes: base64ToBytes(b64),
+    crcOk: crc16Xmodem(b64) === declaredCrc,
+  };
+}
+
+/**
+ * Result of `gfPayloadToBytes`: the raw bitmap bytes (one row = N bytes,
+ * each byte = 8 pixels, MSB first) plus the integrity flag for the
+ * originating wrapper. `crcOk=false` is rendered with a fidelity caveat;
+ * `null` from `gfPayloadToBytes` means the payload was undecodable.
+ */
+interface GfPayloadDecoded {
+  data: Uint8Array;
+  crcOk: boolean;
+}
+
+/** Inflate `:Z64:` zlib payload; null on malformed deflate stream. */
+function tryInflateZlib(input: Uint8Array): Uint8Array | null {
+  try {
+    return unzlibSync(input);
+  } catch {
+    return null;
+  }
+}
+
+/** Decode the ASCII-hex output of `decompressGFA` into a packed byte array
+ *  so all three GF code paths converge on the same `Uint8Array` shape.
+ *  Indexed access + nibble shift instead of `parseInt(slice)` because the
+ *  per-byte slice/parseInt pair is the dominant cost on multi-KB bitmaps. */
+function gfaHexToBytes(hex: string): Uint8Array {
+  const out = new Uint8Array(hex.length >> 1);
+  for (let i = 0; i < out.length; i++) {
+    const hi = parseInt(hex[i * 2] ?? "0", 16);
+    const lo = parseInt(hex[i * 2 + 1] ?? "0", 16);
+    out[i] = (hi << 4) | lo;
+  }
+  return out;
+}
+
+/**
+ * Normalise a `^GF{A|B|C}` payload to packed bitmap bytes. Hides the
+ * format / wrapper / compression dispatch from the command handler so the
+ * latter can stay focused on positioning and pixel painting.
+ *
+ *  - `:B64:`/`:Z64:` wrapper → base64-decode (then zlib-inflate for Z64)
+ *  - `format=A` without wrapper → existing RLE-hex path → bytes
+ *  - `format=B`/`C` without wrapper → null (raw binary can't survive the
+ *    text-based ZPL channel and the parser never sees intact bytes anyway)
+ */
+function gfPayloadToBytes(
+  rawData: string,
+  format: "A" | "B" | "C",
+  bytesPerRow: number,
+): GfPayloadDecoded | null {
+  const wrapper = parseGfWrapper(rawData);
+  if (wrapper) {
+    const bytes =
+      wrapper.kind === "z64" ? tryInflateZlib(wrapper.bytes) : wrapper.bytes;
+    if (!bytes) return null;
+    return { data: bytes, crcOk: wrapper.crcOk };
+  }
+  if (format === "A") {
+    return { data: gfaHexToBytes(decompressGFA(rawData, bytesPerRow)), crcOk: true };
+  }
+  return null;
 }
 
 /**
@@ -1100,10 +1252,16 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       );
     },
     GF(_, rest) {
-      // ^GFA,{totalBytes},{totalBytes},{bytesPerRow},{compressedOrHexData}
+      // ^GF{A|B|C},{totalBytes},{totalBytes},{bytesPerRow},{payload}
+      //
+      // Payload variants the parser understands:
+      //   - format=A + raw hex (optionally with G-Y/g-z/!/,/: RLE)
+      //   - any format + `:B64:<base64>:<crc>` wrapper (base64-decoded)
+      //   - any format + `:Z64:<base64>:<crc>` wrapper (zlib-inflated via
+      //     fflate). CRC mismatch → partial finding (printers tolerate),
+      //     inflate failure → browserLimit (payload unrecoverable).
       const format = rest[0]?.toUpperCase();
-      if (format !== "A") {
-        // Non-A formats (binary, compressed) can't be rendered in the browser
+      if (format !== "A" && format !== "B" && format !== "C") {
         skipped.push(`^GF${rest}`);
         browserLimit.push(`^GF${rest}`);
         return;
@@ -1131,18 +1289,29 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         return;
       }
 
-      // Decompress ZPL Alternative Data Compression for ^GFA
-      const gfHex = decompressGFA(gfRawData, gfBytesPerRow);
+      const decoded = gfPayloadToBytes(gfRawData, format, gfBytesPerRow);
+      if (!decoded) {
+        // Truncated summary because :B64:/:Z64: payloads can be many KB
+        // and we don't want one entry dominating the import report.
+        const gfSummary = `^GF${rest.slice(0, IMPORT_FINDING_PAYLOAD_LIMIT)}…`;
+        skipped.push(gfSummary);
+        browserLimit.push(gfSummary);
+        return;
+      }
+      if (!decoded.crcOk) {
+        // Render anyway (printers tolerate CRC drift) but flag the loss.
+        partialCmds.add("^GF");
+      }
+      const gfBytes = decoded.data;
       const gfWidthDots = gfBytesPerRow * 8;
-      const gfTotalBytes = gfHex.length / 2;
-      const gfHeightDots = Math.floor(gfTotalBytes / gfBytesPerRow);
+      const gfHeightDots = Math.floor(gfBytes.length / gfBytesPerRow);
 
       if (gfHeightDots <= 0) {
         skipped.push(`^GF${rest}`);
         return;
       }
 
-      // Convert hex → 1-bit bitmap → canvas → data URL
+      // Convert 1-bit bitmap → canvas → data URL
       const canvas = document.createElement("canvas");
       canvas.width = gfWidthDots;
       canvas.height = gfHeightDots;
@@ -1153,8 +1322,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
       for (let row = 0; row < gfHeightDots; row++) {
         for (let byteIdx = 0; byteIdx < gfBytesPerRow; byteIdx++) {
-          const hexOffset = (row * gfBytesPerRow + byteIdx) * 2;
-          const byte = parseInt(gfHex.slice(hexOffset, hexOffset + 2), 16) || 0;
+          const byte = gfBytes[row * gfBytesPerRow + byteIdx] ?? 0;
           for (let bit = 0; bit < 8; bit++) {
             const px = byteIdx * 8 + bit;
             const idx = (row * gfWidthDots + px) * 4;
@@ -1180,8 +1348,18 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         height: gfHeightDots,
       });
 
-      // Store original compressed data for lossless re-export
-      const gfaCache = `^GFA,${Math.floor(gfTotalBytes)},${Math.floor(gfTotalBytes)},${gfBytesPerRow},${gfRawData}`;
+      // Store original compressed data for lossless re-export. Preserve
+      // the source format letter (A/B/C) *and* the two original byte
+      // counts: for compressed payloads (^GFC/:Z64:) the 2nd param is the
+      // uncompressed total and the 3rd is the on-wire ("bytes to follow")
+      // size; firmware uses the latter for input-buffer allocation, so
+      // collapsing both to `gfBytes.length` would mis-allocate on
+      // re-import. Falling back to `gfBytes.length` only if the parser
+      // didn't see the original (defensive — every well-formed ^GF has
+      // them).
+      const gfTotalBytes = gfParams[0] ?? String(gfBytes.length);
+      const gfDataBytes = gfParams[1] ?? String(gfBytes.length);
+      const gfaCache = `^GF${format},${gfTotalBytes},${gfDataBytes},${gfBytesPerRow},${gfRawData}`;
 
       const posType: "FT" | "FO" = positionIsFT ? "FT" : "FO";
       objects.push(

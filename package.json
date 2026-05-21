@@ -17,6 +17,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@heroicons/react": "^2.2.0",
     "bwip-js": "^4.10.1",
+    "fflate": "^0.8.3",
     "konva": "^10.3.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
