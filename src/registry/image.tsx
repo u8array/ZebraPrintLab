@@ -5,6 +5,7 @@ import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos } from './zplHelpers';
 import { loadImageFile, getImage, getAllImages } from '../lib/imageCache';
 import { imageToGFA } from '../lib/imageToZpl';
+import { formatStoragePath } from '../lib/storagePath';
 
 export interface ImageProps {
   /** ID into the image cache */
@@ -15,6 +16,16 @@ export interface ImageProps {
   threshold: number;
   /** Cached GFA ZPL string — regenerated when image/width/threshold changes */
   _gfaCache?: string;
+  /** When set, the image is uploaded once via `~DY` (preamble) and referenced
+   *  per-instance via `^XG`. Set by the parser when a ZPL stream uses the
+   *  upload+recall pattern, preserved on re-export. Without this the image
+   *  emits inline `^GF` as before. */
+  storedAs?: {
+    /** Storage device prefix without trailing colon: "R", "E", "B", or "A". */
+    device: string;
+    /** Filename stem (no extension); paired with `.GRF` for graphics. */
+    name: string;
+  };
 }
 
 /** Synchronously generate ^GFA using a blocking canvas (for toZPL). */
@@ -74,9 +85,15 @@ export const image: ObjectTypeDefinition<ImageProps> = {
 
   toZPL: (obj) => {
     const p = obj.props;
+    // Recall path: upload happened in the preamble; here we just reference
+    // it via ^XG. The `.GRF` extension is implicit on `~DY{path},A,G,…` —
+    // Zebra firmware persists the file as `path.GRF` and `^XG` resolves
+    // the dot-suffixed form.
+    if (p.storedAs) {
+      return `${fieldPos(obj)}^XG${formatStoragePath(p.storedAs, true)},1,1^FS`;
+    }
     const cached = getImage(p.imageId);
     if (!cached) return `${fieldPos(obj)}^FD^FS`;
-
     // Use cached GFA if available, otherwise generate synchronously
     const gfa = p._gfaCache || gfaSync(cached.dataUrl, p.widthDots, p.threshold);
     return `${fieldPos(obj)}${gfa}^FS`;

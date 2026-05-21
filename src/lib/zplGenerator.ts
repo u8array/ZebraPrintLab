@@ -5,6 +5,8 @@ import type { CustomFontMapping, LabelConfig } from '../types/ObjectType';
 import type { Page } from '../store/labelStore';
 import { isGroup, type LabelObject } from '../types/Group';
 import { getFontBytes } from './fontCache';
+import type { ImageProps } from '../registry/image';
+import { formatStoragePath } from './storagePath';
 
 /** Format a `~DY` line for one embedded font mapping. The Zebra `~DY`
  *  command syntax splits the path: `~DY{drive}:{name},{fmt},{ext},
@@ -39,6 +41,43 @@ function formatDownloadObject(m: CustomFontMapping): string | undefined {
   return `~DY${drive}${stem},A,T,${bytes.length},,${hex}`;
 }
 
+/** Recursive flatten so images nested inside groups also get their ~DY
+ *  preamble emitted. Reuses the same Group-awareness the body emit
+ *  applies, but stays a local helper because the preamble only needs to
+ *  walk for upload-eligible images and doesn't need ordering or grouping
+ *  semantics. */
+function flattenObjects(objects: LabelObject[]): LabelObject[] {
+  const out: LabelObject[] = [];
+  const walk = (list: LabelObject[]): void => {
+    for (const o of list) {
+      if (isGroup(o)) walk(o.children);
+      else out.push(o);
+    }
+  };
+  walk(objects);
+  return out;
+}
+
+/** Format a `~DY` line for a graphic-upload image. Mirrors the font-upload
+ *  helper but parses the bitmap bytes out of `_gfaCache` (shape:
+ *  `^GF{A|B|C},total,data,bpr,DATA…`). The format letter is preserved so a
+ *  `:Z64:`-wrapped payload re-exports as `~DY...,C,G,...` (Zebra firmware
+ *  pairs `:Z64:` with format C only); collapsing all to `A` would corrupt
+ *  the upload. Returns undefined when the cache is malformed; the caller
+ *  skips, the image then emits inline ^GF instead. */
+function formatGraphicUpload(p: ImageProps): string | undefined {
+  if (!p.storedAs || !p._gfaCache) return undefined;
+  // The two byte-count headers are optional in `^GF` (firmware accepts
+  // `^GFA,,,bpr,DATA`), so `\d*` rather than `\d+` matches both forms.
+  const m = /^\^GF([ABC]),(\d*),(\d*),(\d+),([\s\S]*)$/.exec(p._gfaCache);
+  if (!m) return undefined;
+  const format = m[1];
+  const total = m[2];
+  const bpr = m[4];
+  const data = m[5];
+  return `~DY${formatStoragePath(p.storedAs, false)},${format},G,${total},${bpr},${data}`;
+}
+
 /**
  * Concatenates `generateZPL` output for every page. Each page becomes its own
  * `^XA...^XZ` block; printers process the blocks as separate labels.
@@ -61,6 +100,24 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
   for (const m of label.customFonts ?? []) {
     const line = formatDownloadObject(m);
     if (line) lines.push(line);
+  }
+
+  // ~DY graphic uploads. Each image with `storedAs` is uploaded once
+  // before ^XA; the per-instance ^XG in the body recalls it. Deduplicated
+  // by full path so the same logo doesn't ship twice when used on
+  // multiple pages or in multiple positions. The data is parsed back out
+  // of `_gfaCache` (which stores `^GFA,total,data,bpr,HEX...`); without
+  // that cache the upload is silently dropped.
+  const seenGraphics = new Set<string>();
+  for (const obj of flattenObjects(objects)) {
+    if (obj.type !== 'image') continue;
+    const p = obj.props as ImageProps;
+    if (!p.storedAs || !p._gfaCache) continue;
+    const key = formatStoragePath(p.storedAs, false);
+    if (seenGraphics.has(key)) continue;
+    seenGraphics.add(key);
+    const dy = formatGraphicUpload(p);
+    if (dy) lines.push(dy);
   }
 
   // ~SD is a tilde-prefix command that takes effect immediately on receipt,

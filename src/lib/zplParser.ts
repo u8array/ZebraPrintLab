@@ -22,6 +22,7 @@ import type { MicroPdf417Props } from "../registry/micropdf417";
 import type { CodablockProps } from "../registry/codablock";
 import { unzlibSync } from "fflate";
 import { putImage } from "./imageCache";
+import { formatStoragePath, parseStoragePath } from "./storagePath";
 import { loadFontBytesSync } from "./fontCache";
 import { ZPL_BUILTIN_FONT_LETTERS } from "./customFonts";
 import { GS1_DATABAR_DEFAULT_SEGMENTS } from "./gs1";
@@ -321,6 +322,87 @@ function gfPayloadToBytes(
   return null;
 }
 
+/** Outcome of decoding any GF-shaped graphic (^GF or ~DY graphic upload)
+ *  into an image-cache entry. Common to both call sites so the per-handler
+ *  code only needs to bind it to the right ZPL artifact (label object vs.
+ *  preamble registration). */
+interface DecodedGraphic {
+  imageId: string;
+  widthDots: number;
+  heightDots: number;
+  /** Verbatim `^GF{format},total,data,bpr,DATA` reconstruction kept on the
+   *  image so round-trip emit can splice the same byte stream back into
+   *  either `^GF` (inline) or `~DY` (preamble) without re-encoding. */
+  gfaCache: string;
+  crcOk: boolean;
+}
+
+/** Entry in the `~DY → ^XG` lookup map: a graphic uploaded earlier in the
+ *  stream, keyed by its full `device:stem.ext` path. Structurally a
+ *  `DecodedGraphic` without the per-decode CRC flag — that lives on the
+ *  partialCmds set instead of on every map entry. */
+type UploadedGraphic = Omit<DecodedGraphic, "crcOk">;
+
+/**
+ * Decode a GF-shaped payload into an image-cache entry. Shared between the
+ * `^GF` inline path and the `~DY` graphic-upload preamble; both have the
+ * same payload shape and need the same decoded bitmap, canvas paint, and
+ * cache write. Returns `null` when the payload can't be decoded (caller
+ * surfaces as browserLimit).
+ */
+function decodeGraphicToImage(
+  rawData: string,
+  format: "A" | "B" | "C",
+  bytesPerRow: number,
+  totalBytesHeader: string,
+  dataBytesHeader: string,
+  nameHint: string,
+): DecodedGraphic | null {
+  const decoded = gfPayloadToBytes(rawData, format, bytesPerRow);
+  if (!decoded) return null;
+  const widthDots = bytesPerRow * BITS_PER_BYTE;
+  const heightDots = Math.floor(decoded.data.length / bytesPerRow);
+  if (heightDots <= 0) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = widthDots;
+  canvas.height = heightDots;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not get 2d context");
+  const imgData = ctx.createImageData(widthDots, heightDots);
+  const pixels = imgData.data;
+  for (let row = 0; row < heightDots; row++) {
+    for (let byteIdx = 0; byteIdx < bytesPerRow; byteIdx++) {
+      const byte = decoded.data[row * bytesPerRow + byteIdx] ?? 0;
+      for (let bit = 0; bit < BITS_PER_BYTE; bit++) {
+        const px = byteIdx * BITS_PER_BYTE + bit;
+        const idx = (row * widthDots + px) * 4;
+        // ZPL ^GF: 1-bit = black (printed), 0-bit = transparent.
+        // ImageData starts zero-filled (rgba(0,0,0,0)), which is exactly
+        // the 0-bit case — only the 1-bit case needs a write.
+        if ((byte & (0x80 >> bit)) !== 0) {
+          pixels[idx + 3] = 255;
+        }
+      }
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+  const imageId = crypto.randomUUID();
+  putImage({
+    id: imageId,
+    name: nameHint,
+    dataUrl: canvas.toDataURL("image/png"),
+    width: widthDots,
+    height: heightDots,
+  });
+  return {
+    imageId,
+    widthDots,
+    heightDots,
+    gfaCache: `^GF${format},${totalBytesHeader},${dataBytesHeader},${bytesPerRow},${rawData}`,
+    crcOk: decoded.crcOk,
+  };
+}
+
 /**
  * Decompress ZPL Alternative Data Compression used in ^GFA fields.
  *
@@ -472,6 +554,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   // round-trip stability: emit then re-parse should preserve the
   // user's "ship the bytes" intent.
   const downloadedFontPaths = new Set<string>();
+
+  // Graphics uploaded via ~DY in this stream, keyed by the full
+  // `device:stem.ext` path. A subsequent ^XG references one of these to
+  // instantiate an image object at a position; emitting back goes
+  // through the same map so round-trip preserves upload+recall.
+  const downloadedGraphics = new Map<string, UploadedGraphic>();
 
   // ^FH state (field hex indicator)
   let fhActive = false;
@@ -1289,78 +1377,23 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         return;
       }
 
-      const decoded = gfPayloadToBytes(gfRawData, format, gfBytesPerRow);
-      if (!decoded) {
-        // Truncated summary because :B64:/:Z64: payloads can be many KB
-        // and we don't want one entry dominating the import report.
-        const gfSummary = `^GF${rest.slice(0, IMPORT_FINDING_PAYLOAD_LIMIT)}…`;
+      const gfSummary = `^GF${rest.slice(0, IMPORT_FINDING_PAYLOAD_LIMIT)}…`;
+      // Preserve the source bytes-headers verbatim so re-export keeps the
+      // firmware's input-buffer hint intact (^GFC/:Z64: has total ≠ data).
+      const gfImage = decodeGraphicToImage(
+        gfRawData,
+        format,
+        gfBytesPerRow,
+        gfParams[0] ?? "",
+        gfParams[1] ?? "",
+        `imported_${crypto.randomUUID().slice(0, 8)}.png`,
+      );
+      if (!gfImage) {
         skipped.push(gfSummary);
         browserLimit.push(gfSummary);
         return;
       }
-      if (!decoded.crcOk) {
-        // Render anyway (printers tolerate CRC drift) but flag the loss.
-        partialCmds.add("^GF");
-      }
-      const gfBytes = decoded.data;
-      const gfWidthDots = gfBytesPerRow * 8;
-      const gfHeightDots = Math.floor(gfBytes.length / gfBytesPerRow);
-
-      if (gfHeightDots <= 0) {
-        skipped.push(`^GF${rest}`);
-        return;
-      }
-
-      // Convert 1-bit bitmap → canvas → data URL
-      const canvas = document.createElement("canvas");
-      canvas.width = gfWidthDots;
-      canvas.height = gfHeightDots;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Could not get 2d context");
-      const imgData = ctx.createImageData(gfWidthDots, gfHeightDots);
-      const pixels = imgData.data;
-
-      for (let row = 0; row < gfHeightDots; row++) {
-        for (let byteIdx = 0; byteIdx < gfBytesPerRow; byteIdx++) {
-          const byte = gfBytes[row * gfBytesPerRow + byteIdx] ?? 0;
-          for (let bit = 0; bit < 8; bit++) {
-            const px = byteIdx * 8 + bit;
-            const idx = (row * gfWidthDots + px) * 4;
-            // ZPL ^GF: 1-bit = black (printed), 0-bit = transparent.
-            // ImageData starts zero-filled (rgba(0,0,0,0)), which is exactly
-            // the 0-bit case — only the 1-bit case needs a write.
-            if ((byte & (0x80 >> bit)) !== 0) {
-              pixels[idx + 3] = 255;
-            }
-          }
-        }
-      }
-
-      ctx.putImageData(imgData, 0, 0);
-      const dataUrl = canvas.toDataURL("image/png");
-      const imageId = crypto.randomUUID();
-
-      putImage({
-        id: imageId,
-        name: `imported_${imageId.slice(0, 8)}.png`,
-        dataUrl,
-        width: gfWidthDots,
-        height: gfHeightDots,
-      });
-
-      // Store original compressed data for lossless re-export. Preserve
-      // the source format letter (A/B/C) *and* the two original byte
-      // counts: for compressed payloads (^GFC/:Z64:) the 2nd param is the
-      // uncompressed total and the 3rd is the on-wire ("bytes to follow")
-      // size; firmware uses the latter for input-buffer allocation, so
-      // collapsing both to `gfBytes.length` would mis-allocate on
-      // re-import. Falling back to `gfBytes.length` only if the parser
-      // didn't see the original (defensive — every well-formed ^GF has
-      // them).
-      const gfTotalBytes = gfParams[0] ?? String(gfBytes.length);
-      const gfDataBytes = gfParams[1] ?? String(gfBytes.length);
-      const gfaCache = `^GF${format},${gfTotalBytes},${gfDataBytes},${gfBytesPerRow},${gfRawData}`;
-
+      if (!gfImage.crcOk) partialCmds.add("^GF");
       const posType: "FT" | "FO" = positionIsFT ? "FT" : "FO";
       objects.push(
         makeObj(
@@ -1368,10 +1401,10 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           x,
           y,
           {
-            imageId,
-            widthDots: gfWidthDots,
+            imageId: gfImage.imageId,
+            widthDots: gfImage.widthDots,
             threshold: 128,
-            _gfaCache: gfaCache,
+            _gfaCache: gfImage.gfaCache,
           } satisfies ImageProps,
           posType,
           takeComment(),
@@ -1427,6 +1460,51 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
             reverse: getReverseFlag(),
           } satisfies EllipseProps,
           undefined,
+          takeComment(),
+        ),
+      );
+    },
+
+    // ── Recall stored graphic ──────────────────────────────────────────────
+    XG(_, rest) {
+      // ^XGd:f.x,mx,my — references a graphic uploaded earlier via ~DY.
+      // We look the path up in downloadedGraphics; if found, instantiate an
+      // image object at the current ^FO/^FT and tag it with storedAs so
+      // re-emit produces the same upload+recall pair.
+      const firstComma = rest.indexOf(",");
+      const xgPath = firstComma === -1 ? rest : rest.slice(0, firstComma);
+      const surfaceXgFailure = (): void => {
+        skipped.push(`^XG${rest}`);
+        browserLimit.push(`^XG${rest}`);
+      };
+      // ^XG omitting the `.GRF` suffix is valid ZPL (Labelary accepts
+      // `^XGR:LOGO,…` for an upload stored as `R:LOGO.GRF`). Normalise
+      // through the storage-path helpers so the map lookup matches the
+      // canonical key the ~DY side wrote.
+      const parsed = parseStoragePath(xgPath);
+      if (!parsed) {
+        surfaceXgFailure();
+        return;
+      }
+      const uploaded = downloadedGraphics.get(formatStoragePath(parsed, true));
+      if (!uploaded) {
+        surfaceXgFailure();
+        return;
+      }
+      const posType: "FT" | "FO" = positionIsFT ? "FT" : "FO";
+      objects.push(
+        makeObj(
+          "image",
+          x,
+          y,
+          {
+            imageId: uploaded.imageId,
+            widthDots: uploaded.widthDots,
+            threshold: 128,
+            _gfaCache: uploaded.gfaCache,
+            storedAs: parsed,
+          } satisfies ImageProps,
+          posType,
           takeComment(),
         ),
       );
@@ -1563,15 +1641,60 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       const fmt = rest.slice(c0 + 1, c1).toUpperCase();
       const extCode = rest.slice(c1 + 1, c2).toUpperCase();
       const size = parseInt(rest.slice(c2 + 1, c3), 10);
+      const dyBytesPerRow = parseInt(rest.slice(c3 + 1, c4), 10);
       const data = rest.slice(c4 + 1);
+      const dySummary = `~DY${rest.slice(0, IMPORT_FINDING_PAYLOAD_LIMIT)}…`;
+
+      // Graphic uploads (~DY ...,A/B/C,G,...): decode via the same payload
+      // pipeline as ^GF, register the resulting image under the full
+      // device:stem.GRF path. A subsequent ^XG can then instantiate it.
+      if (extCode === "G" && (fmt === "A" || fmt === "B" || fmt === "C")) {
+        if (!path || isNaN(dyBytesPerRow) || dyBytesPerRow <= 0) {
+          skipped.push(dySummary);
+          browserLimit.push(dySummary);
+          return;
+        }
+        const sizeStr = size > 0 ? String(size) : "";
+        const dyImage = decodeGraphicToImage(
+          data,
+          fmt,
+          dyBytesPerRow,
+          sizeStr,
+          sizeStr,
+          `uploaded_${path.replace(/[:.]/g, "_")}.png`,
+        );
+        if (!dyImage) {
+          skipped.push(dySummary);
+          browserLimit.push(dySummary);
+          return;
+        }
+        if (!dyImage.crcOk) partialCmds.add("~DY");
+        // Path normalisation: ~DY uses `device:stem` without extension; the
+        // ^XG side resolves `device:stem.GRF`. Store the `.GRF` form so the
+        // XG lookup is direct.
+        const parsedDyPath = parseStoragePath(path);
+        if (!parsedDyPath) {
+          skipped.push(dySummary);
+          browserLimit.push(dySummary);
+          return;
+        }
+        downloadedGraphics.set(formatStoragePath(parsedDyPath, true), {
+          imageId: dyImage.imageId,
+          widthDots: dyImage.widthDots,
+          heightDots: dyImage.heightDots,
+          gfaCache: dyImage.gfaCache,
+        });
+        return;
+      }
+
       // Only ASCII-hex TTF/OTF imports are supported. Z64 / compressed
       // payloads need a CRC-checked decoder and stay out of scope.
       if (fmt !== "A" || (extCode !== "T" && extCode !== "B")) {
-        browserLimit.push(`~DY${rest.slice(0, 80)}…`);
+        browserLimit.push(dySummary);
         return;
       }
       if (!path || isNaN(size) || size <= 0 || data.length < size * 2) {
-        browserLimit.push(`~DY${rest.slice(0, 80)}…`);
+        browserLimit.push(dySummary);
         return;
       }
       const bytes = new Uint8Array(size);

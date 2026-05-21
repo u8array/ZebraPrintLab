@@ -661,6 +661,59 @@ describe('parseZPL — ^GFA graphic field', () => {
   });
 });
 
+// ── ~DY graphic upload + ^XG recall ──────────────────────────────────────────
+
+describe('parseZPL — ~DY + ^XG graphic upload/recall', () => {
+  // 1 byte per row × 4 rows → pattern [0x00, 0xFF, 0xFF, 0x00] (horizontal stripe).
+  const HEX = '00FFFF00';
+  const PATH = 'R:LOGO';
+
+  it('registers a ~DY graphic upload and ^XG instantiates it as an image', () => {
+    const zpl =
+      `~DY${PATH},A,G,4,1,${HEX}\n` +
+      `^XA^FO50,80^XG${PATH}.GRF,1,1^FS^XZ`;
+    const { objects, importReport } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('image');
+    expect(props(objects[0]).widthDots).toBe(8);
+    expect(props(objects[0]).storedAs).toEqual({ device: 'R', name: 'LOGO' });
+    expect(objects[0]?.x).toBe(50);
+    expect(objects[0]?.y).toBe(80);
+    expect(importReport.browserLimit).toHaveLength(0);
+  });
+
+  it('resolves ^XG even when the .GRF suffix is omitted', () => {
+    // Labelary accepts `^XGR:LOGO,1,1` for an upload stored as
+    // `R:LOGO.GRF`; the map lookup must normalise both forms.
+    const zpl =
+      `~DYR:LOGO,A,G,4,1,00FFFF00\n` +
+      `^XA^FO50,80^XGR:LOGO,1,1^FS^XZ`;
+    const { objects, importReport } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).storedAs).toEqual({ device: 'R', name: 'LOGO' });
+    expect(importReport.browserLimit).toHaveLength(0);
+  });
+
+  it('^XG without a preceding ~DY surfaces as browserLimit', () => {
+    const zpl = `^XA^FO0,0^XGR:MISSING.GRF,1,1^FS^XZ`;
+    const { objects, importReport } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(0);
+    expect(importReport.browserLimit.some((s) => s.startsWith('^XG'))).toBe(true);
+  });
+
+  it('accepts :Z64:-wrapped graphic payloads in ~DY (format C)', () => {
+    const bytes = new Uint8Array([0, 0xff, 0xff, 0]);
+    const field = makeZ64Field(bytes);
+    const zpl =
+      `~DY${PATH},C,G,4,1,${field}\n` +
+      `^XA^FO0,0^XG${PATH}.GRF,1,1^FS^XZ`;
+    const { objects, importReport } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).storedAs).toEqual({ device: 'R', name: 'LOGO' });
+    expect(importReport.partial).not.toContain('~DY');
+  });
+});
+
 // ── ^LR label reverse ─────────────────────────────────────────────────────────
 
 describe('parseZPL — ^LR label reverse', () => {
