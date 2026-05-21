@@ -170,6 +170,16 @@ function decodeFH(
   });
 }
 
+/** Characters of a `^GF`/`~DY` payload retained in browserLimit/skipped
+ *  findings; rest is replaced with an ellipsis so a single multi-KB
+ *  base64 blob doesn't drown out the import report. */
+const IMPORT_FINDING_PAYLOAD_LIMIT = 80;
+
+const CRC16_POLY = 0x1021;
+const CRC16_MSB_MASK = 0x8000; // 1 << 15
+const CRC16_MASK = 0xffff;
+const BITS_PER_BYTE = 8;
+
 /**
  * CRC-16/XMODEM (poly 0x1021, init 0x0000, no reflect, no xorout) —
  * Zebra's ZB64/ZB16 wrapper uses this variant. Computed over the base64
@@ -178,23 +188,13 @@ function decodeFH(
  * init=0xFFFF — empirically verified against Labelary: payloads with the
  * XMODEM CRC are accepted, CCITT-FALSE CRC is rejected.)
  */
-/** Characters of a `^GF`/`~DY` payload retained in browserLimit/skipped
- *  findings; rest is replaced with an ellipsis so a single multi-KB
- *  base64 blob doesn't drown out the import report. */
-const IMPORT_FINDING_PAYLOAD_LIMIT = 80;
-
-const CRC16_CCITT_POLY = 0x1021;
-const CRC16_MSB_MASK = 0x8000; // 1 << 15
-const CRC16_MASK = 0xffff;
-const BITS_PER_BYTE = 8;
-
 function crc16Xmodem(s: string): number {
   let crc = 0;
   for (const ch of s) {
     crc ^= ch.charCodeAt(0) << BITS_PER_BYTE;
     for (let j = 0; j < BITS_PER_BYTE; j++) {
       crc = (crc & CRC16_MSB_MASK)
-        ? ((crc << 1) ^ CRC16_CCITT_POLY) & CRC16_MASK
+        ? ((crc << 1) ^ CRC16_POLY) & CRC16_MASK
         : (crc << 1) & CRC16_MASK;
     }
   }
@@ -236,9 +236,9 @@ function base64ToBytes(b64: string): Uint8Array {
  * Parse a `:B64:<base64>:<crc>` or `:Z64:<base64>:<crc>` wrapper. Returns
  * null if the payload doesn't carry a wrapper. Used inside `^GFA`/`^GFB`/
  * `^GFC` where Zebra firmware accepts the same envelope. The CRC is
- * computed over the base64 string (CRC-16/CCITT-FALSE) and surfaced as a
- * flag rather than a hard reject — printers tolerate mismatches, and
- * we'd rather render a slightly-suspect graphic than silently drop it.
+ * computed over the base64 string (CRC-16/XMODEM) and surfaced as a flag
+ * rather than a hard reject — printers tolerate mismatches, and we'd
+ * rather render a slightly-suspect graphic than silently drop it.
  *
  * `payload.trim()` because real-world ZPL is often line-broken between
  * commands; the tokenizer keeps the trailing newline on `rest`, and an
@@ -1347,11 +1347,18 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         height: gfHeightDots,
       });
 
-      // Store original compressed data for lossless re-export. Keep the
-      // source format letter (A/B/C) because Labelary and Zebra firmware
-      // reject e.g. `^GFA,…,:Z64:…` — `:Z64:` is canonical for `^GFC`
-      // only, so a hard-coded `^GFA` on the round-trip would corrupt it.
-      const gfaCache = `^GF${format},${gfBytes.length},${gfBytes.length},${gfBytesPerRow},${gfRawData}`;
+      // Store original compressed data for lossless re-export. Preserve
+      // the source format letter (A/B/C) *and* the two original byte
+      // counts: for compressed payloads (^GFC/:Z64:) the 2nd param is the
+      // uncompressed total and the 3rd is the on-wire ("bytes to follow")
+      // size; firmware uses the latter for input-buffer allocation, so
+      // collapsing both to `gfBytes.length` would mis-allocate on
+      // re-import. Falling back to `gfBytes.length` only if the parser
+      // didn't see the original (defensive — every well-formed ^GF has
+      // them).
+      const gfTotalBytes = gfParams[0] ?? String(gfBytes.length);
+      const gfDataBytes = gfParams[1] ?? String(gfBytes.length);
+      const gfaCache = `^GF${format},${gfTotalBytes},${gfDataBytes},${gfBytesPerRow},${gfRawData}`;
 
       const posType: "FT" | "FO" = positionIsFT ? "FT" : "FO";
       objects.push(
