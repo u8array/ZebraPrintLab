@@ -253,6 +253,51 @@ function parseGfWrapper(payload: string): GfWrapperDecoded | null {
 }
 
 /**
+ * Result of `gfPayloadToHex`: either a usable hex bitmap plus the integrity
+ * flag for the originating wrapper, or null if the payload can't be decoded.
+ * `crcOk=false` means the field is rendered with a fidelity caveat (printers
+ * tolerate this); `null` means surface as a browser limit and skip the
+ * object.
+ */
+interface GfPayloadDecoded {
+  hex: string;
+  crcOk: boolean;
+}
+
+/**
+ * Normalise a `^GF{A|B|C}` payload to a hex bitmap. Hides the format /
+ * wrapper / compression dispatch from the command handler so the latter can
+ * stay focused on positioning and pixel painting.
+ *
+ *  - `:B64:`/`:Z64:` wrapper → base64-decode (then zlib-inflate for Z64)
+ *  - `format=A` without wrapper → existing RLE-hex path
+ *  - `format=B`/`C` without wrapper → null (raw binary can't survive the
+ *    text-based ZPL channel and the parser never sees intact bytes anyway)
+ */
+function gfPayloadToHex(
+  rawData: string,
+  format: "A" | "B" | "C",
+  bytesPerRow: number,
+): GfPayloadDecoded | null {
+  const wrapper = parseGfWrapper(rawData);
+  if (wrapper) {
+    let bytes = wrapper.bytes;
+    if (wrapper.kind === "z64") {
+      try {
+        bytes = unzlibSync(wrapper.bytes);
+      } catch {
+        return null;
+      }
+    }
+    return { hex: bytesToHex(bytes), crcOk: wrapper.crcOk };
+  }
+  if (format === "A") {
+    return { hex: decompressGFA(rawData, bytesPerRow), crcOk: true };
+  }
+  return null;
+}
+
+/**
  * Decompress ZPL Alternative Data Compression used in ^GFA fields.
  *
  * Compression characters:
@@ -1220,46 +1265,20 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         return;
       }
 
-      // Token used when we have to surface the field rather than render it.
-      // Truncated because :B64:/:Z64: payloads can be many KB and we don't
-      // want the import report dominated by one entry.
-      const gfSummary = `^GF${rest.slice(0, IMPORT_FINDING_PAYLOAD_LIMIT)}…`;
-
-      // Normalise payload to hex. Three sources, descending in real-world
-      // frequency for our parser: existing ^GFA RLE-hex, :B64:-wrapped binary
-      // (enterprise systems), and raw binary in ^GFB/^GFC (rare in text-paste
-      // UIs because tokenisation can't survive embedded ^/~/\0).
-      let gfHex: string;
-      const wrapper = parseGfWrapper(gfRawData);
-      if (wrapper) {
-        if (!wrapper.crcOk) {
-          // Render anyway (printers tolerate this), but flag the fidelity loss.
-          partialCmds.add("^GF");
-        }
-        let rawBytes = wrapper.bytes;
-        if (wrapper.kind === "z64") {
-          // zlib-compressed payload. fflate.unzlibSync handles the zlib
-          // wrapper (RFC 1950) — Zebra's `:Z64:` is *not* raw deflate. If
-          // inflate throws (truncation, wrong header), the payload is
-          // unrecoverable: surface and bail.
-          try {
-            rawBytes = unzlibSync(wrapper.bytes);
-          } catch {
-            browserLimit.push(gfSummary);
-            skipped.push(gfSummary);
-            return;
-          }
-        }
-        gfHex = bytesToHex(rawBytes);
-      } else if (format === "A") {
-        gfHex = decompressGFA(gfRawData, gfBytesPerRow);
-      } else {
-        // Format B/C without :B64: wrapper: raw binary in a text channel —
-        // can't represent reliably. Surfaced as a limitation.
+      const decoded = gfPayloadToHex(gfRawData, format, gfBytesPerRow);
+      if (!decoded) {
+        // Truncated summary because :B64:/:Z64: payloads can be many KB
+        // and we don't want one entry dominating the import report.
+        const gfSummary = `^GF${rest.slice(0, IMPORT_FINDING_PAYLOAD_LIMIT)}…`;
         skipped.push(gfSummary);
         browserLimit.push(gfSummary);
         return;
       }
+      if (!decoded.crcOk) {
+        // Render anyway (printers tolerate CRC drift) but flag the loss.
+        partialCmds.add("^GF");
+      }
+      const gfHex = decoded.hex;
       const gfWidthDots = gfBytesPerRow * 8;
       const gfTotalBytes = gfHex.length / 2;
       const gfHeightDots = Math.floor(gfTotalBytes / gfBytesPerRow);
