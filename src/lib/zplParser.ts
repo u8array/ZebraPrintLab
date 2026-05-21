@@ -1158,11 +1158,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           for (let bit = 0; bit < 8; bit++) {
             const px = byteIdx * 8 + bit;
             const idx = (row * gfWidthDots + px) * 4;
-            const isBlack = (byte & (0x80 >> bit)) !== 0;
-            pixels[idx] = isBlack ? 0 : 255;
-            pixels[idx + 1] = isBlack ? 0 : 255;
-            pixels[idx + 2] = isBlack ? 0 : 255;
-            pixels[idx + 3] = 255;
+            // ZPL ^GF: 1-bit = black (printed), 0-bit = transparent.
+            // ImageData starts zero-filled (rgba(0,0,0,0)), which is exactly
+            // the 0-bit case — only the 1-bit case needs a write.
+            if ((byte & (0x80 >> bit)) !== 0) {
+              pixels[idx + 3] = 255;
+            }
           }
         }
       }
