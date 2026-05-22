@@ -64,9 +64,7 @@ The **ZPL output** panel at the bottom shows the generated ZPL. It updates in re
 
 File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 
-> Import is best-effort: simple labels (especially those originally created in this tool) come back cleanly, complex or machine-generated ones may lose detail. Use **Save design (.json)** to keep a fully editable copy. `.zpl` is a printer output format, not a design source.
-
-The parser covers the most common ZPL commands. Anything it doesn't recognize is skipped and listed in the import report.
+> Import round-trips text, barcodes, shapes, images (including printer-stored and compressed graphics), and label-header settings. The main gap is variable template fields (`^FN`/`^FV`/`^FE`), which have no editor equivalent. Anything the parser doesn't recognize is skipped and listed in the import report.
 
 ### Multiple labels (pages)
 
@@ -92,7 +90,7 @@ File menu → **Add page** creates a new page. With multiple pages, the control 
 
 ### Saving and loading
 
-Use `.json` (File → Save Design) to save your work. It preserves every object exactly and can be reopened as a fully editable design. `.zpl` is a printer output format: use it to send to a printer, not to save your design.
+Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable content and works as a design source: re-import it and keep editing. `.json` (File → Save Design) additionally stores designer-only state that has no ZPL representation: locked/hidden objects, items excluded from export, custom object names, and group structure.
 
 ---
 
@@ -107,7 +105,6 @@ Use `.json` (File → Save Design) to save your work. It preserves every object 
 
 ## Limitations
 
-- ZPL import covers the most common commands but not the full ZPL II command set. Labels using printer-stored images, downloaded graphics, or printer-specific extensions may not import completely.
 - The canvas is a design preview, not a pixel-perfect simulation. Shapes, spacing, and positions match the print; text approximates Zebra's built-in font to within a few dots, but exact letterforms and anti-aliasing differ. For a faithful render, use the **Preview** in the bottom-right panel (powered by Labelary).
 - Label preview requires a connection to `api.labelary.com`.
 - The Labelary preview doesn't render every ZPL feature. Some less common elements (e.g. Codablock F barcodes) may be missing or wrong in the preview even when the actual print is fine.
