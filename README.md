@@ -64,7 +64,7 @@ The **ZPL output** panel at the bottom shows the generated ZPL. It updates in re
 
 File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 
-> Import round-trips text, barcodes, shapes, images (including printer-stored and compressed graphics), and label-header settings. The main gap is variable template fields (`^FN`/`^FV`/`^FE`), which have no editor equivalent. Anything the parser doesn't recognize is skipped and listed in the import report.
+> Import round-trips text, barcodes, shapes, images (including printer-stored and compressed graphics), and label-header settings. Features the editor has no equivalent for are dropped: variable template fields (`^FN`/`^FV`/`^FE`) and printer-side date/time stamps (`^FC`). Anything the parser doesn't recognize is skipped and listed in the import report.
 
 ### Multiple labels (pages)
 
