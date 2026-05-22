@@ -12,6 +12,7 @@ import {
   findObjectById,
   findAncestors,
   isSelfOrDescendant,
+  stripVariableIdFromObjects,
   type GroupObject,
   type LabelObject,
 } from '../types/Group';
@@ -19,8 +20,16 @@ import { locales } from '../locales';
 import type { LocaleCode } from '../locales';
 import { isDefaultLabelaryHost, fetchPreview, labelaryErrorMessage } from '../lib/labelary';
 import { generateZPL } from '../lib/zplGenerator';
+import {
+  nextFreeFnNumber,
+  FN_NUMBER_MIN,
+  FN_NUMBER_MAX,
+  type Variable,
+  type VariableInput,
+} from '../types/Variable';
 
 export type { ObjectChanges };
+export type { Variable, VariableInput };
 
 export interface Page {
   objects: LabelObject[];
@@ -142,6 +151,11 @@ interface LabelState {
   clipboard: LabelObject[];
   pasteCount: number;
 
+  /** Document-level template variables. Fields reference them via
+   *  `variableId`; export emits `^FN{fnNumber}^FD{defaultValue}^FS`.
+   *  Order is user-controlled and surfaces in the Variables panel. */
+  variables: Variable[];
+
   addObject: (
     type: string,
     position?: { x: number; y: number },
@@ -185,8 +199,22 @@ interface LabelState {
   setThirdPartyEnabled: (service: 'labelary', enabled: boolean) => void;
   acknowledgeLabelaryNotice: () => void;
   setCanvasSettings: (settings: Partial<CanvasSettings>) => void;
-  loadDesign: (label: LabelConfig, pages: Page[]) => void;
+  loadDesign: (label: LabelConfig, pages: Page[], variables?: Variable[]) => void;
   appendPages: (pages: Page[]) => void;
+
+  /** Create a new variable. Returns the new id, or null when all 99
+   *  `^FN` slots are taken (or the supplied fnNumber is out of range /
+   *  already used). Callers should surface null to the user. */
+  addVariable: (input: VariableInput) => string | null;
+  /** Patch fields on an existing variable. Validates uniqueness of
+   *  `name` and `fnNumber` and clamps `fnNumber` to [1, 99]; rejects
+   *  silently (no-op) on conflict so callers don't have to handle errors
+   *  for every keystroke. */
+  updateVariable: (id: string, changes: Partial<Omit<Variable, 'id'>>) => void;
+  /** Delete a variable and unbind every field that referenced it across
+   *  every page. The field's own content prop (kept since binding) takes
+   *  over on render/export. */
+  removeVariable: (id: string) => void;
   moveObjectForward: (id: string) => void;
   moveObjectBackward: (id: string) => void;
   moveObjectToFront: (id: string) => void;
@@ -409,6 +437,7 @@ export const useLabelStore = create<LabelState>()(
       selectedIds: [],
       clipboard: [],
       pasteCount: 0,
+      variables: [],
       locale: detectLocale(),
       theme: detectInitialTheme(),
       thirdParty: thirdPartyDefaults(),
@@ -792,7 +821,7 @@ export const useLabelStore = create<LabelState>()(
           });
         }),
 
-      loadDesign: (label, pages) =>
+      loadDesign: (label, pages, variables) =>
         set((state) => {
           if (selectPreviewLocksEditor(state)) return {};
           return {
@@ -800,6 +829,7 @@ export const useLabelStore = create<LabelState>()(
             pages: pages.length > 0 ? pages : [{ objects: [] }],
             currentPageIndex: 0,
             selectedIds: [],
+            variables: variables ?? [],
           };
         }),
 
@@ -915,6 +945,74 @@ export const useLabelStore = create<LabelState>()(
           return { currentPageIndex: index, selectedIds: [] };
         }),
 
+      addVariable: (input) => {
+        const state = get();
+        if (selectPreviewLocksEditor(state)) return null;
+        const trimmedName = input.name.trim();
+        if (trimmedName === '') return null;
+        if (state.variables.some((v) => v.name === trimmedName)) return null;
+
+        let fnNumber: number;
+        if (input.fnNumber !== undefined) {
+          if (input.fnNumber < FN_NUMBER_MIN || input.fnNumber > FN_NUMBER_MAX) return null;
+          if (state.variables.some((v) => v.fnNumber === input.fnNumber)) return null;
+          fnNumber = input.fnNumber;
+        } else {
+          const next = nextFreeFnNumber(state.variables.map((v) => v.fnNumber));
+          if (next === null) return null;
+          fnNumber = next;
+        }
+
+        const variable: Variable = {
+          id: crypto.randomUUID(),
+          name: trimmedName,
+          fnNumber,
+          defaultValue: input.defaultValue ?? '',
+          ...(input.comment !== undefined ? { comment: input.comment } : {}),
+        };
+        set((s) => ({ variables: [...s.variables, variable] }));
+        return variable.id;
+      },
+
+      updateVariable: (id, changes) =>
+        set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
+          const existing = state.variables.find((v) => v.id === id);
+          if (!existing) return {};
+
+          if (changes.name !== undefined) {
+            const trimmed = changes.name.trim();
+            if (trimmed === '') return {};
+            if (state.variables.some((v) => v.id !== id && v.name === trimmed)) return {};
+            changes = { ...changes, name: trimmed };
+          }
+          if (changes.fnNumber !== undefined) {
+            if (changes.fnNumber < FN_NUMBER_MIN || changes.fnNumber > FN_NUMBER_MAX) return {};
+            if (state.variables.some((v) => v.id !== id && v.fnNumber === changes.fnNumber)) return {};
+          }
+
+          return {
+            variables: state.variables.map((v) => (v.id === id ? { ...v, ...changes } : v)),
+          };
+        }),
+
+      removeVariable: (id) =>
+        set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
+          if (!state.variables.some((v) => v.id === id)) return {};
+          let pagesChanged = false;
+          const nextPages = state.pages.map((p) => {
+            const stripped = stripVariableIdFromObjects(p.objects, id);
+            if (stripped === p.objects) return p;
+            pagesChanged = true;
+            return { ...p, objects: stripped };
+          });
+          return {
+            variables: state.variables.filter((v) => v.id !== id),
+            ...(pagesChanged ? { pages: nextPages } : {}),
+          };
+        }),
+
       enterPreviewMode: async () => {
         const state = get();
         if (state.previewMode.status === 'loading' || state.previewMode.status === 'active') {
@@ -982,6 +1080,7 @@ export const useLabelStore = create<LabelState>()(
         // first run's env value and quietly defeat later build flips.
         labelaryNoticeAcknowledged: state.labelaryNoticeAcknowledged,
         canvasSettings: state.canvasSettings,
+        variables: state.variables,
       }),
     }
     ),
@@ -990,6 +1089,7 @@ export const useLabelStore = create<LabelState>()(
         label: state.label,
         pages: state.pages,
         currentPageIndex: state.currentPageIndex,
+        variables: state.variables,
       }),
     }
   )

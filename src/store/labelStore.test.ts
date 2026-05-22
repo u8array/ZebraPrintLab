@@ -39,6 +39,7 @@ function reset() {
     selectedIds: [],
     clipboard: [],
     pasteCount: 0,
+    variables: [],
     previewMode: { status: 'idle' },
     canvasSettings: {
       showGrid: false,
@@ -1145,5 +1146,158 @@ describe('migrateLegacy — v2→v3 circle→ellipse', () => {
     };
     const migrated = migrateLegacy(persisted, 2) as typeof persisted;
     expect(migrated.pages[0]?.objects[0]).toEqual(persisted.pages[0]?.objects[0]);
+  });
+});
+
+describe('variables', () => {
+  beforeEach(reset);
+
+  it('addVariable assigns sequential fnNumbers starting at 1', () => {
+    const id1 = state().addVariable({ name: 'sku' });
+    const id2 = state().addVariable({ name: 'qty' });
+    expect(id1).not.toBeNull();
+    expect(id2).not.toBeNull();
+    const vars = state().variables;
+    expect(vars).toHaveLength(2);
+    expect(vars[0]?.fnNumber).toBe(1);
+    expect(vars[1]?.fnNumber).toBe(2);
+  });
+
+  it('addVariable fills the lowest free fnNumber when earlier ones were taken explicitly', () => {
+    state().addVariable({ name: 'a', fnNumber: 3 });
+    state().addVariable({ name: 'b', fnNumber: 1 });
+    const id = state().addVariable({ name: 'c' });
+    expect(id).not.toBeNull();
+    const c = state().variables.find((v) => v.name === 'c');
+    expect(c?.fnNumber).toBe(2);
+  });
+
+  it('addVariable rejects duplicate names', () => {
+    state().addVariable({ name: 'sku' });
+    const dup = state().addVariable({ name: 'sku' });
+    expect(dup).toBeNull();
+    expect(state().variables).toHaveLength(1);
+  });
+
+  it('addVariable rejects duplicate fnNumbers', () => {
+    state().addVariable({ name: 'a', fnNumber: 5 });
+    const dup = state().addVariable({ name: 'b', fnNumber: 5 });
+    expect(dup).toBeNull();
+    expect(state().variables).toHaveLength(1);
+  });
+
+  it('addVariable rejects fnNumbers outside 1-99', () => {
+    expect(state().addVariable({ name: 'a', fnNumber: 0 })).toBeNull();
+    expect(state().addVariable({ name: 'b', fnNumber: 100 })).toBeNull();
+    expect(state().variables).toHaveLength(0);
+  });
+
+  it('addVariable rejects empty / whitespace-only names', () => {
+    expect(state().addVariable({ name: '' })).toBeNull();
+    expect(state().addVariable({ name: '   ' })).toBeNull();
+    expect(state().variables).toHaveLength(0);
+  });
+
+  it('addVariable trims the name', () => {
+    state().addVariable({ name: '  sku  ' });
+    expect(state().variables[0]?.name).toBe('sku');
+  });
+
+  it('updateVariable patches fields when valid', () => {
+    const id = defined(state().addVariable({ name: 'sku', defaultValue: 'x' }));
+    state().updateVariable(id, { defaultValue: 'y' });
+    expect(state().variables[0]?.defaultValue).toBe('y');
+  });
+
+  it('updateVariable rejects renaming to an existing name', () => {
+    state().addVariable({ name: 'a' });
+    const id = defined(state().addVariable({ name: 'b' }));
+    state().updateVariable(id, { name: 'a' });
+    expect(state().variables.find((v) => v.id === id)?.name).toBe('b');
+  });
+
+  it('updateVariable rejects fnNumber collisions', () => {
+    state().addVariable({ name: 'a', fnNumber: 1 });
+    const id = defined(state().addVariable({ name: 'b', fnNumber: 2 }));
+    state().updateVariable(id, { fnNumber: 1 });
+    expect(state().variables.find((v) => v.id === id)?.fnNumber).toBe(2);
+  });
+
+  it('removeVariable strips variableId from every bound field across pages', () => {
+    const varId = defined(state().addVariable({ name: 'sku', defaultValue: 'X' }));
+    useLabelStore.setState({
+      pages: [
+        {
+          objects: [
+            {
+              id: 'obj-1',
+              type: 'text',
+              x: 0,
+              y: 0,
+              rotation: 0,
+              variableId: varId,
+              props: { content: 'X', fontHeight: 30, fontWidth: 30, rotation: 'N' },
+            } as LabelObject,
+          ],
+        },
+        {
+          objects: [
+            {
+              id: 'grp-1',
+              type: 'group',
+              x: 0,
+              y: 0,
+              rotation: 0,
+              children: [
+                {
+                  id: 'obj-2',
+                  type: 'text',
+                  x: 0,
+                  y: 0,
+                  rotation: 0,
+                  variableId: varId,
+                  props: { content: 'X', fontHeight: 30, fontWidth: 30, rotation: 'N' },
+                } as LabelObject,
+              ],
+            } as LabelObject,
+          ],
+        },
+      ],
+    });
+
+    state().removeVariable(varId);
+
+    expect(state().variables).toHaveLength(0);
+    const page0 = state().pages[0]?.objects[0] as LabelObject & { variableId?: string };
+    expect(page0.variableId).toBeUndefined();
+    const group = state().pages[1]?.objects[0];
+    if (!group || !isGroup(group)) throw new Error('expected group');
+    const inner = group.children[0] as LabelObject & { variableId?: string };
+    expect(inner.variableId).toBeUndefined();
+  });
+
+  it('removeVariable leaves pages untouched when no field referenced the variable', () => {
+    const varId = defined(state().addVariable({ name: 'sku' }));
+    const pagesBefore = state().pages;
+    state().removeVariable(varId);
+    expect(state().pages).toBe(pagesBefore);
+  });
+
+  it('loadDesign replaces the variable list', () => {
+    state().addVariable({ name: 'a' });
+    state().loadDesign(
+      { widthMm: 50, heightMm: 30, dpmm: 8 },
+      [{ objects: [] }],
+      [{ id: 'v1', name: 'fresh', fnNumber: 7, defaultValue: '' }],
+    );
+    expect(state().variables).toEqual([
+      { id: 'v1', name: 'fresh', fnNumber: 7, defaultValue: '' },
+    ]);
+  });
+
+  it('loadDesign resets variables to empty when none supplied', () => {
+    state().addVariable({ name: 'a' });
+    state().loadDesign({ widthMm: 50, heightMm: 30, dpmm: 8 }, [{ objects: [] }]);
+    expect(state().variables).toEqual([]);
   });
 });

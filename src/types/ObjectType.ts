@@ -112,6 +112,11 @@ export const labelObjectBaseSchema = z.object({
    *  Leaves currently fall back to their registry label; the field lives
    *  on the base so naming leaves later is a UI-only change. */
   name: z.string().optional(),
+  /** When set, the field's render/export content comes from the referenced
+   *  Variable's defaultValue (or future data source). The field's own
+   *  content prop is kept as fallback when the binding is removed.
+   *  Exported as `^FN{n}^FD{default}^FS` instead of plain `^FD{content}^FS`. */
+  variableId: z.string().optional(),
 });
 
 export type LabelObjectBase = z.infer<typeof labelObjectBaseSchema>;

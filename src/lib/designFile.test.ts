@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseDesignFile, serializeDesign } from './designFile';
 import type { LabelObject } from '../types/Group';
+import type { Variable } from '../types/Variable';
 
 const SAMPLE_OBJECTS: LabelObject[] = [
   {
@@ -155,5 +156,53 @@ describe('parseDesignFile', () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toBe('invalid_schema');
+  });
+
+  it('roundtrips variables when present', () => {
+    const variables: Variable[] = [
+      { id: 'v1', name: 'sku', fnNumber: 1, defaultValue: 'ABC' },
+      { id: 'v2', name: 'qty', fnNumber: 2, defaultValue: '0', comment: 'Quantity' },
+    ];
+    const json = serializeDesign(
+      { widthMm: 100, heightMm: 60, dpmm: 8 },
+      [{ objects: SAMPLE_OBJECTS }],
+      variables,
+    );
+    const result = parseDesignFile(json);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.variables).toEqual(variables);
+  });
+
+  it('omits the variables key from JSON when empty (back-compat with older app versions)', () => {
+    const json = serializeDesign(
+      { widthMm: 100, heightMm: 60, dpmm: 8 },
+      [{ objects: SAMPLE_OBJECTS }],
+      [],
+    );
+    const parsed = JSON.parse(json) as Record<string, unknown>;
+    expect(parsed).not.toHaveProperty('variables');
+  });
+
+  it('defaults to empty variables when the JSON lacks the field', () => {
+    const json = serializeDesign(
+      { widthMm: 100, heightMm: 60, dpmm: 8 },
+      [{ objects: SAMPLE_OBJECTS }],
+    );
+    const result = parseDesignFile(json);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.variables).toEqual([]);
+  });
+
+  it('legacy { label, objects } shape loads with empty variables', () => {
+    const legacyJson = JSON.stringify({
+      label: { widthMm: 100, heightMm: 60, dpmm: 8 },
+      objects: SAMPLE_OBJECTS,
+    });
+    const result = parseDesignFile(legacyJson);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.variables).toEqual([]);
   });
 });
