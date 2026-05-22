@@ -1,9 +1,5 @@
 import { useState, type ChangeEvent } from 'react';
-import {
-  InformationCircleIcon,
-  PlusIcon,
-  TrashIcon,
-} from '@heroicons/react/16/solid';
+import { PlusIcon, TrashIcon } from '@heroicons/react/16/solid';
 import { useLabelStore } from '../../store/labelStore';
 import {
   FN_NUMBER_MIN,
@@ -12,16 +8,19 @@ import {
   type Variable,
 } from '../../types/Variable';
 import { walkObjects, type LabelObject } from '../../types/Group';
-import { inputCls, labelCls } from '../Properties/styles';
+import { inputCls } from '../Properties/styles';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { FieldLabel } from '../ui/FieldLabel';
 
 /* i18n: literal strings in this file are scheduled for locale extraction in
  *  Phase 1 step 3d. Keep them in one place so the sweep is mechanical. */
 const COPY = {
   panelHint:
-    'Variables hold default values for fields you bind from the Properties tab. The bound value is what the printer renders.',
+    'Defaults that get filled in at print time. Bind a field from its Properties tab.',
   add: 'Add variable',
   empty: 'No variables yet.',
+  emptyExample:
+    'Useful for sequential SKUs, batch numbers, or customer names.',
   nameLabel: 'Name',
   nameHelp:
     'Free-text identifier shown in the Properties dropdown when binding a field. For you, not the printer.',
@@ -114,7 +113,12 @@ export function VariablesPanel() {
       </p>
 
       {variables.length === 0 ? (
-        <p className="font-mono text-[10px] text-muted italic">{COPY.empty}</p>
+        <div className="flex flex-col gap-2">
+          <p className="font-mono text-[10px] text-muted italic">{COPY.empty}</p>
+          <p className="font-mono text-[10px] text-muted leading-relaxed">
+            {COPY.emptyExample}
+          </p>
+        </div>
       ) : (
         <ul className="flex flex-col gap-3">
           {variables.map((v) => (
@@ -168,22 +172,6 @@ export function VariablesPanel() {
         />
       )}
     </div>
-  );
-}
-
-/** Label + InformationCircleIcon with `title` tooltip. Matches the
- *  pattern already in PropertiesPanel.tsx so info hints look consistent
- *  across the right sidebar. ZPL command codes live only in the
- *  tooltips, never in the always-visible label text. */
-function FieldLabel({ text, help }: { text: string; help: string }) {
-  return (
-    <span className={`${labelCls} flex items-center gap-1`}>
-      {text}
-      <InformationCircleIcon
-        className="w-3 h-3 text-muted/60 cursor-help"
-        title={help}
-      />
-    </span>
   );
 }
 

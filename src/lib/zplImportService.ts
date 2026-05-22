@@ -54,11 +54,13 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
       if (existing) {
         idRemap.set(v.id, existing.id);
       } else {
-        const remappedName = uniqueVariableName(v.name, variables);
-        const kept: Variable = { ...v, name: remappedName };
+        // New fnNumber: keep the entry but disambiguate the name if a
+        // prior block has the same (e.g. two `field_1` derived from
+        // different blocks). No id remap — the spread reuses v.id, and
+        // the block's objects already reference that id.
+        const kept: Variable = { ...v, name: uniqueVariableName(v.name, variables) };
         variables.push(kept);
         variablesByFn.set(kept.fnNumber, kept);
-        if (kept.name !== v.name) idRemap.set(v.id, kept.id);
       }
     }
     // Apply id remap to this block's objects so their `variableId`

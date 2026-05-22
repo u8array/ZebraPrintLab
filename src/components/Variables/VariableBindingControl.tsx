@@ -1,8 +1,9 @@
 import { useState, type ChangeEvent } from 'react';
-import { InformationCircleIcon, XMarkIcon } from '@heroicons/react/16/solid';
+import { XMarkIcon } from '@heroicons/react/16/solid';
 import { useLabelStore } from '../../store/labelStore';
 import type { LabelObject } from '../../types/Group';
-import { inputCls, labelCls } from '../Properties/styles';
+import { inputCls } from '../Properties/styles';
+import { FieldLabel } from '../ui/FieldLabel';
 
 /* i18n: literal strings here belong to the end-of-branch locale sweep;
  *  see docs/variables-plan.local.md. */
@@ -102,13 +103,7 @@ export function VariableBindingControl({ obj }: Props) {
 
   return (
     <div className="flex flex-col gap-1">
-      <span className={`${labelCls} flex items-center gap-1`}>
-        {COPY.label}
-        <InformationCircleIcon
-          className="w-3 h-3 text-muted/60 cursor-help"
-          title={COPY.help}
-        />
-      </span>
+      <FieldLabel text={COPY.label} help={COPY.help} />
 
       {creating ? (
         <div className="flex flex-col gap-1">
@@ -151,7 +146,7 @@ export function VariableBindingControl({ obj }: Props) {
             <option value="">{COPY.unbound}</option>
             {variables.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.name}
+                {formatVariableOption(v.name, v.defaultValue)}
               </option>
             ))}
             <option value={CREATE_NEW_SENTINEL}>{COPY.createNew}</option>
@@ -185,4 +180,18 @@ export function VariableBindingControl({ obj }: Props) {
       )}
     </div>
   );
+}
+
+/** Render `{name} — "{default}"`, truncating long defaults so the
+ *  <option> stays scannable in narrow dropdowns. Empty default is
+ *  surfaced as `{name} — (empty)` rather than a trailing em-dash so
+ *  users see the state explicitly. */
+const OPTION_DEFAULT_MAX = 24;
+function formatVariableOption(name: string, defaultValue: string): string {
+  if (defaultValue === '') return `${name} — (empty)`;
+  const truncated =
+    defaultValue.length > OPTION_DEFAULT_MAX
+      ? `${defaultValue.slice(0, OPTION_DEFAULT_MAX)}…`
+      : defaultValue;
+  return `${name} — "${truncated}"`;
 }
