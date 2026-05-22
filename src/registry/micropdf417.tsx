@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
-import { fieldPos, fdField } from "./zplHelpers";
+import { fieldPos, fdFieldFor } from "./zplHelpers";
 import { commitStacked2DTransform } from "./transformHelpers";
 import { type ZplRotation } from "./rotation";
 import { RotationSelect } from "../components/Properties/RotationSelect";
@@ -19,6 +19,7 @@ export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
   label: "MicroPDF417",
   icon: "▤",
   group: "code-2d",
+  bindable: true,
   defaultProps: {
     content: "1234",
     moduleWidth: 2,
@@ -30,14 +31,14 @@ export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
 
   commitTransform: commitStacked2DTransform,
 
-  toZPL: (obj) => {
+  toZPL: (obj, ctx) => {
     const p = obj.props;
     // ^BF{orientation},{rowHeight},{mode}
     return [
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BF${p.rotation},${p.rowHeight},${p.mode}`,
-      fdField(p.content),
+      fdFieldFor(obj, p.content, ctx),
     ]
       .filter(Boolean)
       .join("");

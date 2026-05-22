@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
-import { fieldPos, fdField } from "./zplHelpers";
+import { fieldPos, fdFieldFor } from "./zplHelpers";
 import { commitUniformScaleTransform } from "./transformHelpers";
 import { type ZplRotation } from "./rotation";
 import { RotationSelect } from "../components/Properties/RotationSelect";
@@ -25,6 +25,7 @@ export const aztec: ObjectTypeDefinition<AztecProps> = {
   label: "Aztec",
   icon: "◇",
   group: "code-2d",
+  bindable: true,
   defaultProps: {
     content: "1234567890",
     magnification: 4,
@@ -35,7 +36,7 @@ export const aztec: ObjectTypeDefinition<AztecProps> = {
 
   commitTransform: commitUniformScaleTransform('magnification', MAGNIFICATION_MIN, MAGNIFICATION_MAX),
 
-  toZPL: (obj) => {
+  toZPL: (obj, ctx) => {
     const p = obj.props;
     // ^B0 a,b,c,d,e,f,g = orientation, magnification, ecic, errorControl,
     // menuSymbol, numberOfSymbols, structuredID. ecLevel=0 is Zebra's
@@ -43,7 +44,7 @@ export const aztec: ObjectTypeDefinition<AztecProps> = {
     return [
       fieldPos(obj),
       `^B0${p.rotation},${p.magnification},N,${p.ecLevel}`,
-      fdField(p.content),
+      fdFieldFor(obj, p.content, ctx),
     ].join("");
   },
 

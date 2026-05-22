@@ -747,3 +747,56 @@ describe('generateZPL — groups', () => {
     expect(zpl).not.toContain('Hidden');
   });
 });
+
+describe('generateZPL — variable bindings', () => {
+  const variable = {
+    id: 'var-1',
+    name: 'sku',
+    fnNumber: 7,
+    defaultValue: 'ABC-123',
+  };
+
+  const textObj = {
+    id: 'obj-1',
+    type: 'text',
+    x: 50,
+    y: 50,
+    rotation: 0,
+    variableId: 'var-1',
+    props: {
+      content: 'placeholder',
+      fontHeight: 30,
+      fontWidth: 0,
+      rotation: 'N',
+    },
+  } as unknown as LabelObject;
+
+  it('emits ^FN{n} before the field and uses the variable default as ^FD payload', () => {
+    const zpl = generateZPL(BASE_LABEL, [textObj], [variable]);
+    expect(zpl).toContain('^FN7^FDABC-123^FS');
+    expect(zpl).not.toContain('placeholder');
+  });
+
+  it('falls back to literal content when no variables are supplied', () => {
+    const zpl = generateZPL(BASE_LABEL, [textObj]);
+    expect(zpl).toContain('placeholder');
+    expect(zpl).not.toContain('^FN');
+  });
+
+  it('falls back to literal content when the binding is orphaned', () => {
+    const zpl = generateZPL(BASE_LABEL, [textObj], [
+      { ...variable, id: 'different-id' },
+    ]);
+    expect(zpl).toContain('placeholder');
+    expect(zpl).not.toContain('^FN');
+  });
+
+  it('round-trips a bound text field through parse → variables stay consistent', () => {
+    const out = generateZPL(BASE_LABEL, [textObj], [variable]);
+    const { variables, objects } = parseZPL(out);
+    expect(variables).toHaveLength(1);
+    expect(variables[0]?.fnNumber).toBe(7);
+    expect(variables[0]?.defaultValue).toBe('ABC-123');
+    expect(objects[0]?.variableId).toBe(variables[0]?.id);
+  });
+});

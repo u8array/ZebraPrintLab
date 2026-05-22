@@ -132,6 +132,33 @@ export function mapObjectById(
 }
 
 /**
+ * Returns a new tree with every leaf's `variableId` cleared when it matches
+ * `variableId`. Recurses into groups. Identity-preserving like
+ * `mapObjectById`: subtrees that hold no matching binding keep their
+ * original references so the store can short-circuit the page update.
+ */
+export function stripVariableIdFromObjects(
+  objects: LabelObject[],
+  variableId: string,
+): LabelObject[] {
+  let changed = false;
+  const next = objects.map((o) => {
+    if (isGroup(o)) {
+      const newChildren = stripVariableIdFromObjects(o.children, variableId);
+      if (newChildren === o.children) return o;
+      changed = true;
+      return { ...o, children: newChildren };
+    }
+    if (o.variableId !== variableId) return o;
+    changed = true;
+    const cleared: LabelObject = { ...o };
+    delete cleared.variableId;
+    return cleared;
+  });
+  return changed ? next : objects;
+}
+
+/**
  * Returns the tree with `id` removed and the removed node, or `null`
  * for the node when nothing matched. Used by reparenting flows that
  * need both the detached node and the tree-without-it.

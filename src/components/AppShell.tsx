@@ -3,9 +3,7 @@ import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { ObjectPalette } from "./Palette/ObjectPalette";
 import { LabelCanvas } from "./Canvas/LabelCanvas";
 import type { LabelCanvasHandle } from "./Canvas/LabelCanvas";
-import { PropertiesPanel } from "./Properties/PropertiesPanel";
-import { LayersPanel } from "./Properties/LayersPanel";
-import { FontManager } from "./Fonts/FontManager";
+import { RightSidebar } from "./RightSidebar/RightSidebar";
 import { ZPLOutput } from "./Output/ZPLOutput";
 import { ZplImportModal } from "./Output/ZplImportModal";
 import { PrintToZebraDialog } from "./Output/PrintToZebraDialog";
@@ -66,7 +64,6 @@ export function AppShell() {
   const canvasSettings = useLabelStore((s) => s.canvasSettings);
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
   const { showGrid, snapEnabled, snapSizeMm, unit } = canvasSettings;
-  const [rightTab, setRightTab] = useState<"properties" | "layers" | "fonts">("properties");
 
   const canUndo = pastStates.length > 0;
   const canRedo = futureStates.length > 0;
@@ -290,45 +287,7 @@ export function AppShell() {
           />
         </main>
 
-        <aside className="w-64 shrink-0 border-l border-border bg-surface flex flex-col">
-          <div className="flex shrink-0 border-b border-border">
-            <button
-              onClick={() => setRightTab("properties")}
-              className={`flex-1 py-2 text-xs font-medium transition-colors ${
-                rightTab === "properties"
-                  ? "text-accent border-b-2 border-accent"
-                  : "text-muted hover:text-text"
-              }`}
-            >
-              {t.layers.propertiesTab}
-            </button>
-            <button
-              onClick={() => setRightTab("layers")}
-              className={`flex-1 py-2 text-xs font-medium transition-colors ${
-                rightTab === "layers"
-                  ? "text-accent border-b-2 border-accent"
-                  : "text-muted hover:text-text"
-              }`}
-            >
-              {t.layers.layersTab}
-            </button>
-            <button
-              onClick={() => setRightTab("fonts")}
-              className={`flex-1 py-2 text-xs font-medium transition-colors ${
-                rightTab === "fonts"
-                  ? "text-accent border-b-2 border-accent"
-                  : "text-muted hover:text-text"
-              }`}
-            >
-              {t.layers.fontsTab}
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {rightTab === "properties" && <PropertiesPanel canvasRef={canvasRef} />}
-            {rightTab === "layers" && <LayersPanel />}
-            {rightTab === "fonts" && <FontManager />}
-          </div>
-        </aside>
+        <RightSidebar canvasRef={canvasRef} />
       </div>
       </DndContext>
 

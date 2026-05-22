@@ -8,13 +8,14 @@ import { labelaryErrorMessage } from "../lib/labelary";
 export function useZplImportExport() {
   const label = useLabelStore((s) => s.label);
   const pages = useLabelStore((s) => s.pages);
+  const variables = useLabelStore((s) => s.variables);
   const objects = useCurrentObjects();
   const [showZplImport, setShowZplImport] = useState(false);
   const [showZebraPrint, setShowZebraPrint] = useState(false);
   const [printError, setPrintError] = useState<string | null>(null);
 
   const handleDownload = () => {
-    const zpl = generateMultiPageZPL(label, pages);
+    const zpl = generateMultiPageZPL(label, pages, variables);
     triggerDownload(new Blob([zpl], { type: "text/plain" }), "label.zpl");
   };
 
@@ -22,7 +23,7 @@ export function useZplImportExport() {
   // only the current page so the preview matches what the user sees.
   const handlePrint = async () => {
     try {
-      await printLabel(label, objects);
+      await printLabel(label, objects, variables);
     } catch (e) {
       setPrintError(labelaryErrorMessage(e));
     }
@@ -35,7 +36,7 @@ export function useZplImportExport() {
     showZebraPrint,
     openZebraPrint: () => setShowZebraPrint(true),
     closeZebraPrint: () => setShowZebraPrint(false),
-    currentZpl: () => generateMultiPageZPL(label, pages),
+    currentZpl: () => generateMultiPageZPL(label, pages, variables),
     printError,
     dismissPrintError: () => setPrintError(null),
     handleDownload,

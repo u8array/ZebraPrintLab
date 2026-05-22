@@ -1,11 +1,16 @@
 import { z } from "zod";
 import { labelConfigSchema, labelObjectBaseSchema, type LabelConfig } from "../types/ObjectType";
+import { variableSchema, type Variable } from "../types/Variable";
 import type { LabelObject } from "../types/Group";
 import { ok, err, type Result } from "./result";
 
 export type DesignFileError = "parse_error" | "invalid_schema";
 export interface DesignFilePage { objects: LabelObject[] }
-export interface DesignFile { label: LabelConfig; pages: DesignFilePage[] }
+export interface DesignFile {
+  label: LabelConfig;
+  pages: DesignFilePage[];
+  variables: Variable[];
+}
 
 // Two distinct shapes share the base fields:
 //   * leaves carry `props` and have no `children`,
@@ -34,6 +39,8 @@ const pageSchema = z.object({ objects: z.array(labelObjectSchema) });
 const designFileSchema = z.object({
   label: labelConfigSchema,
   pages: z.array(pageSchema),
+  // Optional so designs saved before the variables feature still load.
+  variables: z.array(variableSchema).optional(),
 });
 
 const legacyDesignFileSchema = z.object({
@@ -54,7 +61,11 @@ export function parseDesignFile(text: string): Result<DesignFile, DesignFileErro
     // LabelObject[] is a discriminated union with typed props; Zod cannot
     // verify them without per-type schemas, so the cast here is intentional.
     // The registry handles unknown prop shapes gracefully at runtime.
-    return ok(current.data as unknown as DesignFile);
+    return ok({
+      label: current.data.label,
+      pages: current.data.pages as unknown as DesignFilePage[],
+      variables: current.data.variables ?? [],
+    });
   }
 
   // Legacy: { label, objects } from before multi-page support.
@@ -64,14 +75,26 @@ export function parseDesignFile(text: string): Result<DesignFile, DesignFileErro
     return ok({
       label: legacy.data.label,
       pages: [{ objects: legacy.data.objects as unknown as LabelObject[] }],
+      variables: [],
     });
   }
 
   return err("invalid_schema");
 }
 
-export function serializeDesign(label: LabelConfig, pages: DesignFilePage[]): string {
-  return JSON.stringify({ label, pages }, null, 2);
+export function serializeDesign(
+  label: LabelConfig,
+  pages: DesignFilePage[],
+  variables: Variable[] = [],
+): string {
+  // Omit `variables` from the output when empty so older versions of the
+  // app that lack the field can keep round-tripping designs untouched.
+  const payload: { label: LabelConfig; pages: DesignFilePage[]; variables?: Variable[] } = {
+    label,
+    pages,
+  };
+  if (variables.length > 0) payload.variables = variables;
+  return JSON.stringify(payload, null, 2);
 }
 
 export const designFileErrors: Record<DesignFileError, string> = {

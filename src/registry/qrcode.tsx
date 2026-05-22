@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos, fdField } from './zplHelpers';
+import { fieldPos, fdFieldFor } from './zplHelpers';
 import { commitUniformScaleTransform } from './transformHelpers';
 import { type ZplRotation } from './rotation';
 import { RotationSelect } from '../components/Properties/RotationSelect';
@@ -21,6 +21,7 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
   label: 'QR Code',
   icon: '⬚',
   group: 'code-2d',
+  bindable: true,
   defaultProps: {
     content: 'https://example.com',
     magnification: 4,
@@ -31,12 +32,16 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
 
   commitTransform: commitUniformScaleTransform('magnification', MAGNIFICATION_MIN, MAGNIFICATION_MAX),
 
-  toZPL: (obj) => {
+  toZPL: (obj, ctx) => {
     const p = obj.props;
+    // ZPL prefixes the QR payload with `{ec}A,` inside ^FD. When the field
+    // is bound to a variable, the variable's defaultValue stands in for the
+    // full payload including that prefix — Phase 1 keeps fdFieldFor honest
+    // and one-shot; smarter QR-data-only binding is a Phase 2 concern.
     return [
       fieldPos(obj),
       `^BQ${p.rotation},2,${p.magnification}`,
-      fdField(`${p.errorCorrection}A,${p.content}`),
+      fdFieldFor(obj, `${p.errorCorrection}A,${p.content}`, ctx),
     ].join('');
   },
 

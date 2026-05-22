@@ -15,6 +15,7 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
   const t = useT();
   const label = useLabelStore((s) => s.label);
   const pages = useLabelStore((s) => s.pages);
+  const variables = useLabelStore((s) => s.variables);
   const labelaryEnabled = useLabelStore((s) => s.thirdParty.labelary);
   const noticeRequired = useLabelStore(selectLabelaryNoticeRequired);
   const previewMode = useLabelStore((s) => s.previewMode);
@@ -24,7 +25,7 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
   const [showNotice, setShowNotice] = useState(false);
 
   const hasObjects = pages.some((p) => p.objects.length > 0);
-  const zpl = hasObjects ? generateMultiPageZPL(label, pages) : '';
+  const zpl = hasObjects ? generateMultiPageZPL(label, pages, variables) : '';
 
   const previewActive =
     previewMode.status === 'loading' || previewMode.status === 'active';

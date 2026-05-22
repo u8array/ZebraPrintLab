@@ -1,5 +1,6 @@
 import type React from 'react';
 import { z } from 'zod';
+import type { Variable } from './Variable';
 
 /** A single font mapping. Three row shapes are supported so the editor
  *  can stay 1:1 with what the printer renders:
@@ -112,6 +113,11 @@ export const labelObjectBaseSchema = z.object({
    *  Leaves currently fall back to their registry label; the field lives
    *  on the base so naming leaves later is a UI-only change. */
   name: z.string().optional(),
+  /** When set, the field's render/export content comes from the referenced
+   *  Variable's defaultValue (or future data source). The field's own
+   *  content prop is kept as fallback when the binding is removed.
+   *  Exported as `^FN{n}^FD{default}^FS` instead of plain `^FD{content}^FS`. */
+  variableId: z.string().optional(),
 });
 
 export type LabelObjectBase = z.infer<typeof labelObjectBaseSchema>;
@@ -134,12 +140,18 @@ export interface TransformContext {
 }
 
 /** Context passed to `toZPL` so leaf emit functions can reach
- *  label-wide state (default font ID, ^CW alias map, etc.). Optional —
- *  most types ignore it; only text/serial currently care about the
- *  default font fallback. Tests calling `toZPL` directly can omit
- *  `ctx` and get the no-default-context branch. */
+ *  label-wide state (default font ID, ^CW alias map, variables, etc.).
+ *  Optional — most types ignore it; text/serial use it for the default
+ *  font fallback, text/barcode emitters consult `variables` when an
+ *  object's `variableId` is set. Tests calling `toZPL` directly can omit
+ *  `ctx` and get the no-binding / no-default-context branches. */
 export interface ZplEmitContext {
   label: LabelConfig;
+  /** Document-level variables. When a field carries `variableId` pointing
+   *  at one of these, the emitter writes `^FN{n}^FD{default}^FS` so the
+   *  printer treats the field as a template slot. Absent / empty: every
+   *  field emits its own literal content. */
+  variables?: readonly Variable[];
 }
 
 export interface ObjectTypeDefinition<P extends object = object> {
@@ -162,6 +174,14 @@ export interface ObjectTypeDefinition<P extends object = object> {
    * renderer suppresses the text so the designer matches the print output.
    */
   interpretationLocked?: boolean;
+  /**
+   * True when the type emits a ^FD content block via `fdFieldFor` and can
+   * therefore be bound to a Variable. The Properties panel uses this to
+   * decide whether to render the bind-to-variable control. Mirrors which
+   * registry modules actually wire fdFieldFor in their toZPL — keep them
+   * in sync.
+   */
+  bindable?: boolean;
   /**
    * Marks types whose resize must keep a 1:1 aspect ratio. The transformer
    * restricts to corner anchors and forces the resize bbox to stay square,

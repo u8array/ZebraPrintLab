@@ -1,10 +1,12 @@
 import { parseZPL, type ImportFinding, type ImportFindingKind, type ImportReport } from "./zplParser";
 import type { LabelConfig } from "../types/ObjectType";
 import type { LabelObject } from "../types/Group";
+import { uniqueVariableName, type Variable } from "../types/Variable";
 
 export interface ZplImportResult {
   labelConfig: Partial<LabelConfig>;
   pages: { objects: LabelObject[] }[];
+  variables: Variable[];
   report: ImportReport;
 }
 
@@ -29,6 +31,7 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     return {
       labelConfig: {},
       pages: [],
+      variables: [],
       report: { findings: [], partial: [], browserLimit: [], unknown: [] },
     };
   }
@@ -36,9 +39,37 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
   let labelConfig: Partial<LabelConfig> = {};
   const pages: { objects: LabelObject[] }[] = [];
   const findings: ImportFinding[] = [];
+  // Variables are document-level, but the parser reconstructs them per
+  // block. Merge across blocks by fnNumber (same slot used on multiple
+  // pages → one Variable) and rewire later blocks' object references
+  // onto the first block's Variable so the binding survives the merge.
+  const variables: Variable[] = [];
+  const variablesByFn = new Map<number, Variable>();
 
   blocks.forEach((block, i) => {
     const result = parseZPL(block, dpmm);
+    const idRemap = new Map<string, string>();
+    for (const v of result.variables) {
+      const existing = variablesByFn.get(v.fnNumber);
+      if (existing) {
+        idRemap.set(v.id, existing.id);
+      } else {
+        // New fnNumber: keep the entry but disambiguate the name if a
+        // prior block has the same (e.g. two `field_1` derived from
+        // different blocks). No id remap, since the spread reuses v.id and
+        // the block's objects already reference that id.
+        const kept: Variable = { ...v, name: uniqueVariableName(v.name, variables) };
+        variables.push(kept);
+        variablesByFn.set(kept.fnNumber, kept);
+      }
+    }
+    // Apply id remap to this block's objects so their `variableId`
+    // points at the merged Variable rather than the orphaned per-block
+    // entry. Walks into groups for completeness even though the parser
+    // doesn't currently produce groups.
+    if (idRemap.size > 0) {
+      rewireBindings(result.objects, idRemap);
+    }
     pages.push({ objects: result.objects });
     if (i === 0) {
       labelConfig = result.labelConfig;
@@ -63,5 +94,23 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     unknown: dedupBy('unknown'),
   };
 
-  return { labelConfig, pages, report };
+  return { labelConfig, pages, variables, report };
+}
+
+/** In-place rewrite of `variableId` references on freshly-parsed objects
+ *  (not yet in the store, so mutation is safe). Lets the importer dedupe
+ *  cross-block variables without re-walking the tree to construct
+ *  immutable copies. */
+function rewireBindings(
+  objects: LabelObject[],
+  idRemap: ReadonlyMap<string, string>,
+): void {
+  for (const obj of objects) {
+    if (obj.variableId && idRemap.has(obj.variableId)) {
+      obj.variableId = idRemap.get(obj.variableId);
+    }
+    if (obj.type === "group" && "children" in obj) {
+      rewireBindings(obj.children, idRemap);
+    }
+  }
 }

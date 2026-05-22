@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from "react";
 import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { buttonCls, inputCls, labelCls } from "../components/Properties/styles";
-import { textFieldPos, fdField, resolveFontCmd, wrapReverse } from "./zplHelpers";
+import { textFieldPos, fdFieldFor, resolveFontCmd, wrapReverse } from "./zplHelpers";
 import { effectiveScale } from "./transformHelpers";
 import { getFont, loadFontFile } from "../lib/fontCache";
 import { getAvailableFontIds, stripDrivePrefix } from "../lib/customFonts";
@@ -38,6 +38,7 @@ export const text: ObjectTypeDefinition<TextProps> = {
   label: "Text",
   icon: "T",
   group: "text" as const,
+  bindable: true,
   defaultProps: {
     content: "Text",
     fontHeight: 30,
@@ -68,7 +69,7 @@ export const text: ObjectTypeDefinition<TextProps> = {
     const fbCmd = p.blockWidth
       ? `^FB${p.blockWidth},${p.blockLines ?? 1},${p.blockLineSpacing ?? 0},${p.blockJustify ?? "L"},0`
       : "";
-    const body = [textFieldPos(obj), fontCmd, fbCmd, fdField(p.content)]
+    const body = [textFieldPos(obj), fontCmd, fbCmd, fdFieldFor(obj, p.content, ctx)]
       .filter(Boolean)
       .join("");
     return wrapReverse(p.reverse, body);

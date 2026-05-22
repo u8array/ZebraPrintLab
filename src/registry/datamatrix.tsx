@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos, fdField } from './zplHelpers';
+import { fieldPos, fdFieldFor } from './zplHelpers';
 import { commitUniformScaleTransform } from './transformHelpers';
 import { type ZplRotation } from './rotation';
 import { RotationSelect } from '../components/Properties/RotationSelect';
@@ -21,6 +21,7 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
   label: 'DataMatrix',
   icon: '▦',
   group: 'code-2d',
+  bindable: true,
   defaultProps: {
     content: '1234567890',
     dimension: 5,
@@ -31,12 +32,12 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
 
   commitTransform: commitUniformScaleTransform('dimension', DIMENSION_MIN, DIMENSION_MAX),
 
-  toZPL: (obj) => {
+  toZPL: (obj, ctx) => {
     const p = obj.props;
     return [
       fieldPos(obj),
       `^BX${p.rotation},${p.dimension},${p.quality}`,
-      fdField(p.content),
+      fdFieldFor(obj, p.content, ctx),
     ].join('');
   },
 

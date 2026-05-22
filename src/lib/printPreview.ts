@@ -2,6 +2,7 @@ import { generateZPL } from "./zplGenerator";
 import { fetchPreview } from "./labelary";
 import type { LabelConfig } from "../types/ObjectType";
 import type { LabelObject } from "../types/Group";
+import type { Variable } from "../types/Variable";
 
 export function buildLoadingHtml(): string {
   return `<html><head><style>
@@ -20,7 +21,11 @@ export function buildPrintHtml(imageUrl: string): string {
   </html>`;
 }
 
-export async function printLabel(label: LabelConfig, objects: LabelObject[]): Promise<void> {
+export async function printLabel(
+  label: LabelConfig,
+  objects: LabelObject[],
+  variables: readonly Variable[] = [],
+): Promise<void> {
   // Open the window synchronously (inside the user-click call stack) so browsers
   // don't treat it as a popup. Fill it in once the Labelary preview arrives.
   const win = window.open("", "_blank");
@@ -29,7 +34,7 @@ export async function printLabel(label: LabelConfig, objects: LabelObject[]): Pr
   win.document.close();
 
   try {
-    const zpl = generateZPL(label, objects);
+    const zpl = generateZPL(label, objects, variables);
     const url = await fetchPreview(zpl, label);
     win.document.open();
     win.document.write(buildPrintHtml(url));

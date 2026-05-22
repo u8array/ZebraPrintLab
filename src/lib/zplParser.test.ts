@@ -1276,3 +1276,42 @@ describe('parseZPL — ^FO with justification parameter', () => {
     expect(props(objects[0]).content).toBe('Justified');
   });
 });
+
+describe('^FN / template variables', () => {
+  it('creates a Variable for each distinct ^FN and binds the field', () => {
+    const zpl = '^XA^FO10,20^A0N,30,30^FN1^FDDefault^FS^XZ';
+    const { objects, variables } = parseZPL(zpl);
+    expect(variables).toHaveLength(1);
+    expect(variables[0]?.fnNumber).toBe(1);
+    expect(variables[0]?.defaultValue).toBe('Default');
+    expect(variables[0]?.name).toBe('field_1');
+    expect(objects[0]?.variableId).toBe(variables[0]?.id);
+  });
+
+  it('derives the Variable name from a preceding ^FX comment', () => {
+    const zpl = '^XA^FXField: Customer Name^FO10,20^A0N,30,30^FN1^FDJohn^FS^XZ';
+    const { variables } = parseZPL(zpl);
+    expect(variables[0]?.name).toBe('Customer_Name');
+  });
+
+  it('reuses the same Variable when multiple fields share an fnNumber', () => {
+    const zpl =
+      '^XA' +
+      '^FO10,20^A0N,30,30^FN1^FDA^FS' +
+      '^FO10,60^A0N,30,30^FN1^FDA^FS' +
+      '^XZ';
+    const { objects, variables } = parseZPL(zpl);
+    expect(variables).toHaveLength(1);
+    const [a, b] = objects;
+    expect(a?.variableId).toBe(variables[0]?.id);
+    expect(b?.variableId).toBe(variables[0]?.id);
+  });
+
+  it('ignores out-of-range ^FN numbers and records a partial finding', () => {
+    const zpl = '^XA^FO10,20^A0N,30,30^FN0^FDIgnored^FS^XZ';
+    const { variables, objects, importReport } = parseZPL(zpl);
+    expect(variables).toHaveLength(0);
+    expect(objects[0]?.variableId).toBeUndefined();
+    expect(importReport.partial).toContain('^FN');
+  });
+});

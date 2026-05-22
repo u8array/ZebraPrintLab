@@ -3,6 +3,7 @@ import { ObjectRegistry } from '../registry';
 import { stripZplCommandChars } from '../registry/zplHelpers';
 import type { CustomFontMapping, LabelConfig } from '../types/ObjectType';
 import type { Page } from '../store/labelStore';
+import type { Variable } from '../types/Variable';
 import { isGroup, type LabelObject } from '../types/Group';
 import { getFontBytes } from './fontCache';
 import type { ImageProps } from '../registry/image';
@@ -82,11 +83,19 @@ function formatGraphicUpload(p: ImageProps): string | undefined {
  * Concatenates `generateZPL` output for every page. Each page becomes its own
  * `^XA...^XZ` block; printers process the blocks as separate labels.
  */
-export function generateMultiPageZPL(label: LabelConfig, pages: Page[]): string {
-  return pages.map((p) => generateZPL(label, p.objects)).join('\n');
+export function generateMultiPageZPL(
+  label: LabelConfig,
+  pages: Page[],
+  variables: readonly Variable[] = [],
+): string {
+  return pages.map((p) => generateZPL(label, p.objects, variables)).join('\n');
 }
 
-export function generateZPL(label: LabelConfig, objects: LabelObject[]): string {
+export function generateZPL(
+  label: LabelConfig,
+  objects: LabelObject[],
+  variables: readonly Variable[] = [],
+): string {
   const widthDots = mmToDots(label.widthMm, label.dpmm);
   const heightDots = mmToDots(label.heightMm, label.dpmm);
 
@@ -220,7 +229,7 @@ export function generateZPL(label: LabelConfig, objects: LabelObject[]): string 
   const emitLeaf = (obj: LabelObject): string[] => {
     if (obj.includeInExport === false) return [];
     if (isGroup(obj)) return obj.children.flatMap(emitLeaf);
-    const zpl = ObjectRegistry[obj.type]?.toZPL(obj, { label }) ?? '';
+    const zpl = ObjectRegistry[obj.type]?.toZPL(obj, { label, variables }) ?? '';
     return obj.comment
       ? [`^FX${stripZplCommandChars(obj.comment)}\n${zpl}`]
       : [zpl];

@@ -1,4 +1,10 @@
 import type { CustomFontMapping, LabelConfig } from "../types/ObjectType";
+import {
+  FN_NUMBER_MIN,
+  FN_NUMBER_MAX,
+  uniqueVariableName,
+  type Variable,
+} from "../types/Variable";
 import { zplAnchorToModel } from "../components/Canvas/textPositionTransforms";
 import { computeTextRenderMetrics } from "../components/Canvas/textRenderMetrics";
 import type { LabelObject } from "../types/Group";
@@ -72,6 +78,11 @@ export interface ImportReport {
 export interface ParsedZPL {
   labelConfig: Partial<LabelConfig>;
   objects: LabelObject[];
+  /** Template variables reconstructed from `^FN` slots. The parser creates
+   *  one entry per distinct fnNumber it sees and points every bound
+   *  object's `variableId` at the matching entry. Empty when no `^FN`
+   *  appeared in the block. */
+  variables: Variable[];
   /** All commands that were not fully imported (browserLimit + unknown).
    *  Kept for backward compatibility; prefer importReport for categorised access. */
   skipped: string[];
@@ -121,6 +132,21 @@ function makeObj(
     props,
   } as unknown as LabelObject;
 }
+
+/** Derive a Variable name from a `^FX` comment that landed just before the
+ *  `^FN`. Strips well-known annotation prefixes (`Field:`, `Variable:`,
+ *  `Var:`) so a comment like "Field: Customer Name" becomes `Customer_Name`.
+ *  Returns null when the comment is missing or sanitises to empty — the
+ *  caller falls back to `field_{n}`. */
+function variableNameFromComment(comment: string | undefined): string | null {
+  if (!comment) return null;
+  const cleaned = comment
+    .replace(/^\s*(field|variable|var)\s*[:-]\s*/i, "")
+    .trim()
+    .replace(/\s+/g, "_");
+  return cleaned === "" ? null : cleaned;
+}
+
 
 /**
  * Map a ^CI N parameter to a TextDecoder label. Most labels printed by this
@@ -496,11 +522,18 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   const tokens = tokenize(zpl);
   const objects: LabelObject[] = [];
   const labelConfig: Partial<LabelConfig> = {};
+  const variables: Variable[] = [];
   const skipped: string[] = [];
   const partialCmds = new Set<string>(); // deduplicates partial-import command codes
   const browserLimit: string[] = [];
   const unknown: string[] = [];
   let pendingComment: string | undefined;
+
+  /** `^FN{n}` slot pending application to the next field flushed. Snapshot
+   *  of `pendingComment` is kept separately so a later `^FX` that lands
+   *  between `^FN` and `^FS` doesn't pollute the variable's auto-name. */
+  let pendingFn: number | null = null;
+  let pendingFnComment: string | undefined;
 
   /** Consume and return the pending ^FX comment, then clear it. */
   const takeComment = (): string | undefined => {
@@ -920,6 +953,31 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           ),
         );
         break;
+    }
+
+    // Apply the pending `^FN{n}` slot (if any) to the field we just
+    // pushed. Reuse an existing Variable when its fnNumber matches —
+    // ZPL templates often reference the same slot multiple times,
+    // and the binding should funnel to one Variable, not duplicates.
+    if (pendingFn !== null) {
+      const justPushed = objects[objects.length - 1];
+      if (justPushed) {
+        let variable = variables.find((v) => v.fnNumber === pendingFn);
+        if (!variable) {
+          const fallback = `field_${pendingFn}`;
+          const base = variableNameFromComment(pendingFnComment) ?? fallback;
+          variable = {
+            id: crypto.randomUUID(),
+            name: uniqueVariableName(base, variables),
+            fnNumber: pendingFn,
+            defaultValue: content,
+          };
+          variables.push(variable);
+        }
+        justPushed.variableId = variable.id;
+      }
+      pendingFn = null;
+      pendingFnComment = undefined;
     }
 
     fieldType = null;
@@ -1793,9 +1851,20 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       if (!enc.supported) partialCmds.add(`^CI${int(p[0])}`);
     },
 
-    // These commands carry no canvas-design information and are silently
-    // discarded so they do not pollute importReport.unknown.
-    FN: noop, // field number — variable data placeholder (template feature)
+    // ^FN{n}: declares that the next field is a template slot. The
+    // accompanying ^FD payload becomes the slot's default value at
+    // flushField time. Out-of-range numbers (Zebra accepts 0/100+ on
+    // newer firmware, but our model caps at 99) are ignored so they
+    // don't poison the binding.
+    FN: (p) => {
+      const n = int(p[0]);
+      if (n < FN_NUMBER_MIN || n > FN_NUMBER_MAX) {
+        partialCmds.add("^FN");
+        return;
+      }
+      pendingFn = n;
+      pendingFnComment = pendingComment;
+    },
     FV: noop, // field variable — supplies data for ^FN at print time
     FC: noop, // field clock — inserts date/time (requires printer RTC)
     FE: noop, // field concatenation — appends data to current field
@@ -1884,6 +1953,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   return {
     labelConfig,
     objects,
+    variables,
     skipped,
     importReport: {
       findings,

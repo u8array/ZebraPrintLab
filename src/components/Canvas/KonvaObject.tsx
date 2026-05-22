@@ -9,6 +9,7 @@ import { outlineInset } from "../../lib/shapeGeometry";
 import { reverseShapeStyle } from "./reverseShapeStyle";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { useLabelStore } from "../../store/labelStore";
+import { applyBindingToObject } from "../../lib/variableBinding";
 import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "./textPositionTransforms";
 import { getTextRenderMetrics } from "./textRenderMetrics";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
@@ -105,15 +106,19 @@ const BARCODE_TYPES = new Set([
 ]);
 
 export function KonvaObject(props_: Props) {
-  // Pass `obj` explicitly after the spread so each per-type renderer
-  // receives the narrowed type (LineLabelObject, ImageLabelObject)
-  // rather than the wide LabelObject. Without the explicit prop the
-  // spread would re-widen and the renderer would need a runtime cast.
-  const { obj } = props_;
-  if (obj.type === "line") return <LineObject {...props_} obj={obj} />;
-  if (obj.type === "image") return <ImageObject {...props_} obj={obj} />;
-  if (BARCODE_TYPES.has(obj.type)) return <BarcodeObject {...props_} />;
-  return <KonvaObjectInner {...props_} />;
+  // Substitute the bound variable's defaultValue into `props.content`
+  // before any per-type renderer touches the obj. Keeps Konva blissfully
+  // unaware of the binding mechanism: every shape draws what the printer
+  // would print absent a runtime ^FV override. `applyBindingToObject`
+  // is identity-preserving when the obj isn't bound, so memoisation
+  // downstream isn't affected for the common case.
+  const variables = useLabelStore((s) => s.variables);
+  const obj = applyBindingToObject(props_.obj, variables);
+  const renderProps = obj === props_.obj ? props_ : { ...props_, obj };
+  if (obj.type === "line") return <LineObject {...renderProps} obj={obj} />;
+  if (obj.type === "image") return <ImageObject {...renderProps} obj={obj} />;
+  if (BARCODE_TYPES.has(obj.type)) return <BarcodeObject {...renderProps} />;
+  return <KonvaObjectInner {...renderProps} />;
 }
 
 /**

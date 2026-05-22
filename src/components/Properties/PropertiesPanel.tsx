@@ -20,6 +20,8 @@ import { useT } from "../../lib/useT";
 import { parseIntOrUndef } from "../../lib/inputParse";
 import { CollapsibleSection } from "../ui/CollapsibleSection";
 import { AlignButtons } from "./AlignButtons";
+import { VariableBindingControl } from "../Variables/VariableBindingControl";
+import { applyBindingToObject, lookupBoundVariable } from "../../lib/variableBinding";
 import { inputCls, labelCls } from "./styles";
 import type { LabelConfig } from "../../types/ObjectType";
 import {
@@ -40,6 +42,8 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
   const {
     selectedIds,
     updateObject,
+    updateVariable,
+    variables,
     groupSelection,
     label,
     setLabelConfig,
@@ -204,19 +208,64 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
 
         <div className="border-t border-border" />
 
-        {/* Per-type panel: only leaves have a registry entry, so TypePanel
-            is never present for groups. The isGroup guard narrows obj for
-            TypeScript at the call site since registry panels expect the
-            leaf shape (props field present). */}
-        {TypePanel && !groupRow && (
+        {/* Variable binding: shown for types that emit a ^FD content
+            block (text + barcodes minus serial). Collapsed by default
+            for unbound fields so beginners aren't distracted; opens
+            automatically when the field is already bound so the
+            binding state is visible without an extra click. The
+            CollapsibleSection persists the user's manual toggle
+            per-state in localStorage (separate ids for bound vs
+            unbound), so each preference sticks. */}
+        {definition?.bindable && !groupRow && (
           <>
-            <TypePanel
-              obj={obj}
-              onChange={(props) => updateObject(obj.id, { props })}
-            />
+            <CollapsibleSection
+              id={obj.variableId ? 'properties-variable-bound' : 'properties-variable-unbound'}
+              title={t.variables.sectionTitle}
+              defaultOpen={!!obj.variableId}
+            >
+              <VariableBindingControl obj={obj} />
+            </CollapsibleSection>
             <div className="border-t border-border" />
           </>
         )}
+
+        {/* Per-type panel: only leaves have a registry entry, so TypePanel
+            is never present for groups. The isGroup guard narrows obj for
+            TypeScript at the call site since registry panels expect the
+            leaf shape (props field present).
+
+            When a binding is active we hand TypePanel a patched obj where
+            props.content is the variable's defaultValue (so the CONTENT
+            input mirrors the canvas) and we re-route content edits into
+            updateVariable so typing into the per-type input directly
+            edits the variable's default. Non-content props (fontHeight,
+            rotation, …) keep flowing to updateObject untouched. */}
+        {TypePanel && !groupRow && (() => {
+          const boundVariable = lookupBoundVariable(obj, variables);
+          const patchedObj = boundVariable
+            ? applyBindingToObject(obj, variables)
+            : obj;
+          const handleChange = boundVariable
+            ? (props: object) => {
+                const next = { ...(props as Record<string, unknown>) };
+                if (typeof next.content === 'string') {
+                  updateVariable(boundVariable.id, {
+                    defaultValue: next.content,
+                  });
+                  delete next.content;
+                }
+                if (Object.keys(next).length > 0) {
+                  updateObject(obj.id, { props: next });
+                }
+              }
+            : (props: object) => updateObject(obj.id, { props });
+          return (
+            <>
+              <TypePanel obj={patchedObj} onChange={handleChange} />
+              <div className="border-t border-border" />
+            </>
+          );
+        })()}
 
         {/* Comment (^FX) — leaves only: groups emit no ZPL of their own
             so the comment would never reach the output. */}

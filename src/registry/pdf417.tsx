@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
-import { fieldPos, fdField } from "./zplHelpers";
+import { fieldPos, fdFieldFor } from "./zplHelpers";
 import { commitStacked2DTransform } from "./transformHelpers";
 import { type ZplRotation } from "./rotation";
 import { RotationSelect } from "../components/Properties/RotationSelect";
@@ -20,6 +20,7 @@ export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
   label: "PDF417",
   icon: "▥",
   group: "code-2d",
+  bindable: true,
   defaultProps: {
     content: "1234567890",
     rowHeight: 2,
@@ -32,13 +33,13 @@ export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
 
   commitTransform: commitStacked2DTransform,
 
-  toZPL: (obj) => {
+  toZPL: (obj, ctx) => {
     const p = obj.props;
     return [
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^B7${p.rotation},${p.rowHeight},${p.securityLevel},${p.columns},,,`,
-      fdField(p.content),
+      fdFieldFor(obj, p.content, ctx),
     ]
       .filter(Boolean)
       .join("");

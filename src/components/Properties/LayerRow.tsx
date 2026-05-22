@@ -8,10 +8,13 @@ import {
   ChevronRightIcon,
   ChevronDownIcon,
   LinkSlashIcon,
+  VariableIcon,
 } from '@heroicons/react/16/solid';
 import { ObjectRegistry } from '../../registry';
 import { isGroup, type LabelObject } from '../../types/Group';
 import { useT } from '../../lib/useT';
+import { useLabelStore } from '../../store/labelStore';
+import { lookupBoundVariable } from '../../lib/variableBinding';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 import { INDENT_STEP } from './layerLayout';
 
@@ -68,6 +71,14 @@ export function LayerRow({
   const t = useT();
   const def = ObjectRegistry[obj.type];
   const groupRow = isGroup(obj);
+  // Variable badge: small {x} glyph next to the type icon when the leaf
+  // is bound, with the variable name as a tooltip. Lets the user scan
+  // the layers list for slot usage without selecting each row. The
+  // selector subscribes the row to variable changes; cheap because
+  // each row already re-renders on selection / visibility flips.
+  const boundVariable = useLabelStore((s) =>
+    lookupBoundVariable(obj, s.variables),
+  );
   // Inline-rename is currently only exposed for groups; leaves render
   // their registry label as a plain (non-editable) span. The single
   // groupRow check at the entry-point keeps the rest of the edit path
@@ -185,6 +196,12 @@ export function LayerRow({
       <span className="font-mono text-xs text-accent shrink-0 w-4 text-center">
         {groupRow ? '⊞' : def?.icon}
       </span>
+      {boundVariable && (
+        <VariableIcon
+          className="w-3 h-3 shrink-0 text-accent/70"
+          title={`Bound to ${boundVariable.name}`}
+        />
+      )}
       <div className="flex flex-col flex-1 min-w-0">
         {editing ? (
           <input

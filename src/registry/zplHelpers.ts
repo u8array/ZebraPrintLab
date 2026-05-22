@@ -107,3 +107,27 @@ export function fdField(payload: string): string {
   const escaped = payload.replace(/[\^~_]/g, hex);
   return `^FH${FH_DELIM}^FD${escaped}^FS`;
 }
+
+/**
+ * Emit the content block for a bindable field. When `obj.variableId`
+ * points at a known variable in `ctx.variables`, the block becomes
+ * `^FN{n}` followed by `fdField(default)` — the printer treats it as a
+ * template slot whose default mirrors the editor canvas. Otherwise
+ * falls back to the plain `fdField(content)` path, so emitters can
+ * unconditionally route through here.
+ *
+ * Orphan bindings (variableId set but not in the variables list) fall
+ * back to literal content too — keeps export stable when a partial
+ * state slips through (mid-edit, malformed import).
+ */
+export function fdFieldFor(
+  obj: LabelObjectBase,
+  content: string,
+  ctx?: ZplEmitContext,
+): string {
+  const id = obj.variableId;
+  if (!id || !ctx?.variables) return fdField(content);
+  const variable = ctx.variables.find((v) => v.id === id);
+  if (!variable) return fdField(content);
+  return `^FN${variable.fnNumber}${fdField(variable.defaultValue)}`;
+}

@@ -4,6 +4,7 @@ import { importZplText } from '../../lib/zplImportService';
 import { readFileAsText } from '../../lib/readFile';
 import { useLabelStore, type Page } from '../../store/labelStore';
 import type { LabelConfig } from '../../types/ObjectType';
+import type { Variable } from '../../types/Variable';
 import { formatReportAsText, type ImportReport, type ImportResult } from '../../lib/importReport';
 import { ImportSummaryBody } from './ImportSummary';
 import { useT } from '../../lib/useT';
@@ -33,14 +34,21 @@ export function ZplImportModal({ onClose }: Props) {
   const hasExistingContent =
     pages.length > 1 || (pages[0]?.objects.length ?? 0) > 0;
 
-  const applyImport = (labelConfig: Partial<LabelConfig>, importedPages: Page[]) => {
+  const applyImport = (
+    labelConfig: Partial<LabelConfig>,
+    importedPages: Page[],
+    importedVariables: Variable[],
+  ) => {
     if (appendMode && hasExistingContent) {
       // Keep the current label config: the user opted to keep the
       // existing design's dimensions, so any imported ^PW/^LL is
-      // intentionally discarded.
+      // intentionally discarded. Imported variables are dropped too:
+      // append-mode preserves the current Variables tab; merging here
+      // would risk name/fnNumber collisions the user can't see in the
+      // dialog. Round-trip from a saved design uses Save/Load, not Append.
       appendPages(importedPages);
     } else {
-      loadDesign({ ...label, ...labelConfig }, importedPages);
+      loadDesign({ ...label, ...labelConfig }, importedPages, importedVariables);
     }
   };
 
@@ -62,13 +70,18 @@ export function ZplImportModal({ onClose }: Props) {
   // source-specific error they surface; everything past that point is
   // identical, so it lives here.
   const processImport = (text: string) => {
-    const { labelConfig, pages: importedPages, report } = importZplText(text, label.dpmm);
+    const {
+      labelConfig,
+      pages: importedPages,
+      variables: importedVariables,
+      report,
+    } = importZplText(text, label.dpmm);
     const totalObjects = importedPages.reduce((s, p) => s + p.objects.length, 0);
     if (totalObjects === 0 && Object.keys(labelConfig).length === 0) {
       setError('No supported objects found in the ZPL code.');
       return;
     }
-    applyImport(labelConfig, importedPages);
+    applyImport(labelConfig, importedPages, importedVariables);
     finishImport(totalObjects, report);
   };
 

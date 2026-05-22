@@ -1,7 +1,7 @@
 import type { ObjectTypeDefinition, LabelObjectBase } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos, fdField } from './zplHelpers';
+import { fieldPos, fdFieldFor } from './zplHelpers';
 import { filterContent } from './contentSpec';
 import { type ZplRotation } from './rotation';
 import { RotationSelect } from '../components/Properties/RotationSelect';
@@ -41,6 +41,7 @@ export const gs1databar: ObjectTypeDefinition<Gs1DatabarProps> = {
   label: 'GS1 Databar',
   icon: 'GS1',
   group: 'code-1d',
+  bindable: true,
   defaultProps: {
     content: '0112345678901',
     moduleWidth: 2,
@@ -50,12 +51,12 @@ export const gs1databar: ObjectTypeDefinition<Gs1DatabarProps> = {
   defaultSize: { width: 300, height: 120 },
   heightLocked: true,
 
-  toZPL: (obj: LabelObjectBase & { props: Gs1DatabarProps }) => {
+  toZPL: (obj: LabelObjectBase & { props: Gs1DatabarProps }, ctx) => {
     const p = obj.props;
     // ^BRo,s,m,sep,h[,sg] — segments must only be present for Expanded Stacked (7).
     // Including segments on sym 1–6 makes Labelary stack the symbol (wrong rendering).
     const segs = p.symbology === 7 ? `,${p.segments ?? GS1_DATABAR_DEFAULT_SEGMENTS}` : '';
-    return `^BY${p.moduleWidth}${fieldPos(obj)}^BR${p.rotation},${p.symbology},${p.moduleWidth},2,${ZPL_HEIGHT_PLACEHOLDER}${segs}${fdField(p.content)}`;
+    return `^BY${p.moduleWidth}${fieldPos(obj)}^BR${p.rotation},${p.symbology},${p.moduleWidth},2,${ZPL_HEIGHT_PLACEHOLDER}${segs}${fdFieldFor(obj, p.content, ctx)}`;
   },
 
   PropertiesPanel: ({ obj, onChange }) => {
