@@ -1,5 +1,9 @@
 import { useState, type ChangeEvent } from 'react';
-import { PlusIcon, TrashIcon } from '@heroicons/react/16/solid';
+import {
+  InformationCircleIcon,
+  PlusIcon,
+  TrashIcon,
+} from '@heroicons/react/16/solid';
 import { useLabelStore } from '../../store/labelStore';
 import {
   FN_NUMBER_MIN,
@@ -15,12 +19,18 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
  *  Phase 1 step 3d. Keep them in one place so the sweep is mechanical. */
 const COPY = {
   panelHint:
-    'Variables hold defaults that ZPL ^FN/^FV slots reference at print time. Bind a text or barcode field from its Properties tab.',
+    'Variables hold default values for fields you bind from the Properties tab. The bound value is what the printer renders.',
   add: 'Add variable',
   empty: 'No variables yet.',
   nameLabel: 'Name',
+  nameHelp:
+    'Free-text identifier shown in the Properties dropdown when binding a field. For you, not the printer.',
   fnLabel: 'Slot',
+  fnHelp:
+    'ZPL ^FN slot number (1-99) the printer uses to address this variable. Auto-assigned; only change when integrating with a system that injects data via ^FV at print time.',
   defaultLabel: 'Default',
+  defaultHelp:
+    'Value rendered on the canvas and emitted as the ZPL ^FD payload. External systems can override it at print time.',
   removeAria: (name: string) => `Remove variable ${name}`,
   bindingsBadge: (n: number) => (n === 1 ? '1 binding' : `${n} bindings`),
   noBindings: 'unused',
@@ -161,6 +171,22 @@ export function VariablesPanel() {
   );
 }
 
+/** Label + InformationCircleIcon with `title` tooltip. Matches the
+ *  pattern already in PropertiesPanel.tsx so info hints look consistent
+ *  across the right sidebar. ZPL command codes live only in the
+ *  tooltips, never in the always-visible label text. */
+function FieldLabel({ text, help }: { text: string; help: string }) {
+  return (
+    <span className={`${labelCls} flex items-center gap-1`}>
+      {text}
+      <InformationCircleIcon
+        className="w-3 h-3 text-muted/60 cursor-help"
+        title={help}
+      />
+    </span>
+  );
+}
+
 interface RowProps {
   variable: Variable;
   bindings: number;
@@ -218,7 +244,7 @@ function VariableRow({
     <li className="flex flex-col gap-1.5">
       <div className="flex items-end gap-2">
         <div className="flex-1 flex flex-col gap-0.5">
-          <label className={labelCls}>{COPY.nameLabel}</label>
+          <FieldLabel text={COPY.nameLabel} help={COPY.nameHelp} />
           <input
             className={inputCls}
             value={name}
@@ -227,7 +253,7 @@ function VariableRow({
           />
         </div>
         <div className="w-14 flex flex-col gap-0.5">
-          <label className={labelCls}>{COPY.fnLabel}</label>
+          <FieldLabel text={COPY.fnLabel} help={COPY.fnHelp} />
           <input
             type="number"
             min={FN_NUMBER_MIN}
@@ -247,7 +273,7 @@ function VariableRow({
         </button>
       </div>
       <div className="flex flex-col gap-0.5">
-        <label className={labelCls}>{COPY.defaultLabel}</label>
+        <FieldLabel text={COPY.defaultLabel} help={COPY.defaultHelp} />
         <input
           className={inputCls}
           value={def}
