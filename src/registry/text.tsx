@@ -38,6 +38,7 @@ export const text: ObjectTypeDefinition<TextProps> = {
   label: "Text",
   icon: "T",
   group: "text" as const,
+  bindable: true,
   defaultProps: {
     content: "Text",
     fontHeight: 30,

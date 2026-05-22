@@ -21,6 +21,7 @@ export const qrcode: ObjectTypeDefinition<QrCodeProps> = {
   label: 'QR Code',
   icon: '⬚',
   group: 'code-2d',
+  bindable: true,
   defaultProps: {
     content: 'https://example.com',
     magnification: 4,

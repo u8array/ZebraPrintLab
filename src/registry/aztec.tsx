@@ -25,6 +25,7 @@ export const aztec: ObjectTypeDefinition<AztecProps> = {
   label: "Aztec",
   icon: "◇",
   group: "code-2d",
+  bindable: true,
   defaultProps: {
     content: "1234567890",
     magnification: 4,

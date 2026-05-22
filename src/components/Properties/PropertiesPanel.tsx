@@ -20,6 +20,7 @@ import { useT } from "../../lib/useT";
 import { parseIntOrUndef } from "../../lib/inputParse";
 import { CollapsibleSection } from "../ui/CollapsibleSection";
 import { AlignButtons } from "./AlignButtons";
+import { VariableBindingControl } from "../Variables/VariableBindingControl";
 import { inputCls, labelCls } from "./styles";
 import type { LabelConfig } from "../../types/ObjectType";
 import {
@@ -203,6 +204,19 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
         </div>
 
         <div className="border-t border-border" />
+
+        {/* Variable binding: shown for types that emit a ^FD content
+            block (text + barcodes minus serial). Sits above TypePanel
+            so binding state is visible before users dive into type
+            specifics; the type panel's content input becomes
+            redundant once a binding is active (default value lives in
+            the Variables tab). */}
+        {definition?.bindable && !groupRow && (
+          <>
+            <VariableBindingControl obj={obj} />
+            <div className="border-t border-border" />
+          </>
+        )}
 
         {/* Per-type panel: only leaves have a registry entry, so TypePanel
             is never present for groups. The isGroup guard narrows obj for

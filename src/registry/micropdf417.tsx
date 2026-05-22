@@ -19,6 +19,7 @@ export const micropdf417: ObjectTypeDefinition<MicroPdf417Props> = {
   label: "MicroPDF417",
   icon: "▤",
   group: "code-2d",
+  bindable: true,
   defaultProps: {
     content: "1234",
     moduleWidth: 2,

@@ -20,6 +20,7 @@ export const pdf417: ObjectTypeDefinition<Pdf417Props> = {
   label: "PDF417",
   icon: "▥",
   group: "code-2d",
+  bindable: true,
   defaultProps: {
     content: "1234567890",
     rowHeight: 2,

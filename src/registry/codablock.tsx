@@ -19,6 +19,7 @@ export const codablock: ObjectTypeDefinition<CodablockProps> = {
   label: "CODABLOCK",
   icon: "▥B",
   group: "code-2d",
+  bindable: true,
   defaultProps: {
     content: "1234567890",
     moduleWidth: 2,

@@ -175,6 +175,14 @@ export interface ObjectTypeDefinition<P extends object = object> {
    */
   interpretationLocked?: boolean;
   /**
+   * True when the type emits a ^FD content block via `fdFieldFor` and can
+   * therefore be bound to a Variable. The Properties panel uses this to
+   * decide whether to render the bind-to-variable control. Mirrors which
+   * registry modules actually wire fdFieldFor in their toZPL — keep them
+   * in sync.
+   */
+  bindable?: boolean;
+  /**
    * Marks types whose resize must keep a 1:1 aspect ratio. The transformer
    * restricts to corner anchors and forces the resize bbox to stay square,
    * so visual feedback during drag matches the uniform `commitTransform`

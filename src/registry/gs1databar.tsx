@@ -41,6 +41,7 @@ export const gs1databar: ObjectTypeDefinition<Gs1DatabarProps> = {
   label: 'GS1 Databar',
   icon: 'GS1',
   group: 'code-1d',
+  bindable: true,
   defaultProps: {
     content: '0112345678901',
     moduleWidth: 2,

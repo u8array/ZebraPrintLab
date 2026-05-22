@@ -59,6 +59,7 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
     label: config.label,
     icon: config.icon,
     group: config.group,
+    bindable: true,
     defaultProps: {
       content: config.defaultContent,
       height: 100,

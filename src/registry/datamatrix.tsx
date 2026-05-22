@@ -21,6 +21,7 @@ export const datamatrix: ObjectTypeDefinition<DataMatrixProps> = {
   label: 'DataMatrix',
   icon: '▦',
   group: 'code-2d',
+  bindable: true,
   defaultProps: {
     content: '1234567890',
     dimension: 5,
