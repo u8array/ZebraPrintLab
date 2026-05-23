@@ -70,6 +70,10 @@ File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 
 File menu → **Add page** creates a new page. With multiple pages, the control at the bottom-center of the canvas switches between them and removes them. All pages share the same dimensions; export and import handle each page as a separate label.
 
+### Batch printing from CSV
+
+File menu → **Import CSV data** loads a CSV. The mapping dialog pairs each Variable with a column, saved with the design. **Export batch ZPL** or **Send to Zebra Printer** then outputs one label per row.
+
 ### Keyboard shortcuts
 
 | Shortcut | Action |
@@ -99,6 +103,7 @@ Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable conte
 - Smart alignment and spacing guides
 - Layers panel with reordering
 - Variables: bind text and barcode fields to named defaults that emit as `^FN`/`^FV` slots, round-tripping with printer-side templates
+- CSV batch printing: import a CSV, map columns to Variables, print or export one label per row
 - 32 UI languages (auto-detected from browser)
 - Light / dark mode (follows OS setting)
 
