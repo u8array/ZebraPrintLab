@@ -103,7 +103,7 @@ Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable conte
 - Smart alignment and spacing guides
 - Layers panel with reordering
 - Variables: bind text and barcode fields to named defaults that emit as `^FN`/`^FV` slots, round-tripping with printer-side templates
-- CSV batch printing: import a CSV, map columns to Variables, print or export one label per row
+- CSV batch printing: import a CSV, map columns to Variables, print or export with efficient printer-side data merge (template ships once, each row sends only its overrides)
 - 32 UI languages (auto-detected from browser)
 - Light / dark mode (follows OS setting)
 
