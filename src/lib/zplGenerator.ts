@@ -91,6 +91,74 @@ export function generateMultiPageZPL(
   return pages.map((p) => generateZPL(label, p.objects, variables)).join('\n');
 }
 
+/**
+ * Batch-print form for a single page-design driven by a CSV dataset.
+ * Emits two parts:
+ *
+ *  1. The template once, wrapped in `^DFR:LBL.ZPL` so the printer
+ *     stores it under R:LBL.ZPL. The body keeps its `^FN` slots,
+ *     so the printer treats it as a reusable form file.
+ *  2. One small `^XA^XFR:LBL.ZPL^FN…^FD…^FS…^XZ` block per CSV row
+ *     that recalls the stored format and supplies per-row values
+ *     via `^FN` overrides.
+ *
+ * This is the idiomatic ZPL data-merge pattern: the printer parses
+ * the heavy template once and applies cheap field overrides per
+ * label, so a 10k-row batch isn't 10k full copies of the design.
+ *
+ * Variables with no binding (or whose bound header is missing from
+ * the current dataset) emit no override; the printer falls back to
+ * the variable's `^FD` default that's baked into the stored template.
+ *
+ * The drive choice is R: (volatile RAM) so the stored format gets
+ * dropped on printer power-cycle — a single print run is the
+ * intended scope, not permanent provisioning. Filename `LBL.ZPL`
+ * keeps the printer's 8.3 limit and avoids stomping on user
+ * filenames that follow design conventions.
+ */
+export function generateBatchZpl(
+  label: LabelConfig,
+  objects: LabelObject[],
+  variables: readonly Variable[],
+  csvDataset: {
+    headers: readonly string[];
+    rows: readonly (readonly string[])[];
+  },
+  csvMapping: { bindings: Record<string, string> },
+): string {
+  const baseZpl = generateZPL(label, objects, variables);
+  // Inject ^DFR right after the first ^XA. The template ZPL itself is
+  // unchanged — the printer stores the entire ^XA…^XZ payload that
+  // follows ^DFR as a recallable form file.
+  const templateStored = baseZpl.replace(/^\^XA\n/, '^XA\n^DFR:LBL.ZPL\n');
+
+  // Pre-compute (variable.fnNumber, columnIdx) per mapped variable so
+  // the per-row loop is a tight zip. Variables with no binding or whose
+  // header dropped from the dataset are absent here — the printer's
+  // stored template carries their ^FD default, which becomes the
+  // effective value when no override is sent.
+  const overrides: { fn: number; colIdx: number }[] = [];
+  for (const v of variables) {
+    const header = csvMapping.bindings[v.id];
+    if (header === undefined) continue;
+    const colIdx = csvDataset.headers.indexOf(header);
+    if (colIdx === -1) continue;
+    overrides.push({ fn: v.fnNumber, colIdx });
+  }
+
+  const recallBlocks = csvDataset.rows.map((row) => {
+    const lines: string[] = ['^XA', '^XFR:LBL.ZPL'];
+    for (const { fn, colIdx } of overrides) {
+      const value = row[colIdx] ?? '';
+      lines.push(`^FN${fn}^FD${value}^FS`);
+    }
+    lines.push('^XZ');
+    return lines.join('\n');
+  });
+
+  return [templateStored, ...recallBlocks].join('\n');
+}
+
 export function generateZPL(
   label: LabelConfig,
   objects: LabelObject[],

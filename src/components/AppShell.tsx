@@ -101,6 +101,9 @@ export function AppShell() {
     printError,
     dismissPrintError,
     handleDownload,
+    handleExportBatch,
+    canBatchExport,
+    batchRowCount,
     handlePrint,
   } = useZplImportExport();
   const outputPanel = useOutputPanel(OUTPUT_DEFAULT_H);
@@ -209,6 +212,15 @@ export function AppShell() {
             >
               {t.app.exportZpl}
             </DropdownItem>
+            {canBatchExport && (
+              /* i18n: locale key gets added in the end-of-branch sweep. */
+              <DropdownItem
+                icon={ArrowDownTrayIcon}
+                onClick={handleExportBatch}
+              >
+                Export batch ZPL ({batchRowCount} labels)
+              </DropdownItem>
+            )}
             <DropdownSeparator />
             <DropdownItem
               icon={FolderOpenIcon}

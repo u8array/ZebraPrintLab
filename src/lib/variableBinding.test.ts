@@ -3,6 +3,7 @@ import {
   resolveVariableValue,
   buildActiveCsvRow,
   applyBindingToObject,
+  applyBindingToTree,
   getVariableSource,
   type ActiveCsvRow,
 } from './variableBinding';
@@ -202,5 +203,59 @@ describe('getVariableSource', () => {
         headerSnapshot: ['sku', 'qty'],
       }),
     ).toBe('orphan');
+  });
+});
+
+describe('applyBindingToTree', () => {
+  const leaf = (id: string, variableId?: string, content = 'orig'): LabelObject =>
+    ({
+      id,
+      type: 'text',
+      x: 0,
+      y: 0,
+      rotation: 0,
+      ...(variableId ? { variableId } : {}),
+      props: { content },
+    }) as unknown as LabelObject;
+
+  const group = (id: string, children: LabelObject[]): LabelObject =>
+    ({
+      id,
+      type: 'group',
+      x: 0,
+      y: 0,
+      rotation: 0,
+      children,
+    }) as unknown as LabelObject;
+
+  it('substitutes top-level leaves', () => {
+    const objs = [leaf('a'), leaf('b', 'v1')];
+    const out = applyBindingToTree(objs, [variable()], null);
+    expect((out[1] as unknown as { props: { content: string } }).props.content).toBe('DEFAULT');
+  });
+
+  it('recurses into group children', () => {
+    const objs = [group('g1', [leaf('a', 'v1'), leaf('b')])];
+    const out = applyBindingToTree(objs, [variable()], null);
+    const g = out[0]! as unknown as { children: { props: { content: string } }[] };
+    expect(g.children[0]!.props.content).toBe('DEFAULT');
+    expect(g.children[1]!.props.content).toBe('orig');
+  });
+
+  it('substitutes from active CSV row', () => {
+    const objs = [leaf('a', 'v1')];
+    const out = applyBindingToTree(
+      objs,
+      [variable()],
+      active(['sku'], ['ROW-VALUE'], { v1: 'sku' }),
+    );
+    expect((out[0] as unknown as { props: { content: string } }).props.content).toBe('ROW-VALUE');
+  });
+
+  it('schema mode replaces with «name» across tree', () => {
+    const objs = [group('g1', [leaf('a', 'v1')])];
+    const out = applyBindingToTree(objs, [variable({ name: 'sku' })], null, 'schema');
+    const g = out[0]! as unknown as { children: { props: { content: string } }[] };
+    expect(g.children[0]!.props.content).toBe('«sku»');
   });
 });

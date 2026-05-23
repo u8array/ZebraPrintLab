@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { zlibSync } from 'fflate';
-import { generateZPL, generateMultiPageZPL } from './zplGenerator';
+import { generateZPL, generateMultiPageZPL, generateBatchZpl } from './zplGenerator';
 import { parseZPL } from './zplParser';
 import type { LabelConfig } from '../types/ObjectType';
 import type { GroupObject, LabelObject } from '../types/Group';
@@ -798,5 +798,96 @@ describe('generateZPL — variable bindings', () => {
     expect(variables[0]?.fnNumber).toBe(7);
     expect(variables[0]?.defaultValue).toBe('ABC-123');
     expect(objects[0]?.variableId).toBe(variables[0]?.id);
+  });
+});
+
+describe('generateBatchZpl', () => {
+  const baseLabel: LabelConfig = { widthMm: 50, heightMm: 30, dpmm: 8 };
+  const textObj = (variableId: string): LabelObject =>
+    ({
+      id: `obj-${variableId}`,
+      type: 'text',
+      x: 10,
+      y: 10,
+      rotation: 0,
+      variableId,
+      props: { content: '', fontHeight: 30, fontWidth: 0, rotation: 'N' },
+    }) as unknown as LabelObject;
+
+  it('emits ^DFR template + one ^XFR recall block per row', () => {
+    const variables = [
+      { id: 'v1', name: 'sku', fnNumber: 1, defaultValue: 'DEF' },
+    ];
+    const objects = [textObj('v1')];
+    const dataset = {
+      headers: ['sku'],
+      rows: [['A1'], ['B2'], ['C3']],
+    };
+    const mapping = { bindings: { v1: 'sku' } };
+
+    const result = generateBatchZpl(baseLabel, objects, variables, dataset, mapping);
+
+    // Template stored exactly once
+    expect((result.match(/\^DFR:LBL\.ZPL/g) || []).length).toBe(1);
+    // Recall block per row
+    expect((result.match(/\^XFR:LBL\.ZPL/g) || []).length).toBe(3);
+    // Each row's value present as ^FN override
+    expect(result).toContain('^FN1^FDA1^FS');
+    expect(result).toContain('^FN1^FDB2^FS');
+    expect(result).toContain('^FN1^FDC3^FS');
+  });
+
+  it('skips variables that are not in the mapping', () => {
+    const variables = [
+      { id: 'v1', name: 'sku', fnNumber: 1, defaultValue: '' },
+      { id: 'v2', name: 'qty', fnNumber: 2, defaultValue: '' },
+    ];
+    const objects = [textObj('v1'), textObj('v2')];
+    const dataset = { headers: ['sku'], rows: [['A1']] };
+    const mapping = { bindings: { v1: 'sku' } };
+
+    const result = generateBatchZpl(baseLabel, objects, variables, dataset, mapping);
+    // Only the recall blocks should carry overrides; isolate them so the
+    // template body's own ^FN slots don't pollute the assertion.
+    const recall = result.split('^XFR:LBL.ZPL').slice(1).join('^XFR:LBL.ZPL');
+    expect(recall).toContain('^FN1^FDA1^FS');
+    expect(recall).not.toMatch(/\^FN2\^FD/);
+  });
+
+  it('skips orphan bindings (header missing from dataset)', () => {
+    const variables = [
+      { id: 'v1', name: 'sku', fnNumber: 1, defaultValue: '' },
+    ];
+    const objects = [textObj('v1')];
+    const dataset = { headers: ['qty'], rows: [['10']] };
+    const mapping = { bindings: { v1: 'sku' } };
+
+    const result = generateBatchZpl(baseLabel, objects, variables, dataset, mapping);
+    expect(result).toContain('^XFR:LBL.ZPL');
+    const recall = result.split('^XFR:LBL.ZPL').slice(1).join('^XFR:LBL.ZPL');
+    expect(recall).not.toMatch(/\^FN1\^FD/);
+  });
+
+  it('emits empty cells as empty ^FD payload (deliberate blank)', () => {
+    const variables = [
+      { id: 'v1', name: 'note', fnNumber: 1, defaultValue: 'fallback' },
+    ];
+    const objects = [textObj('v1')];
+    const dataset = { headers: ['note'], rows: [['']] };
+    const mapping = { bindings: { v1: 'note' } };
+
+    const result = generateBatchZpl(baseLabel, objects, variables, dataset, mapping);
+    expect(result).toContain('^FN1^FD^FS');
+  });
+
+  it('zero rows yields template-only output (no recall blocks)', () => {
+    const variables = [{ id: 'v1', name: 'sku', fnNumber: 1, defaultValue: '' }];
+    const objects = [textObj('v1')];
+    const dataset = { headers: ['sku'], rows: [] };
+    const mapping = { bindings: { v1: 'sku' } };
+
+    const result = generateBatchZpl(baseLabel, objects, variables, dataset, mapping);
+    expect(result).toContain('^DFR:LBL.ZPL');
+    expect(result).not.toContain('^XFR:LBL.ZPL');
   });
 });

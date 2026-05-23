@@ -67,6 +67,28 @@ export function getVariableSource(
   return csvDataset.headers.includes(header) ? "csv" : "orphan";
 }
 
+/** Recurse through a tree of objects and apply `applyBindingToObject`
+ *  to every leaf. Group structure is preserved. Used by ZPL
+ *  consumers (Labelary preview, generic flat-ZPL emit) that need the
+ *  values substituted before generation — `applyBindingToObject`
+ *  alone only handles a single node, and a group's children stay
+ *  untouched otherwise. */
+export function applyBindingToTree<T extends LabelObject>(
+  objects: readonly T[],
+  variables: readonly Variable[],
+  active: ActiveCsvRow | null,
+  mode: RenderMode = "preview",
+): T[] {
+  return objects.map((o) => {
+    const asGroup = o as unknown as { type?: string; children?: readonly T[] };
+    if (asGroup.type === "group" && Array.isArray(asGroup.children)) {
+      const nextChildren = applyBindingToTree(asGroup.children, variables, active, mode);
+      return { ...o, children: nextChildren } as T;
+    }
+    return applyBindingToObject(o, variables, active, mode);
+  });
+}
+
 /** Snapshot of the currently active CSV row plus the mapping needed
  *  to resolve a Variable to a cell. Caller assembles this from store
  *  state so this lib stays unaware of the store layer. */

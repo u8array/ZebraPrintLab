@@ -29,6 +29,7 @@ import {
   type CsvMapping,
 } from '../types/Variable';
 import { forgetImport, type CsvParseResult } from '../lib/csvImport';
+import { applyBindingToTree, buildActiveCsvRow } from '../lib/variableBinding';
 
 /** Snapshot of an imported CSV plus the row the canvas is currently
  *  previewing. Distinct from the Variable→header mapping (which lives
@@ -1170,7 +1171,13 @@ export const useLabelStore = create<LabelState>()(
           return;
         }
         const objs = currentObjects(state);
-        const zpl = generateZPL(state.label, objs, state.variables);
+        // Pre-substitute active CSV row (or defaults) so the Labelary
+        // overlay shows what would print for the selected row, not
+        // empty ^FN slots. Generate with `variables=[]` so substituted
+        // content lands as literal ^FD instead of a ^FN template.
+        const active = buildActiveCsvRow(state.csvDataset, state.csvMapping);
+        const substituted = applyBindingToTree(objs, state.variables, active);
+        const zpl = generateZPL(state.label, substituted, []);
         // Toggling preview off then on for a side-by-side pixel compare
         // shouldn't burn an API call when nothing changed.
         const cachedUrl = previewCache.get(zpl);

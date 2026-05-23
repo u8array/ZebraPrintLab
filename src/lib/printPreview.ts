@@ -3,6 +3,7 @@ import { fetchPreview } from "./labelary";
 import type { LabelConfig } from "../types/ObjectType";
 import type { LabelObject } from "../types/Group";
 import type { Variable } from "../types/Variable";
+import { applyBindingToTree, type ActiveCsvRow } from "./variableBinding";
 
 export function buildLoadingHtml(): string {
   return `<html><head><style>
@@ -25,6 +26,7 @@ export async function printLabel(
   label: LabelConfig,
   objects: LabelObject[],
   variables: readonly Variable[] = [],
+  active: ActiveCsvRow | null = null,
 ): Promise<void> {
   // Open the window synchronously (inside the user-click call stack) so browsers
   // don't treat it as a popup. Fill it in once the Labelary preview arrives.
@@ -34,7 +36,14 @@ export async function printLabel(
   win.document.close();
 
   try {
-    const zpl = generateZPL(label, objects, variables);
+    // Labelary renders a single label image — there's no print-side
+    // merge to apply, so substitute the active CSV row (or defaults
+    // when no row is loaded) into bound fields before emit. Emit
+    // with `variables=[]` so the substituted content lands in the
+    // ZPL literally instead of as a ^FN template slot Labelary
+    // would render as the default.
+    const substituted = applyBindingToTree(objects, variables, active);
+    const zpl = generateZPL(label, substituted, []);
     const url = await fetchPreview(zpl, label);
     win.document.open();
     win.document.write(buildPrintHtml(url));
