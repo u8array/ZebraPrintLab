@@ -67,6 +67,20 @@ export function nextDefaultVariableName(existing: readonly Variable[]): string {
  *  document) and dictates how the data feeds the template. Header
  *  NAME, not index, so column reorders between imports don't break
  *  the mapping. */
+/** Parse options remembered alongside the mapping so a re-import of
+ *  the same logical dataset uses the same delimiter / encoding /
+ *  headerless decision without the user having to re-pick them.
+ *  Optional fields: omission means "use default" (auto-detect
+ *  delimiter, UTF-8 encoding, header-row present, no rows skipped).
+ *  Persisted in design.json so the choice survives Save/Load. */
+export const csvParseOptionsPersistedSchema = z.object({
+  delimiter: z.string().optional(),
+  hasHeaderRow: z.boolean().optional(),
+  skipRows: z.number().int().min(0).optional(),
+  encoding: z.string().optional(),
+});
+export type CsvParseOptionsPersisted = z.infer<typeof csvParseOptionsPersistedSchema>;
+
 export const csvMappingSchema = z.object({
   /** variableId → header name. Variables without an entry fall back
    *  to their defaultValue when the dataset is active. */
@@ -75,8 +89,33 @@ export const csvMappingSchema = z.object({
    *  array = no CSV ever imported (mapping shouldn't exist either).
    *  Re-import with a different header set triggers a UI warning. */
   headerSnapshot: z.array(z.string()),
+  /** Parse options used when the mapping was last applied. Re-used
+   *  on re-import so the same delimiter/encoding/headerless choice
+   *  applies without the user re-picking. Optional for back-compat
+   *  with mappings saved before this field existed. */
+  parseOptions: csvParseOptionsPersistedSchema.optional(),
 });
 export type CsvMapping = z.infer<typeof csvMappingSchema>;
+
+/** Whether a saved CsvMapping still lines up with a freshly parsed
+ *  set of headers, so the caller can decide if the mapping can be
+ *  reused silently or needs user review. In headerless mode
+ *  (`parseOptions.hasHeaderRow === false`) column count is what
+ *  matters — synthetic `Column N` names line up trivially when
+ *  counts match. In normal header-row mode the comparison is
+ *  order-independent on the set of header names so reordered Excel
+ *  exports stay compatible. */
+export function isMappingCompatibleWith(
+  mapping: CsvMapping,
+  headers: readonly string[],
+): boolean {
+  const headerless = mapping.parseOptions?.hasHeaderRow === false;
+  if (headerless) return mapping.headerSnapshot.length === headers.length;
+  if (mapping.headerSnapshot.length !== headers.length) return false;
+  const known = new Set(mapping.headerSnapshot);
+  for (const h of headers) if (!known.has(h)) return false;
+  return true;
+}
 
 /** Loose header-name comparison for auto-suggesting CSV → Variable
  *  matches at import time. Case-insensitive; spaces, dashes and

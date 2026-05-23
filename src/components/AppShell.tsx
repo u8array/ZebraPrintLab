@@ -7,6 +7,7 @@ import { RightSidebar } from "./RightSidebar/RightSidebar";
 import { ZPLOutput } from "./Output/ZPLOutput";
 import { ZplImportModal } from "./Output/ZplImportModal";
 import { VariableMappingModal } from "./Variables/VariableMappingModal";
+import { CsvImportConfirmDialog } from "./Variables/CsvImportConfirmDialog";
 import { PrintToZebraDialog } from "./Output/PrintToZebraDialog";
 import {
   DropdownMenu,
@@ -78,7 +79,15 @@ export function AppShell() {
 
   useGlobalShortcuts();
   const { handleNew, handleSave, handleLoad, loadInputRef, loadError, dismissLoadError } = useDesignFileActions();
-  const { csvInputRef, handleCsvImport, csvError, dismissCsvError } = useCsvImportActions();
+  const {
+    csvInputRef,
+    handleCsvImport,
+    csvError,
+    dismissCsvError,
+    pendingImport,
+    confirmPendingImport,
+    cancelPendingImport,
+  } = useCsvImportActions();
   const csvMappingModalOpen = useLabelStore((s) => s.csvMappingModalOpen);
   const closeCsvMappingModal = useLabelStore((s) => s.closeCsvMappingModal);
   const {
@@ -332,6 +341,13 @@ export function AppShell() {
       {showZplImport && <ZplImportModal onClose={closeZplImport} />}
       {csvMappingModalOpen && (
         <VariableMappingModal onClose={closeCsvMappingModal} />
+      )}
+      {pendingImport && (
+        <CsvImportConfirmDialog
+          pending={pendingImport}
+          onConfirm={confirmPendingImport}
+          onCancel={cancelPendingImport}
+        />
       )}
       {showZebraPrint && (
         <PrintToZebraDialog zpl={currentZpl()} onClose={closeZebraPrint} />

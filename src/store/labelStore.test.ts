@@ -51,6 +51,7 @@ function reset() {
       zoom: 1,
       unit: 'mm',
       viewRotation: 0,
+      csvRenderMode: 'preview',
     },
   });
 }

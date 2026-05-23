@@ -1,5 +1,7 @@
 import { useState, type ChangeEvent } from 'react';
 import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
   Cog6ToothIcon,
   PlusIcon,
   TableCellsIcon,
@@ -20,6 +22,8 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { FieldLabel } from '../ui/FieldLabel';
 import { useT } from '../../lib/useT';
 import type { Translations } from '../../locales';
+import { getVariableSource, type VariableSource } from '../../lib/variableBinding';
+import { VariableSourceBadge } from './VariableSourceBadge';
 
 export function VariablesPanel() {
   const t = useT();
@@ -32,7 +36,10 @@ export function VariablesPanel() {
   const csvDataset = useLabelStore((s) => s.csvDataset);
   const csvMapping = useLabelStore((s) => s.csvMapping);
   const clearCsv = useLabelStore((s) => s.clearCsv);
+  const setActiveRow = useLabelStore((s) => s.setActiveRow);
   const openCsvMappingModal = useLabelStore((s) => s.openCsvMappingModal);
+  const csvRenderMode = useLabelStore((s) => s.canvasSettings.csvRenderMode);
+  const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
   const [pendingCsvDiscard, setPendingCsvDiscard] = useState(false);
 
   // Mapping completeness for the badge's secondary line. Counts only
@@ -99,9 +106,35 @@ export function VariablesPanel() {
 
   return (
     <div className="flex flex-col gap-3 p-3">
-      <p className="font-mono text-[10px] text-muted leading-relaxed">
-        {tv.panelHint}
-      </p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="font-mono text-[10px] text-muted leading-relaxed flex-1">
+          {tv.panelHint}
+        </p>
+        {variables.length > 0 && (
+          <button
+            onClick={() =>
+              setCanvasSettings({
+                csvRenderMode:
+                  csvRenderMode === 'preview' ? 'schema' : 'preview',
+              })
+            }
+            title={
+              csvRenderMode === 'preview'
+                ? csvDataset
+                  ? 'Showing CSV row data (or defaultValue when unmapped). Click to show «variable» placeholders.'
+                  : 'Showing defaultValue. Click to show «variable» placeholders.'
+                : 'Showing «variable» placeholders. Click to preview values.'
+            }
+            className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
+              csvRenderMode === 'preview'
+                ? 'text-accent bg-[--color-accent-dim]'
+                : 'text-muted hover:text-text hover:bg-surface-2 border border-border'
+            }`}
+          >
+            {csvRenderMode === 'preview' ? 'Preview' : 'Schema'}
+          </button>
+        )}
+      </div>
 
       {csvDataset && (
         <div className="flex flex-col gap-1 px-2 py-1.5 rounded border border-border bg-surface-2 font-mono text-[10px] text-text">
@@ -134,6 +167,47 @@ export function VariablesPanel() {
           <p className="text-muted">
             {csvDataset.source.rowCount} rows · {mappedCount} of {variables.length} mapped
           </p>
+          {csvDataset.rows.length > 0 && (
+            <div className="flex items-center gap-1 pt-0.5">
+              <button
+                onClick={() => setActiveRow(csvDataset.activeRowIndex - 1)}
+                disabled={
+                  csvDataset.activeRowIndex === 0 || csvRenderMode === 'schema'
+                }
+                aria-label="Previous row"
+                title="Previous row"
+                className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronLeftIcon className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-muted">row</span>
+              <input
+                type="number"
+                min={1}
+                max={csvDataset.rows.length}
+                value={csvDataset.activeRowIndex + 1}
+                onChange={(e) => {
+                  const n = parseInt(e.target.value, 10);
+                  if (!Number.isNaN(n)) setActiveRow(n - 1);
+                }}
+                disabled={csvRenderMode === 'schema'}
+                className="w-10 bg-surface-2 border border-border rounded px-1 py-0 text-[10px] font-mono text-text focus:border-accent focus:outline-none text-center disabled:opacity-30 disabled:cursor-not-allowed"
+              />
+              <span className="text-muted">/ {csvDataset.rows.length}</span>
+              <button
+                onClick={() => setActiveRow(csvDataset.activeRowIndex + 1)}
+                disabled={
+                  csvDataset.activeRowIndex === csvDataset.rows.length - 1 ||
+                  csvRenderMode === 'schema'
+                }
+                aria-label="Next row"
+                title="Next row"
+                className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronRightIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -146,25 +220,31 @@ export function VariablesPanel() {
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
-          {variables.map((entry) => (
-            <VariableRow
-              key={entry.id}
-              variable={entry}
-              bindings={bindingCounts.get(entry.id) ?? 0}
-              error={rowError[entry.id]}
-              tv={tv}
-              onChangeName={(name) =>
-                tryUpdate(entry.id, { name }, tv.nameInUse)
-              }
-              onChangeFnNumber={(fnNumber) =>
-                tryUpdate(entry.id, { fnNumber }, tv.slotInUse)
-              }
-              onChangeDefault={(defaultValue) =>
-                tryUpdate(entry.id, { defaultValue }, '')
-              }
-              onRequestDelete={() => setPendingDelete(entry)}
-            />
-          ))}
+          {variables.map((entry) => {
+            const source = getVariableSource(entry, csvDataset, csvMapping);
+            const boundHeader = csvMapping?.bindings[entry.id];
+            return (
+              <VariableRow
+                key={entry.id}
+                variable={entry}
+                bindings={bindingCounts.get(entry.id) ?? 0}
+                source={source}
+                boundHeader={boundHeader}
+                error={rowError[entry.id]}
+                tv={tv}
+                onChangeName={(name) =>
+                  tryUpdate(entry.id, { name }, tv.nameInUse)
+                }
+                onChangeFnNumber={(fnNumber) =>
+                  tryUpdate(entry.id, { fnNumber }, tv.slotInUse)
+                }
+                onChangeDefault={(defaultValue) =>
+                  tryUpdate(entry.id, { defaultValue }, '')
+                }
+                onRequestDelete={() => setPendingDelete(entry)}
+              />
+            );
+          })}
         </ul>
       )}
 
@@ -219,6 +299,8 @@ export function VariablesPanel() {
 interface RowProps {
   variable: Variable;
   bindings: number;
+  source: VariableSource;
+  boundHeader: string | undefined;
   error?: string;
   tv: Translations['variables'];
   onChangeName: (next: string) => void;
@@ -230,6 +312,8 @@ interface RowProps {
 function VariableRow({
   variable,
   bindings,
+  source,
+  boundHeader,
   error,
   tv,
   onChangeName,
@@ -313,12 +397,15 @@ function VariableRow({
         />
       </div>
       <div className="flex justify-between items-center font-mono text-[9px] uppercase tracking-wider text-muted">
-        <span>
-          {bindings === 0
-            ? tv.noBindings
-            : bindings === 1
-              ? tv.bindingsSingular
-              : tv.bindingsPluralFmt.replace('{n}', String(bindings))}
+        <span className="flex items-center gap-1.5">
+          <VariableSourceBadge source={source} boundHeader={boundHeader} size="xs" />
+          <span>
+            {bindings === 0
+              ? tv.noBindings
+              : bindings === 1
+                ? tv.bindingsSingular
+                : tv.bindingsPluralFmt.replace('{n}', String(bindings))}
+          </span>
         </span>
         {error && <span className="text-amber-400">{error}</span>}
       </div>

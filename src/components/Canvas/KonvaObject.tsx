@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { Ellipse, Group, Rect, Text } from "react-konva";
+import { getVariableSource, lookupBoundVariable } from "../../lib/variableBinding";
 import { BarcodeObject } from "./BarcodeObject";
 import { LineObject } from "./LineObject";
 import { ImageObject } from "./ImageObject";
@@ -9,7 +11,7 @@ import { outlineInset } from "../../lib/shapeGeometry";
 import { reverseShapeStyle } from "./reverseShapeStyle";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { useLabelStore } from "../../store/labelStore";
-import { applyBindingToObject } from "../../lib/variableBinding";
+import { applyBindingToObject, buildActiveCsvRow } from "../../lib/variableBinding";
 import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "./textPositionTransforms";
 import { getTextRenderMetrics } from "./textRenderMetrics";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
@@ -106,19 +108,79 @@ const BARCODE_TYPES = new Set([
 ]);
 
 export function KonvaObject(props_: Props) {
-  // Substitute the bound variable's defaultValue into `props.content`
+  // Substitute the bound variable's resolved value into `props.content`
   // before any per-type renderer touches the obj. Keeps Konva blissfully
-  // unaware of the binding mechanism: every shape draws what the printer
-  // would print absent a runtime ^FV override. `applyBindingToObject`
+  // unaware of the binding mechanism: every shape draws what would
+  // print for the currently active CSV row (or the variable's
+  // defaultValue when no CSV is in play). `applyBindingToObject`
   // is identity-preserving when the obj isn't bound, so memoisation
   // downstream isn't affected for the common case.
   const variables = useLabelStore((s) => s.variables);
-  const obj = applyBindingToObject(props_.obj, variables);
+  const csvDataset = useLabelStore((s) => s.csvDataset);
+  const csvMapping = useLabelStore((s) => s.csvMapping);
+  const csvRenderMode = useLabelStore((s) => s.canvasSettings.csvRenderMode);
+  // useMemo so applyBindingToObject's identity-preservation downstream
+  // isn't defeated by a fresh ActiveCsvRow object on every render.
+  const active = useMemo(
+    () => buildActiveCsvRow(csvDataset, csvMapping),
+    [csvDataset, csvMapping],
+  );
+  const obj = applyBindingToObject(props_.obj, variables, active, csvRenderMode);
   const renderProps = obj === props_.obj ? props_ : { ...props_, obj };
-  if (obj.type === "line") return <LineObject {...renderProps} obj={obj} />;
-  if (obj.type === "image") return <ImageObject {...renderProps} obj={obj} />;
-  if (BARCODE_TYPES.has(obj.type)) return <BarcodeObject {...renderProps} />;
-  return <KonvaObjectInner {...renderProps} />;
+
+  // Fallback-tint: bound field is rendering its defaultValue (or empty)
+  // instead of a CSV cell. Surface this as a translucent amber bbox
+  // behind the shape so the user sees "this is not data" without
+  // having to inspect the Variables panel. Only meaningful in
+  // preview mode with a CSV loaded; schema mode already says «name»
+  // and pre-CSV everything renders default by design. Orphaned
+  // variableId (variable was deleted) skips the tint too — the field
+  // is already in an invalid state and gets its own badge upstream.
+  const boundVariable = lookupBoundVariable(obj, variables);
+  const showFallbackTint =
+    csvRenderMode === "preview" &&
+    csvDataset !== null &&
+    boundVariable !== undefined &&
+    getVariableSource(boundVariable, csvDataset, csvMapping) !== "csv";
+
+  const shape =
+    obj.type === "line" ? <LineObject {...renderProps} obj={obj} /> :
+    obj.type === "image" ? <ImageObject {...renderProps} obj={obj} /> :
+    BARCODE_TYPES.has(obj.type) ? <BarcodeObject {...renderProps} /> :
+    <KonvaObjectInner {...renderProps} />;
+
+  if (!showFallbackTint) return shape;
+
+  // Read declared bbox from props. Shapes with explicit width/height
+  // (text, box, ellipse, image, qrcode, datamatrix) produce a visible
+  // tint; barcodes whose width is derived from content length (Code39,
+  // Code128, EAN-13, …) silently skip — their bars are visually
+  // distinctive enough that fallback ambiguity is less acute, and the
+  // source-state badge in the Variables panel covers them.
+  const props = (obj as { props?: { width?: unknown; height?: unknown } }).props;
+  const wDots = typeof props?.width === "number" ? props.width : 0;
+  const hDots = typeof props?.height === "number" ? props.height : 0;
+  if (wDots <= 0 || hDots <= 0) return shape;
+  const { scale, dpmm, offsetX, offsetY } = props_;
+  const tintX = dotsToPx(obj.x, scale, dpmm) - offsetX;
+  const tintY = dotsToPx(obj.y, scale, dpmm) - offsetY;
+  const tintW = dotsToPx(wDots, scale, dpmm);
+  const tintH = dotsToPx(hDots, scale, dpmm);
+
+  return (
+    <Group>
+      <Rect
+        x={tintX}
+        y={tintY}
+        width={tintW}
+        height={tintH}
+        fill="#fb923c"
+        opacity={0.12}
+        listening={false}
+      />
+      {shape}
+    </Group>
+  );
 }
 
 /**

@@ -4,8 +4,17 @@ import {
   suggestCsvMapping,
   uniqueVariableName,
   nextFreeFnNumber,
+  isMappingCompatibleWith,
+  type CsvMapping,
   type Variable,
 } from './Variable';
+
+function mapping(
+  headerSnapshot: string[],
+  parseOptions?: CsvMapping['parseOptions'],
+): CsvMapping {
+  return { bindings: {}, headerSnapshot, ...(parseOptions ? { parseOptions } : {}) };
+}
 
 function v(name: string, id = name): Variable {
   return { id, name, fnNumber: 1, defaultValue: '' };
@@ -72,5 +81,45 @@ describe('uniqueVariableName + nextFreeFnNumber', () => {
   it('nextFreeFnNumber returns null when 1-99 are all taken', () => {
     const all = Array.from({ length: 99 }, (_, i) => i + 1);
     expect(nextFreeFnNumber(all)).toBeNull();
+  });
+});
+
+describe('isMappingCompatibleWith', () => {
+  it('header-row: same names in same order → compatible', () => {
+    expect(isMappingCompatibleWith(mapping(['sku', 'qty']), ['sku', 'qty'])).toBe(true);
+  });
+
+  it('header-row: same names reordered → compatible', () => {
+    expect(isMappingCompatibleWith(mapping(['sku', 'qty']), ['qty', 'sku'])).toBe(true);
+  });
+
+  it('header-row: different name set → incompatible', () => {
+    expect(isMappingCompatibleWith(mapping(['sku', 'qty']), ['sku', 'price'])).toBe(false);
+  });
+
+  it('header-row: subset (one column dropped) → incompatible', () => {
+    expect(isMappingCompatibleWith(mapping(['sku', 'qty']), ['sku'])).toBe(false);
+  });
+
+  it('header-row: superset (extra column) → incompatible', () => {
+    expect(isMappingCompatibleWith(mapping(['sku', 'qty']), ['sku', 'qty', 'note'])).toBe(false);
+  });
+
+  it('headerless: same column count → compatible regardless of names', () => {
+    expect(
+      isMappingCompatibleWith(
+        mapping(['Column 1', 'Column 2', 'Column 3'], { hasHeaderRow: false }),
+        ['Column 1', 'Column 2', 'Column 3'],
+      ),
+    ).toBe(true);
+  });
+
+  it('headerless: different column count → incompatible', () => {
+    expect(
+      isMappingCompatibleWith(
+        mapping(['Column 1', 'Column 2'], { hasHeaderRow: false }),
+        ['Column 1', 'Column 2', 'Column 3'],
+      ),
+    ).toBe(false);
   });
 });

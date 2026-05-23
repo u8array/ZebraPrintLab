@@ -6,6 +6,7 @@ import {
   nextFreeFnNumber,
   suggestCsvMapping,
   type CsvMapping,
+  type CsvParseOptionsPersisted,
   type Variable,
 } from '../../types/Variable';
 import {
@@ -16,6 +17,8 @@ import {
 import { DialogShell } from '../ui/DialogShell';
 import { CollapsibleSection } from '../ui/CollapsibleSection';
 import { inputCls } from '../Properties/styles';
+import { getVariableSource } from '../../lib/variableBinding';
+import { VariableSourceBadge } from './VariableSourceBadge';
 
 /* i18n: literal strings here get locale keys at the end-of-branch sweep. */
 const COPY = {
@@ -103,10 +106,19 @@ export function VariableMappingModal({ onClose }: Props) {
     () => new Set(variables.map((v) => v.id)),
   );
   const [draftOptions, setDraftOptions] = useState<DraftOptions>(() => ({
-    delimiter: csvDataset?.source.delimiter ?? '',
-    hasHeaderRow: true,
-    skipRows: 0,
-    encoding: csvDataset?.source.encoding ?? 'utf-8',
+    // Seed from the persisted mapping first (so a reopen reflects the
+    // last Apply), then fall back to the dataset's source metadata
+    // (the values active at import time), then to library defaults.
+    delimiter:
+      csvMapping?.parseOptions?.delimiter ??
+      csvDataset?.source.delimiter ??
+      '',
+    hasHeaderRow: csvMapping?.parseOptions?.hasHeaderRow ?? true,
+    skipRows: csvMapping?.parseOptions?.skipRows ?? 0,
+    encoding:
+      csvMapping?.parseOptions?.encoding ??
+      csvDataset?.source.encoding ??
+      'utf-8',
   }));
 
   // Re-decode the cached bytes whenever encoding changes. For UTF-8
@@ -279,6 +291,7 @@ export function VariableMappingModal({ onClose }: Props) {
     setCsvMapping({
       bindings: draftBindings,
       headerSnapshot: parse.headers,
+      parseOptions: persistableParseOptions(draftOptions),
     });
     // loadCsv resets activeRowIndex to 0; re-apply the draft row
     // clamped to the new rows.length.
@@ -354,10 +367,24 @@ export function VariableMappingModal({ onClose }: Props) {
               draftVariables.map((v) => {
                 const nameError = nameErrors[v.id];
                 const isNew = !initialVariableIds.has(v.id);
+                // Classify against the draft (not the committed store
+                // state) so the badge reflects live binding edits before
+                // Apply. Both inputs synthesised here have the minimal
+                // shape getVariableSource needs.
+                const draftSource = getVariableSource(
+                  v,
+                  { headers: virtualHeaders },
+                  { bindings: draftBindings, headerSnapshot: virtualHeaders as string[] },
+                );
                 return (
                   <tr key={v.id} className="border-t border-border/50 align-top">
                     <td className="py-1.5 px-3">
                       <div className="flex items-center gap-1">
+                        <VariableSourceBadge
+                          source={draftSource}
+                          boundHeader={draftBindings[v.id]}
+                          size="xs"
+                        />
                         <input
                           className={`${inputCls} ${nameError ? 'border-amber-400' : ''}`}
                           value={v.name}
@@ -576,6 +603,18 @@ function buildInitialBindings(
   const free = headers.filter((h) => !usedHeaders.has(h));
   const suggested = suggestCsvMapping(unmapped, free);
   return { ...carried, ...suggested };
+}
+
+/** Strip default values from the draft so a saved mapping only carries
+ *  the options the user actually customised. Keeps the design file
+ *  minimal and lets future default-changes pick up automatically. */
+function persistableParseOptions(d: DraftOptions): CsvParseOptionsPersisted | undefined {
+  const opts: CsvParseOptionsPersisted = {};
+  if (d.delimiter !== '') opts.delimiter = d.delimiter;
+  if (d.hasHeaderRow === false) opts.hasHeaderRow = false;
+  if (d.skipRows > 0) opts.skipRows = d.skipRows;
+  if (d.encoding !== 'utf-8') opts.encoding = d.encoding;
+  return Object.keys(opts).length === 0 ? undefined : opts;
 }
 
 function arraysShallowEqual(

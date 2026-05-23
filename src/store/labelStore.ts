@@ -123,6 +123,14 @@ export interface CanvasSettings {
   zoom: number;
   unit: Unit;
   viewRotation: ViewRotation;
+  /** Controls how bound variables render on the canvas.
+   *  - 'preview': substitute the active CSV row's cell (falls back to
+   *    defaultValue when no row data is available for the variable).
+   *  - 'schema': render the placeholder `«variableName»` so the user
+   *    sees the field structure regardless of data.
+   *  Only meaningful while a `csvDataset` is loaded; the toolbar
+   *  toggle is hidden otherwise. */
+  csvRenderMode: 'preview' | 'schema';
 }
 
 export type ThemePreference = 'light' | 'dark';
@@ -456,6 +464,16 @@ export function migrateLegacy(persistedState: unknown, version: number): unknown
     s = { ...s, pages: migrateCirclesInPages(s.pages) };
   }
 
+  // v3→v4: canvasSettings.csvRenderMode added for the schema/preview toggle.
+  // Default to 'preview' so existing sessions keep showing data-substituted
+  // canvas exactly as before.
+  if (version < 4) {
+    const cs = s.canvasSettings;
+    if (cs && typeof cs === 'object' && !('csvRenderMode' in cs)) {
+      s = { ...s, canvasSettings: { ...(cs as Record<string, unknown>), csvRenderMode: 'preview' } };
+    }
+  }
+
   return s;
 }
 
@@ -511,7 +529,7 @@ export const useLabelStore = create<LabelState>()(
       thirdParty: thirdPartyDefaults(),
       labelaryNoticeAcknowledged: false,
       previewMode: { status: 'idle' },
-      canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm', viewRotation: 0 },
+      canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm', viewRotation: 0, csvRenderMode: 'preview' },
 
       addObject: (type, position = { x: 50, y: 50 }, propsOverride) => {
         if (selectPreviewLocksEditor(get())) return;
@@ -1198,7 +1216,7 @@ export const useLabelStore = create<LabelState>()(
     }),
     {
       name: 'zpl-designer-session',
-      version: 3,
+      version: 4,
       migrate: (persistedState, version) => migrateLegacy(persistedState, version) as LabelState,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
