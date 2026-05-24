@@ -208,6 +208,8 @@ const it = {
       justifyC: 'C — Centro',
       justifyR: 'R — Destra',
       justifyJ: 'J — Giustificato',
+      blockLinesExceededFmt: 'Il contenuto ha {n} righe — supera il max {max}, sarà troncato dalla stampante',
+      blockLinesUsageFmt: 'Usa {n} di max {max} righe',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

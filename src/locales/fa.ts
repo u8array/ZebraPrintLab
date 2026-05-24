@@ -208,6 +208,8 @@ const fa = {
       justifyC: 'C — وسط',
       justifyR: 'R — راست',
       justifyJ: 'J — تنظیم',
+      blockLinesExceededFmt: 'محتوا {n} خط دارد — از حداکثر {max} بیشتر است، چاپگر کوتاه خواهد کرد',
+      blockLinesUsageFmt: 'از {n} از حداکثر {max} خط استفاده می‌کند',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

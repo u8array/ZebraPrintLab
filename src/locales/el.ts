@@ -208,6 +208,8 @@ const el = {
       justifyC: 'C — Κέντρο',
       justifyR: 'R — Δεξιά',
       justifyJ: 'J — Πλήρης',
+      blockLinesExceededFmt: 'Το περιεχόμενο έχει {n} γραμμές — υπερβαίνει το μέγ {max}, θα περικοπεί από τον εκτυπωτή',
+      blockLinesUsageFmt: 'Χρησιμοποιεί {n} από μέγ {max} γραμμές',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

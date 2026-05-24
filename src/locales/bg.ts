@@ -208,6 +208,8 @@ const bg = {
       justifyC: 'C — Център',
       justifyR: 'R — Дясно',
       justifyJ: 'J — Двустранно',
+      blockLinesExceededFmt: 'Съдържанието има {n} реда — надвишава макс {max}, ще бъде отрязано от принтера',
+      blockLinesUsageFmt: 'Използва {n} от макс {max} реда',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

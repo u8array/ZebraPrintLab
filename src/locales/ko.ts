@@ -208,6 +208,8 @@ const ko = {
       justifyC: 'C — 가운데',
       justifyR: 'R — 오른쪽',
       justifyJ: 'J — 균등 배분',
+      blockLinesExceededFmt: '콘텐츠가 {n}줄 — 최대 {max}을 초과, 프린터가 자릅니다',
+      blockLinesUsageFmt: '최대 {max} 중 {n}줄 사용',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

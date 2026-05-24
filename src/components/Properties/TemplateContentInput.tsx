@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { CLOCK_TOKEN_LABELS } from "../../lib/fcTemplate";
+import { tokeniseMarkers } from "../../lib/markerTokens";
+import type { Variable } from "../../types/Variable";
 
 interface Props {
   value: string;
@@ -12,30 +14,6 @@ interface Props {
   sanitise?: (raw: string) => string;
   placeholder?: string;
   maxLength?: number;
-}
-
-/** Tokenise content into literal / marker segments so the mirror layer
- *  can colour markers without breaking literal text. Marker grammar
- *  matches both variable markers (`«name»`) and clock markers
- *  (`«clock:T»`) — same `«…»` family. */
-type Segment =
-  | { kind: "text"; text: string }
-  | { kind: "var" | "clock"; text: string };
-
-const MARKER_RE = /«([^»]+)»/g;
-
-function tokenise(content: string): Segment[] {
-  const out: Segment[] = [];
-  let last = 0;
-  for (const m of content.matchAll(MARKER_RE)) {
-    const idx = m.index ?? 0;
-    if (idx > last) out.push({ kind: "text", text: content.slice(last, idx) });
-    const body = m[1] ?? "";
-    out.push({ kind: body.startsWith("clock:") ? "clock" : "var", text: m[0] });
-    last = idx + m[0].length;
-  }
-  if (last < content.length) out.push({ kind: "text", text: content.slice(last) });
-  return out;
 }
 
 /**
@@ -78,7 +56,14 @@ export function TemplateContentInput({
   const mirrorRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const segments = useMemo(() => tokenise(value), [value]);
+  const variableNames = useMemo(
+    () => new Set(variables.map((v: Variable) => v.name)),
+    [variables],
+  );
+  const segments = useMemo(
+    () => tokeniseMarkers(value, variableNames),
+    [value, variableNames],
+  );
 
   // Auto-grow from MIN_ROWS up to MAX_ROWS based on actual rendered
   // height (so visual word-wrap counts, not just \n count). Mirror
@@ -152,8 +137,10 @@ export function TemplateContentInput({
             <span key={i}>{s.text}</span>
           ) : s.kind === "var" ? (
             <span key={i} className="text-accent">{s.text}</span>
-          ) : (
+          ) : s.kind === "clock" ? (
             <span key={i} className="text-info">{s.text}</span>
+          ) : (
+            <span key={i} className="text-error underline decoration-wavy decoration-error/60">{s.text}</span>
           ),
         )}
         {value.endsWith("\n") ? " " : ""}

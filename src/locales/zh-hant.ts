@@ -208,6 +208,8 @@ const zhHant = {
       justifyC: 'C — 置中',
       justifyR: 'R — 靠右',
       justifyJ: 'J — 左右對齊',
+      blockLinesExceededFmt: '內容有 {n} 行 — 超過最大 {max}，將被印表機截斷',
+      blockLinesUsageFmt: '使用 {n} / 最大 {max} 行',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

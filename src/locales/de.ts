@@ -229,6 +229,8 @@ const de = {
       justifyC: 'C — Zentriert',
       justifyR: 'R — Rechts',
       justifyJ: 'J — Blocksatz',
+      blockLinesExceededFmt: 'Inhalt hat {n} Zeilen — überschreitet Max {max}, wird vom Drucker abgeschnitten',
+      blockLinesUsageFmt: 'Nutzt {n} von max {max} Zeilen',
       printerFont: 'Druckerschrift',
       uploadFont: 'Schriftdatei hochladen',
       uploadingFont: 'Hochladen…',

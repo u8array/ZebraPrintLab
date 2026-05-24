@@ -208,6 +208,8 @@ const sk = {
       justifyC: 'C — Na stred',
       justifyR: 'R — Vpravo',
       justifyJ: 'J — Do bloku',
+      blockLinesExceededFmt: 'Obsah má {n} riadkov — prekračuje max {max}, tlačiareň skráti',
+      blockLinesUsageFmt: 'Využíva {n} z max {max} riadkov',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

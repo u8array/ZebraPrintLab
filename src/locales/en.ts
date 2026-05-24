@@ -229,6 +229,8 @@ const en = {
       justifyC: 'C — Center',
       justifyR: 'R — Right',
       justifyJ: 'J — Justified',
+      blockLinesExceededFmt: 'Content has {n} lines — exceeds max {max}, will be truncated by printer',
+      blockLinesUsageFmt: 'Uses {n} of max {max} lines',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

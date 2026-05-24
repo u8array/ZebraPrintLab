@@ -208,6 +208,8 @@ const pl = {
       justifyC: 'C — Środek',
       justifyR: 'R — Prawo',
       justifyJ: 'J — Wyjustowane',
+      blockLinesExceededFmt: 'Zawartość ma {n} wierszy — przekracza max {max}, drukarka obetnie',
+      blockLinesUsageFmt: 'Używa {n} z max {max} wierszy',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

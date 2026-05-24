@@ -208,6 +208,8 @@ const ja = {
       justifyC: 'C — 中央揃え',
       justifyR: 'R — 右揃え',
       justifyJ: 'J — 両端揃え',
+      blockLinesExceededFmt: 'コンテンツは{n}行 — 最大{max}を超過、プリンターで切り詰められます',
+      blockLinesUsageFmt: '{n} / 最大 {max} 行使用',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

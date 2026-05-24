@@ -208,6 +208,8 @@ const cs = {
       justifyC: 'C — Na střed',
       justifyR: 'R — Vpravo',
       justifyJ: 'J — Do bloku',
+      blockLinesExceededFmt: 'Obsah má {n} řádků — překračuje max {max}, tiskárna zkrátí',
+      blockLinesUsageFmt: 'Využívá {n} z max {max} řádků',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

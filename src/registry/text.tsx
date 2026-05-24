@@ -11,6 +11,8 @@ import { useLabelStore } from "../store/labelStore";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { NumberInput } from "../components/Properties/NumberInput";
 import { TemplateContentInput } from "../components/Properties/TemplateContentInput";
+import { BlockTextSettings } from "../components/Properties/BlockTextSettings";
+import { encodeFbContent } from "../lib/fbContent";
 
 export interface TextProps {
   content: string;
@@ -70,7 +72,14 @@ export const text: ObjectTypeDefinition<TextProps> = {
     const fbCmd = p.blockWidth
       ? `^FB${p.blockWidth},${p.blockLines ?? 1},${p.blockLineSpacing ?? 0},${p.blockJustify ?? "L"},0`
       : "";
-    const body = [textFieldPos(obj), fontCmd, fbCmd, fdFieldFor(obj, p.content, ctx)]
+    // ^FB block-text uses `\&` as the in-payload line-break marker
+    // (Zebra spec). Encode via the shared helper so parser/generator
+    // stay symmetric (it also escapes literal backslashes so payloads
+    // containing `\&` round-trip without corruption). Outside ^FB the
+    // printer ignores embedded newlines anyway, so encoding only
+    // happens when blockWidth is set.
+    const content = p.blockWidth ? encodeFbContent(p.content) : p.content;
+    const body = [textFieldPos(obj), fontCmd, fbCmd, fdFieldFor(obj, content, ctx)]
       .filter(Boolean)
       .join("");
     return wrapReverse(p.reverse, body);
@@ -213,6 +222,39 @@ export const text: ObjectTypeDefinition<TextProps> = {
           />
         </div>
 
+        {/* Block-Text settings sit directly under the content editor
+            because they govern how that content renders (wrap width,
+            max lines, justify) — keeping them adjacent makes the
+            cause/effect relationship obvious. Other settings (font,
+            rotation, reverse) act on the whole field and come below. */}
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="accent-accent"
+            checked={!!p.blockWidth}
+            onChange={(e) =>
+              onChange(
+                e.target.checked
+                  ? {
+                      blockWidth: 400,
+                      blockLines: 3,
+                      blockLineSpacing: 0,
+                      blockJustify: "L",
+                    }
+                  : {
+                      blockWidth: undefined,
+                      blockLines: undefined,
+                      blockLineSpacing: undefined,
+                      blockJustify: undefined,
+                    },
+              )
+            }
+          />
+          <span className={labelCls}>{t.registry.text.fieldBlock}</span>
+        </label>
+
+        {!!p.blockWidth && <BlockTextSettings props={p} onChange={onChange} />}
+
         <div className="grid grid-cols-2 gap-2">
           <NumberInput
             label={t.registry.text.fontHeight}
@@ -242,77 +284,6 @@ export const text: ObjectTypeDefinition<TextProps> = {
           />
           <span className={labelCls}>{t.registry.text.reverse}</span>
         </label>
-
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            className="accent-accent"
-            checked={!!p.blockWidth}
-            onChange={(e) =>
-              onChange(
-                e.target.checked
-                  ? {
-                      blockWidth: 400,
-                      blockLines: 3,
-                      blockLineSpacing: 0,
-                      blockJustify: "L",
-                    }
-                  : {
-                      blockWidth: undefined,
-                      blockLines: undefined,
-                      blockLineSpacing: undefined,
-                      blockJustify: undefined,
-                    },
-              )
-            }
-          />
-          <span className={labelCls}>{t.registry.text.fieldBlock}</span>
-        </label>
-
-        {!!p.blockWidth && (
-          <>
-            <div className="grid grid-cols-2 gap-2">
-              <NumberInput
-                label={t.registry.text.blockWidth}
-                value={p.blockWidth}
-                min={1}
-                onChange={(blockWidth) => onChange({ blockWidth })}
-              />
-              <NumberInput
-                label={t.registry.text.blockLines}
-                value={p.blockLines ?? 1}
-                min={1}
-                onChange={(blockLines) => onChange({ blockLines })}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex flex-col gap-1">
-                <label className={labelCls}>
-                  {t.registry.text.blockJustify}
-                </label>
-                <select
-                  className={inputCls}
-                  value={p.blockJustify ?? "L"}
-                  onChange={(e) =>
-                    onChange({
-                      blockJustify: e.target.value as TextProps["blockJustify"],
-                    })
-                  }
-                >
-                  <option value="L">{t.registry.text.justifyL}</option>
-                  <option value="C">{t.registry.text.justifyC}</option>
-                  <option value="R">{t.registry.text.justifyR}</option>
-                  <option value="J">{t.registry.text.justifyJ}</option>
-                </select>
-              </div>
-              <NumberInput
-                label={t.registry.text.blockLineSpacing}
-                value={p.blockLineSpacing ?? 0}
-                onChange={(blockLineSpacing) => onChange({ blockLineSpacing })}
-              />
-            </div>
-          </>
-        )}
       </div>
     );
   },

@@ -208,6 +208,8 @@ const sv = {
       justifyC: 'C — Centrerad',
       justifyR: 'R — Höger',
       justifyJ: 'J — Marginaljust.',
+      blockLinesExceededFmt: 'Innehållet har {n} rader — överskrider max {max}, kommer att avkortas av skrivaren',
+      blockLinesUsageFmt: 'Använder {n} av max {max} rader',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

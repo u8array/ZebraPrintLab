@@ -208,6 +208,8 @@ const lt = {
       justifyC: 'C — Centras',
       justifyR: 'R — Dešinė',
       justifyJ: 'J — Abipusė',
+      blockLinesExceededFmt: 'Turinys turi {n} eilučių — viršija maks {max}, spausdintuvas sutrumpins',
+      blockLinesUsageFmt: 'Naudoja {n} iš max {max} eilučių',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

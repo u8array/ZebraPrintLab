@@ -37,7 +37,7 @@ const TOKEN_FORMATTERS: Record<string, (d: Date) => string> = {
     const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
     let n = d.getDate();
     for (let i = 0; i < d.getMonth(); i++) {
-      n += monthDays[i]!;
+      n += monthDays[i] ?? 0;
       if (i === 1 && leap) n += 1;
     }
     return String(n).padStart(3, "0");

@@ -11,6 +11,7 @@ import {
   tokensToMarkers,
   type ClockChars,
 } from "./fcTemplate";
+import { decodeFbContent } from "./fbContent";
 import { zplAnchorToModel } from "../components/Canvas/textPositionTransforms";
 import { computeTextRenderMetrics } from "../components/Canvas/textRenderMetrics";
 import type { LabelObject } from "../types/Group";
@@ -762,8 +763,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     const posType: "FT" | "FO" = positionIsFT ? "FT" : "FO";
     const comment = takeComment();
 
-    // Decode \& line breaks in ^FB text blocks
-    const decoded = fbWidth > 0 ? content.replace(/\\&/g, "\n") : content;
+    // Decode \& line breaks (and \\ escapes) in ^FB text blocks via the
+    // shared helper so parser and generator stay symmetric.
+    const decoded = fbWidth > 0 ? decodeFbContent(content) : content;
 
     switch (fieldType) {
       case "text": {

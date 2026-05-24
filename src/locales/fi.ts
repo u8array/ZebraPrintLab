@@ -208,6 +208,8 @@ const fi = {
       justifyC: 'C — Keskitetty',
       justifyR: 'R — Oikea',
       justifyJ: 'J — Tasattu',
+      blockLinesExceededFmt: 'Sisällössä on {n} riviä — ylittää max {max}, tulostin katkaisee',
+      blockLinesUsageFmt: 'Käyttää {n} / max {max} riviä',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

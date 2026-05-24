@@ -208,6 +208,8 @@ const hu = {
       justifyC: 'C — Középre',
       justifyR: 'R — Jobbra',
       justifyJ: 'J — Sorkizárt',
+      blockLinesExceededFmt: 'A tartalom {n} sort tartalmaz — meghaladja a max {max}-ot, a nyomtató levágja',
+      blockLinesUsageFmt: '{n} sort használ a max {max}-ból',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

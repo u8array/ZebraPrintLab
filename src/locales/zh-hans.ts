@@ -208,6 +208,8 @@ const zhHans = {
       justifyC: 'C — 居中',
       justifyR: 'R — 右对齐',
       justifyJ: 'J — 两端对齐',
+      blockLinesExceededFmt: '内容有 {n} 行 — 超过最大 {max}，将被打印机截断',
+      blockLinesUsageFmt: '使用 {n} / 最大 {max} 行',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

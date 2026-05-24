@@ -208,6 +208,8 @@ const no = {
       justifyC: 'C — Sentrert',
       justifyR: 'R — Høyre',
       justifyJ: 'J — Blokkjustert',
+      blockLinesExceededFmt: 'Innholdet har {n} linjer — overstiger maks {max}, vil bli avkortet av skriveren',
+      blockLinesUsageFmt: 'Bruker {n} av maks {max} linjer',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

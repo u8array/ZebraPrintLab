@@ -208,6 +208,8 @@ const sr = {
       justifyC: 'C — Центар',
       justifyR: 'R — Десно',
       justifyJ: 'J — Обострано',
+      blockLinesExceededFmt: 'Садржај има {n} редова — премашује макс {max}, штампач ће скратити',
+      blockLinesUsageFmt: 'Користи {n} од макс {max} редова',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

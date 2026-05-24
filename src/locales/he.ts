@@ -208,6 +208,8 @@ const he = {
       justifyC: 'C — מרכז',
       justifyR: 'R — ימין',
       justifyJ: 'J — מיושר',
+      blockLinesExceededFmt: 'התוכן מכיל {n} שורות — חורג מהמקס {max}, המדפסת תקצר',
+      blockLinesUsageFmt: 'משתמש ב-{n} מתוך {max} שורות',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

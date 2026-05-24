@@ -16,6 +16,10 @@ export interface CanvasColors {
    *  a blue-ish convention here (Figma, Sketch, Illustrator) to keep
    *  contrast usable across the B/W shape colour space. */
   selection: string;
+  /** UI accent (amber). Used for non-selection design-affordance overlays
+   *  on the canvas — e.g. the ^FB wrap-guide line so the user can tell
+   *  it apart from selection/transformer chrome. */
+  accent: string;
 }
 
 export const DARK_COLORS: CanvasColors = {
@@ -30,6 +34,7 @@ export const DARK_COLORS: CanvasColors = {
   rulerLabel:     '#cccccc',
   rulerSeparator: '#2a2a2a',
   selection:      '#6366f1',
+  accent:         '#f59e0b',
 };
 
 export const LIGHT_COLORS: CanvasColors = {
@@ -44,6 +49,7 @@ export const LIGHT_COLORS: CanvasColors = {
   rulerLabel:     '#27272a',
   rulerSeparator: '#d4d4d8',
   selection:      '#6366f1',
+  accent:         '#d97706',
 };
 
 export function useColorScheme(): CanvasColors {

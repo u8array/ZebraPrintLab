@@ -208,6 +208,8 @@ const ar = {
       justifyC: 'C — وسط',
       justifyR: 'R — يمين',
       justifyJ: 'J — ضبط',
+      blockLinesExceededFmt: 'المحتوى يحتوي على {n} أسطر — يتجاوز الحد الأقصى {max}، ستقطعها الطابعة',
+      blockLinesUsageFmt: 'يستخدم {n} من الحد الأقصى {max} سطر',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

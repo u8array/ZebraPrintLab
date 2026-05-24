@@ -208,6 +208,8 @@ const lv = {
       justifyC: 'C — Centrēts',
       justifyR: 'R — Pa labi',
       justifyJ: 'J — Izlīdzināts',
+      blockLinesExceededFmt: 'Saturam ir {n} rindas — pārsniedz maks {max}, printeris saīsinās',
+      blockLinesUsageFmt: 'Izmanto {n} no maks {max} rindām',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

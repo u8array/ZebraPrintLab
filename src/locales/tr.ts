@@ -208,6 +208,8 @@ const tr = {
       justifyC: 'C — Orta',
       justifyR: 'R — Sağ',
       justifyJ: 'J — İki yana',
+      blockLinesExceededFmt: 'İçerikte {n} satır var — max {max}\'ı aşıyor, yazıcı kırpacak',
+      blockLinesUsageFmt: '{n} / max {max} satır kullanılıyor',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

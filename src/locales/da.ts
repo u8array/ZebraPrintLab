@@ -208,6 +208,8 @@ const da = {
       justifyC: 'C — Centreret',
       justifyR: 'R — Højre',
       justifyJ: 'J — Lige margener',
+      blockLinesExceededFmt: 'Indholdet har {n} linjer — overskrider maks {max}, vil blive afkortet af printeren',
+      blockLinesUsageFmt: 'Bruger {n} af maks {max} linjer',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

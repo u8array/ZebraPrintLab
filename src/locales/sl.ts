@@ -208,6 +208,8 @@ const sl = {
       justifyC: 'C — Sredina',
       justifyR: 'R — Desno',
       justifyJ: 'J — Obojestransko',
+      blockLinesExceededFmt: 'Vsebina ima {n} vrstic — presega največ {max}, tiskalnik bo obrezal',
+      blockLinesUsageFmt: 'Uporablja {n} od največ {max} vrstic',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

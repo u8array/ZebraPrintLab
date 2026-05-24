@@ -208,6 +208,8 @@ const hr = {
       justifyC: 'C — Sredina',
       justifyR: 'R — Desno',
       justifyJ: 'J — Obostrano',
+      blockLinesExceededFmt: 'Sadržaj ima {n} redaka — premašuje maks {max}, pisač će skratiti',
+      blockLinesUsageFmt: 'Koristi {n} od maks {max} redaka',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

@@ -28,6 +28,11 @@
      editor — distinct from accent so the editor can colour-code
      marker families without collision. */
   --color-info:      #67c8e0;
+  /* Validation: amber = warning (truncation, soft mismatch), red =
+     error (missing required, unresolvable marker). Kept distinct
+     from accent so the user can scan severity at a glance. */
+  --color-warning:   #f59e0b;
+  --color-error:     #ef4444;
 
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
@@ -48,6 +53,8 @@
   --color-accent:    #d97706;
   --color-accent-dim:#fef3c7;
   --color-info:      #0e7490;
+  --color-warning:   #b45309;
+  --color-error:     #b91c1c;
 }
 
 *, *::before, *::after {

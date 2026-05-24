@@ -208,6 +208,8 @@ const et = {
       justifyC: 'C — Keskele',
       justifyR: 'R — Paremale',
       justifyJ: 'J — Rööpjoondus',
+      blockLinesExceededFmt: 'Sisul on {n} rida — ületab max {max}, printer kärbib',
+      blockLinesUsageFmt: 'Kasutab {n} / max {max} rida',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

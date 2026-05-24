@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
-import { Ellipse, Group, Rect, Text } from "react-konva";
+import { Ellipse, Group, Line, Rect, Text } from "react-konva";
 import { lookupBoundVariable, shouldShowFallbackTint } from "../../lib/variableBinding";
 import { BarcodeObject } from "./BarcodeObject";
 import { LineObject } from "./LineObject";
@@ -348,6 +348,29 @@ function KonvaObjectInner({
           stroke={isSelected ? colors.selection : undefined}
           strokeWidth={isSelected ? 1 : 0}
         />
+        {/* ^FB wrap-guide: a dashed vertical line at blockWidth so
+            the user sees where the printer will break the text.
+            Only shown while selected — clutter-free for the common
+            view, immediate feedback when adjusting blockWidth.
+            Height = (lines * line-step) where line-step is the font
+            cap height plus the user-configured blockLineSpacing
+            (dots), matching how Zebra advances the y-cursor between
+            wrapped rows. */}
+        {obj.type === "text" && isSelected && obj.props.blockWidth ? (() => {
+          const lines = obj.props.blockLines ?? 1;
+          const spacingPx = dotsToPx(obj.props.blockLineSpacing ?? 0, scale, dpmm);
+          const lineStep = fontSizePx + spacingPx;
+          const guideX = dotsToPx(obj.props.blockWidth, scale, dpmm);
+          return (
+            <Line
+              points={[guideX, 0, guideX, lines * lineStep]}
+              stroke={colors.accent}
+              strokeWidth={1}
+              dash={[4, 3]}
+              listening={false}
+            />
+          );
+        })() : null}
       </Group>
     );
   }

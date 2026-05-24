@@ -208,6 +208,8 @@ const ro = {
       justifyC: 'C — Centru',
       justifyR: 'R — Dreapta',
       justifyJ: 'J — Justify',
+      blockLinesExceededFmt: 'Conținutul are {n} linii — depășește max {max}, va fi trunchiat de imprimantă',
+      blockLinesUsageFmt: 'Folosește {n} din max {max} linii',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',

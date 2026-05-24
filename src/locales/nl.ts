@@ -208,6 +208,8 @@ const nl = {
       justifyC: 'C — Gecentreerd',
       justifyR: 'R — Rechts',
       justifyJ: 'J — Uitgevuld',
+      blockLinesExceededFmt: 'Inhoud heeft {n} regels — overschrijdt max {max}, wordt door printer afgekapt',
+      blockLinesUsageFmt: 'Gebruikt {n} van max {max} regels',
       printerFont: 'Printer font',
       uploadFont: 'Upload font file',
       uploadingFont: 'Uploading…',
