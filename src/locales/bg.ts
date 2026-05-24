@@ -138,6 +138,7 @@ const bg = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Запазване на съществуващите страници',
     chooseFile: 'Избор на файл',
+    insertVariable: 'Вмъкване на променлива',
     exportZpl: 'Export ZPL',
     importCsvData: 'Импортиране на CSV данни',
     exportBatchZplFmt: 'Експорт на пакетен ZPL ({n} етикета)',

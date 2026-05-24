@@ -138,6 +138,7 @@ const cs = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Zachovat stávající stránky',
     chooseFile: 'Vybrat soubor',
+    insertVariable: 'Vložit proměnnou',
     exportZpl: 'Export ZPL',
     importCsvData: 'Importovat data CSV',
     exportBatchZplFmt: 'Exportovat dávkové ZPL ({n} etiket)',

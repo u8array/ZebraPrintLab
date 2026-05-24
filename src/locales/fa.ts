@@ -138,6 +138,7 @@ const fa = {
     importZpl: 'وارد کردن ZPL',
     keepExistingPages: 'حفظ صفحات موجود',
     chooseFile: 'انتخاب فایل',
+    insertVariable: 'درج متغیر',
     exportZpl: 'خروجی ZPL',
     importCsvData: 'وارد کردن داده‌های CSV',
     exportBatchZplFmt: 'خروجی ZPL دسته‌ای ({n} برچسب)',

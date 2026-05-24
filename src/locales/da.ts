@@ -138,6 +138,7 @@ const da = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Behold eksisterende sider',
     chooseFile: 'Vælg fil',
+    insertVariable: 'Indsæt variabel',
     exportZpl: 'Export ZPL',
     importCsvData: 'Importer CSV-data',
     exportBatchZplFmt: 'Eksportér batch-ZPL ({n} etiketter)',

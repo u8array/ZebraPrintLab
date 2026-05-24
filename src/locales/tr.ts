@@ -138,6 +138,7 @@ const tr = {
     importZpl: 'ZPL İçe Aktar',
     keepExistingPages: 'Mevcut sayfaları koru',
     chooseFile: 'Dosya seç',
+    insertVariable: 'Değişken ekle',
     exportZpl: 'ZPL Dışa Aktar',
     importCsvData: 'CSV verisi içe aktar',
     exportBatchZplFmt: 'Toplu ZPL dışa aktar ({n} etiket)',

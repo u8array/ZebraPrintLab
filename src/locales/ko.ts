@@ -138,6 +138,7 @@ const ko = {
     importZpl: 'ZPL 가져오기',
     keepExistingPages: '기존 페이지 유지',
     chooseFile: '파일 선택',
+    insertVariable: '변수 삽입',
     exportZpl: 'ZPL 내보내기',
     importCsvData: 'CSV 데이터 가져오기',
     exportBatchZplFmt: '일괄 ZPL 내보내기 ({n}개 라벨)',

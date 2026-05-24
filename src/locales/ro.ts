@@ -138,6 +138,7 @@ const ro = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Păstrează paginile existente',
     chooseFile: 'Alege fișier',
+    insertVariable: 'Inserează variabilă',
     exportZpl: 'Export ZPL',
     importCsvData: 'Importă date CSV',
     exportBatchZplFmt: 'Exportă ZPL în lot ({n} etichete)',

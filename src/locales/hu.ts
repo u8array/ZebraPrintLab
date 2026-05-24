@@ -138,6 +138,7 @@ const hu = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Meglévő oldalak megtartása',
     chooseFile: 'Fájl kiválasztása',
+    insertVariable: 'Változó beszúrása',
     exportZpl: 'Export ZPL',
     importCsvData: 'CSV-adatok importálása',
     exportBatchZplFmt: 'Köteg ZPL exportálása ({n} címke)',

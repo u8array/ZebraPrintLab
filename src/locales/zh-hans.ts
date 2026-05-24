@@ -138,6 +138,7 @@ const zhHans = {
     importZpl: '导入 ZPL',
     keepExistingPages: '保留现有页面',
     chooseFile: '选择文件',
+    insertVariable: '插入变量',
     exportZpl: '导出 ZPL',
     importCsvData: '导入 CSV 数据',
     exportBatchZplFmt: '导出批量 ZPL ({n} 个标签)',

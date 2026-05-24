@@ -138,6 +138,7 @@ const sk = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Zachovať existujúce stránky',
     chooseFile: 'Vybrať súbor',
+    insertVariable: 'Vložiť premennú',
     exportZpl: 'Export ZPL',
     importCsvData: 'Importovať údaje CSV',
     exportBatchZplFmt: 'Exportovať dávkové ZPL ({n} etikiet)',

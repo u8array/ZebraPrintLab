@@ -138,6 +138,7 @@ const fi = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Säilytä olemassa olevat sivut',
     chooseFile: 'Valitse tiedosto',
+    insertVariable: 'Lisää muuttuja',
     exportZpl: 'Export ZPL',
     importCsvData: 'Tuo CSV-tiedot',
     exportBatchZplFmt: 'Vie erä-ZPL ({n} etikettiä)',

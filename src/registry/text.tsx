@@ -10,6 +10,7 @@ import { useFontCacheVersion } from "../hooks/useFontCacheVersion";
 import { useLabelStore } from "../store/labelStore";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { NumberInput } from "../components/Properties/NumberInput";
+import { TemplateContentInput } from "../components/Properties/TemplateContentInput";
 
 export interface TextProps {
   content: string;
@@ -206,10 +207,9 @@ export const text: ObjectTypeDefinition<TextProps> = {
 
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.registry.text.content}</label>
-          <input
-            className={inputCls}
+          <TemplateContentInput
             value={p.content}
-            onChange={(e) => onChange({ content: e.target.value })}
+            onChange={(content) => onChange({ content })}
           />
         </div>
 

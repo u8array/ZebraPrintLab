@@ -138,6 +138,7 @@ const ja = {
     importZpl: 'ZPL インポート',
     keepExistingPages: '既存のページを保持',
     chooseFile: 'ファイルを選択',
+    insertVariable: '変数を挿入',
     exportZpl: 'ZPL エクスポート',
     importCsvData: 'CSVデータをインポート',
     exportBatchZplFmt: 'バッチZPLをエクスポート ({n} ラベル)',

@@ -138,6 +138,7 @@ const ar = {
     importZpl: 'استيراد ZPL',
     keepExistingPages: 'الاحتفاظ بالصفحات الحالية',
     chooseFile: 'اختيار ملف',
+    insertVariable: 'إدراج متغير',
     exportZpl: 'تصدير ZPL',
     importCsvData: 'استيراد بيانات CSV',
     exportBatchZplFmt: 'تصدير ZPL دفعي ({n} ملصقات)',

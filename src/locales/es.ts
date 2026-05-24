@@ -138,6 +138,7 @@ const es = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Conservar páginas existentes',
     chooseFile: 'Elegir archivo',
+    insertVariable: 'Insertar variable',
     exportZpl: 'Export ZPL',
     importCsvData: 'Importar datos CSV',
     exportBatchZplFmt: 'Exportar ZPL por lotes ({n} etiquetas)',

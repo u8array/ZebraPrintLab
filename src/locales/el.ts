@@ -138,6 +138,7 @@ const el = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Διατήρηση υπαρχουσών σελίδων',
     chooseFile: 'Επιλογή αρχείου',
+    insertVariable: 'Εισαγωγή μεταβλητής',
     exportZpl: 'Export ZPL',
     importCsvData: 'Εισαγωγή δεδομένων CSV',
     exportBatchZplFmt: 'Εξαγωγή παρτίδας ZPL ({n} ετικέτες)',

@@ -138,6 +138,7 @@ const zhHant = {
     importZpl: '匯入 ZPL',
     keepExistingPages: '保留現有頁面',
     chooseFile: '選擇檔案',
+    insertVariable: '插入變數',
     exportZpl: '匯出 ZPL',
     importCsvData: '匯入 CSV 資料',
     exportBatchZplFmt: '匯出批次 ZPL ({n} 個標籤)',

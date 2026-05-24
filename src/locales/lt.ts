@@ -138,6 +138,7 @@ const lt = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Išsaugoti esamus puslapius',
     chooseFile: 'Pasirinkti failą',
+    insertVariable: 'Įterpti kintamąjį',
     exportZpl: 'Export ZPL',
     importCsvData: 'Importuoti CSV duomenis',
     exportBatchZplFmt: 'Eksportuoti paketinį ZPL ({n} etikečių)',

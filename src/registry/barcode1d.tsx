@@ -1,13 +1,14 @@
 import type { ObjectTypeDefinition, ObjectGroup, LabelObjectBase, HriBehavior } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import type { Translations } from '../locales';
-import { inputCls, labelCls } from '../components/Properties/styles';
+import { labelCls } from '../components/Properties/styles';
 import { fieldPos, fdFieldFor } from './zplHelpers';
 import { commitBarcodeWidthHeightTransform } from './transformHelpers';
 import { filterContent, hasValidLength, type ContentSpec } from './contentSpec';
 import { type ZplRotation } from './rotation';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
+import { TemplateContentInput } from '../components/Properties/TemplateContentInput';
 
 export interface Barcode1DProps {
   content: string;
@@ -109,12 +110,24 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <label className={labelCls}>{loc.content}</label>
-            <input
-              className={inputCls}
+            <TemplateContentInput
               value={p.content}
+              onChange={(content) => onChange({ content })}
+              sanitise={(raw) =>
+                // Preserve `«name»` template markers verbatim while
+                // sanitising the literal slices between them — without
+                // this guard, restricted-charset barcodes (e.g. EAN13
+                // numeric-only) would strip the markers' guillemets on
+                // every keystroke after insertion.
+                raw
+                  .split(/(«[^»]+»)/)
+                  .map((s, i) =>
+                    i % 2 === 0 ? filterContent(s, config.contentSpec) : s,
+                  )
+                  .join('')
+              }
               maxLength={config.contentSpec?.maxLength}
               placeholder={loc.placeholder}
-              onChange={(e) => onChange({ content: filterContent(e.target.value, config.contentSpec) })}
             />
             {!hasValidLength(p.content, config.contentSpec) && loc.placeholder && (
               <p className="font-mono text-[10px] text-amber-400">{loc.placeholder}</p>

@@ -138,6 +138,7 @@ const sv = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Behåll befintliga sidor',
     chooseFile: 'Välj fil',
+    insertVariable: 'Infoga variabel',
     exportZpl: 'Export ZPL',
     importCsvData: 'Importera CSV-data',
     exportBatchZplFmt: 'Exportera batch-ZPL ({n} etiketter)',

@@ -138,6 +138,7 @@ const lv = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Saglabāt esošās lapas',
     chooseFile: 'Izvēlēties failu',
+    insertVariable: 'Ievietot mainīgo',
     exportZpl: 'Export ZPL',
     importCsvData: 'Importēt CSV datus',
     exportBatchZplFmt: 'Eksportēt pakešu ZPL ({n} etiķetes)',

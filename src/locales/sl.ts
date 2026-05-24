@@ -138,6 +138,7 @@ const sl = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Ohrani obstoječe strani',
     chooseFile: 'Izberi datoteko',
+    insertVariable: 'Vstavi spremenljivko',
     exportZpl: 'Export ZPL',
     importCsvData: 'Uvozi podatke CSV',
     exportBatchZplFmt: 'Izvozi paketni ZPL ({n} etiket)',

@@ -138,6 +138,7 @@ const et = {
     importZpl: 'Import ZPL',
     keepExistingPages: 'Säilita olemasolevad lehed',
     chooseFile: 'Vali fail',
+    insertVariable: 'Lisa muutuja',
     exportZpl: 'Export ZPL',
     importCsvData: 'Impordi CSV-andmed',
     exportBatchZplFmt: 'Ekspordi partii-ZPL ({n} silti)',

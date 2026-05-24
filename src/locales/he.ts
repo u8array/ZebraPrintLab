@@ -138,6 +138,7 @@ const he = {
     importZpl: 'ייבוא ZPL',
     keepExistingPages: 'שמור על דפים קיימים',
     chooseFile: 'בחר קובץ',
+    insertVariable: 'הכנס משתנה',
     exportZpl: 'ייצוא ZPL',
     importCsvData: 'ייבוא נתוני CSV',
     exportBatchZplFmt: 'ייצוא ZPL באצווה ({n} תוויות)',
