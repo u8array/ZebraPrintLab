@@ -153,14 +153,19 @@ export function TemplateContentInput({
           ) : s.kind === "var" ? (
             <span key={i} className="text-accent">{s.text}</span>
           ) : (
-            <span key={i} className="text-[#67c8e0]">{s.text}</span>
+            <span key={i} className="text-info">{s.text}</span>
           ),
         )}
         {value.endsWith("\n") ? " " : ""}
       </div>
       <textarea
         ref={taRef}
-        className={`${SHARED_CLS} relative block resize-none overflow-y-hidden caret-text focus:border-accent focus:outline-none`}
+        // overflow-y-auto so content beyond MAX_ROWS stays reachable;
+        // scrollbar visually hidden because the mirror layer doesn't
+        // reserve space for one — a visible scrollbar would shift the
+        // textarea's text origin and misalign the colour highlight.
+        // Wheel + keyboard scrolling stay functional via syncScroll.
+        className={`${SHARED_CLS} relative block resize-none overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden caret-text focus:border-accent focus:outline-none`}
         style={{ color: "transparent", background: "transparent" }}
         value={value}
         maxLength={maxLength}
@@ -209,7 +214,7 @@ export function TemplateContentInput({
               className="block w-full text-left px-2 py-1 text-xs font-mono text-text hover:bg-surface-2 transition-colors"
               onClick={() => insertMarker(`clock:${token}`)}
             >
-              <span className="text-[#67c8e0]">«clock:{token}»</span>{" "}
+              <span className="text-info">«clock:{token}»</span>{" "}
               <span className="text-muted">{t.app[labelKey]}</span>
             </button>
           ))}
