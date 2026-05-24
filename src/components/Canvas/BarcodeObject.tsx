@@ -16,6 +16,7 @@ import {
   type EanUpcType,
 } from "./bwipHelpers";
 import { objectRotation } from "../../registry/rotation";
+import { rotatedGroupTransform } from "./rotatedGroupTransform";
 import {
   QR_FO_Y_OFFSET_DOTS,
   QR_FT_MODULE_OFFSET,
@@ -86,7 +87,8 @@ export function BarcodeObject({
   // when the bwip canvas hasn't rendered yet.
   const dim: BarcodeDisplaySize = barcodeCanvas
     ? getDisplaySize(obj, barcodeCanvas, scale, dpmm)
-    : { w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0 };
+    : { w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0,
+        upright: { w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0 } };
 
   // Y delta in dots between the FT baseline (bar bottom) and the bbox
   // top-left, plus the QR-specific firmware offset. Used forward in the
@@ -656,26 +658,28 @@ export function BarcodeObject({
           ];
         }
       } else {
-        // ── Other 1D: single centered text string ──────────────────────────
-        let txtX: number;
-        let txtY: number;
-        let txtWidth: number;
-
-        if (rotation === "R") {
-          txtX = sideX; txtY = 0; txtWidth = h;
-        } else if (rotation === "I") {
-          txtX = w; txtY = topY; txtWidth = w;
-        } else {
-          txtX = sideX; txtY = h; txtWidth = h;
-        }
-
+        // ── Other 1D: single centered text inside an upright-coords
+        //    rotated container. The inner Group's transform places its
+        //    upright origin at the bar sub-rect's rotated origin, so
+        //    `<Text x={0} y={textY} width={uprightBarW}>` lands the same
+        //    spot for every rotation — no per-rotation tx/ty math. The
+        //    upright text-Y formula mirrors the showText branch above
+        //    (isTextAbove → above bars; else → below) so rotated and N
+        //    stay visually consistent per type without duplication.
+        const ub = dim.upright;
+        const innerTr = rotatedGroupTransform(rotation, ub.barW, ub.barH);
+        const textY = isTextAbove
+          ? -textFontSize - rotGap
+          : ub.barH + textGap;
         textElements = (
-          <Text
-            x={txtX} y={txtY} rotation={tRot} width={Math.max(txtWidth, 1)}
-            text={displayText} fontSize={textFontSize}
-            fontFamily="'Courier New', monospace" fontStyle="bold"
-            align="center" wrap="none" fill="#000000" listening={false}
-          />
+          <Group x={dim.barLeftPx + innerTr.x} y={dim.barTopPx + innerTr.y} rotation={innerTr.rotation}>
+            <Text
+              x={0} y={textY} width={Math.max(ub.barW, 1)}
+              text={displayText} fontSize={textFontSize}
+              fontFamily="'Courier New', monospace" fontStyle="bold"
+              align="center" wrap="none" fill="#000000" listening={false}
+            />
+          </Group>
         );
       }
 

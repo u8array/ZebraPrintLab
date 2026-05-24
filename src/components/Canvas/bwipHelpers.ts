@@ -573,6 +573,18 @@ export interface BarcodeDisplaySize {
   barH: number;
   barLeftPx: number;
   barTopPx: number;
+  /** Upright (rotation=N) view of the same layout. Renderers that draw
+   *  inside an inner rotated Group consume this so their geometry stays
+   *  rotation-independent — the inner group's transform handles the
+   *  visual rotation. Always present alongside the rotated fields. */
+  upright: {
+    w: number;
+    h: number;
+    barW: number;
+    barH: number;
+    barLeftPx: number;
+    barTopPx: number;
+  };
   /** Sub-rect of the bwip-js canvas to render (in source pixel coords).
    *  Lets the renderer skip bwip's internal padding, e.g. the
    *  paddingheight pad on GS1 DataBar that would otherwise leave the
@@ -656,6 +668,7 @@ export function getDisplaySize(
   if (!canvas) {
     return {
       w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0,
+      upright: { w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0 },
     };
   }
 
@@ -757,7 +770,21 @@ export function getDisplaySize(
     }
   }
 
-  return { w, h, barW, barH, barLeftPx, barTopPx, bitmapCrop };
+  // Upright view (rotation=N) of the same layout. Text zone sits above
+  // the bars when isTextAbove (logmars), otherwise implicitly below
+  // (barTopPx=0, barH = h - textZonePx). Bars span the full width.
+  // The inner-rotated-Group renderer pattern consumes this so its
+  // geometry stays rotation-independent.
+  const uprightView = {
+    w: upright.w,
+    h: upright.h,
+    barLeftPx: 0,
+    barTopPx: isTextAbove && textZonePx > 0 ? textZonePx : 0,
+    barW: upright.w,
+    barH: textZonePx > 0 ? upright.h - textZonePx : upright.h,
+  };
+
+  return { w, h, barW, barH, barLeftPx, barTopPx, upright: uprightView, bitmapCrop };
 }
 
 function getUprightDisplaySize(
