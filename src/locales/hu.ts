@@ -26,6 +26,7 @@ const hu = {
     ean8: 'EAN-8',
     upce: 'UPC-E',
     upcEanExtension: 'UPC/EAN kiegészítés',
+    code49: 'Code 49',
     interleaved2of5: 'Interleaved 2/5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -340,6 +341,14 @@ const hu = {
       printInterpretation: 'Olvasható',
       moduleWidth: 'Modulszélesség',
       placeholder: '2 vagy 5 számjegy',
+    },
+    code49: {
+      content: 'Tartalom',
+      height: 'Magasság (pont)',
+      moduleWidth: 'Modulszélesség',
+      printInterpretation: 'Olvasható',
+      mode: 'Mód',
+      modeAuto: 'auto',
     },
     interleaved2of5: {
       content: 'Tartalom',

@@ -26,6 +26,7 @@ const lv = {
     ean8: 'EAN-8',
     upce: 'UPC-E',
     upcEanExtension: 'UPC/EAN paplašinājums',
+    code49: 'Code 49',
     interleaved2of5: 'Interleaved 2 no 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -340,6 +341,14 @@ const lv = {
       printInterpretation: 'Lasāms',
       moduleWidth: 'Moduļa platums',
       placeholder: '2 vai 5 cipari',
+    },
+    code49: {
+      content: 'Saturs',
+      height: 'Augstums (punkti)',
+      moduleWidth: 'Moduļa platums',
+      printInterpretation: 'Lasāms',
+      mode: 'Režīms',
+      modeAuto: 'auto',
     },
     interleaved2of5: {
       content: 'Saturs',

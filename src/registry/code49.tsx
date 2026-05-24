@@ -1,0 +1,149 @@
+import type { ObjectTypeDefinition } from '../types/ObjectType';
+import { useT } from '../lib/useT';
+import { inputCls, labelCls } from '../components/Properties/styles';
+import { fieldPos, fdFieldFor } from './zplHelpers';
+import { commitBarcodeWidthHeightTransform } from './transformHelpers';
+import { type ZplRotation } from './rotation';
+import { RotationSelect } from '../components/Properties/RotationSelect';
+import { NumberInput } from '../components/Properties/NumberInput';
+
+/** ZPL ^B4 m: 'A' = auto subset. 0-5 force a specific subset. */
+export type Code49Mode = 'A' | '0' | '1' | '2' | '3' | '4' | '5';
+
+const CODE49_MODES: readonly Code49Mode[] = ['A', '0', '1', '2', '3', '4', '5'];
+
+// bwip-js rejects code49 rowheight outside 8..50 modules.
+const code49MinHeight = (moduleWidth: number) => 8 * Math.max(moduleWidth, 1);
+const code49MaxHeight = (moduleWidth: number) => 50 * Math.max(moduleWidth, 1);
+
+export interface Code49Props {
+  content: string;
+  height: number;
+  moduleWidth: number;
+  printInterpretation: boolean;
+  mode: Code49Mode;
+  rotation: ZplRotation;
+}
+
+export const code49: ObjectTypeDefinition<Code49Props> = {
+  label: 'Code 49',
+  icon: 'C49',
+  group: 'code-1d',
+  bindable: true,
+  defaultProps: {
+    content: 'CODE49',
+    height: 20,
+    moduleWidth: 2,
+    printInterpretation: true,
+    mode: 'A',
+    rotation: 'N',
+  },
+  defaultSize: { width: 300, height: 120 },
+
+  // Clamp height into bwip's range so drag past the limit lands in
+  // props (not just in the render) — otherwise ZPL h drifts from
+  // the visible bars.
+  commitTransform: (obj, ctx) => {
+    const next = commitBarcodeWidthHeightTransform(obj, ctx);
+    const mw = next.moduleWidth ?? obj.props.moduleWidth;
+    const rawH = next.height ?? obj.props.height;
+    return {
+      ...next,
+      height: Math.min(code49MaxHeight(mw), Math.max(code49MinHeight(mw), rawH)),
+    };
+  },
+
+  // Re-clamp height when moduleWidth shifts the valid range (the
+  // height input's own min/max only guards its own field). Skip on
+  // non-positive moduleWidth so JSON-import / undo with garbage
+  // doesn't anchor the clamp.
+  normalizeChanges: (obj, changes) => {
+    const nextProps = changes.props as Partial<Code49Props> | undefined;
+    if (!nextProps || nextProps.moduleWidth === undefined) return changes;
+    const newMw = nextProps.moduleWidth;
+    if (!Number.isFinite(newMw) || newMw < 1) return changes;
+    const curH = nextProps.height ?? obj.props.height;
+    const clampedH = Math.min(
+      code49MaxHeight(newMw),
+      Math.max(code49MinHeight(newMw), curH),
+    );
+    return clampedH === curH
+      ? changes
+      : { ...changes, props: { ...nextProps, height: clampedH } };
+  },
+
+  toZPL: (obj, ctx) => {
+    const p = obj.props;
+    const interp = p.printInterpretation ? 'Y' : 'N';
+    return [
+      `^BY${p.moduleWidth}`,
+      fieldPos(obj),
+      `^B4${p.rotation},${p.height},${interp},${p.mode}`,
+      fdFieldFor(obj, p.content, ctx),
+    ]
+      .filter(Boolean)
+      .join('');
+  },
+
+  PropertiesPanel: ({ obj, onChange }) => {
+    const t = useT();
+    const p = obj.props;
+    const loc = t.registry.code49;
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>{loc.content}</label>
+          <input
+            className={inputCls}
+            value={p.content}
+            onChange={(e) => onChange({ content: e.target.value })}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <NumberInput
+            label={loc.height}
+            value={p.height}
+            min={code49MinHeight(p.moduleWidth)}
+            max={code49MaxHeight(p.moduleWidth)}
+            onChange={(height) => onChange({ height })}
+          />
+          <NumberInput
+            label={loc.moduleWidth}
+            value={p.moduleWidth}
+            min={1}
+            max={10}
+            onChange={(moduleWidth) => onChange({ moduleWidth })}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>{loc.mode}</label>
+          <select
+            className={inputCls}
+            value={p.mode}
+            onChange={(e) => onChange({ mode: e.target.value as Code49Mode })}
+          >
+            {CODE49_MODES.map((m) => (
+              <option key={m} value={m}>
+                {m === 'A' ? `A — ${loc.modeAuto}` : m}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="accent-accent"
+            checked={p.printInterpretation}
+            onChange={(e) => onChange({ printInterpretation: e.target.checked })}
+          />
+          <span className={labelCls}>{loc.printInterpretation}</span>
+        </label>
+
+        <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
+      </div>
+    );
+  },
+};

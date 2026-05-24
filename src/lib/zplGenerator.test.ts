@@ -701,6 +701,49 @@ describe('generateZPL — parse/generate roundtrip', () => {
     expect(props(ext).moduleWidth).toBe(3);
   });
 
+  it('round-trips a ^B4 Code 49 with default mode A', () => {
+    const original = parseZPL('^XA^FO10,10^B4N,20,Y,A^FDCODE49^FS^XZ', 8);
+    const regenerated = generateZPL(BASE_LABEL, original.objects);
+    const reparsed = parseZPL(regenerated, 8);
+    const bc = defined(reparsed.objects.find((o) => o.type === 'code49'));
+    expect(props(bc).content).toBe('CODE49');
+    expect(props(bc).height).toBe(20);
+    expect(props(bc).printInterpretation).toBe(true);
+    expect(props(bc).mode).toBe('A');
+  });
+
+  it('round-trips ^B4 explicit mode + rotation + moduleWidth', () => {
+    const original = parseZPL('^XA^BY3^FO10,10^B4R,30,N,2^FD12345^FS^XZ', 8);
+    const regenerated = generateZPL(BASE_LABEL, original.objects);
+    const reparsed = parseZPL(regenerated, 8);
+    const bc = defined(reparsed.objects.find((o) => o.type === 'code49'));
+    expect(props(bc).rotation).toBe('R');
+    expect(props(bc).moduleWidth).toBe(3);
+    expect(props(bc).mode).toBe('2');
+    expect(props(bc).printInterpretation).toBe(false);
+  });
+
+  it('falls back to mode A when ^B4 receives an unknown mode', () => {
+    const r = parseZPL('^XA^FO10,10^B4N,20,Y,X^FDCODE49^FS^XZ', 8);
+    const bc = defined(r.objects.find((o) => o.type === 'code49'));
+    expect(props(bc).mode).toBe('A');
+  });
+
+  it('does not leak ^B4 mode from one symbol to the next', () => {
+    // Two B4 fields back-to-back: first explicit mode=3, second omits
+    // the mode parameter. The second must default to 'A' even though
+    // the parser variable still holds '3' from the previous handler
+    // run — the handler resets it on each B4 via the `?? "A"` fallback.
+    const r = parseZPL(
+      '^XA^FO10,10^B4N,20,Y,3^FDONE^FS^FO10,200^B4N,20,Y^FDTWO^FS^XZ',
+      8,
+    );
+    const codes = r.objects.filter((o) => o.type === 'code49');
+    expect(codes).toHaveLength(2);
+    expect(props(codes[0]!).mode).toBe('3');
+    expect(props(codes[1]!).mode).toBe('A');
+  });
+
   it('preserves printer params through generate -> parse', () => {
     const label: LabelConfig = {
       ...BASE_LABEL,

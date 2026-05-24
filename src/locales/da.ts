@@ -26,6 +26,7 @@ const da = {
     ean8: 'EAN-8',
     upce: 'UPC-E',
     upcEanExtension: 'UPC/EAN-tillæg',
+    code49: 'Code 49',
     interleaved2of5: 'Interleaved 2 af 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -340,6 +341,14 @@ const da = {
       printInterpretation: 'Læsbar',
       moduleWidth: 'Modulbredde',
       placeholder: '2 eller 5 cifre',
+    },
+    code49: {
+      content: 'Indhold',
+      height: 'Højde (punkter)',
+      moduleWidth: 'Modulbredde',
+      printInterpretation: 'Læsbar',
+      mode: 'Tilstand',
+      modeAuto: 'auto',
     },
     interleaved2of5: {
       content: 'Indhold',

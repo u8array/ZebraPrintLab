@@ -106,6 +106,7 @@ const BARCODE_TYPES = new Set([
   "micropdf417",
   "codablock",
   "upcEanExtension",
+  "code49",
 ]);
 
 export function KonvaObject(props_: Props) {

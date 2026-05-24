@@ -21,6 +21,7 @@ import type { ImageProps } from "../registry/image";
 import type { Barcode1DProps } from "../registry/barcode1d";
 import type { Gs1DatabarProps } from "../registry/gs1databar";
 import type { Pdf417Props } from "../registry/pdf417";
+import type { Code49Props } from "../registry/code49";
 import type { SerialProps } from "../registry/serial";
 import { isZplRotation, type ZplRotation } from "../registry/rotation";
 import type { AztecProps } from "../registry/aztec";
@@ -556,6 +557,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let bcInterp = true;
   let bcCheck = false;
   let bcRotation: ZplRotation = "N";
+  let bcCode49Mode: Code49Props["mode"] = "A";
   let gsSymbology: Gs1DatabarProps["symbology"] = 1;
   let gsSegments: number | undefined = undefined;
   // ^BY barcode defaults
@@ -901,6 +903,25 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           ),
         );
         break;
+      case "code49":
+        objects.push(
+          makeObj(
+            "code49",
+            x,
+            y,
+            {
+              content,
+              height: bcHeight,
+              moduleWidth: byModuleWidth,
+              printInterpretation: bcInterp,
+              mode: bcCode49Mode,
+              rotation: bcRotation,
+            } satisfies Code49Props,
+            posType,
+            comment,
+          ),
+        );
+        break;
       case "aztec":
         objects.push(
           makeObj(
@@ -1152,6 +1173,17 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     B5: mkBarcode("planet", 1, 2), // ^B5N,h,i,N
     BZ: mkBarcode("postal", 1, 2), // ^BZN,h,i,N
     BS: mkBarcode("upcEanExtension", 1, 2), // ^BSo,h,f (UPC/EAN 2- or 5-digit supplement)
+    B4: (p) => {
+      // ^B4o,h,f,m — Code 49. Custom handler for the extra `m`.
+      fieldType = "code49";
+      bcRotation = readRotation(p[0]);
+      bcHeight = int(p[1], byHeight || 20);
+      bcInterp = (p[2] ?? "N") === "Y";
+      const m = (p[3] ?? "A").toUpperCase();
+      bcCode49Mode = /^[A0-5]$/.test(m)
+        ? (m as Code49Props["mode"])
+        : "A";
+    },
 
     // MSI: check logic is "any letter except N" (not simple "Y") — keep inline
     // ^BMN,{checkType},{height},{interp},N  (checkType: A/B/C/D=enabled, N=none)

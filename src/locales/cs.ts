@@ -26,6 +26,7 @@ const cs = {
     ean8: 'EAN-8',
     upce: 'UPC-E',
     upcEanExtension: 'Rozšíření UPC/EAN',
+    code49: 'Code 49',
     interleaved2of5: 'Interleaved 2 z 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -340,6 +341,14 @@ const cs = {
       printInterpretation: 'Čitelné',
       moduleWidth: 'Šířka modulu',
       placeholder: '2 nebo 5 číslic',
+    },
+    code49: {
+      content: 'Obsah',
+      height: 'Výška (body)',
+      moduleWidth: 'Šířka modulu',
+      printInterpretation: 'Čitelné',
+      mode: 'Režim',
+      modeAuto: 'auto',
     },
     interleaved2of5: {
       content: 'Obsah',

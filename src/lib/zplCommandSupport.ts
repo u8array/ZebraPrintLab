@@ -96,7 +96,7 @@ export const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
   { cmd: 'B1', status: 'supported', description: 'Code 11 barcode' },
   { cmd: 'B2', status: 'supported', description: 'Interleaved 2 of 5 barcode' },
   { cmd: 'B3', status: 'supported', description: 'Code 39 barcode' },
-  { cmd: 'B4', status: 'unsupported', description: 'Code 49 barcode' },
+  { cmd: 'B4', status: 'supported', description: 'Code 49 barcode' },
   { cmd: 'B5', status: 'supported', description: 'Planet Code barcode' },
   { cmd: 'B7', status: 'supported', description: 'PDF417 barcode' },
   { cmd: 'B8', status: 'supported', description: 'EAN-8 barcode' },

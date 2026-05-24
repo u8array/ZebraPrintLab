@@ -70,6 +70,7 @@ What's supported, what's next, what's planned.
 - [x] `^B5` — Planet Code
 - [x] `^BZ` — POSTNET
 - [x] `^BS` — UPC/EAN 2- or 5-digit supplement
+- [x] `^B4` — Code 49
 - [x] `^BQ` — QR Code
 - [x] `^BX` — DataMatrix
 - [x] `^B7` — PDF417
@@ -112,7 +113,6 @@ What's supported, what's next, what's planned.
 
 ### Barcodes
 
-- [ ] `^B4` — Code 49
 - [ ] `^BD` — UPS MaxiCode
 - [ ] `^BT` — TLC39
 

@@ -26,6 +26,7 @@ const fa = {
     ean8: 'EAN-8',
     upce: 'UPC-E',
     upcEanExtension: 'افزونه UPC/EAN',
+    code49: 'Code 49',
     interleaved2of5: 'Interleaved 2 از 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -340,6 +341,14 @@ const fa = {
       printInterpretation: 'خوانا',
       moduleWidth: 'عرض ماژول',
       placeholder: '۲ یا ۵ رقم',
+    },
+    code49: {
+      content: 'محتوا',
+      height: 'ارتفاع (نقطه)',
+      moduleWidth: 'عرض ماژول',
+      printInterpretation: 'خوانا',
+      mode: 'حالت',
+      modeAuto: 'خودکار',
     },
     interleaved2of5: {
       content: 'محتوا',

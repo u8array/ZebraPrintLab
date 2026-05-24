@@ -26,6 +26,7 @@ const ro = {
     ean8: 'EAN-8',
     upce: 'UPC-E',
     upcEanExtension: 'Extensie UPC/EAN',
+    code49: 'Code 49',
     interleaved2of5: 'Interleaved 2 din 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -340,6 +341,14 @@ const ro = {
       printInterpretation: 'Lizibil',
       moduleWidth: 'Lățime modul',
       placeholder: '2 sau 5 cifre',
+    },
+    code49: {
+      content: 'Conținut',
+      height: 'Înălțime (puncte)',
+      moduleWidth: 'Lățime modul',
+      printInterpretation: 'Lizibil',
+      mode: 'Mod',
+      modeAuto: 'auto',
     },
     interleaved2of5: {
       content: 'Conținut',

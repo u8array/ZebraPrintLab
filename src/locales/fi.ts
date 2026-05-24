@@ -26,6 +26,7 @@ const fi = {
     ean8: 'EAN-8',
     upce: 'UPC-E',
     upcEanExtension: 'UPC/EAN-lisäys',
+    code49: 'Code 49',
     interleaved2of5: 'Interleaved 2/5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -340,6 +341,14 @@ const fi = {
       printInterpretation: 'Luettava',
       moduleWidth: 'Moduulin leveys',
       placeholder: '2 tai 5 numeroa',
+    },
+    code49: {
+      content: 'Sisältö',
+      height: 'Korkeus (pisteet)',
+      moduleWidth: 'Moduulin leveys',
+      printInterpretation: 'Luettava',
+      mode: 'Tila',
+      modeAuto: 'auto',
     },
     interleaved2of5: {
       content: 'Sisältö',

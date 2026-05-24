@@ -97,6 +97,7 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
   // Placeholder — actual bcid (ean2 vs ean5) is resolved from the
   // content length in the per-type switch in buildBwipOptions.
   upcEanExtension: "ean5",
+  code49: "code49",
 };
 
 export const BWIP_SCALE = 2;
@@ -315,6 +316,29 @@ export function buildBwipOptions(
         text = p.content || "0";
       }
       opts = { bcid, text, scale, height: 10 };
+      break;
+    }
+    case "code49": {
+      const p = obj.props;
+      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
+      // Stacked 1D, bwip auto-picks row count. Clamp rowheight to
+      // bwip's 8..50 range — defensive net for JSON loads that
+      // bypass the registry's commitTransform/normalize clamps.
+      const rawRow = Math.round(p.height / Math.max(p.moduleWidth, 1));
+      const rowheight = Math.min(50, Math.max(8, rawRow));
+      opts = {
+        bcid,
+        text: p.content || "0",
+        scale,
+        rowheight,
+      };
+      // bwip's mode is numeric 0-5; 'A' (auto) is the no-option case.
+      if (p.mode !== "A") {
+        const m = parseInt(p.mode, 10);
+        if (Number.isInteger(m) && m >= 0 && m <= 5) {
+          (opts as Record<string, unknown>).mode = m;
+        }
+      }
       break;
     }
     case "upcEanExtension": {
@@ -856,6 +880,27 @@ function getUprightDisplaySize(
       const extraPx = bwipSc === 1 ? 1 : 0;
       const w = ((cw - extraPx) / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height + LOGMARS_TEXT_ZONE_DOTS, scale, dpmm);
+      return { w, h };
+    }
+    case "code49": {
+      // Stacked 1D. Labelary's emulator only renders the HRI line
+      // for ^B4 (not the bars), so bwip-js is the ground truth;
+      // bbox math is not Labelary-cross-validated. Same as ^BB.
+      const p = obj.props;
+      // Mirror buildBwipOptions's 8..50 clamp so numRows recovery
+      // matches what bwip actually drew.
+      const rawRow = Math.round(p.height / Math.max(p.moduleWidth, 1));
+      const rowheightUnits = Math.min(50, Math.max(8, rawRow));
+      const modulePx = dotsToPx(p.moduleWidth, scale, dpmm);
+      const bwipSc = get1DBwipScale(p.moduleWidth, scale, dpmm);
+      // numRows recovery uses bwipSc (matches the scale bwip was
+      // called with), not BWIP_SCALE — otherwise the row count is
+      // wrong whenever rendering at a non-default scale/dpmm.
+      const numRows = Math.max(1, Math.round(ch / (rowheightUnits * bwipSc)));
+      const w = (cw / bwipSc) * modulePx;
+      // Bbox uses the clamped row height so the preview matches the
+      // rendered bars when raw h is outside bwip's range.
+      const h = numRows * dotsToPx(rowheightUnits * p.moduleWidth, scale, dpmm);
       return { w, h };
     }
     case "code39":

@@ -26,6 +26,7 @@ const he = {
     ean8: 'EAN-8',
     upce: 'UPC-E',
     upcEanExtension: 'הרחבת UPC/EAN',
+    code49: 'Code 49',
     interleaved2of5: 'Interleaved 2 מ-5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -340,6 +341,14 @@ const he = {
       printInterpretation: 'קריא',
       moduleWidth: 'רוחב מודול',
       placeholder: '2 או 5 ספרות',
+    },
+    code49: {
+      content: 'תוכן',
+      height: 'גובה (נקודות)',
+      moduleWidth: 'רוחב מודול',
+      printInterpretation: 'קריא',
+      mode: 'מצב',
+      modeAuto: 'אוטומטי',
     },
     interleaved2of5: {
       content: 'תוכן',

@@ -26,6 +26,7 @@ const zhHant = {
     ean8: 'EAN-8',
     upce: 'UPC-E',
     upcEanExtension: 'UPC/EAN 擴充',
+    code49: '49 碼',
     interleaved2of5: '交叉 2/5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -340,6 +341,14 @@ const zhHant = {
       printInterpretation: '可讀',
       moduleWidth: '模組寬度',
       placeholder: '2 位或 5 位數字',
+    },
+    code49: {
+      content: '內容',
+      height: '高度 (點)',
+      moduleWidth: '模組寬度',
+      printInterpretation: '可讀',
+      mode: '模式',
+      modeAuto: '自動',
     },
     interleaved2of5: {
       content: '內容',

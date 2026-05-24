@@ -26,6 +26,7 @@ const ar = {
     ean8: 'EAN-8',
     upce: 'UPC-E',
     upcEanExtension: 'امتداد UPC/EAN',
+    code49: 'Code 49',
     interleaved2of5: 'Interleaved 2 من 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -340,6 +341,14 @@ const ar = {
       printInterpretation: 'قابل للقراءة',
       moduleWidth: 'عرض الوحدة',
       placeholder: '2 أو 5 أرقام',
+    },
+    code49: {
+      content: 'المحتوى',
+      height: 'الارتفاع (نقاط)',
+      moduleWidth: 'عرض الوحدة',
+      printInterpretation: 'قابل للقراءة',
+      mode: 'الوضع',
+      modeAuto: 'تلقائي',
     },
     interleaved2of5: {
       content: 'المحتوى',

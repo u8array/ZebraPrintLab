@@ -26,6 +26,7 @@ const ko = {
     ean8: 'EAN-8',
     upce: 'UPC-E',
     upcEanExtension: 'UPC/EAN 확장',
+    code49: 'Code 49',
     interleaved2of5: '인터리브드 2/5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -340,6 +341,14 @@ const ko = {
       printInterpretation: '판독 가능',
       moduleWidth: '모듈 너비',
       placeholder: '2자리 또는 5자리',
+    },
+    code49: {
+      content: '내용',
+      height: '높이 (도트)',
+      moduleWidth: '모듈 너비',
+      printInterpretation: '판독 가능',
+      mode: '모드',
+      modeAuto: '자동',
     },
     interleaved2of5: {
       content: '내용',

@@ -26,6 +26,7 @@ const nl = {
     ean8: 'EAN-8',
     upce: 'UPC-E',
     upcEanExtension: 'UPC/EAN-uitbreiding',
+    code49: 'Code 49',
     interleaved2of5: 'Interleaved 2 van 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -340,6 +341,14 @@ const nl = {
       printInterpretation: 'Leesbaar',
       moduleWidth: 'Modulebreedte',
       placeholder: '2 of 5 cijfers',
+    },
+    code49: {
+      content: 'Inhoud',
+      height: 'Hoogte (punten)',
+      moduleWidth: 'Modulebreedte',
+      printInterpretation: 'Leesbaar',
+      mode: 'Modus',
+      modeAuto: 'auto',
     },
     interleaved2of5: {
       content: 'Inhoud',
