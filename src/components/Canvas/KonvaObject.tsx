@@ -277,8 +277,14 @@ function KonvaObjectInner({
       // Use the measured ink width (already in dot space, mirrored to
       // CSS px via dotsToPx) so the inverted background bbox tracks the
       // actual rendered text rather than a length-based guess.
+      // Match the printer's ^GB knockout-background exactly: width =
+      // measured ink width, height = font height in CSS px. Earlier
+      // versions padded the height to 1.3× for visual breathing room
+      // but that hid what the printer actually emits — the canvas now
+      // mirrors the same `^GB inkW, fontHeight` shape the generator
+      // produces, so the preview matches Labelary and the real device.
       const approxW = dotsToPx(textMetrics.inkWidthDots, scale, dpmm);
-      const approxH = fontSizePx * 1.3;
+      const approxH = fontSizePx;
       return (
         <Group
           id={obj.id}
@@ -309,7 +315,7 @@ function KonvaObjectInner({
             fontStyle="bold"
             scaleX={fontScaleX}
             fill="#ffffff"
-            y={approxH * 0.1}
+            y={0}
           />
         </Group>
       );

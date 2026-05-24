@@ -136,6 +136,19 @@ describe('parseZPL — ^FR field reverse', () => {
     const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^FDNormal^FS^XZ', 8);
     expect(props(objects[0]).reverse).toBeFalsy();
   });
+
+  it('keeps an unrelated filled box + ^FR text at a different anchor as two objects', () => {
+    // Anchor mismatch ⇒ no collapse. Hand-written ZPL where a black box
+    // and an ^FR text happen to coexist must round-trip unchanged.
+    const { objects } = parseZPL(
+      '^XA^FO10,10^GB60,30,60,B,0^FS^FO200,200^A0N,30,0^FR^FDHi^FS^XZ',
+      8,
+    );
+    expect(objects).toHaveLength(2);
+    expect(objects[0]?.type).toBe('box');
+    expect(objects[1]?.type).toBe('text');
+    expect(props(objects[1]).reverse).toBe(true);
+  });
 });
 
 // ── shapes ────────────────────────────────────────────────────────────────────

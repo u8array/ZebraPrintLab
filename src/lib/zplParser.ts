@@ -589,6 +589,37 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   // ^FR field reverse (single-field reverse, reset on ^FS / new ^FO / ^FT)
   let frActive = false;
 
+  // Pending knockout-background ^GB. Our generator emits reverse text as
+  // a filled black ^GB followed by an ^FR text at the same anchor —
+  // standard ZPL pattern for white-on-black. On import we stash a
+  // candidate ^GB here and, if the next text field comes with ^FR at
+  // the same anchor and matching bbox, collapse the pair into a single
+  // text object with `reverse: true`. If the stash never matches it
+  // gets committed as a regular filled box, so non-pair ^GB+^FR
+  // sequences in hand-written ZPL round-trip unchanged.
+  /** Stashed ^GB params. Stores the full GB shape so the commit path
+   *  can replay through the standard line-vs-box detection (a 200×30
+   *  filled-black GB at t=30 could be either a fat horizontal line or
+   *  our reverse-text background — only the following ^FR text
+   *  disambiguates). */
+  let pendingReverseBg: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    t: number;
+    color: "B" | "W";
+    rounding: number;
+    reverseFlag: boolean | undefined;
+    comment?: string;
+  } | null = null;
+  /** Bbox tolerance for collapsing a stashed ^GB with a following ^FR
+   *  text. Emit-time inkWidth and parse-time inkWidth can drift by a
+   *  dot or two depending on whether the PrintLab font is registered
+   *  on both sides; a small tolerance lets the legitimate pair
+   *  collapse without over-collapsing unrelated coincidental layouts. */
+  const REVERSE_BBOX_TOLERANCE_DOTS = 2;
+
   // ^LH label home (origin offset applied to all field positions)
   let lhX = 0;
   let lhY = 0;
@@ -767,6 +798,10 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // shared helper so parser and generator stay symmetric.
     const decoded = fbWidth > 0 ? decodeFbContent(content) : content;
 
+    // Non-text fields can never be the second half of a reverse-text
+    // pair, so flush the stashed bg as a regular box before pushing.
+    // Text handles its own collapse-or-commit inline below.
+    if (fieldType !== "text") commitPendingReverseBg();
     switch (fieldType) {
       case "text": {
         // ZPL anchors ^FO at cap-top and ^FT at baseline; our internal
@@ -787,8 +822,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           posType,
           inkWidthDots,
         );
-        // If ^SF was pending, create a serial object instead of text
+        // If ^SF was pending, create a serial object instead of text.
+        // Serial fields can't be the second half of a reverse-text pair
+        // (no reverse-serial use case in our model), so flush any
+        // pending bg as a regular box before pushing the serial.
         if (snPending) {
+          commitPendingReverseBg();
           objects.push(
             makeObj(
               "serial",
@@ -812,12 +851,46 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           resetFB();
           break;
         }
+        // Reverse-text collapse: if the previous field was a filled-black
+        // ^GB at this same anchor with a matching bbox, and this text is
+        // ^FR-flagged, the pair is our white-on-black emit. Drop the
+        // stashed bg and surface a single reverse-text object instead of
+        // a box + reverse-text. Dim match uses a small dot-tolerance so
+        // rounding in the emitter and parser can't unpair a legitimate
+        // pair. Anything that doesn't match flushes the stash as a
+        // regular box so hand-written ZPL with unrelated ^GB+^FR
+        // sequences round-trips unchanged. ^FB block-text isn't part of
+        // the reverse-text emit so collapsing is skipped there too.
+        const vertical = textRot === "R" || textRot === "B";
+        const expectedW = vertical ? textH : Math.max(1, Math.round(inkWidthDots));
+        const expectedH = vertical ? Math.max(1, Math.round(inkWidthDots)) : textH;
+        const collapse =
+          pendingReverseBg !== null &&
+          frActive &&
+          fbWidth === 0 &&
+          pendingReverseBg.x === x &&
+          pendingReverseBg.y === y &&
+          Math.abs(pendingReverseBg.w - expectedW) <= REVERSE_BBOX_TOLERANCE_DOTS &&
+          Math.abs(pendingReverseBg.h - expectedH) <= REVERSE_BBOX_TOLERANCE_DOTS;
+        // Preserve any comment that was attached to the stashed ^GB
+        // (e.g. a `^FX banner` before the bg). Merged with the text's
+        // own comment so no import metadata is silently dropped.
+        let mergedComment = comment;
+        if (collapse) {
+          const bgComment = pendingReverseBg?.comment;
+          if (bgComment) {
+            mergedComment = mergedComment ? `${bgComment}\n${mergedComment}` : bgComment;
+          }
+          pendingReverseBg = null;
+        } else {
+          commitPendingReverseBg();
+        }
         const textProps: TextProps = {
           content: decoded,
           fontHeight: textH,
           fontWidth: textW,
           rotation: textRot,
-          reverse: getReverseFlag(),
+          reverse: collapse ? true : getReverseFlag(),
           printerFontName: pendingPrinterFontName,
           fontId: pendingFontId,
         };
@@ -830,7 +903,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           textProps.blockJustify = fbJustify;
         }
         objects.push(
-          makeObj("text", modelPos.x, modelPos.y, textProps, posType, comment),
+          makeObj("text", modelPos.x, modelPos.y, textProps, posType, mergedComment),
         );
         resetFB();
         break;
@@ -1143,6 +1216,76 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
   const getReverseFlag = () => lrActive || frActive || undefined;
 
+  /** Push a ^GB-derived object using the standard line-vs-box detection.
+   *  Shared between the GB handler's direct-push path and the
+   *  reverse-bg commit path so a stashed GB that didn't pair with a
+   *  reverse-text gets the same line/box classification it would have
+   *  gotten on a direct parse. */
+  const pushGBObject = (
+    gx: number,
+    gy: number,
+    w: number,
+    h: number,
+    t: number,
+    color: "B" | "W",
+    rounding: number,
+    reverseFlag: boolean | undefined,
+    comment: string | undefined,
+  ) => {
+    if (h === t && w > t) {
+      objects.push(
+        makeObj(
+          "line",
+          gx,
+          gy,
+          { angle: 0, length: w, thickness: t, color, reverse: reverseFlag } satisfies LineProps,
+          undefined,
+          comment,
+        ),
+      );
+    } else if (w === t && h > t) {
+      objects.push(
+        makeObj(
+          "line",
+          gx,
+          gy,
+          { angle: 90, length: h, thickness: t, color, reverse: reverseFlag } satisfies LineProps,
+          undefined,
+          comment,
+        ),
+      );
+    } else {
+      const filled = t >= Math.min(w, h);
+      objects.push(
+        makeObj(
+          "box",
+          gx,
+          gy,
+          {
+            width: w,
+            height: h,
+            thickness: t,
+            filled,
+            color,
+            rounding,
+            reverse: reverseFlag,
+          } satisfies BoxProps,
+          undefined,
+          comment,
+        ),
+      );
+    }
+  };
+
+  /** Push the stashed reverse-bg as the GB shape it actually was. Called
+   *  when the stash didn't pair with a reverse-text on the next field. */
+  const commitPendingReverseBg = () => {
+    if (!pendingReverseBg) return;
+    const bg = pendingReverseBg;
+    pendingReverseBg = null;
+    pushGBObject(bg.x, bg.y, bg.w, bg.h, bg.t, bg.color, bg.rounding, bg.reverseFlag, bg.comment);
+  };
+
   const handlers: Record<string, Handler> = {
     // ── Label dimensions ────────────────────────────────────────────────────
     PW(_, rest) {
@@ -1426,68 +1569,26 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       const rounding = int(p[4], 0);
       const gbComment = takeComment();
 
-      // Distinguish line from box: a line has one dimension equal to thickness
-      if (h === t && w > t) {
-        objects.push(
-          makeObj(
-            "line",
-            x,
-            y,
-            {
-              angle: 0,
-              length: w,
-              thickness: t,
-              color,
-              reverse: getReverseFlag(),
-            } satisfies LineProps,
-            undefined,
-            gbComment,
-          ),
-        );
-      } else if (w === t && h > t) {
-        objects.push(
-          makeObj(
-            "line",
-            x,
-            y,
-            {
-              angle: 90,
-              length: h,
-              thickness: t,
-              color,
-              reverse: getReverseFlag(),
-            } satisfies LineProps,
-            undefined,
-            gbComment,
-          ),
-        );
-      } else {
-        const filled = t >= Math.min(w, h);
-        objects.push(
-          makeObj(
-            "box",
-            x,
-            y,
-            {
-              width: w,
-              height: h,
-              // Preserve the original thickness so a ZPL round-trip is
-              // lossless and the renderer can apply Zebra's dimension
-              // promotion (`max(w,t) × max(h,t)`) for fields where
-              // thickness exceeds the smaller axis.
-              thickness: t,
-              filled,
-              color,
-              rounding,
-              reverse: getReverseFlag(),
-            } satisfies BoxProps,
-            undefined,
-            gbComment,
-          ),
-        );
+      // Filled-black non-rounded ^GBs (no active ^LR/^FR) are candidate
+      // reverse-text backgrounds — stash them and let flushField
+      // collapse the pair when the next field is an ^FR text at the
+      // same anchor with matching bbox. Stash is opaque: it stores the
+      // raw GB params so the commit path replays through the same
+      // line-vs-box detection a direct parse would use (a fat
+      // horizontal line and a reverse-bg banner share the same GB
+      // shape; only the following ^FR text disambiguates).
+      const filled = t >= Math.min(w, h);
+      const reverseFlag = getReverseFlag();
+      if (filled && color === "B" && rounding === 0 && !reverseFlag) {
+        commitPendingReverseBg();
+        pendingReverseBg = { x, y, w, h, t, color, rounding, reverseFlag, comment: gbComment };
+        return;
       }
+      commitPendingReverseBg();
+      pushGBObject(x, y, w, h, t, color, rounding, reverseFlag, gbComment);
     },
     GD(p) {
+      commitPendingReverseBg();
       // ^GD{w},{h},{t},{color},{orientation}
       // orientation: L = top-left→bottom-right, R = top-right→bottom-left
       const gdW = int(p[0], 1);
@@ -1523,6 +1624,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       );
     },
     GF(_, rest) {
+      commitPendingReverseBg();
       // ^GF{A|B|C},{totalBytes},{totalBytes},{bytesPerRow},{payload}
       //
       // Payload variants the parser understands:
@@ -1595,6 +1697,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       );
     },
     GE(p) {
+      commitPendingReverseBg();
       // ^GE{w},{h},{t},{color}
       const w = int(p[0], 100);
       const h = int(p[1], 100);
@@ -1623,6 +1726,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       );
     },
     GC(p) {
+      commitPendingReverseBg();
       // ^GC{diameter},{thickness},{color}  → circle = ellipse with equal w/h
       const d = int(p[0], 100);
       const t = int(p[1], 3);
@@ -1650,6 +1754,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
     // ── Recall stored graphic ──────────────────────────────────────────────
     XG(_, rest) {
+      commitPendingReverseBg();
       // ^XGd:f.x,mx,my — references a graphic uploaded earlier via ~DY.
       // Two valid imports:
       //  - With preceding ~DY in the stream: full image (bytes + storedAs
@@ -1965,11 +2070,19 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // ^XA…^XZ block into the next one — without this `^FC@^...^XZ^XA`
     // would parse later default-char tokens differently.
     XA: (p, rest) => {
+      // Defensive: flush any stash that survived a malformed prior
+      // label (missing ^XZ) so it doesn't bleed into the new block.
+      commitPendingReverseBg();
       embedChar = "#";
       clockChars = { ...DEFAULT_CLOCK_CHARS };
       resetComment(p, rest);
     },
-    XZ: resetComment,
+    XZ(_, rest) {
+      // Flush any orphan reverse-bg before the label boundary so it
+      // doesn't leak across labels in a multi-label stream.
+      commitPendingReverseBg();
+      resetComment(_, rest);
+    },
     // ^FX: comment field — accumulate across consecutive ^FX lines so the
     // assembled text reaches the next field object as one multi-line comment.
     FX: appendComment,

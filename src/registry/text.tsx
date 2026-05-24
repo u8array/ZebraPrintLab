@@ -2,7 +2,9 @@ import { useRef, useState, useCallback } from "react";
 import type { ObjectTypeDefinition } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { buttonCls, inputCls, labelCls } from "../components/Properties/styles";
-import { textFieldPos, fdFieldFor, resolveFontCmd, wrapReverse } from "./zplHelpers";
+import { textFieldPos, fdFieldFor, resolveFontCmd } from "./zplHelpers";
+import { getTextRenderMetrics } from "../components/Canvas/textRenderMetrics";
+import type { LabelObject } from "../types/Group";
 import { effectiveScale } from "./transformHelpers";
 import { getFont, loadFontFile } from "../lib/fontCache";
 import { getAvailableFontIds, stripDrivePrefix } from "../lib/customFonts";
@@ -79,10 +81,44 @@ export const text: ObjectTypeDefinition<TextProps> = {
     // printer ignores embedded newlines anyway, so encoding only
     // happens when blockWidth is set.
     const content = p.blockWidth ? encodeFbContent(p.content) : p.content;
-    const body = [textFieldPos(obj), fontCmd, fbCmd, fdFieldFor(obj, content, ctx)]
-      .filter(Boolean)
-      .join("");
-    return wrapReverse(p.reverse, body);
+    const anchor = textFieldPos(obj);
+    const fd = fdFieldFor(obj, content, ctx);
+    if (!p.reverse) {
+      return [anchor, fontCmd, fbCmd, fd].filter(Boolean).join("");
+    }
+    // Reverse text = white-on-black knockout. Standard ZPL pattern:
+    // a filled black ^GB at the field anchor, then the text with ^FR
+    // (Field Reverse) which inverts the ink within the field bounds,
+    // knocking the glyphs out of the black. ^GB and the text share
+    // the same ^FO so the box top aligns with the text cap-top.
+    // Box dimensions match the rendered ink: width from measured
+    // metrics, height from fontHeight. For R/B rotations the visible
+    // bbox is fontHeight wide by inkWidth tall, so the dimensions
+    // swap.
+    const metrics = getTextRenderMetrics(obj as unknown as LabelObject);
+    const fallback = p.fontWidth || p.fontHeight;
+    const inkW = Math.max(1, Math.round(metrics?.inkWidthDots ?? fallback));
+    const vertical = p.rotation === "R" || p.rotation === "B";
+    // ^FB block-text wraps to blockWidth across up to blockLines rows,
+    // so the bg has to cover the block area instead of the single-line
+    // ink bbox. blockLineSpacing is added per row above the first to
+    // mirror Zebra's row advance. The parser skips collapse for
+    // fbWidth>0 so this branch produces a box + reverse-text pair on
+    // round-trip — accepted trade-off until block-text collapse lands.
+    const block = p.blockWidth ?? 0;
+    const lines = p.blockLines ?? 1;
+    const blockH = p.fontHeight * lines + (p.blockLineSpacing ?? 0) * Math.max(0, lines - 1);
+    const baseW = block > 0 ? block : inkW;
+    const baseH = block > 0 ? blockH : p.fontHeight;
+    const gbW = vertical ? baseH : baseW;
+    const gbH = vertical ? baseW : baseH;
+    // Thickness = min(w,h) keeps the box filled (Zebra requires t >=
+    // min(w,h) for a solid fill) without triggering the dimension
+    // promotion. ZPL promotes the box to `max(w,t) × max(h,t)`; using
+    // max here would inflate a 200×30 banner into a 200×200 square.
+    const gbThickness = Math.min(gbW, gbH);
+    const gb = `${anchor}^GB${gbW},${gbH},${gbThickness},B,0^FS`;
+    return [gb, anchor, fontCmd, fbCmd, "^FR", fd].filter(Boolean).join("");
   },
 
   PropertiesPanel: ({ obj, onChange }) => {

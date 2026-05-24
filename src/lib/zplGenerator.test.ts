@@ -55,6 +55,27 @@ describe('generateZPL — structure', () => {
     expect(zpl).toContain('^LS5');
   });
 
+  it('reverse text round-trips: emit ^GB+^FR, parse collapses back to one reverse text', () => {
+    // Generator emits a filled black ^GB knockout-background followed by
+    // an ^FR text at the same anchor. The parser detects that pair and
+    // collapses it back into a single text object with reverse:true —
+    // so the editor never sees two objects after a save/load cycle.
+    const objs = [
+      { id: 'r', type: 'text', x: 50, y: 50, rotation: 0,
+        props: { content: 'Hi', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: true } },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any;
+    const zpl = generateZPL(BASE_LABEL, objs);
+    expect(zpl).toContain('^GB');
+    expect(zpl).toContain('^FR^FD');
+    expect(zpl).not.toContain('^LRY');
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(props(objects[0]).reverse).toBe(true);
+    expect(props(objects[0]).content).toBe('Hi');
+  });
+
   it('omits objects with includeInExport=false', () => {
     const objs = [
       { id: 'a', type: 'text', x: 10, y: 10, rotation: 0, props: { content: 'KEEP', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: false } },
