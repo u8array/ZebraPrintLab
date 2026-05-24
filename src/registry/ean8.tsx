@@ -1,4 +1,5 @@
 import { createBarcode1D } from './barcode1d';
+import { formatEan8Hri } from './hriFormatters';
 export type { Barcode1DProps as Ean8Props } from './barcode1d';
 
 export const ean8 = createBarcode1D({
@@ -13,4 +14,5 @@ export const ean8 = createBarcode1D({
     const interp = p.printInterpretation ? 'Y' : 'N';
     return `^B8${p.rotation},${p.height},${interp},N`;
   },
+  hri: { formatHri: formatEan8Hri },
 });

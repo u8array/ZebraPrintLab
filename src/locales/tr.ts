@@ -25,6 +25,7 @@ const tr = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'UPC/EAN eki',
     interleaved2of5: 'Interleaved 2/5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const tr = {
       printInterpretation: 'Okunabilir',
       moduleWidth: 'Modül genişliği',
       placeholder: '6 rakam',
+    },
+    upcEanExtension: {
+      content: 'İçerik (2 veya 5 hane)',
+      height: 'Yükseklik (nokta)',
+      printInterpretation: 'Okunabilir',
+      moduleWidth: 'Modül genişliği',
+      placeholder: '2 veya 5 hane',
     },
     interleaved2of5: {
       content: 'İçerik',

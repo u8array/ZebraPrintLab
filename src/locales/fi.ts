@@ -25,6 +25,7 @@ const fi = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'UPC/EAN-lisäys',
     interleaved2of5: 'Interleaved 2/5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const fi = {
       printInterpretation: 'Luettava',
       moduleWidth: 'Moduulin leveys',
       placeholder: '6 numeroa',
+    },
+    upcEanExtension: {
+      content: 'Sisältö (2 tai 5 numeroa)',
+      height: 'Korkeus (pisteet)',
+      printInterpretation: 'Luettava',
+      moduleWidth: 'Moduulin leveys',
+      placeholder: '2 tai 5 numeroa',
     },
     interleaved2of5: {
       content: 'Sisältö',

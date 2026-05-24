@@ -25,6 +25,7 @@ const bg = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'Разширение UPC/EAN',
     interleaved2of5: 'Interleaved 2 от 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const bg = {
       printInterpretation: 'Четимо',
       moduleWidth: 'Ширина на модул',
       placeholder: '6 цифри',
+    },
+    upcEanExtension: {
+      content: 'Съдържание (2 или 5 цифри)',
+      height: 'Височина (точки)',
+      printInterpretation: 'Четим',
+      moduleWidth: 'Ширина на модула',
+      placeholder: '2 или 5 цифри',
     },
     interleaved2of5: {
       content: 'Съдържание',

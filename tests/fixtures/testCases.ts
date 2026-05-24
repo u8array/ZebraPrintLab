@@ -293,4 +293,25 @@ export const testCases: TestCase[] = [
     expected_bounds: { x: 100, y: 100, width: 113, height: 190 },
     image_ref: "barcode_ean13_rot_B.png",
   },
+  // UPC/EAN supplements (^BS): the human-readable digits print ABOVE
+  // the bars per Zebra firmware (and Labelary). bbox top sits 18 dots
+  // above the FO anchor; total height = bar height + 18.
+  // ^BS visual regression uses printInterpretation=N for a bars-only
+  // comparison — bwip-js and Zebra ship slightly different glyph
+  // shapes for the supplement digits, which would exceed the strict
+  // ALLOWED_TOLERANCE. The text-zone reservation is still asserted
+  // structurally by labelarySync.test.ts against this fixture's
+  // expected_bounds (which include the 18-dot zone above the bars).
+  {
+    id: "barcode_upcean_supp5_standard",
+    zpl_input: "^XA^BY2^FO50,50^BSN,80,N^FD51999^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 94, height: 80 },
+    image_ref: "barcode_upcean_supp5_standard.png",
+  },
+  {
+    id: "barcode_upcean_supp2_standard",
+    zpl_input: "^XA^BY2^FO50,50^BSN,80,N^FD42^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 40, height: 80 },
+    image_ref: "barcode_upcean_supp2_standard.png",
+  },
 ];

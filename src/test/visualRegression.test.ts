@@ -12,7 +12,7 @@ import {
   buildBwipOptions,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
-import { QR_FO_Y_OFFSET_DOTS } from "../components/Canvas/bwipConstants";
+import { QR_FO_Y_OFFSET_DOTS, UPC_SUPP_TEXT_ZONE_DOTS } from "../components/Canvas/bwipConstants";
 
 const FIXTURES_DIR = path.resolve(
   process.cwd(),
@@ -120,8 +120,15 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
       );
 
       // Zebra firmware renders ^FO-positioned QR codes with a +10 dot Y offset.
-      // Match production BarcodeObject.tsx behaviour.
-      const drawY = obj.type === "qrcode" ? obj.y + QR_FO_Y_OFFSET_DOTS : obj.y;
+      // Match production BarcodeObject.tsx behaviour. UPC/EAN supplements
+      // render the human-readable digits ABOVE the bars, so the bitmap's
+      // top edge sits text-zone above the FO anchor.
+      const drawY =
+        obj.type === "qrcode"
+          ? obj.y + QR_FO_Y_OFFSET_DOTS
+          : obj.type === "upcEanExtension" && obj.props.printInterpretation
+            ? obj.y - UPC_SUPP_TEXT_ZONE_DOTS
+            : obj.y;
       // Bars draw at FO; bbox extends in the text-zone direction without
       // shifting the bar pattern. barLeftPx/barTopPx describe where the
       // bars sit inside the bbox, but the bitmap itself anchors at obj.x/y.

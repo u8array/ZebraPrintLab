@@ -25,6 +25,7 @@ const zhHans = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'UPC/EAN 扩展',
     interleaved2of5: '交叉 2/5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const zhHans = {
       printInterpretation: '可读文字',
       moduleWidth: '模块宽度',
       placeholder: '6 位数字',
+    },
+    upcEanExtension: {
+      content: '内容 (2 位或 5 位数字)',
+      height: '高度 (点)',
+      printInterpretation: '可读',
+      moduleWidth: '模块宽度',
+      placeholder: '2 位或 5 位数字',
     },
     interleaved2of5: {
       content: '内容',

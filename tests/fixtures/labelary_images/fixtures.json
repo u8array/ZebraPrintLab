@@ -483,6 +483,28 @@
         "height": 68
       },
       "image_ref": "barcode_gs1databar_expanded.png"
+    },
+    {
+      "id": "barcode_upcean_supp5_standard",
+      "zpl_input": "^XA^BY2^FO50,50^BSN,80,N^FD51999^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 94,
+        "height": 80
+      },
+      "image_ref": "barcode_upcean_supp5_standard.png"
+    },
+    {
+      "id": "barcode_upcean_supp2_standard",
+      "zpl_input": "^XA^BY2^FO50,50^BSN,80,N^FD42^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 40,
+        "height": 80
+      },
+      "image_ref": "barcode_upcean_supp2_standard.png"
     }
   ]
 }

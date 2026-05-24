@@ -10,6 +10,13 @@ export interface ContentSpec {
   /** Character-class body (no surrounding `[]`), e.g. `0-9` or `0-9A-Z\\-. $/+%`. */
   charset: string;
   maxLength?: number;
+  /** Set of exact lengths the symbology accepts (e.g. [2, 5] for
+   *  UPC/EAN supplements). Used for soft validation in the
+   *  PropertiesPanel — typed input is not blocked (the user has to
+   *  pass through 1/3/4 chars to reach 5), but lengths outside the
+   *  set surface an inline warning so the user notices before the
+   *  printer rejects the field. */
+  validLengths?: readonly number[];
 }
 
 const rejectCache = new WeakMap<ContentSpec, RegExp>();
@@ -27,4 +34,13 @@ export function filterContent(raw: string, spec?: ContentSpec): string {
   if (!spec) return raw;
   const filtered = raw.replace(rejectPattern(spec), '');
   return spec.maxLength ? filtered.slice(0, spec.maxLength) : filtered;
+}
+
+/** True when `content`'s length matches one of `spec.validLengths`,
+ *  or when `validLengths` is unset (no length constraint). Empty
+ *  string is treated as "not yet committed" and returns true so the
+ *  Properties panel doesn't warn on a fresh field. */
+export function hasValidLength(content: string, spec?: ContentSpec): boolean {
+  if (!spec?.validLengths || content === '') return true;
+  return spec.validLengths.includes(content.length);
 }

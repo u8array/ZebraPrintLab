@@ -845,6 +845,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       case "plessey":
       case "planet":
       case "postal":
+      case "upcEanExtension":
         objects.push(
           makeObj(
             fieldType,
@@ -1150,6 +1151,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     BP: mkBarcode("plessey", 2, 3, "Y", 1), // ^BPN,c,h,i,N
     B5: mkBarcode("planet", 1, 2), // ^B5N,h,i,N
     BZ: mkBarcode("postal", 1, 2), // ^BZN,h,i,N
+    BS: mkBarcode("upcEanExtension", 1, 2), // ^BSo,h,f (UPC/EAN 2- or 5-digit supplement)
 
     // MSI: check logic is "any letter except N" (not simple "Y") — keep inline
     // ^BMN,{checkType},{height},{interp},N  (checkType: A/B/C/D=enabled, N=none)

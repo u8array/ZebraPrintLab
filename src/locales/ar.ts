@@ -25,6 +25,7 @@ const ar = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'امتداد UPC/EAN',
     interleaved2of5: 'Interleaved 2 من 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const ar = {
       printInterpretation: 'مقروء',
       moduleWidth: 'عرض الوحدة',
       placeholder: '6 أرقام',
+    },
+    upcEanExtension: {
+      content: 'المحتوى (2 أو 5 أرقام)',
+      height: 'الارتفاع (نقاط)',
+      printInterpretation: 'قابل للقراءة',
+      moduleWidth: 'عرض الوحدة',
+      placeholder: '2 أو 5 أرقام',
     },
     interleaved2of5: {
       content: 'المحتوى',

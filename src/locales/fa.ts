@@ -25,6 +25,7 @@ const fa = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'افزونه UPC/EAN',
     interleaved2of5: 'Interleaved 2 از 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const fa = {
       printInterpretation: 'قابل خواندن',
       moduleWidth: 'عرض ماژول',
       placeholder: '6 رقم',
+    },
+    upcEanExtension: {
+      content: 'محتوا (۲ یا ۵ رقم)',
+      height: 'ارتفاع (نقطه)',
+      printInterpretation: 'خوانا',
+      moduleWidth: 'عرض ماژول',
+      placeholder: '۲ یا ۵ رقم',
     },
     interleaved2of5: {
       content: 'محتوا',

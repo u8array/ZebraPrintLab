@@ -59,6 +59,8 @@ import { micropdf417 } from './micropdf417.tsx';
 import type { MicroPdf417Props } from './micropdf417.tsx';
 import { codablock } from './codablock.tsx';
 import type { CodablockProps } from './codablock.tsx';
+import { upcEanExtension } from './upcEanExtension.tsx';
+import type { UpcEanExtensionProps } from './upcEanExtension.tsx';
 
 /** Single-branch shape for one registry type: the common base plus a
  *  literal `type` discriminator and that type's props. Used to compose
@@ -99,12 +101,13 @@ export type LeafObject =
   | Leaf<'postal', PostalProps>
   | Leaf<'aztec', AztecProps>
   | Leaf<'micropdf417', MicroPdf417Props>
-  | Leaf<'codablock', CodablockProps>;
+  | Leaf<'codablock', CodablockProps>
+  | Leaf<'upcEanExtension', UpcEanExtensionProps>;
 
 export const BARCODE_1D_TYPES = new Set([
   'code128', 'code39', 'ean13', 'ean8', 'upca', 'upce', 'interleaved2of5', 'code93',
   'code11', 'industrial2of5', 'standard2of5', 'codabar', 'logmars', 'msi', 'plessey',
-  'gs1databar', 'planet', 'postal',
+  'gs1databar', 'planet', 'postal', 'upcEanExtension',
 ]);
 
 export const STACKED_2D_TYPES = new Set(['pdf417', 'micropdf417', 'codablock']);
@@ -126,6 +129,7 @@ export const ObjectRegistry: Record<string, ObjectTypeDefinition<any>> = {
   gs1databar,
   ean8,
   upce,
+  upcEanExtension,
   logmars,
   code93,
   codabar,

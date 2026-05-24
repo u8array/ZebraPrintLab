@@ -1,4 +1,5 @@
 import { createBarcode1D } from './barcode1d';
+import { formatUpceHri } from './hriFormatters';
 export type { Barcode1DProps as UpcEProps } from './barcode1d';
 
 export const upce = createBarcode1D({
@@ -13,4 +14,5 @@ export const upce = createBarcode1D({
     const interp = p.printInterpretation ? 'Y' : 'N';
     return `^B9${p.rotation},${p.height},${interp},N`;
   },
+  hri: { formatHri: formatUpceHri },
 });

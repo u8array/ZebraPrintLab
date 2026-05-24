@@ -25,6 +25,7 @@ const ro = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'Extensie UPC/EAN',
     interleaved2of5: 'Interleaved 2 din 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const ro = {
       printInterpretation: 'Lizibil',
       moduleWidth: 'Lățime modul',
       placeholder: '6 cifre',
+    },
+    upcEanExtension: {
+      content: 'Conținut (2 sau 5 cifre)',
+      height: 'Înălțime (puncte)',
+      printInterpretation: 'Lizibil',
+      moduleWidth: 'Lățime modul',
+      placeholder: '2 sau 5 cifre',
     },
     interleaved2of5: {
       content: 'Conținut',

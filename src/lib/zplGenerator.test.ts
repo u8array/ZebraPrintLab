@@ -673,6 +673,34 @@ describe('generateZPL — parse/generate roundtrip', () => {
     expect(props(barcode).height).toBe(150);
   });
 
+  it('round-trips a ^BS UPC/EAN extension (5-digit)', () => {
+    const original = parseZPL('^XA^FO10,10^BSN,80,Y^FD54321^FS^XZ', 8);
+    const regenerated = generateZPL(BASE_LABEL, original.objects);
+    const reparsed = parseZPL(regenerated, 8);
+    const ext = defined(reparsed.objects.find((o) => o.type === 'upcEanExtension'));
+    expect(props(ext).content).toBe('54321');
+    expect(props(ext).height).toBe(80);
+    expect(props(ext).printInterpretation).toBe(true);
+  });
+
+  it('round-trips a ^BS UPC/EAN extension (2-digit)', () => {
+    const original = parseZPL('^XA^FO10,10^BSN,50,N^FD42^FS^XZ', 8);
+    const regenerated = generateZPL(BASE_LABEL, original.objects);
+    const reparsed = parseZPL(regenerated, 8);
+    const ext = defined(reparsed.objects.find((o) => o.type === 'upcEanExtension'));
+    expect(props(ext).content).toBe('42');
+    expect(props(ext).printInterpretation).toBe(false);
+  });
+
+  it('round-trips ^BS rotation and moduleWidth (via ^BY)', () => {
+    const original = parseZPL('^XA^BY3^FO10,10^BSR,80,Y^FD12345^FS^XZ', 8);
+    const regenerated = generateZPL(BASE_LABEL, original.objects);
+    const reparsed = parseZPL(regenerated, 8);
+    const ext = defined(reparsed.objects.find((o) => o.type === 'upcEanExtension'));
+    expect(props(ext).rotation).toBe('R');
+    expect(props(ext).moduleWidth).toBe(3);
+  });
+
   it('preserves printer params through generate -> parse', () => {
     const label: LabelConfig = {
       ...BASE_LABEL,

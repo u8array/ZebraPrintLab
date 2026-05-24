@@ -25,6 +25,7 @@ const et = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'UPC/EAN laiendus',
     interleaved2of5: 'Interleaved 2/5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const et = {
       printInterpretation: 'Loetav',
       moduleWidth: 'Mooduli laius',
       placeholder: '6 numbrit',
+    },
+    upcEanExtension: {
+      content: 'Sisu (2 või 5 numbrit)',
+      height: 'Kõrgus (punktid)',
+      printInterpretation: 'Loetav',
+      moduleWidth: 'Mooduli laius',
+      placeholder: '2 või 5 numbrit',
     },
     interleaved2of5: {
       content: 'Sisu',

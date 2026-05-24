@@ -25,6 +25,7 @@ const lt = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'UPC/EAN papildymas',
     interleaved2of5: 'Interleaved 2 iš 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const lt = {
       printInterpretation: 'Skaitomas',
       moduleWidth: 'Modulio plotis',
       placeholder: '6 skaitmenys',
+    },
+    upcEanExtension: {
+      content: 'Turinys (2 arba 5 skaitmenys)',
+      height: 'Aukštis (taškai)',
+      printInterpretation: 'Skaitomas',
+      moduleWidth: 'Modulio plotis',
+      placeholder: '2 arba 5 skaitmenys',
     },
     interleaved2of5: {
       content: 'Turinys',

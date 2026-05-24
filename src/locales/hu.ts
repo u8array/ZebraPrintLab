@@ -25,6 +25,7 @@ const hu = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'UPC/EAN kiegészítés',
     interleaved2of5: 'Interleaved 2/5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const hu = {
       printInterpretation: 'Olvasható',
       moduleWidth: 'Modulszélesség',
       placeholder: '6 számjegy',
+    },
+    upcEanExtension: {
+      content: 'Tartalom (2 vagy 5 számjegy)',
+      height: 'Magasság (pont)',
+      printInterpretation: 'Olvasható',
+      moduleWidth: 'Modulszélesség',
+      placeholder: '2 vagy 5 számjegy',
     },
     interleaved2of5: {
       content: 'Tartalom',

@@ -107,6 +107,30 @@ describe("rotation pipeline", () => {
     expect(buildBwipOptions(baseCode128("B"), 1, 8)?.rotate).toBe("L");
   });
 
+  it("resolves UPC/EAN supplement bcid by content length", () => {
+    const supplement = (content: string): LabelObject =>
+      ({
+        id: 's',
+        type: 'upcEanExtension',
+        x: 0,
+        y: 0,
+        rotation: 0,
+        props: {
+          content,
+          height: 80,
+          moduleWidth: 2,
+          printInterpretation: true,
+          checkDigit: false,
+          rotation: 'N',
+        },
+      }) as LabelObject;
+    // 2-digit content selects the ean2 bcid; everything else (5-digit,
+    // empty fallback) renders as ean5.
+    expect(buildBwipOptions(supplement('42'), 1, 8)?.bcid).toBe('ean2');
+    expect(buildBwipOptions(supplement('51999'), 1, 8)?.bcid).toBe('ean5');
+    expect(buildBwipOptions(supplement(''), 1, 8)?.bcid).toBe('ean5');
+  });
+
   it("swaps display W and H for quarter rotations", () => {
     // Pretend bwip produced an unrotated 200x100 bitmap.
     const fakeCanvas = { width: 200, height: 100 } as HTMLCanvasElement;

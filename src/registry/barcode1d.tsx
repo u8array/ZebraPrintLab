@@ -1,10 +1,10 @@
-import type { ObjectTypeDefinition, ObjectGroup, LabelObjectBase } from '../types/ObjectType';
+import type { ObjectTypeDefinition, ObjectGroup, LabelObjectBase, HriBehavior } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import type { Translations } from '../locales';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { fieldPos, fdFieldFor } from './zplHelpers';
 import { commitBarcodeWidthHeightTransform } from './transformHelpers';
-import { filterContent, type ContentSpec } from './contentSpec';
+import { filterContent, hasValidLength, type ContentSpec } from './contentSpec';
 import { type ZplRotation } from './rotation';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
@@ -43,6 +43,8 @@ interface Barcode1DConfig {
   interpretationLocked?: boolean;
   /** Restrict allowed input characters; see {@link ContentSpec}. */
   contentSpec?: ContentSpec;
+  /** See {@link HriBehavior}. */
+  hri?: HriBehavior;
 }
 
 interface BarcodeLocale {
@@ -71,6 +73,7 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
     defaultSize: { width: 300, height: 120 },
     heightLocked: config.heightLocked,
     interpretationLocked: config.interpretationLocked,
+    hri: config.hri,
 
     // Width-locked symbologies (currently just heightLocked = true ones like
     // GS1 DataBar) keep undefined so the transformer is disabled entirely.
@@ -113,6 +116,9 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
               placeholder={loc.placeholder}
               onChange={(e) => onChange({ content: filterContent(e.target.value, config.contentSpec) })}
             />
+            {!hasValidLength(p.content, config.contentSpec) && loc.placeholder && (
+              <p className="font-mono text-[10px] text-amber-400">{loc.placeholder}</p>
+            )}
           </div>
 
           <NumberInput

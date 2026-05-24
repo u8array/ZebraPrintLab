@@ -12,7 +12,7 @@
  * bwipHelpers.test.ts ensures every BCID-registered type has a case.
  */
 
-import type { LeafObject } from "../../registry";
+import { ObjectRegistry, type LeafObject } from "../../registry";
 import type { LabelObject } from "../../types/Group";
 import type { Gs1DatabarProps } from "../../registry/gs1databar";
 import { objectRotation } from "../../registry/rotation";
@@ -32,6 +32,7 @@ import {
   LOGMARS_TEXT_ZONE_DOTS,
   MICROPDF417_QUIET_ZONE_ROWS,
   PLESSEY_BWIP_TO_ZEBRA_WIDTH_RATIO,
+  UPC_SUPP_TEXT_ZONE_DOTS,
 } from "./bwipConstants";
 
 /**
@@ -93,6 +94,9 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
   aztec: "azteccodecompact",
   micropdf417: "micropdf417",
   codablock: "codablockf",
+  // Placeholder — actual bcid (ean2 vs ean5) is resolved from the
+  // content length in the per-type switch in buildBwipOptions.
+  upcEanExtension: "ean5",
 };
 
 export const BWIP_SCALE = 2;
@@ -207,24 +211,10 @@ function bwipScale1D(
     : BWIP_SCALE;
 }
 
-export function eanCheckDigit(digits: string, w0: number, w1: number): string {
-  let sum = 0;
-  for (let i = 0; i < digits.length; i++)
-    sum += parseInt(digits[i] ?? "0", 10) * (i % 2 === 0 ? w0 : w1);
-  return String((10 - (sum % 10)) % 10);
-}
-
-/** Compute the UPC-E check digit from the 6 compressed data digits. */
-export function upceCheckDigit(digits6: string): string {
-  const [vA, vB, vC, vD, vE, vF] = digits6.padEnd(6, "0").split("");
-  const fi = parseInt(vF ?? "0", 10);
-  let exp: string;
-  if (fi <= 2) exp = `0${vA}${vB}${vF}0000${vC}${vD}${vE}`;
-  else if (fi === 3) exp = `0${vA}${vB}${vC}00000${vD}${vE}`;
-  else if (fi === 4) exp = `0${vA}${vB}${vC}${vD}00000${vE}`;
-  else exp = `0${vA}${vB}${vC}${vD}${vE}${vF}0000`;
-  return eanCheckDigit(exp, 3, 1);
-}
+// Check-digit math now lives in src/lib/barcodeCheckDigits.ts (pure,
+// no Canvas deps). Re-export here so existing callers (BarcodeObject)
+// keep working without touching every import.
+export { eanCheckDigit, upceCheckDigit } from "../../lib/barcodeCheckDigits";
 
 /**
  * Encode text as Code 128 subset B using bwip-js raw ^NNN format.
@@ -325,6 +315,29 @@ export function buildBwipOptions(
         text = p.content || "0";
       }
       opts = { bcid, text, scale, height: 10 };
+      break;
+    }
+    case "upcEanExtension": {
+      const p = obj.props;
+      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
+      // ZPL ^BS uses one command for both lengths; bwip splits the
+      // bcid. Anything that isn't a 2-digit supplement is rendered
+      // as the 5-digit variant — matches printer behaviour where
+      // the 5-digit form is the common case (ISBN price, magazine
+      // sequence) and bwip-js rejects other lengths outright.
+      // HRI digits sit ABOVE the bars per Zebra firmware. Rendered
+      // as a separate Konva Text overlay (same pattern as logmars)
+      // so all four rotations land at the firmware-correct anchor
+      // via getRotatedTextAnchor; bwip's own includetext would
+      // bake the text into the bitmap and rotate with it.
+      const text = p.content || "00000";
+      const variantBcid = text.length === 2 ? "ean2" : "ean5";
+      opts = {
+        bcid: variantBcid,
+        text,
+        scale,
+        height: 10,
+      };
       break;
     }
     case "code128": {
@@ -544,6 +557,60 @@ export interface BarcodeDisplaySize {
   bitmapCrop?: { x: number; y: number; width: number; height: number };
 }
 
+/** Anchor coordinates for a Konva Text node that is rotated alongside a
+ *  1D barcode. Exactly one field is meaningful per rotation: `sideX` for
+ *  R / B, `topY` for I. The other is set to 0 and ignored by the caller. */
+export interface RotatedTextAnchor {
+  sideX: number;
+  topY: number;
+}
+
+/**
+ * Where to place the rotated HRI text node so it sits `textGap` dots away
+ * from the bars on the firmware-correct side.
+ *
+ * Naive sideX = -textGap / w + textGap anchors against the bbox edge,
+ * which double-counts the firmware text zone (EAN/UPC: 13 dots, logmars:
+ * 20 dots). Anchoring against the bar sub-rectangle (`barLeftPx`/`bw` for
+ * R/B, `barTopPx`/`bh` for I) keeps the gap at exactly `textGap`
+ * regardless of which side the text zone sits on.
+ *
+ * Konva rotates around the node origin, so the anchor accounts for the
+ * text glyph extending in the rotation-opposite direction. For R (CW 90)
+ * with text on the right, the glyph extends LEFT of `sideX` by
+ * `textFontSize`, so we offset by +textFontSize. Mirror for B (CCW 90)
+ * and I (180).
+ */
+export function getRotatedTextAnchor(
+  rotation: "R" | "B" | "I",
+  isTextAbove: boolean,
+  dim: Pick<BarcodeDisplaySize, "barLeftPx" | "barTopPx" | "barW" | "barH">,
+  textGap: number,
+  textFontSize: number,
+): RotatedTextAnchor {
+  const { barLeftPx: btX, barTopPx: btY, barW: bw, barH: bh } = dim;
+  if (rotation === "R") {
+    return {
+      sideX: isTextAbove ? btX + bw + textGap + textFontSize : btX - textGap,
+      topY: 0,
+    };
+  }
+  if (rotation === "B") {
+    return {
+      sideX: isTextAbove ? btX - textGap - textFontSize : btX + bw + textGap,
+      topY: 0,
+    };
+  }
+  // I (180°): text glyph extends UP from the origin, so a text-below-in-
+  // upright glyph (now top after flip) anchors at btY - textGap; a
+  // text-above-in-upright glyph (now bottom) anchors at btY + bh +
+  // textGap + textFontSize.
+  return {
+    sideX: 0,
+    topY: isTextAbove ? btY + bh + textGap + textFontSize : btY - textGap,
+  };
+}
+
 /** Firmware-reserved text-zone height in dots, keyed by symbology. The
  *  zone sits below the bars in upright orientation; rotation maps it to
  *  another side of the bbox in getDisplaySize. Types not listed have no
@@ -583,8 +650,24 @@ export function getDisplaySize(
 
   // Text-zone reservation in upright orientation, on the "below" side of
   // the bars per Labelary's bbox. Zero for symbologies without one.
-  const textZoneDots = TEXT_ZONE_DOTS_BY_TYPE[obj.type] ?? 0;
+  // ^BS supplements reserve the zone ABOVE the bars in upright (N);
+  // bookkeeping reuses the same px value but flips which side gets
+  // the offset.
+  // ^BS reserves the text zone only when printInterpretation=Y; with
+  // f=N the printer prints bars only and bbox = bar height. Other
+  // EAN/UPC reserve the 13-dot zone unconditionally (Zebra firmware
+  // ships a fixed text guard even when N).
+  const textZoneDots =
+    obj.type === "upcEanExtension"
+      ? obj.props.printInterpretation ? UPC_SUPP_TEXT_ZONE_DOTS : 0
+      : TEXT_ZONE_DOTS_BY_TYPE[obj.type] ?? 0;
   const textZonePx = dotsToPx(textZoneDots, scale, dpmm);
+  // Source of truth for textAbove is the registry's HriBehavior — same
+  // field BarcodeObject consumes for its overlay positioning. Without
+  // this the bbox places bars at the top and reserves the zone at the
+  // bottom, but the renderer draws the text above the bars at negative
+  // y → text leaks out of the bbox. Bug spotted by gemini on PR #90.
+  const isTextAbove = ObjectRegistry[obj.type]?.hri?.textAbove ?? false;
 
   // Map the upright "below the bars" zone onto the rotated bbox: it travels
   // around the rectangle as the symbol rotates.
@@ -597,11 +680,23 @@ export function getDisplaySize(
   let barW = w;
   let barH = h;
   if (textZonePx > 0) {
-    switch (rotation) {
-      case "N": barH = h - textZonePx; break;
-      case "R": barLeftPx = textZonePx; barW = w - textZonePx; break;
-      case "I": barTopPx = textZonePx; barH = h - textZonePx; break;
-      case "B": barW = w - textZonePx; break;
+    // isTextAbove flips the upright zone from "below the bars" to "above
+    // the bars" (and the corresponding rotated edges) without duplicating
+    // the rotation table.
+    if (!isTextAbove) {
+      switch (rotation) {
+        case "N": barH = h - textZonePx; break;
+        case "R": barLeftPx = textZonePx; barW = w - textZonePx; break;
+        case "I": barTopPx = textZonePx; barH = h - textZonePx; break;
+        case "B": barW = w - textZonePx; break;
+      }
+    } else {
+      switch (rotation) {
+        case "N": barTopPx = textZonePx; barH = h - textZonePx; break;
+        case "R": barW = w - textZonePx; break;
+        case "I": barH = h - textZonePx; break;
+        case "B": barLeftPx = textZonePx; barW = w - textZonePx; break;
+      }
     }
   }
 
@@ -734,6 +829,21 @@ function getUprightDisplaySize(
       const extraPx = bwipSc === 1 ? 1 : 0;
       const w = ((cw - extraPx) / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height + EAN_TEXT_ZONE_DOTS, scale, dpmm);
+      return { w, h };
+    }
+    case "upcEanExtension": {
+      // ^BS prints the human-readable digits ABOVE the bars (unlike the
+      // main EAN/UPC text band below), and Zebra reserves a larger
+      // vertical zone for it only when printInterpretation=Y. With
+      // f=N the bbox collapses to bar height (no guard reservation,
+      // unlike main UPC/EAN which always reserves 13). Measured
+      // against Labelary at 80-bar height: Y → 98, N → 80.
+      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
+      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+      const extraPx = bwipSc === 1 ? 1 : 0;
+      const w = ((cw - extraPx) / bwipSc) * modulePx;
+      const zone = obj.props.printInterpretation ? UPC_SUPP_TEXT_ZONE_DOTS : 0;
+      const h = dotsToPx(obj.props.height + zone, scale, dpmm);
       return { w, h };
     }
     case "logmars": {

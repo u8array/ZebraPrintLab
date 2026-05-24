@@ -25,6 +25,7 @@ const ja = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'UPC/EAN 拡張',
     interleaved2of5: 'インターリーブド 2/5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const ja = {
       printInterpretation: '可読文字',
       moduleWidth: 'モジュール幅',
       placeholder: '6桁',
+    },
+    upcEanExtension: {
+      content: 'コンテンツ (2 桁または 5 桁)',
+      height: '高さ (ドット)',
+      printInterpretation: '人間可読',
+      moduleWidth: 'モジュール幅',
+      placeholder: '2 桁または 5 桁',
     },
     interleaved2of5: {
       content: '内容',

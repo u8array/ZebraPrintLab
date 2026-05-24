@@ -1,5 +1,6 @@
 import { createBarcode1D } from './barcode1d';
 import type { ContentSpec } from './contentSpec';
+import { formatEan13Hri } from './hriFormatters';
 export type { Barcode1DProps as Ean13Props } from './barcode1d';
 
 const ean13Spec: ContentSpec = { charset: '0-9', maxLength: 12 };
@@ -16,4 +17,5 @@ export const ean13 = createBarcode1D({
     const interp = p.printInterpretation ? 'Y' : 'N';
     return `^BE${p.rotation},${p.height},${interp},N`;
   },
+  hri: { formatHri: formatEan13Hri },
 });

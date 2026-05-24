@@ -154,6 +154,32 @@ export interface ZplEmitContext {
   variables?: readonly Variable[];
 }
 
+/**
+ * Per-type HRI (human-readable interpretation) rendering behaviour. All
+ * fields are optional with sensible defaults: text is rendered below the
+ * bars in raw form with the standard textGap. Each leaf overrides only
+ * what differs from the baseline, keeping BarcodeObject type-agnostic
+ * for the generic HRI path.
+ *
+ * @example See registry/logmars.tsx (text above + wider gap + check digit
+ * formatter) and registry/upcEanExtension.tsx (text above + very tight gap)
+ * for the canonical patterns.
+ */
+export interface HriBehavior {
+  /** True when the HRI text sits above the bars (logmars spec, ^BS).
+   *  Default: false. */
+  textAbove?: boolean;
+  /** Gap in dots between the bar edge and the text glyph. Applies to
+   *  both the upright above-bars gap AND the side gap on rotated
+   *  R/B/I, so a tighter ^BS (2) stays tight after rotation while
+   *  logmars (10) keeps its wider air gap. Below-bars upright always
+   *  uses the global textGap regardless of this value. */
+  aboveGapDots?: number;
+  /** Transform raw content into the displayed HRI string (add check
+   *  digit, wrap with start/stop chars, pad, …). Default: identity. */
+  formatHri?: (content: string) => string;
+}
+
 export interface ObjectTypeDefinition<P extends object = object> {
   label: string;
   icon: string;
@@ -211,6 +237,10 @@ export interface ObjectTypeDefinition<P extends object = object> {
     obj: LabelObjectBase & { props: P },
     ctx: TransformContext,
   ) => Partial<P>;
+  /** See {@link HriBehavior}. Only meaningful for 1D barcode types
+   *  that render an HRI text overlay; other types should leave this
+   *  undefined. */
+  hri?: HriBehavior;
   PropertiesPanel: React.ComponentType<{
     obj: LabelObjectBase & { props: P };
     onChange: (props: Partial<P>) => void;

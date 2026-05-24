@@ -25,6 +25,7 @@ const hr = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'UPC/EAN proširenje',
     interleaved2of5: 'Interleaved 2 od 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const hr = {
       printInterpretation: 'Čitljivo za ljude',
       moduleWidth: 'Širina modula',
       placeholder: '6 znamenki',
+    },
+    upcEanExtension: {
+      content: 'Sadržaj (2 ili 5 znamenki)',
+      height: 'Visina (točke)',
+      printInterpretation: 'Čitljivo',
+      moduleWidth: 'Širina modula',
+      placeholder: '2 ili 5 znamenki',
     },
     interleaved2of5: {
       content: 'Sadržaj',

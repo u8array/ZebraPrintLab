@@ -25,6 +25,7 @@ const sr = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'UPC/EAN proširenje',
     interleaved2of5: 'Interleaved 2 од 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const sr = {
       printInterpretation: 'Читљиво',
       moduleWidth: 'Ширина модула',
       placeholder: '6 цифара',
+    },
+    upcEanExtension: {
+      content: 'Sadržaj (2 ili 5 cifara)',
+      height: 'Visina (tačke)',
+      printInterpretation: 'Čitljivo',
+      moduleWidth: 'Širina modula',
+      placeholder: '2 ili 5 cifara',
     },
     interleaved2of5: {
       content: 'Садржај',

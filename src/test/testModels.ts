@@ -449,4 +449,20 @@ export const testModels: Record<string, LabelObject> = {
     rotation: 0,
     props: { content: "123456789012", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "B" },
   },
+  barcode_upcean_supp5_standard: {
+    id: "supp1",
+    type: "upcEanExtension",
+    x: 50,
+    y: 50,
+    rotation: 0,
+    props: { content: "51999", height: 80, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
+  },
+  barcode_upcean_supp2_standard: {
+    id: "supp2",
+    type: "upcEanExtension",
+    x: 50,
+    y: 50,
+    rotation: 0,
+    props: { content: "42", height: 80, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
+  },
 };

@@ -25,6 +25,7 @@ const sv = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'UPC/EAN-tillägg',
     interleaved2of5: 'Interleaved 2 av 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const sv = {
       printInterpretation: 'Läsbar',
       moduleWidth: 'Modulbredd',
       placeholder: '6 siffror',
+    },
+    upcEanExtension: {
+      content: 'Innehåll (2 eller 5 siffror)',
+      height: 'Höjd (punkter)',
+      printInterpretation: 'Läsbar',
+      moduleWidth: 'Modulbredd',
+      placeholder: '2 eller 5 siffror',
     },
     interleaved2of5: {
       content: 'Innehåll',

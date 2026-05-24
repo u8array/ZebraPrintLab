@@ -25,6 +25,7 @@ const es = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'Extensión UPC/EAN',
     interleaved2of5: 'Intercalado 2 de 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const es = {
       printInterpretation: 'Legible',
       moduleWidth: 'Ancho módulo',
       placeholder: '6 dígitos',
+    },
+    upcEanExtension: {
+      content: 'Contenido (2 o 5 dígitos)',
+      height: 'Altura (puntos)',
+      printInterpretation: 'Legible',
+      moduleWidth: 'Ancho de módulo',
+      placeholder: '2 o 5 dígitos',
     },
     interleaved2of5: {
       content: 'Contenido',

@@ -9,8 +9,7 @@ import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import {
   buildBwipOptions,
   getDisplaySize,
-  eanCheckDigit,
-  upceCheckDigit,
+  getRotatedTextAnchor,
   get1DBwipScale,
   getEanUpcLayout,
   type BarcodeDisplaySize,
@@ -20,7 +19,6 @@ import { objectRotation } from "../../registry/rotation";
 import {
   QR_FO_Y_OFFSET_DOTS,
   QR_FT_MODULE_OFFSET,
-  LOGMARS_TEXT_ABOVE_GAP_DOTS,
   EAN_UPC_TYPES,
 } from "./bwipConstants";
 
@@ -201,6 +199,20 @@ export function BarcodeObject({
     const textGap = Math.max(dotsToPx(5, scale, dpmm), 3);
     const rawContent = (obj.props as { content?: string }).content ?? "";
 
+    // HRI behaviour comes from the registry — per-type formatHri /
+    // textAbove / aboveGapDots. Defaults: raw content, below bars,
+    // textGap. Keeps BarcodeObject type-agnostic for the generic 1D
+    // HRI path; EAN/UPC multi-digit-split branches below consume the
+    // same formatHri output (displayText) as the source string.
+    const hri = ObjectRegistry[obj.type]?.hri;
+    const displayText = hri?.formatHri?.(rawContent) ?? rawContent;
+    const isTextAbove = hri?.textAbove ?? false;
+    // 3px floor matches textGap so HRI stays legible at very small
+    // scales regardless of which dots value the spec calls for.
+    const aboveGapPx = hri?.aboveGapDots !== undefined
+      ? Math.max(dotsToPx(hri.aboveGapDots, scale, dpmm), 3)
+      : textGap;
+
     // ── EAN/UPC: manually-positioned digit labels ─────────────────────────
     if (EAN_UPC_TYPES.has(obj.type) && printInterp) {
       const bwipSc = get1DBwipScale(moduleWidth, scale, dpmm);
@@ -217,11 +229,8 @@ export function BarcodeObject({
       let clipRight = 0;
 
       if (obj.type === "ean13") {
-        const digits12 = rawContent
-          .replace(/\D/g, "")
-          .slice(0, 12)
-          .padEnd(12, "0");
-        const allDigits = digits12 + eanCheckDigit(digits12, 1, 3); // 13 digits
+        // 13-digit string formatted by registry's formatEan13Hri (includes check digit).
+        const allDigits = displayText;
 
         const { xLeft: xLeft13, xRight: xRight13, halfWidth: halfW13 } = layout;
 
@@ -235,7 +244,7 @@ export function BarcodeObject({
             width={ldW}
             text={allDigits[0]}
             fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center"
             wrap="none"
             fill="#000000"
@@ -248,7 +257,7 @@ export function BarcodeObject({
             width={halfW13}
             text={allDigits.slice(1, 7)}
             fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center"
             wrap="none"
             fill="#000000"
@@ -261,7 +270,7 @@ export function BarcodeObject({
             width={halfW13}
             text={allDigits.slice(7, 13)}
             fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center"
             wrap="none"
             fill="#000000"
@@ -269,11 +278,8 @@ export function BarcodeObject({
           />,
         ];
       } else if (obj.type === "ean8") {
-        const digits7 = rawContent
-          .replace(/\D/g, "")
-          .slice(0, 7)
-          .padEnd(7, "0");
-        const allDigits = digits7 + eanCheckDigit(digits7, 3, 1); // 8 digits
+        // 8-digit string formatted by registry's formatEan8Hri.
+        const allDigits = displayText;
 
         const { xLeft: xLeft8, xRight: xRight8, halfWidth: halfW8 } = layout;
 
@@ -286,7 +292,7 @@ export function BarcodeObject({
             width={halfW8}
             text={allDigits.slice(0, 4)}
             fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center"
             wrap="none"
             fill="#000000"
@@ -299,7 +305,7 @@ export function BarcodeObject({
             width={halfW8}
             text={allDigits.slice(4, 8)}
             fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center"
             wrap="none"
             fill="#000000"
@@ -307,11 +313,8 @@ export function BarcodeObject({
           />,
         ];
       } else if (obj.type === "upca") {
-        const digits11 = rawContent
-          .replace(/\D/g, "")
-          .slice(0, 11)
-          .padEnd(11, "0");
-        const allDigits = digits11 + eanCheckDigit(digits11, 3, 1); // 12 digits
+        // 12-digit string formatted by registry's formatUpcaHri.
+        const allDigits = displayText;
 
         const { xLeft: xLeftUpca, xRight: xRightUpca, halfWidth: halfUpca } =
           layout;
@@ -327,7 +330,7 @@ export function BarcodeObject({
             width={ldW}
             text={allDigits[0]}
             fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center"
             wrap="none"
             fill="#000000"
@@ -341,7 +344,7 @@ export function BarcodeObject({
             width={halfUpca}
             text={allDigits.slice(1, 6)}
             fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center"
             wrap="none"
             fill="#000000"
@@ -355,7 +358,7 @@ export function BarcodeObject({
             width={halfUpca}
             text={allDigits.slice(6, 11)}
             fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center"
             wrap="none"
             fill="#000000"
@@ -363,12 +366,10 @@ export function BarcodeObject({
           />,
         ];
       } else if (obj.type === "upce") {
-        const digits6 = rawContent
-          .replace(/\D/g, "")
-          .slice(0, 6)
-          .padEnd(6, "0");
-
-        const checkDigit = upceCheckDigit(digits6);
+        // displayText = "0" + 6 data digits + check digit (8 chars total),
+        // formatted by registry's formatUpceHri.
+        const digits6 = displayText.slice(1, 7);
+        const checkDigit = displayText[7] ?? "";
 
         // UPC-E: 6 digits centered over the data area (modules 3–44 of 51)
         const { xLeft: xMid, halfWidth: midW } = layout;
@@ -383,7 +384,7 @@ export function BarcodeObject({
             width={ldW}
             text="0"
             fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center"
             wrap="none"
             fill="#000000"
@@ -396,7 +397,7 @@ export function BarcodeObject({
             width={midW}
             text={digits6}
             fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center"
             wrap="none"
             fill="#000000"
@@ -409,7 +410,7 @@ export function BarcodeObject({
             width={ldW}
             text={checkDigit}
             fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="left"
             wrap="none"
             fill="#000000"
@@ -451,40 +452,31 @@ export function BarcodeObject({
       );
     }
 
-    // ── Other 1D: separate Konva Text below bars ──────────────────────────
-    const showText = BARCODE_1D_TYPES.has(obj.type) && printInterp;
+    // ── Other 1D: separate Konva Text below (or above) the bars ──────────
+    const showText =
+      BARCODE_1D_TYPES.has(obj.type) &&
+      printInterp;
     // Rotated 1D: text overlay rotated to match the barcode orientation.
     const showRotatedText =
       !isUpright &&
       printInterpEnabled &&
       BARCODE_1D_TYPES.has(obj.type);
 
-    let displayText = rawContent;
-    if (obj.type === "code39") {
-      displayText = `*${rawContent}*`;
-    } else if (obj.type === "logmars") {
-      const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-. $/+%";
-      let sum = 0;
-      for (const c of rawContent) {
-        const idx = chars.indexOf(c.toUpperCase());
-        if (idx >= 0) sum += idx;
-      }
-      displayText = `${rawContent}${chars[sum % 43] ?? ""}`;
-    }
-
     if (showText) {
       // LOGMARS renders the human-readable line above the bars (per spec).
       // ^FO Y refers to the bar top, so text is drawn at negative y to extend
       // above the group origin into the visual zone above the bars.
-      const isTextAbove = obj.type === "logmars";
-      const aboveGap = isTextAbove
-        ? Math.max(dotsToPx(LOGMARS_TEXT_ABOVE_GAP_DOTS, scale, dpmm), 3)
-        : textGap;
+      const aboveGap = aboveGapPx;
       // Local y for the HRI text. The /sy form keeps a constant *visual* offset
       // when the group is being scaled (sy = 1 at rest, ≠ 1 during a drag).
+      // Anchor against the BAR top (btY) for text-above, not the group
+      // origin: when the firmware reserves a text zone above the bars
+      // (logmars: 20 dots, ^BS f=Y: 18 dots) the group origin sits
+      // text-zone above the bar top, and ignoring btY pushes the text
+      // a full text-zone above where it should sit.
       const textLocalY = (sy: number) =>
         isTextAbove
-          ? -(textFontSize + aboveGap) / sy
+          ? btY - (textFontSize + aboveGap) / sy
           : Math.max(bh, 1) + textGap / sy;
       const txtY = textLocalY(1);
 
@@ -550,7 +542,7 @@ export function BarcodeObject({
             width={Math.max(w, 1)}
             text={displayText}
             fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center"
             wrap="none"
             fill="#000000"
@@ -570,12 +562,23 @@ export function BarcodeObject({
       // Text "side" for 90°/270°: standard 1D text is below bars in upright,
       //   so after 90°CW it's on the LEFT; after 270°CW on the RIGHT.
       //   LOGMARS is mirrored (text above in upright → right for 90°, left for 270°).
-      const isTextAbove = obj.type === "logmars";
-      // x-anchor for R/B (shared by all text nodes for a given rotation)
-      const sideX =
-        rotation === "R"
-          ? isTextAbove ? w + textGap + textFontSize : -textGap
-          : isTextAbove ? -(textGap + textFontSize) : w + textGap;
+      // isTextAbove and rotGap come from the registry (same source as
+      // upright above) — keeps rotated and N visually consistent per
+      // type without duplicating the per-type chain.
+      const rotGap = aboveGapPx;
+      // x/y anchor for the rotated text. Helper anchors against the bar
+      // sub-rectangle, not the bbox edge — without that the firmware
+      // text-zone (EAN/UPC: 13 dots, logmars: 20 dots) is added to the
+      // gap and the text drifts that many dots away from the bars.
+      // sideX is the R/B x-anchor (and the I tx for sysNode/trailNode);
+      // topY is the I y-anchor (replaces -textGap for I).
+      const { sideX, topY } = getRotatedTextAnchor(
+        rotation,
+        isTextAbove,
+        dim,
+        rotGap,
+        textFontSize,
+      );
       const tRot = rotation === "R" ? 90 : rotation === "I" ? 180 : -90;
 
       // ── EAN/UPC: reproduce upright digit layout along the rotated axis ──
@@ -592,6 +595,7 @@ export function BarcodeObject({
         const tStyle = {
           fontSize: textFontSize,
           fontFamily: "'Courier New', monospace" as const,
+          fontStyle: "bold" as const,
           wrap: "none" as const,
           fill: "#000000",
           listening: false,
@@ -603,7 +607,7 @@ export function BarcodeObject({
         // For I: encPos → screen-x leftward from right (start=right), anchor-x = w - encPos.
         const node = (key: string, encPos: number, size: number, text: string) => {
           const tx = rotation === "I" ? w - encPos : sideX;
-          const ty = rotation === "R" ? encPos : rotation === "B" ? h - encPos : -textGap;
+          const ty = rotation === "R" ? encPos : rotation === "B" ? h - encPos : topY;
           return <Text key={key} x={tx} y={ty} rotation={tRot} width={Math.max(size, 1)} text={text} align="center" {...tStyle} />;
         };
 
@@ -611,7 +615,7 @@ export function BarcodeObject({
         const sysNode = (key: string, text: string) => {
           // R: above top (y=-ldW); B: below bottom (y=h+ldW); I: right of barcode (x=w+ldW).
           const tx = rotation === "I" ? w + ldW : sideX;
-          const ty = rotation === "R" ? -ldW : rotation === "B" ? h + ldW : -textGap;
+          const ty = rotation === "R" ? -ldW : rotation === "B" ? h + ldW : topY;
           return <Text key={key} x={tx} y={ty} rotation={tRot} width={Math.max(ldW, 1)} text={text} align="center" {...tStyle} />;
         };
 
@@ -619,40 +623,36 @@ export function BarcodeObject({
         const trailNode = (key: string, text: string) => {
           // R: below bottom (y≈encDisplay); B: above top (y≈h-encDisplay); I: left of x=0.
           const tx = rotation === "I" ? -ldW : sideX;
-          const ty = rotation === "R" ? encDisplay : rotation === "B" ? h - encDisplay : -textGap;
+          const ty = rotation === "R" ? encDisplay : rotation === "B" ? h - encDisplay : topY;
           return <Text key={key} x={tx} y={ty} rotation={tRot} width={Math.max(ldW, 1)} text={text} align="left" {...tStyle} />;
         };
 
+        // All EAN/UPC HRI strings are formatted by the registry's
+        // formatHri (displayText). The split positions differ per type
+        // but the source string is the same as the upright branch.
         if (obj.type === "ean13") {
-          const d12 = rawContent.replace(/\D/g, "").slice(0, 12).padEnd(12, "0");
-          const all13 = d12 + eanCheckDigit(d12, 1, 3);
           textElements = [
-            sysNode("sys", all13[0] ?? ""),
-            node("left", xLeft, halfW, all13.slice(1, 7)),
-            node("right", xRight, halfW, all13.slice(7, 13)),
+            sysNode("sys", displayText[0] ?? ""),
+            node("left", xLeft, halfW, displayText.slice(1, 7)),
+            node("right", xRight, halfW, displayText.slice(7, 13)),
           ];
         } else if (obj.type === "ean8") {
-          const d7 = rawContent.replace(/\D/g, "").slice(0, 7).padEnd(7, "0");
-          const all8 = d7 + eanCheckDigit(d7, 3, 1);
           textElements = [
-            node("left", xLeft, halfW, all8.slice(0, 4)),
-            node("right", xRight, halfW, all8.slice(4, 8)),
+            node("left", xLeft, halfW, displayText.slice(0, 4)),
+            node("right", xRight, halfW, displayText.slice(4, 8)),
           ];
         } else if (obj.type === "upca") {
-          const d11 = rawContent.replace(/\D/g, "").slice(0, 11).padEnd(11, "0");
-          const all12 = d11 + eanCheckDigit(d11, 3, 1);
           textElements = [
-            sysNode("sys", all12[0] ?? ""),
-            node("left", xLeft, halfW, all12.slice(1, 6)),
-            node("right", xRight, halfW, all12.slice(6, 11)),
+            sysNode("sys", displayText[0] ?? ""),
+            node("left", xLeft, halfW, displayText.slice(1, 6)),
+            node("right", xRight, halfW, displayText.slice(6, 11)),
           ];
         } else if (obj.type === "upce") {
-          const d6 = rawContent.replace(/\D/g, "").slice(0, 6).padEnd(6, "0");
-          const ck = upceCheckDigit(d6);
+          // displayText = "0" + 6 data digits + check digit (8 chars).
           textElements = [
-            sysNode("sys", "0"),
-            node("mid", xLeft, halfW, d6),
-            trailNode("trail", ck),
+            sysNode("sys", displayText[0] ?? "0"),
+            node("mid", xLeft, halfW, displayText.slice(1, 7)),
+            trailNode("trail", displayText[7] ?? ""),
           ];
         }
       } else {
@@ -664,9 +664,7 @@ export function BarcodeObject({
         if (rotation === "R") {
           txtX = sideX; txtY = 0; txtWidth = h;
         } else if (rotation === "I") {
-          txtX = w;
-          txtY = isTextAbove ? bh + textGap + textFontSize : -textGap;
-          txtWidth = w;
+          txtX = w; txtY = topY; txtWidth = w;
         } else {
           txtX = sideX; txtY = h; txtWidth = h;
         }
@@ -675,7 +673,7 @@ export function BarcodeObject({
           <Text
             x={txtX} y={txtY} rotation={tRot} width={Math.max(txtWidth, 1)}
             text={displayText} fontSize={textFontSize}
-            fontFamily="'Courier New', monospace"
+            fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center" wrap="none" fill="#000000" listening={false}
           />
         );

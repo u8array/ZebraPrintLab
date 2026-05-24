@@ -25,6 +25,7 @@ const el = {
     upca: 'UPC-A',
     ean8: 'EAN-8',
     upce: 'UPC-E',
+    upcEanExtension: 'Επέκταση UPC/EAN',
     interleaved2of5: 'Interleaved 2 από 5',
     code93: 'Code 93',
     pdf417: 'PDF417',
@@ -332,6 +333,13 @@ const el = {
       printInterpretation: 'Αναγνώσιμο',
       moduleWidth: 'Πλάτος μονάδας',
       placeholder: '6 ψηφία',
+    },
+    upcEanExtension: {
+      content: 'Περιεχόμενο (2 ή 5 ψηφία)',
+      height: 'Ύψος (κουκκίδες)',
+      printInterpretation: 'Αναγνώσιμο',
+      moduleWidth: 'Πλάτος μονάδας',
+      placeholder: '2 ή 5 ψηφία',
     },
     interleaved2of5: {
       content: 'Περιεχόμενο',
