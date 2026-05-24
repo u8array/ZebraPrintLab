@@ -39,6 +39,7 @@ What's supported, what's next, what's planned.
 - [x] `^TB` — text block
 - [x] `^FN` — variable placeholder
 - [x] `^FV` — variable data
+- [x] `^FE` — field-number embed character
 - [x] `^BY` — barcode field default
 
 ### Text & fonts
@@ -104,7 +105,6 @@ What's supported, what's next, what's planned.
 
 ### Fields
 
-- [ ] `^FE` — field concatenation
 - [ ] `^FM` — multiple field origins
 - [ ] `^FP` — field path (text along path)
 - [ ] `^CO` — font cache size

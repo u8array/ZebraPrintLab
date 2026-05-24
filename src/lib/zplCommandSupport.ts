@@ -51,7 +51,7 @@ export const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
   { cmd: 'FW', status: 'supported', description: 'Field orientation — sets default rotation for subsequent fields' },
   { cmd: 'FB', status: 'supported', description: 'Field block — multi-line text with word-wrap and justification' },
   { cmd: 'FC', status: 'unsupported', description: 'Field clock — inserts date/time into field data' },
-  { cmd: 'FE', status: 'unsupported', description: 'Field concatenation — appends data to the current field' },
+  { cmd: 'FE', status: 'supported', description: 'Field-number embed character — redefines the ^FN inline-embed delimiter (default #) used by ^FD/^FV. Imported embeds become «name» template markers; round-trips through generate.' },
   { cmd: 'FM', status: 'unsupported', description: 'Multiple field origin locations' },
   { cmd: 'FN', status: 'supported', description: 'Field number — variable field placeholder, lands in the Variables tab on import and emits as ^FN{slot} on export' },
   { cmd: 'FP', status: 'unsupported', description: 'Field parameter — sets character-by-character text direction' },

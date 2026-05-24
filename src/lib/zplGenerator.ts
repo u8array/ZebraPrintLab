@@ -1,7 +1,13 @@
 import { mmToDots } from './coordinates';
 import { ObjectRegistry } from '../registry';
 import { fdField, stripZplCommandChars } from '../registry/zplHelpers';
-import type { CustomFontMapping, LabelConfig } from '../types/ObjectType';
+import {
+  extractTemplateRefs,
+  hasTemplateMarkers,
+  pickEmbedChar,
+} from './fnTemplate';
+import { getObjectStringContent } from './variableBinding';
+import type { CustomFontMapping, LabelConfig, ZplEmitContext } from '../types/ObjectType';
 import type { Variable } from '../types/Variable';
 import { isGroup, type LabelObject, type Page } from '../types/Group';
 import { getFontBytes } from './fontCache';
@@ -56,6 +62,66 @@ function flattenObjects(objects: LabelObject[]): LabelObject[] {
   };
   walk(objects);
   return out;
+}
+
+/**
+ * Plan the label-header `^FE` directive + `^FN` declarations that
+ * inline-embed templates need, plus the emit context that downstream
+ * per-leaf `toZPL` calls consume.
+ *
+ *  - Walks the label once: collects single-bind fnNumbers (they emit
+ *    their declaration inline via fdFieldFor) and template-referenced
+ *    fnNumbers (need a header declaration). De-dupes against each
+ *    other so a slot referenced both ways is declared exactly once.
+ *  - Picks an embedChar that doesn't clash with any literal payload
+ *    text (prefers `#`, the ZPL default). If every safe candidate is
+ *    taken — pathological payload — skips the template path entirely
+ *    so markers fall through as literal text instead of producing
+ *    ambiguous embeds.
+ *  - Returns the header lines (`^FE...`, `^FN...`) and an emit ctx
+ *    whose `embedChar` is set only when templates are emittable —
+ *    fdFieldFor checks for it as the "templates allowed" gate.
+ */
+function planTemplateHeader(
+  shifted: LabelObject[],
+  label: LabelConfig,
+  variables: readonly Variable[],
+): { headerLines: string[]; emitCtx: ZplEmitContext } {
+  const templatePayloads: string[] = [];
+  const templateFns = new Set<number>();
+  const singleBindFns = new Set<number>();
+  for (const leaf of flattenObjects(shifted)) {
+    if (leaf.includeInExport === false) continue;
+    if (leaf.variableId) {
+      const v = variables.find((x) => x.id === leaf.variableId);
+      if (v) singleBindFns.add(v.fnNumber);
+    }
+    const c = getObjectStringContent(leaf);
+    if (c === undefined || !hasTemplateMarkers(c)) continue;
+    templatePayloads.push(c);
+    for (const name of extractTemplateRefs(c)) {
+      const v = variables.find((x) => x.name === name);
+      if (v) templateFns.add(v.fnNumber);
+    }
+  }
+  const pickedEmbedChar =
+    templatePayloads.length > 0 ? pickEmbedChar(templatePayloads) : '#';
+  if (pickedEmbedChar === null) {
+    // Markers stay literal in the emitted ZPL.
+    return { headerLines: [], emitCtx: { label, variables } };
+  }
+  const headerLines: string[] = [];
+  if (pickedEmbedChar !== '#') headerLines.push(`^FE${pickedEmbedChar}`);
+  for (const fn of [...templateFns].sort((a, b) => a - b)) {
+    if (singleBindFns.has(fn)) continue;
+    const v = variables.find((x) => x.fnNumber === fn);
+    if (!v) continue;
+    headerLines.push(`^FN${fn}${fdField(v.defaultValue)}`);
+  }
+  return {
+    headerLines,
+    emitCtx: { label, variables, embedChar: pickedEmbedChar },
+  };
 }
 
 /** Format a `~DY` line for a graphic-upload image. Mirrors the font-upload
@@ -290,21 +356,29 @@ export function generateZPL(
     return x < 0 || y < 0 ? [] : [{ ...obj, x, y }];
   };
 
+  const shifted =
+    homeX !== 0 || homeY !== 0 || top !== 0
+      ? objects.flatMap(shiftOrDrop)
+      : objects;
+
+  // ^FE inline embeds (`«name»` markers in content) need every
+  // referenced fnNumber to have a `^FN<n>^FD<default>^FS` declaration
+  // somewhere in the label format. Compute the header + emit context
+  // in one helper so the main flow stays a sequence of label parts.
+  const { headerLines, emitCtx } = planTemplateHeader(shifted, label, variables);
+  lines.push(...headerLines);
+
   // Groups are structural only — they emit no ZPL of their own. A group
   // with includeInExport=false cascades the skip to its whole subtree;
   // otherwise we recurse and let each leaf decide.
   const emitLeaf = (obj: LabelObject): string[] => {
     if (obj.includeInExport === false) return [];
     if (isGroup(obj)) return obj.children.flatMap(emitLeaf);
-    const zpl = ObjectRegistry[obj.type]?.toZPL(obj, { label, variables }) ?? '';
+    const zpl = ObjectRegistry[obj.type]?.toZPL(obj, emitCtx) ?? '';
     return obj.comment
       ? [`^FX${stripZplCommandChars(obj.comment)}\n${zpl}`]
       : [zpl];
   };
-  const shifted =
-    homeX !== 0 || homeY !== 0 || top !== 0
-      ? objects.flatMap(shiftOrDrop)
-      : objects;
   lines.push(...shifted.flatMap(emitLeaf));
 
   // ^PQ q,p,r,o — emit if quantity > 1 OR any extended param is set.

@@ -5,6 +5,7 @@ import type { LabelObject } from '../../types/Group';
 import { inputCls } from '../Properties/styles';
 import { FieldLabel } from '../ui/FieldLabel';
 import { useT } from '../../lib/useT';
+import { getObjectStringContent } from '../../lib/variableBinding';
 
 const CREATE_NEW_SENTINEL = '__create_new__';
 
@@ -58,9 +59,7 @@ export function VariableBindingControl({ obj }: Props) {
     // field is currently carrying, preserving the canvas state across
     // the binding transition. Every bindable type's first ^FD emission
     // comes from `props.content` (see registry implementations).
-    const props = (obj as { props?: { content?: unknown } }).props;
-    const defaultValue =
-      typeof props?.content === 'string' ? props.content : '';
+    const defaultValue = getObjectStringContent(obj) ?? '';
     const id = addVariable({ name: trimmed, defaultValue });
     if (id === null) {
       // Two reasons addVariable returns null: name collision or no free

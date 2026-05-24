@@ -5,6 +5,7 @@ import {
   uniqueVariableName,
   type Variable,
 } from "../types/Variable";
+import { embedsToMarkers } from "./fnTemplate";
 import { zplAnchorToModel } from "../components/Canvas/textPositionTransforms";
 import { computeTextRenderMetrics } from "../components/Canvas/textRenderMetrics";
 import type { LabelObject } from "../types/Group";
@@ -558,6 +559,11 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let bcCheck = false;
   let bcRotation: ZplRotation = "N";
   let bcCode49Mode: Code49Props["mode"] = "A";
+  // ^FE field-number embed character. Default '#'; redefined by
+  // ^FE<char>. Format-scoped, persists through ^FS (see Zebra ZPL II
+  // Programming Guide). Reset per parse is implicit — this `let` is
+  // initialised once at the top of parseZPL.
+  let embedChar = "#";
   let gsSymbology: Gs1DatabarProps["symbology"] = 1;
   let gsSegments: number | undefined = undefined;
   // ^BY barcode defaults
@@ -659,11 +665,88 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     fbJustify = "L";
   };
 
+  /** Get-or-create a Variable for the given FN slot. Three call
+   *  sites — bare `^FN^FD^FS` declarations, single-bind fields,
+   *  and template-embed references — all funnel through here so
+   *  the auto-naming convention (`field_<n>` unless an FX comment
+   *  hints otherwise) and the uniqueName collision logic live in
+   *  one place. */
+  const bootstrapVariable = (
+    fnNumber: number,
+    defaultValue: string,
+    commentHint?: string,
+  ): Variable => {
+    const existing = variables.find((v) => v.fnNumber === fnNumber);
+    if (existing) {
+      if (!existing.defaultValue && defaultValue) {
+        existing.defaultValue = defaultValue;
+      }
+      return existing;
+    }
+    const base = variableNameFromComment(commentHint) ?? `field_${fnNumber}`;
+    const v: Variable = {
+      id: crypto.randomUUID(),
+      name: uniqueVariableName(base, variables),
+      fnNumber,
+      defaultValue,
+    };
+    variables.push(v);
+    return v;
+  };
+
+  // Build a fnNumber→name map from the variables collected so far,
+  // bootstrapping Variables for any FN referenced by embeds in the
+  // current field's content. Mirrors the single-bind bootstrap at
+  // the bottom of flushField — same auto-name convention so embed-
+  // referenced FNs and inline-bound FNs share the same Variable
+  // entry when they hit the same slot number.
+  const applyFnEmbeds = (payload: string): string => {
+    // Match the same shape embedsToMarkers expects: `<e><n><e>` or
+    // `<e><n>,...<e>`. A naked `<e><digits>` without a closing `<e>`
+    // would otherwise bootstrap a phantom Variable from a literal
+    // like `#5 special` and then dangle (no marker emitted).
+    const e = embedChar.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const embedRe = new RegExp(`${e}(\\d+)(?:,[^${e}]*)?${e}`, "g");
+    let m: RegExpExecArray | null;
+    const seen = new Set<number>();
+    while ((m = embedRe.exec(payload)) !== null) {
+      if (!m[1]) continue;
+      const n = parseInt(m[1], 10);
+      if (n < FN_NUMBER_MIN || n > FN_NUMBER_MAX) continue;
+      seen.add(n);
+    }
+    if (seen.size === 0) return payload;
+    for (const n of seen) bootstrapVariable(n, "");
+    const fnToName = new Map(variables.map((v) => [v.fnNumber, v.name]));
+    return embedsToMarkers(payload, embedChar, fnToName);
+  };
+
   const flushField = () => {
-    if (!fieldType || pendingFD === null) return;
-    const content = fhActive
+    if (!fieldType || pendingFD === null) {
+      // Bare `^FN<n>^FD<default>^FS` (no ^FO / ^A) is a Variable
+      // declaration, not a field. Register the Variable so the
+      // default reaches the Variables panel + downstream resolves,
+      // and clear pendingFn so it doesn't leak into the next field.
+      if (pendingFn !== null && pendingFD !== null) {
+        const decl = fhActive
+          ? decodeFH(pendingFD, fhDelimiter, fhDecoder)
+          : pendingFD;
+        bootstrapVariable(pendingFn, decl, pendingFnComment);
+        pendingFn = null;
+        pendingFnComment = undefined;
+      }
+      pendingFD = null;
+      return;
+    }
+    const rawDecoded = fhActive
       ? decodeFH(pendingFD, fhDelimiter, fhDecoder)
       : pendingFD;
+    // ^FE-style inline FN embeds (`#1#`, `#2,0,3#`, …) get rewritten
+    // into the canonical `«variableName»` marker form before the
+    // content reaches downstream code. Bootstrap a Variable for any
+    // referenced FN that has no existing entry — same auto-naming
+    // ("field_<n>") used by the single-bind ^FN path below.
+    const content = applyFnEmbeds(rawDecoded);
     const posType: "FT" | "FO" = positionIsFT ? "FT" : "FO";
     const comment = takeComment();
 
@@ -984,18 +1067,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     if (pendingFn !== null) {
       const justPushed = objects[objects.length - 1];
       if (justPushed) {
-        let variable = variables.find((v) => v.fnNumber === pendingFn);
-        if (!variable) {
-          const fallback = `field_${pendingFn}`;
-          const base = variableNameFromComment(pendingFnComment) ?? fallback;
-          variable = {
-            id: crypto.randomUUID(),
-            name: uniqueVariableName(base, variables),
-            fnNumber: pendingFn,
-            defaultValue: content,
-          };
-          variables.push(variable);
-        }
+        const variable = bootstrapVariable(pendingFn, content, pendingFnComment);
         justPushed.variableId = variable.id;
       }
       pendingFn = null;
@@ -1253,8 +1325,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
     // ── Field data / separator ──────────────────────────────────────────────
     FD(_, rest) {
-      // Implicit text field: ^FD without a prior ^A uses ^CF defaults
-      if (!fieldType) {
+      // Implicit text field: ^FD without a prior ^A uses ^CF defaults.
+      // Skip the implicit promotion when pendingFn is set — that means
+      // we're looking at a bare `^FN<n>^FD<default>^FS` Variable
+      // declaration (the docs-example form for ^FE inline embeds),
+      // which flushField then routes through the bare-declaration
+      // path (no field object, just Variable registration).
+      if (!fieldType && pendingFn === null) {
         fieldType = "text";
         textH = cfHeight || 30;
         textW = cfWidth || 0;
@@ -1901,7 +1978,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     },
     FV: noop, // field variable — supplies data for ^FN at print time
     FC: noop, // field clock — inserts date/time (requires printer RTC)
-    FE: noop, // field concatenation — appends data to current field
+    FE: (p) => {
+      // ^FE<char>: redefine the FN-embed delimiter used inside ^FD/^FV.
+      // Single ASCII character; falls back to '#' when missing/invalid.
+      const c = p[0]?.[0];
+      embedChar = c && c !== "^" && c !== "~" ? c : "#";
+    },
     FM: noop, // multiple field origin locations
     FP: noop, // field parameter — per-character text direction
     MN: noop, // media handling / notch tracking

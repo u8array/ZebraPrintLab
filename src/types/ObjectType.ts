@@ -152,6 +152,12 @@ export interface ZplEmitContext {
    *  printer treats the field as a template slot. Absent / empty: every
    *  field emits its own literal content. */
   variables?: readonly Variable[];
+  /** ^FE embed delimiter active for the current label. Defaults to `#`
+   *  (ZPL's own default). Set by the label-level emitter when it picks
+   *  an alternate char to avoid colliding with literal payload text;
+   *  per-leaf emitters consult it when translating `«name»` markers
+   *  back to `#n#` embed syntax. */
+  embedChar?: string;
 }
 
 /**

@@ -1,4 +1,5 @@
 import type { LabelObjectBase, ZplEmitContext } from "../types/ObjectType";
+import { hasTemplateMarkers, markersToEmbeds } from "../lib/fnTemplate";
 import { modelToZplAnchor } from "../components/Canvas/textPositionTransforms";
 import { getTextRenderMetrics } from "../components/Canvas/textRenderMetrics";
 import type { LabelObject } from "../types/Group";
@@ -125,6 +126,16 @@ export function fdFieldFor(
   content: string,
   ctx?: ZplEmitContext,
 ): string {
+  // Template path: content carries `«name»` markers (^FE inline embeds).
+  // Convert to `#n#`-style embeds using the label-level embedChar; the
+  // generator emits the corresponding ^FN declarations at the label
+  // header. Skipped when `embedChar` is unset (the generator signals
+  // "no safe delimiter available, leave markers literal" — see
+  // generateZPL's templatesEmittable gate).
+  if (ctx?.variables && ctx.embedChar && hasTemplateMarkers(content)) {
+    const { payload } = markersToEmbeds(content, ctx.variables, ctx.embedChar);
+    return fdField(payload);
+  }
   const id = obj.variableId;
   if (!id || !ctx?.variables) return fdField(content);
   const variable = ctx.variables.find((v) => v.id === id);

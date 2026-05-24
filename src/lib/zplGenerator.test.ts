@@ -729,6 +729,68 @@ describe('generateZPL — parse/generate roundtrip', () => {
     expect(props(bc).mode).toBe('A');
   });
 
+  it('parses ^FE inline FN embeds into «name» markers + auto-creates variables', () => {
+    // The templated field references FN2 and FN3 inline; the parser
+    // auto-creates the Variables when they don't already exist (same
+    // bootstrap convention as the single-bind ^FN path).
+    const r = parseZPL(
+      '^XA^FO50,50^A0N,30,30^FD#2# and then #3#^FS^XZ',
+      8,
+    );
+    expect(r.variables.map((v) => ({ fn: v.fnNumber, n: v.name })).sort((a, b) => a.fn - b.fn))
+      .toEqual([
+        { fn: 2, n: 'field_2' },
+        { fn: 3, n: 'field_3' },
+      ]);
+    const text = defined(r.objects.find((o) => o.type === 'text'));
+    expect(props(text).content).toBe('«field_2» and then «field_3»');
+  });
+
+  it('respects a custom ^FE embed character', () => {
+    // ^FE@ redefines the embed delimiter, so `@1@` reads as the FN1
+    // embed and the literal `#` survives untouched in the output.
+    const r = parseZPL(
+      '^XA^FE@^FO50,50^A0N,30,30^FDItem #@1@^FS^XZ',
+      8,
+    );
+    const text = defined(r.objects.find((o) => o.type === 'text'));
+    expect(props(text).content).toBe('Item #«field_1»');
+  });
+
+  it('round-trips a label that uses ^FE inline embeds', () => {
+    const src = '^XA^FO50,50^A0N,30,30^FD#1#-#2#^FS^XZ';
+    const original = parseZPL(src, 8);
+    const regenerated = generateZPL(BASE_LABEL, original.objects, original.variables);
+    const reparsed = parseZPL(regenerated, 8);
+    const text = defined(reparsed.objects.find((o) => o.type === 'text'));
+    expect(props(text).content).toBe('«field_1»-«field_2»');
+    expect(reparsed.variables.map((v) => v.fnNumber).sort()).toEqual([1, 2]);
+  });
+
+  it('emits ^FE<alt> when payload contains a literal #', () => {
+    // Pre-build state via the parser so variable ids are real.
+    const r = parseZPL('^XA^FN1^FDfoo^FS^XZ', 8);
+    const v = defined(r.variables[0]);
+    const generated = generateZPL(BASE_LABEL, [
+      {
+        id: 'a',
+        type: 'text',
+        x: 10,
+        y: 10,
+        rotation: 0,
+        props: {
+          content: 'Item #«' + v.name + '»',
+          fontHeight: 20,
+          fontWidth: 0,
+          rotation: 'N',
+        },
+      } as LabelObject,
+    ], r.variables);
+    // '#' is in the payload literal, so generator must switch to '@'.
+    expect(generated).toMatch(/\^FE@/);
+    expect(generated).toMatch(/\^FDItem #@1@\^FS/);
+  });
+
   it('does not leak ^B4 mode from one symbol to the next', () => {
     // Two B4 fields back-to-back: first explicit mode=3, second omits
     // the mode parameter. The second must default to 'A' even though

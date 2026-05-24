@@ -1,5 +1,20 @@
 import type { LabelObject } from "../types/Group";
 import type { CsvMapping, Variable } from "../types/Variable";
+import { hasTemplateMarkers, resolveTemplateMarkers } from "./fnTemplate";
+
+/**
+ * Safely read an object's `props.content` as a string. Bindable
+ * leaves expose `content`; groups and non-bindable leaves don't.
+ * The union doesn't narrow through `as LabelObject`, so this
+ * encapsulates the unsafe cast in one place — all consumers that
+ * walk a heterogeneous object tree (binding resolution, generator
+ * pre-scan, store rename ripple, Variables panel counts) share
+ * the same shape check.
+ */
+export function getObjectStringContent(obj: LabelObject): string | undefined {
+  const c = (obj as { props?: { content?: unknown } }).props?.content;
+  return typeof c === "string" ? c : undefined;
+}
 
 /**
  * Resolve an object's `variableId` against the variable list and return
@@ -158,17 +173,32 @@ export function applyBindingToObject<T extends LabelObject>(
   active: ActiveCsvRow | null = null,
   mode: RenderMode = "preview",
 ): T {
+  const content = getObjectStringContent(obj);
+  if (content === undefined) return obj;
+
+  // Two resolution paths, applied in order so they compose:
+  //   1. `variableId` single-bind: whole content is the variable value
+  //   2. `«name»` template markers (^FE/^FN inline embeds): scan-and-
+  //       substitute, multiple variables per content
+  // Order matters when a single-bind variable's resolved value itself
+  // contains template markers — rare but cheap to support correctly.
+  let next = content;
   const variable = lookupBoundVariable(obj, variables);
-  if (!variable) return obj;
-  const props = (obj as { props?: { content?: unknown } }).props;
-  if (!props || typeof props.content !== "string") return obj;
-  const resolved = resolveVariableValue(variable, active, mode);
-  if (props.content === resolved) return obj;
-  // The discriminated union doesn't narrow through a spread, so we cast
-  // back to T. Runtime shape preserves the original variant; only
-  // `props.content` changes.
+  if (variable) {
+    next = resolveVariableValue(variable, active, mode);
+  }
+  if (hasTemplateMarkers(next)) {
+    next = resolveTemplateMarkers(next, (name) => {
+      const v = variables.find((x) => x.name === name);
+      if (!v) return undefined;
+      return resolveVariableValue(v, active, mode);
+    });
+  }
+  if (next === content) return obj;
+  // Discriminated union doesn't narrow through spread, cast back to T.
+  const props = (obj as { props: object }).props;
   return {
     ...obj,
-    props: { ...props, content: resolved },
+    props: { ...props, content: next },
   } as unknown as T;
 }
