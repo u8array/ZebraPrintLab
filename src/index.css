@@ -24,6 +24,10 @@
   --color-muted:     #666666;
   --color-accent:    #f59e0b;
   --color-accent-dim:#78490a;
+  /* Secondary highlight, e.g. clock-token markers in the content
+     editor — distinct from accent so the editor can colour-code
+     marker families without collision. */
+  --color-info:      #67c8e0;
 
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
@@ -43,6 +47,7 @@
   --color-muted:     #52525b;
   --color-accent:    #d97706;
   --color-accent-dim:#fef3c7;
+  --color-info:      #0e7490;
 }
 
 *, *::before, *::after {

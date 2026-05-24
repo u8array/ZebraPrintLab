@@ -1,6 +1,7 @@
 import type { LabelObject } from "../types/Group";
 import type { CsvMapping, Variable } from "../types/Variable";
 import { hasTemplateMarkers, resolveTemplateMarkers } from "./fnTemplate";
+import { hasClockMarkers, resolveClockMarkers } from "./fcTemplate";
 
 /**
  * Safely read an object's `props.content` as a string. Bindable
@@ -115,14 +116,18 @@ export function applyBindingToTree<T extends LabelObject>(
   variables: readonly Variable[],
   active: ActiveCsvRow | null,
   mode: RenderMode = "preview",
+  /** Reference time for clock markers — evaluated once per tree pass
+   *  here so every leaf sees the same instant, even on large labels. */
+  now?: Date,
 ): T[] {
+  const sharedNow = now ?? new Date();
   return objects.map((o) => {
     const asGroup = o as unknown as { type?: string; children?: readonly T[] };
     if (asGroup.type === "group" && Array.isArray(asGroup.children)) {
-      const nextChildren = applyBindingToTree(asGroup.children, variables, active, mode);
+      const nextChildren = applyBindingToTree(asGroup.children, variables, active, mode, sharedNow);
       return { ...o, children: nextChildren } as T;
     }
-    return applyBindingToObject(o, variables, active, mode);
+    return applyBindingToObject(o, variables, active, mode, sharedNow);
   });
 }
 
@@ -172,6 +177,10 @@ export function applyBindingToObject<T extends LabelObject>(
   variables: readonly Variable[],
   active: ActiveCsvRow | null = null,
   mode: RenderMode = "preview",
+  /** Reference time for `«clock:T»` resolution. Lazy-initialised
+   *  inside the clock branch so plain-text fields don't pay for an
+   *  unused `new Date()` allocation on every render. */
+  now?: Date,
 ): T {
   const content = getObjectStringContent(obj);
   if (content === undefined) return obj;
@@ -194,6 +203,13 @@ export function applyBindingToObject<T extends LabelObject>(
       const v = byName.get(name);
       return v ? resolveVariableValue(v, active, mode) : undefined;
     });
+  }
+  // ^FC clock markers resolve to the editor's current Date so the
+  // canvas previews what the printer would substitute right now.
+  // Schema mode leaves them as `«clock:T»` literals — same intent
+  // as schema-mode variable placeholders (show structure, not data).
+  if (mode === "preview" && hasClockMarkers(next)) {
+    next = resolveClockMarkers(next, now ?? new Date());
   }
   if (next === content) return obj;
   // Discriminated union doesn't narrow through spread, cast back to T.

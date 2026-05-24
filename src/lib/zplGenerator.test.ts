@@ -767,6 +767,55 @@ describe('generateZPL — parse/generate roundtrip', () => {
     expect(reparsed.variables.map((v) => v.fnNumber).sort()).toEqual([1, 2]);
   });
 
+  it('parses ^FD clock tokens into «clock:T» markers', () => {
+    const r = parseZPL('^XA^FO50,50^A0N,30,30^FDDate %d/%m/%Y^FS^XZ', 8);
+    const text = defined(r.objects.find((o) => o.type === 'text'));
+    expect(props(text).content).toBe('Date «clock:d»/«clock:m»/«clock:Y»');
+  });
+
+  it('respects a custom ^FC clock char on parse', () => {
+    const r = parseZPL('^XA^FC@^FO50,50^A0N,30,30^FDDate @d/@m/@Y^FS^XZ', 8);
+    const text = defined(r.objects.find((o) => o.type === 'text'));
+    expect(props(text).content).toBe('Date «clock:d»/«clock:m»/«clock:Y»');
+  });
+
+  it('round-trips a label with clock tokens (default chars)', () => {
+    const src = '^XA^FO50,50^A0N,30,30^FD%d/%m/%Y %H:%M^FS^XZ';
+    const original = parseZPL(src, 8);
+    const regenerated = generateZPL(BASE_LABEL, original.objects);
+    const reparsed = parseZPL(regenerated, 8);
+    const text = defined(reparsed.objects.find((o) => o.type === 'text'));
+    expect(props(text).content).toBe('«clock:d»/«clock:m»/«clock:Y» «clock:H»:«clock:M»');
+    // No ^FC line when defaults work — payload has no `%` `{` or `#`
+    // literals beyond the token positions.
+    expect(regenerated).not.toMatch(/\^FC/);
+  });
+
+  it('resets ^FC and ^FE state between sibling ^XA blocks', () => {
+    // Two back-to-back labels: first overrides ^FC/^FE chars, second
+    // uses defaults. Without an XA reset, the second label would
+    // parse with the leaked chars and misinterpret default tokens.
+    const r = parseZPL(
+      '^XA^FC@^FE!^FO50,50^A0N,30,30^FD@d !1!^FS^XZ' +
+      '^XA^FO50,50^A0N,30,30^FD%d #1#^FS^XZ',
+      8,
+    );
+    // parseZPL flattens pages into one objects array — second label's
+    // text is the second text object. Its `%d` should still parse as
+    // a clock token; if the leak existed, the parser would have stuck
+    // with `@` and left `%d` literal in the content.
+    const texts = r.objects.filter((o) => o.type === 'text');
+    expect(texts.length).toBeGreaterThanOrEqual(2);
+    expect(props(defined(texts[1])).content).toContain('«clock:d»');
+  });
+
+  it('emits ^FC<alt> when payload contains a literal %', () => {
+    const src = '^XA^FO50,50^A0N,30,30^FD100% match %Y^FS^XZ';
+    const original = parseZPL(src, 8);
+    const regenerated = generateZPL(BASE_LABEL, original.objects);
+    expect(regenerated).toMatch(/\^FC\$/);
+  });
+
   it('emits ^FE<alt> when payload contains a literal #', () => {
     // Pre-build state via the parser so variable ids are real.
     const r = parseZPL('^XA^FN1^FDfoo^FS^XZ', 8);

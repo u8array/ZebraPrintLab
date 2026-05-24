@@ -50,7 +50,7 @@ export const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
   { cmd: 'FX', status: 'structural', description: 'Comment field — ignored' },
   { cmd: 'FW', status: 'supported', description: 'Field orientation — sets default rotation for subsequent fields' },
   { cmd: 'FB', status: 'supported', description: 'Field block — multi-line text with word-wrap and justification' },
-  { cmd: 'FC', status: 'unsupported', description: 'Field clock — inserts date/time into field data' },
+  { cmd: 'FC', status: 'supported', description: 'Field clock — redefines the clock chars used for inline date/time tokens inside ^FD. Tokens import as «clock:T» markers; canvas previews the current date, generator round-trips through ^FC + tokens.' },
   { cmd: 'FE', status: 'supported', description: 'Field-number embed character — redefines the ^FN inline-embed delimiter (default #) used by ^FD/^FV. Imported embeds become «name» template markers; round-trips through generate.' },
   { cmd: 'FM', status: 'unsupported', description: 'Multiple field origin locations' },
   { cmd: 'FN', status: 'supported', description: 'Field number — variable field placeholder, lands in the Variables tab on import and emits as ^FN{slot} on export' },

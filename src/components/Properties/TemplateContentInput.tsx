@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { inputCls } from "./styles";
+import { CLOCK_TOKEN_LABELS } from "../../lib/fcTemplate";
 
 interface Props {
   value: string;
@@ -14,17 +14,57 @@ interface Props {
   maxLength?: number;
 }
 
+/** Tokenise content into literal / marker segments so the mirror layer
+ *  can colour markers without breaking literal text. Marker grammar
+ *  matches both variable markers (`«name»`) and clock markers
+ *  (`«clock:T»`) — same `«…»` family. */
+type Segment =
+  | { kind: "text"; text: string }
+  | { kind: "var" | "clock"; text: string };
+
+const MARKER_RE = /«([^»]+)»/g;
+
+function tokenise(content: string): Segment[] {
+  const out: Segment[] = [];
+  let last = 0;
+  for (const m of content.matchAll(MARKER_RE)) {
+    const idx = m.index ?? 0;
+    if (idx > last) out.push({ kind: "text", text: content.slice(last, idx) });
+    const body = m[1] ?? "";
+    out.push({ kind: body.startsWith("clock:") ? "clock" : "var", text: m[0] });
+    last = idx + m[0].length;
+  }
+  if (last < content.length) out.push({ kind: "text", text: content.slice(last) });
+  return out;
+}
+
 /**
- * Text input + "Insert variable" button. The button opens a small
- * dropdown listing every defined Variable; picking one splices its
- * `«name»` marker into the input at the current cursor position.
- * Templates resolve at render time via applyBindingToObject — see
- * lib/fnTemplate + lib/variableBinding.
+ * Multi-line content editor for bindable fields. Renders a textarea
+ * over a colour-mirror layer that highlights `«…»` markers in their
+ * type-specific colour (variable = accent, clock = cyan). Cursor and
+ * selection come from the native textarea; the mirror is purely
+ * visual.
  *
- * Used by Text and 1D-barcode properties panels in place of the
- * plain input so non-technical users can compose multi-variable
- * fields without typing the marker syntax by hand.
+ * The textarea auto-grows from 1 to MAX_ROWS as content wraps or
+ * gains newlines. Newlines round-trip via the existing ^FB / `\&`
+ * mechanism in the parser/generator — outside a ^FB block they emit
+ * literally and are ignored by Zebra firmware, which is the spec-
+ * correct fallback.
+ *
+ * The `{x}` button opens a dropdown listing every defined Variable
+ * plus the canonical clock tokens; picking either splices the marker
+ * into the textarea at the cursor.
  */
+const MIN_ROWS = 2;
+const MAX_ROWS = 8;
+const LINE_HEIGHT_PX = 20; // text-xs leading-5 ⇒ 20px
+// Shared geometry between textarea + mirror. Any visual delta here
+// causes per-char misalignment of the highlight against the cursor.
+// pr-7 reserves room for the absolute `{x}` button in the top-right
+// so first-line content doesn't slide under it.
+const SHARED_CLS =
+  "w-full bg-surface-2 border border-border rounded pl-2 pr-7 py-1 text-xs font-mono leading-5 whitespace-pre-wrap break-words";
+
 export function TemplateContentInput({
   value,
   onChange,
@@ -34,12 +74,29 @@ export function TemplateContentInput({
 }: Props) {
   const t = useT();
   const variables = useLabelStore((s) => s.variables);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const mirrorRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  const segments = useMemo(() => tokenise(value), [value]);
 
-  // Click-outside + Esc close. Mounted only while open so the
-  // listeners don't fire for every other open menu in the panel.
+  // Auto-grow from MIN_ROWS up to MAX_ROWS based on actual rendered
+  // height (so visual word-wrap counts, not just \n count). Mirror
+  // matches the textarea exactly so the highlight layer stays
+  // aligned at every grow step.
+  useLayoutEffect(() => {
+    const ta = taRef.current;
+    const mirror = mirrorRef.current;
+    if (!ta || !mirror) return;
+    ta.style.height = "auto"; // reset so scrollHeight reflects content
+    const minH = MIN_ROWS * LINE_HEIGHT_PX + 8; // +8 = 2× py-1 padding
+    const maxH = MAX_ROWS * LINE_HEIGHT_PX + 8;
+    const h = Math.min(maxH, Math.max(minH, ta.scrollHeight));
+    ta.style.height = `${h}px`;
+    mirror.style.height = `${h}px`;
+  }, [value]);
+
+  // Click-outside + Esc close. Mounted only while open.
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
@@ -56,55 +113,109 @@ export function TemplateContentInput({
     };
   }, [open]);
 
-  const insertMarker = (name: string) => {
-    const input = inputRef.current;
-    const marker = `«${name}»`;
-    const cursor = input?.selectionStart ?? value.length;
-    const end = input?.selectionEnd ?? cursor;
+  const insertMarker = (markerBody: string) => {
+    const ta = taRef.current;
+    const marker = `«${markerBody}»`;
+    const cursor = ta?.selectionStart ?? value.length;
+    const end = ta?.selectionEnd ?? cursor;
     const next = value.slice(0, cursor) + marker + value.slice(end);
     onChange(next);
     setOpen(false);
-    // Restore focus + place cursor right after the inserted marker.
     queueMicrotask(() => {
-      if (!input) return;
+      if (!ta) return;
       const pos = cursor + marker.length;
-      input.focus();
-      input.setSelectionRange(pos, pos);
+      ta.focus();
+      ta.setSelectionRange(pos, pos);
     });
   };
 
+  const syncScroll = () => {
+    const ta = taRef.current;
+    const mirror = mirrorRef.current;
+    if (!ta || !mirror) return;
+    mirror.scrollTop = ta.scrollTop;
+    mirror.scrollLeft = ta.scrollLeft;
+  };
+
   return (
-    <div ref={rootRef} className="relative flex gap-1">
-      <input
-        ref={inputRef}
-        className={`${inputCls} flex-1`}
+    <div ref={rootRef} className="relative">
+      {/* Visual layer: same geometry as the textarea, coloured marker
+          spans. Hidden from a11y so the screen-reader gets the
+          textarea value only. */}
+      <div
+        ref={mirrorRef}
+        className={`${SHARED_CLS} absolute inset-0 overflow-hidden pointer-events-none text-text`}
+        aria-hidden
+      >
+        {segments.map((s, i) =>
+          s.kind === "text" ? (
+            <span key={i}>{s.text}</span>
+          ) : s.kind === "var" ? (
+            <span key={i} className="text-accent">{s.text}</span>
+          ) : (
+            <span key={i} className="text-info">{s.text}</span>
+          ),
+        )}
+        {value.endsWith("\n") ? " " : ""}
+      </div>
+      <textarea
+        ref={taRef}
+        // overflow-y-auto so content beyond MAX_ROWS stays reachable;
+        // scrollbar visually hidden because the mirror layer doesn't
+        // reserve space for one — a visible scrollbar would shift the
+        // textarea's text origin and misalign the colour highlight.
+        // Wheel + keyboard scrolling stay functional via syncScroll.
+        className={`${SHARED_CLS} relative block resize-none overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden caret-text focus:border-accent focus:outline-none`}
+        style={{ color: "transparent", background: "transparent" }}
         value={value}
         maxLength={maxLength}
         placeholder={placeholder}
         onChange={(e) => onChange(sanitise ? sanitise(e.target.value) : e.target.value)}
+        onScroll={syncScroll}
+        spellCheck={false}
       />
+      {/* Button floats inside the textarea's top-right corner so the
+          input keeps the full panel width. Subtle background so it
+          stays legible when textarea content runs under it. */}
       <button
         type="button"
-        className="px-2 rounded border border-border bg-surface-2 text-xs font-mono text-muted hover:text-text hover:border-accent transition-colors"
+        className="absolute top-1 right-1 px-1.5 rounded text-[10px] font-mono bg-surface border border-border text-muted hover:text-text hover:border-accent transition-colors"
         title={t.app.insertVariable}
-        disabled={variables.length === 0}
+        aria-haspopup="menu"
+        aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
       >
         {"{x}"}
       </button>
-      {open && variables.length > 0 && (
+      {open && (
         <div
-          className="absolute right-0 top-full mt-1 z-10 min-w-[8rem] max-h-48 overflow-y-auto rounded border border-border bg-surface shadow-lg"
+          className="absolute right-0 top-full mt-1 z-10 min-w-[10rem] max-h-64 overflow-y-auto rounded border border-border bg-surface shadow-lg"
           role="menu"
         >
-          {variables.map((v) => (
+          {variables.length > 0 && (
+            <>
+              {variables.map((v) => (
+                <button
+                  key={v.id}
+                  type="button"
+                  className="block w-full text-left px-2 py-1 text-xs font-mono text-accent hover:bg-surface-2 transition-colors"
+                  onClick={() => insertMarker(v.name)}
+                >
+                  «{v.name}»
+                </button>
+              ))}
+              <div className="border-t border-border my-1" />
+            </>
+          )}
+          {CLOCK_TOKEN_LABELS.map(({ token, labelKey }) => (
             <button
-              key={v.id}
+              key={token}
               type="button"
               className="block w-full text-left px-2 py-1 text-xs font-mono text-text hover:bg-surface-2 transition-colors"
-              onClick={() => insertMarker(v.name)}
+              onClick={() => insertMarker(`clock:${token}`)}
             >
-              «{v.name}»
+              <span className="text-info">«clock:{token}»</span>{" "}
+              <span className="text-muted">{t.app[labelKey]}</span>
             </button>
           ))}
         </div>

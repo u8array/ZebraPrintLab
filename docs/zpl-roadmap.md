@@ -40,6 +40,7 @@ What's supported, what's next, what's planned.
 - [x] `^FN` — variable placeholder
 - [x] `^FV` — variable data
 - [x] `^FE` — field-number embed character
+- [x] `^FC` — field clock (date / time)
 - [x] `^BY` — barcode field default
 
 ### Text & fonts
@@ -143,7 +144,6 @@ Coming with a future native build.
 
 ### Real-time data
 
-- [ ] `^FC` — field clock (date / time)
 - [ ] `^SO` — RTC offset
 - [ ] `^ST` — set date & time
 

@@ -158,6 +158,13 @@ export interface ZplEmitContext {
    *  per-leaf emitters consult it when translating `«name»` markers
    *  back to `#n#` embed syntax. */
   embedChar?: string;
+  /** ^FC clock chars active for the current label. Defaults to
+   *  `% { #`; the label-level emitter picks an alternate triple when
+   *  defaults clash with literal payload text. Per-leaf emitters
+   *  consult it when translating `«clock:T»` markers back to
+   *  `<char><T>` token syntax. Absent when no field carries clock
+   *  markers — fdFieldFor leaves them literal in that case. */
+  clockChars?: { date: string; time: string; tertiary: string };
 }
 
 /**

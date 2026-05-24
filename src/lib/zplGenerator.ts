@@ -6,6 +6,11 @@ import {
   hasTemplateMarkers,
   pickEmbedChar,
 } from './fnTemplate';
+import {
+  hasClockMarkers,
+  pickClockChars,
+  isDefaultClockChars,
+} from './fcTemplate';
 import { getObjectStringContent } from './variableBinding';
 import type { CustomFontMapping, LabelConfig, ZplEmitContext } from '../types/ObjectType';
 import type { Variable } from '../types/Variable';
@@ -96,8 +101,11 @@ function planTemplateHeader(
   const varsByFn = new Map(variables.map((v) => [v.fnNumber, v]));
 
   const templatePayloads: string[] = [];
+  const clockPayloads: string[] = [];
   const templateFns = new Set<number>();
   const singleBindFns = new Set<number>();
+  // Single tree walk collects both ^FE-template and ^FC-clock payloads
+  // so the leaf set is flattened once, not twice.
   for (const leaf of flattenObjects(shifted)) {
     if (leaf.includeInExport === false) continue;
     if (leaf.variableId) {
@@ -105,31 +113,47 @@ function planTemplateHeader(
       if (v) singleBindFns.add(v.fnNumber);
     }
     const c = getObjectStringContent(leaf);
-    if (c === undefined || !hasTemplateMarkers(c)) continue;
-    templatePayloads.push(c);
-    for (const name of extractTemplateRefs(c)) {
-      const v = varsByName.get(name);
-      if (v) templateFns.add(v.fnNumber);
+    if (c === undefined) continue;
+    if (hasTemplateMarkers(c)) {
+      templatePayloads.push(c);
+      for (const name of extractTemplateRefs(c)) {
+        const v = varsByName.get(name);
+        if (v) templateFns.add(v.fnNumber);
+      }
     }
+    if (hasClockMarkers(c)) clockPayloads.push(c);
   }
   const pickedEmbedChar =
     templatePayloads.length > 0 ? pickEmbedChar(templatePayloads) : '#';
-  if (pickedEmbedChar === null) {
-    // Markers stay literal in the emitted ZPL.
-    return { headerLines: [], emitCtx: { label, variables } };
-  }
   const headerLines: string[] = [];
-  if (pickedEmbedChar !== '#') headerLines.push(`^FE${pickedEmbedChar}`);
-  for (const fn of [...templateFns].sort((a, b) => a - b)) {
-    if (singleBindFns.has(fn)) continue;
-    const v = varsByFn.get(fn);
-    if (!v) continue;
-    headerLines.push(`^FN${fn}${fdField(v.defaultValue)}`);
+  const emitCtx: ZplEmitContext = { label, variables };
+
+  if (pickedEmbedChar !== null) {
+    if (pickedEmbedChar !== '#') headerLines.push(`^FE${pickedEmbedChar}`);
+    for (const fn of [...templateFns].sort((a, b) => a - b)) {
+      if (singleBindFns.has(fn)) continue;
+      const v = varsByFn.get(fn);
+      if (!v) continue;
+      headerLines.push(`^FN${fn}${fdField(v.defaultValue)}`);
+    }
+    emitCtx.embedChar = pickedEmbedChar;
   }
-  return {
-    headerLines,
-    emitCtx: { label, variables, embedChar: pickedEmbedChar },
-  };
+
+  // ^FC clock chars run on the same fail-safe logic as ^FE: pick a
+  // triple that doesn't clash with any literal payload text, emit
+  // `^FC<a>,<b>,<c>` only when ≠ defaults, leave clock markers
+  // literal when no safe triple exists.
+  if (clockPayloads.length > 0) {
+    const picked = pickClockChars(clockPayloads);
+    if (picked) {
+      if (!isDefaultClockChars(picked)) {
+        headerLines.push(`^FC${picked.date},${picked.time},${picked.tertiary}`);
+      }
+      emitCtx.clockChars = picked;
+    }
+  }
+
+  return { headerLines, emitCtx };
 }
 
 /** Format a `~DY` line for a graphic-upload image. Mirrors the font-upload

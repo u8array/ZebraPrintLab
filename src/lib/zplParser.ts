@@ -6,6 +6,11 @@ import {
   type Variable,
 } from "../types/Variable";
 import { embedsToMarkers } from "./fnTemplate";
+import {
+  DEFAULT_CLOCK_CHARS,
+  tokensToMarkers,
+  type ClockChars,
+} from "./fcTemplate";
 import { zplAnchorToModel } from "../components/Canvas/textPositionTransforms";
 import { computeTextRenderMetrics } from "../components/Canvas/textRenderMetrics";
 import type { LabelObject } from "../types/Group";
@@ -564,6 +569,11 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   // Programming Guide). Reset per parse is implicit — this `let` is
   // initialised once at the top of parseZPL.
   let embedChar = "#";
+  // ^FC field-clock chars. Same scoping as ^FE: format-scoped, default
+  // `% { #`, redefined by `^FC<date>,<time>,<tertiary>`. Tokens in ^FD
+  // that follow one of these chars become `«clock:T»` markers at
+  // flushField time, then re-emit as the same triplet on round-trip.
+  let clockChars: ClockChars = { ...DEFAULT_CLOCK_CHARS };
   let gsSymbology: Gs1DatabarProps["symbology"] = 1;
   let gsSegments: number | undefined = undefined;
   // ^BY barcode defaults
@@ -741,12 +751,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     const rawDecoded = fhActive
       ? decodeFH(pendingFD, fhDelimiter, fhDecoder)
       : pendingFD;
-    // ^FE-style inline FN embeds (`#1#`, `#2,0,3#`, …) get rewritten
-    // into the canonical `«variableName»` marker form before the
-    // content reaches downstream code. Bootstrap a Variable for any
-    // referenced FN that has no existing entry — same auto-naming
-    // ("field_<n>") used by the single-bind ^FN path below.
-    const content = applyFnEmbeds(rawDecoded);
+    // Two marker conversions, in order:
+    //   1. ^FE-style FN embeds (`#1#` → `«variableName»`), bootstrap
+    //      Variables when the FN slot is new — same auto-naming as
+    //      the single-bind ^FN path below.
+    //   2. ^FC clock tokens (`%d`, `%Y`, …) → `«clock:T»`. Runs after
+    //      FN embeds so a payload like `%FN#1#%Y` resolves both.
+    const afterFn = applyFnEmbeds(rawDecoded);
+    const content = tokensToMarkers(afterFn, clockChars);
     const posType: "FT" | "FO" = positionIsFT ? "FT" : "FO";
     const comment = takeComment();
 
@@ -1946,8 +1958,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     },
 
     // ── Ignored / structural ────────────────────────────────────────────────
-    // ^XA / ^XZ: label start/end — reset pending comment via empty rest
-    XA: resetComment,
+    // ^XA / ^XZ: label start/end. Reset format-scoped directives so a
+    // multi-label stream doesn't leak ^FE/^FC overrides from a prior
+    // ^XA…^XZ block into the next one — without this `^FC@^...^XZ^XA`
+    // would parse later default-char tokens differently.
+    XA: (p, rest) => {
+      embedChar = "#";
+      clockChars = { ...DEFAULT_CLOCK_CHARS };
+      resetComment(p, rest);
+    },
     XZ: resetComment,
     // ^FX: comment field — accumulate across consecutive ^FX lines so the
     // assembled text reaches the next field object as one multi-line comment.
@@ -1977,7 +1996,20 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       pendingFnComment = pendingComment;
     },
     FV: noop, // field variable — supplies data for ^FN at print time
-    FC: noop, // field clock — inserts date/time (requires printer RTC)
+    FC: (p) => {
+      // ^FC<a>,<b>,<c>: redefine clock chars. Missing/empty slots
+      // keep their current value (Zebra spec: defaults persist when
+      // a parameter is omitted). `^` and `~` stay reserved.
+      const accept = (raw: string | undefined, current: string) => {
+        const c = raw?.[0];
+        return c && c !== "^" && c !== "~" ? c : current;
+      };
+      clockChars = {
+        date: accept(p[0], clockChars.date),
+        time: accept(p[1], clockChars.time),
+        tertiary: accept(p[2], clockChars.tertiary),
+      };
+    },
     FE: (p) => {
       // ^FE<char>: redefine the FN-embed delimiter used inside ^FD/^FV.
       // Single ASCII character; falls back to '#' when missing/invalid.
