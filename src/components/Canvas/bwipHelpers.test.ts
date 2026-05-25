@@ -93,18 +93,13 @@ describe("rotation pipeline", () => {
       },
     }) as LabelObject;
 
-  it("does not set rotate for N", () => {
-    const opts = buildBwipOptions(baseCode128("N"), 1, 8);
-    expect(opts?.rotate).toBeUndefined();
-  });
-
-  it("forwards R and I unchanged to bwip-js", () => {
-    expect(buildBwipOptions(baseCode128("R"), 1, 8)?.rotate).toBe("R");
-    expect(buildBwipOptions(baseCode128("I"), 1, 8)?.rotate).toBe("I");
-  });
-
-  it("translates ZPL B to bwip L (270° CW)", () => {
-    expect(buildBwipOptions(baseCode128("B"), 1, 8)?.rotate).toBe("L");
+  it("never sets a bwip rotate option (Konva handles visual rotation)", () => {
+    // bwip-js always renders upright now; the renderer wraps the
+    // bitmap in an inner rotated Group via rotatedGroupTransform. A
+    // rotate option in opts would double-rotate the result.
+    for (const rot of ["N", "R", "I", "B"] as const) {
+      expect(buildBwipOptions(baseCode128(rot), 1, 8)?.rotate).toBeUndefined();
+    }
   });
 
   it("resolves UPC/EAN supplement bcid by content length", () => {
@@ -132,14 +127,12 @@ describe("rotation pipeline", () => {
   });
 
   it("swaps display W and H for quarter rotations", () => {
-    // Pretend bwip produced an unrotated 200x100 bitmap.
-    const fakeCanvas = { width: 200, height: 100 } as HTMLCanvasElement;
-    const upright = getDisplaySize(baseCode128("N"), fakeCanvas, 1, 8);
-    // For R/B, bwip's bitmap is post-rotation (100x200). Pass that and check
-    // the upright dimensions are recovered then re-swapped to visible.
-    const rotatedCanvas = { width: 100, height: 200 } as HTMLCanvasElement;
-    const rotR = getDisplaySize(baseCode128("R"), rotatedCanvas, 1, 8);
-    const rotB = getDisplaySize(baseCode128("B"), rotatedCanvas, 1, 8);
+    // bwip-js always produces an upright bitmap now; getDisplaySize
+    // swaps W/H itself for R/B to report the rotated screen footprint.
+    const uprightCanvas = { width: 200, height: 100 } as HTMLCanvasElement;
+    const upright = getDisplaySize(baseCode128("N"), uprightCanvas, 1, 8);
+    const rotR = getDisplaySize(baseCode128("R"), uprightCanvas, 1, 8);
+    const rotB = getDisplaySize(baseCode128("B"), uprightCanvas, 1, 8);
     expect(rotR.w).toBe(upright.h);
     expect(rotR.h).toBe(upright.w);
     expect(rotB.w).toBe(upright.h);

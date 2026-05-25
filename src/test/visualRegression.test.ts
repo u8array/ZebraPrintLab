@@ -129,22 +129,40 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
           : obj.type === "upcEanExtension" && obj.props.printInterpretation
             ? obj.y - UPC_SUPP_TEXT_ZONE_DOTS
             : obj.y;
-      // Bars draw at FO; bbox extends in the text-zone direction without
-      // shifting the bar pattern. barLeftPx/barTopPx describe where the
-      // bars sit inside the bbox, but the bitmap itself anchors at obj.x/y.
-      // bitmapCrop excludes any internal padding rows (e.g. GS1 DataBar's
-      // paddingheight) so bars fill the full bar sub-rectangle.
+      // bwip now always renders upright. Apply the rotated-Group
+      // transform via the 2D ctx so the test matches what Konva paints
+      // in the renderer: bitmap drawn at its bar sub-rect inside the
+      // upright bbox, then rotated to land at the FO.
       const crop = displaySize.bitmapCrop ?? {
         x: 0,
         y: 0,
         width: bwipImage.width,
         height: bwipImage.height,
       };
+      const ub = displaySize.upright;
+      const rot = obj.props.rotation;
+      ctx.save();
+      // Translate to the rotated bbox top-left (= FO - rotated bar offset),
+      // then apply rotatedGroupTransform-equivalent rotation around that.
+      const bboxTopLeftX = obj.x - displaySize.barLeftPx;
+      const bboxTopLeftY = drawY - displaySize.barTopPx;
+      ctx.translate(bboxTopLeftX, bboxTopLeftY);
+      if (rot === "R") {
+        ctx.translate(ub.h, 0);
+        ctx.rotate(Math.PI / 2);
+      } else if (rot === "I") {
+        ctx.translate(ub.w, ub.h);
+        ctx.rotate(Math.PI);
+      } else if (rot === "B") {
+        ctx.translate(0, ub.w);
+        ctx.rotate(-Math.PI / 2);
+      }
       ctx.drawImage(
         bwipImage,
         crop.x, crop.y, crop.width, crop.height,
-        obj.x, drawY, displaySize.barW, displaySize.barH,
+        ub.barLeftPx, ub.barTopPx, ub.barW, ub.barH,
       );
+      ctx.restore();
 
       // 4. Compare with Labelary ref
       const labelaryRef = PNG.sync.read(fs.readFileSync(fixturePath));

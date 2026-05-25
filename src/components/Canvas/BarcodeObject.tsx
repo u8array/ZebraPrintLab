@@ -280,18 +280,16 @@ export function BarcodeObject({
 
     if (showHriOverlay) {
       const ub = dim.upright;
-      const innerTr = rotatedGroupTransform(rotation, ub.barW, ub.barH);
+      // Inner Group covers the full upright bbox so KImage + text both
+      // live inside it at upright bbox-relative coords. The Group's
+      // transform handles all R/I/B placement.
+      const innerTr = rotatedGroupTransform(rotation, ub.w, ub.h);
 
-      // Build text overlay content in upright coords.
+      // Build text overlay content in upright bbox-relative coords.
       let overlayContent: React.ReactNode;
       if (EAN_UPC_TYPES.has(obj.type)) {
         const bwipSc = get1DBwipScale(moduleWidth, scale, dpmm);
-        // Upright canvas dimension along the encoding axis. For R/B the
-        // bwip bitmap is rotated 90°, so the upright width sits on the
-        // canvas's `height` field; for N/I it's `width` as-is.
-        const isQuarter = rotation === "R" || rotation === "B";
-        const uprightCanvasW = isQuarter ? barcodeCanvas.height : barcodeCanvas.width;
-        const layout = getEanUpcLayout(obj.type as EanUpcType, ub.w, uprightCanvasW, bwipSc);
+        const layout = getEanUpcLayout(obj.type as EanUpcType, ub.w, barcodeCanvas.width, bwipSc);
         const { nodes } = buildEanUpcDigitOverlay({
           type: obj.type as EanUpcType,
           displayText,
@@ -301,6 +299,9 @@ export function BarcodeObject({
           textGap,
           textFontSize,
         });
+        // EAN/UPC have barTopPx === 0 (no text zone above), so the
+        // helper's bar-relative textY equals the bbox-relative one
+        // here — render directly without an offset wrapper.
         overlayContent = nodes;
       } else {
         // Other 1D: single centered text. textRef is wired only for the
@@ -311,12 +312,12 @@ export function BarcodeObject({
         // during a rotated resize drag — minor visual nit, no broken
         // print output.
         const textY = isTextAbove
-          ? -textFontSize - aboveGapPx
-          : ub.barH + textGap;
+          ? ub.barTopPx - textFontSize - aboveGapPx
+          : ub.barTopPx + ub.barH + textGap;
         overlayContent = (
           <Text
             ref={isUpright ? setTextRef : undefined}
-            x={0} y={textY} width={Math.max(ub.barW, 1)}
+            x={ub.barLeftPx} y={textY} width={Math.max(ub.barW, 1)}
             text={displayText} fontSize={textFontSize}
             fontFamily="'Courier New', monospace" fontStyle="bold"
             align="center" wrap="none" fill="#000000" listening={false}
@@ -325,16 +326,14 @@ export function BarcodeObject({
       }
 
       // Counter-scale only applies to upright Other 1D. textLocalY here
-      // returns the position in inner-Group local coords (the inner-
-      // Group origin sits at bar top-left for upright N, so subtracting
-      // btY from the legacy outer-coord formula gives the same screen
-      // y). For above-bars (logmars): inner-y = -(font + gap)/sy. For
-      // below: inner-y = barH + gap/sy.
+      // returns the position in inner-Group local coords (bbox-relative
+      // upright). For above-bars (logmars): barTopPx - (font+gap)/sy.
+      // For below: barTopPx + barH + gap/sy.
       const useUprightTransform = isUpright && !EAN_UPC_TYPES.has(obj.type);
       const textLocalY = (sy: number) =>
         isTextAbove
-          ? -(textFontSize + aboveGapPx) / sy
-          : ub.barH + textGap / sy;
+          ? ub.barTopPx - (textFontSize + aboveGapPx) / sy
+          : ub.barTopPx + ub.barH + textGap / sy;
       const handleTransform = () => {
         const grp = groupRef.current;
         const txt = textRef.current;
@@ -368,36 +367,29 @@ export function BarcodeObject({
           onTransform={useUprightTransform ? handleTransform : undefined}
           onTransformEnd={useUprightTransform ? handleTransformEnd : undefined}
         >
-          <KImage
-            x={btX}
-            y={btY}
-            image={barcodeCanvas}
-            crop={bitmapCrop}
-            width={bw}
-            height={bh}
-            imageSmoothingEnabled={false}
-            stroke={isSelected ? colors.selection : undefined}
-            strokeWidth={isSelected ? 2 : 0}
-            strokeScaleEnabled={false}
-          />
-          <Group ref={excludeGroupFromBbox}>
-            <Group
-              x={dim.barLeftPx + innerTr.x}
-              y={dim.barTopPx + innerTr.y}
-              rotation={innerTr.rotation}
-            >
-              {overlayContent}
-            </Group>
+          <Group x={innerTr.x} y={innerTr.y} rotation={innerTr.rotation}>
+            <KImage
+              x={ub.barLeftPx}
+              y={ub.barTopPx}
+              image={barcodeCanvas}
+              crop={bitmapCrop}
+              width={ub.barW}
+              height={ub.barH}
+              imageSmoothingEnabled={false}
+              stroke={isSelected ? colors.selection : undefined}
+              strokeWidth={isSelected ? 2 : 0}
+              strokeScaleEnabled={false}
+            />
+            <Group ref={excludeGroupFromBbox}>{overlayContent}</Group>
           </Group>
         </Group>
       );
     }
 
-    // Default path. Wrapped in a Group so the bbox spans the full footprint
-    // (including any text zone reserved by firmware) while the bitmap
-    // renders only at the bar sub-rectangle. An invisible Rect at the full
-    // bbox dimensions keeps Group.getClientRect aligned with displayH even
-    // when btY > 0 or bh < h.
+    // Default path: 2D barcodes + 1D without HRI. bwip renders upright,
+    // the inner Group's rotated transform handles R/I/B placement.
+    const ub = dim.upright;
+    const defaultInnerTr = rotatedGroupTransform(rotation, ub.w, ub.h);
     return (
       <Group
         id={obj.id}
@@ -408,18 +400,20 @@ export function BarcodeObject({
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       >
-        <KImage
-          x={btX}
-          y={btY}
-          image={barcodeCanvas}
-          crop={bitmapCrop}
-          width={bw}
-          height={bh}
-          imageSmoothingEnabled={false}
-          stroke={isSelected ? colors.selection : undefined}
-          strokeWidth={isSelected ? 2 : 0}
-          strokeScaleEnabled={false}
-        />
+        <Group x={defaultInnerTr.x} y={defaultInnerTr.y} rotation={defaultInnerTr.rotation}>
+          <KImage
+            x={ub.barLeftPx}
+            y={ub.barTopPx}
+            image={barcodeCanvas}
+            crop={bitmapCrop}
+            width={ub.barW}
+            height={ub.barH}
+            imageSmoothingEnabled={false}
+            stroke={isSelected ? colors.selection : undefined}
+            strokeWidth={isSelected ? 2 : 0}
+            strokeScaleEnabled={false}
+          />
+        </Group>
       </Group>
     );
   }
