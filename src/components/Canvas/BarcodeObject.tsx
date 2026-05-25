@@ -9,7 +9,6 @@ import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import {
   buildBwipOptions,
   getDisplaySize,
-  getRotatedTextAnchor,
   get1DBwipScale,
   getEanUpcLayout,
   type BarcodeDisplaySize,
@@ -568,31 +567,27 @@ export function BarcodeObject({
       // upright above) — keeps rotated and N visually consistent per
       // type without duplicating the per-type chain.
       const rotGap = aboveGapPx;
-      // x/y anchor for the rotated text. Helper anchors against the bar
-      // sub-rectangle, not the bbox edge — without that the firmware
-      // text-zone (EAN/UPC: 13 dots, logmars: 20 dots) is added to the
-      // gap and the text drifts that many dots away from the bars.
-      // sideX is the R/B x-anchor (and the I tx for sysNode/trailNode);
-      // topY is the I y-anchor (replaces -textGap for I).
-      const { sideX, topY } = getRotatedTextAnchor(
-        rotation,
-        isTextAbove,
-        dim,
-        rotGap,
-        textFontSize,
-      );
-      const tRot = rotation === "R" ? 90 : rotation === "I" ? 180 : -90;
 
-      // ── EAN/UPC: reproduce upright digit layout along the rotated axis ──
+      // ── EAN/UPC: reproduce the upright digit layout inside an inner
+      //    rotated Group. Each digit node lives at its upright x/y
+      //    (xLeft/xRight from getEanUpcLayout, textY just below bars);
+      //    the inner Group's transform handles the visual rotation, so
+      //    the per-rotation tx/ty/tRot triple is gone. Same source-of-
+      //    truth digit splits as the upright EAN/UPC branch above.
       let textElements: React.ReactNode;
       if (EAN_UPC_TYPES.has(obj.type)) {
+        const ub = dim.upright;
         const bwipSc = get1DBwipScale(moduleWidth, scale, dpmm);
-        // For I: encoding runs horizontally (canvas.width); for R/B: vertically (canvas.height)
-        const encDisplay = rotation === "I" ? w : h;
-        const encCanvas  = rotation === "I" ? barcodeCanvas.width : barcodeCanvas.height;
-        const layout = getEanUpcLayout(obj.type as EanUpcType, encDisplay, encCanvas, bwipSc);
+        // Upright canvas dimension along the encoding axis. For R/B the
+        // bwip bitmap is rotated 90°, so the upright width sits on the
+        // canvas's `height` field; for N/I it's `width` as-is.
+        const isQuarter = rotation === "R" || rotation === "B";
+        const uprightCanvasW = isQuarter ? barcodeCanvas.height : barcodeCanvas.width;
+        const layout = getEanUpcLayout(obj.type as EanUpcType, ub.w, uprightCanvasW, bwipSc);
         const { xLeft, xRight, halfWidth: halfW } = layout;
         const ldW = textFontSize * 1.2;
+        const textY = ub.barH + textGap;
+        const innerTr = rotatedGroupTransform(rotation, ub.barW, ub.barH);
 
         const tStyle = {
           fontSize: textFontSize,
@@ -603,60 +598,43 @@ export function BarcodeObject({
           listening: false,
         };
 
-        // Position a text node at `encPos` from barcode start, spanning `size`.
-        // For R: encPos → screen-y downward from top (start=top).
-        // For B: encPos → screen-y upward from bottom (start=bottom), anchor = h - encPos.
-        // For I: encPos → screen-x leftward from right (start=right), anchor-x = w - encPos.
-        const node = (key: string, encPos: number, size: number, text: string) => {
-          const tx = rotation === "I" ? w - encPos : sideX;
-          const ty = rotation === "R" ? encPos : rotation === "B" ? h - encPos : topY;
-          return <Text key={key} x={tx} y={ty} rotation={tRot} width={Math.max(size, 1)} text={text} align="center" {...tStyle} />;
-        };
+        const mainDigits = (key: string, x: number, width: number, text: string) =>
+          <Text key={key} x={x} y={textY} width={Math.max(width, 1)} text={text} align="center" {...tStyle} />;
+        const sysDigit = (text: string) =>
+          <Text key="sys" x={-ldW} y={textY} width={ldW} text={text} align="center" {...tStyle} />;
+        const trailDigit = (text: string) =>
+          <Text key="trail" x={ub.barW + 2} y={textY} width={ldW} text={text} align="left" {...tStyle} />;
 
-        // Single digit floated BEFORE barcode start (outside the quiet zone).
-        const sysNode = (key: string, text: string) => {
-          // R: above top (y=-ldW); B: below bottom (y=h+ldW); I: right of barcode (x=w+ldW).
-          const tx = rotation === "I" ? w + ldW : sideX;
-          const ty = rotation === "R" ? -ldW : rotation === "B" ? h + ldW : topY;
-          return <Text key={key} x={tx} y={ty} rotation={tRot} width={Math.max(ldW, 1)} text={text} align="center" {...tStyle} />;
-        };
-
-        // Single digit floated AFTER barcode end (UPC-A/UPC-E check digit).
-        const trailNode = (key: string, text: string) => {
-          // R: below bottom (y≈encDisplay); B: above top (y≈h-encDisplay); I: left of x=0.
-          const tx = rotation === "I" ? -ldW : sideX;
-          const ty = rotation === "R" ? encDisplay : rotation === "B" ? h - encDisplay : topY;
-          return <Text key={key} x={tx} y={ty} rotation={tRot} width={Math.max(ldW, 1)} text={text} align="left" {...tStyle} />;
-        };
-
-        // All EAN/UPC HRI strings are formatted by the registry's
-        // formatHri (displayText). The split positions differ per type
-        // but the source string is the same as the upright branch.
+        let digitNodes: React.ReactNode[] = [];
         if (obj.type === "ean13") {
-          textElements = [
-            sysNode("sys", displayText[0] ?? ""),
-            node("left", xLeft, halfW, displayText.slice(1, 7)),
-            node("right", xRight, halfW, displayText.slice(7, 13)),
+          digitNodes = [
+            sysDigit(displayText[0] ?? ""),
+            mainDigits("left", xLeft, halfW, displayText.slice(1, 7)),
+            mainDigits("right", xRight, halfW, displayText.slice(7, 13)),
           ];
         } else if (obj.type === "ean8") {
-          textElements = [
-            node("left", xLeft, halfW, displayText.slice(0, 4)),
-            node("right", xRight, halfW, displayText.slice(4, 8)),
+          digitNodes = [
+            mainDigits("left", xLeft, halfW, displayText.slice(0, 4)),
+            mainDigits("right", xRight, halfW, displayText.slice(4, 8)),
           ];
         } else if (obj.type === "upca") {
-          textElements = [
-            sysNode("sys", displayText[0] ?? ""),
-            node("left", xLeft, halfW, displayText.slice(1, 6)),
-            node("right", xRight, halfW, displayText.slice(6, 11)),
+          digitNodes = [
+            sysDigit(displayText[0] ?? ""),
+            mainDigits("left", xLeft, halfW, displayText.slice(1, 6)),
+            mainDigits("right", xRight, halfW, displayText.slice(6, 11)),
           ];
         } else if (obj.type === "upce") {
-          // displayText = "0" + 6 data digits + check digit (8 chars).
-          textElements = [
-            sysNode("sys", displayText[0] ?? "0"),
-            node("mid", xLeft, halfW, displayText.slice(1, 7)),
-            trailNode("trail", displayText[7] ?? ""),
+          digitNodes = [
+            sysDigit(displayText[0] ?? "0"),
+            mainDigits("mid", xLeft, halfW, displayText.slice(1, 7)),
+            trailDigit(displayText[7] ?? ""),
           ];
         }
+        textElements = (
+          <Group x={dim.barLeftPx + innerTr.x} y={dim.barTopPx + innerTr.y} rotation={innerTr.rotation}>
+            {digitNodes}
+          </Group>
+        );
       } else {
         // ── Other 1D: single centered text inside an upright-coords
         //    rotated container. The inner Group's transform places its
