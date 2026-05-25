@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLabelStore, useHistory, getCurrentObjects, selectPreviewLocksEditor } from "../store/labelStore";
 import { nextRotation } from "../components/Canvas/rotationGeometry";
+import { isEditableTarget } from "../lib/dom";
 
 export function useGlobalShortcuts() {
   const duplicateSelectedObjects = useLabelStore((s) => s.duplicateSelectedObjects);
@@ -21,13 +22,7 @@ export function useGlobalShortcuts() {
       // /page, both of which would visibly drift away from the frozen
       // snapshot. Block them wholesale.
       if (selectPreviewLocksEditor(useLabelStore.getState())) return;
-      const target = e.target as HTMLElement;
-      const tag = target.tagName;
-      const inInput =
-        tag === "INPUT" ||
-        tag === "TEXTAREA" ||
-        tag === "SELECT" ||
-        target.isContentEditable;
+      const inInput = isEditableTarget(e.target as HTMLElement);
       const mod = e.metaKey || e.ctrlKey;
 
       if (mod && e.code === "KeyZ") {

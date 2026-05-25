@@ -82,6 +82,17 @@ function EllipseSelectionOverlay({
   );
 }
 
+// ZPL `^FB` justify letters → Konva `Text.align` values. Konva
+// supports only left/center/right, so ZPL "J" (justified) falls
+// back to left — the printed output still justifies, the canvas
+// just approximates.
+const ZPL_JUSTIFY_TO_KONVA_ALIGN: Record<"L" | "C" | "R" | "J", "left" | "center" | "right"> = {
+  L: "left",
+  C: "center",
+  R: "right",
+  J: "left",
+};
+
 const BARCODE_TYPES = new Set([
   "code128",
   "code39",
@@ -358,17 +369,7 @@ function KonvaObjectInner({
           {...(obj.type === "text" && obj.props.blockWidth
             ? {
                 width: dotsToPx(obj.props.blockWidth, scale, dpmm),
-                // Konva supports left/center/right; ZPL "J" (justified)
-                // has no Konva equivalent so fall back to left — the
-                // printed output still justifies, the canvas just
-                // approximates.
-                align: (
-                  obj.props.blockJustify === "C"
-                    ? "center"
-                    : obj.props.blockJustify === "R"
-                      ? "right"
-                      : "left"
-                ),
+                align: ZPL_JUSTIFY_TO_KONVA_ALIGN[obj.props.blockJustify ?? "L"],
               }
             : {})}
         />

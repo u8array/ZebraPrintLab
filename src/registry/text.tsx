@@ -15,6 +15,7 @@ import { NumberInput } from "../components/Properties/NumberInput";
 import { TemplateContentInput } from "../components/Properties/TemplateContentInput";
 import { BlockTextSettings } from "../components/Properties/BlockTextSettings";
 import { encodeFbContent } from "../lib/fbContent";
+import { deriveBlockTextPatch, FB_DEFAULTS } from "../lib/textBlock";
 
 export interface TextProps {
   content: string;
@@ -254,36 +255,7 @@ export const text: ObjectTypeDefinition<TextProps> = {
           <label className={labelCls}>{t.registry.text.content}</label>
           <TemplateContentInput
             value={p.content}
-            onChange={(content) => {
-              // Auto-enable ^FB block-text when the user types a
-              // newline (printer ignores embedded `\n` in plain ^FD,
-              // so a visual second line in the editor would silently
-              // collapse to one row on the label). Width default
-              // mirrors the manual Tekstblok toggle. `blockLines`
-              // grows with line count so the printer doesn't truncate
-              // — never shrinks back, since the user may want a
-              // higher cap than the current content for CSV-bound
-              // rows of varying length.
-              const lines = content.split("\n").length;
-              const patch: Partial<TextProps> = { content };
-              if (lines > 1 && !p.blockWidth) {
-                // First newline: activate ^FB so the printer respects
-                // the line break. blockLines tracks the exact line
-                // count from here on.
-                patch.blockWidth = 400;
-                patch.blockLines = lines;
-                patch.blockLineSpacing = 0;
-                patch.blockJustify = "L";
-              } else if (p.blockWidth && lines !== (p.blockLines ?? 1)) {
-                // ^FB already active: sync blockLines both ways so the
-                // printed block matches the editor's visible row
-                // count. (Users with a deliberate higher cap for
-                // CSV-bound rows should disable Tekstblok and manage
-                // it manually.)
-                patch.blockLines = lines;
-              }
-              onChange(patch);
-            }}
+            onChange={(content) => onChange(deriveBlockTextPatch(content, p))}
           />
         </div>
 
@@ -300,12 +272,7 @@ export const text: ObjectTypeDefinition<TextProps> = {
             onChange={(e) =>
               onChange(
                 e.target.checked
-                  ? {
-                      blockWidth: 400,
-                      blockLines: 3,
-                      blockLineSpacing: 0,
-                      blockJustify: "L",
-                    }
+                  ? { ...FB_DEFAULTS, blockLines: 3 }
                   : {
                       blockWidth: undefined,
                       blockLines: undefined,

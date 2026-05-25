@@ -166,23 +166,30 @@ export function TemplateContentInput({
     };
   }, [open]);
 
-  /** Commit a value mutation that places the caret at `nextCaret` after
-   *  React re-renders. The render-effect uses the saved caret offset to
-   *  position the selection. */
+  /** Place the editor caret at the given character `offset`. Used by
+   *  every mutation path (insert / atomic delete / paste / external
+   *  commit) so caret-restore logic stays in one spot. */
+  const restoreCaret = (offset: number) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+    const pos = findCaretPosition(editor, offset);
+    const range = document.createRange();
+    range.setStart(pos.node, pos.offset);
+    range.collapse(true);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  };
+
+  /** Commit a value mutation triggered from a React event handler
+   *  (clicks, menu selection) and schedule the caret restore for the
+   *  next microtask so it runs after React's render. The native-event
+   *  path uses `flushSync` + a direct call instead, because typing
+   *  follow-up keys race the next event loop tick. */
   const commit = (next: string, nextCaret: number) => {
     onChange(next);
-    queueMicrotask(() => {
-      const editor = editorRef.current;
-      if (!editor) return;
-      editor.focus();
-      const pos = findCaretPosition(editor, nextCaret);
-      const range = document.createRange();
-      range.setStart(pos.node, pos.offset);
-      range.collapse(true);
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-    });
+    queueMicrotask(() => restoreCaret(nextCaret));
   };
 
   const getCaretOffsetInEditor = (): number => {
@@ -221,87 +228,95 @@ export function TemplateContentInput({
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
-    /** Intercept Backspace/Delete that would erode a marker mid-token
-     *  and replace them with an atomic-range delete of the whole `«…»`.
-     *  Intercept browser-native undo so the app's zundo history stays
-     *  authoritative (global Ctrl+Z in useGlobalShortcuts runs the
-     *  actual undo). Paste is funneled through a plain-text reader to
-     *  drop any rich-text formatting. */
+    /** `flushSync` + sync caret restore: typing follow-up keys race a
+     *  microtask-deferred restore (user types Enter+letter — the letter
+     *  fires before the rebuilt DOM has its caret in place and ends up
+     *  appended to the previous line). Pay the synchronous-render cost
+     *  to keep ordering correct. */
+    const commitInline = (next: string, nextCaret: number) => {
+      flushSync(() => stateRef.current.onChange(next));
+      restoreCaret(nextCaret);
+    };
+    /** Selection bounds (lo, hi) clamped to `editor` content; defaults
+     *  to caret at end-of-value for off-editor selections. */
+    const selectionRange = (fallbackLen: number) => {
+      const sel = window.getSelection();
+      const start = sel && editor.contains(sel.anchorNode)
+        ? getCaretOffset(editor, sel.anchorNode!, sel.anchorOffset)
+        : fallbackLen;
+      const end = sel && editor.contains(sel.focusNode)
+        ? getCaretOffset(editor, sel.focusNode!, sel.focusOffset)
+        : start;
+      return { lo: Math.min(start, end), hi: Math.max(start, end) };
+    };
+    /** Browser-native undo/redo route through zundo (global Ctrl+Z),
+     *  not the contenteditable's internal undo stack — otherwise the
+     *  two diverge. Intercept and drop. */
+    const handleHistory = () => {
+      // caller already preventDefault'd via early-return path; nothing
+      // more to do.
+    };
+    /** Backspace/Delete adjacent to a marker boundary erodes the
+     *  `«…»` mid-token into a non-resolving fragment. Intercept and
+     *  delete the whole marker atomically instead. */
+    const handleAtomicDelete = (direction: "backspace" | "delete") => {
+      const { value } = stateRef.current;
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return false;
+      const caret = getCaretOffset(editor, sel.anchorNode!, sel.anchorOffset);
+      const m = findAtomicMarker(value, caret, direction);
+      if (!m) return false;
+      commitInline(value.slice(0, m.start) + value.slice(m.end), m.start);
+      return true;
+    };
+    /** Chrome's native `insertParagraph` wraps following content in a
+     *  `<div>` which would force `domToPlainText` to special-case
+     *  block-level layout. `insertLineBreak` keeps everything as
+     *  inline + `<br>` which the helper already handles. */
+    const handleParagraph = () => document.execCommand("insertLineBreak");
+    /** Force plain-text paste: read `text/plain` only, run through
+     *  `sanitise` if configured, respect `maxLength`. Drops any HTML
+     *  the source put in `text/html`. */
+    const handlePaste = (e: InputEvent) => {
+      const { value, sanitise, maxLength } = stateRef.current;
+      const data = e.dataTransfer?.getData("text/plain") ?? "";
+      if (!data) return;
+      const clean = sanitise ? sanitise(data) : data;
+      const { lo, hi } = selectionRange(value.length);
+      let toInsert = clean;
+      if (maxLength !== undefined) {
+        const room = maxLength - (value.length - (hi - lo));
+        toInsert = toInsert.slice(0, Math.max(0, room));
+      }
+      commitInline(value.slice(0, lo) + toInsert + value.slice(hi), lo + toInsert.length);
+    };
     const handler = (e: InputEvent) => {
       if (composingRef.current) return;
-      const { value, onChange, sanitise, maxLength } = stateRef.current;
-      const inputType = e.inputType;
-      if (inputType === "historyUndo" || inputType === "historyRedo") {
-        e.preventDefault();
-        return;
-      }
-      const commitInline = (next: string, nextCaret: number) => {
-        // flushSync forces React to render synchronously here so the
-        // caret restore lands BEFORE the next key event (otherwise a
-        // user typing fast through Enter+letter races us — the letter
-        // fires before the rebuilt DOM gets its caret restored and
-        // ends up appended to the previous line).
-        flushSync(() => onChange(next));
-        if (!editor) return;
-        editor.focus();
-        const pos = findCaretPosition(editor, nextCaret);
-        const range = document.createRange();
-        range.setStart(pos.node, pos.offset);
-        range.collapse(true);
-        const sel = window.getSelection();
-        sel?.removeAllRanges();
-        sel?.addRange(range);
-      };
-      if (inputType === "insertParagraph") {
-        // Chrome's native `insertParagraph` wraps following content
-        // in a `<div>` which `domToPlainText` would have to special-
-        // case. Force a plain `<br>` insertion instead via
-        // `insertLineBreak` semantics — Chrome's input event for
-        // that inserts a single BR at the caret and the next
-        // keystroke continues normally.
-        e.preventDefault();
-        document.execCommand("insertLineBreak");
-        return;
-      }
-      if (inputType === "deleteContentBackward" || inputType === "deleteContentForward") {
-        const sel = window.getSelection();
-        if (!sel || sel.rangeCount === 0) return;
-        if (!sel.isCollapsed) return;
-        const caret = getCaretOffset(editor, sel.anchorNode!, sel.anchorOffset);
-        const m = findAtomicMarker(
-          value,
-          caret,
-          inputType === "deleteContentBackward" ? "backspace" : "delete",
-        );
-        if (!m) return;
-        e.preventDefault();
-        commitInline(value.slice(0, m.start) + value.slice(m.end), m.start);
-        return;
-      }
-      if (inputType === "insertFromPaste") {
-        e.preventDefault();
-        const data = e.dataTransfer?.getData("text/plain") ?? "";
-        if (!data) return;
-        const clean = sanitise ? sanitise(data) : data;
-        const sel = window.getSelection();
-        const start = sel && editor.contains(sel.anchorNode)
-          ? getCaretOffset(editor, sel.anchorNode!, sel.anchorOffset)
-          : value.length;
-        const end = sel && editor.contains(sel.focusNode)
-          ? getCaretOffset(editor, sel.focusNode!, sel.focusOffset)
-          : start;
-        const lo = Math.min(start, end);
-        const hi = Math.max(start, end);
-        let toInsert = clean;
-        if (maxLength !== undefined) {
-          const room = maxLength - (value.length - (hi - lo));
-          toInsert = toInsert.slice(0, Math.max(0, room));
+      switch (e.inputType) {
+        case "historyUndo":
+        case "historyRedo":
+          e.preventDefault();
+          handleHistory();
+          return;
+        case "insertParagraph":
+          e.preventDefault();
+          handleParagraph();
+          return;
+        case "deleteContentBackward":
+        case "deleteContentForward": {
+          const direction = e.inputType === "deleteContentBackward" ? "backspace" : "delete";
+          if (handleAtomicDelete(direction)) e.preventDefault();
+          return;
         }
-        commitInline(value.slice(0, lo) + toInsert + value.slice(hi), lo + toInsert.length);
+        case "insertFromPaste":
+          e.preventDefault();
+          handlePaste(e);
+          return;
       }
     };
     editor.addEventListener("beforeinput", handler);
     return () => editor.removeEventListener("beforeinput", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onInput = () => {
