@@ -407,6 +407,37 @@ describe('pdf417.toZPL', () => {
   });
 });
 
+// ── symbol (^GS) ──────────────────────────────────────────────────────────────
+
+describe('symbol.toZPL', () => {
+  const def = defined(ObjectRegistry['symbol']);
+
+  it('emits ^GS with rotation, height, width and ^FD with symbol code', () => {
+    const zpl = def.toZPL(makeObj('symbol', {
+      symbol: 'A', height: 50, width: 50, rotation: 'N',
+    }));
+    expect(zpl).toBe('^FO100,200^GSN,50,50^FDA^FS');
+  });
+
+  it('round-trips all five canonical codes', () => {
+    for (const code of ['A', 'B', 'C', 'D', 'E'] as const) {
+      const zpl = def.toZPL(makeObj('symbol', {
+        symbol: code, height: 30, width: 30, rotation: 'N',
+      }));
+      expect(zpl).toContain(`^FD${code}^FS`);
+    }
+  });
+
+  it('preserves rotation letter in ^GS first parameter', () => {
+    for (const rot of ['N', 'R', 'I', 'B'] as const) {
+      const zpl = def.toZPL(makeObj('symbol', {
+        symbol: 'B', height: 30, width: 30, rotation: rot,
+      }));
+      expect(zpl).toContain(`^GS${rot},30,30`);
+    }
+  });
+});
+
 // ── serial ────────────────────────────────────────────────────────────────────
 
 describe('serial.toZPL', () => {

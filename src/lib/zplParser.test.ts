@@ -531,6 +531,53 @@ describe('parseZPL — ^GE ellipse', () => {
   });
 });
 
+describe('parseZPL — ^GS graphic symbol', () => {
+  it('creates a symbol object with code, dims and rotation', () => {
+    const { objects } = parseZPL('^XA^FO30,40^GSR,50,60^FDC^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('symbol');
+    expect(props(objects[0]).symbol).toBe('C');
+    expect(props(objects[0]).height).toBe(50);
+    expect(props(objects[0]).width).toBe(60);
+    expect(props(objects[0]).rotation).toBe('R');
+  });
+
+  it('falls back to "B" (©) when ^FD payload is not a known code', () => {
+    const { objects } = parseZPL('^XA^FO0,0^GSN,30,30^FDZ^FS^XZ', 8);
+    expect(props(objects[0]).symbol).toBe('B');
+  });
+
+  it('defaults width to height when ^GS width omitted', () => {
+    const { objects } = parseZPL('^XA^FO0,0^GSN,40^FDA^FS^XZ', 8);
+    expect(props(objects[0]).height).toBe(40);
+    expect(props(objects[0]).width).toBe(40);
+  });
+
+  it('does not leak symbol state into a following ^FD when ^GS has no payload', () => {
+    // Bare ^GS without ^FD is malformed but seen in the wild; the
+    // parser must NOT treat the next unrelated ^FD (here: a plain
+    // text field) as the symbol payload.
+    const { objects } = parseZPL(
+      '^XA^FO0,0^GSN,40,40^FS^FO100,100^A0N,30,30^FDhello^FS^XZ',
+      8,
+    );
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(props(objects[0]).content).toBe('hello');
+  });
+
+  it('round-trips through registry.toZPL for every code + rotation', () => {
+    for (const code of ['A','B','C','D','E'] as const) {
+      for (const rot of ['N','R','I','B'] as const) {
+        const zpl = `^XA^FO10,20^GS${rot},40,40^FD${code}^FS^XZ`;
+        const { objects } = parseZPL(zpl, 8);
+        expect(props(objects[0]).symbol).toBe(code);
+        expect(props(objects[0]).rotation).toBe(rot);
+      }
+    }
+  });
+});
+
 describe('parseZPL — ^GC circle', () => {
   it('creates an ellipse with equal width and height from ^GC', () => {
     const { objects } = parseZPL('^XA^FO0,0^GC100,3,B^FS^XZ', 8);

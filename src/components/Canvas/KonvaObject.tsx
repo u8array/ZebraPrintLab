@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
-import { Ellipse, Group, Line, Rect, Text } from "react-konva";
+import { Ellipse, Group, Line, Rect, Shape, Text } from "react-konva";
 import { lookupBoundVariable, shouldShowFallbackTint } from "../../lib/variableBinding";
 import { BarcodeObject } from "./BarcodeObject";
 import { LineObject } from "./LineObject";
@@ -15,6 +15,8 @@ import { applyBindingToObject, buildActiveCsvRow } from "../../lib/variableBindi
 import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "./textPositionTransforms";
 import { getTextRenderMetrics } from "./textRenderMetrics";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
+import { DEFAULT_GS_SYMBOL_META, GS_SYMBOLS } from "../../registry/symbol";
+import { GS_SYMBOL_PATHS, GS_VECTOR_CODES, type GsVectorCode } from "../../registry/gsSymbolPaths";
 
 type Props = KonvaObjectProps;
 
@@ -377,6 +379,147 @@ function KonvaObjectInner({
             />
           );
         })() : null}
+      </Group>
+    );
+  }
+
+  if (obj.type === "symbol") {
+    const p = obj.props;
+    const w = dotsToPx(p.width, scale, dpmm);
+    const h = dotsToPx(p.height, scale, dpmm);
+    // A/B/C have real vector paths sourced from Labelary (pixel-true
+    // to Zebra firmware). D/E are trademarked UL/CSA logos we can't
+    // ship — render a clearly-placeholder dashed gray box with the
+    // letters so the user knows the printer will substitute the real
+    // logo. Unknown codes (D/E or malformed import) take the same
+    // placeholder branch via the null path here.
+    const vectorPath = GS_VECTOR_CODES.has(p.symbol)
+      ? GS_SYMBOL_PATHS[p.symbol as GsVectorCode]
+      : null;
+    // The field bbox itself doesn't rotate — Zebra keeps the ^FO
+    // anchor and (w, h) extent fixed and rotates only the glyph
+    // inside. Skip the outer rotatedGroupTransform; sceneFunc bakes
+    // rotation into the per-rotation `rel` rect + a canvas rotate
+    // for the path orientation.
+    return (
+      <Group
+        id={obj.id}
+        x={x}
+        y={y}
+        draggable={!obj.locked}
+        {...selectionHandlers(onSelect)}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+      >
+        {/* Single hit area for the whole field bbox — picks up clicks
+            both for the vector-path branch and the placeholder branch
+            below (both of which render with listening={false}). One
+            source of truth for "where in this Group counts as a hit"
+            instead of duplicating a transparent Rect inside each
+            branch. */}
+        <Rect width={w} height={h} fill="transparent" />
+        {vectorPath ? (() => {
+            // Konva.Path has no fillRule prop, so the holes in ® / ©
+            // (inner ring carved out of the outer disc) can't be
+            // expressed via Path's nonzero fill. Drop down to a
+            // custom Shape that builds a Path2D from the d-string
+            // and fills it with the native even-odd rule — handles
+            // both the holed glyphs and the multi-letter ™ uniformly.
+            //
+            // `rel[rotation]` carries the post-rotation glyph rect
+            // inside the declared bbox, measured directly from
+            // Labelary so Zebra's per-rotation anchor offsets match
+            // pixel-for-pixel.
+            // Defensive ?? rel.N for the malformed-import case where
+            // a JSON-restored object slips a non-N/R/I/B rotation
+            // string past the type system; falling back to the
+            // upright entry keeps the canvas from crashing on bad
+            // data instead of throwing inside sceneFunc.
+            const rel = vectorPath.rel[p.rotation] ?? vectorPath.rel.N;
+            const glyphW = vectorPath.bbox.maxX - vectorPath.bbox.minX;
+            const glyphH = vectorPath.bbox.maxY - vectorPath.bbox.minY;
+            const renderW = w * rel.w;
+            const renderH = h * rel.h;
+            const renderX = w * rel.x;
+            const renderY = h * rel.y;
+            return (
+              <Shape
+                listening={false}
+                sceneFunc={(ctx) => {
+                  ctx.save();
+                  ctx.translate(renderX, renderY);
+                  // For each rotation: pre-translate so the post-rotation
+                  // glyph bbox starts at (0, 0) within the rel rect,
+                  // then rotate, then scale upright path coords to fit
+                  // the (renderW × renderH) target. R/B swap effective
+                  // W/H because the upright glyph is sideways on screen.
+                  if (p.rotation === "R") {
+                    ctx.translate(renderW, 0);
+                    ctx.rotate(Math.PI / 2);
+                    ctx.scale(renderH / glyphW, renderW / glyphH);
+                  } else if (p.rotation === "I") {
+                    ctx.translate(renderW, renderH);
+                    ctx.rotate(Math.PI);
+                    ctx.scale(renderW / glyphW, renderH / glyphH);
+                  } else if (p.rotation === "B") {
+                    ctx.translate(0, renderH);
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.scale(renderH / glyphW, renderW / glyphH);
+                  } else {
+                    ctx.scale(renderW / glyphW, renderH / glyphH);
+                  }
+                  ctx.translate(-vectorPath.bbox.minX, -vectorPath.bbox.minY);
+                  const path = new Path2D(vectorPath.d);
+                  ctx.fillStyle = "#000000";
+                  // Konva.Context exposes the underlying 2D canvas
+                  // context as `_context`; reach for it directly so
+                  // we can call `fill(path, "evenodd")` — the Konva
+                  // wrapper doesn't surface the path/rule overload.
+                  ctx._context.fill(path, "evenodd");
+                  ctx.restore();
+                }}
+              />
+            );
+          })() : (
+            <>
+              <Rect
+                width={w}
+                height={h}
+                stroke="#9ca3af"
+                strokeWidth={Math.max(1, Math.min(w, h) * 0.04)}
+                strokeScaleEnabled={false}
+                dash={[Math.max(4, w * 0.06), Math.max(3, w * 0.04)]}
+                cornerRadius={Math.min(w, h) * 0.15}
+                fill="transparent"
+                listening={false}
+              />
+              <Text
+                x={0}
+                y={0}
+                width={w}
+                height={h}
+                align="center"
+                verticalAlign="middle"
+                text={(GS_SYMBOLS.find((s) => s.code === p.symbol) ?? DEFAULT_GS_SYMBOL_META).glyph}
+                fontSize={Math.min(h, w) * 0.5}
+                fontFamily="'Courier New', monospace"
+                fontStyle="bold"
+                fill="#6b7280"
+                listening={false}
+              />
+            </>
+          )}
+        {isSelected && (
+          <Rect
+            width={w}
+            height={h}
+            stroke={colors.selection}
+            strokeWidth={1.5}
+            strokeScaleEnabled={false}
+            fill="transparent"
+            listening={false}
+          />
+        )}
       </Group>
     );
   }

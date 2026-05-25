@@ -29,6 +29,7 @@ import type { Barcode1DProps } from "../registry/barcode1d";
 import type { Gs1DatabarProps } from "../registry/gs1databar";
 import type { Pdf417Props } from "../registry/pdf417";
 import type { Code49Props } from "../registry/code49";
+import { DEFAULT_GS_SYMBOL, GS_SYMBOL_CODES, type SymbolProps } from "../registry/symbol";
 import type { SerialProps } from "../registry/serial";
 import { isZplRotation, type ZplRotation } from "../registry/rotation";
 import type { AztecProps } from "../registry/aztec";
@@ -564,6 +565,10 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   let bcInterp = true;
   let bcCheck = false;
   let bcRotation: ZplRotation = "N";
+  // ^GS graphic-symbol params held until ^FD picks the symbol code.
+  let symRot: ZplRotation = "N";
+  let symH = 30;
+  let symW = 30;
   let bcCode49Mode: Code49Props["mode"] = "A";
   // ^FE field-number embed character. Default '#'; redefined by
   // ^FE<char>. Format-scoped, persists through ^FS (see Zebra ZPL II
@@ -778,6 +783,10 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         pendingFnComment = undefined;
       }
       pendingFD = null;
+      // Clear fieldType too so a half-formed field (e.g. `^GS…^FS`
+      // without `^FD`) doesn't leak its kind into the next ^FD that
+      // arrives via an unrelated ^FO.
+      fieldType = null;
       return;
     }
     const rawDecoded = fhActive
@@ -1145,6 +1154,29 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           ),
         );
         break;
+      case "symbol": {
+        // ^GS payload is a single letter A..E selecting the glyph.
+        // Anything else falls back to DEFAULT_GS_SYMBOL so a malformed
+        // import still produces a sensible visible object.
+        const raw = content.trim().charAt(0).toUpperCase();
+        const code = (GS_SYMBOL_CODES.has(raw) ? raw : DEFAULT_GS_SYMBOL) as SymbolProps["symbol"];
+        objects.push(
+          makeObj(
+            "symbol",
+            x,
+            y,
+            {
+              symbol: code,
+              height: symH,
+              width: symW,
+              rotation: symRot,
+            } satisfies SymbolProps,
+            posType,
+            comment,
+          ),
+        );
+        break;
+      }
     }
 
     // Apply the pending `^FN{n}` slot (if any) to the field we just
@@ -2031,7 +2063,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     FL: mkBrowserLimit("FL"), // font link — links fonts on printer storage
     HT: mkBrowserLimit("HT"), // head test — diagnostic for print head
     LF: mkBrowserLimit("LF"), // list fonts — queries printer for installed fonts
-    GS: mkBrowserLimit("GS"), // graphic symbol — references printer-internal symbols
+    GS(p) {
+      // ^GS{rotation},{height},{width} — selects the internal-font
+      // legal-symbol glyph (^FD picks which: A=®, B=©, C=™, D=UL, E=CSA).
+      fieldType = "symbol";
+      symRot = readRotation(p[0]);
+      symH = int(p[1], 30);
+      symW = int(p[2], symH);
+    },
     IM: mkBrowserLimit("IM"), // image reference — references image stored on printer
     DG: mkBrowserLimit("DG", "~"), // ~DG stores a graphic on the printer (tilde prefix)
 
