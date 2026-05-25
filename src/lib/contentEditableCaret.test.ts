@@ -35,7 +35,7 @@ describe("domToPlainText", () => {
     expect(domToPlainText(root([span("Hello "), span("World")]) as unknown as Node)).toBe("Hello World");
   });
 
-  it("treats <br> as a newline", () => {
+  it("treats <br> as a newline between siblings", () => {
     expect(domToPlainText(root([span("a"), br(), span("b")]) as unknown as Node)).toBe("a\nb");
   });
 
@@ -46,6 +46,15 @@ describe("domToPlainText", () => {
   it("descends into nested elements", () => {
     const inner = el("EM", [text("there")]);
     expect(domToPlainText(root([el("SPAN", [text("Hi "), inner])]) as unknown as Node)).toBe("Hi there");
+  });
+
+  it("strips a trailing <br> as the Chrome caret-placeholder", () => {
+    // segmentsToHTML always appends a trailing <br> so Chrome's caret
+    // has somewhere to land on the empty last line — that BR does not
+    // represent a real \n and should not appear in the value.
+    expect(domToPlainText(root([text("A"), br()]) as unknown as Node)).toBe("A");
+    expect(domToPlainText(root([text("A"), br(), br()]) as unknown as Node)).toBe("A\n");
+    expect(domToPlainText(root([br()]) as unknown as Node)).toBe("");
   });
 });
 

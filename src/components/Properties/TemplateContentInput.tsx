@@ -63,10 +63,9 @@ const SEGMENT_CLASS: Record<MarkerSegment["kind"], string> = {
 /** Build the editor's HTML representation of `segments`. Markers
  *  wrap in a coloured span; plain-text segments become raw text
  *  nodes; a literal `\n` becomes a bare `<br>` between siblings.
- *  Flatter than wrapping each line in its own span: Chrome's caret
- *  algorithm handles `(parent, indexAfterBR)` reliably as long as
- *  there's a real text node on either side to land in, which the
- *  bare-text emission for plain segments naturally produces. */
+ *  Always appends a trailing placeholder `<br>` so Chrome has a
+ *  caret target on the empty last line — `domToPlainText` strips
+ *  the trailing placeholder so the roundtrip is symmetric. */
 function segmentsToHTML(segments: MarkerSegment[]): string {
   const parts: string[] = [];
   for (const s of segments) {
@@ -84,6 +83,7 @@ function segmentsToHTML(segments: MarkerSegment[]): string {
       parts.push(`<span class="${cls}">${escapeHTML(s.text)}</span>`);
     }
   }
+  parts.push("<br>"); // trailing placeholder, stripped by domToPlainText
   return parts.join("");
 }
 

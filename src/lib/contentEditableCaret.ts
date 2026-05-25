@@ -16,8 +16,12 @@
  *   - Offsets are character positions in the produced plain text. */
 
 /** Concatenate every descendant text node of `root` into a single string,
- *  converting `<br>` elements to `\n`. The result matches what
- *  `getCaretOffset` measures against. */
+ *  converting `<br>` elements to `\n`. A trailing `<br>` directly under
+ *  `root` is treated as a Chrome contenteditable placeholder and
+ *  skipped — Chrome appends one after `insertLineBreak` so the cursor
+ *  has somewhere to land on the new empty line, but it doesn't
+ *  represent a real character in the value. `segmentsToHTML` must
+ *  emit the same trailing placeholder so the roundtrip is symmetric. */
 export function domToPlainText(root: Node): string {
   let out = "";
   const walk = (n: Node) => {
@@ -33,7 +37,16 @@ export function domToPlainText(root: Node): string {
     }
     for (const c of Array.from(n.childNodes)) walk(c);
   };
-  for (const c of Array.from(root.childNodes)) walk(c);
+  const children = Array.from(root.childNodes);
+  const lastIdx = children.length - 1;
+  for (let i = 0; i < children.length; i += 1) {
+    const c = children[i]!;
+    if (i === lastIdx && c.nodeType === Node.ELEMENT_NODE && (c as Element).tagName === "BR") {
+      // Placeholder BR — Chrome's caret target on a trailing empty line.
+      continue;
+    }
+    walk(c);
+  }
   return out;
 }
 
