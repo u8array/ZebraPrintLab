@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
-import { Ellipse, Group, Line, Rect, Text } from "react-konva";
+import { Ellipse, Group, Line, Rect, Shape, Text } from "react-konva";
 import { lookupBoundVariable, shouldShowFallbackTint } from "../../lib/variableBinding";
 import { BarcodeObject } from "./BarcodeObject";
 import { LineObject } from "./LineObject";
@@ -16,7 +16,7 @@ import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "./textPositionTransforms";
 import { getTextRenderMetrics } from "./textRenderMetrics";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import { DEFAULT_GS_SYMBOL_META, GS_SYMBOLS } from "../../registry/symbol";
-import { rotatedGroupTransform } from "./rotatedGroupTransform";
+import { GS_SYMBOL_PATHS } from "../../registry/gsSymbolPaths";
 
 type Props = KonvaObjectProps;
 
@@ -387,18 +387,17 @@ function KonvaObjectInner({
     const p = obj.props;
     const w = dotsToPx(p.width, scale, dpmm);
     const h = dotsToPx(p.height, scale, dpmm);
-    const meta = GS_SYMBOLS.find((s) => s.code === p.symbol) ?? DEFAULT_GS_SYMBOL_META;
-    // UL/CSA glyphs aren't real Unicode characters; the printer renders
-    // a stylised logo. The canvas approximates with the letters inside
-    // a rounded outline so the user still sees what'll print. ®/©/™ are
-    // genuine Unicode glyphs and render directly.
-    const isLogo = p.symbol === "D" || p.symbol === "E";
-    const fontSize = Math.min(h, w) * (isLogo ? 0.55 : 1);
-    // Inner rotated Group so the upright (w × h) content fills the
-    // rotated bbox starting at (0, 0) — same pattern barcode + text
-    // use, keeps ^FO consistent across the editor regardless of
-    // rotation.
-    const innerTr = rotatedGroupTransform(p.rotation, w, h);
+    // A/B/C have real vector paths sourced from Labelary (pixel-true
+    // to Zebra firmware). D/E are trademarked UL/CSA logos we can't
+    // ship — render a clearly-placeholder dashed gray box with the
+    // letters so the user knows the printer will substitute the real
+    // logo. Falls back to the © path if an unknown code slips through.
+    const vectorPath = GS_SYMBOL_PATHS[p.symbol as 'A' | 'B' | 'C'] ?? null;
+    // The field bbox itself doesn't rotate — Zebra keeps the ^FO
+    // anchor and (w, h) extent fixed and rotates only the glyph
+    // inside. Skip the outer rotatedGroupTransform; sceneFunc bakes
+    // rotation into the per-rotation `rel` rect + a canvas rotate
+    // for the path orientation.
     return (
       <Group
         id={obj.id}
@@ -409,47 +408,110 @@ function KonvaObjectInner({
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
       >
-        <Group x={innerTr.x} y={innerTr.y} rotation={innerTr.rotation}>
-          {isLogo && (
-            <Rect
-              width={w}
-              height={h}
-              stroke="#000000"
-              // min(w,h) so a tall thin or wide flat logo gets a
-              // proportional stroke instead of a fat band when one
-              // axis is much smaller than the other.
-              strokeWidth={Math.max(1, Math.min(w, h) * 0.05)}
-              strokeScaleEnabled={false}
-              cornerRadius={Math.min(w, h) * 0.15}
-              fill="transparent"
-            />
+        {vectorPath ? (() => {
+            // Konva.Path has no fillRule prop, so the holes in ® / ©
+            // (inner ring carved out of the outer disc) can't be
+            // expressed via Path's nonzero fill. Drop down to a
+            // custom Shape that builds a Path2D from the d-string
+            // and fills it with the native even-odd rule — handles
+            // both the holed glyphs and the multi-letter ™ uniformly.
+            //
+            // `rel[rotation]` carries the post-rotation glyph rect
+            // inside the declared bbox, measured directly from
+            // Labelary so Zebra's per-rotation anchor offsets match
+            // pixel-for-pixel.
+            const rel = vectorPath.rel[p.rotation];
+            const glyphW = vectorPath.bbox.maxX - vectorPath.bbox.minX;
+            const glyphH = vectorPath.bbox.maxY - vectorPath.bbox.minY;
+            const renderW = w * rel.w;
+            const renderH = h * rel.h;
+            const renderX = w * rel.x;
+            const renderY = h * rel.y;
+            return (
+              <>
+              {/* Hit area: a plain Rect catches clicks for the whole
+                  bbox so the user can hit anywhere in the field, not
+                  only the glyph ink. Rendered first so the visible
+                  Shape draws on top. `fill="transparent"` keeps it
+                  invisible but Konva-listenable. */}
+              <Rect width={w} height={h} fill="transparent" />
+              <Shape
+                listening={false}
+                sceneFunc={(ctx) => {
+                  ctx.save();
+                  ctx.translate(renderX, renderY);
+                  // For each rotation: pre-translate so the post-rotation
+                  // glyph bbox starts at (0, 0) within the rel rect,
+                  // then rotate, then scale upright path coords to fit
+                  // the (renderW × renderH) target. R/B swap effective
+                  // W/H because the upright glyph is sideways on screen.
+                  if (p.rotation === "R") {
+                    ctx.translate(renderW, 0);
+                    ctx.rotate(Math.PI / 2);
+                    ctx.scale(renderH / glyphW, renderW / glyphH);
+                  } else if (p.rotation === "I") {
+                    ctx.translate(renderW, renderH);
+                    ctx.rotate(Math.PI);
+                    ctx.scale(renderW / glyphW, renderH / glyphH);
+                  } else if (p.rotation === "B") {
+                    ctx.translate(0, renderH);
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.scale(renderH / glyphW, renderW / glyphH);
+                  } else {
+                    ctx.scale(renderW / glyphW, renderH / glyphH);
+                  }
+                  ctx.translate(-vectorPath.bbox.minX, -vectorPath.bbox.minY);
+                  const path = new Path2D(vectorPath.d);
+                  ctx.fillStyle = "#000000";
+                  // 2D ctx fill(rule) is unaware of the Konva wrapper,
+                  // so cast through unknown to reach the underlying
+                  // CanvasRenderingContext2D method.
+                  (ctx as unknown as CanvasRenderingContext2D).fill(path, "evenodd");
+                  ctx.restore();
+                }}
+              />
+              </>
+            );
+          })() : (
+            <>
+              <Rect
+                width={w}
+                height={h}
+                stroke="#9ca3af"
+                strokeWidth={Math.max(1, Math.min(w, h) * 0.04)}
+                strokeScaleEnabled={false}
+                dash={[Math.max(4, w * 0.06), Math.max(3, w * 0.04)]}
+                cornerRadius={Math.min(w, h) * 0.15}
+                fill="transparent"
+                listening={false}
+              />
+              <Text
+                x={0}
+                y={0}
+                width={w}
+                height={h}
+                align="center"
+                verticalAlign="middle"
+                text={(GS_SYMBOLS.find((s) => s.code === p.symbol) ?? DEFAULT_GS_SYMBOL_META).glyph}
+                fontSize={Math.min(h, w) * 0.5}
+                fontFamily="'Courier New', monospace"
+                fontStyle="bold"
+                fill="#6b7280"
+                listening={false}
+              />
+            </>
           )}
-          <Text
-            x={0}
-            y={0}
+        {isSelected && (
+          <Rect
             width={w}
             height={h}
-            align="center"
-            verticalAlign="middle"
-            text={meta.glyph}
-            fontSize={fontSize}
-            fontFamily="'Courier New', monospace"
-            fontStyle="bold"
-            fill="#000000"
+            stroke={colors.selection}
+            strokeWidth={1.5}
+            strokeScaleEnabled={false}
+            fill="transparent"
             listening={false}
           />
-          {isSelected && (
-            <Rect
-              width={w}
-              height={h}
-              stroke={colors.selection}
-              strokeWidth={1.5}
-              strokeScaleEnabled={false}
-              fill="transparent"
-              listening={false}
-            />
-          )}
-        </Group>
+        )}
       </Group>
     );
   }
