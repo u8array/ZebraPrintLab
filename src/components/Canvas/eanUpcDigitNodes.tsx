@@ -81,13 +81,18 @@ export function buildEanUpcDigitOverlay(args: BuildArgs): EanUpcDigitOverlay {
         ],
       };
     case "upca":
+      // UPC-A HRI: number system (1) | 5 manuf | 5 product | check (1).
+      // System digit floats left of the bars, check digit floats right —
+      // matches Zebra's ^BU default (checkDigit=Y) which the generator
+      // now emits.
       return {
         clipLeft: ldW,
-        clipRight: 0,
+        clipRight: ldW,
         nodes: [
           sys(displayText[0] ?? ""),
           main("left", xLeft, halfW, displayText.slice(1, 6)),
           main("right", xRight, halfW, displayText.slice(6, 11)),
+          trail(displayText[11] ?? ""),
         ],
       };
     case "upce":

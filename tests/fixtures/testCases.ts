@@ -68,7 +68,7 @@ export const testCases: TestCase[] = [
   },
   {
     id: "barcode_upca_standard",
-    zpl_input: "^XA^BY2^FO50,50^BUN,100,N,N,N^FD01234567890^FS^XZ",
+    zpl_input: "^XA^BY2^FO50,50^BUN,100,N,N,Y^FD01234567890^FS^XZ",
     expected_bounds: { x: 50, y: 50, width: 200, height: 100 },
     image_ref: "barcode_upca_standard.png",
   },
@@ -224,7 +224,7 @@ export const testCases: TestCase[] = [
   // The ZPL roundtrip is covered by a unit test in zplGenerator.test.ts.
   {
     id: "barcode_upce_standard",
-    zpl_input: "^XA^BY2^FO50,50^B9N,100,N,N^FD012345^FS^XZ",
+    zpl_input: "^XA^BY2^FO50,50^B9N,100,N,Y^FD012345^FS^XZ",
     expected_bounds: { x: 50, y: 50, width: 102, height: 113 },
     image_ref: "barcode_upce_standard.png",
   },
