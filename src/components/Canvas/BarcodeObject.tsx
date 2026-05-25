@@ -166,15 +166,6 @@ export function BarcodeObject({
   };
 
   if (barcodeCanvas) {
-    const w = dim.w;
-    const h = dim.h;
-    // Bitmap is drawn at the bar sub-rectangle of the bbox so the bars
-    // render at their true height. The text-zone padding (which side
-    // depends on rotation) stays empty inside the bbox.
-    const bw = Math.max(dim.barW, 1);
-    const bh = Math.max(dim.barH, 1);
-    const btX = dim.barLeftPx;
-    const btY = dim.barTopPx;
     // Konva crop prop is undefined when no cropping is needed; passing it
     // selectively skips bwip's internal padding (e.g. GS1 DataBar's
     // paddingheight rows) so bars fill the bbox at firmware-correct height.
@@ -187,7 +178,6 @@ export function BarcodeObject({
     const printInterpEnabled =
       !ObjectRegistry[obj.type]?.interpretationLocked &&
       !!(obj.props as { printInterpretation?: boolean }).printInterpretation;
-    const printInterp = isUpright && printInterpEnabled;
     // Cross-type access: this block runs for every barcode and reads moduleWidth
     // generically (textFontSize is computed for HRI text rendering downstream).
     // Unlike buildBwipOptions, this function isn't switch-structured by obj.type,
@@ -215,68 +205,20 @@ export function BarcodeObject({
       ? Math.max(dotsToPx(hri.aboveGapDots, scale, dpmm), 3)
       : textGap;
 
-    // ── EAN/UPC: manually-positioned digit labels ─────────────────────────
-    if (EAN_UPC_TYPES.has(obj.type) && printInterp) {
-      const bwipSc = get1DBwipScale(moduleWidth, scale, dpmm);
-      const layout = getEanUpcLayout(
-        obj.type as EanUpcType,
-        w,
-        barcodeCanvas.width,
-        bwipSc,
-      );
-      const { nodes: textNodes, clipLeft, clipRight } = buildEanUpcDigitOverlay({
-        type: obj.type as EanUpcType,
-        displayText,
-        layout,
-        uprightBarW: w,
-        uprightBarH: bh,
-        textGap,
-        textFontSize,
-      });
-
-      return (
-        <Group
-          id={obj.id}
-          x={x}
-          y={y}
-          clipX={-clipLeft}
-          clipY={0}
-          clipWidth={Math.max(w, 1) + clipLeft + clipRight}
-          clipHeight={Math.max(h, 1) + textFontSize + textGap}
-          draggable={!obj.locked}
-          {...selectionHandlers(onSelect)}
-          onDragMove={(e) =>
-            e.target.position(snapPos(e.target.x(), e.target.y()))
-          }
-          onDragEnd={handleDragEnd}
-        >
-          <KImage
-            x={btX}
-            y={btY}
-            image={barcodeCanvas}
-            crop={bitmapCrop}
-            width={bw}
-            height={bh}
-            imageSmoothingEnabled={false}
-            stroke={isSelected ? colors.selection : undefined}
-            strokeWidth={isSelected ? 2 : 0}
-            strokeScaleEnabled={false}
-          />
-          {textNodes.length > 0 && <Group ref={excludeGroupFromBbox}>{textNodes}</Group>}
-        </Group>
-      );
-    }
-
-    // ── 1D barcode with HRI (any rotation, except upright EAN/UPC which
-    //    has its own clipped path above). Text overlay always lives in
-    //    upright coords inside an inner rotated Group; the Group's
-    //    transform handles all R/I/B placement. For upright + non-EAN/
-    //    UPC the text additionally counter-scales during a resize drag
-    //    so HRI stays at constant visual size while the bars stretch.
+    // ── 1D barcode with HRI overlay (all 4 rotations, both EAN/UPC and
+    //    Other 1D). Text overlay always lives in upright bbox-relative
+    //    coords inside an inner rotated Group; the Group's transform
+    //    handles every R/I/B placement. Upright EAN/UPC additionally
+    //    needs clip-expansion on the outer Group so the floated
+    //    sys/trail digits stay visible (their x extends past the
+    //    bar bbox); rotated EAN/UPC gets no clipping because the
+    //    floated digits land within the rotated bbox after Konva's
+    //    bbox computation. Upright Other 1D additionally counter-
+    //    scales the HRI text during a resize drag so it stays at
+    //    constant visual size while the bars stretch.
     const showHriOverlay =
-      printInterpEnabled &&
-      BARCODE_1D_TYPES.has(obj.type) &&
-      !(isUpright && EAN_UPC_TYPES.has(obj.type));
+      printInterpEnabled && BARCODE_1D_TYPES.has(obj.type);
+    const isUprightEanUpc = isUpright && EAN_UPC_TYPES.has(obj.type);
 
     if (showHriOverlay) {
       const ub = dim.upright;
@@ -287,10 +229,12 @@ export function BarcodeObject({
 
       // Build text overlay content in upright bbox-relative coords.
       let overlayContent: React.ReactNode;
+      let clipLeft = 0;
+      let clipRight = 0;
       if (EAN_UPC_TYPES.has(obj.type)) {
         const bwipSc = get1DBwipScale(moduleWidth, scale, dpmm);
         const layout = getEanUpcLayout(obj.type as EanUpcType, ub.w, barcodeCanvas.width, bwipSc);
-        const { nodes } = buildEanUpcDigitOverlay({
+        const overlay = buildEanUpcDigitOverlay({
           type: obj.type as EanUpcType,
           displayText,
           layout,
@@ -302,7 +246,9 @@ export function BarcodeObject({
         // EAN/UPC have barTopPx === 0 (no text zone above), so the
         // helper's bar-relative textY equals the bbox-relative one
         // here — render directly without an offset wrapper.
-        overlayContent = nodes;
+        overlayContent = overlay.nodes;
+        clipLeft = overlay.clipLeft;
+        clipRight = overlay.clipRight;
       } else {
         // Other 1D: single centered text. textRef is wired only for the
         // upright case so handleTransform/End can counter-scale it; for
@@ -360,6 +306,10 @@ export function BarcodeObject({
           id={obj.id}
           x={x}
           y={y}
+          clipX={isUprightEanUpc ? -clipLeft : undefined}
+          clipY={isUprightEanUpc ? 0 : undefined}
+          clipWidth={isUprightEanUpc ? Math.max(ub.w, 1) + clipLeft + clipRight : undefined}
+          clipHeight={isUprightEanUpc ? Math.max(ub.h, 1) + textFontSize + textGap : undefined}
           draggable={!obj.locked}
           {...selectionHandlers(onSelect)}
           onDragMove={(e) => e.target.position(snapPos(e.target.x(), e.target.y()))}
