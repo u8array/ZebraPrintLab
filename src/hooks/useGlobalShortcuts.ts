@@ -21,8 +21,13 @@ export function useGlobalShortcuts() {
       // /page, both of which would visibly drift away from the frozen
       // snapshot. Block them wholesale.
       if (selectPreviewLocksEditor(useLabelStore.getState())) return;
-      const tag = (e.target as HTMLElement).tagName;
-      const inInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+      const target = e.target as HTMLElement;
+      const tag = target.tagName;
+      const inInput =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        target.isContentEditable;
       const mod = e.metaKey || e.ctrlKey;
 
       if (mod && e.code === "KeyZ") {

@@ -213,8 +213,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code !== "Delete" && e.code !== "Backspace") return;
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      const target = e.target as HTMLElement;
+      const tag = target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) return;
       // Preview overlay shows a frozen Labelary snapshot; editing while
       // it's active would silently drift the comparison out of sync.
       if (selectPreviewLocksEditor(useLabelStore.getState())) return;
