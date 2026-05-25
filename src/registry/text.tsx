@@ -267,11 +267,19 @@ export const text: ObjectTypeDefinition<TextProps> = {
               const lines = content.split("\n").length;
               const patch: Partial<TextProps> = { content };
               if (lines > 1 && !p.blockWidth) {
+                // First newline: activate ^FB so the printer respects
+                // the line break. blockLines tracks the exact line
+                // count from here on.
                 patch.blockWidth = 400;
-                patch.blockLines = Math.max(lines, 3);
+                patch.blockLines = lines;
                 patch.blockLineSpacing = 0;
                 patch.blockJustify = "L";
-              } else if (p.blockWidth && lines > (p.blockLines ?? 1)) {
+              } else if (p.blockWidth && lines !== (p.blockLines ?? 1)) {
+                // ^FB already active: sync blockLines both ways so the
+                // printed block matches the editor's visible row
+                // count. (Users with a deliberate higher cap for
+                // CSV-bound rows should disable Tekstblok and manage
+                // it manually.)
                 patch.blockLines = lines;
               }
               onChange(patch);
