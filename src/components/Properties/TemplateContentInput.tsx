@@ -31,6 +31,13 @@ interface Props {
   sanitise?: (raw: string) => string;
   placeholder?: string;
   maxLength?: number;
+  /** Id of the LabelObject owning this editor. Used to scope the
+   *  store's `editorFocusRequest` so that only the editor for the
+   *  requested object takes focus — without this, every mounted
+   *  TemplateContentInput (text, barcode1d, …) would `.focus()` on
+   *  every focus request, racing the result. Omit when no focus
+   *  routing is needed (e.g. test harnesses). */
+  objectId?: string;
 }
 
 /**
@@ -100,10 +107,11 @@ export function TemplateContentInput({
   sanitise,
   placeholder,
   maxLength,
+  objectId,
 }: Props) {
   const t = useT();
   const variables = useLabelStore((s) => s.variables);
-  const editorFocusNonce = useLabelStore((s) => s.editorFocusNonce);
+  const editorFocusRequest = useLabelStore((s) => s.editorFocusRequest);
   const editorRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const composingRef = useRef(false);
@@ -153,19 +161,25 @@ export function TemplateContentInput({
   // External focus request — e.g. a canvas double-click on the text
   // field asks the user to immediately start typing. Focus + select
   // all so the next keystroke replaces the current value (typical
-  // "rename"-style affordance). Skipped on the initial nonce=0 mount
-  // so unrelated text-field selections don't steal focus.
+  // "rename"-style affordance). Three guards:
+  //  1. `editorFocusRequest === null` (steady state) → ignore.
+  //  2. `editorFocusRequest.id !== objectId` → some OTHER object's
+  //     editor was asked to focus; stay out of its way.
+  //  3. `document.activeElement === editor` → user is already typing
+  //     here. A second click would otherwise stomp the live caret +
+  //     selection (typical fat-finger after the first dblclick).
   useEffect(() => {
-    if (editorFocusNonce === 0) return;
+    if (!editorFocusRequest || editorFocusRequest.id !== objectId) return;
     const editor = editorRef.current;
     if (!editor) return;
+    if (document.activeElement === editor) return;
     editor.focus();
     const range = document.createRange();
     range.selectNodeContents(editor);
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
-  }, [editorFocusNonce]);
+  }, [editorFocusRequest, objectId]);
 
   // Click-outside + Esc close. Mounted only while the {x} menu is open.
   useEffect(() => {

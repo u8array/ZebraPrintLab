@@ -344,14 +344,19 @@ interface LabelState {
    *  panel — the sidebar itself reads + writes via `setSidebarTab`. */
   sidebarTab: 'properties' | 'layers' | 'variables' | 'fonts';
   setSidebarTab: (tab: LabelState['sidebarTab']) => void;
-  /** Monotonic counter; an increment signals "please focus the text
-   *  field's content editor". TemplateContentInput watches this and
-   *  calls `.focus()` + selectAll when it changes. Decoupled from
-   *  selection because focusing on every select would steal keyboard
-   *  focus from the canvas / global shortcuts; only explicit user
-   *  intent (e.g. a canvas double-click) requests it. */
-  editorFocusNonce: number;
-  requestContentEditorFocus: () => void;
+  /** One-shot focus request scoped to a single object. Each call sets a
+   *  fresh object (incrementing `nonce` so consumers can re-fire even
+   *  for the same id) and TemplateContentInput's effect compares its
+   *  own `objectId` prop to `id` so only the editor for the requested
+   *  object takes focus. `null` is the steady state — kept transient
+   *  in memory only, never persisted. */
+  editorFocusRequest: { id: string; nonce: number } | null;
+  /** Fire a focus request for the given object's content editor. Does
+   *  NOT touch the sidebar tab — the caller is responsible for
+   *  composing `setSidebarTab('properties')` alongside this when the
+   *  request would otherwise land on an unmounted editor. Decoupled
+   *  so the store doesn't assert which panel hosts the editor. */
+  requestContentEditorFocus: (id: string) => void;
 
   /** Start a preview session: render the current page's objects to ZPL,
    *  fetch the Labelary PNG, swap status to `active` on success or
@@ -1110,11 +1115,13 @@ export const useLabelStore = create<LabelState>()(
 
       sidebarTab: 'properties',
       setSidebarTab: (tab) => set({ sidebarTab: tab }),
-      editorFocusNonce: 0,
-      requestContentEditorFocus: () =>
+      editorFocusRequest: null,
+      requestContentEditorFocus: (id) =>
         set((state) => ({
-          sidebarTab: 'properties',
-          editorFocusNonce: state.editorFocusNonce + 1,
+          editorFocusRequest: {
+            id,
+            nonce: (state.editorFocusRequest?.nonce ?? 0) + 1,
+          },
         })),
 
       addVariable: (input) => {

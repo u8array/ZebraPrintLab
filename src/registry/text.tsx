@@ -254,6 +254,7 @@ export const text: ObjectTypeDefinition<TextProps> = {
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.registry.text.content}</label>
           <TemplateContentInput
+            objectId={obj.id}
             value={p.content}
             onChange={(content) => onChange(deriveBlockTextPatch(content, p))}
           />

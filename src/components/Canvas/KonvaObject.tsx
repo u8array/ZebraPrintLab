@@ -219,6 +219,7 @@ function KonvaObjectInner({
   // based and the round-trip is unaffected.
   const label = useLabelStore((s) => s.label);
   const requestContentEditorFocus = useLabelStore((s) => s.requestContentEditorFocus);
+  const setSidebarTab = useLabelStore((s) => s.setSidebarTab);
   // obj.x/y is the Konva render position (top-left of the EM bbox) —
   // identical to what every other shape stores. The ZPL anchor (^FO
   // cap-top / ^FT baseline) lives at obj.x/y + zplAnchorDelta and is
@@ -343,17 +344,22 @@ function KonvaObjectInner({
         onDragEnd={handleDragEnd}
         // Double-click a text/serial field to jump straight into
         // editing: ensure the field is the sole selection, switch the
-        // sidebar to Properties (so the editor is mounted), and ask
-        // it to take focus with all content selected — typing
-        // replaces the current value, matching the "rename"-style
-        // affordance of every other editable label-element pattern.
+        // sidebar to Properties (so the editor is mounted), then ask
+        // the editor for THIS object to take focus + selectAll —
+        // typing replaces the current value, matching the
+        // "rename"-style affordance every editable label-element
+        // pattern uses. Sidebar + focus are two separate store calls
+        // so the store doesn't have to know which panel hosts the
+        // editor; the caller composes them.
         onDblClick={() => {
           onSelect(false);
-          requestContentEditorFocus();
+          setSidebarTab("properties");
+          requestContentEditorFocus(obj.id);
         }}
         onDblTap={() => {
           onSelect(false);
-          requestContentEditorFocus();
+          setSidebarTab("properties");
+          requestContentEditorFocus(obj.id);
         }}
       >
         {(() => {

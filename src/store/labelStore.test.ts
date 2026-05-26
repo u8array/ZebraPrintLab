@@ -1376,18 +1376,32 @@ describe('sidebar tab + content-editor focus request', () => {
     expect(state().sidebarTab).toBe('layers');
   });
 
-  it('requestContentEditorFocus increments the nonce and switches to properties', () => {
-    state().setSidebarTab('variables');
-    const before = state().editorFocusNonce;
-    state().requestContentEditorFocus();
-    expect(state().editorFocusNonce).toBe(before + 1);
-    expect(state().sidebarTab).toBe('properties');
+  it('requestContentEditorFocus(id) sets a fresh focus request scoped to that id', () => {
+    expect(state().editorFocusRequest).toBeNull();
+    state().requestContentEditorFocus('obj-1');
+    const first = state().editorFocusRequest;
+    expect(first?.id).toBe('obj-1');
+    expect(first?.nonce).toBe(1);
   });
 
-  it('repeated requestContentEditorFocus keeps incrementing so consumers re-fire', () => {
-    state().requestContentEditorFocus();
-    const first = state().editorFocusNonce;
-    state().requestContentEditorFocus();
-    expect(state().editorFocusNonce).toBe(first + 1);
+  it('requestContentEditorFocus does NOT change the sidebar tab (caller composes)', () => {
+    state().setSidebarTab('layers');
+    state().requestContentEditorFocus('obj-1');
+    expect(state().sidebarTab).toBe('layers');
+  });
+
+  it('repeated requestContentEditorFocus bumps the nonce so consumers re-fire on the same id', () => {
+    state().requestContentEditorFocus('obj-1');
+    const firstNonce = state().editorFocusRequest?.nonce;
+    state().requestContentEditorFocus('obj-1');
+    const secondNonce = state().editorFocusRequest?.nonce;
+    expect(secondNonce).toBe((firstNonce ?? 0) + 1);
+    expect(state().editorFocusRequest?.id).toBe('obj-1');
+  });
+
+  it('requestContentEditorFocus with a different id retargets', () => {
+    state().requestContentEditorFocus('obj-1');
+    state().requestContentEditorFocus('obj-2');
+    expect(state().editorFocusRequest?.id).toBe('obj-2');
   });
 });
