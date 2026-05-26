@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   zebraGlyphAdvanceDots,
   zebraLineWidthDots,
-  zebraLineStepDots,
   zebraAlignOffsetDots,
 } from "./zebraTextLayout";
 
@@ -29,20 +28,6 @@ describe("zebraLineWidthDots", () => {
 
   it("returns 0 for empty line", () => {
     expect(zebraLineWidthDots("", 30, 0)).toBe(0);
-  });
-});
-
-describe("zebraLineStepDots", () => {
-  it("returns fontHeight when blockLineSpacing is 0", () => {
-    expect(zebraLineStepDots(30, 0)).toBe(30);
-  });
-
-  it("adds blockLineSpacing on top of fontHeight", () => {
-    expect(zebraLineStepDots(30, 4)).toBe(34);
-  });
-
-  it("accepts negative blockLineSpacing (Zebra allows it to tighten the block)", () => {
-    expect(zebraLineStepDots(30, -5)).toBe(25);
   });
 });
 

@@ -1113,6 +1113,9 @@ export const useLabelStore = create<LabelState>()(
           return { currentPageIndex: index, selectedIds: [] };
         }),
 
+      // sidebarTab is transient — not in partialize, so a reload
+      // resets it to 'properties' (the safe default for any selection
+      // state that survived rehydration).
       sidebarTab: 'properties',
       setSidebarTab: (tab) => set({ sidebarTab: tab }),
       editorFocusRequest: null,

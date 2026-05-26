@@ -35,18 +35,16 @@ export function domToPlainText(root: Node): string {
       out += "\n";
       return;
     }
-    for (const c of Array.from(n.childNodes)) walk(c);
+    n.childNodes.forEach(walk);
   };
-  const children = Array.from(root.childNodes);
-  const lastIdx = children.length - 1;
-  for (let i = 0; i < children.length; i += 1) {
-    const c = children[i]!;
+  const lastIdx = root.childNodes.length - 1;
+  root.childNodes.forEach((c, i) => {
     if (i === lastIdx && c.nodeType === Node.ELEMENT_NODE && (c as Element).tagName === "BR") {
       // Placeholder BR — Chrome's caret target on a trailing empty line.
-      continue;
+      return;
     }
     walk(c);
-  }
+  });
   return out;
 }
 
@@ -84,7 +82,7 @@ export function getCaretOffset(root: Node, node: Node, offset: number): number {
       count += 1;
       return;
     }
-    for (const c of Array.from(n.childNodes)) visit(c);
+    n.childNodes.forEach(visit);
   };
   visit(root);
   return count;
@@ -146,7 +144,7 @@ export function findCaretPosition(
       }
       return;
     }
-    for (const c of Array.from(n.childNodes)) visit(c);
+    n.childNodes.forEach(visit);
   };
   visit(root);
   if (result) return result;

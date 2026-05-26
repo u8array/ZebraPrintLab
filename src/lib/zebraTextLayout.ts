@@ -36,17 +36,6 @@ export function zebraLineWidthDots(
   return line.length * zebraGlyphAdvanceDots(fontHeight, fontWidth);
 }
 
-/** Vertical advance between successive wrapped lines in a `^FB` block:
- *  the font cap height plus the user-configured `^FB`-spacing. Keeps
- *  the line-step formula in the same module as the per-line width /
- *  align helpers so all `^FB` geometry lives in one tested place. */
-export function zebraLineStepDots(
-  fontHeight: number,
-  blockLineSpacing: number,
-): number {
-  return fontHeight + blockLineSpacing;
-}
-
 /** Horizontal offset (in dots, relative to the block's left edge) that
  *  a line of `lineLength` glyphs gets at the given `justify` mode
  *  inside a `blockWidth`-dots block. Negative widths clamp to 0 (the

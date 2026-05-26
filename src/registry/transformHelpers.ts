@@ -68,10 +68,27 @@ export function commitRotatedWidthHeightTransform<
   obj: LabelObjectBase & { props: P },
   ctx: TransformContext,
 ): Partial<P> {
+  return commitRotatedSizeTransform(obj, ctx, "width", "height");
+}
+
+/** Generic rotation-aware commit: scales an arbitrary numeric prop
+ *  pair by `esx` / `esy`, rounds + snaps, clamps to min 1. */
+export function commitRotatedSizeTransform<
+  P extends { rotation: "N" | "R" | "I" | "B" },
+  XK extends keyof P,
+  YK extends keyof P,
+>(
+  obj: LabelObjectBase & { props: P },
+  ctx: TransformContext,
+  xKey: XK,
+  yKey: YK,
+): Partial<P> {
   const { esx, esy } = effectiveScale(obj.props.rotation, ctx);
+  const oldX = obj.props[xKey] as unknown as number;
+  const oldY = obj.props[yKey] as unknown as number;
   return {
-    width: Math.max(1, ctx.snap(Math.round(obj.props.width * esx))),
-    height: Math.max(1, ctx.snap(Math.round(obj.props.height * esy))),
+    [xKey]: Math.max(1, ctx.snap(Math.round(oldX * esx))),
+    [yKey]: Math.max(1, ctx.snap(Math.round(oldY * esy))),
   } as Partial<P>;
 }
 

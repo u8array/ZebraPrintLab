@@ -108,6 +108,10 @@ interface BaseTextProps {
  *  centred / right-aligned output aligned with Labelary — Konva's
  *  own `Text.align` uses canvas `measureText` which over-estimates
  *  A0 glyph widths and drifts noticeably for centred blocks. */
+type TextFieldObj =
+  | (LeafObject & { type: "text"; props: TextProps })
+  | (LeafObject & { type: "serial"; props: SerialProps });
+
 function TextFieldContent({
   obj,
   content,
@@ -116,25 +120,27 @@ function TextFieldContent({
   dpmm,
   fontVersion,
 }: {
-  obj: LeafObject & { type: "text" | "serial"; props: TextProps | SerialProps };
+  obj: TextFieldObj;
   content: string;
   base: BaseTextProps;
   scale: number;
   dpmm: number;
   fontVersion: number;
 }) {
-  if (obj.type !== "text" || !obj.props.blockWidth) {
+  if (obj.type !== "text") {
     return <Text key={fontVersion} x={0} y={0} text={content} {...base} />;
   }
-  const p = obj.props;
-  const justify = p.blockJustify ?? "L";
-  const lineStepPx =
-    base.fontSize + dotsToPx(p.blockLineSpacing ?? 0, scale, dpmm);
+  const { blockWidth, blockJustify, blockLineSpacing, fontHeight, fontWidth } = obj.props;
+  if (!blockWidth) {
+    return <Text key={fontVersion} x={0} y={0} text={content} {...base} />;
+  }
+  const justify = blockJustify ?? "L";
+  const lineStepPx = base.fontSize + dotsToPx(blockLineSpacing ?? 0, scale, dpmm);
   return (
     <>
       {content.split("\n").map((line, i) => {
-        const lineWidthDots = zebraLineWidthDots(line, p.fontHeight, p.fontWidth);
-        const offsetDots = zebraAlignOffsetDots(lineWidthDots, p.blockWidth!, justify);
+        const lineWidthDots = zebraLineWidthDots(line, fontHeight, fontWidth);
+        const offsetDots = zebraAlignOffsetDots(lineWidthDots, blockWidth, justify);
         return (
           <Text
             key={`${fontVersion}-${i}`}
@@ -320,6 +326,7 @@ function KonvaObjectInner({
   const label = useLabelStore((s) => s.label);
   const requestContentEditorFocus = useLabelStore((s) => s.requestContentEditorFocus);
   const setSidebarTab = useLabelStore((s) => s.setSidebarTab);
+  const selectObjects = useLabelStore((s) => s.selectObjects);
   // obj.x/y is the Konva render position (top-left of the EM bbox) —
   // identical to what every other shape stores. The ZPL anchor (^FO
   // cap-top / ^FT baseline) lives at obj.x/y + zplAnchorDelta and is
@@ -442,28 +449,23 @@ function KonvaObjectInner({
         {...selectionHandlers(onSelect)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
-        // Double-click a text/serial field to jump straight into
-        // editing: ensure the field is the sole selection, switch the
-        // sidebar to Properties (so the editor is mounted), then ask
-        // the editor for THIS object to take focus + selectAll —
-        // typing replaces the current value, matching the
-        // "rename"-style affordance every editable label-element
-        // pattern uses. Sidebar + focus are two separate store calls
-        // so the store doesn't have to know which panel hosts the
-        // editor; the caller composes them.
+        // selectObjects directly (not onSelect) so a leaf inside a
+        // group pierces the group's auto-promotion.
         onDblClick={() => {
-          onSelect(false);
+          if (obj.locked) return;
+          selectObjects([obj.id]);
           setSidebarTab("properties");
           requestContentEditorFocus(obj.id);
         }}
         onDblTap={() => {
-          onSelect(false);
+          if (obj.locked) return;
+          selectObjects([obj.id]);
           setSidebarTab("properties");
           requestContentEditorFocus(obj.id);
         }}
       >
         <TextFieldContent
-          obj={obj as LeafObject & { type: "text" | "serial"; props: TextProps | SerialProps }}
+          obj={obj as TextFieldObj}
           content={content}
           base={{
             fontSize: fontSizePx,

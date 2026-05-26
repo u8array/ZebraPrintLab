@@ -38,6 +38,13 @@ interface Props {
    *  every focus request, racing the result. Omit when no focus
    *  routing is needed (e.g. test harnesses). */
   objectId?: string;
+  /** Whether the value can contain newlines. Defaults to `true`
+   *  (text/^FB) and screen-reader-announces "multiline edit"; pass
+   *  `false` for restricted-charset single-line fields (e.g.
+   *  barcode payloads where `\n` is sanitised away — a stray Enter
+   *  would otherwise flicker a `<br>` into the DOM until onInput
+   *  strips it). */
+  multiline?: boolean;
 }
 
 /**
@@ -108,6 +115,7 @@ export function TemplateContentInput({
   placeholder,
   maxLength,
   objectId,
+  multiline = true,
 }: Props) {
   const t = useT();
   const variables = useLabelStore((s) => s.variables);
@@ -252,9 +260,9 @@ export function TemplateContentInput({
   // React's synthetic `onBeforeInput` does not fire reliably on
   // contenteditable in React 19 — attach a native listener instead.
   // Latest-state ref keeps the closure pure; we never re-bind.
-  const stateRef = useRef({ value, onChange, sanitise, maxLength });
+  const stateRef = useRef({ value, onChange, sanitise, maxLength, multiline });
   useLayoutEffect(() => {
-    stateRef.current = { value, onChange, sanitise, maxLength };
+    stateRef.current = { value, onChange, sanitise, maxLength, multiline };
   });
 
   useEffect(() => {
@@ -301,17 +309,25 @@ export function TemplateContentInput({
       commitInline(value.slice(0, m.start) + value.slice(m.end), m.start);
       return true;
     };
-    /** Chrome's native `insertParagraph` wraps following content in a
-     *  `<div>` which would force `domToPlainText` to special-case
-     *  block-level layout. `insertLineBreak` keeps everything as
-     *  inline + `<br>` which the helper already handles. */
-    const handleParagraph = () => document.execCommand("insertLineBreak");
-    /** Force plain-text paste: read `text/plain` only, run through
-     *  `sanitise` if configured, respect `maxLength`. Drops any HTML
-     *  the source put in `text/html`. */
-    const handlePaste = (e: InputEvent) => {
+    /** Splice `\n` into the value at the caret, then let the render
+     *  effect rebuild the DOM with the right `<br>` placement. Goes
+     *  through the same commitInline pipeline as atomic-delete /
+     *  paste — no `document.execCommand` (deprecated, replaced by
+     *  Range-based mutation through React state). */
+    const handleParagraph = () => {
+      const { value } = stateRef.current;
+      const { lo, hi } = selectionRange(value.length);
+      commitInline(value.slice(0, lo) + "\n" + value.slice(hi), lo + 1);
+    };
+    /** Force plain-text paste via the standard `paste` event —
+     *  `beforeinput insertFromPaste` exposes `dataTransfer` only in
+     *  Chromium; Firefox/Safari leave it null. `ClipboardEvent` is
+     *  the cross-engine path and the same plain-text-only contract
+     *  applies (sanitise + maxLength + splice into value). */
+    const handlePaste = (e: ClipboardEvent) => {
+      e.preventDefault();
       const { value, sanitise, maxLength } = stateRef.current;
-      const data = e.dataTransfer?.getData("text/plain") ?? "";
+      const data = e.clipboardData?.getData("text/plain") ?? "";
       if (!data) return;
       const clean = sanitise ? sanitise(data) : data;
       const { lo, hi } = selectionRange(value.length);
@@ -331,8 +347,10 @@ export function TemplateContentInput({
           handleHistory();
           return;
         case "insertParagraph":
+          // Single-line editors drop Enter; the `\n` would get
+          // sanitised away and flicker a stray `<br>` in between.
           e.preventDefault();
-          handleParagraph();
+          if (stateRef.current.multiline) handleParagraph();
           return;
         case "deleteContentBackward":
         case "deleteContentForward": {
@@ -340,14 +358,14 @@ export function TemplateContentInput({
           if (handleAtomicDelete(direction)) e.preventDefault();
           return;
         }
-        case "insertFromPaste":
-          e.preventDefault();
-          handlePaste(e);
-          return;
       }
     };
     editor.addEventListener("beforeinput", handler);
-    return () => editor.removeEventListener("beforeinput", handler);
+    editor.addEventListener("paste", handlePaste);
+    return () => {
+      editor.removeEventListener("beforeinput", handler);
+      editor.removeEventListener("paste", handlePaste);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -395,7 +413,7 @@ export function TemplateContentInput({
         contentEditable
         suppressContentEditableWarning
         role="textbox"
-        aria-multiline="true"
+        aria-multiline={multiline}
         aria-label={placeholder ?? t.app.insertVariable}
         data-placeholder={isEmpty ? placeholder : undefined}
         spellCheck={false}

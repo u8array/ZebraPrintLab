@@ -112,6 +112,7 @@ export function createBarcode1D(config: Barcode1DConfig): ObjectTypeDefinition<B
             <label className={labelCls}>{loc.content}</label>
             <TemplateContentInput
               objectId={obj.id}
+              multiline={false}
               value={p.content}
               onChange={(content) => onChange({ content })}
               sanitise={(raw) =>
