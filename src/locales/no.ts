@@ -42,6 +42,7 @@ const no = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Gruppe',
@@ -61,6 +62,7 @@ const no = {
     multipleSelectedHint: 'piltaster flytter',
     groupSelection: 'Grupper utvalg',
     visualApproxHint: 'Visuell gjengivelse er omtrentlig; dimensjonene samsvarer med ZPL-utskriften',
+    visualApproxUnverifiedHint: 'Visuell gjengivelse er omtrentlig; mål kan avvike fra ZPL-utskriften',
     alignCenterH: 'Sentrer horisontalt på etiketten',
     alignCenterV: 'Sentrer vertikalt på etiketten',
     alignCenterBoth: 'Sentrer på etiketten',
@@ -463,6 +465,11 @@ const no = {
       content: 'Innhold',
       magnification: 'Størrelse (1–10)',
       ecLevel: 'Feilkorreksjon (0 = auto)',
+    },
+    maxicode: {
+      content: 'Innhold',
+      mode: 'Modus',
+      mode6Advisory: 'Modus 6 koder leserkonfigurasjonskommandoer, ikke brukerdata',
     },
     micropdf417: {
       content: 'Innhold',

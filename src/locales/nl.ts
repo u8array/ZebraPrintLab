@@ -42,6 +42,7 @@ const nl = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Groep',
@@ -61,6 +62,7 @@ const nl = {
     multipleSelectedHint: 'pijltoetsen om te verplaatsen',
     groupSelection: 'Selectie groeperen',
     visualApproxHint: 'Visuele weergave bij benadering; afmetingen komen overeen met de ZPL-afdruk',
+    visualApproxUnverifiedHint: 'Visuele weergave bij benadering; afmetingen kunnen afwijken van de ZPL-afdruk',
     alignCenterH: 'Horizontaal op label centreren',
     alignCenterV: 'Verticaal op label centreren',
     alignCenterBoth: 'Op label centreren',
@@ -463,6 +465,11 @@ const nl = {
       content: 'Inhoud',
       magnification: 'Grootte (1–10)',
       ecLevel: 'Foutcorrectie (0 = auto)',
+    },
+    maxicode: {
+      content: 'Inhoud',
+      mode: 'Modus',
+      mode6Advisory: 'Modus 6 codeert lezerconfiguratiecommando\'s, geen gebruikersgegevens',
     },
     micropdf417: {
       content: 'Inhoud',

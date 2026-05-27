@@ -8,6 +8,7 @@ import { useColorScheme } from "../../lib/useColorScheme";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import {
   buildBwipOptions,
+  cleanBwipError,
   getDisplaySize,
   get1DBwipScale,
   getEanUpcLayout,
@@ -74,11 +75,7 @@ export function BarcodeObject({
       bwipjs.toCanvas(canvas, opts as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
       barcodeCanvas = canvas;
     } catch (e) {
-      const raw = e instanceof Error ? e.message : String(e);
-      // bwip-js prefixes its errors like `bwip-js: bwipp.code39badCharacter: ...`
-      // Strip the library/identifier head so the placeholder shows only the
-      // human-readable reason.
-      errorMsg = raw.replace(/^bwip-js:\s*/i, '').replace(/^bwipp\.[^:]+:\s*/i, '');
+      errorMsg = cleanBwipError(e);
     }
   }
 

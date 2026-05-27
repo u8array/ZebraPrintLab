@@ -33,6 +33,7 @@ import { DEFAULT_GS_SYMBOL, GS_SYMBOL_CODES, type SymbolProps } from "../registr
 import type { SerialProps } from "../registry/serial";
 import { isZplRotation, type ZplRotation } from "../registry/rotation";
 import type { AztecProps } from "../registry/aztec";
+import type { MaxicodeProps } from "../registry/maxicode";
 import type { MicroPdf417Props } from "../registry/micropdf417";
 import type { CodablockProps } from "../registry/codablock";
 import { unzlibSync } from "fflate";
@@ -687,6 +688,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   // Aztec pending parameters
   let aztecMag = 4;
 
+  // Maxicode pending parameters
+  let maxicodeMode: MaxicodeProps["mode"] = 4;
+
   // MicroPDF417 pending parameters
   let mpdfRowHeight = 10;
 
@@ -1118,6 +1122,22 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           ),
         );
         break;
+      case "maxicode":
+        objects.push(
+          makeObj(
+            "maxicode",
+            x,
+            y,
+            {
+              content,
+              mode: maxicodeMode,
+              rotation: bcRotation,
+            } satisfies MaxicodeProps,
+            posType,
+            comment,
+          ),
+        );
+        break;
       case "micropdf417":
         objects.push(
           makeObj(
@@ -1492,6 +1512,17 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // ^B0N,{magnification},... / ^BON,... — Aztec (^B0 and ^BO are synonyms)
     B0: handleAztec,
     BO: handleAztec,
+    // ^BVo,{mode},{symbolNumber},{totalSymbols} — Maxicode (fixed
+    // physical size, no magnification). symbolNumber/totalSymbols
+    // describe structured-append composition; we don't expose that
+    // in the editor, so the params are read but the emitted form
+    // pins them to (1, 1).
+    BV(p) {
+      fieldType = "maxicode";
+      bcRotation = readRotation(p[0]);
+      const m = int(p[1], 4);
+      maxicodeMode = (m >= 2 && m <= 6 ? m : 4) as MaxicodeProps["mode"];
+    },
     // ^BFN,{rowHeight} — MicroPDF417
     BF(p) {
       fieldType = "micropdf417";

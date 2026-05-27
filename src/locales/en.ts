@@ -42,6 +42,7 @@ const en = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Group',
@@ -61,6 +62,7 @@ const en = {
     multipleSelectedHint: 'use arrow keys to move',
     groupSelection: 'Group selection',
     visualApproxHint: 'Visual rendering approximate; dimensions match the ZPL print',
+    visualApproxUnverifiedHint: 'Visual rendering approximate; dimensions may differ from the ZPL print',
     alignCenterH: 'Center horizontally on label',
     alignCenterV: 'Center vertically on label',
     alignCenterBoth: 'Center on label',
@@ -484,6 +486,11 @@ const en = {
       content: 'Content',
       magnification: 'Size (1–10)',
       ecLevel: 'Error correction (0 = auto)',
+    },
+    maxicode: {
+      content: 'Content',
+      mode: 'Mode',
+      mode6Advisory: 'Mode 6 encodes reader-configuration commands, not user data',
     },
     micropdf417: {
       content: 'Content',

@@ -42,6 +42,7 @@ const lt = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Grupė',
@@ -61,6 +62,7 @@ const lt = {
     multipleSelectedHint: 'rodyklėmis perkeli',
     groupSelection: 'Grupuoti pasirinkimą',
     visualApproxHint: 'Vaizdavimas apytikslis; matmenys atitinka ZPL spaudinį',
+    visualApproxUnverifiedHint: 'Vaizdinis atvaizdavimas yra apytikslis; matmenys gali skirtis nuo ZPL spausdinimo',
     alignCenterH: 'Centruoti horizontaliai etiketėje',
     alignCenterV: 'Centruoti vertikaliai etiketėje',
     alignCenterBoth: 'Centruoti etiketėje',
@@ -463,6 +465,11 @@ const lt = {
       content: 'Turinys',
       magnification: 'Dydis (1–10)',
       ecLevel: 'Klaidų korekcija (0 = auto)',
+    },
+    maxicode: {
+      content: 'Turinys',
+      mode: 'Režimas',
+      mode6Advisory: '6 režimas koduoja skaitytuvo konfigūravimo komandas, o ne naudotojo duomenis',
     },
     micropdf417: {
       content: 'Turinys',

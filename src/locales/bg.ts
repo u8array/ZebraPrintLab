@@ -42,6 +42,7 @@ const bg = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Група',
@@ -61,6 +62,7 @@ const bg = {
     multipleSelectedHint: 'със стрелките местиш',
     groupSelection: 'Групирай селекцията',
     visualApproxHint: 'Визуалното изобразяване е приблизително; размерите съответстват на ZPL отпечатъка',
+    visualApproxUnverifiedHint: 'Визуалното изобразяване е приблизително; размерите може да се различават от ZPL отпечатъка',
     alignCenterH: 'Хоризонтално центриране върху етикета',
     alignCenterV: 'Вертикално центриране върху етикета',
     alignCenterBoth: 'Центриране върху етикета',
@@ -463,6 +465,11 @@ const bg = {
       content: 'Съдържание',
       magnification: 'Размер (1–10)',
       ecLevel: 'Корекция на грешки (0 = auto)',
+    },
+    maxicode: {
+      content: 'Съдържание',
+      mode: 'Режим',
+      mode6Advisory: 'Режим 6 кодира команди за конфигурация на скенера, а не потребителски данни',
     },
     micropdf417: {
       content: 'Съдържание',

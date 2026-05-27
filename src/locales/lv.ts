@@ -42,6 +42,7 @@ const lv = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Grupa',
@@ -61,6 +62,7 @@ const lv = {
     multipleSelectedHint: 'ar bultiņām pārvietot',
     groupSelection: 'Grupēt atlasi',
     visualApproxHint: 'Vizuālais attēlojums ir aptuvens; izmēri atbilst ZPL izdrukai',
+    visualApproxUnverifiedHint: 'Vizuālā atveidošana ir aptuvena; izmēri var atšķirties no ZPL izdrukas',
     alignCenterH: 'Centrēt horizontāli uz etiķetes',
     alignCenterV: 'Centrēt vertikāli uz etiķetes',
     alignCenterBoth: 'Centrēt uz etiķetes',
@@ -463,6 +465,11 @@ const lv = {
       content: 'Saturs',
       magnification: 'Izmērs (1–10)',
       ecLevel: 'Kļūdu korekcija (0 = auto)',
+    },
+    maxicode: {
+      content: 'Saturs',
+      mode: 'Režīms',
+      mode6Advisory: '6. režīms kodē lasītāja konfigurācijas komandas, nevis lietotāja datus',
     },
     micropdf417: {
       content: 'Saturs',

@@ -42,6 +42,7 @@ const hu = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Csoport',
@@ -61,6 +62,7 @@ const hu = {
     multipleSelectedHint: 'nyilakkal mozgasd',
     groupSelection: 'Kijelölés csoportosítása',
     visualApproxHint: 'A vizuális megjelenítés közelítő; a méretek megegyeznek a ZPL nyomtatással',
+    visualApproxUnverifiedHint: 'A vizuális megjelenítés közelítő; a méretek eltérhetnek a ZPL nyomtatástól',
     alignCenterH: 'Vízszintesen középre a címkén',
     alignCenterV: 'Függőlegesen középre a címkén',
     alignCenterBoth: 'Igazítás a címkén középre',
@@ -463,6 +465,11 @@ const hu = {
       content: 'Tartalom',
       magnification: 'Méret (1–10)',
       ecLevel: 'Hibajavítás (0 = auto)',
+    },
+    maxicode: {
+      content: 'Tartalom',
+      mode: 'Mód',
+      mode6Advisory: 'A 6-os mód olvasó-konfigurációs parancsokat kódol, nem felhasználói adatokat',
     },
     micropdf417: {
       content: 'Tartalom',

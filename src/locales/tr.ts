@@ -42,6 +42,7 @@ const tr = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Grup',
@@ -61,6 +62,7 @@ const tr = {
     multipleSelectedHint: 'oklarla taşı',
     groupSelection: 'Seçimi grupla',
     visualApproxHint: 'Görsel render yaklaşıktır; boyutlar ZPL çıktısıyla eşleşir',
+    visualApproxUnverifiedHint: 'Görsel oluşturma yaklaşıktır; boyutlar ZPL çıktısından farklı olabilir',
     alignCenterH: 'Etikette yatay ortala',
     alignCenterV: 'Etikette dikey ortala',
     alignCenterBoth: 'Etikete ortala',
@@ -463,6 +465,11 @@ const tr = {
       content: 'İçerik',
       magnification: 'Boyut (1–10)',
       ecLevel: 'Hata düzeltme (0 = auto)',
+    },
+    maxicode: {
+      content: 'İçerik',
+      mode: 'Mod',
+      mode6Advisory: 'Mod 6, kullanıcı verileri yerine okuyucu yapılandırma komutlarını kodlar',
     },
     micropdf417: {
       content: 'İçerik',

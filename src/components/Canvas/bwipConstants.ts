@@ -58,11 +58,27 @@ export const PLESSEY_BWIP_TO_ZEBRA_WIDTH_RATIO = 49 / 82;
  *  with the same module count but at different transition positions). UI
  *  surfaces a hint when one is selected so users know the layout is correct
  *  even when the visual rendering is approximate. */
-export const BWIP_VISUAL_APPROX_TYPES = new Set<string>([
-  "code93",
-  "code11",
-  "plessey",
-  "gs1databar",
+/** Severity of visual-render approximation per symbology. One
+ *  axis with two levels:
+ *   - "approx":     bitmap approximate, dimensions spec-correct
+ *                   (we compute the bbox against the ZPL formula)
+ *   - "unverified": bitmap approximate AND dimensions not cross-
+ *                   checkable against Labelary because Labelary
+ *                   returns the raw text payload instead of a real
+ *                   symbol render. The printed footprint may differ
+ *                   from the canvas bbox.
+ *  The UI picks a per-severity hint string; absence means the
+ *  canvas render is trusted. */
+export type BwipApproxSeverity = "approx" | "unverified";
+
+export const BWIP_APPROX_SEVERITY: ReadonlyMap<string, BwipApproxSeverity> = new Map([
+  ["code93", "approx"],
+  ["code11", "approx"],
+  ["plessey", "approx"],
+  ["gs1databar", "approx"],
+  ["code49", "unverified"],
+  ["codablock", "unverified"],
+  ["maxicode", "unverified"],
 ]);
 
 // Per-symbology spec module heights for GS1 DataBar. bwip-js renders most

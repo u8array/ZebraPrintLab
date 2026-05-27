@@ -5,7 +5,7 @@ import type { LabelCanvasHandle } from "../Canvas/LabelCanvas";
 import type { AlignAxis } from "../../lib/alignment";
 import { ObjectRegistry } from "../../registry";
 import { canGroupSelection, findObjectById, isGroup } from "../../types/Group";
-import { BWIP_VISUAL_APPROX_TYPES } from "../Canvas/bwipConstants";
+import { BWIP_APPROX_SEVERITY } from "../Canvas/bwipConstants";
 import { stripZplCommandChars } from "../../registry/zplHelpers";
 import { dotsToMm, mmToDots } from "../../lib/coordinates";
 import {
@@ -28,6 +28,26 @@ import {
   getAvailableFontIds,
   stripDrivePrefix,
 } from "../../lib/customFonts";
+
+/** Tooltip-icon flagging that the canvas render is approximate for
+ *  the given object type. Two severities collapse into one icon
+ *  with a per-severity hint string. Returns null when the type's
+ *  render is fully trusted (no entry in BWIP_APPROX_SEVERITY). */
+function BwipApproxIcon({ type }: { type: string }) {
+  const t = useT();
+  const severity = BWIP_APPROX_SEVERITY.get(type);
+  if (!severity) return null;
+  const title =
+    severity === "approx"
+      ? t.properties.visualApproxHint
+      : t.properties.visualApproxUnverifiedHint;
+  return (
+    <InformationCircleIcon
+      className="w-3.5 h-3.5 text-muted/60 cursor-help"
+      title={title}
+    />
+  );
+}
 
 interface PropertiesPanelProps {
   /** Imperative handle on the canvas — used for actions that need live render
@@ -124,12 +144,8 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
         <span className="text-xs font-medium text-text">
           {typeLabel}
         </span>
-        {BWIP_VISUAL_APPROX_TYPES.has(obj.type) && (
-          <InformationCircleIcon
-            className="w-3.5 h-3.5 text-muted/60 cursor-help"
-            title={t.properties.visualApproxHint}
-          />
-        )}
+        <BwipApproxIcon type={obj.type} />
+
         <span className="font-mono text-[10px] text-muted ml-auto truncate">
           {obj.id.slice(0, 8)}
         </span>

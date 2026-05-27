@@ -42,6 +42,7 @@ const ar = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'ماكسي كود',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'مجموعة',
@@ -61,6 +62,7 @@ const ar = {
     multipleSelectedHint: 'استخدم أسهم الاتجاه للتحريك',
     groupSelection: 'تجميع التحديد',
     visualApproxHint: 'العرض المرئي تقريبي؛ الأبعاد تطابق طباعة ZPL',
+    visualApproxUnverifiedHint: 'العرض البصري تقريبي؛ قد تختلف الأبعاد عن طباعة ZPL',
     alignCenterH: 'توسيط أفقياً على الملصق',
     alignCenterV: 'توسيط رأسياً على الملصق',
     alignCenterBoth: 'توسيط على الملصق',
@@ -463,6 +465,11 @@ const ar = {
       content: 'المحتوى',
       magnification: 'الحجم (1–10)',
       ecLevel: 'تصحيح الأخطاء (0 = تلقائي)',
+    },
+    maxicode: {
+      content: 'المحتوى',
+      mode: 'الوضع',
+      mode6Advisory: 'الوضع 6 يقوم بترميز أوامر تكوين القارئ، وليس بيانات المستخدم',
     },
     micropdf417: {
       content: 'المحتوى',

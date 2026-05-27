@@ -42,6 +42,7 @@ const fi = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Ryhmä',
@@ -61,6 +62,7 @@ const fi = {
     multipleSelectedHint: 'nuolinäppäimillä siirrät',
     groupSelection: 'Ryhmittele valinta',
     visualApproxHint: 'Visuaalinen esitys on likimääräinen; mitat vastaavat ZPL-tulostetta',
+    visualApproxUnverifiedHint: 'Visuaalinen esitys on likimääräinen; mitat voivat poiketa ZPL-tulosteesta',
     alignCenterH: 'Keskitä vaakasuunnassa etikettiin',
     alignCenterV: 'Keskitä pystysuunnassa etikettiin',
     alignCenterBoth: 'Keskitä etikettiin',
@@ -463,6 +465,11 @@ const fi = {
       content: 'Sisältö',
       magnification: 'Koko (1–10)',
       ecLevel: 'Virheenkorjaus (0 = auto)',
+    },
+    maxicode: {
+      content: 'Sisältö',
+      mode: 'Tila',
+      mode6Advisory: 'Tila 6 koodaa lukijan konfigurointikomentoja, ei käyttäjädataa',
     },
     micropdf417: {
       content: 'Sisältö',

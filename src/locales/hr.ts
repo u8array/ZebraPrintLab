@@ -42,6 +42,7 @@ const hr = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Grupa',
@@ -61,6 +62,7 @@ const hr = {
     multipleSelectedHint: 'strelicama pomičeš',
     groupSelection: 'Grupiraj odabir',
     visualApproxHint: 'Vizualni prikaz je približan; dimenzije odgovaraju ZPL ispisu',
+    visualApproxUnverifiedHint: 'Vizualni prikaz je približan; dimenzije se mogu razlikovati od ZPL ispisa',
     alignCenterH: 'Centriraj vodoravno na naljepnici',
     alignCenterV: 'Centriraj okomito na naljepnici',
     alignCenterBoth: 'Centriraj na naljepnici',
@@ -463,6 +465,11 @@ const hr = {
       content: 'Sadržaj',
       magnification: 'Veličina (1–10)',
       ecLevel: 'Korekcija grešaka (0 = auto)',
+    },
+    maxicode: {
+      content: 'Sadržaj',
+      mode: 'Način',
+      mode6Advisory: 'Način 6 kodira naredbe za konfiguraciju čitača, ne korisničke podatke',
     },
     micropdf417: {
       content: 'Sadržaj',

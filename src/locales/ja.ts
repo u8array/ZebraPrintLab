@@ -42,6 +42,7 @@ const ja = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'グループ',
@@ -61,6 +62,7 @@ const ja = {
     multipleSelectedHint: '矢印キーで移動',
     groupSelection: '選択をグループ化',
     visualApproxHint: '視覚的表示は概略です。寸法は ZPL 印刷と一致します',
+    visualApproxUnverifiedHint: '視覚的表示は概略です。寸法は ZPL 印刷と異なる場合があります',
     alignCenterH: 'ラベル上で水平方向に中央揃え',
     alignCenterV: 'ラベル上で垂直方向に中央揃え',
     alignCenterBoth: 'ラベル中央に配置',
@@ -463,6 +465,11 @@ const ja = {
       content: '内容',
       magnification: 'サイズ（1–10）',
       ecLevel: 'エラー訂正（0 = 自動）',
+    },
+    maxicode: {
+      content: '内容',
+      mode: 'モード',
+      mode6Advisory: 'モード 6 はリーダー設定コマンドをエンコードします。ユーザーデータではありません',
     },
     micropdf417: {
       content: '内容',

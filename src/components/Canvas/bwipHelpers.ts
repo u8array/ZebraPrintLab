@@ -12,6 +12,7 @@
  * bwipHelpers.test.ts ensures every BCID-registered type has a case.
  */
 
+import bwipjs from "bwip-js/browser";
 import { ObjectRegistry, type LeafObject } from "../../registry";
 import type { LabelObject } from "../../types/Group";
 import type { Gs1DatabarProps } from "../../registry/gs1databar";
@@ -92,6 +93,7 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
   qrcode: "qrcode",
   datamatrix: "datamatrix",
   aztec: "azteccodecompact",
+  maxicode: "maxicode",
   micropdf417: "micropdf417",
   codablock: "codablockf",
   // Placeholder — actual bcid (ean2 vs ean5) is resolved from the
@@ -102,6 +104,48 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
 
 export const BWIP_SCALE = 2;
 const BWIP_2D_INTERNAL_SCALE = 2;
+
+/** Reused unattached canvas for dry-run encoding validators (e.g.
+ *  `validateMaxicodeBwip`). Cheaper than creating a fresh element
+ *  per call and we don't need its pixel output, just the success
+ *  /throw signal from bwip-js. Initialised lazily so SSR-style
+ *  imports don't break — `document` exists only in the browser. */
+let _validationCanvas: HTMLCanvasElement | null = null;
+function getValidationCanvas(): HTMLCanvasElement {
+  if (!_validationCanvas) _validationCanvas = document.createElement("canvas");
+  return _validationCanvas;
+}
+
+/** Strip the `bwip-js: bwipp.symbology:` prefixes that bwip-js
+ *  decorates every encoder error with, so the bare diagnostic
+ *  ("Expected postcode followed by group separator character",
+ *  etc.) can be shown as-is in the UI. Shared between the canvas
+ *  render (BarcodeObject) and dry-run validators below. */
+export function cleanBwipError(e: unknown): string {
+  const raw = e instanceof Error ? e.message : String(e);
+  return raw.replace(/^bwip-js:\s*/i, "").replace(/^bwipp\.[^:]+:\s*/i, "");
+}
+
+/** Dry-run a Maxicode encode against the shared validation canvas
+ *  to check whether the (content, mode) combination would succeed
+ *  in the real render path. Returns null on success or the cleaned
+ *  bwip-js error message on failure (e.g. SCM-format mismatch for
+ *  modes 2/3). Uses the same option shape `buildBwipOptions`
+ *  produces so canvas render and panel-side validation can't drift. */
+export function validateMaxicodeBwip(content: string, mode: number): string | null {
+  try {
+    const opts = {
+      bcid: "maxicode",
+      text: content || " ",
+      scale: BWIP_SCALE,
+      mode,
+    } as unknown as Parameters<typeof bwipjs.toCanvas>[1];
+    bwipjs.toCanvas(getValidationCanvas(), opts);
+    return null;
+  } catch (e) {
+    return cleanBwipError(e);
+  }
+}
 
 /**
  * Estimate the number of columns ZPL/Labelary would choose for PDF417 when
@@ -506,6 +550,14 @@ export function buildBwipOptions(
       opts = { bcid, text: p.content || " ", scale: BWIP_SCALE };
       break;
     }
+    case "maxicode": {
+      const p = obj.props;
+      // bwip-js maxicode uses `mode` (number) directly; modes 2/3
+      // would also accept a structured carrier message via `parse`,
+      // but we don't expose SCM editing yet so pass content as-is.
+      opts = { bcid, text: p.content || " ", scale: BWIP_SCALE, mode: p.mode };
+      break;
+    }
     case "micropdf417": {
       const p = obj.props;
       opts = {
@@ -901,6 +953,15 @@ function getUprightDisplaySize(
       const size =
         (cw / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
       return { w: size, h: size };
+    }
+    case "maxicode": {
+      // Fixed physical size — no module-magnification prop. bwip-js
+      // emits the canonical maxicode bitmap at BWIP_SCALE internal
+      // pixels per dot, so converting cw/ch back to dots and then
+      // to stage px places the symbol at its true printed size.
+      const w = dotsToPx(cw / BWIP_SCALE, scale, dpmm);
+      const h = dotsToPx(ch / BWIP_SCALE, scale, dpmm);
+      return { w, h };
     }
     case "micropdf417": {
       const p = obj.props;

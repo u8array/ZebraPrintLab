@@ -42,6 +42,7 @@ const he = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'קבוצה',
@@ -61,6 +62,7 @@ const he = {
     multipleSelectedHint: 'מקשי החצים מזיזים',
     groupSelection: 'קבץ בחירה',
     visualApproxHint: 'התצוגה החזותית מקורבת; הממדים תואמים את הדפסת ה-ZPL',
+    visualApproxUnverifiedHint: 'התצוגה החזותית מקורבת; הממדים עשויים להיות שונים מהדפסת ZPL',
     alignCenterH: 'מרכז אופקית במדבקה',
     alignCenterV: 'מרכז אנכית במדבקה',
     alignCenterBoth: 'מרכז במדבקה',
@@ -463,6 +465,11 @@ const he = {
       content: 'תוכן',
       magnification: 'גודל (1–10)',
       ecLevel: 'תיקון שגיאות (0 = אוטומטי)',
+    },
+    maxicode: {
+      content: 'תוכן',
+      mode: 'מצב',
+      mode6Advisory: 'מצב 6 מקודד פקודות תצורת קורא, לא נתוני משתמש',
     },
     micropdf417: {
       content: 'תוכן',

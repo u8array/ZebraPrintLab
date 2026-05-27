@@ -42,6 +42,7 @@ const ko = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: '그룹',
@@ -61,6 +62,7 @@ const ko = {
     multipleSelectedHint: '화살표 키로 이동',
     groupSelection: '선택 항목 그룹화',
     visualApproxHint: '시각적 표시는 근사치이며, 치수는 ZPL 인쇄와 일치합니다',
+    visualApproxUnverifiedHint: '시각적 렌더링은 근사치이며, 치수는 ZPL 인쇄와 다를 수 있습니다',
     alignCenterH: '라벨에서 가로 가운데 정렬',
     alignCenterV: '라벨에서 세로 가운데 정렬',
     alignCenterBoth: '라벨 가운데 정렬',
@@ -463,6 +465,11 @@ const ko = {
       content: '내용',
       magnification: '크기 (1–10)',
       ecLevel: '오류 정정 (0 = 자동)',
+    },
+    maxicode: {
+      content: '내용',
+      mode: '모드',
+      mode6Advisory: '모드 6은 사용자 데이터가 아닌 리더 구성 명령을 인코딩합니다',
     },
     micropdf417: {
       content: '내용',

@@ -42,6 +42,7 @@ const pl = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Grupa',
@@ -61,6 +62,7 @@ const pl = {
     multipleSelectedHint: 'strzałki przesuwają',
     groupSelection: 'Grupuj zaznaczenie',
     visualApproxHint: 'Renderowanie wizualne jest przybliżone; wymiary odpowiadają wydrukowi ZPL',
+    visualApproxUnverifiedHint: 'Renderowanie wizualne jest przybliżone; wymiary mogą różnić się od wydruku ZPL',
     alignCenterH: 'Wyśrodkuj poziomo na etykiecie',
     alignCenterV: 'Wyśrodkuj pionowo na etykiecie',
     alignCenterBoth: 'Wyśrodkuj na etykiecie',
@@ -463,6 +465,11 @@ const pl = {
       content: 'Zawartość',
       magnification: 'Rozmiar (1–10)',
       ecLevel: 'Korekcja błędów (0 = auto)',
+    },
+    maxicode: {
+      content: 'Treść',
+      mode: 'Tryb',
+      mode6Advisory: 'Tryb 6 koduje polecenia konfiguracji czytnika, a nie dane użytkownika',
     },
     micropdf417: {
       content: 'Zawartość',

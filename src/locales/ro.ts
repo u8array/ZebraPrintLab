@@ -42,6 +42,7 @@ const ro = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Grup',
@@ -61,6 +62,7 @@ const ro = {
     multipleSelectedHint: 'săgeți pentru mutare',
     groupSelection: 'Grupează selecția',
     visualApproxHint: 'Randarea vizuală este aproximativă; dimensiunile corespund tipăririi ZPL',
+    visualApproxUnverifiedHint: 'Randarea vizuală este aproximativă; dimensiunile pot diferi de tipărirea ZPL',
     alignCenterH: 'Centrează orizontal pe etichetă',
     alignCenterV: 'Centrează vertical pe etichetă',
     alignCenterBoth: 'Centrează pe etichetă',
@@ -463,6 +465,11 @@ const ro = {
       content: 'Conținut',
       magnification: 'Dimensiune (1–10)',
       ecLevel: 'Corecție erori (0 = auto)',
+    },
+    maxicode: {
+      content: 'Conținut',
+      mode: 'Mod',
+      mode6Advisory: 'Modul 6 codifică comenzi de configurare a cititorului, nu date de utilizator',
     },
     micropdf417: {
       content: 'Conținut',

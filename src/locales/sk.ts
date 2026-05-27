@@ -42,6 +42,7 @@ const sk = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Skupina',
@@ -61,6 +62,7 @@ const sk = {
     multipleSelectedHint: 'šípkami posuniete',
     groupSelection: 'Zoskupiť výber',
     visualApproxHint: 'Vizuálne zobrazenie je približné; rozmery zodpovedajú tlači ZPL',
+    visualApproxUnverifiedHint: 'Vizuálne vykreslenie je približné; rozmery sa môžu líšiť od tlače ZPL',
     alignCenterH: 'Vycentrovať vodorovne na štítku',
     alignCenterV: 'Vycentrovať zvislo na štítku',
     alignCenterBoth: 'Vycentrovať na štítku',
@@ -463,6 +465,11 @@ const sk = {
       content: 'Obsah',
       magnification: 'Veľkosť (1–10)',
       ecLevel: 'Korekcia chýb (0 = auto)',
+    },
+    maxicode: {
+      content: 'Obsah',
+      mode: 'Režim',
+      mode6Advisory: 'Režim 6 kóduje konfiguračné príkazy čítačky, nie používateľské údaje',
     },
     micropdf417: {
       content: 'Obsah',

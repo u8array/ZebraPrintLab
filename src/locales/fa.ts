@@ -42,6 +42,7 @@ const fa = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'ماکسی‌کد',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'گروه',
@@ -61,6 +62,7 @@ const fa = {
     multipleSelectedHint: 'با کلیدهای جهت‌دار جابه‌جا کنید',
     groupSelection: 'گروه‌بندی انتخاب',
     visualApproxHint: 'نمایش بصری تقریبی است؛ ابعاد با چاپ ZPL مطابقت دارد',
+    visualApproxUnverifiedHint: 'نمایش بصری تقریبی است؛ ابعاد ممکن است با چاپ ZPL متفاوت باشد',
     alignCenterH: 'وسط‌چین افقی روی برچسب',
     alignCenterV: 'وسط‌چین عمودی روی برچسب',
     alignCenterBoth: 'وسط‌چین برچسب',
@@ -463,6 +465,11 @@ const fa = {
       content: 'محتوا',
       magnification: 'اندازه (1–10)',
       ecLevel: 'تصحیح خطا (0 = خودکار)',
+    },
+    maxicode: {
+      content: 'محتوا',
+      mode: 'حالت',
+      mode6Advisory: 'حالت 6 دستورات پیکربندی اسکنر را رمزگذاری می‌کند، نه داده‌های کاربر',
     },
     micropdf417: {
       content: 'محتوا',

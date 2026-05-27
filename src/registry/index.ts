@@ -63,6 +63,8 @@ import { upcEanExtension } from './upcEanExtension.tsx';
 import type { UpcEanExtensionProps } from './upcEanExtension.tsx';
 import { code49 } from './code49.tsx';
 import type { Code49Props } from './code49.tsx';
+import { maxicode } from './maxicode.tsx';
+import type { MaxicodeProps } from './maxicode.tsx';
 import { symbol } from './symbol.tsx';
 import type { SymbolProps } from './symbol.tsx';
 
@@ -108,6 +110,7 @@ export type LeafObject =
   | Leaf<'codablock', CodablockProps>
   | Leaf<'upcEanExtension', UpcEanExtensionProps>
   | Leaf<'code49', Code49Props>
+  | Leaf<'maxicode', MaxicodeProps>
   | Leaf<'symbol', SymbolProps>;
 
 export const BARCODE_1D_TYPES = new Set([
@@ -151,6 +154,7 @@ export const ObjectRegistry: Record<string, ObjectTypeDefinition<any>> = {
   datamatrix,
   pdf417,
   aztec,
+  maxicode,
   micropdf417,
   codablock,
   // code-postal

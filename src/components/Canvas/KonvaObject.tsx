@@ -229,6 +229,7 @@ const BARCODE_TYPES = new Set([
   "planet",
   "postal",
   "aztec",
+  "maxicode",
   "micropdf417",
   "codablock",
   "upcEanExtension",

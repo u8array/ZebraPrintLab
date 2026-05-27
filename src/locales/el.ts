@@ -42,6 +42,7 @@ const el = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Ομάδα',
@@ -61,6 +62,7 @@ const el = {
     multipleSelectedHint: 'τα βέλη μετακινούν',
     groupSelection: 'Ομαδοποίηση επιλογής',
     visualApproxHint: 'Η οπτική απόδοση είναι κατά προσέγγιση· οι διαστάσεις αντιστοιχούν στην εκτύπωση ZPL',
+    visualApproxUnverifiedHint: 'Η οπτική απόδοση είναι κατά προσέγγιση· οι διαστάσεις μπορεί να διαφέρουν από την εκτύπωση ZPL',
     alignCenterH: 'Οριζόντιο κεντράρισμα στην ετικέτα',
     alignCenterV: 'Κατακόρυφο κεντράρισμα στην ετικέτα',
     alignCenterBoth: 'Κεντράρισμα στην ετικέτα',
@@ -463,6 +465,11 @@ const el = {
       content: 'Περιεχόμενο',
       magnification: 'Μέγεθος (1–10)',
       ecLevel: 'Διόρθωση σφαλμάτων (0 = auto)',
+    },
+    maxicode: {
+      content: 'Περιεχόμενο',
+      mode: 'Λειτουργία',
+      mode6Advisory: 'Η λειτουργία 6 κωδικοποιεί εντολές διαμόρφωσης σαρωτή, όχι δεδομένα χρήστη',
     },
     micropdf417: {
       content: 'Περιεχόμενο',

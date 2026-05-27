@@ -42,6 +42,7 @@ const zhHant = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: '群組',
@@ -61,6 +62,7 @@ const zhHant = {
     multipleSelectedHint: '方向鍵移動',
     groupSelection: '群組所選',
     visualApproxHint: '視覺呈現為近似值；尺寸與 ZPL 列印輸出一致',
+    visualApproxUnverifiedHint: '視覺渲染為近似值；尺寸可能與 ZPL 列印輸出不同',
     alignCenterH: '於標籤水平置中',
     alignCenterV: '於標籤垂直置中',
     alignCenterBoth: '於標籤置中',
@@ -463,6 +465,11 @@ const zhHant = {
       content: '內容',
       magnification: '大小（1–10）',
       ecLevel: '糾錯（0 = 自動）',
+    },
+    maxicode: {
+      content: '內容',
+      mode: '模式',
+      mode6Advisory: '模式 6 編碼讀取器設定命令，而非使用者資料',
     },
     micropdf417: {
       content: '內容',

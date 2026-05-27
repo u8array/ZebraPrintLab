@@ -42,6 +42,7 @@ const et = {
     planet: 'Planet Code',
     postal: 'POSTNET',
     aztec: 'Aztec',
+    maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
     group: 'Rühm',
@@ -61,6 +62,7 @@ const et = {
     multipleSelectedHint: 'nooltega liigutad',
     groupSelection: 'Grupeeri valik',
     visualApproxHint: 'Visuaalne kuva on ligikaudne; mõõtmed vastavad ZPL-väljatrükile',
+    visualApproxUnverifiedHint: 'Visuaalne kuvamine on ligikaudne; mõõtmed võivad ZPL-trükist erineda',
     alignCenterH: 'Keskjoonda sildil rõhtsalt',
     alignCenterV: 'Keskjoonda sildil püstiselt',
     alignCenterBoth: 'Keskjoonda sildil',
@@ -463,6 +465,11 @@ const et = {
       content: 'Sisu',
       magnification: 'Suurus (1–10)',
       ecLevel: 'Veaparandus (0 = auto)',
+    },
+    maxicode: {
+      content: 'Sisu',
+      mode: 'Režiim',
+      mode6Advisory: 'Režiim 6 kodeerib lugeja konfiguratsioonikäske, mitte kasutaja andmeid',
     },
     micropdf417: {
       content: 'Sisu',
