@@ -6,11 +6,13 @@ import { fieldPos, fdFieldFor } from "./zplHelpers";
 import { type ZplRotation } from "./rotation";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 
-/** Maxicode is a fixed-physical-size 2D symbology (1.11" × 1.054"
- *  at standard scale, ~28 × 26 mm). Unlike QR or DataMatrix it has
- *  no per-module magnification — the printer always renders a
- *  single fixed size. Therefore no `commitTransform` and no
- *  magnification prop; only the data, mode, and rotation vary. */
+/** Maxicode is a fixed-physical-size 2D symbology. Per ISO/IEC
+ *  16023 §4.11 the printed footprint is 28.14 × 26.91 mm at
+ *  standard module size (1.11 × 1.054 inch). Unlike QR or
+ *  DataMatrix it has no per-module magnification: the printer
+ *  always renders the same physical dimensions regardless of
+ *  dpmm. Therefore no `commitTransform` and no magnification
+ *  prop; only the data, mode, and rotation vary. */
 
 /** All modes the spec defines. Editor exposes every one and lets
  *  bwip-js validate the (content, mode) pair on encode:
@@ -27,9 +29,6 @@ import { RotationSelect } from "../components/Properties/RotationSelect";
  *  shown instead of an error. */
 const ALL_MODES = [2, 3, 4, 5, 6] as const;
 
-/** Default physical footprint of a Maxicode at 8 dpmm: spec is
- *  ~28 × 26.9 mm; converted to dots that's 224 × 216. */
-const MAXICODE_DEFAULT_FOOTPRINT = { width: 224, height: 216 } as const;
 
 /** Mode 4 = standard symbol with arbitrary payload, the only mode
  *  most users without UPS-domain knowledge can reach for without
@@ -52,10 +51,11 @@ export const maxicode: ObjectTypeDefinition<MaxicodeProps> = {
     mode: MAXICODE_DEFAULT_MODE,
     rotation: "N",
   },
-  // Fixed-size symbol — the printer always renders at standard
-  // Maxicode dimensions, so the resize transformer is disabled
-  // (heightLocked) and no commitTransform is needed.
-  defaultSize: MAXICODE_DEFAULT_FOOTPRINT,
+  // Spec-fixed physical footprint per ISO/IEC 16023. Declared in
+  // mm so the palette resolves to the active label's dpmm at drop
+  // time; `heightLocked` then disables both transformer axes since
+  // the symbology has no resize semantics.
+  defaultSize: { widthMm: 28.14, heightMm: 26.91 },
   heightLocked: true,
 
   toZPL: (obj, ctx) => {

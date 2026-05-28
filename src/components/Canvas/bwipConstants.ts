@@ -78,7 +78,6 @@ export const BWIP_APPROX_SEVERITY: ReadonlyMap<string, BwipApproxSeverity> = new
   ["gs1databar", "approx"],
   ["code49", "unverified"],
   ["codablock", "unverified"],
-  ["maxicode", "unverified"],
 ]);
 
 // Per-symbology spec module heights for GS1 DataBar. bwip-js renders most

@@ -198,7 +198,20 @@ export interface ObjectTypeDefinition<P extends object = object> {
   icon: string;
   group: ObjectGroup;
   defaultProps: P;
-  defaultSize: { width: number; height: number };
+  /** Default footprint at palette-drop time. Two shapes:
+   *    `{ width, height }`       in dots (most types: an editor
+   *                              default chosen for visual size,
+   *                              not a spec quantity)
+   *    `{ widthMm, heightMm }`   in millimetres (spec-fixed
+   *                              physical-size types like Maxicode,
+   *                              where the printed footprint is set
+   *                              by the symbology spec regardless
+   *                              of dpmm)
+   *  The palette resolves the active variant against the current
+   *  label's dpmm so centring works at any resolution. */
+  defaultSize:
+    | { width: number; height: number }
+    | { widthMm: number; heightMm: number };
   /**
    * True if the rendered height is fixed by the symbology spec rather than the
    * `height` prop (e.g. GS1 Databar Omnidirectional). The transformer disables

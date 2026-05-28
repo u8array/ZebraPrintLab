@@ -1,10 +1,11 @@
 import { useDraggable } from '@dnd-kit/core';
 import { ObjectRegistry } from '../../registry';
 import { PALETTE_GROUPS } from './paletteGroups';
-import type { ObjectGroup } from '../../types/ObjectType';
 import { useT } from '../../lib/useT';
 import { useLabelStore } from '../../store/labelStore';
 import { mmToDots } from '../../lib/coordinates';
+import type { ObjectGroup, ObjectTypeDefinition } from '../../types/ObjectType';
+import { resolveDefaultSizeDots } from './resolveDefaultSize';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 import { CollapsibleSection } from '../ui/CollapsibleSection';
 import type { PaletteDragData } from '../../dnd/types';
@@ -16,7 +17,7 @@ interface PaletteEntryProps {
   type: string;
   icon: string;
   label: string;
-  defaultSize: { width: number; height: number };
+  defaultSize: ObjectTypeDefinition["defaultSize"];
   propsOverride?: object;
 }
 
@@ -29,11 +30,12 @@ function PaletteEntry({ id, type, icon, label, defaultSize, propsOverride }: Pal
 
   const handleDoubleClick = () => {
     const { label: labelConfig } = useLabelStore.getState();
+    const size = resolveDefaultSizeDots(defaultSize, labelConfig);
     addObject(
       type,
       {
-        x: Math.round(mmToDots(labelConfig.widthMm, labelConfig.dpmm) / 2 - defaultSize.width / 2),
-        y: Math.round(mmToDots(labelConfig.heightMm, labelConfig.dpmm) / 2 - defaultSize.height / 2),
+        x: Math.round(mmToDots(labelConfig.widthMm, labelConfig.dpmm) / 2 - size.width / 2),
+        y: Math.round(mmToDots(labelConfig.heightMm, labelConfig.dpmm) / 2 - size.height / 2),
       },
       propsOverride,
     );
@@ -67,7 +69,7 @@ interface ResolvedEntry {
   type: string;
   icon: string;
   label: string;
-  defaultSize: { width: number; height: number };
+  defaultSize: ObjectTypeDefinition["defaultSize"];
   propsOverride?: object;
 }
 
