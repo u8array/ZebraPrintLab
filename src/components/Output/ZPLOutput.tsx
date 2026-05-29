@@ -149,10 +149,14 @@ function OutputSection({
 
   const handleCopy = () => {
     if (!content) return;
+    // `navigator.clipboard` is undefined in non-secure contexts
+    // (plain HTTP, file://) and in some embedded WebViews. Bail
+    // out instead of throwing — the copy button is non-essential.
+    if (!navigator.clipboard) return;
     navigator.clipboard.writeText(content).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    });
+    }).catch(() => { /* swallow: user-cancel or permission-denied */ });
   };
 
   return (

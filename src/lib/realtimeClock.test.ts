@@ -26,6 +26,16 @@ describe('formatRealtimeClockForZpl', () => {
     expect(formatRealtimeClockForZpl('2026-05-01T00:60:00')).toBeNull();
     expect(formatRealtimeClockForZpl('2026-05-01T00:00:60')).toBeNull();
   });
+
+  it('rejects calendar-impossible dates (Feb 30, Apr 31, Feb 29 in non-leap year)', () => {
+    expect(formatRealtimeClockForZpl('2026-02-30T00:00:00')).toBeNull();
+    expect(formatRealtimeClockForZpl('2026-04-31T00:00:00')).toBeNull();
+    expect(formatRealtimeClockForZpl('2026-02-29T00:00:00')).toBeNull(); // 2026 not leap
+  });
+
+  it('accepts Feb 29 in leap years', () => {
+    expect(formatRealtimeClockForZpl('2024-02-29T00:00:00')).toBe('02,29,2024,00,00,00');
+  });
 });
 
 describe('parseRealtimeClock', () => {
@@ -53,6 +63,16 @@ describe('parseRealtimeClock', () => {
 
   it('rejects 2-digit year (firmware requires 4-digit)', () => {
     expect(parseRealtimeClock(['05', '29', '26', '18', '30', '45'])).toBeNull();
+  });
+
+  it('rejects calendar-impossible dates (Feb 30, Apr 31, Feb 29 in non-leap year)', () => {
+    expect(parseRealtimeClock(['02', '30', '2026', '00', '00', '00'])).toBeNull();
+    expect(parseRealtimeClock(['04', '31', '2026', '00', '00', '00'])).toBeNull();
+    expect(parseRealtimeClock(['02', '29', '2026', '00', '00', '00'])).toBeNull();
+  });
+
+  it('accepts Feb 29 in leap years', () => {
+    expect(parseRealtimeClock(['02', '29', '2024', '00', '00', '00'])).toBe('2024-02-29T00:00:00');
   });
 });
 

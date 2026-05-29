@@ -29,6 +29,19 @@ const inRangeStr = (s: string, min: number, max: number): boolean => {
   return Number.isFinite(n) && n >= min && n <= max;
 };
 
+/** Last day of the given (1-indexed) month for the given year. Uses
+ *  the `Date(year, monthIndex, 0)` rollover trick: day 0 of month N
+ *  is the last day of month N-1, so passing the 1-indexed month
+ *  directly gives the last day of *that* month. Correctly handles
+ *  leap years (Feb 29 in 2024, Feb 28 in 2026). */
+const lastDayOfMonth = (year: number, month1Indexed: number): number =>
+  new Date(year, month1Indexed, 0).getDate();
+
+/** Strict calendar-date check on top of the per-field range checks.
+ *  Rejects Feb 30, Apr 31, Feb 29 in non-leap years, etc. */
+const isValidCalendarDate = (year: number, month: number, day: number): boolean =>
+  day <= lastDayOfMonth(year, month);
+
 const pad2 = (s: string) => s.padStart(2, '0');
 
 /** Parses Zebra's six `^ST` positional params back into the ISO
@@ -50,6 +63,7 @@ export function parseRealtimeClock(params: readonly (string | undefined)[]): str
   if (!/^\d{1,2}$/.test(hr) || !inRangeStr(hr, 0, 23)) return null;
   if (!/^\d{1,2}$/.test(mi) || !inRangeStr(mi, 0, 59)) return null;
   if (!/^\d{1,2}$/.test(se) || !inRangeStr(se, 0, 59)) return null;
+  if (!isValidCalendarDate(Number.parseInt(yr, 10), Number.parseInt(mo, 10), Number.parseInt(da, 10))) return null;
   return `${yr}-${pad2(mo)}-${pad2(da)}T${pad2(hr)}:${pad2(mi)}:${pad2(se)}`;
 }
 
@@ -79,5 +93,6 @@ export function formatRealtimeClockForZpl(iso: string): string | null {
   if (!inRangeStr(hour, 0, 23)) return null;
   if (!inRangeStr(minute, 0, 59)) return null;
   if (!inRangeStr(second, 0, 59)) return null;
+  if (!isValidCalendarDate(Number.parseInt(year, 10), Number.parseInt(month, 10), Number.parseInt(day, 10))) return null;
   return `${month},${day},${year},${hour},${minute},${second}`;
 }
