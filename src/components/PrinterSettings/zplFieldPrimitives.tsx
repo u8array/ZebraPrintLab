@@ -128,6 +128,53 @@ export function BoundedIntControl({
   );
 }
 
+/** Inner enum-backed select for grids that share one parent ZPL
+ *  tag across multiple positional params (^MF pair, ^SL mode +
+ *  language). Same input shape as `ZplEnumSelect` minus the
+ *  `command` tag — the tag lives at the parent `ZplField` so
+ *  duplicating it on each sub-row would visually suggest two
+ *  separate commands. */
+export function ZplEnumSubSelect<T extends string>({
+  label,
+  values,
+  isValid,
+  value,
+  onChange,
+  defaultLabel,
+  optionLabel,
+}: {
+  label: string;
+  values: readonly T[];
+  isValid: (v: string) => v is T;
+  value: T | undefined;
+  onChange: (next: T | undefined) => void;
+  defaultLabel: string;
+  optionLabel: (v: T) => string;
+}) {
+  return (
+    <ZplSubField label={label}>
+      {(id) => (
+        <select
+          id={id}
+          className={inputCls}
+          value={value ?? ""}
+          onChange={(e) => {
+            const raw = e.target.value;
+            onChange(isValid(raw) ? raw : undefined);
+          }}
+        >
+          <option value="">{defaultLabel}</option>
+          {values.map((v) => (
+            <option key={v} value={v}>
+              {optionLabel(v)}
+            </option>
+          ))}
+        </select>
+      )}
+    </ZplSubField>
+  );
+}
+
 /** Generic enum-backed select row: label + ZPL-tag header + select
  *  with a leading "default" placeholder. Replaces the hand-rolled
  *  select scaffolding in MediaFeedTab and PrintQualityTab so the

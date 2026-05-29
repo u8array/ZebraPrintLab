@@ -192,6 +192,65 @@ describe("generateSetupScript — output shape", () => {
     expect(() => labelConfigSchema.parse({ ...base, printerName: "abcdefghij0123456" })).toThrow();
   });
 
+  it("emits ^SL with mode S only when language is unset", () => {
+    expect(generateSetupScript({ ...base, clockMode: "S" })).toBe("^XA\n^SLS\n^XZ");
+  });
+
+  it("emits ^SL with mode T plus language when both set", () => {
+    expect(generateSetupScript({ ...base, clockMode: "T", clockLanguage: "4" }))
+      .toBe("^XA\n^SLT,4\n^XZ");
+  });
+
+  it("emits ^SL with numeric tolerance when mode is TOL", () => {
+    expect(generateSetupScript({ ...base, clockMode: "TOL", clockTolerance: 60, clockLanguage: "1" }))
+      .toBe("^XA\n^SL60,1\n^XZ");
+  });
+
+  it("schema rejects clockMode='TOL' without clockTolerance (cross-field rule)", () => {
+    expect(() => labelConfigSchema.parse({ ...base, clockMode: "TOL" })).toThrow();
+  });
+
+  it("schema rejects clockTolerance set under non-TOL mode (cross-field rule)", () => {
+    expect(() => labelConfigSchema.parse({ ...base, clockMode: "S", clockTolerance: 60 })).toThrow();
+  });
+
+  it("skips ^SL emit when only language or tolerance is set without mode anchor", () => {
+    expect(generateSetupScript({ ...base, clockLanguage: "4" })).toBe("");
+    expect(generateSetupScript({ ...base, clockTolerance: 60 })).toBe("");
+  });
+
+  it("round-trips ^SL S/T/TOL modes via the parser", () => {
+    for (const orig of [
+      { ...base, clockMode: "S" as const },
+      { ...base, clockMode: "T" as const, clockLanguage: "4" as const },
+      { ...base, clockMode: "TOL" as const, clockTolerance: 90, clockLanguage: "1" as const },
+    ]) {
+      const { labelConfig: parsed } = parseZPL(generateSetupScript(orig));
+      expect(parsed.clockMode).toBe(orig.clockMode);
+      if (orig.clockMode === "TOL") expect(parsed.clockTolerance).toBe(orig.clockTolerance);
+      if ("clockLanguage" in orig) expect(parsed.clockLanguage).toBe(orig.clockLanguage);
+    }
+  });
+
+  it("parses bare ^SL with no params as a no-op (no field set)", () => {
+    const { labelConfig: parsed } = parseZPL("^XA^SL^XZ");
+    expect(parsed.clockMode).toBeUndefined();
+    expect(parsed.clockLanguage).toBeUndefined();
+  });
+
+  it("drops ^SL with out-of-range tolerance or unknown language", () => {
+    expect(parseZPL("^XA^SL1500,1^XZ").labelConfig.clockMode).toBeUndefined();
+    expect(parseZPL("^XA^SLS,99^XZ").labelConfig.clockLanguage).toBeUndefined();
+  });
+
+  it("does not orphan-set clockLanguage when the mode parse drops", () => {
+    // Without the mode guard, `^SL1500,1` would set
+    // clockLanguage='1' while clockMode stays undefined — emit
+    // would then drop the orphan language silently, making it
+    // write-only state. Pin the guard.
+    expect(parseZPL("^XA^SL1500,1^XZ").labelConfig.clockLanguage).toBeUndefined();
+  });
+
   it("rejects commas in ^KN / ^SE free-string fields (would round-trip-split)", () => {
 
     expect(() => labelConfigSchema.parse({ ...base, printerName: "Lab,01" })).toThrow();
@@ -230,6 +289,9 @@ describe("generateSetupScript — output shape", () => {
       "zplMode",
       "printerName",
       "printerDescription",
+      "clockMode",
+      "clockTolerance",
+      "clockLanguage",
     ]);
   });
 

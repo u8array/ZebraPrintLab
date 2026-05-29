@@ -129,6 +129,43 @@ export const ZPL_MODE_VALUES = ['1', '2'] as const;
 export type ZplMode = (typeof ZPL_MODE_VALUES)[number];
 export const isZplMode = makeEnumGuard(ZPL_MODE_VALUES);
 
+/** ^SL clock mode selector. The mode slot accepts three distinct
+ *  value shapes per spec (`S`, `T`, or numeric 1..999), so the
+ *  enum carries three symbolic values and a sibling field
+ *  (`clockTolerance`) holds the numeric tolerance only when the
+ *  mode is `TOL`. Generator/parser fold the three shapes back
+ *  into the single positional slot at emit/parse time.
+ *
+ *    S    = Start-Time mode — stamp captured when ^XA arrives
+ *    T    = Time-Now mode — stamp captured at queue dequeue
+ *    TOL  = Time-Now with tolerance window in seconds (emit as
+ *           the numeric value 1..999 in the mode slot) */
+export const CLOCK_MODE_VALUES = ['S', 'T', 'TOL'] as const;
+export type ClockMode = (typeof CLOCK_MODE_VALUES)[number];
+export const isClockMode = makeEnumGuard(CLOCK_MODE_VALUES);
+
+/** ^SL tolerance (seconds) when `clockMode === 'TOL'`. */
+export const CLOCK_TOLERANCE_RANGE = { min: 1, max: 999 } as const;
+/** UX default seeded into the store the moment the user picks the TOL
+ *  mode in the modal — paired with the schema's "TOL requires a
+ *  tolerance value" cross-field rule so the field cannot land in the
+ *  half-set state. The 60s value matches the official `^SL60,1`
+ *  Zebra example. */
+export const CLOCK_TOLERANCE_DEFAULT = 60;
+
+/** ^SL clock-language codes. Numeric 1..13 per spec; we store the
+ *  digit chars to match the on-wire shape. The set overlaps with
+ *  `PRINTER_LOCALE_VALUES` conceptually (same languages, different
+ *  code systems) but Zebra documents them separately — each enum
+ *  gets its own label keys so future divergence (e.g. ^KL adding
+ *  Korean while ^SL still tops out at Japanese) does not silently
+ *  mis-render. */
+export const CLOCK_LANGUAGE_VALUES = [
+  '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
+] as const;
+export type ClockLanguage = (typeof CLOCK_LANGUAGE_VALUES)[number];
+export const isClockLanguage = makeEnumGuard(CLOCK_LANGUAGE_VALUES);
+
 /** ^KD clock-print format selector. Drives how ^FC clock fields render
  *  on the printed label.
  *    0 = no display (default, clock field disabled)
@@ -242,6 +279,16 @@ export const labelConfigSchema = z.object({
    *  the per-value rendering. Stored as the digit char ('0'..'3'),
    *  matching the on-wire shape. */
   clockFormat: z.enum(CLOCK_FORMAT_VALUES).optional(),
+  /** ^SL `a`: clock mode (S / T / TOL). See `CLOCK_MODE_VALUES`. */
+  clockMode: z.enum(CLOCK_MODE_VALUES).optional(),
+  /** ^SL `a` (numeric form): tolerance in seconds. Only emitted
+   *  when `clockMode === 'TOL'`; the generator drops this if mode
+   *  is not TOL, the parser only writes it when the wire value
+   *  was numeric. */
+  clockTolerance: intInRange(CLOCK_TOLERANCE_RANGE).optional(),
+  /** ^SL `b`: clock-language code (digit char '1'..'13'). See
+   *  `CLOCK_LANGUAGE_VALUES`. */
+  clockLanguage: z.enum(CLOCK_LANGUAGE_VALUES).optional(),
   /** ^KL: printer-side display locale. See `PRINTER_LOCALE_VALUES`. */
   printerLocale: z.enum(PRINTER_LOCALE_VALUES).optional(),
   /** ^SE: encoding-table file path on the printer (e.g.
@@ -267,6 +314,29 @@ export const labelConfigSchema = z.object({
    *  Spec does not pin an explicit length cap; the injection-
    *  safe regex is the only schema-side constraint. */
   printerDescription: z.string().min(1).regex(setupScriptSafeStringRegex).optional(),
+}).superRefine((cfg, ctx) => {
+  // ^SL `clockTolerance` and `clockMode === 'TOL'` are bidirectionally
+  // coupled: tolerance is only meaningful when mode is TOL, and mode TOL
+  // requires an explicit tolerance value (the wire form `^SL<tolerance>`
+  // *is* the tolerance number — there is no default-tolerance form). The
+  // cross-field rule pins the relationship at the schema layer so the
+  // inconsistent states (`mode S + tolerance set`, or `mode TOL + tolerance
+  // unset`) are unreachable through `parse` and the emitter does not need
+  // a fallback that would leak a UI default into persisted state.
+  if (cfg.clockTolerance !== undefined && cfg.clockMode !== 'TOL') {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['clockTolerance'],
+      message: 'clockTolerance is only valid when clockMode === "TOL"',
+    });
+  }
+  if (cfg.clockMode === 'TOL' && cfg.clockTolerance === undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['clockTolerance'],
+      message: 'clockMode "TOL" requires clockTolerance to be set',
+    });
+  }
 });
 
 export type LabelConfig = z.infer<typeof labelConfigSchema>;

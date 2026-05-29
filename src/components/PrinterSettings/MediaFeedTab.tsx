@@ -1,6 +1,5 @@
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { inputCls } from "../ui/formStyles";
 import {
   MAX_LABEL_LENGTH_RANGE,
   MEDIA_FEED_VALUES,
@@ -21,8 +20,8 @@ import {
   ZplCheckbox,
   ZplCommandLabel,
   ZplEnumSelect,
+  ZplEnumSubSelect,
   ZplField,
-  ZplSubField,
 } from "./zplFieldPrimitives";
 
 type LocMediaFeed = ReturnType<typeof useT>["printerSettings"]["mediaFeed"];
@@ -123,19 +122,23 @@ export function MediaFeedTab() {
       <ZplField>
         <ZplCommandLabel text={loc.mediaFeedHeading} command="^MF" />
         <div className="grid grid-cols-2 gap-2">
-          <FeedSubSelect
+          <ZplEnumSubSelect
             label={loc.mediaFeedPowerUp}
+            values={MEDIA_FEED_VALUES}
+            isValid={isMediaFeedMode}
             value={label.mediaFeedPowerUp}
             onChange={(v) => setLabelConfig({ mediaFeedPowerUp: v })}
             defaultLabel={t.printerSettings.defaultOption}
-            optionLabel={(m) => loc[FEED_LABEL_KEYS[m]]}
+            optionLabel={(m) => `${m} ${loc[FEED_LABEL_KEYS[m]]}`}
           />
-          <FeedSubSelect
+          <ZplEnumSubSelect
             label={loc.mediaFeedHeadClose}
+            values={MEDIA_FEED_VALUES}
+            isValid={isMediaFeedMode}
             value={label.mediaFeedHeadClose}
             onChange={(v) => setLabelConfig({ mediaFeedHeadClose: v })}
             defaultLabel={t.printerSettings.defaultOption}
-            optionLabel={(m) => loc[FEED_LABEL_KEYS[m]]}
+            optionLabel={(m) => `${m} ${loc[FEED_LABEL_KEYS[m]]}`}
           />
         </div>
       </ZplField>
@@ -150,43 +153,3 @@ export function MediaFeedTab() {
   );
 }
 
-/** Inner sub-select for the two ^MF positional params. Wraps a
- *  bare `<select>` in ZplSubField so the parent ^MF tag stays the
- *  single command label for both slots. ZplEnumSelect would render
- *  a redundant tag spot here. */
-function FeedSubSelect({
-  label,
-  value,
-  onChange,
-  defaultLabel,
-  optionLabel,
-}: {
-  label: string;
-  value: MediaFeedMode | undefined;
-  onChange: (v: MediaFeedMode | undefined) => void;
-  defaultLabel: string;
-  optionLabel: (m: MediaFeedMode) => string;
-}) {
-  return (
-    <ZplSubField label={label}>
-      {(id) => (
-        <select
-          id={id}
-          className={inputCls}
-          value={value ?? ""}
-          onChange={(e) => {
-            const raw = e.target.value;
-            onChange(isMediaFeedMode(raw) ? raw : undefined);
-          }}
-        >
-          <option value="">{defaultLabel}</option>
-          {MEDIA_FEED_VALUES.map((m) => (
-            <option key={m} value={m}>
-              {m} {optionLabel(m)}
-            </option>
-          ))}
-        </select>
-      )}
-    </ZplSubField>
-  );
-}
