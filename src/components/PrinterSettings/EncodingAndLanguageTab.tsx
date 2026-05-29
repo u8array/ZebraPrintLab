@@ -15,6 +15,7 @@ import {
   ZplEnumSelect,
   ZplField,
 } from "./zplFieldPrimitives";
+import { SE_PATH_PATTERN } from "./sePathPattern";
 
 type LocEncodingLanguage = ReturnType<typeof useT>["printerSettings"]["encodingLanguage"];
 
@@ -65,32 +66,19 @@ export function EncodingAndLanguageTab() {
       />
 
       {/* ^SE: free-form printer file path (e.g. `E:UHANGUL.DAT`).
-          No primitive — datepath-like inputs are not used elsewhere
+          No primitive — path-like inputs are not used elsewhere
           in the modal; promote to a primitive only when a second
-          caller appears.
-
-          `pattern` is a permissive shape check (drive letter +
-          colon + 8-char stem + `.DAT` extension). Includes the
-          read-only `Z:` firmware drive; allows lowercase + space +
-          underscore + hyphen in the stem (the parser preserves
-          path-internal spaces, so blocking them in the UI would
-          be inconsistent); strict `.DAT` extension via per-letter
-          classes (`[dDaAtT]{3}` would also match `.DDD`); optional
-          comma-separated second param (`^SE` accepts one on some
-          firmware revisions). Double-escaped backslashes because
-          JSX string attributes interpret JS escapes (`\.` would
-          collapse to literal `.`, matching any char).
-
-          Acts purely as a visual `:invalid` hint via Tailwind's
-          `invalid:` variant; the parser stays tolerant because
-          firmware path conventions vary. */}
+          caller appears. `SE_PATH_PATTERN` is a soft `:invalid`
+          hint (see `sePathPattern.ts` for the shape rationale);
+          the parser stays tolerant because firmware path
+          conventions vary. */}
       <ZplField>
         <ZplCommandLabel text={loc.encodingTable} command="^SE" htmlFor={encodingId} />
         <input
           id={encodingId}
           type="text"
           className={`${inputCls} invalid:border-warning`}
-          pattern="[rReEbBaAzZ]:[A-Za-z0-9_\\- ]{1,8}\\.[dD][aA][tT](,.+)?"
+          pattern={SE_PATH_PATTERN}
           value={label.encodingTable ?? ""}
           onChange={(e) =>
             setLabelConfig({ encodingTable: e.target.value || undefined })
