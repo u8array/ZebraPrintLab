@@ -106,6 +106,12 @@ const SETUP_SCRIPT_EMITTERS = {
     emit: (l) => {
       if (l.printerName === undefined) return null;
       const name = l.printerName.trim();
+      // Schema's min(1) accepts whitespace-only strings; trimming
+      // to empty here drops the emit so the parser's "no name = no
+      // ^KN" round-trip rule holds. Without this guard, `^KN` (or
+      // `^KN,desc`) would emit and the parser would silently drop
+      // both fields on re-import.
+      if (!name) return null;
       const desc = l.printerDescription?.trim();
       return desc ? `^KN${name},${desc}` : `^KN${name}`;
     },

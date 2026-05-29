@@ -161,6 +161,15 @@ describe("generateSetupScript — output shape", () => {
     expect(generateSetupScript({ ...base, printerDescription: "orphan" })).toBe("");
   });
 
+  it("skips ^KN emit when name is whitespace-only after trim", () => {
+    // Schema's min(1) accepts "   "; the emit-side trim-guard
+    // prevents an empty ^KN from going out and silently dropping
+    // both fields on re-import.
+    expect(generateSetupScript({ ...base, printerName: "   " })).toBe("");
+    expect(generateSetupScript({ ...base, printerName: "   ", printerDescription: "desc" }))
+      .toBe("");
+  });
+
   it("round-trips ^KN via the parser without loss", () => {
     const orig: LabelConfig = {
       ...base,
