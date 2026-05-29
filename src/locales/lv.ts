@@ -125,6 +125,8 @@ const lv = {
       encodingLanguage: 'Kodējums un valoda',
       identity: 'Identitāte',
     },
+    railGroupPerLabel: 'Uz uzlīmi',
+    railGroupSetupScript: 'Iestatīšanas skripts',
     mediaFeed: {
       mediaMode: 'Drukāšanas režīms',
       mediaModeT: 'Atplēšana',
@@ -165,6 +167,15 @@ const lv = {
       reprintAfterError: 'Drukāt vēlreiz pēc kļūdas',
       headTestInterval: 'Galviņas testa intervāls (etiķetes)',
       tearOffAdjust: 'Atplēšanas regulēšana',
+    },
+    clockTime: {
+      setRealtimeClock: 'Iestatīt reālā laika pulksteni',
+      setRealtimeClockHint: 'Statiska vērtība: ievadīta vienreiz un nosūtīta nemainīta. Printeris to nepārvirza.',
+      clockFormat: 'Pulksteņa attēlojuma formāts',
+      clockFormat0: 'Bez attēlojuma',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24 stundu)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12 stundu AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24 stundu)',
     },
   },
 
@@ -209,6 +220,8 @@ const lv = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script satur saturu',
     copy: 'Kopēt',
     copied: '✓ Nokopēts',
     noObjects: 'Etiķetē vēl nav objektu',

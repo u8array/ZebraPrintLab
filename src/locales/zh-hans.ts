@@ -125,6 +125,8 @@ const zhHans = {
       encodingLanguage: '编码与语言',
       identity: '标识',
     },
+    railGroupPerLabel: '每个标签',
+    railGroupSetupScript: '设置脚本',
     mediaFeed: {
       mediaMode: '打印模式',
       mediaModeT: '撕离',
@@ -165,6 +167,15 @@ const zhHans = {
       reprintAfterError: '出错后重新打印',
       headTestInterval: '打印头测试间隔（标签）',
       tearOffAdjust: '撕离调整',
+    },
+    clockTime: {
+      setRealtimeClock: '设置实时时钟',
+      setRealtimeClockHint: '静态值：输入一次后按原样发送，打印机不会自动推进。',
+      clockFormat: '时钟显示格式',
+      clockFormat0: '不显示',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24 小时制)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12 小时制 AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24 小时制)',
     },
   },
 
@@ -209,6 +220,8 @@ const zhHans = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script 有内容',
     copy: '复制',
     copied: '✓ 已复制',
     noObjects: '标签上暂无对象',

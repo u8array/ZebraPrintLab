@@ -3,19 +3,23 @@ import { XMarkIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../lib/useT";
 import { useLabelStore, type PrinterSettingsTab } from "../../store/labelStore";
 import { DialogShell } from "../ui/DialogShell";
+import { ClockAndTimeTab } from "./ClockAndTimeTab";
 import { MediaFeedTab } from "./MediaFeedTab";
 import { PrintQualityTab } from "./PrintQualityTab";
 
-/** Tab IDs in display order. The "is this tab shipped?" state is
- *  derived from TAB_COMPONENTS membership below, so adding a tab
- *  is a one-line registry entry plus the locale strings — no dual
- *  source of truth to keep in sync. */
-const TABS: readonly PrinterSettingsTab[] = [
-  "mediaFeed",
-  "printQuality",
-  "clockTime",
-  "encodingLanguage",
-  "identity",
+/** Tab rail grouped by ZPL output channel. The Modal emits two
+ *  separate outputs in the ZPL panel (per-label and Setup-Script);
+ *  grouping the tabs the same way makes the split discoverable
+ *  without an explicit label on every field. "is this tab shipped?"
+ *  is still derived from TAB_COMPONENTS membership below — adding
+ *  a tab is a one-line entry in the right group plus the locale
+ *  strings, no separate WIP flag to keep in sync. */
+const RAIL_GROUPS: readonly {
+  labelKey: 'railGroupPerLabel' | 'railGroupSetupScript';
+  tabs: readonly PrinterSettingsTab[];
+}[] = [
+  { labelKey: 'railGroupPerLabel', tabs: ['mediaFeed', 'printQuality'] },
+  { labelKey: 'railGroupSetupScript', tabs: ['clockTime', 'encodingLanguage', 'identity'] },
 ];
 
 /** Per-tab content registry. Tabs absent here render as disabled
@@ -26,6 +30,7 @@ const TABS: readonly PrinterSettingsTab[] = [
 const TAB_COMPONENTS: Partial<Record<PrinterSettingsTab, FC>> = {
   mediaFeed: MediaFeedTab,
   printQuality: PrintQualityTab,
+  clockTime: ClockAndTimeTab,
 };
 
 /** Modal-box class kept as a constant rather than inline so the
@@ -89,39 +94,29 @@ export function PrinterSettingsModal() {
           // 10px-uppercase tracking-wider density across all 32
           // locales (worst case: "Kodierung & Sprache" / "Encoding
           // & Language").
-          className="w-44 shrink-0 border-r border-border bg-surface-2/40 py-3"
+          className="w-44 shrink-0 border-r border-border bg-surface-2/40 py-2"
           aria-label={t.printerSettings.title}
         >
-          {TABS.map((id) => {
-            const active = id === tab;
-            // WIP is derived: a tab is WIP iff no content
-            // component is registered for it. Single source of
-            // truth, no flag to keep in sync.
-            const wip = !(id in TAB_COMPONENTS);
-            const railRowCls = active
-              ? "text-accent border-accent -ml-px bg-accent/5"
-              : wip
-                ? "text-muted/40 border-transparent cursor-not-allowed"
-                : "text-muted border-transparent hover:text-text hover:bg-surface-2";
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setTab(id)}
-                disabled={wip}
-                aria-current={active ? "page" : undefined}
-                className={
-                  "w-full text-left flex items-center justify-between gap-2 px-3 py-1.5 " +
-                  "font-mono text-[10px] uppercase tracking-wider " +
-                  "border-l-2 transition-colors " +
-                  railRowCls
-                }
-              >
-                <span>{t.printerSettings.tabs[id]}</span>
-                {wip && <span className="text-[9px] text-muted/50">{t.printerSettings.wip}</span>}
-              </button>
-            );
-          })}
+          {RAIL_GROUPS.map((group, idx) => (
+            <div
+              key={group.labelKey}
+              className={idx > 0 ? "mt-3 pt-3 border-t border-border" : undefined}
+            >
+              <div className="px-3 pb-1 font-mono text-[9px] uppercase tracking-widest text-muted/50">
+                {t.printerSettings[group.labelKey]}
+              </div>
+              {group.tabs.map((id) => (
+                <TabRailRow
+                  key={id}
+                  id={id}
+                  active={id === tab}
+                  onClick={() => setTab(id)}
+                  label={t.printerSettings.tabs[id]}
+                  wipLabel={t.printerSettings.wip}
+                />
+              ))}
+            </div>
+          ))}
         </nav>
 
         <section className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
@@ -142,5 +137,46 @@ export function PrinterSettingsModal() {
         </button>
       </footer>
     </DialogShell>
+  );
+}
+
+/** Single rail row. WIP state is derived from TAB_COMPONENTS so the
+ *  rail stays in sync without an extra flag (adding a tab to
+ *  TAB_COMPONENTS automatically removes the WIP styling). */
+function TabRailRow({
+  id,
+  active,
+  onClick,
+  label,
+  wipLabel,
+}: {
+  id: PrinterSettingsTab;
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  wipLabel: string;
+}) {
+  const wip = !(id in TAB_COMPONENTS);
+  const cls = active
+    ? "text-accent border-accent -ml-px bg-accent/5"
+    : wip
+      ? "text-muted/40 border-transparent cursor-not-allowed"
+      : "text-muted border-transparent hover:text-text hover:bg-surface-2";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={wip}
+      aria-current={active ? "page" : undefined}
+      className={
+        "w-full text-left flex items-center justify-between gap-2 px-3 py-1.5 " +
+        "font-mono text-[10px] uppercase tracking-wider " +
+        "border-l-2 transition-colors " +
+        cls
+      }
+    >
+      <span>{label}</span>
+      {wip && <span className="text-[9px] text-muted/50">{wipLabel}</span>}
+    </button>
   );
 }

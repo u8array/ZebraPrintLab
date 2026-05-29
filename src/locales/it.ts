@@ -125,6 +125,8 @@ const it = {
       encodingLanguage: 'Codifica e lingua',
       identity: 'Identità',
     },
+    railGroupPerLabel: 'Per etichetta',
+    railGroupSetupScript: 'Script di configurazione',
     mediaFeed: {
       mediaMode: 'Modalità di stampa',
       mediaModeT: 'Strappo',
@@ -165,6 +167,15 @@ const it = {
       reprintAfterError: 'Ristampa dopo errore',
       headTestInterval: 'Intervallo test testina (etichette)',
       tearOffAdjust: 'Regolazione strappo',
+    },
+    clockTime: {
+      setRealtimeClock: 'Imposta orologio in tempo reale',
+      setRealtimeClockHint: 'Valore statico: digitato una volta e inviato così com\'è. La stampante non lo fa avanzare.',
+      clockFormat: 'Formato di visualizzazione dell\'orologio',
+      clockFormat0: 'Nessuna visualizzazione',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24h)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12h AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24h)',
     },
   },
 
@@ -209,6 +220,8 @@ const it = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script contiene dati',
     copy: 'Copia',
     copied: '✓ Copiato',
     noObjects: "Nessun oggetto sull'etichetta",

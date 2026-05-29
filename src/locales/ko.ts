@@ -125,6 +125,8 @@ const ko = {
       encodingLanguage: '인코딩 및 언어',
       identity: '식별',
     },
+    railGroupPerLabel: '라벨별',
+    railGroupSetupScript: '설정 스크립트',
     mediaFeed: {
       mediaMode: '인쇄 모드',
       mediaModeT: '찢기',
@@ -165,6 +167,15 @@ const ko = {
       reprintAfterError: '오류 후 재인쇄',
       headTestInterval: '헤드 테스트 간격 (라벨)',
       tearOffAdjust: '찢기 조정',
+    },
+    clockTime: {
+      setRealtimeClock: '실시간 시계 설정',
+      setRealtimeClockHint: '정적 값입니다. 한 번 입력하면 그대로 전송되며 프린터에서 진행되지 않습니다.',
+      clockFormat: '시계 표시 형식',
+      clockFormat0: '표시 없음',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24시간)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12시간 AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24시간)',
     },
   },
 
@@ -209,6 +220,8 @@ const ko = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script에 내용이 있습니다',
     copy: '복사',
     copied: '✓ 복사됨',
     noObjects: '레이블에 아직 개체가 없습니다',

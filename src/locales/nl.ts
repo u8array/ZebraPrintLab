@@ -125,6 +125,8 @@ const nl = {
       encodingLanguage: 'Codering en taal',
       identity: 'Identiteit',
     },
+    railGroupPerLabel: 'Per etiket',
+    railGroupSetupScript: 'Setup-script',
     mediaFeed: {
       mediaMode: 'Afdrukmodus',
       mediaModeT: 'Afscheuren',
@@ -165,6 +167,15 @@ const nl = {
       reprintAfterError: 'Opnieuw afdrukken na fout',
       headTestInterval: 'Kop-test interval (etiketten)',
       tearOffAdjust: 'Afscheur-aanpassing',
+    },
+    clockTime: {
+      setRealtimeClock: 'Realtimeklok instellen',
+      setRealtimeClockHint: 'Statische waarde: één keer ingevoerd en ongewijzigd verzonden. De printer telt niet door.',
+      clockFormat: 'Klokweergaveformaat',
+      clockFormat0: 'Geen weergave',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24-uurs)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12-uurs AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24-uurs)',
     },
   },
 
@@ -209,6 +220,8 @@ const nl = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script bevat inhoud',
     copy: 'Kopiëren',
     copied: '✓ Gekopieerd',
     noObjects: 'Nog geen objecten op het etiket',

@@ -125,6 +125,8 @@ const sr = {
       encodingLanguage: 'Кодирање и језик',
       identity: 'Идентитет',
     },
+    railGroupPerLabel: 'По налепници',
+    railGroupSetupScript: 'Скрипта подешавања',
     mediaFeed: {
       mediaMode: 'Režim štampe',
       mediaModeT: 'Otkidanje',
@@ -165,6 +167,15 @@ const sr = {
       reprintAfterError: 'Ponovno štampanje nakon greške',
       headTestInterval: 'Interval testa glave (etikete)',
       tearOffAdjust: 'Podešavanje otkidanja',
+    },
+    clockTime: {
+      setRealtimeClock: 'Подеси сат у реалном времену',
+      setRealtimeClockHint: 'Статична вредност: уписана једном и послата непромењена. Штампач је не помера.',
+      clockFormat: 'Формат приказа сата',
+      clockFormat0: 'Без приказа',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24-часовни)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12-часовни AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24-часовни)',
     },
   },
 
@@ -209,6 +220,8 @@ const sr = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script sadrži sadržaj',
     copy: 'Kopiraj',
     copied: '✓ Kopirano',
     noObjects: 'Nema objekata na nalepnici',

@@ -125,6 +125,8 @@ const el = {
       encodingLanguage: 'Κωδικοποίηση και γλώσσα',
       identity: 'Ταυτότητα',
     },
+    railGroupPerLabel: 'Ανά ετικέτα',
+    railGroupSetupScript: 'Σενάριο εγκατάστασης',
     mediaFeed: {
       mediaMode: 'Λειτουργία εκτύπωσης',
       mediaModeT: 'Αποκοπή',
@@ -165,6 +167,15 @@ const el = {
       reprintAfterError: 'Επανεκτύπωση μετά από σφάλμα',
       headTestInterval: 'Διάστημα δοκιμής κεφαλής (ετικέτες)',
       tearOffAdjust: 'Ρύθμιση αποκοπής',
+    },
+    clockTime: {
+      setRealtimeClock: 'Ρύθμιση ρολογιού πραγματικού χρόνου',
+      setRealtimeClockHint: 'Στατική τιμή: πληκτρολογείται μία φορά και αποστέλλεται ως έχει. Ο εκτυπωτής δεν την προωθεί.',
+      clockFormat: 'Μορφή εμφάνισης ρολογιού',
+      clockFormat0: 'Καμία εμφάνιση',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24ωρο)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12ωρο AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24ωρο)',
     },
   },
 
@@ -209,6 +220,8 @@ const el = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Το Setup Script περιέχει δεδομένα',
     copy: 'Αντιγραφή',
     copied: '✓ Αντιγράφηκε',
     noObjects: 'Δεν υπάρχουν ακόμη αντικείμενα στην ετικέτα',

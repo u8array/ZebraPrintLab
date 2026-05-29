@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { generateZPL } from "./zplGenerator";
+import { generateSetupScript } from "./zplSetupScript";
 import { parseZPL } from "./zplParser";
 import type { LabelConfig } from "../types/ObjectType";
 
@@ -97,37 +98,53 @@ describe("Printer Settings Modal Tab 1 — parser roundtrip", () => {
   });
 });
 
-describe("Printer Settings Modal Tab 2 — Print Quality commands", () => {
-  it("emits ^JZ with the selected reprint mode", () => {
-    expect(generateZPL({ ...base, reprintAfterError: "Y" }, [])).toContain("^JZY");
-    expect(generateZPL({ ...base, reprintAfterError: "N" }, [])).toContain("^JZN");
+describe("Printer Settings Modal Tab 2 — Print Quality commands (Setup Script)", () => {
+  it("emits ^JZ in the Setup Script with the selected reprint mode", () => {
+    expect(generateSetupScript({ ...base, reprintAfterError: "Y" })).toContain("^JZY");
+    expect(generateSetupScript({ ...base, reprintAfterError: "N" })).toContain("^JZN");
   });
 
-  it("emits ^JT with the head-test interval", () => {
-    expect(generateZPL({ ...base, headTestInterval: 500 }, [])).toContain("^JT500");
+  it("emits ^JT in the Setup Script with the head-test interval", () => {
+    expect(generateSetupScript({ ...base, headTestInterval: 500 })).toContain("^JT500");
   });
 
-  it("emits ~TA before ^XA (tilde-prefix takes effect immediately)", () => {
-    const zpl = generateZPL({ ...base, tearOffAdjust: -30 }, []);
-    expect(zpl).toContain("~TA-30");
-    expect(zpl.indexOf("~TA")).toBeLessThan(zpl.indexOf("^XA"));
+  it("emits ~TA in the Setup Script (tilde-prefix above the wrapper block)", () => {
+    // Pair with a caret command so the ^XA wrapper exists; otherwise
+    // a tilde-only script has no block to compare position against.
+    const script = generateSetupScript({
+      ...base,
+      tearOffAdjust: -30,
+      reprintAfterError: "Y",
+    });
+    expect(script).toContain("~TA-30");
+    expect(script.indexOf("~TA")).toBeLessThan(script.indexOf("^XA"));
   });
 
-  it("omits all three when their fields are undefined", () => {
-    const zpl = generateZPL(base, []);
+  it("keeps ^JZ / ^JT / ~TA out of the per-label generateZPL output", () => {
+    const both = {
+      ...base,
+      reprintAfterError: "Y" as const,
+      headTestInterval: 250,
+      tearOffAdjust: 15,
+    };
+    const zpl = generateZPL(both, []);
     expect(zpl).not.toContain("^JZ");
     expect(zpl).not.toContain("^JT");
     expect(zpl).not.toContain("~TA");
   });
 
-  it("round-trips ^JZ / ^JT / ~TA without loss", () => {
+  it("returns an empty Setup Script when no relevant field is set", () => {
+    expect(generateSetupScript(base)).toBe("");
+  });
+
+  it("round-trips ^JZ / ^JT / ~TA via the Setup Script parser", () => {
     const orig = {
       ...base,
       reprintAfterError: "Y" as const,
       headTestInterval: 250,
       tearOffAdjust: 15,
     };
-    const { labelConfig: parsed } = parseZPL(generateZPL(orig, []));
+    const { labelConfig: parsed } = parseZPL(generateSetupScript(orig));
     expect(parsed.reprintAfterError).toBe("Y");
     expect(parsed.headTestInterval).toBe(250);
     expect(parsed.tearOffAdjust).toBe(15);

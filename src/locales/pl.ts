@@ -125,6 +125,8 @@ const pl = {
       encodingLanguage: 'Kodowanie i język',
       identity: 'Identyfikacja',
     },
+    railGroupPerLabel: 'Na etykietę',
+    railGroupSetupScript: 'Skrypt konfiguracji',
     mediaFeed: {
       mediaMode: 'Tryb druku',
       mediaModeT: 'Odrywanie',
@@ -165,6 +167,15 @@ const pl = {
       reprintAfterError: 'Wydrukuj ponownie po błędzie',
       headTestInterval: 'Interwał testu głowicy (etykiety)',
       tearOffAdjust: 'Regulacja odrywania',
+    },
+    clockTime: {
+      setRealtimeClock: 'Ustaw zegar czasu rzeczywistego',
+      setRealtimeClockHint: 'Wartość statyczna: wpisana raz i wysłana bez zmian. Drukarka jej nie zwiększa.',
+      clockFormat: 'Format wyświetlania zegara',
+      clockFormat0: 'Brak wyświetlania',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24-godz.)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12-godz. AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24-godz.)',
     },
   },
 
@@ -209,6 +220,8 @@ const pl = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script zawiera treść',
     copy: 'Kopiuj',
     copied: '✓ Skopiowano',
     noObjects: 'Brak obiektów na etykiecie',

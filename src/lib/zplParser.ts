@@ -6,6 +6,7 @@ import {
   MAX_LABEL_LENGTH_RANGE,
   SPEED_RANGE,
   TEAR_OFF_ADJUST_RANGE,
+  isClockFormat,
   isMediaFeedMode,
   isMediaMode,
   isMediaTracking,
@@ -13,6 +14,7 @@ import {
   isPrintOrientation,
 } from "../types/ObjectType";
 import { parseIntOrUndef } from "./inputParse";
+import { parseRealtimeClock } from "./realtimeClock";
 import {
   FN_NUMBER_MIN,
   FN_NUMBER_MAX,
@@ -1927,7 +1929,11 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       }
     },
     MM(_, rest) {
-      const mode = (rest[0] ?? "").toUpperCase();
+      // `.trim()` before `[0]` so a stray leading whitespace in the
+      // input (rare but seen with hand-edited ZPL) does not eat the
+      // mode character. Applies to all single-char enum handlers
+      // below (MT / PO / PM / KD).
+      const mode = (rest.trim()[0] ?? "").toUpperCase();
       if (isMediaMode(mode)) labelConfig.mediaMode = mode;
     },
     LS(_, rest) {
@@ -1947,7 +1953,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       if (v !== undefined) labelConfig.darkness = v;
     },
     MT(_, rest) {
-      const mt = (rest[0] ?? "").toUpperCase();
+      const mt = (rest.trim()[0] ?? "").toUpperCase();
       if (isMediaType(mt)) labelConfig.mediaType = mt;
     },
     MN(p) {
@@ -1988,11 +1994,11 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       if (v !== undefined) labelConfig.tearOffAdjust = v;
     },
     PO(_, rest) {
-      const po = (rest[0] ?? "").toUpperCase();
+      const po = (rest.trim()[0] ?? "").toUpperCase();
       if (isPrintOrientation(po)) labelConfig.printOrientation = po;
     },
     PM(_, rest) {
-      const m = (rest[0] ?? "").toUpperCase();
+      const m = (rest.trim()[0] ?? "").toUpperCase();
       if (m === "Y" || m === "N") labelConfig.mirror = m;
     },
     // ~SD — instant darkness set (00..30). Tilde-prefix; the tokenizer
@@ -2000,6 +2006,23 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     SD(_, rest) {
       const v = inRange(parseIntOrUndef(rest), DARKNESS_INSTANT_RANGE);
       if (v !== undefined) labelConfig.instantDarkness = v;
+    },
+    // ^ST MM,DD,YYYY,HH,MM,SS — set real-time clock. Delegates the
+    // shape + range validation to the shared `realtimeClock` helper
+    // so the parser and generator cannot drift on round-trip. Invalid
+    // / partial / impossible inputs are silently dropped, matching
+    // the parser's existing contract.
+    ST(p) {
+      const iso = parseRealtimeClock(p);
+      if (iso !== null) labelConfig.setRealtimeClock = iso;
+    },
+    // ^KD <format-code>. Reads only the first char of `rest`, so
+    // `^KD2,foo` parses as `clockFormat: '2'` and the trailing junk
+    // is dropped. Matches the parser's lenient contract elsewhere
+    // (PO / PM / MT take the same first-char approach).
+    KD(_, rest) {
+      const v = rest.trim()[0] ?? "";
+      if (isClockFormat(v)) labelConfig.clockFormat = v;
     },
 
     // ^CW {alias},{path} — register an alias for a printer-resident font.

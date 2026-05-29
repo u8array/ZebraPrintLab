@@ -125,6 +125,8 @@ const cs = {
       encodingLanguage: 'Kódování a jazyk',
       identity: 'Identita',
     },
+    railGroupPerLabel: 'Na štítek',
+    railGroupSetupScript: 'Inicializační skript',
     mediaFeed: {
       mediaMode: 'Režim tisku',
       mediaModeT: 'Odtrhnutí',
@@ -165,6 +167,15 @@ const cs = {
       reprintAfterError: 'Přetisk po chybě',
       headTestInterval: 'Interval testu hlavy (etikety)',
       tearOffAdjust: 'Úprava odtrhu',
+    },
+    clockTime: {
+      setRealtimeClock: 'Nastavit hodiny reálného času',
+      setRealtimeClockHint: 'Statická hodnota: zadaná jednou a odeslaná beze změny. Tiskárna ji neposouvá.',
+      clockFormat: 'Formát zobrazení hodin',
+      clockFormat0: 'Žádné zobrazení',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24h)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12h AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24h)',
     },
   },
 
@@ -209,6 +220,8 @@ const cs = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script obsahuje data',
     copy: 'Kopírovat',
     copied: '✓ Zkopírováno',
     noObjects: 'Na štítku zatím nejsou žádné objekty',

@@ -125,6 +125,8 @@ const lt = {
       encodingLanguage: 'Kodavimas ir kalba',
       identity: 'Tapatybė',
     },
+    railGroupPerLabel: 'Etiketei',
+    railGroupSetupScript: 'Sąrankos scenarijus',
     mediaFeed: {
       mediaMode: 'Spausdinimo režimas',
       mediaModeT: 'Atplėšimas',
@@ -165,6 +167,15 @@ const lt = {
       reprintAfterError: 'Spausdinti iš naujo po klaidos',
       headTestInterval: 'Galvutės testo intervalas (etiketės)',
       tearOffAdjust: 'Atplėšimo reguliavimas',
+    },
+    clockTime: {
+      setRealtimeClock: 'Nustatyti realaus laiko laikrodį',
+      setRealtimeClockHint: 'Statinė reikšmė: įvedama vieną kartą ir siunčiama nepakeista. Spausdintuvas jos nepatobulina.',
+      clockFormat: 'Laikrodžio rodymo formatas',
+      clockFormat0: 'Be rodinio',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24 val.)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12 val. AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24 val.)',
     },
   },
 
@@ -209,6 +220,8 @@ const lt = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script turi turinio',
     copy: 'Kopijuoti',
     copied: '✓ Nukopijuota',
     noObjects: 'Etiketėje dar nėra objektų',

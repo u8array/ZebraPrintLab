@@ -125,6 +125,8 @@ const no = {
       encodingLanguage: 'Koding og språk',
       identity: 'Identitet',
     },
+    railGroupPerLabel: 'Per etikett',
+    railGroupSetupScript: 'Oppsettsskript',
     mediaFeed: {
       mediaMode: 'Utskriftsmodus',
       mediaModeT: 'Avriving',
@@ -165,6 +167,15 @@ const no = {
       reprintAfterError: 'Skriv ut på nytt etter feil',
       headTestInterval: 'Hodetest-intervall (etiketter)',
       tearOffAdjust: 'Avrivings-justering',
+    },
+    clockTime: {
+      setRealtimeClock: 'Still inn sanntidsklokke',
+      setRealtimeClockHint: 'Statisk verdi: skrevet inn én gang og sendt uendret. Skriveren teller ikke videre.',
+      clockFormat: 'Visningsformat for klokke',
+      clockFormat0: 'Ingen visning',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24-timers)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12-timers AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24-timers)',
     },
   },
 
@@ -209,6 +220,8 @@ const no = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script har innhold',
     copy: 'Kopier',
     copied: '✓ Kopiert',
     noObjects: 'Ingen objekter på etiketten ennå',

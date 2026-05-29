@@ -125,6 +125,8 @@ const en = {
       encodingLanguage: 'Encoding & Language',
       identity: 'Identity',
     },
+    railGroupPerLabel: 'Per Label',
+    railGroupSetupScript: 'Setup Script',
     mediaFeed: {
       mediaMode: 'Print mode',
       mediaModeT: 'Tear-off',
@@ -165,6 +167,15 @@ const en = {
       reprintAfterError: 'Reprint after error',
       headTestInterval: 'Head-test interval (labels)',
       tearOffAdjust: 'Tear-off adjust',
+    },
+    clockTime: {
+      setRealtimeClock: 'Set real-time clock',
+      setRealtimeClockHint: 'Static value — typed once, then sent verbatim. The printer does not advance it.',
+      clockFormat: 'Clock display format',
+      clockFormat0: 'No display',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24-hour)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12-hour AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24-hour)',
     },
   },
 
@@ -230,6 +241,8 @@ const en = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script has content',
     copy: 'Copy',
     copied: '✓ Copied',
     noObjects: 'No objects on the label yet',

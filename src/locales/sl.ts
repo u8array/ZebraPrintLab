@@ -125,6 +125,8 @@ const sl = {
       encodingLanguage: 'Kodiranje in jezik',
       identity: 'Identiteta',
     },
+    railGroupPerLabel: 'Na nalepko',
+    railGroupSetupScript: 'Skripta za nastavitev',
     mediaFeed: {
       mediaMode: 'Način tiskanja',
       mediaModeT: 'Odtrganje',
@@ -165,6 +167,15 @@ const sl = {
       reprintAfterError: 'Ponovno natisni po napaki',
       headTestInterval: 'Interval testa glave (etikete)',
       tearOffAdjust: 'Prilagoditev odtrganja',
+    },
+    clockTime: {
+      setRealtimeClock: 'Nastavi uro v realnem času',
+      setRealtimeClockHint: 'Statična vrednost: vnesena enkrat in poslana nespremenjena. Tiskalnik je ne prestavlja.',
+      clockFormat: 'Format prikaza ure',
+      clockFormat0: 'Brez prikaza',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24-urni)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12-urni AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24-urni)',
     },
   },
 
@@ -209,6 +220,8 @@ const sl = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script vsebuje vsebino',
     copy: 'Kopiraj',
     copied: '✓ Kopirano',
     noObjects: 'Na nalepki še ni predmetov',

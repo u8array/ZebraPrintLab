@@ -125,6 +125,8 @@ const ro = {
       encodingLanguage: 'Codare și limbă',
       identity: 'Identitate',
     },
+    railGroupPerLabel: 'Pe etichetă',
+    railGroupSetupScript: 'Script de configurare',
     mediaFeed: {
       mediaMode: 'Mod de tipărire',
       mediaModeT: 'Rupere',
@@ -165,6 +167,15 @@ const ro = {
       reprintAfterError: 'Reimprimare după eroare',
       headTestInterval: 'Interval test cap (etichete)',
       tearOffAdjust: 'Reglare rupere',
+    },
+    clockTime: {
+      setRealtimeClock: 'Setează ceasul în timp real',
+      setRealtimeClockHint: 'Valoare statică: introdusă o dată și trimisă ca atare. Imprimanta nu o avansează.',
+      clockFormat: 'Format de afișare a ceasului',
+      clockFormat0: 'Fără afișare',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24h)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12h AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24h)',
     },
   },
 
@@ -209,6 +220,8 @@ const ro = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script conține conținut',
     copy: 'Copiați',
     copied: '✓ Copiat',
     noObjects: 'Nu există încă obiecte pe etichetă',

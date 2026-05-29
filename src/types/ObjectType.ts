@@ -81,6 +81,22 @@ export const PRINT_ORIENTATION_VALUES = ['N', 'I'] as const;
 export type PrintOrientation = (typeof PRINT_ORIENTATION_VALUES)[number];
 export const isPrintOrientation = makeEnumGuard(PRINT_ORIENTATION_VALUES);
 
+/** ^ST real-time clock value, as the HTML5 `datetime-local` string
+ *  shape (`YYYY-MM-DDTHH:MM` or with `:SS`). Single source of truth
+ *  for both the labelConfig Zod schema and the `realtimeClock`
+ *  parse/format helper in `src/lib/`. */
+export const realtimeClockIsoRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/;
+
+/** ^KD clock-print format selector. Drives how ^FC clock fields render
+ *  on the printed label.
+ *    0 = no display (default, clock field disabled)
+ *    1 = MM/DD/YY (24-hour) HH:MM:SS
+ *    2 = MM/DD/YY (12-hour) HH:MM:SS (with AM/PM)
+ *    3 = DD/MM/YY (24-hour) HH:MM:SS */
+export const CLOCK_FORMAT_VALUES = ['0', '1', '2', '3'] as const;
+export type ClockFormat = (typeof CLOCK_FORMAT_VALUES)[number];
+export const isClockFormat = makeEnumGuard(CLOCK_FORMAT_VALUES);
+
 /** Numeric ranges shared between Zod schema, parser clamps and UI
  *  bounded inputs. Single source of truth so a Zebra-firmware spec
  *  tweak only has to land here. Declared before `labelConfigSchema`
@@ -89,7 +105,7 @@ export const isPrintOrientation = makeEnumGuard(PRINT_ORIENTATION_VALUES);
 export const SPEED_RANGE = { min: 2, max: 14 } as const;
 export const DARKNESS_PERMANENT_RANGE = { min: -30, max: 30 } as const;
 export const DARKNESS_INSTANT_RANGE = { min: 0, max: 30 } as const;
-export const HEAD_TEST_INTERVAL_RANGE = { min: 0, max: 9999 } as const;
+export const HEAD_TEST_INTERVAL_RANGE = { min: 0, max: 10000 } as const;
 export const TEAR_OFF_ADJUST_RANGE = { min: -120, max: 120 } as const;
 /** ^ML: maximum label length, in dots. Zebra spec accepts 1..32000. */
 export const MAX_LABEL_LENGTH_RANGE = { min: 1, max: 32000 } as const;
@@ -171,6 +187,19 @@ export const labelConfigSchema = z.object({
    *  values move the tear line back; positive forward. Zebra
    *  accepts -120..+120 dots. */
   tearOffAdjust: intInRange(TEAR_OFF_ADJUST_RANGE).optional(),
+  /** ^ST: static set-clock value for the printer's real-time clock.
+   *  Stored as the raw HTML5 `datetime-local` string
+   *  (`YYYY-MM-DDTHH:MM` or with `:SS`); the generator splits it into
+   *  the six positional params (`^STMM,DD,YYYY,HH,MM,SS`). User-typed
+   *  static value rather than a now-snapshot, so generated Setup
+   *  Scripts stay reproducible across copy/export. The regex catches
+   *  corrupt persisted state at schema-parse time rather than
+   *  silently dropping it on emit. */
+  setRealtimeClock: z.string().regex(realtimeClockIsoRegex).optional(),
+  /** ^KD: clock-print format selector. See `CLOCK_FORMAT_VALUES` for
+   *  the per-value rendering. Stored as the digit char ('0'..'3'),
+   *  matching the on-wire shape. */
+  clockFormat: z.enum(CLOCK_FORMAT_VALUES).optional(),
 });
 
 export type LabelConfig = z.infer<typeof labelConfigSchema>;

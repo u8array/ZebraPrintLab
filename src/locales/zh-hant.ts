@@ -125,6 +125,8 @@ const zhHant = {
       encodingLanguage: '編碼與語言',
       identity: '識別',
     },
+    railGroupPerLabel: '每個標籤',
+    railGroupSetupScript: '設定指令稿',
     mediaFeed: {
       mediaMode: '列印模式',
       mediaModeT: '撕離',
@@ -165,6 +167,15 @@ const zhHant = {
       reprintAfterError: '錯誤後重新列印',
       headTestInterval: '列印頭測試間隔（標籤）',
       tearOffAdjust: '撕離調整',
+    },
+    clockTime: {
+      setRealtimeClock: '設定即時時鐘',
+      setRealtimeClockHint: '靜態值：輸入一次後依原樣傳送，印表機不會自動推進。',
+      clockFormat: '時鐘顯示格式',
+      clockFormat0: '不顯示',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24 小時制)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12 小時制 AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24 小時制)',
     },
   },
 
@@ -209,6 +220,8 @@ const zhHant = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script 有內容',
     copy: '複製',
     copied: '✓ 已複製',
     noObjects: '標籤上尚無物件',

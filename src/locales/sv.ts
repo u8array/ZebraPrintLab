@@ -125,6 +125,8 @@ const sv = {
       encodingLanguage: 'Kodning och språk',
       identity: 'Identitet',
     },
+    railGroupPerLabel: 'Per etikett',
+    railGroupSetupScript: 'Konfigurationsskript',
     mediaFeed: {
       mediaMode: 'Utskriftsläge',
       mediaModeT: 'Avrivning',
@@ -165,6 +167,15 @@ const sv = {
       reprintAfterError: 'Skriv ut igen efter fel',
       headTestInterval: 'Huvudtestintervall (etiketter)',
       tearOffAdjust: 'Avrivningsjustering',
+    },
+    clockTime: {
+      setRealtimeClock: 'Ställ in realtidsklocka',
+      setRealtimeClockHint: 'Statiskt värde: skrivs en gång och skickas oförändrat. Skrivaren räknar inte upp det.',
+      clockFormat: 'Visningsformat för klocka',
+      clockFormat0: 'Ingen visning',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24-timmars)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12-timmars AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24-timmars)',
     },
   },
 
@@ -209,6 +220,8 @@ const sv = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script har innehåll',
     copy: 'Kopiera',
     copied: '✓ Kopierat',
     noObjects: 'Inga objekt på etiketten ännu',

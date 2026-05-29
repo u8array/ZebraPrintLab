@@ -125,6 +125,8 @@ const fa = {
       encodingLanguage: 'کدگذاری و زبان',
       identity: 'هویت',
     },
+    railGroupPerLabel: 'برای هر برچسب',
+    railGroupSetupScript: 'اسکریپت راه‌اندازی',
     mediaFeed: {
       mediaMode: 'حالت چاپ',
       mediaModeT: 'پاره‌کن',
@@ -165,6 +167,15 @@ const fa = {
       reprintAfterError: 'چاپ مجدد پس از خطا',
       headTestInterval: 'فاصله تست هد (برچسب‌ها)',
       tearOffAdjust: 'تنظیم پاره‌کن',
+    },
+    clockTime: {
+      setRealtimeClock: 'تنظیم ساعت زمان واقعی',
+      setRealtimeClockHint: 'Static value — typed once, then sent verbatim. The printer does not advance it.',
+      clockFormat: 'قالب نمایش ساعت',
+      clockFormat0: 'بدون نمایش',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (۲۴ ساعته)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (۱۲ ساعته AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (۲۴ ساعته)',
     },
   },
 
@@ -209,6 +220,8 @@ const fa = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script has content',
     copy: 'کپی',
     copied: '✓ کپی شد',
     noObjects: 'هنوز هیچ شیئی روی برچسب نیست',

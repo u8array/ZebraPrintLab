@@ -125,6 +125,8 @@ const ar = {
       encodingLanguage: 'الترميز واللغة',
       identity: 'الهوية',
     },
+    railGroupPerLabel: 'لكل ملصق',
+    railGroupSetupScript: 'نص الإعداد',
     mediaFeed: {
       mediaMode: 'وضع الطباعة',
       mediaModeT: 'قطع',
@@ -165,6 +167,15 @@ const ar = {
       reprintAfterError: 'إعادة الطباعة بعد الخطأ',
       headTestInterval: 'فاصل اختبار الرأس (ملصقات)',
       tearOffAdjust: 'ضبط القطع',
+    },
+    clockTime: {
+      setRealtimeClock: 'ضبط ساعة الوقت الفعلي',
+      setRealtimeClockHint: 'Static value — typed once, then sent verbatim. The printer does not advance it.',
+      clockFormat: 'تنسيق عرض الساعة',
+      clockFormat0: 'بدون عرض',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24 ساعة)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12 ساعة AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24 ساعة)',
     },
   },
 
@@ -209,6 +220,8 @@ const ar = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script has content',
     copy: 'نسخ',
     copied: '✓ تم النسخ',
     noObjects: 'لا توجد عناصر على الملصق بعد',

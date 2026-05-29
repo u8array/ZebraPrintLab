@@ -125,6 +125,8 @@ const fi = {
       encodingLanguage: 'Koodaus ja kieli',
       identity: 'Tunniste',
     },
+    railGroupPerLabel: 'Per etiketti',
+    railGroupSetupScript: 'Asennusskripti',
     mediaFeed: {
       mediaMode: 'Tulostustila',
       mediaModeT: 'Repäisy',
@@ -165,6 +167,15 @@ const fi = {
       reprintAfterError: 'Tulosta uudelleen virheen jälkeen',
       headTestInterval: 'Päätestin väli (etiketit)',
       tearOffAdjust: 'Repäisyn säätö',
+    },
+    clockTime: {
+      setRealtimeClock: 'Aseta reaaliaikakello',
+      setRealtimeClockHint: 'Staattinen arvo: kirjoitetaan kerran ja lähetetään sellaisenaan. Tulostin ei lisää siihen aikaa.',
+      clockFormat: 'Kellon näyttömuoto',
+      clockFormat0: 'Ei näyttöä',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24-tuntinen)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12-tuntinen AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24-tuntinen)',
     },
   },
 
@@ -209,6 +220,8 @@ const fi = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Skriptissä on sisältöä',
     copy: 'Kopioi',
     copied: '✓ Kopioitu',
     noObjects: 'Etiketillä ei ole vielä objekteja',

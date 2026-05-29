@@ -125,6 +125,8 @@ const bg = {
       encodingLanguage: 'Кодиране и език',
       identity: 'Идентичност',
     },
+    railGroupPerLabel: 'На етикет',
+    railGroupSetupScript: 'Инициализиращ скрипт',
     mediaFeed: {
       mediaMode: 'Режим на печат',
       mediaModeT: 'Откъсване',
@@ -165,6 +167,15 @@ const bg = {
       reprintAfterError: 'Повторен печат след грешка',
       headTestInterval: 'Интервал на тест на главата (етикети)',
       tearOffAdjust: 'Настройка на откъсване',
+    },
+    clockTime: {
+      setRealtimeClock: 'Настройка на часовник в реално време',
+      setRealtimeClockHint: 'Статична стойност: въведена веднъж и изпратена непроменена. Принтерът не я придвижва.',
+      clockFormat: 'Формат на показване на часовника',
+      clockFormat0: 'Без показване',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24-часов)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12-часов AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24-часов)',
     },
   },
 
@@ -209,6 +220,8 @@ const bg = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script съдържа данни',
     copy: 'Копирай',
     copied: '✓ Копирано',
     noObjects: 'Все още няма обекти върху етикета',

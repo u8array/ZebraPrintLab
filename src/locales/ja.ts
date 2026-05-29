@@ -125,6 +125,8 @@ const ja = {
       encodingLanguage: 'エンコードと言語',
       identity: '識別情報',
     },
+    railGroupPerLabel: 'ラベルごと',
+    railGroupSetupScript: 'セットアップスクリプト',
     mediaFeed: {
       mediaMode: '印刷モード',
       mediaModeT: 'ティアオフ',
@@ -165,6 +167,15 @@ const ja = {
       reprintAfterError: 'エラー後に再印刷',
       headTestInterval: 'ヘッドテスト間隔 (ラベル)',
       tearOffAdjust: 'ティアオフ調整',
+    },
+    clockTime: {
+      setRealtimeClock: 'リアルタイムクロックを設定',
+      setRealtimeClockHint: '静的な値です。一度入力するとそのまま送信され、プリンタ側で進行しません。',
+      clockFormat: '時刻の表示形式',
+      clockFormat0: '表示なし',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24時間)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12時間 AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24時間)',
     },
   },
 
@@ -209,6 +220,8 @@ const ja = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Scriptに内容があります',
     copy: 'コピー',
     copied: '✓ コピーしました',
     noObjects: 'ラベルにオブジェクトがありません',

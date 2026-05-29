@@ -125,6 +125,8 @@ const hu = {
       encodingLanguage: 'Kódolás és nyelv',
       identity: 'Azonosító',
     },
+    railGroupPerLabel: 'Címkénként',
+    railGroupSetupScript: 'Beállító szkript',
     mediaFeed: {
       mediaMode: 'Nyomtatási mód',
       mediaModeT: 'Letépés',
@@ -165,6 +167,15 @@ const hu = {
       reprintAfterError: 'Újranyomtatás hiba után',
       headTestInterval: 'Fejteszt-intervallum (címkék)',
       tearOffAdjust: 'Letépés beállítása',
+    },
+    clockTime: {
+      setRealtimeClock: 'Valós idejű óra beállítása',
+      setRealtimeClockHint: 'Statikus érték: egyszer megadva, változatlanul elküldve. A nyomtató nem lépteti tovább.',
+      clockFormat: 'Óra megjelenítési formátum',
+      clockFormat0: 'Nincs megjelenítés',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24 órás)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12 órás AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24 órás)',
     },
   },
 
@@ -209,6 +220,8 @@ const hu = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'A Setup Script tartalmaz adatokat',
     copy: 'Másolás',
     copied: '✓ Másolva',
     noObjects: 'Még nincsenek objektumok a címkén',

@@ -125,6 +125,8 @@ const he = {
       encodingLanguage: 'קידוד ושפה',
       identity: 'זהות',
     },
+    railGroupPerLabel: 'לכל מדבקה',
+    railGroupSetupScript: 'סקריפט הגדרה',
     mediaFeed: {
       mediaMode: 'מצב הדפסה',
       mediaModeT: 'תלישה',
@@ -165,6 +167,15 @@ const he = {
       reprintAfterError: 'הדפסה מחדש לאחר שגיאה',
       headTestInterval: 'מרווח בדיקת ראש (תוויות)',
       tearOffAdjust: 'כיוון תלישה',
+    },
+    clockTime: {
+      setRealtimeClock: 'הגדר שעון זמן אמת',
+      setRealtimeClockHint: 'ערך סטטי: מוקלד פעם אחת ונשלח כפי שהוא. המדפסת אינה מקדמת אותו.',
+      clockFormat: 'תבנית תצוגת שעון',
+      clockFormat0: 'ללא תצוגה',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24 שעות)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12 שעות AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24 שעות)',
     },
   },
 
@@ -209,6 +220,8 @@ const he = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script מכיל תוכן',
     copy: 'העתק',
     copied: '✓ הועתק',
     noObjects: 'אין אובייקטים על התווית עדיין',

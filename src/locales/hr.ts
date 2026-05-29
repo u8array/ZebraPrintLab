@@ -125,6 +125,8 @@ const hr = {
       encodingLanguage: 'Kodiranje i jezik',
       identity: 'Identitet',
     },
+    railGroupPerLabel: 'Po naljepnici',
+    railGroupSetupScript: 'Skripta postavljanja',
     mediaFeed: {
       mediaMode: 'Način ispisa',
       mediaModeT: 'Otkidanje',
@@ -165,6 +167,15 @@ const hr = {
       reprintAfterError: 'Ponovni ispis nakon greške',
       headTestInterval: 'Interval testa glave (etikete)',
       tearOffAdjust: 'Podešavanje otkidanja',
+    },
+    clockTime: {
+      setRealtimeClock: 'Postavi sat u stvarnom vremenu',
+      setRealtimeClockHint: 'Statična vrijednost: upisana jednom i poslana nepromijenjeno. Pisač je ne pomiče.',
+      clockFormat: 'Format prikaza sata',
+      clockFormat0: 'Bez prikaza',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24-satni)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12-satni AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24-satni)',
     },
   },
 
@@ -209,6 +220,8 @@ const hr = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script sadrži sadržaj',
     copy: 'Kopiraj',
     copied: '✓ Kopirano',
     noObjects: 'Nema objekata na naljepnici',

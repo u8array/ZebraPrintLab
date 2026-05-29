@@ -125,6 +125,8 @@ const et = {
       encodingLanguage: 'Kodeering ja keel',
       identity: 'Identiteet',
     },
+    railGroupPerLabel: 'Sildi kohta',
+    railGroupSetupScript: 'Seadistusskript',
     mediaFeed: {
       mediaMode: 'Prindirežiim',
       mediaModeT: 'Rebimine',
@@ -165,6 +167,15 @@ const et = {
       reprintAfterError: 'Korduvprint pärast viga',
       headTestInterval: 'Pea testimise intervall (etiketid)',
       tearOffAdjust: 'Rebimise reguleerimine',
+    },
+    clockTime: {
+      setRealtimeClock: 'Määra reaalajakell',
+      setRealtimeClockHint: 'Staatiline väärtus: sisestatakse korra ja saadetakse muutmata. Printer seda edasi ei loe.',
+      clockFormat: 'Kella kuvavorming',
+      clockFormat0: 'Kuva puudub',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24-tunnine)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12-tunnine AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24-tunnine)',
     },
   },
 
@@ -209,6 +220,8 @@ const et = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script sisaldab andmeid',
     copy: 'Kopeeri',
     copied: '✓ Kopeeritud',
     noObjects: 'Sildil pole veel objekte',

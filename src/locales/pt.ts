@@ -125,6 +125,8 @@ const pt = {
       encodingLanguage: 'Codificação e idioma',
       identity: 'Identidade',
     },
+    railGroupPerLabel: 'Por etiqueta',
+    railGroupSetupScript: 'Script de configuração',
     mediaFeed: {
       mediaMode: 'Modo de impressão',
       mediaModeT: 'Destacável',
@@ -165,6 +167,15 @@ const pt = {
       reprintAfterError: 'Reimprimir após erro',
       headTestInterval: 'Intervalo de teste da cabeça (etiquetas)',
       tearOffAdjust: 'Ajuste de destacável',
+    },
+    clockTime: {
+      setRealtimeClock: 'Definir relógio em tempo real',
+      setRealtimeClockHint: 'Valor estático: digitado uma vez e enviado tal como está. A impressora não o avança.',
+      clockFormat: 'Formato de exibição do relógio',
+      clockFormat0: 'Sem exibição',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24h)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12h AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24h)',
     },
   },
 
@@ -209,6 +220,8 @@ const pt = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script tem conteúdo',
     copy: 'Copiar',
     copied: '✓ Copiado',
     noObjects: 'Ainda não há objetos na etiqueta',

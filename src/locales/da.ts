@@ -125,6 +125,8 @@ const da = {
       encodingLanguage: 'Kodning og sprog',
       identity: 'Identitet',
     },
+    railGroupPerLabel: 'Pr. etiket',
+    railGroupSetupScript: 'Opsætningsscript',
     mediaFeed: {
       mediaMode: 'Udskriftstilstand',
       mediaModeT: 'Afrivning',
@@ -165,6 +167,15 @@ const da = {
       reprintAfterError: 'Genudskriv efter fejl',
       headTestInterval: 'Hovedtest-interval (etiketter)',
       tearOffAdjust: 'Afrivningsjustering',
+    },
+    clockTime: {
+      setRealtimeClock: 'Indstil realtidsur',
+      setRealtimeClockHint: 'Statisk værdi: indtastet én gang og sendt uændret. Printeren tæller ikke videre.',
+      clockFormat: 'Visningsformat for ur',
+      clockFormat0: 'Ingen visning',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24-timers)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12-timers AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24-timers)',
     },
   },
 
@@ -209,6 +220,8 @@ const da = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script har indhold',
     copy: 'Kopiér',
     copied: '✓ Kopieret',
     noObjects: 'Ingen objekter på etiketten endnu',

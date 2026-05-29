@@ -125,6 +125,8 @@ const tr = {
       encodingLanguage: 'Kodlama ve dil',
       identity: 'Kimlik',
     },
+    railGroupPerLabel: 'Etiket başına',
+    railGroupSetupScript: 'Kurulum betiği',
     mediaFeed: {
       mediaMode: 'Yazdırma modu',
       mediaModeT: 'Yırtma',
@@ -165,6 +167,15 @@ const tr = {
       reprintAfterError: 'Hatadan sonra yeniden yazdır',
       headTestInterval: 'Kafa testi aralığı (etiketler)',
       tearOffAdjust: 'Yırtma ayarı',
+    },
+    clockTime: {
+      setRealtimeClock: 'Gerçek zamanlı saati ayarla',
+      setRealtimeClockHint: 'Statik değer: bir kez yazılır ve olduğu gibi gönderilir. Yazıcı ilerletmez.',
+      clockFormat: 'Saat görüntüleme biçimi',
+      clockFormat0: 'Görüntü yok',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24 saat)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12 saat AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24 saat)',
     },
   },
 
@@ -209,6 +220,8 @@ const tr = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup Script',
+    hiddenSecondaryHint: 'Setup Script içerik içeriyor',
     copy: 'Kopyala',
     copied: '✓ Kopyalandı',
     noObjects: 'Etikette henüz nesne yok',

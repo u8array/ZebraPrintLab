@@ -125,6 +125,8 @@ const de = {
       encodingLanguage: 'Kodierung & Sprache',
       identity: 'Identität',
     },
+    railGroupPerLabel: 'Pro Etikett',
+    railGroupSetupScript: 'Setup-Skript',
     mediaFeed: {
       mediaMode: 'Druckmodus',
       mediaModeT: 'Abriss',
@@ -165,6 +167,15 @@ const de = {
       reprintAfterError: 'Nach Fehler erneut drucken',
       headTestInterval: 'Kopftest-Intervall (Etiketten)',
       tearOffAdjust: 'Abriss-Versatz',
+    },
+    clockTime: {
+      setRealtimeClock: 'Echtzeituhr stellen',
+      setRealtimeClockHint: 'Statischer Wert — einmal eingegeben, dann unverändert gesendet. Der Drucker zählt nicht weiter.',
+      clockFormat: 'Uhrzeit-Anzeigeformat',
+      clockFormat0: 'Keine Anzeige',
+      clockFormat1: 'MM/DD/YY  HH:MM:SS (24h)',
+      clockFormat2: 'MM/DD/YY  HH:MM:SS (12h AM/PM)',
+      clockFormat3: 'DD/MM/YY  HH:MM:SS (24h)',
     },
   },
 
@@ -230,6 +241,8 @@ const de = {
 
   output: {
     zplHeading: 'ZPL',
+    setupScriptHeading: 'Setup-Script',
+    hiddenSecondaryHint: 'Setup-Script enthält Inhalt',
     copy: 'Kopieren',
     copied: '✓ Kopiert',
     noObjects: 'Noch keine Objekte auf dem Etikett',
