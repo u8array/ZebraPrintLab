@@ -1,5 +1,6 @@
 import type { CustomFontMapping, LabelConfig } from "../types/ObjectType";
 import {
+  CLOCK_TOLERANCE_RANGE,
   DARKNESS_INSTANT_RANGE,
   DARKNESS_PERMANENT_RANGE,
   HEAD_TEST_INTERVAL_RANGE,
@@ -8,6 +9,7 @@ import {
   SPEED_RANGE,
   TEAR_OFF_ADJUST_RANGE,
   isClockFormat,
+  isClockLanguage,
   isMediaFeedMode,
   isMediaMode,
   isMediaTracking,
@@ -2066,9 +2068,36 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         labelConfig.printerDescription = desc;
       }
     },
-    // ^SL belongs in Tab 3 Clock & Time (Mode S/T + Language
-    // 1-13), not Identity — handler will land with that follow-
-    // up PR. See memory:project_ticket_sl_clock_formatting.
+    // ^SL `a`,`b` — Set Mode and Language for ^FC clock fields.
+    // The `a` slot accepts three shapes: 'S' (Start-Time), 'T'
+    // (Time-Now), or numeric 1..999 (Time-Now with tolerance
+    // seconds). The schema models the three shapes as two
+    // fields (clockMode enum + clockTolerance numeric); the
+    // parser fans the wire value out into both.
+    SL(p) {
+      const a = strParam(p[0]);
+      if (a === "S" || a === "T") {
+        labelConfig.clockMode = a;
+        // Clear any tolerance left over from a previous ^SL parse —
+        // schema's cross-field rule forbids `tolerance && mode !== 'TOL'`,
+        // and the parser writes raw values without re-running the
+        // schema, so a stale tolerance from an earlier ^SL60,1 would
+        // make the persisted state un-saveable.
+        labelConfig.clockTolerance = undefined;
+      } else {
+        const tol = inRange(parseIntOrUndef(a), CLOCK_TOLERANCE_RANGE);
+        if (tol !== undefined) {
+          labelConfig.clockMode = "TOL";
+          labelConfig.clockTolerance = tol;
+        }
+      }
+      // Language only when the mode parse landed — orphan language
+      // (mode invalid, b valid) would be write-only state (emit
+      // gated on mode anchor, parser would silently re-drop).
+      if (labelConfig.clockMode === undefined) return;
+      const b = strParam(p[1]);
+      if (isClockLanguage(b)) labelConfig.clockLanguage = b;
+    },
 
     // ^CW {alias},{path} — register an alias for a printer-resident font.
     // Subsequent ^A{alias} fields resolve to {path} via the fontAliases

@@ -124,6 +124,38 @@ const SETUP_SCRIPT_EMITTERS = {
     channel: 'block',
     emit: () => null,
   },
+  clockMode: {
+    channel: 'block',
+    // ^SL has three value shapes in one positional slot: 'S', 'T',
+    // or numeric 1..999 (TOL with tolerance). Schema's cross-field
+    // refine guarantees that `mode === 'TOL'` always has a defined
+    // `clockTolerance`, so no fallback is needed here — a missing
+    // tolerance under TOL is unreachable through `parse`. Language
+    // rides along when set; if omitted, the printer keeps its
+    // current second-positional value.
+    emit: (l) => {
+      if (l.clockMode === undefined) return null;
+      const a = l.clockMode === 'TOL'
+        ? String(l.clockTolerance)
+        : l.clockMode;
+      const b = l.clockLanguage;
+      return b !== undefined ? `^SL${a},${b}` : `^SL${a}`;
+    },
+  },
+  clockTolerance: {
+    // Folded into the ^SL emit above; see `printerDescription`
+    // for the rationale of the no-op standalone entry.
+    channel: 'block',
+    emit: () => null,
+  },
+  clockLanguage: {
+    // Same fold-in pattern: language rides on ^SL's second
+    // positional. If language is set but mode is not, the printer
+    // would need a bare `^SL,<lang>` which the spec leaves
+    // implementation-defined — we drop instead of guessing.
+    channel: 'block',
+    emit: () => null,
+  },
 } as const satisfies Partial<Record<keyof LabelConfig, SetupScriptEmitter>>;
 
 /** Public list of the LabelConfig fields that flow through the
