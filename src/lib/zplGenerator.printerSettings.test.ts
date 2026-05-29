@@ -96,3 +96,46 @@ describe("Printer Settings Modal Tab 1 — parser roundtrip", () => {
     expect(labelConfig.mediaFeedHeadClose).toBe("N");
   });
 });
+
+describe("Printer Settings Modal Tab 2 — Print Quality commands", () => {
+  it("emits ^JZ with the selected reprint mode", () => {
+    expect(generateZPL({ ...base, reprintAfterError: "Y" }, [])).toContain("^JZY");
+    expect(generateZPL({ ...base, reprintAfterError: "N" }, [])).toContain("^JZN");
+  });
+
+  it("emits ^JT with the head-test interval", () => {
+    expect(generateZPL({ ...base, headTestInterval: 500 }, [])).toContain("^JT500");
+  });
+
+  it("emits ~TA before ^XA (tilde-prefix takes effect immediately)", () => {
+    const zpl = generateZPL({ ...base, tearOffAdjust: -30 }, []);
+    expect(zpl).toContain("~TA-30");
+    expect(zpl.indexOf("~TA")).toBeLessThan(zpl.indexOf("^XA"));
+  });
+
+  it("omits all three when their fields are undefined", () => {
+    const zpl = generateZPL(base, []);
+    expect(zpl).not.toContain("^JZ");
+    expect(zpl).not.toContain("^JT");
+    expect(zpl).not.toContain("~TA");
+  });
+
+  it("round-trips ^JZ / ^JT / ~TA without loss", () => {
+    const orig = {
+      ...base,
+      reprintAfterError: "Y" as const,
+      headTestInterval: 250,
+      tearOffAdjust: 15,
+    };
+    const { labelConfig: parsed } = parseZPL(generateZPL(orig, []));
+    expect(parsed.reprintAfterError).toBe("Y");
+    expect(parsed.headTestInterval).toBe(250);
+    expect(parsed.tearOffAdjust).toBe(15);
+  });
+
+  it("clamps out-of-range parser values for ^JT and ~TA", () => {
+    expect(parseZPL("^XA^JT99999^XZ").labelConfig.headTestInterval).toBeUndefined();
+    expect(parseZPL("~TA200^XA^XZ").labelConfig.tearOffAdjust).toBeUndefined();
+    expect(parseZPL("~TA-200^XA^XZ").labelConfig.tearOffAdjust).toBeUndefined();
+  });
+});

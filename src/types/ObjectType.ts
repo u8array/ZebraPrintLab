@@ -66,6 +66,32 @@ export function makeEnumGuard<T extends string>(values: readonly T[]): (v: strin
 export const isMediaTracking = makeEnumGuard(MEDIA_TRACKING_VALUES);
 export const isMediaFeedMode = makeEnumGuard(MEDIA_FEED_VALUES);
 
+/** ^MM print mode (per-label cut/peel/tear behaviour). */
+export const MEDIA_MODE_VALUES = ['T', 'V', 'D', 'K'] as const;
+export type MediaMode = (typeof MEDIA_MODE_VALUES)[number];
+export const isMediaMode = makeEnumGuard(MEDIA_MODE_VALUES);
+
+/** ^MT media type. T=thermal transfer, D=direct thermal. */
+export const MEDIA_TYPE_VALUES = ['T', 'D'] as const;
+export type MediaType = (typeof MEDIA_TYPE_VALUES)[number];
+export const isMediaType = makeEnumGuard(MEDIA_TYPE_VALUES);
+
+/** ^PO print orientation. N=normal, I=inverted (180°). */
+export const PRINT_ORIENTATION_VALUES = ['N', 'I'] as const;
+export type PrintOrientation = (typeof PRINT_ORIENTATION_VALUES)[number];
+export const isPrintOrientation = makeEnumGuard(PRINT_ORIENTATION_VALUES);
+
+/** Numeric ranges shared between Zod schema, parser clamps and UI
+ *  bounded inputs. Single source of truth so a Zebra-firmware spec
+ *  tweak only has to land here. Declared before `labelConfigSchema`
+ *  so the schema's `.min()/.max()` calls can read them at module
+ *  load time without a TDZ trap. */
+export const SPEED_RANGE = { min: 2, max: 14 } as const;
+export const DARKNESS_PERMANENT_RANGE = { min: -30, max: 30 } as const;
+export const DARKNESS_INSTANT_RANGE = { min: 0, max: 30 } as const;
+export const HEAD_TEST_INTERVAL_RANGE = { min: 0, max: 9999 } as const;
+export const TEAR_OFF_ADJUST_RANGE = { min: -120, max: 120 } as const;
+
 export const labelConfigSchema = z.object({
   widthMm: z.number(),
   heightMm: z.number(),
@@ -87,14 +113,14 @@ export const labelConfigSchema = z.object({
   /** ^LT y: label top shift emitted at export. Same compensation semantics
    *  as labelHomeY. Zebra supports -120..+120. */
   labelTop: z.number().int().min(-120).max(120).optional(),
-  printSpeed: z.number().int().min(2).max(14).optional(),
+  printSpeed: z.number().int().min(SPEED_RANGE.min).max(SPEED_RANGE.max).optional(),
   /** ^PR p2: slew (inter-label) speed. */
-  slewSpeed: z.number().int().min(2).max(14).optional(),
+  slewSpeed: z.number().int().min(SPEED_RANGE.min).max(SPEED_RANGE.max).optional(),
   /** ^PR p3: backfeed speed. */
-  backfeedSpeed: z.number().int().min(2).max(14).optional(),
-  darkness: z.number().int().min(-30).max(30).optional(),
+  backfeedSpeed: z.number().int().min(SPEED_RANGE.min).max(SPEED_RANGE.max).optional(),
+  darkness: z.number().int().min(DARKNESS_PERMANENT_RANGE.min).max(DARKNESS_PERMANENT_RANGE.max).optional(),
   /** ~SD: instant darkness set, emitted before ^XA. 0-30. */
-  instantDarkness: z.number().int().min(0).max(30).optional(),
+  instantDarkness: z.number().int().min(DARKNESS_INSTANT_RANGE.min).max(DARKNESS_INSTANT_RANGE.max).optional(),
   mediaType: z.enum(['T', 'D']).optional(),
   printOrientation: z.enum(['N', 'I']).optional(),
   /** ^PM: mirror image (left/right flip). */
@@ -122,6 +148,26 @@ export const labelConfigSchema = z.object({
   /** ^XB: suppress backfeed for the next label. Standalone toggle.
    *  Command emits without parameters when active. */
   suppressBackfeed: z.boolean().optional(),
+  /** ^JZ: reprint the previous label after a print error
+   *  (paper-out, ribbon-out, etc). Y = enabled, N = disabled. */
+  reprintAfterError: z.enum(['Y', 'N']).optional(),
+  /** ^JT: head-test interval. Number of labels printed between
+   *  printhead element tests. 0 disables periodic testing. */
+  headTestInterval: z
+    .number()
+    .int()
+    .min(HEAD_TEST_INTERVAL_RANGE.min)
+    .max(HEAD_TEST_INTERVAL_RANGE.max)
+    .optional(),
+  /** ~TA: tear-off position adjustment in dot rows. Negative
+   *  values move the tear line back; positive forward. Zebra
+   *  accepts -120..+120 dots. */
+  tearOffAdjust: z
+    .number()
+    .int()
+    .min(TEAR_OFF_ADJUST_RANGE.min)
+    .max(TEAR_OFF_ADJUST_RANGE.max)
+    .optional(),
 });
 
 export type LabelConfig = z.infer<typeof labelConfigSchema>;

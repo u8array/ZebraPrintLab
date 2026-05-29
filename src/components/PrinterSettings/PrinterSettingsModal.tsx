@@ -4,6 +4,7 @@ import { useT } from "../../lib/useT";
 import { useLabelStore, type PrinterSettingsTab } from "../../store/labelStore";
 import { DialogShell } from "../ui/DialogShell";
 import { MediaFeedTab } from "./MediaFeedTab";
+import { PrintQualityTab } from "./PrintQualityTab";
 
 /** Tab IDs in display order. The "is this tab shipped?" state is
  *  derived from TAB_COMPONENTS membership below, so adding a tab
@@ -24,14 +25,19 @@ const TABS: readonly PrinterSettingsTab[] = [
  *  undefined` for any tab id without a narrowing cast. */
 const TAB_COMPONENTS: Partial<Record<PrinterSettingsTab, FC>> = {
   mediaFeed: MediaFeedTab,
+  printQuality: PrintQualityTab,
 };
 
 /** Modal-box class kept as a constant rather than inline so the
  *  width / shadow tuning is named and stays consistent if other
- *  modals adopt the same shell. */
+ *  modals adopt the same shell. Fixed height (h-[600px]) so the
+ *  modal does not resize when switching tabs of different field
+ *  counts — the user keeps the same spatial anchor while content
+ *  scrolls inside. `max-h-[85vh]` is a fallback cap for very
+ *  short viewports where 600px would overflow. */
 const MODAL_BOX_CLS =
   "bg-surface border border-border rounded-lg shadow-2xl " +
-  "w-[720px] max-w-[95vw] max-h-[85vh] flex flex-col overflow-hidden";
+  "w-[720px] max-w-[95vw] h-[600px] max-h-[85vh] flex flex-col overflow-hidden";
 
 /** Printer Settings modal — five tabs of pure-ZPL printer config.
  *  Vertical tab rail scales to N tabs and mirrors the

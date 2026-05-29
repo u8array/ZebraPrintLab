@@ -172,10 +172,10 @@ What's supported, what's next, what's planned.
 | Status | Command | Description | Bucket |
 |:-:|---|---|---|
 | `[ ]` | `^PA` | advanced text properties | `Modal: Print Quality` |
-| `[ ]` | `^JZ` | reprint after error | `Modal: Print Quality` |
+| `[x]` | `^JZ` | reprint after error | |
 | `[ ]` | `^JH` | early warning settings | `Modal: Print Quality` |
-| `[ ]` | `^JT` | head test interval | `Modal: Print Quality` |
-| `[ ]` | `~TA` | tear off adjust | `Modal: Print Quality` |
+| `[x]` | `^JT` | head test interval | |
+| `[x]` | `~TA` | tear off adjust | |
 | `[ ]` | `^PF` | slew dot rows | `Modal: Print Quality` |
 | `[ ]` | `^PH` / `~PH` | slew to home | `Modal: Print Quality` |
 | `[ ]` | `^PN` | present now | `Modal: Print Quality` |

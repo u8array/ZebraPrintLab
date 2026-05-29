@@ -305,6 +305,12 @@ export function generateZPL(
     const v = String(label.instantDarkness).padStart(2, '0');
     lines.push(`~SD${v}`);
   }
+  // ~TA same shape as ~SD: tilde-prefix, set-once printer state.
+  // Emit before ^XA so the tear-off adjustment is in effect when
+  // the label is cut.
+  if (label.tearOffAdjust !== undefined) {
+    lines.push(`~TA${label.tearOffAdjust}`);
+  }
 
   lines.push(
     '^XA',
@@ -326,6 +332,15 @@ export function generateZPL(
     lines.push(`^MF${p1},${p2}`);
   }
   if (label.suppressBackfeed) lines.push('^XB');
+  // ZPL-spec caveat: ^JZ, ^JT, and ~TA (emitted before ^XA above)
+  // are persistent in the printer's EEPROM. Re-emitting them on
+  // every label writes flash on every print, which long-term wears
+  // the device. The Printer Settings Modal epic plans a per-label
+  // vs setup-script split that moves these into a separate one-
+  // shot output; until that lands, the editor keeps them in the
+  // per-label header so the modal stays a single output target.
+  if (label.reprintAfterError !== undefined) lines.push(`^JZ${label.reprintAfterError}`);
+  if (label.headTestInterval !== undefined) lines.push(`^JT${label.headTestInterval}`);
   // ^PR print,slew,backfeed — any of the three triggers emission. Slew and
   // backfeed default to the print speed per Zebra spec; ZPL has no way to
   // skip a positional param, so backfeed-only still has to repeat the print

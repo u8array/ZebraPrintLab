@@ -1,5 +1,10 @@
 import type { CustomFontMapping, LabelConfig } from "../types/ObjectType";
-import { isMediaFeedMode, isMediaTracking } from "../types/ObjectType";
+import {
+  HEAD_TEST_INTERVAL_RANGE,
+  TEAR_OFF_ADJUST_RANGE,
+  isMediaFeedMode,
+  isMediaTracking,
+} from "../types/ObjectType";
 import {
   FN_NUMBER_MIN,
   FN_NUMBER_MAX,
@@ -122,6 +127,18 @@ function tokenize(zpl: string): { cmd: string; rest: string }[] {
 function int(s: string | undefined, fallback = 0): number {
   const n = Number.parseInt(s ?? "", 10);
   return Number.isNaN(n) ? fallback : n;
+}
+
+/** Optional-int counterpart to `int`: returns `undefined` for
+ *  missing / unparseable input instead of a sentinel value. Use
+ *  this when "param absent" must stay distinguishable from "param
+ *  zero" — otherwise the caller has to pick a fallback that won't
+ *  collide with valid input, which is a footgun whenever the
+ *  valid range shifts. */
+function intOrUndef(s: string | undefined): number | undefined {
+  if (!s) return undefined;
+  const n = Number.parseInt(s, 10);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 /** Normalised positional string param: trims surrounding whitespace
@@ -1956,6 +1973,22 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     },
     XB() {
       labelConfig.suppressBackfeed = true;
+    },
+    JZ(p) {
+      const v = strParam(p[0]);
+      if (v === "Y" || v === "N") labelConfig.reprintAfterError = v;
+    },
+    JT(p) {
+      const v = intOrUndef(p[0]);
+      if (v !== undefined && v >= HEAD_TEST_INTERVAL_RANGE.min && v <= HEAD_TEST_INTERVAL_RANGE.max) {
+        labelConfig.headTestInterval = v;
+      }
+    },
+    TA(_, rest) {
+      const v = intOrUndef(rest);
+      if (v !== undefined && v >= TEAR_OFF_ADJUST_RANGE.min && v <= TEAR_OFF_ADJUST_RANGE.max) {
+        labelConfig.tearOffAdjust = v;
+      }
     },
     PO(_, rest) {
       const po = (rest[0] ?? "").toUpperCase();
