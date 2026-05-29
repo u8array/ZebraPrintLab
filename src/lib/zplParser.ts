@@ -1,10 +1,18 @@
 import type { CustomFontMapping, LabelConfig } from "../types/ObjectType";
 import {
+  DARKNESS_INSTANT_RANGE,
+  DARKNESS_PERMANENT_RANGE,
   HEAD_TEST_INTERVAL_RANGE,
+  MAX_LABEL_LENGTH_RANGE,
+  SPEED_RANGE,
   TEAR_OFF_ADJUST_RANGE,
   isMediaFeedMode,
+  isMediaMode,
   isMediaTracking,
+  isMediaType,
+  isPrintOrientation,
 } from "../types/ObjectType";
+import { parseIntOrUndef } from "./inputParse";
 import {
   FN_NUMBER_MIN,
   FN_NUMBER_MAX,
@@ -129,16 +137,13 @@ function int(s: string | undefined, fallback = 0): number {
   return Number.isNaN(n) ? fallback : n;
 }
 
-/** Optional-int counterpart to `int`: returns `undefined` for
- *  missing / unparseable input instead of a sentinel value. Use
- *  this when "param absent" must stay distinguishable from "param
- *  zero" — otherwise the caller has to pick a fallback that won't
- *  collide with valid input, which is a footgun whenever the
- *  valid range shifts. */
-function intOrUndef(s: string | undefined): number | undefined {
-  if (!s) return undefined;
-  const n = Number.parseInt(s, 10);
-  return Number.isFinite(n) ? n : undefined;
+/** Tiny range helper for parser handlers that gate a value on a
+ *  `*_RANGE` constant. Returns the value when in range, undefined
+ *  otherwise — matches the parser's "silently drop invalid params"
+ *  contract while removing the repetitive `>= R.min && <= R.max`
+ *  shape from each ranged handler. */
+function inRange(v: number | undefined, r: { min: number; max: number }): number | undefined {
+  return v !== undefined && v >= r.min && v <= r.max ? v : undefined;
 }
 
 /** Normalised positional string param: trims surrounding whitespace
@@ -1922,36 +1927,28 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       }
     },
     MM(_, rest) {
-      const mode = (rest[0] ?? "").toUpperCase() as LabelConfig["mediaMode"];
-      if (mode) labelConfig.mediaMode = mode;
+      const mode = (rest[0] ?? "").toUpperCase();
+      if (isMediaMode(mode)) labelConfig.mediaMode = mode;
     },
     LS(_, rest) {
       const shift = int(rest, 0);
       if (shift !== 0) labelConfig.labelShift = shift;
     },
     PR(p) {
-      const speed = int(p[0], 0);
-      if (speed >= 2 && speed <= 14) labelConfig.printSpeed = speed;
-      if (p.length > 1) {
-        const slew = int(p[1], 0);
-        if (slew >= 2 && slew <= 14) labelConfig.slewSpeed = slew;
-      }
-      if (p.length > 2) {
-        const bf = int(p[2], 0);
-        if (bf >= 2 && bf <= 14) labelConfig.backfeedSpeed = bf;
-      }
+      const print = inRange(parseIntOrUndef(p[0]), SPEED_RANGE);
+      if (print !== undefined) labelConfig.printSpeed = print;
+      const slew = inRange(parseIntOrUndef(p[1]), SPEED_RANGE);
+      if (slew !== undefined) labelConfig.slewSpeed = slew;
+      const bf = inRange(parseIntOrUndef(p[2]), SPEED_RANGE);
+      if (bf !== undefined) labelConfig.backfeedSpeed = bf;
     },
     MD(_, rest) {
-      // Direct parse: int() falls back to 0 on NaN, which would conflate
-      // "absent" with the valid darkness value 0.
-      const parsed = parseInt(rest, 10);
-      if (!isNaN(parsed) && parsed >= -30 && parsed <= 30) {
-        labelConfig.darkness = parsed;
-      }
+      const v = inRange(parseIntOrUndef(rest), DARKNESS_PERMANENT_RANGE);
+      if (v !== undefined) labelConfig.darkness = v;
     },
     MT(_, rest) {
       const mt = (rest[0] ?? "").toUpperCase();
-      if (mt === "T" || mt === "D") labelConfig.mediaType = mt;
+      if (isMediaType(mt)) labelConfig.mediaType = mt;
     },
     MN(p) {
       // ^MNa,b — b is an optional black-mark offset for W/M modes,
@@ -1962,8 +1959,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       if (isMediaTracking(v)) labelConfig.mediaTracking = v;
     },
     ML(p) {
-      const v = int(p[0]);
-      if (v > 0) labelConfig.maxLabelLength = v;
+      const v = inRange(parseIntOrUndef(p[0]), MAX_LABEL_LENGTH_RANGE);
+      if (v !== undefined) labelConfig.maxLabelLength = v;
     },
     MF(p) {
       const p1 = strParam(p[0]);
@@ -1979,20 +1976,20 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       if (v === "Y" || v === "N") labelConfig.reprintAfterError = v;
     },
     JT(p) {
-      const v = intOrUndef(p[0]);
-      if (v !== undefined && v >= HEAD_TEST_INTERVAL_RANGE.min && v <= HEAD_TEST_INTERVAL_RANGE.max) {
-        labelConfig.headTestInterval = v;
-      }
+      const v = inRange(parseIntOrUndef(p[0]), HEAD_TEST_INTERVAL_RANGE);
+      if (v !== undefined) labelConfig.headTestInterval = v;
     },
-    TA(_, rest) {
-      const v = intOrUndef(rest);
-      if (v !== undefined && v >= TEAR_OFF_ADJUST_RANGE.min && v <= TEAR_OFF_ADJUST_RANGE.max) {
-        labelConfig.tearOffAdjust = v;
-      }
+    // ~TA reads p[0] (not the raw rest string) so trailing tokens
+    // from a streamed ZPL chunk (e.g. `~TA10^XA…`) don't leak into
+    // the parsed value. The tokeniser strips the leading tilde, so
+    // a plain ~TA-30 still resolves p[0] to "-30".
+    TA(p) {
+      const v = inRange(parseIntOrUndef(p[0]), TEAR_OFF_ADJUST_RANGE);
+      if (v !== undefined) labelConfig.tearOffAdjust = v;
     },
     PO(_, rest) {
       const po = (rest[0] ?? "").toUpperCase();
-      if (po === "N" || po === "I") labelConfig.printOrientation = po;
+      if (isPrintOrientation(po)) labelConfig.printOrientation = po;
     },
     PM(_, rest) {
       const m = (rest[0] ?? "").toUpperCase();
@@ -2001,10 +1998,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // ~SD — instant darkness set (00..30). Tilde-prefix; the tokenizer
     // drops the delimiter, so we accept this as the canonical SD handler.
     SD(_, rest) {
-      const parsed = parseInt(rest, 10);
-      if (!isNaN(parsed) && parsed >= 0 && parsed <= 30) {
-        labelConfig.instantDarkness = parsed;
-      }
+      const v = inRange(parseIntOrUndef(rest), DARKNESS_INSTANT_RANGE);
+      if (v !== undefined) labelConfig.instantDarkness = v;
     },
 
     // ^CW {alias},{path} — register an alias for a printer-resident font.

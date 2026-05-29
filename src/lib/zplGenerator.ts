@@ -298,6 +298,15 @@ export function generateZPL(
     if (dy) lines.push(dy);
   }
 
+  // ZPL-spec caveat for the persistent printer-state commands emitted
+  // in this generator (~SD and ~TA here, ^JZ and ^JT below): all four
+  // are stored in the printer's EEPROM. Re-emitting them on every
+  // label writes flash on every print, which long-term wears the
+  // device. The Printer Settings Modal epic plans a per-label vs
+  // setup-script split that moves these into a separate one-shot
+  // output; until that lands, the editor keeps them in the per-label
+  // header so the modal stays a single output target.
+
   // ~SD is a tilde-prefix command that takes effect immediately on receipt,
   // independently of the label block. Emit it before ^XA so the darkness
   // change applies to the label that follows.
@@ -307,7 +316,8 @@ export function generateZPL(
   }
   // ~TA same shape as ~SD: tilde-prefix, set-once printer state.
   // Emit before ^XA so the tear-off adjustment is in effect when
-  // the label is cut.
+  // the label is cut. No zero-pad: ~TA accepts a signed integer
+  // (-120..+120) directly.
   if (label.tearOffAdjust !== undefined) {
     lines.push(`~TA${label.tearOffAdjust}`);
   }
@@ -332,13 +342,7 @@ export function generateZPL(
     lines.push(`^MF${p1},${p2}`);
   }
   if (label.suppressBackfeed) lines.push('^XB');
-  // ZPL-spec caveat: ^JZ, ^JT, and ~TA (emitted before ^XA above)
-  // are persistent in the printer's EEPROM. Re-emitting them on
-  // every label writes flash on every print, which long-term wears
-  // the device. The Printer Settings Modal epic plans a per-label
-  // vs setup-script split that moves these into a separate one-
-  // shot output; until that lands, the editor keeps them in the
-  // per-label header so the modal stays a single output target.
+  // ^JZ / ^JT — see EEPROM-persistence caveat above the ~SD emit.
   if (label.reprintAfterError !== undefined) lines.push(`^JZ${label.reprintAfterError}`);
   if (label.headTestInterval !== undefined) lines.push(`^JT${label.headTestInterval}`);
   // ^PR print,slew,backfeed — any of the three triggers emission. Slew and

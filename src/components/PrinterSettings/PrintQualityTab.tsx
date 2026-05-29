@@ -1,8 +1,5 @@
-import { useId } from "react";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { inputCls, labelCls } from "../Properties/styles";
-import { clampBoundedInt, readBoundedInt } from "../../lib/inputParse";
 import {
   DARKNESS_INSTANT_RANGE,
   DARKNESS_PERMANENT_RANGE,
@@ -14,11 +11,13 @@ import {
   type PrintOrientation,
 } from "../../types/ObjectType";
 import {
+  BoundedIntControl,
   ZplBoundedIntInput,
   ZplCheckbox,
   ZplCommandLabel,
   ZplEnumSelect,
   ZplField,
+  ZplSubField,
 } from "./zplFieldPrimitives";
 
 type LocPrintQuality = ReturnType<typeof useT>["printerSettings"]["printQuality"];
@@ -67,59 +66,73 @@ export function PrintQualityTab() {
       />
 
       {/* Speed triple: ^PR a,b,c — print / slew / backfeed. All
-          three share the same 2..14 ips range. Hand-rolled as a
-          grid of bare inputs because they share one ZPL command
-          tag (^PR) and one heading (the ZplBoundedIntInput
-          primitive renders one tag per call). */}
+          three share the same 2..14 ips range and one ^PR command,
+          so group them under one ZplField + tag header. */}
       <ZplField>
         <ZplCommandLabel text={loc.printSpeedHeading} command="^PR" />
         <div className="grid grid-cols-3 gap-2">
-          <SpeedSlot
-            label={loc.printSpeed}
-            value={label.printSpeed}
-            onChange={(v) => setLabelConfig({ printSpeed: v })}
-          />
-          <SpeedSlot
-            label={loc.slewSpeed}
-            value={label.slewSpeed}
-            onChange={(v) => setLabelConfig({ slewSpeed: v })}
-          />
-          <SpeedSlot
-            label={loc.backfeedSpeed}
-            value={label.backfeedSpeed}
-            onChange={(v) => setLabelConfig({ backfeedSpeed: v })}
-          />
+          <ZplSubField label={loc.printSpeed}>
+            {(id) => (
+              <BoundedIntControl
+                id={id}
+                min={SPEED_RANGE.min}
+                max={SPEED_RANGE.max}
+                value={label.printSpeed}
+                onChange={(v) => setLabelConfig({ printSpeed: v })}
+              />
+            )}
+          </ZplSubField>
+          <ZplSubField label={loc.slewSpeed}>
+            {(id) => (
+              <BoundedIntControl
+                id={id}
+                min={SPEED_RANGE.min}
+                max={SPEED_RANGE.max}
+                value={label.slewSpeed}
+                onChange={(v) => setLabelConfig({ slewSpeed: v })}
+              />
+            )}
+          </ZplSubField>
+          <ZplSubField label={loc.backfeedSpeed}>
+            {(id) => (
+              <BoundedIntControl
+                id={id}
+                min={SPEED_RANGE.min}
+                max={SPEED_RANGE.max}
+                value={label.backfeedSpeed}
+                onChange={(v) => setLabelConfig({ backfeedSpeed: v })}
+              />
+            )}
+          </ZplSubField>
         </div>
       </ZplField>
 
-      {/* Darkness pair: ^MD permanent + ~SD instant override.
-          Two commands but one logical concept; group under one
-          tag header instead of two separate ZplBoundedIntInput
-          rows. */}
-      <ZplField>
-        <ZplCommandLabel text={loc.darknessHeading} command="^MD" />
-        <div className="grid grid-cols-2 gap-2">
-          <BoundedIntSlot
-            label={loc.darknessPermanent}
-            min={DARKNESS_PERMANENT_RANGE.min}
-            max={DARKNESS_PERMANENT_RANGE.max}
-            value={label.darkness}
-            onChange={(v) => setLabelConfig({ darkness: v })}
-          />
-          <BoundedIntSlot
-            label={loc.darknessInstant}
-            min={DARKNESS_INSTANT_RANGE.min}
-            max={DARKNESS_INSTANT_RANGE.max}
-            value={label.instantDarkness}
-            onChange={(v) => setLabelConfig({ instantDarkness: v })}
-          />
-        </div>
-      </ZplField>
+      {/* ^MD permanent darkness — the EEPROM-persistent set value. */}
+      <ZplBoundedIntInput
+        label={loc.darknessPermanent}
+        command="^MD"
+        min={DARKNESS_PERMANENT_RANGE.min}
+        max={DARKNESS_PERMANENT_RANGE.max}
+        value={label.darkness}
+        onChange={(v) => setLabelConfig({ darkness: v })}
+      />
 
-      {/* Drucker-Default für ^JZ ist "Y" (reprint aktiv). Unchecked
-          muss daher explizit "N" emittieren, sonst fällt der
-          Drucker auf den Default zurück und der User kann reprint
-          gar nicht abschalten. */}
+      {/* ~SD instant darkness override. Separate row from ^MD so
+          each command keeps its own tag (the earlier shared-^MD
+          grid mis-labelled the ~SD slot as ^MD). */}
+      <ZplBoundedIntInput
+        label={loc.darknessInstant}
+        command="~SD"
+        min={DARKNESS_INSTANT_RANGE.min}
+        max={DARKNESS_INSTANT_RANGE.max}
+        value={label.instantDarkness}
+        onChange={(v) => setLabelConfig({ instantDarkness: v })}
+      />
+
+      {/* Printer default for ^JZ is "Y" (reprint enabled). The
+          unchecked state must explicitly emit "N", otherwise the
+          printer falls back to its default and the user cannot
+          actually disable reprint from this UI. */}
       <ZplCheckbox
         text={loc.reprintAfterError}
         command="^JZ"
@@ -144,66 +157,6 @@ export function PrintQualityTab() {
         value={label.tearOffAdjust}
         onChange={(v) => setLabelConfig({ tearOffAdjust: v })}
         unit={t.printerSettings.dotsUnit}
-      />
-    </div>
-  );
-}
-
-/** Speed-slot input: one cell of the ^PR triple. Same shape as
- *  the darkness slots but with the SPEED_RANGE pre-applied since
- *  all three ^PR positions share the 2..14 ips range. */
-function SpeedSlot({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: number | undefined;
-  onChange: (v: number | undefined) => void;
-}) {
-  return (
-    <BoundedIntSlot
-      label={label}
-      min={SPEED_RANGE.min}
-      max={SPEED_RANGE.max}
-      value={value}
-      onChange={onChange}
-    />
-  );
-}
-
-/** Bare bounded-int cell for grids that share one ZPL tag across
- *  multiple positional params (^PR triple, ^MD pair). The outer
- *  ZplField already carries the tag; this control just labels its
- *  own slot. ZplBoundedIntInput would render a tag per call. */
-function BoundedIntSlot({
-  label,
-  min,
-  max,
-  value,
-  onChange,
-}: {
-  label: string;
-  min: number;
-  max: number;
-  value: number | undefined;
-  onChange: (v: number | undefined) => void;
-}) {
-  const id = useId();
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className={labelCls}>
-        {label}
-      </label>
-      <input
-        id={id}
-        type="number"
-        className={inputCls}
-        min={min}
-        max={max}
-        value={value ?? ""}
-        onChange={(e) => onChange(readBoundedInt(e.target.value, min, max))}
-        onBlur={(e) => onChange(clampBoundedInt(e.target.value, min, max))}
       />
     </div>
   );

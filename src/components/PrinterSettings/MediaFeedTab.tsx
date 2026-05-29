@@ -1,8 +1,8 @@
-import { useId } from "react";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { inputCls, labelCls } from "../Properties/styles";
+import { inputCls } from "../ui/formStyles";
 import {
+  MAX_LABEL_LENGTH_RANGE,
   MEDIA_FEED_VALUES,
   MEDIA_MODE_VALUES,
   MEDIA_TRACKING_VALUES,
@@ -22,6 +22,7 @@ import {
   ZplCommandLabel,
   ZplEnumSelect,
   ZplField,
+  ZplSubField,
 } from "./zplFieldPrimitives";
 
 type LocMediaFeed = ReturnType<typeof useT>["printerSettings"]["mediaFeed"];
@@ -107,19 +108,18 @@ export function MediaFeedTab() {
       <ZplBoundedIntInput
         label={loc.maxLabelLength}
         command="^ML"
-        min={1}
-        max={32000}
+        min={MAX_LABEL_LENGTH_RANGE.min}
+        max={MAX_LABEL_LENGTH_RANGE.max}
         value={label.maxLabelLength}
         onChange={(v) => setLabelConfig({ maxLabelLength: v })}
         unit={t.printerSettings.dotsUnit}
       />
 
       {/* ^MF carries two positional params, so the row's "control"
-          slot is a 2-col grid instead of a single input. The
-          ZplEnumSelect primitive isn't a fit here because both
+          slot is a 2-col grid instead of a single input. Both
           sub-selects share one ZPL command tag and one heading;
-          hand-roll the row instead of forcing the primitive to
-          grow a multi-control shape. */}
+          ZplSubField gives each slot its own <label> while the
+          parent ZplField carries the ^MF tag. */}
       <ZplField>
         <ZplCommandLabel text={loc.mediaFeedHeading} command="^MF" />
         <div className="grid grid-cols-2 gap-2">
@@ -150,10 +150,10 @@ export function MediaFeedTab() {
   );
 }
 
-/** Inner sub-select for the two ^MF positional params. Both
- *  slots share one ZPL tag (^MF) at the parent ZplField, so this
- *  inner control is a plain labelled select without its own tag
- *  header. ZplEnumSelect would render an empty tag spot here. */
+/** Inner sub-select for the two ^MF positional params. Wraps a
+ *  bare `<select>` in ZplSubField so the parent ^MF tag stays the
+ *  single command label for both slots. ZplEnumSelect would render
+ *  a redundant tag spot here. */
 function FeedSubSelect({
   label,
   value,
@@ -167,28 +167,26 @@ function FeedSubSelect({
   defaultLabel: string;
   optionLabel: (m: MediaFeedMode) => string;
 }) {
-  const id = useId();
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className={labelCls}>
-        {label}
-      </label>
-      <select
-        id={id}
-        className={inputCls}
-        value={value ?? ""}
-        onChange={(e) => {
-          const raw = e.target.value;
-          onChange(isMediaFeedMode(raw) ? raw : undefined);
-        }}
-      >
-        <option value="">{defaultLabel}</option>
-        {MEDIA_FEED_VALUES.map((m) => (
-          <option key={m} value={m}>
-            {m} {optionLabel(m)}
-          </option>
-        ))}
-      </select>
-    </div>
+    <ZplSubField label={label}>
+      {(id) => (
+        <select
+          id={id}
+          className={inputCls}
+          value={value ?? ""}
+          onChange={(e) => {
+            const raw = e.target.value;
+            onChange(isMediaFeedMode(raw) ? raw : undefined);
+          }}
+        >
+          <option value="">{defaultLabel}</option>
+          {MEDIA_FEED_VALUES.map((m) => (
+            <option key={m} value={m}>
+              {m} {optionLabel(m)}
+            </option>
+          ))}
+        </select>
+      )}
+    </ZplSubField>
   );
 }

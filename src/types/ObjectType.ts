@@ -91,6 +91,16 @@ export const DARKNESS_PERMANENT_RANGE = { min: -30, max: 30 } as const;
 export const DARKNESS_INSTANT_RANGE = { min: 0, max: 30 } as const;
 export const HEAD_TEST_INTERVAL_RANGE = { min: 0, max: 9999 } as const;
 export const TEAR_OFF_ADJUST_RANGE = { min: -120, max: 120 } as const;
+/** ^ML: maximum label length, in dots. Zebra spec accepts 1..32000. */
+export const MAX_LABEL_LENGTH_RANGE = { min: 1, max: 32000 } as const;
+
+/** Tiny adapter that applies a `*_RANGE` constant to a zod integer
+ *  chain. Collapses the repetitive `.int().min(R.min).max(R.max)`
+ *  shape so a range bump only changes the `*_RANGE` constant and
+ *  every consumer (schema, parser, UI) tracks automatically. */
+function intInRange(r: { min: number; max: number }) {
+  return z.number().int().min(r.min).max(r.max);
+}
 
 export const labelConfigSchema = z.object({
   widthMm: z.number(),
@@ -103,7 +113,7 @@ export const labelConfigSchema = z.object({
   replicates: z.number().int().min(0).max(99999999).optional(),
   /** ^PQ p4: override pause count (cutter behaviour). */
   overridePauseCount: z.enum(['Y', 'N']).optional(),
-  mediaMode: z.enum(['T', 'V', 'D', 'K']).optional(),
+  mediaMode: z.enum(MEDIA_MODE_VALUES).optional(),
   labelShift: z.number().optional(),
   /** ^LH x: horizontal origin offset emitted at export. Field FOs are
    *  shifted accordingly so the on-screen layout equals the print result. */
@@ -113,16 +123,16 @@ export const labelConfigSchema = z.object({
   /** ^LT y: label top shift emitted at export. Same compensation semantics
    *  as labelHomeY. Zebra supports -120..+120. */
   labelTop: z.number().int().min(-120).max(120).optional(),
-  printSpeed: z.number().int().min(SPEED_RANGE.min).max(SPEED_RANGE.max).optional(),
+  printSpeed: intInRange(SPEED_RANGE).optional(),
   /** ^PR p2: slew (inter-label) speed. */
-  slewSpeed: z.number().int().min(SPEED_RANGE.min).max(SPEED_RANGE.max).optional(),
+  slewSpeed: intInRange(SPEED_RANGE).optional(),
   /** ^PR p3: backfeed speed. */
-  backfeedSpeed: z.number().int().min(SPEED_RANGE.min).max(SPEED_RANGE.max).optional(),
-  darkness: z.number().int().min(DARKNESS_PERMANENT_RANGE.min).max(DARKNESS_PERMANENT_RANGE.max).optional(),
+  backfeedSpeed: intInRange(SPEED_RANGE).optional(),
+  darkness: intInRange(DARKNESS_PERMANENT_RANGE).optional(),
   /** ~SD: instant darkness set, emitted before ^XA. 0-30. */
-  instantDarkness: z.number().int().min(DARKNESS_INSTANT_RANGE.min).max(DARKNESS_INSTANT_RANGE.max).optional(),
-  mediaType: z.enum(['T', 'D']).optional(),
-  printOrientation: z.enum(['N', 'I']).optional(),
+  instantDarkness: intInRange(DARKNESS_INSTANT_RANGE).optional(),
+  mediaType: z.enum(MEDIA_TYPE_VALUES).optional(),
+  printOrientation: z.enum(PRINT_ORIENTATION_VALUES).optional(),
   /** ^PM: mirror image (left/right flip). */
   mirror: z.enum(['Y', 'N']).optional(),
   defaultFontId: z.string().min(1).optional(),
@@ -140,7 +150,7 @@ export const labelConfigSchema = z.object({
   mediaTracking: z.enum(MEDIA_TRACKING_VALUES).optional(),
   /** ^ML: maximum label length, in dots. Printer-side upper bound used
    *  during media calibration; defaults to printer hardware max. */
-  maxLabelLength: z.number().int().positive().optional(),
+  maxLabelLength: intInRange(MAX_LABEL_LENGTH_RANGE).optional(),
   /** ^MF p1: feed action at power-up. */
   mediaFeedPowerUp: z.enum(MEDIA_FEED_VALUES).optional(),
   /** ^MF p2: feed action after head-close (same enum). */
@@ -149,25 +159,18 @@ export const labelConfigSchema = z.object({
    *  Command emits without parameters when active. */
   suppressBackfeed: z.boolean().optional(),
   /** ^JZ: reprint the previous label after a print error
-   *  (paper-out, ribbon-out, etc). Y = enabled, N = disabled. */
+   *  (paper-out, ribbon-out, etc). Y = enabled, N = disabled.
+   *  `undefined` = printer default, which is `Y` on most firmwares.
+   *  Consumers that need an effective value should treat undefined
+   *  as `Y`. */
   reprintAfterError: z.enum(['Y', 'N']).optional(),
   /** ^JT: head-test interval. Number of labels printed between
    *  printhead element tests. 0 disables periodic testing. */
-  headTestInterval: z
-    .number()
-    .int()
-    .min(HEAD_TEST_INTERVAL_RANGE.min)
-    .max(HEAD_TEST_INTERVAL_RANGE.max)
-    .optional(),
+  headTestInterval: intInRange(HEAD_TEST_INTERVAL_RANGE).optional(),
   /** ~TA: tear-off position adjustment in dot rows. Negative
    *  values move the tear line back; positive forward. Zebra
    *  accepts -120..+120 dots. */
-  tearOffAdjust: z
-    .number()
-    .int()
-    .min(TEAR_OFF_ADJUST_RANGE.min)
-    .max(TEAR_OFF_ADJUST_RANGE.max)
-    .optional(),
+  tearOffAdjust: intInRange(TEAR_OFF_ADJUST_RANGE).optional(),
 });
 
 export type LabelConfig = z.infer<typeof labelConfigSchema>;

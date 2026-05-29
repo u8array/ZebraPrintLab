@@ -10,12 +10,14 @@
 /**
  * Parses an integer from a raw input value, returning `undefined` when the
  * field is empty or unparsable. Use for optional number fields where
- * "absent" is a valid persisted state.
+ * "absent" is a valid persisted state. Accepts `undefined` so it can be
+ * used both for `<input>` change handlers (raw string) and for tokenised
+ * ZPL positional params (`string | undefined`).
  */
-export function parseIntOrUndef(raw: string): number | undefined {
-  if (raw.trim() === '') return undefined;
-  const n = parseInt(raw, 10);
-  return isNaN(n) ? undefined : n;
+export function parseIntOrUndef(raw: string | undefined): number | undefined {
+  if (raw === undefined || raw.trim() === '') return undefined;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 /**
@@ -29,16 +31,25 @@ export function clampMin(raw: string, min: number): number {
 }
 
 /**
- * Parses an integer from a raw input value, clamping the UPPER bound
- * eagerly while letting intermediate values BELOW `min` pass through
- * unchanged. Returns `undefined` for empty / unparsable input.
+ * Parses an integer from a raw input value, clamping the UPPER
+ * bound eagerly while letting *non-negative* values below `min`
+ * pass through unchanged. Returns `undefined` for empty /
+ * unparsable input.
  *
  * The asymmetric clamp keeps `onChange` from sabotaging the user
- * mid-typing: with `min=2` a user keying "12" first types "1", which
- * would otherwise snap to "2" and turn the next keystroke into "22"
- * (→ clamped to max). Allowing positive sub-`min` values to stay
- * lets the user finish typing; pair with a final-clamp on blur via
- * `clampBoundedInt` to pin the committed value back into range.
+ * mid-typing: with `min=2` a user keying "12" first types "1",
+ * which would otherwise snap to "2" and turn the next keystroke
+ * into "22" (clamped to max). Allowing non-negative sub-`min`
+ * values to stay lets the user finish typing; pair with a final-
+ * clamp on blur via `clampBoundedInt` to pin the committed value
+ * back into range.
+ *
+ * Negative values are clamped to `min` immediately, since the
+ * "intermediate value" use case only applies to keyboards that
+ * type one digit at a time (no negative-typing path leads through
+ * a sub-`min` positive). Fields with negative ranges (e.g. ~TA's
+ * -120..+120) rely on the user typing the minus sign first, after
+ * which subsequent digits never undershoot `min`.
  */
 export function readBoundedInt(raw: string, min: number, max: number): number | undefined {
   if (raw.trim() === '') return undefined;

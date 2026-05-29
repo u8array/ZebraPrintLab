@@ -1,5 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { labelCls, inputCls } from "../Properties/styles";
+import { labelCls, inputCls } from "../ui/formStyles";
 import { clampBoundedInt, readBoundedInt } from "../../lib/inputParse";
 
 /** Shared muted-monospace class for ZPL command tags so the visual
@@ -68,6 +68,66 @@ export function ZplField({ children }: { children: ReactNode }) {
   return <div className="flex flex-col gap-1">{children}</div>;
 }
 
+/** Labelled-cell wrapper for grid slots that share one parent ZPL
+ *  tag across multiple positional params (^PR triple, ^MF pair).
+ *  Renders only the per-slot `<label>` (the ZPL tag lives at the
+ *  parent ZplField) and pipes a `useId`-generated id to the child
+ *  control via a render prop so the `htmlFor` link is correct
+ *  without making callers manage ids manually. */
+export function ZplSubField({
+  label,
+  children,
+}: {
+  label: string;
+  children: (id: string) => ReactNode;
+}) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1">
+      <label htmlFor={id} className={labelCls}>
+        {label}
+      </label>
+      {children(id)}
+    </div>
+  );
+}
+
+/** Bare bounded-int `<input>` plus the asymmetric edit/commit clamp
+ *  pair: `readBoundedInt` caps only the upper bound during typing so
+ *  the user can transit through non-negative values below `min`
+ *  (e.g. type "1" on the way to "12" when min=2). `onBlur` pulls the
+ *  committed value back into the full `[min, max]` range. Shared by
+ *  `ZplBoundedIntInput` (full ZPL-tag row) and grid-cell wrappers
+ *  that share one parent tag (^PR triple, ^MD pair). Keeping the
+ *  pair colocated avoids the two callers drifting on future fixes
+ *  (e.g. the gemini-review onBlur addition). */
+export function BoundedIntControl({
+  id,
+  min,
+  max,
+  value,
+  onChange,
+}: {
+  id?: string;
+  min: number;
+  max: number;
+  value: number | undefined;
+  onChange: (next: number | undefined) => void;
+}) {
+  return (
+    <input
+      id={id}
+      type="number"
+      className={inputCls}
+      min={min}
+      max={max}
+      value={value ?? ""}
+      onChange={(e) => onChange(readBoundedInt(e.target.value, min, max))}
+      onBlur={(e) => onChange(clampBoundedInt(e.target.value, min, max))}
+    />
+  );
+}
+
 /** Generic enum-backed select row: label + ZPL-tag header + select
  *  with a leading "default" placeholder. Replaces the hand-rolled
  *  select scaffolding in MediaFeedTab and PrintQualityTab so the
@@ -130,7 +190,6 @@ export function ZplBoundedIntInput({
   value,
   onChange,
   unit,
-  compact = true,
 }: {
   label: string;
   command: string;
@@ -139,29 +198,11 @@ export function ZplBoundedIntInput({
   value: number | undefined;
   onChange: (next: number | undefined) => void;
   unit?: string;
-  /** Compact (w-32) by default — typical printer-config values fit
-   *  in 5 digits. Pass `compact={false}` for full-width when the
-   *  value can grow long (rare). */
-  compact?: boolean;
 }) {
   const id = useId();
-  // `readBoundedInt` only caps the UPPER bound during typing so the
-  // user can transit through values < min (e.g. type "1" on the way
-  // to "12" when min=2). `onBlur` pulls the committed value back
-  // into the full [min, max] range so an intermediate sub-min input
-  // does not persist after edit.
   const inputBox = (
-    <div className={compact ? "w-32" : undefined}>
-      <input
-        id={id}
-        type="number"
-        className={inputCls}
-        min={min}
-        max={max}
-        value={value ?? ""}
-        onChange={(e) => onChange(readBoundedInt(e.target.value, min, max))}
-        onBlur={(e) => onChange(clampBoundedInt(e.target.value, min, max))}
-      />
+    <div className="w-32">
+      <BoundedIntControl id={id} min={min} max={max} value={value} onChange={onChange} />
     </div>
   );
   return (
