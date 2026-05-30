@@ -14,12 +14,10 @@ What's supported, what's next, what's planned.
 | Bucket | What it means |
 |---|---|
 | `Coming soon` | Next sweep of registry / parser work, no infrastructure dependency |
-| `Modal: Media & Feed` | Lands with the [Printer Settings Modal](../) Tab 1 |
-| `Modal: Print Quality` | Lands with Modal Tab 2 |
-| `Modal: Clock & Time` | Lands with Modal Tab 3 |
-| `Modal: Encoding & Language` | Lands with Modal Tab 4 |
-| `Modal: Identity` | Lands with Modal Tab 5 |
 | `Native build` | Requires bidirectional printer connection (host queries, calibration feedback, RFID read, serial config); waits for Tauri |
+| `Out of scope` | Intentionally not modelled (e.g. ^SO RTC offset, ~SE encoding-table tilde-form) — see related Modal-tab field for the supported alternative |
+
+The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encoding & Language / Identity) is now shipped; commands that didn't make the first cut sit under `Coming soon` and slot into the existing tab UI without infrastructure work.
 
 ## Layout & flow
 
@@ -156,59 +154,60 @@ What's supported, what's next, what's planned.
 
 | Status | Command | Description | Bucket |
 |:-:|---|---|---|
-| `[ ]` | `^MN` | media tracking (web / mark / continuous) | `Modal: Media & Feed` |
-| `[ ]` | `^ML` | maximum label length | `Modal: Media & Feed` |
-| `[ ]` | `^MF` | media feed | `Modal: Media & Feed` |
-| `[ ]` | `^XB` | suppress backfeed | `Modal: Media & Feed` |
-| `[ ]` | `^MA` | maintenance alert | `Modal: Media & Feed` |
-| `[ ]` | `^MC` | map clear | `Modal: Media & Feed` |
-| `[ ]` | `^MI` | maintenance info message | `Modal: Media & Feed` |
-| `[ ]` | `^MP` | mode protection | `Modal: Media & Feed` |
-| `[ ]` | `^MU` | units of measure | `Modal: Media & Feed` |
-| `[ ]` | `^MW` | head cold warning | `Modal: Media & Feed` |
+| `[x]` | `^MN` | media tracking (web / mark / continuous) | |
+| `[x]` | `^ML` | maximum label length | |
+| `[x]` | `^MF` | media feed | |
+| `[x]` | `^XB` | suppress backfeed | |
+| `[ ]` | `^MA` | maintenance alert | `Coming soon` |
+| `[ ]` | `^MC` | map clear | `Coming soon` |
+| `[ ]` | `^MI` | maintenance info message | `Coming soon` |
+| `[ ]` | `^MP` | mode protection | `Coming soon` |
+| `[ ]` | `^MU` | units of measure | `Coming soon` |
+| `[ ]` | `^MW` | head cold warning | `Coming soon` |
 
 ## Print quality
 
 | Status | Command | Description | Bucket |
 |:-:|---|---|---|
-| `[ ]` | `^PA` | advanced text properties | `Modal: Print Quality` |
 | `[x]` | `^JZ` | reprint after error | |
-| `[ ]` | `^JH` | early warning settings | `Modal: Print Quality` |
 | `[x]` | `^JT` | head test interval | |
 | `[x]` | `~TA` | tear off adjust | |
-| `[ ]` | `^PF` | slew dot rows | `Modal: Print Quality` |
-| `[ ]` | `^PH` / `~PH` | slew to home | `Modal: Print Quality` |
-| `[ ]` | `^PN` | present now | `Modal: Print Quality` |
-| `[ ]` | `^PP` / `~PP` | programmable pause | `Modal: Print Quality` |
-| `[ ]` | `~PR` | applicator reprint | `Modal: Print Quality` |
-| `[ ]` | `~PS` | print start | `Modal: Print Quality` |
-| `[ ]` | `~JS` | change backfeed sequence | `Modal: Print Quality` |
-| `[ ]` | `^JW` | set ribbon tension | `Modal: Print Quality` |
-| `[ ]` | `^JU` | configuration update | `Modal: Print Quality` |
+| `[ ]` | `^PA` | advanced text properties | `Coming soon` |
+| `[ ]` | `^JH` | early warning settings | `Coming soon` |
+| `[ ]` | `^PF` | slew dot rows | `Coming soon` |
+| `[ ]` | `^PH` / `~PH` | slew to home | `Coming soon` |
+| `[ ]` | `^PN` | present now | `Coming soon` |
+| `[ ]` | `^PP` / `~PP` | programmable pause | `Coming soon` |
+| `[ ]` | `~PR` | applicator reprint | `Coming soon` |
+| `[ ]` | `~PS` | print start | `Coming soon` |
+| `[ ]` | `~JS` | change backfeed sequence | `Coming soon` |
+| `[ ]` | `^JW` | set ribbon tension | `Coming soon` |
+| `[ ]` | `^JU` | configuration update | `Coming soon` |
 
 ## Clock & time
 
 | Status | Command | Description | Bucket |
 |:-:|---|---|---|
-| `[ ]` | `^ST` | set date & time | `Modal: Clock & Time` |
-| `[ ]` | `^SO` | RTC offset | `Modal: Clock & Time` |
-| `[ ]` | `^KD` | date & time format | `Modal: Clock & Time` |
+| `[x]` | `^ST` | set date & time (static + live-clock mode) | |
+| `[x]` | `^KD` | date & time format | |
+| `[ ]` | `^SO` | RTC offset | `Out of scope` |
 
 ## Encoding & language
 
 | Status | Command | Description | Bucket |
 |:-:|---|---|---|
-| `[ ]` | `^KL` | define language | `Modal: Encoding & Language` |
-| `[ ]` | `^SE` / `~SE` | encoding table | `Modal: Encoding & Language` |
-| `[ ]` | `^SZ` | set ZPL mode | `Modal: Encoding & Language` |
+| `[x]` | `^KL` | define language | |
+| `[x]` | `^SE` | encoding table | |
+| `[x]` | `^SZ` | set ZPL mode | |
+| `[ ]` | `~SE` | encoding table (tilde-form, immediate) | `Out of scope` |
 
 ## Identity & access
 
 | Status | Command | Description | Bucket |
 |:-:|---|---|---|
-| `[ ]` | `^KN` | printer name | `Modal: Identity` |
-| `[ ]` | `^SL` | set mode & language | `Modal: Identity` |
-| `[ ]` | `^KP` | set password | `Modal: Identity` |
+| `[x]` | `^KN` | printer name + description | |
+| `[x]` | `^SL` | clock mode (S / T / TOL) + language | |
+| `[ ]` | `^KP` | set password | `Coming soon` |
 
 ## Configuration & persistence
 
