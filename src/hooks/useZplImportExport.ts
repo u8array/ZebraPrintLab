@@ -6,6 +6,7 @@ import {
   useLabelStore,
 } from "../store/labelStore";
 import { generateMultiPageZPL, generateBatchZpl } from "../lib/zplGenerator";
+import { generateSetupScript } from "../lib/zplSetupScript";
 import { printLabel } from "../lib/printPreview";
 import { triggerDownload } from "../lib/triggerDownload";
 import { labelaryErrorMessage } from "../lib/labelary";
@@ -19,9 +20,14 @@ export function useZplImportExport() {
   // render on every label / page / variable edit.
   const canBatchExport = useLabelStore(selectCanBatchExport);
   const batchRowCount = useLabelStore((s) => s.csvDataset?.rows.length ?? 0);
+  // Source-aware Zebra-print state lives in the store so the
+  // PrinterSettingsModal can trigger a Setup-Script send without
+  // prop-drilling through this hook. Treat `null` as closed.
+  const zebraPrintSource = useLabelStore((s) => s.zebraPrintSource);
+  const openZebraPrintStore = useLabelStore((s) => s.openZebraPrint);
+  const closeZebraPrintStore = useLabelStore((s) => s.closeZebraPrint);
 
   const [showZplImport, setShowZplImport] = useState(false);
-  const [showZebraPrint, setShowZebraPrint] = useState(false);
   const [printError, setPrintError] = useState<string | null>(null);
 
   const handleDownload = () => {
@@ -54,11 +60,16 @@ export function useZplImportExport() {
     }
   };
 
-  // ZPL surfaced to direct-print: batch form when a CSV is in play (so
-  // sending to the printer produces N labels), otherwise the same
-  // template the editor displays.
+  // ZPL surfaced to direct-print: branch on the active source.
+  // - 'setupScript': EEPROM-persistent printer config (live-clock
+  //   safe — the generator captures `now` here, at click-time).
+  // - 'label' (default): batch form when a CSV is in play, otherwise
+  //   the same template the editor displays.
   const currentZpl = () => {
     const s = useLabelStore.getState();
+    if (zebraPrintSource === 'setupScript') {
+      return generateSetupScript(s.printerProfile);
+    }
     const batch = selectBatchInputs(s);
     return batch
       ? generateBatchZpl(
@@ -71,9 +82,9 @@ export function useZplImportExport() {
     showZplImport,
     openZplImport: () => setShowZplImport(true),
     closeZplImport: () => setShowZplImport(false),
-    showZebraPrint,
-    openZebraPrint: () => setShowZebraPrint(true),
-    closeZebraPrint: () => setShowZebraPrint(false),
+    showZebraPrint: zebraPrintSource !== null,
+    openZebraPrint: () => openZebraPrintStore('label'),
+    closeZebraPrint: closeZebraPrintStore,
     currentZpl,
     printError,
     dismissPrintError: () => setPrintError(null),

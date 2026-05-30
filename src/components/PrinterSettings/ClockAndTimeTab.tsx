@@ -1,7 +1,6 @@
 import { useId } from "react";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { toLocalIsoString } from "../../lib/realtimeClock";
 import { inputCls, labelCls } from "../ui/formStyles";
 import {
   CLOCK_FORMAT_VALUES,
@@ -58,45 +57,53 @@ const CLOCK_LANGUAGE_LABEL_KEYS = {
  *  reproducible (no live now-snapshot on every copy/export). */
 export function ClockAndTimeTab() {
   const t = useT();
-  const label = useLabelStore((s) => s.label);
-  const setLabelConfig = useLabelStore((s) => s.setLabelConfig);
+  const profile = useLabelStore((s) => s.printerProfile);
+  const patchPrinterProfile = useLabelStore((s) => s.patchPrinterProfile);
   const loc = t.printerSettings.clockTime;
   const clockId = useId();
   const modeId = useId();
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* ^ST: hand-rolled instead of going through a primitive, since
-          datetime-local is the only such input in the modal and
-          adding a primitive for one caller is YAGNI. The "Now"
-          button seeds the field with the current local wall-clock
-          time — UI-only nudge, the field itself stays static so
-          the generated Setup-Script remains reproducible. */}
+    // gap-3 (not gap-4) so the tab fits inside the modal's ~290px form
+    // budget even when TOL mode expands the ^SL sub-block. With gap-4
+    // the TOL state spills past the docked preview into a scroll, and
+    // the scrollbar inside a panel that's bordered top + bottom by
+    // fixed UI is easy to miss.
+    <div className="flex flex-col gap-3">
+      {/* ^ST: two modes for the real-time-clock value.
+          - Static: user types a value, generator emits it verbatim
+            on every export (reproducible Setup-Script).
+          - Live: user toggles the checkbox, generator captures the
+            current wall-clock time at every export (Setup-Script
+            actually "sets the clock to now"; not reproducible).
+          The checkbox is colocated with the input so the active
+          mode is visible at a glance. The input is disabled while
+          live mode is on, but the stored value is kept so flipping
+          back does not lose the typed value. */}
       <ZplField>
         <ZplCommandLabel text={loc.setRealtimeClock} command="^ST" htmlFor={clockId} />
-        <div className="flex items-center gap-2">
+        <input
+          id={clockId}
+          type="datetime-local"
+          step="1"
+          className={`${inputCls} disabled:opacity-40 disabled:cursor-not-allowed`}
+          value={profile.setRealtimeClock ?? ""}
+          disabled={!!profile.useCurrentTimeForClock}
+          onChange={(e) =>
+            patchPrinterProfile({ setRealtimeClock: e.target.value || undefined })
+          }
+        />
+        <label className="flex items-center gap-2 mt-1 cursor-pointer">
           <input
-            id={clockId}
-            type="datetime-local"
-            step="1"
-            className={`${inputCls} flex-1`}
-            value={label.setRealtimeClock ?? ""}
+            type="checkbox"
+            className="accent-accent"
+            checked={!!profile.useCurrentTimeForClock}
             onChange={(e) =>
-              setLabelConfig({ setRealtimeClock: e.target.value || undefined })
+              patchPrinterProfile({ useCurrentTimeForClock: e.target.checked || undefined })
             }
           />
-          <button
-            type="button"
-            onClick={() =>
-              setLabelConfig({ setRealtimeClock: toLocalIsoString() })
-            }
-            title={`${loc.setRealtimeClock}: ${loc.clockSetNow}`}
-            aria-label={`${loc.setRealtimeClock}: ${loc.clockSetNow}`}
-            className="px-3 py-1 rounded text-xs font-mono bg-surface-2 border border-border text-muted hover:text-accent hover:border-accent transition-colors"
-          >
-            {loc.clockSetNow}
-          </button>
-        </div>
+          <span className="text-xs text-text">{loc.clockUseCurrentTime}</span>
+        </label>
         <span className={labelCls + " normal-case tracking-normal text-muted/70"}>
           {loc.setRealtimeClockHint}
         </span>
@@ -107,8 +114,8 @@ export function ClockAndTimeTab() {
         command="^KD"
         values={CLOCK_FORMAT_VALUES}
         isValid={isClockFormat}
-        value={label.clockFormat}
-        onChange={(v) => setLabelConfig({ clockFormat: v })}
+        value={profile.clockFormat}
+        onChange={(v) => patchPrinterProfile({ clockFormat: v })}
         defaultLabel={t.printerSettings.defaultOption}
         optionLabel={(m) => loc[CLOCK_FORMAT_LABEL_KEYS[m]]}
       />
@@ -124,7 +131,7 @@ export function ClockAndTimeTab() {
         <select
           id={modeId}
           className={inputCls}
-          value={label.clockMode ?? ""}
+          value={profile.clockMode ?? ""}
           onChange={(e) => {
             const v = e.target.value;
             const nextMode = isClockMode(v) ? v : undefined;
@@ -135,9 +142,9 @@ export function ClockAndTimeTab() {
             // this the store would briefly hold an invalid combo
             // (TOL without tolerance) which the schema rejects.
             const nextTolerance = nextMode === 'TOL'
-              ? label.clockTolerance ?? CLOCK_TOLERANCE_DEFAULT
+              ? profile.clockTolerance ?? CLOCK_TOLERANCE_DEFAULT
               : undefined;
-            setLabelConfig({ clockMode: nextMode, clockTolerance: nextTolerance });
+            patchPrinterProfile({ clockMode: nextMode, clockTolerance: nextTolerance });
           }}
         >
           <option value="">{t.printerSettings.defaultOption}</option>
@@ -145,15 +152,15 @@ export function ClockAndTimeTab() {
             <option key={m} value={m}>{loc[CLOCK_MODE_LABEL_KEYS[m]]}</option>
           ))}
         </select>
-        {label.clockMode === 'TOL' && (
+        {profile.clockMode === 'TOL' && (
           <ZplSubField label={loc.clockTolerance}>
             {(id) => (
               <BoundedIntControl
                 id={id}
                 min={CLOCK_TOLERANCE_RANGE.min}
                 max={CLOCK_TOLERANCE_RANGE.max}
-                value={label.clockTolerance}
-                onChange={(v) => setLabelConfig({ clockTolerance: v })}
+                value={profile.clockTolerance}
+                onChange={(v) => patchPrinterProfile({ clockTolerance: v })}
               />
             )}
           </ZplSubField>
@@ -162,8 +169,8 @@ export function ClockAndTimeTab() {
           label={loc.clockLanguage}
           values={CLOCK_LANGUAGE_VALUES}
           isValid={isClockLanguage}
-          value={label.clockLanguage}
-          onChange={(v) => setLabelConfig({ clockLanguage: v })}
+          value={profile.clockLanguage}
+          onChange={(v) => patchPrinterProfile({ clockLanguage: v })}
           defaultLabel={t.printerSettings.defaultOption}
           optionLabel={(m) => `${m} – ${loc[CLOCK_LANGUAGE_LABEL_KEYS[m]]}`}
         />

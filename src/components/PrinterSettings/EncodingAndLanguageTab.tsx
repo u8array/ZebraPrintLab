@@ -47,8 +47,8 @@ const ZPL_MODE_LABEL_KEYS = {
  *  Script" rail group. */
 export function EncodingAndLanguageTab() {
   const t = useT();
-  const label = useLabelStore((s) => s.label);
-  const setLabelConfig = useLabelStore((s) => s.setLabelConfig);
+  const profile = useLabelStore((s) => s.printerProfile);
+  const patchPrinterProfile = useLabelStore((s) => s.patchPrinterProfile);
   const loc = t.printerSettings.encodingLanguage;
   const encodingId = useId();
 
@@ -59,8 +59,8 @@ export function EncodingAndLanguageTab() {
         command="^KL"
         values={PRINTER_LOCALE_VALUES}
         isValid={isPrinterLocale}
-        value={label.printerLocale}
-        onChange={(v) => setLabelConfig({ printerLocale: v })}
+        value={profile.printerLocale}
+        onChange={(v) => patchPrinterProfile({ printerLocale: v })}
         defaultLabel={t.printerSettings.defaultOption}
         optionLabel={(m) => `${m} ${loc[PRINTER_LOCALE_LABEL_KEYS[m]]}`}
       />
@@ -79,9 +79,9 @@ export function EncodingAndLanguageTab() {
           type="text"
           className={`${inputCls} invalid:border-warning`}
           pattern={SE_PATH_PATTERN}
-          value={label.encodingTable ?? ""}
+          value={profile.encodingTable ?? ""}
           onChange={(e) =>
-            setLabelConfig({ encodingTable: e.target.value || undefined })
+            patchPrinterProfile({ encodingTable: e.target.value || undefined })
           }
         />
         <span className="font-mono text-[10px] text-muted/70 normal-case tracking-normal">
@@ -94,8 +94,8 @@ export function EncodingAndLanguageTab() {
         command="^SZ"
         values={ZPL_MODE_VALUES}
         isValid={isZplMode}
-        value={label.zplMode}
-        onChange={(v) => setLabelConfig({ zplMode: v })}
+        value={profile.zplMode}
+        onChange={(v) => patchPrinterProfile({ zplMode: v })}
         defaultLabel={t.printerSettings.defaultOption}
         optionLabel={(m) => loc[ZPL_MODE_LABEL_KEYS[m]]}
       />

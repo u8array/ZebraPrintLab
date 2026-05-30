@@ -193,7 +193,7 @@ export const MAX_LABEL_LENGTH_RANGE = { min: 1, max: 32000 } as const;
  *  chain. Collapses the repetitive `.int().min(R.min).max(R.max)`
  *  shape so a range bump only changes the `*_RANGE` constant and
  *  every consumer (schema, parser, UI) tracks automatically. */
-function intInRange(r: { min: number; max: number }) {
+export function intInRange(r: { min: number; max: number }) {
   return z.number().int().min(r.min).max(r.max);
 }
 
@@ -253,91 +253,12 @@ export const labelConfigSchema = z.object({
   /** ^XB: suppress backfeed for the next label. Standalone toggle.
    *  Command emits without parameters when active. */
   suppressBackfeed: z.boolean().optional(),
-  /** ^JZ: reprint the previous label after a print error
-   *  (paper-out, ribbon-out, etc). Y = enabled, N = disabled.
-   *  `undefined` = printer default, which is `Y` on most firmwares.
-   *  Consumers that need an effective value should treat undefined
-   *  as `Y`. */
-  reprintAfterError: z.enum(['Y', 'N']).optional(),
-  /** ^JT: head-test interval. Number of labels printed between
-   *  printhead element tests. 0 disables periodic testing. */
-  headTestInterval: intInRange(HEAD_TEST_INTERVAL_RANGE).optional(),
-  /** ~TA: tear-off position adjustment in dot rows. Negative
-   *  values move the tear line back; positive forward. Zebra
-   *  accepts -120..+120 dots. */
-  tearOffAdjust: intInRange(TEAR_OFF_ADJUST_RANGE).optional(),
-  /** ^ST: static set-clock value for the printer's real-time clock.
-   *  Stored as the raw HTML5 `datetime-local` string
-   *  (`YYYY-MM-DDTHH:MM` or with `:SS`); the generator splits it into
-   *  the six positional params (`^STMM,DD,YYYY,HH,MM,SS`). User-typed
-   *  static value rather than a now-snapshot, so generated Setup
-   *  Scripts stay reproducible across copy/export. The regex catches
-   *  corrupt persisted state at schema-parse time rather than
-   *  silently dropping it on emit. */
-  setRealtimeClock: z.string().regex(realtimeClockIsoRegex).optional(),
-  /** ^KD: clock-print format selector. See `CLOCK_FORMAT_VALUES` for
-   *  the per-value rendering. Stored as the digit char ('0'..'3'),
-   *  matching the on-wire shape. */
-  clockFormat: z.enum(CLOCK_FORMAT_VALUES).optional(),
-  /** ^SL `a`: clock mode (S / T / TOL). See `CLOCK_MODE_VALUES`. */
-  clockMode: z.enum(CLOCK_MODE_VALUES).optional(),
-  /** ^SL `a` (numeric form): tolerance in seconds. Only emitted
-   *  when `clockMode === 'TOL'`; the generator drops this if mode
-   *  is not TOL, the parser only writes it when the wire value
-   *  was numeric. */
-  clockTolerance: intInRange(CLOCK_TOLERANCE_RANGE).optional(),
-  /** ^SL `b`: clock-language code (digit char '1'..'13'). See
-   *  `CLOCK_LANGUAGE_VALUES`. */
-  clockLanguage: z.enum(CLOCK_LANGUAGE_VALUES).optional(),
-  /** ^KL: printer-side display locale. See `PRINTER_LOCALE_VALUES`. */
-  printerLocale: z.enum(PRINTER_LOCALE_VALUES).optional(),
-  /** ^SE: encoding-table file path on the printer (e.g.
-   *  `E:UHANGUL.DAT`). Power-user setup field; ^CI28 (UTF-8)
-   *  emitted in `generateZPL` covers the typical case. Free string
-   *  because the path shape is firmware-and-storage-dependent.
-   *  `min(1)` locks the "unset" invariant in the schema so the UI,
-   *  generator, and parser all agree that empty string is not a
-   *  valid persisted value (cleared input maps to `undefined`).
-   *  The regex blocks the ZPL command-introducer characters
-   *  (`^`, `~`), newlines, and control codes — an untrusted import
-   *  with `encodingTable: "^SD30"` would otherwise inject a second
-   *  command into the generated Setup Script via string interpolation. */
-  encodingTable: z.string().min(1).regex(setupScriptSafeStringRegex).optional(),
-  /** ^SZ: ZPL mode. `2` is the default on every modern firmware;
-   *  `1` switches the printer to legacy ZPL interpretation. */
-  zplMode: z.enum(ZPL_MODE_VALUES).optional(),
-  /** ^KN p1: friendly printer name (max 16 chars per spec).
-   *  Same injection-safety regex as ^SE so an imported ZPL
-   *  cannot smuggle a second command via the name value. */
-  printerName: z.string().min(1).max(PRINTER_NAME_MAX_LEN).regex(setupScriptSafeStringRegex).optional(),
-  /** ^KN p2: optional human-readable printer description.
-   *  Spec does not pin an explicit length cap; the injection-
-   *  safe regex is the only schema-side constraint. */
-  printerDescription: z.string().min(1).regex(setupScriptSafeStringRegex).optional(),
-}).superRefine((cfg, ctx) => {
-  // ^SL `clockTolerance` and `clockMode === 'TOL'` are bidirectionally
-  // coupled: tolerance is only meaningful when mode is TOL, and mode TOL
-  // requires an explicit tolerance value (the wire form `^SL<tolerance>`
-  // *is* the tolerance number — there is no default-tolerance form). The
-  // cross-field rule pins the relationship at the schema layer so the
-  // inconsistent states (`mode S + tolerance set`, or `mode TOL + tolerance
-  // unset`) are unreachable through `parse` and the emitter does not need
-  // a fallback that would leak a UI default into persisted state.
-  if (cfg.clockTolerance !== undefined && cfg.clockMode !== 'TOL') {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['clockTolerance'],
-      message: 'clockTolerance is only valid when clockMode === "TOL"',
-    });
-  }
-  if (cfg.clockMode === 'TOL' && cfg.clockTolerance === undefined) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['clockTolerance'],
-      message: 'clockMode "TOL" requires clockTolerance to be set',
-    });
-  }
 });
+
+// Note: the EEPROM-persistent printer-state fields (^JZ, ^JT, ~TA,
+// ^ST, ^KD, ^SL, ^KL, ^SE, ^SZ, ^KN) used to live here but moved to
+// `PrinterProfile` so design files no longer leak per-installation
+// state. See src/types/PrinterProfile.ts.
 
 export type LabelConfig = z.infer<typeof labelConfigSchema>;
 

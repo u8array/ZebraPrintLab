@@ -43,6 +43,8 @@ export function PrintQualityTab() {
   const t = useT();
   const label = useLabelStore((s) => s.label);
   const setLabelConfig = useLabelStore((s) => s.setLabelConfig);
+  const profile = useLabelStore((s) => s.printerProfile);
+  const patchPrinterProfile = useLabelStore((s) => s.patchPrinterProfile);
   const loc = t.printerSettings.printQuality;
 
   return (
@@ -136,8 +138,8 @@ export function PrintQualityTab() {
       <ZplCheckbox
         text={loc.reprintAfterError}
         command="^JZ"
-        checked={label.reprintAfterError !== "N"}
-        onChange={(v) => setLabelConfig({ reprintAfterError: v ? "Y" : "N" })}
+        checked={profile.reprintAfterError !== "N"}
+        onChange={(v) => patchPrinterProfile({ reprintAfterError: v ? "Y" : "N" })}
       />
 
       <ZplBoundedIntInput
@@ -145,8 +147,8 @@ export function PrintQualityTab() {
         command="^JT"
         min={HEAD_TEST_INTERVAL_RANGE.min}
         max={HEAD_TEST_INTERVAL_RANGE.max}
-        value={label.headTestInterval}
-        onChange={(v) => setLabelConfig({ headTestInterval: v })}
+        value={profile.headTestInterval}
+        onChange={(v) => patchPrinterProfile({ headTestInterval: v })}
       />
 
       <ZplBoundedIntInput
@@ -154,8 +156,8 @@ export function PrintQualityTab() {
         command="~TA"
         min={TEAR_OFF_ADJUST_RANGE.min}
         max={TEAR_OFF_ADJUST_RANGE.max}
-        value={label.tearOffAdjust}
-        onChange={(v) => setLabelConfig({ tearOffAdjust: v })}
+        value={profile.tearOffAdjust}
+        onChange={(v) => patchPrinterProfile({ tearOffAdjust: v })}
         unit={t.printerSettings.dotsUnit}
       />
     </div>

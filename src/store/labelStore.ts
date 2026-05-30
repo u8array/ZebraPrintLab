@@ -2,6 +2,13 @@ import { create, useStore } from 'zustand';
 import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { LabelConfig, ObjectChanges } from '../types/ObjectType';
+import {
+  EMPTY_PRINTER_PROFILE,
+  PRINTER_PROFILE_FIELDS,
+  printerProfileSchema,
+  type PrinterProfile,
+} from '../types/PrinterProfile';
+import { pruneUndefined } from '../lib/pruneUndefined';
 import type { Unit } from '../lib/units';
 import type { ViewRotation } from '../components/Canvas/rotationGeometry';
 import { ObjectRegistry } from '../registry';
@@ -189,6 +196,12 @@ export type PreviewMode =
 
 interface LabelState {
   label: LabelConfig;
+  /** EEPROM-persistent printer-state. Separate slice from `label` so
+   *  design files (which round-trip `label`) don't leak the user's
+   *  printer name, locale, clock value, etc. See PrinterProfile.ts.
+   *  Single-profile for now; the multi-profile follow-up will replace
+   *  this with `printerProfiles: Record<id, PrinterProfile>`. */
+  printerProfile: PrinterProfile;
   pages: Page[];
   currentPageIndex: number;
   selectedIds: string[];
@@ -273,6 +286,15 @@ interface LabelState {
    *  via the layers panel, instead of having to select-then-shortcut. */
   addGroup: () => void;
   setLabelConfig: (config: Partial<LabelConfig>) => void;
+  /** Patch the active printer profile. Same shape as setLabelConfig
+   *  but writes to the printerProfile slice so per-installation
+   *  Setup-Script fields stay out of the per-label config. */
+  patchPrinterProfile: (patch: Partial<PrinterProfile>) => void;
+  /** Clear all printer-profile fields (back to "printer defaults
+   *  apply everywhere"). Surfaced as the Setup-Script preview's
+   *  Clear action; emits no ^XA/^XZ output until a field is set
+   *  again. */
+  resetPrinterProfile: () => void;
   setLocale: (locale: LocaleCode) => void;
   setTheme: (theme: ThemePreference) => void;
   setThirdPartyEnabled: (service: 'labelary', enabled: boolean) => void;
@@ -357,6 +379,16 @@ interface LabelState {
   setSidebarTab: (tab: LabelState['sidebarTab']) => void;
   printerSettingsTab: PrinterSettingsTab | null;
   setPrinterSettingsTab: (tab: PrinterSettingsTab | null) => void;
+  /** Cross-component trigger for the "send to Zebra" dialog. The
+   *  source picks which ZPL gets fed in: `label` for the regular
+   *  multi-page label output (the default — file-menu entry), or
+   *  `setupScript` for the EEPROM-persistent printer config (the
+   *  PrinterSettingsModal's send button). `null` keeps the dialog
+   *  closed. Centralised in the store so the modal can trigger
+   *  without prop-drilling through the AppShell hook tree. */
+  zebraPrintSource: 'label' | 'setupScript' | null;
+  openZebraPrint: (source: 'label' | 'setupScript') => void;
+  closeZebraPrint: () => void;
   /** One-shot focus request scoped to a single object. Each call sets a
    *  fresh object (incrementing `nonce` so consumers can re-fire even
    *  for the same id) and TemplateContentInput's effect compares its
@@ -565,6 +597,33 @@ export function migrateLegacy(persistedState: unknown, version: number): unknown
     }
   }
 
+  // v4→v5: Setup-Script fields move out of labelConfig into a new
+  // printerProfile slice (see PrinterProfile.ts). Extract any of the
+  // 14 profile fields that lived on `label`, hoist them onto a fresh
+  // `printerProfile`, and strip them from the label so the per-label
+  // config no longer carries per-installation state.
+  if (version < 5) {
+    const label = s.label;
+    if (label && typeof label === 'object') {
+      const profileFields = new Set<string>(PRINTER_PROFILE_FIELDS);
+      const profile: Record<string, unknown> = {};
+      const nextLabel: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(label as Record<string, unknown>)) {
+        if (profileFields.has(k)) profile[k] = v;
+        else nextLabel[k] = v;
+      }
+      s = { ...s, label: nextLabel, printerProfile: profile };
+    }
+  }
+
+  // Belt-and-suspenders: any code path that bypasses the v4→v5 hop
+  // (manual edits, partial rollbacks, future version-bump that forgets
+  // to seed) must still leave `printerProfile` present, otherwise
+  // every `s.printerProfile.foo` selector throws on rehydrate.
+  if (!('printerProfile' in (s as Record<string, unknown>))) {
+    s = { ...s, printerProfile: {} };
+  }
+
   return s;
 }
 
@@ -606,6 +665,7 @@ export const useLabelStore = create<LabelState>()(
     persist(
     (set, get) => ({
       label: { widthMm: 100, heightMm: 60, dpmm: 8 },
+      printerProfile: EMPTY_PRINTER_PROFILE,
       pages: [{ objects: [] }],
       currentPageIndex: 0,
       selectedIds: [],
@@ -1030,10 +1090,58 @@ export const useLabelStore = create<LabelState>()(
           };
         }),
 
+      // Asymmetry with `patchPrinterProfile` below: setLabelConfig
+      // does NOT strip undefined keys, because LabelConfig fields
+      // have explicit generator defaults applied per-emit ("field
+      // unset = use widthMm/dpmm/etc fallback"), while PrinterProfile
+      // models true three-state "absent = printer default" semantics
+      // that round-trip through persist/import. Different semantics,
+      // different write paths.
       setLabelConfig: (config) =>
         set((state) => {
           if (selectPreviewLocksEditor(state)) return {};
           return { label: { ...state.label, ...config } };
+        }),
+
+      patchPrinterProfile: (patch) =>
+        set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
+          // Drop keys explicitly set to `undefined` so the profile
+          // stays "field absent = printer default" rather than
+          // "field present with undefined". Validate the merged
+          // result through the schema so the cross-field rule
+          // (clockMode === 'TOL' ↔ clockTolerance defined) can't be
+          // violated from any caller — UI fields already enforce
+          // field-by-field, but `parseZPL` imports and any future
+          // patch site should not be trusted to know the rule.
+          const next = pruneUndefined<PrinterProfile>({
+            ...state.printerProfile,
+            ...patch,
+          });
+          const parsed = printerProfileSchema.safeParse(next);
+          if (!parsed.success) {
+            // Dev: throw so the bug surfaces immediately in tests
+            // and HMR sessions. Prod: warn-and-drop so end users
+            // hit a degraded-but-alive store instead of a crash.
+            // All callers today are UI-validated or schema-clean
+            // parser results, so an invalid patch reaching here is
+            // by definition a bug we want to see.
+            const msg = '[printerProfile] rejected invalid patch';
+            if (import.meta.env.DEV) {
+              throw new Error(
+                `${msg}: ${parsed.error.issues.map((i) => i.message).join('; ')}`,
+              );
+            }
+            console.warn(msg, parsed.error.issues, { merged: next });
+            return {};
+          }
+          return { printerProfile: parsed.data };
+        }),
+
+      resetPrinterProfile: () =>
+        set((state) => {
+          if (selectPreviewLocksEditor(state)) return {};
+          return { printerProfile: {} };
         }),
 
       setLocale: (locale) => set({ locale }),
@@ -1133,6 +1241,9 @@ export const useLabelStore = create<LabelState>()(
       setSidebarTab: (tab) => set({ sidebarTab: tab }),
       printerSettingsTab: null,
       setPrinterSettingsTab: (tab) => set({ printerSettingsTab: tab }),
+      zebraPrintSource: null,
+      openZebraPrint: (source) => set({ zebraPrintSource: source }),
+      closeZebraPrint: () => set({ zebraPrintSource: null }),
       editorFocusRequest: null,
       requestContentEditorFocus: (id) =>
         set((state) => ({
@@ -1370,11 +1481,12 @@ export const useLabelStore = create<LabelState>()(
     }),
     {
       name: 'zpl-designer-session',
-      version: 4,
+      version: 5,
       migrate: (persistedState, version) => migrateLegacy(persistedState, version) as LabelState,
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         label: state.label,
+        printerProfile: state.printerProfile,
         pages: state.pages,
         currentPageIndex: state.currentPageIndex,
         locale: state.locale,
@@ -1393,6 +1505,7 @@ export const useLabelStore = create<LabelState>()(
     {
       partialize: (state) => ({
         label: state.label,
+        printerProfile: state.printerProfile,
         pages: state.pages,
         currentPageIndex: state.currentPageIndex,
         variables: state.variables,

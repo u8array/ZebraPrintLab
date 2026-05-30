@@ -2,9 +2,10 @@ import { useState, type ReactNode } from 'react';
 import { CheckIcon, ClipboardDocumentIcon, ChevronDownIcon, ChevronUpIcon, EyeIcon } from '@heroicons/react/16/solid';
 import { useLabelStore, selectLabelaryNoticeRequired } from '../../store/labelStore';
 import { generateMultiPageZPL } from '../../lib/zplGenerator';
-import { generateSetupScript } from '../../lib/zplSetupScript';
+import { useCopyToClipboard } from '../../lib/useCopyToClipboard';
 import { useT } from '../../lib/useT';
 import { LabelaryNoticeModal } from './LabelaryNoticeModal';
+import { ZplLine } from './ZplLine';
 
 interface Props {
   collapsed?: boolean;
@@ -26,7 +27,6 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
 
   const hasObjects = pages.some((p) => p.objects.length > 0);
   const zpl = hasObjects ? generateMultiPageZPL(label, pages, variables) : '';
-  const setupScript = generateSetupScript(label);
 
   const previewActive =
     previewMode.status === 'loading' || previewMode.status === 'active';
@@ -46,19 +46,12 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
   return (
     <div className="flex flex-col h-full">
       <OutputSection
-        variant="primary"
         heading={t.output.zplHeading}
         content={zpl}
         emptyMessage={t.output.noObjects}
         collapsed={collapsed}
         onCollapseToggle={collapsed ? onExpand : onCollapse}
         collapseLabel={collapsed ? t.app.expand : t.app.collapse}
-        /* Hidden-secondary indicator: when the panel is collapsed,
-           the Setup-Script section is also hidden but still has
-           emit-worthy content. A small accent dot in the header
-           signals "there is more output below" so users do not
-           silently lose visibility of their printer-state edits. */
-        hiddenSecondaryActive={!!collapsed && !!setupScript}
         extraActions={labelaryEnabled && (
           <button
             onClick={togglePreview}
@@ -77,20 +70,6 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
         )}
       />
 
-      {/* Setup-Script section only renders when at least one EEPROM-
-          persistent printer-state field is set. The Printer Settings
-          Modal is where users enable those (^JZ, ^JT, ~TA, plus the
-          upcoming clock/encoding/identity commands); the output here
-          shows what would be sent once to provision the printer. */}
-      {!collapsed && setupScript && (
-        <OutputSection
-          variant="secondary"
-          heading={t.output.setupScriptHeading}
-          content={setupScript}
-          emptyMessage=""
-        />
-      )}
-
       {showNotice && (
         <LabelaryNoticeModal
           onClose={() => setShowNotice(false)}
@@ -105,18 +84,11 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
 }
 
 /** Single output pane: header (collapse toggle + heading + extra
- *  actions + copy button) and a `<pre>` body. Reused for the main
- *  per-label ZPL and the Setup-Script output so both sections share
- *  the same look (and any future tweaks land in one place).
- *
- *  `variant='primary'` fills the remaining flex space (used by the
- *  main per-label ZPL). `variant='secondary'` gets a top border + a
- *  bounded max-height so it sits compactly under the primary pane
- *  (used by the Setup-Script output). The variant collapses two
- *  separate booleans (`borderTop` / `maxHeightClass`) into one
- *  honest discriminator. */
+ *  actions + copy button) and a `<pre>` body. The Setup-Script
+ *  output moved into the Printer Settings modal's docked preview
+ *  pane, so this component no longer needs to host a secondary
+ *  variant — it just shows the per-label ZPL. */
 function OutputSection({
-  variant,
   heading,
   content,
   emptyMessage,
@@ -124,9 +96,7 @@ function OutputSection({
   onCollapseToggle,
   collapseLabel,
   extraActions,
-  hiddenSecondaryActive,
 }: {
-  variant: 'primary' | 'secondary';
   heading: string;
   content: string;
   emptyMessage: string;
@@ -134,33 +104,12 @@ function OutputSection({
   onCollapseToggle?: () => void;
   collapseLabel?: string;
   extraActions?: ReactNode;
-  /** When `true`, render a small accent dot next to the heading so
-   *  users know a hidden secondary section has emit-worthy content
-   *  even while this pane is collapsed. */
-  hiddenSecondaryActive?: boolean;
 }) {
-  const isSecondary = variant === 'secondary';
-  const containerCls = isSecondary
-    ? 'border-t border-border'
-    : 'flex-1 min-h-0';
-  const bodyCls = isSecondary ? 'max-h-48' : 'flex-1';
   const t = useT();
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    if (!content) return;
-    // `navigator.clipboard` is undefined in non-secure contexts
-    // (plain HTTP, file://) and in some embedded WebViews. Bail
-    // out instead of throwing — the copy button is non-essential.
-    if (!navigator.clipboard) return;
-    navigator.clipboard.writeText(content).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    }).catch(() => { /* swallow: user-cancel or permission-denied */ });
-  };
+  const { copy, copied } = useCopyToClipboard(() => content);
 
   return (
-    <div className={`flex flex-col ${containerCls}`}>
+    <div className="flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
           {onCollapseToggle && (
@@ -174,18 +123,11 @@ function OutputSection({
             </button>
           )}
           <span className="font-mono text-[10px] text-muted uppercase tracking-widest">{heading}</span>
-          {hiddenSecondaryActive && (
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-accent"
-              title={t.output.hiddenSecondaryHint}
-              aria-label={t.output.hiddenSecondaryHint}
-            />
-          )}
         </div>
         <div className="flex items-center gap-3">
           {extraActions}
           <button
-            onClick={handleCopy}
+            onClick={copy}
             disabled={!content}
             title={t.output.copy}
             className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
@@ -198,7 +140,7 @@ function OutputSection({
       </div>
 
       {!collapsed && (
-        <pre className={`overflow-auto p-3 font-mono text-xs leading-relaxed text-text m-0 bg-surface ${bodyCls}`}>
+        <pre className="overflow-auto p-3 font-mono text-xs leading-relaxed text-text m-0 bg-surface flex-1">
           {content
             ? content.split('\n').map((line, i) => (
                 <ZplLine key={i} line={line} />
@@ -211,16 +153,3 @@ function OutputSection({
   );
 }
 
-function ZplLine({ line }: { line: string }) {
-  // highlight ^CMD tokens in amber, rest in default text color
-  const parts = line.split(/([\^][A-Z0-9]+)/g);
-  return (
-    <span className="block">
-      {parts.map((part, i) =>
-        /^\^[A-Z0-9]+$/.test(part)
-          ? <span key={i} className="text-accent">{part}</span>
-          : <span key={i} className="text-text">{part}</span>
-      )}
-    </span>
-  );
-}

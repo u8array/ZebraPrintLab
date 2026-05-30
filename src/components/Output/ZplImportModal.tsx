@@ -5,6 +5,7 @@ import { readFileAsText } from '../../lib/readFile';
 import { useLabelStore } from '../../store/labelStore';
 import type { Page } from '../../types/Group';
 import type { LabelConfig } from '../../types/ObjectType';
+import type { PrinterProfile } from '../../types/PrinterProfile';
 import type { Variable } from '../../types/Variable';
 import { formatReportAsText, type ImportReport, type ImportResult } from '../../lib/importReport';
 import { ImportSummaryBody } from './ImportSummary';
@@ -25,6 +26,7 @@ export function ZplImportModal({ onClose }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loadDesign = useLabelStore((s) => s.loadDesign);
   const appendPages = useLabelStore((s) => s.appendPages);
+  const patchPrinterProfile = useLabelStore((s) => s.patchPrinterProfile);
   const label = useLabelStore((s) => s.label);
   const pages = useLabelStore((s) => s.pages);
 
@@ -37,6 +39,7 @@ export function ZplImportModal({ onClose }: Props) {
 
   const applyImport = (
     labelConfig: Partial<LabelConfig>,
+    printerProfile: Partial<PrinterProfile>,
     importedPages: Page[],
     importedVariables: Variable[],
   ) => {
@@ -50,6 +53,13 @@ export function ZplImportModal({ onClose }: Props) {
       appendPages(importedPages);
     } else {
       loadDesign({ ...label, ...labelConfig }, importedPages, importedVariables);
+    }
+    // Setup-Script fields update the active profile regardless of
+    // append/replace — they are per-installation state, not per-design,
+    // so an import of a ZPL that carries Setup-Script commands should
+    // reflect those commands' intent on the user's profile.
+    if (Object.keys(printerProfile).length > 0) {
+      patchPrinterProfile(printerProfile);
     }
   };
 
@@ -73,16 +83,21 @@ export function ZplImportModal({ onClose }: Props) {
   const processImport = (text: string) => {
     const {
       labelConfig,
+      printerProfile,
       pages: importedPages,
       variables: importedVariables,
       report,
     } = importZplText(text, label.dpmm);
     const totalObjects = importedPages.reduce((s, p) => s + p.objects.length, 0);
-    if (totalObjects === 0 && Object.keys(labelConfig).length === 0) {
+    if (
+      totalObjects === 0 &&
+      Object.keys(labelConfig).length === 0 &&
+      Object.keys(printerProfile).length === 0
+    ) {
       setError('No supported objects found in the ZPL code.');
       return;
     }
-    applyImport(labelConfig, importedPages, importedVariables);
+    applyImport(labelConfig, printerProfile, importedPages, importedVariables);
     finishImport(totalObjects, report);
   };
 

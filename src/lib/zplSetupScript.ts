@@ -1,8 +1,8 @@
-import type { LabelConfig } from '../types/ObjectType';
-import { formatRealtimeClockForZpl } from './realtimeClock';
+import type { PrinterProfile } from '../types/PrinterProfile';
+import { formatRealtimeClockForZpl, toLocalIsoString } from './realtimeClock';
 
 /**
- * Generates the one-shot Setup-Script output for a label config.
+ * Generates the one-shot Setup-Script output for a printer profile.
  *
  * Separate from `generateZPL` because the commands this emits are
  * EEPROM-persistent printer state (~TA, ^JZ, ^JT, and the clock /
@@ -36,65 +36,111 @@ import { formatRealtimeClockForZpl } from './realtimeClock';
  * Skip-when-default would be silent wrong-state.
  */
 
-/** Per-field emitter: takes the full label so the emitter owns its
- *  own undefined-check and any value-shape transformation (e.g.
- *  the ^ST datetime-to-positional split). Returning `null` skips
- *  the field, returning a string pushes it onto the relevant
- *  channel queue. Wraps the label rather than the field value so
- *  TS keeps per-field narrowing inside each emitter — passing only
- *  the value would lose the discriminant. */
-interface SetupScriptEmitter {
-  channel: 'tilde' | 'block';
-  emit: (label: LabelConfig) => string | null;
-}
+/** Registry entry kinds.
+ *
+ *  `emit` entries own a real ZPL command. They take the full profile
+ *  so the emitter handles its own undefined-check and any value-shape
+ *  transformation (e.g. the ^ST datetime-to-positional split).
+ *  Returning `null` skips the field, returning a string pushes it
+ *  onto the relevant channel queue.
+ *
+ *  `foldedInto` entries are pure metadata — fields that don't emit a
+ *  standalone command because they ride along on another field's
+ *  emit (e.g. `printerDescription` is a positional param of `^KN`,
+ *  `clockTolerance` is folded into `^SL` based on `clockMode`). The
+ *  `target` is documentary and also lets the generator iteration
+ *  cheaply skip these fields without calling a no-op closure. */
+type SetupScriptEntry =
+  | {
+      kind: 'emit';
+      channel: 'tilde' | 'block';
+      emit: (profile: PrinterProfile) => string | null;
+    }
+  | {
+      kind: 'foldedInto';
+      target: keyof PrinterProfile;
+    };
 
 /** Single registry of all Setup-Script commands. Keys must be
- *  `keyof LabelConfig` (enforced via `satisfies Partial<Record<…>>`)
+ *  `keyof PrinterProfile` (enforced via `satisfies Partial<Record<…>>`)
  *  so a typo or a field renamed in the schema surfaces here. Adding
  *  a new Setup-Script command means one entry in this map — the
  *  if-chain in `generateSetupScript`, the no-leak test, and the
  *  exported `SETUP_SCRIPT_FIELDS` list all derive from it. */
 const SETUP_SCRIPT_EMITTERS = {
   tearOffAdjust: {
+    kind: 'emit',
     channel: 'tilde',
-    // No zero-pad: ~TA accepts a signed integer (-120..+120) directly.
-    // `tearOffAdjust === 0` emits `~TA0` intentionally per the
-    // default-value-emit note in the file docstring.
-    emit: (l) => l.tearOffAdjust !== undefined ? `~TA${l.tearOffAdjust}` : null,
+    // ~TA requires the magnitude to be exactly 3 digits per the Zebra
+    // spec: "if the number of characters is less than 3, the command
+    // is ignored." So `~TA5` is silently dropped by firmware; the
+    // correct form is `~TA005`. The sign (if any) sits OUTSIDE the
+    // 3-digit width: `~TA-050`, `~TA005`.
+    emit: (p) => {
+      if (p.tearOffAdjust === undefined) return null;
+      const v = p.tearOffAdjust;
+      const sign = v < 0 ? '-' : '';
+      const mag = String(Math.abs(v)).padStart(3, '0');
+      return `~TA${sign}${mag}`;
+    },
   },
   reprintAfterError: {
+    kind: 'emit',
     channel: 'block',
-    emit: (l) => l.reprintAfterError !== undefined ? `^JZ${l.reprintAfterError}` : null,
+    emit: (p) => p.reprintAfterError !== undefined ? `^JZ${p.reprintAfterError}` : null,
   },
   headTestInterval: {
+    kind: 'emit',
     channel: 'block',
-    emit: (l) => l.headTestInterval !== undefined ? `^JT${l.headTestInterval}` : null,
+    emit: (p) => p.headTestInterval !== undefined ? `^JT${p.headTestInterval}` : null,
   },
   setRealtimeClock: {
+    kind: 'emit',
     channel: 'block',
-    emit: (l) => {
-      if (l.setRealtimeClock === undefined) return null;
-      const params = formatRealtimeClockForZpl(l.setRealtimeClock);
+    // Two paths share the ^ST slot: when `useCurrentTimeForClock`
+    // is on, the emit captures *now* at call-time (live mode —
+    // every export gets a fresh stamp, the Setup-Script is no
+    // longer reproducible but it actually "sets the clock"). When
+    // off, the stored ISO string is emitted verbatim (static mode
+    // — reproducible, but the user has to remember to set the
+    // value before sending). The live branch wins when both are
+    // set, so toggling the checkbox in the UI is unambiguous.
+    emit: (p) => {
+      if (p.useCurrentTimeForClock) {
+        const params = formatRealtimeClockForZpl(toLocalIsoString());
+        return params !== null ? `^ST${params}` : null;
+      }
+      if (p.setRealtimeClock === undefined) return null;
+      const params = formatRealtimeClockForZpl(p.setRealtimeClock);
       return params !== null ? `^ST${params}` : null;
     },
   },
+  useCurrentTimeForClock: {
+    kind: 'foldedInto',
+    target: 'setRealtimeClock',
+  },
   clockFormat: {
+    kind: 'emit',
     channel: 'block',
-    emit: (l) => l.clockFormat !== undefined ? `^KD${l.clockFormat}` : null,
+    emit: (p) => p.clockFormat !== undefined ? `^KD${p.clockFormat}` : null,
   },
   printerLocale: {
+    kind: 'emit',
     channel: 'block',
-    emit: (l) => l.printerLocale !== undefined ? `^KL${l.printerLocale}` : null,
+    emit: (p) => p.printerLocale !== undefined ? `^KL${p.printerLocale}` : null,
   },
   encodingTable: {
+    kind: 'emit',
     channel: 'block',
-    emit: (l) => l.encodingTable !== undefined ? `^SE${l.encodingTable}` : null,
+    emit: (p) => p.encodingTable !== undefined ? `^SE${p.encodingTable}` : null,
   },
   zplMode: {
+    kind: 'emit',
     channel: 'block',
-    emit: (l) => l.zplMode !== undefined ? `^SZ${l.zplMode}` : null,
+    emit: (p) => p.zplMode !== undefined ? `^SZ${p.zplMode}` : null,
   },
   printerName: {
+    kind: 'emit',
     channel: 'block',
     // ^KN takes two positional params; description rides along
     // only when set. The `printerDescription` registry entry below
@@ -103,28 +149,25 @@ const SETUP_SCRIPT_EMITTERS = {
     // ^KN emit stays a single line. Both values are `.trim()`ed
     // on emit because the parser trims on import, and asymmetric
     // whitespace would silently break the round-trip invariant.
-    emit: (l) => {
-      if (l.printerName === undefined) return null;
-      const name = l.printerName.trim();
+    emit: (p) => {
+      if (p.printerName === undefined) return null;
+      const name = p.printerName.trim();
       // Schema's min(1) accepts whitespace-only strings; trimming
       // to empty here drops the emit so the parser's "no name = no
       // ^KN" round-trip rule holds. Without this guard, `^KN` (or
       // `^KN,desc`) would emit and the parser would silently drop
       // both fields on re-import.
       if (!name) return null;
-      const desc = l.printerDescription?.trim();
+      const desc = p.printerDescription?.trim();
       return desc ? `^KN${name},${desc}` : `^KN${name}`;
     },
   },
   printerDescription: {
-    // Folded into the ^KN emit above; this entry exists only so
-    // the SETUP_SCRIPT_FIELDS list (derived via Object.keys) sees
-    // the field and the no-leak test knows it's per-spec a
-    // Setup-Script field.
-    channel: 'block',
-    emit: () => null,
+    kind: 'foldedInto',
+    target: 'printerName',
   },
   clockMode: {
+    kind: 'emit',
     channel: 'block',
     // ^SL has three value shapes in one positional slot: 'S', 'T',
     // or numeric 1..999 (TOL with tolerance). Schema's cross-field
@@ -133,32 +176,32 @@ const SETUP_SCRIPT_EMITTERS = {
     // tolerance under TOL is unreachable through `parse`. Language
     // rides along when set; if omitted, the printer keeps its
     // current second-positional value.
-    emit: (l) => {
-      if (l.clockMode === undefined) return null;
-      const a = l.clockMode === 'TOL'
-        ? String(l.clockTolerance)
-        : l.clockMode;
-      const b = l.clockLanguage;
+    emit: (p) => {
+      if (p.clockMode === undefined) return null;
+      const a = p.clockMode === 'TOL'
+        ? String(p.clockTolerance)
+        : p.clockMode;
+      const b = p.clockLanguage;
       return b !== undefined ? `^SL${a},${b}` : `^SL${a}`;
     },
   },
   clockTolerance: {
-    // Folded into the ^SL emit above; see `printerDescription`
-    // for the rationale of the no-op standalone entry.
-    channel: 'block',
-    emit: () => null,
+    kind: 'foldedInto',
+    target: 'clockMode',
   },
   clockLanguage: {
-    // Same fold-in pattern: language rides on ^SL's second
-    // positional. If language is set but mode is not, the printer
-    // would need a bare `^SL,<lang>` which the spec leaves
-    // implementation-defined — we drop instead of guessing.
-    channel: 'block',
-    emit: () => null,
+    // Language rides on ^SL's second positional. If language is set
+    // but mode is not, the printer would need a bare `^SL,<lang>`
+    // which the spec leaves implementation-defined — we drop instead
+    // of guessing. The fold target is `clockMode` because the emit
+    // path lives there even though `clockLanguage` is independently
+    // settable from the UI.
+    kind: 'foldedInto',
+    target: 'clockMode',
   },
-} as const satisfies Partial<Record<keyof LabelConfig, SetupScriptEmitter>>;
+} as const satisfies Partial<Record<keyof PrinterProfile, SetupScriptEntry>>;
 
-/** Public list of the LabelConfig fields that flow through the
+/** Public list of the PrinterProfile fields that flow through the
  *  Setup-Script generator. Derived from the registry so the two
  *  cannot drift. Consumers (test no-leak assertion, modal rail
  *  grouping) read this instead of hard-coding the list. */
@@ -168,13 +211,23 @@ export const SETUP_SCRIPT_FIELDS = Object.keys(
 
 export type SetupScriptField = keyof typeof SETUP_SCRIPT_EMITTERS;
 
-export function generateSetupScript(label: LabelConfig): string {
+/** Re-export the registry for tests that need to assert structural
+ *  invariants (e.g. every foldedInto.target points at a kind:'emit'
+ *  entry, never another foldedInto — that would create a fold chain
+ *  with no actual emit producer). Kept module-internal-ish: not
+ *  intended for runtime consumers, just the test boundary. */
+export const __SETUP_SCRIPT_EMITTERS_FOR_TESTS = SETUP_SCRIPT_EMITTERS;
+
+export function generateSetupScript(profile: PrinterProfile): string {
   const tildeLines: string[] = [];
   const blockLines: string[] = [];
 
   for (const field of SETUP_SCRIPT_FIELDS) {
     const e = SETUP_SCRIPT_EMITTERS[field];
-    const line = e.emit(label);
+    // foldedInto entries don't emit on their own; their value rides
+    // along on the `target` field's emit. Skip without calling.
+    if (e.kind !== 'emit') continue;
+    const line = e.emit(profile);
     if (line === null) continue;
     (e.channel === 'tilde' ? tildeLines : blockLines).push(line);
   }

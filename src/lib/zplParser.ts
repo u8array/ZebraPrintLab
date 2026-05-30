@@ -1,4 +1,5 @@
 import type { CustomFontMapping, LabelConfig } from "../types/ObjectType";
+import type { PrinterProfile } from "../types/PrinterProfile";
 import {
   CLOCK_TOLERANCE_RANGE,
   DARKNESS_INSTANT_RANGE,
@@ -109,6 +110,13 @@ export interface ImportReport {
 
 export interface ParsedZPL {
   labelConfig: Partial<LabelConfig>;
+  /** EEPROM-persistent printer-state extracted from any Setup-Script
+   *  commands in the stream (^JZ, ^JT, ~TA, ^ST, ^KD, ^SL, ^KL, ^SE,
+   *  ^SZ, ^KN). Distinct from `labelConfig` so import doesn't leak
+   *  per-installation state into the per-label design. Caller decides
+   *  whether to merge these into the active store profile or surface
+   *  them for user confirmation. */
+  printerProfile: Partial<PrinterProfile>;
   objects: LabelObject[];
   /** Template variables reconstructed from `^FN` slots. The parser creates
    *  one entry per distinct fnNumber it sees and points every bound
@@ -572,6 +580,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   const tokens = tokenize(zpl);
   const objects: LabelObject[] = [];
   const labelConfig: Partial<LabelConfig> = {};
+  const printerProfile: Partial<PrinterProfile> = {};
   const variables: Variable[] = [];
   const skipped: string[] = [];
   const partialCmds = new Set<string>(); // deduplicates partial-import command codes
@@ -1985,11 +1994,11 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     },
     JZ(p) {
       const v = strParam(p[0]);
-      if (v === "Y" || v === "N") labelConfig.reprintAfterError = v;
+      if (v === "Y" || v === "N") printerProfile.reprintAfterError = v;
     },
     JT(p) {
       const v = inRange(parseIntOrUndef(p[0]), HEAD_TEST_INTERVAL_RANGE);
-      if (v !== undefined) labelConfig.headTestInterval = v;
+      if (v !== undefined) printerProfile.headTestInterval = v;
     },
     // ~TA reads p[0] (not the raw rest string) so trailing tokens
     // from a streamed ZPL chunk (e.g. `~TA10^XA…`) don't leak into
@@ -1997,7 +2006,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // a plain ~TA-30 still resolves p[0] to "-30".
     TA(p) {
       const v = inRange(parseIntOrUndef(p[0]), TEAR_OFF_ADJUST_RANGE);
-      if (v !== undefined) labelConfig.tearOffAdjust = v;
+      if (v !== undefined) printerProfile.tearOffAdjust = v;
     },
     PO(_, rest) {
       const po = (rest.trim()[0] ?? "").toUpperCase();
@@ -2020,7 +2029,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // the parser's existing contract.
     ST(p) {
       const iso = parseRealtimeClock(p);
-      if (iso !== null) labelConfig.setRealtimeClock = iso;
+      if (iso !== null) printerProfile.setRealtimeClock = iso;
     },
     // ^KD <format-code>. Reads only the first char of `rest`, so
     // `^KD2,foo` parses as `clockFormat: '2'` and the trailing junk
@@ -2028,7 +2037,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // (PO / PM / MT take the same first-char approach).
     KD(_, rest) {
       const v = rest.trim()[0] ?? "";
-      if (isClockFormat(v)) labelConfig.clockFormat = v;
+      if (isClockFormat(v)) printerProfile.clockFormat = v;
     },
     // ^KL <locale-code>. Two- or three-char alpha code (see
     // PRINTER_LOCALE_VALUES). `rest` may contain trailing newline /
@@ -2036,7 +2045,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // guard check.
     KL(_, rest) {
       const v = rest.trim().toUpperCase();
-      if (isPrinterLocale(v)) labelConfig.printerLocale = v;
+      if (isPrinterLocale(v)) printerProfile.printerLocale = v;
     },
     // ^SE <file-path>. Free string per spec; trim to drop any
     // streaming whitespace but otherwise preserve the value as-is
@@ -2046,13 +2055,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // in the store and be re-emitted as an injected command.
     SE(_, rest) {
       const v = rest.trim();
-      if (v && !setupScriptUnsafeCharRegex.test(v)) labelConfig.encodingTable = v;
+      if (v && !setupScriptUnsafeCharRegex.test(v)) printerProfile.encodingTable = v;
     },
     // ^SZ <mode>. Single digit '1' or '2'; same first-char-trim
     // pattern as KD / KL.
     SZ(_, rest) {
       const v = rest.trim()[0] ?? "";
-      if (isZplMode(v)) labelConfig.zplMode = v;
+      if (isZplMode(v)) printerProfile.zplMode = v;
     },
     // ^KN <name>,<description>. Both parts free strings; the
     // injection-guard regex mirrors the schema so an imported
@@ -2062,10 +2071,10 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       const name = (p[0] ?? "").trim();
       if (!name || name.length > PRINTER_NAME_MAX_LEN) return;
       if (setupScriptUnsafeCharRegex.test(name)) return;
-      labelConfig.printerName = name;
+      printerProfile.printerName = name;
       const desc = (p[1] ?? "").trim();
       if (desc && !setupScriptUnsafeCharRegex.test(desc)) {
-        labelConfig.printerDescription = desc;
+        printerProfile.printerDescription = desc;
       }
     },
     // ^SL `a`,`b` — Set Mode and Language for ^FC clock fields.
@@ -2077,26 +2086,29 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     SL(p) {
       const a = strParam(p[0]);
       if (a === "S" || a === "T") {
-        labelConfig.clockMode = a;
+        printerProfile.clockMode = a;
         // Clear any tolerance left over from a previous ^SL parse —
         // schema's cross-field rule forbids `tolerance && mode !== 'TOL'`,
         // and the parser writes raw values without re-running the
         // schema, so a stale tolerance from an earlier ^SL60,1 would
-        // make the persisted state un-saveable.
-        labelConfig.clockTolerance = undefined;
+        // make the persisted state un-saveable. `delete` rather than
+        // `= undefined` so the returned ParsedZPL doesn't carry the
+        // key as present-with-undefined (which leaks across the
+        // import-service fold as a misleading "clear" signal).
+        delete printerProfile.clockTolerance;
       } else {
         const tol = inRange(parseIntOrUndef(a), CLOCK_TOLERANCE_RANGE);
         if (tol !== undefined) {
-          labelConfig.clockMode = "TOL";
-          labelConfig.clockTolerance = tol;
+          printerProfile.clockMode = "TOL";
+          printerProfile.clockTolerance = tol;
         }
       }
       // Language only when the mode parse landed — orphan language
       // (mode invalid, b valid) would be write-only state (emit
       // gated on mode anchor, parser would silently re-drop).
-      if (labelConfig.clockMode === undefined) return;
+      if (printerProfile.clockMode === undefined) return;
       const b = strParam(p[1]);
-      if (isClockLanguage(b)) labelConfig.clockLanguage = b;
+      if (isClockLanguage(b)) printerProfile.clockLanguage = b;
     },
 
     // ^CW {alias},{path} — register an alias for a printer-resident font.
@@ -2440,6 +2452,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
   return {
     labelConfig,
+    printerProfile,
     objects,
     variables,
     skipped,

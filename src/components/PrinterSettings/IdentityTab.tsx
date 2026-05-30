@@ -19,8 +19,8 @@ import {
  *  follow-up. */
 export function IdentityTab() {
   const t = useT();
-  const label = useLabelStore((s) => s.label);
-  const setLabelConfig = useLabelStore((s) => s.setLabelConfig);
+  const profile = useLabelStore((s) => s.printerProfile);
+  const patchPrinterProfile = useLabelStore((s) => s.patchPrinterProfile);
   const loc = t.printerSettings.identity;
   const nameId = useId();
 
@@ -38,9 +38,9 @@ export function IdentityTab() {
           type="text"
           maxLength={PRINTER_NAME_MAX_LEN}
           className={inputCls}
-          value={label.printerName ?? ""}
+          value={profile.printerName ?? ""}
           onChange={(e) =>
-            setLabelConfig({ printerName: e.target.value || undefined })
+            patchPrinterProfile({ printerName: e.target.value || undefined })
           }
         />
         <span className={`${labelCls} normal-case tracking-normal text-muted/70`}>
@@ -53,9 +53,9 @@ export function IdentityTab() {
               id={id}
               type="text"
               className={inputCls}
-              value={label.printerDescription ?? ""}
+              value={profile.printerDescription ?? ""}
               onChange={(e) =>
-                setLabelConfig({ printerDescription: e.target.value || undefined })
+                patchPrinterProfile({ printerDescription: e.target.value || undefined })
               }
             />
           )}

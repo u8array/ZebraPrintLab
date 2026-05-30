@@ -1,10 +1,18 @@
 import { parseZPL, type ImportFinding, type ImportFindingKind, type ImportReport } from "./zplParser";
+import { pruneUndefined } from "./pruneUndefined";
 import type { LabelConfig } from "../types/ObjectType";
+import type { PrinterProfile } from "../types/PrinterProfile";
 import type { LabelObject } from "../types/Group";
 import { uniqueVariableName, type Variable } from "../types/Variable";
 
 export interface ZplImportResult {
   labelConfig: Partial<LabelConfig>;
+  /** Setup-Script fields extracted from the import. Caller decides
+   *  whether to overwrite the active printer profile (e.g. only when
+   *  the user explicitly opts in) — design imports should typically
+   *  NOT auto-apply these so a shared `.zpl` can't silently
+   *  reconfigure the user's printer. */
+  printerProfile: Partial<PrinterProfile>;
   pages: { objects: LabelObject[] }[];
   variables: Variable[];
   report: ImportReport;
@@ -30,6 +38,7 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
   if (blocks.length === 0) {
     return {
       labelConfig: {},
+      printerProfile: {},
       pages: [],
       variables: [],
       report: { findings: [], partial: [], browserLimit: [], unknown: [] },
@@ -37,6 +46,11 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
   }
 
   let labelConfig: Partial<LabelConfig> = {};
+  // Merge profile fields across blocks: later blocks' values win so a
+  // multi-block ZPL with re-stated Setup-Script commands resolves to
+  // the last-seen state (mirrors what the printer would actually end
+  // up with after executing the stream).
+  const printerProfile: Partial<PrinterProfile> = {};
   const pages: { objects: LabelObject[] }[] = [];
   const findings: ImportFinding[] = [];
   // Variables are document-level, but the parser reconstructs them per
@@ -74,6 +88,12 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     if (i === 0) {
       labelConfig = result.labelConfig;
     }
+    // Fold cross-block profile fields without leaking present-with-
+    // undefined keys: an explicit `undefined` from one block would
+    // otherwise overwrite a real value from a later block and end up
+    // in the returned ZplImportResult as a misleading "field cleared"
+    // signal for any consumer that bypasses patchPrinterProfile.
+    Object.assign(printerProfile, pruneUndefined(result.printerProfile));
     // Per-block findings come from the parser with pageIndex=0; stamp the
     // real page index here so the UI can navigate to them.
     for (const f of result.importReport.findings) {
@@ -94,7 +114,7 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     unknown: dedupBy('unknown'),
   };
 
-  return { labelConfig, pages, variables, report };
+  return { labelConfig, printerProfile, pages, variables, report };
 }
 
 /** In-place rewrite of `variableId` references on freshly-parsed objects
