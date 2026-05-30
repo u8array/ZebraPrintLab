@@ -99,4 +99,19 @@ describe('importZplText: findings.pageIndex', () => {
     expect(onPage1).toHaveLength(1);
     expect(onPage1[0]?.command).toBe('^A@');
   });
+
+  it('folds printerProfile across multiple ^XA blocks (last-write-wins per key, non-overlapping preserved)', () => {
+    // Block 1 sets reprintAfterError=N + setRealtimeClock.
+    // Block 2 overrides reprintAfterError to Y.
+    // Result must carry Y from block 2 AND the clock from block 1 —
+    // a per-block fold mid-pipeline; a refactor that collapsed the
+    // fold to one end-of-stream pass would lose one of the two.
+    const zpl = [
+      '^XA^JZN^ST05,20,2026,12,00,00^XZ',
+      '^XA^JZY^XZ',
+    ].join('\n');
+    const { printerProfile } = importZplText(zpl, 8);
+    expect(printerProfile.reprintAfterError).toBe('Y');
+    expect(printerProfile.setRealtimeClock).toBeDefined();
+  });
 });

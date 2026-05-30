@@ -29,11 +29,11 @@ import type { Variable } from "../../types/Variable";
 function caretOffsetIn(
   editor: HTMLElement,
   sel: Selection | null,
-  which: 'anchor' | 'focus' = 'anchor',
+  which: "anchor" | "focus" = "anchor",
 ): number | null {
   if (!sel || sel.rangeCount === 0) return null;
-  const node = which === 'anchor' ? sel.anchorNode : sel.focusNode;
-  const offset = which === 'anchor' ? sel.anchorOffset : sel.focusOffset;
+  const node = which === "anchor" ? sel.anchorNode : sel.focusNode;
+  const offset = which === "anchor" ? sel.anchorOffset : sel.focusOffset;
   if (!node || !editor.contains(node)) return null;
   return getCaretOffset(editor, node, offset);
 }
@@ -258,7 +258,7 @@ export function TemplateContentInput({
     const marker = `«${markerBody}»`;
     const start = getCaretOffsetInEditor();
     const end = editor
-      ? (caretOffsetIn(editor, window.getSelection(), 'focus') ?? start)
+      ? (caretOffsetIn(editor, window.getSelection(), "focus") ?? start)
       : start;
     const lo = Math.min(start, end);
     const hi = Math.max(start, end);
@@ -291,8 +291,8 @@ export function TemplateContentInput({
      *  to caret at end-of-value for off-editor selections. */
     const selectionRange = (fallbackLen: number) => {
       const sel = window.getSelection();
-      const start = caretOffsetIn(editor, sel, 'anchor') ?? fallbackLen;
-      const end = caretOffsetIn(editor, sel, 'focus') ?? start;
+      const start = caretOffsetIn(editor, sel, "anchor") ?? fallbackLen;
+      const end = caretOffsetIn(editor, sel, "focus") ?? start;
       return { lo: Math.min(start, end), hi: Math.max(start, end) };
     };
     /** Browser-native undo/redo route through zundo (global Ctrl+Z),
@@ -373,7 +373,6 @@ export function TemplateContentInput({
       editor.removeEventListener("beforeinput", handler);
       editor.removeEventListener("paste", handlePaste);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onInput = () => {

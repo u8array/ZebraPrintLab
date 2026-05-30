@@ -1,28 +1,6 @@
 import type { CustomFontMapping, LabelConfig } from "../types/ObjectType";
 import type { PrinterProfile } from "../types/PrinterProfile";
 import {
-  CLOCK_TOLERANCE_RANGE,
-  DARKNESS_INSTANT_RANGE,
-  DARKNESS_PERMANENT_RANGE,
-  HEAD_TEST_INTERVAL_RANGE,
-  MAX_LABEL_LENGTH_RANGE,
-  PRINTER_NAME_MAX_LEN,
-  SPEED_RANGE,
-  TEAR_OFF_ADJUST_RANGE,
-  isClockFormat,
-  isClockLanguage,
-  isMediaFeedMode,
-  isMediaMode,
-  isMediaTracking,
-  isMediaType,
-  isPrintOrientation,
-  isPrinterLocale,
-  isZplMode,
-  setupScriptUnsafeCharRegex,
-} from "../types/ObjectType";
-import { parseIntOrUndef } from "./inputParse";
-import { parseRealtimeClock } from "./realtimeClock";
-import {
   FN_NUMBER_MIN,
   FN_NUMBER_MAX,
   uniqueVariableName,
@@ -59,522 +37,40 @@ import type { AztecProps } from "../registry/aztec";
 import type { MaxicodeProps } from "../registry/maxicode";
 import type { MicroPdf417Props } from "../registry/micropdf417";
 import type { CodablockProps } from "../registry/codablock";
-import { unzlibSync } from "fflate";
-import { putImage } from "./imageCache";
 import { formatStoragePath, parseStoragePath } from "./storagePath";
 import { loadFontBytesSync } from "./fontCache";
 import { ZPL_BUILTIN_FONT_LETTERS } from "./customFonts";
 import { GS1_DATABAR_DEFAULT_SEGMENTS } from "./gs1";
-
-export type ImportFindingKind = "partial" | "browserLimit" | "unknown";
-
-/**
- * One import finding. Created per-occurrence so each entry can be navigated
- * to its source page in the UI; cross-block dedup happens (if at all) in the
- * service layer that merges per-page parser runs.
- */
-export interface ImportFinding {
-  kind: ImportFindingKind;
-  /** Command token. For 'partial' the bare code (e.g. "^A@"); for
-   *  'browserLimit' / 'unknown' the full token including parameters
-   *  (e.g. "^IM,R:LOGO.GRF"). Matches the pre-finding-restructure
-   *  format so existing UI / format helpers keep working. */
-  command: string;
-  /** Page index this finding originated from. The parser doesn't know about
-   *  pages and emits 0; `zplImportService` overwrites it when it merges the
-   *  per-block parser results into a multi-page report. */
-  pageIndex: number;
-}
-
-/**
- * Categorised import report produced alongside the parsed objects.
- * `findings` is the source of truth; the three string buckets are derived
- * views kept for backward compatibility with existing parser tests and
- * the textual report formatter.
- */
-export interface ImportReport {
-  /** Per-block findings grouped by kind (partial, then browserLimit, then
-   *  unknown). Inside each group, entries are in encounter order; the
-   *  partial group is deduplicated by command code. The derived arrays
-   *  below offer a kind-filtered view. */
-  findings: ImportFinding[];
-  /** Commands that were imported with known loss (e.g. ^A@ → font face not available in browser).
-   *  An object WAS created; something about it is approximate. Deduplicated by command code. */
-  partial: string[];
-  /** Commands skipped because they require printer hardware or file storage
-   *  (e.g. ^IM, ~DG). No object was created for these. */
-  browserLimit: string[];
-  /** Commands that were not recognised at all. No object was created for these. */
-  unknown: string[];
-}
-
-export interface ParsedZPL {
-  labelConfig: Partial<LabelConfig>;
-  /** EEPROM-persistent printer-state extracted from any Setup-Script
-   *  commands in the stream (^JZ, ^JT, ~TA, ^ST, ^KD, ^SL, ^KL, ^SE,
-   *  ^SZ, ^KN). Distinct from `labelConfig` so import doesn't leak
-   *  per-installation state into the per-label design. Caller decides
-   *  whether to merge these into the active store profile or surface
-   *  them for user confirmation. */
-  printerProfile: Partial<PrinterProfile>;
-  objects: LabelObject[];
-  /** Template variables reconstructed from `^FN` slots. The parser creates
-   *  one entry per distinct fnNumber it sees and points every bound
-   *  object's `variableId` at the matching entry. Empty when no `^FN`
-   *  appeared in the block. */
-  variables: Variable[];
-  /** All commands that were not fully imported (browserLimit + unknown).
-   *  Kept for backward compatibility; prefer importReport for categorised access. */
-  skipped: string[];
-  /** Categorised breakdown of import fidelity */
-  importReport: ImportReport;
-}
-
-type Handler = (p: string[], rest: string) => void;
-
-// ZPL commands start with ^ or ~ followed by 2 characters
-function tokenize(zpl: string): { cmd: string; rest: string }[] {
-  const tokens: { cmd: string; rest: string }[] = [];
-  // Split on both ^ and ~ delimiters, preserving the delimiter type
-  const parts = zpl.split(/(?=[\^~])/);
-  for (const part of parts) {
-    if (part.length < 3) continue; // need delimiter + 2-char command
-    const delimiter = part[0];
-    if (delimiter !== "^" && delimiter !== "~") continue;
-    const cmd = part.slice(1, 3).toUpperCase();
-    const rest = part.slice(3);
-    tokens.push({ cmd, rest });
-  }
-  return tokens;
-}
-
-function int(s: string | undefined, fallback = 0): number {
-  const n = Number.parseInt(s ?? "", 10);
-  return Number.isNaN(n) ? fallback : n;
-}
-
-/** Tiny range helper for parser handlers that gate a value on a
- *  `*_RANGE` constant. Returns the value when in range, undefined
- *  otherwise — matches the parser's "silently drop invalid params"
- *  contract while removing the repetitive `>= R.min && <= R.max`
- *  shape from each ranged handler. */
-function inRange(v: number | undefined, r: { min: number; max: number }): number | undefined {
-  return v !== undefined && v >= r.min && v <= r.max ? v : undefined;
-}
-
-/** Normalised positional string param: trims surrounding whitespace
- *  (the tokenizer keeps trailing `\n` etc. on the last positional)
- *  and upper-cases for case-insensitive enum matches. Use for any
- *  multi-positional string-enum handler so each handler agrees on
- *  the same param-cleaning contract. */
-function strParam(s: string | undefined): string {
-  return (s ?? "").trim().toUpperCase();
-}
-
-function makeObj(
-  type: string,
-  x: number,
-  y: number,
-  props: unknown,
-  positionType?: "FO" | "FT",
-  comment?: string,
-): LabelObject {
-  return {
-    id: crypto.randomUUID(),
-    type,
-    x,
-    y,
-    rotation: 0,
-    positionType,
-    comment,
-    props,
-  } as unknown as LabelObject;
-}
-
-/** Derive a Variable name from a `^FX` comment that landed just before the
- *  `^FN`. Strips well-known annotation prefixes (`Field:`, `Variable:`,
- *  `Var:`) so a comment like "Field: Customer Name" becomes `Customer_Name`.
- *  Returns null when the comment is missing or sanitises to empty — the
- *  caller falls back to `field_{n}`. */
-function variableNameFromComment(comment: string | undefined): string | null {
-  if (!comment) return null;
-  const cleaned = comment
-    .replace(/^\s*(field|variable|var)\s*[:-]\s*/i, "")
-    .trim()
-    .replace(/\s+/g, "_");
-  return cleaned === "" ? null : cleaned;
-}
-
-
-/**
- * Map a ^CI N parameter to a TextDecoder label. Most labels printed by this
- * app use ^CI28 (UTF-8); ^CI27 is Windows-1252 (Zebra default for many EU
- * setups); legacy ^CI0..13 are 7-bit-ASCII-compatible code-page variants for
- * which Windows-1252 is a safe superset for the purposes of `^FH` decoding.
- * Unsupported encodings (multi-byte UTF-16/32 variants, code page 850, …)
- * fall back to UTF-8 with the command surfaced via importReport.partial.
- */
-function ciToEncoding(n: number): { label: string; supported: boolean } {
-  if (n === 28) return { label: "utf-8", supported: true };
-  if (n === 27) return { label: "windows-1252", supported: true };
-  if (n >= 0 && n <= 13) return { label: "windows-1252", supported: true };
-  return { label: "utf-8", supported: false };
-}
-
-const decoderCache = new Map<string, TextDecoder>();
-function getDecoder(label: string): TextDecoder {
-  let dec = decoderCache.get(label);
-  if (!dec) {
-    dec = new TextDecoder(label);
-    decoderCache.set(label, dec);
-  }
-  return dec;
-}
-
-/**
- * Decode ^FH hex escapes: replaces runs of {delimiter}XX with the string for
- * the byte sequence XX XX … under the active ^CI encoding. A single non-ASCII
- * glyph may span multiple escape pairs (e.g. `_C3_A4` → `ä` under UTF-8), so
- * we collect contiguous pairs into a Uint8Array and run one TextDecoder pass
- * per run. Invalid byte sequences become U+FFFD (decoder default).
- */
-function decodeFH(
-  text: string,
-  delimiter: string,
-  decoder: TextDecoder,
-): string {
-  const escaped = delimiter.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const runRe = new RegExp(`(?:${escaped}[0-9A-Fa-f]{2})+`, "g");
-  const stride = delimiter.length + 2;
-  return text.replace(runRe, (run) => {
-    const bytes = new Uint8Array(run.length / stride);
-    for (let i = 0, b = 0; i < run.length; i += stride, b++) {
-      bytes[b] = parseInt(run.slice(i + delimiter.length, i + stride), 16);
-    }
-    return decoder.decode(bytes);
-  });
-}
+import {
+  tokenize,
+  int,
+  makeObj,
+  variableNameFromComment,
+  ciToEncoding,
+  getDecoder,
+  decodeFH,
+} from "./zplParser/helpers";
+import { decodeGraphicToImage } from "./zplParser/decoders/graphic";
+import { createLabelConfigHandlers } from "./zplParser/handlers/labelConfig";
+import { createSetupScriptHandlers } from "./zplParser/handlers/setupScript";
+import { createUnsupportedHandlers } from "./zplParser/handlers/unsupported";
+import type {
+  Handler,
+  UploadedGraphic,
+  ImportFinding,
+  ParsedZPL,
+} from "./zplParser/types";
+export type {
+  ImportFindingKind,
+  ImportFinding,
+  ImportReport,
+  ParsedZPL,
+} from "./zplParser/types";
 
 /** Characters of a `^GF`/`~DY` payload retained in browserLimit/skipped
  *  findings; rest is replaced with an ellipsis so a single multi-KB
  *  base64 blob doesn't drown out the import report. */
 const IMPORT_FINDING_PAYLOAD_LIMIT = 80;
-
-const CRC16_POLY = 0x1021;
-const CRC16_MSB_MASK = 0x8000; // 1 << 15
-const CRC16_MASK = 0xffff;
-const BITS_PER_BYTE = 8;
-
-/**
- * CRC-16/XMODEM (poly 0x1021, init 0x0000, no reflect, no xorout) —
- * Zebra's ZB64/ZB16 wrapper uses this variant. Computed over the base64
- * (or hex) payload between the `:B64:`/`:Z64:` prefix and the trailing
- * `:CRC` suffix. (Note: this is *not* CRC-16/CCITT-FALSE, which uses
- * init=0xFFFF — empirically verified against Labelary: payloads with the
- * XMODEM CRC are accepted, CCITT-FALSE CRC is rejected.)
- */
-function crc16Xmodem(s: string): number {
-  let crc = 0;
-  for (const ch of s) {
-    crc ^= ch.charCodeAt(0) << BITS_PER_BYTE;
-    for (let j = 0; j < BITS_PER_BYTE; j++) {
-      crc = (crc & CRC16_MSB_MASK)
-        ? ((crc << 1) ^ CRC16_POLY) & CRC16_MASK
-        : (crc << 1) & CRC16_MASK;
-    }
-  }
-  return crc;
-}
-
-type GfWrapperKind = "b64" | "z64";
-
-interface GfWrapperDecoded {
-  kind: GfWrapperKind;
-  /** Raw decoded bytes — for `:Z64:` this is still zlib-compressed. */
-  bytes: Uint8Array;
-  /** True if the trailing CRC matches the base64 payload. */
-  crcOk: boolean;
-}
-
-/** CRC-16 emitted as 4 uppercase hex chars in the `:B64:`/`:Z64:` trailer. */
-const CRC_HEX_DIGITS = 4;
-// \s in the base64 char class tolerates the line-break-every-N-chars
-// formatting that some ZPL generators apply to long ^GF payloads.
-const GF_WRAPPER_RE = new RegExp(
-  `^:(B64|Z64):([A-Za-z0-9+/=\\s]+):([0-9A-Fa-f]{${CRC_HEX_DIGITS}})$`,
-);
-
-/** Decode a base64 string to bytes; empty array on malformed input. */
-function base64ToBytes(b64: string): Uint8Array {
-  let bin: string;
-  try {
-    bin = atob(b64);
-  } catch {
-    return new Uint8Array(0);
-  }
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes;
-}
-
-/**
- * Parse a `:B64:<base64>:<crc>` or `:Z64:<base64>:<crc>` wrapper. Returns
- * null if the payload doesn't carry a wrapper. Used inside `^GFA`/`^GFB`/
- * `^GFC` where Zebra firmware accepts the same envelope. The CRC is
- * computed over the base64 string (CRC-16/XMODEM) and surfaced as a flag
- * rather than a hard reject — printers tolerate mismatches, and we'd
- * rather render a slightly-suspect graphic than silently drop it.
- *
- * `payload.trim()` because real-world ZPL is often line-broken between
- * commands; the tokenizer keeps the trailing newline on `rest`, and an
- * un-trimmed regex with a `$` anchor would miss every wrapper-in-the-wild.
- */
-function parseGfWrapper(payload: string): GfWrapperDecoded | null {
-  const m = GF_WRAPPER_RE.exec(payload.trim());
-  if (!m) return null;
-  // atob and the CRC both fail on embedded whitespace — strip after match
-  // so the wrapper-form regex above can stay permissive for line-broken
-  // payloads but the downstream decoders see pure base64.
-  const b64 = (m[2] ?? "").replace(/\s/g, "");
-  const declaredCrc = parseInt(m[3] ?? "0", 16);
-  return {
-    kind: (m[1] ?? "").toLowerCase() as GfWrapperKind,
-    bytes: base64ToBytes(b64),
-    crcOk: crc16Xmodem(b64) === declaredCrc,
-  };
-}
-
-/**
- * Result of `gfPayloadToBytes`: the raw bitmap bytes (one row = N bytes,
- * each byte = 8 pixels, MSB first) plus the integrity flag for the
- * originating wrapper. `crcOk=false` is rendered with a fidelity caveat;
- * `null` from `gfPayloadToBytes` means the payload was undecodable.
- */
-interface GfPayloadDecoded {
-  data: Uint8Array;
-  crcOk: boolean;
-}
-
-/** Inflate `:Z64:` zlib payload; null on malformed deflate stream. */
-function tryInflateZlib(input: Uint8Array): Uint8Array | null {
-  try {
-    return unzlibSync(input);
-  } catch {
-    return null;
-  }
-}
-
-/** Decode the ASCII-hex output of `decompressGFA` into a packed byte array
- *  so all three GF code paths converge on the same `Uint8Array` shape.
- *  Indexed access + nibble shift instead of `parseInt(slice)` because the
- *  per-byte slice/parseInt pair is the dominant cost on multi-KB bitmaps. */
-function gfaHexToBytes(hex: string): Uint8Array {
-  const out = new Uint8Array(hex.length >> 1);
-  for (let i = 0; i < out.length; i++) {
-    const hi = parseInt(hex[i * 2] ?? "0", 16);
-    const lo = parseInt(hex[i * 2 + 1] ?? "0", 16);
-    out[i] = (hi << 4) | lo;
-  }
-  return out;
-}
-
-/**
- * Normalise a `^GF{A|B|C}` payload to packed bitmap bytes. Hides the
- * format / wrapper / compression dispatch from the command handler so the
- * latter can stay focused on positioning and pixel painting.
- *
- *  - `:B64:`/`:Z64:` wrapper → base64-decode (then zlib-inflate for Z64)
- *  - `format=A` without wrapper → existing RLE-hex path → bytes
- *  - `format=B`/`C` without wrapper → null (raw binary can't survive the
- *    text-based ZPL channel and the parser never sees intact bytes anyway)
- */
-function gfPayloadToBytes(
-  rawData: string,
-  format: "A" | "B" | "C",
-  bytesPerRow: number,
-): GfPayloadDecoded | null {
-  const wrapper = parseGfWrapper(rawData);
-  if (wrapper) {
-    const bytes =
-      wrapper.kind === "z64" ? tryInflateZlib(wrapper.bytes) : wrapper.bytes;
-    if (!bytes) return null;
-    return { data: bytes, crcOk: wrapper.crcOk };
-  }
-  if (format === "A") {
-    return { data: gfaHexToBytes(decompressGFA(rawData, bytesPerRow)), crcOk: true };
-  }
-  return null;
-}
-
-/** Outcome of decoding any GF-shaped graphic (^GF or ~DY graphic upload)
- *  into an image-cache entry. Common to both call sites so the per-handler
- *  code only needs to bind it to the right ZPL artifact (label object vs.
- *  preamble registration). */
-interface DecodedGraphic {
-  imageId: string;
-  widthDots: number;
-  heightDots: number;
-  /** Verbatim `^GF{format},total,data,bpr,DATA` reconstruction kept on the
-   *  image so round-trip emit can splice the same byte stream back into
-   *  either `^GF` (inline) or `~DY` (preamble) without re-encoding. */
-  gfaCache: string;
-  crcOk: boolean;
-}
-
-/** Entry in the `~DY → ^XG` lookup map: a graphic uploaded earlier in the
- *  stream, keyed by its full `device:stem.ext` path. Structurally a
- *  `DecodedGraphic` without the per-decode CRC flag — that lives on the
- *  partialCmds set instead of on every map entry. */
-type UploadedGraphic = Omit<DecodedGraphic, "crcOk">;
-
-/**
- * Decode a GF-shaped payload into an image-cache entry. Shared between the
- * `^GF` inline path and the `~DY` graphic-upload preamble; both have the
- * same payload shape and need the same decoded bitmap, canvas paint, and
- * cache write. Returns `null` when the payload can't be decoded (caller
- * surfaces as browserLimit).
- */
-function decodeGraphicToImage(
-  rawData: string,
-  format: "A" | "B" | "C",
-  bytesPerRow: number,
-  totalBytesHeader: string,
-  dataBytesHeader: string,
-  nameHint: string,
-): DecodedGraphic | null {
-  const decoded = gfPayloadToBytes(rawData, format, bytesPerRow);
-  if (!decoded) return null;
-  const widthDots = bytesPerRow * BITS_PER_BYTE;
-  const heightDots = Math.floor(decoded.data.length / bytesPerRow);
-  if (heightDots <= 0) return null;
-  const canvas = document.createElement("canvas");
-  canvas.width = widthDots;
-  canvas.height = heightDots;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Could not get 2d context");
-  const imgData = ctx.createImageData(widthDots, heightDots);
-  const pixels = imgData.data;
-  for (let row = 0; row < heightDots; row++) {
-    for (let byteIdx = 0; byteIdx < bytesPerRow; byteIdx++) {
-      const byte = decoded.data[row * bytesPerRow + byteIdx] ?? 0;
-      for (let bit = 0; bit < BITS_PER_BYTE; bit++) {
-        const px = byteIdx * BITS_PER_BYTE + bit;
-        const idx = (row * widthDots + px) * 4;
-        // ZPL ^GF: 1-bit = black (printed), 0-bit = transparent.
-        // ImageData starts zero-filled (rgba(0,0,0,0)), which is exactly
-        // the 0-bit case — only the 1-bit case needs a write.
-        if ((byte & (0x80 >> bit)) !== 0) {
-          pixels[idx + 3] = 255;
-        }
-      }
-    }
-  }
-  ctx.putImageData(imgData, 0, 0);
-  const imageId = crypto.randomUUID();
-  putImage({
-    id: imageId,
-    name: nameHint,
-    dataUrl: canvas.toDataURL("image/png"),
-    width: widthDots,
-    height: heightDots,
-  });
-  return {
-    imageId,
-    widthDots,
-    heightDots,
-    gfaCache: `^GF${format},${totalBytesHeader},${dataBytesHeader},${bytesPerRow},${rawData}`,
-    crcOk: decoded.crcOk,
-  };
-}
-
-/**
- * Decompress ZPL Alternative Data Compression used in ^GFA fields.
- *
- * Compression characters:
- *   G–Y (uppercase) → repeat next hex digit 1–19 times
- *   g–z (lowercase) → repeat next hex digit 20–400 times (multiples of 20)
- *   Combinable: e.g. hI0 = (40+3) × '0' = 43 zeros
- *   ,  → fill remainder of current row with '0'
- *   !  → fill remainder of current row with 'F'
- *   :  → repeat previous row
- */
-function decompressGFA(data: string, bytesPerRow: number): string {
-  const nibblesPerRow = bytesPerRow * 2;
-  const rows: string[] = [];
-  let currentRow = "";
-  let i = 0;
-
-  const isHex = (ch: string) => /[0-9A-Fa-f]/.test(ch);
-  const repeatCount = (ch: string): number => {
-    if (ch >= "G" && ch <= "Y") return ch.charCodeAt(0) - 70; // G=1 .. Y=19
-    if (ch >= "g" && ch <= "z") return (ch.charCodeAt(0) - 102) * 20; // g=20 .. z=400
-    return 0;
-  };
-  const isCompressChar = (ch: string) =>
-    (ch >= "G" && ch <= "Y") || (ch >= "g" && ch <= "z");
-
-  const pushRow = () => {
-    rows.push(currentRow.slice(0, nibblesPerRow).padEnd(nibblesPerRow, "0"));
-    currentRow = "";
-  };
-
-  while (i < data.length) {
-    const ch = data[i] ?? "";
-
-    if (ch === ",") {
-      // Fill rest of row with '0', complete row
-      pushRow();
-      i++;
-    } else if (ch === "!") {
-      // Fill rest of row with 'F', complete row
-      currentRow = currentRow.padEnd(nibblesPerRow, "F");
-      rows.push(currentRow.slice(0, nibblesPerRow));
-      currentRow = "";
-      i++;
-    } else if (ch === ":") {
-      // Repeat previous row
-      rows.push(
-        rows.length > 0
-          ? (rows[rows.length - 1] ?? "0".repeat(nibblesPerRow))
-          : "0".repeat(nibblesPerRow),
-      );
-      i++;
-    } else if (isCompressChar(ch)) {
-      // Accumulate repeat count (lowercase + uppercase can combine)
-      let count = repeatCount(ch);
-      i++;
-      while (i < data.length && isCompressChar(data[i] ?? "")) {
-        count += repeatCount(data[i] ?? "");
-        i++;
-      }
-      // Next character is the hex digit to repeat
-      const nextCh = data[i] ?? "";
-      if (i < data.length && isHex(nextCh)) {
-        currentRow += nextCh.repeat(count);
-        i++;
-      }
-    } else if (isHex(ch)) {
-      currentRow += ch;
-      i++;
-    } else {
-      // Skip whitespace / unknown
-      i++;
-    }
-
-    // If row is complete, push it
-    if (currentRow.length >= nibblesPerRow) {
-      rows.push(currentRow.slice(0, nibblesPerRow));
-      currentRow = currentRow.slice(nibblesPerRow);
-    }
-  }
-
-  // Handle any remaining partial row
-  if (currentRow.length > 0) {
-    pushRow();
-  }
-
-  return rows.join("");
-}
 
 export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   const tokens = tokenize(zpl);
@@ -1268,7 +764,6 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   };
 
   // ── Command handler map ────────────────────────────────────────────────────
-  const noop: Handler = () => void 0;
   const resetComment: Handler = (_, rest) => {
     pendingComment = rest.trim() || undefined;
   };
@@ -1280,13 +775,6 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     if (!next) return;
     pendingComment = pendingComment ? `${pendingComment}\n${next}` : next;
   };
-  const mkBrowserLimit =
-    (prefix: string, delimiter = "^"): Handler =>
-    (_, rest) => {
-      const tok = `${delimiter}${prefix}${rest}`;
-      skipped.push(tok);
-      browserLimit.push(tok);
-    };
 
   const readRotation = (raw: string | undefined): ZplRotation =>
     raw && isZplRotation(raw) ? raw : "N";
@@ -1389,14 +877,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
   const handlers: Record<string, Handler> = {
     // ── Label dimensions ────────────────────────────────────────────────────
-    PW(_, rest) {
-      const dots = int(rest);
-      if (dots > 0) labelConfig.widthMm = Math.round((dots / dpmm) * 10) / 10;
-    },
-    LL(_, rest) {
-      const dots = int(rest);
-      if (dots > 0) labelConfig.heightMm = Math.round((dots / dpmm) * 10) / 10;
-    },
+    // PW / LL — extracted to handlers/labelConfig.ts (need dpmm).
 
     // ── Field origin ────────────────────────────────────────────────────────
     FO(p) {
@@ -1926,190 +1407,11 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     },
 
     // ── Label print settings ────────────────────────────────────────────────
-    PQ(p) {
-      const qty = int(p[0], 0);
-      if (qty > 0) labelConfig.printQuantity = qty;
-      // ^PQ q,p,r,o — preserve extended params when present.
-      if (p.length > 1) {
-        const pause = int(p[1], 0);
-        if (pause >= 0 && pause <= 99999999) labelConfig.pauseCount = pause;
-      }
-      if (p.length > 2) {
-        const reps = int(p[2], 0);
-        if (reps >= 0 && reps <= 99999999) labelConfig.replicates = reps;
-      }
-      if (p.length > 3) {
-        const o = (p[3] ?? "").toUpperCase();
-        if (o === "Y" || o === "N") labelConfig.overridePauseCount = o;
-      }
-    },
-    MM(_, rest) {
-      // `.trim()` before `[0]` so a stray leading whitespace in the
-      // input (rare but seen with hand-edited ZPL) does not eat the
-      // mode character. Applies to all single-char enum handlers
-      // below (MT / PO / PM / KD).
-      const mode = (rest.trim()[0] ?? "").toUpperCase();
-      if (isMediaMode(mode)) labelConfig.mediaMode = mode;
-    },
-    LS(_, rest) {
-      const shift = int(rest, 0);
-      if (shift !== 0) labelConfig.labelShift = shift;
-    },
-    PR(p) {
-      const print = inRange(parseIntOrUndef(p[0]), SPEED_RANGE);
-      if (print !== undefined) labelConfig.printSpeed = print;
-      const slew = inRange(parseIntOrUndef(p[1]), SPEED_RANGE);
-      if (slew !== undefined) labelConfig.slewSpeed = slew;
-      const bf = inRange(parseIntOrUndef(p[2]), SPEED_RANGE);
-      if (bf !== undefined) labelConfig.backfeedSpeed = bf;
-    },
-    MD(_, rest) {
-      const v = inRange(parseIntOrUndef(rest), DARKNESS_PERMANENT_RANGE);
-      if (v !== undefined) labelConfig.darkness = v;
-    },
-    MT(_, rest) {
-      const mt = (rest.trim()[0] ?? "").toUpperCase();
-      if (isMediaType(mt)) labelConfig.mediaType = mt;
-    },
-    MN(p) {
-      // ^MNa,b — b is an optional black-mark offset for W/M modes,
-      // which we don't model. Reading p[0] instead of the raw rest
-      // string keeps `^MNY,10` from being mis-read as the single
-      // token "Y,10" and silently dropped.
-      const v = strParam(p[0]);
-      if (isMediaTracking(v)) labelConfig.mediaTracking = v;
-    },
-    ML(p) {
-      const v = inRange(parseIntOrUndef(p[0]), MAX_LABEL_LENGTH_RANGE);
-      if (v !== undefined) labelConfig.maxLabelLength = v;
-    },
-    MF(p) {
-      const p1 = strParam(p[0]);
-      const p2 = strParam(p[1]);
-      if (isMediaFeedMode(p1)) labelConfig.mediaFeedPowerUp = p1;
-      if (isMediaFeedMode(p2)) labelConfig.mediaFeedHeadClose = p2;
-    },
-    XB() {
-      labelConfig.suppressBackfeed = true;
-    },
-    JZ(p) {
-      const v = strParam(p[0]);
-      if (v === "Y" || v === "N") printerProfile.reprintAfterError = v;
-    },
-    JT(p) {
-      const v = inRange(parseIntOrUndef(p[0]), HEAD_TEST_INTERVAL_RANGE);
-      if (v !== undefined) printerProfile.headTestInterval = v;
-    },
-    // ~TA reads p[0] (not the raw rest string) so trailing tokens
-    // from a streamed ZPL chunk (e.g. `~TA10^XA…`) don't leak into
-    // the parsed value. The tokeniser strips the leading tilde, so
-    // a plain ~TA-30 still resolves p[0] to "-30".
-    TA(p) {
-      const v = inRange(parseIntOrUndef(p[0]), TEAR_OFF_ADJUST_RANGE);
-      if (v !== undefined) printerProfile.tearOffAdjust = v;
-    },
-    PO(_, rest) {
-      const po = (rest.trim()[0] ?? "").toUpperCase();
-      if (isPrintOrientation(po)) labelConfig.printOrientation = po;
-    },
-    PM(_, rest) {
-      const m = (rest.trim()[0] ?? "").toUpperCase();
-      if (m === "Y" || m === "N") labelConfig.mirror = m;
-    },
-    // ~SD — instant darkness set (00..30). Tilde-prefix; the tokenizer
-    // drops the delimiter, so we accept this as the canonical SD handler.
-    SD(_, rest) {
-      const v = inRange(parseIntOrUndef(rest), DARKNESS_INSTANT_RANGE);
-      if (v !== undefined) labelConfig.instantDarkness = v;
-    },
-    // ^ST MM,DD,YYYY,HH,MM,SS — set real-time clock. Delegates the
-    // shape + range validation to the shared `realtimeClock` helper
-    // so the parser and generator cannot drift on round-trip. Invalid
-    // / partial / impossible inputs are silently dropped, matching
-    // the parser's existing contract.
-    ST(p) {
-      const iso = parseRealtimeClock(p);
-      if (iso !== null) printerProfile.setRealtimeClock = iso;
-    },
-    // ^KD <format-code>. Reads only the first char of `rest`, so
-    // `^KD2,foo` parses as `clockFormat: '2'` and the trailing junk
-    // is dropped. Matches the parser's lenient contract elsewhere
-    // (PO / PM / MT take the same first-char approach).
-    KD(_, rest) {
-      const v = rest.trim()[0] ?? "";
-      if (isClockFormat(v)) printerProfile.clockFormat = v;
-    },
-    // ^KL <locale-code>. Two- or three-char alpha code (see
-    // PRINTER_LOCALE_VALUES). `rest` may contain trailing newline /
-    // tokens from the streamed ZPL; trim and uppercase before the
-    // guard check.
-    KL(_, rest) {
-      const v = rest.trim().toUpperCase();
-      if (isPrinterLocale(v)) printerProfile.printerLocale = v;
-    },
-    // ^SE <file-path>. Free string per spec; trim to drop any
-    // streaming whitespace but otherwise preserve the value as-is
-    // because the firmware path syntax is user-supplied. The
-    // dangerous-char check mirrors the schema regex so an imported
-    // ZPL that smuggled a ^/~ / newline into the path cannot land
-    // in the store and be re-emitted as an injected command.
-    SE(_, rest) {
-      const v = rest.trim();
-      if (v && !setupScriptUnsafeCharRegex.test(v)) printerProfile.encodingTable = v;
-    },
-    // ^SZ <mode>. Single digit '1' or '2'; same first-char-trim
-    // pattern as KD / KL.
-    SZ(_, rest) {
-      const v = rest.trim()[0] ?? "";
-      if (isZplMode(v)) printerProfile.zplMode = v;
-    },
-    // ^KN <name>,<description>. Both parts free strings; the
-    // injection-guard regex mirrors the schema so an imported
-    // ZPL cannot smuggle command-introducer chars into either
-    // field. Name length cap stays per spec.
-    KN(p) {
-      const name = (p[0] ?? "").trim();
-      if (!name || name.length > PRINTER_NAME_MAX_LEN) return;
-      if (setupScriptUnsafeCharRegex.test(name)) return;
-      printerProfile.printerName = name;
-      const desc = (p[1] ?? "").trim();
-      if (desc && !setupScriptUnsafeCharRegex.test(desc)) {
-        printerProfile.printerDescription = desc;
-      }
-    },
-    // ^SL `a`,`b` — Set Mode and Language for ^FC clock fields.
-    // The `a` slot accepts three shapes: 'S' (Start-Time), 'T'
-    // (Time-Now), or numeric 1..999 (Time-Now with tolerance
-    // seconds). The schema models the three shapes as two
-    // fields (clockMode enum + clockTolerance numeric); the
-    // parser fans the wire value out into both.
-    SL(p) {
-      const a = strParam(p[0]);
-      if (a === "S" || a === "T") {
-        printerProfile.clockMode = a;
-        // Clear any tolerance left over from a previous ^SL parse —
-        // schema's cross-field rule forbids `tolerance && mode !== 'TOL'`,
-        // and the parser writes raw values without re-running the
-        // schema, so a stale tolerance from an earlier ^SL60,1 would
-        // make the persisted state un-saveable. `delete` rather than
-        // `= undefined` so the returned ParsedZPL doesn't carry the
-        // key as present-with-undefined (which leaks across the
-        // import-service fold as a misleading "clear" signal).
-        delete printerProfile.clockTolerance;
-      } else {
-        const tol = inRange(parseIntOrUndef(a), CLOCK_TOLERANCE_RANGE);
-        if (tol !== undefined) {
-          printerProfile.clockMode = "TOL";
-          printerProfile.clockTolerance = tol;
-        }
-      }
-      // Language only when the mode parse landed — orphan language
-      // (mode invalid, b valid) would be write-only state (emit
-      // gated on mode anchor, parser would silently re-drop).
-      if (printerProfile.clockMode === undefined) return;
-      const b = strParam(p[1]);
-      if (isClockLanguage(b)) printerProfile.clockLanguage = b;
-    },
+    // PQ / MM / LS / PR / MD / MT / MN / ML / MF / XB / PO / PM / ~SD
+    // extracted to handlers/labelConfig.ts; merged below at the literal end.
+    //
+    // JZ / JT / TA / ST / KD / KL / SE / SZ / KN / SL — Setup-Script
+    // handlers extracted to handlers/setupScript.ts; merged below too.
 
     // ^CW {alias},{path} — register an alias for a printer-resident font.
     // Subsequent ^A{alias} fields resolve to {path} via the fontAliases
@@ -2259,9 +1561,6 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     },
 
     // ── Browser-limit: printer-specific features ────────────────────────────
-    FL: mkBrowserLimit("FL"), // font link — links fonts on printer storage
-    HT: mkBrowserLimit("HT"), // head test — diagnostic for print head
-    LF: mkBrowserLimit("LF"), // list fonts — queries printer for installed fonts
     GS(p) {
       // ^GS{rotation},{height},{width} — selects the internal-font
       // legal-symbol glyph (^FD picks which: A=®, B=©, C=™, D=UL, E=CSA).
@@ -2270,8 +1569,6 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       symH = int(p[1], 30);
       symW = int(p[2], symH);
     },
-    IM: mkBrowserLimit("IM"), // image reference — references image stored on printer
-    DG: mkBrowserLimit("DG", "~"), // ~DG stores a graphic on the printer (tilde prefix)
 
     // ── TrueType font / text block ──────────────────────────────────────────
     // ^A@{rotation},{height},{width},{drive}:{font} — TrueType font reference
@@ -2348,7 +1645,6 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       pendingFn = n;
       pendingFnComment = pendingComment;
     },
-    FV: noop, // field variable — supplies data for ^FN at print time
     FC: (p) => {
       // ^FC<a>,<b>,<c>: redefine clock chars. Missing/empty slots
       // keep their current value (Zebra spec: defaults persist when
@@ -2369,19 +1665,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       const c = p[0]?.[0];
       embedChar = c && c !== "^" && c !== "~" ? c : "#";
     },
-    FM: noop, // multiple field origin locations
-    FP: noop, // field parameter — per-character text direction
-    JA: noop, // applicator / configuration recall
-    JM: noop, // darkness / print settings
-    JC: noop, // calibrate
-    JD: noop, // disable head-cleaning
-    JE: noop, // enable head-cleaning
-    JI: noop, // initialize printer
-    JR: noop, // restore factory defaults
-    JS: noop, // change darkness
-    JU: noop, // update firmware
-    PP: noop, // presentation position
+    // FV / FM / FP / JA / JM / JC / JD / JE / JI / JR / JS / JU / PP —
+    // noops; FL / HT / LF / IM / ~DG — browser-limit factories. All
+    // extracted to handlers/unsupported.ts.
   };
+
+  Object.assign(handlers, createSetupScriptHandlers(printerProfile));
+  Object.assign(handlers, createLabelConfigHandlers(labelConfig, dpmm));
+  Object.assign(handlers, createUnsupportedHandlers({ skipped, browserLimit }));
 
   // ── Main dispatch loop ─────────────────────────────────────────────────────
   for (const { cmd, rest } of tokens) {
