@@ -1,5 +1,4 @@
-import type { CustomFontMapping, LabelConfig } from "../types/ObjectType";
-import type { PrinterProfile } from "../types/PrinterProfile";
+import type { CustomFontMapping } from "../types/ObjectType";
 import {
   FN_NUMBER_MIN,
   FN_NUMBER_MAX,
@@ -7,15 +6,10 @@ import {
   type Variable,
 } from "../types/Variable";
 import { embedsToMarkers } from "./fnTemplate";
-import {
-  DEFAULT_CLOCK_CHARS,
-  tokensToMarkers,
-  type ClockChars,
-} from "./fcTemplate";
+import { DEFAULT_CLOCK_CHARS, tokensToMarkers } from "./fcTemplate";
 import { decodeFbContent } from "./fbContent";
 import { zplAnchorToModel } from "./labelGeometry/textPositionTransforms";
 import { computeTextRenderMetrics } from "./labelGeometry/textRenderMetrics";
-import type { LabelObject } from "../types/Group";
 import type { TextProps } from "../registry/text";
 import type { Code128Props } from "../registry/code128";
 import type { Code39Props } from "../registry/code39";
@@ -51,12 +45,12 @@ import {
   decodeFH,
 } from "./zplParser/helpers";
 import { decodeGraphicToImage } from "./zplParser/decoders/graphic";
+import { createParserState, REVERSE_BBOX_TOLERANCE_DOTS } from "./zplParser/context";
 import { createLabelConfigHandlers } from "./zplParser/handlers/labelConfig";
 import { createSetupScriptHandlers } from "./zplParser/handlers/setupScript";
 import { createUnsupportedHandlers } from "./zplParser/handlers/unsupported";
 import type {
   Handler,
-  UploadedGraphic,
   ImportFinding,
   ParsedZPL,
 } from "./zplParser/types";
@@ -74,191 +68,32 @@ const IMPORT_FINDING_PAYLOAD_LIMIT = 80;
 
 export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   const tokens = tokenize(zpl);
-  const objects: LabelObject[] = [];
-  const labelConfig: Partial<LabelConfig> = {};
-  const printerProfile: Partial<PrinterProfile> = {};
-  const variables: Variable[] = [];
-  const skipped: string[] = [];
-  const partialCmds = new Set<string>(); // deduplicates partial-import command codes
-  const browserLimit: string[] = [];
-  const unknown: string[] = [];
-  let pendingComment: string | undefined;
-
-  /** `^FN{n}` slot pending application to the next field flushed. Snapshot
-   *  of `pendingComment` is kept separately so a later `^FX` that lands
-   *  between `^FN` and `^FS` doesn't pollute the variable's auto-name. */
-  let pendingFn: number | null = null;
-  let pendingFnComment: string | undefined;
+  const s = createParserState();
+  // Destructured references for sub-state objects whose internal
+  // mutations don't need `s.` qualification. Reads via `s.foo` for
+  // primitives only; collection references stay bare for terseness.
+  // Destructured aliases for high-frequency collection refs so the
+  // inline body keeps reading naturally. Primitives stay on `s.foo`
+  // (rebound writes need that). The three Map/Set collections that
+  // also count as state mutate via method calls so they read cleanest
+  // via `s.fontAliases.get(...)` etc — kept on `s.` for consistency.
+  const {
+    objects, labelConfig, printerProfile, variables,
+    skipped, partialCmds, browserLimit, unknown,
+  } = s;
 
   /** Consume and return the pending ^FX comment, then clear it. */
   const takeComment = (): string | undefined => {
-    const c = pendingComment;
-    pendingComment = undefined;
+    const c = s.pendingComment;
+    s.pendingComment = undefined;
     return c;
   };
 
-  let x = 0;
-  let y = 0;
-  // which barcode/text command is pending a ^FD payload
-  let fieldType: string | null = null;
-  let pendingFD: string | null = null;
-
-  // cached per-field parameters
-  let textRot: TextProps["rotation"] = "N";
-  let textH = 30;
-  let textW = 0;
-  let bcHeight = 100;
-  let bcInterp = true;
-  let bcCheck = false;
-  let bcRotation: ZplRotation = "N";
-  // ^GS graphic-symbol params held until ^FD picks the symbol code.
-  let symRot: ZplRotation = "N";
-  let symH = 30;
-  let symW = 30;
-  let bcCode49Mode: Code49Props["mode"] = "A";
-  // ^FE field-number embed character. Default '#'; redefined by
-  // ^FE<char>. Format-scoped, persists through ^FS (see Zebra ZPL II
-  // Programming Guide). Reset per parse is implicit — this `let` is
-  // initialised once at the top of parseZPL.
-  let embedChar = "#";
-  // ^FC field-clock chars. Same scoping as ^FE: format-scoped, default
-  // `% { #`, redefined by `^FC<date>,<time>,<tertiary>`. Tokens in ^FD
-  // that follow one of these chars become `«clock:T»` markers at
-  // flushField time, then re-emit as the same triplet on round-trip.
-  let clockChars: ClockChars = { ...DEFAULT_CLOCK_CHARS };
-  let gsSymbology: Gs1DatabarProps["symbology"] = 1;
-  let gsSegments: number | undefined = undefined;
-  // ^BY barcode defaults
-  let byModuleWidth = 2;
-  let byHeight = 0; // 0 = no ^BY height; barcode handlers use ||100 as sentinel
-  let qrMag = 4;
-  let dmDim = 5;
-  let dmQuality: DataMatrixProps["quality"] = 200;
-
-  // ^LR state (label reverse / invert)
-  let lrActive = false;
-  // ^FR field reverse (single-field reverse, reset on ^FS / new ^FO / ^FT)
-  let frActive = false;
-
-  // Pending knockout-background ^GB. Our generator emits reverse text as
-  // a filled black ^GB followed by an ^FR text at the same anchor —
-  // standard ZPL pattern for white-on-black. On import we stash a
-  // candidate ^GB here and, if the next text field comes with ^FR at
-  // the same anchor and matching bbox, collapse the pair into a single
-  // text object with `reverse: true`. If the stash never matches it
-  // gets committed as a regular filled box, so non-pair ^GB+^FR
-  // sequences in hand-written ZPL round-trip unchanged.
-  /** Stashed ^GB params. Stores the full GB shape so the commit path
-   *  can replay through the standard line-vs-box detection (a 200×30
-   *  filled-black GB at t=30 could be either a fat horizontal line or
-   *  our reverse-text background — only the following ^FR text
-   *  disambiguates). */
-  let pendingReverseBg: {
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-    t: number;
-    color: "B" | "W";
-    rounding: number;
-    reverseFlag: boolean | undefined;
-    comment?: string;
-  } | null = null;
-  /** Bbox tolerance for collapsing a stashed ^GB with a following ^FR
-   *  text. Emit-time inkWidth and parse-time inkWidth can drift by a
-   *  dot or two depending on whether the PrintLab font is registered
-   *  on both sides; a small tolerance lets the legitimate pair
-   *  collapse without over-collapsing unrelated coincidental layouts. */
-  const REVERSE_BBOX_TOLERANCE_DOTS = 2;
-
-  // ^LH label home (origin offset applied to all field positions)
-  let lhX = 0;
-  let lhY = 0;
-
-  // ^LT label top (vertical offset applied to all field positions)
-  let ltY = 0;
-
-  // ^CW alias→path mappings. Single-character aliases that resolve
-  // ^A{alias} field references back to the original font path. Built
-  // as the parser walks the header, consulted on each ^A{X} encounter.
-  const fontAliases = new Map<string, string>();
-
-  // Paths that arrived via ~DY in this stream. Used so a subsequent
-  // ^CW for the same path flips the mapping's `embedInZpl` flag —
-  // round-trip stability: emit then re-parse should preserve the
-  // user's "ship the bytes" intent.
-  const downloadedFontPaths = new Set<string>();
-
-  // Graphics uploaded via ~DY in this stream, keyed by the full
-  // `device:stem.ext` path. A subsequent ^XG references one of these to
-  // instantiate an image object at a position; emitting back goes
-  // through the same map so round-trip preserves upload+recall.
-  const downloadedGraphics = new Map<string, UploadedGraphic>();
-
-  // ^FH state (field hex indicator)
-  let fhActive = false;
-  let fhDelimiter = "_";
-
-  // ^CI state (character set / encoding for ^FH byte decoding). Default UTF-8
-  // matches our generator output; legacy ZPL using ^CI27 / ^CI0..13 sets a
-  // single-byte decoder before ^FH escapes are processed.
-  let fhDecoder = getDecoder("utf-8");
-
-  // ^FT vs ^FO: store position type so we can reproduce exactly in re-export.
-  let positionIsFT = false;
-
-  // ^CF (change alphanumeric default font) state. cfFontId tracks the
-  // font character so the ^A handler can suppress redundant fontId
-  // assignments — a text field whose ^A repeats the ^CF font is the
-  // generator's way of saying "use the label default", and we want the
-  // model to reflect that rather than pinning the alias on every field.
-  let cfHeight = 0;
-  let cfWidth = 0;
-  let cfFontId: string | undefined;
-
-  // ^FW (field default rotation) state
-  let fwRotation: TextProps["rotation"] = "N";
-
-  // ^FB (field block) state — applied to next text field, then reset
-  let fbWidth = 0;
-  let fbLines = 1;
-  let fbSpacing = 0;
-  let fbJustify: TextProps["blockJustify"] = "L";
-
-  // PDF417 pending parameters
-  let pdfRowHeight = 10;
-  let pdfSecurity = 0;
-  let pdfColumns = 0;
-
-  // Aztec pending parameters
-  let aztecMag = 4;
-
-  // Maxicode pending parameters
-  let maxicodeMode: MaxicodeProps["mode"] = 4;
-
-  // MicroPDF417 pending parameters
-  let mpdfRowHeight = 10;
-
-  // CODABLOCK pending parameters
-  let cbRowHeight = 10;
-  let cbSecurity: CodablockProps["securityLevel"] = "Y";
-
-  // ^A@ pending printer font name (e.g. "ARIAL.TTF")
-  let pendingPrinterFontName: string | undefined;
-  // ^A{id} pending font identifier (e.g. "M", "0"). Mutually exclusive
-  // with pendingPrinterFontName at field flush; both reset after use.
-  let pendingFontId: string | undefined;
-
-  // ^SN / ^SF serialization state
-  let snPending = false;
-  let snIncrement = 1;
-  let snMode: SerialProps["zplMode"] = "SN";
-
   const resetFB = () => {
-    fbWidth = 0;
-    fbLines = 1;
-    fbSpacing = 0;
-    fbJustify = "L";
+    s.fbWidth = 0;
+    s.fbLines = 1;
+    s.fbSpacing = 0;
+    s.fbJustify = "L";
   };
 
   /** Get-or-create a Variable for the given FN slot. Three call
@@ -301,7 +136,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // `<e><n>,...<e>`. A naked `<e><digits>` without a closing `<e>`
     // would otherwise bootstrap a phantom Variable from a literal
     // like `#5 special` and then dangle (no marker emitted).
-    const e = embedChar.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const e = s.embedChar.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const embedRe = new RegExp(`${e}(\\d+)(?:,[^${e}]*)?${e}`, "g");
     let m: RegExpExecArray | null;
     const seen = new Set<number>();
@@ -314,33 +149,33 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     if (seen.size === 0) return payload;
     for (const n of seen) bootstrapVariable(n, "");
     const fnToName = new Map(variables.map((v) => [v.fnNumber, v.name]));
-    return embedsToMarkers(payload, embedChar, fnToName);
+    return embedsToMarkers(payload, s.embedChar, fnToName);
   };
 
   const flushField = () => {
-    if (!fieldType || pendingFD === null) {
+    if (!s.fieldType || s.pendingFD === null) {
       // Bare `^FN<n>^FD<default>^FS` (no ^FO / ^A) is a Variable
       // declaration, not a field. Register the Variable so the
       // default reaches the Variables panel + downstream resolves,
-      // and clear pendingFn so it doesn't leak into the next field.
-      if (pendingFn !== null && pendingFD !== null) {
-        const decl = fhActive
-          ? decodeFH(pendingFD, fhDelimiter, fhDecoder)
-          : pendingFD;
-        bootstrapVariable(pendingFn, decl, pendingFnComment);
-        pendingFn = null;
-        pendingFnComment = undefined;
+      // and clear s.pendingFn so it doesn't leak into the next field.
+      if (s.pendingFn !== null && s.pendingFD !== null) {
+        const decl = s.fhActive
+          ? decodeFH(s.pendingFD, s.fhDelimiter, s.fhDecoder)
+          : s.pendingFD;
+        bootstrapVariable(s.pendingFn, decl, s.pendingFnComment);
+        s.pendingFn = null;
+        s.pendingFnComment = undefined;
       }
-      pendingFD = null;
-      // Clear fieldType too so a half-formed field (e.g. `^GS…^FS`
+      s.pendingFD = null;
+      // Clear s.fieldType too so a half-formed field (e.g. `^GS…^FS`
       // without `^FD`) doesn't leak its kind into the next ^FD that
       // arrives via an unrelated ^FO.
-      fieldType = null;
+      s.fieldType = null;
       return;
     }
-    const rawDecoded = fhActive
-      ? decodeFH(pendingFD, fhDelimiter, fhDecoder)
-      : pendingFD;
+    const rawDecoded = s.fhActive
+      ? decodeFH(s.pendingFD, s.fhDelimiter, s.fhDecoder)
+      : s.pendingFD;
     // Two marker conversions, in order:
     //   1. ^FE-style FN embeds (`#1#` → `«variableName»`), bootstrap
     //      Variables when the FN slot is new — same auto-naming as
@@ -348,19 +183,19 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     //   2. ^FC clock tokens (`%d`, `%Y`, …) → `«clock:T»`. Runs after
     //      FN embeds so a payload like `%FN#1#%Y` resolves both.
     const afterFn = applyFnEmbeds(rawDecoded);
-    const content = tokensToMarkers(afterFn, clockChars);
-    const posType: "FT" | "FO" = positionIsFT ? "FT" : "FO";
+    const content = tokensToMarkers(afterFn, s.clockChars);
+    const posType: "FT" | "FO" = s.positionIsFT ? "FT" : "FO";
     const comment = takeComment();
 
     // Decode \& line breaks (and \\ escapes) in ^FB text blocks via the
     // shared helper so parser and generator stay symmetric.
-    const decoded = fbWidth > 0 ? decodeFbContent(content) : content;
+    const decoded = s.fbWidth > 0 ? decodeFbContent(content) : content;
 
     // Non-text fields can never be the second half of a reverse-text
     // pair, so flush the stashed bg as a regular box before pushing.
     // Text handles its own collapse-or-commit inline below.
-    if (fieldType !== "text") commitPendingReverseBg();
-    switch (fieldType) {
+    if (s.fieldType !== "text") commitPendingReverseBg();
+    switch (s.fieldType) {
       case "text": {
         // ZPL anchors ^FO at cap-top and ^FT at baseline; our internal
         // model stores the Konva render position (EM-top-left) so editor
@@ -368,15 +203,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         // need the rendered ink width — measure it the same way the
         // renderer does so the round-trip stays exact.
         const { inkWidthDots } = computeTextRenderMetrics({
-          content: snPending ? `#${decoded}` : decoded,
-          fontHeight: textH,
-          fontWidth: textW,
-          printerFontName: pendingPrinterFontName,
+          content: s.snPending ? `#${decoded}` : decoded,
+          fontHeight: s.textH,
+          fontWidth: s.textW,
+          printerFontName: s.pendingPrinterFontName,
         });
         const modelPos = zplAnchorToModel(
-          x,
-          y,
-          { fontHeight: textH, rotation: textRot },
+          s.x,
+          s.y,
+          { fontHeight: s.textH, rotation: s.textRot },
           posType,
           inkWidthDots,
         );
@@ -384,7 +219,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         // Serial fields can't be the second half of a reverse-text pair
         // (no reverse-serial use case in our model), so flush any
         // pending bg as a regular box before pushing the serial.
-        if (snPending) {
+        if (s.snPending) {
           commitPendingReverseBg();
           objects.push(
             makeObj(
@@ -393,19 +228,19 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
               modelPos.y,
               {
                 content: decoded,
-                increment: snIncrement,
-                fontHeight: textH,
-                fontWidth: textW,
-                rotation: textRot,
-                zplMode: snMode,
+                increment: s.snIncrement,
+                fontHeight: s.textH,
+                fontWidth: s.textW,
+                rotation: s.textRot,
+                zplMode: s.snMode,
               } satisfies SerialProps,
               posType,
               comment,
             ),
           );
-          snPending = false;
-          snIncrement = 1;
-          snMode = "SN";
+          s.snPending = false;
+          s.snIncrement = 1;
+          s.snMode = "SN";
           resetFB();
           break;
         }
@@ -419,46 +254,46 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         // regular box so hand-written ZPL with unrelated ^GB+^FR
         // sequences round-trips unchanged. ^FB block-text isn't part of
         // the reverse-text emit so collapsing is skipped there too.
-        const vertical = textRot === "R" || textRot === "B";
-        const expectedW = vertical ? textH : Math.max(1, Math.round(inkWidthDots));
-        const expectedH = vertical ? Math.max(1, Math.round(inkWidthDots)) : textH;
+        const vertical = s.textRot === "R" || s.textRot === "B";
+        const expectedW = vertical ? s.textH : Math.max(1, Math.round(inkWidthDots));
+        const expectedH = vertical ? Math.max(1, Math.round(inkWidthDots)) : s.textH;
         const collapse =
-          pendingReverseBg !== null &&
-          frActive &&
-          fbWidth === 0 &&
-          pendingReverseBg.x === x &&
-          pendingReverseBg.y === y &&
-          Math.abs(pendingReverseBg.w - expectedW) <= REVERSE_BBOX_TOLERANCE_DOTS &&
-          Math.abs(pendingReverseBg.h - expectedH) <= REVERSE_BBOX_TOLERANCE_DOTS;
+          s.pendingReverseBg !== null &&
+          s.frActive &&
+          s.fbWidth === 0 &&
+          s.pendingReverseBg.x === s.x &&
+          s.pendingReverseBg.y === s.y &&
+          Math.abs(s.pendingReverseBg.w - expectedW) <= REVERSE_BBOX_TOLERANCE_DOTS &&
+          Math.abs(s.pendingReverseBg.h - expectedH) <= REVERSE_BBOX_TOLERANCE_DOTS;
         // Preserve any comment that was attached to the stashed ^GB
         // (e.g. a `^FX banner` before the bg). Merged with the text's
         // own comment so no import metadata is silently dropped.
         let mergedComment = comment;
         if (collapse) {
-          const bgComment = pendingReverseBg?.comment;
+          const bgComment = s.pendingReverseBg?.comment;
           if (bgComment) {
             mergedComment = mergedComment ? `${bgComment}\n${mergedComment}` : bgComment;
           }
-          pendingReverseBg = null;
+          s.pendingReverseBg = null;
         } else {
           commitPendingReverseBg();
         }
         const textProps: TextProps = {
           content: decoded,
-          fontHeight: textH,
-          fontWidth: textW,
-          rotation: textRot,
+          fontHeight: s.textH,
+          fontWidth: s.textW,
+          rotation: s.textRot,
           reverse: collapse ? true : getReverseFlag(),
-          printerFontName: pendingPrinterFontName,
-          fontId: pendingFontId,
+          printerFontName: s.pendingPrinterFontName,
+          fontId: s.pendingFontId,
         };
-        pendingPrinterFontName = undefined;
-        pendingFontId = undefined;
-        if (fbWidth > 0) {
-          textProps.blockWidth = fbWidth;
-          textProps.blockLines = fbLines;
-          textProps.blockLineSpacing = fbSpacing;
-          textProps.blockJustify = fbJustify;
+        s.pendingPrinterFontName = undefined;
+        s.pendingFontId = undefined;
+        if (s.fbWidth > 0) {
+          textProps.blockWidth = s.fbWidth;
+          textProps.blockLines = s.fbLines;
+          textProps.blockLineSpacing = s.fbSpacing;
+          textProps.blockJustify = s.fbJustify;
         }
         objects.push(
           makeObj("text", modelPos.x, modelPos.y, textProps, posType, mergedComment),
@@ -470,15 +305,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "code128",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               content,
-              height: bcHeight,
-              moduleWidth: byModuleWidth,
-              printInterpretation: bcInterp,
-              checkDigit: bcCheck,
-              rotation: bcRotation,
+              height: s.bcHeight,
+              moduleWidth: s.byModuleWidth,
+              printInterpretation: s.bcInterp,
+              checkDigit: s.bcCheck,
+              rotation: s.bcRotation,
             } satisfies Code128Props,
             posType,
             comment,
@@ -489,15 +324,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "code39",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               content,
-              height: bcHeight,
-              moduleWidth: byModuleWidth,
-              printInterpretation: bcInterp,
-              checkDigit: bcCheck,
-              rotation: bcRotation,
+              height: s.bcHeight,
+              moduleWidth: s.byModuleWidth,
+              printInterpretation: s.bcInterp,
+              checkDigit: s.bcCheck,
+              rotation: s.bcRotation,
             } satisfies Code39Props,
             posType,
             comment,
@@ -508,15 +343,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "ean13",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               content,
-              height: bcHeight,
-              moduleWidth: byModuleWidth,
-              printInterpretation: bcInterp,
+              height: s.bcHeight,
+              moduleWidth: s.byModuleWidth,
+              printInterpretation: s.bcInterp,
               checkDigit: false, // EAN-13 has no user-controlled check digit (^BE auto-appends).
-              rotation: bcRotation,
+              rotation: s.bcRotation,
             } satisfies Ean13Props,
             posType,
             comment,
@@ -530,13 +365,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "qrcode",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               content: data,
-              magnification: qrMag,
+              magnification: s.qrMag,
               errorCorrection: ec,
-              rotation: bcRotation,
+              rotation: s.bcRotation,
             } satisfies QrCodeProps,
             posType,
             comment,
@@ -548,13 +383,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "datamatrix",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               content,
-              dimension: dmDim,
-              quality: dmQuality,
-              rotation: bcRotation,
+              dimension: s.dmDim,
+              quality: s.dmQuality,
+              rotation: s.bcRotation,
             } satisfies DataMatrixProps,
             posType,
             comment,
@@ -578,16 +413,16 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       case "upcEanExtension":
         objects.push(
           makeObj(
-            fieldType,
-            x,
-            y,
+            s.fieldType,
+            s.x,
+            s.y,
             {
               content,
-              height: bcHeight,
-              moduleWidth: byModuleWidth,
-              printInterpretation: bcInterp,
-              checkDigit: bcCheck,
-              rotation: bcRotation,
+              height: s.bcHeight,
+              moduleWidth: s.byModuleWidth,
+              printInterpretation: s.bcInterp,
+              checkDigit: s.bcCheck,
+              rotation: s.bcRotation,
             } satisfies Barcode1DProps,
             posType,
             comment,
@@ -598,14 +433,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "gs1databar",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               content,
-              moduleWidth: byModuleWidth,
-              symbology: gsSymbology,
-              segments: gsSegments,
-              rotation: bcRotation,
+              moduleWidth: s.byModuleWidth,
+              symbology: s.gsSymbology,
+              segments: s.gsSegments,
+              rotation: s.bcRotation,
             } satisfies Gs1DatabarProps,
             posType,
             comment,
@@ -616,15 +451,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "pdf417",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               content,
-              rowHeight: pdfRowHeight,
-              securityLevel: pdfSecurity,
-              columns: pdfColumns,
-              moduleWidth: byModuleWidth,
-              rotation: bcRotation,
+              rowHeight: s.pdfRowHeight,
+              securityLevel: s.pdfSecurity,
+              columns: s.pdfColumns,
+              moduleWidth: s.byModuleWidth,
+              rotation: s.bcRotation,
             } satisfies Pdf417Props,
             posType,
             comment,
@@ -635,15 +470,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "code49",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               content,
-              height: bcHeight,
-              moduleWidth: byModuleWidth,
-              printInterpretation: bcInterp,
-              mode: bcCode49Mode,
-              rotation: bcRotation,
+              height: s.bcHeight,
+              moduleWidth: s.byModuleWidth,
+              printInterpretation: s.bcInterp,
+              mode: s.bcCode49Mode,
+              rotation: s.bcRotation,
             } satisfies Code49Props,
             posType,
             comment,
@@ -654,13 +489,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "aztec",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               content,
-              magnification: aztecMag,
+              magnification: s.aztecMag,
               ecLevel: 0,
-              rotation: bcRotation,
+              rotation: s.bcRotation,
             } satisfies AztecProps,
             posType,
             comment,
@@ -671,12 +506,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "maxicode",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               content,
-              mode: maxicodeMode,
-              rotation: bcRotation,
+              mode: s.maxicodeMode,
+              rotation: s.bcRotation,
             } satisfies MaxicodeProps,
             posType,
             comment,
@@ -687,14 +522,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "micropdf417",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               content,
-              moduleWidth: byModuleWidth,
-              rowHeight: mpdfRowHeight,
+              moduleWidth: s.byModuleWidth,
+              rowHeight: s.mpdfRowHeight,
               mode: 0,
-              rotation: bcRotation,
+              rotation: s.bcRotation,
             } satisfies MicroPdf417Props,
             posType,
             comment,
@@ -705,14 +540,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "codablock",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               content,
-              moduleWidth: byModuleWidth,
-              rowHeight: cbRowHeight,
-              securityLevel: cbSecurity,
-              rotation: bcRotation,
+              moduleWidth: s.byModuleWidth,
+              rowHeight: s.cbRowHeight,
+              securityLevel: s.cbSecurity,
+              rotation: s.bcRotation,
             } satisfies CodablockProps,
             posType,
             comment,
@@ -728,13 +563,13 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         objects.push(
           makeObj(
             "symbol",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               symbol: code,
-              height: symH,
-              width: symW,
-              rotation: symRot,
+              height: s.symH,
+              width: s.symW,
+              rotation: s.symRot,
             } satisfies SymbolProps,
             posType,
             comment,
@@ -748,24 +583,24 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // pushed. Reuse an existing Variable when its fnNumber matches —
     // ZPL templates often reference the same slot multiple times,
     // and the binding should funnel to one Variable, not duplicates.
-    if (pendingFn !== null) {
+    if (s.pendingFn !== null) {
       const justPushed = objects[objects.length - 1];
       if (justPushed) {
-        const variable = bootstrapVariable(pendingFn, content, pendingFnComment);
+        const variable = bootstrapVariable(s.pendingFn, content, s.pendingFnComment);
         justPushed.variableId = variable.id;
       }
-      pendingFn = null;
-      pendingFnComment = undefined;
+      s.pendingFn = null;
+      s.pendingFnComment = undefined;
     }
 
-    fieldType = null;
-    pendingFD = null;
-    frActive = false;
+    s.fieldType = null;
+    s.pendingFD = null;
+    s.frActive = false;
   };
 
   // ── Command handler map ────────────────────────────────────────────────────
   const resetComment: Handler = (_, rest) => {
-    pendingComment = rest.trim() || undefined;
+    s.pendingComment = rest.trim() || undefined;
   };
   // Hand-written ZPL often splits a logical comment across several `^FX` lines
   // before the field they describe. Accumulate them so each line survives on
@@ -773,16 +608,16 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   const appendComment: Handler = (_, rest) => {
     const next = rest.trim();
     if (!next) return;
-    pendingComment = pendingComment ? `${pendingComment}\n${next}` : next;
+    s.pendingComment = s.pendingComment ? `${s.pendingComment}\n${next}` : next;
   };
 
   const readRotation = (raw: string | undefined): ZplRotation =>
     raw && isZplRotation(raw) ? raw : "N";
 
   const handleAztec: Handler = (p) => {
-    fieldType = "aztec";
-    bcRotation = readRotation(p[0]);
-    aztecMag = int(p[1], 4);
+    s.fieldType = "aztec";
+    s.bcRotation = readRotation(p[0]);
+    s.aztecMag = int(p[1], 4);
   };
 
   // Factory for standard 1D barcode commands that share the same state variables.
@@ -796,14 +631,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       cIdx = -1,
     ): Handler =>
     (p) => {
-      fieldType = type;
-      bcRotation = readRotation(p[0]);
-      bcHeight = int(p[hIdx], byHeight || 100);
-      bcInterp = (p[iIdx] ?? iDefault) === "Y";
-      if (cIdx >= 0) bcCheck = (p[cIdx] ?? "N") === "Y";
+      s.fieldType = type;
+      s.bcRotation = readRotation(p[0]);
+      s.bcHeight = int(p[hIdx], s.byHeight || 100);
+      s.bcInterp = (p[iIdx] ?? iDefault) === "Y";
+      if (cIdx >= 0) s.bcCheck = (p[cIdx] ?? "N") === "Y";
     };
 
-  const getReverseFlag = () => lrActive || frActive || undefined;
+  const getReverseFlag = () => s.lrActive || s.frActive || undefined;
 
   /** Push a ^GB-derived object using the standard line-vs-box detection.
    *  Shared between the GB handler's direct-push path and the
@@ -869,9 +704,9 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   /** Push the stashed reverse-bg as the GB shape it actually was. Called
    *  when the stash didn't pair with a reverse-text on the next field. */
   const commitPendingReverseBg = () => {
-    if (!pendingReverseBg) return;
-    const bg = pendingReverseBg;
-    pendingReverseBg = null;
+    if (!s.pendingReverseBg) return;
+    const bg = s.pendingReverseBg;
+    s.pendingReverseBg = null;
     pushGBObject(bg.x, bg.y, bg.w, bg.h, bg.t, bg.color, bg.rounding, bg.reverseFlag, bg.comment);
   };
 
@@ -882,33 +717,33 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // ── Field origin ────────────────────────────────────────────────────────
     FO(p) {
       flushField();
-      frActive = false;
-      x = int(p[0]) + lhX;
-      y = int(p[1]) + lhY + ltY;
+      s.frActive = false;
+      s.x = int(p[0]) + s.lhX;
+      s.y = int(p[1]) + s.lhY + s.ltY;
       // 3rd param is justification (0/1/2) — stored but not actively used
-      positionIsFT = false;
+      s.positionIsFT = false;
     },
     FT(p) {
       flushField();
-      frActive = false;
-      x = int(p[0]) + lhX;
-      y = int(p[1]) + lhY + ltY;
-      positionIsFT = true;
+      s.frActive = false;
+      s.x = int(p[0]) + s.lhX;
+      s.y = int(p[1]) + s.lhY + s.ltY;
+      s.positionIsFT = true;
     },
 
     // ── Text ────────────────────────────────────────────────────────────────
     // ^A0{rotation},{height},{width}  e.g. ^A0N,30,0
     A0(p, rest) {
-      fieldType = "text";
-      textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
-      textH = int(p[1], cfHeight || 30);
-      textW = int(p[2], cfWidth || 0);
+      s.fieldType = "text";
+      s.textRot = (rest[0] as TextProps["rotation"]) ?? s.fwRotation;
+      s.textH = int(p[1], s.cfHeight || 30);
+      s.textW = int(p[2], s.cfWidth || 0);
       // Set fontId="0" only when the current ^CF is not already 0 —
       // otherwise the field is just repeating the label default, and
       // we keep fontId undefined so the model says "use the default".
       // When no ^CF has fired, "0" is the historical baseline both the
       // generator and the printer fall back to, so it counts as default.
-      pendingFontId = cfFontId && cfFontId !== "0" ? "0" : undefined;
+      s.pendingFontId = s.cfFontId && s.cfFontId !== "0" ? "0" : undefined;
     },
 
     // ── Change alphanumeric default font ────────────────────────────────────
@@ -917,11 +752,11 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       const fontId = (p[0] ?? "").trim();
       const explicitHeight = parseInt(p[1] ?? "", 10);
       const explicitWidth = parseInt(p[2] ?? "", 10);
-      cfHeight = isNaN(explicitHeight) ? cfHeight : explicitHeight;
-      cfWidth = isNaN(explicitWidth) ? cfWidth : explicitWidth;
+      s.cfHeight = isNaN(explicitHeight) ? s.cfHeight : explicitHeight;
+      s.cfWidth = isNaN(explicitWidth) ? s.cfWidth : explicitWidth;
       if (fontId) {
         labelConfig.defaultFontId = fontId;
-        cfFontId = fontId;
+        s.cfFontId = fontId;
       }
       if (!isNaN(explicitHeight) && explicitHeight > 0) {
         labelConfig.defaultFontHeight = explicitHeight;
@@ -936,32 +771,32 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     FW(_, rest) {
       const fw = (rest[0] ?? "N").toUpperCase();
       if (fw === "N" || fw === "R" || fw === "I" || fw === "B") {
-        fwRotation = fw;
+        s.fwRotation = fw;
       }
     },
 
     // ── Field block ─────────────────────────────────────────────────────────
     // ^FB{width},{lines},{lineSpacing},{justify},{hangingIndent}
     FB(p) {
-      fbWidth = int(p[0], 0);
-      fbLines = int(p[1], 1);
-      fbSpacing = int(p[2], 0);
+      s.fbWidth = int(p[0], 0);
+      s.fbLines = int(p[1], 1);
+      s.fbSpacing = int(p[2], 0);
       const fbJ = (p[3] ?? "L").toUpperCase();
-      fbJustify = fbJ === "C" || fbJ === "R" || fbJ === "J" ? fbJ : "L";
+      s.fbJustify = fbJ === "C" || fbJ === "R" || fbJ === "J" ? fbJ : "L";
       // ^FB also implies text if no ^A was specified
-      if (!fieldType) {
-        fieldType = "text";
-        textH = cfHeight || 30;
-        textW = cfWidth || 0;
-        textRot = fwRotation;
+      if (!s.fieldType) {
+        s.fieldType = "text";
+        s.textH = s.cfHeight || 30;
+        s.textW = s.cfWidth || 0;
+        s.textRot = s.fwRotation;
       }
     },
 
     // ── Barcode defaults ────────────────────────────────────────────────────
     // ^BY{module_width},{ratio},{height}
     BY(p) {
-      byModuleWidth = int(p[0], 2);
-      byHeight = int(p[2], 0);
+      s.byModuleWidth = int(p[0], 2);
+      s.byHeight = int(p[2], 0);
     },
 
     // ── Barcodes ────────────────────────────────────────────────────────────
@@ -986,12 +821,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     BS: mkBarcode("upcEanExtension", 1, 2), // ^BSo,h,f (UPC/EAN 2- or 5-digit supplement)
     B4: (p) => {
       // ^B4o,h,f,m — Code 49. Custom handler for the extra `m`.
-      fieldType = "code49";
-      bcRotation = readRotation(p[0]);
-      bcHeight = int(p[1], byHeight || 20);
-      bcInterp = (p[2] ?? "N") === "Y";
+      s.fieldType = "code49";
+      s.bcRotation = readRotation(p[0]);
+      s.bcHeight = int(p[1], s.byHeight || 20);
+      s.bcInterp = (p[2] ?? "N") === "Y";
       const m = (p[3] ?? "A").toUpperCase();
-      bcCode49Mode = /^[A0-5]$/.test(m)
+      s.bcCode49Mode = /^[A0-5]$/.test(m)
         ? (m as Code49Props["mode"])
         : "A";
     },
@@ -999,20 +834,20 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // MSI: check logic is "any letter except N" (not simple "Y") — keep inline
     // ^BMN,{checkType},{height},{interp},N  (checkType: A/B/C/D=enabled, N=none)
     BM(p) {
-      fieldType = "msi";
-      bcRotation = readRotation(p[0]);
-      bcCheck = (p[1] ?? "N") !== "N";
-      bcHeight = int(p[2], byHeight || 100);
-      bcInterp = (p[3] ?? "Y") === "Y";
+      s.fieldType = "msi";
+      s.bcRotation = readRotation(p[0]);
+      s.bcCheck = (p[1] ?? "N") !== "N";
+      s.bcHeight = int(p[2], s.byHeight || 100);
+      s.bcInterp = (p[3] ?? "Y") === "Y";
     },
-    // GS1 Databar: different param layout, also updates byModuleWidth
+    // GS1 Databar: different param layout, also updates s.byModuleWidth
     // ^BRo,{symbology},{magnification},{separator},{height},{segments}
     BR(p) {
-      fieldType = "gs1databar";
-      bcRotation = readRotation(p[0]);
-      byModuleWidth = int(p[2], byModuleWidth);
-      gsSymbology = (int(p[1], 1) as Gs1DatabarProps["symbology"]) || 1;
-      gsSegments =
+      s.fieldType = "gs1databar";
+      s.bcRotation = readRotation(p[0]);
+      s.byModuleWidth = int(p[2], s.byModuleWidth);
+      s.gsSymbology = (int(p[1], 1) as Gs1DatabarProps["symbology"]) || 1;
+      s.gsSegments =
         p[5] !== undefined
           ? int(p[5], GS1_DATABAR_DEFAULT_SEGMENTS)
           : undefined;
@@ -1020,24 +855,24 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
 
     // ^BQN,2,{magnification} — QR Code
     BQ(p) {
-      fieldType = "qrcode";
-      bcRotation = readRotation(p[0]);
-      qrMag = int(p[2], 4);
+      s.fieldType = "qrcode";
+      s.bcRotation = readRotation(p[0]);
+      s.qrMag = int(p[2], 4);
     },
     // ^BXN,{dimension},{quality} — DataMatrix
     BX(p) {
-      fieldType = "datamatrix";
-      bcRotation = readRotation(p[0]);
-      dmDim = int(p[1], 5);
-      dmQuality = int(p[2], 200) as DataMatrixProps["quality"];
+      s.fieldType = "datamatrix";
+      s.bcRotation = readRotation(p[0]);
+      s.dmDim = int(p[1], 5);
+      s.dmQuality = int(p[2], 200) as DataMatrixProps["quality"];
     },
     // ^B7N,{rowHeight},{securityLevel},{columns},,, — PDF417
     B7(p) {
-      fieldType = "pdf417";
-      bcRotation = readRotation(p[0]);
-      pdfRowHeight = int(p[1], 10);
-      pdfSecurity = int(p[2], 0);
-      pdfColumns = int(p[3], 0);
+      s.fieldType = "pdf417";
+      s.bcRotation = readRotation(p[0]);
+      s.pdfRowHeight = int(p[1], 10);
+      s.pdfSecurity = int(p[2], 0);
+      s.pdfColumns = int(p[3], 0);
     },
     // ^B0N,{magnification},... / ^BON,... — Aztec (^B0 and ^BO are synonyms)
     B0: handleAztec,
@@ -1048,51 +883,51 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // in the editor, so the params are read but the emitted form
     // pins them to (1, 1).
     BV(p) {
-      fieldType = "maxicode";
-      bcRotation = readRotation(p[0]);
+      s.fieldType = "maxicode";
+      s.bcRotation = readRotation(p[0]);
       const m = int(p[1], 4);
-      maxicodeMode = (m >= 2 && m <= 6 ? m : 4) as MaxicodeProps["mode"];
+      s.maxicodeMode = (m >= 2 && m <= 6 ? m : 4) as MaxicodeProps["mode"];
     },
     // ^BFN,{rowHeight} — MicroPDF417
     BF(p) {
-      fieldType = "micropdf417";
-      bcRotation = readRotation(p[0]);
-      mpdfRowHeight = int(p[1], 10);
+      s.fieldType = "micropdf417";
+      s.bcRotation = readRotation(p[0]);
+      s.mpdfRowHeight = int(p[1], 10);
     },
     // ^BBN,{rowHeight},{security},{numCharsPerRow},{numRows},{mode} — CODABLOCK
     BB(p) {
-      fieldType = "codablock";
-      bcRotation = readRotation(p[0]);
-      cbRowHeight = int(p[1], 10);
-      cbSecurity = (p[2] ?? "Y") === "N" ? "N" : "Y";
+      s.fieldType = "codablock";
+      s.bcRotation = readRotation(p[0]);
+      s.cbRowHeight = int(p[1], 10);
+      s.cbSecurity = (p[2] ?? "Y") === "N" ? "N" : "Y";
     },
 
     // ── Field hex indicator ─────────────────────────────────────────────────
     FH(_, rest) {
-      fhActive = true;
-      fhDelimiter = rest[0] ?? "_";
+      s.fhActive = true;
+      s.fhDelimiter = rest[0] ?? "_";
     },
 
     // ── Field data / separator ──────────────────────────────────────────────
     FD(_, rest) {
       // Implicit text field: ^FD without a prior ^A uses ^CF defaults.
-      // Skip the implicit promotion when pendingFn is set — that means
+      // Skip the implicit promotion when s.pendingFn is set — that means
       // we're looking at a bare `^FN<n>^FD<default>^FS` Variable
       // declaration (the docs-example form for ^FE inline embeds),
       // which flushField then routes through the bare-declaration
       // path (no field object, just Variable registration).
-      if (!fieldType && pendingFn === null) {
-        fieldType = "text";
-        textH = cfHeight || 30;
-        textW = cfWidth || 0;
-        textRot = fwRotation;
+      if (!s.fieldType && s.pendingFn === null) {
+        s.fieldType = "text";
+        s.textH = s.cfHeight || 30;
+        s.textW = s.cfWidth || 0;
+        s.textRot = s.fwRotation;
       }
-      pendingFD = rest;
+      s.pendingFD = rest;
     },
     FS() {
       flushField();
-      fhActive = false;
-      positionIsFT = false;
+      s.fhActive = false;
+      s.positionIsFT = false;
     },
 
     // ── Serialization ───────────────────────────────────────────────────────
@@ -1125,28 +960,28 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     SF(p) {
       // ^SF{increment},{padDigits},{leadZero}
       // Appears BEFORE ^FD — set pending state so flushField creates serial
-      snPending = true;
-      snIncrement = int(p[0], 1);
-      snMode = "SF";
+      s.snPending = true;
+      s.snIncrement = int(p[0], 1);
+      s.snMode = "SF";
     },
 
     // ── Label reverse / field reverse ───────────────────────────────────────
     LR(_, rest) {
-      lrActive = rest.toUpperCase().startsWith("Y");
+      s.lrActive = rest.toUpperCase().startsWith("Y");
     },
     FR() {
-      frActive = true;
+      s.frActive = true;
     },
 
     // ── Label home (origin offset) ──────────────────────────────────────────
     LH(p) {
-      lhX = int(p[0], 0);
-      lhY = int(p[1], 0);
+      s.lhX = int(p[0], 0);
+      s.lhY = int(p[1], 0);
     },
 
     // ── Label top (vertical offset) ─────────────────────────────────────────
     LT(_, rest) {
-      ltY = int(rest, 0);
+      s.ltY = int(rest, 0);
     },
 
     // ── Graphics ────────────────────────────────────────────────────────────
@@ -1174,11 +1009,11 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       const reverseFlag = getReverseFlag();
       if (filled && color === "B" && rounding === 0 && !reverseFlag) {
         commitPendingReverseBg();
-        pendingReverseBg = { x, y, w, h, t, color, rounding, reverseFlag, comment: gbComment };
+        s.pendingReverseBg = { x: s.x, y: s.y, w, h, t, color, rounding, reverseFlag, comment: gbComment };
         return;
       }
       commitPendingReverseBg();
-      pushGBObject(x, y, w, h, t, color, rounding, reverseFlag, gbComment);
+      pushGBObject(s.x, s.y, w, h, t, color, rounding, reverseFlag, gbComment);
     },
     GD(p) {
       commitPendingReverseBg();
@@ -1193,7 +1028,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       // Recover start point and angle from bounding-box FO position
       // 'L': dx>0,dy>0 → obj.x=boxX, angle=atan2(h,w)
       // 'R': dx<0,dy>0 → obj.x=boxX+w, angle=atan2(h,-w)
-      const gdObjX = gdOri === "R" ? x + gdW : x;
+      const gdObjX = gdOri === "R" ? s.x + gdW : s.x;
       const gdAngle = Math.round(
         gdOri === "R"
           ? (Math.atan2(gdH, -gdW) * 180) / Math.PI
@@ -1203,7 +1038,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         makeObj(
           "line",
           gdObjX,
-          y,
+          s.y,
           {
             angle: gdAngle,
             length: gdLen,
@@ -1272,12 +1107,12 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         return;
       }
       if (!gfImage.crcOk) partialCmds.add("^GF");
-      const posType: "FT" | "FO" = positionIsFT ? "FT" : "FO";
+      const posType: "FT" | "FO" = s.positionIsFT ? "FT" : "FO";
       objects.push(
         makeObj(
           "image",
-          x,
-          y,
+          s.x,
+          s.y,
           {
             imageId: gfImage.imageId,
             widthDots: gfImage.widthDots,
@@ -1300,8 +1135,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       objects.push(
         makeObj(
           "ellipse",
-          x,
-          y,
+          s.x,
+          s.y,
           {
             width: w,
             height: h,
@@ -1328,8 +1163,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       objects.push(
         makeObj(
           "ellipse",
-          x,
-          y,
+          s.x,
+          s.y,
           {
             width: d,
             height: d,
@@ -1364,14 +1199,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         browserLimit.push(`^XG${rest}`);
         return;
       }
-      const uploaded = downloadedGraphics.get(formatStoragePath(parsed, true));
-      const posType: "FT" | "FO" = positionIsFT ? "FT" : "FO";
+      const uploaded = s.downloadedGraphics.get(formatStoragePath(parsed, true));
+      const posType: "FT" | "FO" = s.positionIsFT ? "FT" : "FO";
       if (uploaded) {
         objects.push(
           makeObj(
             "image",
-            x,
-            y,
+            s.x,
+            s.y,
             {
               imageId: uploaded.imageId,
               widthDots: uploaded.widthDots,
@@ -1392,8 +1227,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       objects.push(
         makeObj(
           "image",
-          x,
-          y,
+          s.x,
+          s.y,
           {
             imageId: "",
             widthDots: 200,
@@ -1414,21 +1249,21 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // handlers extracted to handlers/setupScript.ts; merged below too.
 
     // ^CW {alias},{path} — register an alias for a printer-resident font.
-    // Subsequent ^A{alias} fields resolve to {path} via the fontAliases
+    // Subsequent ^A{alias} fields resolve to {path} via the s.fontAliases
     // map. The mapping is also persisted on labelConfig so the generator
     // can re-emit it on round-trip. Upsert by alias mirrors the
-    // Map-set semantics of fontAliases: a later ^CW for the same alias
+    // Map-set semantics of s.fontAliases: a later ^CW for the same alias
     // replaces the earlier mapping rather than accumulating duplicates.
     CW(p) {
       const alias = (p[0] ?? "").trim().toUpperCase();
       const path = (p[1] ?? "").trim();
       if (!/^[A-Z0-9]$/.test(alias) || !path) return;
-      fontAliases.set(alias, path);
+      s.fontAliases.set(alias, path);
       const list = (labelConfig.customFonts ?? []).filter(
         (m) => m.alias !== alias,
       );
       const entry: CustomFontMapping = { alias, path };
-      if (downloadedFontPaths.has(path)) {
+      if (s.downloadedFontPaths.has(path)) {
         // The bytes already shipped via ~DY earlier in the stream;
         // surface that intent on the model so re-emit will ~DY again.
         entry.embedInZpl = true;
@@ -1514,7 +1349,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
           browserLimit.push(dySummary);
           return;
         }
-        downloadedGraphics.set(formatStoragePath(parsedDyPath, true), {
+        s.downloadedGraphics.set(formatStoragePath(parsedDyPath, true), {
           imageId: dyImage.imageId,
           widthDots: dyImage.widthDots,
           heightDots: dyImage.heightDots,
@@ -1553,7 +1388,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       const fullPath = path.includes(".") ? path : `${path}${ext}`;
       try {
         loadFontBytesSync(bytes, filename);
-        downloadedFontPaths.add(fullPath);
+        s.downloadedFontPaths.add(fullPath);
       } catch {
         // Oversized or otherwise unloadable — surface as browser-limit.
         browserLimit.push(`~DY${path}`);
@@ -1564,38 +1399,38 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     GS(p) {
       // ^GS{rotation},{height},{width} — selects the internal-font
       // legal-symbol glyph (^FD picks which: A=®, B=©, C=™, D=UL, E=CSA).
-      fieldType = "symbol";
-      symRot = readRotation(p[0]);
-      symH = int(p[1], 30);
-      symW = int(p[2], symH);
+      s.fieldType = "symbol";
+      s.symRot = readRotation(p[0]);
+      s.symH = int(p[1], 30);
+      s.symW = int(p[2], s.symH);
     },
 
     // ── TrueType font / text block ──────────────────────────────────────────
     // ^A@{rotation},{height},{width},{drive}:{font} — TrueType font reference
     // Can't load printer TrueType fonts; import as text with best-effort sizing
     "A@"(p, rest) {
-      fieldType = "text";
-      textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
-      textH = int(p[1]) || cfHeight || 30;
-      textW = int(p[2]) || cfWidth || 0;
+      s.fieldType = "text";
+      s.textRot = (rest[0] as TextProps["rotation"]) ?? s.fwRotation;
+      s.textH = int(p[1]) || s.cfHeight || 30;
+      s.textW = int(p[2]) || s.cfWidth || 0;
       const fontRef = p[3] ?? "";
       const colonIdx = fontRef.indexOf(":");
-      pendingPrinterFontName =
+      s.pendingPrinterFontName =
         (colonIdx >= 0 ? fontRef.slice(colonIdx + 1) : fontRef) || undefined;
       partialCmds.add("^A@");
     },
     // ^TB{rotation},{width},{height} — text block (alternative to ^A + ^FB)
     TB(p, rest) {
-      fieldType = "text";
-      textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
+      s.fieldType = "text";
+      s.textRot = (rest[0] as TextProps["rotation"]) ?? s.fwRotation;
       const tbW = int(p[1], 0);
       const tbH = int(p[2], 0);
-      textH = cfHeight || 30;
-      textW = cfWidth || 0;
+      s.textH = s.cfHeight || 30;
+      s.textW = s.cfWidth || 0;
       if (tbW > 0) {
-        fbWidth = tbW;
-        fbLines = tbH > 0 ? Math.floor(tbH / (textH || 30)) : 1;
-        fbJustify = "L";
+        s.fbWidth = tbW;
+        s.fbLines = tbH > 0 ? Math.floor(tbH / (s.textH || 30)) : 1;
+        s.fbJustify = "L";
       }
     },
 
@@ -1608,8 +1443,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       // Defensive: flush any stash that survived a malformed prior
       // label (missing ^XZ) so it doesn't bleed into the new block.
       commitPendingReverseBg();
-      embedChar = "#";
-      clockChars = { ...DEFAULT_CLOCK_CHARS };
+      s.embedChar = "#";
+      s.clockChars = { ...DEFAULT_CLOCK_CHARS };
       resetComment(p, rest);
     },
     XZ(_, rest) {
@@ -1627,7 +1462,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // current decoder and surface as a partial import.
     CI: (p) => {
       const enc = ciToEncoding(int(p[0]));
-      fhDecoder = getDecoder(enc.label);
+      s.fhDecoder = getDecoder(enc.label);
       if (!enc.supported) partialCmds.add(`^CI${int(p[0])}`);
     },
 
@@ -1642,8 +1477,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         partialCmds.add("^FN");
         return;
       }
-      pendingFn = n;
-      pendingFnComment = pendingComment;
+      s.pendingFn = n;
+      s.pendingFnComment = s.pendingComment;
     },
     FC: (p) => {
       // ^FC<a>,<b>,<c>: redefine clock chars. Missing/empty slots
@@ -1653,17 +1488,17 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
         const c = raw?.[0];
         return c && c !== "^" && c !== "~" ? c : current;
       };
-      clockChars = {
-        date: accept(p[0], clockChars.date),
-        time: accept(p[1], clockChars.time),
-        tertiary: accept(p[2], clockChars.tertiary),
+      s.clockChars = {
+        date: accept(p[0], s.clockChars.date),
+        time: accept(p[1], s.clockChars.time),
+        tertiary: accept(p[2], s.clockChars.tertiary),
       };
     },
     FE: (p) => {
       // ^FE<char>: redefine the FN-embed delimiter used inside ^FD/^FV.
       // Single ASCII character; falls back to '#' when missing/invalid.
       const c = p[0]?.[0];
-      embedChar = c && c !== "^" && c !== "~" ? c : "#";
+      s.embedChar = c && c !== "^" && c !== "~" ? c : "#";
     },
     // FV / FM / FP / JA / JM / JC / JD / JE / JI / JR / JS / JU / PP —
     // noops; FL / HT / LF / IM / ~DG — browser-limit factories. All
@@ -1686,26 +1521,26 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // ^A{font}{rotation},{height},{width} — general font command (A0 and A@ are in the map;
     // remaining ^A* variants are dynamic keys that cannot be static map entries).
     if (cmd[0] === "A" && cmd.length === 2) {
-      fieldType = "text";
-      textRot = (rest[0] as TextProps["rotation"]) ?? fwRotation;
-      textH = int(p[1], cfHeight || 30);
-      textW = int(p[2], cfWidth || 0);
+      s.fieldType = "text";
+      s.textRot = (rest[0] as TextProps["rotation"]) ?? s.fwRotation;
+      s.textH = int(p[1], s.cfHeight || 30);
+      s.textW = int(p[2], s.cfWidth || 0);
       const fontChar = cmd[1] ?? "";
       // Round-trip semantics: when the font character matches the
       // current ^CF, treat the field as "use the label default" and
-      // leave pendingFontId undefined so the model carries no per-field
+      // leave s.pendingFontId undefined so the model carries no per-field
       // override. Otherwise pin the alias on the field so re-emitting
       // produces the same ^A{id} short form. Unknown aliases (no ^CW
       // and not a built-in) still go through — the printer would fall
       // back to font 0 at print, but storing the user's choice keeps
       // the import lossless for editing.
-      if (cfFontId && fontChar === cfFontId) {
-        pendingFontId = undefined;
+      if (s.cfFontId && fontChar === s.cfFontId) {
+        s.pendingFontId = undefined;
       } else {
-        pendingFontId = fontChar;
+        s.pendingFontId = fontChar;
       }
       if (
-        !fontAliases.has(fontChar) &&
+        !s.fontAliases.has(fontChar) &&
         !ZPL_BUILTIN_FONT_LETTERS.includes(fontChar)
       ) {
         partialCmds.add(`^${cmd}`);
