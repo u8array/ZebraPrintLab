@@ -7,14 +7,14 @@
  */
 
 /** Import fidelity when a ZPL command is parsed by this designer. */
-export type ZplCommandStatus =
+type ZplCommandStatus =
   | 'supported'      // Fully imported; no design information is lost
   | 'partial'        // Imported with known limitations (see ZplCommandInfo.loss)
   | 'structural'     // Carries no design content; correctly ignored (^XA, ^XZ, ^FX …)
   | 'browser-limit'  // Requires printer hardware / file storage; cannot be used in the browser
   | 'unsupported';   // Carries design information but not yet implemented
 
-export interface ZplCommandInfo {
+interface ZplCommandInfo {
   /** 2-character ZPL command code, uppercase, without the leading ^ or ~ */
   cmd: string;
   /** Brief description of what this ZPL command does */
@@ -25,7 +25,7 @@ export interface ZplCommandInfo {
   loss?: string;
 }
 
-export const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
+const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
   // ── Label layout ──────────────────────────────────────────────────────────
   { cmd: 'XA', status: 'structural', description: 'Start format (label start marker)' },
   { cmd: 'XZ', status: 'structural', description: 'End format / print label' },
@@ -184,15 +184,3 @@ export const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
 export const ZPL_COMMAND_MAP: ReadonlyMap<string, ZplCommandInfo> =
   new Map(ZPL_COMMANDS.map((c) => [c.cmd, c]));
 
-/**
- * Returns the import status for a ZPL command token (2 uppercase chars).
- * Handles the special case of general ^A{x} bitmap-font commands.
- */
-export function getCommandStatus(cmd: string): ZplCommandStatus {
-  const upper = cmd.toUpperCase();
-  const entry = ZPL_COMMAND_MAP.get(upper);
-  if (entry) return entry.status;
-  // General ^A{font}{rotation} commands (A1–A9, AA–AZ except A0 which is explicit) — best-effort text
-  if (upper.length === 2 && upper[0] === 'A') return 'partial';
-  return 'unsupported';
-}

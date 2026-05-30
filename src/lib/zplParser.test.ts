@@ -1313,6 +1313,13 @@ describe('parseZPL: importReport.findings', () => {
     expect(kinds).toContain('browserLimit');
     expect(kinds).toContain('unknown');
     expect(importReport.findings.every((f) => f.pageIndex === 0)).toBe(true);
+    // Tripwire: findings emit in source order. A pipeline split that
+    // collects unknowns / browser-limits in a separate pass would
+    // reorder these. Order: ^A@ (L1 partial) → ^IM (L1 browserLimit) →
+    // ^XX (L1 unknown).
+    expect(importReport.findings.map((f) => f.command)).toEqual([
+      '^A@', '^IMR:LOGO.GRF', '^XX99',
+    ]);
   });
 
   it('partial findings are deduplicated by command code', () => {

@@ -1622,17 +1622,17 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       const snInc = int(p[1], 1);
       const lastObj = objects[objects.length - 1];
       if (lastObj && lastObj.type === "text") {
-        const tp = lastObj.props as unknown as Record<string, unknown>;
+        const tp = lastObj.props;
         const serialObj = makeObj(
           "serial",
           lastObj.x,
           lastObj.y,
           {
-            content: snStart || (tp["content"] as string) || "001",
+            content: snStart || tp.content || "001",
             increment: snInc,
-            fontHeight: (tp["fontHeight"] as number) ?? 30,
-            fontWidth: (tp["fontWidth"] as number) ?? 0,
-            rotation: (tp["rotation"] as SerialProps["rotation"]) ?? "N",
+            fontHeight: tp.fontHeight ?? 30,
+            fontWidth: tp.fontWidth ?? 0,
+            rotation: tp.rotation ?? "N",
             zplMode: "SN",
           } satisfies SerialProps,
           lastObj.positionType,

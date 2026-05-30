@@ -67,7 +67,8 @@ export function getCaretOffset(root: Node, node: Node, offset: number): number {
       }
       // Element node: count text from the first `offset` children, then stop.
       for (let i = 0; i < offset && i < n.childNodes.length; i += 1) {
-        visit(n.childNodes[i]!);
+        const child = n.childNodes[i];
+        if (child) visit(child);
       }
       found = true;
       return;
@@ -114,7 +115,8 @@ export function findCaretPosition(
     if (el.tagName === "BR") {
       if (remaining === 0) {
         // Caret right before the <br>: place it in the parent at the BR's index.
-        const parent = el.parentNode!;
+        const parent = el.parentNode;
+        if (!parent) return;
         const idx = Array.prototype.indexOf.call(parent.childNodes, el);
         result = { node: parent, offset: idx };
         return;
@@ -137,7 +139,8 @@ export function findCaretPosition(
           result = { node: next, offset: 0 };
           return;
         }
-        const parent = el.parentNode!;
+        const parent = el.parentNode;
+        if (!parent) return;
         const idx = Array.prototype.indexOf.call(parent.childNodes, el);
         result = { node: parent, offset: idx + 1 };
         return;

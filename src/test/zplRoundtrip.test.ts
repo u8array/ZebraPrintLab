@@ -46,6 +46,21 @@ describe('round-trip — shipping label', () => {
     expect(second.objects).toHaveLength(first.objects.length);
   });
 
+  it('tripwire: labelConfig keys from first parse survive the round-trip', () => {
+    // A pipeline split that runs the labelConfig / printerProfile fold
+    // in the wrong order — e.g. across-blocks post-aggregation instead
+    // of per-block — would drop keys here. (Second-parse may legitimately
+    // GAIN keys: the generator emits ^PW/^LL defaults that the raw ZPL
+    // didn't include. Subset-check captures the regression without
+    // fighting that asymmetry.)
+    const { first, second } = roundtrip(SHIPPING_ZPL);
+    const firstKeys = Object.keys(first.labelConfig);
+    const secondKeys = new Set(Object.keys(second.labelConfig));
+    for (const k of firstKeys) {
+      expect(secondKeys.has(k), `key "${k}" dropped during round-trip`).toBe(true);
+    }
+  });
+
   it('preserves object types in the same order', () => {
     const { first, second } = roundtrip(SHIPPING_ZPL);
     expect(second.objects.map((o) => o.type)).toEqual(first.objects.map((o) => o.type));

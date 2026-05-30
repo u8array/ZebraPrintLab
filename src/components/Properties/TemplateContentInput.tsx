@@ -22,6 +22,22 @@ import {
 } from "../../lib/contentEditableCaret";
 import type { Variable } from "../../types/Variable";
 
+/** Read a caret offset relative to `editor` from the live Selection's
+ *  anchor- or focus-node, returning `null` when the selection isn't
+ *  inside the editor. Encapsulates the "Node | null narrowing after
+ *  editor.contains()" dance that TypeScript can't follow. */
+function caretOffsetIn(
+  editor: HTMLElement,
+  sel: Selection | null,
+  which: 'anchor' | 'focus' = 'anchor',
+): number | null {
+  if (!sel || sel.rangeCount === 0) return null;
+  const node = which === 'anchor' ? sel.anchorNode : sel.focusNode;
+  const offset = which === 'anchor' ? sel.anchorOffset : sel.focusOffset;
+  if (!node || !editor.contains(node)) return null;
+  return getCaretOffset(editor, node, offset);
+}
+
 interface Props {
   value: string;
   onChange: (next: string) => void;
@@ -150,19 +166,18 @@ export function TemplateContentInput({
       if (editor.innerHTML === desired) return;
     }
     // Save caret offset within the editor before rebuild.
-    const sel = window.getSelection();
-    let caretOffset: number | null = null;
-    if (sel && sel.rangeCount > 0 && editor.contains(sel.anchorNode)) {
-      caretOffset = getCaretOffset(editor, sel.anchorNode!, sel.anchorOffset);
-    }
+    const caretOffset = caretOffsetIn(editor, window.getSelection());
     editor.innerHTML = segmentsToHTML(segments);
     if (caretOffset !== null && document.activeElement === editor) {
-      const pos = findCaretPosition(editor, caretOffset);
-      const range = document.createRange();
-      range.setStart(pos.node, pos.offset);
-      range.collapse(true);
-      sel!.removeAllRanges();
-      sel!.addRange(range);
+      const selAfter = window.getSelection();
+      if (selAfter) {
+        const pos = findCaretPosition(editor, caretOffset);
+        const range = document.createRange();
+        range.setStart(pos.node, pos.offset);
+        range.collapse(true);
+        selAfter.removeAllRanges();
+        selAfter.addRange(range);
+      }
     }
   }, [value, segments]);
 
@@ -234,22 +249,17 @@ export function TemplateContentInput({
 
   const getCaretOffsetInEditor = (): number => {
     const editor = editorRef.current;
-    const sel = window.getSelection();
-    if (!editor || !sel || sel.rangeCount === 0) return value.length;
-    if (!editor.contains(sel.anchorNode)) return value.length;
-    return getCaretOffset(editor, sel.anchorNode!, sel.anchorOffset);
+    if (!editor) return value.length;
+    return caretOffsetIn(editor, window.getSelection()) ?? value.length;
   };
 
   const insertMarker = (markerBody: string) => {
     const editor = editorRef.current;
     const marker = `«${markerBody}»`;
     const start = getCaretOffsetInEditor();
-    const end = (() => {
-      const sel = window.getSelection();
-      if (!editor || !sel || sel.rangeCount === 0) return start;
-      if (!editor.contains(sel.focusNode)) return start;
-      return getCaretOffset(editor, sel.focusNode!, sel.focusOffset);
-    })();
+    const end = editor
+      ? (caretOffsetIn(editor, window.getSelection(), 'focus') ?? start)
+      : start;
     const lo = Math.min(start, end);
     const hi = Math.max(start, end);
     const next = value.slice(0, lo) + marker + value.slice(hi);
@@ -281,12 +291,8 @@ export function TemplateContentInput({
      *  to caret at end-of-value for off-editor selections. */
     const selectionRange = (fallbackLen: number) => {
       const sel = window.getSelection();
-      const start = sel && editor.contains(sel.anchorNode)
-        ? getCaretOffset(editor, sel.anchorNode!, sel.anchorOffset)
-        : fallbackLen;
-      const end = sel && editor.contains(sel.focusNode)
-        ? getCaretOffset(editor, sel.focusNode!, sel.focusOffset)
-        : start;
+      const start = caretOffsetIn(editor, sel, 'anchor') ?? fallbackLen;
+      const end = caretOffsetIn(editor, sel, 'focus') ?? start;
       return { lo: Math.min(start, end), hi: Math.max(start, end) };
     };
     /** Browser-native undo/redo route through zundo (global Ctrl+Z),
@@ -303,7 +309,8 @@ export function TemplateContentInput({
       const { value } = stateRef.current;
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return false;
-      const caret = getCaretOffset(editor, sel.anchorNode!, sel.anchorOffset);
+      const caret = caretOffsetIn(editor, sel);
+      if (caret === null) return false;
       const m = findAtomicMarker(value, caret, direction);
       if (!m) return false;
       commitInline(value.slice(0, m.start) + value.slice(m.end), m.start);
