@@ -576,6 +576,7 @@ const sk = {
       content: 'Obsah',
       rowHeight: 'Výška riadku (body)',
       moduleWidth: 'Šírka modulu',
+      mode: 'Režim',
     },
     codablock: {
       content: 'Obsah',

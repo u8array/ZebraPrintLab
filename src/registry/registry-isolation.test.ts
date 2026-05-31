@@ -23,7 +23,6 @@ describe("registry isolation baseline", () => {
   it("split entries surface no PropertiesPanel on the Core map", () => {
     // Derived from `<type>.panel.tsx` filenames whose stem matches a
     // registry key (filters out factory files like barcode1d.panel.tsx).
-    // Stage 6 will assert this against every key once all entries are split.
     const panelFiles = import.meta.glob("./*.panel.tsx", { eager: false });
     const splitTypes = Object.keys(panelFiles)
       .map((p) => p.replace(/^\.\//, "").replace(/\.panel\.tsx$/, ""))

@@ -576,6 +576,7 @@ const ja = {
       content: '内容',
       rowHeight: '行高さ（ドット）',
       moduleWidth: 'モジュール幅',
+      mode: 'モード',
     },
     codablock: {
       content: '内容',

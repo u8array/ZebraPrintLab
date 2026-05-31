@@ -597,6 +597,7 @@ const en = {
       content: 'Content',
       rowHeight: 'Row height (dots)',
       moduleWidth: 'Module width',
+      mode: 'Mode',
     },
     codablock: {
       content: 'Content',

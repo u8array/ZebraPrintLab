@@ -26,6 +26,10 @@ export interface BarcodeLocale {
   placeholder?: string;
 }
 
+/** Per-symbology config consumed by both `createBarcode1DCore` and
+ *  `createBarcode1DPanel`. Single shape per entry; each factory reads
+ *  the subset it needs. TODO Stage 7: split into Core / Panel halves so
+ *  the `.ts` doesn't carry `locale` / `contentSpec` (panel-only). */
 export interface Barcode1DConfig {
   label: string;
   icon: string;
@@ -73,10 +77,8 @@ export function createBarcode1DCore(config: Barcode1DConfig): ObjectTypeCore<Bar
     interpretationLocked: config.interpretationLocked,
     hri: config.hri,
 
-    // Width-locked symbologies (currently just heightLocked = true ones like
-    // GS1 DataBar) keep undefined so the transformer is disabled entirely.
-    // Otherwise the bar height scales with sy and the module width scales
-    // with sx (clamped to [1, 10] in commitBarcodeWidthHeightTransform).
+    // heightLocked symbologies disable the transformer entirely; others scale
+    // bar height with sy and module width with sx (clamped in the helper).
     commitTransform: config.heightLocked
       ? undefined
       : commitBarcodeWidthHeightTransform,

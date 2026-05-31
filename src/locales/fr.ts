@@ -576,6 +576,7 @@ const fr = {
       content: 'Contenu',
       rowHeight: 'Hauteur ligne (points)',
       moduleWidth: 'Largeur module',
+      mode: 'Mode',
     },
     codablock: {
       content: 'Contenu',

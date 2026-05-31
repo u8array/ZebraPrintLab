@@ -576,6 +576,7 @@ const sl = {
       content: 'Vsebina',
       rowHeight: 'Višina vrstice (pike)',
       moduleWidth: 'Širina modula',
+      mode: 'Način',
     },
     codablock: {
       content: 'Vsebina',

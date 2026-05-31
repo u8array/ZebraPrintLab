@@ -576,6 +576,7 @@ const el = {
       content: 'Περιεχόμενο',
       rowHeight: 'Ύψος γραμμής (κουκκίδες)',
       moduleWidth: 'Πλάτος μονάδας',
+      mode: 'Λειτουργία',
     },
     codablock: {
       content: 'Περιεχόμενο',

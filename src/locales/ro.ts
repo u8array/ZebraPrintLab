@@ -576,6 +576,7 @@ const ro = {
       content: 'Conținut',
       rowHeight: 'Înălțime rând (puncte)',
       moduleWidth: 'Lățime modul',
+      mode: 'Mod',
     },
     codablock: {
       content: 'Conținut',

@@ -576,6 +576,7 @@ const zhHans = {
       content: '内容',
       rowHeight: '行高（点）',
       moduleWidth: '模块宽度',
+      mode: '模式',
     },
     codablock: {
       content: '内容',

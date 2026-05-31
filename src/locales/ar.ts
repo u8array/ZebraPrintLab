@@ -576,6 +576,7 @@ const ar = {
       content: 'المحتوى',
       rowHeight: 'ارتفاع الصف (نقاط)',
       moduleWidth: 'عرض الوحدة',
+      mode: 'الوضع',
     },
     codablock: {
       content: 'المحتوى',

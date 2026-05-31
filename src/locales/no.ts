@@ -576,6 +576,7 @@ const no = {
       content: 'Innhold',
       rowHeight: 'Radhøyde (punkter)',
       moduleWidth: 'Modulbredde',
+      mode: 'Modus',
     },
     codablock: {
       content: 'Innhold',

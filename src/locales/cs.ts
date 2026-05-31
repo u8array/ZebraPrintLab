@@ -576,6 +576,7 @@ const cs = {
       content: 'Obsah',
       rowHeight: 'Výška řádku (body)',
       moduleWidth: 'Šířka modulu',
+      mode: 'Režim',
     },
     codablock: {
       content: 'Obsah',

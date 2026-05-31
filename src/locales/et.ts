@@ -576,6 +576,7 @@ const et = {
       content: 'Sisu',
       rowHeight: 'Rea kõrgus (punkti)',
       moduleWidth: 'Mooduli laius',
+      mode: 'Režiim',
     },
     codablock: {
       content: 'Sisu',

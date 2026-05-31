@@ -576,6 +576,7 @@ const zhHant = {
       content: '內容',
       rowHeight: '行高（點）',
       moduleWidth: '模組寬度',
+      mode: '模式',
     },
     codablock: {
       content: '內容',

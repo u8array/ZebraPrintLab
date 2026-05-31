@@ -576,6 +576,7 @@ const sv = {
       content: 'Innehåll',
       rowHeight: 'Radhöjd (punkter)',
       moduleWidth: 'Modulbredd',
+      mode: 'Läge',
     },
     codablock: {
       content: 'Innehåll',

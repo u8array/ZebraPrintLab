@@ -597,6 +597,7 @@ const de = {
       content: 'Inhalt',
       rowHeight: 'Zeilenhöhe (Punkte)',
       moduleWidth: 'Modulbreite',
+      mode: 'Modus',
     },
     codablock: {
       content: 'Inhalt',

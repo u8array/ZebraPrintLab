@@ -1,9 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
 import { InformationCircleIcon, TrashIcon } from '@heroicons/react/16/solid';
-import type { ObjectTypeDefinition } from '../types/ObjectType';
+import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { buttonCls, inputCls, labelCls } from '../components/Properties/styles';
-import { fieldPos } from './zplHelpers';
 import { loadImageFile, getImage, getAllImages, removeImage } from '../lib/imageCache';
 import { imageToGFA } from '../lib/imageToZpl';
 import {
@@ -15,142 +14,9 @@ import {
   type StorageDevice,
 } from '../lib/storagePath';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import type { ImageProps } from './image';
 
-export interface ImageProps {
-  /** ID into the image cache */
-  imageId: string;
-  /** Target width in dots (height derived from aspect ratio when a cached
-   *  PNG is available; falls back to `heightDots` for recall-only
-   *  placeholders). */
-  widthDots: number;
-  /** Override height for placeholder/recall-only images that have no
-   *  cached bytes — without it the box would snap to a fixed default
-   *  and ignore the user's drag. Only consulted when `imageId` does
-   *  not resolve to a cached image. */
-  heightDots?: number;
-  /** Luminance threshold for mono conversion (0–255) */
-  threshold: number;
-  /** Cached GFA ZPL string — regenerated when image/width/threshold changes */
-  _gfaCache?: string;
-  /** When set, the image is uploaded once via `~DY` (preamble) and referenced
-   *  per-instance via `^XG`. Set by the parser when a ZPL stream uses the
-   *  upload+recall pattern, preserved on re-export. Without this the image
-   *  emits inline `^GF` as before. */
-  storedAs?: {
-    /** Storage device prefix without trailing colon: "R", "E", "B", or "A". */
-    device: string;
-    /** Filename stem (no extension); paired with `.GRF` for graphics. */
-    name: string;
-    /** Ship the bitmap bytes via `~DY` alongside the `^XG` reference.
-     *  Default true on first toggle so a single-job ZPL is self-contained.
-     *  False = recall-only: assume the file is already on printer storage,
-     *  emit only `^XG`. Mirrors the customFonts `embedInZpl` pattern. */
-    embedInZpl?: boolean;
-  };
-}
-
-/** Synchronously generate ^GFA using a blocking canvas (for toZPL). */
-function gfaSync(dataUrl: string, widthDots: number, threshold: number): string {
-  const img = new Image();
-  // data-URL loads synchronously when set on an already-created Image
-  img.src = dataUrl;
-  // In some browsers this might not be immediate for large images,
-  // but for data-URLs it's synchronous.
-  if (!img.complete || !img.naturalWidth) return '';
-
-  const aspect = img.naturalHeight / img.naturalWidth;
-  const heightDots = Math.max(1, Math.round(widthDots * aspect));
-  const bytesPerRow = Math.ceil(widthDots / 8);
-  const paddedWidth = bytesPerRow * 8;
-
-  const canvas = document.createElement('canvas');
-  canvas.width = paddedWidth;
-  canvas.height = heightDots;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Could not get 2d context');
-
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, paddedWidth, heightDots);
-  ctx.drawImage(img, 0, 0, widthDots, heightDots);
-
-  const pixels = ctx.getImageData(0, 0, paddedWidth, heightDots).data;
-  const totalBytes = bytesPerRow * heightDots;
-  const hexChars: string[] = [];
-
-  for (let row = 0; row < heightDots; row++) {
-    for (let byteIdx = 0; byteIdx < bytesPerRow; byteIdx++) {
-      let byte = 0;
-      for (let bit = 0; bit < 8; bit++) {
-        const px = byteIdx * 8 + bit;
-        const idx = (row * paddedWidth + px) * 4;
-        const lum = 0.299 * (pixels[idx] ?? 255) + 0.587 * (pixels[idx + 1] ?? 255) + 0.114 * (pixels[idx + 2] ?? 255);
-        if (lum < threshold) byte |= (0x80 >> bit);
-      }
-      hexChars.push(byte.toString(16).toUpperCase().padStart(2, '0'));
-    }
-  }
-
-  return `^GFA,${totalBytes},${totalBytes},${bytesPerRow},${hexChars.join('')}`;
-}
-
-export const image: ObjectTypeDefinition<ImageProps> = {
-  label: 'Image',
-  icon: 'img',
-  group: 'shape',
-  defaultProps: {
-    imageId: '',
-    widthDots: 200,
-    threshold: 128,
-  },
-  defaultSize: { width: 200, height: 200 },
-
-  // Resize via canvas-handle:
-  //  - With cached PNG → aspect locked, height re-derives from widthDots.
-  //    Pick the dominant scale (largest deviation from 1) so all eight
-  //    handles work for both grow and shrink. Math.max would mis-handle
-  //    inward single-axis drags (sx=0.5, sy=1 → max=1 → no change).
-  //  - Without cache (recall-only placeholder) → free-form. widthDots
-  //    and heightDots scale independently so the user can shape the
-  //    placeholder box for layout purposes.
-  // _gfaCache always cleared — for cached images the hex needs regen at
-  // the new width; for placeholders it's empty anyway.
-  commitTransform: (obj, ctx) => {
-    const { sx, sy, snap } = ctx;
-    const cached = getImage(obj.props.imageId);
-    const widthDots = (scale: number): number =>
-      Math.max(8, snap(Math.round(obj.props.widthDots * scale)));
-    if (cached) {
-      const dominant = Math.abs(sx - 1) >= Math.abs(sy - 1) ? sx : sy;
-      return { widthDots: widthDots(dominant), _gfaCache: undefined };
-    }
-    // First-resize fallback for heightDots: use the current widthDots so
-    // the implicit default (square placeholder) matches what the canvas
-    // renders before the user has dragged. Drifting from that — e.g. a
-    // hard-coded 200 — would mean the first drag visibly snaps the box.
-    const baseHeight = obj.props.heightDots ?? obj.props.widthDots;
-    return {
-      widthDots: widthDots(sx),
-      heightDots: Math.max(8, snap(Math.round(baseHeight * sy))),
-      _gfaCache: undefined,
-    };
-  },
-
-  toZPL: (obj) => {
-    const p = obj.props;
-    // Recall path: upload happened in the preamble; here we just reference
-    // it via ^XG. The `.GRF` extension is implicit on `~DY{path},A,G,…` —
-    // Zebra firmware persists the file as `path.GRF` and `^XG` resolves
-    // the dot-suffixed form.
-    if (p.storedAs) {
-      return `${fieldPos(obj)}^XG${formatStoragePath(p.storedAs, true)},1,1^FS`;
-    }
-    const cached = getImage(p.imageId);
-    if (!cached) return `${fieldPos(obj)}^FD^FS`;
-    // Use cached GFA if available, otherwise generate synchronously
-    const gfa = p._gfaCache || gfaSync(cached.dataUrl, p.widthDots, p.threshold);
-    return `${fieldPos(obj)}${gfa}^FS`;
-  },
-
+export const imagePanel: ObjectTypeUi<ImageProps> = {
   PropertiesPanel: ({ obj, onChange }) => {
     const t = useT();
     const p = obj.props;
@@ -171,10 +37,7 @@ export const image: ObjectTypeDefinition<ImageProps> = {
         const result = await imageToGFA(entry.dataUrl, p.widthDots, p.threshold);
         onChange({ imageId: entry.id, _gfaCache: result.zpl });
       } catch {
-        // Surface the failure inline (non-image MIME, oversized file, decode
-        // error, GFA exception) and stop. The codebase has no production
-        // logging path; debugging specific causes (e.g. an obscure MIME) is
-        // done with a devtools breakpoint on this catch.
+        // Surface the failure inline (non-image MIME, oversized, decode error).
         setUploadFailed(true);
       } finally {
         setUploading(false);

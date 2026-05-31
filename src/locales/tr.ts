@@ -576,6 +576,7 @@ const tr = {
       content: 'İçerik',
       rowHeight: 'Satır yüksekliği (nokta)',
       moduleWidth: 'Modül genişliği',
+      mode: 'Mod',
     },
     codablock: {
       content: 'İçerik',

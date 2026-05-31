@@ -576,6 +576,7 @@ const ko = {
       content: '내용',
       rowHeight: '행 높이 (도트)',
       moduleWidth: '모듈 폭',
+      mode: '모드',
     },
     codablock: {
       content: '내용',

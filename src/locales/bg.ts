@@ -576,6 +576,7 @@ const bg = {
       content: 'Съдържание',
       rowHeight: 'Височина на ред (точки)',
       moduleWidth: 'Ширина на модул',
+      mode: 'Режим',
     },
     codablock: {
       content: 'Съдържание',

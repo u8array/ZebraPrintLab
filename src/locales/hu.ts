@@ -576,6 +576,7 @@ const hu = {
       content: 'Tartalom',
       rowHeight: 'Sormagasság (pont)',
       moduleWidth: 'Modulszélesség',
+      mode: 'Mód',
     },
     codablock: {
       content: 'Tartalom',

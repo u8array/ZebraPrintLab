@@ -576,6 +576,7 @@ const da = {
       content: 'Indhold',
       rowHeight: 'Rækkehøjde (punkter)',
       moduleWidth: 'Modulbredde',
+      mode: 'Tilstand',
     },
     codablock: {
       content: 'Indhold',

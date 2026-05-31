@@ -576,6 +576,7 @@ const fi = {
       content: 'Sisältö',
       rowHeight: 'Rivikorkeus (pistettä)',
       moduleWidth: 'Moduulin leveys',
+      mode: 'Tila',
     },
     codablock: {
       content: 'Sisältö',

@@ -576,6 +576,7 @@ const it = {
       content: 'Contenuto',
       rowHeight: 'Altezza riga (punti)',
       moduleWidth: 'Larghezza modulo',
+      mode: 'Modalità',
     },
     codablock: {
       content: 'Contenuto',

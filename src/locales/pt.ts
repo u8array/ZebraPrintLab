@@ -576,6 +576,7 @@ const pt = {
       content: 'Conteúdo',
       rowHeight: 'Altura linha (pontos)',
       moduleWidth: 'Largura módulo',
+      mode: 'Modo',
     },
     codablock: {
       content: 'Conteúdo',

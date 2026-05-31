@@ -576,6 +576,7 @@ const hr = {
       content: 'Sadržaj',
       rowHeight: 'Visina retka (točke)',
       moduleWidth: 'Širina modula',
+      mode: 'Način',
     },
     codablock: {
       content: 'Sadržaj',

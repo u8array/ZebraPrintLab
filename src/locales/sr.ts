@@ -576,6 +576,7 @@ const sr = {
       content: 'Садржај',
       rowHeight: 'Висина реда (тачке)',
       moduleWidth: 'Ширина модула',
+      mode: 'Režim',
     },
     codablock: {
       content: 'Садржај',

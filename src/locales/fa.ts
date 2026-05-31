@@ -576,6 +576,7 @@ const fa = {
       content: 'محتوا',
       rowHeight: 'ارتفاع ردیف (نقطه)',
       moduleWidth: 'عرض ماژول',
+      mode: 'حالت',
     },
     codablock: {
       content: 'محتوا',

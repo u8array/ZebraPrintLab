@@ -576,6 +576,7 @@ const he = {
       content: 'תוכן',
       rowHeight: 'גובה שורה (נקודות)',
       moduleWidth: 'רוחב מודול',
+      mode: 'מצב',
     },
     codablock: {
       content: 'תוכן',

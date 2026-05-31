@@ -576,6 +576,7 @@ const lt = {
       content: 'Turinys',
       rowHeight: 'Eilutės aukštis (taškai)',
       moduleWidth: 'Modulio plotis',
+      mode: 'Režimas',
     },
     codablock: {
       content: 'Turinys',

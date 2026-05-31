@@ -576,6 +576,7 @@ const nl = {
       content: 'Inhoud',
       rowHeight: 'Rijhoogte (punten)',
       moduleWidth: 'Modulebreedte',
+      mode: 'Modus',
     },
     codablock: {
       content: 'Inhoud',

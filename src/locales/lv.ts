@@ -576,6 +576,7 @@ const lv = {
       content: 'Saturs',
       rowHeight: 'Rindas augstums (punkti)',
       moduleWidth: 'Moduļa platums',
+      mode: 'Režīms',
     },
     codablock: {
       content: 'Saturs',

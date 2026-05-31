@@ -576,6 +576,7 @@ const pl = {
       content: 'Zawartość',
       rowHeight: 'Wysokość wiersza (punkty)',
       moduleWidth: 'Szerokość modułu',
+      mode: 'Tryb',
     },
     codablock: {
       content: 'Zawartość',
