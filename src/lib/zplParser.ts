@@ -111,8 +111,8 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     // extracted to handlers/unsupported.ts.
   };
 
-  Object.assign(handlers, createBarcodeHandlers(s));
-  Object.assign(handlers, createFieldHandlers(s, labelConfig, { flushField, appendComment }));
+  Object.assign(handlers, createBarcodeHandlers(s.field, s.defaults));
+  Object.assign(handlers, createFieldHandlers(s, { flushField, appendComment }));
   Object.assign(handlers, graphicsFamily.handlers);
   Object.assign(handlers, createSetupScriptHandlers(printerProfile));
   Object.assign(handlers, createLabelConfigHandlers(labelConfig, dpmm));

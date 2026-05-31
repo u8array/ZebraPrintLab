@@ -3,18 +3,21 @@ import type { DataMatrixProps } from "../../../registry/datamatrix";
 import type { Gs1DatabarProps } from "../../../registry/gs1databar";
 import type { MaxicodeProps } from "../../../registry/maxicode";
 import { GS1_DATABAR_DEFAULT_SEGMENTS } from "../../gs1";
-import type { ParserState } from "../context";
+import type { DefaultsState, FieldState } from "../context";
 import { int, readRotation } from "../helpers";
 import type { Handler } from "../types";
 
-/** Handlers for every ^B* barcode-family command plus the shared
- *  ^BY defaults. Each handler only mutates the per-field caching
- *  slice on `ParserState` (s.field.fieldType + s.field.bcRotation, s.field.bcHeight,
- *  s.field.bcInterp, s.field.bcCheck, s.defaults.byModuleWidth, plus per-symbology
- *  pendings like s.field.qrMag / s.field.dmDim / s.field.aztecMag). flushField (kept
- *  in parseZPL.ts) is what actually emits the LabelObject once the
- *  closing ^FS arrives. */
-export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
+/** Handlers for every ^B* barcode-family command plus the shared ^BY
+ *  defaults. Takes only the two slices it actually mutates: `field`
+ *  (per-field caching of fieldType + bcRotation / bcHeight / bcInterp
+ *  / bcCheck + per-symbology pendings like qrMag / dmDim / aztecMag)
+ *  and `defaults` (^BY barcode defaults that following ^B* handlers
+ *  inherit from). flushField in parseZPL.ts emits the LabelObject
+ *  once the closing ^FS arrives. */
+export function createBarcodeHandlers(
+  field: FieldState,
+  defaults: DefaultsState,
+): Record<string, Handler> {
   // Factory for standard 1D barcode commands that share the same state
   // variables. hIdx/iIdx/cIdx are the comma-split parameter indices for
   // height / printInterpretation / checkDigit.
@@ -27,25 +30,25 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
       cIdx = -1,
     ): Handler =>
     (p) => {
-      s.field.fieldType = type;
-      s.field.bcRotation = readRotation(p[0]);
-      s.field.bcHeight = int(p[hIdx], s.defaults.byHeight || 100);
-      s.field.bcInterp = (p[iIdx] ?? iDefault) === "Y";
-      if (cIdx >= 0) s.field.bcCheck = (p[cIdx] ?? "N") === "Y";
+      field.fieldType = type;
+      field.bcRotation = readRotation(p[0]);
+      field.bcHeight = int(p[hIdx], defaults.byHeight || 100);
+      field.bcInterp = (p[iIdx] ?? iDefault) === "Y";
+      if (cIdx >= 0) field.bcCheck = (p[cIdx] ?? "N") === "Y";
     };
 
   const handleAztec: Handler = (p) => {
-    s.field.fieldType = "aztec";
-    s.field.bcRotation = readRotation(p[0]);
-    s.field.aztecMag = int(p[1], 4);
+    field.fieldType = "aztec";
+    field.bcRotation = readRotation(p[0]);
+    field.aztecMag = int(p[1], 4);
   };
 
   return {
     // ── Barcode defaults ──────────────────────────────────────────────────
     // ^BY{moduleWidth},{ratio},{height}
     BY(p) {
-      s.defaults.byModuleWidth = int(p[0], 2);
-      s.defaults.byHeight = int(p[2], 0);
+      defaults.byModuleWidth = int(p[0], 2);
+      defaults.byHeight = int(p[2], 0);
     },
 
     // ── 1D barcodes via mkBarcode(type, hIdx, iIdx, iDefault?, cIdx?) ─────
@@ -69,12 +72,12 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
 
     // ^B4o,h,f,m — Code 49. Custom handler for the extra mode parameter.
     B4(p) {
-      s.field.fieldType = "code49";
-      s.field.bcRotation = readRotation(p[0]);
-      s.field.bcHeight = int(p[1], s.defaults.byHeight || 20);
-      s.field.bcInterp = (p[2] ?? "N") === "Y";
+      field.fieldType = "code49";
+      field.bcRotation = readRotation(p[0]);
+      field.bcHeight = int(p[1], defaults.byHeight || 20);
+      field.bcInterp = (p[2] ?? "N") === "Y";
       const m = (p[3] ?? "A").toUpperCase();
-      s.field.bcCode49Mode = /^[A0-5]$/.test(m)
+      field.bcCode49Mode = /^[A0-5]$/.test(m)
         ? (m as Code49Props["mode"])
         : "A";
     },
@@ -82,21 +85,21 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
     // MSI: check logic is "any letter except N" (not simple "Y") — keep inline.
     // ^BMN,{checkType},{height},{interp},N  (checkType: A/B/C/D=enabled, N=none)
     BM(p) {
-      s.field.fieldType = "msi";
-      s.field.bcRotation = readRotation(p[0]);
-      s.field.bcCheck = (p[1] ?? "N") !== "N";
-      s.field.bcHeight = int(p[2], s.defaults.byHeight || 100);
-      s.field.bcInterp = (p[3] ?? "Y") === "Y";
+      field.fieldType = "msi";
+      field.bcRotation = readRotation(p[0]);
+      field.bcCheck = (p[1] ?? "N") !== "N";
+      field.bcHeight = int(p[2], defaults.byHeight || 100);
+      field.bcInterp = (p[3] ?? "Y") === "Y";
     },
 
-    // GS1 Databar: different param layout, also updates s.defaults.byModuleWidth.
+    // GS1 Databar: different param layout, also updates defaults.byModuleWidth.
     // ^BRo,{symbology},{magnification},{separator},{height},{segments}
     BR(p) {
-      s.field.fieldType = "gs1databar";
-      s.field.bcRotation = readRotation(p[0]);
-      s.defaults.byModuleWidth = int(p[2], s.defaults.byModuleWidth);
-      s.field.gsSymbology = (int(p[1], 1) as Gs1DatabarProps["symbology"]) || 1;
-      s.field.gsSegments =
+      field.fieldType = "gs1databar";
+      field.bcRotation = readRotation(p[0]);
+      defaults.byModuleWidth = int(p[2], defaults.byModuleWidth);
+      field.gsSymbology = (int(p[1], 1) as Gs1DatabarProps["symbology"]) || 1;
+      field.gsSegments =
         p[5] !== undefined
           ? int(p[5], GS1_DATABAR_DEFAULT_SEGMENTS)
           : undefined;
@@ -104,26 +107,26 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
 
     // ^BQN,2,{magnification} — QR Code
     BQ(p) {
-      s.field.fieldType = "qrcode";
-      s.field.bcRotation = readRotation(p[0]);
-      s.field.qrMag = int(p[2], 4);
+      field.fieldType = "qrcode";
+      field.bcRotation = readRotation(p[0]);
+      field.qrMag = int(p[2], 4);
     },
 
     // ^BXN,{dimension},{quality} — DataMatrix
     BX(p) {
-      s.field.fieldType = "datamatrix";
-      s.field.bcRotation = readRotation(p[0]);
-      s.field.dmDim = int(p[1], 5);
-      s.field.dmQuality = int(p[2], 200) as DataMatrixProps["quality"];
+      field.fieldType = "datamatrix";
+      field.bcRotation = readRotation(p[0]);
+      field.dmDim = int(p[1], 5);
+      field.dmQuality = int(p[2], 200) as DataMatrixProps["quality"];
     },
 
     // ^B7N,{rowHeight},{securityLevel},{columns},,, — PDF417
     B7(p) {
-      s.field.fieldType = "pdf417";
-      s.field.bcRotation = readRotation(p[0]);
-      s.field.pdfRowHeight = int(p[1], 10);
-      s.field.pdfSecurity = int(p[2], 0);
-      s.field.pdfColumns = int(p[3], 0);
+      field.fieldType = "pdf417";
+      field.bcRotation = readRotation(p[0]);
+      field.pdfRowHeight = int(p[1], 10);
+      field.pdfSecurity = int(p[2], 0);
+      field.pdfColumns = int(p[3], 0);
     },
 
     // ^B0N,{magnification},... / ^BON,... — Aztec (^B0 and ^BO are synonyms)
@@ -136,25 +139,25 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
     // in the editor, so the params are read but the emitted form
     // pins them to (1, 1).
     BV(p) {
-      s.field.fieldType = "maxicode";
-      s.field.bcRotation = readRotation(p[0]);
+      field.fieldType = "maxicode";
+      field.bcRotation = readRotation(p[0]);
       const m = int(p[1], 4);
-      s.field.maxicodeMode = (m >= 2 && m <= 6 ? m : 4) as MaxicodeProps["mode"];
+      field.maxicodeMode = (m >= 2 && m <= 6 ? m : 4) as MaxicodeProps["mode"];
     },
 
     // ^BFN,{rowHeight} — MicroPDF417
     BF(p) {
-      s.field.fieldType = "micropdf417";
-      s.field.bcRotation = readRotation(p[0]);
-      s.field.mpdfRowHeight = int(p[1], 10);
+      field.fieldType = "micropdf417";
+      field.bcRotation = readRotation(p[0]);
+      field.mpdfRowHeight = int(p[1], 10);
     },
 
     // ^BBN,{rowHeight},{security},{numCharsPerRow},{numRows},{mode} — CODABLOCK
     BB(p) {
-      s.field.fieldType = "codablock";
-      s.field.bcRotation = readRotation(p[0]);
-      s.field.cbRowHeight = int(p[1], 10);
-      s.field.cbSecurity = (p[2] ?? "Y") === "N" ? "N" : "Y";
+      field.fieldType = "codablock";
+      field.bcRotation = readRotation(p[0]);
+      field.cbRowHeight = int(p[1], 10);
+      field.cbSecurity = (p[2] ?? "Y") === "N" ? "N" : "Y";
     },
   };
 }

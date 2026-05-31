@@ -162,7 +162,18 @@ export interface FieldState {
 /** All mutable parser state grouped into typed sub-slices. Each
  *  handler family can take only the slices it actually mutates, so
  *  the type system enforces ownership across families rather than
- *  every handler getting the whole god-object. */
+ *  every handler getting the whole god-object.
+ *
+ *  Narrowing heuristic for handler-family factories: pass individual
+ *  slices when the family mutates ≤ 2 of them (barcodes →
+ *  `field, defaults`; setupScript → `printerProfile`; labelConfig →
+ *  `labelConfig`); pass `s` whole when the family touches ≥ 3 slices,
+ *  because the long parameter list duplicates the ParserState
+ *  interface without adding type-safety. Sub-slices still enforce
+ *  ownership at the access path even when the whole `s` is passed —
+ *  e.g. graphics needs `s.reverseBg` (top-level mutation) plus four
+ *  other slices, so it takes `s` but the per-slice access path keeps
+ *  the intent visible. */
 export interface ParserState {
   result: ParserResult;
   label: LabelFrameState;
@@ -170,9 +181,13 @@ export interface ParserState {
   format: FormatState;
   defaults: DefaultsState;
   fonts: FontsState;
-  /** ^GB stash for the reverse-text collapse heuristic — flat top-
-   *  level field (not nested) because the value is null in the common
-   *  case and the collapse is a one-field stash, not a sub-state. */
+  /** ^GB stash for the reverse-text collapse heuristic. Top-level
+   *  field, not nested under `field` — parallel to `comment.fnNumber`
+   *  it's a nullable "pending until next field consumes it" stash,
+   *  but kept flat because there's only one such field at this level
+   *  and grouping a single field into its own sub-slice would add
+   *  ceremony without clarity. If a second cross-handler stash ever
+   *  joins (e.g. a deferred font-load), promote to `pending: {...}`. */
   reverseBg: PendingReverseBg | null;
   field: FieldState;
 }

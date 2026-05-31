@@ -45,7 +45,7 @@ export interface FlushFieldDeps {
 
 /** Factory for the field-emit closure: `flushField` (the giant switch
  *  that turns cached `s.field.fieldType` + `s.field.pendingFD` into a pushed
- *  `LabelObject`). The helpers `bootstrapVariable` + `applyFnEmbeds`
+ *  `LabelObject`). The helpers `upsertVariable` + `applyFnEmbeds`
  *  stay private to the closure — they're only called from inside
  *  flushField (the ^FN-embed bootstrap happens at flush time, not
  *  earlier in the field-handler family). */
@@ -56,13 +56,14 @@ export function createFlushField(
   const { commitPendingReverseBg, getReverseFlag, takeComment } = deps;
   const { objects, variables } = s.result;
 
-  /** Get-or-create a Variable for the given FN slot. Three call
-   *  sites — bare `^FN^FD^FS` declarations, single-bind fields,
-   *  and template-embed references — all funnel through here so
-   *  the auto-naming convention (`field_<n>` unless an FX comment
-   *  hints otherwise) and the uniqueName collision logic live in
-   *  one place. */
-  const bootstrapVariable = (
+  /** Upsert a Variable for the given FN slot — returns the existing
+   *  one (and silently backfills its `defaultValue` if it was empty
+   *  and this call supplies one), or creates a new entry with the
+   *  auto-naming convention (`field_<n>` unless an FX comment hints
+   *  otherwise) + uniqueName collision logic. Three call sites: bare
+   *  `^FN^FD^FS` declarations, single-bind fields, and template-embed
+   *  references — all funnel through here. */
+  const upsertVariable = (
     fnNumber: number,
     defaultValue: string,
     commentHint?: string,
@@ -107,7 +108,7 @@ export function createFlushField(
       seen.add(n);
     }
     if (seen.size === 0) return payload;
-    for (const n of seen) bootstrapVariable(n, "");
+    for (const n of seen) upsertVariable(n, "");
     const fnToName = new Map(variables.map((v) => [v.fnNumber, v.name]));
     return embedsToMarkers(payload, s.format.embedChar, fnToName);
   };
@@ -129,7 +130,7 @@ export function createFlushField(
         const decl = s.format.fhActive
           ? decodeFH(s.field.pendingFD, s.format.fhDelimiter, s.format.fhDecoder)
           : s.field.pendingFD;
-        bootstrapVariable(s.comment.fnNumber, decl, s.comment.fnComment);
+        upsertVariable(s.comment.fnNumber, decl, s.comment.fnComment);
         s.comment.fnNumber = null;
         s.comment.fnComment = undefined;
       }
@@ -553,7 +554,7 @@ export function createFlushField(
     if (s.comment.fnNumber !== null) {
       const justPushed = objects[objects.length - 1];
       if (justPushed) {
-        const variable = bootstrapVariable(s.comment.fnNumber, content, s.comment.fnComment);
+        const variable = upsertVariable(s.comment.fnNumber, content, s.comment.fnComment);
         justPushed.variableId = variable.id;
       }
       s.comment.fnNumber = null;

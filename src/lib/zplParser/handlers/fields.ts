@@ -1,4 +1,4 @@
-import type { CustomFontMapping, LabelConfig } from "../../../types/ObjectType";
+import type { CustomFontMapping } from "../../../types/ObjectType";
 import { FN_NUMBER_MAX, FN_NUMBER_MIN } from "../../../types/Variable";
 import type { SerialProps } from "../../../registry/serial";
 import type { ParserState } from "../context";
@@ -20,13 +20,13 @@ export interface FieldHelpers {
  *  reverse + offset (LR/FR/LH/LT), serialisation (SN/SF), template
  *  hooks (FN/FC/FE), encoding (CI), comments (FX), and font alias
  *  registration (CW). Mutates the per-field caching slice on
- *  `ParserState` plus the shared `labelConfig`. */
+ *  `ParserState` plus the shared `labelConfig` via `s.result`. */
 export function createFieldHandlers(
   s: ParserState,
-  labelConfig: Partial<LabelConfig>,
   helpers: FieldHelpers,
 ): Record<string, Handler> {
   const { flushField, appendComment } = helpers;
+  const { labelConfig } = s.result;
 
   return {
     // ── Field origin ──────────────────────────────────────────────────────
