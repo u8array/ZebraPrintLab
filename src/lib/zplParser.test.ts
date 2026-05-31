@@ -1179,6 +1179,15 @@ describe('parseZPL — ^SF serialization', () => {
     expect(objects[0]?.type).toBe('serial');
     expect(props(objects[0]).increment).toBe(3);
   });
+
+  it('does not leak snPending to a sibling field inside the same ^FS block', () => {
+    const zpl =
+      '^XA^SF3,3,Y^FO10,10^A0N,30,0^FD001^FO20,20^A0N,30,0^FD002^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(2);
+    expect(objects[0]?.type).toBe('serial');
+    expect(objects[1]?.type).toBe('text');
+  });
 });
 
 // ── pending per-field state lifetime at ^FS boundary ─────────────────────────
