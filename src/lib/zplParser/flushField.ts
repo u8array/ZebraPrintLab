@@ -168,6 +168,8 @@ export function createFlushField(
               comment,
             ),
           );
+          // Consumed: clear pending serial state immediately so a
+          // following field inside the same ^FS block emits as text.
           s.field.snPending = false;
           s.field.snIncrement = 1;
           s.field.snMode = "SN";

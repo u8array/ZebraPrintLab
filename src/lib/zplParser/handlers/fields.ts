@@ -24,7 +24,6 @@ export function createFieldHandlers(
     // ── Field origin ──────────────────────────────────────────────────────
     FO(p) {
       flushField();
-      s.field.frActive = false;
       s.field.x = int(p[0]) + s.label.lhX;
       s.field.y = int(p[1]) + s.label.lhY + s.label.ltY;
       // 3rd param is justification (0/1/2) — stored but not actively used.
@@ -32,7 +31,6 @@ export function createFieldHandlers(
     },
     FT(p) {
       flushField();
-      s.field.frActive = false;
       s.field.x = int(p[0]) + s.label.lhX;
       s.field.y = int(p[1]) + s.label.lhY + s.label.ltY;
       s.field.positionIsFT = true;
@@ -116,6 +114,22 @@ export function createFieldHandlers(
       flushField();
       s.format.fhActive = false;
       s.field.positionIsFT = false;
+      // Drop any per-field pending state that flushField left intact.
+      // Each of these binds only to the field this ^FS closes; without
+      // an explicit reset at the boundary a bare ^XX^FS (no ^FD) would
+      // leak the pending value into the next real field.
+      s.field.snPending = false;
+      s.field.snIncrement = 1;
+      s.field.snMode = "SN";
+      s.field.pendingPrinterFontName = undefined;
+      s.field.pendingFontId = undefined;
+      s.field.frActive = false;
+      s.defaults.fbWidth = 0;
+      s.defaults.fbLines = 1;
+      s.defaults.fbSpacing = 0;
+      s.defaults.fbJustify = "L";
+      s.comment.fnNumber = null;
+      s.comment.fnComment = undefined;
     },
 
     // ── Serialization ─────────────────────────────────────────────────────

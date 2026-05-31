@@ -1155,6 +1155,106 @@ describe('parseZPL — ^SF serialization', () => {
     const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^SF3,3,Y^FD100^FS^XZ', 8);
     expect(props(objects[0]).increment).toBe(3);
   });
+
+  it('does not leak snPending across a non-text field', () => {
+    const zpl =
+      '^XA^SF%%%,1^FO10,10^BCN,100,Y,N,N^FD123^FS^FO50,50^A0N,30,0^FDtext^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(2);
+    expect(objects[0]?.type).toBe('code128');
+    expect(objects[1]?.type).toBe('text');
+  });
+
+  it('does not leak snPending across a bare ^SF^FS', () => {
+    const zpl = '^XA^SF%%%,1^FS^FO10,10^A0N,30,0^FDtext^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+  });
+
+  it('preserves snPending when ^SF appears before ^FO', () => {
+    const zpl = '^XA^SF3,3,Y^FO10,10^A0N,30,0^FD001^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('serial');
+    expect(props(objects[0]).increment).toBe(3);
+  });
+
+  it('does not leak snPending to a sibling field inside the same ^FS block', () => {
+    const zpl =
+      '^XA^SF3,3,Y^FO10,10^A0N,30,0^FD001^FO20,20^A0N,30,0^FD002^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(2);
+    expect(objects[0]?.type).toBe('serial');
+    expect(objects[1]?.type).toBe('text');
+  });
+});
+
+// ── pending per-field state lifetime at ^FS boundary ─────────────────────────
+
+describe('parseZPL — pending field state cleared at ^FS', () => {
+  it('does not leak pendingPrinterFontName from a bare ^A@^FS', () => {
+    const zpl =
+      '^XA^A@N,30,0,E:CUSTOM.FNT^FS^FO10,10^A0N,30,0^FDplain^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(props(objects[0]).printerFontName).toBeUndefined();
+  });
+
+  it('does not leak pendingFontId from a bare ^A0^FS into a later ^A@ field', () => {
+    const zpl =
+      '^XA^CF1,30,0^A0N,30,0^FS^FO10,10^A@N,30,0,E:CUSTOM.FNT^FDx^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(props(objects[0]).fontId).toBeUndefined();
+  });
+
+  it('does not leak ^FN slot from a bare ^FN^FS into the next field', () => {
+    const zpl =
+      '^XA^FN1^FS^FO10,10^A0N,30,0^FDhello^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.variableId).toBeUndefined();
+  });
+
+  it('does not leak frActive from a bare ^FR^FS into a fieldless next text', () => {
+    const zpl =
+      '^XA^FO10,10^FR^FS^A0N,30,0^FDplain^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(props(objects[0]).reverse).toBeFalsy();
+  });
+
+  it('does not leak ^FB defaults from a bare ^FB^FS into the next text field', () => {
+    const zpl =
+      '^XA^FB200^FS^FO10,10^A0N,30,0^FDplain^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(props(objects[0]).blockWidth).toBeUndefined();
+  });
+
+  it('does not leak bcCheck from a checked barcode into the next non-checked barcode', () => {
+    const zpl =
+      '^XA^FO10,10^BCN,100,Y,N,Y^FD123^FS^FO50,50^BIN,100,Y,N^FD12345^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(2);
+    expect(objects[0]?.type).toBe('code128');
+    expect(props(objects[0]).checkDigit).toBe(true);
+    expect(objects[1]?.type).toBe('industrial2of5');
+    expect(props(objects[1]).checkDigit).toBe(false);
+  });
+
+  it('applies ^FR set before ^FO to the next formatted field (spec)', () => {
+    const zpl = '^XA^FR^FO10,10^A0N,30,0^FDreversed^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(props(objects[0]).reverse).toBe(true);
+  });
 });
 
 // ── ~ commands (tilde) ────────────────────────────────────────────────────────

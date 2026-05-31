@@ -26,7 +26,7 @@ export function createBarcodeHandlers(
       field.bcRotation = readRotation(p[0]);
       field.bcHeight = int(p[hIdx], defaults.byHeight || 100);
       field.bcInterp = (p[iIdx] ?? iDefault) === "Y";
-      if (cIdx >= 0) field.bcCheck = (p[cIdx] ?? "N") === "Y";
+      field.bcCheck = cIdx >= 0 ? (p[cIdx] ?? "N") === "Y" : false;
     };
 
   const handleAztec: Handler = (p) => {
