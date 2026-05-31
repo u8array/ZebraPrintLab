@@ -1,9 +1,6 @@
 import type { StateCreator } from 'zustand';
-import {
-  selectPreviewLocksEditor,
-  currentObjects,
-  type LabelState,
-} from '../labelStore';
+import { selectPreviewLocksEditor, currentObjects } from '../labelStore.selectors';
+import type { LabelState } from '../labelStore';
 import { updateCurrentObjects } from '../labelStore.internals';
 
 export interface SelectionSlice {

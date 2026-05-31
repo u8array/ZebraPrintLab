@@ -5,7 +5,8 @@ import {
   type PrinterProfile,
 } from '../../types/PrinterProfile';
 import { pruneUndefined } from '../../lib/pruneUndefined';
-import { selectPreviewLocksEditor, type LabelState } from '../labelStore';
+import { selectPreviewLocksEditor } from '../labelStore.selectors';
+import type { LabelState } from '../labelStore';
 
 export interface PrinterProfileSlice {
   /** EEPROM-persistent printer-state. Separate from `label` so design

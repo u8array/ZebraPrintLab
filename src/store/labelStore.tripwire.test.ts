@@ -1,12 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { useLabelStore, persistPartialize, temporalPartialize } from './labelStore';
 
-/**
- * Tripwires for the labelStore-decomposition refactor: snapshot the
- * stable surface that downstream slice extractions must preserve. If a
- * slice forgets to thread a field into persist or temporal partialize,
- * one of these assertions catches it immediately.
- */
+/** Snapshot the stable surface every slice extraction must preserve. */
 
 const EXPECTED_PERSIST_KEYS = [
   'canvasSettings',
@@ -33,10 +28,13 @@ const EXPECTED_TEMPORAL_KEYS = [
 const EXPECTED_PUBLIC_SELECTORS = [
   'canCallLabelary',
   'currentObjects',
+  'getCurrentObjects',
   'selectBatchInputs',
   'selectCanBatchExport',
   'selectLabelaryNoticeRequired',
   'selectPreviewLocksEditor',
+  'useCurrentObjects',
+  'useHistory',
 ];
 
 describe('labelStore tripwires', () => {

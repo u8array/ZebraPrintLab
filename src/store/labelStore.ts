@@ -4,8 +4,6 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { LabelConfig } from '../types/LabelConfig';
 import type { ObjectChanges } from '../types/LabelObject';
 import { PRINTER_PROFILE_FIELDS } from '../types/PrinterProfile';
-import type { Unit } from '../lib/units';
-import type { ViewRotation } from '../components/Canvas/rotationGeometry';
 import { getEntry } from '../registry';
 import {
   isGroup,
@@ -19,7 +17,7 @@ import {
   type LabelObject,
   type Page,
 } from '../types/Group';
-import { isDefaultLabelaryHost, fetchPreview, labelaryErrorMessage } from '../lib/labelary';
+import { fetchPreview, labelaryErrorMessage } from '../lib/labelary';
 import {
   rewriteTemplateMarkers,
   applyObjectChanges,
@@ -28,7 +26,6 @@ import {
   buildOffsetCopies,
   cloneChildrenFresh,
   updateCurrentObjects,
-  type PageState,
 } from './labelStore.internals';
 import {
   createPrinterProfileSlice,
@@ -62,39 +59,6 @@ export interface CsvDataset {
 
 export type { ObjectChanges };
 export type { Variable, VariableInput };
-
-/** Meta fields that remain editable on a locked object so the user can
- *  release the lock or annotate without unlocking first. Everything else
- *  (position, props, rotation, positionType) is blocked. */
-export interface CanvasSettings {
-  showGrid: boolean;
-  snapEnabled: boolean;
-  snapSizeMm: number;
-  zoom: number;
-  unit: Unit;
-  viewRotation: ViewRotation;
-  /** Controls how bound variables render on the canvas.
-   *  - 'preview': substitute the active CSV row's cell (falls back to
-   *    defaultValue when no row data is available for the variable).
-   *  - 'schema': render the placeholder `«variableName»` so the user
-   *    sees the field structure regardless of data.
-   *  Only meaningful while a `csvDataset` is loaded; the toolbar
-   *  toggle is hidden otherwise. */
-  csvRenderMode: 'preview' | 'schema';
-}
-
-export type ThemePreference = 'light' | 'dark';
-
-/** Tab IDs for the Printer Settings modal. Source of truth for
- *  components that render the rail and for the store's modal
- *  state. Adding a tab is a one-line union extension plus the
- *  matching locale-key + content component. */
-export type PrinterSettingsTab =
-  | 'mediaFeed'
-  | 'printQuality'
-  | 'clockTime'
-  | 'encodingLanguage'
-  | 'identity';
 
 /** Labelary-backed canvas overlay. While `active`, the canvas renders
  *  the Labelary-rendered PNG in place of the editor objects so the user
@@ -262,49 +226,15 @@ interface LabelStateBase {
 /** Composed store shape: base fields + every extracted slice. */
 export type LabelState = LabelStateBase & PrinterProfileSlice & UiSlice & SelectionSlice;
 
-export const currentObjects = (state: PageState): LabelObject[] =>
-  state.pages[state.currentPageIndex]?.objects ?? [];
-
-/** True when a Labelary network call is permitted: the gate is on AND the
- *  user has seen the privacy notice. Kept as a documented invariant; UI
- *  buttons read `thirdParty.labelary` and `labelaryNoticeAcknowledged`
- *  separately because they need to distinguish "hide" (gate off) from
- *  "show notice first" (gate on, not yet acknowledged). */
-export const canCallLabelary = (s: LabelState): boolean =>
-  s.thirdParty.labelary && s.labelaryNoticeAcknowledged;
-
-/** True when clicking a Labelary-backed action must first surface the
- *  privacy notice modal. A custom-host build implies the operator already
- *  controls the endpoint and no third-party disclosure is needed. */
-export const selectLabelaryNoticeRequired = (s: LabelState): boolean =>
-  isDefaultLabelaryHost() && !s.labelaryNoticeAcknowledged;
-
-/** True while the preview overlay is taking input away from the editor —
- *  i.e. the canvas Stage should not accept pointer events. Loading and
- *  active both qualify (loading blocks edits so the snapshot we're about
- *  to show isn't already stale); error and idle return false so the user
- *  can keep working after dismissing a failure. */
-export const selectPreviewLocksEditor = (s: LabelState): boolean =>
-  s.previewMode.status === 'loading' || s.previewMode.status === 'active';
-
-/** The dataset + mapping pair that batch emit needs, or null when
- *  batch emit would produce nothing different from a single label.
- *  Requires a loaded CSV with rows and at least one mapped Variable.
- *  Co-narrows the two store fields so callers don't repeat the
- *  null-checks for TS. */
-export const selectBatchInputs = (
-  s: LabelState,
-): { dataset: CsvDataset; mapping: CsvMapping } | null => {
-  const { csvDataset, csvMapping } = s;
-  if (!csvDataset || csvDataset.rows.length === 0) return null;
-  if (!csvMapping || Object.keys(csvMapping.bindings).length === 0) return null;
-  return { dataset: csvDataset, mapping: csvMapping };
-};
-
-/** Boolean form of {@link selectBatchInputs} — feeds the File menu
- *  enable state without triggering re-renders on the inner refs. */
-export const selectCanBatchExport = (s: LabelState): boolean =>
-  selectBatchInputs(s) !== null;
+export {
+  currentObjects,
+  canCallLabelary,
+  selectLabelaryNoticeRequired,
+  selectPreviewLocksEditor,
+  selectBatchInputs,
+  selectCanBatchExport,
+} from './labelStore.selectors';
+import { currentObjects, selectPreviewLocksEditor } from './labelStore.selectors';
 
 /** Single-entry cache for the Labelary preview blob URL, keyed by the
  *  exact ZPL string that produced it. Module-level rather than store-
