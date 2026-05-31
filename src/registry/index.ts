@@ -2,7 +2,8 @@ import type { ObjectTypeCore, ObjectTypeUi } from '../types/ObjectType';
 
 export type { LeafObject } from './leafObject';
 
-import { text } from './text.tsx';
+import { text } from './text';
+import { textPanel } from './text.panel';
 import { code128 } from './code128';
 import { code128Panel } from './code128.panel';
 import { code39 } from './code39';
@@ -19,7 +20,8 @@ import { ellipse } from './ellipse';
 import { ellipsePanel } from './ellipse.panel';
 import { line } from './line';
 import { linePanel } from './line.panel';
-import { serial } from './serial.tsx';
+import { serial } from './serial';
+import { serialPanel } from './serial.panel';
 import { image } from './image';
 import { imagePanel } from './image.panel';
 import { upca } from './upca';
@@ -64,8 +66,10 @@ import { upcEanExtension } from './upcEanExtension';
 import { upcEanExtensionPanel } from './upcEanExtension.panel';
 import { code49 } from './code49';
 import { code49Panel } from './code49.panel';
-import { maxicode } from './maxicode.tsx';
-import { symbol } from './symbol.tsx';
+import { maxicode } from './maxicode';
+import { maxicodePanel } from './maxicode.panel';
+import { symbol } from './symbol';
+import { symbolPanel } from './symbol.panel';
 
 export const BARCODE_1D_TYPES = new Set([
   'code128', 'code39', 'ean13', 'ean8', 'upca', 'upce', 'interleaved2of5', 'code93',
@@ -124,8 +128,8 @@ export const ObjectRegistry: Record<string, ObjectTypeCore<any>> = {
 /** Per-type PropertiesPanel components, keyed by registry type. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ObjectPanels: Record<string, ObjectTypeUi<any>> = {
-  text,
-  symbol,
+  text: textPanel,
+  symbol: symbolPanel,
   code128: code128Panel,
   ean13: ean13Panel,
   upca: upcaPanel,
@@ -148,7 +152,7 @@ export const ObjectPanels: Record<string, ObjectTypeUi<any>> = {
   datamatrix: datamatrixPanel,
   pdf417: pdf417Panel,
   aztec: aztecPanel,
-  maxicode,
+  maxicode: maxicodePanel,
   micropdf417: micropdf417Panel,
   codablock: codablockPanel,
   planet: planetPanel,
@@ -156,6 +160,6 @@ export const ObjectPanels: Record<string, ObjectTypeUi<any>> = {
   box: boxPanel,
   ellipse: ellipsePanel,
   line: linePanel,
-  serial,
+  serial: serialPanel,
   image: imagePanel,
 };

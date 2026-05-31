@@ -1,10 +1,6 @@
-import type { ObjectTypeDefinition } from "../types/ObjectType";
-import { useT } from "../lib/useT";
-import { inputCls, labelCls } from "../components/Properties/styles";
-import { validateMaxicodeBwip } from "../components/Canvas/bwipHelpers";
+import type { ObjectTypeCore } from "../types/ObjectType";
 import { fieldPos, fdFieldFor } from "./zplHelpers";
 import { type ZplRotation } from "./rotation";
-import { RotationSelect } from "../components/Properties/RotationSelect";
 
 /** Maxicode is a fixed-physical-size 2D symbology. Per ISO/IEC
  *  16023 §4.11 the printed footprint is 28.14 × 26.91 mm at
@@ -27,7 +23,7 @@ import { RotationSelect } from "../components/Properties/RotationSelect";
  *  always encodes successfully but produces a scanner-configuration
  *  symbol rather than user data, so an informational advisory is
  *  shown instead of an error. */
-const ALL_MODES = [2, 3, 4, 5, 6] as const;
+export const ALL_MODES = [2, 3, 4, 5, 6] as const;
 
 
 /** Mode 4 = standard symbol with arbitrary payload, the only mode
@@ -41,7 +37,7 @@ export interface MaxicodeProps {
   rotation: ZplRotation;
 }
 
-export const maxicode: ObjectTypeDefinition<MaxicodeProps> = {
+export const maxicode: ObjectTypeCore<MaxicodeProps> = {
   label: "Maxicode",
   icon: "⬡",
   group: "code-2d",
@@ -68,57 +64,5 @@ export const maxicode: ObjectTypeDefinition<MaxicodeProps> = {
       `^BV${p.rotation},${p.mode},1,1`,
       fdFieldFor(obj, p.content, ctx),
     ].join("");
-  },
-
-  PropertiesPanel: ({ obj, onChange }) => {
-    const t = useT();
-    const p = obj.props;
-    const loc = t.registry.maxicode;
-    // Resolve the diagnostic line beneath the mode dropdown. Hard
-    // errors (bwip-js encoder rejections, mostly SCM-format issues
-    // in mode 2/3) win over the soft mode-6 advisory.
-    const error = validateMaxicodeBwip(p.content, p.mode);
-    const advisory = p.mode === 6 ? loc.mode6Advisory : null;
-    const diagnostic = error
-      ? { text: error, className: "text-error font-mono" }
-      : advisory
-        ? { text: advisory, className: "text-muted" }
-        : null;
-    return (
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{loc.content}</label>
-          <input
-            className={inputCls}
-            value={p.content}
-            onChange={(e) => onChange({ content: e.target.value })}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{loc.mode}</label>
-          <select
-            className={inputCls}
-            value={p.mode}
-            onChange={(e) =>
-              onChange({ mode: Number(e.target.value) as MaxicodeProps["mode"] })
-            }
-          >
-            {ALL_MODES.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-          {diagnostic && (
-            <p className={`text-[10px] leading-snug ${diagnostic.className}`}>
-              {diagnostic.text}
-            </p>
-          )}
-        </div>
-
-        <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
-      </div>
-    );
   },
 };
