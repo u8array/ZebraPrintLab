@@ -108,11 +108,8 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
     set((state) => {
       if (selectPreviewLocksEditor(state)) return {};
       if (updates.length === 0) return {};
-      // Single tree walk: O(tree) instead of O(updates × tree).
-      // Identity-preserving — subtrees with no matching id keep their
-      // reference so React memoisation can skip them. inheritedLocked
-      // cascades so a leaf in a locked group sees the cascade without
-      // re-traversing ancestors per call.
+      // Single tree walk, identity-preserving; inheritedLocked cascades
+      // so leaves in locked groups stay locked without ancestor re-walks.
       const updateMap = new Map(updates.map((u) => [u.id, u.changes]));
       const applyUpdates = (
         nodes: LabelObject[],
@@ -174,8 +171,6 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
 
   copySelectedObjects: () => {
     const state = get();
-    // Copy doesn't mutate the design, but the clipboard write would
-    // create a confusing "I copied something during preview" state.
     if (selectPreviewLocksEditor(state)) return;
     const objs = currentObjects(state);
     const clipboard = state.selectedIds.flatMap((id) => {

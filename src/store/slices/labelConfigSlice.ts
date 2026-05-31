@@ -8,9 +8,8 @@ import type { LabelState } from '../labelStore';
 
 export interface LabelConfigSlice {
   label: LabelConfig;
-  /** Patch the per-label config. Does NOT strip undefined keys —
-   *  LabelConfig fields fall back to width/dpmm defaults at emit time
-   *  (different semantics from PrinterProfile's "absent = printer default"). */
+  /** Patch the per-label config; undefined keys fall back to width/dpmm
+   *  defaults at emit time. */
   setLabelConfig: (config: Partial<LabelConfig>) => void;
   /** Atomic file-open: resets label, pages, currentPageIndex,
    *  selectedIds, variables, csvMapping, csvDataset in one set() so

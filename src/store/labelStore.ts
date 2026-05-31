@@ -199,16 +199,10 @@ export const useCurrentObjects = () => useLabelStore(currentObjects);
 export const getCurrentObjects = (): LabelObject[] =>
   currentObjects(useLabelStore.getState());
 
-// Undo / redo. Wrapping zundo's hook so undo/redo become no-ops while
-// the preview overlay is locking the editor. Header buttons read
-// `canUndo`/`canRedo` from `pastStates`/`futureStates` — those keep
-// reporting truthful values, so a separate UI check (or button
-// disabled-state) still wins for visual feedback. The wrapper here is
-// the load-bearing safety net for any caller that goes straight to
-// `useHistory().undo()`.
+// Wraps zundo so undo/redo become no-ops under the preview lock;
+// `canUndo`/`canRedo` still reflect real history for button state.
 const noopHistoryAction = () => {
-  /* preview lock: no-op so undo/redo never replay state under a frozen
-   * Labelary snapshot. */
+  /* preview lock active */
 };
 export const useHistory = () => {
   const history = useStore(useLabelStore.temporal);
