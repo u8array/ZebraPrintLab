@@ -36,8 +36,7 @@ import { linePanel } from './line.panel';
 import { serialPanel } from './serial.panel';
 import { imagePanel } from './image.panel';
 
-// `satisfies` enforces exhaustiveness at the literal; permissive export
-// matches ObjectRegistry's shape.
+// satisfies = exhaustiveness check; export type stays permissive.
 const _ObjectPanels = {
   text: textPanel,
   symbol: symbolPanel,
@@ -75,15 +74,12 @@ const _ObjectPanels = {
   image: imagePanel,
 } satisfies ObjectPanelsMap;
 
-/** Per-type PropertiesPanel components. UI-only import; lib/parser never pulls
- *  a `.panel.tsx`. For dynamic lookups over `LabelObject['type']`, use {@link getPanel}. */
+/** Per-type PropertiesPanel components. Literal-key access catches typos; use
+ *  {@link getPanel} for dynamic lookups. UI-only import; lib/parser never pulls a `.panel.tsx`. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ObjectPanels: Record<LeafType, ObjectTypeUi<any>> = _ObjectPanels;
 
-/** Dynamic lookup helper for callers whose `type` is `LabelObject['type']`
- *  or an untyped string. Returns undefined for non-leaf types. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getPanel(type: string): ObjectTypeUi<any> | undefined {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (_ObjectPanels as Record<string, ObjectTypeUi<any> | undefined>)[type];
+/** Dynamic lookup for `LabelObject['type']`; undefined for non-leaf. */
+export function getPanel(type: string): (typeof ObjectPanels)[LeafType] | undefined {
+  return (ObjectPanels as Record<string, (typeof ObjectPanels)[LeafType] | undefined>)[type];
 }

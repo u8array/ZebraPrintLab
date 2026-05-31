@@ -46,7 +46,7 @@ export const BARCODE_1D_TYPES = new Set([
 
 export const STACKED_2D_TYPES = new Set(['pdf417', 'micropdf417', 'codablock']);
 
-// satisfies enforces exhaustiveness; permissive export keeps callers' inference loose.
+// satisfies = exhaustiveness check; export type stays permissive.
 const _ObjectRegistry = {
   // text
   text,
@@ -89,17 +89,12 @@ const _ObjectRegistry = {
   image,
 } satisfies ObjectRegistryMap;
 
-/** Per-type Core (domain) entries, keyed on `LeafType` — literal-key
- *  access (e.g. `ObjectRegistry.code128`) catches typos at compile time.
- *  For dynamic lookups over `LabelObject['type']` (which includes
- *  `'group'`), use {@link getEntry}. */
+/** Per-type Core entries. Literal-key access catches typos; use
+ *  {@link getEntry} for dynamic `LabelObject['type']` lookups. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ObjectRegistry: Record<LeafType, ObjectTypeCore<any>> = _ObjectRegistry;
 
-/** Dynamic lookup helper for callers whose `type` is `LabelObject['type']`
- *  or an untyped string. Returns undefined for non-leaf types (e.g. `'group'`). */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getEntry(type: string): ObjectTypeCore<any> | undefined {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (_ObjectRegistry as Record<string, ObjectTypeCore<any> | undefined>)[type];
+/** Dynamic lookup for `LabelObject['type']`; undefined for non-leaf (e.g. `'group'`). */
+export function getEntry(type: string): (typeof ObjectRegistry)[LeafType] | undefined {
+  return (ObjectRegistry as Record<string, (typeof ObjectRegistry)[LeafType] | undefined>)[type];
 }
