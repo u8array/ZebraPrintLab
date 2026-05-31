@@ -1,6 +1,24 @@
 import type { LabelObject } from "../../types/Group";
+import { isZplRotation, type ZplRotation } from "../../registry/rotation";
 
-// ZPL commands start with ^ or ~ followed by 2 characters
+/** Validated ZplRotation or `fallback` (default 'N'). */
+export function readRotation(
+  raw: string | undefined,
+  fallback: ZplRotation = "N",
+): ZplRotation {
+  return raw && isZplRotation(raw) ? raw : fallback;
+}
+
+/** Validate ^GB/^GC/^GD/^GE colour char; default "B" per spec. */
+export function readColor(raw: string | undefined): "B" | "W" {
+  return raw === "W" ? "W" : "B";
+}
+
+/** First non-space char, upper-cased — single-char enum handlers. */
+export function firstChar(rest: string): string {
+  return (rest.trim()[0] ?? "").toUpperCase();
+}
+
 export function tokenize(zpl: string): { cmd: string; rest: string }[] {
   const tokens: { cmd: string; rest: string }[] = [];
   // Split on both ^ and ~ delimiters, preserving the delimiter type.
@@ -21,16 +39,12 @@ export function int(s: string | undefined, fallback = 0): number {
   return Number.isNaN(n) ? fallback : n;
 }
 
-/** Returns the value when in range, undefined otherwise — matches the
- *  parser's "silently drop invalid params" contract while removing the
- *  repetitive `>= R.min && <= R.max` shape from each ranged handler. */
+/** Returns v if within [r.min, r.max], else undefined. */
 export function inRange(v: number | undefined, r: { min: number; max: number }): number | undefined {
   return v !== undefined && v >= r.min && v <= r.max ? v : undefined;
 }
 
-/** Trims surrounding whitespace (tokenizer keeps trailing `\n` etc. on
- *  the last positional) and upper-cases for case-insensitive enum
- *  matches. */
+/** Trim + uppercase for case-insensitive enum match. */
 export function strParam(s: string | undefined): string {
   return (s ?? "").trim().toUpperCase();
 }
@@ -68,13 +82,7 @@ export function variableNameFromComment(comment: string | undefined): string | n
   return cleaned === "" ? null : cleaned;
 }
 
-/**
- * Map a ^CI N parameter to a TextDecoder label. ^CI28 = UTF-8;
- * ^CI27 = Windows-1252; legacy ^CI0..13 are 7-bit-ASCII-compatible
- * code-page variants for which Windows-1252 is a safe superset for `^FH`
- * decoding. Unsupported encodings fall back to UTF-8 with the command
- * surfaced via importReport.partial.
- */
+/** ^CI N → TextDecoder label; unsupported variants fall back to UTF-8. */
 export function ciToEncoding(n: number): { label: string; supported: boolean } {
   if (n === 28) return { label: "utf-8", supported: true };
   if (n === 27) return { label: "windows-1252", supported: true };
@@ -92,13 +100,7 @@ export function getDecoder(label: string): TextDecoder {
   return dec;
 }
 
-/**
- * Decode ^FH hex escapes: replaces runs of {delimiter}XX with the string
- * for the byte sequence under the active ^CI encoding. A single non-ASCII
- * glyph may span multiple pairs (e.g. `_C3_A4` → `ä` under UTF-8), so
- * contiguous pairs collect into a Uint8Array for one TextDecoder pass.
- * Invalid byte sequences become U+FFFD.
- */
+/** ^FH hex escapes → decoded string; contiguous pairs collect for multi-byte glyphs. */
 export function decodeFH(
   text: string,
   delimiter: string,

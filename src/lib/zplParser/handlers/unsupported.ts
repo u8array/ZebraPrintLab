@@ -1,27 +1,14 @@
+import { pushBrowserLimit, type ParserResult } from "../context";
 import type { Handler } from "../types";
 
-/** Handlers for commands the parser intentionally ignores or surfaces
- *  as "needs printer hardware".
- *
- *  - **noops** (FV, FM, FP, JA, JM, JC, JD, JE, JI, JR, JS, JU, PP):
- *    parsed and dropped. They have no design impact in a browser-only
- *    editor; consuming them keeps the dispatch map exhaustive so the
- *    final "unknown command" fallback doesn't fire.
- *  - **browser-limit** (FL, HT, LF, IM, ~DG): commands that need
- *    printer-resident storage / hardware. Recorded into the
- *    `browserLimit` finding bucket so the import report can surface
- *    them as "not loaded but intentionally skipped". */
+/** Intentionally-dropped commands: noops + browser-limit (needs printer hardware). */
 export function createUnsupportedHandlers(
-  { skipped, browserLimit }: { skipped: string[]; browserLimit: string[] },
+  result: ParserResult,
 ): Record<string, Handler> {
   const noop: Handler = () => void 0;
   const mkBrowserLimit =
     (prefix: string, delimiter = "^"): Handler =>
-    (_, rest) => {
-      const tok = `${delimiter}${prefix}${rest}`;
-      skipped.push(tok);
-      browserLimit.push(tok);
-    };
+    (_, rest) => pushBrowserLimit(result, `${delimiter}${prefix}${rest}`);
 
   return {
     // Noops — present in stream, no design impact.

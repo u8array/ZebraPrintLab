@@ -11,17 +11,14 @@ import {
   isPrintOrientation,
 } from "../../../types/ObjectType";
 import { parseIntOrUndef } from "../../inputParse";
-import { inRange, int, strParam } from "../helpers";
+import { firstChar, inRange, int, strParam } from "../helpers";
 import type { Handler } from "../types";
 
 /** ^PQ extended params (pauseCount, replicates) — Zebra spec caps at
  *  8 digits / 99,999,999 per slot. */
 const PQ_EXT_MAX = 99_999_999;
 
-/** Per-label media + print-quality handlers — every entry mutates
- *  only the `labelConfig` slice. ^PW / ^LL (dots → mm using `dpmm`),
- *  ^PQ / ^MM / ^LS / ^PR / ^MD / ^MT / ^MN / ^ML / ^MF / ^XB / ^PO /
- *  ^PM / ~SD. */
+/** Per-label media + print-quality handlers — mutate only `labelConfig`. */
 export function createLabelConfigHandlers(
   labelConfig: Partial<LabelConfig>,
   dpmm: number,
@@ -53,11 +50,7 @@ export function createLabelConfigHandlers(
       }
     },
     MM(_, rest) {
-      // `.trim()` before `[0]` so a stray leading whitespace in the
-      // input (rare but seen with hand-edited ZPL) does not eat the
-      // mode character. Applies to all single-char enum handlers
-      // below (MT / PO / PM).
-      const mode = (rest.trim()[0] ?? "").toUpperCase();
+      const mode = firstChar(rest);
       if (isMediaMode(mode)) labelConfig.mediaMode = mode;
     },
     LS(_, rest) {
@@ -77,7 +70,7 @@ export function createLabelConfigHandlers(
       if (v !== undefined) labelConfig.darkness = v;
     },
     MT(_, rest) {
-      const mt = (rest.trim()[0] ?? "").toUpperCase();
+      const mt = firstChar(rest);
       if (isMediaType(mt)) labelConfig.mediaType = mt;
     },
     MN(p) {
@@ -102,11 +95,11 @@ export function createLabelConfigHandlers(
       labelConfig.suppressBackfeed = true;
     },
     PO(_, rest) {
-      const po = (rest.trim()[0] ?? "").toUpperCase();
+      const po = firstChar(rest);
       if (isPrintOrientation(po)) labelConfig.printOrientation = po;
     },
     PM(_, rest) {
-      const m = (rest.trim()[0] ?? "").toUpperCase();
+      const m = firstChar(rest);
       if (m === "Y" || m === "N") labelConfig.mirror = m;
     },
     // ~SD — instant darkness set (00..30). Tilde-prefix; the tokenizer
