@@ -3,7 +3,8 @@ import { CheckIcon, ClipboardDocumentIcon, TrashIcon, XMarkIcon } from "@heroico
 import { useCopyToClipboard } from "../../lib/useCopyToClipboard";
 import { useT } from "../../lib/useT";
 import { generateSetupScript } from "../../lib/zplSetupScript";
-import { useLabelStore, type PrinterSettingsTab } from "../../store/labelStore";
+import { useLabelStore } from "../../store/labelStore";
+import type { PrinterSettingsTab } from "../../store/slices/uiSlice";
 import type { PrinterProfile } from "../../types/PrinterProfile";
 import { DialogShell } from "../ui/DialogShell";
 import { ZplLine } from "../Output/ZplLine";

@@ -34,6 +34,24 @@ export function nextFreeFnNumber(used: readonly number[]): number | null {
   return null;
 }
 
+/** True iff every variable has a non-empty trimmed name + an in-range
+ *  fnNumber, and no two share either field. Used by every bulk-replace
+ *  path (setVariables, applyMappingDraft) so a stray duplicate can't
+ *  leave the Variables panel in an unfixable state. */
+export function validateVariablesUnique(variables: readonly Variable[]): boolean {
+  const names = new Set<string>();
+  const fns = new Set<number>();
+  for (const v of variables) {
+    const trimmed = v.name.trim();
+    if (trimmed === '' || names.has(trimmed)) return false;
+    names.add(trimmed);
+    if (v.fnNumber < FN_NUMBER_MIN || v.fnNumber > FN_NUMBER_MAX) return false;
+    if (fns.has(v.fnNumber)) return false;
+    fns.add(v.fnNumber);
+  }
+  return true;
+}
+
 /** Append `_2`, `_3`, … to `base` until it no longer collides with any
  *  existing variable's name. Shared between the parser (auto-naming from
  *  ^FX comments) and the importer (merging across multi-page blocks)
