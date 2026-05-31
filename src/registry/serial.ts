@@ -27,7 +27,7 @@ export const serial: ObjectTypeCore<SerialProps> = {
     zplMode: "SN",
   },
   defaultSize: { width: 100, height: 30 },
-  // Rectangle resize matching text.tsx — see notes there.
+  // Rectangle resize matching text.ts — see notes there.
   commitTransform: (obj, ctx) => {
     const oldH = obj.props.fontHeight;
     const oldW = obj.props.fontWidth > 0 ? obj.props.fontWidth : oldH;

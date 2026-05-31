@@ -1,4 +1,7 @@
 import { createBarcode1DPanel } from './barcode1d.panel';
-import { interleaved2of5Config } from './interleaved2of5';
 
-export const interleaved2of5Panel = createBarcode1DPanel(interleaved2of5Config);
+export const interleaved2of5Panel = createBarcode1DPanel({
+  locale: (t) => t.registry.interleaved2of5,
+  hasCheckDigit: true,
+  contentSpec: { charset: '0-9' },
+});

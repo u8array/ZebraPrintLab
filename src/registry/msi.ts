@@ -1,14 +1,11 @@
-import { createBarcode1DCore, type Barcode1DConfig } from './barcode1d';
+import { createBarcode1DCore, type Barcode1DCoreConfig } from './barcode1d';
 export type { Barcode1DProps as MsiProps } from "./barcode1d";
 
-export const msiConfig: Barcode1DConfig = {
+export const msiCoreConfig: Barcode1DCoreConfig = {
   label: "MSI",
   icon: "MSI",
   defaultContent: "12345678",
-  hasCheckDigit: true,
-  locale: (t) => t.registry.msi,
   group: 'code-1d',
-  contentSpec: { charset: '0-9' },
   // MSI standard specifies a 2:1 wide:narrow ratio, which bwip-js hardcodes
   // internally. ZPL ^BY defaults to 3.0, so we must override to keep canvas
   // and Labelary preview in sync.
@@ -22,4 +19,4 @@ export const msiConfig: Barcode1DConfig = {
   },
 };
 
-export const msi = createBarcode1DCore(msiConfig);
+export const msi = createBarcode1DCore(msiCoreConfig);

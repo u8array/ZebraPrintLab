@@ -1,4 +1,7 @@
 import { createBarcode1DPanel } from './barcode1d.panel';
-import { industrial2of5Config } from './industrial2of5';
 
-export const industrial2of5Panel = createBarcode1DPanel(industrial2of5Config);
+export const industrial2of5Panel = createBarcode1DPanel({
+  locale: (t) => t.registry.industrial2of5,
+  hasCheckDigit: false,
+  contentSpec: { charset: '0-9' },
+});

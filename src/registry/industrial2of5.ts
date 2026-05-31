@@ -1,18 +1,15 @@
-import { createBarcode1DCore, type Barcode1DConfig } from './barcode1d';
+import { createBarcode1DCore, type Barcode1DCoreConfig } from './barcode1d';
 export type { Barcode1DProps as Industrial2of5Props } from "./barcode1d";
 
-export const industrial2of5Config: Barcode1DConfig = {
+export const industrial2of5CoreConfig: Barcode1DCoreConfig = {
   label: "Industrial 2 of 5",
   icon: "I25",
   defaultContent: "12345678",
-  hasCheckDigit: false,
-  locale: (t) => t.registry.industrial2of5,
   group: 'code-1d',
-  contentSpec: { charset: '0-9' },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     return `^BI${p.rotation},${p.height},${interp},N`;
   },
 };
 
-export const industrial2of5 = createBarcode1DCore(industrial2of5Config);
+export const industrial2of5 = createBarcode1DCore(industrial2of5CoreConfig);

@@ -1,13 +1,32 @@
 import type { ObjectTypeUi } from '../types/ObjectType';
+import type { Translations } from '../locales';
 import { useT } from '../lib/useT';
 import { labelCls } from '../components/Properties/styles';
-import { filterContent, hasValidLength } from './contentSpec';
+import { filterContent, hasValidLength, type ContentSpec } from './contentSpec';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { TemplateContentInput } from '../components/Properties/TemplateContentInput';
-import type { Barcode1DProps, Barcode1DConfig } from './barcode1d';
+import type { Barcode1DProps } from './barcode1d';
 
-export function createBarcode1DPanel(config: Barcode1DConfig): ObjectTypeUi<Barcode1DProps> {
+/** Per-symbology locale block: labels rendered by the panel. */
+export interface BarcodeLocale {
+  content: string;
+  height: string;
+  moduleWidth: string;
+  printInterpretation: string;
+  checkDigit?: string;
+  placeholder?: string;
+}
+
+export interface Barcode1DPanelConfig {
+  locale: (t: Translations) => BarcodeLocale;
+  hasCheckDigit: boolean;
+  contentSpec?: ContentSpec;
+  heightLocked?: boolean;
+  interpretationLocked?: boolean;
+}
+
+export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi<Barcode1DProps> {
   return {
     PropertiesPanel: ({ obj, onChange }) => {
       const t = useT();

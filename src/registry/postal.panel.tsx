@@ -1,4 +1,7 @@
 import { createBarcode1DPanel } from './barcode1d.panel';
-import { postalConfig } from './postal';
 
-export const postalPanel = createBarcode1DPanel(postalConfig);
+export const postalPanel = createBarcode1DPanel({
+  locale: (t) => t.registry.postal,
+  hasCheckDigit: false,
+  contentSpec: { charset: '0-9' },
+});

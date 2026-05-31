@@ -1,10 +1,8 @@
 import type { ObjectGroup } from '../types/LabelObject';
 import type { ObjectTypeCore } from '../types/ObjectType';
 import type { HriBehavior } from '../types/ZplEmit';
-import type { Translations } from '../locales';
 import { fieldPos, fdFieldFor } from './zplHelpers';
 import { commitBarcodeWidthHeightTransform } from './transformHelpers';
-import { type ContentSpec } from './contentSpec';
 import { type ZplRotation } from './rotation';
 
 export interface Barcode1DProps {
@@ -16,30 +14,12 @@ export interface Barcode1DProps {
   rotation: ZplRotation;
 }
 
-/** Per-symbology locale block: labels rendered by the panel. */
-export interface BarcodeLocale {
-  content: string;
-  height: string;
-  moduleWidth: string;
-  printInterpretation: string;
-  checkDigit?: string;
-  placeholder?: string;
-}
-
-/** Per-symbology config consumed by both `createBarcode1DCore` and
- *  `createBarcode1DPanel`. Single shape per entry; each factory reads
- *  the subset it needs. TODO Stage 7: split into Core / Panel halves so
- *  the `.ts` doesn't carry `locale` / `contentSpec` (panel-only). */
-export interface Barcode1DConfig {
+export interface Barcode1DCoreConfig {
   label: string;
   icon: string;
   defaultContent: string;
-  hasCheckDigit: boolean;
   /** Build the ZPL barcode command (e.g. `^BUN,100,Y,N,N`). */
   zplCommand: (p: Barcode1DProps) => string;
-  /** Per-symbology locale selector — TS verifies the returned shape
-   *  conforms to BarcodeLocale at every call site. */
-  locale: (t: Translations) => BarcodeLocale;
   group: ObjectGroup;
   /**
    * Explicit wide-to-narrow ratio for the ^BY command.
@@ -52,13 +32,11 @@ export interface Barcode1DConfig {
   heightLocked?: boolean;
   /** See {@link ObjectTypeCore.interpretationLocked}. */
   interpretationLocked?: boolean;
-  /** Restrict allowed input characters; see {@link ContentSpec}. */
-  contentSpec?: ContentSpec;
   /** See {@link HriBehavior}. */
   hri?: HriBehavior;
 }
 
-export function createBarcode1DCore(config: Barcode1DConfig): ObjectTypeCore<Barcode1DProps> {
+export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore<Barcode1DProps> {
   return {
     label: config.label,
     icon: config.icon,

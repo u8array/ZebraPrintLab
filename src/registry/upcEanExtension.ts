@@ -1,4 +1,4 @@
-import { createBarcode1DCore, type Barcode1DConfig } from './barcode1d';
+import { createBarcode1DCore, type Barcode1DCoreConfig } from './barcode1d';
 import { formatUpcEanExtensionHri } from './hriFormatters';
 import { UPC_SUPP_TEXT_ABOVE_GAP_DOTS } from '../components/Canvas/bwipConstants';
 export type { Barcode1DProps as UpcEanExtensionProps } from './barcode1d';
@@ -15,14 +15,11 @@ export type { Barcode1DProps as UpcEanExtensionProps } from './barcode1d';
  *  Default '51999' = $19.99 in the ISBN price-code form, the
  *  dominant use case. */
 
-export const upcEanExtensionConfig: Barcode1DConfig = {
+export const upcEanExtensionCoreConfig: Barcode1DCoreConfig = {
   label: 'UPC/EAN extension',
   icon: 'EXT',
   defaultContent: '51999',
-  hasCheckDigit: false,
-  locale: (t) => t.registry.upcEanExtension,
   group: 'code-1d',
-  contentSpec: { charset: '0-9', maxLength: 5, validLengths: [2, 5] },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     return `^BS${p.rotation},${p.height},${interp}`;
@@ -34,4 +31,4 @@ export const upcEanExtensionConfig: Barcode1DConfig = {
   },
 };
 
-export const upcEanExtension = createBarcode1DCore(upcEanExtensionConfig);
+export const upcEanExtension = createBarcode1DCore(upcEanExtensionCoreConfig);

@@ -39,10 +39,8 @@ import type { SymbolProps } from './symbol';
  *  literal `type` discriminator and that type's props. */
 type Leaf<T extends string, P extends object> = LabelObjectBase & { type: T; props: P };
 
-/** Discriminated union of every registry-backed leaf type. Lives in a
- *  type-only module so `types/Group.ts` can import it without dragging
- *  the runtime `registry/index.ts` (and its .tsx imports) into the
- *  module graph — at runtime this file resolves to an empty module. */
+/** Discriminated union of every registry-backed leaf type. Type-only so
+ *  `types/Group.ts` can import it without dragging the runtime registry. */
 export type LeafObject =
   | Leaf<'text', TextProps>
   | Leaf<'code128', Code128Props>

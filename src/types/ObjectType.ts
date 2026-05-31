@@ -88,5 +88,6 @@ export interface ObjectTypeUi<P extends object = object> {
   }>;
 }
 
-/** Bundled Core+Ui shape; phased out as entries split into `<type>.ts` + `<type>.panel.tsx`. */
+/** Combined Core+Ui shape, used at the palette boundary where both halves
+ *  are needed together (e.g. `defaultSize` lookup from `ObjectPalette`). */
 export type ObjectTypeDefinition<P extends object = object> = ObjectTypeCore<P> & ObjectTypeUi<P>;

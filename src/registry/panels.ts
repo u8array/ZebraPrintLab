@@ -75,8 +75,6 @@ const _ObjectPanels = {
   image: imagePanel,
 } satisfies ObjectPanelsMap;
 
-/** Per-type PropertiesPanel components, keyed by registry type. The
- *  literal above is exhaustive on `LeafObject['type']`; imported only
- *  by the UI layer so lib/parser never pulls a `.panel.tsx`. */
+/** Per-type PropertiesPanel components. UI-only import; lib/parser never pulls a `.panel.tsx`. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ObjectPanels: Record<string, ObjectTypeUi<any>> = _ObjectPanels;

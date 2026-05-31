@@ -1,15 +1,12 @@
-import { createBarcode1DCore, type Barcode1DConfig } from './barcode1d';
+import { createBarcode1DCore, type Barcode1DCoreConfig } from './barcode1d';
 import { formatUpceHri } from './hriFormatters';
 export type { Barcode1DProps as UpcEProps } from './barcode1d';
 
-export const upceConfig: Barcode1DConfig = {
+export const upceCoreConfig: Barcode1DCoreConfig = {
   label: 'UPC-E',
   icon: 'UPE',
   defaultContent: '012345',
-  hasCheckDigit: false,
-  locale: (t) => t.registry.upce,
   group: 'code-1d',
-  contentSpec: { charset: '0-9', maxLength: 6 },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     // ^B9 params: rotation, height, interpretation, checkDigit.
@@ -20,4 +17,4 @@ export const upceConfig: Barcode1DConfig = {
   hri: { formatHri: formatUpceHri },
 };
 
-export const upce = createBarcode1DCore(upceConfig);
+export const upce = createBarcode1DCore(upceCoreConfig);

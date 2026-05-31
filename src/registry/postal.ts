@@ -1,14 +1,11 @@
-import { createBarcode1DCore, type Barcode1DConfig } from './barcode1d';
+import { createBarcode1DCore, type Barcode1DCoreConfig } from './barcode1d';
 export type { Barcode1DProps as PostalProps } from "./barcode1d";
 
-export const postalConfig: Barcode1DConfig = {
+export const postalCoreConfig: Barcode1DCoreConfig = {
   label: "POSTNET",
   icon: "✉Z",
   defaultContent: "12345",
-  hasCheckDigit: false,
-  locale: (t) => t.registry.postal,
   group: 'code-postal',
-  contentSpec: { charset: '0-9' },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     // ^BZ{orientation},{height},{interp},{startStop}
@@ -16,4 +13,4 @@ export const postalConfig: Barcode1DConfig = {
   },
 };
 
-export const postal = createBarcode1DCore(postalConfig);
+export const postal = createBarcode1DCore(postalCoreConfig);

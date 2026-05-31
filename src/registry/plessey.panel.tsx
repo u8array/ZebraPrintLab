@@ -1,4 +1,7 @@
 import { createBarcode1DPanel } from './barcode1d.panel';
-import { plesseyConfig } from './plessey';
 
-export const plesseyPanel = createBarcode1DPanel(plesseyConfig);
+export const plesseyPanel = createBarcode1DPanel({
+  locale: (t) => t.registry.plessey,
+  hasCheckDigit: true,
+  contentSpec: { charset: '0-9A-Fa-f' },
+});

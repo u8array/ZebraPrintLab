@@ -46,8 +46,7 @@ export const BARCODE_1D_TYPES = new Set([
 
 export const STACKED_2D_TYPES = new Set(['pdf417', 'micropdf417', 'codablock']);
 
-// Internal literal: `satisfies` enforces that every LeafType has an entry
-// at build time, without narrowing the per-key value type in callers.
+// satisfies enforces exhaustiveness; permissive export keeps callers' inference loose.
 const _ObjectRegistry = {
   // text
   text,
@@ -90,8 +89,6 @@ const _ObjectRegistry = {
   image,
 } satisfies ObjectRegistryMap;
 
-/** Per-type registry of Core (domain) entries. The literal above is
- *  exhaustive on `LeafObject['type']`; adding a new leaf type without
- *  a registry entry fails the build. */
+/** Per-type Core (domain) entries, keyed by registry type. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ObjectRegistry: Record<string, ObjectTypeCore<any>> = _ObjectRegistry;

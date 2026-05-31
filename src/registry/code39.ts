@@ -1,18 +1,12 @@
-import { createBarcode1DCore, type Barcode1DConfig } from './barcode1d';
-import type { ContentSpec } from './contentSpec';
+import { createBarcode1DCore, type Barcode1DCoreConfig } from './barcode1d';
 import { formatCode39Hri } from './hriFormatters';
 export type { Barcode1DProps as Code39Props } from './barcode1d';
 
-const code39Spec: ContentSpec = { charset: '0-9A-Za-z\\-. $/+%' };
-
-export const code39Config: Barcode1DConfig = {
+export const code39CoreConfig: Barcode1DCoreConfig = {
   label: 'Code 39',
   icon: '|·|',
   defaultContent: 'CODE39',
-  hasCheckDigit: true,
-  locale: (t) => t.registry.code39,
   group: 'code-1d',
-  contentSpec: code39Spec,
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
@@ -21,4 +15,4 @@ export const code39Config: Barcode1DConfig = {
   hri: { formatHri: formatCode39Hri },
 };
 
-export const code39 = createBarcode1DCore(code39Config);
+export const code39 = createBarcode1DCore(code39CoreConfig);

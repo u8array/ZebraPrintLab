@@ -1,14 +1,11 @@
-import { createBarcode1DCore, type Barcode1DConfig } from './barcode1d';
+import { createBarcode1DCore, type Barcode1DCoreConfig } from './barcode1d';
 export type { Barcode1DProps as Code11Props } from "./barcode1d";
 
-export const code11Config: Barcode1DConfig = {
+export const code11CoreConfig: Barcode1DCoreConfig = {
   label: "Code 11",
   icon: "C11",
   defaultContent: "12345",
-  hasCheckDigit: true,
-  locale: (t) => t.registry.code11,
   group: 'code-1d',
-  contentSpec: { charset: '0-9\\-' },
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     const check = p.checkDigit ? "Y" : "N";
@@ -16,4 +13,4 @@ export const code11Config: Barcode1DConfig = {
   },
 };
 
-export const code11 = createBarcode1DCore(code11Config);
+export const code11 = createBarcode1DCore(code11CoreConfig);
