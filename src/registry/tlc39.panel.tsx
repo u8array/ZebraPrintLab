@@ -49,7 +49,7 @@ export const tlc39Panel: ObjectTypeUi<Tlc39Props> = {
             label={loc.microPdfRows}
             value={p.microPdfRows}
             min={1}
-            max={99}
+            max={10}
             onChange={(microPdfRows) => onChange({ microPdfRows })}
           />
         </div>

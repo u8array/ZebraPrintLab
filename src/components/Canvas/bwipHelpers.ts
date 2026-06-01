@@ -31,6 +31,7 @@ import {
   GS1_DATABAR_PADDING_ROWS,
   GS1_DATABAR_SPEC_HEIGHT_MODULES,
   LOGMARS_TEXT_ZONE_DOTS,
+  MICROPDF417_PX_PER_ROW,
   MICROPDF417_QUIET_ZONE_ROWS,
   PLESSEY_BWIP_TO_ZEBRA_WIDTH_RATIO,
   UPC_SUPP_TEXT_ZONE_DOTS,
@@ -965,9 +966,7 @@ function getUprightDisplaySize(
     }
     case "micropdf417": {
       const p = obj.props;
-      // bwip-js ignores rowheight for micropdf417 and always uses 2 internal pixels per row.
-      // It also adds MICROPDF417_QUIET_ZONE_ROWS quiet-zone rows (top+bottom) to the canvas.
-      const numRows = Math.max(0, ch / (BWIP_SCALE * 2) - MICROPDF417_QUIET_ZONE_ROWS);
+      const numRows = micropdfDataRows(ch);
       const w =
         (cw / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
       const h = numRows * dotsToPx(p.rowHeight, scale, dpmm);
@@ -992,6 +991,25 @@ function getUprightDisplaySize(
   }
 }
 
+/** Valid MicroPDF417 row counts in TLC39's linked 4-column geometry. */
+export const TLC39_MICROPDF_ROW_COUNTS = [4, 6, 8, 10] as const;
+
+/** Snap to the nearest valid row count; bwip-js throws on any other value. */
+export function snapTlc39MicroPdfRows(requested: number): number {
+  if (!Number.isFinite(requested)) return 4;
+  for (const r of TLC39_MICROPDF_ROW_COUNTS) if (requested <= r) return r;
+  return 10;
+}
+
+/** Data-row count from a bwip-js MicroPDF417 canvas height (assumes scale=BWIP_SCALE). */
+function micropdfDataRows(canvasHeight: number): number {
+  return Math.max(
+    0,
+    canvasHeight / (BWIP_SCALE * MICROPDF417_PX_PER_ROW)
+      - MICROPDF417_QUIET_ZONE_ROWS,
+  );
+}
+
 /** TLC39 spec splits content on the first comma: ECI (6 digits) for
  *  the Code 39 base line, serial (≤25 alphanum) for the MicroPDF417
  *  block stacked on top. The "T" linkage flag is appended to the
@@ -1013,76 +1031,105 @@ interface Tlc39RenderProps {
   moduleWidth: number;
   height: number;
   microPdfRowHeight: number;
+  microPdfRows: number;
 }
 
-/** Render TLC39 as a composite canvas: MicroPDF417 block on top
- *  (serial) and Code 39 base line below (ECI + "T" linkage flag).
- *  bwip-js has no native TLC39 encoder, so this composes two standard
- *  encoders per the TIA spec. `scale` is the bwip-js pixel scale
- *  (matches the canvas zoom) so the composite stays crisp at any
- *  view-level. Returns null on encoding failure. */
+/** TLC39 composite (MicroPDF417 on top, Code 39 base below). bwip-js has
+ *  no native encoder; composes two encoders at dpmm-aware display sizes
+ *  per the TCIF spec (shared width, no separator). */
 export function renderTlc39Canvas(
   props: Tlc39RenderProps,
   scale: number,
   dpmm: number,
 ): HTMLCanvasElement | null {
   const { eci, serial } = splitTlc39Content(props.content);
-  const code39Text = serial ? `${eci}T` : eci;
-  // Match the 1D-barcode render pattern: pick an integer per-module
-  // pixel scale tied to the editor zoom and dpmm so module edges stay
-  // sharp at any view-level.
   const bwipScale = get1DBwipScale(props.moduleWidth, scale, dpmm);
-  // bwip-js `height` is in millimetres at 1x; rough conversion from
-  // the prop's dot value uses /4 (assumes ~8 dpmm) so the rendered
-  // Code 39 height roughly matches print expectations.
-  const code39Height = Math.max(4, Math.round(props.height / 4));
-  const code39Canvas = document.createElement("canvas");
-  try {
-    bwipjs.toCanvas(code39Canvas, {
-      bcid: "code39",
-      text: code39Text || " ",
-      scale: bwipScale,
-      height: code39Height,
-      includetext: false,
-    } as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
-  } catch {
-    return null;
+  const modulePx = dotsToPx(props.moduleWidth, scale, dpmm);
+  const code39H = dotsToPx(props.height, scale, dpmm);
+
+  const renderCode39 = (text: string): HTMLCanvasElement | null => {
+    const c = document.createElement("canvas");
+    try {
+      bwipjs.toCanvas(c, {
+        bcid: "code39",
+        text: text || " ",
+        scale: bwipScale,
+        // bwip `height` is in mm at 1x; constant source height
+        // (stretched to dpmm-correct dots below) matches the standalone
+        // 1D pattern.
+        height: 10,
+        includetext: false,
+      } as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
+    } catch {
+      return null;
+    }
+    return c;
+  };
+
+  const stretchTo = (
+    src: HTMLCanvasElement,
+    targetW: number,
+    targetH: number,
+  ): HTMLCanvasElement | null => {
+    const out = document.createElement("canvas");
+    out.width = Math.max(1, Math.round(targetW));
+    out.height = Math.max(1, Math.round(targetH));
+    const c = out.getContext("2d");
+    if (!c) return null;
+    c.fillStyle = "white";
+    c.fillRect(0, 0, out.width, out.height);
+    c.imageSmoothingEnabled = false;
+    c.drawImage(src, 0, 0, out.width, out.height);
+    return out;
+  };
+
+  if (!serial) {
+    const src = renderCode39(eci);
+    if (!src) return null;
+    const w = (src.width / bwipScale) * modulePx;
+    return stretchTo(src, w, code39H);
   }
 
-  if (!serial) return code39Canvas;
-
-  const mpdfCanvas = document.createElement("canvas");
+  // Render MicroPDF first; the "T" linkage flag is only appended to
+  // Code 39 when the linked MicroPDF actually rendered, otherwise the
+  // flag would claim a link that does not exist.
+  const snappedRows = snapTlc39MicroPdfRows(props.microPdfRows);
+  const mpdfSrc = document.createElement("canvas");
+  let mpdfOk = true;
   try {
-    bwipjs.toCanvas(mpdfCanvas, {
+    bwipjs.toCanvas(mpdfSrc, {
       bcid: "micropdf417",
       text: serial,
-      scale: bwipScale,
-      rowheight: Math.max(2, props.microPdfRowHeight),
+      scale: BWIP_SCALE,
+      rows: snappedRows,
+      // TLC39 spec: linked MicroPDF417 is fixed at 4 columns.
+      columns: 4,
     } as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
   } catch {
-    // Serial encoding failed; degrade gracefully to the Code 39 line.
-    return code39Canvas;
+    mpdfOk = false;
   }
 
-  // Spec: MicroPDF417 sits ABOVE the Code 39 base (consistent with
-  // GS1 composite symbologies CC-A/B/C, which also place the 2D
-  // component on top of the linear base). The two symbols share the
-  // same printed width; firmware stretches the narrower one
-  // horizontally so modules go non-square but visual alignment
-  // matches the printed output. TCIF spec explicitly states no
-  // separator pattern and no required spacing between components;
-  // Zebra firmware renders them touching, so we do the same.
-  const w = Math.max(code39Canvas.width, mpdfCanvas.width);
-  const h = mpdfCanvas.height + code39Canvas.height;
+  const code39Src = renderCode39(mpdfOk ? `${eci}T` : eci);
+  if (!code39Src) return null;
+  const code39W = (code39Src.width / bwipScale) * modulePx;
+
+  if (!mpdfOk) return stretchTo(code39Src, code39W, code39H);
+
+  const mpdfW = (mpdfSrc.width / BWIP_SCALE) * modulePx;
+  const mpdfH = snappedRows * dotsToPx(props.microPdfRowHeight, scale, dpmm);
+
+  const w = Math.max(1, Math.round(Math.max(code39W, mpdfW)));
+  const mpdfPxH = Math.max(1, Math.round(mpdfH));
+  const code39PxH = Math.max(1, Math.round(code39H));
   const composite = document.createElement("canvas");
   composite.width = w;
-  composite.height = h;
+  composite.height = mpdfPxH + code39PxH;
   const ctx = composite.getContext("2d");
   if (!ctx) return null;
   ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(0, 0, composite.width, composite.height);
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(mpdfCanvas, 0, 0, w, mpdfCanvas.height);
-  ctx.drawImage(code39Canvas, 0, mpdfCanvas.height, w, code39Canvas.height);
+  ctx.drawImage(mpdfSrc, 0, 0, w, mpdfPxH);
+  ctx.drawImage(code39Src, 0, mpdfPxH, w, code39PxH);
   return composite;
 }

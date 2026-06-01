@@ -15,9 +15,9 @@ export interface Tlc39Props {
   height: number;
   /** MicroPDF417 row height in dots (1-255, default 4). */
   microPdfRowHeight: number;
-  /** MicroPDF417 row count. Zebra ^BT h2 accepts 1-99; firmware snaps
-   *  to a valid MicroPDF417 row count {4,6,8,10,12,15,20,26,32,38,44}.
-   *  Default 4. */
+  /** MicroPDF417 row count. Zebra ^BT h2 accepts 1-10 (narrower than
+   *  standalone ^BF since TLC39's linked MicroPDF is fixed at 4 columns);
+   *  firmware snaps to a valid row count {4,6,8,10}. Default 4. */
   microPdfRows: number;
   rotation: ZplRotation;
 }
@@ -44,8 +44,8 @@ export const tlc39: ObjectTypeCore<Tlc39Props> = {
     return [
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
-      // r1=2 (wide:narrow ratio) is the Zebra default; the editor does
-      // not expose it as a prop so we always emit the canonical value.
+      // r1 (wide:narrow ratio) is not exposed as a prop; emit the
+      // canonical "2" so the field round-trips.
       `^BT${p.rotation},${p.moduleWidth},2,${p.height},${p.microPdfRowHeight},${p.microPdfRows}`,
       fdFieldFor(obj, p.content, ctx),
     ]
