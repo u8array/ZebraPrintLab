@@ -115,7 +115,7 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 | `[x]` | `^B0` / `^BO` | Aztec | |
 | `[x]` | `^BB` | CODABLOCK F | |
 | `[x]` | `^BV` | UPS MaxiCode (also accepts `^BD` on some firmware generations as an alias) | |
-| `[ ]` | `^BT` | TLC39 | `Coming soon` |
+| `[x]` | `^BT` | TLC39 | |
 
 ## Graphics
 

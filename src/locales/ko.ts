@@ -45,6 +45,7 @@ const ko = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: '그룹',
   },
 
@@ -583,6 +584,13 @@ const ko = {
       rowHeight: '행 높이 (도트)',
       moduleWidth: '모듈 폭',
       security: '보안 검사',
+    },
+    tlc39: {
+      content: '내용',
+      height: '높이 (도트)',
+      moduleWidth: '모듈 너비',
+      microPdfRowHeight: 'MicroPDF 행 높이',
+      microPdfRows: 'MicroPDF 행 수',
     },
   },
 

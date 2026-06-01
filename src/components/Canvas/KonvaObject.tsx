@@ -234,6 +234,7 @@ const BARCODE_TYPES = new Set([
   "codablock",
   "upcEanExtension",
   "code49",
+  "tlc39",
 ]);
 
 export function KonvaObject(props_: Props) {

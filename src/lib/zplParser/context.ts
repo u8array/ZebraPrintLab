@@ -134,6 +134,10 @@ export interface FieldState {
   mpdfRowHeight: number;
   cbRowHeight: number;
   cbSecurity: CodablockProps["securityLevel"];
+  // TLC39 pending
+  tlcHeight: number;
+  tlcMicroPdfRowHeight: number;
+  tlcMicroPdfRows: number;
   // Pending font reference (^A@ or ^A{id}) — mutually exclusive
   pendingPrinterFontName: string | undefined;
   pendingFontId: string | undefined;
@@ -260,6 +264,9 @@ export function createParserState(): ParserState {
       mpdfRowHeight: 10,
       cbRowHeight: 10,
       cbSecurity: "Y",
+      tlcHeight: 40,
+      tlcMicroPdfRowHeight: 4,
+      tlcMicroPdfRows: 4,
       pendingPrinterFontName: undefined,
       pendingFontId: undefined,
       snPending: false,

@@ -45,6 +45,7 @@ const lt = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'Grupė',
   },
 
@@ -583,6 +584,13 @@ const lt = {
       rowHeight: 'Eilutės aukštis (taškai)',
       moduleWidth: 'Modulio plotis',
       security: 'Saugumo patikra',
+    },
+    tlc39: {
+      content: 'Turinys',
+      height: 'Aukštis (taškai)',
+      moduleWidth: 'Modulio plotis',
+      microPdfRowHeight: 'MicroPDF eilutės aukštis',
+      microPdfRows: 'MicroPDF eilutės',
     },
   },
 

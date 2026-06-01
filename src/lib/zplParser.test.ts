@@ -1388,6 +1388,59 @@ describe('parseZPL — change caret / tilde / delimiter (^CC ^CT ^CD)', () => {
   });
 });
 
+// ── ^BT TLC39 ─────────────────────────────────────────────────────────────────
+
+describe('parseZPL — ^BT TLC39', () => {
+  it('parses ^BT with full param set into a tlc39 object', () => {
+    const zpl = '^XA^FO50,50^BTN,3,3,60,5,3^FD123456,ABC^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('tlc39');
+    const p = props(objects[0]);
+    expect(p.content).toBe('123456,ABC');
+    expect(p.height).toBe(60);
+    expect(p.microPdfRowHeight).toBe(5);
+    expect(p.microPdfRows).toBe(3);
+    expect(p.rotation).toBe('N');
+  });
+
+  it('preserves valid microPdfRows across the Zebra 1-99 range', () => {
+    const zpl = '^XA^FO0,0^BTN,2,3,40,4,6^FD123456,X^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(props(objects[0]).microPdfRows).toBe(6);
+  });
+
+  it('round-trips ^BT via parse → toZPL → parse', async () => {
+    const { ObjectRegistry } = await import('../registry');
+    const original = '^XA^FO50,60^BY3^BTN,3,2,80,5,8^FD654321,ABCDEF^FS^XZ';
+    const { objects } = parseZPL(original, 8);
+    expect(objects).toHaveLength(1);
+    const emitted = ObjectRegistry.tlc39.toZPL(objects[0] as never);
+    expect(emitted).toContain('^BTN,3,2,80,5,8');
+    expect(emitted).toContain('^FD654321,ABCDEF');
+    const { objects: round2 } = parseZPL(`^XA${emitted}^XZ`, 8);
+    expect(round2[0]?.type).toBe('tlc39');
+    expect(props(round2[0])).toMatchObject(props(objects[0]));
+  });
+});
+
+describe('splitTlc39Content', () => {
+  it('splits on first comma; ECI before, serial after', async () => {
+    const { splitTlc39Content } = await import('../components/Canvas/bwipHelpers');
+    expect(splitTlc39Content('123456,ABC123')).toEqual({ eci: '123456', serial: 'ABC123' });
+  });
+
+  it('strips a leading S data identifier from the serial', async () => {
+    const { splitTlc39Content } = await import('../components/Canvas/bwipHelpers');
+    expect(splitTlc39Content('123456,SXYZ789')).toEqual({ eci: '123456', serial: 'XYZ789' });
+  });
+
+  it('returns empty serial when no comma is present', async () => {
+    const { splitTlc39Content } = await import('../components/Canvas/bwipHelpers');
+    expect(splitTlc39Content('123456')).toEqual({ eci: '123456', serial: '' });
+  });
+});
+
 // ── ^IM image reference ───────────────────────────────────────────────────────
 
 describe('parseZPL — ^IM image reference', () => {

@@ -29,6 +29,7 @@ import type { AztecProps } from "../../registry/aztec";
 import type { MaxicodeProps } from "../../registry/maxicode";
 import type { MicroPdf417Props } from "../../registry/micropdf417";
 import type { CodablockProps } from "../../registry/codablock";
+import type { Tlc39Props } from "../../registry/tlc39";
 import { decodeFH, makeObj, variableNameFromComment } from "./helpers";
 import { getPosType, type ParserState, REVERSE_BBOX_TOLERANCE_DOTS } from "./context";
 
@@ -472,6 +473,25 @@ export function createFlushField(
               securityLevel: s.field.cbSecurity,
               rotation: s.field.bcRotation,
             } satisfies CodablockProps,
+            posType,
+            comment,
+          ),
+        );
+        break;
+      case "tlc39":
+        objects.push(
+          makeObj(
+            "tlc39",
+            s.field.x,
+            s.field.y,
+            {
+              content,
+              moduleWidth: s.defaults.byModuleWidth,
+              height: s.field.tlcHeight,
+              microPdfRowHeight: s.field.tlcMicroPdfRowHeight,
+              microPdfRows: s.field.tlcMicroPdfRows,
+              rotation: s.field.bcRotation,
+            } satisfies Tlc39Props,
             posType,
             comment,
           ),

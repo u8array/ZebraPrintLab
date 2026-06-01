@@ -991,3 +991,86 @@ function getUprightDisplaySize(
     }
   }
 }
+
+/** TLC39 spec splits content on the first comma: ECI (6 digits) for
+ *  the Code 39 base line, serial (≤25 alphanum) for the MicroPDF417
+ *  block stacked on top. The "T" linkage flag is appended to the
+ *  Code 39 data when a MicroPDF417 follows; the leading "S" data
+ *  identifier (if any) is stripped from the serial before MicroPDF
+ *  encoding. */
+export function splitTlc39Content(content: string): { eci: string; serial: string } {
+  const comma = content.indexOf(",");
+  if (comma < 0) return { eci: content, serial: "" };
+  const eci = content.slice(0, comma);
+  let serial = content.slice(comma + 1);
+  if (serial.startsWith("S")) serial = serial.slice(1);
+  return { eci, serial };
+}
+
+interface Tlc39RenderProps {
+  content: string;
+  height: number;
+  microPdfRowHeight: number;
+}
+
+/** Render TLC39 as a composite canvas: MicroPDF417 block on top
+ *  (serial) and Code 39 base line below (ECI + "T" linkage flag).
+ *  bwip-js has no native TLC39 encoder, so this composes two standard
+ *  encoders per the TIA spec. Returns null on encoding failure. */
+export function renderTlc39Canvas(props: Tlc39RenderProps): HTMLCanvasElement | null {
+  const { eci, serial } = splitTlc39Content(props.content);
+  const code39Text = serial ? `${eci}T` : eci;
+  // bwip-js `height` is in millimetres at 1x; rough conversion from
+  // the prop's dot value uses /4 (assumes ~8 dpmm / 2x scale) so the
+  // rendered Code 39 height roughly matches print expectations.
+  const code39Height = Math.max(4, Math.round(props.height / 4));
+  const code39Canvas = document.createElement("canvas");
+  try {
+    bwipjs.toCanvas(code39Canvas, {
+      bcid: "code39",
+      text: code39Text || " ",
+      scale: BWIP_SCALE,
+      height: code39Height,
+      includetext: false,
+    } as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
+  } catch {
+    return null;
+  }
+
+  if (!serial) return code39Canvas;
+
+  const mpdfCanvas = document.createElement("canvas");
+  try {
+    bwipjs.toCanvas(mpdfCanvas, {
+      bcid: "micropdf417",
+      text: serial,
+      scale: BWIP_SCALE,
+      rowheight: Math.max(2, props.microPdfRowHeight),
+    } as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
+  } catch {
+    // Serial encoding failed; degrade gracefully to the Code 39 line.
+    return code39Canvas;
+  }
+
+  // Spec: MicroPDF417 sits ABOVE the Code 39 base (consistent with
+  // GS1 composite symbologies CC-A/B/C, which also place the 2D
+  // component on top of the linear base). The two symbols share the
+  // same printed width; firmware stretches the narrower one
+  // horizontally so modules go non-square but visual alignment
+  // matches the printed output. TCIF spec explicitly states no
+  // separator pattern and no required spacing between components;
+  // Zebra firmware renders them touching, so we do the same.
+  const w = Math.max(code39Canvas.width, mpdfCanvas.width);
+  const h = mpdfCanvas.height + code39Canvas.height;
+  const composite = document.createElement("canvas");
+  composite.width = w;
+  composite.height = h;
+  const ctx = composite.getContext("2d");
+  if (!ctx) return null;
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, w, h);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(mpdfCanvas, 0, 0, w, mpdfCanvas.height);
+  ctx.drawImage(code39Canvas, 0, mpdfCanvas.height, w, code39Canvas.height);
+  return composite;
+}

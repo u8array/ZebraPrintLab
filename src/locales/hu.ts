@@ -45,6 +45,7 @@ const hu = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'Csoport',
   },
 
@@ -583,6 +584,13 @@ const hu = {
       rowHeight: 'Sormagasság (pont)',
       moduleWidth: 'Modulszélesség',
       security: 'Biztonsági ellenőrzés',
+    },
+    tlc39: {
+      content: 'Tartalom',
+      height: 'Magasság (pont)',
+      moduleWidth: 'Modulszélesség',
+      microPdfRowHeight: 'MicroPDF sormagasság',
+      microPdfRows: 'MicroPDF sorok',
     },
   },
 

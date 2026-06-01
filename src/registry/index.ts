@@ -36,6 +36,7 @@ import { codablock } from './codablock';
 import { upcEanExtension } from './upcEanExtension';
 import { code49 } from './code49';
 import { maxicode } from './maxicode';
+import { tlc39 } from './tlc39';
 import { symbol } from './symbol';
 
 export const BARCODE_1D_TYPES = new Set([
@@ -78,6 +79,7 @@ const _ObjectRegistry = {
   maxicode,
   micropdf417,
   codablock,
+  tlc39,
   // code-postal
   planet,
   postal,

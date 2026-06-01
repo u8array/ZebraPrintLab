@@ -45,6 +45,7 @@ const el = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'Ομάδα',
   },
 
@@ -583,6 +584,13 @@ const el = {
       rowHeight: 'Ύψος γραμμής (κουκκίδες)',
       moduleWidth: 'Πλάτος μονάδας',
       security: 'Έλεγχος ασφαλείας',
+    },
+    tlc39: {
+      content: 'Περιεχόμενο',
+      height: 'Ύψος (κουκκίδες)',
+      moduleWidth: 'Πλάτος μονάδας',
+      microPdfRowHeight: 'Ύψος γραμμής MicroPDF',
+      microPdfRows: 'Γραμμές MicroPDF',
     },
   },
 

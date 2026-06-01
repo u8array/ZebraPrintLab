@@ -45,6 +45,7 @@ const fi = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'Ryhmä',
   },
 
@@ -583,6 +584,13 @@ const fi = {
       rowHeight: 'Rivikorkeus (pistettä)',
       moduleWidth: 'Moduulin leveys',
       security: 'Turvatarkistus',
+    },
+    tlc39: {
+      content: 'Sisältö',
+      height: 'Korkeus (pisteet)',
+      moduleWidth: 'Moduulin leveys',
+      microPdfRowHeight: 'MicroPDF-rivin korkeus',
+      microPdfRows: 'MicroPDF-rivit',
     },
   },
 

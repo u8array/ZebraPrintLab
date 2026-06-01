@@ -45,6 +45,7 @@ const bg = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'Група',
   },
 
@@ -583,6 +584,13 @@ const bg = {
       rowHeight: 'Височина на ред (точки)',
       moduleWidth: 'Ширина на модул',
       security: 'Проверка за сигурност',
+    },
+    tlc39: {
+      content: 'Съдържание',
+      height: 'Височина (точки)',
+      moduleWidth: 'Ширина на модула',
+      microPdfRowHeight: 'Височина на ред MicroPDF',
+      microPdfRows: 'Редове MicroPDF',
     },
   },
 

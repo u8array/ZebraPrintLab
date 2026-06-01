@@ -34,14 +34,14 @@ The print resolution (dpmm = dots per millimeter) must match your printer. Commo
 
 Drag items from the left panel onto the canvas, or double-click them to add at the center.
 
-Available objects: text, serial (auto-incrementing number fields), barcodes (27 symbologies including Code 128, QR, DataMatrix, PDF417, Maxicode), shapes (box, line, ellipse), and images.
+Available objects: text, serial (auto-incrementing number fields), barcodes (28 symbologies including Code 128, QR, DataMatrix, PDF417, Maxicode), shapes (box, line, ellipse), and images.
 
 <details>
 <summary>Full list of supported barcode symbologies</summary>
 
 **1D linear:** Code 128, Code 39, Code 93, Code 11, Interleaved 2 of 5, Standard 2 of 5, Industrial 2 of 5, Codabar, LOGMARS, MSI, Plessey, GS1 Databar, Planet Code, Postal/POSTNET, EAN-13, EAN-8, UPC-A, UPC-E, UPC/EAN 2- or 5-digit supplement, Code 49
 
-**2D matrix:** QR Code, DataMatrix, PDF417, MicroPDF417, Aztec, Codablock F, Maxicode
+**2D matrix:** QR Code, DataMatrix, PDF417, MicroPDF417, Aztec, Codablock F, Maxicode, TLC39
 
 </details>
 
@@ -116,13 +116,13 @@ Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable conte
 
 ## Coverage
 
-93 of the 202 ZPL II commands tracked in the [roadmap](docs/zpl-roadmap.md) are supported today. Categorical breakdown:
+94 of the 202 ZPL II commands tracked in the [roadmap](docs/zpl-roadmap.md) are supported today. Categorical breakdown:
 
 | Area | Supported |
 |---|---|
 | Layout & flow | 16 / 16 |
 | Templates & variables | 4 / 4 |
-| Barcodes | 27 / 28 |
+| Barcodes | 28 / 28 |
 | Fields | 15 / 20 |
 | Encoding & language | 3 / 4 |
 | Clock & time | 2 / 3 |

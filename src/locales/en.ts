@@ -45,6 +45,7 @@ const en = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'Group',
   },
 
@@ -604,6 +605,13 @@ const en = {
       rowHeight: 'Row height (dots)',
       moduleWidth: 'Module width',
       security: 'Security check',
+    },
+    tlc39: {
+      content: 'Content',
+      height: 'Height (dots)',
+      moduleWidth: 'Module width',
+      microPdfRowHeight: 'MicroPDF row height',
+      microPdfRows: 'MicroPDF rows',
     },
   },
 
