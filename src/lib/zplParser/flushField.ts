@@ -486,7 +486,7 @@ export function createFlushField(
             s.field.y,
             {
               content,
-              moduleWidth: s.defaults.byModuleWidth,
+              moduleWidth: s.field.tlcModuleWidth ?? s.defaults.byModuleWidth,
               height: s.field.tlcHeight,
               microPdfRowHeight: s.field.tlcMicroPdfRowHeight,
               microPdfRows: s.field.tlcMicroPdfRows,

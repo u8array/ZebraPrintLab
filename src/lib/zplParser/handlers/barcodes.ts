@@ -156,6 +156,9 @@ export function createBarcodeHandlers(
     BT(p) {
       field.fieldType = "tlc39";
       field.bcRotation = readRotation(p[0]);
+      // w1 (Code 39 narrow bar) overrides ^BY when present; undefined
+      // means fall back to defaults.byModuleWidth at flush time.
+      field.tlcModuleWidth = int(p[1]) || undefined;
       field.tlcHeight = int(p[3], defaults.byHeight || 40);
       field.tlcMicroPdfRowHeight = int(p[4], 4);
       // Zebra ^BT h2 range is 1-99; firmware snaps to a valid MicroPDF417

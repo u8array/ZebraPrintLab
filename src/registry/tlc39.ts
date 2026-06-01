@@ -5,8 +5,9 @@ import { type ZplRotation } from "./rotation";
 
 export interface Tlc39Props {
   /** TLC39 data: `<ECI>,<serial>`. ECI is 6 digits; serial is up to
-   *  25 alphanumeric characters (and renders as MicroPDF417 below the
-   *  Code 39 line). The comma is the canonical separator per spec. */
+   *  25 alphanumeric characters (rendered as MicroPDF417 stacked on
+   *  top of the Code 39 base line). Comma is the canonical separator
+   *  per spec. */
   content: string;
   /** Code 39 narrow bar width in dots (1-10, default from ^BY). */
   moduleWidth: number;
