@@ -33,6 +33,7 @@ import type { CodablockProps } from './codablock';
 import type { UpcEanExtensionProps } from './upcEanExtension';
 import type { Code49Props } from './code49';
 import type { MaxicodeProps } from './maxicode';
+import type { Tlc39Props } from './tlc39';
 import type { SymbolProps } from './symbol';
 
 /** Single-branch shape for one registry type: the common base plus a
@@ -75,6 +76,7 @@ export type LeafObject =
   | Leaf<'upcEanExtension', UpcEanExtensionProps>
   | Leaf<'code49', Code49Props>
   | Leaf<'maxicode', MaxicodeProps>
+  | Leaf<'tlc39', Tlc39Props>
   | Leaf<'symbol', SymbolProps>;
 
 /** Every registered leaf-type discriminator. */

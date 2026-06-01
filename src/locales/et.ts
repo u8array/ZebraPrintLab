@@ -45,6 +45,7 @@ const et = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'Rühm',
   },
 
@@ -583,6 +584,13 @@ const et = {
       rowHeight: 'Rea kõrgus (punkti)',
       moduleWidth: 'Mooduli laius',
       security: 'Turvakontroll',
+    },
+    tlc39: {
+      content: 'Sisu',
+      height: 'Kõrgus (punktid)',
+      moduleWidth: 'Mooduli laius',
+      microPdfRowHeight: 'MicroPDF rea kõrgus',
+      microPdfRows: 'MicroPDF read',
     },
   },
 

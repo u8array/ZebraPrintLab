@@ -45,6 +45,7 @@ const ro = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'Grup',
   },
 
@@ -583,6 +584,13 @@ const ro = {
       rowHeight: 'Înălțime rând (puncte)',
       moduleWidth: 'Lățime modul',
       security: 'Verificare securitate',
+    },
+    tlc39: {
+      content: 'Conținut',
+      height: 'Înălțime (puncte)',
+      moduleWidth: 'Lățime modul',
+      microPdfRowHeight: 'Înălțime rând MicroPDF',
+      microPdfRows: 'Rânduri MicroPDF',
     },
   },
 

@@ -45,6 +45,7 @@ const cs = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'Skupina',
   },
 
@@ -583,6 +584,13 @@ const cs = {
       rowHeight: 'Výška řádku (body)',
       moduleWidth: 'Šířka modulu',
       security: 'Bezpečnostní kontrola',
+    },
+    tlc39: {
+      content: 'Obsah',
+      height: 'Výška (body)',
+      moduleWidth: 'Šířka modulu',
+      microPdfRowHeight: 'Výška řádku MicroPDF',
+      microPdfRows: 'Řádky MicroPDF',
     },
   },
 

@@ -45,6 +45,7 @@ const fa = {
     maxicode: 'ماکسی‌کد',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'گروه',
   },
 
@@ -583,6 +584,13 @@ const fa = {
       rowHeight: 'ارتفاع ردیف (نقطه)',
       moduleWidth: 'عرض ماژول',
       security: 'بررسی امنیتی',
+    },
+    tlc39: {
+      content: 'محتوا',
+      height: 'ارتفاع (نقطه)',
+      moduleWidth: 'عرض ماژول',
+      microPdfRowHeight: 'ارتفاع ردیف MicroPDF',
+      microPdfRows: 'ردیف‌های MicroPDF',
     },
   },
 

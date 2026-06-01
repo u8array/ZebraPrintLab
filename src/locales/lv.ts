@@ -45,6 +45,7 @@ const lv = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'Grupa',
   },
 
@@ -583,6 +584,13 @@ const lv = {
       rowHeight: 'Rindas augstums (punkti)',
       moduleWidth: 'Moduļa platums',
       security: 'Drošības pārbaude',
+    },
+    tlc39: {
+      content: 'Saturs',
+      height: 'Augstums (punkti)',
+      moduleWidth: 'Moduļa platums',
+      microPdfRowHeight: 'MicroPDF rindas augstums',
+      microPdfRows: 'MicroPDF rindas',
     },
   },
 

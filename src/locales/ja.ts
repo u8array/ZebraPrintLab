@@ -45,6 +45,7 @@ const ja = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'グループ',
   },
 
@@ -583,6 +584,13 @@ const ja = {
       rowHeight: '行高さ（ドット）',
       moduleWidth: 'モジュール幅',
       security: 'セキュリティチェック',
+    },
+    tlc39: {
+      content: 'コンテンツ',
+      height: '高さ (ドット)',
+      moduleWidth: 'モジュール幅',
+      microPdfRowHeight: 'MicroPDF行の高さ',
+      microPdfRows: 'MicroPDF行数',
     },
   },
 

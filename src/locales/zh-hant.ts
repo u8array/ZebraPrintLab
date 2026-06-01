@@ -45,6 +45,7 @@ const zhHant = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: '群組',
   },
 
@@ -583,6 +584,13 @@ const zhHant = {
       rowHeight: '行高（點）',
       moduleWidth: '模組寬度',
       security: '安全檢查',
+    },
+    tlc39: {
+      content: '內容',
+      height: '高度 (點)',
+      moduleWidth: '模組寬度',
+      microPdfRowHeight: 'MicroPDF 列高',
+      microPdfRows: 'MicroPDF 列數',
     },
   },
 

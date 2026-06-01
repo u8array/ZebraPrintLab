@@ -28,6 +28,7 @@ import { aztecPanel } from './aztec.panel';
 import { maxicodePanel } from './maxicode.panel';
 import { micropdf417Panel } from './micropdf417.panel';
 import { codablockPanel } from './codablock.panel';
+import { tlc39Panel } from './tlc39.panel';
 import { planetPanel } from './planet.panel';
 import { postalPanel } from './postal.panel';
 import { boxPanel } from './box.panel';
@@ -65,6 +66,7 @@ const _ObjectPanels = {
   maxicode: maxicodePanel,
   micropdf417: micropdf417Panel,
   codablock: codablockPanel,
+  tlc39: tlc39Panel,
   planet: planetPanel,
   postal: postalPanel,
   box: boxPanel,

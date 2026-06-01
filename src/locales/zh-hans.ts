@@ -45,6 +45,7 @@ const zhHans = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: '组',
   },
 
@@ -583,6 +584,13 @@ const zhHans = {
       rowHeight: '行高（点）',
       moduleWidth: '模块宽度',
       security: '安全检查',
+    },
+    tlc39: {
+      content: '内容',
+      height: '高度 (点)',
+      moduleWidth: '模块宽度',
+      microPdfRowHeight: 'MicroPDF 行高',
+      microPdfRows: 'MicroPDF 行数',
     },
   },
 

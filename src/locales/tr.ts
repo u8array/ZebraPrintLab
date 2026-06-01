@@ -45,6 +45,7 @@ const tr = {
     maxicode: 'Maxicode',
     micropdf417: 'MicroPDF417',
     codablock: 'CODABLOCK',
+    tlc39: 'TLC39',
     group: 'Grup',
   },
 
@@ -583,6 +584,13 @@ const tr = {
       rowHeight: 'Satır yüksekliği (nokta)',
       moduleWidth: 'Modül genişliği',
       security: 'Güvenlik kontrolü',
+    },
+    tlc39: {
+      content: 'İçerik',
+      height: 'Yükseklik (nokta)',
+      moduleWidth: 'Modül genişliği',
+      microPdfRowHeight: 'MicroPDF satır yüksekliği',
+      microPdfRows: 'MicroPDF satırları',
     },
   },
 
