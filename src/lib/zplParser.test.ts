@@ -1411,10 +1411,44 @@ describe('parseZPL — ^BT TLC39', () => {
     expect(props(objects[0]).moduleWidth).toBe(5);
   });
 
-  it('preserves valid microPdfRows across the Zebra 1-99 range', () => {
+  it('preserves microPdfRows mid-range', () => {
     const zpl = '^XA^FO0,0^BTN,2,3,40,4,6^FD123456,X^FS^XZ';
     const { objects } = parseZPL(zpl, 8);
     expect(props(objects[0]).microPdfRows).toBe(6);
+  });
+
+  it('accepts microPdfRows=1 and =10 (^BT spec bounds)', () => {
+    const z1 = parseZPL('^XA^FO0,0^BTN,2,3,40,4,1^FD123456,X^FS^XZ', 8).objects;
+    expect(props(z1[0]).microPdfRows).toBe(1);
+    const z10 = parseZPL('^XA^FO0,0^BTN,2,3,40,4,10^FD123456,X^FS^XZ', 8).objects;
+    expect(props(z10[0]).microPdfRows).toBe(10);
+  });
+
+  it('rejects microPdfRows outside ^BT spec range (-1, 0, 11, 20) and falls back to default 4', () => {
+    for (const v of [-1, 0, 11, 20]) {
+      const zpl = `^XA^FO0,0^BTN,2,3,40,4,${v}^FD123456,X^FS^XZ`;
+      const { objects } = parseZPL(zpl, 8);
+      expect(props(objects[0]).microPdfRows, `rows=${v}`).toBe(4);
+    }
+  });
+
+  it('drops non-canonical r1 on round-trip (re-emits as 2)', async () => {
+    const { ObjectRegistry } = await import('../registry');
+    const { objects } = parseZPL('^XA^FO0,0^BTN,2,3,40,4,4^FD123,X^FS^XZ', 8);
+    const emitted = ObjectRegistry.tlc39.toZPL(objects[0] as never);
+    expect(emitted).toContain('^BTN,2,2,40,4,4');
+  });
+
+  it('round-trips ^BT without serial (no MicroPDF block, no trailing comma)', async () => {
+    const { ObjectRegistry } = await import('../registry');
+    const original = '^XA^FO10,20^BY2^BTN,2,2,40,4,4^FD123456^FS^XZ';
+    const { objects } = parseZPL(original, 8);
+    expect(objects[0]?.type).toBe('tlc39');
+    expect(props(objects[0]).content).toBe('123456');
+    const emitted = ObjectRegistry.tlc39.toZPL(objects[0] as never);
+    expect(emitted).toMatch(/\^FD123456\^FS/);
+    const { objects: round2 } = parseZPL(`^XA${emitted}^XZ`, 8);
+    expect(props(round2[0]).content).toBe('123456');
   });
 
   it('round-trips ^BT via parse → toZPL → parse', async () => {
@@ -1428,6 +1462,23 @@ describe('parseZPL — ^BT TLC39', () => {
     const { objects: round2 } = parseZPL(`^XA${emitted}^XZ`, 8);
     expect(round2[0]?.type).toBe('tlc39');
     expect(props(round2[0])).toMatchObject(props(objects[0]));
+  });
+});
+
+describe('snapTlc39MicroPdfRows', () => {
+  it('snaps in-range requests up to the nearest valid {4,6,8,10}', async () => {
+    const { snapTlc39MicroPdfRows } = await import('../components/Canvas/bwipHelpers');
+    expect(snapTlc39MicroPdfRows(1)).toBe(4);
+    expect(snapTlc39MicroPdfRows(4)).toBe(4);
+    expect(snapTlc39MicroPdfRows(5)).toBe(6);
+    expect(snapTlc39MicroPdfRows(7)).toBe(8);
+    expect(snapTlc39MicroPdfRows(9)).toBe(10);
+    expect(snapTlc39MicroPdfRows(10)).toBe(10);
+  });
+
+  it('clamps above-range to the highest valid count', async () => {
+    const { snapTlc39MicroPdfRows } = await import('../components/Canvas/bwipHelpers');
+    expect(snapTlc39MicroPdfRows(99)).toBe(10);
   });
 });
 

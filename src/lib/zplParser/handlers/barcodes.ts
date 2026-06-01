@@ -152,19 +152,20 @@ export function createBarcodeHandlers(
       field.cbSecurity = (p[2] ?? "Y") === "N" ? "N" : "Y";
     },
 
-    // ^BTo,w1,r1,h1,w2,h2 — TLC39 (Code 39 + optional MicroPDF417 stack)
+    // ^BTo,w1,r1,h1,w2,h2: TLC39 (Code 39 + optional MicroPDF417 stack)
     BT(p) {
       field.fieldType = "tlc39";
       field.bcRotation = readRotation(p[0]);
       // w1 (Code 39 narrow bar) overrides ^BY when present; undefined
       // means fall back to defaults.byModuleWidth at flush time.
       field.tlcModuleWidth = int(p[1]) || undefined;
+      // p[2] (r1) intentionally dropped; canonicalized on emit.
       field.tlcHeight = int(p[3], defaults.byHeight || 40);
       field.tlcMicroPdfRowHeight = int(p[4], 4);
-      // Zebra ^BT h2 range is 1-99; firmware snaps to a valid MicroPDF417
-      // row count on print, so we keep whatever the user supplied.
+      // Zebra ^BT h2 range is 1-10; firmware snaps to a valid linked
+      // MicroPDF417 row count {4,6,8,10} on print.
       const rows = int(p[5], 4);
-      field.tlcMicroPdfRows = rows >= 1 && rows <= 99 ? rows : 4;
+      field.tlcMicroPdfRows = rows >= 1 && rows <= 10 ? rows : 4;
     },
   };
 }

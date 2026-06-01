@@ -29,6 +29,9 @@ export const LOGMARS_TEXT_ZONE_DOTS = 20;
 // bwip-js adds 3 quiet-zone rows to MicroPDF417 canvas output.
 export const MICROPDF417_QUIET_ZONE_ROWS = 3;
 
+// bwip-js renders MicroPDF417 at 2 internal px per data row, independent of `rowheight`.
+export const MICROPDF417_PX_PER_ROW = 2;
+
 /**
  * bwip-vs-Zebra width-correction constants for symbologies whose bar
  * pattern in bwip-js diverges from Zebra firmware.
