@@ -63,6 +63,12 @@ export interface FormatState {
   fhActive: boolean;
   fhDelimiter: string;
   fhDecoder: TextDecoder;
+  // Command prefix characters; mutated by ^CC/~CC, ^CT/~CT, ^CD/~CD.
+  // The tokenizer reads caretChar/tildeChar on every char scan so mid-stream
+  // changes take effect on the very next command.
+  caretChar: string;
+  tildeChar: string;
+  delimiterChar: string;
 }
 
 /** Persistent defaults for following fields (^CF, ^FW, ^FB, ^BY). */
@@ -201,6 +207,9 @@ export function createParserState(): ParserState {
       fhActive: false,
       fhDelimiter: "_",
       fhDecoder: getDecoder("utf-8"),
+      caretChar: "^",
+      tildeChar: "~",
+      delimiterChar: ",",
     },
     defaults: {
       cfHeight: 0,

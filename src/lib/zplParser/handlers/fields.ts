@@ -275,5 +275,36 @@ export function createFieldHandlers(
       const c = p[0]?.[0];
       s.format.embedChar = c && c !== "^" && c !== "~" ? c : "#";
     },
+
+    // ^CC<char> / ~CC<char>: change the command prefix char (default ^).
+    // The tokenizer reads s.format.caretChar live, so the next command in
+    // the stream uses the new prefix. Reject chars that would collapse
+    // a role boundary (tilde, delimiter) and end up parsing nothing.
+    CC(_, rest) {
+      const c = rest[0];
+      if (!c || c <= " " || c === "\x7F" || c === s.format.tildeChar || c === s.format.delimiterChar) {
+        s.result.partialCmds.add("^CC");
+        return;
+      }
+      s.format.caretChar = c;
+    },
+    // ^CT<char> / ~CT<char>: change the tilde-form prefix (default ~).
+    CT(_, rest) {
+      const c = rest[0];
+      if (!c || c <= " " || c === "\x7F" || c === s.format.caretChar || c === s.format.delimiterChar) {
+        s.result.partialCmds.add("^CT");
+        return;
+      }
+      s.format.tildeChar = c;
+    },
+    // ^CD<char> / ~CD<char>: change the parameter delimiter (default ,).
+    CD(_, rest) {
+      const c = rest[0];
+      if (!c || c <= " " || c === "\x7F" || c === s.format.caretChar || c === s.format.tildeChar) {
+        s.result.partialCmds.add("^CD");
+        return;
+      }
+      s.format.delimiterChar = c;
+    },
   };
 }

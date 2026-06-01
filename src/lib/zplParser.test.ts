@@ -1278,6 +1278,116 @@ describe('parseZPL — ~ tilde commands', () => {
   });
 });
 
+// ── ^CC / ^CT / ^CD change command-prefix chars ──────────────────────────────
+
+describe('parseZPL — change caret / tilde / delimiter (^CC ^CT ^CD)', () => {
+  it('^CC switches the command prefix; following commands use the new char', () => {
+    const zpl = '^XA^CCYYFO10,10YA0N,30,0YFDhelloYFSYXZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(props(objects[0]).content).toBe('hello');
+  });
+
+  it('~CC is a synonym of ^CC', () => {
+    const zpl = '^XA~CCYYFO10,10YA0N,30,0YFDhelloYFSYXZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+  });
+
+  it('^CT switches the tilde prefix without affecting ^ commands', () => {
+    const zpl = '^XA^CT!^FO10,10^A0N,30,0^FDhello^FS!DGR:LOGO.GRF,10,1,FF^XZ';
+    const { objects, importReport } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(importReport.browserLimit.some((s) => s.startsWith('~DG'))).toBe(true);
+  });
+
+  it('^CD switches the parameter delimiter', () => {
+    const zpl = '^XA^CD;^FO10;10^A0N;30;0^FDhello^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.x).toBe(10);
+    expect(props(objects[0]).fontHeight).toBe(30);
+    expect(props(objects[0]).content).toBe('hello');
+  });
+
+  it('~CD is a synonym of ^CD', () => {
+    const zpl = '^XA~CD;^FO10;10^A0N;30;0^FDhello^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects[0]?.x).toBe(10);
+    expect(props(objects[0]).fontHeight).toBe(30);
+  });
+
+  it('combined ^CC + ^CD: both prefix and delimiter swap', () => {
+    const zpl = '^XA^CD;^CCYYFO10;10YA0N;30;0YFDhelloYFSYXZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.x).toBe(10);
+    expect(props(objects[0]).fontHeight).toBe(30);
+  });
+
+  it('^CC persists across an ^XA boundary within the same parse', () => {
+    const zpl =
+      '^XA^CCYYXZYXAYFO10,10YA0N,30,0YFDhelloYFSYXZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+  });
+
+  it('^CC^ resets the caret prefix back to ^', () => {
+    const zpl = '^XA^CCYYFO10,10YA0N,30,0YFDfirstYFSYCC^^FO50,50^A0N,30,0^FDsecond^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(2);
+    expect(props(objects[0]).content).toBe('first');
+    expect(props(objects[1]).content).toBe('second');
+  });
+
+  it('^CC always consumes the next char as its argument (even if it is ^)', () => {
+    // Spec: ^CC reads exactly one arg char. With `^CC^FO...`, the ^ of
+    // ^FO is consumed as the (no-op) argument; the FO that follows is
+    // no longer a command, so its position is lost.
+    const zpl = '^XA^CC^FO10,10^A0N,30,0^FDhello^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).content).toBe('hello');
+    expect(objects[0]?.x).toBe(0);
+  });
+
+  it('^CD also affects ^GF parameter parsing', () => {
+    // ^GFA;total;total;bpr;data uses the mutated delimiter for the four
+    // params; a wrong split would push the command into browserLimit.
+    const zpl = '^XA^CD;^FO10;10^GFA;6;6;3;111111111111^FS^XZ';
+    const { objects, importReport } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('image');
+    expect(importReport.browserLimit.some((s) => s.startsWith('^GF'))).toBe(false);
+  });
+
+  it('rejects ^CC / ^CT / ^CD args that would collapse role boundaries', () => {
+    // ^CC~ would make caret == tilde (tokenizer cannot distinguish);
+    // ^CD^ would make delimiter == caret (param-split eats command chars).
+    // Invalid args land in partialCmds and the prefix stays unchanged.
+    const zpl = '^XA^CC~^CD^^FO10,10^A0N,30,0^FDhello^FS^XZ';
+    const { objects, importReport } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).content).toBe('hello');
+    expect(importReport.partial).toContain('^CC');
+    expect(importReport.partial).toContain('^CD');
+  });
+
+  it('rejects ^CC / ^CT / ^CD args that are space or non-printable', () => {
+    // Space/control chars cannot serve as prefixes and would silently
+    // break the subsequent stream; reject them up front.
+    const zpl = '^XA^CC ^CT\t^FO10,10^A0N,30,0^FDhello^FS^XZ';
+    const { objects, importReport } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).content).toBe('hello');
+    expect(importReport.partial).toContain('^CC');
+    expect(importReport.partial).toContain('^CT');
+  });
+});
+
 // ── ^IM image reference ───────────────────────────────────────────────────────
 
 describe('parseZPL — ^IM image reference', () => {

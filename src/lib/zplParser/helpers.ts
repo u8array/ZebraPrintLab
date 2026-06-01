@@ -19,19 +19,53 @@ export function firstChar(rest: string): string {
   return (rest.trim()[0] ?? "").toUpperCase();
 }
 
-export function tokenize(zpl: string): { cmd: string; rest: string }[] {
-  const tokens: { cmd: string; rest: string }[] = [];
-  // Split on both ^ and ~ delimiters, preserving the delimiter type.
-  const parts = zpl.split(/(?=[\^~])/);
-  for (const part of parts) {
-    if (part.length < 3) continue;
-    const delimiter = part[0];
-    if (delimiter !== "^" && delimiter !== "~") continue;
-    const cmd = part.slice(1, 3).toUpperCase();
-    const rest = part.slice(3);
-    tokens.push({ cmd, rest });
+/** Live command-prefix chars; the tokenizer reads these on every char
+ *  scan so ^CC/^CT mutations take effect on the very next command. */
+export interface TokenizerChars {
+  caretChar: string;
+  tildeChar: string;
+}
+
+/** Stream tokens incrementally so ^CC/^CT changes mid-parse apply to
+ *  subsequent commands. The caller passes a live ref (typically
+ *  `s.format`) whose `caretChar`/`tildeChar` may be mutated between
+ *  iterations. */
+export function* tokenize(
+  zpl: string,
+  chars: TokenizerChars,
+): Generator<{ cmd: string; rest: string }> {
+  let pos = 0;
+  while (pos < zpl.length) {
+    let cmdStart = -1;
+    for (let i = pos; i < zpl.length; i++) {
+      const ch = zpl[i];
+      if (ch === chars.caretChar || ch === chars.tildeChar) {
+        cmdStart = i;
+        break;
+      }
+    }
+    if (cmdStart === -1 || cmdStart + 3 > zpl.length) return;
+    const cmd = zpl.slice(cmdStart + 1, cmdStart + 3).toUpperCase();
+    // ^CC/^CT/^CD take exactly one argument character; everything after
+    // it belongs to the next command (using the new prefix if the handler
+    // mutates it). Generic commands consume rest until the next delimiter.
+    if (cmd === "CC" || cmd === "CT" || cmd === "CD") {
+      const argChar = zpl[cmdStart + 3] ?? "";
+      pos = cmdStart + 4;
+      yield { cmd, rest: argChar };
+      continue;
+    }
+    let endPos = zpl.length;
+    for (let i = cmdStart + 3; i < zpl.length; i++) {
+      const ch = zpl[i];
+      if (ch === chars.caretChar || ch === chars.tildeChar) {
+        endPos = i;
+        break;
+      }
+    }
+    pos = endPos;
+    yield { cmd, rest: zpl.slice(cmdStart + 3, endPos) };
   }
-  return tokens;
 }
 
 export function int(s: string | undefined, fallback = 0): number {

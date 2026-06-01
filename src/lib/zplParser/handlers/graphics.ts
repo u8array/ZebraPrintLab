@@ -169,11 +169,13 @@ export function createGraphicsHandlers(
         return;
       }
 
-      // Extract params: skip "A," then find 3rd comma to separate params from data
+      // Extract params: skip "A," then find 3rd delimiter to separate params from data.
+      // Respects ^CD-mutated delimiter so ^CD;^GFA;total;total;bpr;data still parses.
+      const delim = s.format.delimiterChar;
       const gfRest = rest.slice(2); // "total,total,bytesPerRow,data..."
       let commaPos = -1;
       for (let n = 0; n < 3; n++) {
-        commaPos = gfRest.indexOf(",", commaPos + 1);
+        commaPos = gfRest.indexOf(delim, commaPos + 1);
         if (commaPos === -1) break;
       }
       if (commaPos === -1) {
@@ -181,7 +183,7 @@ export function createGraphicsHandlers(
         return;
       }
 
-      const gfParams = gfRest.slice(0, commaPos).split(",");
+      const gfParams = gfRest.slice(0, commaPos).split(delim);
       const gfBytesPerRow = int(gfParams[2], 0);
       // Everything after the 3rd comma is the (possibly compressed) graphic data
       const gfRawData = gfRest.slice(commaPos + 1);
@@ -287,7 +289,7 @@ export function createGraphicsHandlers(
       //    (admin pre-loaded). Object gets storedAs.embedInZpl=false and
       //    no cached bitmap; the canvas falls back to a placeholder, the
       //    emitter skips the ~DY preamble but keeps the ^XG reference.
-      const firstComma = rest.indexOf(",");
+      const firstComma = rest.indexOf(s.format.delimiterChar);
       const xgPath = firstComma === -1 ? rest : rest.slice(0, firstComma);
       const parsed = parseStoragePath(xgPath);
       if (!parsed) {
@@ -358,9 +360,10 @@ export function createGraphicsHandlers(
       // KB of hex; we want to avoid splitting that into the rest of
       // the params array. Param layout up to and including bytes-per-
       // row is fixed-arity, so we walk commas until we've found 5.
+      const delim = s.format.delimiterChar;
       const c: number[] = [];
       for (let i = 0; i < rest.length && c.length < 5; i++) {
-        if (rest[i] === ",") c.push(i);
+        if (rest[i] === delim) c.push(i);
       }
       if (c.length < 5) {
         pushBrowserLimit(s.result, `~DY${rest}`);

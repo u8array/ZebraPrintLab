@@ -27,8 +27,8 @@ export type {
 
 /** Parse a ZPL II byte stream into an editable design model. */
 export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
-  const tokens = tokenize(zpl);
   const s = createParserState();
+  const tokens = tokenize(zpl, s.format);
   const {
     objects, labelConfig, printerProfile, variables,
     skipped, partialCmds, browserLimit, unknown,
@@ -79,7 +79,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   Object.assign(handlers, createUnsupportedHandlers(s.result));
 
   for (const { cmd, rest } of tokens) {
-    const p = rest.split(",");
+    const p = rest.split(s.format.delimiterChar);
     const handler = handlers[cmd];
     if (handler) {
       handler(p, rest);

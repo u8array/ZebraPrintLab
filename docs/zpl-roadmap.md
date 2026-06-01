@@ -213,9 +213,9 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 
 | Status | Command | Description | Bucket |
 |:-:|---|---|---|
-| `[ ]` | `^CC` / `~CC` | change caret | `Coming soon` |
-| `[ ]` | `^CD` / `~CD` | change delimiter | `Coming soon` |
-| `[ ]` | `^CT` / `~CT` | change tilde | `Coming soon` |
+| `[x]` | `^CC` / `~CC` | change caret | |
+| `[x]` | `^CD` / `~CD` | change delimiter | |
+| `[x]` | `^CT` / `~CT` | change tilde | |
 | `[ ]` | `^CM` | change memory letter assignment | `Native build` |
 | `[ ]` | `~KB` | kill battery | `Native build` |
 
