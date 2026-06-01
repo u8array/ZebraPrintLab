@@ -1398,10 +1398,17 @@ describe('parseZPL — ^BT TLC39', () => {
     expect(objects[0]?.type).toBe('tlc39');
     const p = props(objects[0]);
     expect(p.content).toBe('123456,ABC');
+    expect(p.moduleWidth).toBe(3);
     expect(p.height).toBe(60);
     expect(p.microPdfRowHeight).toBe(5);
     expect(p.microPdfRows).toBe(3);
     expect(p.rotation).toBe('N');
+  });
+
+  it('falls back to ^BY moduleWidth when ^BT w1 is empty', () => {
+    const zpl = '^XA^FO0,0^BY5^BTN,,3,40,4,4^FD123456,X^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    expect(props(objects[0]).moduleWidth).toBe(5);
   });
 
   it('preserves valid microPdfRows across the Zebra 1-99 range', () => {

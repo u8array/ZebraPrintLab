@@ -67,7 +67,7 @@ export function BarcodeObject({
   if (obj.type === "tlc39") {
     // bwip-js has no native tlc39 encoder; render the Code 39 + MicroPDF417
     // composite ourselves. Goes straight to canvas, bypassing buildBwipOptions.
-    barcodeCanvas = renderTlc39Canvas(obj.props);
+    barcodeCanvas = renderTlc39Canvas(obj.props, scale, dpmm);
     if (!barcodeCanvas) errorMsg = "TLC39 render failed";
   } else {
     const opts = buildBwipOptions(obj, scale, dpmm);

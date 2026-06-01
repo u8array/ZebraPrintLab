@@ -135,6 +135,7 @@ export interface FieldState {
   cbRowHeight: number;
   cbSecurity: CodablockProps["securityLevel"];
   // TLC39 pending
+  tlcModuleWidth: number | undefined;
   tlcHeight: number;
   tlcMicroPdfRowHeight: number;
   tlcMicroPdfRows: number;
@@ -264,6 +265,7 @@ export function createParserState(): ParserState {
       mpdfRowHeight: 10,
       cbRowHeight: 10,
       cbSecurity: "Y",
+      tlcModuleWidth: undefined,
       tlcHeight: 40,
       tlcMicroPdfRowHeight: 4,
       tlcMicroPdfRows: 4,

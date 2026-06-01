@@ -999,6 +999,7 @@ function getUprightDisplaySize(
  *  identifier (if any) is stripped from the serial before MicroPDF
  *  encoding. */
 export function splitTlc39Content(content: string): { eci: string; serial: string } {
+  if (!content) return { eci: "", serial: "" };
   const comma = content.indexOf(",");
   if (comma < 0) return { eci: content, serial: "" };
   const eci = content.slice(0, comma);
@@ -1009,6 +1010,7 @@ export function splitTlc39Content(content: string): { eci: string; serial: strin
 
 interface Tlc39RenderProps {
   content: string;
+  moduleWidth: number;
   height: number;
   microPdfRowHeight: number;
 }
@@ -1016,20 +1018,30 @@ interface Tlc39RenderProps {
 /** Render TLC39 as a composite canvas: MicroPDF417 block on top
  *  (serial) and Code 39 base line below (ECI + "T" linkage flag).
  *  bwip-js has no native TLC39 encoder, so this composes two standard
- *  encoders per the TIA spec. Returns null on encoding failure. */
-export function renderTlc39Canvas(props: Tlc39RenderProps): HTMLCanvasElement | null {
+ *  encoders per the TIA spec. `scale` is the bwip-js pixel scale
+ *  (matches the canvas zoom) so the composite stays crisp at any
+ *  view-level. Returns null on encoding failure. */
+export function renderTlc39Canvas(
+  props: Tlc39RenderProps,
+  scale: number,
+  dpmm: number,
+): HTMLCanvasElement | null {
   const { eci, serial } = splitTlc39Content(props.content);
   const code39Text = serial ? `${eci}T` : eci;
+  // Match the 1D-barcode render pattern: pick an integer per-module
+  // pixel scale tied to the editor zoom and dpmm so module edges stay
+  // sharp at any view-level.
+  const bwipScale = get1DBwipScale(props.moduleWidth, scale, dpmm);
   // bwip-js `height` is in millimetres at 1x; rough conversion from
-  // the prop's dot value uses /4 (assumes ~8 dpmm / 2x scale) so the
-  // rendered Code 39 height roughly matches print expectations.
+  // the prop's dot value uses /4 (assumes ~8 dpmm) so the rendered
+  // Code 39 height roughly matches print expectations.
   const code39Height = Math.max(4, Math.round(props.height / 4));
   const code39Canvas = document.createElement("canvas");
   try {
     bwipjs.toCanvas(code39Canvas, {
       bcid: "code39",
       text: code39Text || " ",
-      scale: BWIP_SCALE,
+      scale: bwipScale,
       height: code39Height,
       includetext: false,
     } as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
@@ -1044,7 +1056,7 @@ export function renderTlc39Canvas(props: Tlc39RenderProps): HTMLCanvasElement | 
     bwipjs.toCanvas(mpdfCanvas, {
       bcid: "micropdf417",
       text: serial,
-      scale: BWIP_SCALE,
+      scale: bwipScale,
       rowheight: Math.max(2, props.microPdfRowHeight),
     } as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
   } catch {
