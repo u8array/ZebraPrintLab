@@ -1,11 +1,13 @@
-name: PR checks
+name: CI
 
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
 
 jobs:
-  check:
+  lint-test-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
