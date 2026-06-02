@@ -20,10 +20,23 @@ import { objectRotation } from "../../registry/rotation";
 import { rotatedGroupTransform } from "./rotatedGroupTransform";
 import { buildEanUpcDigitOverlay } from "./eanUpcDigitNodes";
 import {
+  COURIER_BOLD_EM_BOTTOM_PAD,
+  COURIER_BOLD_INK_TO_EM,
+  EAN_UPC_TYPES,
   QR_FO_Y_OFFSET_DOTS,
   QR_FT_MODULE_OFFSET,
-  EAN_UPC_TYPES,
 } from "./bwipConstants";
+
+/** Resolve a registry value that may be a constant or a function of
+ *  moduleWidth. Mirrors the pattern formatHri uses for content. */
+function resolveMwValue<T>(
+  v: T | ((moduleWidth: number) => T) | undefined,
+  moduleWidth: number,
+): T | undefined {
+  return typeof v === "function"
+    ? (v as (mw: number) => T)(moduleWidth)
+    : v;
+}
 
 export function BarcodeObject({
   obj,
@@ -192,22 +205,23 @@ export function BarcodeObject({
     // through with the default; their branches don't render HRI text anyway).
     const moduleWidth =
       (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
-    const textFontSize = Math.max(dotsToPx(moduleWidth * 10, scale, dpmm), 6);
     const textGap = Math.max(dotsToPx(5, scale, dpmm), 3);
     const rawContent = (obj.props as { content?: string }).content ?? "";
 
-    // HRI behaviour comes from the registry — per-type formatHri /
-    // textAbove / aboveGapDots. Defaults: raw content, below bars,
-    // textGap. Keeps BarcodeObject type-agnostic for the generic 1D
-    // HRI path; EAN/UPC multi-digit-split branches below consume the
-    // same formatHri output (displayText) as the source string.
     const hri = ObjectRegistry[obj.type]?.hri;
+    // Function-form fontDots returns ink dots; inflate to Konva em.
+    // The mw * 10 fallback is em-calibrated already.
+    const fontDots = hri?.fontDots
+      ? hri.fontDots(moduleWidth) * COURIER_BOLD_INK_TO_EM
+      : moduleWidth * 10;
+    const textFontSize = Math.max(dotsToPx(fontDots, scale, dpmm), 6);
     const displayText = hri?.formatHri?.(rawContent) ?? rawContent;
     const isTextAbove = hri?.textAbove ?? false;
     // 3px floor matches textGap so HRI stays legible at very small
     // scales regardless of which dots value the spec calls for.
-    const aboveGapPx = hri?.aboveGapDots !== undefined
-      ? Math.max(dotsToPx(hri.aboveGapDots, scale, dpmm), 3)
+    const gapDots = resolveMwValue(hri?.aboveGapDots, moduleWidth);
+    const aboveGapPx = gapDots !== undefined
+      ? Math.max(dotsToPx(gapDots, scale, dpmm), 3)
       : textGap;
 
     // ── 1D barcode with HRI overlay (all 4 rotations, both EAN/UPC and
@@ -264,8 +278,10 @@ export function BarcodeObject({
         // ref stays undefined and the bars+text just scale together
         // during a rotated resize drag — minor visual nit, no broken
         // print output.
+        // Compensate Courier's em-bottom padding only on the ink-height path.
+        const inkShiftPx = hri?.fontDots ? textFontSize * COURIER_BOLD_EM_BOTTOM_PAD : 0;
         const textY = isTextAbove
-          ? ub.barTopPx - textFontSize - aboveGapPx
+          ? ub.barTopPx - textFontSize - aboveGapPx + inkShiftPx
           : ub.barTopPx + ub.barH + textGap;
         overlayContent = (
           <Text

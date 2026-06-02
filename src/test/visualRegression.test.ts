@@ -12,7 +12,7 @@ import {
   buildBwipOptions,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
-import { QR_FO_Y_OFFSET_DOTS, UPC_SUPP_TEXT_ZONE_DOTS } from "../components/Canvas/bwipConstants";
+import { QR_FO_Y_OFFSET_DOTS, upcSuppTextZoneDots } from "../components/Canvas/bwipConstants";
 
 const FIXTURES_DIR = path.resolve(
   process.cwd(),
@@ -127,7 +127,7 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
         obj.type === "qrcode"
           ? obj.y + QR_FO_Y_OFFSET_DOTS
           : obj.type === "upcEanExtension" && obj.props.printInterpretation
-            ? obj.y - UPC_SUPP_TEXT_ZONE_DOTS
+            ? obj.y - upcSuppTextZoneDots(obj.props.moduleWidth)
             : obj.y;
       // bwip now always renders upright. Apply the rotated-Group
       // transform via the 2D ctx so the test matches what Konva paints
