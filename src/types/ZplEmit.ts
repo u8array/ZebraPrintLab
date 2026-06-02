@@ -49,4 +49,8 @@ export interface HriBehavior {
   aboveGapDots?: number;
   /** Transform raw content into the displayed HRI string. Default: identity. */
   formatHri?: (content: string) => string;
+  /** Fixed HRI font height in dots, overriding the generic
+   *  `moduleWidth * 10` formula. Use when the symbology spec mandates a
+   *  glyph size independent of bar width (^BS supplement digits). */
+  fontDots?: number;
 }

@@ -21,6 +21,12 @@ export const LOGMARS_TEXT_ABOVE_GAP_DOTS = 10;
 // standard 5-dot textGap. Empirically ~2 dots.
 export const UPC_SUPP_TEXT_ABOVE_GAP_DOTS = 2;
 
+// ^BS supplement HRI glyph height in dots. Constant per spec (small OCR-B
+// digits, independent of moduleWidth), unlike LOGMARS where font scales
+// with bar width. Derived from UPC_SUPP_TEXT_ZONE_DOTS minus the gap:
+// 18 - 2 = 16.
+export const UPC_SUPP_TEXT_FONT_DOTS = 16;
+
 // Total LOGMARS text-zone reserved by firmware (regardless of printInterpretation):
 // glyph height + LOGMARS_TEXT_ABOVE_GAP_DOTS. Empirically 20 dots — used as part
 // of the ZPL-correct bbox so selection-handles match the printed footprint.

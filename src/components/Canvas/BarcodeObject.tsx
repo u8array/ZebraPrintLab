@@ -192,16 +192,21 @@ export function BarcodeObject({
     // through with the default; their branches don't render HRI text anyway).
     const moduleWidth =
       (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
-    const textFontSize = Math.max(dotsToPx(moduleWidth * 10, scale, dpmm), 6);
     const textGap = Math.max(dotsToPx(5, scale, dpmm), 3);
     const rawContent = (obj.props as { content?: string }).content ?? "";
 
-    // HRI behaviour comes from the registry — per-type formatHri /
-    // textAbove / aboveGapDots. Defaults: raw content, below bars,
-    // textGap. Keeps BarcodeObject type-agnostic for the generic 1D
-    // HRI path; EAN/UPC multi-digit-split branches below consume the
-    // same formatHri output (displayText) as the source string.
+    // HRI behaviour comes from the registry, per-type formatHri /
+    // textAbove / aboveGapDots / fontDots. Defaults: raw content, below
+    // bars, textGap, font = moduleWidth * 10 dots. Keeps BarcodeObject
+    // type-agnostic for the generic 1D HRI path; EAN/UPC multi-digit-split
+    // branches below consume the same formatHri output (displayText) as
+    // the source string.
     const hri = ObjectRegistry[obj.type]?.hri;
+    // ^BS pins fontDots to a constant so the supplement digits stay
+    // at the spec OCR-B size regardless of moduleWidth changes from
+    // resize, where moduleWidth * 10 would over-scale the glyph.
+    const fontDots = hri?.fontDots ?? moduleWidth * 10;
+    const textFontSize = Math.max(dotsToPx(fontDots, scale, dpmm), 6);
     const displayText = hri?.formatHri?.(rawContent) ?? rawContent;
     const isTextAbove = hri?.textAbove ?? false;
     // 3px floor matches textGap so HRI stays legible at very small
