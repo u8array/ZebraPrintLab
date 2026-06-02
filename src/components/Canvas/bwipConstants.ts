@@ -5,21 +5,49 @@ export const QR_FT_MODULE_OFFSET = 3;
 // (even with printInterpretation=false). Verified at 8 and 12 dpmm: constant 13 dots.
 export const EAN_TEXT_ZONE_DOTS = 13;
 
-// ^BS UPC/EAN supplements print the digits ABOVE the bars (Zebra spec), with
-// a larger reserved zone than the main EAN/UPC text band. Measured against
-// Labelary for FO 50,50 ^BSN,80,Y: bbox top sits 18 dots above the FO anchor
-// (bbox height 98 = bar height 80 + 18).
-export const UPC_SUPP_TEXT_ZONE_DOTS = 18;
-
 // LOGMARS renders the human-readable line ABOVE the bars (per spec).
 // Empirically Labelary leaves ~10 dots between visible text bottom and bar top,
 // wider than the standard textGap used for text below other 1D barcodes.
 export const LOGMARS_TEXT_ABOVE_GAP_DOTS = 10;
 
-// ^BS UPC/EAN supplement: text sits tight against the bars in Labelary,
-// noticeably tighter than logmars and even slightly tighter than the
-// standard 5-dot textGap. Empirically ~2 dots.
-export const UPC_SUPP_TEXT_ABOVE_GAP_DOTS = 2;
+// ^BS UPC/EAN supplement: text and zone scale in discrete Font 0
+// magnification steps with moduleWidth, not linearly. Empirically derived
+// from Labelary PNGs at 8 dpmm with ^BSN,80,Y ^FD51999 across mw 1-10;
+// font ink height and gap-to-bar both step at the same mw thresholds.
+const UPC_SUPP_SIZE_STEPS: { maxMw: number; font: number; gap: number }[] = [
+  { maxMw: 1, font: 7, gap: 2 },
+  { maxMw: 2, font: 14, gap: 4 },
+  { maxMw: 7, font: 21, gap: 3 },
+];
+const UPC_SUPP_SIZE_FALLBACK = { font: 44, gap: 5 } as const;
+
+function upcSuppStep(moduleWidth: number): { font: number; gap: number } {
+  return (
+    UPC_SUPP_SIZE_STEPS.find((s) => moduleWidth <= s.maxMw) ??
+    UPC_SUPP_SIZE_FALLBACK
+  );
+}
+
+export function upcSuppFontDots(moduleWidth: number): number {
+  return upcSuppStep(moduleWidth).font;
+}
+
+export function upcSuppAboveGapDots(moduleWidth: number): number {
+  return upcSuppStep(moduleWidth).gap;
+}
+
+export function upcSuppTextZoneDots(moduleWidth: number): number {
+  const s = upcSuppStep(moduleWidth);
+  return s.font + s.gap;
+}
+
+// Courier New Bold (the HRI overlay face) cap height is ~0.583 of the em
+// square, and the digit baseline leaves ~22% empty em below the visible
+// ink. Used by BarcodeObject to inflate ink-height fontDots into Konva
+// em-fontSize and to shift the text down so the visible gap to the bar
+// matches the spec.
+export const COURIER_BOLD_INK_TO_EM = 1 / 0.583;
+export const COURIER_BOLD_EM_BOTTOM_PAD = 0.22;
 
 // Total LOGMARS text-zone reserved by firmware (regardless of printInterpretation):
 // glyph height + LOGMARS_TEXT_ABOVE_GAP_DOTS. Empirically 20 dots — used as part

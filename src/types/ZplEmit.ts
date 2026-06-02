@@ -45,8 +45,14 @@ export interface HriBehavior {
   /** True when the HRI text sits above the bars (logmars spec, ^BS). */
   textAbove?: boolean;
   /** Gap in dots between the bar edge and the text glyph. Applies to
-   *  both the upright above-bars gap AND the side gap on rotated R/B/I. */
-  aboveGapDots?: number;
+   *  both the upright above-bars gap AND the side gap on rotated R/B/I.
+   *  Pass a function when the gap depends on moduleWidth (^BS). */
+  aboveGapDots?: number | ((moduleWidth: number) => number);
   /** Transform raw content into the displayed HRI string. Default: identity. */
   formatHri?: (content: string) => string;
+  /** HRI glyph ink height in dots as a function of moduleWidth, overriding
+   *  the generic `moduleWidth * 10` formula. Use when the symbology uses
+   *  discrete Font 0 magnification steps instead of continuous scaling
+   *  (^BS supplement digits). */
+  fontDots?: (moduleWidth: number) => number;
 }

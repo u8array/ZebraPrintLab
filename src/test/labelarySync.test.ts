@@ -6,7 +6,7 @@ import {
   buildBwipOptions,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
-import { UPC_SUPP_TEXT_ZONE_DOTS } from "../components/Canvas/bwipConstants";
+import { upcSuppTextZoneDots } from "../components/Canvas/bwipConstants";
 import { ObjectRegistry } from "../registry";
 import { objectRotation } from "../registry/rotation";
 import { defined } from "./helpers";
@@ -115,7 +115,7 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
           // ^BS bbox top sits above the FO anchor by the supplement
           // text zone when printInterpretation=Y; the bars themselves
           // still start at obj.y. With f=N the bbox starts at FO.
-          visualY -= UPC_SUPP_TEXT_ZONE_DOTS;
+          visualY -= upcSuppTextZoneDots(obj.props.moduleWidth);
         }
       }
 

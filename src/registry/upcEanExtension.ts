@@ -1,6 +1,9 @@
 import { createBarcode1DCore, type Barcode1DCoreConfig } from './barcode1d';
 import { formatUpcEanExtensionHri } from './hriFormatters';
-import { UPC_SUPP_TEXT_ABOVE_GAP_DOTS } from '../components/Canvas/bwipConstants';
+import {
+  upcSuppAboveGapDots,
+  upcSuppFontDots,
+} from '../components/Canvas/bwipConstants';
 export type { Barcode1DProps as UpcEanExtensionProps } from './barcode1d';
 
 /** UPC/EAN extension barcode (^BS) — the 2- or 5-digit supplement
@@ -26,7 +29,8 @@ export const upcEanExtensionCoreConfig: Barcode1DCoreConfig = {
   },
   hri: {
     textAbove: true,
-    aboveGapDots: UPC_SUPP_TEXT_ABOVE_GAP_DOTS,
+    aboveGapDots: upcSuppAboveGapDots,
+    fontDots: upcSuppFontDots,
     formatHri: formatUpcEanExtensionHri,
   },
 };
