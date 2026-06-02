@@ -34,7 +34,7 @@ import {
   MICROPDF417_PX_PER_ROW,
   MICROPDF417_QUIET_ZONE_ROWS,
   PLESSEY_BWIP_TO_ZEBRA_WIDTH_RATIO,
-  UPC_SUPP_TEXT_ZONE_DOTS,
+  upcSuppTextZoneDots,
 } from "./bwipConstants";
 
 /**
@@ -403,6 +403,11 @@ export function buildBwipOptions(
         text,
         scale,
         height: 10,
+        // bwip-js defaults includetext=true for ean2/ean5 and bakes the
+        // digits into the bitmap; we render the HRI via Konva so it can
+        // follow Zebra's Font 0 magnification steps and stay aligned
+        // under all four rotations.
+        includetext: false,
       };
       break;
     }
@@ -684,7 +689,9 @@ export function getDisplaySize(
   // ships a fixed text guard even when N).
   const textZoneDots =
     obj.type === "upcEanExtension"
-      ? obj.props.printInterpretation ? UPC_SUPP_TEXT_ZONE_DOTS : 0
+      ? obj.props.printInterpretation
+        ? upcSuppTextZoneDots(obj.props.moduleWidth)
+        : 0
       : TEXT_ZONE_DOTS_BY_TYPE[obj.type] ?? 0;
   const textZonePx = dotsToPx(textZoneDots, scale, dpmm);
   // Source of truth for textAbove is the registry's HriBehavior — same
@@ -869,7 +876,9 @@ function getUprightDisplaySize(
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
       const extraPx = bwipSc === 1 ? 1 : 0;
       const w = ((cw - extraPx) / bwipSc) * modulePx;
-      const zone = obj.props.printInterpretation ? UPC_SUPP_TEXT_ZONE_DOTS : 0;
+      const zone = obj.props.printInterpretation
+        ? upcSuppTextZoneDots(obj.props.moduleWidth)
+        : 0;
       const h = dotsToPx(obj.props.height + zone, scale, dpmm);
       return { w, h };
     }
