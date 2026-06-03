@@ -104,6 +104,10 @@ export interface FieldState {
   pendingFD: string | null;
   /** ^FR: single-field reverse, reset on ^FS / new ^FO / ^FT. */
   frActive: boolean;
+  /** ^FP direction (H/V/R); per-field, reset to 'H' at ^FS. */
+  fpDirection: "H" | "V" | "R";
+  /** ^FP inter-character gap in dots; per-field, reset to 0 at ^FS. */
+  fpCharGap: number;
   // Text-field cached params
   textRot: TextProps["rotation"];
   textH: number;
@@ -241,6 +245,8 @@ export function createParserState(): ParserState {
       fieldType: null,
       pendingFD: null,
       frActive: false,
+      fpDirection: "H",
+      fpCharGap: 0,
       textRot: "N",
       textH: 30,
       textW: 0,
