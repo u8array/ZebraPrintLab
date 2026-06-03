@@ -89,6 +89,16 @@ function EllipseSelectionOverlay({
  *  Every Text node in the field (single-line or per-^FB-line) uses
  *  the same font / scale / rotation / fill / selection-stroke; only
  *  `key`, `text`, and `(x, y)` vary across them. */
+/** Apply the canvas-side projection of ^FP to the raw text. V stacks
+ *  glyphs (one per line) by injecting line breaks; R reverses the
+ *  glyph order. H leaves the text untouched. Combined V+R is not a
+ *  spec form since ^FP's direction parameter is a single letter. */
+function applyFpToContent(content: string, fpDirection: "H" | "V" | "R" | undefined): string {
+  if (fpDirection === "V") return [...content].join("\n");
+  if (fpDirection === "R") return [...content].reverse().join("");
+  return content;
+}
+
 interface BaseTextProps {
   fontSize: number;
   fontFamily: string;
@@ -98,6 +108,7 @@ interface BaseTextProps {
   fill: string;
   stroke: string | undefined;
   strokeWidth: number;
+  letterSpacing?: number;
 }
 
 /** Render a text/serial field as either a single Konva `<Text>` or,
@@ -395,6 +406,15 @@ function KonvaObjectInner({
       B: 270,
     };
 
+    // ^FP: V stacks glyphs as newlines, R reverses order, gap maps to
+    // letterSpacing in px. Labelary ignores gap in V mode, so we mirror
+    // that (still round-tripping the value through ZPL emit).
+    const fpDirection = obj.type === "text" ? obj.props.fpDirection : undefined;
+    const fpCharGap = obj.type === "text" ? obj.props.fpCharGap ?? 0 : 0;
+    const fpContent = applyFpToContent(content, fpDirection);
+    const fpLetterSpacingPx =
+      fpDirection !== "V" && fpCharGap > 0 ? dotsToPx(fpCharGap, scale, dpmm) : 0;
+
     if (obj.type === "text" && obj.props.reverse) {
       // ZPL `^A0,h,w` lets `w` differ from `h` to stretch each glyph
       // horizontally. `w=0` is Zebra shorthand for "match the height".
@@ -435,12 +455,13 @@ function KonvaObjectInner({
             // before @font-face finished loading sticks and the rotated
             // bbox lands a few dots off.
             key={fontVersion}
-            text={content}
+            text={fpContent}
             fontSize={fontSizePx}
             fontFamily={fontFamily}
             fontStyle="bold"
             scaleX={fontScaleX}
             fill="#ffffff"
+            letterSpacing={fpLetterSpacingPx}
             y={0}
           />
         </Group>
@@ -481,7 +502,7 @@ function KonvaObjectInner({
       >
         <TextFieldContent
           obj={obj as TextFieldObj}
-          content={content}
+          content={fpContent}
           base={{
             fontSize: fontSizePx,
             fontFamily,
@@ -491,6 +512,7 @@ function KonvaObjectInner({
             fill: "#000000",
             stroke: isSelected ? colors.selection : undefined,
             strokeWidth: isSelected ? 1 : 0,
+            letterSpacing: fpLetterSpacingPx,
           }}
           scale={scale}
           dpmm={dpmm}
