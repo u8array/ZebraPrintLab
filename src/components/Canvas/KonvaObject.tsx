@@ -4,7 +4,7 @@ import { lookupBoundVariable, shouldShowFallbackTint } from "../../lib/variableB
 import { BarcodeObject } from "./BarcodeObject";
 import { LineObject } from "./LineObject";
 import { ImageObject } from "./ImageObject";
-import Konva from "konva";
+import type Konva from "konva";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { outlineInset } from "../../lib/shapeGeometry";
 import { reverseShapeStyle } from "./reverseShapeStyle";
@@ -85,20 +85,25 @@ function EllipseSelectionOverlay({
   );
 }
 
-/** Shared `<Text>` props baked once per render of a text/serial field.
- *  Every Text node in the field (single-line or per-^FB-line) uses
- *  the same font / scale / rotation / fill / selection-stroke; only
- *  `key`, `text`, and `(x, y)` vary across them. */
-/** Apply the canvas-side projection of ^FP to the raw text. V stacks
- *  glyphs (one per line) by injecting line breaks; R reverses the
- *  glyph order. H leaves the text untouched. Combined V+R is not a
- *  spec form since ^FP's direction parameter is a single letter. */
+/** Canvas-side projection of ^FP. V+R never coincide: ^FP's
+ *  direction is a single letter. */
 function applyFpToContent(content: string, fpDirection: "H" | "V" | "R" | undefined): string {
   if (fpDirection === "V") return [...content].join("\n");
   if (fpDirection === "R") return [...content].reverse().join("");
   return content;
 }
 
+/** Per Labelary pixel scan: a reversed block's left edge sits
+ *  `FPR_ANCHOR_LEFT_PADDING_RATIO × fontHeight` dots right of
+ *  `FO − totalAdvance`. PrintLab Bold advance widths are calibrated
+ *  to CG Triumvirate (assets/fonts/NOTICE.md), so a fontHeight
+ *  factor stays stable across sizes. */
+const FPR_ANCHOR_LEFT_PADDING_RATIO = 0.8;
+
+/** Shared `<Text>` props baked once per render of a text/serial field.
+ *  Every Text node in the field (single-line or per-^FB-line) uses
+ *  the same font / scale / rotation / fill / selection-stroke; only
+ *  `key`, `text`, and `(x, y)` vary across them. */
 interface BaseTextProps {
   fontSize: number;
   fontFamily: string;
@@ -109,9 +114,8 @@ interface BaseTextProps {
   stroke: string | undefined;
   strokeWidth: number;
   letterSpacing?: number;
-  /** Horizontal shift in CSS px applied to every glyph; non-zero for
-   *  ^FPR so the reversed block anchors with the original first data
-   *  character (visually rightmost) at ^FO. */
+  /** Horizontal CSS-px shift applied to every glyph (used by the
+   *  ^FPR anchor offset). */
   offsetXPx?: number;
 }
 
@@ -411,48 +415,20 @@ function KonvaObjectInner({
       B: 270,
     };
 
-    // ^FP: V stacks glyphs as newlines, R reverses order, gap maps to
-    // letterSpacing in px. Labelary ignores gap in V mode, so we mirror
-    // that (still round-tripping the value through ZPL emit).
+    // Labelary ignores ^FP gap in V mode; mirror that on canvas while
+    // still round-tripping the value through ZPL emit.
     const fpDirection = obj.type === "text" ? obj.props.fpDirection : undefined;
     const fpCharGap = obj.type === "text" ? obj.props.fpCharGap ?? 0 : 0;
     const fpContent = applyFpToContent(content, fpDirection);
     const fpLetterSpacingPx =
       fpDirection !== "V" && fpCharGap > 0 ? dotsToPx(fpCharGap, scale, dpmm) : 0;
-    // R-mode: Labelary anchors the original first data character (now
-    // displayed rightmost) at ^FO, so the reversed block extends LEFT
-    // of FO. Shift by (total render width − last char's own width) so
-    // the rightmost glyph's left edge lands at FO. Using the proper
-    // per-char metric (not inkWidth/n) matters because A0 is
-    // proportional: a wide 'A' or 'M' as the data's first char would
-    // otherwise leave the block too far left.
-    // R-mode: Labelary places the reversed block such that the
-    // block's LEFT edge lands `FPR_ANCHOR_LEFT_PADDING_RATIO × fontH`
-    // dots right of (FO − totalAdvance). Verified against a Labelary
-    // pixel scan: at fontH=50 with content "ABC", the block's left
-    // ink edge sits at FO − (totalAdvance − ratio×fontH) = FO−42 dot
-    // when fullProbe.width() ≈ 82, matching Labelary's dot 208.
-    // PrintLab ZPL Bold advance widths are calibrated to Zebra CG
-    // Triumvirate (see assets/fonts/NOTICE.md), so the ratio scales
-    // with fontH without re-tuning per font size.
-    const FPR_ANCHOR_LEFT_PADDING_RATIO = 0.8;
-    const fpShiftXPx = (() => {
-      if (fpDirection !== "R" || content.length <= 1) return 0;
-      const probeOpts = {
-        fontSize: fontSizePx,
-        fontFamily,
-        fontStyle: "bold",
-        scaleX: fontScaleX,
-        letterSpacing: fpLetterSpacingPx,
-      };
-      const fullProbe = new Konva.Text({ ...probeOpts, text: fpContent });
-      const anchorWidthPx = dotsToPx(
-        obj.props.fontHeight * FPR_ANCHOR_LEFT_PADDING_RATIO,
-        scale,
-        dpmm,
-      );
-      return -(fullProbe.width() - anchorWidthPx);
-    })();
+    let fpShiftXPx = 0;
+    if (fpDirection === "R" && content.length > 1) {
+      const anchorPadDots = obj.props.fontHeight * FPR_ANCHOR_LEFT_PADDING_RATIO;
+      const reservedPx = dotsToPx(textMetrics.inkWidthDots - anchorPadDots, scale, dpmm);
+      const gapPx = (content.length - 1) * fpLetterSpacingPx;
+      fpShiftXPx = -(reservedPx + gapPx);
+    }
 
     if (obj.type === "text" && obj.props.reverse) {
       // ZPL `^A0,h,w` lets `w` differ from `h` to stretch each glyph
