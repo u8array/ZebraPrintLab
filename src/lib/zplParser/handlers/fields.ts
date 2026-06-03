@@ -177,11 +177,12 @@ export function createFieldHandlers(
 
     // ── Field-direction modifier (CJK vertical / RTL reverse) ─────────────
     // ^FP{d},{g}  d ∈ H|V|R, g = inter-char gap in dots (default 0).
-    // Per-field; ^FS resets back to H/0.
+    // Per-field; ^FS resets back to H/0. Gap is clamped to the spec's
+    // 0..9999 range so a malformed import can't corrupt the prop.
     FP(p) {
       const d = (p[0] ?? "H").toUpperCase();
       s.field.fpDirection = d === "V" || d === "R" ? d : "H";
-      s.field.fpCharGap = int(p[1], 0);
+      s.field.fpCharGap = Math.max(0, Math.min(9999, int(p[1], 0)));
     },
 
     // ── Label home (origin offset) ────────────────────────────────────────

@@ -54,6 +54,16 @@ export const text: ObjectTypeCore<TextProps> = {
   // by sx and persist the result. `effectiveScale` flips sx/sy for R/B
   // rotations so the user's screen-vertical drag stays attached to
   // fontHeight regardless of how Konva orients the glyphs.
+  // Canonical un-emit shape so round-trips stay diff-free.
+  normalizeChanges: (_obj, changes) => {
+    const nextProps = changes.props as Partial<TextProps> | undefined;
+    if (!nextProps) return changes;
+    let patched = nextProps;
+    if (patched.fpDirection === "H") patched = { ...patched, fpDirection: undefined };
+    if (patched.fpCharGap === 0) patched = { ...patched, fpCharGap: undefined };
+    return patched === nextProps ? changes : { ...changes, props: patched };
+  },
+
   commitTransform: (obj, ctx) => {
     const oldH = obj.props.fontHeight;
     const oldW = obj.props.fontWidth > 0 ? obj.props.fontWidth : oldH;
@@ -70,9 +80,7 @@ export const text: ObjectTypeCore<TextProps> = {
     const fbCmd = p.blockWidth
       ? `^FB${p.blockWidth},${p.blockLines ?? 1},${p.blockLineSpacing ?? 0},${p.blockJustify ?? "L"},0`
       : "";
-    // ^FP only emits when a non-default direction or a positive gap is
-    // set. The spec accepts `^FPd,g`; we always emit the gap so the
-    // round-trip is unambiguous (Labelary tolerates the trailing 0).
+    // Always emit the gap so the round-trip is unambiguous.
     const fpDir = p.fpDirection ?? "H";
     const fpGap = p.fpCharGap ?? 0;
     const fpCmd = fpDir !== "H" || fpGap > 0 ? `^FP${fpDir},${fpGap}` : "";
