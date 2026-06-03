@@ -14,7 +14,6 @@ export function createUnsupportedHandlers(
     // Noops — present in stream, no design impact.
     FV: noop,
     FM: noop,
-    FP: noop,
     JA: noop,
     JM: noop,
     JC: noop,

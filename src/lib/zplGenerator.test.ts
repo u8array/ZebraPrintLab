@@ -557,6 +557,34 @@ describe('generateZPL — text object', () => {
   });
 });
 
+describe('generateZPL — ^FP field-direction modifier', () => {
+  it('omits ^FP for the default horizontal layout', () => {
+    const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FDHello^FS^XZ', 8);
+    expect(generateZPL(BASE_LABEL, objects)).not.toContain('^FP');
+  });
+
+  it('emits ^FPV,0 for vertical text', () => {
+    const { objects } = parseZPL('^XA^FO10,20^A0N,30,30^FPV^FDABC^FS^XZ', 8);
+    const zpl = generateZPL(BASE_LABEL, objects);
+    expect(zpl).toContain('^FPV,0');
+    expect(zpl.indexOf('^FPV')).toBeLessThan(zpl.indexOf('^A0'));
+  });
+
+  it('emits gap on horizontal layout when only ^FP,g was set', () => {
+    const { objects } = parseZPL('^XA^FO10,20^A0N,30,30^FP,4^FDABC^FS^XZ', 8);
+    const zpl = generateZPL(BASE_LABEL, objects);
+    expect(zpl).toContain('^FPH,4');
+  });
+
+  it('round-trips ^FPV,2 through parser + generator', () => {
+    const original = '^XA^FO50,50^A0N,30,30^FPV,2^FDABC^FS^XZ';
+    const { objects } = parseZPL(original, 8);
+    const zpl = generateZPL(BASE_LABEL, objects);
+    expect(zpl).toContain('^FPV,2');
+    expect(zpl).toContain('^FDABC');
+  });
+});
+
 describe('generateZPL — box object', () => {
   it('emits ^GB for a box object', () => {
     const { objects } = parseZPL('^XA^FO10,20^GB200,100,3,B,0^FS^XZ', 8);
