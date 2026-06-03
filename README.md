@@ -116,21 +116,21 @@ Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable conte
 
 ## Coverage
 
-94 of the 202 ZPL II commands tracked in the [roadmap](docs/zpl-roadmap.md) are supported today. Categorical breakdown:
+97 of the 202 ZPL II commands tracked in the [roadmap](docs/zpl-roadmap.md) are supported today. Categorical breakdown:
 
 | Area | Supported |
 |---|---|
 | Layout & flow | 16 / 16 |
 | Templates & variables | 4 / 4 |
 | Barcodes | 28 / 28 |
-| Fields | 15 / 20 |
+| Fields | 16 / 20 |
 | Encoding & language | 3 / 4 |
 | Clock & time | 2 / 3 |
-| Identity & access | 2 / 3 |
+| Identity & access | 3 / 3 |
 | Graphics | 6 / 12 |
 | Media & feed | 4 / 10 |
 | Text & fonts | 6 / 14 |
-| Print quality | 3 / 14 |
+| Print quality | 4 / 14 |
 | Configuration & persistence | 3 / 5 |
 | Hardware / Host comm / RFID / Network | 0 / 67 |
 
