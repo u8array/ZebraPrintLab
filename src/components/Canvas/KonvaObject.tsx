@@ -4,7 +4,7 @@ import { lookupBoundVariable, shouldShowFallbackTint } from "../../lib/variableB
 import { BarcodeObject } from "./BarcodeObject";
 import { LineObject } from "./LineObject";
 import { ImageObject } from "./ImageObject";
-import type Konva from "konva";
+import Konva from "konva";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { outlineInset } from "../../lib/shapeGeometry";
 import { reverseShapeStyle } from "./reverseShapeStyle";
@@ -109,6 +109,10 @@ interface BaseTextProps {
   stroke: string | undefined;
   strokeWidth: number;
   letterSpacing?: number;
+  /** Horizontal shift in CSS px applied to every glyph; non-zero for
+   *  ^FPR so the reversed block anchors with the original first data
+   *  character (visually rightmost) at ^FO. */
+  offsetXPx?: number;
 }
 
 /** Render a text/serial field as either a single Konva `<Text>` or,
@@ -137,12 +141,13 @@ function TextFieldContent({
   dpmm: number;
   fontVersion: number;
 }) {
+  const shift = base.offsetXPx ?? 0;
   if (obj.type !== "text") {
-    return <Text key={fontVersion} x={0} y={0} text={content} {...base} />;
+    return <Text key={fontVersion} x={shift} y={0} text={content} {...base} />;
   }
   const { blockWidth, blockJustify, blockLineSpacing, fontHeight, fontWidth } = obj.props;
   if (!blockWidth) {
-    return <Text key={fontVersion} x={0} y={0} text={content} {...base} />;
+    return <Text key={fontVersion} x={shift} y={0} text={content} {...base} />;
   }
   const justify = blockJustify ?? "L";
   const lineStepPx = base.fontSize + dotsToPx(blockLineSpacing ?? 0, scale, dpmm);
@@ -414,6 +419,40 @@ function KonvaObjectInner({
     const fpContent = applyFpToContent(content, fpDirection);
     const fpLetterSpacingPx =
       fpDirection !== "V" && fpCharGap > 0 ? dotsToPx(fpCharGap, scale, dpmm) : 0;
+    // R-mode: Labelary anchors the original first data character (now
+    // displayed rightmost) at ^FO, so the reversed block extends LEFT
+    // of FO. Shift by (total render width − last char's own width) so
+    // the rightmost glyph's left edge lands at FO. Using the proper
+    // per-char metric (not inkWidth/n) matters because A0 is
+    // proportional: a wide 'A' or 'M' as the data's first char would
+    // otherwise leave the block too far left.
+    // R-mode: Labelary places the reversed block such that the
+    // block's LEFT edge lands `FPR_ANCHOR_LEFT_PADDING_RATIO × fontH`
+    // dots right of (FO − totalAdvance). Verified against a Labelary
+    // pixel scan: at fontH=50 with content "ABC", the block's left
+    // ink edge sits at FO − (totalAdvance − ratio×fontH) = FO−42 dot
+    // when fullProbe.width() ≈ 82, matching Labelary's dot 208.
+    // PrintLab ZPL Bold advance widths are calibrated to Zebra CG
+    // Triumvirate (see assets/fonts/NOTICE.md), so the ratio scales
+    // with fontH without re-tuning per font size.
+    const FPR_ANCHOR_LEFT_PADDING_RATIO = 0.8;
+    const fpShiftXPx = (() => {
+      if (fpDirection !== "R" || content.length <= 1) return 0;
+      const probeOpts = {
+        fontSize: fontSizePx,
+        fontFamily,
+        fontStyle: "bold",
+        scaleX: fontScaleX,
+        letterSpacing: fpLetterSpacingPx,
+      };
+      const fullProbe = new Konva.Text({ ...probeOpts, text: fpContent });
+      const anchorWidthPx = dotsToPx(
+        obj.props.fontHeight * FPR_ANCHOR_LEFT_PADDING_RATIO,
+        scale,
+        dpmm,
+      );
+      return -(fullProbe.width() - anchorWidthPx);
+    })();
 
     if (obj.type === "text" && obj.props.reverse) {
       // ZPL `^A0,h,w` lets `w` differ from `h` to stretch each glyph
@@ -462,6 +501,7 @@ function KonvaObjectInner({
             scaleX={fontScaleX}
             fill="#ffffff"
             letterSpacing={fpLetterSpacingPx}
+            x={fpShiftXPx}
             y={0}
           />
         </Group>
@@ -513,6 +553,7 @@ function KonvaObjectInner({
             stroke: isSelected ? colors.selection : undefined,
             strokeWidth: isSelected ? 1 : 0,
             letterSpacing: fpLetterSpacingPx,
+            offsetXPx: fpShiftXPx,
           }}
           scale={scale}
           dpmm={dpmm}
