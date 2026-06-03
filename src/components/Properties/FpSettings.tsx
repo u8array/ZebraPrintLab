@@ -11,47 +11,48 @@ interface Props {
   onChange: (patch: Partial<TextProps>) => void;
 }
 
-/** SVG glyphs for the three ^FP direction modes. `currentColor`
- *  inherits the active/inactive button colour so theme + selection
- *  state drive the icon without per-icon styling. */
+/** Mirrors Material Symbols' `format_textdirection_*` idiom; strokes
+ *  use `currentColor` so the active-state token drives them. */
 const ICONS: Record<FpDir, ReactNode> = {
   H: (
-    <svg viewBox="0 0 16 12" className="w-4 h-3 mx-auto" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <line x1="2" y1="6" x2="14" y2="6" />
-      <polyline points="11,3 14,6 11,9" fill="none" />
+    <svg viewBox="0 0 16 12" className="w-4 h-3 mx-auto" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none" aria-hidden="true">
+      <line x1="2" y1="2.5" x2="11" y2="2.5" />
+      <line x1="2" y1="5.5" x2="9" y2="5.5" />
+      <line x1="11" y1="9.5" x2="14.5" y2="9.5" />
+      <polyline points="13,8 14.5,9.5 13,11" />
     </svg>
   ),
   V: (
-    <svg viewBox="0 0 16 12" className="w-4 h-3 mx-auto" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <line x1="8" y1="1" x2="8" y2="11" />
-      <polyline points="5,8 8,11 11,8" fill="none" />
+    <svg viewBox="0 0 16 12" className="w-4 h-3 mx-auto" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none" aria-hidden="true">
+      <line x1="4.5" y1="2" x2="7.5" y2="2" />
+      <line x1="4.5" y1="5" x2="7.5" y2="5" />
+      <line x1="4.5" y1="8" x2="7.5" y2="8" />
+      <line x1="11" y1="2" x2="11" y2="9" />
+      <polyline points="9.5,7.5 11,9 12.5,7.5" />
     </svg>
   ),
   R: (
-    <svg viewBox="0 0 16 12" className="w-4 h-3 mx-auto" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <line x1="2" y1="6" x2="14" y2="6" />
-      <polyline points="5,3 2,6 5,9" fill="none" />
+    <svg viewBox="0 0 16 12" className="w-4 h-3 mx-auto" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none" aria-hidden="true">
+      <line x1="5" y1="2.5" x2="14" y2="2.5" />
+      <line x1="7" y1="5.5" x2="14" y2="5.5" />
+      <line x1="1.5" y1="9.5" x2="5" y2="9.5" />
+      <polyline points="3,8 1.5,9.5 3,11" />
     </svg>
   ),
 };
 
-/** ^FP direction + gap sub-panel: horizontal / vertical-stack /
- *  reverse-order with an inter-character gap. Niche feature (CJK /
- *  RTL typography); collapsed behind the parent panel's disclosure
- *  so it doesn't crowd the common case. */
+/** ^FP direction + inter-character gap sub-panel. Normalising 'H'
+ *  / gap=0 back to undefined is the registry's job, not the
+ *  panel's. */
 export function FpSettings({ props: p, onChange }: Props) {
   const t = useT();
   const dir = p.fpDirection ?? "H";
+  const gapDisabled = dir === "V";
   const items: { v: FpDir; title: string }[] = [
     { v: "H", title: t.registry.text.fpDirH },
     { v: "V", title: t.registry.text.fpDirV },
     { v: "R", title: t.registry.text.fpDirR },
   ];
-  const onDirChange = (next: FpDir) => {
-    // 'H' with zero gap is the unset state; drop the prop so the
-    // generator stops emitting ^FP and the round-trip stays clean.
-    onChange({ fpDirection: next === "H" ? undefined : next });
-  };
   return (
     <div className="pl-3 border-l border-border flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
@@ -66,7 +67,7 @@ export function FpSettings({ props: p, onChange }: Props) {
                 title={title}
                 aria-label={title}
                 aria-pressed={active}
-                onClick={() => onDirChange(v)}
+                onClick={() => onChange({ fpDirection: v })}
                 className={`w-7 h-6 flex items-center justify-center rounded border transition-colors ${
                   active
                     ? "border-accent bg-accent-dim text-accent"
@@ -79,14 +80,13 @@ export function FpSettings({ props: p, onChange }: Props) {
           })}
         </div>
       </div>
-      <div className="w-1/2 pr-1">
+      <div title={gapDisabled ? t.registry.text.fpCharGapVHint : undefined}>
         <NumberInput
           label={t.registry.text.fpCharGap}
           value={p.fpCharGap ?? 0}
           min={0}
-          onChange={(fpCharGap) =>
-            onChange({ fpCharGap: fpCharGap > 0 ? fpCharGap : undefined })
-          }
+          disabled={gapDisabled}
+          onChange={(fpCharGap) => onChange({ fpCharGap })}
         />
       </div>
     </div>

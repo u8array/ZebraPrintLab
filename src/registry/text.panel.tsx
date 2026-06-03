@@ -34,8 +34,7 @@ export const textPanel: ObjectTypeUi<TextProps> = {
     const fontLoaded = !!p.printerFontName && !!getFont(p.printerFontName);
     const fontAssignedButMissing = !!p.printerFontName && !fontLoaded;
     const [showAdvanced, setShowAdvanced] = useState(!!p.printerFontName);
-    // ^FP is niche (CJK / RTL); auto-expand only when the field
-    // already uses it so existing labels surface their settings.
+    // Niche (CJK / RTL); auto-expand only when already in use.
     const fpInUse = p.fpDirection !== undefined || (p.fpCharGap ?? 0) > 0;
     const [showFp, setShowFp] = useState(fpInUse);
 
@@ -205,16 +204,8 @@ export const textPanel: ObjectTypeUi<TextProps> = {
           onChange={(rotation) => onChange({ rotation })}
         />
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            className="accent-accent"
-            checked={p.reverse ?? false}
-            onChange={(e) => onChange({ reverse: e.target.checked })}
-          />
-          <span className={labelCls}>{t.registry.text.reverse}</span>
-        </label>
-
+        {/* ^FP sits next to Rotation: both govern glyph flow rather
+            than what is painted. */}
         <div className="flex flex-col gap-1">
           <button
             type="button"
@@ -228,6 +219,16 @@ export const textPanel: ObjectTypeUi<TextProps> = {
           </button>
           {showFp && <FpSettings props={p} onChange={onChange} />}
         </div>
+
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            className="accent-accent"
+            checked={p.reverse ?? false}
+            onChange={(e) => onChange({ reverse: e.target.checked })}
+          />
+          <span className={labelCls}>{t.registry.text.reverse}</span>
+        </label>
       </div>
     );
   },
