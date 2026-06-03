@@ -182,7 +182,7 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 | `[ ]` | `~PS` | print start | `Coming soon` |
 | `[ ]` | `~JS` | change backfeed sequence | `Coming soon` |
 | `[ ]` | `^JW` | set ribbon tension | `Coming soon` |
-| `[ ]` | `^JU` | configuration update | `Coming soon` |
+| `[x]` | `^JU` | configuration update | |
 
 ## Clock & time
 
@@ -207,7 +207,7 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 |:-:|---|---|---|
 | `[x]` | `^KN` | printer name + description | |
 | `[x]` | `^SL` | clock mode (S / T / TOL) + language | |
-| `[ ]` | `^KP` | set password | `Coming soon` |
+| `[x]` | `^KP` | set password | |
 
 ## Configuration & persistence
 
