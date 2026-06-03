@@ -59,6 +59,19 @@ export const isClockFormat = makeEnumGuard(CLOCK_FORMAT_VALUES);
 export const HEAD_TEST_INTERVAL_RANGE = { min: 0, max: 10000 } as const;
 export const TEAR_OFF_ADJUST_RANGE = { min: -120, max: 120 } as const;
 
+/** ^KP front-panel password. 4-digit numeric, '0000' disables LCD-
+ *  setup protection. Default at factory is '1234'. */
+export const PRINTER_PASSWORD_REGEX = /^\d{4}$/;
+
+/** ^JU configuration update actions. S=save, R=recall last saved,
+ *  N=reload factory network settings (destructive), F=full factory
+ *  reset (destructive). All four are exposed in the UI; the
+ *  destructive pair carry a "(destructive)" suffix in their locale
+ *  labels so a misclick is at least visible. */
+export const CONFIG_UPDATE_VALUES = ['S', 'R', 'N', 'F'] as const;
+export type ConfigUpdateAction = (typeof CONFIG_UPDATE_VALUES)[number];
+export const isConfigUpdateAction = makeEnumGuard(CONFIG_UPDATE_VALUES);
+
 /** Printer-installation profile: EEPROM-persistent printer-state
  *  fields separated from `labelConfig` so design files don't leak
  *  per-install values when shared. */
@@ -80,6 +93,11 @@ export const printerProfileSchema = z.object({
   zplMode: z.enum(ZPL_MODE_VALUES).optional(),
   printerName: z.string().min(1).max(PRINTER_NAME_MAX_LEN).regex(setupScriptSafeStringRegex).optional(),
   printerDescription: z.string().min(1).regex(setupScriptSafeStringRegex).optional(),
+  setPassword: z.string().regex(PRINTER_PASSWORD_REGEX).optional(),
+  /** ^JU action. Generator emits the value as `^JU{action}` last in
+   *  the setup-script block so an `S` commit happens after every
+   *  other persistent write in the same script. */
+  configurationUpdate: z.enum(CONFIG_UPDATE_VALUES).optional(),
 }).superRefine((p, ctx) => {
   if (p.clockTolerance !== undefined && p.clockMode !== 'TOL') {
     ctx.addIssue({

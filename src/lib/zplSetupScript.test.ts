@@ -238,6 +238,66 @@ describe("generateSetupScript — output shape", () => {
     expect(() => printerProfileSchema.parse({ ...base, printerName: "abcdefghij0123456" })).toThrow();
   });
 
+  it("emits ^KP for a 4-digit password", () => {
+    expect(generateSetupScript({ ...base, setPassword: "4711" }))
+      .toBe("^XA\n^KP4711\n^XZ");
+  });
+
+  it("preserves ^KP0000 (the disable-protection value)", () => {
+    expect(generateSetupScript({ ...base, setPassword: "0000" }))
+      .toBe("^XA\n^KP0000\n^XZ");
+  });
+
+  it("schema rejects non-4-digit passwords", () => {
+    expect(() => printerProfileSchema.parse({ ...base, setPassword: "123" })).toThrow();
+    expect(() => printerProfileSchema.parse({ ...base, setPassword: "12345" })).toThrow();
+    expect(() => printerProfileSchema.parse({ ...base, setPassword: "abcd" })).toThrow();
+  });
+
+  it("round-trips ^KP via the parser", () => {
+    const { printerProfile: parsed } = parseZPL("^XA^KP9876^XZ");
+    expect(parsed.setPassword).toBe("9876");
+  });
+
+  it("parser rejects ^KP values that don't match the 4-digit shape", () => {
+    expect(parseZPL("^XA^KP12^XZ").printerProfile.setPassword).toBeUndefined();
+    expect(parseZPL("^XA^KP12A4^XZ").printerProfile.setPassword).toBeUndefined();
+  });
+
+  it("emits ^JU{action} for each spec value", () => {
+    expect(generateSetupScript({ ...base, configurationUpdate: "S" }))
+      .toBe("^XA\n^JUS\n^XZ");
+    expect(generateSetupScript({ ...base, configurationUpdate: "R" }))
+      .toBe("^XA\n^JUR\n^XZ");
+    expect(generateSetupScript({ ...base, configurationUpdate: "N" }))
+      .toBe("^XA\n^JUN\n^XZ");
+    expect(generateSetupScript({ ...base, configurationUpdate: "F" }))
+      .toBe("^XA\n^JUF\n^XZ");
+  });
+
+  it("places ^JU last in the block so ^JUS commits everything before it", () => {
+    const script = generateSetupScript({
+      ...base,
+      setPassword: "4711",
+      printerName: "lab-01",
+      configurationUpdate: "S",
+    });
+    const lines = script.split("\n");
+    expect(lines[lines.length - 2]).toBe("^JUS");
+    expect(lines[lines.length - 1]).toBe("^XZ");
+  });
+
+  it("round-trips ^JU via the parser", () => {
+    for (const action of ["S", "R", "N", "F"] as const) {
+      const { printerProfile: parsed } = parseZPL(`^XA^JU${action}^XZ`);
+      expect(parsed.configurationUpdate).toBe(action);
+    }
+  });
+
+  it("parser rejects ^JU with an unknown action letter", () => {
+    expect(parseZPL("^XA^JUX^XZ").printerProfile.configurationUpdate).toBeUndefined();
+  });
+
   it("emits ^SL with mode S only when language is unset", () => {
     expect(generateSetupScript({ ...base, clockMode: "S" })).toBe("^XA\n^SLS\n^XZ");
   });
@@ -346,10 +406,22 @@ describe("generateSetupScript — output shape", () => {
       "zplMode",
       "printerName",
       "printerDescription",
+      "setPassword",
       "clockMode",
       "clockTolerance",
       "clockLanguage",
+      "configurationUpdate",
     ]);
+  });
+
+  it("places configurationUpdate as the last entry so ^JUS commits the block", () => {
+    // Tripwire: ^JU emits whatever persistent writes precede it, so a
+    // future field added after configurationUpdate would land inside
+    // the same ^XA…^XZ block and only get committed on the next
+    // print job, not at provisioning.
+    expect(SETUP_SCRIPT_FIELDS[SETUP_SCRIPT_FIELDS.length - 1]).toBe(
+      "configurationUpdate",
+    );
   });
 
   it("PrinterProfile carries only Setup-Script fields — no per-label leakage", () => {
