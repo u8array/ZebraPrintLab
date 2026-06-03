@@ -60,7 +60,7 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 | `[x]` | `^FC` | field clock (date / time) | |
 | `[x]` | `^BY` | barcode field default | |
 | `[ ]` | `^FM` | multiple field origins | `Coming soon` |
-| `[ ]` | `^FP` | field path (text along path) | `Coming soon` |
+| `[x]` | `^FP` | vertical / reverse field layout (CJK / RTL) | |
 | `[ ]` | `^CO` | font cache size | `Coming soon` |
 | `[ ]` | `^CP` | change parser | `Coming soon` |
 | `[ ]` | `^CV` | code validation | `Coming soon` |

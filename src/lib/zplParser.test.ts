@@ -409,6 +409,55 @@ describe('parseZPL — ^TB text block', () => {
   });
 });
 
+// ── ^FP field-direction modifier ──────────────────────────────────────────────
+
+describe('parseZPL — ^FP vertical / reverse text', () => {
+  const baseField = '^XA^FO50,50^A0N,30,30';
+
+  it('parses ^FPV as vertical direction', () => {
+    const { objects } = parseZPL(`${baseField}^FPV^FDABC^FS^XZ`, 8);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).fpDirection).toBe('V');
+    expect(props(objects[0]).fpCharGap).toBeUndefined();
+  });
+
+  it('parses ^FPR as reverse direction', () => {
+    const { objects } = parseZPL(`${baseField}^FPR^FDABC^FS^XZ`, 8);
+    expect(props(objects[0]).fpDirection).toBe('R');
+  });
+
+  it('parses inter-character gap', () => {
+    const { objects } = parseZPL(`${baseField}^FPV,5^FDABC^FS^XZ`, 8);
+    expect(props(objects[0]).fpDirection).toBe('V');
+    expect(props(objects[0]).fpCharGap).toBe(5);
+  });
+
+  it('defaults direction to H when only gap is given (^FP,5)', () => {
+    const { objects } = parseZPL(`${baseField}^FP,5^FDABC^FS^XZ`, 8);
+    // H is omitted on emit by leaving fpDirection undefined; gap survives.
+    expect(props(objects[0]).fpDirection).toBeUndefined();
+    expect(props(objects[0]).fpCharGap).toBe(5);
+  });
+
+  it('falls back to H for unknown direction letters', () => {
+    const { objects } = parseZPL(`${baseField}^FPX^FDABC^FS^XZ`, 8);
+    expect(props(objects[0]).fpDirection).toBeUndefined();
+  });
+
+  it('does not leak ^FP across ^FS into the next field', () => {
+    const zpl =
+      `${baseField}^FPV,3^FDFirst^FS` +
+      `^FO50,150^A0N,30,30^FDSecond^FS^XZ`;
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(2);
+    expect(props(objects[0]).fpDirection).toBe('V');
+    expect(props(objects[0]).fpCharGap).toBe(3);
+    expect(props(objects[1]).fpDirection).toBeUndefined();
+    expect(props(objects[1]).fpCharGap).toBeUndefined();
+  });
+
+});
+
 // ── additional barcode types ──────────────────────────────────────────────────
 
 describe('parseZPL — ^B3 Code 39', () => {

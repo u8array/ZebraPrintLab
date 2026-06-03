@@ -219,6 +219,12 @@ export function createFlushField(
           textProps.blockLineSpacing = s.defaults.fbSpacing;
           textProps.blockJustify = s.defaults.fbJustify;
         }
+        if (s.field.fpDirection !== "H") {
+          textProps.fpDirection = s.field.fpDirection;
+        }
+        if (s.field.fpCharGap > 0) {
+          textProps.fpCharGap = s.field.fpCharGap;
+        }
         objects.push(
           makeObj("text", modelPos.x, modelPos.y, textProps, posType, mergedComment),
         );
