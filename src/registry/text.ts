@@ -26,6 +26,13 @@ export interface TextProps {
   blockLines?: number;
   blockLineSpacing?: number;
   blockJustify?: "L" | "C" | "R" | "J";
+  /** ^FP field-direction modifier. 'H' = horizontal advance (default,
+   *  omitted on emit), 'V' = stack glyphs along the field's
+   *  perpendicular axis, 'R' = reverse glyph order (RTL languages). */
+  fpDirection?: "H" | "V" | "R";
+  /** ^FP inter-character gap in dots, added on top of the font's
+   *  natural advance. Omitted on emit when 0. */
+  fpCharGap?: number;
 }
 
 export const text: ObjectTypeCore<TextProps> = {
@@ -63,6 +70,12 @@ export const text: ObjectTypeCore<TextProps> = {
     const fbCmd = p.blockWidth
       ? `^FB${p.blockWidth},${p.blockLines ?? 1},${p.blockLineSpacing ?? 0},${p.blockJustify ?? "L"},0`
       : "";
+    // ^FP only emits when a non-default direction or a positive gap is
+    // set. The spec accepts `^FPd,g`; we always emit the gap so the
+    // round-trip is unambiguous (Labelary tolerates the trailing 0).
+    const fpDir = p.fpDirection ?? "H";
+    const fpGap = p.fpCharGap ?? 0;
+    const fpCmd = fpDir !== "H" || fpGap > 0 ? `^FP${fpDir},${fpGap}` : "";
     // ^FB block-text uses `\&` as the in-payload line-break marker
     // (Zebra spec). Encode via the shared helper so parser/generator
     // stay symmetric (it also escapes literal backslashes so payloads
@@ -73,7 +86,7 @@ export const text: ObjectTypeCore<TextProps> = {
     const anchor = textFieldPos(obj);
     const fd = fdFieldFor(obj, content, ctx);
     if (!p.reverse) {
-      return [anchor, fontCmd, fbCmd, fd].filter(Boolean).join("");
+      return [anchor, fpCmd, fontCmd, fbCmd, fd].filter(Boolean).join("");
     }
     // Reverse text = white-on-black knockout. Standard ZPL pattern:
     // a filled black ^GB at the field anchor, then the text with ^FR
@@ -107,6 +120,6 @@ export const text: ObjectTypeCore<TextProps> = {
     // max here would inflate a 200×30 banner into a 200×200 square.
     const gbThickness = Math.min(gbW, gbH);
     const gb = `${anchor}^GB${gbW},${gbH},${gbThickness},B,0^FS`;
-    return [gb, anchor, fontCmd, fbCmd, "^FR", fd].filter(Boolean).join("");
+    return [gb, anchor, fpCmd, fontCmd, fbCmd, "^FR", fd].filter(Boolean).join("");
   },
 };

@@ -124,6 +124,8 @@ export function createFieldHandlers(
       s.field.pendingPrinterFontName = undefined;
       s.field.pendingFontId = undefined;
       s.field.frActive = false;
+      s.field.fpDirection = "H";
+      s.field.fpCharGap = 0;
       s.defaults.fbWidth = 0;
       s.defaults.fbLines = 1;
       s.defaults.fbSpacing = 0;
@@ -171,6 +173,15 @@ export function createFieldHandlers(
     },
     FR() {
       s.field.frActive = true;
+    },
+
+    // ── Field-direction modifier (CJK vertical / RTL reverse) ─────────────
+    // ^FP{d},{g}  d ∈ H|V|R, g = inter-char gap in dots (default 0).
+    // Per-field; ^FS resets back to H/0.
+    FP(p) {
+      const d = (p[0] ?? "H").toUpperCase();
+      s.field.fpDirection = d === "V" || d === "R" ? d : "H";
+      s.field.fpCharGap = int(p[1], 0);
     },
 
     // ── Label home (origin offset) ────────────────────────────────────────
