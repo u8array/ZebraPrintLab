@@ -1,28 +1,59 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { inputCls, labelCls } from "../ui/formStyles";
-import { PRINTER_NAME_MAX_LEN } from "../../types/PrinterProfile";
+import {
+  CONFIG_UPDATE_VALUES,
+  type ConfigUpdateAction,
+  PRINTER_NAME_MAX_LEN,
+  PRINTER_PASSWORD_REGEX,
+  isConfigUpdateAction,
+} from "../../types/PrinterProfile";
 import {
   ZplCommandLabel,
+  ZplEnumSelect,
   ZplField,
   ZplSubField,
 } from "./zplFieldPrimitives";
 
-/** Tab 5 of the Printer Settings Modal — printer identity setup.
- *  Emits ^KN (printer name + description) on the Setup-Script
- *  channel; both fields fold into a single `^KNname,description`
- *  command at emit time. The tab stays intentionally focused on
- *  "what is this printer called" — ^SL (clock-formatting Mode +
- *  Language) lives in Tab 3 Clock & Time per its semantic home.
- *  See memory:project_ticket_sl_clock_formatting for the ^SL
- *  follow-up. */
+type LocIdentity = ReturnType<typeof useT>["printerSettings"]["identity"];
+
+/** Explicit value → locale-key map; `satisfies` forces every
+ *  ConfigUpdateAction to have an entry and rejects typo keys at
+ *  compile time. Matches the CLOCK_FORMAT_LABEL_KEYS pattern. */
+const CONFIG_UPDATE_LABEL_KEYS = {
+  S: 'configurationUpdateOptionS',
+  R: 'configurationUpdateOptionR',
+  N: 'configurationUpdateOptionN',
+  F: 'configurationUpdateOptionF',
+} as const satisfies Record<ConfigUpdateAction, keyof LocIdentity>;
+
+/** Tab 5 of the Printer Settings Modal: printer identity + EEPROM
+ *  commit setup. Emits ^KN (name + description), ^KP (4-digit panel
+ *  password) and ^JU (configuration update action) on the Setup-
+ *  Script channel. ^SL lives in Tab 3 Clock & Time per its semantic
+ *  home. See memory:project_ticket_sl_clock_formatting. */
 export function IdentityTab() {
   const t = useT();
   const profile = useLabelStore((s) => s.printerProfile);
   const patchPrinterProfile = useLabelStore((s) => s.patchPrinterProfile);
   const loc = t.printerSettings.identity;
   const nameId = useId();
+  const passwordId = useId();
+  // Local mirror for the 4-digit input: progressive typing ("4", "47")
+  // is shown immediately but only commits to the store once the regex
+  // matches. Without this, partial values would always be filtered out
+  // and the user could never finish entering a password. Re-sync on
+  // store changes (import, reset) uses the adjust-state-during-render
+  // pattern so the React compiler doesn't flag a useEffect → setState
+  // cascade.
+  const storedPassword = profile.setPassword ?? "";
+  const [passwordDraft, setPasswordDraft] = useState(storedPassword);
+  const [lastStoredPassword, setLastStoredPassword] = useState(storedPassword);
+  if (lastStoredPassword !== storedPassword) {
+    setLastStoredPassword(storedPassword);
+    setPasswordDraft(storedPassword);
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -61,6 +92,43 @@ export function IdentityTab() {
           )}
         </ZplSubField>
       </ZplField>
+
+      <ZplField>
+        <ZplCommandLabel text={loc.setPassword} command="^KP" htmlFor={passwordId} />
+        <input
+          id={passwordId}
+          type="text"
+          inputMode="numeric"
+          pattern="\d{4}"
+          maxLength={4}
+          className={inputCls}
+          value={passwordDraft}
+          onChange={(e) => {
+            const raw = e.target.value;
+            if (!/^\d{0,4}$/.test(raw)) return;
+            setPasswordDraft(raw);
+            if (raw === "") {
+              patchPrinterProfile({ setPassword: undefined });
+            } else if (PRINTER_PASSWORD_REGEX.test(raw)) {
+              patchPrinterProfile({ setPassword: raw });
+            }
+          }}
+        />
+        <span className={`${labelCls} normal-case tracking-normal text-muted/70`}>
+          {loc.setPasswordHint}
+        </span>
+      </ZplField>
+
+      <ZplEnumSelect
+        label={loc.configurationUpdate}
+        command="^JU"
+        values={CONFIG_UPDATE_VALUES}
+        isValid={isConfigUpdateAction}
+        value={profile.configurationUpdate}
+        onChange={(configurationUpdate) => patchPrinterProfile({ configurationUpdate })}
+        defaultLabel={loc.configurationUpdateUnset}
+        optionLabel={(v) => loc[CONFIG_UPDATE_LABEL_KEYS[v]]}
+      />
     </div>
   );
 }
