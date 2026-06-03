@@ -10,6 +10,7 @@ import { RotationSelect } from "../components/Properties/RotationSelect";
 import { NumberInput } from "../components/Properties/NumberInput";
 import { TemplateContentInput } from "../components/Properties/TemplateContentInput";
 import { BlockTextSettings } from "../components/Properties/BlockTextSettings";
+import { FpSettings } from "../components/Properties/FpSettings";
 import { deriveBlockTextPatch, FB_DEFAULTS } from "../lib/textBlock";
 import type { TextProps } from "./text";
 
@@ -33,6 +34,10 @@ export const textPanel: ObjectTypeUi<TextProps> = {
     const fontLoaded = !!p.printerFontName && !!getFont(p.printerFontName);
     const fontAssignedButMissing = !!p.printerFontName && !fontLoaded;
     const [showAdvanced, setShowAdvanced] = useState(!!p.printerFontName);
+    // ^FP is niche (CJK / RTL); auto-expand only when the field
+    // already uses it so existing labels surface their settings.
+    const fpInUse = p.fpDirection !== undefined || (p.fpCharGap ?? 0) > 0;
+    const [showFp, setShowFp] = useState(fpInUse);
 
     const handleFontUpload = useCallback(
       async (file: File) => {
@@ -209,6 +214,20 @@ export const textPanel: ObjectTypeUi<TextProps> = {
           />
           <span className={labelCls}>{t.registry.text.reverse}</span>
         </label>
+
+        <div className="flex flex-col gap-1">
+          <button
+            type="button"
+            className="text-[10px] text-muted hover:text-text text-left"
+            onClick={() => setShowFp((v) => !v)}
+            aria-expanded={showFp}
+          >
+            {showFp
+              ? `▾ ${t.registry.text.fpAdvanced}`
+              : `▸ ${t.registry.text.fpAdvanced}`}
+          </button>
+          {showFp && <FpSettings props={p} onChange={onChange} />}
+        </div>
       </div>
     );
   },
