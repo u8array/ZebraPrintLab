@@ -1,12 +1,12 @@
 import type { PrinterProfile } from "../../../types/PrinterProfile";
-import { CLOCK_TOLERANCE_RANGE, HEAD_TEST_INTERVAL_RANGE, PRINTER_NAME_MAX_LEN, TEAR_OFF_ADJUST_RANGE, isClockFormat, isClockLanguage, isPrinterLocale, isZplMode, setupScriptUnsafeCharRegex } from "../../../types/PrinterProfile";
+import { CLOCK_TOLERANCE_RANGE, HEAD_TEST_INTERVAL_RANGE, PRINTER_NAME_MAX_LEN, PRINTER_PASSWORD_REGEX, TEAR_OFF_ADJUST_RANGE, isClockFormat, isClockLanguage, isConfigUpdateAction, isPrinterLocale, isZplMode, setupScriptUnsafeCharRegex } from "../../../types/PrinterProfile";
 import { parseIntOrUndef } from "../../inputParse";
 import { parseRealtimeClock } from "../../realtimeClock";
 import { inRange, strParam } from "../helpers";
 import type { Handler } from "../types";
 
 /** Setup-Script commands (^JZ, ^JT, ~TA, ^ST, ^KD, ^KL, ^SE, ^SZ,
- *  ^KN, ^SL) — all write the shared `printerProfile` slice. */
+ *  ^KN, ^SL, ^KP, ^JU): all write the shared `printerProfile` slice. */
 export function createSetupScriptHandlers(
   printerProfile: Partial<PrinterProfile>,
 ): Record<string, Handler> {
@@ -72,6 +72,14 @@ export function createSetupScriptHandlers(
       if (printerProfile.clockMode === undefined) return;
       const b = strParam(p[1]);
       if (isClockLanguage(b)) printerProfile.clockLanguage = b;
+    },
+    KP(p) {
+      const raw = (p[0] ?? "").trim();
+      if (PRINTER_PASSWORD_REGEX.test(raw)) printerProfile.setPassword = raw;
+    },
+    JU(_, rest) {
+      const v = rest.trim().toUpperCase();
+      if (isConfigUpdateAction(v)) printerProfile.configurationUpdate = v;
     },
   };
 }

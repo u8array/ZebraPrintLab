@@ -98,6 +98,11 @@ const SETUP_SCRIPT_EMITTERS = {
     },
   },
   printerDescription: { kind: 'foldedInto', target: 'printerName' },
+  setPassword: {
+    kind: 'emit',
+    channel: 'block',
+    emit: (p) => p.setPassword !== undefined ? `^KP${p.setPassword}` : null,
+  },
   clockMode: {
     kind: 'emit',
     channel: 'block',
@@ -115,6 +120,19 @@ const SETUP_SCRIPT_EMITTERS = {
   // Drop bare `^SL,<lang>` (mode unset): spec leaves the shape
   // implementation-defined.
   clockLanguage: { kind: 'foldedInto', target: 'clockMode' },
+  // configurationUpdate is the registry's last entry on purpose: a
+  // commit (`^JUS`) needs to follow every other persistent write so
+  // the EEPROM lands the rest of the block before being asked to
+  // save itself. The Zebra app note for ^JU also warns that more
+  // than one ^JU per file is unsupported, so we never split this.
+  // The "is-last" invariant is anchored by a tripwire in
+  // zplSetupScript.test.ts so adding a later entry can't silently
+  // break the commit semantics.
+  configurationUpdate: {
+    kind: 'emit',
+    channel: 'block',
+    emit: (p) => p.configurationUpdate !== undefined ? `^JU${p.configurationUpdate}` : null,
+  },
 } as const satisfies Partial<Record<keyof PrinterProfile, SetupScriptEntry>>;
 
 /** Public list of the PrinterProfile fields that flow through the
