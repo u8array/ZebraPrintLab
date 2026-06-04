@@ -562,7 +562,7 @@ const lt = {
       content: 'Turinys',
       height: 'Aukštis (taškai)',
       printInterpretation: 'Skaitomas',
-      moduleWidth: 'Modulio plotis',
+      magnification: 'Dydis (1–10)',
       symbology: 'Simbolika',
       segments: 'Segmentai eilutėje',
     },

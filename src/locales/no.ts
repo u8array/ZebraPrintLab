@@ -562,7 +562,7 @@ const no = {
       content: 'Innhold',
       height: 'Høyde (punkter)',
       printInterpretation: 'Lesbar',
-      moduleWidth: 'Modulbredde',
+      magnification: 'Størrelse (1–10)',
       symbology: 'Symbolikk',
       segments: 'Segmenter per rad',
     },

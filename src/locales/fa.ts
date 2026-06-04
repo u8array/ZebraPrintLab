@@ -562,7 +562,7 @@ const fa = {
       content: 'محتوا',
       height: 'ارتفاع (نقطه)',
       printInterpretation: 'قابل خواندن',
-      moduleWidth: 'عرض ماژول',
+      magnification: 'اندازه (1–10)',
       symbology: 'نماد‌شناسی',
       segments: 'بخش در هر ردیف',
     },

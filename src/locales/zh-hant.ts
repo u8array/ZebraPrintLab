@@ -562,7 +562,7 @@ const zhHant = {
       content: '內容',
       height: '高度（點）',
       printInterpretation: '可讀文字',
-      moduleWidth: '模組寬度',
+      magnification: '大小（1–10）',
       symbology: '符號體系',
       segments: '每行段數',
     },

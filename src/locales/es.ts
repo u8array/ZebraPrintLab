@@ -562,7 +562,7 @@ const es = {
       content: 'Contenido',
       height: 'Altura (puntos)',
       printInterpretation: 'Legible',
-      moduleWidth: 'Ancho módulo',
+      magnification: 'Tamaño (1–10)',
       symbology: 'Simbología',
       segments: 'Segmentos por fila',
     },

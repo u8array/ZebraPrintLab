@@ -583,7 +583,7 @@ const en = {
       content: 'Content',
       height: 'Height (dots)',
       printInterpretation: 'Human readable',
-      moduleWidth: 'Module width',
+      magnification: 'Size (1–10)',
       symbology: 'Symbology',
       segments: 'Segments per row',
     },

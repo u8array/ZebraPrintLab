@@ -13,8 +13,6 @@ export function createUnitsHandler(s: ParserState, dpmm: number): Record<string,
     // a-slot scales dot-quantities on read so the model stays
     // dots-canonical. b,c are a paired resampling directive persisted
     // for re-emit; printer does the actual scaling at print time.
-    // Spec: ^MU carries field-by-field until overridden, so no ^XA
-    // reset; per-block isolation comes from zplImportService.
     MU(p) {
       const a = (p[0] ?? "").trim().toUpperCase();
       if (a === "I") s.format.unitScale = dpmm * 25.4;

@@ -562,7 +562,7 @@ const ko = {
       content: '내용',
       height: '높이 (도트)',
       printInterpretation: '판독 가능',
-      moduleWidth: '모듈 폭',
+      magnification: '크기 (1–10)',
       symbology: '심볼로지',
       segments: '행당 세그먼트',
     },

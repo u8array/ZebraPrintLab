@@ -562,7 +562,7 @@ const et = {
       content: 'Sisu',
       height: 'Kõrgus (punkti)',
       printInterpretation: 'Loetav',
-      moduleWidth: 'Mooduli laius',
+      magnification: 'Suurus (1–10)',
       symbology: 'Sümbolika',
       segments: 'Segmente rea kohta',
     },

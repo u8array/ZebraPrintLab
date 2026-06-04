@@ -562,7 +562,7 @@ const sv = {
       content: 'Innehåll',
       height: 'Höjd (punkter)',
       printInterpretation: 'Läsbar',
-      moduleWidth: 'Modulbredd',
+      magnification: 'Storlek (1–10)',
       symbology: 'Symbolik',
       segments: 'Segment per rad',
     },

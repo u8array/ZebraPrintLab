@@ -56,9 +56,7 @@ export interface CommentState {
   fnComment: string | undefined;
 }
 
-/** Format-scoped (per-^XA) state; reset at label boundary
- *  EXCEPT for `unitScale`, which the ^MU spec defines as carrying
- *  across formats until explicitly overridden. */
+/** Format-scoped (per-^XA) state; reset at label boundary. */
 export interface FormatState {
   embedChar: string;
   clockChars: ClockChars;
@@ -131,6 +129,10 @@ export interface FieldState {
   // GS1 Databar pending
   gsSymbology: Gs1DatabarProps["symbology"];
   gsSegments: number | undefined;
+  /** ^BR p[2] magnification multiplier (1-10). Per spec NOT a dot
+   *  quantity; kept separate from `defaults.byModuleWidth` so a stray
+   *  ^BR doesn't overwrite real dot widths from ^BY. */
+  gsMagnification: number | undefined;
   // 2D matrix pending
   qrMag: number;
   dmDim: number;
@@ -267,6 +269,7 @@ export function createParserState(): ParserState {
       symW: 30,
       gsSymbology: 1,
       gsSegments: undefined,
+      gsMagnification: undefined,
       qrMag: 4,
       dmDim: 5,
       dmQuality: 200,

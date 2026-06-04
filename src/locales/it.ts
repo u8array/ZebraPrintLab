@@ -562,7 +562,7 @@ const it = {
       content: 'Contenuto',
       height: 'Altezza (punti)',
       printInterpretation: 'Leggibile',
-      moduleWidth: 'Larghezza modulo',
+      magnification: 'Dimensione (1–10)',
       symbology: 'Simbologia',
       segments: 'Segmenti per riga',
     },

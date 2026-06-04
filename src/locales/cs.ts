@@ -562,7 +562,7 @@ const cs = {
       content: 'Obsah',
       height: 'Výška (body)',
       printInterpretation: 'Čitelný pro člověka',
-      moduleWidth: 'Šířka modulu',
+      magnification: 'Velikost (1–10)',
       symbology: 'Symbolika',
       segments: 'Segmenty na řádek',
     },

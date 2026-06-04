@@ -562,7 +562,7 @@ const sl = {
       content: 'Vsebina',
       height: 'Višina (pike)',
       printInterpretation: 'Berljivo za človeka',
-      moduleWidth: 'Širina modula',
+      magnification: 'Velikost (1–10)',
       symbology: 'Simbologija',
       segments: 'Segmenti na vrstico',
     },

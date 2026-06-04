@@ -562,7 +562,7 @@ const da = {
       content: 'Indhold',
       height: 'Højde (punkter)',
       printInterpretation: 'Læsbar',
-      moduleWidth: 'Modulbredde',
+      magnification: 'Størrelse (1–10)',
       symbology: 'Symbolik',
       segments: 'Segmenter per række',
     },

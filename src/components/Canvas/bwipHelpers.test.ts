@@ -162,7 +162,7 @@ describe("getDisplaySize gs1databar sym 7 fallback", () => {
       rotation: 0,
       props: {
         content: "0112345678901231",
-        moduleWidth: 2,
+        magnification: 2,
         symbology: 7,
         segments: 22,
         rotation: "N",
@@ -194,7 +194,7 @@ describe("buildBwipOptions gs1databar Expanded fallback", () => {
     rotation: 0,
     props: {
       content,
-      moduleWidth: 2,
+      magnification: 2,
       symbology: 6,
       segments: 22,
       rotation: "N",

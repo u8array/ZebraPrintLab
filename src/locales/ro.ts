@@ -562,7 +562,7 @@ const ro = {
       content: 'Conținut',
       height: 'Înălțime (puncte)',
       printInterpretation: 'Lizibil',
-      moduleWidth: 'Lățime modul',
+      magnification: 'Dimensiune (1–10)',
       symbology: 'Simbologie',
       segments: 'Segmente pe rând',
     },

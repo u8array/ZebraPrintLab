@@ -159,6 +159,7 @@ export function createFieldHandlers(
       s.field.frActive = false;
       s.field.fpDirection = "H";
       s.field.fpCharGap = 0;
+      s.field.gsMagnification = undefined;
       s.defaults.fbWidth = 0;
       s.defaults.fbLines = 1;
       s.defaults.fbSpacing = 0;

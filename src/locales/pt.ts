@@ -562,7 +562,7 @@ const pt = {
       content: 'Conteúdo',
       height: 'Altura (pontos)',
       printInterpretation: 'Legível',
-      moduleWidth: 'Largura módulo',
+      magnification: 'Tamanho (1–10)',
       symbology: 'Simbologia',
       segments: 'Segmentos por linha',
     },

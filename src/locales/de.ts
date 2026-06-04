@@ -583,7 +583,7 @@ const de = {
       content: 'Inhalt',
       height: 'Höhe (Punkte)',
       printInterpretation: 'Klartext',
-      moduleWidth: 'Modulbreite',
+      magnification: 'Größe (1–10)',
       symbology: 'Symbolik',
       segments: 'Segmente pro Zeile',
     },

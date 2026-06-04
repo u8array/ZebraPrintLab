@@ -76,9 +76,7 @@ export function int(s: string | undefined, fallback = 0): number {
 /** Optional-form of the dot-quantity reader. Returns undefined when
  *  the param is missing/NaN. `parseFloat` is load-bearing: ^MUI/^MUM
  *  admits fractional unit values (`^FO0.5,0.5` = half an inch);
- *  `parseInt` would silently truncate to 0. In D-mode this also
- *  rounds fractional input (`^FO10.6` → 11), a deliberate change
- *  from the old `parseInt` truncate. */
+ *  `parseInt` would silently truncate to 0. */
 export function intDotsOrUndef(
   s: string | undefined,
   unitScale: number,

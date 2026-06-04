@@ -562,7 +562,7 @@ const ja = {
       content: '内容',
       height: '高さ（ドット）',
       printInterpretation: '可読文字',
-      moduleWidth: 'モジュール幅',
+      magnification: 'サイズ（1–10）',
       symbology: 'シンボル体系',
       segments: '1行あたりのセグメント数',
     },

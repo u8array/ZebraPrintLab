@@ -562,7 +562,7 @@ const fr = {
       content: 'Contenu',
       height: 'Hauteur (points)',
       printInterpretation: 'Lisible',
-      moduleWidth: 'Largeur module',
+      magnification: 'Taille (1–10)',
       symbology: 'Symbologie',
       segments: 'Segments par ligne',
     },

@@ -739,6 +739,19 @@ describe('generateZPL — parse/generate roundtrip', () => {
     expect(reparsed.labelConfig.muResampling).toEqual({ formatDpi: 200, outputDpi: 600 });
   });
 
+  it('emits gs1databar magnification into both ^BY and ^BR slots', () => {
+    const objs = [{
+      id: 'g1', type: 'gs1databar', x: 0, y: 0, rotation: 0,
+      props: { content: '0112345678901', magnification: 5, symbology: 1 as const, rotation: 'N' as const },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }] as any;
+    const zpl = generateZPL(BASE_LABEL, objs);
+    expect(zpl).toContain('^BY5');
+    expect(zpl).toContain('^BRN,1,5,2,');
+    const reparsed = parseZPL(zpl, 8);
+    expect(props(reparsed.objects[0]).magnification).toBe(5);
+  });
+
   it('preserves text content through a roundtrip', () => {
     const original = parseZPL('^XA^FO10,20^A0N,30,0^FDHello World^FS^XZ', 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);

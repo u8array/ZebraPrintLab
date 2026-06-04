@@ -367,7 +367,10 @@ export function createFlushField(
             s.field.y,
             {
               content,
-              moduleWidth: s.defaults.byModuleWidth,
+              // ^BR p[2] is the authoritative magnification source;
+              // fall back to ^BY moduleWidth when ^BR omitted p[2]
+              // (Zebra convention: ^BY and ^BR magnification match).
+              magnification: s.field.gsMagnification ?? s.defaults.byModuleWidth,
               symbology: s.field.gsSymbology,
               segments: s.field.gsSegments,
               rotation: s.field.bcRotation,

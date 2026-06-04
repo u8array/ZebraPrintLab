@@ -562,7 +562,7 @@ const lv = {
       content: 'Saturs',
       height: 'Augstums (punkti)',
       printInterpretation: 'Lasāms',
-      moduleWidth: 'Moduļa platums',
+      magnification: 'Izmērs (1–10)',
       symbology: 'Simboloģija',
       segments: 'Segmenti uz rindu',
     },

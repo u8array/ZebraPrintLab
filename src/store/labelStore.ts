@@ -3,6 +3,7 @@ import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { ObjectChanges } from '../types/LabelObject';
 import { PRINTER_PROFILE_FIELDS } from '../types/PrinterProfile';
+import { visitLeavesInPages } from '../lib/objectTree';
 import type { LabelObject } from '../types/Group';
 import {
   createPrinterProfileSlice,
@@ -103,7 +104,31 @@ export function migrateLegacy(persistedState: unknown, version: number): unknown
     s = { ...s, printerProfile: {} };
   }
 
+  // v5→v6: gs1databar props.moduleWidth → props.magnification. The
+  // value was always semantically the ^BR magnification multiplier
+  // (1-10), not a dot quantity; the rename clarifies that.
+  if (version < 6) {
+    s = { ...s, pages: migrateGs1DatabarInPages(s.pages) };
+  }
+
   return s;
+}
+
+function migrateGs1DatabarInPages(pages: unknown): unknown {
+  // Mutates in place via the shared leaf walker; pages is the persisted
+  // payload not the live store, so mutation is safe.
+  visitLeavesInPages(pages, (leaf) => {
+    if (
+      leaf.type !== 'gs1databar' ||
+      !leaf.props ||
+      typeof leaf.props !== 'object'
+    ) return;
+    const props = leaf.props as Record<string, unknown>;
+    if (!('moduleWidth' in props) || 'magnification' in props) return;
+    props.magnification = props.moduleWidth;
+    delete props.moduleWidth;
+  });
+  return pages;
 }
 
 function migrateCirclesInPages(pages: unknown): unknown {
@@ -180,7 +205,7 @@ export const useLabelStore = create<LabelState>()(
     }),
     {
       name: 'zpl-designer-session',
-      version: 5,
+      version: 6,
       migrate: (persistedState, version) => migrateLegacy(persistedState, version) as LabelState,
       storage: createJSONStorage(() => localStorage),
       partialize: persistPartialize,

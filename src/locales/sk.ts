@@ -562,7 +562,7 @@ const sk = {
       content: 'Obsah',
       height: 'Výška (body)',
       printInterpretation: 'Čitateľný pre človeka',
-      moduleWidth: 'Šírka modulu',
+      magnification: 'Veľkosť (1–10)',
       symbology: 'Symbolika',
       segments: 'Segmenty na riadok',
     },

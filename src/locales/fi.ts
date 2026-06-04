@@ -562,7 +562,7 @@ const fi = {
       content: 'Sisältö',
       height: 'Korkeus (pistettä)',
       printInterpretation: 'Luettava',
-      moduleWidth: 'Moduulin leveys',
+      magnification: 'Koko (1–10)',
       symbology: 'Symboliikka',
       segments: 'Segmentit per rivi',
     },

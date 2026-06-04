@@ -337,6 +337,28 @@ describe('parseZPL — ^BC Code 128', () => {
   });
 });
 
+describe('parseZPL — ^BR GS1 Databar', () => {
+  it('reads ^BR p[2] as the gs1databar magnification, not byModuleWidth', () => {
+    // ^BY4 sets dot-typed module width 4; ^BR p[2]=6 is the multiplier.
+    // Pre-refactor both wrote into byModuleWidth so the 4 was clobbered.
+    const { objects } = parseZPL(
+      '^XA^BY4,2,100^FO0,0^BRN,1,6,2,100^FD0112345678901^FS^XZ',
+      8,
+    );
+    const obj = objects[0];
+    expect(obj?.type).toBe('gs1databar');
+    expect(props(obj).magnification).toBe(6);
+  });
+
+  it('falls back to ^BY moduleWidth when ^BR omits the magnification slot', () => {
+    const { objects } = parseZPL(
+      '^XA^BY3,2,100^FO0,0^BRN,1^FD0112345678901^FS^XZ',
+      8,
+    );
+    expect(props(objects[0]).magnification).toBe(3);
+  });
+});
+
 // ── ^FX comment ───────────────────────────────────────────────────────────────
 
 describe('parseZPL — ^FX comment', () => {

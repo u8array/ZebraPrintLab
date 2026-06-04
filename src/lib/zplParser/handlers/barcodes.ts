@@ -89,8 +89,10 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
     BR(p) {
       field.fieldType = "gs1databar";
       field.bcRotation = readRotation(p[0]);
-      // p[2] is magnification (integer multiplier 1-10), not a dot quantity.
-      defaults.byModuleWidth = int(p[2], defaults.byModuleWidth);
+      // p[2] is the ^BR magnification multiplier (1-10), not a dot
+      // quantity. Out-of-range falls back to ^BY at flush time.
+      const mag = int(p[2]);
+      field.gsMagnification = mag >= 1 && mag <= 10 ? mag : undefined;
       field.gsSymbology = (int(p[1], 1) as Gs1DatabarProps["symbology"]) || 1;
       field.gsSegments =
         p[5] !== undefined

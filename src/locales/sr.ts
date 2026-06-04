@@ -562,7 +562,7 @@ const sr = {
       content: 'Садржај',
       height: 'Висина (тачке)',
       printInterpretation: 'Читљиво',
-      moduleWidth: 'Ширина модула',
+      magnification: 'Величина (1–10)',
       symbology: 'Симбологија',
       segments: 'Сегменти по реду',
     },

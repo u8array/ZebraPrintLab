@@ -6,7 +6,9 @@ import { GS1_DATABAR_DEFAULT_SEGMENTS } from '../lib/gs1';
 
 export interface Gs1DatabarProps {
   content: string;
-  moduleWidth: number;
+  /** ^BR p[2] magnification multiplier (1-10). Generator emits the
+   *  same value to ^BY moduleWidth by Zebra convention. */
+  magnification: number;
   symbology: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   segments?: number;
   rotation: ZplRotation;
@@ -37,7 +39,7 @@ export const gs1databar: ObjectTypeCore<Gs1DatabarProps> = {
   bindable: true,
   defaultProps: {
     content: '0112345678901',
-    moduleWidth: 2,
+    magnification: 2,
     symbology: 1,
     rotation: 'N',
   },
@@ -49,6 +51,6 @@ export const gs1databar: ObjectTypeCore<Gs1DatabarProps> = {
     // ^BRo,s,m,sep,h[,sg] — segments must only be present for Expanded Stacked (7).
     // Including segments on sym 1–6 makes Labelary stack the symbol (wrong rendering).
     const segs = p.symbology === 7 ? `,${p.segments ?? GS1_DATABAR_DEFAULT_SEGMENTS}` : '';
-    return `^BY${p.moduleWidth}${fieldPos(obj)}^BR${p.rotation},${p.symbology},${p.moduleWidth},2,${ZPL_HEIGHT_PLACEHOLDER}${segs}${fdFieldFor(obj, p.content, ctx)}`;
+    return `^BY${p.magnification}${fieldPos(obj)}^BR${p.rotation},${p.symbology},${p.magnification},2,${ZPL_HEIGHT_PLACEHOLDER}${segs}${fdFieldFor(obj, p.content, ctx)}`;
   },
 };

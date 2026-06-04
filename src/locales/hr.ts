@@ -562,7 +562,7 @@ const hr = {
       content: 'Sadržaj',
       height: 'Visina (točke)',
       printInterpretation: 'Čitljivo za ljude',
-      moduleWidth: 'Širina modula',
+      magnification: 'Veličina (1–10)',
       symbology: 'Simbologija',
       segments: 'Segmenti po retku',
     },

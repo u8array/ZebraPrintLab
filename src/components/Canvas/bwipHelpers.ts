@@ -484,7 +484,7 @@ export function buildBwipOptions(
     }
     case "gs1databar": {
       const p = obj.props;
-      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
+      const scale = bwipScale1D(p.magnification, renderScale, renderDpmm);
       const sym = p.symbology;
       const isExpanded = GS1_DATABAR_EXPANDED_SYMBOLOGIES.has(sym);
       // bwip-js needs (AI)data parens; canonical model stores raw digits.
@@ -741,7 +741,7 @@ export function getDisplaySize(
   // bwip renders upright.
   let bitmapCrop: BarcodeDisplaySize["bitmapCrop"];
   if (obj.type === "gs1databar") {
-    const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+    const bwipSc = get1DBwipScale(obj.props.magnification, scale, dpmm);
     const padPx = GS1_DATABAR_PADDING_ROWS * bwipSc;
     if (canvas.height > 2 * padPx) {
       bitmapCrop = {
@@ -823,8 +823,8 @@ function getUprightDisplaySize(
       return { w, h };
     }
     case "gs1databar": {
-      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
-      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
+      const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
+      const bwipSc = get1DBwipScale(obj.props.magnification, scale, dpmm);
       const w = (cw / bwipSc) * modulePx;
       // bwip-js renders most non-stacked variants at the omni (33-module)
       // height regardless of the actual symbology, so trusting `ch` would

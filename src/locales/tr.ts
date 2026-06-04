@@ -562,7 +562,7 @@ const tr = {
       content: 'İçerik',
       height: 'Yükseklik (nokta)',
       printInterpretation: 'Okunabilir',
-      moduleWidth: 'Modül genişliği',
+      magnification: 'Boyut (1–10)',
       symbology: 'Semboloji',
       segments: 'Satır başına segment',
     },

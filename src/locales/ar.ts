@@ -562,7 +562,7 @@ const ar = {
       content: 'المحتوى',
       height: 'الارتفاع (نقاط)',
       printInterpretation: 'مقروء',
-      moduleWidth: 'عرض الوحدة',
+      magnification: 'الحجم (1–10)',
       symbology: 'الرمزية',
       segments: 'مقاطع لكل صف',
     },

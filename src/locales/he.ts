@@ -562,7 +562,7 @@ const he = {
       content: 'תוכן',
       height: 'גובה (נקודות)',
       printInterpretation: 'קריא',
-      moduleWidth: 'רוחב מודול',
+      magnification: 'גודל (1–10)',
       symbology: 'סימבולוגיה',
       segments: 'מקטעים לשורה',
     },

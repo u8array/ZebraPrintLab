@@ -562,7 +562,7 @@ const bg = {
       content: 'Съдържание',
       height: 'Височина (точки)',
       printInterpretation: 'Четимо',
-      moduleWidth: 'Ширина на модул',
+      magnification: 'Размер (1–10)',
       symbology: 'Символика',
       segments: 'Сегменти на ред',
     },

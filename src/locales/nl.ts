@@ -562,7 +562,7 @@ const nl = {
       content: 'Inhoud',
       height: 'Hoogte (punten)',
       printInterpretation: 'Leesbaar',
-      moduleWidth: 'Modulebreedte',
+      magnification: 'Grootte (1–10)',
       symbology: 'Symbologie',
       segments: 'Segmenten per rij',
     },

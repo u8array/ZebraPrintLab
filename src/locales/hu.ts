@@ -562,7 +562,7 @@ const hu = {
       content: 'Tartalom',
       height: 'Magasság (pont)',
       printInterpretation: 'Olvasható',
-      moduleWidth: 'Modulszélesség',
+      magnification: 'Méret (1–10)',
       symbology: 'Szimbológia',
       segments: 'Szegmens soronként',
     },

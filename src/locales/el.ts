@@ -562,7 +562,7 @@ const el = {
       content: 'Περιεχόμενο',
       height: 'Ύψος (κουκκίδες)',
       printInterpretation: 'Αναγνώσιμο',
-      moduleWidth: 'Πλάτος μονάδας',
+      magnification: 'Μέγεθος (1–10)',
       symbology: 'Συμβολολογία',
       segments: 'Τμήματα ανά γραμμή',
     },
