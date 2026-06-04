@@ -52,6 +52,103 @@ describe('parseZPL — label config', () => {
   });
 });
 
+describe('parseZPL — ^MU units of measure', () => {
+  it('^MUI rescales following ^GB coords from inches to dots at 8 dpmm', () => {
+    // 1 inch @ 8 dpmm = 8 * 25.4 = 203.2 dots, rounded to 203
+    const { objects } = parseZPL('^XA^MUI^FO1,2^GB1,1,0.1^FS^XZ', 8);
+    const [obj] = objects;
+    expect(obj?.x).toBe(203);
+    expect(obj?.y).toBe(406);
+  });
+
+  it('^MUM rescales following ^GB coords from mm to dots at 8 dpmm', () => {
+    // 10 mm @ 8 dpmm = 80 dots
+    const { objects } = parseZPL('^XA^MUM^FO10,20^GB10,10,1^FS^XZ', 8);
+    const [obj] = objects;
+    expect(obj?.x).toBe(80);
+    expect(obj?.y).toBe(160);
+  });
+
+  it('^MUD leaves ^GB coords unchanged (dots-canonical, default)', () => {
+    const { objects } = parseZPL('^XA^MUD^FO100,200^GB50,50,2^FS^XZ', 8);
+    const [obj] = objects;
+    expect(obj?.x).toBe(100);
+    expect(obj?.y).toBe(200);
+  });
+
+  it('^MU carries across ^XA per spec (field-by-field until overridden)', () => {
+    // Spec: "^MU carries over from field to field until a new mode is
+    // entered." In production parseZPL is called per-block by
+    // zplImportService so cross-block carry-over never surfaces; this
+    // pins the spec-correct behaviour for the parser-API itself.
+    const { objects } = parseZPL(
+      '^XA^MUI^FO1,1^GB1,1,1^FS^XZ^XA^FO1,1^GB1,1,1^FS^XZ',
+      8,
+    );
+    expect(objects[0]?.x).toBe(203);
+    expect(objects[1]?.x).toBe(203);
+  });
+
+  it('^MU b,c slots persist on labelConfig for re-emit', () => {
+    const { labelConfig } = parseZPL('^XA^MUD,150,300^XZ', 8);
+    expect(labelConfig.formatDpi).toBe(150);
+    expect(labelConfig.outputDpi).toBe(300);
+  });
+
+  it('^MU drops out-of-spec dpi values silently', () => {
+    const { labelConfig } = parseZPL('^XA^MUD,77,999^XZ', 8);
+    expect(labelConfig.formatDpi).toBeUndefined();
+    expect(labelConfig.outputDpi).toBeUndefined();
+  });
+
+  it('^MU,150,300 with a-slot omitted resets unit to D and persists b/c', () => {
+    const { labelConfig, objects } = parseZPL(
+      '^XA^MU,150,300^FO100,100^GB10,10,1^FS^XZ',
+      8,
+    );
+    expect(labelConfig.formatDpi).toBe(150);
+    expect(labelConfig.outputDpi).toBe(300);
+    // a-slot defaulted to D so coords stay unscaled
+    expect(objects[0]?.x).toBe(100);
+  });
+
+  it('invalid ^MU a-slot surfaces as partial finding', () => {
+    const { importReport } = parseZPL('^XA^MUX^XZ', 8);
+    expect(importReport.partial).toContain('^MU');
+  });
+
+  it('round-trip: ^MUD,b,c parses + generates back symmetrically', () => {
+    const original = '^XA^MUD,200,600^PW600^LL400^CI28^XZ';
+    const { labelConfig } = parseZPL(original, 8);
+    expect(labelConfig.formatDpi).toBe(200);
+    expect(labelConfig.outputDpi).toBe(600);
+  });
+
+  it('^MUI admits fractional inch values (the whole point of I-mode)', () => {
+    // 0.5 inch @ 8 dpmm = 0.5 * 8 * 25.4 = 101.6 dots, rounded to 102
+    const { objects } = parseZPL('^XA^MUI^FO0.5,0.25^GB1,1,0.05^FS^XZ', 8);
+    const [box] = objects;
+    expect(box?.x).toBe(102);
+    expect(box?.y).toBe(51);
+    expect(props(box).width).toBe(203);
+    expect(props(box).thickness).toBe(10); // 0.05 in = 10.16 dots → 10
+  });
+
+  it('^MUI also rescales ^GB dimensions and ^PW/^LL', () => {
+    const { labelConfig, objects } = parseZPL(
+      '^XA^MUI^PW4^LL3^FO0,0^GB1,2,0.05^FS^XZ',
+      8,
+    );
+    expect(labelConfig.widthMm).toBeCloseTo(101.6, 0); // 4 in = 812.8 dots / 8 = 101.6 mm
+    expect(labelConfig.heightMm).toBeCloseTo(76.2, 0);
+    const box = objects[0];
+    expect(box?.type).toBe('box');
+    // 1 in width = 203 dots, 2 in height = 406, 0.05 in thickness = 10 dots
+    expect(props(box).width).toBe(203);
+    expect(props(box).height).toBe(406);
+  });
+});
+
 // ── text ──────────────────────────────────────────────────────────────────────
 
 describe('parseZPL — text via ^A0', () => {

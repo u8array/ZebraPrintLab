@@ -73,6 +73,33 @@ export function int(s: string | undefined, fallback = 0): number {
   return Number.isNaN(n) ? fallback : n;
 }
 
+/** Read a dot-quantity, applying the active ^MU `a`-slot multiplier.
+ *  `parseFloat` is load-bearing: ^MUI/^MUM admits fractional unit
+ *  values (`^FO0.5,0.5` = half an inch); `parseInt` would silently
+ *  truncate to 0. Non-dot params (rotation, mode, counts) stay on
+ *  plain `int`. */
+export function intDots(
+  s: string | undefined,
+  unitScale: number,
+  fallback = 0,
+): number {
+  const n = Number.parseFloat(s ?? "");
+  if (Number.isNaN(n)) return fallback;
+  return Math.round(n * unitScale);
+}
+
+/** Optional-form of `intDots`. Returns undefined when the param is
+ *  missing/NaN. Used where "absent" must be distinguished from
+ *  "explicit 0". */
+export function intDotsOrUndef(
+  s: string | undefined,
+  unitScale: number,
+): number | undefined {
+  const n = Number.parseFloat(s ?? "");
+  if (Number.isNaN(n)) return undefined;
+  return Math.round(n * unitScale);
+}
+
 /** Returns v if within [r.min, r.max], else undefined. */
 export function inRange(v: number | undefined, r: { min: number; max: number }): number | undefined {
   return v !== undefined && v >= r.min && v <= r.max ? v : undefined;

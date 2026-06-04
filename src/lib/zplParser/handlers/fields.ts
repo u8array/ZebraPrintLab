@@ -2,7 +2,7 @@ import type { CustomFontMapping } from "../../../types/LabelConfig";
 import { FN_NUMBER_MAX, FN_NUMBER_MIN } from "../../../types/Variable";
 import type { SerialProps } from "../../../registry/serial";
 import { getDefaultTextH, getDefaultTextW, type ParserState } from "../context";
-import { ciToEncoding, getDecoder, int, makeObj, readRotation } from "../helpers";
+import { ciToEncoding, getDecoder, int, intDots, intDotsOrUndef, makeObj, readRotation } from "../helpers";
 import type { Handler } from "../types";
 
 /** flushField + appendComment are shared with the orchestrator. */
@@ -24,15 +24,15 @@ export function createFieldHandlers(
     // ── Field origin ──────────────────────────────────────────────────────
     FO(p) {
       flushField();
-      s.field.x = int(p[0]) + s.label.lhX;
-      s.field.y = int(p[1]) + s.label.lhY + s.label.ltY;
+      s.field.x = intDots(p[0], s.format.unitScale) + s.label.lhX;
+      s.field.y = intDots(p[1], s.format.unitScale) + s.label.lhY + s.label.ltY;
       // 3rd param is justification (0/1/2) — stored but not actively used.
       s.field.positionIsFT = false;
     },
     FT(p) {
       flushField();
-      s.field.x = int(p[0]) + s.label.lhX;
-      s.field.y = int(p[1]) + s.label.lhY + s.label.ltY;
+      s.field.x = intDots(p[0], s.format.unitScale) + s.label.lhX;
+      s.field.y = intDots(p[1], s.format.unitScale) + s.label.lhY + s.label.ltY;
       s.field.positionIsFT = true;
     },
 
@@ -41,8 +41,8 @@ export function createFieldHandlers(
     A0(p, rest) {
       s.field.fieldType = "text";
       s.field.textRot = readRotation(rest[0], s.defaults.fwRotation);
-      s.field.textH = int(p[1], getDefaultTextH(s.defaults));
-      s.field.textW = int(p[2], getDefaultTextW(s.defaults));
+      s.field.textH = intDots(p[1], s.format.unitScale, getDefaultTextH(s.defaults));
+      s.field.textW = intDots(p[2], s.format.unitScale, getDefaultTextW(s.defaults));
       // fontId "0" only when ^CF differs; "0" is the implicit default otherwise.
       s.field.pendingFontId = s.defaults.cfFontId && s.defaults.cfFontId !== "0" ? "0" : undefined;
     },
@@ -51,18 +51,18 @@ export function createFieldHandlers(
     // ^CF{font},{height},{width}  → sets default for fields without ^A
     CF(p) {
       const fontId = (p[0] ?? "").trim();
-      const explicitHeight = parseInt(p[1] ?? "", 10);
-      const explicitWidth = parseInt(p[2] ?? "", 10);
-      s.defaults.cfHeight = isNaN(explicitHeight) ? s.defaults.cfHeight : explicitHeight;
-      s.defaults.cfWidth = isNaN(explicitWidth) ? s.defaults.cfWidth : explicitWidth;
+      const explicitHeight = intDotsOrUndef(p[1], s.format.unitScale);
+      const explicitWidth = intDotsOrUndef(p[2], s.format.unitScale);
+      if (explicitHeight !== undefined) s.defaults.cfHeight = explicitHeight;
+      if (explicitWidth !== undefined) s.defaults.cfWidth = explicitWidth;
       if (fontId) {
         labelConfig.defaultFontId = fontId;
         s.defaults.cfFontId = fontId;
       }
-      if (!isNaN(explicitHeight) && explicitHeight > 0) {
+      if (explicitHeight !== undefined && explicitHeight > 0) {
         labelConfig.defaultFontHeight = explicitHeight;
       }
-      if (!isNaN(explicitWidth) && explicitWidth >= 0) {
+      if (explicitWidth !== undefined && explicitWidth >= 0) {
         labelConfig.defaultFontWidth = explicitWidth;
       }
     },
@@ -79,9 +79,9 @@ export function createFieldHandlers(
     // ── Field block ───────────────────────────────────────────────────────
     // ^FB{width},{lines},{lineSpacing},{justify},{hangingIndent}
     FB(p) {
-      s.defaults.fbWidth = int(p[0], 0);
+      s.defaults.fbWidth = intDots(p[0], s.format.unitScale, 0);
       s.defaults.fbLines = int(p[1], 1);
-      s.defaults.fbSpacing = int(p[2], 0);
+      s.defaults.fbSpacing = intDots(p[2], s.format.unitScale, 0);
       const fbJ = (p[3] ?? "L").toUpperCase();
       s.defaults.fbJustify = fbJ === "C" || fbJ === "R" || fbJ === "J" ? fbJ : "L";
       // ^FB also implies text if no ^A was specified.
@@ -182,18 +182,18 @@ export function createFieldHandlers(
     FP(p) {
       const d = (p[0] ?? "H").toUpperCase();
       s.field.fpDirection = d === "V" || d === "R" ? d : "H";
-      s.field.fpCharGap = Math.max(0, Math.min(9999, int(p[1], 0)));
+      s.field.fpCharGap = Math.max(0, Math.min(9999, intDots(p[1], s.format.unitScale, 0)));
     },
 
     // ── Label home (origin offset) ────────────────────────────────────────
     LH(p) {
-      s.label.lhX = int(p[0], 0);
-      s.label.lhY = int(p[1], 0);
+      s.label.lhX = intDots(p[0], s.format.unitScale, 0);
+      s.label.lhY = intDots(p[1], s.format.unitScale, 0);
     },
 
     // ── Label top (vertical offset) ───────────────────────────────────────
     LT(_, rest) {
-      s.label.ltY = int(rest, 0);
+      s.label.ltY = intDots(rest, s.format.unitScale, 0);
     },
 
     // ^CW {alias},{path} — register a printer-resident font alias.
@@ -223,8 +223,8 @@ export function createFieldHandlers(
     "A@"(p, rest) {
       s.field.fieldType = "text";
       s.field.textRot = readRotation(rest[0], s.defaults.fwRotation);
-      s.field.textH = int(p[1]) || getDefaultTextH(s.defaults);
-      s.field.textW = int(p[2]) || getDefaultTextW(s.defaults);
+      s.field.textH = intDots(p[1], s.format.unitScale) || getDefaultTextH(s.defaults);
+      s.field.textW = intDots(p[2], s.format.unitScale) || getDefaultTextW(s.defaults);
       const fontRef = p[3] ?? "";
       const colonIdx = fontRef.indexOf(":");
       s.field.pendingPrinterFontName =
@@ -235,8 +235,8 @@ export function createFieldHandlers(
     TB(p, rest) {
       s.field.fieldType = "text";
       s.field.textRot = readRotation(rest[0], s.defaults.fwRotation);
-      const tbW = int(p[1], 0);
-      const tbH = int(p[2], 0);
+      const tbW = intDots(p[1], s.format.unitScale, 0);
+      const tbH = intDots(p[2], s.format.unitScale, 0);
       s.field.textH = getDefaultTextH(s.defaults);
       s.field.textW = getDefaultTextW(s.defaults);
       if (tbW > 0) {

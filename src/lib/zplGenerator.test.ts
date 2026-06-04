@@ -55,6 +55,31 @@ describe('generateZPL — structure', () => {
     expect(zpl).toContain('^LS5');
   });
 
+  it('does not emit ^MU when neither formatDpi nor outputDpi is set', () => {
+    const zpl = generateZPL(BASE_LABEL, []);
+    expect(zpl).not.toContain('^MU');
+  });
+
+  it('emits ^MUD,b,c when formatDpi and outputDpi are set', () => {
+    const zpl = generateZPL({ ...BASE_LABEL, formatDpi: 150, outputDpi: 300 }, []);
+    expect(zpl).toContain('^MUD,150,300');
+  });
+
+  it('emits ^MU directly after ^XA so the printer sees the resampling header first', () => {
+    const zpl = generateZPL({ ...BASE_LABEL, formatDpi: 200, outputDpi: 600 }, []);
+    const xaIdx = zpl.indexOf('^XA');
+    const muIdx = zpl.indexOf('^MUD');
+    const pwIdx = zpl.indexOf('^PW');
+    expect(xaIdx).toBeGreaterThanOrEqual(0);
+    expect(muIdx).toBeGreaterThan(xaIdx);
+    expect(muIdx).toBeLessThan(pwIdx);
+  });
+
+  it('omits ^MU when only one of formatDpi/outputDpi is set (paired directive)', () => {
+    expect(generateZPL({ ...BASE_LABEL, formatDpi: 200 }, [])).not.toContain('^MU');
+    expect(generateZPL({ ...BASE_LABEL, outputDpi: 300 }, [])).not.toContain('^MU');
+  });
+
   it('reverse text round-trips: emit ^GB+^FR, parse collapses back to one reverse text', () => {
     // Generator emits a filled black ^GB knockout-background followed by
     // an ^FR text at the same anchor. The parser detects that pair and

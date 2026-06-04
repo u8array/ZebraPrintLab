@@ -69,6 +69,9 @@ export interface FormatState {
   caretChar: string;
   tildeChar: string;
   delimiterChar: string;
+  /** ^MU a-slot dot multiplier: 1 (D), dpmm*25.4 (I), dpmm (M).
+   *  Internal model is dots-canonical; I/M sources get scaled on read. */
+  unitScale: number;
 }
 
 /** Persistent defaults for following fields (^CF, ^FW, ^FB, ^BY). */
@@ -219,6 +222,7 @@ export function createParserState(): ParserState {
       caretChar: "^",
       tildeChar: "~",
       delimiterChar: ",",
+      unitScale: 1,
     },
     defaults: {
       cfHeight: 0,
