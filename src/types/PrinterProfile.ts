@@ -82,9 +82,8 @@ export const CONFIG_UPDATE_VALUES = ['S', 'R', 'N', 'F'] as const;
 export type ConfigUpdateAction = (typeof CONFIG_UPDATE_VALUES)[number];
 export const isConfigUpdateAction = makeEnumGuard(CONFIG_UPDATE_VALUES);
 
-/** ^MA/^MI alert type. Shared discriminator so one field couples
- *  alert and message at the wire level. */
-export const MAINTENANCE_ALERT_TYPES = ['H', 'R'] as const;
+/** ^MA/^MI alert type. R=head replacement, C=head cleaning per spec. */
+export const MAINTENANCE_ALERT_TYPES = ['R', 'C'] as const;
 export type MaintenanceAlertType = (typeof MAINTENANCE_ALERT_TYPES)[number];
 export const isMaintenanceAlertType = makeEnumGuard(MAINTENANCE_ALERT_TYPES);
 
@@ -93,33 +92,45 @@ export const MAINTENANCE_ALERT_PRINT_VALUES = ['Y', 'N'] as const;
 export type MaintenanceAlertPrint = (typeof MAINTENANCE_ALERT_PRINT_VALUES)[number];
 export const isMaintenanceAlertPrint = makeEnumGuard(MAINTENANCE_ALERT_PRINT_VALUES);
 
-/** ^MA units slot: M=meters, I=inches, C=centimeters. */
-export const MAINTENANCE_ALERT_UNITS = ['M', 'I', 'C'] as const;
+/** ^MA units slot: C=centimeters, I=inches, M=meters. */
+export const MAINTENANCE_ALERT_UNITS = ['C', 'I', 'M'] as const;
 export type MaintenanceAlertUnit = (typeof MAINTENANCE_ALERT_UNITS)[number];
 export const isMaintenanceAlertUnit = makeEnumGuard(MAINTENANCE_ALERT_UNITS);
 
-/** ^MA threshold/frequency cap. Spec is implementation-defined;
- *  99999 covers typical ~600m head life. */
-export const MAINTENANCE_DISTANCE_MAX = 99999;
+/** ^MA threshold/frequency caps. Type-dependent per spec:
+ *  R (replacement) = 0-150000 m (150 km printhead life),
+ *  C (cleaning)    = 0-2000 m. Schema's outer .max uses the larger;
+ *  the per-type cap is enforced in superRefine. */
+export const MAINTENANCE_DISTANCE_MAX_BY_TYPE = { R: 150000, C: 2000 } as const;
 /** ^MI message length cap from Zebra Quick Reference. */
 export const MAINTENANCE_MESSAGE_MAX_LEN = 63;
-/** ^JH g-slot (head cleaning interval) range in meters. Min is 1
- *  so the unset/disabled state is `undefined` rather than ambiguous
- *  `0M`. Max 900 keeps PAX4 compatible.
- *  TODO HW-verify: Zebra docs are ambiguous whether the wire format
- *  is raw `<n>M` or an indexed table (0..16 mapping to 100M..900M).
- *  Current implementation uses `<n>M`; verify on real hardware. */
-export const HEAD_CLEANING_INTERVAL_RANGE = { min: 1, max: 900 } as const;
+
+/** ^JH g-slot head-cleaning interval: indexed table 0..16 mapping to
+ *  meters in steps of 50 starting at 100M. Wire value is the index. */
+export const HEAD_CLEANING_INTERVAL_METERS = [
+  100, 150, 200, 250, 300, 350, 400, 450,
+  500, 550, 600, 650, 700, 750, 800, 850, 900,
+] as const;
+export type HeadCleaningIntervalMeters = (typeof HEAD_CLEANING_INTERVAL_METERS)[number];
+export const isHeadCleaningIntervalMeters = (n: number): n is HeadCleaningIntervalMeters =>
+  (HEAD_CLEANING_INTERVAL_METERS as readonly number[]).includes(n);
+
+/** ^JH positional slot count and indices: f=early-warning master,
+ *  g=head-cleaning interval. The other 8 slots are runtime reset
+ *  flags we don't model. */
+export const JH_SLOT_COUNT = 10;
+export const JH_SLOT_F = 5;
+export const JH_SLOT_G = 6;
 
 /** Default seed for a freshly enabled ^MA. Matches the spec example
- *  `^MAH,Y,5,1,M`. Spread inline so UI placeholder display and
- *  parser blank-slot fallback stay in sync. */
+ *  `^MAR,Y,5,1,I`. Spread inline so UI placeholder display and parser
+ *  blank-slot fallback stay in sync. */
 export const MAINTENANCE_ALERT_DEFAULTS = {
-  type: 'H',
+  type: 'R',
   print: 'Y',
   threshold: 5,
   frequency: 1,
-  units: 'M',
+  units: 'I',
 } as const;
 
 /** Printer-installation profile: EEPROM-persistent printer-state
@@ -145,12 +156,13 @@ export const printerProfileSchema = z.object({
   printerDescription: z.string().min(1).regex(setupScriptSafeStringRegex).optional(),
   setPassword: z.string().regex(PRINTER_PASSWORD_REGEX).optional(),
   /** ^MA alert. Requires earlyWarningMaintenance==='E' to actually
-   *  fire; the two are stored independently. */
+   *  fire; the two are stored independently. The type-specific
+   *  threshold/frequency caps are enforced in superRefine. */
   maintenanceAlert: z.object({
     type: z.enum(MAINTENANCE_ALERT_TYPES),
     print: z.enum(['Y', 'N']),
-    threshold: z.number().int().min(0).max(MAINTENANCE_DISTANCE_MAX),
-    frequency: z.number().int().min(1).max(MAINTENANCE_DISTANCE_MAX),
+    threshold: z.number().int().min(0).max(MAINTENANCE_DISTANCE_MAX_BY_TYPE.R),
+    frequency: z.number().int().min(0).max(MAINTENANCE_DISTANCE_MAX_BY_TYPE.R),
     units: z.enum(MAINTENANCE_ALERT_UNITS),
   }).optional(),
   /** ^MI custom message printed when the matching `^MA{type}` fires. */
@@ -164,9 +176,12 @@ export const printerProfileSchema = z.object({
    *  the ^MA alert system on. Without `E` the maintenanceAlert
    *  config sits dormant on the printer. */
   earlyWarningMaintenance: z.enum(['E', 'D']).optional(),
-  /** ^JH g-slot head-cleaning interval, stored as a meter count.
-   *  Generator emits `<n>M`; spec accepts an `M` suffix only. */
-  headCleaningIntervalMeters: intInRange(HEAD_CLEANING_INTERVAL_RANGE).optional(),
+  /** ^JH g-slot head-cleaning interval. Stored as meters for UX; the
+   *  wire format is an index into HEAD_CLEANING_INTERVAL_METERS. */
+  headCleaningIntervalMeters: z.number().int().refine(
+    isHeadCleaningIntervalMeters,
+    `must be one of ${HEAD_CLEANING_INTERVAL_METERS.join(', ')}`,
+  ).optional(),
   /** ^JU action. Generator emits the value as `^JU{action}` last in
    *  the setup-script block so an `S` commit happens after every
    *  other persistent write in the same script. */
@@ -197,25 +212,30 @@ export const printerProfileSchema = z.object({
       message: 'maintenanceMessage.type must match maintenanceAlert.type',
     });
   }
+  if (p.maintenanceAlert) {
+    const cap = MAINTENANCE_DISTANCE_MAX_BY_TYPE[p.maintenanceAlert.type];
+    if (p.maintenanceAlert.threshold > cap) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['maintenanceAlert', 'threshold'],
+        message: `threshold for type ${p.maintenanceAlert.type} must be ≤ ${cap}`,
+      });
+    }
+    if (p.maintenanceAlert.frequency > cap) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['maintenanceAlert', 'frequency'],
+        message: `frequency for type ${p.maintenanceAlert.type} must be ≤ ${cap}`,
+      });
+    }
+  }
 });
 
 export type PrinterProfile = z.infer<typeof printerProfileSchema>;
 
-/** Repair the cross-field ^MA/^MI type invariant after a partial patch.
- *  Direction follows which side the patch object touches: a patch with
- *  a `maintenanceAlert.type` cascades into message, and vice versa.
- *  When both sides are touched, no cascade runs and the schema's
- *  superRefine catches a mismatch.
- *
- *  Caveat: UI callers spread the whole alert (`{ ...alert, [key]: v }`)
- *  so `patch.maintenanceAlert.type` is "touched" even for non-type
- *  edits. The cascade then runs but is a no-op as long as the
- *  pre-patch invariant held (which the slice gates). If the store is
- *  ever seeded with a mismatched pair, the next single-side sub-field
- *  edit silently rewrites the unrelated side toward the patched one
- *  instead of surfacing the seed bug.
- *
- *  Pure function; safe to call before `safeParse` at any boundary. */
+/** Cascade direction follows whichever side the patch touches:
+ *  alert-touched rewrites message.type, message-touched rewrites
+ *  alert.type. Both-touched leaves the mismatch to superRefine. */
 export function normalizeMaintenanceTypes(
   merged: PrinterProfile,
   patch: Partial<PrinterProfile>,

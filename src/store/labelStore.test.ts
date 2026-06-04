@@ -1165,7 +1165,7 @@ describe('migrateLegacy — v4→v5 printerProfile extraction', () => {
         reprintAfterError: 'Y',
         headTestInterval: 250,
         tearOffAdjust: 15,
-        clockFormat: 'd1',
+        clockFormat: '1',
         printerName: 'lab-zpl-01',
       },
       pages: [{ objects: [] }],
@@ -1178,7 +1178,7 @@ describe('migrateLegacy — v4→v5 printerProfile extraction', () => {
       reprintAfterError: 'Y',
       headTestInterval: 250,
       tearOffAdjust: 15,
-      clockFormat: 'd1',
+      clockFormat: '1',
       printerName: 'lab-zpl-01',
     });
   });
@@ -1204,6 +1204,44 @@ describe('migrateLegacy — v4→v5 printerProfile extraction', () => {
       printerProfile: Record<string, unknown>;
     };
     expect(migrated.printerProfile).toEqual({});
+  });
+
+  it('drops the schema-rejected sub-field on rehydrate', () => {
+    // Legacy persist that survived from before the cross-field
+    // superRefine landed. The repair walks Zod's issue paths: the
+    // cross-field rule flags the message side, so the alert stays
+    // and the (stale) message is dropped instead of silently
+    // rewriting on the next edit.
+    const persisted = {
+      label: { widthMm: 100, heightMm: 50, dpmm: 8 },
+      pages: [{ objects: [] }],
+      printerProfile: {
+        maintenanceAlert: { type: 'H', print: 'Y', threshold: 5, frequency: 1, units: 'M' },
+        maintenanceMessage: { type: 'R', text: 'Replace head' },
+      },
+    };
+    const migrated = migrateLegacy(persisted, 6) as typeof persisted & {
+      printerProfile: Record<string, unknown>;
+    };
+    expect(migrated.printerProfile.maintenanceAlert).toEqual({
+      type: 'C', print: 'Y', threshold: 5, frequency: 1, units: 'M',
+    });
+    expect(migrated.printerProfile.maintenanceMessage).toBeUndefined();
+  });
+
+  it('drops clockMode "TOL" when clockTolerance is missing on rehydrate', () => {
+    // superRefine reports path ['clockTolerance'], which is already
+    // absent — a single-pass delete would be a no-op and leave the
+    // invariant violation in place. The fixpoint loop catches this.
+    const persisted = {
+      label: { widthMm: 100, heightMm: 50, dpmm: 8 },
+      pages: [{ objects: [] }],
+      printerProfile: { clockMode: 'TOL' },
+    };
+    const migrated = migrateLegacy(persisted, 6) as typeof persisted & {
+      printerProfile: Record<string, unknown>;
+    };
+    expect(migrated.printerProfile.clockMode).toBeUndefined();
   });
 });
 

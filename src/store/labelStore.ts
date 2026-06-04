@@ -2,7 +2,7 @@ import { create, useStore } from 'zustand';
 import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { ObjectChanges } from '../types/LabelObject';
-import { PRINTER_PROFILE_FIELDS } from '../types/PrinterProfile';
+import { PRINTER_PROFILE_FIELDS, printerProfileSchema } from '../types/PrinterProfile';
 import { visitLeavesInPages } from '../lib/objectTree';
 import type { LabelObject } from '../types/Group';
 import {
@@ -111,7 +111,58 @@ export function migrateLegacy(persistedState: unknown, version: number): unknown
     s = { ...s, pages: migrateGs1DatabarInPages(s.pages) };
   }
 
+  // v6→v7: ^MA/^MI type codes corrected to match spec (R/C instead of
+  // H/R). The legacy 'H' meant "head cleaning"; the spec letter is 'C'.
+  // 'R' (replacement) was already correct.
+  if (version < 7) {
+    const pp = (s as Record<string, unknown>).printerProfile;
+    if (pp && typeof pp === 'object') {
+      s = { ...s, printerProfile: migrateMaintenanceTypeCodes(pp as Record<string, unknown>) };
+    }
+  }
+
+  // Re-validate the rehydrated profile so a legacy snapshot that
+  // violates the schema or a cross-field rule can't crash the slice's
+  // safeParse on the next patch. Cross-field issues report a path
+  // that may already be absent (clockMode='TOL' without
+  // clockTolerance: path is ['clockTolerance']), so a single delete
+  // pass is not enough. Fixpoint-loop until stable.
+  const profile = (s as Record<string, unknown>).printerProfile;
+  if (profile && typeof profile === 'object') {
+    let next = { ...(profile as Record<string, unknown>) };
+    for (let i = 0; i < 8; i++) {
+      const validation = printerProfileSchema.safeParse(next);
+      if (validation.success) break;
+      const drop = new Set<string>();
+      for (const issue of validation.error.issues) {
+        const topKey = issue.path[0];
+        if (typeof topKey === 'string' && topKey in next) drop.add(topKey);
+      }
+      // No present top-key to drop means the residual violation isn't
+      // something the loop can resolve; bail to {} rather than spin.
+      if (drop.size === 0) {
+        next = {};
+        break;
+      }
+      next = Object.fromEntries(Object.entries(next).filter(([k]) => !drop.has(k)));
+    }
+    s = { ...s, printerProfile: next };
+  }
+
   return s;
+}
+
+function migrateMaintenanceTypeCodes(pp: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...pp };
+  const remap = (obj: unknown): unknown => {
+    if (!obj || typeof obj !== 'object') return obj;
+    const o = obj as Record<string, unknown>;
+    if (o.type === 'H') return { ...o, type: 'C' };
+    return obj;
+  };
+  if (out.maintenanceAlert) out.maintenanceAlert = remap(out.maintenanceAlert);
+  if (out.maintenanceMessage) out.maintenanceMessage = remap(out.maintenanceMessage);
+  return out;
 }
 
 function migrateGs1DatabarInPages(pages: unknown): unknown {
@@ -205,7 +256,7 @@ export const useLabelStore = create<LabelState>()(
     }),
     {
       name: 'zpl-designer-session',
-      version: 6,
+      version: 7,
       migrate: (persistedState, version) => migrateLegacy(persistedState, version) as LabelState,
       storage: createJSONStorage(() => localStorage),
       partialize: persistPartialize,

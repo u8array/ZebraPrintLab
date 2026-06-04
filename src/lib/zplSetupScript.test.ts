@@ -5,7 +5,12 @@ import {
   __SETUP_SCRIPT_EMITTERS_FOR_TESTS,
 } from "./zplSetupScript";
 import { parseZPL } from "./zplParser";
-import { printerProfileSchema, type PrinterProfile } from "../types/PrinterProfile";
+import {
+  MAINTENANCE_ALERT_DEFAULTS,
+  MAINTENANCE_DISTANCE_MAX_BY_TYPE,
+  printerProfileSchema,
+  type PrinterProfile,
+} from "../types/PrinterProfile";
 
 const base: PrinterProfile = {};
 
@@ -456,17 +461,17 @@ describe("generateSetupScript — maintenance commands", () => {
   it("emits ^MA with the 5 positional params", () => {
     const script = generateSetupScript({
       ...base,
-      maintenanceAlert: { type: 'H', print: 'Y', threshold: 5, frequency: 1, units: 'M' },
+      maintenanceAlert: { type: 'C', print: 'Y', threshold: 5, frequency: 1, units: 'M' },
     });
-    expect(script).toBe("^XA\n^MAH,Y,5,1,M\n^XZ");
+    expect(script).toBe("^XA\n^MAC,Y,5,1,M\n^XZ");
   });
 
   it("emits ^MI as type + text", () => {
     const script = generateSetupScript({
       ...base,
-      maintenanceMessage: { type: 'H', text: 'Clean head soon' },
+      maintenanceMessage: { type: 'C', text: 'Clean head soon' },
     });
-    expect(script).toBe("^XA\n^MIH,Clean head soon\n^XZ");
+    expect(script).toBe("^XA\n^MIC,Clean head soon\n^XZ");
   });
 
   it("emits ^MW for the head-cold-warning flag", () => {
@@ -484,28 +489,28 @@ describe("generateSetupScript — maintenance commands", () => {
       earlyWarningMaintenance: 'E',
       headCleaningIntervalMeters: 150,
     });
-    expect(script).toBe("^XA\n^JH,,,,,E,150M,,,\n^XZ");
+    expect(script).toBe("^XA\n^JH,,,,,E,1,,,\n^XZ");
   });
 
   it("emits ^JH with only g-slot when only the interval is set", () => {
     const script = generateSetupScript({ ...base, headCleaningIntervalMeters: 200 });
-    expect(script).toBe("^XA\n^JH,,,,,,200M,,,\n^XZ");
+    expect(script).toBe("^XA\n^JH,,,,,,2,,,\n^XZ");
   });
 
   it("parses ^MA / ^MI / ^MW / ^JH back into the profile", () => {
     const zpl = [
       "^XA",
-      "^MAH,Y,5,1,M",
-      "^MIH,Clean me",
+      "^MAC,Y,5,1,M",
+      "^MIC,Clean me",
       "^MWN",
-      "^JH,,,,,E,150M,,,",
+      "^JH,,,,,E,1,,,",
       "^XZ",
     ].join("\n");
     const { printerProfile } = parseZPL(zpl);
     expect(printerProfile.maintenanceAlert).toEqual({
-      type: 'H', print: 'Y', threshold: 5, frequency: 1, units: 'M',
+      type: 'C', print: 'Y', threshold: 5, frequency: 1, units: 'M',
     });
-    expect(printerProfile.maintenanceMessage).toEqual({ type: 'H', text: 'Clean me' });
+    expect(printerProfile.maintenanceMessage).toEqual({ type: 'C', text: 'Clean me' });
     expect(printerProfile.headColdWarning).toBe('N');
     expect(printerProfile.earlyWarningMaintenance).toBe('E');
     expect(printerProfile.headCleaningIntervalMeters).toBe(150);
@@ -528,19 +533,26 @@ describe("generateSetupScript — maintenance commands", () => {
     const script = generateSetupScript({
       ...base,
       earlyWarningMaintenance: 'E',
-      maintenanceAlert: { type: 'H', print: 'Y', threshold: 5, frequency: 1, units: 'M' },
+      maintenanceAlert: { type: 'C', print: 'Y', threshold: 5, frequency: 1, units: 'I' },
     });
     expect(script.indexOf("^JH")).toBeLessThan(script.indexOf("^MA"));
   });
 
   it("defaults ^MA print to Y when the slot is blank", () => {
-    const { printerProfile } = parseZPL("^XA^MAH,,5,1,M^XZ");
+    const { printerProfile } = parseZPL("^XA^MAC,,5,1,M^XZ");
     expect(printerProfile.maintenanceAlert?.print).toBe("Y");
   });
 
-  it("defaults ^MA units to M when the slot is blank", () => {
-    const { printerProfile } = parseZPL("^XA^MAH,Y,5,1^XZ");
-    expect(printerProfile.maintenanceAlert?.units).toBe("M");
+  it("defaults ^MA units to I when the slot is blank", () => {
+    const { printerProfile } = parseZPL("^XA^MAC,Y,5,1^XZ");
+    expect(printerProfile.maintenanceAlert?.units).toBe("I");
+  });
+
+  it("defaults ^MA threshold and frequency to spec values when slots are blank", () => {
+    const { printerProfile } = parseZPL("^XA^MAR,Y,,,M^XZ");
+    expect(printerProfile.maintenanceAlert).toEqual({
+      type: "R", print: "Y", threshold: 5, frequency: 1, units: "M",
+    });
   });
 
   it("drops ^MA with invalid type", () => {
@@ -548,46 +560,78 @@ describe("generateSetupScript — maintenance commands", () => {
     expect(printerProfile.maintenanceAlert).toBeUndefined();
   });
 
-  it("drops ^MA with out-of-range threshold", () => {
-    const { printerProfile } = parseZPL("^XA^MAH,Y,999999,1,M^XZ");
+  it("drops ^MA type C with threshold over the 2000 m cap", () => {
+    const { printerProfile } = parseZPL("^XA^MAC,Y,2001,1,M^XZ");
     expect(printerProfile.maintenanceAlert).toBeUndefined();
   });
 
-  it("drops ^MA with frequency=0 (out of spec example range)", () => {
-    // Documents the parser's min=1 stance: older firmware dumps with
-    // `frequency=0` (intended as a "disabled" idiom) are discarded
-    // rather than imported as a degenerate "alert every 0 labels".
-    const { printerProfile } = parseZPL("^XA^MAH,Y,5,0,M^XZ");
-    expect(printerProfile.maintenanceAlert).toBeUndefined();
+  it("accepts ^MA type R with threshold up to 150000 m", () => {
+    const { printerProfile } = parseZPL("^XA^MAR,Y,150000,1,M^XZ");
+    expect(printerProfile.maintenanceAlert?.threshold).toBe(150000);
+  });
+
+  it("accepts ^MA with frequency=0 (disabled-repeat idiom)", () => {
+    const { printerProfile } = parseZPL("^XA^MAC,Y,5,0,M^XZ");
+    expect(printerProfile.maintenanceAlert?.frequency).toBe(0);
   });
 
   it("drops ^MI with embedded comma", () => {
-    const { printerProfile } = parseZPL("^XA^MIH,Hi, there^XZ");
+    const { printerProfile } = parseZPL("^XA^MIC,Hi, there^XZ");
     expect(printerProfile.maintenanceMessage).toBeUndefined();
   });
 
   it("drops ^MI exceeding the message length cap", () => {
     const longText = "A".repeat(64);
-    const { printerProfile } = parseZPL(`^XA^MIH,${longText}^XZ`);
+    const { printerProfile } = parseZPL(`^XA^MIC,${longText}^XZ`);
     expect(printerProfile.maintenanceMessage).toBeUndefined();
   });
 
-  it("accepts ^JH g-slot in lowercase m suffix", () => {
-    const { printerProfile } = parseZPL("^XA^JH,,,,,E,150m,,,^XZ");
+  it("parses ^JH g-slot index 1 as 150 m", () => {
+    const { printerProfile } = parseZPL("^XA^JH,,,,,E,1,,,^XZ");
     expect(printerProfile.headCleaningIntervalMeters).toBe(150);
   });
 
-  it("drops ^JH g-slot without M suffix", () => {
-    const { printerProfile } = parseZPL("^XA^JH,,,,,E,150,,,^XZ");
+  it("drops ^JH g-slot index out of range", () => {
+    const { printerProfile } = parseZPL("^XA^JH,,,,,E,17,,,^XZ");
     expect(printerProfile.headCleaningIntervalMeters).toBeUndefined();
   });
 
   it("rejects mismatched ^MA/^MI type via schema", () => {
     const result = printerProfileSchema.safeParse({
-      maintenanceAlert: { type: 'H', print: 'Y', threshold: 5, frequency: 1, units: 'M' },
+      maintenanceAlert: { type: 'C', print: 'Y', threshold: 5, frequency: 1, units: 'M' },
       maintenanceMessage: { type: 'R', text: 'Mismatched' },
     });
     expect(result.success).toBe(false);
+  });
+
+  it("parser drops a mismatched ^MI so the import patch never crashes the schema", () => {
+    const { printerProfile } = parseZPL("^XA^MAC,Y,5,1,M^MIR,Replace head^XZ");
+    expect(printerProfile.maintenanceAlert?.type).toBe("C");
+    expect(printerProfile.maintenanceMessage).toBeUndefined();
+  });
+
+  it("parser drops a stale ^MI when a later ^MA flips the type", () => {
+    const { printerProfile } = parseZPL("^XA^MIC,Clean me^MAR,Y,5,1,M^XZ");
+    expect(printerProfile.maintenanceAlert?.type).toBe("R");
+    expect(printerProfile.maintenanceMessage).toBeUndefined();
+  });
+
+  it("reverse-order import: ^MI before ^MA with mismatched types, alert wins", () => {
+    const { printerProfile } = parseZPL("^XA^MIC,Clean me^MAR,Y,5,1,M^XZ");
+    expect(printerProfile.maintenanceAlert?.type).toBe("R");
+    expect(printerProfile.maintenanceMessage).toBeUndefined();
+  });
+
+  it("MAINTENANCE_ALERT_DEFAULTS fit the tighter (C) cap", () => {
+    // Parser blank-slot fallbacks are type-independent; if a future
+    // bump exceeds the C cap the round-trip of a partial ^MAC dump
+    // would silently corrupt. Pin the invariant.
+    const minCap = Math.min(
+      MAINTENANCE_DISTANCE_MAX_BY_TYPE.R,
+      MAINTENANCE_DISTANCE_MAX_BY_TYPE.C,
+    );
+    expect(MAINTENANCE_ALERT_DEFAULTS.threshold).toBeLessThanOrEqual(minCap);
+    expect(MAINTENANCE_ALERT_DEFAULTS.frequency).toBeLessThanOrEqual(minCap);
   });
 });
 

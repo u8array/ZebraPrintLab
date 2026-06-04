@@ -148,6 +148,10 @@ export function ClockAndTimeTab() {
                 min={CLOCK_TOLERANCE_RANGE.min}
                 max={CLOCK_TOLERANCE_RANGE.max}
                 value={profile.clockTolerance}
+                // Required while clockMode='TOL': empty blur snaps the
+                // draft back to the last committed value with no patch
+                // sent, so the input stays in sync with the store.
+                required
                 onChange={(v) => patchPrinterProfile({ clockTolerance: v })}
               />
             )}
