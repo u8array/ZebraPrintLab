@@ -1,4 +1,4 @@
-import { useId, useRef, type InputHTMLAttributes, type ReactNode } from "react";
+import { useId, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { labelCls, inputCls } from "../ui/formStyles";
 import { clampBoundedInt, readBoundedInt } from "../../lib/inputParse";
 import { stripUnsafeChars } from "../../types/PrinterProfile";
@@ -93,16 +93,12 @@ export function ZplSubField({
   );
 }
 
-/** Text input that runs a sanitiser before the value reaches the
- *  store, so a schema-rejected char never causes a silent rollback
- *  (frozen-field UX). Default sanitiser strips Setup-Script-unsafe
- *  chars; pass `sanitize` for other regimes.
- *
- *  IME composition (CJK/Korean) is gated via real `compositionstart`/
- *  `compositionend` events so the sanitiser doesn't fire mid-session
- *  and desync the composition buffer. The caret jumps to end after a
- *  mid-string strip (accepted trade-off for simplicity over the
- *  caret-preservation gymnastics that subtle bugs invited). */
+/** Text input with a local draft so a sanitiser-rejected commit can't
+ *  cause a controlled-input revert (frozen-field UX). Default sanitiser
+ *  strips Setup-Script-unsafe chars. IME-safe: during composition the
+ *  raw value lives in the draft only, sanitise and commit run on
+ *  compositionend. External value changes reseed the draft via
+ *  adjust-state-during-render. */
 export function SafeStringInput({
   id,
   value,
@@ -115,59 +111,60 @@ export function SafeStringInput({
   value: string;
   onChange: (next: string) => void;
   sanitize?: (raw: string) => string;
-} & Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "value" | "onChange" | "type">) {
-  const composing = useRef(false);
+} & Omit<
+    InputHTMLAttributes<HTMLInputElement>,
+    "id" | "value" | "onChange" | "onInput" | "defaultValue" | "type"
+  >) {
+  const [draft, setDraft] = useState(value);
+  const [lastExternal, setLastExternal] = useState(value);
+  const [composing, setComposing] = useState(false);
+  if (lastExternal !== value) {
+    setLastExternal(value);
+    setDraft(value);
+  }
   return (
     <input
       {...rest}
       id={id}
       type="text"
-      // Always include `inputCls`; the caller's `className` appends so
-      // overrides don't have to re-spell the base class.
       className={className ? `${inputCls} ${className}` : inputCls}
-      value={value}
+      value={draft}
       onCompositionStart={(e) => {
-        composing.current = true;
+        setComposing(true);
         rest.onCompositionStart?.(e);
       }}
       onCompositionEnd={(e) => {
-        composing.current = false;
-        // Sanitise here as a safety net for browsers that don't dispatch
-        // the trailing `input` event after `compositionend` (older Safari,
-        // some Android IMEs). The follow-up `input` (when it fires) runs
-        // sanitise on the same value, which is idempotent.
-        onChange(sanitize(e.currentTarget.value));
+        setComposing(false);
+        const next = sanitize(e.currentTarget.value);
+        setDraft(next);
+        onChange(next);
         rest.onCompositionEnd?.(e);
       }}
       onBlur={(e) => {
-        // Blur can fire mid-composition (focus stolen / user clicks
-        // away) without a preceding `compositionend`. Reset the flag
-        // so the next focus session starts clean.
-        composing.current = false;
+        setComposing(false);
         rest.onBlur?.(e);
       }}
       onChange={(e) => {
-        if (composing.current) {
-          // Raw mid-composition value goes through; schema is permissive
-          // enough for CJK chars (the unsafe class is ^/~/,/control
-          // only). A user explicitly typing an unsafe char via IME is
-          // the rare frozen-field scenario worth a follow-up.
-          onChange(e.target.value);
+        if (composing) {
+          setDraft(e.target.value);
           return;
         }
-        onChange(sanitize(e.target.value));
+        const next = sanitize(e.target.value);
+        setDraft(next);
+        onChange(next);
       }}
     />
   );
 }
 
-/** Bare bounded-int `<input>` plus the asymmetric edit/commit clamp
- *  pair: `readBoundedInt` caps only the upper bound during typing so
- *  the user can transit through non-negative values below `min`
- *  (e.g. type "1" on the way to "12" when min=2). `onBlur` pulls the
- *  committed value back into the full `[min, max]` range. Shared by
- *  `ZplBoundedIntInput` (full ZPL-tag row) and grid-cell wrappers
- *  that share one parent tag (^PR triple, ^MD pair). */
+/** Bounded-int `<input>` with a local-draft buffer for intermediate
+ *  states (empty field, sub-min digits) the schema would reject.
+ *  Commits on keystroke when `[min, max]`; on blur, clamps into range.
+ *  External value changes reseed the draft via adjust-state-during-render.
+ *
+ *  `required`: empty blur on an optional field emits `undefined` (clear);
+ *  on a required field, snaps the draft back to the last committed value
+ *  with no patch, keeping the input in sync with the store. */
 export function BoundedIntControl({
   id,
   min,
@@ -175,6 +172,7 @@ export function BoundedIntControl({
   value,
   onChange,
   disabled,
+  required,
 }: {
   id?: string;
   min: number;
@@ -182,7 +180,17 @@ export function BoundedIntControl({
   value: number | undefined;
   onChange: (next: number | undefined) => void;
   disabled?: boolean;
+  required?: boolean;
 }) {
+  const externalText = value === undefined ? "" : String(value);
+  const [draft, setDraft] = useState(externalText);
+  const [lastExternal, setLastExternal] = useState(externalText);
+  // adjust-state-during-render: external store value (undo, reset,
+  // sibling edit) reseeds the draft.
+  if (lastExternal !== externalText) {
+    setLastExternal(externalText);
+    setDraft(externalText);
+  }
   return (
     <input
       id={id}
@@ -190,10 +198,37 @@ export function BoundedIntControl({
       className={inputCls}
       min={min}
       max={max}
-      value={value ?? ""}
+      value={draft}
       disabled={disabled}
-      onChange={(e) => onChange(readBoundedInt(e.target.value, min, max))}
-      onBlur={(e) => onChange(clampBoundedInt(e.target.value, min, max))}
+      // Tells screen-reader users the field can't be cleared. Pairs
+      // with the snap-back behaviour on empty blur.
+      aria-required={required || undefined}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setDraft(raw);
+        const parsed = readBoundedInt(raw, min, max);
+        // Only commit when the parsed value passes the schema range
+        // (raw==="" → undefined; sub-min digits stay in the draft).
+        if (parsed !== undefined && parsed >= min) onChange(parsed);
+      }}
+      onBlur={(e) => {
+        const raw = e.target.value;
+        if (raw === "") {
+          if (required) {
+            // Snap back to the last committed value so the input
+            // doesn't desync from the store after a rejected clear.
+            setDraft(lastExternal);
+            return;
+          }
+          onChange(undefined);
+          return;
+        }
+        const clamped = clampBoundedInt(raw, min, max);
+        if (clamped !== undefined) {
+          setDraft(String(clamped));
+          onChange(clamped);
+        }
+      }}
     />
   );
 }

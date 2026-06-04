@@ -1,4 +1,10 @@
-import type { PrinterProfile } from '../types/PrinterProfile';
+import {
+  HEAD_CLEANING_INTERVAL_METERS,
+  JH_SLOT_COUNT,
+  JH_SLOT_F,
+  JH_SLOT_G,
+  type PrinterProfile,
+} from '../types/PrinterProfile';
 import { formatRealtimeClockForZpl, toLocalIsoString } from './realtimeClock';
 
 /** Generates the one-shot Setup-Script ZPL for a printer profile —
@@ -20,10 +26,6 @@ type SetupScriptEntry =
       kind: 'foldedInto';
       target: keyof PrinterProfile;
     };
-
-/** Named indices for the two ^JH slots we model (a..j = 0..9). */
-const JH_SLOT_F = 5;
-const JH_SLOT_G = 6;
 
 const SETUP_SCRIPT_EMITTERS = {
   tearOffAdjust: {
@@ -127,7 +129,7 @@ const SETUP_SCRIPT_EMITTERS = {
   // ^JH precedes ^MA so the master gate is on when the alert lands;
   // otherwise the printer discards the alert until ^JUS + reboot.
   // earlyWarningMaintenance owns the composite emit;
-  // headCleaningIntervalMeters folds in (cf. ^KN).
+  // headCleaningIntervalMeters folds in.
   earlyWarningMaintenance: {
     kind: 'emit',
     channel: 'block',
@@ -135,10 +137,13 @@ const SETUP_SCRIPT_EMITTERS = {
       if (p.earlyWarningMaintenance === undefined && p.headCleaningIntervalMeters === undefined) {
         return null;
       }
-      const slots = ['', '', '', '', '', '', '', '', '', ''];
+      const slots: string[] = Array<string>(JH_SLOT_COUNT).fill('');
       slots[JH_SLOT_F] = p.earlyWarningMaintenance ?? '';
       if (p.headCleaningIntervalMeters !== undefined) {
-        slots[JH_SLOT_G] = `${p.headCleaningIntervalMeters}M`;
+        const idx = HEAD_CLEANING_INTERVAL_METERS.indexOf(
+          p.headCleaningIntervalMeters as (typeof HEAD_CLEANING_INTERVAL_METERS)[number],
+        );
+        if (idx >= 0) slots[JH_SLOT_G] = String(idx);
       }
       return `^JH${slots.join(',')}`;
     },

@@ -248,7 +248,7 @@ const en = {
     maintenance: {
       maintenanceAlertHeading: 'Maintenance alert',
       alertType: 'Alert type',
-      alertTypeH: 'Head cleaning',
+      alertTypeC: 'Head cleaning',
       alertTypeR: 'Head replacement',
       alertPrint: 'Print warning label',
       alertPrintY: 'Print',

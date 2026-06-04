@@ -41,13 +41,11 @@ export function IdentityTab() {
   const loc = t.printerSettings.identity;
   const nameId = useId();
   const passwordId = useId();
-  // Local mirror for the 4-digit input: progressive typing ("4", "47")
-  // is shown immediately but only commits to the store once the regex
-  // matches. Without this, partial values would always be filtered out
-  // and the user could never finish entering a password. Re-sync on
-  // store changes (import, reset) uses the adjust-state-during-render
-  // pattern so the React compiler doesn't flag a useEffect → setState
-  // cascade.
+  // Progressive-commit draft: store only accepts a complete 4-digit
+  // value, but the user has to type intermediate states. SafeStringInput
+  // is fully controlled and would clobber the partial draft, so the
+  // ^KP input stays hand-rolled. Adjust-state-during-render reseeds on
+  // external changes (import, reset).
   const storedPassword = profile.setPassword ?? "";
   const [passwordDraft, setPasswordDraft] = useState(storedPassword);
   const [lastStoredPassword, setLastStoredPassword] = useState(storedPassword);

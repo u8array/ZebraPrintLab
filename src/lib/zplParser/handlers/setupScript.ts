@@ -1,4 +1,4 @@
-import { CLOCK_TOLERANCE_RANGE, HEAD_CLEANING_INTERVAL_RANGE, HEAD_TEST_INTERVAL_RANGE, MAINTENANCE_ALERT_DEFAULTS, MAINTENANCE_DISTANCE_MAX, MAINTENANCE_MESSAGE_MAX_LEN, PRINTER_NAME_MAX_LEN, PRINTER_PASSWORD_REGEX, TEAR_OFF_ADJUST_RANGE, isClockFormat, isClockLanguage, isConfigUpdateAction, isMaintenanceAlertPrint, isMaintenanceAlertType, isMaintenanceAlertUnit, isPrinterLocale, isZplMode, setupScriptUnsafeCharRegex } from "../../../types/PrinterProfile";
+import { CLOCK_TOLERANCE_RANGE, HEAD_CLEANING_INTERVAL_METERS, HEAD_TEST_INTERVAL_RANGE, JH_SLOT_F, JH_SLOT_G, MAINTENANCE_ALERT_DEFAULTS, MAINTENANCE_DISTANCE_MAX_BY_TYPE, MAINTENANCE_MESSAGE_MAX_LEN, PRINTER_NAME_MAX_LEN, PRINTER_PASSWORD_REGEX, TEAR_OFF_ADJUST_RANGE, isClockFormat, isClockLanguage, isConfigUpdateAction, isMaintenanceAlertPrint, isMaintenanceAlertType, isMaintenanceAlertUnit, isPrinterLocale, isZplMode, setupScriptUnsafeCharRegex } from "../../../types/PrinterProfile";
 import { parseIntOrUndef } from "../../inputParse";
 import { parseRealtimeClock } from "../../realtimeClock";
 import type { ParserState } from "../context";
@@ -84,23 +84,42 @@ export function createSetupScriptHandlers(s: ParserState): Record<string, Handle
     MA(p) {
       const type = strParam(p[0]);
       if (!isMaintenanceAlertType(type)) return;
-      // Blank slot falls back to spec default so partial dumps round-trip.
+      // Each blank slot falls back to its spec default so partial dumps
+      // round-trip. Out-of-range or otherwise invalid values still drop
+      // the whole command.
       const printRaw = strParam(p[1]);
       const print = printRaw === "" ? MAINTENANCE_ALERT_DEFAULTS.print : printRaw;
       if (!isMaintenanceAlertPrint(print)) return;
-      const threshold = inRange(parseIntOrUndef(p[2]), { min: 0, max: MAINTENANCE_DISTANCE_MAX });
-      // frequency min=1: spec is implementation-defined but every
-      // Zebra example shows >=1; 0 ("alert every 0 labels") is degenerate.
-      const frequency = inRange(parseIntOrUndef(p[3]), { min: 1, max: MAINTENANCE_DISTANCE_MAX });
+      const cap = MAINTENANCE_DISTANCE_MAX_BY_TYPE[type];
+      const thresholdRaw = (p[2] ?? "").trim();
+      const threshold = thresholdRaw === ""
+        ? MAINTENANCE_ALERT_DEFAULTS.threshold
+        : inRange(parseIntOrUndef(thresholdRaw), { min: 0, max: cap });
+      const frequencyRaw = (p[3] ?? "").trim();
+      const frequency = frequencyRaw === ""
+        ? MAINTENANCE_ALERT_DEFAULTS.frequency
+        : inRange(parseIntOrUndef(frequencyRaw), { min: 0, max: cap });
       if (threshold === undefined || frequency === undefined) return;
       const unitsRaw = strParam(p[4]);
       const units = unitsRaw === "" ? MAINTENANCE_ALERT_DEFAULTS.units : unitsRaw;
       if (!isMaintenanceAlertUnit(units)) return;
       printerProfile.maintenanceAlert = { type, print, threshold, frequency, units };
+      // Alert wins per the ^MA/^MI pair policy; drop a stale ^MI.
+      if (
+        printerProfile.maintenanceMessage &&
+        printerProfile.maintenanceMessage.type !== type
+      ) {
+        delete printerProfile.maintenanceMessage;
+      }
     },
     MI(p) {
       const type = strParam(p[0]);
       if (!isMaintenanceAlertType(type)) return;
+      // Alert wins: refuse a ^MI that contradicts an existing ^MA.
+      if (
+        printerProfile.maintenanceAlert &&
+        printerProfile.maintenanceAlert.type !== type
+      ) return;
       // Rejoin so a message with embedded commas trips the
       // unsafe-char guard below instead of getting silently
       // truncated at the first comma.
@@ -114,15 +133,13 @@ export function createSetupScriptHandlers(s: ParserState): Record<string, Handle
       if (v === "Y" || v === "N") printerProfile.headColdWarning = v;
     },
     // ^JH: only f/g modelled; other slots are runtime reset flags.
+    // g is a 0..16 index into HEAD_CLEANING_INTERVAL_METERS per spec.
     JH(p) {
-      const JH_SLOT_F = 5;
-      const JH_SLOT_G = 6;
       const f = strParam(p[JH_SLOT_F]);
       if (f === "E" || f === "D") printerProfile.earlyWarningMaintenance = f;
-      const gMatch = /^(\d+)M$/i.exec((p[JH_SLOT_G] ?? "").trim());
-      if (gMatch && gMatch[1] !== undefined) {
-        const meters = inRange(parseIntOrUndef(gMatch[1]), HEAD_CLEANING_INTERVAL_RANGE);
-        if (meters !== undefined) printerProfile.headCleaningIntervalMeters = meters;
+      const idx = parseIntOrUndef((p[JH_SLOT_G] ?? "").trim());
+      if (idx !== undefined && idx >= 0 && idx < HEAD_CLEANING_INTERVAL_METERS.length) {
+        printerProfile.headCleaningIntervalMeters = HEAD_CLEANING_INTERVAL_METERS[idx];
       }
     },
   };
