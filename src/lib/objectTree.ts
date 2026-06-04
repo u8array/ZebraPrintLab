@@ -18,7 +18,7 @@ export function visitLeavesInPages(pages: unknown, visit: (leaf: UnknownNode) =>
 }
 
 function walkNode(node: unknown, visit: (leaf: UnknownNode) => void): void {
-  if (!node || typeof node !== "object") return;
+  if (!node || typeof node !== "object" || Array.isArray(node)) return;
   const n = node as UnknownNode & { objects?: unknown };
   if (Array.isArray(n.objects)) {
     for (const child of n.objects) walkNode(child, visit);
