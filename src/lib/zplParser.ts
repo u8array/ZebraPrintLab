@@ -3,7 +3,7 @@ import { tokenize } from "./zplParser/helpers";
 import { createParserState } from "./zplParser/context";
 import { createFlushField } from "./zplParser/flushField";
 import { createBarcodeHandlers } from "./zplParser/handlers/barcodes";
-import { createFieldHandlers, handleDynamicFontA } from "./zplParser/handlers/fields";
+import { createDynamicFontAWildcard, createFieldHandlers } from "./zplParser/handlers/fields";
 import { createGraphicsHandlers } from "./zplParser/handlers/graphics";
 import { createLabelConfigHandlers } from "./zplParser/handlers/labelConfig";
 import { createSetupScriptHandlers } from "./zplParser/handlers/setupScript";
@@ -13,6 +13,7 @@ import type {
   Handler,
   ImportFinding,
   ParsedZPL,
+  Wildcard,
 } from "./zplParser/types";
 export type {
   ImportFindingKind,
@@ -55,15 +56,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   };
 
   const handlers: Record<string, Handler> = {
-    XA: (p, rest) => {
+    XA: (p, rest, cmd) => {
       commitPendingReverseBg();
       s.format.embedChar = "#";
       s.format.clockChars = { ...DEFAULT_CLOCK_CHARS };
-      resetComment(p, rest);
+      resetComment(p, rest, cmd);
     },
-    XZ(_, rest) {
+    XZ(p, rest, cmd) {
       commitPendingReverseBg();
-      resetComment(_, rest);
+      resetComment(p, rest, cmd);
     },
   };
 
@@ -75,16 +76,15 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   Object.assign(handlers, createUnitsHandler(s, dpmm));
   Object.assign(handlers, createUnsupportedHandlers(s.result));
 
+  // Wildcard handlers are tried only after exact-match dispatch fails,
+  // so a handler-table entry always wins over a pattern-match.
+  const wildcards: Wildcard[] = [createDynamicFontAWildcard(s)];
+
   for (const { cmd, rest } of tokens) {
     const p = rest.split(s.format.delimiterChar);
-    const handler = handlers[cmd];
+    const handler = handlers[cmd] ?? wildcards.find((w) => w.matches(cmd))?.handle;
     if (handler) {
-      handler(p, rest);
-      continue;
-    }
-
-    if (cmd[0] === "A" && cmd.length === 2) {
-      handleDynamicFontA(s, cmd, rest, p);
+      handler(p, rest, cmd);
       continue;
     }
 

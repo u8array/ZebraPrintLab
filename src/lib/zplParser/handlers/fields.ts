@@ -4,7 +4,7 @@ import type { SerialProps } from "../../../registry/serial";
 import { ZPL_BUILTIN_FONT_LETTERS } from "../../customFonts";
 import { getDefaultTextH, getDefaultTextW, type ParserState } from "../context";
 import { ciToEncoding, dotsFor, getDecoder, int, makeObj, readRotation } from "../helpers";
-import type { Handler } from "../types";
+import type { Handler, Wildcard } from "../types";
 
 /** flushField + appendComment are shared with the orchestrator. */
 export interface FieldHelpers {
@@ -13,34 +13,34 @@ export interface FieldHelpers {
 }
 
 /** ^A{font}{rotation},{height},{width}: dynamic font (A0/A@ are
- *  static-mapped). Lives outside the handler-key dispatch because the
- *  font char is the wildcard part of the command name; the orchestrator
- *  forwards here on any `^A?` match. */
-export function handleDynamicFontA(
-  s: ParserState,
-  cmd: string,
-  rest: string,
-  p: string[],
-): void {
+ *  static-mapped). Registered as a `Wildcard` because the font char
+ *  is the variable part of the command name. */
+export function createDynamicFontAWildcard(s: ParserState): Wildcard {
   const { dots } = dotsFor(s);
-  s.field.fieldType = "text";
-  s.field.textRot = readRotation(rest[0], s.defaults.fwRotation);
-  s.field.textH = dots(p[1], getDefaultTextH(s.defaults));
-  s.field.textW = dots(p[2], getDefaultTextW(s.defaults));
-  const fontChar = cmd[1] ?? "";
-  // Round-trip: ^A{id} matching the active ^CF drops to "use default"
-  // (no pendingFontId) so re-emit stays terse; otherwise pin the alias.
-  if (s.defaults.cfFontId && fontChar === s.defaults.cfFontId) {
-    s.field.pendingFontId = undefined;
-  } else {
-    s.field.pendingFontId = fontChar;
-  }
-  if (
-    !s.fonts.aliases.has(fontChar) &&
-    !ZPL_BUILTIN_FONT_LETTERS.includes(fontChar)
-  ) {
-    s.result.partialCmds.add(`^${cmd}`);
-  }
+  return {
+    matches: (cmd) => cmd.length === 2 && cmd[0] === "A",
+    handle: (p, rest, cmd) => {
+      s.field.fieldType = "text";
+      s.field.textRot = readRotation(rest[0], s.defaults.fwRotation);
+      s.field.textH = dots(p[1], getDefaultTextH(s.defaults));
+      s.field.textW = dots(p[2], getDefaultTextW(s.defaults));
+      const fontChar = cmd[1] ?? "";
+      // Round-trip: ^A{id} matching the active ^CF drops to "use
+      // default" (no pendingFontId) so re-emit stays terse; otherwise
+      // pin the alias.
+      if (s.defaults.cfFontId && fontChar === s.defaults.cfFontId) {
+        s.field.pendingFontId = undefined;
+      } else {
+        s.field.pendingFontId = fontChar;
+      }
+      if (
+        !s.fonts.aliases.has(fontChar) &&
+        !ZPL_BUILTIN_FONT_LETTERS.includes(fontChar)
+      ) {
+        s.result.partialCmds.add(`^${cmd}`);
+      }
+    },
+  };
 }
 
 /** Field-shaping commands: FO/FT, A0/A@, TB, CF, FW, FB, FH, FD/FS,
