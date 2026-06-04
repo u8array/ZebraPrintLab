@@ -89,39 +89,56 @@ describe('parseZPL — ^MU units of measure', () => {
     expect(objects[1]?.x).toBe(203);
   });
 
-  it('^MU b,c slots persist on labelConfig for re-emit', () => {
+  it('^MU b,c slots persist as a pair on labelConfig for re-emit', () => {
     const { labelConfig } = parseZPL('^XA^MUD,150,300^XZ', 8);
-    expect(labelConfig.formatDpi).toBe(150);
-    expect(labelConfig.outputDpi).toBe(300);
+    expect(labelConfig.muResampling).toEqual({ formatDpi: 150, outputDpi: 300 });
   });
 
-  it('^MU drops out-of-spec dpi values silently', () => {
-    const { labelConfig } = parseZPL('^XA^MUD,77,999^XZ', 8);
-    expect(labelConfig.formatDpi).toBeUndefined();
-    expect(labelConfig.outputDpi).toBeUndefined();
+  it('^MU with out-of-spec dpi values surfaces as partial finding', () => {
+    const { labelConfig, importReport } = parseZPL('^XA^MUD,77,999^XZ', 8);
+    expect(labelConfig.muResampling).toBeUndefined();
+    expect(importReport.partial).toContain('^MU');
   });
 
-  it('^MU,150,300 with a-slot omitted resets unit to D and persists b/c', () => {
+  it('^MU,150,300 with a-slot omitted resets unit to D and persists the pair', () => {
     const { labelConfig, objects } = parseZPL(
       '^XA^MU,150,300^FO100,100^GB10,10,1^FS^XZ',
       8,
     );
-    expect(labelConfig.formatDpi).toBe(150);
-    expect(labelConfig.outputDpi).toBe(300);
+    expect(labelConfig.muResampling).toEqual({ formatDpi: 150, outputDpi: 300 });
     // a-slot defaulted to D so coords stay unscaled
     expect(objects[0]?.x).toBe(100);
   });
 
-  it('invalid ^MU a-slot surfaces as partial finding', () => {
-    const { importReport } = parseZPL('^XA^MUX^XZ', 8);
+  it('invalid ^MU a-slot surfaces as partial finding without dropping prior unit', () => {
+    // ^MUI sets unitScale to inches; a follow-up ^MUX must not silently
+    // downgrade subsequent coords to dots.
+    const { objects, importReport } = parseZPL(
+      '^XA^MUI^FO1,1^GB1,1,1^FS^MUX^FO1,1^GB1,1,1^FS^XZ',
+      8,
+    );
+    expect(importReport.partial).toContain('^MU');
+    expect(objects[0]?.x).toBe(203);
+    expect(objects[1]?.x).toBe(203);
+  });
+
+  it('half-set ^MU dpi pair is rejected as partial (both-or-neither invariant)', () => {
+    const { labelConfig, importReport } = parseZPL('^XA^MUD,200^XZ', 8);
+    expect(labelConfig.muResampling).toBeUndefined();
     expect(importReport.partial).toContain('^MU');
   });
 
   it('round-trip: ^MUD,b,c parses + generates back symmetrically', () => {
     const original = '^XA^MUD,200,600^PW600^LL400^CI28^XZ';
     const { labelConfig } = parseZPL(original, 8);
-    expect(labelConfig.formatDpi).toBe(200);
-    expect(labelConfig.outputDpi).toBe(600);
+    expect(labelConfig.muResampling).toEqual({ formatDpi: 200, outputDpi: 600 });
+  });
+
+  it('^MUI also rescales dynamic ^A{font} dims (the wildcard-dispatch path)', () => {
+    // 0.5 inch font height @ 8 dpmm = 101.6 → 102 dots
+    const { objects } = parseZPL('^XA^MUI^FO0,0^A1N,0.5,0.5^FDX^FS^XZ', 8);
+    expect(props(objects[0]).fontHeight).toBe(102);
+    expect(props(objects[0]).fontWidth).toBe(102);
   });
 
   it('^MUI admits fractional inch values (the whole point of I-mode)', () => {

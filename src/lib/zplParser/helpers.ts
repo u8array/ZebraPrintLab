@@ -73,24 +73,12 @@ export function int(s: string | undefined, fallback = 0): number {
   return Number.isNaN(n) ? fallback : n;
 }
 
-/** Read a dot-quantity, applying the active ^MU `a`-slot multiplier.
- *  `parseFloat` is load-bearing: ^MUI/^MUM admits fractional unit
- *  values (`^FO0.5,0.5` = half an inch); `parseInt` would silently
- *  truncate to 0. Non-dot params (rotation, mode, counts) stay on
- *  plain `int`. */
-export function intDots(
-  s: string | undefined,
-  unitScale: number,
-  fallback = 0,
-): number {
-  const n = Number.parseFloat(s ?? "");
-  if (Number.isNaN(n)) return fallback;
-  return Math.round(n * unitScale);
-}
-
-/** Optional-form of `intDots`. Returns undefined when the param is
- *  missing/NaN. Used where "absent" must be distinguished from
- *  "explicit 0". */
+/** Optional-form of the dot-quantity reader. Returns undefined when
+ *  the param is missing/NaN. `parseFloat` is load-bearing: ^MUI/^MUM
+ *  admits fractional unit values (`^FO0.5,0.5` = half an inch);
+ *  `parseInt` would silently truncate to 0. In D-mode this also
+ *  rounds fractional input (`^FO10.6` → 11), a deliberate change
+ *  from the old `parseInt` truncate. */
 export function intDotsOrUndef(
   s: string | undefined,
   unitScale: number,
@@ -98,6 +86,31 @@ export function intDotsOrUndef(
   const n = Number.parseFloat(s ?? "");
   if (Number.isNaN(n)) return undefined;
   return Math.round(n * unitScale);
+}
+
+/** Read a dot-quantity, applying the active ^MU `a`-slot multiplier.
+ *  Use at every site the spec documents as "dots"; non-dot params
+ *  (rotation, mode, counts) stay on plain `int`. */
+export function intDots(
+  s: string | undefined,
+  unitScale: number,
+  fallback = 0,
+): number {
+  return intDotsOrUndef(s, unitScale) ?? fallback;
+}
+
+/** Bind `intDots`/`intDotsOrUndef` to a parser state's live unit
+ *  scale, so handler factories don't each rebuild the same closures.
+ *  Returns helpers that read `state.format.unitScale` at call time
+ *  (load-bearing: ^MU mid-format mutates it). */
+export function dotsFor(state: { format: { unitScale: number } }): {
+  dots: (raw: string | undefined, fb?: number) => number;
+  dotsOrUndef: (raw: string | undefined) => number | undefined;
+} {
+  return {
+    dots: (raw, fb = 0) => intDots(raw, state.format.unitScale, fb),
+    dotsOrUndef: (raw) => intDotsOrUndef(raw, state.format.unitScale),
+  };
 }
 
 /** Returns v if within [r.min, r.max], else undefined. */

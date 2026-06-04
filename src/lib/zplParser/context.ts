@@ -56,7 +56,9 @@ export interface CommentState {
   fnComment: string | undefined;
 }
 
-/** Format-scoped (per-^XA) state; reset at label boundary. */
+/** Format-scoped (per-^XA) state; reset at label boundary
+ *  EXCEPT for `unitScale`, which the ^MU spec defines as carrying
+ *  across formats until explicitly overridden. */
 export interface FormatState {
   embedChar: string;
   clockChars: ClockChars;
@@ -70,7 +72,8 @@ export interface FormatState {
   tildeChar: string;
   delimiterChar: string;
   /** ^MU a-slot dot multiplier: 1 (D), dpmm*25.4 (I), dpmm (M).
-   *  Internal model is dots-canonical; I/M sources get scaled on read. */
+   *  Internal model is dots-canonical; I/M sources get scaled on read.
+   *  Survives ^XA per spec (^MU carries field-by-field until overridden). */
   unitScale: number;
 }
 

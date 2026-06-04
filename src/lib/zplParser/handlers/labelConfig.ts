@@ -1,8 +1,7 @@
-import type { LabelConfig } from "../../../types/LabelConfig";
 import { DARKNESS_INSTANT_RANGE, DARKNESS_PERMANENT_RANGE, MAX_LABEL_LENGTH_RANGE, SPEED_RANGE, isMediaFeedMode, isMediaMode, isMediaTracking, isMediaType, isPrintOrientation } from "../../../types/LabelConfig";
 import { parseIntOrUndef } from "../../inputParse";
-import type { FormatState } from "../context";
-import { firstChar, inRange, int, intDots, intDotsOrUndef, strParam } from "../helpers";
+import type { ParserState } from "../context";
+import { dotsFor, firstChar, inRange, int, strParam } from "../helpers";
 import type { Handler } from "../types";
 
 /** ^PQ extended params (pauseCount, replicates) — Zebra spec caps at
@@ -11,18 +10,19 @@ const PQ_EXT_MAX = 99_999_999;
 
 /** Per-label media + print-quality handlers — mutate only `labelConfig`. */
 export function createLabelConfigHandlers(
-  labelConfig: Partial<LabelConfig>,
+  s: ParserState,
   dpmm: number,
-  format: FormatState,
 ): Record<string, Handler> {
+  const labelConfig = s.result.labelConfig;
+  const { dots, dotsOrUndef } = dotsFor(s);
   return {
     PW(_, rest) {
-      const dots = intDots(rest, format.unitScale);
-      if (dots > 0) labelConfig.widthMm = Math.round((dots / dpmm) * 10) / 10;
+      const w = dots(rest);
+      if (w > 0) labelConfig.widthMm = Math.round((w / dpmm) * 10) / 10;
     },
     LL(_, rest) {
-      const dots = intDots(rest, format.unitScale);
-      if (dots > 0) labelConfig.heightMm = Math.round((dots / dpmm) * 10) / 10;
+      const h = dots(rest);
+      if (h > 0) labelConfig.heightMm = Math.round((h / dpmm) * 10) / 10;
     },
     PQ(p) {
       const qty = int(p[0], 0);
@@ -46,7 +46,7 @@ export function createLabelConfigHandlers(
       if (isMediaMode(mode)) labelConfig.mediaMode = mode;
     },
     LS(_, rest) {
-      const shift = intDots(rest, format.unitScale, 0);
+      const shift = dots(rest);
       if (shift !== 0) labelConfig.labelShift = shift;
     },
     PR(p) {
@@ -74,7 +74,7 @@ export function createLabelConfigHandlers(
       if (isMediaTracking(v)) labelConfig.mediaTracking = v;
     },
     ML(p) {
-      const v = inRange(intDotsOrUndef(p[0], format.unitScale), MAX_LABEL_LENGTH_RANGE);
+      const v = inRange(dotsOrUndef(p[0]), MAX_LABEL_LENGTH_RANGE);
       if (v !== undefined) labelConfig.maxLabelLength = v;
     },
     MF(p) {

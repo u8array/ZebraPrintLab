@@ -55,29 +55,30 @@ describe('generateZPL — structure', () => {
     expect(zpl).toContain('^LS5');
   });
 
-  it('does not emit ^MU when neither formatDpi nor outputDpi is set', () => {
+  it('does not emit ^MU when muResampling is unset', () => {
     const zpl = generateZPL(BASE_LABEL, []);
     expect(zpl).not.toContain('^MU');
   });
 
-  it('emits ^MUD,b,c when formatDpi and outputDpi are set', () => {
-    const zpl = generateZPL({ ...BASE_LABEL, formatDpi: 150, outputDpi: 300 }, []);
+  it('emits ^MUD,b,c when muResampling is set', () => {
+    const zpl = generateZPL(
+      { ...BASE_LABEL, muResampling: { formatDpi: 150, outputDpi: 300 } },
+      [],
+    );
     expect(zpl).toContain('^MUD,150,300');
   });
 
   it('emits ^MU directly after ^XA so the printer sees the resampling header first', () => {
-    const zpl = generateZPL({ ...BASE_LABEL, formatDpi: 200, outputDpi: 600 }, []);
+    const zpl = generateZPL(
+      { ...BASE_LABEL, muResampling: { formatDpi: 200, outputDpi: 600 } },
+      [],
+    );
     const xaIdx = zpl.indexOf('^XA');
     const muIdx = zpl.indexOf('^MUD');
     const pwIdx = zpl.indexOf('^PW');
     expect(xaIdx).toBeGreaterThanOrEqual(0);
     expect(muIdx).toBeGreaterThan(xaIdx);
     expect(muIdx).toBeLessThan(pwIdx);
-  });
-
-  it('omits ^MU when only one of formatDpi/outputDpi is set (paired directive)', () => {
-    expect(generateZPL({ ...BASE_LABEL, formatDpi: 200 }, [])).not.toContain('^MU');
-    expect(generateZPL({ ...BASE_LABEL, outputDpi: 300 }, [])).not.toContain('^MU');
   });
 
   it('reverse text round-trips: emit ^GB+^FR, parse collapses back to one reverse text', () => {
@@ -728,6 +729,14 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const regenerated = generateZPL(BASE_LABEL, original.objects);
     const reparsed = parseZPL(regenerated, 8);
     expect(reparsed.objects).toHaveLength(original.objects.length);
+  });
+
+  it('round-trips ^MU muResampling pair through parser + generator', () => {
+    const label = { ...BASE_LABEL, muResampling: { formatDpi: 200, outputDpi: 600 } as const };
+    const regenerated = generateZPL(label, []);
+    expect(regenerated).toContain('^MUD,200,600');
+    const reparsed = parseZPL(regenerated, 8);
+    expect(reparsed.labelConfig.muResampling).toEqual({ formatDpi: 200, outputDpi: 600 });
   });
 
   it('preserves text content through a roundtrip', () => {
