@@ -1,6 +1,7 @@
-import { useId, type ReactNode } from "react";
+import { useId, useRef, type InputHTMLAttributes, type ReactNode } from "react";
 import { labelCls, inputCls } from "../ui/formStyles";
 import { clampBoundedInt, readBoundedInt } from "../../lib/inputParse";
+import { stripUnsafeChars } from "../../types/PrinterProfile";
 
 /** Shared muted-monospace class for ZPL command tags so the visual
  *  weight stays identical across the label-row, checkbox-row and
@@ -92,27 +93,95 @@ export function ZplSubField({
   );
 }
 
+/** Text input that runs a sanitiser before the value reaches the
+ *  store, so a schema-rejected char never causes a silent rollback
+ *  (frozen-field UX). Default sanitiser strips Setup-Script-unsafe
+ *  chars; pass `sanitize` for other regimes.
+ *
+ *  IME composition (CJK/Korean) is gated via real `compositionstart`/
+ *  `compositionend` events so the sanitiser doesn't fire mid-session
+ *  and desync the composition buffer. The caret jumps to end after a
+ *  mid-string strip (accepted trade-off for simplicity over the
+ *  caret-preservation gymnastics that subtle bugs invited). */
+export function SafeStringInput({
+  id,
+  value,
+  onChange,
+  sanitize = stripUnsafeChars,
+  className,
+  ...rest
+}: {
+  id?: string;
+  value: string;
+  onChange: (next: string) => void;
+  sanitize?: (raw: string) => string;
+} & Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "value" | "onChange" | "type">) {
+  const composing = useRef(false);
+  return (
+    <input
+      {...rest}
+      id={id}
+      type="text"
+      // Always include `inputCls`; the caller's `className` appends so
+      // overrides don't have to re-spell the base class.
+      className={className ? `${inputCls} ${className}` : inputCls}
+      value={value}
+      onCompositionStart={(e) => {
+        composing.current = true;
+        rest.onCompositionStart?.(e);
+      }}
+      onCompositionEnd={(e) => {
+        composing.current = false;
+        // Sanitise here as a safety net for browsers that don't dispatch
+        // the trailing `input` event after `compositionend` (older Safari,
+        // some Android IMEs). The follow-up `input` (when it fires) runs
+        // sanitise on the same value, which is idempotent.
+        onChange(sanitize(e.currentTarget.value));
+        rest.onCompositionEnd?.(e);
+      }}
+      onBlur={(e) => {
+        // Blur can fire mid-composition (focus stolen / user clicks
+        // away) without a preceding `compositionend`. Reset the flag
+        // so the next focus session starts clean.
+        composing.current = false;
+        rest.onBlur?.(e);
+      }}
+      onChange={(e) => {
+        if (composing.current) {
+          // Raw mid-composition value goes through; schema is permissive
+          // enough for CJK chars (the unsafe class is ^/~/,/control
+          // only). A user explicitly typing an unsafe char via IME is
+          // the rare frozen-field scenario worth a follow-up.
+          onChange(e.target.value);
+          return;
+        }
+        onChange(sanitize(e.target.value));
+      }}
+    />
+  );
+}
+
 /** Bare bounded-int `<input>` plus the asymmetric edit/commit clamp
  *  pair: `readBoundedInt` caps only the upper bound during typing so
  *  the user can transit through non-negative values below `min`
  *  (e.g. type "1" on the way to "12" when min=2). `onBlur` pulls the
  *  committed value back into the full `[min, max]` range. Shared by
  *  `ZplBoundedIntInput` (full ZPL-tag row) and grid-cell wrappers
- *  that share one parent tag (^PR triple, ^MD pair). Keeping the
- *  pair colocated avoids the two callers drifting on future fixes
- *  (e.g. the gemini-review onBlur addition). */
+ *  that share one parent tag (^PR triple, ^MD pair). */
 export function BoundedIntControl({
   id,
   min,
   max,
   value,
   onChange,
+  disabled,
 }: {
   id?: string;
   min: number;
   max: number;
   value: number | undefined;
   onChange: (next: number | undefined) => void;
+  disabled?: boolean;
 }) {
   return (
     <input
@@ -122,6 +191,7 @@ export function BoundedIntControl({
       min={min}
       max={max}
       value={value ?? ""}
+      disabled={disabled}
       onChange={(e) => onChange(readBoundedInt(e.target.value, min, max))}
       onBlur={(e) => onChange(clampBoundedInt(e.target.value, min, max))}
     />

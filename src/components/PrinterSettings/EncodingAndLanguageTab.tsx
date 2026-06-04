@@ -1,9 +1,9 @@
 import { useId } from "react";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { inputCls } from "../ui/formStyles";
 import { PRINTER_LOCALE_VALUES, ZPL_MODE_VALUES, isPrinterLocale, isZplMode, type PrinterLocale, type ZplMode } from "../../types/PrinterProfile";
 import {
+  SafeStringInput,
   ZplCommandLabel,
   ZplEnumSelect,
   ZplField,
@@ -67,15 +67,12 @@ export function EncodingAndLanguageTab() {
           conventions vary. */}
       <ZplField>
         <ZplCommandLabel text={loc.encodingTable} command="^SE" htmlFor={encodingId} />
-        <input
+        <SafeStringInput
           id={encodingId}
-          type="text"
-          className={`${inputCls} invalid:border-warning`}
+          className="invalid:border-warning"
           pattern={SE_PATH_PATTERN}
           value={profile.encodingTable ?? ""}
-          onChange={(e) =>
-            patchPrinterProfile({ encodingTable: e.target.value || undefined })
-          }
+          onChange={(v) => patchPrinterProfile({ encodingTable: v || undefined })}
         />
         <span className="font-mono text-[10px] text-muted/70 normal-case tracking-normal">
           {loc.encodingTableHint}

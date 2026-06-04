@@ -15,8 +15,18 @@ export const PRINTER_NAME_MAX_LEN = 16;
 const SETUP_SCRIPT_UNSAFE_CHARS = '\\^~,\\r\\n\\x00-\\x1f';
 /** Anchored, positive form for `z.string().regex(...)` schema checks. */
 export const setupScriptSafeStringRegex = new RegExp(`^[^${SETUP_SCRIPT_UNSAFE_CHARS}]+$`);
-/** Unanchored, negative form for parser-side dropping. */
+/** Unanchored, negative form for parser-side dropping. No `g` flag so
+ *  `.test()` callers don't carry `lastIndex` state across calls. */
 export const setupScriptUnsafeCharRegex = new RegExp(`[${SETUP_SCRIPT_UNSAFE_CHARS}]`);
+/** Global form for `.replace()`-based stripping. Hoisted so UI input
+ *  handlers don't allocate a fresh regex per keystroke. */
+const setupScriptUnsafeCharGlobalRegex = new RegExp(`[${SETUP_SCRIPT_UNSAFE_CHARS}]`, 'g');
+/** Strip every occurrence of an unsafe char from `raw`. UI inputs feed
+ *  user keystrokes through this so a single comma in a paste doesn't
+ *  cause the schema regex to reject the whole patch and the store to
+ *  roll back silently (a frozen-field UX). */
+export const stripUnsafeChars = (raw: string): string =>
+  raw.replace(setupScriptUnsafeCharGlobalRegex, '');
 
 /** ^KL printer locale — two-letter ISO 639-1 shorthands per Zebra spec. */
 export const PRINTER_LOCALE_VALUES = [
@@ -190,6 +200,39 @@ export const printerProfileSchema = z.object({
 });
 
 export type PrinterProfile = z.infer<typeof printerProfileSchema>;
+
+/** Repair the cross-field ^MA/^MI type invariant after a partial patch.
+ *  Direction follows which side the patch object touches: a patch with
+ *  a `maintenanceAlert.type` cascades into message, and vice versa.
+ *  When both sides are touched, no cascade runs and the schema's
+ *  superRefine catches a mismatch.
+ *
+ *  Caveat: UI callers spread the whole alert (`{ ...alert, [key]: v }`)
+ *  so `patch.maintenanceAlert.type` is "touched" even for non-type
+ *  edits. The cascade then runs but is a no-op as long as the
+ *  pre-patch invariant held (which the slice gates). If the store is
+ *  ever seeded with a mismatched pair, the next single-side sub-field
+ *  edit silently rewrites the unrelated side toward the patched one
+ *  instead of surfacing the seed bug.
+ *
+ *  Pure function; safe to call before `safeParse` at any boundary. */
+export function normalizeMaintenanceTypes(
+  merged: PrinterProfile,
+  patch: Partial<PrinterProfile>,
+): PrinterProfile {
+  const alert = merged.maintenanceAlert;
+  const message = merged.maintenanceMessage;
+  if (!alert || !message || alert.type === message.type) return merged;
+  const alertTouched = patch.maintenanceAlert?.type !== undefined;
+  const messageTouched = patch.maintenanceMessage?.type !== undefined;
+  if (alertTouched && !messageTouched) {
+    return { ...merged, maintenanceMessage: { ...message, type: alert.type } };
+  }
+  if (messageTouched && !alertTouched) {
+    return { ...merged, maintenanceAlert: { ...alert, type: message.type } };
+  }
+  return merged;
+}
 
 /** Derived from the schema so a new optional field is automatically
  *  picked up by the v4→v5 migration and import loader. */
