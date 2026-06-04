@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand';
 import {
   EMPTY_PRINTER_PROFILE,
+  normalizeMaintenanceTypes,
   printerProfileSchema,
   type PrinterProfile,
 } from '../../types/PrinterProfile';
@@ -40,10 +41,14 @@ export const createPrinterProfileSlice: StateCreator<
       // undefined". Validate the merged result through the schema so the
       // cross-field rule (clockMode === 'TOL' ↔ clockTolerance defined)
       // can't be violated from any caller.
-      const next = pruneUndefined<PrinterProfile>({
+      const merged = pruneUndefined<PrinterProfile>({
         ...state.printerProfile,
         ...patch,
       });
+      // Repair cross-field invariants at the store boundary so any
+      // caller (UI partial patch, import, undo replay) gets them for
+      // free. Direction follows patch intent; see normalizeMaintenanceTypes.
+      const next = normalizeMaintenanceTypes(merged, patch);
       const parsed = printerProfileSchema.safeParse(next);
       if (!parsed.success) {
         const msg = '[printerProfile] rejected invalid patch';

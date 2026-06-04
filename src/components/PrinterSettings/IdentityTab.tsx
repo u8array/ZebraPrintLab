@@ -10,6 +10,7 @@ import {
   isConfigUpdateAction,
 } from "../../types/PrinterProfile";
 import {
+  SafeStringInput,
   ZplCommandLabel,
   ZplEnumSelect,
   ZplField,
@@ -64,15 +65,11 @@ export function IdentityTab() {
           MediaFeedTab). */}
       <ZplField>
         <ZplCommandLabel text={loc.printerName} command="^KN" htmlFor={nameId} />
-        <input
+        <SafeStringInput
           id={nameId}
-          type="text"
           maxLength={PRINTER_NAME_MAX_LEN}
-          className={inputCls}
           value={profile.printerName ?? ""}
-          onChange={(e) =>
-            patchPrinterProfile({ printerName: e.target.value || undefined })
-          }
+          onChange={(v) => patchPrinterProfile({ printerName: v || undefined })}
         />
         <span className={`${labelCls} normal-case tracking-normal text-muted/70`}>
           {loc.printerNameHint}
@@ -80,14 +77,10 @@ export function IdentityTab() {
 
         <ZplSubField label={loc.printerDescription}>
           {(id) => (
-            <input
+            <SafeStringInput
               id={id}
-              type="text"
-              className={inputCls}
               value={profile.printerDescription ?? ""}
-              onChange={(e) =>
-                patchPrinterProfile({ printerDescription: e.target.value || undefined })
-              }
+              onChange={(v) => patchPrinterProfile({ printerDescription: v || undefined })}
             />
           )}
         </ZplSubField>

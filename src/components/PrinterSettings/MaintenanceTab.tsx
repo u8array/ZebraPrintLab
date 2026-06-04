@@ -17,10 +17,13 @@ import {
   type MaintenanceAlertUnit,
 } from "../../types/PrinterProfile";
 import {
+  BoundedIntControl,
+  SafeStringInput,
   ZplBoundedIntInput,
   ZplCommandLabel,
   ZplEnumSelect,
   ZplField,
+  ZplSubField,
 } from "./zplFieldPrimitives";
 
 type LocMaintenance = ReturnType<typeof useT>["printerSettings"]["maintenance"];
@@ -46,18 +49,12 @@ export function MaintenanceTab() {
   const alert = profile.maintenanceAlert;
   const message = profile.maintenanceMessage;
 
-  // Centralised mutation: any change to maintenanceAlert.type also
-  // cascades into maintenanceMessage.type so the cross-field invariant
-  // (superRefine in PrinterProfile.ts) never trips and a silent patch
-  // rollback never strands the UI.
+  // Cascade between maintenanceAlert.type and maintenanceMessage.type
+  // lives in patchPrinterProfile so UI call sites don't carry the
+  // invariant; this helper only owns the per-field merge.
   const updateAlert = <K extends keyof MaintenanceAlert>(key: K, value: MaintenanceAlert[K]) => {
     if (!alert) return;
-    const nextAlert = { ...alert, [key]: value };
-    const next: Partial<PrinterProfile> = { maintenanceAlert: nextAlert };
-    if (key === "type" && message) {
-      next.maintenanceMessage = { ...message, type: nextAlert.type };
-    }
-    patchPrinterProfile(next);
+    patchPrinterProfile({ maintenanceAlert: { ...alert, [key]: value } });
   };
 
   return (
@@ -78,18 +75,14 @@ export function MaintenanceTab() {
                     return;
                   }
                   if (!isMaintenanceAlertType(raw)) return;
-                  if (alert) {
-                    updateAlert("type", raw);
-                    return;
-                  }
-                  // First-time alert creation: cascade into an
-                  // existing typed-ahead message so the cross-field
-                  // invariant holds atomically.
-                  const next: Partial<PrinterProfile> = {
-                    maintenanceAlert: { ...MAINTENANCE_ALERT_DEFAULTS, type: raw },
-                  };
-                  if (message) next.maintenanceMessage = { ...message, type: raw };
-                  patchPrinterProfile(next);
+                  // First-time creation seeds defaults; subsequent edits
+                  // re-spread the alert. The cross-field type cascade
+                  // is enforced by patchPrinterProfile.
+                  patchPrinterProfile({
+                    maintenanceAlert: alert
+                      ? { ...alert, type: raw }
+                      : { ...MAINTENANCE_ALERT_DEFAULTS, type: raw },
+                  });
                 }}
               >
                 <option value="">{t.printerSettings.defaultOption}</option>
@@ -98,60 +91,78 @@ export function MaintenanceTab() {
                 ))}
               </select>
             </div>
-            <div className="flex flex-col gap-1">
-              <label className={labelCls}>{loc.alertPrint}</label>
-              <select
-                className={inputCls}
-                value={alert?.print ?? MAINTENANCE_ALERT_DEFAULTS.print}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (isMaintenanceAlertPrint(raw)) updateAlert("print", raw);
-                }}
-                disabled={!alert}
-              >
-                {MAINTENANCE_ALERT_PRINT_VALUES.map((v) => (
-                  <option key={v} value={v}>{v === "Y" ? loc.alertPrintY : loc.alertPrintN}</option>
-                ))}
-              </select>
-            </div>
+            <ZplSubField label={loc.alertPrint}>
+              {(id) => (
+                <select
+                  id={id}
+                  className={inputCls}
+                  value={alert?.print ?? MAINTENANCE_ALERT_DEFAULTS.print}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (isMaintenanceAlertPrint(raw)) updateAlert("print", raw);
+                  }}
+                  disabled={!alert}
+                >
+                  {MAINTENANCE_ALERT_PRINT_VALUES.map((v) => (
+                    <option key={v} value={v}>{v === "Y" ? loc.alertPrintY : loc.alertPrintN}</option>
+                  ))}
+                </select>
+              )}
+            </ZplSubField>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <BoundedIntCell
-              label={loc.alertThreshold}
-              min={0}
-              max={MAINTENANCE_DISTANCE_MAX}
-              value={alert?.threshold}
-              onChange={(threshold) => {
-                if (threshold !== undefined) updateAlert("threshold", threshold);
-              }}
-              disabled={!alert}
-            />
-            <BoundedIntCell
-              label={loc.alertFrequency}
-              min={1}
-              max={MAINTENANCE_DISTANCE_MAX}
-              value={alert?.frequency}
-              onChange={(frequency) => {
-                if (frequency !== undefined) updateAlert("frequency", frequency);
-              }}
-              disabled={!alert}
-            />
-            <div className="flex flex-col gap-1">
-              <label className={labelCls}>{loc.alertUnits}</label>
-              <select
-                className={inputCls}
-                value={alert?.units ?? MAINTENANCE_ALERT_DEFAULTS.units}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (isMaintenanceAlertUnit(raw)) updateAlert("units", raw);
-                }}
-                disabled={!alert}
-              >
-                {MAINTENANCE_ALERT_UNITS.map((v) => (
-                  <option key={v} value={v}>{loc[ALERT_UNIT_LABEL_KEYS[v]]}</option>
-                ))}
-              </select>
-            </div>
+            <ZplSubField label={loc.alertThreshold}>
+              {(id) => (
+                <BoundedIntControl
+                  id={id}
+                  min={0}
+                  max={MAINTENANCE_DISTANCE_MAX}
+                  value={alert?.threshold}
+                  disabled={!alert}
+                  onChange={(threshold) => {
+                    // Drop undefined (mid-typing empty); blur clamps stale state.
+                    if (threshold !== undefined) updateAlert("threshold", threshold);
+                  }}
+                />
+              )}
+            </ZplSubField>
+            <ZplSubField label={loc.alertFrequency}>
+              {(id) => (
+                <BoundedIntControl
+                  id={id}
+                  min={1}
+                  max={MAINTENANCE_DISTANCE_MAX}
+                  value={alert?.frequency}
+                  disabled={!alert}
+                  onChange={(frequency) => {
+                    // readBoundedInt lets sub-min positives through so a
+                    // user typing "1" toward "12" survives a min=2 field;
+                    // schema requires >= min, so gate the commit here.
+                    if (frequency !== undefined && frequency >= 1) {
+                      updateAlert("frequency", frequency);
+                    }
+                  }}
+                />
+              )}
+            </ZplSubField>
+            <ZplSubField label={loc.alertUnits}>
+              {(id) => (
+                <select
+                  id={id}
+                  className={inputCls}
+                  value={alert?.units ?? MAINTENANCE_ALERT_DEFAULTS.units}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (isMaintenanceAlertUnit(raw)) updateAlert("units", raw);
+                  }}
+                  disabled={!alert}
+                >
+                  {MAINTENANCE_ALERT_UNITS.map((v) => (
+                    <option key={v} value={v}>{loc[ALERT_UNIT_LABEL_KEYS[v]]}</option>
+                  ))}
+                </select>
+              )}
+            </ZplSubField>
           </div>
         </div>
       </ZplField>
@@ -159,29 +170,28 @@ export function MaintenanceTab() {
       <ZplField>
         <ZplCommandLabel text={loc.maintenanceMessageHeading} command="^MI" />
         <div className="flex flex-col gap-2 pl-2 border-l border-border">
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{loc.messageText}</label>
-            <input
-              type="text"
-              className={inputCls}
-              maxLength={MAINTENANCE_MESSAGE_MAX_LEN}
-              value={message?.text ?? ""}
-              onChange={(e) => {
-                const text = e.target.value;
-                if (!text) {
-                  patchPrinterProfile({ maintenanceMessage: undefined });
-                  return;
-                }
-                // Type sticks to alert.type when an alert exists; otherwise
-                // falls back to the default so superRefine stays satisfied.
-                const type = message?.type ?? alert?.type ?? MAINTENANCE_ALERT_DEFAULTS.type;
-                patchPrinterProfile({ maintenanceMessage: { type, text } });
-              }}
-            />
-            <span className={`${labelCls} normal-case tracking-normal text-muted/70`}>
-              {loc.messageTextHint} ({MAINTENANCE_MESSAGE_MAX_LEN})
-            </span>
-          </div>
+          <ZplSubField label={loc.messageText}>
+            {(id) => (
+              <SafeStringInput
+                id={id}
+                maxLength={MAINTENANCE_MESSAGE_MAX_LEN}
+                value={message?.text ?? ""}
+                onChange={(text) => {
+                  if (!text) {
+                    patchPrinterProfile({ maintenanceMessage: undefined });
+                    return;
+                  }
+                  // Type sticks to alert.type when an alert exists; otherwise
+                  // falls back to the default so superRefine stays satisfied.
+                  const type = message?.type ?? alert?.type ?? MAINTENANCE_ALERT_DEFAULTS.type;
+                  patchPrinterProfile({ maintenanceMessage: { type, text } });
+                }}
+              />
+            )}
+          </ZplSubField>
+          <span className={`${labelCls} normal-case tracking-normal text-muted/70`}>
+            {loc.messageTextHint} ({MAINTENANCE_MESSAGE_MAX_LEN})
+          </span>
         </div>
       </ZplField>
 
@@ -228,39 +238,3 @@ export function MaintenanceTab() {
   );
 }
 
-function BoundedIntCell({
-  label,
-  min,
-  max,
-  value,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  min: number;
-  max: number;
-  value: number | undefined;
-  onChange: (next: number | undefined) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className={labelCls}>{label}</label>
-      <input
-        type="number"
-        className={inputCls}
-        min={min}
-        max={max}
-        value={value ?? ""}
-        disabled={disabled}
-        onChange={(e) => {
-          const raw = e.target.value;
-          if (raw === "") return;
-          const n = Number.parseInt(raw, 10);
-          if (Number.isNaN(n)) return;
-          onChange(Math.max(min, Math.min(max, n)));
-        }}
-      />
-    </div>
-  );
-}
