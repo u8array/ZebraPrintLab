@@ -172,6 +172,9 @@ const es = {
       reprintAfterError: 'Reimprimir tras error',
       headTestInterval: 'Intervalo de prueba del cabezal (etiquetas)',
       tearOffAdjust: 'Ajuste de desgarro',
+      codeValidation: 'Validación del código',
+      codeValidationOn: 'Activado',
+      codeValidationOff: 'Desactivado',
     },
     clockTime: {
       setRealtimeClock: 'Ajustar reloj en tiempo real',

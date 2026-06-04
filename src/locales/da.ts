@@ -172,6 +172,9 @@ const da = {
       reprintAfterError: 'Genudskriv efter fejl',
       headTestInterval: 'Hovedtest-interval (etiketter)',
       tearOffAdjust: 'Afrivningsjustering',
+      codeValidation: 'Kodevalidering',
+      codeValidationOn: 'Til',
+      codeValidationOff: 'Fra',
     },
     clockTime: {
       setRealtimeClock: 'Indstil realtidsur',

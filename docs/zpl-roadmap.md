@@ -63,7 +63,7 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 | `[x]` | `^FP` | vertical / reverse field layout (CJK / RTL) | |
 | `[ ]` | `^CO` | font cache size | `Coming soon` |
 | `[ ]` | `^CP` | change parser | `Coming soon` |
-| `[ ]` | `^CV` | code validation | `Coming soon` |
+| `[x]` | `^CV` | code validation | |
 
 ## Text & fonts
 

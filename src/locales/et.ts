@@ -172,6 +172,9 @@ const et = {
       reprintAfterError: 'Korduvprint pärast viga',
       headTestInterval: 'Pea testimise intervall (etiketid)',
       tearOffAdjust: 'Rebimise reguleerimine',
+      codeValidation: 'Koodi valideerimine',
+      codeValidationOn: 'Sees',
+      codeValidationOff: 'Väljas',
     },
     clockTime: {
       setRealtimeClock: 'Määra reaalajakell',

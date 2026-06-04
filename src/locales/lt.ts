@@ -172,6 +172,9 @@ const lt = {
       reprintAfterError: 'Spausdinti iš naujo po klaidos',
       headTestInterval: 'Galvutės testo intervalas (etiketės)',
       tearOffAdjust: 'Atplėšimo reguliavimas',
+      codeValidation: 'Kodo tikrinimas',
+      codeValidationOn: 'Įjungta',
+      codeValidationOff: 'Išjungta',
     },
     clockTime: {
       setRealtimeClock: 'Nustatyti realaus laiko laikrodį',

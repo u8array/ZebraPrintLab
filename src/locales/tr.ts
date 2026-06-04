@@ -172,6 +172,9 @@ const tr = {
       reprintAfterError: 'Hatadan sonra yeniden yazdır',
       headTestInterval: 'Kafa testi aralığı (etiketler)',
       tearOffAdjust: 'Yırtma ayarı',
+      codeValidation: 'Kod doğrulama',
+      codeValidationOn: 'Açık',
+      codeValidationOff: 'Kapalı',
     },
     clockTime: {
       setRealtimeClock: 'Gerçek zamanlı saati ayarla',

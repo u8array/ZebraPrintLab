@@ -172,6 +172,9 @@ const cs = {
       reprintAfterError: 'Přetisk po chybě',
       headTestInterval: 'Interval testu hlavy (etikety)',
       tearOffAdjust: 'Úprava odtrhu',
+      codeValidation: 'Validace kódu',
+      codeValidationOn: 'Zapnuto',
+      codeValidationOff: 'Vypnuto',
     },
     clockTime: {
       setRealtimeClock: 'Nastavit hodiny reálného času',

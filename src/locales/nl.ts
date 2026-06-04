@@ -172,6 +172,9 @@ const nl = {
       reprintAfterError: 'Opnieuw afdrukken na fout',
       headTestInterval: 'Kop-test interval (etiketten)',
       tearOffAdjust: 'Afscheur-aanpassing',
+      codeValidation: 'Codevalidatie',
+      codeValidationOn: 'Aan',
+      codeValidationOff: 'Uit',
     },
     clockTime: {
       setRealtimeClock: 'Realtimeklok instellen',

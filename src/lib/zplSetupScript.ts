@@ -17,15 +17,11 @@ import { formatRealtimeClockForZpl, toLocalIsoString } from './realtimeClock';
  *  earlier script left the printer in a non-default state. */
 
 type SetupScriptEntry =
-  | {
-      kind: 'emit';
-      channel: 'tilde' | 'block';
-      emit: (profile: PrinterProfile) => string | null;
-    }
-  | {
-      kind: 'foldedInto';
-      target: keyof PrinterProfile;
-    };
+  | { kind: 'emit'; channel: 'tilde'; emit: (p: PrinterProfile) => string | null }
+  // `scope` is required on block entries so every new command makes the
+  // persistence call explicit; 'session' entries emit after ^JUS.
+  | { kind: 'emit'; channel: 'block'; scope: 'persistent' | 'session'; emit: (p: PrinterProfile) => string | null }
+  | { kind: 'foldedInto'; target: keyof PrinterProfile };
 
 const SETUP_SCRIPT_EMITTERS = {
   tearOffAdjust: {
@@ -45,16 +41,19 @@ const SETUP_SCRIPT_EMITTERS = {
   reprintAfterError: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => p.reprintAfterError !== undefined ? `^JZ${p.reprintAfterError}` : null,
   },
   headTestInterval: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => p.headTestInterval !== undefined ? `^JT${p.headTestInterval}` : null,
   },
   setRealtimeClock: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     // Live mode (useCurrentTimeForClock) captures now() at emit-time
     // and wins over the stored static value. Toggling the checkbox in
     // the UI is therefore unambiguous regardless of stored ISO state.
@@ -72,26 +71,31 @@ const SETUP_SCRIPT_EMITTERS = {
   clockFormat: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => p.clockFormat !== undefined ? `^KD${p.clockFormat}` : null,
   },
   printerLocale: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => p.printerLocale !== undefined ? `^KL${p.printerLocale}` : null,
   },
   encodingTable: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => p.encodingTable !== undefined ? `^SE${p.encodingTable}` : null,
   },
   zplMode: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => p.zplMode !== undefined ? `^SZ${p.zplMode}` : null,
   },
   printerName: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => {
       if (p.printerName === undefined) return null;
       // Trim both halves: parser trims on import; asymmetric whitespace
@@ -107,11 +111,13 @@ const SETUP_SCRIPT_EMITTERS = {
   setPassword: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => p.setPassword !== undefined ? `^KP${p.setPassword}` : null,
   },
   clockMode: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     // ^SL `a` slot is tri-shape: 'S', 'T', or numeric tolerance (TOL
     // mode). Schema's cross-field refine guarantees TOL always has a
     // defined clockTolerance, so no fallback needed.
@@ -133,6 +139,7 @@ const SETUP_SCRIPT_EMITTERS = {
   earlyWarningMaintenance: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => {
       if (p.earlyWarningMaintenance === undefined && p.headCleaningIntervalMeters === undefined) {
         return null;
@@ -152,6 +159,7 @@ const SETUP_SCRIPT_EMITTERS = {
   maintenanceAlert: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => {
       const m = p.maintenanceAlert;
       if (!m) return null;
@@ -161,6 +169,7 @@ const SETUP_SCRIPT_EMITTERS = {
   maintenanceMessage: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => p.maintenanceMessage
       ? `^MI${p.maintenanceMessage.type},${p.maintenanceMessage.text}`
       : null,
@@ -168,20 +177,22 @@ const SETUP_SCRIPT_EMITTERS = {
   headColdWarning: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => p.headColdWarning !== undefined ? `^MW${p.headColdWarning}` : null,
   },
-  // configurationUpdate is the registry's last entry on purpose: a
-  // commit (`^JUS`) needs to follow every other persistent write so
-  // the EEPROM lands the rest of the block before being asked to
-  // save itself. The Zebra app note for ^JU also warns that more
-  // than one ^JU per file is unsupported, so we never split this.
-  // The "is-last" invariant is anchored by a tripwire in
-  // zplSetupScript.test.ts so adding a later entry can't silently
-  // break the commit semantics.
+  // Last persistent entry: ^JUS must follow every persistent write so the
+  // EEPROM commits the block. Tripwire in zplSetupScript.test.ts pins this.
   configurationUpdate: {
     kind: 'emit',
     channel: 'block',
+    scope: 'persistent',
     emit: (p) => p.configurationUpdate !== undefined ? `^JU${p.configurationUpdate}` : null,
+  },
+  codeValidation: {
+    kind: 'emit',
+    channel: 'block',
+    scope: 'session',
+    emit: (p) => p.codeValidation !== undefined ? `^CV${p.codeValidation}` : null,
   },
 } as const satisfies Partial<Record<keyof PrinterProfile, SetupScriptEntry>>;
 
@@ -200,15 +211,32 @@ export const __SETUP_SCRIPT_EMITTERS_FOR_TESTS = SETUP_SCRIPT_EMITTERS;
 
 export function generateSetupScript(profile: PrinterProfile): string {
   const tildeLines: string[] = [];
-  const blockLines: string[] = [];
+  const persistentBlock: string[] = [];
+  const sessionBlock: string[] = [];
 
   for (const field of SETUP_SCRIPT_FIELDS) {
     const e = SETUP_SCRIPT_EMITTERS[field];
     if (e.kind !== 'emit') continue;
     const line = e.emit(profile);
     if (line === null) continue;
-    (e.channel === 'tilde' ? tildeLines : blockLines).push(line);
+    if (e.channel === 'tilde') {
+      tildeLines.push(line);
+      continue;
+    }
+    // Exhaustive on scope: a future variant forces a case here at
+    // compile time instead of silently falling through to persistent.
+    switch (e.scope) {
+      case 'persistent': persistentBlock.push(line); break;
+      case 'session': sessionBlock.push(line); break;
+      default: {
+        const _exhaustive: never = e;
+        throw new Error(`unhandled scope on emit entry: ${JSON.stringify(_exhaustive)}`);
+      }
+    }
   }
+  // Order is load-bearing: session entries trail ^JUS so the commit
+  // never tries to persist them.
+  const blockLines = [...persistentBlock, ...sessionBlock];
 
   if (tildeLines.length === 0 && blockLines.length === 0) return '';
 

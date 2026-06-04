@@ -421,17 +421,31 @@ describe("generateSetupScript — output shape", () => {
       "maintenanceMessage",
       "headColdWarning",
       "configurationUpdate",
+      "codeValidation",
     ]);
   });
 
-  it("places configurationUpdate as the last entry so ^JUS commits the block", () => {
+  it("places configurationUpdate as the last persistent entry so ^JUS commits the block", () => {
     // Tripwire: ^JU emits whatever persistent writes precede it, so a
-    // future field added after configurationUpdate would land inside
-    // the same ^XA…^XZ block and only get committed on the next
-    // print job, not at provisioning.
-    expect(SETUP_SCRIPT_FIELDS[SETUP_SCRIPT_FIELDS.length - 1]).toBe(
+    // future persistent field added after configurationUpdate would
+    // land in the same ^XA…^XZ block and only get committed on the
+    // next print job, not at provisioning. Session-scoped entries
+    // (e.g. ^CV) are allowed after because they emit after ^JUS.
+    const persistentFields = SETUP_SCRIPT_FIELDS.filter((f) => {
+      const e = __SETUP_SCRIPT_EMITTERS_FOR_TESTS[f];
+      return e.kind === 'emit' && e.channel === 'block' && e.scope === 'persistent';
+    });
+    expect(persistentFields[persistentFields.length - 1]).toBe(
       "configurationUpdate",
     );
+  });
+
+  it("emits session-scoped commands after ^JUS so the commit can't try to persist them", () => {
+    const script = generateSetupScript({
+      configurationUpdate: 'S',
+      codeValidation: 'Y',
+    });
+    expect(script).toBe("^XA\n^JUS\n^CVY\n^XZ");
   });
 
   it("PrinterProfile carries only Setup-Script fields — no per-label leakage", () => {
@@ -476,6 +490,20 @@ describe("generateSetupScript — maintenance commands", () => {
 
   it("emits ^MW for the head-cold-warning flag", () => {
     expect(generateSetupScript({ ...base, headColdWarning: 'N' })).toBe("^XA\n^MWN\n^XZ");
+  });
+
+  it("emits ^CV for the code-validation toggle", () => {
+    expect(generateSetupScript({ ...base, codeValidation: 'Y' })).toBe("^XA\n^CVY\n^XZ");
+    expect(generateSetupScript({ ...base, codeValidation: 'N' })).toBe("^XA\n^CVN\n^XZ");
+  });
+
+  it("parses ^CV back into the profile", () => {
+    expect(parseZPL("^XA^CVY^XZ").printerProfile.codeValidation).toBe("Y");
+    expect(parseZPL("^XA^CVN^XZ").printerProfile.codeValidation).toBe("N");
+  });
+
+  it("drops ^CV with an invalid value", () => {
+    expect(parseZPL("^XA^CVX^XZ").printerProfile.codeValidation).toBeUndefined();
   });
 
   it("emits ^JH with f-slot filled and other slots empty", () => {

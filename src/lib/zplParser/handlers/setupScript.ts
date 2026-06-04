@@ -132,6 +132,10 @@ export function createSetupScriptHandlers(s: ParserState): Record<string, Handle
       const v = rest.trim().toUpperCase();
       if (v === "Y" || v === "N") printerProfile.headColdWarning = v;
     },
+    CV(_, rest) {
+      const v = rest.trim().toUpperCase();
+      if (v === "Y" || v === "N") printerProfile.codeValidation = v;
+    },
     // ^JH: only f/g modelled; other slots are runtime reset flags.
     // g is a 0..16 index into HEAD_CLEANING_INTERVAL_METERS per spec.
     JH(p) {

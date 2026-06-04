@@ -172,6 +172,9 @@ const en = {
       reprintAfterError: 'Reprint after error',
       headTestInterval: 'Head-test interval (labels)',
       tearOffAdjust: 'Tear-off adjust',
+      codeValidation: 'Code validation',
+      codeValidationOn: 'On',
+      codeValidationOff: 'Off',
     },
     clockTime: {
       setRealtimeClock: 'Set real-time clock',

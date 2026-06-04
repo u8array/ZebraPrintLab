@@ -172,6 +172,9 @@ const it = {
       reprintAfterError: 'Ristampa dopo errore',
       headTestInterval: 'Intervallo test testina (etichette)',
       tearOffAdjust: 'Regolazione strappo',
+      codeValidation: 'Convalida codice',
+      codeValidationOn: 'Attivo',
+      codeValidationOff: 'Disattivo',
     },
     clockTime: {
       setRealtimeClock: 'Imposta orologio in tempo reale',

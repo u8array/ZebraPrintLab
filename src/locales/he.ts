@@ -172,6 +172,9 @@ const he = {
       reprintAfterError: 'הדפסה מחדש לאחר שגיאה',
       headTestInterval: 'מרווח בדיקת ראש (תוויות)',
       tearOffAdjust: 'כיוון תלישה',
+      codeValidation: 'אימות קוד',
+      codeValidationOn: 'מופעל',
+      codeValidationOff: 'כבוי',
     },
     clockTime: {
       setRealtimeClock: 'הגדר שעון זמן אמת',

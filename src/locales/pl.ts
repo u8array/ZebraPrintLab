@@ -172,6 +172,9 @@ const pl = {
       reprintAfterError: 'Wydrukuj ponownie po błędzie',
       headTestInterval: 'Interwał testu głowicy (etykiety)',
       tearOffAdjust: 'Regulacja odrywania',
+      codeValidation: 'Walidacja kodu',
+      codeValidationOn: 'Wł.',
+      codeValidationOff: 'Wył.',
     },
     clockTime: {
       setRealtimeClock: 'Ustaw zegar czasu rzeczywistego',

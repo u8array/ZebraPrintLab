@@ -172,6 +172,9 @@ const hr = {
       reprintAfterError: 'Ponovni ispis nakon greške',
       headTestInterval: 'Interval testa glave (etikete)',
       tearOffAdjust: 'Podešavanje otkidanja',
+      codeValidation: 'Validacija koda',
+      codeValidationOn: 'Uključeno',
+      codeValidationOff: 'Isključeno',
     },
     clockTime: {
       setRealtimeClock: 'Postavi sat u stvarnom vremenu',

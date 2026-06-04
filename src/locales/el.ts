@@ -172,6 +172,9 @@ const el = {
       reprintAfterError: 'Επανεκτύπωση μετά από σφάλμα',
       headTestInterval: 'Διάστημα δοκιμής κεφαλής (ετικέτες)',
       tearOffAdjust: 'Ρύθμιση αποκοπής',
+      codeValidation: 'Επικύρωση κώδικα',
+      codeValidationOn: 'Ενεργό',
+      codeValidationOff: 'Ανενεργό',
     },
     clockTime: {
       setRealtimeClock: 'Ρύθμιση ρολογιού πραγματικού χρόνου',

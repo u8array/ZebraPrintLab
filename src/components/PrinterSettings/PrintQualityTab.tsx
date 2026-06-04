@@ -152,6 +152,17 @@ export function PrintQualityTab() {
         onChange={(v) => patchPrinterProfile({ tearOffAdjust: v })}
         unit={t.printerSettings.dotsUnit}
       />
+
+      <ZplEnumSelect
+        label={loc.codeValidation}
+        command="^CV"
+        values={['Y', 'N'] as const}
+        isValid={(v): v is 'Y' | 'N' => v === 'Y' || v === 'N'}
+        value={profile.codeValidation}
+        onChange={(codeValidation) => patchPrinterProfile({ codeValidation })}
+        defaultLabel={t.printerSettings.defaultOption}
+        optionLabel={(v) => v === 'Y' ? loc.codeValidationOn : loc.codeValidationOff}
+      />
     </div>
   );
 }

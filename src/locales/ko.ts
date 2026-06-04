@@ -172,6 +172,9 @@ const ko = {
       reprintAfterError: '오류 후 재인쇄',
       headTestInterval: '헤드 테스트 간격 (라벨)',
       tearOffAdjust: '찢기 조정',
+      codeValidation: '코드 검증',
+      codeValidationOn: '켜기',
+      codeValidationOff: '끄기',
     },
     clockTime: {
       setRealtimeClock: '실시간 시계 설정',

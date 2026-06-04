@@ -172,6 +172,9 @@ const zhHans = {
       reprintAfterError: '出错后重新打印',
       headTestInterval: '打印头测试间隔（标签）',
       tearOffAdjust: '撕离调整',
+      codeValidation: '编码验证',
+      codeValidationOn: '开',
+      codeValidationOff: '关',
     },
     clockTime: {
       setRealtimeClock: '设置实时时钟',

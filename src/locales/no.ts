@@ -172,6 +172,9 @@ const no = {
       reprintAfterError: 'Skriv ut på nytt etter feil',
       headTestInterval: 'Hodetest-intervall (etiketter)',
       tearOffAdjust: 'Avrivings-justering',
+      codeValidation: 'Kodevalidering',
+      codeValidationOn: 'På',
+      codeValidationOff: 'Av',
     },
     clockTime: {
       setRealtimeClock: 'Still inn sanntidsklokke',

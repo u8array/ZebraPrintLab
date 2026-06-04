@@ -172,6 +172,9 @@ const zhHant = {
       reprintAfterError: '錯誤後重新列印',
       headTestInterval: '列印頭測試間隔（標籤）',
       tearOffAdjust: '撕離調整',
+      codeValidation: '編碼驗證',
+      codeValidationOn: '開',
+      codeValidationOff: '關',
     },
     clockTime: {
       setRealtimeClock: '設定即時時鐘',

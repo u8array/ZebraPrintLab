@@ -172,6 +172,9 @@ const bg = {
       reprintAfterError: 'Повторен печат след грешка',
       headTestInterval: 'Интервал на тест на главата (етикети)',
       tearOffAdjust: 'Настройка на откъсване',
+      codeValidation: 'Валидация на кода',
+      codeValidationOn: 'Вкл.',
+      codeValidationOff: 'Изкл.',
     },
     clockTime: {
       setRealtimeClock: 'Настройка на часовник в реално време',

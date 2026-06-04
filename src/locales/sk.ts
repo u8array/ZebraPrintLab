@@ -172,6 +172,9 @@ const sk = {
       reprintAfterError: 'Pretlač po chybe',
       headTestInterval: 'Interval testu hlavy (etikety)',
       tearOffAdjust: 'Úprava odtrhu',
+      codeValidation: 'Validácia kódu',
+      codeValidationOn: 'Zapnuté',
+      codeValidationOff: 'Vypnuté',
     },
     clockTime: {
       setRealtimeClock: 'Nastaviť hodiny reálneho času',

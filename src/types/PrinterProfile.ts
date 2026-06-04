@@ -172,6 +172,8 @@ export const printerProfileSchema = z.object({
   }).optional(),
   /** ^MW head-cold warning LCD/alert toggle. */
   headColdWarning: z.enum(['Y', 'N']).optional(),
+  /** ^CV barcode validation (session-scoped per spec, not persisted by ^JUS). */
+  codeValidation: z.enum(['Y', 'N']).optional(),
   /** ^JH f-slot: early-warning-maintenance master gate that turns
    *  the ^MA alert system on. Without `E` the maintenanceAlert
    *  config sits dormant on the printer. */

@@ -172,6 +172,9 @@ const ja = {
       reprintAfterError: 'エラー後に再印刷',
       headTestInterval: 'ヘッドテスト間隔 (ラベル)',
       tearOffAdjust: 'ティアオフ調整',
+      codeValidation: 'コード検証',
+      codeValidationOn: 'オン',
+      codeValidationOff: 'オフ',
     },
     clockTime: {
       setRealtimeClock: 'リアルタイムクロックを設定',

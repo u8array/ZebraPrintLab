@@ -172,6 +172,9 @@ const de = {
       reprintAfterError: 'Nach Fehler erneut drucken',
       headTestInterval: 'Kopftest-Intervall (Etiketten)',
       tearOffAdjust: 'Abriss-Versatz',
+      codeValidation: 'Code-Validierung',
+      codeValidationOn: 'Ein',
+      codeValidationOff: 'Aus',
     },
     clockTime: {
       setRealtimeClock: 'Echtzeituhr stellen',

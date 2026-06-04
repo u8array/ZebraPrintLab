@@ -172,6 +172,9 @@ const fi = {
       reprintAfterError: 'Tulosta uudelleen virheen jälkeen',
       headTestInterval: 'Päätestin väli (etiketit)',
       tearOffAdjust: 'Repäisyn säätö',
+      codeValidation: 'Koodin tarkistus',
+      codeValidationOn: 'Päällä',
+      codeValidationOff: 'Pois',
     },
     clockTime: {
       setRealtimeClock: 'Aseta reaaliaikakello',

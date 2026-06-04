@@ -172,6 +172,9 @@ const fa = {
       reprintAfterError: 'چاپ مجدد پس از خطا',
       headTestInterval: 'فاصله تست هد (برچسب‌ها)',
       tearOffAdjust: 'تنظیم پاره‌کن',
+      codeValidation: 'اعتبارسنجی کد',
+      codeValidationOn: 'روشن',
+      codeValidationOff: 'خاموش',
     },
     clockTime: {
       setRealtimeClock: 'تنظیم ساعت زمان واقعی',

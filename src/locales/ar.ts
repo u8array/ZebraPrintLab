@@ -172,6 +172,9 @@ const ar = {
       reprintAfterError: 'إعادة الطباعة بعد الخطأ',
       headTestInterval: 'فاصل اختبار الرأس (ملصقات)',
       tearOffAdjust: 'ضبط القطع',
+      codeValidation: 'التحقق من الرمز',
+      codeValidationOn: 'تشغيل',
+      codeValidationOff: 'إيقاف',
     },
     clockTime: {
       setRealtimeClock: 'ضبط ساعة الوقت الفعلي',

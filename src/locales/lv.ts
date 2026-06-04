@@ -172,6 +172,9 @@ const lv = {
       reprintAfterError: 'Drukāt vēlreiz pēc kļūdas',
       headTestInterval: 'Galviņas testa intervāls (etiķetes)',
       tearOffAdjust: 'Atplēšanas regulēšana',
+      codeValidation: 'Koda validācija',
+      codeValidationOn: 'Ieslēgts',
+      codeValidationOff: 'Izslēgts',
     },
     clockTime: {
       setRealtimeClock: 'Iestatīt reālā laika pulksteni',

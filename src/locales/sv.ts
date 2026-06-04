@@ -172,6 +172,9 @@ const sv = {
       reprintAfterError: 'Skriv ut igen efter fel',
       headTestInterval: 'Huvudtestintervall (etiketter)',
       tearOffAdjust: 'Avrivningsjustering',
+      codeValidation: 'Kodvalidering',
+      codeValidationOn: 'På',
+      codeValidationOff: 'Av',
     },
     clockTime: {
       setRealtimeClock: 'Ställ in realtidsklocka',

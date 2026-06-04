@@ -172,6 +172,9 @@ const ro = {
       reprintAfterError: 'Reimprimare după eroare',
       headTestInterval: 'Interval test cap (etichete)',
       tearOffAdjust: 'Reglare rupere',
+      codeValidation: 'Validare cod',
+      codeValidationOn: 'Activat',
+      codeValidationOff: 'Dezactivat',
     },
     clockTime: {
       setRealtimeClock: 'Setează ceasul în timp real',

@@ -172,6 +172,9 @@ const fr = {
       reprintAfterError: 'Réimprimer après erreur',
       headTestInterval: 'Intervalle de test de tête (étiquettes)',
       tearOffAdjust: 'Réglage de déchirement',
+      codeValidation: 'Validation du code',
+      codeValidationOn: 'Activé',
+      codeValidationOff: 'Désactivé',
     },
     clockTime: {
       setRealtimeClock: 'Régler l\'horloge temps réel',

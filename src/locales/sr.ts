@@ -172,6 +172,9 @@ const sr = {
       reprintAfterError: 'Ponovno štampanje nakon greške',
       headTestInterval: 'Interval testa glave (etikete)',
       tearOffAdjust: 'Podešavanje otkidanja',
+      codeValidation: 'Validacija koda',
+      codeValidationOn: 'Uključeno',
+      codeValidationOff: 'Isključeno',
     },
     clockTime: {
       setRealtimeClock: 'Подеси сат у реалном времену',

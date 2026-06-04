@@ -172,6 +172,9 @@ const hu = {
       reprintAfterError: 'Újranyomtatás hiba után',
       headTestInterval: 'Fejteszt-intervallum (címkék)',
       tearOffAdjust: 'Letépés beállítása',
+      codeValidation: 'Kódellenőrzés',
+      codeValidationOn: 'Be',
+      codeValidationOff: 'Ki',
     },
     clockTime: {
       setRealtimeClock: 'Valós idejű óra beállítása',
