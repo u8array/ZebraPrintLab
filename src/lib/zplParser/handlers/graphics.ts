@@ -6,7 +6,7 @@ import { loadFontBytesSync } from "../../fontCache";
 import { formatStoragePath, parseStoragePath } from "../../storagePath";
 import { getPosType, pushBrowserLimit, type ParserState } from "../context";
 import { decodeGraphicToImage } from "../decoders/graphic";
-import { int, makeObj, readColor, readRotation } from "../helpers";
+import { int, intDots, makeObj, readColor, readRotation } from "../helpers";
 import type { Handler } from "../types";
 
 /** Characters of a `^GF`/`~DY` payload retained in browserLimit/skipped
@@ -103,9 +103,9 @@ export function createGraphicsHandlers(
     GB(p) {
       // ^GB{w},{h},{t},{color},{rounding}
       // ZPL: w=0 or h=0 means "use thickness value" for that dimension
-      const t = int(p[2], 3);
-      const rawW = int(p[0], t);
-      const rawH = int(p[1], t);
+      const t = intDots(p[2], s.format.unitScale, 3);
+      const rawW = intDots(p[0], s.format.unitScale, t);
+      const rawH = intDots(p[1], s.format.unitScale, t);
       const w = rawW === 0 ? t : rawW;
       const h = rawH === 0 ? t : rawH;
       const color = readColor(p[3]);
@@ -127,9 +127,9 @@ export function createGraphicsHandlers(
       commitPendingReverseBg();
       // ^GD{w},{h},{t},{color},{orientation}
       // orientation: L = top-left→bottom-right, R = top-right→bottom-left
-      const gdW = int(p[0], 1);
-      const gdH = int(p[1], 1);
-      const gdT = int(p[2], 3);
+      const gdW = intDots(p[0], s.format.unitScale, 1);
+      const gdH = intDots(p[1], s.format.unitScale, 1);
+      const gdT = intDots(p[2], s.format.unitScale, 3);
       const gdColor = readColor(p[3]);
       const gdOri = (p[4] ?? "L").toUpperCase();
       const gdLen = Math.round(Math.sqrt(gdW * gdW + gdH * gdH));
@@ -228,9 +228,9 @@ export function createGraphicsHandlers(
     GE(p) {
       commitPendingReverseBg();
       // ^GE{w},{h},{t},{color}
-      const w = int(p[0], 100);
-      const h = int(p[1], 100);
-      const t = int(p[2], 3);
+      const w = intDots(p[0], s.format.unitScale, 100);
+      const h = intDots(p[1], s.format.unitScale, 100);
+      const t = intDots(p[2], s.format.unitScale, 3);
       const color = readColor(p[3]);
       const filled = t >= Math.min(w, h);
       s.result.objects.push(
@@ -254,8 +254,8 @@ export function createGraphicsHandlers(
     GC(p) {
       commitPendingReverseBg();
       // ^GC{diameter},{thickness},{color}  → circle = ellipse with equal w/h
-      const d = int(p[0], 100);
-      const t = int(p[1], 3);
+      const d = intDots(p[0], s.format.unitScale, 100);
+      const t = intDots(p[1], s.format.unitScale, 3);
       const color = readColor(p[2]);
       const filled = t >= d;
       s.result.objects.push(
@@ -343,8 +343,8 @@ export function createGraphicsHandlers(
     GS(p) {
       s.field.fieldType = "symbol";
       s.field.symRot = readRotation(p[0]);
-      s.field.symH = int(p[1], 30);
-      s.field.symW = int(p[2], s.field.symH);
+      s.field.symH = intDots(p[1], s.format.unitScale, 30);
+      s.field.symW = intDots(p[2], s.format.unitScale, s.field.symH);
     },
 
     // ── ~DY downloaded TrueType / graphic payload ──────────────────────────

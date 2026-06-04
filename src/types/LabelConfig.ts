@@ -75,6 +75,14 @@ export const DARKNESS_INSTANT_RANGE = { min: 0, max: 30 } as const;
 /** ^ML: maximum label length, in dots. Zebra spec accepts 1..32000. */
 export const MAX_LABEL_LENGTH_RANGE = { min: 1, max: 32000 } as const;
 
+/** ^MU b,c accepted dpi values. 200 is Zebra's token for 203-dpi
+ *  printers; only the b/c ratio drives resampling. */
+export const MU_DPI_VALUES = [150, 200, 300, 600] as const;
+export type MuDpi = (typeof MU_DPI_VALUES)[number];
+export const isMuDpi = (n: number): n is MuDpi =>
+  (MU_DPI_VALUES as readonly number[]).includes(n);
+const muDpiSchema = z.number().refine(isMuDpi);
+
 export const labelConfigSchema = z.object({
   widthMm: z.number(),
   heightMm: z.number(),
@@ -124,6 +132,10 @@ export const labelConfigSchema = z.object({
   mediaFeedHeadClose: z.enum(MEDIA_FEED_VALUES).optional(),
   /** ^XB: suppress backfeed for the next label. Standalone toggle. */
   suppressBackfeed: z.boolean().optional(),
+  /** ^MU b: format base dpi paired with outputDpi for printer-side resampling. */
+  formatDpi: muDpiSchema.optional(),
+  /** ^MU c: target output dpi. Paired with formatDpi. */
+  outputDpi: muDpiSchema.optional(),
 });
 
 export type LabelConfig = z.infer<typeof labelConfigSchema>;

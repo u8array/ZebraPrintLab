@@ -308,8 +308,13 @@ export function generateZPL(
     lines.push(`~SD${v}`);
   }
 
+  lines.push('^XA');
+  // Paired b,c only; emitting just one half would produce a bogus
+  // resampling ratio. a=D matches the dots-canonical body.
+  if (label.formatDpi !== undefined && label.outputDpi !== undefined) {
+    lines.push(`^MUD,${label.formatDpi},${label.outputDpi}`);
+  }
   lines.push(
-    '^XA',
     `^PW${widthDots}`,
     `^LL${heightDots}`,
     '^CI28',

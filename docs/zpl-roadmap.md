@@ -162,7 +162,7 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 | `[ ]` | `^MC` | map clear | `Coming soon` |
 | `[ ]` | `^MI` | maintenance info message | `Coming soon` |
 | `[ ]` | `^MP` | mode protection | `Coming soon` |
-| `[ ]` | `^MU` | units of measure | `Coming soon` |
+| `[x]` | `^MU` | units of measure | |
 | `[ ]` | `^MW` | head cold warning | `Coming soon` |
 
 ## Print quality

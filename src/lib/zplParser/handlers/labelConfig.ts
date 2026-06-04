@@ -1,7 +1,8 @@
 import type { LabelConfig } from "../../../types/LabelConfig";
 import { DARKNESS_INSTANT_RANGE, DARKNESS_PERMANENT_RANGE, MAX_LABEL_LENGTH_RANGE, SPEED_RANGE, isMediaFeedMode, isMediaMode, isMediaTracking, isMediaType, isPrintOrientation } from "../../../types/LabelConfig";
 import { parseIntOrUndef } from "../../inputParse";
-import { firstChar, inRange, int, strParam } from "../helpers";
+import type { FormatState } from "../context";
+import { firstChar, inRange, int, intDots, intDotsOrUndef, strParam } from "../helpers";
 import type { Handler } from "../types";
 
 /** ^PQ extended params (pauseCount, replicates) — Zebra spec caps at
@@ -12,14 +13,15 @@ const PQ_EXT_MAX = 99_999_999;
 export function createLabelConfigHandlers(
   labelConfig: Partial<LabelConfig>,
   dpmm: number,
+  format: FormatState,
 ): Record<string, Handler> {
   return {
     PW(_, rest) {
-      const dots = int(rest);
+      const dots = intDots(rest, format.unitScale);
       if (dots > 0) labelConfig.widthMm = Math.round((dots / dpmm) * 10) / 10;
     },
     LL(_, rest) {
-      const dots = int(rest);
+      const dots = intDots(rest, format.unitScale);
       if (dots > 0) labelConfig.heightMm = Math.round((dots / dpmm) * 10) / 10;
     },
     PQ(p) {
@@ -44,7 +46,7 @@ export function createLabelConfigHandlers(
       if (isMediaMode(mode)) labelConfig.mediaMode = mode;
     },
     LS(_, rest) {
-      const shift = int(rest, 0);
+      const shift = intDots(rest, format.unitScale, 0);
       if (shift !== 0) labelConfig.labelShift = shift;
     },
     PR(p) {
@@ -72,7 +74,7 @@ export function createLabelConfigHandlers(
       if (isMediaTracking(v)) labelConfig.mediaTracking = v;
     },
     ML(p) {
-      const v = inRange(parseIntOrUndef(p[0]), MAX_LABEL_LENGTH_RANGE);
+      const v = inRange(intDotsOrUndef(p[0], format.unitScale), MAX_LABEL_LENGTH_RANGE);
       if (v !== undefined) labelConfig.maxLabelLength = v;
     },
     MF(p) {
