@@ -1,15 +1,14 @@
-import type { PrinterProfile } from "../../../types/PrinterProfile";
 import { CLOCK_TOLERANCE_RANGE, HEAD_TEST_INTERVAL_RANGE, PRINTER_NAME_MAX_LEN, PRINTER_PASSWORD_REGEX, TEAR_OFF_ADJUST_RANGE, isClockFormat, isClockLanguage, isConfigUpdateAction, isPrinterLocale, isZplMode, setupScriptUnsafeCharRegex } from "../../../types/PrinterProfile";
 import { parseIntOrUndef } from "../../inputParse";
 import { parseRealtimeClock } from "../../realtimeClock";
+import type { ParserState } from "../context";
 import { inRange, strParam } from "../helpers";
 import type { Handler } from "../types";
 
 /** Setup-Script commands (^JZ, ^JT, ~TA, ^ST, ^KD, ^KL, ^SE, ^SZ,
  *  ^KN, ^SL, ^KP, ^JU): all write the shared `printerProfile` slice. */
-export function createSetupScriptHandlers(
-  printerProfile: Partial<PrinterProfile>,
-): Record<string, Handler> {
+export function createSetupScriptHandlers(s: ParserState): Record<string, Handler> {
+  const printerProfile = s.result.printerProfile;
   return {
     JZ(p) {
       const v = strParam(p[0]);

@@ -83,6 +83,15 @@ export const isMuDpi = (n: number): n is MuDpi =>
   (MU_DPI_VALUES as readonly number[]).includes(n);
 const muDpiSchema = z.number().refine(isMuDpi);
 
+/** ^MU b,c dpi-resampling pair. Type-enforces the spec's "both or
+ *  neither" invariant: a half-set pair has no meaningful ratio, so we
+ *  refuse to model it. */
+export const muResamplingSchema = z.object({
+  formatDpi: muDpiSchema,
+  outputDpi: muDpiSchema,
+});
+export type MuResampling = z.infer<typeof muResamplingSchema>;
+
 export const labelConfigSchema = z.object({
   widthMm: z.number(),
   heightMm: z.number(),
@@ -132,10 +141,9 @@ export const labelConfigSchema = z.object({
   mediaFeedHeadClose: z.enum(MEDIA_FEED_VALUES).optional(),
   /** ^XB: suppress backfeed for the next label. Standalone toggle. */
   suppressBackfeed: z.boolean().optional(),
-  /** ^MU b: format base dpi paired with outputDpi for printer-side resampling. */
-  formatDpi: muDpiSchema.optional(),
-  /** ^MU c: target output dpi. Paired with formatDpi. */
-  outputDpi: muDpiSchema.optional(),
+  /** ^MU b,c paired dpi-resampling directive. Set only when both
+   *  slots arrived valid from a ^MU b,c. See `muResamplingSchema`. */
+  muResampling: muResamplingSchema.optional(),
 });
 
 export type LabelConfig = z.infer<typeof labelConfigSchema>;

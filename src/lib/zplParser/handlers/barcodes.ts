@@ -3,16 +3,15 @@ import type { DataMatrixProps } from "../../../registry/datamatrix";
 import type { Gs1DatabarProps } from "../../../registry/gs1databar";
 import type { MaxicodeProps } from "../../../registry/maxicode";
 import { GS1_DATABAR_DEFAULT_SEGMENTS } from "../../gs1";
-import type { DefaultsState, FieldState, FormatState } from "../context";
-import { int, intDots, readRotation } from "../helpers";
+import type { ParserState } from "../context";
+import { dotsFor, int, readRotation } from "../helpers";
 import type { Handler } from "../types";
 
 /** ^B* barcode commands + shared ^BY defaults. Touches `field` and `defaults`. */
-export function createBarcodeHandlers(
-  field: FieldState,
-  defaults: DefaultsState,
-  format: FormatState,
-): Record<string, Handler> {
+export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
+  const { field, defaults } = s;
+  const { dots } = dotsFor(s);
+
   // Factory for 1D barcodes: hIdx/iIdx/cIdx = param indices for height/interp/check.
   const mkBarcode =
     (
@@ -25,7 +24,7 @@ export function createBarcodeHandlers(
     (p) => {
       field.fieldType = type;
       field.bcRotation = readRotation(p[0]);
-      field.bcHeight = intDots(p[hIdx], format.unitScale, defaults.byHeight || 100);
+      field.bcHeight = dots(p[hIdx], defaults.byHeight || 100);
       field.bcInterp = (p[iIdx] ?? iDefault) === "Y";
       field.bcCheck = cIdx >= 0 ? (p[cIdx] ?? "N") === "Y" : false;
     };
@@ -40,8 +39,8 @@ export function createBarcodeHandlers(
     // ── Barcode defaults ──────────────────────────────────────────────────
     // ^BY{moduleWidth},{ratio},{height}
     BY(p) {
-      defaults.byModuleWidth = intDots(p[0], format.unitScale, 2);
-      defaults.byHeight = intDots(p[2], format.unitScale, 0);
+      defaults.byModuleWidth = dots(p[0], 2);
+      defaults.byHeight = dots(p[2], 0);
     },
 
     // ── 1D barcodes via mkBarcode(type, hIdx, iIdx, iDefault?, cIdx?) ─────
@@ -67,7 +66,7 @@ export function createBarcodeHandlers(
     B4(p) {
       field.fieldType = "code49";
       field.bcRotation = readRotation(p[0]);
-      field.bcHeight = intDots(p[1], format.unitScale, defaults.byHeight || 20);
+      field.bcHeight = dots(p[1], defaults.byHeight || 20);
       field.bcInterp = (p[2] ?? "N") === "Y";
       const m = (p[3] ?? "A").toUpperCase();
       field.bcCode49Mode = /^[A0-5]$/.test(m)
@@ -81,7 +80,7 @@ export function createBarcodeHandlers(
       field.fieldType = "msi";
       field.bcRotation = readRotation(p[0]);
       field.bcCheck = (p[1] ?? "N") !== "N";
-      field.bcHeight = intDots(p[2], format.unitScale, defaults.byHeight || 100);
+      field.bcHeight = dots(p[2], defaults.byHeight || 100);
       field.bcInterp = (p[3] ?? "Y") === "Y";
     },
 
@@ -110,7 +109,7 @@ export function createBarcodeHandlers(
     BX(p) {
       field.fieldType = "datamatrix";
       field.bcRotation = readRotation(p[0]);
-      field.dmDim = intDots(p[1], format.unitScale, 5);
+      field.dmDim = dots(p[1], 5);
       field.dmQuality = int(p[2], 200) as DataMatrixProps["quality"];
     },
 
@@ -118,7 +117,7 @@ export function createBarcodeHandlers(
     B7(p) {
       field.fieldType = "pdf417";
       field.bcRotation = readRotation(p[0]);
-      field.pdfRowHeight = intDots(p[1], format.unitScale, 10);
+      field.pdfRowHeight = dots(p[1], 10);
       field.pdfSecurity = int(p[2], 0);
       field.pdfColumns = int(p[3], 0);
     },
@@ -143,14 +142,14 @@ export function createBarcodeHandlers(
     BF(p) {
       field.fieldType = "micropdf417";
       field.bcRotation = readRotation(p[0]);
-      field.mpdfRowHeight = intDots(p[1], format.unitScale, 10);
+      field.mpdfRowHeight = dots(p[1], 10);
     },
 
     // ^BBN,{rowHeight},{security},{numCharsPerRow},{numRows},{mode} — CODABLOCK
     BB(p) {
       field.fieldType = "codablock";
       field.bcRotation = readRotation(p[0]);
-      field.cbRowHeight = intDots(p[1], format.unitScale, 10);
+      field.cbRowHeight = dots(p[1], 10);
       field.cbSecurity = (p[2] ?? "Y") === "N" ? "N" : "Y";
     },
 
@@ -160,10 +159,10 @@ export function createBarcodeHandlers(
       field.bcRotation = readRotation(p[0]);
       // w1 (Code 39 narrow bar) overrides ^BY when present; undefined
       // means fall back to defaults.byModuleWidth at flush time.
-      field.tlcModuleWidth = intDots(p[1], format.unitScale, 0) || undefined;
+      field.tlcModuleWidth = dots(p[1], 0) || undefined;
       // p[2] (r1) intentionally dropped; canonicalized on emit.
-      field.tlcHeight = intDots(p[3], format.unitScale, defaults.byHeight || 40);
-      field.tlcMicroPdfRowHeight = intDots(p[4], format.unitScale, 4);
+      field.tlcHeight = dots(p[3], defaults.byHeight || 40);
+      field.tlcMicroPdfRowHeight = dots(p[4], 4);
       // Zebra ^BT h2 range is 1-10; firmware snaps to a valid linked
       // MicroPDF417 row count {4,6,8,10} on print.
       const rows = int(p[5], 4);

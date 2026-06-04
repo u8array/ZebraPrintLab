@@ -309,10 +309,10 @@ export function generateZPL(
   }
 
   lines.push('^XA');
-  // Paired b,c only; emitting just one half would produce a bogus
-  // resampling ratio. a=D matches the dots-canonical body.
-  if (label.formatDpi !== undefined && label.outputDpi !== undefined) {
-    lines.push(`^MUD,${label.formatDpi},${label.outputDpi}`);
+  // a=D since the model is dots-canonical; b,c shape is guaranteed
+  // by muResamplingSchema.
+  if (label.muResampling) {
+    lines.push(`^MUD,${label.muResampling.formatDpi},${label.muResampling.outputDpi}`);
   }
   lines.push(
     `^PW${widthDots}`,
