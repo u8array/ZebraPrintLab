@@ -72,6 +72,46 @@ export const CONFIG_UPDATE_VALUES = ['S', 'R', 'N', 'F'] as const;
 export type ConfigUpdateAction = (typeof CONFIG_UPDATE_VALUES)[number];
 export const isConfigUpdateAction = makeEnumGuard(CONFIG_UPDATE_VALUES);
 
+/** ^MA/^MI alert type. Shared discriminator so one field couples
+ *  alert and message at the wire level. */
+export const MAINTENANCE_ALERT_TYPES = ['H', 'R'] as const;
+export type MaintenanceAlertType = (typeof MAINTENANCE_ALERT_TYPES)[number];
+export const isMaintenanceAlertType = makeEnumGuard(MAINTENANCE_ALERT_TYPES);
+
+/** ^MA print slot: Y=emit warning label, N=skip. */
+export const MAINTENANCE_ALERT_PRINT_VALUES = ['Y', 'N'] as const;
+export type MaintenanceAlertPrint = (typeof MAINTENANCE_ALERT_PRINT_VALUES)[number];
+export const isMaintenanceAlertPrint = makeEnumGuard(MAINTENANCE_ALERT_PRINT_VALUES);
+
+/** ^MA units slot: M=meters, I=inches, C=centimeters. */
+export const MAINTENANCE_ALERT_UNITS = ['M', 'I', 'C'] as const;
+export type MaintenanceAlertUnit = (typeof MAINTENANCE_ALERT_UNITS)[number];
+export const isMaintenanceAlertUnit = makeEnumGuard(MAINTENANCE_ALERT_UNITS);
+
+/** ^MA threshold/frequency cap. Spec is implementation-defined;
+ *  99999 covers typical ~600m head life. */
+export const MAINTENANCE_DISTANCE_MAX = 99999;
+/** ^MI message length cap from Zebra Quick Reference. */
+export const MAINTENANCE_MESSAGE_MAX_LEN = 63;
+/** ^JH g-slot (head cleaning interval) range in meters. Min is 1
+ *  so the unset/disabled state is `undefined` rather than ambiguous
+ *  `0M`. Max 900 keeps PAX4 compatible.
+ *  TODO HW-verify: Zebra docs are ambiguous whether the wire format
+ *  is raw `<n>M` or an indexed table (0..16 mapping to 100M..900M).
+ *  Current implementation uses `<n>M`; verify on real hardware. */
+export const HEAD_CLEANING_INTERVAL_RANGE = { min: 1, max: 900 } as const;
+
+/** Default seed for a freshly enabled ^MA. Matches the spec example
+ *  `^MAH,Y,5,1,M`. Spread inline so UI placeholder display and
+ *  parser blank-slot fallback stay in sync. */
+export const MAINTENANCE_ALERT_DEFAULTS = {
+  type: 'H',
+  print: 'Y',
+  threshold: 5,
+  frequency: 1,
+  units: 'M',
+} as const;
+
 /** Printer-installation profile: EEPROM-persistent printer-state
  *  fields separated from `labelConfig` so design files don't leak
  *  per-install values when shared. */
@@ -94,6 +134,29 @@ export const printerProfileSchema = z.object({
   printerName: z.string().min(1).max(PRINTER_NAME_MAX_LEN).regex(setupScriptSafeStringRegex).optional(),
   printerDescription: z.string().min(1).regex(setupScriptSafeStringRegex).optional(),
   setPassword: z.string().regex(PRINTER_PASSWORD_REGEX).optional(),
+  /** ^MA alert. Requires earlyWarningMaintenance==='E' to actually
+   *  fire; the two are stored independently. */
+  maintenanceAlert: z.object({
+    type: z.enum(MAINTENANCE_ALERT_TYPES),
+    print: z.enum(['Y', 'N']),
+    threshold: z.number().int().min(0).max(MAINTENANCE_DISTANCE_MAX),
+    frequency: z.number().int().min(1).max(MAINTENANCE_DISTANCE_MAX),
+    units: z.enum(MAINTENANCE_ALERT_UNITS),
+  }).optional(),
+  /** ^MI custom message printed when the matching `^MA{type}` fires. */
+  maintenanceMessage: z.object({
+    type: z.enum(MAINTENANCE_ALERT_TYPES),
+    text: z.string().min(1).max(MAINTENANCE_MESSAGE_MAX_LEN).regex(setupScriptSafeStringRegex),
+  }).optional(),
+  /** ^MW head-cold warning LCD/alert toggle. */
+  headColdWarning: z.enum(['Y', 'N']).optional(),
+  /** ^JH f-slot: early-warning-maintenance master gate that turns
+   *  the ^MA alert system on. Without `E` the maintenanceAlert
+   *  config sits dormant on the printer. */
+  earlyWarningMaintenance: z.enum(['E', 'D']).optional(),
+  /** ^JH g-slot head-cleaning interval, stored as a meter count.
+   *  Generator emits `<n>M`; spec accepts an `M` suffix only. */
+  headCleaningIntervalMeters: intInRange(HEAD_CLEANING_INTERVAL_RANGE).optional(),
   /** ^JU action. Generator emits the value as `^JU{action}` last in
    *  the setup-script block so an `S` commit happens after every
    *  other persistent write in the same script. */
@@ -111,6 +174,17 @@ export const printerProfileSchema = z.object({
       code: 'custom',
       path: ['clockTolerance'],
       message: 'clockMode "TOL" requires clockTolerance to be set',
+    });
+  }
+  if (
+    p.maintenanceAlert &&
+    p.maintenanceMessage &&
+    p.maintenanceAlert.type !== p.maintenanceMessage.type
+  ) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['maintenanceMessage', 'type'],
+      message: 'maintenanceMessage.type must match maintenanceAlert.type',
     });
   }
 });

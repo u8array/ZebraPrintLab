@@ -21,6 +21,10 @@ type SetupScriptEntry =
       target: keyof PrinterProfile;
     };
 
+/** Named indices for the two ^JH slots we model (a..j = 0..9). */
+const JH_SLOT_F = 5;
+const JH_SLOT_G = 6;
+
 const SETUP_SCRIPT_EMITTERS = {
   tearOffAdjust: {
     kind: 'emit',
@@ -120,6 +124,47 @@ const SETUP_SCRIPT_EMITTERS = {
   // Drop bare `^SL,<lang>` (mode unset): spec leaves the shape
   // implementation-defined.
   clockLanguage: { kind: 'foldedInto', target: 'clockMode' },
+  // ^JH precedes ^MA so the master gate is on when the alert lands;
+  // otherwise the printer discards the alert until ^JUS + reboot.
+  // earlyWarningMaintenance owns the composite emit;
+  // headCleaningIntervalMeters folds in (cf. ^KN).
+  earlyWarningMaintenance: {
+    kind: 'emit',
+    channel: 'block',
+    emit: (p) => {
+      if (p.earlyWarningMaintenance === undefined && p.headCleaningIntervalMeters === undefined) {
+        return null;
+      }
+      const slots = ['', '', '', '', '', '', '', '', '', ''];
+      slots[JH_SLOT_F] = p.earlyWarningMaintenance ?? '';
+      if (p.headCleaningIntervalMeters !== undefined) {
+        slots[JH_SLOT_G] = `${p.headCleaningIntervalMeters}M`;
+      }
+      return `^JH${slots.join(',')}`;
+    },
+  },
+  headCleaningIntervalMeters: { kind: 'foldedInto', target: 'earlyWarningMaintenance' },
+  maintenanceAlert: {
+    kind: 'emit',
+    channel: 'block',
+    emit: (p) => {
+      const m = p.maintenanceAlert;
+      if (!m) return null;
+      return `^MA${m.type},${m.print},${m.threshold},${m.frequency},${m.units}`;
+    },
+  },
+  maintenanceMessage: {
+    kind: 'emit',
+    channel: 'block',
+    emit: (p) => p.maintenanceMessage
+      ? `^MI${p.maintenanceMessage.type},${p.maintenanceMessage.text}`
+      : null,
+  },
+  headColdWarning: {
+    kind: 'emit',
+    channel: 'block',
+    emit: (p) => p.headColdWarning !== undefined ? `^MW${p.headColdWarning}` : null,
+  },
   // configurationUpdate is the registry's last entry on purpose: a
   // commit (`^JUS`) needs to follow every other persistent write so
   // the EEPROM lands the rest of the block before being asked to

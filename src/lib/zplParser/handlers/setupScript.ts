@@ -1,4 +1,4 @@
-import { CLOCK_TOLERANCE_RANGE, HEAD_TEST_INTERVAL_RANGE, PRINTER_NAME_MAX_LEN, PRINTER_PASSWORD_REGEX, TEAR_OFF_ADJUST_RANGE, isClockFormat, isClockLanguage, isConfigUpdateAction, isPrinterLocale, isZplMode, setupScriptUnsafeCharRegex } from "../../../types/PrinterProfile";
+import { CLOCK_TOLERANCE_RANGE, HEAD_CLEANING_INTERVAL_RANGE, HEAD_TEST_INTERVAL_RANGE, MAINTENANCE_ALERT_DEFAULTS, MAINTENANCE_DISTANCE_MAX, MAINTENANCE_MESSAGE_MAX_LEN, PRINTER_NAME_MAX_LEN, PRINTER_PASSWORD_REGEX, TEAR_OFF_ADJUST_RANGE, isClockFormat, isClockLanguage, isConfigUpdateAction, isMaintenanceAlertPrint, isMaintenanceAlertType, isMaintenanceAlertUnit, isPrinterLocale, isZplMode, setupScriptUnsafeCharRegex } from "../../../types/PrinterProfile";
 import { parseIntOrUndef } from "../../inputParse";
 import { parseRealtimeClock } from "../../realtimeClock";
 import type { ParserState } from "../context";
@@ -6,7 +6,8 @@ import { inRange, strParam } from "../helpers";
 import type { Handler } from "../types";
 
 /** Setup-Script commands (^JZ, ^JT, ~TA, ^ST, ^KD, ^KL, ^SE, ^SZ,
- *  ^KN, ^SL, ^KP, ^JU): all write the shared `printerProfile` slice. */
+ *  ^KN, ^SL, ^KP, ^MA, ^MI, ^MW, ^JH, ^JU): all write the shared
+ *  `printerProfile` slice. */
 export function createSetupScriptHandlers(s: ParserState): Record<string, Handler> {
   const printerProfile = s.result.printerProfile;
   return {
@@ -79,6 +80,50 @@ export function createSetupScriptHandlers(s: ParserState): Record<string, Handle
     JU(_, rest) {
       const v = rest.trim().toUpperCase();
       if (isConfigUpdateAction(v)) printerProfile.configurationUpdate = v;
+    },
+    MA(p) {
+      const type = strParam(p[0]);
+      if (!isMaintenanceAlertType(type)) return;
+      // Blank slot falls back to spec default so partial dumps round-trip.
+      const printRaw = strParam(p[1]);
+      const print = printRaw === "" ? MAINTENANCE_ALERT_DEFAULTS.print : printRaw;
+      if (!isMaintenanceAlertPrint(print)) return;
+      const threshold = inRange(parseIntOrUndef(p[2]), { min: 0, max: MAINTENANCE_DISTANCE_MAX });
+      // frequency min=1: spec is implementation-defined but every
+      // Zebra example shows >=1; 0 ("alert every 0 labels") is degenerate.
+      const frequency = inRange(parseIntOrUndef(p[3]), { min: 1, max: MAINTENANCE_DISTANCE_MAX });
+      if (threshold === undefined || frequency === undefined) return;
+      const unitsRaw = strParam(p[4]);
+      const units = unitsRaw === "" ? MAINTENANCE_ALERT_DEFAULTS.units : unitsRaw;
+      if (!isMaintenanceAlertUnit(units)) return;
+      printerProfile.maintenanceAlert = { type, print, threshold, frequency, units };
+    },
+    MI(p) {
+      const type = strParam(p[0]);
+      if (!isMaintenanceAlertType(type)) return;
+      // Rejoin so a message with embedded commas trips the
+      // unsafe-char guard below instead of getting silently
+      // truncated at the first comma.
+      const text = (p.slice(1).join(",")).trim();
+      if (!text || text.length > MAINTENANCE_MESSAGE_MAX_LEN) return;
+      if (setupScriptUnsafeCharRegex.test(text)) return;
+      printerProfile.maintenanceMessage = { type, text };
+    },
+    MW(_, rest) {
+      const v = rest.trim().toUpperCase();
+      if (v === "Y" || v === "N") printerProfile.headColdWarning = v;
+    },
+    // ^JH: only f/g modelled; other slots are runtime reset flags.
+    JH(p) {
+      const JH_SLOT_F = 5;
+      const JH_SLOT_G = 6;
+      const f = strParam(p[JH_SLOT_F]);
+      if (f === "E" || f === "D") printerProfile.earlyWarningMaintenance = f;
+      const gMatch = /^(\d+)M$/i.exec((p[JH_SLOT_G] ?? "").trim());
+      if (gMatch && gMatch[1] !== undefined) {
+        const meters = inRange(parseIntOrUndef(gMatch[1]), HEAD_CLEANING_INTERVAL_RANGE);
+        if (meters !== undefined) printerProfile.headCleaningIntervalMeters = meters;
+      }
     },
   };
 }

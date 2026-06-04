@@ -35,7 +35,8 @@ export type PrinterSettingsTab =
   | 'printQuality'
   | 'clockTime'
   | 'encodingLanguage'
-  | 'identity';
+  | 'identity'
+  | 'maintenance';
 
 export type SidebarTab = 'properties' | 'layers' | 'variables' | 'fonts';
 
