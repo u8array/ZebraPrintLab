@@ -158,12 +158,12 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 | `[x]` | `^ML` | maximum label length | |
 | `[x]` | `^MF` | media feed | |
 | `[x]` | `^XB` | suppress backfeed | |
-| `[ ]` | `^MA` | maintenance alert | `Coming soon` |
+| `[x]` | `^MA` | maintenance alert | |
 | `[ ]` | `^MC` | map clear | `Coming soon` |
-| `[ ]` | `^MI` | maintenance info message | `Coming soon` |
+| `[x]` | `^MI` | maintenance info message | |
 | `[ ]` | `^MP` | mode protection | `Coming soon` |
 | `[x]` | `^MU` | units of measure | |
-| `[ ]` | `^MW` | head cold warning | `Coming soon` |
+| `[x]` | `^MW` | head cold warning | |
 
 ## Print quality
 
@@ -173,7 +173,7 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 | `[x]` | `^JT` | head test interval | |
 | `[x]` | `~TA` | tear off adjust | |
 | `[ ]` | `^PA` | advanced text properties | `Coming soon` |
-| `[ ]` | `^JH` | early warning settings | `Coming soon` |
+| `[x]` | `^JH` | early warning settings | |
 | `[ ]` | `^PF` | slew dot rows | `Coming soon` |
 | `[ ]` | `^PH` / `~PH` | slew to home | `Coming soon` |
 | `[ ]` | `^PN` | present now | `Coming soon` |
