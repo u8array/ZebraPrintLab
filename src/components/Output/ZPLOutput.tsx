@@ -87,7 +87,7 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
  *  actions + copy button) and a `<pre>` body. The Setup-Script
  *  output moved into the Printer Settings modal's docked preview
  *  pane, so this component no longer needs to host a secondary
- *  variant — it just shows the per-label ZPL. */
+ *  variant; it just shows the per-label ZPL. */
 function OutputSection({
   heading,
   content,

@@ -15,7 +15,7 @@ import { ok, err, type Result } from "./result";
  *  changes in a way an older app cannot read. Add a vN schema +
  *  migrator below and dispatch on `schemaVersion` in `parseDesignFile`.
  *  The persist middleware in `labelStore` has its own independent
- *  version for localStorage state — do not conflate. */
+ *  version for localStorage state; do not conflate. */
 export const CURRENT_DESIGN_SCHEMA_VERSION = 1;
 
 export type DesignFileError = "parse_error" | "invalid_schema";

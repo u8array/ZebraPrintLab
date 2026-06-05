@@ -55,7 +55,7 @@ export function createSetupScriptHandlers(s: ParserState): Record<string, Handle
         printerProfile.printerDescription = desc;
       }
     },
-    // ^SL `a`,`b` — `a` is tri-shape ('S' / 'T' / numeric → TOL).
+    // ^SL `a`,`b`; `a` is tri-shape ('S' / 'T' / numeric → TOL).
     SL(p) {
       const a = strParam(p[0]);
       if (a === "S" || a === "T") {

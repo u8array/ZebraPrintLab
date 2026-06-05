@@ -1,16 +1,5 @@
-/**
- * ZPL-FIRST SIZING POLICY
- *
- * The designer is a layout tool, not a scanner. `getDisplaySize` maps the
- * bwip-js intrinsic canvas size to the ZPL-correct display pixels so the
- * displayed bbox matches what Zebra firmware will print. Bar patterns may
- * look slightly distorted because bwip-js' rendering algorithm differs.
- *
- * Per-symbology rationale (especially for the deliberately-not-corrected
- * cases code93, code11, plessey) is in the inline comments at each `case`
- * block in getUprightDisplaySize. The static-parse test in
- * bwipHelpers.test.ts ensures every BCID-registered type has a case.
- */
+// ZPL-first sizing: bbox matches Zebra firmware print, not bwip-js intrinsic
+// canvas. Per-symbology rationale lives at each case in getUprightDisplaySize.
 
 import bwipjs from "bwip-js/browser";
 import { ObjectRegistry, type LeafObject } from "../../registry";
@@ -37,22 +26,13 @@ import {
   upcSuppTextZoneDots,
 } from "./bwipConstants";
 
-/**
- * AI 01 followed by exactly 11 numeric digits (13 chars total) is not a valid
- * GTIN-14 element string. Zebra firmware does NOT pad it to Method 1; it falls
- * back to General Compaction (~149 modules at 8dpmm). bwip-js with `(01)<padded>`
- * would force Method 1 (~133 modules), so we re-route through `(99)` to get
- * General Compaction encoding too. Empirical cutoff (probed against Labelary).
- */
+// AI 01 + 11 digits is not a valid GTIN-14. Zebra falls back to General
+// Compaction (~149 modules at 8dpmm); routing through (99) matches that
+// where bwip-js would otherwise force Method 1. Probed against Labelary.
 function isAi01ElevenDigitFragment(content: string): boolean {
   return /^01\d{11}$/.test(content);
 }
 
-/**
- * Bwip-js text for GS1 DataBar Expanded — wraps raw AI input in parens and
- * routes the empirically-known length-mismatch case (AI 01 + 11 digits) through
- * `(99)` so the rendered bitmap width matches Zebra firmware's print output.
- */
 function gs1ExpandedBwipText(content: string): string {
   if (isAi01ElevenDigitFragment(content)) return `(99)${content}`;
   return wrapGs1AIs(content);
@@ -84,9 +64,7 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
   logmars: "code39",
   msi: "msi",
   plessey: "plessey",
-  // Placeholder — the actual bcid is resolved per-symbology via
-  // GS1_DATABAR_BCID below. This entry exists only to pass the
-  // `if (!bcid) return null` guard at the top of buildBwipOptions.
+  // Placeholder; real bcid resolved per-symbology via GS1_DATABAR_BCID.
   gs1databar: "databaromni",
   planet: "planet",
   postal: "postnet",
@@ -97,8 +75,7 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
   maxicode: "maxicode",
   micropdf417: "micropdf417",
   codablock: "codablockf",
-  // Placeholder — actual bcid (ean2 vs ean5) is resolved from the
-  // content length in the per-type switch in buildBwipOptions.
+  // Placeholder; ean2 vs ean5 resolved from content length.
   upcEanExtension: "ean5",
   code49: "code49",
 };
@@ -106,33 +83,20 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
 export const BWIP_SCALE = 2;
 const BWIP_2D_INTERNAL_SCALE = 2;
 
-/** Reused unattached canvas for dry-run encoding validators (e.g.
- *  `validateMaxicodeBwip`). Cheaper than creating a fresh element
- *  per call and we don't need its pixel output, just the success
- *  /throw signal from bwip-js. Initialised lazily so SSR-style
- *  imports don't break — `document` exists only in the browser. */
+// Lazy so SSR imports don't crash on missing `document`.
 let _validationCanvas: HTMLCanvasElement | null = null;
 function getValidationCanvas(): HTMLCanvasElement {
   if (!_validationCanvas) _validationCanvas = document.createElement("canvas");
   return _validationCanvas;
 }
 
-/** Strip the `bwip-js: bwipp.symbology:` prefixes that bwip-js
- *  decorates every encoder error with, so the bare diagnostic
- *  ("Expected postcode followed by group separator character",
- *  etc.) can be shown as-is in the UI. Shared between the canvas
- *  render (BarcodeObject) and dry-run validators below. */
+/** Strip `bwip-js: bwipp.symbology:` prefixes from encoder errors for UI display. */
 export function cleanBwipError(e: unknown): string {
   const raw = e instanceof Error ? e.message : String(e);
   return raw.replace(/^bwip-js:\s*/i, "").replace(/^bwipp\.[^:]+:\s*/i, "");
 }
 
-/** Dry-run a Maxicode encode against the shared validation canvas
- *  to check whether the (content, mode) combination would succeed
- *  in the real render path. Returns null on success or the cleaned
- *  bwip-js error message on failure (e.g. SCM-format mismatch for
- *  modes 2/3). Uses the same option shape `buildBwipOptions`
- *  produces so canvas render and panel-side validation can't drift. */
+/** Dry-run encode; returns null on success or cleaned error message. */
 export function validateMaxicodeBwip(content: string, mode: number): string | null {
   try {
     const opts = {
@@ -148,22 +112,12 @@ export function validateMaxicodeBwip(content: string, mode: number): string | nu
   }
 }
 
-/**
- * Estimate the number of columns ZPL/Labelary would choose for PDF417 when
- * columns=0 (auto). Zebra uses a heuristic to keep the symbol somewhat square.
- * This formula is derived empirically by measuring Labelary outputs for
- * various content lengths.
- */
+// Mirrors Zebra's columns=0 auto-heuristic. Empirically validated against
+// Labelary at 8dpmm, secLevel 0 and 1, content 10..49 chars.
 function estimatePdf417Columns(content: string, securityLevel: number): number {
-  // Rough estimate of codewords: each 2.3 characters ~ 1 codeword.
-  // Security level adds (2^(securityLevel+1)) error correction codewords.
   const dataCodewords = Math.ceil((content.length || 1) / 2.3);
   const eccCodewords = Math.pow(2, securityLevel + 1);
   const totalCodewords = dataCodewords + eccCodewords;
-
-  // Zebra heuristic: columns = floor(sqrt(totalCodewords / 4))
-  // Empirically validated against Labelary at 8dpmm for secLevel 0 and 1,
-  // content lengths 10–49 chars.
   return Math.max(1, Math.min(30, Math.floor(Math.sqrt(totalCodewords / 4))));
 }
 
@@ -171,7 +125,7 @@ function estimatePdf417Columns(content: string, securityLevel: number): number {
 // row count exceeds what the data strictly requires.
 const BWIP_PDF417_MIN_ROWHEIGHT = 3;
 
-// EAN/UPC bar-pattern module layout (no quiet zones — bwip-js native canvas).
+// EAN/UPC bar-pattern module layout (no quiet zones, bwip-js native canvas).
 // All values are module offsets/widths from the left edge of the bar pattern.
 //   ean13/upca: 3 start | 6×7 (42) | 5 centre | 6×7 (42) | 3 end = 95 modules
 //   ean8:       3 start | 4×7 (28) | 5 centre | 4×7 (28) | 3 end = 67 modules
@@ -192,16 +146,12 @@ export interface EanUpcLayout {
   modulePx: number;
   /** x-position (display px) of the left/main digit block. */
   xLeft: number;
-  /** x-position (display px) of the right digit block; 0 for upce. */
+  /** x-position (display px) of the right digit block, 0 for upce. */
   xRight: number;
   /** Width (display px) of each digit block. */
   halfWidth: number;
 }
 
-/**
- * Compute display-pixel positions for the manually-rendered digit labels
- * underneath EAN/UPC bar patterns. Pure function; testable without Konva.
- */
 export function getEanUpcLayout(
   type: EanUpcType,
   displayWidth: number,
@@ -226,12 +176,7 @@ export function getEanUpcLayout(
 // and barcode_postal_standard (6 digits) at 8dpmm, moduleWidth=2.
 const POSTNET_PLANET_WIDTH_RATIO = 0.7525;
 
-/**
- * Compute the optimal bwip render scale for 1D barcodes so that each module
- * maps to an integer number of display pixels (avoiding anti-aliasing on
- * non-integer upscaling). Falls back to BWIP_SCALE when display pixels per
- * module round to zero.
- */
+/** Integer-aligned per-module render scale; avoids non-integer upscaling. */
 export function get1DBwipScale(
   moduleWidth: number,
   scale: number,
@@ -240,13 +185,6 @@ export function get1DBwipScale(
   return Math.max(1, Math.round(dotsToPx(moduleWidth, scale, dpmm)));
 }
 
-/**
- * Render-scale for 1D barcodes: integer-aligned per-module scale when the
- * caller supplies the canvas scale + dpmm, otherwise the BWIP_SCALE default.
- * Wrapping the branch lets per-type cases pass their own (narrowed,
- * required-typed) `moduleWidth` instead of going through a cast at the
- * generic top of buildBwipOptions.
- */
 function bwipScale1D(
   moduleWidth: number,
   renderScale: number | undefined,
@@ -257,17 +195,10 @@ function bwipScale1D(
     : BWIP_SCALE;
 }
 
-// Check-digit math now lives in src/lib/barcodeCheckDigits.ts (pure,
-// no Canvas deps). Re-export here so existing callers (BarcodeObject)
-// keep working without touching every import.
 export { eanCheckDigit, upceCheckDigit } from "../../lib/barcodeCheckDigits";
 
-/**
- * Encode text as Code 128 subset B using bwip-js raw ^NNN format.
- * ZPL's ^BC defaults to subset B for printable ASCII content, so using raw
- * Code B here keeps the designer's module count in sync with Labelary.
- * Returns null for characters outside Code B range (ASCII 32–126).
- */
+// Forcing Code B keeps module count in sync with Labelary (^BC default).
+// Returns null for chars outside ASCII 32..126.
 function toCode128BRaw(text: string): string | null {
   if (!text) return null;
   const parts = ["^104"]; // Start B
@@ -279,28 +210,9 @@ function toCode128BRaw(text: string): string | null {
   return parts.join("");
 }
 
-/**
- * Translate ZPL ^BC field-data escape sequences (`>X`) into bwip-js parsefnc
- * syntax. Returns null when no recognized escape is present so the caller can
- * stay on the existing raw-Subset-B path.
- *
- * ZPL Code 128 escapes (Zebra ZPL II Programming Guide):
- *   >0 → literal `>`
- *   >5 → FNC1
- *   >6 → FNC2
- *   >7 → FNC3
- *   >8 → FNC4
- *   >9 → invoke Code C; inserts FNC1 only when it is the first character
- *        of the field (per ZPL II manual). Mid-string `>9` is just a
- *        subset switch which bwip auto-mode handles for digit runs.
- *   >: → switch to Subset B (dropped; bwip auto-mode chooses the subset)
- *   >; → switch to Subset A (dropped; bwip auto-mode chooses the subset)
- *
- * Without this translation, `STRSTR>52316094000242201` is rendered as 21 raw
- * Subset-B symbols, while the firmware reads `>5` as FNC1 and switches to
- * Subset C for the 16 trailing digits — yielding ~15 symbols and a much
- * narrower bbox. The mismatch is what users observe as "Länge stimmt nicht".
- */
+// Translate ^BC field-data escapes (`>X`) to bwip parsefnc; null when none.
+// ZPL II: >0 literal >, >5..>8 FNC1..FNC4, >9 FNC1 only at pos 0 (else
+// subset switch handled by bwip auto), >:/>; subset switches (dropped).
 export function parseZplCode128Escapes(text: string): string | null {
   if (!/>[05-9:;]/.test(text)) return null;
   let out = "";
@@ -318,7 +230,7 @@ export function parseZplCode128Escapes(text: string): string | null {
         case "8": out += "^FNC4"; i++; continue;
         case "9": if (i === 0) out += "^FNC1"; i++; continue;
         case ":":
-        case ";": i++; continue; // subset switch — bwip auto-mode handles it
+        case ";": i++; continue; // subset switch, bwip auto-mode handles it
       }
     }
     out += ch;
@@ -334,12 +246,7 @@ export function buildBwipOptions(
   const bcid = BCID[obj.type];
   if (!bcid) return null;
 
-  // bwip always renders upright; visual rotation is handled in the
-  // Konva renderer via an inner rotated Group (rotatedGroupTransform).
-  // Declared without an initializer because every reachable case
-  // assigns before `break` and the `default` arm returns early — the
-  // previous `= null` initializer is what ESLint 10's
-  // no-useless-assignment now flags as dead.
+  // bwip always renders upright; Konva renderer applies visual rotation.
   let opts: Record<string, unknown>;
 
   switch (obj.type) {
@@ -362,9 +269,7 @@ export function buildBwipOptions(
     case "code49": {
       const p = obj.props;
       const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
-      // Stacked 1D, bwip auto-picks row count. Clamp rowheight to
-      // bwip's 8..50 range — defensive net for JSON loads that
-      // bypass the registry's commitTransform/normalize clamps.
+      // Clamp to bwip's 8..50 range; guards JSON loads that bypass registry.
       const rawRow = Math.round(p.height / Math.max(p.moduleWidth, 1));
       const rowheight = Math.min(50, Math.max(8, rawRow));
       opts = {
@@ -385,17 +290,9 @@ export function buildBwipOptions(
     case "upcEanExtension": {
       const p = obj.props;
       const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
-      // ZPL ^BS uses one command for both lengths; bwip splits the
-      // bcid. Anything that isn't a 2-digit supplement is rendered
-      // as the 5-digit variant — matches printer behaviour where
-      // the 5-digit form is the common case (ISBN price, magazine
-      // sequence) and bwip-js rejects other lengths outright.
-      // HRI digits sit ABOVE the bars per Zebra firmware. Rendered
-      // as a separate Konva Text overlay (same pattern as logmars)
-      // so all four rotations land at the firmware-correct anchor
-      // via the inner rotated Group in BarcodeObject; bwip's own
-      // includetext would bake the text into the bitmap and rotate
-      // with it.
+      // bwip splits ^BS into ean2/ean5 by length; non-2 falls back to ean5.
+      // HRI rendered as separate Konva overlay (Zebra puts it above bars)
+      // so rotation lands at the firmware anchor.
       const text = p.content || "00000";
       const variantBcid = text.length === 2 ? "ean2" : "ean5";
       opts = {
@@ -403,10 +300,6 @@ export function buildBwipOptions(
         text,
         scale,
         height: 10,
-        // bwip-js defaults includetext=true for ean2/ean5 and bakes the
-        // digits into the bitmap; we render the HRI via Konva so it can
-        // follow Zebra's Font 0 magnification steps and stay aligned
-        // under all four rotations.
         includetext: false,
       };
       break;
@@ -415,12 +308,9 @@ export function buildBwipOptions(
       const p = obj.props;
       const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
       const text = p.content || "0";
-      // Note: ZPL ^BC e=Y (checkDigit) only prints the MOD-10 digit in the
-      // interpretation line — it does NOT append it to the encoded barcode data.
-      // ZPL escape sequences (e.g. `>5` for FNC1, `>9` for Code-C switch with
-      // FNC1) require parsefnc auto-mode so bwip emits the same compact symbol
-      // count Zebra firmware does. Plain ASCII falls through to the raw Code B
-      // path which keeps the existing module count behaviour unchanged.
+      // ^BC e=Y only prints MOD-10 in HRI, not in encoded data. ZPL escapes
+      // need parsefnc auto-mode to match firmware's symbol count; plain ASCII
+      // stays on the raw Code B path.
       const escaped = parseZplCode128Escapes(text);
       if (escaped !== null) {
         opts = { bcid, text: escaped, parsefnc: true, scale, height: 10 };
@@ -444,11 +334,7 @@ export function buildBwipOptions(
     case "plessey": {
       const p = obj.props;
       const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
-      // Code39/Codabar/Plessey only encode uppercase letters. Zebra firmware
-      // (and Labelary) silently uppercase lowercase input; bwip-js does not and
-      // throws instead, which would crash the canvas for any imported ZPL with
-      // lowercase content. Uppercase here so the lib matches firmware behaviour
-      // without rewriting the user's source.
+      // Zebra silently uppercases for these symbologies; bwip-js throws.
       const needsUpper = obj.type === "code39" || obj.type === "codabar" || obj.type === "plessey";
       const raw = p.content || "0";
       const text = needsUpper ? raw.toUpperCase() : raw;
@@ -458,8 +344,7 @@ export function buildBwipOptions(
     case "msi": {
       const p = obj.props;
       const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
-      // Zebra always encodes a Mod10 check digit in MSI regardless of the ^BM e=N
-      // parameter (which only suppresses it in the interpretation line).
+      // Zebra always encodes Mod10 in MSI; ^BM e=N only suppresses the HRI digit.
       opts = { bcid, text: p.content || "0", scale, height: 10, includecheck: true };
       break;
     }
@@ -487,8 +372,8 @@ export function buildBwipOptions(
       const scale = bwipScale1D(p.magnification, renderScale, renderDpmm);
       const sym = p.symbology;
       const isExpanded = GS1_DATABAR_EXPANDED_SYMBOLOGIES.has(sym);
-      // bwip-js needs (AI)data parens; canonical model stores raw digits.
-      // Sym 1–5 require AI 01 + valid 14-digit GTIN with correct check.
+      // bwip needs (AI)data parens; model stores raw digits.
+      // Sym 1..5 require AI 01 + valid 14-digit GTIN with check.
       const text = isExpanded
         ? gs1ExpandedBwipText(p.content)
         : `(01)${gtin14WithCheck(p.content)}`;
@@ -558,9 +443,6 @@ export function buildBwipOptions(
     }
     case "maxicode": {
       const p = obj.props;
-      // bwip-js maxicode uses `mode` (number) directly; modes 2/3
-      // would also accept a structured carrier message via `parse`,
-      // but we don't expose SCM editing yet so pass content as-is.
       opts = { bcid, text: p.content || " ", scale: BWIP_SCALE, mode: p.mode };
       break;
     }
@@ -594,26 +476,13 @@ export function buildBwipOptions(
       return null;
   }
 
-  // Visual rotation is Konva's job (wraps the KImage in a rotated Group
-  // via rotatedGroupTransform). Asking bwip to rotate would produce
-  // bitmaps in mismatched orientations across types — keep them all
-  // upright so the renderer can rotate them uniformly.
   return opts;
 }
 
 /**
- * Display size of a barcode bbox in pixels.
- *
- *  `w` × `h` is the full footprint Zebra firmware reserves on the print —
- *  this includes any text zone that may sit on one side of the bars. The
- *  bars themselves occupy a sub-rectangle described by
- *  `(barLeftPx, barTopPx, barW, barH)`. For symbologies without a text
- *  zone or for rotations the text zone hasn't been mapped onto, the bar
- *  rect equals the full bbox.
- *
- *  Renderers should draw the bwip-js bitmap inside the bar sub-rectangle so
- *  the bars appear at their true height, while the Konva Group / hit area
- *  spans the full bbox so selection-handles match the printed footprint.
+ * Barcode bbox in pixels. `(w, h)` is the firmware-reserved footprint
+ * including text zones; `(barLeftPx, barTopPx, barW, barH)` is the bar
+ * sub-rect for drawing the bitmap.
  */
 export interface BarcodeDisplaySize {
   w: number;
@@ -622,10 +491,7 @@ export interface BarcodeDisplaySize {
   barH: number;
   barLeftPx: number;
   barTopPx: number;
-  /** Upright (rotation=N) view of the same layout. Renderers that draw
-   *  inside an inner rotated Group consume this so their geometry stays
-   *  rotation-independent — the inner group's transform handles the
-   *  visual rotation. Always present alongside the rotated fields. */
+  /** Upright (rotation=N) layout for inner-rotated-Group renderers. */
   upright: {
     w: number;
     h: number;
@@ -634,18 +500,12 @@ export interface BarcodeDisplaySize {
     barLeftPx: number;
     barTopPx: number;
   };
-  /** Sub-rect of the bwip-js canvas to render (in source pixel coords).
-   *  Lets the renderer skip bwip's internal padding, e.g. the
-   *  paddingheight pad on GS1 DataBar that would otherwise leave the
-   *  bars proportionally shorter than the firmware-reserved bbox.
-   *  Undefined = use the full canvas. */
+  /** Sub-rect of bwip canvas to render, skipping internal padding (e.g.
+   *  GS1 DataBar paddingheight). Undefined = full canvas. */
   bitmapCrop?: { x: number; y: number; width: number; height: number };
 }
 
-/** Firmware-reserved text-zone height in dots, keyed by symbology. The
- *  zone sits below the bars in upright orientation; rotation maps it to
- *  another side of the bbox in getDisplaySize. Types not listed have no
- *  reserved zone. */
+/** Firmware-reserved text-zone height in dots (below bars in upright). */
 const TEXT_ZONE_DOTS_BY_TYPE: Partial<Record<LabelObject["type"], number>> = {
   ean13: EAN_TEXT_ZONE_DOTS,
   ean8: EAN_TEXT_ZONE_DOTS,
@@ -667,9 +527,6 @@ export function getDisplaySize(
     };
   }
 
-  // bwip-js now always renders upright (the BarcodeObject renderer
-  // handles visual rotation via a rotated Konva Group), so the canvas
-  // dimensions are the upright dimensions directly.
   const rotation = objectRotation(obj.props);
   const isQuarter = rotation === "R" || rotation === "B";
   const upright = getUprightDisplaySize(obj, canvas.width, canvas.height, scale, dpmm);
@@ -678,15 +535,8 @@ export function getDisplaySize(
   const w = isQuarter ? upright.h : upright.w;
   const h = isQuarter ? upright.w : upright.h;
 
-  // Text-zone reservation in upright orientation, on the "below" side of
-  // the bars per Labelary's bbox. Zero for symbologies without one.
-  // ^BS supplements reserve the zone ABOVE the bars in upright (N);
-  // bookkeeping reuses the same px value but flips which side gets
-  // the offset.
-  // ^BS reserves the text zone only when printInterpretation=Y; with
-  // f=N the printer prints bars only and bbox = bar height. Other
-  // EAN/UPC reserve the 13-dot zone unconditionally (Zebra firmware
-  // ships a fixed text guard even when N).
+  // ^BS reserves text zone only when printInterpretation=Y; other EAN/UPC
+  // reserve the 13-dot zone unconditionally (firmware ships a fixed guard).
   const textZoneDots =
     obj.type === "upcEanExtension"
       ? obj.props.printInterpretation
@@ -694,11 +544,8 @@ export function getDisplaySize(
         : 0
       : TEXT_ZONE_DOTS_BY_TYPE[obj.type] ?? 0;
   const textZonePx = dotsToPx(textZoneDots, scale, dpmm);
-  // Source of truth for textAbove is the registry's HriBehavior — same
-  // field BarcodeObject consumes for its overlay positioning. Without
-  // this the bbox places bars at the top and reserves the zone at the
-  // bottom, but the renderer draws the text above the bars at negative
-  // y → text leaks out of the bbox. Bug spotted by gemini on PR #90.
+  // Must mirror BarcodeObject's HriBehavior, else above-bars text leaks
+  // out of the bbox (PR #90).
   const isTextAbove = ObjectRegistry[obj.type]?.hri?.textAbove ?? false;
 
   // Map the upright "below the bars" zone onto the rotated bbox: it travels
@@ -712,9 +559,6 @@ export function getDisplaySize(
   let barW = w;
   let barH = h;
   if (textZonePx > 0) {
-    // isTextAbove flips the upright zone from "below the bars" to "above
-    // the bars" (and the corresponding rotated edges) without duplicating
-    // the rotation table.
     if (!isTextAbove) {
       switch (rotation) {
         case "N": barH = h - textZonePx; break;
@@ -732,13 +576,7 @@ export function getDisplaySize(
     }
   }
 
-  // GS1 DataBar opts include `paddingheight: N`, which adds whitespace
-  // rows on top and bottom of the upright bwip canvas. Without cropping
-  // them out, the bitmap drawn at displayH leaves the bars
-  // proportionally shorter than the spec-correct height. Zebra firmware
-  // fills the full reserved height with bars; mirror that by cropping
-  // the source bitmap to the bar-only rows. Always y-axis now because
-  // bwip renders upright.
+  // Crop GS1 DataBar paddingheight rows so bars fill the firmware-reserved height.
   let bitmapCrop: BarcodeDisplaySize["bitmapCrop"];
   if (obj.type === "gs1databar") {
     const bwipSc = get1DBwipScale(obj.props.magnification, scale, dpmm);
@@ -753,11 +591,6 @@ export function getDisplaySize(
     }
   }
 
-  // Upright view (rotation=N) of the same layout. Text zone sits above
-  // the bars when isTextAbove (logmars), otherwise implicitly below
-  // (barTopPx=0, barH = h - textZonePx). Bars span the full width.
-  // The inner-rotated-Group renderer pattern consumes this so its
-  // geometry stays rotation-independent.
   const uprightView = {
     w: upright.w,
     h: upright.h,
@@ -777,17 +610,11 @@ function getUprightDisplaySize(
   scale: number,
   dpmm: number,
 ): { w: number; h: number } {
-  // bwip-js at bwipSc=1 renders 1 extra pixel; at bwipSc>=2 it renders the exact module
-  // count. The extraPx term corrects for this so formulas stay consistent across scales.
+  // bwip at bwipSc=1 renders 1 extra px; bwipSc>=2 is exact. extraPx corrects.
   switch (obj.type) {
     case "code93":
     case "code11": {
-      // bwip-js uses a narrower quiet zone than Zebra firmware. The
-      // shortfall is content-independent — a fixed module count per
-      // symbology — so we add it to the bwip module count to recover
-      // the ZPL-correct print width. The bitmap stretches ~10-25% to
-      // fill the wider bbox; bars look slightly broader than the
-      // printed output but dimensions match.
+      // bwip's quiet zone is narrower than Zebra; add the fixed shortfall.
       const delta = obj.type === "code93"
         ? CODE93_QUIET_ZONE_DELTA_MODULES
         : CODE11_QUIET_ZONE_DELTA_MODULES;
@@ -798,11 +625,8 @@ function getUprightDisplaySize(
       return { w, h };
     }
     case "plessey": {
-      // bwip-js uses a fundamentally different bar encoding from Zebra
-      // ^BP — bwip renders ~67% wider than Zebra for the same content.
-      // Both encodings grow linearly with content, so a constant ratio
-      // suffices. The bitmap squeezes to ~60% of its intrinsic width;
-      // bars look compressed but the printed footprint matches.
+      // bwip uses a different bar encoding from ^BP (~67% wider). Constant
+      // ratio compresses to match the firmware footprint.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
       const w =
@@ -826,18 +650,9 @@ function getUprightDisplaySize(
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.magnification, scale, dpmm);
       const w = (cw / bwipSc) * modulePx;
-      // bwip-js renders most non-stacked variants at the omni (33-module)
-      // height regardless of the actual symbology, so trusting `ch` would
-      // overstate the height for sym 2/5/6 and understate it for sym 4.
-      // Use the spec-defined module count instead.
-      //
-      // Sym 7 (Expanded Stacked) cannot be Labelary-cross-validated:
-      // bwip-js needs the (AI)data parens-AI input format, Zebra ^BR sym 7
-      // silently rejects that input and renders an empty PNG, so neither
-      // direction can produce a shared ground truth. The bwip-natural
-      // canvas height is used as a best-effort approximation; the rendered
-      // size therefore matches what the user sees in bwip's preview but
-      // is not guaranteed to match Zebra firmware's actual print output.
+      // bwip renders most non-stacked variants at omni (33-module) height;
+      // use spec module count instead. Sym 7 cannot be Labelary-validated
+      // (input format mismatch) so bwip-natural height is best-effort.
       const specModules = GS1_DATABAR_SPEC_HEIGHT_MODULES[obj.props.symbology];
       const h = specModules !== undefined
         ? specModules * modulePx
@@ -855,9 +670,7 @@ function getUprightDisplaySize(
     case "ean8":
     case "upca":
     case "upce": {
-      // EAN/UPC reserves a 13-dot text zone below the bars in firmware,
-      // even when printInterpretation=N. Include it in the bbox so the
-      // selection footprint matches the printed extent.
+      // 13-dot text zone reserved by firmware even when interpretation=N.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
       const extraPx = bwipSc === 1 ? 1 : 0;
@@ -866,12 +679,8 @@ function getUprightDisplaySize(
       return { w, h };
     }
     case "upcEanExtension": {
-      // ^BS prints the human-readable digits ABOVE the bars (unlike the
-      // main EAN/UPC text band below), and Zebra reserves a larger
-      // vertical zone for it only when printInterpretation=Y. With
-      // f=N the bbox collapses to bar height (no guard reservation,
-      // unlike main UPC/EAN which always reserves 13). Measured
-      // against Labelary at 80-bar height: Y → 98, N → 80.
+      // ^BS prints HRI ABOVE bars; zone only reserved when interpretation=Y
+      // (f=N collapses to bar height, unlike main EAN/UPC). Labelary 80h: Y=98, N=80.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
       const extraPx = bwipSc === 1 ? 1 : 0;
@@ -883,10 +692,7 @@ function getUprightDisplaySize(
       return { w, h };
     }
     case "logmars": {
-      // LOGMARS reserves a text zone above the bars (per spec) regardless of
-      // printInterpretation. Include LOGMARS_TEXT_ZONE_DOTS so the bbox
-      // matches the firmware footprint; bwip's bitmap covers only the bar
-      // portion and is rendered at the bottom of the bbox.
+      // Spec reserves text zone above bars regardless of printInterpretation.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
       const extraPx = bwipSc === 1 ? 1 : 0;
@@ -895,23 +701,14 @@ function getUprightDisplaySize(
       return { w, h };
     }
     case "code49": {
-      // Stacked 1D. Labelary's emulator only renders the HRI line
-      // for ^B4 (not the bars), so bwip-js is the ground truth;
-      // bbox math is not Labelary-cross-validated. Same as ^BB.
+      // Labelary only renders HRI for ^B4; bwip is ground truth (same as ^BB).
       const p = obj.props;
-      // Mirror buildBwipOptions's 8..50 clamp so numRows recovery
-      // matches what bwip actually drew.
       const rawRow = Math.round(p.height / Math.max(p.moduleWidth, 1));
       const rowheightUnits = Math.min(50, Math.max(8, rawRow));
       const modulePx = dotsToPx(p.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(p.moduleWidth, scale, dpmm);
-      // numRows recovery uses bwipSc (matches the scale bwip was
-      // called with), not BWIP_SCALE — otherwise the row count is
-      // wrong whenever rendering at a non-default scale/dpmm.
       const numRows = Math.max(1, Math.round(ch / (rowheightUnits * bwipSc)));
       const w = (cw / bwipSc) * modulePx;
-      // Bbox uses the clamped row height so the preview matches the
-      // rendered bars when raw h is outside bwip's range.
       const h = numRows * dotsToPx(rowheightUnits * p.moduleWidth, scale, dpmm);
       return { w, h };
     }
@@ -930,14 +727,8 @@ function getUprightDisplaySize(
     }
     case "pdf417": {
       const p = obj.props;
-      // bwip-js uses a fixed internal row height of 3 for pdf417
       const numRows = ch / (BWIP_PDF417_MIN_ROWHEIGHT * BWIP_SCALE);
-
-      // Width check: bwip-js sometimes adds unexpected padding or uses
-      // different column logic. We force the display width based on the
-      // actual number of columns. PDF417 width in modules is:
-      // 17 * start + 17 * left + 17 * columns + 17 * right + 18 * stop
-      // Total = 17 * (columns + 4) + 1
+      // PDF417 module width: 17*(columns+4)+1.
       const columns =
         p.columns || estimatePdf417Columns(p.content, p.securityLevel);
       const modulesW = 17 * (columns + 4) + 1;
@@ -965,10 +756,7 @@ function getUprightDisplaySize(
       return { w: size, h: size };
     }
     case "maxicode": {
-      // Fixed physical size — no module-magnification prop. bwip-js
-      // emits the canonical maxicode bitmap at BWIP_SCALE internal
-      // pixels per dot, so converting cw/ch back to dots and then
-      // to stage px places the symbol at its true printed size.
+      // Fixed physical size; convert bwip's px-per-dot back to stage px.
       const w = dotsToPx(cw / BWIP_SCALE, scale, dpmm);
       const h = dotsToPx(ch / BWIP_SCALE, scale, dpmm);
       return { w, h };
@@ -1003,7 +791,7 @@ function getUprightDisplaySize(
 /** Valid MicroPDF417 row counts in TLC39's linked 4-column geometry. */
 export const TLC39_MICROPDF_ROW_COUNTS = [4, 6, 8, 10] as const;
 
-/** Snap to the nearest valid row count; bwip-js throws on any other value. */
+/** Snap to the nearest valid row count, bwip-js throws on any other value. */
 export function snapTlc39MicroPdfRows(requested: number): number {
   if (!Number.isFinite(requested)) return 4;
   for (const r of TLC39_MICROPDF_ROW_COUNTS) if (requested <= r) return r;
@@ -1019,12 +807,7 @@ function micropdfDataRows(canvasHeight: number): number {
   );
 }
 
-/** TLC39 spec splits content on the first comma: ECI (6 digits) for
- *  the Code 39 base line, serial (≤25 alphanum) for the MicroPDF417
- *  block stacked on top. The "T" linkage flag is appended to the
- *  Code 39 data when a MicroPDF417 follows; the leading "S" data
- *  identifier (if any) is stripped from the serial before MicroPDF
- *  encoding. */
+/** Split on first comma: ECI for Code 39, serial for MicroPDF417 (leading "S" stripped). */
 export function splitTlc39Content(content: string): { eci: string; serial: string } {
   if (!content) return { eci: "", serial: "" };
   const comma = content.indexOf(",");
@@ -1043,9 +826,7 @@ interface Tlc39RenderProps {
   microPdfRows: number;
 }
 
-/** TLC39 composite (MicroPDF417 on top, Code 39 base below). bwip-js has
- *  no native encoder; composes two encoders at dpmm-aware display sizes
- *  per the TCIF spec (shared width, no separator). */
+/** TLC39 composite (MicroPDF417 on top, Code 39 below; shared width, no separator). */
 export function renderTlc39Canvas(
   props: Tlc39RenderProps,
   scale: number,
@@ -1063,9 +844,6 @@ export function renderTlc39Canvas(
         bcid: "code39",
         text: text || " ",
         scale: bwipScale,
-        // bwip `height` is in mm at 1x; constant source height
-        // (stretched to dpmm-correct dots below) matches the standalone
-        // 1D pattern.
         height: 10,
         includetext: false,
       } as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
@@ -1099,9 +877,7 @@ export function renderTlc39Canvas(
     return stretchTo(src, w, code39H);
   }
 
-  // Render MicroPDF first; the "T" linkage flag is only appended to
-  // Code 39 when the linked MicroPDF actually rendered, otherwise the
-  // flag would claim a link that does not exist.
+  // "T" linkage flag only appended after MicroPDF actually renders.
   const snappedRows = snapTlc39MicroPdfRows(props.microPdfRows);
   const mpdfSrc = document.createElement("canvas");
   let mpdfOk = true;

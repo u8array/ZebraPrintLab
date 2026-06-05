@@ -3,7 +3,7 @@ import { zlibSync } from 'fflate';
 import { parseZPL } from './zplParser';
 import { props } from '../test/helpers';
 
-/** CRC-16/XMODEM — same variant used by the parser to validate
+/** CRC-16/XMODEM; same variant used by the parser to validate
  *  :B64:/:Z64: wrappers (poly 0x1021, init 0x0000). Duplicated here so
  *  tests can build valid CRC values without exporting the parser's
  *  internal helper. */
@@ -483,7 +483,7 @@ describe('parseZPL — ^FH hex escape', () => {
   });
 
   it('reports unsupported ^CI N as partial import', () => {
-    // ^CI50 is not a real Zebra encoding — falls back to UTF-8 default
+    // ^CI50 is not a real Zebra encoding; falls back to UTF-8 default
     const { importReport } = parseZPL('^XA^CI50^FH_^FO0,0^A0N,30,0^FDx^FS^XZ', 8);
     expect(importReport.partial).toContain('^CI50');
   });
@@ -1046,7 +1046,7 @@ describe('parseZPL — printer params', () => {
   it('parses ^CW mapping and pins ^A{alias} as the field-level fontId', () => {
     // The ^CW mapping lives in labelConfig.customFonts; the text field
     // only carries the alias char so re-emitting produces the same
-    // short ^A{id} form. printerFontName remains undefined — that field
+    // short ^A{id} form. printerFontName remains undefined; that field
     // is for the long ^A@,…E:NAME.TTF form, not for alias-based refs.
     const { labelConfig, objects } = parseZPL(
       '^XA^CWM,E:ARIAL.TTF^FO10,10^AMN,30,0^FDHi^FS^XZ',
@@ -1278,7 +1278,7 @@ describe('parseZPL — example shipping label (integration)', () => {
 
   it('parses the permit box as unfilled', () => {
     const boxes = objects.filter((o) => o.type === 'box');
-    // permit box: ^FO600,300^GB150,150,3 — thickness=3 < min(150,150) → unfilled
+    // permit box: ^FO600,300^GB150,150,3, thickness=3 < min(150,150) → unfilled
     const permitBox = boxes.find((b) => b.x === 600 && b.y === 300);
     expect(permitBox).toBeDefined();
     expect(props(permitBox).filled).toBe(false);
@@ -1743,7 +1743,7 @@ describe('parseZPL — importReport.partial', () => {
   });
 
   it('does not flag built-in ^A{letter} fonts (A-H) as partial', () => {
-    // ^AB references the built-in Zebra font B — the parser pins it on
+    // ^AB references the built-in Zebra font B; the parser pins it on
     // the field as fontId="B" and the generator re-emits the short
     // form, so the import is lossless and stays out of partial.
     const { importReport } = parseZPL('^XA^FO0,0^ABN,30,0^FDText^FS^XZ', 8);

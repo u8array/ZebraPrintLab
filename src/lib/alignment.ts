@@ -5,7 +5,7 @@
  * required to centre the group bbox within the label.
  *
  * Multi-select uses the union of all bboxes and shifts every object by the
- * same delta — matches Figma's "align to canvas" behaviour for grouped
+ * same delta; matches Figma's "align to canvas" behaviour for grouped
  * selections, where children keep their relative positions.
  */
 
@@ -28,7 +28,7 @@ export interface AlignTarget {
 }
 
 /**
- * Compute (dx, dy) — the same shift applied to every member of the group so
+ * Compute (dx, dy); the same shift applied to every member of the group so
  * that its combined bbox sits centred inside `target` along the requested
  * axis. Returns zero on the inactive axis. Empty input → {0,0}.
  */

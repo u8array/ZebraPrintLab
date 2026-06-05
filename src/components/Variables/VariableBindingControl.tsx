@@ -55,10 +55,9 @@ export function VariableBindingControl({ obj }: Props) {
       setError(tv.nameRequired);
       return;
     }
-    // Seed the new variable's default with whatever literal content the
-    // field is currently carrying, preserving the canvas state across
-    // the binding transition. Every bindable type's first ^FD emission
-    // comes from `props.content` (see registry implementations).
+    // Every bindable type's first ^FD emission comes from
+    // `props.content`, so seeding the default from it preserves the
+    // canvas state across the binding transition.
     const defaultValue = getObjectStringContent(obj) ?? '';
     const id = addVariable({ name: trimmed, defaultValue });
     if (id === null) {

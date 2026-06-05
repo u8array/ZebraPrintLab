@@ -68,7 +68,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
         return;
       case "no_response":
         // Raw-socket printers (port 9100) never reply with HTTP, so a
-        // timeout is the typical success case — but it is indistinguishable
+        // timeout is the typical success case; but it is indistinguishable
         // from an unreachable host. Report honestly instead of green-success.
         setNetStatus({ type: "success", message: t.zebraPrint.sentNoResponse });
         return;

@@ -9,7 +9,7 @@ export interface ZplImportResult {
   labelConfig: Partial<LabelConfig>;
   /** Setup-Script fields extracted from the import. Caller decides
    *  whether to overwrite the active printer profile (e.g. only when
-   *  the user explicitly opts in) — design imports should typically
+   *  the user explicitly opts in); design imports should typically
    *  NOT auto-apply these so a shared `.zpl` can't silently
    *  reconfigure the user's printer. */
   printerProfile: Partial<PrinterProfile>;
@@ -79,8 +79,8 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     }
     // Apply id remap to this block's objects so their `variableId`
     // points at the merged Variable rather than the orphaned per-block
-    // entry. Walks into groups for completeness even though the parser
-    // doesn't currently produce groups.
+    // entry. Defensive walk into groups; the parser does not produce
+    // groups, but the helper is shape-agnostic.
     if (idRemap.size > 0) {
       rewireBindings(result.objects, idRemap);
     }

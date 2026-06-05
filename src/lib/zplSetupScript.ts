@@ -7,7 +7,7 @@ import {
 } from '../types/PrinterProfile';
 import { formatRealtimeClockForZpl, toLocalIsoString } from './realtimeClock';
 
-/** Generates the one-shot Setup-Script ZPL for a printer profile —
+/** Generates the one-shot Setup-Script ZPL for a printer profile:
  *  EEPROM-persistent state (~TA, ^JZ, ^JT, clock / encoding / identity)
  *  meant to be sent once at provisioning, not on every print job.
  *  Returns '' when no field is set so callers can hide the pane without
@@ -53,6 +53,8 @@ const SETUP_SCRIPT_EMITTERS = {
   setRealtimeClock: {
     kind: 'emit',
     channel: 'block',
+    // ^ST writes the on-board battery-backed RTC, not EEPROM; ^JUS is a
+    // no-op for it. Grouped with 'persistent' purely for emit order.
     scope: 'persistent',
     // Live mode (useCurrentTimeForClock) captures now() at emit-time
     // and wins over the stored static value. Toggling the checkbox in

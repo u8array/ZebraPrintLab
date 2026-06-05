@@ -10,10 +10,7 @@ function tryInflateZlib(input: Uint8Array): Uint8Array | null {
   }
 }
 
-/** Decode the ASCII-hex output of `decompressGFA` into a packed byte array
- *  so all three GF code paths converge on the same `Uint8Array` shape.
- *  Indexed access + nibble shift instead of `parseInt(slice)` because the
- *  per-byte slice/parseInt pair is the dominant cost on multi-KB bitmaps. */
+/** Nibble shift over slice/parseInt; the per-byte pair dominates on multi-KB bitmaps. */
 function gfaHexToBytes(hex: string): Uint8Array {
   const out = new Uint8Array(hex.length >> 1);
   for (let i = 0; i < out.length; i++) {
@@ -29,16 +26,7 @@ interface GfPayloadDecoded {
   crcOk: boolean;
 }
 
-/**
- * Normalise a `^GF{A|B|C}` payload to packed bitmap bytes. Hides the
- * format / wrapper / compression dispatch from the command handler so
- * the latter can stay focused on positioning and pixel painting.
- *
- *  - `:B64:`/`:Z64:` wrapper → base64-decode (then zlib-inflate for Z64)
- *  - `format=A` without wrapper → existing RLE-hex path → bytes
- *  - `format=B`/`C` without wrapper → null (raw binary can't survive the
- *    text-based ZPL channel and the parser never sees intact bytes anyway)
- */
+/** :B64:/:Z64: -> base64 (+inflate); format=A -> RLE-hex; B/C w/o wrapper -> null. */
 export function gfPayloadToBytes(
   rawData: string,
   format: "A" | "B" | "C",
@@ -67,17 +55,8 @@ const repeatCount = (ch: string): number => {
   return 0;
 };
 
-/**
- * Decompress ZPL Alternative Data Compression used in ^GFA fields.
- *
- * Compression characters:
- *   G–Y (uppercase) → repeat next hex digit 1–19 times
- *   g–z (lowercase) → repeat next hex digit 20–400 times (multiples of 20)
- *   Combinable: e.g. hI0 = (40+3) × '0' = 43 zeros
- *   ,  → fill remainder of current row with '0'
- *   !  → fill remainder of current row with 'F'
- *   :  → repeat previous row
- */
+// ^GFA ZPL Alt Data Compression: G-Y x1-19, g-z x20-400 (mult 20), combinable.
+// , = pad row with 0; ! = pad with F; : = repeat previous row.
 function decompressGFA(data: string, bytesPerRow: number): string {
   const nibblesPerRow = bytesPerRow * 2;
   const rows: string[] = [];

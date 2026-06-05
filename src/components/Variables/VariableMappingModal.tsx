@@ -631,9 +631,8 @@ function buildInitialBindings(
   return { ...carried, ...suggested };
 }
 
-/** Strip default values from the draft so a saved mapping only carries
- *  the options the user actually customised. Keeps the design file
- *  minimal and lets future default-changes pick up automatically. */
+/** Strip default values so a saved mapping only carries the options
+ *  the user actually customised. */
 function persistableParseOptions(d: DraftOptions): CsvParseOptionsPersisted | undefined {
   const opts: CsvParseOptionsPersisted = {};
   if (d.delimiter !== '') opts.delimiter = d.delimiter;

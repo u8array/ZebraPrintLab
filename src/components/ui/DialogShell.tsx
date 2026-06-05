@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
-/** Either `labelledBy` (preferred — id of the title element) or
+/** Either `labelledBy` (preferred; id of the title element) or
  *  `describedBy` (id of the body element, for dialogs with no title)
  *  must be supplied. The discriminated union compiles in the rule so
  *  a Dialog without an accessible name is a TS error, not a runtime
@@ -20,7 +20,7 @@ type Props = Labelling & {
    *  CSS transform that would otherwise contain `position: fixed`. */
   portal?: boolean;
   /** Tailwind classes for the inner dialog box (background, border,
-   *  width, etc.). Each modal supplies its own — visual variants stay
+   *  width, etc.). Each modal supplies its own; visual variants stay
    *  intentional. */
   boxClassName: string;
   children: ReactNode;

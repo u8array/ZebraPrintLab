@@ -3,7 +3,7 @@ import { eanCheckDigit, upceCheckDigit } from '../lib/barcodeCheckDigits';
 /**
  * HRI text formatters per 1D symbology. Each takes the user-provided
  * content string and returns the full HRI line the canvas should display.
- * Pure functions — kept here (not inline in each leaf) so they can be
+ * Pure functions; kept here (not inline in each leaf) so they can be
  * unit-tested independently and re-used across the canvas + any future
  * non-canvas renderer (export, preview, …).
  *

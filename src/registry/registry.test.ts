@@ -24,7 +24,7 @@ describe('text.toZPL', () => {
     const zpl = def.toZPL(makeObj('text', {
       content: 'Hello', fontHeight: 30, fontWidth: 0, rotation: 'N',
     }));
-    // obj is at (100, 200) — the Konva render position. The emitted ^FO
+    // obj is at (100, 200), the Konva render position. The emitted ^FO
     // shifts to the ZPL cap-top anchor: for N h=30, dy = 30 * 0.154 = 4.62,
     // rounded to integer dots = 5 ⇒ 200 + 5 = 205.
     expect(zpl).toContain('^FO100,205');
@@ -520,7 +520,7 @@ describe('ObjectRegistry', () => {
     }
   });
 
-  // 2D codes are always resizable on the canvas — without commitTransform a
+  // 2D codes are always resizable on the canvas; without commitTransform a
   // drag-resize silently has no effect (this was the aztec regression).
   // Every code-2d entry must declare a commit handler, except `heightLocked`
   // ones (e.g. Maxicode) which disable the transformer entirely and

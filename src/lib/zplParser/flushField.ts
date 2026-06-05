@@ -74,7 +74,7 @@ export function createFlushField(
 
   // Bootstrap Variables for FNs referenced by embeds before marker substitution.
   const applyFnEmbeds = (payload: string): string => {
-    // Closed `<e><n><e>` only — a naked `<e><digits>` would dangle phantom Variables.
+    // Closed `<e><n><e>` only; a naked `<e><digits>` would dangle phantom Variables.
     const e = s.format.embedChar.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const embedRe = new RegExp(`${e}(\\d+)(?:,[^${e}]*)?${e}`, "g");
     let m: RegExpExecArray | null;
@@ -134,7 +134,7 @@ export function createFlushField(
         // ZPL anchors ^FO at cap-top and ^FT at baseline; our internal
         // model stores the Konva render position (EM-top-left) so editor
         // interactions stay shift-free. The FO/I and FO/B shifts also
-        // need the rendered ink width — measure it the same way the
+        // need the rendered ink width; measure it the same way the
         // renderer does so the round-trip stays exact.
         const { inkWidthDots } = computeTextRenderMetrics({
           content: s.field.snPending ? `#${decoded}` : decoded,

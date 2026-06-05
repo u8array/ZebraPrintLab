@@ -142,7 +142,7 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       );
       // LOGMARS and EAN/UPC have firmware-reserved text zones now included
       // in getDisplaySize's bbox, so they pass the strict height check below.
-      // No remaining bwip-vs-Zebra width mismatches at the bbox level —
+      // No remaining bwip-vs-Zebra width mismatches at the bbox level:
       // code93/code11 add a fixed quiet-zone delta in getDisplaySize, and
       // plessey applies an empirical width ratio. The bitmap inside still
       // looks visually distorted (kept as a known limitation in
@@ -185,9 +185,9 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
 
       // Strict bounds check: compare calculated display size with fixture expectations.
       // Excluded types:
-      //   codablock — bwip-js uses different encoding parameters than Zebra firmware.
-      //   hasBwipSizeMismatch — bwip-natural size diverges from Labelary (see above).
-      //   isGs1Sym7 — GS1 Expanded Stacked height is segments-dependent.
+      //   codablock: bwip-js uses different encoding parameters than Zebra firmware.
+      //   hasBwipSizeMismatch: bwip-natural size diverges from Labelary (see above).
+      //   isGs1Sym7: GS1 Expanded Stacked height is segments-dependent.
       if (obj.type !== "codablock" && !hasBwipSizeMismatch && !isGs1Sym7) {
         expect(displaySize.w * 8).toBeCloseTo(tc.expected_bounds.width, 1);
         if (!isEanUpc) {

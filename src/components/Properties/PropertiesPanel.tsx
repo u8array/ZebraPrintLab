@@ -50,7 +50,7 @@ function BwipApproxIcon({ type }: { type: string }) {
   );
 }
 
-/** POSITION section header with centre-on-label tools docked right —
+/** POSITION section header with centre-on-label tools docked right;
  *  same Figma/Sketch/Affinity convention used across leaf, group and
  *  multi-select panels. `unitSuffix` shows only when X/Y inputs sit
  *  below (leaf case); group + multi-select pass it bare. `useId`
@@ -77,10 +77,9 @@ function PositionSectionHeader({
 }
 
 interface PropertiesPanelProps {
-  /** Imperative handle on the canvas — used for actions that need live render
-   *  bboxes (alignment, future zoom-to-selection, etc.). Required so the
-   *  type system forces the caller to wire it up; the inner null-check on
-   *  `.current` only covers the brief window before LabelCanvas mounts. */
+  /** Imperative handle on the canvas; required for actions that need
+   *  live render bboxes (alignment). The inner null-check on `.current`
+   *  covers the brief window before LabelCanvas mounts. */
   canvasRef: RefObject<LabelCanvasHandle | null>;
 }
 
@@ -181,10 +180,10 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
       </div>
 
       <div className="p-3 flex flex-col gap-4">
-        {/* Name — currently exposed only for groups, since leaf rows still
-            fall back to their registry label in the layers panel. The
-            field lives on LabelObjectBase so adding it for other types
-            later is a UI-only change. */}
+        {/* Name field: exposed only for groups; leaf rows fall back to
+            their registry label in the layers panel. The field is on
+            LabelObjectBase so adding it for other types would not need
+            a schema change. */}
         {groupRow && (
           <div className="flex flex-col gap-1">
             <label className={labelCls}>{t.properties.name}</label>
@@ -202,11 +201,11 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
 
         {/* Position: groups have no meaningful x/y of their own (children
             store world coordinates), so the inputs are hidden. Align
-            still applies — it expands to the group's leaves at the
+            still applies; it expands to the group's leaves at the
             canvas layer. */}
         <div className="flex flex-col gap-2">
           {groupRow ? (
-            // Groups have no per-leaf position inputs — header alone.
+            // Groups have no per-leaf position inputs; header alone.
             <PositionSectionHeader onAlign={handleAlign} />
           ) : (
             <>
@@ -312,7 +311,7 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
           );
         })()}
 
-        {/* Comment (^FX) — leaves only: groups emit no ZPL of their own
+        {/* Comment (^FX); leaves only: groups emit no ZPL of their own
             so the comment would never reach the output. */}
         {!groupRow && (
           <div className="flex flex-col gap-1">
@@ -328,7 +327,7 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
           </div>
         )}
 
-        {/* Lock — paired with the LayersPanel lock icon; mirroring it here
+        {/* Lock; paired with the LayersPanel lock icon; mirroring it here
             so a user already in PropertiesPanel can flip lock state without
             jumping panels. Lock itself is a meta-field bypass in the store,
             so the checkbox stays interactive even when the object is locked. */}
@@ -347,7 +346,7 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
           />
         </label>
 
-        {/* Include in ZPL output — paired with the LayersPanel eye toggle:
+        {/* Include in ZPL output; paired with the LayersPanel eye toggle:
             visible controls editor render, includeInExport controls ZPL
             emission. Stored as undefined when on so default state stays
             absent from persisted JSON. */}

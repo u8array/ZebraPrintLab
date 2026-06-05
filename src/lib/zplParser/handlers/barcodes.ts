@@ -56,13 +56,13 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
     BI: mkBarcode("industrial2of5", 1, 2), // ^BIN,h,i,N
     BJ: mkBarcode("standard2of5", 1, 2), // ^BJN,h,i,N
     BK: mkBarcode("codabar", 2, 3, "Y", 1), // ^BKN,c,h,i,N
-    BL: mkBarcode("logmars", 1, 2, "N"), // ^BLN,h,i — interp default N
+    BL: mkBarcode("logmars", 1, 2, "N"), // ^BLN,h,i; interp default N
     BP: mkBarcode("plessey", 2, 3, "Y", 1), // ^BPN,c,h,i,N
     B5: mkBarcode("planet", 1, 2), // ^B5N,h,i,N
     BZ: mkBarcode("postal", 1, 2), // ^BZN,h,i,N
     BS: mkBarcode("upcEanExtension", 1, 2), // ^BSo,h,f (UPC/EAN supplement)
 
-    // ^B4o,h,f,m — Code 49. Custom handler for the extra mode parameter.
+    // ^B4o,h,f,m; Code 49. Custom handler for the extra mode parameter.
     B4(p) {
       field.fieldType = "code49";
       field.bcRotation = readRotation(p[0]);
@@ -74,7 +74,7 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
         : "A";
     },
 
-    // MSI: check logic is "any letter except N" (not simple "Y") — keep inline.
+    // MSI: check logic is "any letter except N" (not simple "Y"); keep inline.
     // ^BMN,{checkType},{height},{interp},N  (checkType: A/B/C/D=enabled, N=none)
     BM(p) {
       field.fieldType = "msi";
@@ -100,14 +100,14 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
           : undefined;
     },
 
-    // ^BQN,2,{magnification} — QR Code
+    // ^BQN,2,{magnification}; QR Code
     BQ(p) {
       field.fieldType = "qrcode";
       field.bcRotation = readRotation(p[0]);
       field.qrMag = int(p[2], 4);
     },
 
-    // ^BXN,{dimension},{quality} — DataMatrix
+    // ^BXN,{dimension},{quality}; DataMatrix
     BX(p) {
       field.fieldType = "datamatrix";
       field.bcRotation = readRotation(p[0]);
@@ -115,7 +115,7 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
       field.dmQuality = int(p[2], 200) as DataMatrixProps["quality"];
     },
 
-    // ^B7N,{rowHeight},{securityLevel},{columns},,, — PDF417
+    // ^B7N,{rowHeight},{securityLevel},{columns},,,; PDF417
     B7(p) {
       field.fieldType = "pdf417";
       field.bcRotation = readRotation(p[0]);
@@ -124,11 +124,11 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
       field.pdfColumns = int(p[3], 0);
     },
 
-    // ^B0N,{magnification},... / ^BON,... — Aztec (^B0 and ^BO are synonyms)
+    // ^B0N,{magnification},... / ^BON,...; Aztec (^B0 and ^BO are synonyms)
     B0: handleAztec,
     BO: handleAztec,
 
-    // ^BVo,{mode},{symbolNumber},{totalSymbols} — Maxicode (fixed
+    // ^BVo,{mode},{symbolNumber},{totalSymbols}: Maxicode (fixed
     // physical size, no magnification). symbolNumber/totalSymbols
     // describe structured-append composition; we don't expose that
     // in the editor, so the params are read but the emitted form
@@ -140,14 +140,14 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
       field.maxicodeMode = (m >= 2 && m <= 6 ? m : 4) as MaxicodeProps["mode"];
     },
 
-    // ^BFN,{rowHeight} — MicroPDF417
+    // ^BFN,{rowHeight}: MicroPDF417
     BF(p) {
       field.fieldType = "micropdf417";
       field.bcRotation = readRotation(p[0]);
       field.mpdfRowHeight = dots(p[1], 10);
     },
 
-    // ^BBN,{rowHeight},{security},{numCharsPerRow},{numRows},{mode} — CODABLOCK
+    // ^BBN,{rowHeight},{security},{numCharsPerRow},{numRows},{mode}: CODABLOCK
     BB(p) {
       field.fieldType = "codablock";
       field.bcRotation = readRotation(p[0]);
@@ -162,7 +162,7 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
       // w1 (Code 39 narrow bar) overrides ^BY when present; undefined
       // means fall back to defaults.byModuleWidth at flush time.
       field.tlcModuleWidth = dots(p[1], 0) || undefined;
-      // p[2] (r1) intentionally dropped; canonicalized on emit.
+      // p[2] (r1) intentionally dropped, canonicalized on emit.
       field.tlcHeight = dots(p[3], defaults.byHeight || 40);
       field.tlcMicroPdfRowHeight = dots(p[4], 4);
       // Zebra ^BT h2 range is 1-10; firmware snaps to a valid linked

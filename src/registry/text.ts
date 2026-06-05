@@ -114,7 +114,8 @@ export const text: ObjectTypeCore<TextProps> = {
     // ink bbox. blockLineSpacing is added per row above the first to
     // mirror Zebra's row advance. The parser skips collapse for
     // fbWidth>0 so this branch produces a box + reverse-text pair on
-    // round-trip — accepted trade-off until block-text collapse lands.
+    // round-trip; the box + reverse-text pair is the accepted output until
+    // block-text collapse is implemented.
     const block = p.blockWidth ?? 0;
     const lines = p.blockLines ?? 1;
     const blockH = p.fontHeight * lines + (p.blockLineSpacing ?? 0) * Math.max(0, lines - 1);

@@ -11,7 +11,7 @@ export const GS1_DATABAR_EXPANDED_SYMBOLOGIES: ReadonlySet<number> = new Set([6,
 /** Spec-maximum segments-per-row for ^BR Expanded Stacked (must be even, 2–22). */
 export const GS1_DATABAR_DEFAULT_SEGMENTS = 22;
 
-/** Fixed-length GS1 Application Identifiers — used to wrap raw input in parens. */
+/** Fixed-length GS1 Application Identifiers; used to wrap raw input in parens. */
 const FIXED_AI_LEN: Record<string, number> = {
   "00": 18, "01": 14, "02": 14, "11": 6, "13": 6, "15": 6, "17": 6, "20": 2,
 };

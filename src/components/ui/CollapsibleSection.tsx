@@ -18,7 +18,7 @@ function readStored(id: string, fallback: boolean): boolean {
 
 /**
  * Section with a clickable header that toggles its body. Independent of
- * sibling sections — multiple can be open at once. Open state is persisted
+ * sibling sections; multiple can be open at once. Open state is persisted
  * per `id` in localStorage so the UI feels stable across reloads.
  */
 export function CollapsibleSection({

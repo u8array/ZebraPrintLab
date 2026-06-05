@@ -33,7 +33,7 @@ const CONFIG_UPDATE_LABEL_KEYS = {
  *  commit setup. Emits ^KN (name + description), ^KP (4-digit panel
  *  password) and ^JU (configuration update action) on the Setup-
  *  Script channel. ^SL lives in Tab 3 Clock & Time per its semantic
- *  home. See memory:project_ticket_sl_clock_formatting. */
+ *  home. */
 export function IdentityTab() {
   const t = useT();
   const profile = useLabelStore((s) => s.printerProfile);

@@ -151,7 +151,7 @@ describe("getDisplaySize gs1databar sym 7 fallback", () => {
   // Sym 7 (Expanded Stacked) cannot be Labelary-cross-validated due to a
   // parens-AI input-format mismatch between bwip-js and Zebra firmware.
   // The implementation falls back to bwip-natural canvas height. This test
-  // pins that behavior — any change must be intentional and accompanied
+  // pins that behavior; any change must be intentional and accompanied
   // by a documented strategy for the missing ground truth.
   it("derives height from canvas dims (bwip-natural), not from a spec table", () => {
     const obj: LabelObject = {
@@ -170,7 +170,7 @@ describe("getDisplaySize gs1databar sym 7 fallback", () => {
     };
     // Canvas height varies per content+segments; we use a representative
     // value that bwip-js produced for a 16-char content at default
-    // segments. The exact pixel size isn't load-bearing — what matters is
+    // segments. The exact pixel size isn't load-bearing; what matters is
     // the formula, which derives from `ch`.
     const ch = 73;
     const cw = 100;

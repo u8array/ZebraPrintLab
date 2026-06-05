@@ -19,18 +19,9 @@ const ORIENTATION_LABEL_KEYS = {
   I: "printOrientationI",
 } as const satisfies Record<PrintOrientation, keyof LocPrintQuality>;
 
-/** Tab 2 of the Printer Settings Modal. Houses everything that
- *  controls per-label print quality: orientation, mirror, speed,
- *  darkness, plus three new commands (^JZ reprint-after-error,
- *  ^JT head-test interval, ~TA tear-off adjust).
- *
- *  Caveat: ^JZ / ^JT / ~TA are persistent in the printer's EEPROM
- *  per the ZPL spec, so emitting them on every label writes flash
- *  on every print. The Printer Settings Modal epic plans to split
- *  per-label commands from setup-script-only commands; until that
- *  ships, these three live in the per-label generator path. See
- *  the project_ticket_printer_settings_modal memory for the
- *  follow-up. */
+/** Tab 2 of the Printer Settings Modal. Per-label print quality
+ *  (orientation, mirror, speed, darkness) plus setup-script-only
+ *  ^JZ / ^JT / ~TA / ^CV which the user provisions once. */
 export function PrintQualityTab() {
   const t = useT();
   const label = useLabelStore((s) => s.label);
@@ -59,7 +50,7 @@ export function PrintQualityTab() {
         onChange={(v) => setLabelConfig({ mirror: v ? "Y" : undefined })}
       />
 
-      {/* Speed triple: ^PR a,b,c — print / slew / backfeed. All
+      {/* Speed triple: ^PR a,b,c; print / slew / backfeed. All
           three share the same 2..14 ips range and one ^PR command,
           so group them under one ZplField + tag header. */}
       <ZplField>
@@ -101,7 +92,7 @@ export function PrintQualityTab() {
         </div>
       </ZplField>
 
-      {/* ^MD permanent darkness — the EEPROM-persistent set value. */}
+      {/* ^MD permanent darkness; the EEPROM-persistent set value. */}
       <ZplBoundedIntInput
         label={loc.darknessPermanent}
         command="^MD"

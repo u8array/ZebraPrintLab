@@ -60,7 +60,7 @@ export const line: ObjectTypeCore<LineProps> = {
     const l = p.length;
     const a = ((p.angle % 360) + 360) % 360; // normalise to [0, 360)
 
-    // Pure horizontal — angle 180 means the line extends LEFT from (obj.x, obj.y),
+    // Pure horizontal: angle 180 means the line extends LEFT from (obj.x, obj.y),
     // so the ^GB box must start at (obj.x - l) to overlap the same pixels.
     if (a === 0 || a === 180) {
       const bx = a === 180 ? obj.x - l : obj.x;
@@ -70,7 +70,7 @@ export const line: ObjectTypeCore<LineProps> = {
         `^${cmd}${bx},${obj.y}^GB${l},${t},${t},${p.color},0^FS`,
       );
     }
-    // Pure vertical — angle 270 means the line extends UP from (obj.x, obj.y),
+    // Pure vertical: angle 270 means the line extends UP from (obj.x, obj.y),
     // so the ^GB box must start at (obj.x, obj.y - l).
     if (a === 90 || a === 270) {
       const by = a === 270 ? obj.y - l : obj.y;
@@ -81,7 +81,7 @@ export const line: ObjectTypeCore<LineProps> = {
       );
     }
 
-    // Diagonal — use ^GD (bounding-box diagonal command)
+    // Diagonal: use ^GD (bounding-box diagonal command)
     const rad = (a * Math.PI) / 180;
     const dx = l * Math.cos(rad);
     const dy = l * Math.sin(rad);

@@ -1,5 +1,5 @@
 /**
- * Vitest global setup — stubs browser APIs that are unavailable in Node.js.
+ * Vitest global setup: stubs browser APIs that are unavailable in Node.js.
  * Runs once per worker before any module is evaluated, so top-level module
  * code in imageCache.ts, labelStore.ts etc. can initialise without crashing.
  */
@@ -57,7 +57,7 @@ Object.defineProperty(globalThis, 'window', {
   } as unknown as Window,
 });
 
-// ── document (canvas stub – used by ^GFA parser path) ────────────────────────
+// Canvas stub for the ^GFA parser path.
 
 /** Minimal ImageData stub for canvas operations in Node. */
 class FakeImageData {

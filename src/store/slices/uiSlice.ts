@@ -46,15 +46,15 @@ export interface UiSlice {
    *  toggled the explicit choice persists. */
   theme: ThemePreference;
   /** Per-service gates for third-party network calls. Sourced from
-   *  build-time env on every load (see thirdPartyDefaults) and
-   *  intentionally NOT in persist-partialize until a settings UI lands. */
+   *  build-time env on every load (see thirdPartyDefaults); not
+   *  persisted, so env is the single source of truth. */
   thirdParty: { labelary: boolean };
   /** Whether the user has dismissed the one-time Labelary privacy notice. */
   labelaryNoticeAcknowledged: boolean;
   canvasSettings: CanvasSettings;
 
   /** Right-sidebar tab. Lives in the store so canvas interactions can
-   *  drive the panel (e.g. double-click a text field). Transient — not
+   *  drive the panel (e.g. double-click a text field). Transient; not
    *  in partialize so a reload resets to 'properties'. */
   sidebarTab: SidebarTab;
   printerSettingsTab: PrinterSettingsTab | null;
@@ -76,7 +76,7 @@ export interface UiSlice {
   setPrinterSettingsTab: (tab: PrinterSettingsTab | null) => void;
   openZebraPrint: (source: 'label' | 'setupScript') => void;
   closeZebraPrint: () => void;
-  /** Fire a focus request. Does NOT touch the sidebar tab — caller
+  /** Fire a focus request. Does NOT touch the sidebar tab; caller
    *  composes `setSidebarTab('properties')` when the request would
    *  otherwise land on an unmounted editor. */
   requestContentEditorFocus: (id: string) => void;

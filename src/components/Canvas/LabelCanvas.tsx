@@ -50,8 +50,6 @@ import {
 } from "../../registry/rotation";
 
 const PADDING = 40;
-// Quick-rotate button: horizontal gap from the selected node's right edge
-// (stage px), and a small vertical bias so it lines up with the visual top.
 const ROTATE_BUTTON_GAP_PX = 16;
 const ROTATE_BUTTON_TOP_OFFSET_PX = -2;
 
@@ -69,9 +67,6 @@ interface Props {
   onViewRotationChange: (rotation: ViewRotation) => void;
 }
 
-/** Imperative actions sibling components (PropertiesPanel) need from the
- *  canvas. The canvas owns the live render bboxes via Konva — co-locating
- *  the action with the data avoids round-tripping through the store. */
 export interface LabelCanvasHandle {
   alignSelectionToLabel: (axis: AlignAxis) => void;
 }
@@ -97,9 +92,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const [guides, setGuides] = useState<SnapGuide[]>([]);
   const [ghost, setGhost] = useState<LeafObject | null>(null);
 
-  // Raw pointer position tracked independently of @dnd-kit's scroll-adjusted delta.
-  // activatorEvent.client + event.delta includes scroll momentum from the palette
-  // sidebar, which causes a proportional drop-position offset on touch devices.
+  // Bypasses @dnd-kit scroll-adjusted delta; palette scroll momentum
+  // would otherwise offset touch-device drops.
   const lastPointerRef = useRef({ x: 0, y: 0 });
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
@@ -127,9 +121,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const previewLocks = useLabelStore(selectPreviewLocksEditor);
   const exitPreviewMode = useLabelStore((s) => s.exitPreviewMode);
 
-  // Load the Labelary blob URL into an HTMLImageElement so react-konva's
-  // `Image` node can draw it. Decoding before mount avoids a one-frame
-  // flash of empty space when the user toggles preview on.
+  // Pre-decode so toggling preview on doesn't flash a frame of empty space.
   const [previewImg, setPreviewImg] = useState<HTMLImageElement | null>(null);
   const previewUrl = previewMode.status === 'active' ? previewMode.url : null;
   useEffect(() => {
@@ -145,12 +137,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     };
   }, [previewUrl]);
 
-  // Render path operates on visible leaves only: groups emit no node of
-  // their own (v1 has no group transform), and a group with visible=false
-  // hides its whole subtree. Lock cascades the same way — a leaf inside
-  // a locked group is stamped as effectively locked so the per-leaf
-  // draggable / locked-click checks all see one consistent value
-  // without each consumer having to walk ancestors.
+  // Leaves only; group lock/visible cascades down so per-leaf checks see one value.
   const visibleLeaves = useMemo(() => {
     const out: LeafObject[] = [];
     const walk = (nodes: LabelObject[], inheritedLocked: boolean) => {
@@ -168,10 +155,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     return out;
   }, [objects]);
 
-  // Konva-side machinery (transformer, snap snapshots) lives on leaves;
-  // groups have no node of their own. Expanding the selection here is
-  // what makes "click a child → group is selected" feel like a Figma
-  // multi-drag without a second drag pathway.
+  // Expand selection so group-click feels like Figma multi-drag.
   const allLeaves = useMemo(() => getAllLeaves(objects), [objects]);
   const attachableIds = useMemo(
     () => expandSelection(objects, selectedIds),
@@ -191,14 +175,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     return () => observer.disconnect();
   }, []);
 
-  // Alt+click cycles selection through stacked objects so users can reach
-  // shapes hidden behind a filled (or inverted) form.
   useAltClickCycle({ containerRef, stageRef, selectObject });
 
-  // Escape exits preview mode. Stays bound globally (not just to the
-  // canvas) so the user can return to the editor from anywhere — and
-  // the existing useGlobalShortcuts already short-circuits the rest of
-  // its bindings while preview locks, so there's no collision risk.
+  // Global binding so user can exit preview from anywhere.
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code !== 'Escape') return;
@@ -215,8 +194,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code !== "Delete" && e.code !== "Backspace") return;
       if (isEditableTarget(e.target as HTMLElement)) return;
-      // Preview overlay shows a frozen Labelary snapshot; editing while
-      // it's active would silently drift the comparison out of sync.
+      // Preview is a frozen snapshot; editing would drift the comparison.
       if (selectPreviewLocksEditor(useLabelStore.getState())) return;
       const { selectedIds: ids } = useLabelStore.getState();
       if (ids.length === 0) return;
@@ -250,13 +228,10 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
           : 1;
       const screenDx = e.code === "ArrowRight" ? step : e.code === "ArrowLeft" ? -step : 0;
       const screenDy = e.code === "ArrowDown" ? step : e.code === "ArrowUp" ? -step : 0;
-      // Map the visual screen direction to label coordinates so arrow keys
-      // always move the object the way the user sees it on the rotated view.
+      // Inverse-rotate so arrow direction matches visual.
       const [dx, dy] = inverseRotateDelta(screenDx, screenDy, viewRotation);
 
-      // Expand so arrow keys move every leaf of a selected group, not
-      // the group node itself (whose x/y is conventionally 0 and has no
-      // effect on rendered children).
+      // Expand so a selected group moves its leaves (group x/y is conventionally 0).
       const expanded = expandSelection(objs, ids);
       updateObjects(
         expanded.flatMap((sid) => {
@@ -279,9 +254,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const labelShiftMm = (label.labelShift ?? 0) / label.dpmm;
   const effectiveWidthMm = label.widthMm + labelShiftMm;
 
-  // zoom=1 → 100% → physical label size on screen (96 dpi CSS convention).
-  // fitZoom is the multiplier that makes the visually-rotated label fill the
-  // container, so axes swap at 90°/270°.
+  // zoom=1 = 100% (96 dpi CSS); fitZoom swaps axes at 90/270.
   const axisSwapped = isAxisSwapped(viewRotation);
   const fitWidthMm = axisSwapped ? label.heightMm : effectiveWidthMm;
   const fitHeightMm = axisSwapped ? effectiveWidthMm : label.heightMm;
@@ -292,8 +265,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       )
     : 1;
 
-  // On first mount (once container dimensions are known), initialize zoom to
-  // fit so the label is immediately visible regardless of persisted zoom value.
+  // Init zoom to fit once container is sized so label is immediately visible.
   const didInitRef = useRef(false);
   useEffect(() => {
     if (didInitRef.current || usableWidth <= 0) return;
@@ -340,10 +312,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const snap = (dots: number) =>
     snapEnabled ? Math.round(dots / snapUnit) * snapUnit : dots;
 
-  // Stable across renders — every consumer that needs a snap snapshot
-  // calls this with its own id. Defined once (vs. per-object in the
-  // KonvaObject map) so a 60Hz dragmove that re-renders LabelCanvas
-  // doesn't churn N closures per frame.
+  // One stable closure to avoid 60Hz churning N per-object closures.
   const getOthersSnapshot = useCallback((excludeId: string) => {
     const stage = stageRef.current;
     if (!stage) return [];
@@ -367,10 +336,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     onStageMouseDown,
   } = useCanvasLasso({ containerRef, stageRef, spaceDown, selectObjects });
 
-  // Snap / guide infrastructure used by both drag and resize. The label rect
-  // here matches the visual (rotation-aware) bounds — snap math operates in
-  // stage-screen space, so it must reflect what the user sees, not the
-  // un-rotated layout coordinates.
+  // Snap math operates in stage-screen space, so the label rect must
+  // reflect the rotation-aware visual bounds, not layout coords.
   const transformerSnapLabelRect = useMemo(
     () => ({
       id: "_lbl",
@@ -382,12 +349,6 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     [visualLabelX, visualLabelY, visualLabelWidthPx, visualLabelHeightPx],
   );
 
-  // Imperative align-to-label: PropertiesPanel calls this directly via the
-  // forwarded ref. Co-located with the render data — measure each selected
-  // node's rendered bbox via Konva clientRect (single source of truth for
-  // type-specific footprints like text baselines / barcode text-zones),
-  // compute the centre-delta in screen px, map back through view rotation
-  // and px-per-dot to model coordinates.
   useImperativeHandle(
     ref,
     () => ({
@@ -398,9 +359,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
         const ids = state.selectedIds;
         if (ids.length === 0) return;
         const objs = currentObjects(state);
-        // Konva nodes only exist for leaves; align operates on the
-        // measured rendered bboxes, so expand any selected group to its
-        // leaf ids and feed those into the Konva lookup.
+        // Konva nodes exist only for leaves; expand group ids.
         const attachable = expandSelection(objs, ids);
 
         const boxes = attachable.flatMap((id) => {
@@ -423,9 +382,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
           screenDy,
           viewRotation,
         );
-        // Round to integer dots — matches the `mmToDots` convention used by
-        // PropertiesPanel inputs and keeps the store's x/y invariant so ZPL
-        // emit doesn't see fractional coordinates.
+        // Integer dots preserves store invariant; mmToDots convention.
         const pxPerDot = scale / label.dpmm;
         const dxDots = Math.round(layoutDx / pxPerDot);
         const dyDots = Math.round(layoutDy / pxPerDot);
@@ -467,12 +424,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     viewRotation,
   });
 
-  // Quick 90°-rotation button overlay. Only step-rotation objects (those
-  // with a `rotation: N|R|I|B` prop — text, serial, all barcodes) get the
-  // affordance; box/ellipse/line/image rotate freely via the
-  // Transformer or have no rotation. Positioned at the visual top-right
-  // corner of the selected node, derived from getClientRect so it tracks
-  // the rendered bbox through both object-rotation and viewRotation.
+  // Step-rotation only (text/serial/barcodes); box/ellipse/line/image use Transformer.
   const singleSelected = selectedIds.length === 1
     ? objects.find((o) => o.id === selectedIds[0]) ?? null
     : null;
@@ -491,16 +443,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       setRotationBtnPos(null);
       return;
     }
-    // Recompute the button anchor whenever the selected node moves.
-    // The handler updates the Konva node directly so the button tracks
-    // the drag at full frame rate; React state is kept in sync so a
-    // subsequent re-render (selection change, scale, etc.) starts from
-    // the latest position instead of snapping back.
-    //
-    // Listeners attach to the node itself, not to the stage: Konva's
-    // `transform` event (fired per-frame during a resize) does NOT
-    // bubble, so a stage-level listener would only catch `dragmove`
-    // and the button would freeze in place until the user released.
+    // Direct node update for 60fps drag; React state kept in sync.
+    // Per-node listener because Konva's transform doesn't bubble.
     const update = () => {
       const rect = node.getClientRect({ relativeTo: stage, skipStroke: true });
       const x = rect.x + rect.width + ROTATE_BUTTON_GAP_PX;
@@ -531,12 +475,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       ...(changes.x !== undefined && { x: snap(changes.x) }),
       ...(changes.y !== undefined && { y: snap(changes.y) }),
     };
-    // Multi-select: propagate position delta to all other selected objects.
-    // Read fresh state (getState) to avoid stale closure when multiple DragEnd events
-    // fire simultaneously during a Transformer group drag.
-    // expandSelection lets a selected group behave like a multi-selection
-    // of its leaves here, so dragging one leaf moves the whole group via
-    // the same delta-propagation path used by shift-click selections.
+    // Fresh getState() guards stale closure across simultaneous DragEnd
+    // events; expandSelection propagates the delta to group leaves.
     const state = useLabelStore.getState();
     const currentObjs = currentObjects(state);
     const selIds = expandSelection(currentObjs, state.selectedIds);
@@ -590,9 +530,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       otherRects.push({ id: o.id, x: r.x, y: r.y, width: r.width, height: r.height });
     }
 
-    // Snap operates in stage (screen) space — getClientRect on rotated
-    // children already accounts for the Group transform, so the label rect
-    // must use visual bounds (not un-rotated labelOffset*).
+    // Stage space; clientRect already accounts for Group transform.
     const labelRect = {
       id: "_lbl",
       x: visualLabelX,
@@ -608,8 +546,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       labelRect,
       labelRect,
     );
-    // result is in screen space; node.position() is in group-local space, so
-    // the delta needs inverse-rotation back into the un-rotated frame.
+    // result is screen-space; node.position() is group-local, so inverse-rotate.
     const screenDx = result.x - dr.x;
     const screenDy = result.y - dr.y;
     if (screenDx !== 0 || screenDy !== 0) {
@@ -628,18 +565,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     if (e.target === e.target.getStage()) selectObjects([]);
   };
 
-  /**
-   * Click-passthrough for locked objects (Figma idiom). The locked node
-   * still listens (so the Alt+click cycle keeps reaching it), but its
-   * onSelect routes here instead of selecting itself. The next non-locked
-   * hit at the same point wins; if nothing's left, treat as background.
-   *
-   * Pointer source is `lastPointerRef` rather than the original click
-   * event because `onSelect` deliberately drops the event to keep the
-   * KonvaObjectProps surface narrow. The document-level pointermove
-   * listener updates the ref every frame, so by the time the click
-   * handler fires the ref is at the click position.
-   */
+  /** Figma idiom: locked object passes click through to next non-locked hit. */
   const handleLockedClick = (add: boolean) => {
     const stage = stageRef.current;
     const cr = containerRef.current?.getBoundingClientRect();
@@ -678,8 +604,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const pointerToLabelDots = (clientX: number, clientY: number) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return null;
-    // Inverse-rotate the pointer around the label center so screen-space
-    // input maps back into the un-rotated label coordinate frame.
+    // Inverse-rotate around label center to map screen -> un-rotated frame.
     const [rx, ry] = inverseRotateDelta(
       clientX - rect.left - labelCenterX,
       clientY - rect.top - labelCenterY,
@@ -748,10 +673,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
         background: colors.canvasBg,
         backgroundImage: `radial-gradient(circle, ${colors.canvasDot} 1px, transparent 1px)`,
         backgroundSize: "24px 24px",
-        // `not-allowed` while the preview overlay is locking the editor:
-        // signals at the user's locus of attention (the canvas itself)
-        // that editing is paused, instead of relying on the toolbar button
-        // alone for state feedback.
+        // Locus-of-attention feedback for preview lock.
         cursor: previewLocks ? 'not-allowed' : cursor,
       }}
       onMouseDown={handleMouseDown}
@@ -759,10 +681,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      {/* Preview-mode overlays. Loading is shown DOM-side because
-          the Konva Image can't render before the bitmap decoded; the
-          error banner stays inside the canvas region so the user can
-          dismiss it without leaving the canvas viewport. */}
+      {/* Loading is DOM (Konva can't render before decode); error is in-canvas. */}
       {previewMode.status === 'loading' && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-bg/40 pointer-events-none">
           <span className="font-mono text-[10px] text-muted animate-pulse">
@@ -870,13 +789,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
         >
           {/* Object layer */}
           <Layer>
-            {/*
-             * Rotation pivot: x=offsetX=labelCenterX. At 0° this collapses to
-             * the identity (group-local = screen), and onTransformEnd stays
-             * valid because Konva keeps node.x()/y() in the group's local
-             * (un-rotated) frame during drags. Pointer input (pointerToLabelDots)
-             * is inverse-rotated explicitly since it bypasses Konva.
-             */}
+            {/* Pivot at labelCenter; node.x()/y() stays group-local during drags. */}
             <Group
               x={labelCenterX}
               y={labelCenterY}
@@ -890,11 +803,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 width={labelWidthPx}
                 height={labelHeightPx}
                 fill="white"
-                // Preview overlay swaps the default drop-shadow for a
-                // symmetric amber glow so the paper itself carries the
-                // mode indicator at the user's locus of attention. Same
-                // amber the app uses for Labelary-related warnings, so
-                // the colour language stays consistent.
+                // Preview: amber glow matches the Labelary-warning palette.
                 shadowColor={previewLocks ? 'rgba(251, 191, 36, 0.55)' : 'rgba(0,0,0,0.4)'}
                 shadowBlur={previewLocks ? 28 : 12}
                 shadowOffsetY={previewLocks ? 0 : 2}
@@ -913,11 +822,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 />
               )}
 
-              {/* Preview overlay replaces the editor leaves entirely so the
-                  user sees exactly what Labelary would render at the same
-                  scale and position. Falls back to nothing during loading
-                  (loading spinner is rendered as a DOM overlay outside the
-                  Konva stage), so neither view briefly blinks through. */}
+              {/* Preview replaces editor leaves so user sees the Labelary render at same scale. */}
               {previewLocks ? (
                 previewImg && (
                   <KImage
@@ -940,14 +845,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                     offsetY={labelOffsetY}
                     isSelected={attachableIds.includes(obj.id)}
                     onSelect={(add) => {
-                      // Auto-select-parent: clicking a child of a group
-                      // surfaces the outermost containing group as the
-                      // selection target. Top-level leaves pass through.
+                      // Click child -> select outermost group; lock cascades to handleLockedClick.
                       const target = selectionTargetId(objects, obj.id);
-                      // Lock cascades from the group: a click on a child
-                      // of a locked group routes through handleLockedClick
-                      // (so the next non-locked hit wins) instead of
-                      // selecting through to a leaf the user can't move.
                       const targetObj =
                         target === obj.id ? obj : findObjectById(objects, target);
                       if (targetObj?.locked) handleLockedClick(add);
@@ -980,11 +879,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               )}
             </Group>
 
-            {/* Lasso, guides and Transformer live in screen space outside
-                the Group. Lasso intersection uses getClientRect which
-                respects the rotation; snap guides come from computeSnap in
-                stage pixels; the Transformer follows nodes through their
-                accumulated parent transform. */}
+            {/* Outside the rotation Group; clientRect/Transformer respect parent transforms. */}
             {!previewLocks && lassoRect && (
               <Rect
                 x={lassoRect.x}
@@ -1010,17 +905,12 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 onTransformStart={onTransformStart}
                 boundBoxFunc={boundBoxFunc}
                 onTransformEnd={onTransformEnd}
-                // Match the per-shape selection stroke and the line endpoint
-                // handles so all selection visuals share one colour.
                 borderStroke={colors.selection}
                 anchorStroke={colors.selection}
                 anchorFill="#ffffff"
                 anchorSize={7}
                 anchorStrokeWidth={1}
-                // Exclude selection stroke from the bbox; otherwise scale-aware
-                // stroke padding leaks into the resize math and produces sub-dot
-                // drift in node.x()/y() that surfaces as 1-dot ZPL coordinate
-                // jumps under pxToDots rounding.
+                // Stroke-padding drift would surface as 1-dot ZPL jumps.
                 ignoreStroke
               />
             )}
@@ -1036,8 +926,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
             )}
           </Layer>
 
-          {/* Ruler — topmost layer. Tracks the visually-rotated label edges;
-              labels are reversed when the corresponding axis flips. */}
+          {/* Ruler tracks visual edges; labels reverse when axis flips. */}
           <Layer listening={false}>
             <Ruler
               labelOffsetX={visualLabelX}

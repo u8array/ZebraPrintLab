@@ -29,69 +29,69 @@ const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
   // ── Label layout ──────────────────────────────────────────────────────────
   { cmd: 'XA', status: 'structural', description: 'Start format (label start marker)' },
   { cmd: 'XZ', status: 'structural', description: 'End format / print label' },
-  { cmd: 'PW', status: 'supported', description: 'Print width — sets label width in dots' },
-  { cmd: 'LL', status: 'supported', description: 'Label length — sets label height in dots' },
-  { cmd: 'LH', status: 'supported', description: 'Label home — global origin offset applied to all fields' },
-  { cmd: 'LS', status: 'supported', description: 'Label shift — horizontal offset in dots' },
-  { cmd: 'LT', status: 'supported', description: 'Label top — vertical offset applied to all field positions' },
+  { cmd: 'PW', status: 'supported', description: 'Print width: sets label width in dots' },
+  { cmd: 'LL', status: 'supported', description: 'Label length: sets label height in dots' },
+  { cmd: 'LH', status: 'supported', description: 'Label home: global origin offset applied to all fields' },
+  { cmd: 'LS', status: 'supported', description: 'Label shift: horizontal offset in dots' },
+  { cmd: 'LT', status: 'supported', description: 'Label top: vertical offset applied to all field positions' },
   { cmd: 'PQ', status: 'supported', description: 'Print quantity' },
   { cmd: 'MM', status: 'supported', description: 'Media mode (T tear-off, V peel, D cutter, K kiosk)' },
-  { cmd: 'MT', status: 'structural', description: 'Media type — printer hardware setting, not relevant for canvas design' },
+  { cmd: 'MT', status: 'structural', description: 'Media type: printer hardware setting, not relevant for canvas design' },
 
   // ── Field positioning ─────────────────────────────────────────────────────
-  { cmd: 'FO', status: 'supported', description: 'Field origin — absolute position from label home' },
-  { cmd: 'FT', status: 'supported', description: 'Field top — position measured from top-left of label' },
+  { cmd: 'FO', status: 'supported', description: 'Field origin: absolute position from label home' },
+  { cmd: 'FT', status: 'supported', description: 'Field top: position measured from top-left of label' },
 
   // ── Field data & modifiers ────────────────────────────────────────────────
-  { cmd: 'FD', status: 'supported', description: 'Field data — content payload for the current field' },
-  { cmd: 'FS', status: 'supported', description: 'Field separator — ends the current field' },
-  { cmd: 'FH', status: 'supported', description: 'Field hex indicator — enables _XX hex-escape sequences in ^FD' },
-  { cmd: 'FR', status: 'supported', description: 'Field reverse — inverts colours for this field only' },
-  { cmd: 'FX', status: 'structural', description: 'Comment field — ignored' },
-  { cmd: 'FW', status: 'supported', description: 'Field orientation — sets default rotation for subsequent fields' },
-  { cmd: 'FB', status: 'supported', description: 'Field block — multi-line text with word-wrap and justification' },
-  { cmd: 'FC', status: 'supported', description: 'Field clock — redefines the clock chars used for inline date/time tokens inside ^FD. Tokens import as «clock:T» markers; canvas previews the current date, generator round-trips through ^FC + tokens.' },
-  { cmd: 'FE', status: 'supported', description: 'Field-number embed character — redefines the ^FN inline-embed delimiter (default #) used by ^FD/^FV. Imported embeds become «name» template markers; round-trips through generate.' },
+  { cmd: 'FD', status: 'supported', description: 'Field data: content payload for the current field' },
+  { cmd: 'FS', status: 'supported', description: 'Field separator: ends the current field' },
+  { cmd: 'FH', status: 'supported', description: 'Field hex indicator: enables _XX hex-escape sequences in ^FD' },
+  { cmd: 'FR', status: 'supported', description: 'Field reverse: inverts colours for this field only' },
+  { cmd: 'FX', status: 'structural', description: 'Comment field: ignored' },
+  { cmd: 'FW', status: 'supported', description: 'Field orientation: sets default rotation for subsequent fields' },
+  { cmd: 'FB', status: 'supported', description: 'Field block: multi-line text with word-wrap and justification' },
+  { cmd: 'FC', status: 'supported', description: 'Field clock: redefines the clock chars used for inline date/time tokens inside ^FD. Tokens import as «clock:T» markers; canvas previews the current date, generator round-trips through ^FC + tokens.' },
+  { cmd: 'FE', status: 'supported', description: 'Field-number embed character: redefines the ^FN inline-embed delimiter (default #) used by ^FD/^FV. Imported embeds become «name» template markers; round-trips through generate.' },
   { cmd: 'FM', status: 'unsupported', description: 'Multiple field origin locations' },
-  { cmd: 'FN', status: 'supported', description: 'Field number — variable field placeholder, lands in the Variables tab on import and emits as ^FN{slot} on export' },
-  { cmd: 'FP', status: 'unsupported', description: 'Field parameter — sets character-by-character text direction' },
-  { cmd: 'FV', status: 'supported', description: 'Field variable — supplies data for a ^FN field at print time; populates the bound Variable\'s default on import' },
+  { cmd: 'FN', status: 'supported', description: 'Field number: variable field placeholder, lands in the Variables tab on import and emits as ^FN{slot} on export' },
+  { cmd: 'FP', status: 'supported', description: 'Field parameter; sets character-by-character text direction (vertical CJK / reverse RTL layout)' },
+  { cmd: 'FV', status: 'supported', description: 'Field variable: supplies data for a ^FN field at print time; populates the bound Variable\'s default on import' },
 
   // ── Fonts & text ──────────────────────────────────────────────────────────
-  { cmd: 'A0', status: 'supported', description: 'Scalable/bitmap font 0 — primary designer font' },
-  { cmd: 'CF', status: 'supported', description: 'Change default font — sets height/width for subsequent text fields' },
+  { cmd: 'A0', status: 'supported', description: 'Scalable/bitmap font 0: primary designer font' },
+  { cmd: 'CF', status: 'supported', description: 'Change default font: sets height/width for subsequent text fields' },
   {
     cmd: 'A@', status: 'partial',
     description: 'TrueType/OpenType font reference by device path',
     loss: 'Font face is not imported; text content and point size are preserved with best-effort sizing',
   },
-  { cmd: 'TB', status: 'supported', description: 'Text block — alternative to ^A + ^FB for wrapped/justified text' },
+  { cmd: 'TB', status: 'supported', description: 'Text block: alternative to ^A + ^FB for wrapped/justified text' },
   {
     cmd: 'CW', status: 'browser-limit',
-    description: 'Font identifier — assigns a single-letter alias to a printer-resident font',
+    description: 'Font identifier: assigns a single-letter alias to a printer-resident font',
     loss: 'Cannot access printer font storage; alias is ignored but subsequent ^A references fall back to default font',
   },
   {
     cmd: 'FL', status: 'browser-limit',
-    description: 'Font linking — links host fonts on the printer',
+    description: 'Font linking: links host fonts on the printer',
     loss: 'Requires printer font storage; not applicable in the browser',
   },
   {
     cmd: 'HT', status: 'browser-limit',
-    description: 'Host linked font list — retrieves font data from printer',
+    description: 'Host linked font list: retrieves font data from printer',
     loss: 'Requires printer communication; not available in the browser',
   },
   {
     cmd: 'LF', status: 'browser-limit',
-    description: 'List font links — retrieves linked font info from printer',
+    description: 'List font links: retrieves linked font info from printer',
     loss: 'Requires printer communication; not available in the browser',
   },
 
   // ── Reverse / invert ──────────────────────────────────────────────────────
-  { cmd: 'LR', status: 'supported', description: 'Label reverse — inverts colours for all subsequent fields' },
+  { cmd: 'LR', status: 'supported', description: 'Label reverse: inverts colours for all subsequent fields' },
 
   // ── Barcodes ──────────────────────────────────────────────────────────────
-  { cmd: 'BY', status: 'supported', description: 'Bar code field default — sets module width, ratio, height' },
+  { cmd: 'BY', status: 'supported', description: 'Bar code field default: sets module width, ratio, height' },
   { cmd: 'B0', status: 'supported', description: 'Aztec barcode' },
   { cmd: 'B1', status: 'supported', description: 'Code 11 barcode' },
   { cmd: 'B2', status: 'supported', description: 'Interleaved 2 of 5 barcode' },
@@ -123,42 +123,42 @@ const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
   { cmd: 'BZ', status: 'supported', description: 'POSTAL barcode' },
 
   // ── Graphics ──────────────────────────────────────────────────────────────
-  { cmd: 'GB', status: 'supported', description: 'Graphic box — also interpreted as a line when one dimension equals thickness' },
+  { cmd: 'GB', status: 'supported', description: 'Graphic box: also interpreted as a line when one dimension equals thickness' },
   { cmd: 'GD', status: 'supported', description: 'Graphic diagonal line' },
   { cmd: 'GE', status: 'supported', description: 'Graphic ellipse' },
   { cmd: 'GC', status: 'supported', description: 'Graphic circle (mapped to ellipse with equal width/height)' },
   {
     cmd: 'GF', status: 'partial',
-    description: 'Graphic field — embedded monochrome bitmap',
+    description: 'Graphic field: embedded monochrome bitmap',
     loss: 'Only ^GFA (hex / ZPL-compressed format) is supported; ^GFB and ^GFC formats are skipped',
   },
   {
     cmd: 'GS', status: 'browser-limit',
-    description: 'Graphic symbol — prints a printer-resident symbol character',
+    description: 'Graphic symbol: prints a printer-resident symbol character',
     loss: 'Symbols are stored on the printer; cannot be rendered in the browser',
   },
 
   // ── Serialisation ─────────────────────────────────────────────────────────
-  { cmd: 'SN', status: 'supported', description: 'Serialisation data (post-field counter — ^SN appears after ^FD)' },
-  { cmd: 'SF', status: 'supported', description: 'Serialize field (pre-field counter — ^SF appears before ^FD)' },
+  { cmd: 'SN', status: 'supported', description: 'Serialisation data (post-field counter: ^SN appears after ^FD)' },
+  { cmd: 'SF', status: 'supported', description: 'Serialize field (pre-field counter: ^SF appears before ^FD)' },
 
   // ── Encoding ──────────────────────────────────────────────────────────────
-  { cmd: 'CI', status: 'structural', description: 'Change international font/encoding — not required; UTF-8 is used natively in the browser' },
+  { cmd: 'CI', status: 'structural', description: 'Change international font/encoding: not required; UTF-8 is used natively in the browser' },
 
   // ── Control & media ───────────────────────────────────────────────────────
-  { cmd: 'MC', status: 'structural', description: 'Map clear — clears the bitmap buffer before building the label' },
-  { cmd: 'MD', status: 'structural', description: 'Media darkness — printer hardware setting' },
-  { cmd: 'ML', status: 'structural', description: 'Maximum label length — printer calibration value' },
-  { cmd: 'MN', status: 'structural', description: 'Media tracking — continuous/gap/mark sensing (hardware)' },
+  { cmd: 'MC', status: 'structural', description: 'Map clear: clears the bitmap buffer before building the label' },
+  { cmd: 'MD', status: 'structural', description: 'Media darkness: printer hardware setting' },
+  { cmd: 'ML', status: 'structural', description: 'Maximum label length: printer calibration value' },
+  { cmd: 'MN', status: 'structural', description: 'Media tracking: continuous/gap/mark sensing (hardware)' },
 
   // ── Print control ─────────────────────────────────────────────────────────
-  { cmd: 'PF', status: 'structural', description: 'Slew given number of dot rows — printer movement command' },
-  { cmd: 'PH', status: 'structural', description: 'Slew to home position — printer movement command' },
-  { cmd: 'PM', status: 'structural', description: 'Print mirror image — hardware mirror setting' },
-  { cmd: 'PO', status: 'structural', description: 'Print orientation — sets label print orientation on printer' },
-  { cmd: 'PP', status: 'structural', description: 'Programmable pause — pauses after each label (hardware)' },
-  { cmd: 'PR', status: 'structural', description: 'Print rate — sets print speed (hardware)' },
-  { cmd: 'PS', status: 'structural', description: 'Print start — resumes printing after a pause (hardware)' },
+  { cmd: 'PF', status: 'structural', description: 'Slew given number of dot rows: printer movement command' },
+  { cmd: 'PH', status: 'structural', description: 'Slew to home position: printer movement command' },
+  { cmd: 'PM', status: 'structural', description: 'Print mirror image: hardware mirror setting' },
+  { cmd: 'PO', status: 'structural', description: 'Print orientation: sets label print orientation on printer' },
+  { cmd: 'PP', status: 'structural', description: 'Programmable pause: pauses after each label (hardware)' },
+  { cmd: 'PR', status: 'structural', description: 'Print rate: sets print speed (hardware)' },
+  { cmd: 'PS', status: 'structural', description: 'Print start: resumes printing after a pause (hardware)' },
 
   // ── Printer storage & resources ───────────────────────────────────────────
   {
@@ -172,12 +172,11 @@ const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
     loss: 'Stores data on the physical printer; not relevant for canvas label design',
   },
 
-  // ── Templates & batch merge (round-trip on parse; emit as ^DFR/^XFR
-  // for CSV-driven batch printing) ──────────────────────────────────────────
-  { cmd: 'DF', status: 'supported', description: 'Download format — used as ^DFR:LBL.ZPL to store the design template once, recalled per CSV row during batch export' },
-  { cmd: 'XF', status: 'supported', description: 'Recall format — pulled per row in batch export, paired with ^FN overrides' },
-  { cmd: 'XG', status: 'supported', description: 'Recall graphic — used together with ~DY for printer-resident images' },
-  { cmd: 'DY', status: 'supported', description: 'Download object (~DY) — embeds custom fonts and graphics so the printer can resolve ^A aliases and ^XG recalls' },
+  // Templates & batch merge: ^DF/^XF with R: drive path for CSV-driven batch printing.
+  { cmd: 'DF', status: 'supported', description: 'Download format; used as ^DFR:LBL.ZPL to store the design template once, recalled per CSV row during batch export' },
+  { cmd: 'XF', status: 'supported', description: 'Recall format; pulled per row in batch export, paired with ^FN overrides' },
+  { cmd: 'XG', status: 'supported', description: 'Recall graphic; used together with ~DY for printer-resident images' },
+  { cmd: 'DY', status: 'supported', description: 'Download object (~DY); embeds custom fonts and graphics so the printer can resolve ^A aliases and ^XG recalls' },
 ] as const;
 
 /** O(1) lookup map: command code → info */

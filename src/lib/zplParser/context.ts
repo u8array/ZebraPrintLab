@@ -39,12 +39,14 @@ export interface ParserResult {
   unknown: string[];
 }
 
-/** Label-frame state from ^LH / ^LT / ^LR; persists until overridden. */
+/** Label-frame state from ^LH / ^LT / ^LR; per spec these are persistent
+ *  printer defaults that survive ^XZ until overridden or power-cycled. */
 export interface LabelFrameState {
   lhX: number;
   lhY: number;
   ltY: number;
-  /** ^LR is label-wide; per-field ^FR lives on `field` (resets at ^FS). */
+  /** ^LR persists across labels per spec (printer default). Per-field
+   *  ^FR lives on `field` (resets at ^FS). */
   lrActive: boolean;
 }
 
@@ -63,7 +65,7 @@ export interface FormatState {
   fhActive: boolean;
   fhDelimiter: string;
   fhDecoder: TextDecoder;
-  // Command prefix characters; mutated by ^CC/~CC, ^CT/~CT, ^CD/~CD.
+  // Command prefix characters, mutated by ^CC/~CC, ^CT/~CT, ^CD/~CD.
   // The tokenizer reads caretChar/tildeChar on every char scan so mid-stream
   // changes take effect on the very next command.
   caretChar: string;
@@ -97,9 +99,9 @@ export interface FontsState {
   downloadedGraphics: Map<string, UploadedGraphic>;
 }
 
-/** Per-field accumulator; consumed and reset by flushField at ^FS. */
+/** Per-field accumulator, consumed and reset by flushField at ^FS. */
 export interface FieldState {
-  // Position (^FO / ^FT — pre-shift, before label.lh*/lt* offsets)
+  // Position (^FO / ^FT, pre-shift, before label.lh*/lt* offsets)
   x: number;
   y: number;
   positionIsFT: boolean;
@@ -151,7 +153,7 @@ export interface FieldState {
   tlcHeight: number;
   tlcMicroPdfRowHeight: number;
   tlcMicroPdfRows: number;
-  // Pending font reference (^A@ or ^A{id}) — mutually exclusive
+  // Pending font reference (^A@ or ^A{id}), mutually exclusive
   pendingPrinterFontName: string | undefined;
   pendingFontId: string | undefined;
   // ^SN / ^SF serialisation pending

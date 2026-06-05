@@ -37,7 +37,7 @@ export const code49: ObjectTypeCore<Code49Props> = {
   defaultSize: { width: 300, height: 120 },
 
   // Clamp height into bwip's range so drag past the limit lands in
-  // props (not just in the render) — otherwise ZPL h drifts from
+  // props (not just in the render); otherwise ZPL h drifts from
   // the visible bars.
   commitTransform: (obj, ctx) => {
     const next = commitBarcodeWidthHeightTransform(obj, ctx);

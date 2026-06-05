@@ -37,7 +37,7 @@ export function FontManager() {
 
   // Partition customFonts into three buckets matched to the three UI
   // sections. Discriminator is the *presence* of the `path` property
-  // (m.path === undefined), not its truthiness — a manual mapping
+  // (m.path === undefined), not its truthiness; a manual mapping
   // freshly added carries an empty-string path while the user types,
   // and we must keep that row in the manual section instead of
   // mis-routing it into the built-in-preview bucket. We also remember
@@ -147,7 +147,7 @@ export function FontManager() {
   const addBuiltinPreview = () => {
     // Pick the first built-in id that does not already have a binding
     // so the new row lands on a usable default. If every built-in is
-    // already bound, fall back to "0" — the user can edit it.
+    // already bound, fall back to "0"; the user can edit it.
     const takenAliases = new Set(
       (customFonts ?? [])
         .filter((m) => m.path === undefined)
@@ -160,7 +160,7 @@ export function FontManager() {
 
   // Built-in-preview rows are keyed by alias (one binding per ID).
   // Patch is applied via spread so an explicit `undefined` actually
-  // clears the field — the previous `?? m.previewFontName` fallback
+  // clears the field; the previous `?? m.previewFontName` fallback
   // turned "Pick a font…" into a no-op because Nullish-coalescing
   // ignores undefined patches.
   const updateBuiltinPreview = (
@@ -337,14 +337,14 @@ function FontEntry({
   onRequestDelete,
 }: FontEntryProps) {
   const t = useT();
-  // The embed toggle is only meaningful once an alias is in place —
+  // The embed toggle is only meaningful once an alias is in place;
   // ~DY without a matching ^CW would dump bytes onto the printer that
   // no field can reference. Disable + tooltip when alias is empty so
   // the constraint is visible instead of silently failing at emit.
   const embedDisabled = !alias;
   // Heads-up when the user picks a built-in letter (0, A-H): ^CW with
   // a built-in alias overrides the factory font on the printer, which
-  // is rarely what the user wants — the "Built-in font previews"
+  // is rarely what the user wants; the "Built-in font previews"
   // section is the right place for an editor-only binding.
   const overridesBuiltin = isBuiltinFontId(alias);
 
@@ -452,7 +452,7 @@ function ManualMappingsSection({
   // Auto-remove rows whose alias AND path are both empty when focus
   // actually leaves the row container. requestAnimationFrame defers
   // the check until the new focus has landed, then we confirm the row
-  // no longer contains it — tabbing between the row's own inputs does
+  // no longer contains it; tabbing between the row's own inputs does
   // not count as "leaving".
   const handleBlur = (
     e: FocusEvent<HTMLDivElement>,
@@ -628,7 +628,7 @@ function AddFontForm({ onDone }: AddFontFormProps) {
   const [uploadFailed, setUploadFailed] = useState(false);
 
   const handleFileChange = useCallback(async (file: File) => {
-    // Default to the source filename uppercased — Zebra printer storage
+    // Default to the source filename uppercased; Zebra printer storage
     // conventionally uses uppercase ALL.TTF style identifiers, and a
     // freshly-picked file is almost always the user's intended name.
     const printerName = name.trim() || file.name.toUpperCase();

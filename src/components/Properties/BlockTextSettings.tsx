@@ -11,7 +11,7 @@ interface Props {
 
 /** Block-text (`^FB`) sub-panel: width / max-lines / justify /
  *  line-spacing plus inline validation hints. Hints are purely
- *  informational — never auto-correct user-set blockLines, since
+ *  informational; never auto-correct user-set blockLines, since
  *  content can legitimately have fewer lines than max (CSV-bound
  *  rows vary) or more (intentional truncation). The editor surfaces
  *  the mismatch but leaves the choice to the user. */
@@ -22,7 +22,7 @@ export function BlockTextSettings({ props: p, onChange }: Props) {
   const truncates = contentLines > maxLines;
   return (
     // Indent + left border marks the sub-panel as belonging to the
-    // FELDBLOCK checkbox above — same convention as the Font-Advanced
+    // FELDBLOCK checkbox above; same convention as the Font-Advanced
     // block in text.tsx.
     <div className="pl-3 border-l border-border flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">

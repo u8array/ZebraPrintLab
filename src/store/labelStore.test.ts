@@ -247,7 +247,7 @@ describe('duplicateSelectedObjects', () => {
 
     expect(objs()).toHaveLength(4);
     // Selection follows the new copy each time, so the offsets compound
-    // linearly: 100, 120, 140, 160 — never quadratic.
+    // linearly: 100, 120, 140, 160; never quadratic.
     expect(objs().map((o) => o.x)).toEqual([100, 120, 140, 160]);
     expect(objs().map((o) => o.y)).toEqual([100, 120, 140, 160]);
   });
@@ -889,7 +889,7 @@ describe('ungroup', () => {
 
   describe('preview lock blocks design mutations', () => {
     function enterPreview() {
-      // Push the store directly into the active state — the real
+      // Push the store directly into the active state; the real
       // `enterPreviewMode` would talk to Labelary and can't run in tests.
       useLabelStore.setState({
         previewMode: { status: 'active', url: 'blob:test' },
@@ -1032,7 +1032,7 @@ describe('ungroup', () => {
       resolveFirst('blob:stale-1');
       await first;
 
-      // Status must still be `loading` for fetch 2 — fetch 1's URL was
+      // Status must still be `loading` for fetch 2; fetch 1's URL was
       // for the previous design and must have been discarded + revoked.
       expect(state().previewMode.status).toBe('loading');
       expect(vi.mocked(globalThis.URL.revokeObjectURL)).toHaveBeenCalledWith(
@@ -1057,7 +1057,7 @@ describe('ungroup', () => {
       expect(firstUrl).toBeTruthy();
       state().exitPreviewMode();
 
-      // Mutate the design — the next enterPreviewMode generates different
+      // Mutate the design; the next enterPreviewMode generates different
       // ZPL and must hit the API again, revoking the prior blob.
       state().addObject('text');
       await state().enterPreviewMode();
@@ -1207,11 +1207,10 @@ describe('migrateLegacy — v4→v5 printerProfile extraction', () => {
   });
 
   it('drops the schema-rejected sub-field on rehydrate', () => {
-    // Legacy persist that survived from before the cross-field
-    // superRefine landed. The repair walks Zod's issue paths: the
-    // cross-field rule flags the message side, so the alert stays
-    // and the (stale) message is dropped instead of silently
-    // rewriting on the next edit.
+    // Legacy persist that violates the cross-field superRefine. The
+    // repair walks Zod's issue paths: the cross-field rule flags the
+    // message side, so the alert stays and the (stale) message is
+    // dropped instead of silently rewriting on the next edit.
     const persisted = {
       label: { widthMm: 100, heightMm: 50, dpmm: 8 },
       pages: [{ objects: [] }],
@@ -1231,7 +1230,7 @@ describe('migrateLegacy — v4→v5 printerProfile extraction', () => {
 
   it('drops clockMode "TOL" when clockTolerance is missing on rehydrate', () => {
     // superRefine reports path ['clockTolerance'], which is already
-    // absent — a single-pass delete would be a no-op and leave the
+    // absent; a single-pass delete would be a no-op and leave the
     // invariant violation in place. The fixpoint loop catches this.
     const persisted = {
       label: { widthMm: 100, heightMm: 50, dpmm: 8 },

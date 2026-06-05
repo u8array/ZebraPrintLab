@@ -37,7 +37,7 @@ export function decodeGraphicToImage(
         const px = byteIdx * BITS_PER_BYTE + bit;
         const idx = (row * widthDots + px) * 4;
         // ZPL ^GF: 1-bit = black (printed), 0-bit = transparent.
-        // ImageData starts zero-filled (rgba(0,0,0,0)) — only the
+        // ImageData starts zero-filled (rgba(0,0,0,0)); only the
         // 1-bit case needs a write.
         if ((byte & (0x80 >> bit)) !== 0) {
           pixels[idx + 3] = 255;

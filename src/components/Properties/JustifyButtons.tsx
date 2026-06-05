@@ -11,7 +11,7 @@ interface Props {
 
 /** Inline SVG glyphs for the four justify modes. Stroke uses
  *  `currentColor` so the active/inactive button colour drives the
- *  icon — single source of truth for theming. Inline SVG (vs.
+ *  icon; single source of truth for theming. Inline SVG (vs.
  *  Unicode glyphs) avoids font-fallback tofu on systems without the
  *  niche math/arrow ranges installed. */
 const ICONS: Record<Justify, ReactNode> = {
@@ -46,7 +46,7 @@ const ICONS: Record<Justify, ReactNode> = {
 };
 
 /** ^FB text-justification toggle: 4 icon buttons (left / centre /
- *  right / justified) — same MS Word pattern users already know.
+ *  right / justified); same MS Word pattern users already know.
  *  Replaces the legacy `<select>` so picking takes a single click
  *  and the active mode is visually obvious at a glance. */
 export function JustifyButtons({ value, onChange }: Props) {

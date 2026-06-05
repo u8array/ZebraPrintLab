@@ -48,7 +48,7 @@ export const gs1databar: ObjectTypeCore<Gs1DatabarProps> = {
 
   toZPL: (obj: LabelObjectBase & { props: Gs1DatabarProps }, ctx) => {
     const p = obj.props;
-    // ^BRo,s,m,sep,h[,sg] — segments must only be present for Expanded Stacked (7).
+    // ^BRo,s,m,sep,h[,sg]: segments must only be present for Expanded Stacked (7).
     // Including segments on sym 1–6 makes Labelary stack the symbol (wrong rendering).
     const segs = p.symbology === 7 ? `,${p.segments ?? GS1_DATABAR_DEFAULT_SEGMENTS}` : '';
     return `^BY${p.magnification}${fieldPos(obj)}^BR${p.rotation},${p.symbology},${p.magnification},2,${ZPL_HEIGHT_PLACEHOLDER}${segs}${fdFieldFor(obj, p.content, ctx)}`;

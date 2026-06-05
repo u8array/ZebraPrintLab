@@ -5,13 +5,7 @@ export function clamp(min: number, max: number, value: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-/** ZPL rotates the rendered content but the Konva wrapper Group stays
- *  axis-aligned, so `sx`/`sy` from the transformer are always in screen
- *  space. For rotation R / B (90° / 270°) the user's screen-vertical
- *  drag therefore targets the pre-rotation X axis (text/bar-width)
- *  rather than the pre-rotation Y axis (height) — swap the two so each
- *  commit helper can keep talking about "x-prop" and "y-prop" without
- *  having to know about rotation. N and I both leave the axes aligned. */
+/** R/B rotation swaps sx/sy so commits stay in pre-rotation x/y props. */
 export function effectiveScale(
   rotation: "N" | "R" | "I" | "B" | undefined,
   ctx: TransformContext,
@@ -22,12 +16,7 @@ export function effectiveScale(
     : { esx: ctx.sx, esy: ctx.sy };
 }
 
-/**
- * Factory for commitTransform on uniformly-scaling 2D codes (QR, Aztec,
- * DataMatrix): a single integer module-size prop scales by min(sx, sy)
- * and clamps to [min, max]. The prop name and range vary per code, so they
- * are closed over at registry-definition time.
- */
+/** Uniform 2D commit factory; prop name + range closed over per registry. */
 export function commitUniformScaleTransform<
   K extends string,
   P extends Record<K, number> = Record<K, number>,
@@ -43,10 +32,7 @@ interface WidthHeightProps {
   height: number;
 }
 
-/** Shared commitTransform for shapes that scale width and height
- *  independently (box, ellipse). No rotation-aware axis swap — these
- *  types render axis-aligned. For ZPL-rotated types (text, symbol)
- *  use `commitRotatedWidthHeightTransform`. */
+/** Axis-aligned (box/ellipse); rotated types use commitRotatedWidthHeightTransform. */
 export function commitWidthHeightTransform<P extends WidthHeightProps>(
   obj: LabelObjectBase & { props: P },
   ctx: TransformContext,
@@ -58,10 +44,7 @@ export function commitWidthHeightTransform<P extends WidthHeightProps>(
   } as Partial<P>;
 }
 
-/** Rotation-aware variant: width is the pre-rotation x-extent, height
- *  the pre-rotation y-extent. `effectiveScale` swaps sx/sy for R/B
- *  rotations so the user's screen-vertical drag stays attached to the
- *  `height` prop regardless of how the shape is oriented on screen. */
+/** width/height are pre-rotation; effectiveScale handles R/B drag axis. */
 export function commitRotatedWidthHeightTransform<
   P extends WidthHeightProps & { rotation: "N" | "R" | "I" | "B" },
 >(
@@ -71,8 +54,6 @@ export function commitRotatedWidthHeightTransform<
   return commitRotatedSizeTransform(obj, ctx, "width", "height");
 }
 
-/** Generic rotation-aware commit: scales an arbitrary numeric prop
- *  pair by `esx` / `esy`, rounds + snaps, clamps to min 1. */
 function commitRotatedSizeTransform<
   P extends { rotation: "N" | "R" | "I" | "B" },
   XK extends keyof P,
@@ -92,17 +73,7 @@ function commitRotatedSizeTransform<
   } as Partial<P>;
 }
 
-/**
- * commitTransform for 1D barcodes. Vertical drag scales bar height,
- * horizontal drag scales the module width — the latter is clamped to
- * the ZPL `^BY` range [1, 10]. During the drag the bitmap stretches
- * free-form for visual feedback; this commit rounds the result to a
- * valid integer moduleWidth on release.
- *
- * `effectiveScale` swaps sx/sy for R/B-rotated barcodes so user's
- * screen-vertical drag stays attached to bar height regardless of how
- * the bitmap is oriented on screen.
- */
+/** moduleWidth clamped to ^BY [1,10]; bitmap stretches mid-drag, rounded on release. */
 export function commitBarcodeWidthHeightTransform<
   P extends { height: number; moduleWidth: number; rotation: "N" | "R" | "I" | "B" },
 >(
@@ -122,12 +93,7 @@ interface Stacked2DProps {
   moduleWidth: number;
 }
 
-/**
- * Shared commitTransform for stacked 2D barcodes (pdf417, micropdf417,
- * codablock). The drag-start anchor pins the rowHeight grid so the final
- * value matches the snap performed during the drag (boundBoxFunc).
- * Rotation-aware via `effectiveScale`, same reasoning as the 1D helper.
- */
+/** Drag-start anchor pins the rowHeight grid so commit matches the in-drag snap. */
 export function commitStacked2DTransform<
   P extends Stacked2DProps & { rotation: "N" | "R" | "I" | "B" },
 >(

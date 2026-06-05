@@ -190,7 +190,7 @@ export function PrinterSettingsModal() {
 }
 
 /** Docked preview pane on the Setup-Script top-tab. Per-Label has no
- *  preview here — its ZPL still lives in the editor's main output. */
+ *  preview here; its ZPL still lives in the editor's main output. */
 function PreviewDock({
   setupScript,
   printerProfile,

@@ -59,7 +59,7 @@ export function createFieldHandlers(
       flushField();
       s.field.x = dots(p[0]) + s.label.lhX;
       s.field.y = dots(p[1]) + s.label.lhY + s.label.ltY;
-      // 3rd param is justification (0/1/2) — stored but not actively used.
+      // 3rd param is justification (0/1/2), stored but not actively used.
       s.field.positionIsFT = false;
     },
     FT(p) {
@@ -170,7 +170,7 @@ export function createFieldHandlers(
 
     // ── Serialization ─────────────────────────────────────────────────────
     SN(p) {
-      // ^SN{start},{increment},{leadZero} — runs after ^FD; upgrade last text to serial.
+      // ^SN{start},{increment},{leadZero}: runs after ^FD, upgrade last text to serial.
       const snStart = p[0] ?? "";
       const snInc = int(p[1], 1);
       const lastObj = s.result.objects[s.result.objects.length - 1];
@@ -195,7 +195,7 @@ export function createFieldHandlers(
       }
     },
     SF(p) {
-      // ^SF{increment},{padDigits},{leadZero} — runs before ^FD; flushField emits serial.
+      // ^SF{increment},{padDigits},{leadZero}: runs before ^FD, flushField emits serial.
       s.field.snPending = true;
       s.field.snIncrement = int(p[0], 1);
       s.field.snMode = "SF";
@@ -230,7 +230,7 @@ export function createFieldHandlers(
       s.label.ltY = dots(rest);
     },
 
-    // ^CW {alias},{path} — register a printer-resident font alias.
+    // ^CW {alias},{path}: register a printer-resident font alias.
     // Upsert: later ^CW for same alias replaces, no duplicates.
     CW(p) {
       const alias = (p[0] ?? "").trim().toUpperCase();
@@ -242,7 +242,7 @@ export function createFieldHandlers(
       );
       const entry: CustomFontMapping = { alias, path };
       if (s.fonts.downloadedFontPaths.has(path)) {
-        // Bytes shipped via ~DY earlier; mark for re-emit and link the fontCache key.
+        // Bytes shipped via ~DY earlier, mark for re-emit and link the fontCache key.
         entry.embedInZpl = true;
         const colonIdx = path.indexOf(":");
         const filename = colonIdx >= 0 ? path.slice(colonIdx + 1) : path;
@@ -252,8 +252,8 @@ export function createFieldHandlers(
     },
 
     // ── TrueType font / text block ────────────────────────────────────────
-    // ^A@{rotation},{height},{width},{drive}:{font} — TrueType font reference.
-    // Can't load printer TrueType fonts; import as text with best-effort sizing.
+    // ^A@{rotation},{height},{width},{drive}:{font}: TrueType font reference.
+    // Can't load printer TrueType fonts, import as text with best-effort sizing.
     "A@"(p, rest) {
       s.field.fieldType = "text";
       s.field.textRot = readRotation(rest[0], s.defaults.fwRotation);
@@ -265,7 +265,7 @@ export function createFieldHandlers(
         (colonIdx >= 0 ? fontRef.slice(colonIdx + 1) : fontRef) || undefined;
       s.result.partialCmds.add("^A@");
     },
-    // ^TB{rotation},{width},{height} — text block (alternative to ^A + ^FB)
+    // ^TB{rotation},{width},{height}: text block (alternative to ^A + ^FB)
     TB(p, rest) {
       s.field.fieldType = "text";
       s.field.textRot = readRotation(rest[0], s.defaults.fwRotation);
@@ -317,7 +317,7 @@ export function createFieldHandlers(
     },
     FE(p) {
       // ^FE<char>: redefine the FN-embed delimiter used inside ^FD/^FV.
-      // Single ASCII character; falls back to '#' when missing/invalid.
+      // Single ASCII character, falls back to '#' when missing/invalid.
       const c = p[0]?.[0];
       s.format.embedChar = c && c !== "^" && c !== "~" ? c : "#";
     },

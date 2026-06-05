@@ -7,7 +7,7 @@ import { PNG } from 'pngjs';
 import { textTestCases } from '../../tests/fixtures/textTestCases';
 
 /**
- * Renderer-pair stability check — Skia (@napi-rs/canvas) vs Labelary,
+ * Renderer-pair stability check: Skia (@napi-rs/canvas) vs Labelary,
  * with the SAME TTF loaded on both sides (PrintLabZPL-Bold.ttf):
  *   - Labelary uploaded it via /v1/fonts before generating the fixtures
  *     (see tests/scripts/fetch_labelary_text_fixtures.ts).
@@ -15,7 +15,7 @@ import { textTestCases } from '../../tests/fixtures/textTestCases';
  *
  * **This suite does NOT verify Zebra firmware fidelity.** Glyph data is
  * identical on both sides by construction, and Labelary is itself a
- * firmware simulator — substituting the font further removes the one
+ * firmware simulator; substituting the font further removes the one
  * thing Labelary contributed (its bundled Zebra-equivalent font metrics).
  * What this catches: drift in our canvas font sizing / anchor math /
  * fontSize-to-fontHeight conversion vs Labelary's renderer. What it
@@ -33,11 +33,11 @@ const FIXTURES_DIR = path.resolve(
 const DIFF_DIR = path.resolve(process.cwd(), 'tests/fixtures/__text_diffs__');
 const FONT_PATH = path.resolve(process.cwd(), 'src/assets/fonts/PrintLabZPL-Bold.ttf');
 
-const CANVAS_PX = 812; // 4x4 inch at 8 dpmm — matches the fixture canvas.
+const CANVAS_PX = 812; // 4x4 inch at 8 dpmm, matches the fixture canvas.
 const FONT_FAMILY = 'PrintLab ZPL';
 
 /** Diff allowance. With both sides loading the same TTF the remaining
- *  delta is anti-aliasing edge variance between the renderers — sized
+ *  delta is anti-aliasing edge variance between the renderers, sized
  *  with the glyph perimeter rather than the area, so a flat ceiling
  *  generous enough for the largest case in the matrix still leaves an
  *  order of magnitude of headroom before a real regression (wrong font

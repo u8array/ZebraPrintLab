@@ -43,7 +43,7 @@ export function buildBulkToggleUpdates(
   // produces the same JSON regardless of which UI path triggered it.
   // Without this, LayersPanel toggles would leave `locked: false` /
   // `visible: true` in saved design files while PropertiesPanel toggles
-  // omit the key — producing churn in version-controlled design files.
+  // omit the key; producing churn in version-controlled design files.
   const patchValue: boolean | undefined =
     field === "locked"
       ? (nextValue ? true : undefined)

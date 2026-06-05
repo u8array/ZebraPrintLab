@@ -140,7 +140,7 @@ export function VariablesPanel() {
 
       {!csvDataset && csvMapping && Object.keys(csvMapping.bindings).length > 0 && (
         /* Mapping persisted (design.json or localStorage) but no CSV
-           data in this session — reload, Discard CSV, or opening a
+           data in this session; reload, Discard CSV, or opening a
            saved design. Surface it so the saved bindings don't look
            lost. User re-imports via the File menu's "Import CSV data"
            to bring values back; the X here drops the mapping entirely. */
@@ -504,7 +504,7 @@ function countBindings(
       // De-dupe per OBJECT across both binding styles: a field with
       // both `variableId === V` and `«V»` in its content counts as
       // one usage of V, not two. Mirrors how the user thinks about
-      // "where is V used" — one field = one place.
+      // "where is V used"; one field = one place.
       const refsInThisObj = new Set<string>();
       if (obj.variableId && known.has(obj.variableId)) {
         refsInThisObj.add(obj.variableId);

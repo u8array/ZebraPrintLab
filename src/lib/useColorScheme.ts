@@ -12,12 +12,12 @@ export interface CanvasColors {
   rulerLabel: string;
   rulerSeparator: string;
   /** Selection stroke / handle colour for shapes and the Konva Transformer.
-   *  Distinct from the UI accent (amber) on purpose — design tools follow
+   *  Distinct from the UI accent (amber) on purpose; design tools follow
    *  a blue-ish convention here (Figma, Sketch, Illustrator) to keep
    *  contrast usable across the B/W shape colour space. */
   selection: string;
   /** UI accent (amber). Used for non-selection design-affordance overlays
-   *  on the canvas — e.g. the ^FB wrap-guide line so the user can tell
+   *  on the canvas; e.g. the ^FB wrap-guide line so the user can tell
    *  it apart from selection/transformer chrome. */
   accent: string;
 }

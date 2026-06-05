@@ -22,7 +22,7 @@ export { __resetPreviewCacheForTests } from './slices/previewSlice';
 export type { ObjectChanges };
 export type { Variable, VariableInput };
 
-/** Composed store shape — intersection of every slice. */
+/** Composed store shape; intersection of every slice. */
 export type LabelState =
   & ObjectSlice
   & PrinterProfileSlice
@@ -96,10 +96,9 @@ export function migrateLegacy(persistedState: unknown, version: number): unknown
     }
   }
 
-  // Belt-and-suspenders: any code path that bypasses the v4→v5 hop
-  // (manual edits, partial rollbacks, future version-bump that forgets
-  // to seed) must still leave `printerProfile` present, otherwise
-  // every `s.printerProfile.foo` selector throws on rehydrate.
+  // Invariant: rehydrated state must carry `printerProfile`, else
+  // every `s.printerProfile.foo` selector throws. Later migrations
+  // assume this shape and don't re-seed it.
   if (!('printerProfile' in (s as Record<string, unknown>))) {
     s = { ...s, printerProfile: {} };
   }
@@ -215,8 +214,8 @@ function migrateCircleObject(obj: unknown): unknown {
   };
 }
 
-/** localStorage persist subset. `thirdParty` intentionally OUT — build-time
- *  env (VITE_THIRD_PARTY_*) is authoritative until a settings UI lands. */
+/** localStorage persist subset. `thirdParty` is intentionally OUT: the
+ *  build-time env (VITE_THIRD_PARTY_*) is the single source of truth. */
 export const persistPartialize = (state: LabelState) => ({
   label: state.label,
   printerProfile: state.printerProfile,
@@ -230,7 +229,7 @@ export const persistPartialize = (state: LabelState) => ({
   csvMapping: state.csvMapping,
 });
 
-/** zundo undo-timeline subset — narrower than persist, only the
+/** zundo undo-timeline subset; narrower than persist, only the
  *  document state (label/profile/pages/variables/csvMapping) is undoable. */
 export const temporalPartialize = (state: LabelState) => ({
   label: state.label,

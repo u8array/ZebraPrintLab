@@ -87,13 +87,13 @@ interface Options {
   updateObject: (id: string, changes: ObjectChanges) => void;
   /** Label rect in stage-screen space, used as a snap target. */
   labelRect: SnapRect;
-  /** True when grid-snap is OFF — object-snap during resize mirrors drag. */
+  /** True when grid-snap is OFF; object-snap during resize mirrors drag. */
   objectSnapEnabled: boolean;
   /** Pushes resize-time snap guides into the canvas's shared guide state. */
   setGuides: (guides: SnapGuide[]) => void;
   /** Canvas view rotation. When non-zero, the parent group is rotated and
    *  Konva's bbox semantics in boundBoxFunc no longer match our axis-aware
-   *  snap / pin helpers — we fall back to native Konva resize there. */
+   *  snap / pin helpers; we fall back to native Konva resize there. */
   viewRotation: number;
 }
 
@@ -133,7 +133,7 @@ export function useKonvaTransformer({
   // can't move during a resize, so we avoid re-querying Konva on every tick.
   const othersSnapshotRef = useRef<SnapRect[]>([]);
 
-  // Stable key of selected object types — avoids re-running on every drag-move
+  // Stable key of selected object types, avoids re-running on every drag-move
   // position update (which changes objects but not the types of selected objects).
   const selectedTypesKey = selectedIds
     .map((id) => objects.find((o) => o.id === id)?.type ?? "")
@@ -176,7 +176,7 @@ export function useKonvaTransformer({
     // Force a re-measure: after commitTransform the node's getClientRect has
     // changed but the transformer caches its bounds from the last interaction.
     transformerRef.current.forceUpdate();
-  // selectedTypesKey encodes the type of every selected object — sufficient to
+  // selectedTypesKey encodes the type of every selected object, sufficient to
   // detect the line/non-line distinction that governs transformer attachment.
   // selectedSignature triggers a re-measure when an object's size or position
   // changes (e.g. after commitTransform finishes a resize).
@@ -234,7 +234,7 @@ export function useKonvaTransformer({
     transformAnchorRef.current = obj && STACKED_2D_TYPES.has(obj.type)
       ? { nodeHeight: node.height(), rowHeight: (obj.props as { rowHeight: number }).rowHeight }
       : null;
-    // startBbox is captured lazily on the first boundBoxFunc call — Konva
+    // startBbox is captured lazily on the first boundBoxFunc call; Konva
     // passes those bboxes in the transformer's frame, which on rotated
     // parents differs from getClientRect's stage frame.
     transformStartBboxRef.current = null;
@@ -247,7 +247,7 @@ export function useKonvaTransformer({
     }
     if (isUniformScale) newBox = forceSquareBox(oldBox, newBox);
     // When the canvas view is rotated, Konva's bbox semantics in this
-    // callback no longer match an axis-aware snap / pin model — visual
+    // callback no longer match an axis-aware snap / pin model; visual
     // bottom-edge becomes node-local-left etc. Skip the height snap,
     // object-snap and inactive-edge pin in that case and let Konva
     // resize natively. Stacked-2D row quantisation only matters when
@@ -317,7 +317,7 @@ export function useKonvaTransformer({
     }
     const renderedXDots = pxToDots(node.x() - objectsOffsetX, scale, dpmm);
     const renderedYDots = pxToDots(node.y() - labelOffsetY, scale, dpmm);
-    // For FT-anchored 1D barcodes, model.y is the bar baseline — needs the
+    // For FT-anchored 1D barcodes, model.y is the bar baseline, which needs the
     // post-resize bar height to convert from the bbox top back. Pipe the
     // scaled height through the same snap() commitBarcodeWidthHeight-
     // Transform uses so the baseline math sees the *committed* value and
@@ -337,7 +337,7 @@ export function useKonvaTransformer({
       newBarHeightDots,
     );
     // Only apply snap when the resize actually moved the anchor handle.
-    // Compare in *rendered* space — for types whose render path applies
+    // Compare in *rendered* space; for types whose render path applies
     // a shift (text, QR, FT barcodes), comparing the rendered top-left
     // to obj.x/y directly always trips (shift ≠ 0 in baseline), so snap
     // fires on every anchored-corner resize and pulls the visible

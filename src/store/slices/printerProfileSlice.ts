@@ -12,8 +12,7 @@ import type { LabelState } from '../labelStore';
 export interface PrinterProfileSlice {
   /** EEPROM-persistent printer-state. Separate from `label` so design
    *  files (which round-trip `label`) don't leak the user's printer
-   *  name, locale, clock value, etc. Single-profile for now; the
-   *  multi-profile follow-up will swap to `Record<id, PrinterProfile>`. */
+   *  name, locale, clock value, etc. Single profile per installation. */
   printerProfile: PrinterProfile;
   /** Patch the active profile. Same shape as `setLabelConfig` but
    *  writes to this slice so per-installation Setup-Script fields stay

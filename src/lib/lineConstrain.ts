@@ -6,15 +6,15 @@
  * drag (Figma / Sketch convention) instead of the diagonal Euclidean
  * distance:
  *
- *  - `free`     — no constraint
- *  - `shift`    — always snap to the nearest 45° step
- *  - `autoSnap` — snap to the nearest 45° step only when within ±5°,
+ *  - `free`    ; no constraint
+ *  - `shift`   ; always snap to the nearest 45° step
+ *  - `autoSnap`; snap to the nearest 45° step only when within ±5°,
  *                 otherwise free (Figma's "smart guides" behaviour)
  */
 
 export type ConstrainMode = "free" | "shift" | "autoSnap";
 
-/** Tolerance in degrees for `autoSnap` mode — below this distance from
+/** Tolerance in degrees for `autoSnap` mode; below this distance from
  *  a 45° step the angle is snapped, above it the raw angle is kept. */
 const AUTO_SNAP_TOLERANCE_DEG = 5;
 
@@ -47,7 +47,7 @@ function normalizeAngle(deg: number): number {
 
 /** Project (dxDots, dyDots) onto the line at `axisAngleDeg`. Picks the
  *  axis direction (axisAngleDeg or its 180°-flip) so the projected length
- *  is non-negative — the line always follows the cursor. */
+ *  is non-negative; the line always follows the cursor. */
 function projectOntoAxis(
   dxDots: number,
   dyDots: number,

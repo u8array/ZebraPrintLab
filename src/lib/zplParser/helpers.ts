@@ -14,7 +14,7 @@ export function readColor(raw: string | undefined): "B" | "W" {
   return raw === "W" ? "W" : "B";
 }
 
-/** First non-space char, upper-cased — single-char enum handlers. */
+/** First non-space char, upper-cased; single-char enum handlers. */
 export function firstChar(rest: string): string {
   return (rest.trim()[0] ?? "").toUpperCase();
 }

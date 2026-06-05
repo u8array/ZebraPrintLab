@@ -27,7 +27,7 @@ export const serial: ObjectTypeCore<SerialProps> = {
     zplMode: "SN",
   },
   defaultSize: { width: 100, height: 30 },
-  // Rectangle resize matching text.ts — see notes there.
+  // Rectangle resize matching text.ts, see notes there.
   commitTransform: (obj, ctx) => {
     const oldH = obj.props.fontHeight;
     const oldW = obj.props.fontWidth > 0 ? obj.props.fontWidth : oldH;
@@ -44,7 +44,7 @@ export const serial: ObjectTypeCore<SerialProps> = {
     // Re-apply the input charset filter at emit time so ZPL-imported content
     // (which bypasses the in-app filter) can't smuggle ^/~ into the ^SN start
     // parameter or comma-split the parameter list. fdField additionally
-    // hex-escapes any survivors in the FD payload — belt and suspenders.
+    // hex-escapes any survivors in the FD payload, belt and suspenders.
     const safe = filterContent(p.content, serialSpec);
     if (p.zplMode === "SF") {
       // ^SF: increment, pad-digits (derived from content length), change-per-label

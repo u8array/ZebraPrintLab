@@ -38,7 +38,7 @@ const CLOCK_LANGUAGE_LABEL_KEYS = {
   '13': 'clockLanguage13',
 } as const satisfies Record<ClockLanguage, keyof LocClockTime>;
 
-/** Tab 3 of the Printer Settings Modal — clock/time setup commands.
+/** Tab 3 of the Printer Settings Modal; clock/time setup commands.
  *  All three live in the Setup-Script output (EEPROM-persistent),
  *  not the per-label ZPL block. ^ST is modelled as a static user-
  *  typed value via HTML5 datetime-local, so generated scripts stay
@@ -108,7 +108,7 @@ export function ClockAndTimeTab() {
         optionLabel={(m) => loc[CLOCK_FORMAT_LABEL_KEYS[m]]}
       />
 
-      {/* All three ^SL inputs live under one parent tag — mode +
+      {/* All three ^SL inputs live under one parent tag; mode +
           (conditional) tolerance share the first positional slot,
           language is the second. ZplSubField keeps the per-row
           labels without duplicating the ^SL command tag (same
@@ -126,7 +126,7 @@ export function ClockAndTimeTab() {
             // Schema's cross-field rule pairs `clockMode === 'TOL'`
             // with a defined `clockTolerance` (and vice versa). Seed
             // the default the moment the user picks TOL, and clear
-            // the tolerance the moment they leave TOL — without
+            // the tolerance the moment they leave TOL; without
             // this the store would briefly hold an invalid combo
             // (TOL without tolerance) which the schema rejects.
             const nextTolerance = nextMode === 'TOL'

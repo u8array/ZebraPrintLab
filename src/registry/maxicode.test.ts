@@ -43,12 +43,12 @@ describe("validateMaxicodeBwip", () => {
   // produces a stub canvas without a 2D context, so success-path
   // assertions (mode 4/5 with valid content) can't be verified here.
   // The rejection paths exercise bwip-js' format validators, which
-  // throw synchronously before touching the canvas — that's the
+  // throw synchronously before touching the canvas; that's the
   // contract we actually need to pin (cleaned error message format).
 
   it("returns a non-null cleaned diagnostic when bwip-js rejects (e.g. mode 2/3 with bare text)", () => {
     // Pick an input that triggers either an SCM-format error (mode 2/3)
-    // or the canvas-missing fallback — both are stripped of the
+    // or the canvas-missing fallback; both are stripped of the
     // `bwip-js:` / `bwipp.<symbology>:` prefixes by cleanBwipError.
     const err = validateMaxicodeBwip("HELLO123", 2);
     expect(err).not.toBeNull();

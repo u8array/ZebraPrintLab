@@ -219,10 +219,10 @@ describe('Group helpers', () => {
       const inner = leaf('inside');
       const tree = [group('g1', [inner]), group('g2', [leaf('other')])];
       const next = mapObjectById(tree, 'inside', (o) => ({ ...o, x: 5 }));
-      // g2 wasn't touched — its node identity stays.
+      // g2 wasn't touched; its node identity stays.
       expect(next[1]).toBe(tree[1]);
       // g1 is rebuilt (its children array changed), but the unchanged
-      // sibling inside g1 — there's none — would also keep identity.
+      // sibling inside g1 (there's none) would also keep identity.
       expect(next[0]).not.toBe(tree[0]);
     });
 

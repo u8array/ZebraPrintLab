@@ -50,7 +50,7 @@ describe("domToPlainText", () => {
 
   it("strips a trailing <br> as the Chrome caret-placeholder", () => {
     // segmentsToHTML always appends a trailing <br> so Chrome's caret
-    // has somewhere to land on the empty last line — that BR does not
+    // has somewhere to land on the empty last line; that BR does not
     // represent a real \n and should not appear in the value.
     expect(domToPlainText(root([text("A"), br()]) as unknown as Node)).toBe("A");
     expect(domToPlainText(root([text("A"), br(), br()]) as unknown as Node)).toBe("A\n");

@@ -71,6 +71,6 @@ export interface DecodedGraphic {
 }
 
 /** Entry in the `~DY → ^XG` lookup map: a graphic uploaded earlier in the
- *  stream. Structurally a `DecodedGraphic` without the per-decode CRC flag —
+ *  stream. Structurally a `DecodedGraphic` without the per-decode CRC flag;
  *  that lives on the partialCmds set instead of on every map entry. */
 export type UploadedGraphic = Omit<DecodedGraphic, "crcOk">;

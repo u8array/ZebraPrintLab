@@ -4,11 +4,11 @@ import type { ParserState } from "../context";
 import { dotsFor, firstChar, inRange, int, strParam } from "../helpers";
 import type { Handler } from "../types";
 
-/** ^PQ extended params (pauseCount, replicates) — Zebra spec caps at
+/** ^PQ extended params (pauseCount, replicates); Zebra spec caps at
  *  8 digits / 99,999,999 per slot. */
 const PQ_EXT_MAX = 99_999_999;
 
-/** Per-label media + print-quality handlers — mutate only `labelConfig`. */
+/** Per-label media + print-quality handlers; mutate only `labelConfig`. */
 export function createLabelConfigHandlers(
   s: ParserState,
   dpmm: number,
@@ -27,7 +27,7 @@ export function createLabelConfigHandlers(
     PQ(p) {
       const qty = int(p[0], 0);
       if (qty > 0) labelConfig.printQuantity = qty;
-      // ^PQ q,p,r,o — preserve extended params when present.
+      // ^PQ q,p,r,o: preserve extended params when present.
       if (p.length > 1) {
         const pause = int(p[1], 0);
         if (pause >= 0 && pause <= PQ_EXT_MAX) labelConfig.pauseCount = pause;
@@ -66,7 +66,7 @@ export function createLabelConfigHandlers(
       if (isMediaType(mt)) labelConfig.mediaType = mt;
     },
     MN(p) {
-      // ^MNa,b — b is an optional black-mark offset for W/M modes,
+      // ^MNa,b: b is an optional black-mark offset for W/M modes,
       // which we don't model. Reading p[0] instead of the raw rest
       // string keeps `^MNY,10` from being mis-read as the single
       // token "Y,10" and silently dropped.
@@ -94,8 +94,8 @@ export function createLabelConfigHandlers(
       const m = firstChar(rest);
       if (m === "Y" || m === "N") labelConfig.mirror = m;
     },
-    // ~SD — instant darkness set (00..30). Tilde-prefix; the tokenizer
-    // drops the delimiter, so this is the canonical SD handler.
+    // ~SD: instant darkness set (00..30). Tilde-prefix, so the tokenizer
+    // drops the delimiter and this is the canonical SD handler.
     SD(_, rest) {
       const v = inRange(parseIntOrUndef(rest), DARKNESS_INSTANT_RANGE);
       if (v !== undefined) labelConfig.instantDarkness = v;

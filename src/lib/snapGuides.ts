@@ -2,14 +2,8 @@ export const SNAP_THRESHOLD_PX = 6;
 /** Extra px the alignment guide extends beyond the dragged + matched objects. */
 const GUIDE_PADDING_PX = 8;
 
-/**
- * Edge-only point snap used for line endpoint resize. Unlike computeSnap,
- * which treats the drag as a sized rect and considers other shapes'
- * centres as snap targets (sensible for whole-object alignment, weird
- * for endpoint alignment — picking the middle of a neighbour line as a
- * snap target produces the "snaps to 50%" artefact users reported).
- * Considers only edges of others + the label rect.
- */
+/** Edge-only point snap for line endpoints; centres-as-targets would trigger
+ *  the "snaps to 50%" artefact. */
 export function computePointSnap(
   point: { x: number; y: number },
   others: SnapRect[],
@@ -36,13 +30,10 @@ export function computePointSnap(
         to: Math.max(dragPerp, perpTo) + GUIDE_PADDING_PX,
       };
       if (d < bestDelta) {
-        // Strictly closer — replace the best candidate.
         bestDelta = d;
         bestValue = target;
         bestGuides = [guide];
       } else if (target === bestValue) {
-        // Same edge value at the same distance — accumulate so each
-        // contributing object draws its own guide line.
         bestGuides.push(guide);
       }
     };
@@ -55,10 +46,7 @@ export function computePointSnap(
       consider(endEdge, perpStart, perpEnd);
     }
     if (labelRect) {
-      // Label edges *and* center are valid endpoint snap targets. Centre
-      // is intentionally only allowed for the label (not for other
-      // objects) — endpoint alignment to a neighbour's midpoint produced
-      // the "50 %" artefact this helper was created to avoid.
+      // Label center allowed (not other objects'); avoids "50%" artefact.
       const startEdge = axis === 'x' ? labelRect.x : labelRect.y;
       const size = axis === 'x' ? labelRect.width : labelRect.height;
       const endEdge = startEdge + size;
@@ -111,16 +99,11 @@ interface AxisInfo {
 }
 
 interface AnchorCandidate {
-  /** Anchor position to align against (start, center, or end of the candidate). */
   value: number;
-  /** Guide line emitted when this anchor wins. */
   guide: SnapGuide;
 }
 
-/**
- * The 3 anchors of `other` (start/center/end) as alignment candidates.
- * Guide spans the perpendicular extent covering both `drag*` and `other`.
- */
+/** Start/center/end anchors; guide spans both drag and other. */
 function objectAnchorCandidates(
   other: AxisInfo,
   dragPerp: number,
@@ -138,7 +121,6 @@ function objectAnchorCandidates(
   }));
 }
 
-/** The 3 anchors of the label rect (start/center/end) as alignment candidates. */
 function labelAnchorCandidates(
   labelAxis: AxisInfo,
   alignOrientation: 'H' | 'V',
@@ -155,12 +137,7 @@ function labelAnchorCandidates(
   }));
 }
 
-/**
- * Keep only the 2 nearest objects per direction from the drag axis. Prevents
- * snapping to distant objects on the other side of the label, and bounds the
- * candidate count for performance. Equal-spacing math (drag-only) needs 2 (not
- * 1) per side because it operates on consecutive pairs.
- */
+/** 2 nearest per direction (equal-spacing needs consecutive pairs). */
 function filterNearby(dragPos: number, dragSize: number, others: AxisInfo[]): AxisInfo[] {
   const dragEnd = dragPos + dragSize;
   const leftOf = others
@@ -177,18 +154,12 @@ function filterNearby(dragPos: number, dragSize: number, others: AxisInfo[]): Ax
   return [...leftOf, ...overlapping, ...rightOf];
 }
 
-/**
- * Computes object-snap for a dragged rect against stationary rects.
- * All values are stage pixels. Returns the snapped position and guide lines.
- */
 export function computeSnap(
   dragged: SnapRect,
   others: SnapRect[],
   threshold = SNAP_THRESHOLD_PX,
-  /** Label bounds in stage pixels — guide lines extend to these boundaries */
   labelBounds?: { x: number; y: number; width: number; height: number },
-  /** Full-size label rect for edge/center snapping — kept separate so it doesn't
-   *  interfere with the nearest-2-per-direction object filtering. */
+  /** Separate from `others` so it bypasses nearest-2 filter. */
   labelRect?: SnapRect,
 ): SnapResult {
   const xDrag: AxisInfo = { pos: dragged.x, size: dragged.width,  perp: dragged.y, perpSize: dragged.height };
@@ -199,7 +170,7 @@ export function computeSnap(
   const xLabelExtent = labelBounds ? { from: labelBounds.y, to: labelBounds.y + labelBounds.height } : undefined;
   const yLabelExtent = labelBounds ? { from: labelBounds.x, to: labelBounds.x + labelBounds.width } : undefined;
 
-  // Label rect anchors — tested separately, outside the nearest-2 filter
+  // Label rect anchors; tested separately, outside the nearest-2 filter
   const xLblAxis = labelRect ? { pos: labelRect.x, size: labelRect.width, perp: labelRect.y, perpSize: labelRect.height } : undefined;
   const yLblAxis = labelRect ? { pos: labelRect.y, size: labelRect.height, perp: labelRect.x, perpSize: labelRect.width } : undefined;
 
@@ -213,12 +184,9 @@ function snapAxis(
   drag: AxisInfo,
   others: AxisInfo[],
   threshold: number,
-  // Guide orientation for alignment snaps — perpendicular to the movement axis.
-  // Equal-spacing guides use the opposite orientation.
+  // Perpendicular to movement; equal-spacing uses the opposite.
   alignOrientation: 'H' | 'V',
-  /** If provided, guide lines extend to these label boundaries instead of object edges ±8px */
   labelExtent?: { from: number; to: number },
-  /** Label rect axis info — tested for alignment only (edges + center), outside nearest-2 filter */
   labelAxis?: AxisInfo,
 ): { snapped: number; guides: SnapGuide[] } {
   const spaceOrientation: 'H' | 'V' = alignOrientation === 'V' ? 'H' : 'V';
@@ -235,7 +203,6 @@ function snapAxis(
       snapped = newPos;
       guides = newGuides;
     } else if (d < threshold && d === bestDelta && newPos === snapped) {
-      // Same snap position — accumulate guides (e.g. object align + label center)
       guides.push(...newGuides);
     }
   }
@@ -321,16 +288,7 @@ export interface ResizeSnapResult {
   guides: SnapGuide[];
 }
 
-/**
- * Derive which edges of `newBox` are moving relative to `oldBox`. Used to
- * decide which edges should participate in resize-time snapping (the static
- * edges have nothing to align).
- *
- * The default tolerance is 2 screen pixels so Konva's per-frame FP scale-
- * driven node-position drift (sub-pixel on a pure single-edge drag, more
- * at low zoom) doesn't flip a static edge to "active" — that previously
- * let the object-snap pull a bottom-edge resize sideways/up.
- */
+/** 2px tolerance guards Konva's FP scale drift from flipping static edges active. */
 export function deriveActiveEdges(
   oldBox: SnapRect,
   newBox: SnapRect,
@@ -345,19 +303,12 @@ export function deriveActiveEdges(
 }
 
 interface EdgeMatch {
-  /** Distance from the drag edge in px; Infinity = no match. */
   delta: number;
-  /** Pixel position to snap the active edge to. */
   pos: number;
-  /** Guides emitted when this match is selected. */
   guides: SnapGuide[];
 }
 
-/**
- * Sentinel "no match yet" value. Returns a fresh object so callers can never
- * accidentally bleed mutations (e.g. pushing into `guides`) into a shared
- * reference.
- */
+/** Fresh object so callers don't bleed `guides` mutations into a shared ref. */
 function noMatch(): EdgeMatch {
   return { delta: Infinity, pos: 0, guides: [] };
 }
@@ -373,15 +324,10 @@ function considerEdge(current: EdgeMatch, candidatePos: number, dragPos: number,
 }
 
 interface ResizeAxisInput {
-  /** Active leading edge (left for X, top for Y). */
   posActive: boolean;
-  /** Active trailing edge (right for X, bottom for Y). */
   endActive: boolean;
-  /** Current dragged value for the leading edge. */
   pos: number;
-  /** Current dragged size. */
   size: number;
-  /** Perpendicular extent of the dragged box, used for guide line spans. */
   perp: number;
   perpSize: number;
 }
@@ -403,7 +349,7 @@ function snapResizeAxis(
   const dragEnd = drag.pos + drag.size;
   const nearby = filterNearby(drag.pos, drag.size, others);
 
-  // Resize alignment ignores the dragged center by design — only edges align.
+  // Resize aligns edges only; dragged center is ignored by design.
   const candidates: AnchorCandidate[] = [];
   for (const o of nearby) {
     candidates.push(...objectAnchorCandidates(o, drag.perp, drag.perpSize, alignOrientation));
@@ -419,9 +365,7 @@ function snapResizeAxis(
     if (drag.endActive) endMatch = considerEdge(endMatch, c.value, dragEnd, c.guide, threshold);
   }
 
-  // Edge matches adjust pos OR size depending on which side is moving.
-  // The applied snap takes whichever edge has the smaller delta — both edges
-  // may have matches, but snapping both simultaneously would fight.
+  // Pick smaller-delta edge; snapping both would fight.
   let pos = drag.pos;
   let size = drag.size;
   const guides: SnapGuide[] = [];
@@ -438,14 +382,7 @@ function snapResizeAxis(
   return { pos, size, guides };
 }
 
-/**
- * Computes resize-time snap for a transformer-driven box against stationary
- * rects. Only the edges in `activeEdges` participate. Returns the adjusted
- * box and any guide lines to render.
- *
- * Distinct from `computeSnap` (drag) because the application is different:
- * drag shifts the bbox; resize moves a single edge, changing the size.
- */
+/** Resize variant of computeSnap; only `activeEdges` participate. */
 export function computeResizeSnap(
   newBox: SnapRect,
   others: SnapRect[],

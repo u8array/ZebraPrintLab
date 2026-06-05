@@ -22,10 +22,7 @@ import {
 } from "../../lib/contentEditableCaret";
 import type { Variable } from "../../types/Variable";
 
-/** Read a caret offset relative to `editor` from the live Selection's
- *  anchor- or focus-node, returning `null` when the selection isn't
- *  inside the editor. Encapsulates the "Node | null narrowing after
- *  editor.contains()" dance that TypeScript can't follow. */
+/** Caret offset within `editor`, or null when selection isn't inside it. */
 function caretOffsetIn(
   editor: HTMLElement,
   sel: Selection | null,
@@ -41,45 +38,18 @@ function caretOffsetIn(
 interface Props {
   value: string;
   onChange: (next: string) => void;
-  /** Optional sanitiser for restricted-charset fields (e.g. numeric-only
-   *  barcodes). Applied to user-originated input only — template
-   *  markers inserted via the `{x}` menu are not sanitised. */
+  /** User input only; marker insertions skip sanitise. */
   sanitise?: (raw: string) => string;
   placeholder?: string;
   maxLength?: number;
-  /** Id of the LabelObject owning this editor. Used to scope the
-   *  store's `editorFocusRequest` so that only the editor for the
-   *  requested object takes focus — without this, every mounted
-   *  TemplateContentInput (text, barcode1d, …) would `.focus()` on
-   *  every focus request, racing the result. Omit when no focus
-   *  routing is needed (e.g. test harnesses). */
+  /** Scopes editorFocusRequest so only the matching editor focuses. */
   objectId?: string;
-  /** Whether the value can contain newlines. Defaults to `true`
-   *  (text/^FB) and screen-reader-announces "multiline edit"; pass
-   *  `false` for restricted-charset single-line fields (e.g.
-   *  barcode payloads where `\n` is sanitised away — a stray Enter
-   *  would otherwise flicker a `<br>` into the DOM until onInput
-   *  strips it). */
+  /** False for single-line restricted-charset fields. */
   multiline?: boolean;
 }
 
-/**
- * Multi-line, syntax-highlighted content editor for bindable fields.
- *
- * Implemented as a single `contenteditable` div so the selection and
- * caret sit ON the coloured marker spans directly — eliminating the
- * subpixel selection-rect misalignment of a separate-textarea +
- * mirror-layer architecture. Markers (`«…»`) are coloured per type
- * (variable = accent, clock = cyan, orphan = red wavy underline).
- *
- * Value flow:
- *  - parent passes `value` (canonical plain string with `«…»` markers)
- *  - useLayoutEffect renders that value into the editor as coloured
- *    spans, restoring the caret by character offset across the
- *    rebuild so user typing feels continuous
- *  - on input the DOM is converted back to plain text and emitted via
- *    `onChange` — letting the parent re-derive the rendered DOM
- */
+/** contenteditable div with coloured marker spans. Parent owns canonical
+ *  plain string; useLayoutEffect rebuilds DOM and restores caret offset. */
 const SHARED_CLS =
   "w-full min-h-[1.75rem] bg-surface-2 border border-border rounded pl-2 pr-7 py-1 text-xs font-mono leading-5 whitespace-pre-wrap break-words focus:border-accent focus:outline-none";
 
@@ -90,26 +60,20 @@ const SEGMENT_CLASS: Record<MarkerSegment["kind"], string> = {
   orphan: "text-error underline decoration-wavy decoration-error/60",
 };
 
-/** Build the editor's HTML representation of `segments`. Markers
- *  wrap in a coloured span; plain-text segments become raw text
- *  nodes; a literal `\n` becomes a bare `<br>` between siblings.
- *  Always appends a trailing placeholder `<br>` so Chrome has a
- *  caret target on the empty last line — `domToPlainText` strips
- *  the trailing placeholder so the roundtrip is symmetric. */
+/** Trailing `<br>` placeholder gives Chrome a caret target on empty last
+ *  line; domToPlainText strips it symmetrically. */
 function segmentsToHTML(segments: MarkerSegment[]): string {
   const parts: string[] = [];
   for (const s of segments) {
     const cls = SEGMENT_CLASS[s.kind];
     if (s.kind === "text") {
-      // Plain text: emit as text nodes joined by <br>, no wrapper.
       const lines = s.text.split("\n");
       lines.forEach((line, i) => {
         if (i > 0) parts.push("<br>");
         if (line !== "") parts.push(escapeHTML(line));
       });
     } else {
-      // Markers never contain `\n` (the grammar `«[^»]+»` excludes
-      // newlines), so a single coloured span is always correct.
+      // Markers exclude `\n` per grammar `«[^»]+»`.
       parts.push(`<span class="${cls}">${escapeHTML(s.text)}</span>`);
     }
   }
@@ -150,22 +114,16 @@ export function TemplateContentInput({
     [value, variableNames],
   );
 
-  // Render `value` into the editor as coloured spans. Runs whenever
-  // the canonical value or token classification changes; skips when
-  // the DOM's plain text already matches (user typed, parent echoed
-  // back) to avoid clobbering the live caret unnecessarily.
+  // Skip rebuild when DOM plain text already matches; avoids clobbering caret.
   useLayoutEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
     const currentText = domToPlainText(editor);
     if (currentText === value) {
-      // DOM may still be out-of-sync on classification (e.g. variable
-      // newly defined elsewhere) — only rebuild when the segment set
-      // produces a different HTML.
+      // Classification may shift (new variable defined elsewhere).
       const desired = segmentsToHTML(segments);
       if (editor.innerHTML === desired) return;
     }
-    // Save caret offset within the editor before rebuild.
     const caretOffset = caretOffsetIn(editor, window.getSelection());
     editor.innerHTML = segmentsToHTML(segments);
     if (caretOffset !== null && document.activeElement === editor) {
@@ -181,16 +139,7 @@ export function TemplateContentInput({
     }
   }, [value, segments]);
 
-  // External focus request — e.g. a canvas double-click on the text
-  // field asks the user to immediately start typing. Focus + select
-  // all so the next keystroke replaces the current value (typical
-  // "rename"-style affordance). Three guards:
-  //  1. `editorFocusRequest === null` (steady state) → ignore.
-  //  2. `editorFocusRequest.id !== objectId` → some OTHER object's
-  //     editor was asked to focus; stay out of its way.
-  //  3. `document.activeElement === editor` → user is already typing
-  //     here. A second click would otherwise stomp the live caret +
-  //     selection (typical fat-finger after the first dblclick).
+  // External focus request (canvas dblclick): focus + selectAll for rename.
   useEffect(() => {
     if (!editorFocusRequest || editorFocusRequest.id !== objectId) return;
     const editor = editorRef.current;
@@ -221,9 +170,6 @@ export function TemplateContentInput({
     };
   }, [open]);
 
-  /** Place the editor caret at the given character `offset`. Used by
-   *  every mutation path (insert / atomic delete / paste / external
-   *  commit) so caret-restore logic stays in one spot. */
   const restoreCaret = (offset: number) => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -237,11 +183,7 @@ export function TemplateContentInput({
     sel?.addRange(range);
   };
 
-  /** Commit a value mutation triggered from a React event handler
-   *  (clicks, menu selection) and schedule the caret restore for the
-   *  next microtask so it runs after React's render. The native-event
-   *  path uses `flushSync` + a direct call instead, because typing
-   *  follow-up keys race the next event loop tick. */
+  /** React-event path; microtask defers caret restore after React render. */
   const commit = (next: string, nextCaret: number) => {
     onChange(next);
     queueMicrotask(() => restoreCaret(nextCaret));
@@ -267,9 +209,8 @@ export function TemplateContentInput({
     commit(next, lo + marker.length);
   };
 
-  // React's synthetic `onBeforeInput` does not fire reliably on
-  // contenteditable in React 19 — attach a native listener instead.
-  // Latest-state ref keeps the closure pure; we never re-bind.
+  // React 19 onBeforeInput is unreliable on contenteditable; native listener
+  // with latest-state ref so closure stays stable.
   const stateRef = useRef({ value, onChange, sanitise, maxLength, multiline });
   useLayoutEffect(() => {
     stateRef.current = { value, onChange, sanitise, maxLength, multiline };
@@ -278,33 +219,22 @@ export function TemplateContentInput({
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor) return;
-    /** `flushSync` + sync caret restore: typing follow-up keys race a
-     *  microtask-deferred restore (user types Enter+letter — the letter
-     *  fires before the rebuilt DOM has its caret in place and ends up
-     *  appended to the previous line). Pay the synchronous-render cost
-     *  to keep ordering correct. */
+    /** Sync render+restore so follow-up keys land on the rebuilt DOM. */
     const commitInline = (next: string, nextCaret: number) => {
       flushSync(() => stateRef.current.onChange(next));
       restoreCaret(nextCaret);
     };
-    /** Selection bounds (lo, hi) clamped to `editor` content; defaults
-     *  to caret at end-of-value for off-editor selections. */
     const selectionRange = (fallbackLen: number) => {
       const sel = window.getSelection();
       const start = caretOffsetIn(editor, sel, "anchor") ?? fallbackLen;
       const end = caretOffsetIn(editor, sel, "focus") ?? start;
       return { lo: Math.min(start, end), hi: Math.max(start, end) };
     };
-    /** Browser-native undo/redo route through zundo (global Ctrl+Z),
-     *  not the contenteditable's internal undo stack — otherwise the
-     *  two diverge. Intercept and drop. */
+    /** Drop browser undo/redo; zundo owns history. */
     const handleHistory = () => {
-      // caller already preventDefault'd via early-return path; nothing
-      // more to do.
+      // caller already preventDefault'd via early-return path.
     };
-    /** Backspace/Delete adjacent to a marker boundary erodes the
-     *  `«…»` mid-token into a non-resolving fragment. Intercept and
-     *  delete the whole marker atomically instead. */
+    /** Delete the whole `«...»` marker atomically rather than eroding mid-token. */
     const handleAtomicDelete = (direction: "backspace" | "delete") => {
       const { value } = stateRef.current;
       const sel = window.getSelection();
@@ -316,21 +246,13 @@ export function TemplateContentInput({
       commitInline(value.slice(0, m.start) + value.slice(m.end), m.start);
       return true;
     };
-    /** Splice `\n` into the value at the caret, then let the render
-     *  effect rebuild the DOM with the right `<br>` placement. Goes
-     *  through the same commitInline pipeline as atomic-delete /
-     *  paste — no `document.execCommand` (deprecated, replaced by
-     *  Range-based mutation through React state). */
     const handleParagraph = () => {
       const { value } = stateRef.current;
       const { lo, hi } = selectionRange(value.length);
       commitInline(value.slice(0, lo) + "\n" + value.slice(hi), lo + 1);
     };
-    /** Force plain-text paste via the standard `paste` event —
-     *  `beforeinput insertFromPaste` exposes `dataTransfer` only in
-     *  Chromium; Firefox/Safari leave it null. `ClipboardEvent` is
-     *  the cross-engine path and the same plain-text-only contract
-     *  applies (sanitise + maxLength + splice into value). */
+    /** ClipboardEvent for cross-engine plain-text paste; FF/Safari lack
+     *  dataTransfer on beforeinput insertFromPaste. */
     const handlePaste = (e: ClipboardEvent) => {
       e.preventDefault();
       const { value, sanitise, maxLength } = stateRef.current;
@@ -354,8 +276,7 @@ export function TemplateContentInput({
           handleHistory();
           return;
         case "insertParagraph":
-          // Single-line editors drop Enter; the `\n` would get
-          // sanitised away and flicker a stray `<br>` in between.
+          // Single-line drops Enter; sanitise would otherwise flicker a stray <br>.
           e.preventDefault();
           if (stateRef.current.multiline) handleParagraph();
           return;
@@ -391,9 +312,7 @@ export function TemplateContentInput({
     onInput();
   };
 
-  /** Double-click a marker → select the whole `«…»` instead of the
-   *  default word-boundary selection (which lands on a fragment like
-   *  `name` from `«name»`). */
+  /** Select the whole `«...»` instead of word-boundary fragment. */
   const onDoubleClick = () => {
     const editor = editorRef.current;
     if (!editor) return;

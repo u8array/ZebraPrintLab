@@ -2,7 +2,7 @@ interface IconProps {
   className?: string;
 }
 
-/** Object centred on a vertical dashed line — represents horizontal centring. */
+/** Object centred on a vertical dashed line; represents horizontal centring. */
 export function CenterHIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true" className={className}>
@@ -12,7 +12,7 @@ export function CenterHIcon({ className }: IconProps) {
   );
 }
 
-/** Object centred on a horizontal dashed line — represents vertical centring. */
+/** Object centred on a horizontal dashed line; represents vertical centring. */
 export function CenterVIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true" className={className}>
@@ -22,7 +22,7 @@ export function CenterVIcon({ className }: IconProps) {
   );
 }
 
-/** Object on the cross-hair of two dashed lines — represents bi-axial centring. */
+/** Object on the cross-hair of two dashed lines; represents bi-axial centring. */
 export function CenterBothIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true" className={className}>

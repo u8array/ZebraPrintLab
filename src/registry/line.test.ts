@@ -75,7 +75,7 @@ describe("pickAngle", () => {
     });
 
     it("clicking vertical in 90° view yields 0 (label-vertical = screen-horizontal at 0° view)", () => {
-      // wait — clicking vertical in a 90° view should yield a line that LOOKS vertical on screen.
+      // wait: clicking vertical in a 90° view should yield a line that LOOKS vertical on screen.
       // Screen-vertical = label-angle = 90 - 90 = 0 (or -90 - 90 = -180).
       // dist(0, 0) = 0 → exact match → flip → -180
       expect(pickAngle(0, [90, -90], 90)).toBe(-180);
@@ -110,7 +110,7 @@ describe("line.toZPL — thickness only affects perpendicular dimension", () => 
       .toBe("^FO50,100^GB200,3,3,B,0^FS");
     expect(line.toZPL(makeLine({ x: 50, y: 100, length: 200, thickness: 20 })))
       .toBe("^FO50,100^GB200,20,20,B,0^FS");
-    // Length param identical; only thickness changed.
+    // Length param identical, only thickness changed.
   });
 
   it("vertical line: width param = thickness, height param = length", () => {

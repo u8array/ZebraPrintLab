@@ -10,7 +10,7 @@ export interface SelectionSlice {
   selectObjects: (ids: string[]) => void;
   /** Delete every non-locked selected object on the current page;
    *  locked items survive and remain selected so the user can see what
-   *  the Delete keystroke spared. Cross-writes pages — owned by
+   *  the Delete keystroke spared. Cross-writes pages; owned by
    *  objectSlice but the trigger lives with the selection it acts on. */
   removeSelectedObjects: () => void;
 }

@@ -55,7 +55,7 @@ describe("tokensToMarkers", () => {
       .toBe("«clock:d»/«clock:m»/«clock:Y»");
   });
   it("treats all three clock chars equivalently for token recognition", () => {
-    // Tokens after the time and tertiary chars also get recognised —
+    // Tokens after the time and tertiary chars also get recognised;
     // matches Zebra firmware behaviour where all three draw from the
     // same RTC pool.
     expect(tokensToMarkers("%d{H#Y", DEFAULT_CLOCK_CHARS))
@@ -90,7 +90,7 @@ describe("pickClockChars", () => {
     expect(r!.date).not.toBe("%");
   });
   it("returns null when every candidate for one slot clashes", () => {
-    // Saturate the date-candidate list — should bail.
+    // Saturate the date-candidate list; should bail.
     expect(pickClockChars(["%$*+="])).toBeNull();
   });
 });

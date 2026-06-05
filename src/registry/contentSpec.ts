@@ -12,7 +12,7 @@ export interface ContentSpec {
   maxLength?: number;
   /** Set of exact lengths the symbology accepts (e.g. [2, 5] for
    *  UPC/EAN supplements). Used for soft validation in the
-   *  PropertiesPanel — typed input is not blocked (the user has to
+   *  PropertiesPanel; typed input is not blocked (the user has to
    *  pass through 1/3/4 chars to reach 5), but lengths outside the
    *  set surface an inline warning so the user notices before the
    *  printer rejects the field. */

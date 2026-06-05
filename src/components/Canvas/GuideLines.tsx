@@ -1,7 +1,7 @@
 import { Group, Line } from 'react-konva';
 import type { SnapGuide } from '../../lib/snapGuides';
 
-// Soft indigo — visible on white labels without being aggressive
+// Soft indigo; visible on white labels without being aggressive
 const COLOR = '#818cf8';
 const TICK = 4; // half-length of tick marks on spacing guides
 

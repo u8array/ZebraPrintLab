@@ -34,7 +34,7 @@ const ZPL_MODE_LABEL_KEYS = {
   '2': 'zplMode2',
 } as const satisfies Record<ZplMode, keyof LocEncodingLanguage>;
 
-/** Tab 4 of the Printer Settings Modal — encoding & language setup.
+/** Tab 4 of the Printer Settings Modal; encoding & language setup.
  *  All three commands belong to the Setup-Script output channel
  *  (EEPROM-persistent printer state), surfaced under the "Setup
  *  Script" rail group. */
@@ -59,7 +59,7 @@ export function EncodingAndLanguageTab() {
       />
 
       {/* ^SE: free-form printer file path (e.g. `E:UHANGUL.DAT`).
-          No primitive — path-like inputs are not used elsewhere
+          No primitive; path-like inputs are not used elsewhere
           in the modal; promote to a primitive only when a second
           caller appears. `SE_PATH_PATTERN` is a soft `:invalid`
           hint (see `sePathPattern.ts` for the shape rationale);

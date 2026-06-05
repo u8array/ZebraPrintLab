@@ -4,7 +4,7 @@
  *  (off by 5-15 dots for narrow `1`/`I`/`.` or wide `@`/`W`).
  *
  *  The 2D context is created once and cached for the lifetime of the
- *  page — `measureText` is fast, `createElement('canvas')` isn't.
+ *  page; `measureText` is fast, `createElement('canvas')` isn't.
  *  Falls back to a length-based estimate in non-DOM environments. */
 
 let ctx: CanvasRenderingContext2D | null | undefined;

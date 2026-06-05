@@ -282,7 +282,7 @@ export function createGraphicsHandlers(
     // ── Recall stored graphic ──────────────────────────────────────────────
     XG(_, rest) {
       commitPendingReverseBg();
-      // ^XGd:f.x,mx,my — references a graphic uploaded earlier via ~DY.
+      // ^XGd:f.x,mx,my, references a graphic uploaded earlier via ~DY.
       // Two valid imports:
       //  - With preceding ~DY in the stream: full image (bytes + storedAs
       //    with embedInZpl=true) so re-emit produces the same upload+recall.
@@ -339,7 +339,7 @@ export function createGraphicsHandlers(
       );
     },
 
-    // ^GS{rotation},{height},{width} — selects the internal-font
+    // ^GS{rotation},{height},{width}: selects the internal-font
     // legal-symbol glyph (^FD picks which: A=®, B=©, C=™, D=UL, E=CSA).
     GS(p) {
       s.field.fieldType = "symbol";
@@ -460,7 +460,7 @@ export function createGraphicsHandlers(
         loadFontBytesSync(bytes, filename);
         s.fonts.downloadedFontPaths.add(fullPath);
       } catch {
-        // Oversized or otherwise unloadable — surface as browser-limit.
+        // Oversized or otherwise unloadable, surface as browser-limit.
         pushBrowserLimit(s.result, `~DY${path}`);
       }
     },

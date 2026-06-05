@@ -22,7 +22,7 @@ const LS_PREFIX = 'zpl-img-';
 /** Hard cap on a single image's source bytes. localStorage quota across all
  *  origins is ~5 MiB; capping per-image at 2 MiB stops one oversized drop
  *  from filling the entire cache. The UI's `accept="image/*"` is a hint
- *  only — this is the authoritative limit. */
+ *  only; this is the authoritative limit. */
 export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
 const cache = new Map<string, CachedImage>();

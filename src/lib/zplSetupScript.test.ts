@@ -82,7 +82,7 @@ describe("generateSetupScript — output shape", () => {
   describe("^ST live mode (useCurrentTimeForClock)", () => {
     beforeEach(() => {
       // Local fields: May 30 2026 18:30:45 in whatever TZ the host
-      // is in — toLocalIsoString reads getFullYear/etc, so the
+      // is in; toLocalIsoString reads getFullYear/etc, so the
       // assertion is TZ-independent.
       vi.useFakeTimers();
       vi.setSystemTime(new Date(2026, 4, 30, 18, 30, 45));
@@ -367,7 +367,7 @@ describe("generateSetupScript — output shape", () => {
 
   it("does not orphan-set clockLanguage when the mode parse drops", () => {
     // Without the mode guard, `^SL1500,1` would set
-    // clockLanguage='1' while clockMode stays undefined — emit
+    // clockLanguage='1' while clockMode stays undefined; emit
     // would then drop the orphan language silently, making it
     // write-only state. Pin the guard.
     expect(parseZPL("^XA^SL1500,1^XZ").printerProfile.clockLanguage).toBeUndefined();
@@ -666,7 +666,7 @@ describe("generateSetupScript — maintenance commands", () => {
 describe("SETUP_SCRIPT_EMITTERS structural invariants", () => {
   it("every foldedInto.target points at a kind:'emit' entry, never another foldedInto", () => {
     // A target chain (foldedInto → foldedInto) would mean no entry
-    // actually produces the wire command — the registry would compile
+    // actually produces the wire command; the registry would compile
     // but the emit channel would silently drop. This test catches a
     // typo where `clockTolerance.target` got changed to `clockLanguage`
     // (also a foldedInto) instead of `clockMode`.

@@ -1,33 +1,9 @@
-/**
- * Pure helpers for the printer's Real-Time Clock value (^ST / parser).
- *
- * Holds the single source of truth for the `^ST` shape so the
- * generator (`zplSetupScript.ts`) and the parser (`zplParser.ts`)
- * cannot drift on round-trip. Two responsibilities:
- *
- *   - `realtimeClockIsoRegex` — schema-level shape check for the
- *     ISO local datetime string stored on `labelConfig`. Hoisted
- *     so `labelConfigSchema` can reject corrupt persisted state at
- *     load time rather than silently dropping it on emit.
- *
- *   - `parseRealtimeClock` / `formatRealtimeClockForZpl` — bidi
- *     conversion between the ISO string (HTML5 `datetime-local`
- *     shape) and Zebra's six positional params (`MM,DD,YYYY,HH,MM,SS`).
- *     Both apply semantic range checks (month 1..12, day 1..31, etc.)
- *     so the generator never emits a bogus `^ST` the printer would
- *     reject, and the parser never round-trips an impossible date.
- */
+// Round-trip source of truth for ^ST: ISO datetime-local <-> Zebra's
+// `MM,DD,YYYY,HH,MM,SS` six positional params with calendar validation.
 
-// Re-export so consumers can grab the regex and parse/format helpers together.
 export { realtimeClockIsoRegex } from '../types/PrinterProfile';
 
-/** Returns the current local time as the ISO datetime-local string
- *  shape (`YYYY-MM-DDTHH:MM:SS`). Used by the ^ST "Now" button to
- *  seed the field with the user's current wall-clock time —
- *  `Date.prototype.toISOString` returns UTC, the form input is
- *  local, so a dedicated formatter is needed. Deterministic given a
- *  `Date`, so tests can pass a fixed instance instead of relying on
- *  `new Date()` at call time. */
+/** Local-time ISO `YYYY-MM-DDTHH:MM:SS`; deterministic on `d` for tests. */
 export function toLocalIsoString(d: Date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -39,26 +15,16 @@ const inRangeStr = (s: string, min: number, max: number): boolean => {
   return Number.isFinite(n) && n >= min && n <= max;
 };
 
-/** Last day of the given (1-indexed) month for the given year. Uses
- *  the `Date(year, monthIndex, 0)` rollover trick: day 0 of month N
- *  is the last day of month N-1, so passing the 1-indexed month
- *  directly gives the last day of *that* month. Correctly handles
- *  leap years (Feb 29 in 2024, Feb 28 in 2026). */
+/** Day 0 of month N = last day of month N-1; leap-year safe. */
 const lastDayOfMonth = (year: number, month1Indexed: number): number =>
   new Date(year, month1Indexed, 0).getDate();
 
-/** Strict calendar-date check on top of the per-field range checks.
- *  Rejects Feb 30, Apr 31, Feb 29 in non-leap years, etc. */
 const isValidCalendarDate = (year: number, month: number, day: number): boolean =>
   day <= lastDayOfMonth(year, month);
 
 const pad2 = (s: string) => s.padStart(2, '0');
 
-/** Parses Zebra's six `^ST` positional params back into the ISO
- *  local datetime shape (`YYYY-MM-DDTHH:MM:SS`). Returns `null` on
- *  any semantic range violation so the parser can drop the command
- *  silently — matching the existing parser contract for invalid
- *  input. */
+/** Null on any range/calendar violation; parser drops silently. */
 export function parseRealtimeClock(params: readonly (string | undefined)[]): string | null {
   if (params.length < 6) return null;
   const mo = (params[0] ?? '').trim();
@@ -77,27 +43,17 @@ export function parseRealtimeClock(params: readonly (string | undefined)[]): str
   return `${yr}-${pad2(mo)}-${pad2(da)}T${pad2(hr)}:${pad2(mi)}:${pad2(se)}`;
 }
 
-/** Splits an ISO local datetime string (`YYYY-MM-DDTHH:MM[:SS]`)
- *  into the six positional params Zebra's `^ST` expects, in the
- *  spec order `MM,DD,YYYY,HH,MM,SS`. Returns `null` when the input
- *  is malformed so the generator can skip the emit instead of
- *  producing a bogus command. Seconds default to `00` when the
- *  input lacks them (HTML5 `datetime-local` omits them by default
- *  unless the UA was hinted with `step="1"`). */
+/** ISO -> `MM,DD,YYYY,HH,MM,SS`; null on malformed/impossible date. */
 export function formatRealtimeClockForZpl(iso: string): string | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(iso);
   if (!m) return null;
-  // The regex enforces presence of the five required groups; the
-  // `?? ''` falls back are dead branches under `noUncheckedIndexedAccess`
-  // but cheaper than scattered non-null assertions.
+  // `?? ''` dead branches for noUncheckedIndexedAccess.
   const year = m[1] ?? '';
   const month = m[2] ?? '';
   const day = m[3] ?? '';
   const hour = m[4] ?? '';
   const minute = m[5] ?? '';
   const second = m[6] ?? '00';
-  // Semantic range check mirrors `parseRealtimeClock` so neither
-  // direction lets impossible dates survive a round-trip.
   if (!inRangeStr(month, 1, 12)) return null;
   if (!inRangeStr(day, 1, 31)) return null;
   if (!inRangeStr(hour, 0, 23)) return null;
