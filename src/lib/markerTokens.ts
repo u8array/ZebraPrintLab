@@ -20,8 +20,9 @@ export function tokeniseMarkers(
     const idx = m.index ?? 0;
     if (idx > last) out.push({ kind: "text", text: content.slice(last, idx) });
     const body = m[1] ?? "";
-    if (body.startsWith("clock:")) {
-      const tok = body.slice("clock:".length);
+    const clockMatch = body.match(/^clock([23]?):([A-Za-z])$/);
+    if (clockMatch) {
+      const tok = clockMatch[2] ?? "";
       out.push({ kind: KNOWN_CLOCK_TOKENS.has(tok) ? "clock" : "orphan", text: m[0] });
     } else {
       out.push({ kind: variableNames.has(body) ? "var" : "orphan", text: m[0] });

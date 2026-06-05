@@ -94,7 +94,7 @@ export function fdFieldFor(
     payload = markersToEmbeds(payload, ctx.variables, ctx.embedChar).payload;
   }
   if (ctx?.clockChars && hasClockMarkers(payload)) {
-    payload = markersToTokens(payload, ctx.clockChars.date);
+    payload = markersToTokens(payload, ctx.clockChars);
   }
   if (payload !== content) return fdField(payload);
   const id = obj.variableId;

@@ -22,7 +22,7 @@ import { parseIntOrUndef } from "../../lib/inputParse";
 import { CollapsibleSection } from "../ui/CollapsibleSection";
 import { AlignButtons } from "./AlignButtons";
 import { VariableBindingControl } from "../Variables/VariableBindingControl";
-import { applyBindingToObject, lookupBoundVariable } from "../../lib/variableBinding";
+import { applyBindingToObject, clockCtxFromLabel, lookupBoundVariable } from "../../lib/variableBinding";
 import { inputCls, labelCls } from "./styles";
 import type { LabelConfig } from "../../types/LabelConfig";
 import {
@@ -287,7 +287,7 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
         {TypePanel && !groupRow && (() => {
           const boundVariable = lookupBoundVariable(obj, variables);
           const patchedObj = boundVariable
-            ? applyBindingToObject(obj, variables)
+            ? applyBindingToObject(obj, variables, null, "preview", clockCtxFromLabel(label))
             : obj;
           const handleChange = boundVariable
             ? (props: object) => {

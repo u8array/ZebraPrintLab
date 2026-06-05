@@ -10,7 +10,7 @@ import { outlineInset } from "../../lib/shapeGeometry";
 import { reverseShapeStyle } from "./reverseShapeStyle";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { useLabelStore } from "../../store/labelStore";
-import { applyBindingToObject, buildActiveCsvRow } from "../../lib/variableBinding";
+import { applyBindingToObject, buildActiveCsvRow, clockCtxFromLabel } from "../../lib/variableBinding";
 import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "../../lib/labelGeometry/textPositionTransforms";
 import { getTextRenderMetrics } from "../../lib/labelGeometry/textRenderMetrics";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
@@ -235,8 +235,11 @@ export function KonvaObject(props_: Props) {
   const csvDataset = useLabelStore((s) => s.csvDataset);
   const csvMapping = useLabelStore((s) => s.csvMapping);
   const csvRenderMode = useLabelStore((s) => s.canvasSettings.csvRenderMode);
+  const label = useLabelStore((s) => s.label);
   const active = buildActiveCsvRow(csvDataset, csvMapping);
-  const obj = applyBindingToObject(props_.obj, variables, active, csvRenderMode);
+  const obj = applyBindingToObject(
+    props_.obj, variables, active, csvRenderMode, clockCtxFromLabel(label),
+  );
   const renderProps = obj === props_.obj ? props_ : { ...props_, obj };
 
   const boundVariable = lookupBoundVariable(obj, variables);

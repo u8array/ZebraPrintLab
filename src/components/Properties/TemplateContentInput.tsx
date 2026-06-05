@@ -8,7 +8,8 @@ import {
 import { flushSync } from "react-dom";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { CLOCK_TOKEN_LABELS } from "../../lib/fcTemplate";
+import { CLOCK_TOKEN_LABELS, type ClockChannel } from "../../lib/fcTemplate";
+import { applyClockOffset, clockOffsetIsEmpty, type ClockOffset } from "../../types/LabelConfig";
 import {
   findAtomicMarker,
   findMarkerContaining,
@@ -100,6 +101,10 @@ export function TemplateContentInput({
   const t = useT();
   const variables = useLabelStore((s) => s.variables);
   const editorFocusRequest = useLabelStore((s) => s.editorFocusRequest);
+  const secondaryOffset = useLabelStore((s) => s.label.secondaryClockOffset);
+  const tertiaryOffset = useLabelStore((s) => s.label.tertiaryClockOffset);
+  const setLabelConfig = useLabelStore((s) => s.setLabelConfig);
+  const [channel, setChannel] = useState<ClockChannel>(1);
   const editorRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const composingRef = useRef(false);
@@ -360,7 +365,9 @@ export function TemplateContentInput({
       </button>
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 z-10 min-w-[10rem] max-h-64 overflow-y-auto rounded border border-border bg-surface shadow-lg"
+          className={`absolute right-0 top-full mt-1 z-10 max-h-[28rem] overflow-y-auto rounded border border-border bg-surface shadow-lg ${
+            channel === 1 ? "min-w-[10rem]" : "min-w-[18rem]"
+          }`}
           role="menu"
         >
           {variables.length > 0 && (
@@ -378,17 +385,169 @@ export function TemplateContentInput({
               <div className="border-t border-border my-1" />
             </>
           )}
+          <ClockChannelTabs
+            active={channel}
+            secondaryConfigured={hasNonZero(secondaryOffset)}
+            tertiaryConfigured={hasNonZero(tertiaryOffset)}
+            onChange={setChannel}
+            t={t}
+          />
           {CLOCK_TOKEN_LABELS.map(({ token, labelKey }) => (
             <button
               key={token}
               type="button"
               className="block w-full text-left px-2 py-1 text-xs font-mono text-text hover:bg-surface-2 transition-colors"
-              onClick={() => insertMarker(`clock:${token}`)}
+              onClick={() => insertMarker(markerBodyFor(channel, token))}
             >
-              <span className="text-info">«clock:{token}»</span>{" "}
+              <span className="text-info">«{markerBodyFor(channel, token)}»</span>{" "}
               <span className="text-muted">{t.app[labelKey]}</span>
             </button>
           ))}
+          {channel !== 1 && (
+            <ClockOffsetEditor
+              channel={channel}
+              value={channel === 2 ? secondaryOffset : tertiaryOffset}
+              onChange={(next) =>
+                setLabelConfig(
+                  channel === 2
+                    ? { secondaryClockOffset: next }
+                    : { tertiaryClockOffset: next },
+                )
+              }
+              t={t}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function markerBodyFor(channel: ClockChannel, token: string): string {
+  return channel === 1 ? `clock:${token}` : `clock${channel}:${token}`;
+}
+
+const hasNonZero = (o: ClockOffset | undefined): boolean => !!o && !clockOffsetIsEmpty(o);
+
+interface TabsProps {
+  active: ClockChannel;
+  secondaryConfigured: boolean;
+  tertiaryConfigured: boolean;
+  onChange: (next: ClockChannel) => void;
+  t: ReturnType<typeof useT>;
+}
+
+function ClockChannelTabs({ active, secondaryConfigured, tertiaryConfigured, onChange, t }: TabsProps) {
+  const tab = (channel: ClockChannel, label: string, configured: boolean) => {
+    const isActive = active === channel;
+    return (
+      <button
+        type="button"
+        className={`flex-1 px-2 py-1 text-[10px] font-mono uppercase tracking-wider border-b-2 transition-colors ${
+          isActive
+            ? "text-text border-accent"
+            : "text-muted border-transparent hover:text-text"
+        }`}
+        onClick={() => onChange(channel)}
+      >
+        {label}
+        {configured && <span className="ml-1 text-accent">●</span>}
+      </button>
+    );
+  };
+  return (
+    <div className="flex border-b border-border bg-surface-2/50">
+      {tab(1, t.app.clockChannelPrimary, false)}
+      {tab(2, t.app.clockChannelSecondary, secondaryConfigured)}
+      {tab(3, t.app.clockChannelTertiary, tertiaryConfigured)}
+    </div>
+  );
+}
+
+interface OffsetEditorProps {
+  channel: 2 | 3;
+  value: ClockOffset | undefined;
+  onChange: (next: ClockOffset | undefined) => void;
+  t: ReturnType<typeof useT>;
+}
+
+const OFFSET_FIELDS = [
+  { key: "years", labelKey: "clockOffsetYears" },
+  { key: "months", labelKey: "clockOffsetMonths" },
+  { key: "days", labelKey: "clockOffsetDays" },
+  { key: "hours", labelKey: "clockOffsetHours" },
+  { key: "minutes", labelKey: "clockOffsetMinutes" },
+  { key: "seconds", labelKey: "clockOffsetSeconds" },
+] as const satisfies readonly { key: keyof ClockOffset; labelKey: string }[];
+
+const QUICK_SETS = [
+  { labelKey: "clockOffsetPlus1Month", offset: { months: 1 } },
+  { labelKey: "clockOffsetPlus3Months", offset: { months: 3 } },
+  { labelKey: "clockOffsetPlus6Months", offset: { months: 6 } },
+  { labelKey: "clockOffsetPlus1Year", offset: { years: 1 } },
+  { labelKey: "clockOffsetPlus2Years", offset: { years: 2 } },
+] as const satisfies readonly { labelKey: string; offset: ClockOffset }[];
+
+function ClockOffsetEditor({ channel, value, onChange, t }: OffsetEditorProps) {
+  const v = value ?? {};
+  const headingKey = channel === 2
+    ? "clockOffsetSecondaryHeading"
+    : "clockOffsetTertiaryHeading";
+  const update = (key: keyof ClockOffset, raw: string) => {
+    const n = raw === "" || raw === "-" ? 0 : parseInt(raw, 10);
+    if (!Number.isFinite(n)) return;
+    const next = { ...v, [key]: n === 0 ? undefined : n };
+    const allZero = Object.values(next).every((x) => x === undefined || x === 0);
+    onChange(allZero ? undefined : next);
+  };
+  const preview = useMemo(() => {
+    if (!hasNonZero(value)) return null;
+    return applyClockOffset(new Date(), value).toISOString().replace("T", " ").slice(0, 19);
+  }, [value]);
+  return (
+    <div className="border-t border-border bg-surface-2/30 px-2 py-2 flex flex-col gap-2">
+      <div className="text-[10px] font-mono uppercase tracking-wider text-muted">
+        {t.app[headingKey]}
+        <span className="ml-1 text-muted/60">^SO{channel}</span>
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {OFFSET_FIELDS.map(({ key, labelKey }) => (
+          <label key={key} className="flex flex-col gap-0.5">
+            <span className="text-[9px] font-mono uppercase tracking-wider text-muted/70">
+              {t.app[labelKey]}
+            </span>
+            <input
+              type="number"
+              className="w-full bg-surface border border-border rounded px-1.5 py-0.5 text-xs font-mono text-text focus:border-accent focus:outline-none"
+              value={v[key] ?? ""}
+              placeholder="0"
+              onChange={(e) => update(key, e.target.value)}
+            />
+          </label>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {QUICK_SETS.map(({ labelKey, offset }) => (
+          <button
+            key={labelKey}
+            type="button"
+            className="px-1.5 py-0.5 text-[10px] font-mono border border-border rounded text-muted hover:text-text hover:border-accent transition-colors"
+            onClick={() => onChange(offset)}
+          >
+            {t.app[labelKey]}
+          </button>
+        ))}
+        <button
+          type="button"
+          className="px-1.5 py-0.5 text-[10px] font-mono border border-border rounded text-muted hover:text-error hover:border-error transition-colors"
+          onClick={() => onChange(undefined)}
+        >
+          {t.app.clockOffsetClear}
+        </button>
+      </div>
+      {preview && (
+        <div className="text-[10px] font-mono text-muted">
+          {t.app.clockOffsetPreview}: <span className="text-text">{preview}</span>
         </div>
       )}
     </div>

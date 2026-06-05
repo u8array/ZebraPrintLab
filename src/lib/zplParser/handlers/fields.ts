@@ -321,6 +321,41 @@ export function createFieldHandlers(
       const c = p[0]?.[0];
       s.format.embedChar = c && c !== "^" && c !== "~" ? c : "#";
     },
+    SO(p) {
+      // ^SOa,b,c,d,e,f,g where a=clock# (2 or 3), then wire order
+      // months,days,years,hours,minutes,seconds. Each slot signed,
+      // empty=0. Writes to labelConfig.{secondary|tertiary}ClockOffset
+      // so the resolver can compute per-channel Dates.
+      const clockNum = (p[0] ?? "").trim();
+      if (clockNum !== "2" && clockNum !== "3") return;
+      const slot = (idx: number) => {
+        const raw = (p[idx] ?? "").trim();
+        if (raw === "") return 0;
+        const n = parseInt(raw, 10);
+        return Number.isFinite(n) ? n : 0;
+      };
+      // Skip zero slots so the stored offset matches the schema's
+      // non-empty invariant and stays uncluttered for the UI.
+      const offset: Record<string, number> = {};
+      const setIf = (key: string, idx: number) => {
+        const n = slot(idx);
+        if (n !== 0) offset[key] = n;
+      };
+      setIf("months", 1);
+      setIf("days", 2);
+      setIf("years", 3);
+      setIf("hours", 4);
+      setIf("minutes", 5);
+      setIf("seconds", 6);
+      if (Object.keys(offset).length === 0) {
+        if (clockNum === "2") delete labelConfig.secondaryClockOffset;
+        else delete labelConfig.tertiaryClockOffset;
+      } else if (clockNum === "2") {
+        labelConfig.secondaryClockOffset = offset;
+      } else {
+        labelConfig.tertiaryClockOffset = offset;
+      }
+    },
 
     // ^CC<char> / ~CC<char>: change the command prefix char (default ^).
     // The tokenizer reads s.format.caretChar live, so the next command in

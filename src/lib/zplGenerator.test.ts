@@ -912,6 +912,44 @@ describe('generateZPL — parse/generate roundtrip', () => {
     expect(regenerated).toMatch(/\^FC\$/);
   });
 
+  it('round-trips ^SO2 offsets via labelConfig.secondaryClockOffset', () => {
+    const src = '^XA^SO2,1,0,0,0,0,0^FO10,10^A0N,30,30^FD{Y-{m^FS^XZ';
+    const r = parseZPL(src, 8);
+    expect(r.labelConfig.secondaryClockOffset).toEqual({ months: 1 });
+    const regenerated = generateZPL({ ...BASE_LABEL, ...r.labelConfig }, r.objects);
+    expect(regenerated).toMatch(/\^SO2,1,0,0,0,0,0/);
+    expect(regenerated).toMatch(/\{Y-\{m/);
+  });
+
+  it('round-trips ^SO3 offsets independently of ^SO2', () => {
+    const src = '^XA^SO3,0,0,1,0,0,0^FO10,10^A0N,30,30^FD#Y^FS^XZ';
+    const r = parseZPL(src, 8);
+    expect(r.labelConfig.tertiaryClockOffset).toEqual({ years: 1 });
+    expect(r.labelConfig.secondaryClockOffset).toBeUndefined();
+    const regenerated = generateZPL({ ...BASE_LABEL, ...r.labelConfig }, r.objects);
+    expect(regenerated).toMatch(/\^SO3,0,0,1,0,0,0/);
+    expect(regenerated).not.toMatch(/\^SO2/);
+  });
+
+  it('drops the ^SO command for an all-zero offset on emit', () => {
+    const regenerated = generateZPL(
+      { ...BASE_LABEL, secondaryClockOffset: { months: 0, days: 0, years: 0 } },
+      [],
+    );
+    expect(regenerated).not.toMatch(/\^SO/);
+  });
+
+  it('parses ^SO2 with all-zero values as a no-op (no offset stored)', () => {
+    const r = parseZPL('^XA^SO2,0,0,0,0,0,0^FO10,10^A0N,30,30^FD{Y^FS^XZ', 8);
+    expect(r.labelConfig.secondaryClockOffset).toBeUndefined();
+  });
+
+  it('rejects ^SO with clock# not in {2,3}', () => {
+    const r = parseZPL('^XA^SO1,1,0,0,0,0,0^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
+    expect(r.labelConfig.secondaryClockOffset).toBeUndefined();
+    expect(r.labelConfig.tertiaryClockOffset).toBeUndefined();
+  });
+
   it('emits ^FE<alt> when payload contains a literal #', () => {
     // Pre-build state via the parser so variable ids are real.
     const r = parseZPL('^XA^FN1^FDfoo^FS^XZ', 8);

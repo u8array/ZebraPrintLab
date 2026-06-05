@@ -12,7 +12,7 @@ import {
   isDefaultClockChars,
 } from './fcTemplate';
 import { getObjectStringContent } from './variableBinding';
-import type { CustomFontMapping, LabelConfig } from '../types/LabelConfig';
+import type { ClockOffset, CustomFontMapping, LabelConfig } from '../types/LabelConfig';
 import type { ZplEmitContext } from '../types/ZplEmit';
 import type { Variable } from '../types/Variable';
 import { isGroup, type LabelObject, type Page } from '../types/Group';
@@ -108,6 +108,14 @@ function planTemplateHeader(
   if (clockPayloads.length > 0) {
     const picked = pickClockChars(clockPayloads);
     if (picked) {
+      // ^SO precedes ^FC so the offsets are armed when the firmware
+      // activates the secondary/tertiary clock chars. ^SO is session-
+      // scoped; emitting on every label that uses these channels
+      // overwrites any stale state from a prior label.
+      const so2 = formatSetOffset(2, label.secondaryClockOffset);
+      const so3 = formatSetOffset(3, label.tertiaryClockOffset);
+      if (so2) headerLines.push(so2);
+      if (so3) headerLines.push(so3);
       if (!isDefaultClockChars(picked)) {
         headerLines.push(`^FC${picked.date},${picked.time},${picked.tertiary}`);
       }
@@ -116,6 +124,27 @@ function planTemplateHeader(
   }
 
   return { headerLines, emitCtx };
+}
+
+/** ^SOa,b,c,d,e,f,g where a=clock# (2 or 3), then wire order
+ *  months,days,years,hours,minutes,seconds. Returns null when the
+ *  offset is absent or all-zero (in which case the channel falls
+ *  back to the primary RTC and the command is redundant). */
+function formatSetOffset(
+  clock: 2 | 3,
+  offset: ClockOffset | undefined,
+): string | null {
+  if (!offset) return null;
+  const slots = [
+    offset.months ?? 0,
+    offset.days ?? 0,
+    offset.years ?? 0,
+    offset.hours ?? 0,
+    offset.minutes ?? 0,
+    offset.seconds ?? 0,
+  ];
+  if (slots.every((v) => v === 0)) return null;
+  return `^SO${clock},${slots.join(',')}`;
 }
 
 /** ~DY for a graphic upload. Format letter is preserved so :Z64: stays paired with C. */

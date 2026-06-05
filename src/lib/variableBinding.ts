@@ -1,7 +1,8 @@
 import type { LabelObject } from "../types/Group";
 import type { CsvMapping, Variable } from "../types/Variable";
 import { hasTemplateMarkers, resolveTemplateMarkers } from "./fnTemplate";
-import { hasClockMarkers, resolveClockMarkers } from "./fcTemplate";
+import { channelDatesFrom, hasClockMarkers, resolveClockMarkers, type ChannelDates } from "./fcTemplate";
+import type { ClockOffset, LabelConfig } from "../types/LabelConfig";
 
 /** Read `props.content` if present and string-typed; one place for the
  *  unsafe cast that consumers walking heterogeneous trees share. */
@@ -70,17 +71,25 @@ export function applyBindingToTree<T extends LabelObject>(
   variables: readonly Variable[],
   active: ActiveCsvRow | null,
   mode: RenderMode = "preview",
-  /** Shared clock reference so every leaf sees the same instant. */
-  now?: Date,
+  /** Shared clock context so every leaf sees the same instant and the
+   *  same label-level ^SO offsets. */
+  clock?: ClockResolveCtx,
 ): T[] {
-  const sharedNow = now ?? new Date();
+  // Lift once per tree so all leaves share one instant + offsets.
+  const now = clock?.now ?? new Date();
+  const dates = clock?.dates ?? channelDatesFrom(
+    now,
+    clock?.secondaryOffset,
+    clock?.tertiaryOffset,
+  );
+  const shared: ClockResolveCtx = { dates };
   return objects.map((o) => {
     const asGroup = o as unknown as { type?: string; children?: readonly T[] };
     if (asGroup.type === "group" && Array.isArray(asGroup.children)) {
-      const nextChildren = applyBindingToTree(asGroup.children, variables, active, mode, sharedNow);
+      const nextChildren = applyBindingToTree(asGroup.children, variables, active, mode, shared);
       return { ...o, children: nextChildren } as T;
     }
-    return applyBindingToObject(o, variables, active, mode, sharedNow);
+    return applyBindingToObject(o, variables, active, mode, shared);
   });
 }
 
@@ -105,6 +114,26 @@ export function buildActiveCsvRow(
   return { headers: csvDataset.headers, row, mapping: csvMapping };
 }
 
+/** Per-call clock context. `dates` is preferred (pre-applies the
+ *  label's ^SO2/^SO3 offsets); `now` is a back-compat shortcut for
+ *  callers without label-level offset access. */
+export interface ClockResolveCtx {
+  dates?: ChannelDates;
+  now?: Date;
+  secondaryOffset?: ClockOffset;
+  tertiaryOffset?: ClockOffset;
+}
+
+/** Builds a ClockResolveCtx from the label's ^SO offsets. */
+export function clockCtxFromLabel(
+  label: Pick<LabelConfig, "secondaryClockOffset" | "tertiaryClockOffset">,
+): ClockResolveCtx {
+  return {
+    secondaryOffset: label.secondaryClockOffset,
+    tertiaryOffset: label.tertiaryClockOffset,
+  };
+}
+
 /** Identity-preserving: returns same ref when unbound or unchanged. */
 export function applyBindingToObject<T extends LabelObject>(
   obj: T,
@@ -112,7 +141,7 @@ export function applyBindingToObject<T extends LabelObject>(
   active: ActiveCsvRow | null = null,
   mode: RenderMode = "preview",
   /** Lazy-initialised inside the clock branch. */
-  now?: Date,
+  clock?: ClockResolveCtx,
 ): T {
   const content = getObjectStringContent(obj);
   if (content === undefined) return obj;
@@ -133,7 +162,13 @@ export function applyBindingToObject<T extends LabelObject>(
     });
   }
   if (mode === "preview" && hasClockMarkers(next)) {
-    next = resolveClockMarkers(next, now ?? new Date());
+    const ctx = clock ?? {};
+    const dates = ctx.dates ?? channelDatesFrom(
+      ctx.now ?? new Date(),
+      ctx.secondaryOffset,
+      ctx.tertiaryOffset,
+    );
+    next = resolveClockMarkers(next, dates);
   }
   if (next === content) return obj;
   const props = (obj as { props: object }).props;

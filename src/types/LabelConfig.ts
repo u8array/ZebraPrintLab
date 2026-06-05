@@ -64,6 +64,51 @@ export const muResamplingSchema = z.object({
 });
 export type MuResampling = z.infer<typeof muResamplingSchema>;
 
+/** ^SO offset slots; mirrors the b,c,d,e,f,g wire-format order. All
+ *  fields signed; omitted = 0. Schema-natural order in our type is
+ *  years/months/days/hours/minutes/seconds; the parser/generator
+ *  swaps to wire order (months,days,years,...) at the boundary.
+ *  Caps stay inside Int32 so firmware parsers don't reject the wire. */
+const INT32_MAX = 2_147_483_647;
+export const clockOffsetSchema = z.object({
+  years: z.number().int().min(-100).max(100).optional(),
+  months: z.number().int().min(-1200).max(1200).optional(),
+  days: z.number().int().min(-36500).max(36500).optional(),
+  hours: z.number().int().min(-876000).max(876000).optional(),
+  minutes: z.number().int().min(-52560000).max(52560000).optional(),
+  seconds: z.number().int().min(-INT32_MAX).max(INT32_MAX).optional(),
+}).refine(
+  (o) => !clockOffsetIsEmpty(o),
+  { message: "at least one slot must be non-zero" },
+);
+export type ClockOffset = z.infer<typeof clockOffsetSchema>;
+
+/** True when every slot is undefined or 0. */
+export function clockOffsetIsEmpty(o: Record<string, number | undefined>): boolean {
+  return !Object.values(o).some((x) => x !== undefined && x !== 0);
+}
+
+/** Empty / all-zero offsets become undefined so the refine doesn't
+ *  reject the whole label. */
+function coerceEmptyOffset(v: unknown): unknown {
+  if (v === null || typeof v !== "object") return v;
+  return clockOffsetIsEmpty(v as Record<string, number | undefined>) ? undefined : v;
+}
+
+/** New Date with offset applied via native setters (handles month /
+ *  year / DST rollover). Undefined offset returns d verbatim. */
+export function applyClockOffset(d: Date, offset: ClockOffset | undefined): Date {
+  if (!offset) return d;
+  const next = new Date(d);
+  if (offset.years) next.setFullYear(next.getFullYear() + offset.years);
+  if (offset.months) next.setMonth(next.getMonth() + offset.months);
+  if (offset.days) next.setDate(next.getDate() + offset.days);
+  if (offset.hours) next.setHours(next.getHours() + offset.hours);
+  if (offset.minutes) next.setMinutes(next.getMinutes() + offset.minutes);
+  if (offset.seconds) next.setSeconds(next.getSeconds() + offset.seconds);
+  return next;
+}
+
 export const labelConfigSchema = z.object({
   widthMm: z.number(),
   heightMm: z.number(),
@@ -113,6 +158,10 @@ export const labelConfigSchema = z.object({
   suppressBackfeed: z.boolean().optional(),
   /** ^MU b,c; set only when both slots arrived valid. */
   muResampling: muResamplingSchema.optional(),
+  /** ^SO2: secondary clock offset (`«clock2:T»` markers resolve through this). */
+  secondaryClockOffset: z.preprocess(coerceEmptyOffset, clockOffsetSchema.optional()),
+  /** ^SO3: tertiary clock offset (`«clock3:T»` markers resolve through this). */
+  tertiaryClockOffset: z.preprocess(coerceEmptyOffset, clockOffsetSchema.optional()),
 });
 
 export type LabelConfig = z.infer<typeof labelConfigSchema>;
