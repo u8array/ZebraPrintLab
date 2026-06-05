@@ -308,7 +308,7 @@ const ar = {
     clockOffsetPlus1Year: '+1س',
     clockOffsetPlus2Years: '+2س',
     clockOffsetClear: 'مسح',
-    clockOffsetPreview: 'معاინה',
+    clockOffsetPreview: 'معاينة',
     exportZpl: 'تصدير ZPL',
     importCsvData: 'استيراد بيانات CSV',
     exportBatchZplFmt: 'تصدير ZPL دفعي ({n} ملصقات)',

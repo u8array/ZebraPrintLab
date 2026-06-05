@@ -493,8 +493,31 @@ function ClockOffsetEditor({ channel, value, onChange, t }: OffsetEditorProps) {
   const headingKey = channel === 2
     ? "clockOffsetSecondaryHeading"
     : "clockOffsetTertiaryHeading";
+  // Local draft buffer so intermediate states like "-" or "" don't
+  // collapse to undefined and clear the input mid-typing.
+  const externalText = (key: keyof ClockOffset) => v[key]?.toString() ?? "";
+  const [draft, setDraft] = useState<Partial<Record<keyof ClockOffset, string>>>({});
+  const [lastExternal, setLastExternal] = useState<Partial<Record<keyof ClockOffset, string>>>({});
+  const currentExternal: Partial<Record<keyof ClockOffset, string>> = {
+    years: externalText("years"), months: externalText("months"), days: externalText("days"),
+    hours: externalText("hours"), minutes: externalText("minutes"), seconds: externalText("seconds"),
+  };
+  if (
+    OFFSET_FIELDS.some(({ key }) => lastExternal[key] !== currentExternal[key])
+  ) {
+    setLastExternal(currentExternal);
+    setDraft(currentExternal);
+  }
   const update = (key: keyof ClockOffset, raw: string) => {
-    const n = raw === "" || raw === "-" ? 0 : parseInt(raw, 10);
+    setDraft((d) => ({ ...d, [key]: raw }));
+    // Empty or sign-only stays in the draft; don't commit yet.
+    if (raw === "" || raw === "-") {
+      const next = { ...v, [key]: undefined };
+      const allZero = Object.values(next).every((x) => x === undefined || x === 0);
+      onChange(allZero ? undefined : next);
+      return;
+    }
+    const n = parseInt(raw, 10);
     if (!Number.isFinite(n)) return;
     const next = { ...v, [key]: n === 0 ? undefined : n };
     const allZero = Object.values(next).every((x) => x === undefined || x === 0);
@@ -519,7 +542,7 @@ function ClockOffsetEditor({ channel, value, onChange, t }: OffsetEditorProps) {
             <input
               type="number"
               className="w-full bg-surface border border-border rounded px-1.5 py-0.5 text-xs font-mono text-text focus:border-accent focus:outline-none"
-              value={v[key] ?? ""}
+              value={draft[key] ?? ""}
               placeholder="0"
               onChange={(e) => update(key, e.target.value)}
             />
