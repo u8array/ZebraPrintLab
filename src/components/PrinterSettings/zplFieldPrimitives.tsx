@@ -35,13 +35,15 @@ export function ZplCheckbox({
   command,
   checked,
   onChange,
+  hint,
 }: {
   text: string;
   command: string;
   checked: boolean;
   onChange: (next: boolean) => void;
+  hint?: ReactNode;
 }) {
-  return (
+  const row = (
     <div className="flex items-center justify-between gap-2">
       <label className="flex items-center gap-2 cursor-pointer">
         <input
@@ -54,6 +56,13 @@ export function ZplCheckbox({
       </label>
       <span className={commandTagCls}>{command}</span>
     </div>
+  );
+  if (hint === undefined) return row;
+  return (
+    <ZplField>
+      {row}
+      <ZplFieldHint>{hint}</ZplFieldHint>
+    </ZplField>
   );
 }
 
@@ -253,6 +262,7 @@ export function ZplEnumSelect<T extends string>({
   onChange,
   defaultLabel,
   optionLabel,
+  hint,
 }: {
   label: string;
   command: string;
@@ -262,6 +272,7 @@ export function ZplEnumSelect<T extends string>({
   onChange: (next: T | undefined) => void;
   defaultLabel: string;
   optionLabel: (v: T) => string;
+  hint?: ReactNode;
 }) {
   const id = useId();
   return (
@@ -283,6 +294,7 @@ export function ZplEnumSelect<T extends string>({
           </option>
         ))}
       </select>
+      {hint !== undefined && <ZplFieldHint>{hint}</ZplFieldHint>}
     </ZplField>
   );
 }

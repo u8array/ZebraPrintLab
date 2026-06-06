@@ -93,42 +93,34 @@ export function EncodingAndLanguageTab() {
 
       {/* ^PA Advanced Text Properties: 4 independent slots, composite
           emit fires only when ≥1 is set (see zplSetupScript.ts). */}
-      <ZplField>
-        <ZplCheckbox
-          text={loc.paSlotA}
-          command="^PA"
-          checked={profile.paSlotA === true}
-          onChange={(v) => patchPrinterProfile({ paSlotA: v || undefined })}
-        />
-        <ZplFieldHint>{loc.paSlotAHint}</ZplFieldHint>
-      </ZplField>
-      <ZplField>
-        <ZplCheckbox
-          text={loc.paSlotB}
-          command="^PA"
-          checked={profile.paSlotB === true}
-          onChange={(v) => patchPrinterProfile({ paSlotB: v || undefined })}
-        />
-        <ZplFieldHint>{loc.paSlotBHint}</ZplFieldHint>
-      </ZplField>
-      <ZplField>
-        <ZplCheckbox
-          text={loc.paSlotC}
-          command="^PA"
-          checked={profile.paSlotC === true}
-          onChange={(v) => patchPrinterProfile({ paSlotC: v || undefined })}
-        />
-        <ZplFieldHint>{loc.paSlotCHint}</ZplFieldHint>
-      </ZplField>
-      <ZplField>
-        <ZplCheckbox
-          text={loc.paSlotD}
-          command="^PA"
-          checked={profile.paSlotD === true}
-          onChange={(v) => patchPrinterProfile({ paSlotD: v || undefined })}
-        />
-        <ZplFieldHint>{loc.paSlotDHint}</ZplFieldHint>
-      </ZplField>
+      <ZplCheckbox
+        text={loc.paSlotA}
+        command="^PA"
+        checked={profile.paSlotA === true}
+        onChange={(v) => patchPrinterProfile({ paSlotA: v || undefined })}
+        hint={loc.paSlotAHint}
+      />
+      <ZplCheckbox
+        text={loc.paSlotB}
+        command="^PA"
+        checked={profile.paSlotB === true}
+        onChange={(v) => patchPrinterProfile({ paSlotB: v || undefined })}
+        hint={loc.paSlotBHint}
+      />
+      <ZplCheckbox
+        text={loc.paSlotC}
+        command="^PA"
+        checked={profile.paSlotC === true}
+        onChange={(v) => patchPrinterProfile({ paSlotC: v || undefined })}
+        hint={loc.paSlotCHint}
+      />
+      <ZplCheckbox
+        text={loc.paSlotD}
+        command="^PA"
+        checked={profile.paSlotD === true}
+        onChange={(v) => patchPrinterProfile({ paSlotD: v || undefined })}
+        hint={loc.paSlotDHint}
+      />
 
       <FontLinksField />
     </div>
