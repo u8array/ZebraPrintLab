@@ -422,6 +422,10 @@ describe("generateSetupScript — output shape", () => {
       "headColdWarning",
       "configurationUpdate",
       "codeValidation",
+      "paSlotA",
+      "paSlotB",
+      "paSlotC",
+      "paSlotD",
     ]);
   });
 
@@ -504,6 +508,38 @@ describe("generateSetupScript — maintenance commands", () => {
 
   it("drops ^CV with an invalid value", () => {
     expect(parseZPL("^XA^CVX^XZ").printerProfile.codeValidation).toBeUndefined();
+  });
+
+  it("emits ^PA composite when any slot is set", () => {
+    expect(generateSetupScript({ ...base, paSlotA: true })).toBe("^XA\n^PA1,0,0,0\n^XZ");
+    expect(generateSetupScript({ ...base, paSlotB: true, paSlotD: true })).toBe("^XA\n^PA0,1,0,1\n^XZ");
+    expect(generateSetupScript({ ...base, paSlotA: true, paSlotB: true, paSlotC: true, paSlotD: true }))
+      .toBe("^XA\n^PA1,1,1,1\n^XZ");
+  });
+
+  it("omits ^PA when no slot is set (default behaviour byte-identical)", () => {
+    expect(generateSetupScript(base)).not.toContain("^PA");
+  });
+
+  it("parses ^PA back into the profile (true-only storage)", () => {
+    const r = parseZPL("^XA^PA1,1,0,1^XZ").printerProfile;
+    expect(r.paSlotA).toBe(true);
+    expect(r.paSlotB).toBe(true);
+    expect(r.paSlotC).toBeUndefined();
+    expect(r.paSlotD).toBe(true);
+  });
+
+  it("round-trips ^PA1,1,1,1", () => {
+    const r = parseZPL("^XA^PA1,1,1,1^XZ").printerProfile;
+    expect(generateSetupScript(r)).toContain("^PA1,1,1,1");
+  });
+
+  it("treats omitted ^PA slots as 0 (printer default)", () => {
+    const r = parseZPL("^XA^PA1^XZ").printerProfile;
+    expect(r.paSlotA).toBe(true);
+    expect(r.paSlotB).toBeUndefined();
+    expect(r.paSlotC).toBeUndefined();
+    expect(r.paSlotD).toBeUndefined();
   });
 
   it("emits ^JH with f-slot filled and other slots empty", () => {

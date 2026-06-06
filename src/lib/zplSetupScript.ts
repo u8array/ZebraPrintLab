@@ -196,6 +196,25 @@ const SETUP_SCRIPT_EMITTERS = {
     scope: 'session',
     emit: (p) => p.codeValidation !== undefined ? `^CV${p.codeValidation}` : null,
   },
+  // ^PA advanced text properties (4 slots a-d, each 0/1). paSlotA owns
+  // the composite emit; b/c/d fold in. Emitted only when at least one
+  // slot is set so default labels stay byte-identical. Slot semantics
+  // are not surfaced in UI; round-trip pass-through only.
+  paSlotA: {
+    kind: 'emit',
+    channel: 'block',
+    scope: 'session',
+    emit: (p) => {
+      if (p.paSlotA === undefined && p.paSlotB === undefined && p.paSlotC === undefined && p.paSlotD === undefined) {
+        return null;
+      }
+      const b = (v: boolean | undefined) => v ? '1' : '0';
+      return `^PA${b(p.paSlotA)},${b(p.paSlotB)},${b(p.paSlotC)},${b(p.paSlotD)}`;
+    },
+  },
+  paSlotB: { kind: 'foldedInto', target: 'paSlotA' },
+  paSlotC: { kind: 'foldedInto', target: 'paSlotA' },
+  paSlotD: { kind: 'foldedInto', target: 'paSlotA' },
 } as const satisfies Partial<Record<keyof PrinterProfile, SetupScriptEntry>>;
 
 /** Public list of the PrinterProfile fields that flow through the

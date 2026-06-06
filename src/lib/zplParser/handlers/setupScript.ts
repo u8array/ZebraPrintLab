@@ -136,6 +136,19 @@ export function createSetupScriptHandlers(s: ParserState): Record<string, Handle
       const v = rest.trim().toUpperCase();
       if (v === "Y" || v === "N") printerProfile.codeValidation = v;
     },
+    PA(p) {
+      // ^PAa,b,c,d each 0/1; missing slot = 0 (printer default).
+      const flag = (raw: string | undefined) => {
+        const t = (raw ?? "").trim();
+        return t === "1";
+      };
+      // Only store true; false (=0) is the printer default and stays
+      // absent in the profile so emit-on-non-default holds.
+      if (flag(p[0])) printerProfile.paSlotA = true;
+      if (flag(p[1])) printerProfile.paSlotB = true;
+      if (flag(p[2])) printerProfile.paSlotC = true;
+      if (flag(p[3])) printerProfile.paSlotD = true;
+    },
     // ^JH: only f/g modelled; other slots are runtime reset flags.
     // g is a 0..16 index into HEAD_CLEANING_INTERVAL_METERS per spec.
     JH(p) {
