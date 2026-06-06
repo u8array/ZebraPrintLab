@@ -105,8 +105,9 @@ export function IdentityTab() {
             }
           }}
           onBlur={() => {
-            // Snap incomplete drafts back so input and exported ZPL stay in sync.
-            if (passwordDraft !== "" && !PRINTER_PASSWORD_REGEX.test(passwordDraft)) {
+            // Snap drafts back when they diverge from the store (incomplete
+            // typing, or patch silently rejected by the lock-when-preview guard).
+            if (passwordDraft !== lastStoredPassword) {
               setPasswordDraft(lastStoredPassword);
             }
           }}

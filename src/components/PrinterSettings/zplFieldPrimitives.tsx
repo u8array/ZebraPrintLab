@@ -57,7 +57,7 @@ export function ZplCheckbox({
       <span className={commandTagCls}>{command}</span>
     </div>
   );
-  if (hint === undefined) return row;
+  if (!hint) return row;
   return (
     <ZplField>
       {row}
