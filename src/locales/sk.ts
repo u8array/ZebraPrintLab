@@ -127,6 +127,7 @@ const sk = {
       printQuality: 'Kvalita tlače',
       clockTime: 'Dátum a čas',
       encodingLanguage: 'Kódovanie a jazyk',
+      fonts: 'Písma',
       identity: 'Identita',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const sk = {
       fontLinksEmpty: 'Žiadne odkazy písem.',
       fontLinksRemove: 'Odstrániť odkaz',
       fontLinksOverLimitFmt: 'Viac ako 5 odkazov pre: {bases}. Tlačiareň ticho ignoruje pretečenie.',
+    },
+    fonts: {
+      uploadHeading: 'Písma v tlačiarni',
+      uploadHint: 'Vyberte, ktoré nahrané písma odošle inštalačný skript do tlačiarne.',
+      noFonts: 'Zatiaľ neboli nahrané žiadne písma. Nahrajte ich v pravom bočnom paneli.',
+      uploadToggle: 'Odoslať pri nastavení',
+      missingBytes: 'Písmo chýba. Nahrajte ho alebo odstráňte záznam.',
+      removeOrphan: 'Odstrániť zastaraný záznam',
     },
     identity: {
       printerName: 'Názov tlačiarne',

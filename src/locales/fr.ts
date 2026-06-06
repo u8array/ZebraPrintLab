@@ -127,6 +127,7 @@ const fr = {
       printQuality: 'Qualité d’impression',
       clockTime: 'Date et heure',
       encodingLanguage: 'Encodage et langue',
+      fonts: 'Polices',
       identity: 'Identité',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const fr = {
       fontLinksEmpty: 'Aucun lien de police.',
       fontLinksRemove: 'Supprimer le lien',
       fontLinksOverLimitFmt: "Plus de 5 liens pour : {bases}. L'imprimante ignore silencieusement le dépassement.",
+    },
+    fonts: {
+      uploadHeading: "Polices sur l'imprimante",
+      uploadHint: "Choisissez quelles polices téléversées le script d'installation envoie à l'imprimante.",
+      noFonts: "Aucune police téléversée pour l'instant. Téléversez-en une dans la barre latérale droite.",
+      uploadToggle: "Envoyer à l'installation",
+      missingBytes: "Police manquante. Téléversez-la ou supprimez l'entrée.",
+      removeOrphan: "Supprimer l'entrée obsolète",
     },
     identity: {
       printerName: 'Nom de l\'imprimante',

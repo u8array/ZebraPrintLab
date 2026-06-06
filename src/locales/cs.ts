@@ -127,6 +127,7 @@ const cs = {
       printQuality: 'Kvalita tisku',
       clockTime: 'Datum a čas',
       encodingLanguage: 'Kódování a jazyk',
+      fonts: 'Písma',
       identity: 'Identita',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const cs = {
       fontLinksEmpty: 'Žádné odkazy písem.',
       fontLinksRemove: 'Odebrat odkaz',
       fontLinksOverLimitFmt: 'Více než 5 odkazů pro: {bases}. Tiskárna tiše ignoruje přebytek.',
+    },
+    fonts: {
+      uploadHeading: 'Písma v tiskárně',
+      uploadHint: 'Vyberte, která nahraná písma odešle instalační skript do tiskárny.',
+      noFonts: 'Zatím nejsou nahraná žádná písma. Nahrajte je v pravém postranním panelu.',
+      uploadToggle: 'Odeslat při nastavení',
+      missingBytes: 'Písmo chybí. Nahrajte je nebo odeberte záznam.',
+      removeOrphan: 'Odebrat zastaralý záznam',
     },
     identity: {
       printerName: 'Název tiskárny',

@@ -10,6 +10,7 @@ import { DialogShell } from "../ui/DialogShell";
 import { ZplLine } from "../Output/ZplLine";
 import { ClockAndTimeTab } from "./ClockAndTimeTab";
 import { EncodingAndLanguageTab } from "./EncodingAndLanguageTab";
+import { FontsTab } from "./FontsTab";
 import { IdentityTab } from "./IdentityTab";
 import { MaintenanceTab } from "./MaintenanceTab";
 import { MediaFeedTab } from "./MediaFeedTab";
@@ -24,6 +25,7 @@ const TOP_TAB_OF = {
   printQuality: 'perLabel',
   clockTime: 'setupScript',
   encodingLanguage: 'setupScript',
+  fonts: 'setupScript',
   identity: 'setupScript',
   maintenance: 'setupScript',
 } as const satisfies Record<PrinterSettingsTab, TopTabId>;
@@ -51,6 +53,7 @@ const TAB_COMPONENTS: Partial<Record<PrinterSettingsTab, FC>> = {
   printQuality: PrintQualityTab,
   clockTime: ClockAndTimeTab,
   encodingLanguage: EncodingAndLanguageTab,
+  fonts: FontsTab,
   identity: IdentityTab,
   maintenance: MaintenanceTab,
 };

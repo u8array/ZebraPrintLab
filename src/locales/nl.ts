@@ -127,6 +127,7 @@ const nl = {
       printQuality: 'Afdrukkwaliteit',
       clockTime: 'Datum en tijd',
       encodingLanguage: 'Codering en taal',
+      fonts: 'Lettertypen',
       identity: 'Identiteit',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const nl = {
       fontLinksEmpty: 'Geen lettertypekoppelingen.',
       fontLinksRemove: 'Koppeling verwijderen',
       fontLinksOverLimitFmt: 'Meer dan 5 koppelingen voor: {bases}. Printer negeert overschot stilzwijgend.',
+    },
+    fonts: {
+      uploadHeading: 'Lettertypen op de printer',
+      uploadHint: 'Kies welke geüploade lettertypen het installatiescript naar de printer stuurt.',
+      noFonts: 'Nog geen lettertypen geüpload. Upload er een in de rechterzijbalk.',
+      uploadToggle: 'Verzenden bij installatie',
+      missingBytes: 'Lettertype ontbreekt. Upload het of verwijder het item.',
+      removeOrphan: 'Verouderd item verwijderen',
     },
     identity: {
       printerName: 'Printernaam',

@@ -127,6 +127,7 @@ const fi = {
       printQuality: 'Tulostuslaatu',
       clockTime: 'Päivämäärä ja aika',
       encodingLanguage: 'Koodaus ja kieli',
+      fonts: 'Fontit',
       identity: 'Tunniste',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const fi = {
       fontLinksEmpty: 'Ei fonttilinkkejä.',
       fontLinksRemove: 'Poista linkki',
       fontLinksOverLimitFmt: 'Yli 5 linkkiä kohteelle: {bases}. Tulostin ohittaa ylivuodon hiljaisesti.',
+    },
+    fonts: {
+      uploadHeading: 'Tulostimen fontit',
+      uploadHint: 'Valitse, mitkä ladatut fontit asennusskripti lähettää tulostimeen.',
+      noFonts: 'Fontteja ei ole vielä ladattu. Lataa yksi oikeasta sivupalkista.',
+      uploadToggle: 'Lähetä asennuksessa',
+      missingBytes: 'Fontti puuttuu. Lataa se tai poista merkintä.',
+      removeOrphan: 'Poista vanhentunut merkintä',
     },
     identity: {
       printerName: 'Tulostimen nimi',

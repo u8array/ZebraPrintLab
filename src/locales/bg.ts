@@ -127,6 +127,7 @@ const bg = {
       printQuality: 'Качество на печат',
       clockTime: 'Дата и час',
       encodingLanguage: 'Кодиране и език',
+      fonts: 'Шрифтове',
       identity: 'Идентичност',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const bg = {
       fontLinksEmpty: 'Няма връзки на шрифтове.',
       fontLinksRemove: 'Премахни връзката',
       fontLinksOverLimitFmt: 'Повече от 5 връзки за: {bases}. Принтерът мълчаливо игнорира излишъка.',
+    },
+    fonts: {
+      uploadHeading: 'Шрифтове на принтера',
+      uploadHint: 'Изберете кои качени шрифтове скриптът за настройка изпраща към принтера.',
+      noFonts: 'Все още няма качени шрифтове. Качете един от страничната лента вдясно.',
+      uploadToggle: 'Изпрати при настройка',
+      missingBytes: 'Шрифтът липсва. Качете го или премахнете записа.',
+      removeOrphan: 'Премахни остарелия запис',
     },
     identity: {
       printerName: 'Име на принтера',

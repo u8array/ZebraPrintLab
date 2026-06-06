@@ -127,6 +127,7 @@ const tr = {
       printQuality: 'Baskı kalitesi',
       clockTime: 'Tarih ve saat',
       encodingLanguage: 'Kodlama ve dil',
+      fonts: 'Yazı tipleri',
       identity: 'Kimlik',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const tr = {
       fontLinksEmpty: 'Yazı tipi bağlantısı yok.',
       fontLinksRemove: 'Bağlantıyı kaldır',
       fontLinksOverLimitFmt: "{bases} için 5'ten fazla bağlantı. Yazıcı taşmayı sessizce yok sayar.",
+    },
+    fonts: {
+      uploadHeading: 'Yazıcıdaki yazı tipleri',
+      uploadHint: 'Kurulum betiğinin yazıcıya hangi yüklenmiş yazı tiplerini göndereceğini seçin.',
+      noFonts: 'Henüz yazı tipi yüklenmedi. Sağ kenar çubuğundan birini yükleyin.',
+      uploadToggle: 'Kurulumda gönder',
+      missingBytes: 'Yazı tipi eksik. Yükleyin veya kaydı kaldırın.',
+      removeOrphan: 'Eski kaydı kaldır',
     },
     identity: {
       printerName: 'Yazıcı adı',

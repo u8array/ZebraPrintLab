@@ -127,6 +127,7 @@ const ja = {
       printQuality: '印刷品質',
       clockTime: '日付と時刻',
       encodingLanguage: 'エンコードと言語',
+      fonts: 'フォント',
       identity: '識別情報',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const ja = {
       fontLinksEmpty: 'フォントリンクなし。',
       fontLinksRemove: 'リンクを削除',
       fontLinksOverLimitFmt: '{bases} のリンクが5件を超えています。プリンターは超過分を黙って無視します。',
+    },
+    fonts: {
+      uploadHeading: 'プリンター上のフォント',
+      uploadHint: 'セットアップスクリプトがプリンターに送信する、アップロード済みフォントを選択します。',
+      noFonts: 'まだフォントがアップロードされていません。右サイドバーからアップロードしてください。',
+      uploadToggle: 'セットアップ時に送信',
+      missingBytes: 'フォントが見つかりません。アップロードするか項目を削除してください。',
+      removeOrphan: '古い項目を削除',
     },
     identity: {
       printerName: 'プリンター名',

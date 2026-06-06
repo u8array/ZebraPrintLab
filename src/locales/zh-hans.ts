@@ -127,6 +127,7 @@ const zhHans = {
       printQuality: '打印质量',
       clockTime: '日期与时间',
       encodingLanguage: '编码与语言',
+      fonts: '字体',
       identity: '标识',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const zhHans = {
       fontLinksEmpty: '无字体链接。',
       fontLinksRemove: '移除链接',
       fontLinksOverLimitFmt: '{bases} 的链接超过 5 个。打印机将静默忽略超出部分。',
+    },
+    fonts: {
+      uploadHeading: '打印机上的字体',
+      uploadHint: '选择安装脚本要发送到打印机的已上传字体。',
+      noFonts: '尚未上传字体。请在右侧边栏上传一个。',
+      uploadToggle: '设置时发送',
+      missingBytes: '缺少字体。请上传或删除该条目。',
+      removeOrphan: '移除过时条目',
     },
     identity: {
       printerName: '打印机名称',

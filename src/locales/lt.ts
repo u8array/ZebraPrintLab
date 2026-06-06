@@ -127,6 +127,7 @@ const lt = {
       printQuality: 'Spausdinimo kokybė',
       clockTime: 'Data ir laikas',
       encodingLanguage: 'Kodavimas ir kalba',
+      fonts: 'Šriftai',
       identity: 'Tapatybė',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const lt = {
       fontLinksEmpty: 'Šriftų nuorodų nėra.',
       fontLinksRemove: 'Pašalinti nuorodą',
       fontLinksOverLimitFmt: 'Daugiau nei 5 nuorodos: {bases}. Spausdintuvas tyliai ignoruoja perteklių.',
+    },
+    fonts: {
+      uploadHeading: 'Spausdintuvo šriftai',
+      uploadHint: 'Pasirinkite, kuriuos įkeltus šriftus sąrankos scenarijus siunčia į spausdintuvą.',
+      noFonts: 'Šriftų dar neįkelta. Įkelkite vieną dešinėje šoninėje juostoje.',
+      uploadToggle: 'Siųsti sąrankoje',
+      missingBytes: 'Trūksta šrifto. Įkelkite jį arba pašalinkite įrašą.',
+      removeOrphan: 'Pašalinti pasenusį įrašą',
     },
     identity: {
       printerName: 'Spausdintuvo pavadinimas',

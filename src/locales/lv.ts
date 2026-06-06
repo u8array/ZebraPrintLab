@@ -127,6 +127,7 @@ const lv = {
       printQuality: 'Drukas kvalitāte',
       clockTime: 'Datums un laiks',
       encodingLanguage: 'Kodējums un valoda',
+      fonts: 'Fonti',
       identity: 'Identitāte',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const lv = {
       fontLinksEmpty: 'Nav fontu saišu.',
       fontLinksRemove: 'Noņemt saiti',
       fontLinksOverLimitFmt: 'Vairāk nekā 5 saites: {bases}. Printeris klusi ignorē pārpalikumu.',
+    },
+    fonts: {
+      uploadHeading: 'Printera fonti',
+      uploadHint: 'Izvēlieties, kurus augšupielādētos fontus iestatīšanas skripts nosūta printerim.',
+      noFonts: 'Vēl nav augšupielādēts neviens fonts. Augšupielādējiet to labajā sānu joslā.',
+      uploadToggle: 'Sūtīt iestatīšanā',
+      missingBytes: 'Trūkst fonta. Augšupielādējiet to vai noņemiet ierakstu.',
+      removeOrphan: 'Noņemt novecojušu ierakstu',
     },
     identity: {
       printerName: 'Printera nosaukums',

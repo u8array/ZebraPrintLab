@@ -127,6 +127,7 @@ const he = {
       printQuality: 'איכות הדפסה',
       clockTime: 'תאריך ושעה',
       encodingLanguage: 'קידוד ושפה',
+      fonts: 'גופנים',
       identity: 'זהות',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const he = {
       fontLinksEmpty: 'אין קישורי גופן.',
       fontLinksRemove: 'הסר קישור',
       fontLinksOverLimitFmt: 'יותר מ-5 קישורים עבור: {bases}. המדפסת מתעלמת בשקט מהעודף.',
+    },
+    fonts: {
+      uploadHeading: 'גופנים במדפסת',
+      uploadHint: 'בחר אילו גופנים שהועלו ישלח סקריפט ההתקנה למדפסת.',
+      noFonts: 'עדיין לא הועלו גופנים. העלה אחד בסרגל הצד הימני.',
+      uploadToggle: 'שלח בהתקנה',
+      missingBytes: 'הגופן חסר. העלה אותו או הסר את הרשומה.',
+      removeOrphan: 'הסר רשומה מיושנת',
     },
     identity: {
       printerName: 'שם המדפסת',

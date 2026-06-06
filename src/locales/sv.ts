@@ -127,6 +127,7 @@ const sv = {
       printQuality: 'Utskriftskvalitet',
       clockTime: 'Datum och tid',
       encodingLanguage: 'Kodning och språk',
+      fonts: 'Teckensnitt',
       identity: 'Identitet',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const sv = {
       fontLinksEmpty: 'Inga teckensnittslänkar.',
       fontLinksRemove: 'Ta bort länk',
       fontLinksOverLimitFmt: 'Mer än 5 länkar för: {bases}. Skrivaren ignorerar överskott tyst.',
+    },
+    fonts: {
+      uploadHeading: 'Teckensnitt på skrivaren',
+      uploadHint: 'Välj vilka uppladdade teckensnitt installationsskriptet skickar till skrivaren.',
+      noFonts: 'Inga teckensnitt har laddats upp än. Ladda upp ett i höger sidofält.',
+      uploadToggle: 'Skicka vid installation',
+      missingBytes: 'Teckensnitt saknas. Ladda upp eller ta bort posten.',
+      removeOrphan: 'Ta bort föråldrad post',
     },
     identity: {
       printerName: 'Skrivarnamn',

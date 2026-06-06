@@ -127,6 +127,7 @@ const ro = {
       printQuality: 'Calitate imprimare',
       clockTime: 'Data și ora',
       encodingLanguage: 'Codare și limbă',
+      fonts: 'Fonturi',
       identity: 'Identitate',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const ro = {
       fontLinksEmpty: 'Fără legături de fonturi.',
       fontLinksRemove: 'Elimină linkul',
       fontLinksOverLimitFmt: 'Mai mult de 5 legături pentru: {bases}. Imprimanta ignoră silențios excesul.',
+    },
+    fonts: {
+      uploadHeading: 'Fonturi pe imprimantă',
+      uploadHint: 'Alege ce fonturi încărcate trimite scriptul de configurare către imprimantă.',
+      noFonts: 'Nicio sursă încărcată încă. Încarcă una în bara laterală din dreapta.',
+      uploadToggle: 'Trimite la configurare',
+      missingBytes: 'Font lipsă. Încarcă-l sau elimină intrarea.',
+      removeOrphan: 'Elimină intrarea învechită',
     },
     identity: {
       printerName: 'Numele imprimantei',

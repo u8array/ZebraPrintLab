@@ -127,6 +127,7 @@ const hr = {
       printQuality: 'Kvaliteta ispisa',
       clockTime: 'Datum i vrijeme',
       encodingLanguage: 'Kodiranje i jezik',
+      fonts: 'Fontovi',
       identity: 'Identitet',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const hr = {
       fontLinksEmpty: 'Nema veza fontova.',
       fontLinksRemove: 'Ukloni vezu',
       fontLinksOverLimitFmt: 'Više od 5 poveznica za: {bases}. Pisač tiho zanemaruje višak.',
+    },
+    fonts: {
+      uploadHeading: 'Fontovi na pisaču',
+      uploadHint: 'Odaberite koje učitane fontove instalacijska skripta šalje na pisač.',
+      noFonts: 'Još nije učitan nijedan font. Učitajte ga u desnoj bočnoj traci.',
+      uploadToggle: 'Pošalji pri postavljanju',
+      missingBytes: 'Font nedostaje. Učitajte ga ili uklonite unos.',
+      removeOrphan: 'Ukloni zastarjeli unos',
     },
     identity: {
       printerName: 'Naziv pisača',

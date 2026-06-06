@@ -127,6 +127,7 @@ const sl = {
       printQuality: 'Kakovost tiskanja',
       clockTime: 'Datum in čas',
       encodingLanguage: 'Kodiranje in jezik',
+      fonts: 'Pisave',
       identity: 'Identiteta',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const sl = {
       fontLinksEmpty: 'Ni povezav pisav.',
       fontLinksRemove: 'Odstrani povezavo',
       fontLinksOverLimitFmt: 'Več kot 5 povezav za: {bases}. Tiskalnik tiho prezre presežek.',
+    },
+    fonts: {
+      uploadHeading: 'Pisave v tiskalniku',
+      uploadHint: 'Izberite, katere naložene pisave namestitveni skript pošlje v tiskalnik.',
+      noFonts: 'Pisave še niso naložene. Naložite jo v desni stranski vrstici.',
+      uploadToggle: 'Pošlji pri namestitvi',
+      missingBytes: 'Pisava manjka. Naložite jo ali odstranite vnos.',
+      removeOrphan: 'Odstrani zastarel vnos',
     },
     identity: {
       printerName: 'Ime tiskalnika',

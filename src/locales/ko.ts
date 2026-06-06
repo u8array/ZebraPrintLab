@@ -127,6 +127,7 @@ const ko = {
       printQuality: '인쇄 품질',
       clockTime: '날짜 및 시간',
       encodingLanguage: '인코딩 및 언어',
+      fonts: '글꼴',
       identity: '식별',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const ko = {
       fontLinksEmpty: '글꼴 링크 없음.',
       fontLinksRemove: '링크 제거',
       fontLinksOverLimitFmt: '{bases}에 대한 링크가 5개를 초과합니다. 프린터는 초과분을 조용히 무시합니다.',
+    },
+    fonts: {
+      uploadHeading: '프린터의 글꼴',
+      uploadHint: '설정 스크립트가 프린터로 보낼 업로드된 글꼴을 선택하세요.',
+      noFonts: '아직 업로드된 글꼴이 없습니다. 오른쪽 사이드바에서 업로드하세요.',
+      uploadToggle: '설정 시 전송',
+      missingBytes: '글꼴 없음. 업로드하거나 항목을 제거하세요.',
+      removeOrphan: '오래된 항목 제거',
     },
     identity: {
       printerName: '프린터 이름',

@@ -127,6 +127,7 @@ const et = {
       printQuality: 'Printimise kvaliteet',
       clockTime: 'Kuupäev ja kellaaeg',
       encodingLanguage: 'Kodeering ja keel',
+      fonts: 'Fondid',
       identity: 'Identiteet',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const et = {
       fontLinksEmpty: 'Fondilinke pole.',
       fontLinksRemove: 'Eemalda link',
       fontLinksOverLimitFmt: 'Üle 5 lingi: {bases}. Printer ignoreerib ületäidet vaikselt.',
+    },
+    fonts: {
+      uploadHeading: 'Printeri fondid',
+      uploadHint: 'Vali, millised üleslaaditud fondid saadab seadistusskript printerisse.',
+      noFonts: 'Veel pole fonte üles laaditud. Lae üks üles paremal külgribal.',
+      uploadToggle: 'Saada seadistusel',
+      missingBytes: 'Font puudub. Laadi üles või eemalda kirje.',
+      removeOrphan: 'Eemalda aegunud kirje',
     },
     identity: {
       printerName: 'Printeri nimi',

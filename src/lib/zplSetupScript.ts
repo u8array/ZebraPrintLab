@@ -5,6 +5,7 @@ import {
   JH_SLOT_G,
   type PrinterProfile,
 } from '../types/PrinterProfile';
+import { formatFontDownloadFromPath } from './customFonts';
 import { formatRealtimeClockForZpl, toLocalIsoString } from './realtimeClock';
 
 /** Generates the one-shot Setup-Script ZPL for a printer profile:
@@ -24,6 +25,19 @@ type SetupScriptEntry =
   | { kind: 'foldedInto'; target: keyof PrinterProfile };
 
 const SETUP_SCRIPT_EMITTERS = {
+  // Fonts ship before any block command so ^FL inside the persistent
+  // block resolves against them in the same provisioning send.
+  setupFonts: {
+    kind: 'emit',
+    channel: 'tilde',
+    emit: (p) => {
+      const lines = p.setupFonts?.flatMap((f) => {
+        const line = formatFontDownloadFromPath(f.path);
+        return line ? [line] : [];
+      }) ?? [];
+      return lines.length > 0 ? lines.join('\n') : null;
+    },
+  },
   tearOffAdjust: {
     kind: 'emit',
     channel: 'tilde',

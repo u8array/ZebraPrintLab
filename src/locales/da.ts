@@ -127,6 +127,7 @@ const da = {
       printQuality: 'Udskriftskvalitet',
       clockTime: 'Dato og tid',
       encodingLanguage: 'Kodning og sprog',
+      fonts: 'Skrifttyper',
       identity: 'Identitet',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const da = {
       fontLinksEmpty: 'Ingen skrifttypelinks.',
       fontLinksRemove: 'Fjern link',
       fontLinksOverLimitFmt: 'Mere end 5 links for: {bases}. Printeren ignorerer stille overskydende.',
+    },
+    fonts: {
+      uploadHeading: 'Skrifttyper på printeren',
+      uploadHint: 'Vælg, hvilke uploadede skrifttyper opsætningsscriptet sender til printeren.',
+      noFonts: 'Ingen skrifttyper er uploadet endnu. Upload én i højre sidebjælke.',
+      uploadToggle: 'Send ved opsætning',
+      missingBytes: 'Skrifttype mangler. Upload den eller fjern posten.',
+      removeOrphan: 'Fjern forældet post',
     },
     identity: {
       printerName: 'Printernavn',

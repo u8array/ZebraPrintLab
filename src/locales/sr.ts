@@ -127,6 +127,7 @@ const sr = {
       printQuality: 'Квалитет штампе',
       clockTime: 'Датум и време',
       encodingLanguage: 'Кодирање и језик',
+      fonts: 'Fontovi',
       identity: 'Идентитет',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const sr = {
       fontLinksEmpty: 'Nema veza fontova.',
       fontLinksRemove: 'Ukloni vezu',
       fontLinksOverLimitFmt: 'Više od 5 veza za: {bases}. Štampač tiho ignoriše višak.',
+    },
+    fonts: {
+      uploadHeading: 'Фонтови на штампачу',
+      uploadHint: 'Изаберите које отпремљене фонтове скрипта за подешавање шаље на штампач.',
+      noFonts: 'Још увек нису отпремљени фонтови. Отпремите један у десној бочној траци.',
+      uploadToggle: 'Пошаљи при подешавању',
+      missingBytes: 'Фонт недостаје. Отпремите га или уклоните унос.',
+      removeOrphan: 'Уклони застарели унос',
     },
     identity: {
       printerName: 'Назив штампача',

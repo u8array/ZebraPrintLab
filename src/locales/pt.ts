@@ -127,6 +127,7 @@ const pt = {
       printQuality: 'Qualidade de impressão',
       clockTime: 'Data e hora',
       encodingLanguage: 'Codificação e idioma',
+      fonts: 'Fontes',
       identity: 'Identidade',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const pt = {
       fontLinksEmpty: 'Sem vínculos de fonte.',
       fontLinksRemove: 'Remover ligação',
       fontLinksOverLimitFmt: 'Mais de 5 vínculos para: {bases}. A impressora ignora silenciosamente o excesso.',
+    },
+    fonts: {
+      uploadHeading: 'Fontes na impressora',
+      uploadHint: 'Escolha quais fontes carregadas o script de configuração envia para a impressora.',
+      noFonts: 'Nenhuma fonte carregada ainda. Carregue uma na barra lateral direita.',
+      uploadToggle: 'Enviar na configuração',
+      missingBytes: 'Fonte ausente. Envie-a ou remova a entrada.',
+      removeOrphan: 'Remover entrada obsoleta',
     },
     identity: {
       printerName: 'Nome da impressora',

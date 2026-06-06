@@ -127,6 +127,7 @@ const en = {
       printQuality: 'Print Quality',
       clockTime: 'Clock & Time',
       encodingLanguage: 'Encoding & Language',
+      fonts: 'Fonts',
       identity: 'Identity',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const en = {
       fontLinksEmpty: 'No font links.',
       fontLinksRemove: 'Remove link',
       fontLinksOverLimitFmt: 'More than 5 links for: {bases}. Printer silently ignores overflow.',
+    },
+    fonts: {
+      uploadHeading: 'Fonts on the printer',
+      uploadHint: 'Choose which uploaded fonts the setup script sends to the printer.',
+      noFonts: 'No fonts uploaded yet. Upload one in the right sidebar.',
+      uploadToggle: 'Send at setup',
+      missingBytes: 'Font missing. Upload it or remove this entry.',
+      removeOrphan: 'Remove stale entry',
     },
     identity: {
       printerName: 'Printer name',

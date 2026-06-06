@@ -127,6 +127,7 @@ const fa = {
       printQuality: 'کیفیت چاپ',
       clockTime: 'تاریخ و زمان',
       encodingLanguage: 'کدگذاری و زبان',
+      fonts: 'فونت‌ها',
       identity: 'هویت',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const fa = {
       fontLinksEmpty: 'پیوند فونتی وجود ندارد.',
       fontLinksRemove: 'حذف پیوند',
       fontLinksOverLimitFmt: 'بیش از ۵ پیوند برای: {bases}. چاپگر اضافی را بی‌صدا نادیده می‌گیرد.',
+    },
+    fonts: {
+      uploadHeading: 'فونت‌های روی چاپگر',
+      uploadHint: 'انتخاب کنید کدام فونت‌های بارگذاری‌شده توسط اسکریپت راه‌اندازی به چاپگر ارسال شوند.',
+      noFonts: 'هنوز فونتی بارگذاری نشده است. یکی را از نوار کناری راست بارگذاری کنید.',
+      uploadToggle: 'ارسال هنگام راه‌اندازی',
+      missingBytes: 'فونت موجود نیست. بارگذاری کنید یا ورودی را حذف کنید.',
+      removeOrphan: 'حذف ورودی منسوخ',
     },
     identity: {
       printerName: 'نام چاپگر',

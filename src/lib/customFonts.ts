@@ -1,6 +1,25 @@
 import type { CustomFontMapping, LabelConfig } from "../types/LabelConfig";
+import { getFontBytes } from "./fontCache";
 /** Strip-pattern; schema's regex `/^[A-Z0-9]$/` is the inverse. */
 export const ALIAS_CHAR_RE = /[^A-Z0-9]/g;
+
+/** Build the `~DY` upload line for a `E:NAME.TTF` style path, bytes from fontCache. */
+export function formatFontDownloadFromPath(path: string): string | undefined {
+  const colon = path.indexOf(":");
+  if (colon < 0) return undefined;
+  const drive = path.slice(0, colon + 1);
+  const filename = path.slice(colon + 1);
+  const dot = filename.lastIndexOf(".");
+  const stem = dot >= 0 ? filename.slice(0, dot) : filename;
+  const ext = dot >= 0 ? filename.slice(dot + 1).toUpperCase() : "";
+  if (ext !== "TTF" && ext !== "OTF") return undefined;
+  const bytes = getFontBytes(filename);
+  if (!bytes) return undefined;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
+  return `~DY${drive}${stem},A,T,${bytes.length},,${hex}`;
+}
 
 export const DEFAULT_FONT_DRIVE = "E:";
 

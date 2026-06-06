@@ -127,6 +127,7 @@ const hu = {
       printQuality: 'Nyomtatási minőség',
       clockTime: 'Dátum és idő',
       encodingLanguage: 'Kódolás és nyelv',
+      fonts: 'Betűtípusok',
       identity: 'Azonosító',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const hu = {
       fontLinksEmpty: 'Nincsenek betűtípus-hivatkozások.',
       fontLinksRemove: 'Hivatkozás eltávolítása',
       fontLinksOverLimitFmt: 'Több mint 5 hivatkozás ehhez: {bases}. A nyomtató csendben figyelmen kívül hagyja a túlcsordulást.',
+    },
+    fonts: {
+      uploadHeading: 'Betűtípusok a nyomtatón',
+      uploadHint: 'Válaszd ki, mely feltöltött betűtípusokat küldje a beállító szkript a nyomtatóra.',
+      noFonts: 'Még nincs feltöltött betűtípus. Tölts fel egyet a jobb oldali sávban.',
+      uploadToggle: 'Küldés beállításkor',
+      missingBytes: 'Hiányzó betűtípus. Töltsd fel vagy távolítsd el a bejegyzést.',
+      removeOrphan: 'Elavult bejegyzés eltávolítása',
     },
     identity: {
       printerName: 'Nyomtató neve',

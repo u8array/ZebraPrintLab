@@ -127,6 +127,7 @@ const ar = {
       printQuality: 'جودة الطباعة',
       clockTime: 'التاريخ والوقت',
       encodingLanguage: 'الترميز واللغة',
+      fonts: 'الخطوط',
       identity: 'الهوية',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const ar = {
       fontLinksEmpty: 'لا توجد روابط خطوط.',
       fontLinksRemove: 'إزالة الرابط',
       fontLinksOverLimitFmt: 'أكثر من 5 روابط لـ: {bases}. الطابعة تتجاهل الفائض بصمت.',
+    },
+    fonts: {
+      uploadHeading: 'الخطوط على الطابعة',
+      uploadHint: 'اختر الخطوط المرفوعة التي يرسلها نص الإعداد إلى الطابعة.',
+      noFonts: 'لم يتم رفع أي خطوط بعد. ارفع خطًا من الشريط الجانبي الأيمن.',
+      uploadToggle: 'إرسال عند الإعداد',
+      missingBytes: 'الخط مفقود. حمّله أو احذف الإدخال.',
+      removeOrphan: 'إزالة الإدخال القديم',
     },
     identity: {
       printerName: 'اسم الطابعة',

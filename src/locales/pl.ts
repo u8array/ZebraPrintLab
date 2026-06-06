@@ -127,6 +127,7 @@ const pl = {
       printQuality: 'Jakość druku',
       clockTime: 'Data i godzina',
       encodingLanguage: 'Kodowanie i język',
+      fonts: 'Czcionki',
       identity: 'Identyfikacja',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const pl = {
       fontLinksEmpty: 'Brak łączy czcionek.',
       fontLinksRemove: 'Usuń łącze',
       fontLinksOverLimitFmt: 'Więcej niż 5 łączy dla: {bases}. Drukarka po cichu ignoruje nadmiar.',
+    },
+    fonts: {
+      uploadHeading: 'Czcionki w drukarce',
+      uploadHint: 'Wybierz, które przesłane czcionki skrypt konfiguracyjny wyśle do drukarki.',
+      noFonts: 'Nie przesłano jeszcze żadnych czcionek. Prześlij jedną na prawym pasku bocznym.',
+      uploadToggle: 'Wyślij przy konfiguracji',
+      missingBytes: 'Brak czcionki. Prześlij ją lub usuń wpis.',
+      removeOrphan: 'Usuń nieaktualny wpis',
     },
     identity: {
       printerName: 'Nazwa drukarki',

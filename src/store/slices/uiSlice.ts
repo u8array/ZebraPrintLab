@@ -35,6 +35,7 @@ export type PrinterSettingsTab =
   | 'printQuality'
   | 'clockTime'
   | 'encodingLanguage'
+  | 'fonts'
   | 'identity'
   | 'maintenance';
 

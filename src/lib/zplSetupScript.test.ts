@@ -400,6 +400,7 @@ describe("generateSetupScript — output shape", () => {
     // command is added, both the if-chain and SETUP_SCRIPT_FIELDS
     // must be updated together.
     expect([...SETUP_SCRIPT_FIELDS]).toEqual([
+      "setupFonts",
       "tearOffAdjust",
       "reprintAfterError",
       "headTestInterval",
@@ -539,6 +540,39 @@ describe("generateSetupScript — maintenance commands", () => {
   it("round-trips ^PA1,1,1,1", () => {
     const r = parseZPL("^XA^PA1,1,1,1^XZ").printerProfile;
     expect(generateSetupScript(r)).toContain("^PA1,1,1,1");
+  });
+
+  it("emits ~DY for each setupFonts entry with bytes in fontCache, before ^FL", async () => {
+    const { loadFontBytes } = await import("./fontCache");
+    await loadFontBytes(new Uint8Array([1, 2, 3, 4]), "TESTSU.TTF");
+    const script = generateSetupScript({
+      ...base,
+      setupFonts: [{ path: "E:TESTSU.TTF" }],
+      fontLinks: [{ ext: "E:TESTSU.TTF", base: "E:LATIN.TTF" }],
+    });
+    expect(script).toBe(
+      "~DYE:TESTSU,A,T,4,,01020304\n^XA\n^FLE:TESTSU.TTF,E:LATIN.TTF,1\n^XZ",
+    );
+  });
+
+  it("skips setupFonts entries whose bytes are missing", () => {
+    const script = generateSetupScript({
+      ...base,
+      setupFonts: [{ path: "E:NOPE.TTF" }],
+    });
+    expect(script).not.toContain("~DY");
+  });
+
+  it("skips setupFonts entries with non-TTF/OTF extensions or missing drive", () => {
+    expect(generateSetupScript({ ...base, setupFonts: [{ path: "E:LOGO.BMP" }] }))
+      .not.toContain("~DY");
+    expect(generateSetupScript({ ...base, setupFonts: [{ path: "NOCOLON.TTF" }] }))
+      .not.toContain("~DY");
+  });
+
+  it("omits the ~DY block when setupFonts is empty or missing", () => {
+    expect(generateSetupScript(base)).not.toContain("~DY");
+    expect(generateSetupScript({ ...base, setupFonts: [] })).not.toContain("~DY");
   });
 
   it("emits one ^FL per active font link, persistent (before ^JUS)", () => {

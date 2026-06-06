@@ -127,6 +127,7 @@ const no = {
       printQuality: 'Utskriftskvalitet',
       clockTime: 'Dato og tid',
       encodingLanguage: 'Koding og språk',
+      fonts: 'Skrifter',
       identity: 'Identitet',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const no = {
       fontLinksEmpty: 'Ingen skriftkoblinger.',
       fontLinksRemove: 'Fjern lenke',
       fontLinksOverLimitFmt: 'Mer enn 5 lenker for: {bases}. Skriveren ignorerer overskudd stille.',
+    },
+    fonts: {
+      uploadHeading: 'Skrifter på skriveren',
+      uploadHint: 'Velg hvilke opplastede skrifter oppsettsskriptet sender til skriveren.',
+      noFonts: 'Ingen skrifter er lastet opp ennå. Last opp én i sidefeltet til høyre.',
+      uploadToggle: 'Send ved oppsett',
+      missingBytes: 'Skrift mangler. Last opp eller fjern oppføringen.',
+      removeOrphan: 'Fjern utdatert oppføring',
     },
     identity: {
       printerName: 'Skrivernavn',

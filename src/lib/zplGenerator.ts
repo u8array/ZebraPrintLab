@@ -16,30 +16,13 @@ import type { ClockOffset, CustomFontMapping, LabelConfig } from '../types/Label
 import type { ZplEmitContext } from '../types/ZplEmit';
 import type { Variable } from '../types/Variable';
 import { isGroup, type LabelObject, type Page } from '../types/Group';
-import { getFontBytes } from './fontCache';
+import { formatFontDownloadFromPath } from './customFonts';
 import type { ImageProps } from '../registry/image';
 import { formatStoragePath } from './storagePath';
 
-/** Emit `~DY{drive}:{name},A,T,{bytes},,{hex}` for an embedded font.
- *  ASCII hex (A/T) is universal across firmware revisions despite the
- *  2x payload. Returns undefined when the mapping or font bytes are
- *  unavailable; partial labels are preferred over throwing. */
 function formatDownloadObject(m: CustomFontMapping): string | undefined {
   if (!m.embedInZpl || !m.path || !m.previewFontName) return undefined;
-  const bytes = getFontBytes(m.previewFontName);
-  if (!bytes) return undefined;
-  const colonIdx = m.path.indexOf(':');
-  if (colonIdx < 0) return undefined;
-  const drive = m.path.slice(0, colonIdx + 1);
-  const filename = m.path.slice(colonIdx + 1);
-  const dotIdx = filename.lastIndexOf('.');
-  const stem = dotIdx >= 0 ? filename.slice(0, dotIdx) : filename;
-  const ext = dotIdx >= 0 ? filename.slice(dotIdx + 1).toUpperCase() : '';
-  if (ext !== 'TTF' && ext !== 'OTF') return undefined;
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0'))
-    .join('')
-    .toUpperCase();
-  return `~DY${drive}${stem},A,T,${bytes.length},,${hex}`;
+  return formatFontDownloadFromPath(m.path);
 }
 
 function flattenObjects(objects: LabelObject[]): LabelObject[] {

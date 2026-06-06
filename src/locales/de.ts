@@ -127,6 +127,7 @@ const de = {
       printQuality: 'Druckqualität',
       clockTime: 'Datum & Uhrzeit',
       encodingLanguage: 'Kodierung & Sprache',
+      fonts: 'Schriften',
       identity: 'Identität',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const de = {
       fontLinksEmpty: 'Keine Font-Verknüpfungen.',
       fontLinksRemove: 'Verknüpfung entfernen',
       fontLinksOverLimitFmt: 'Mehr als 5 Verknüpfungen für: {bases}. Drucker ignoriert Überlauf stillschweigend.',
+    },
+    fonts: {
+      uploadHeading: 'Schriftarten auf dem Drucker',
+      uploadHint: 'Wähle aus, welche hochgeladenen Schriftarten das Setup-Skript an den Drucker sendet.',
+      noFonts: 'Noch keine Schriftarten hochgeladen. Lade eine in der rechten Seitenleiste hoch.',
+      uploadToggle: 'Beim Setup senden',
+      missingBytes: 'Schrift fehlt. Neu hochladen oder Eintrag entfernen.',
+      removeOrphan: 'Verwaisten Eintrag entfernen',
     },
     identity: {
       printerName: 'Druckername',

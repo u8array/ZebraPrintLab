@@ -127,6 +127,7 @@ const it = {
       printQuality: 'Qualità di stampa',
       clockTime: 'Data e ora',
       encodingLanguage: 'Codifica e lingua',
+      fonts: 'Font',
       identity: 'Identità',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const it = {
       fontLinksEmpty: 'Nessun collegamento font.',
       fontLinksRemove: 'Rimuovi collegamento',
       fontLinksOverLimitFmt: "Più di 5 collegamenti per: {bases}. La stampante ignora silenziosamente l'eccesso.",
+    },
+    fonts: {
+      uploadHeading: 'Font sulla stampante',
+      uploadHint: 'Scegli quali font caricati lo script di configurazione invia alla stampante.',
+      noFonts: 'Nessun font caricato. Caricane uno dalla barra laterale destra.',
+      uploadToggle: 'Invia alla configurazione',
+      missingBytes: 'Font mancante. Caricalo o rimuovi la voce.',
+      removeOrphan: 'Rimuovi voce obsoleta',
     },
     identity: {
       printerName: 'Nome stampante',

@@ -167,6 +167,12 @@ export const printerProfileSchema = z.object({
     ext: z.string().max(FONT_LINKS_PATH_MAX_LEN).regex(setupScriptOptionalSafeStringRegex),
     base: z.string().max(FONT_LINKS_PATH_MAX_LEN).regex(setupScriptOptionalSafeStringRegex),
   })).optional(),
+  /** Fonts to upload once via `~DY,A,T` ahead of the setup-script block
+   *  (analogue to {@link LabelConfig.customFonts} but per-printer). Paths
+   *  only; bytes are pulled from the shared fontCache at emit time. */
+  setupFonts: z.array(z.object({
+    path: z.string().min(1).max(FONT_LINKS_PATH_MAX_LEN).regex(setupScriptSafeStringRegex),
+  })).optional(),
   /** ^JH f master gate; without `E` ^MA sits dormant. */
   earlyWarningMaintenance: z.enum(['E', 'D']).optional(),
   /** ^JH g; stored as meters for UX, wire is index into table. */

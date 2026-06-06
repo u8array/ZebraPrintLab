@@ -127,6 +127,7 @@ const zhHant = {
       printQuality: '列印品質',
       clockTime: '日期與時間',
       encodingLanguage: '編碼與語言',
+      fonts: '字型',
       identity: '識別',
       maintenance: 'Maintenance',
     },
@@ -250,6 +251,14 @@ const zhHant = {
       fontLinksEmpty: '無字型連結。',
       fontLinksRemove: '移除連結',
       fontLinksOverLimitFmt: '{bases} 的連結超過 5 個。印表機將靜默忽略超出部分。',
+    },
+    fonts: {
+      uploadHeading: '印表機上的字型',
+      uploadHint: '選擇安裝指令稿要傳送到印表機的已上傳字型。',
+      noFonts: '尚未上傳字型。請在右側邊欄上傳一個。',
+      uploadToggle: '設定時傳送',
+      missingBytes: '缺少字型。請上傳或移除該項目。',
+      removeOrphan: '移除過時項目',
     },
     identity: {
       printerName: '印表機名稱',
