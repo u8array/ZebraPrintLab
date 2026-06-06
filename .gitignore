@@ -28,6 +28,9 @@ tests/fixtures/__diffs__/
 tests/fixtures/__shape_diffs__/
 tests/fixtures/__text_diffs__/
 
+# Local scratch (font subsets, Labelary validation outputs, etc.)
+tmp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

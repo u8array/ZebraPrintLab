@@ -5,7 +5,7 @@ import type { ZplRotation } from './rotation';
 
 /**
  * ZPL `^GS` Graphic Symbol. Five canonical glyphs Zebra firmware
- * renders from an internal font — used for legal markings on retail
+ * renders from an internal font; used for legal markings on retail
  * and certification labels. Higher-letter codes exist in some firmware
  * but aren't portable; we ship the five every Zebra printer supports.
  */
@@ -21,7 +21,7 @@ export type SymbolCode = (typeof GS_SYMBOLS)[number]['code'];
 
 /** Fallback when an import carries an unknown ^GS code (firmware-
  *  specific extension or hand-typed garbage). Matches Zebra's own
- *  default rendering — a © glyph that the user can immediately spot
+ *  default rendering; a © glyph that the user can immediately spot
  *  and replace via the Properties panel. */
 export const DEFAULT_GS_SYMBOL: SymbolCode = 'B';
 /** Resolved GS_SYMBOLS entry for the DEFAULT_GS_SYMBOL code. Renderers
@@ -31,7 +31,7 @@ export const DEFAULT_GS_SYMBOL: SymbolCode = 'B';
 export const DEFAULT_GS_SYMBOL_META =
   GS_SYMBOLS.find((s) => s.code === DEFAULT_GS_SYMBOL) ?? GS_SYMBOLS[0];
 
-/** Set of recognised ^GS codes — used by the parser to validate the
+/** Set of recognised ^GS codes; used by the parser to validate the
  *  ^FD payload without re-listing the letters. Single source of truth
  *  for which codes round-trip cleanly. */
 export const GS_SYMBOL_CODES: ReadonlySet<string> = new Set(GS_SYMBOLS.map((s) => s.code));

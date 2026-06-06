@@ -48,8 +48,8 @@ describe('round-trip — shipping label', () => {
 
   it('tripwire: labelConfig keys from first parse survive the round-trip', () => {
     // A pipeline split that runs the labelConfig / printerProfile fold
-    // in the wrong order — e.g. across-blocks post-aggregation instead
-    // of per-block — would drop keys here. (Second-parse may legitimately
+    // in the wrong order (e.g. across-blocks post-aggregation instead
+    // of per-block) would drop keys here. (Second-parse may legitimately
     // GAIN keys: the generator emits ^PW/^LL defaults that the raw ZPL
     // didn't include. Subset-check captures the regression without
     // fighting that asymmetry.)
@@ -174,6 +174,28 @@ const BLOCK_TEXT_ZPL = `
 ^XZ
 `.trim();
 
+const BLOCK_TEXT_HANGING_INDENT_ZPL = `
+^XA
+^PW640^LL400
+^FO50,50^A0N,25,0^FB400,3,0,L,40^FDLine one\\&Line two\\&Line three^FS
+^XZ
+`.trim();
+
+const BLOCK_TEXT_FT_ZPL = `
+^XA
+^PW640^LL400
+^FT50,300^A0N,25,0^FB400,3,5,L,0^FDLine one\\&Line two\\&Line three^FS
+^XZ
+`.trim();
+
+const BLOCK_TEXT_FT_ROTATIONS = ["N", "R", "I", "B"] as const;
+const blockTextFtRotZpl = (rot: typeof BLOCK_TEXT_FT_ROTATIONS[number]) => `
+^XA
+^PW640^LL400
+^FT200,200^A0${rot},30,30^FB200,3,5,L,0^FDA\\&B\\&C^FS
+^XZ
+`.trim();
+
 describe('round-trip — field block text', () => {
   it('preserves block width and justify', () => {
     const { first, second } = roundtrip(BLOCK_TEXT_ZPL);
@@ -184,6 +206,56 @@ describe('round-trip — field block text', () => {
     expect(props(t2).blockWidth).toBe(props(t1).blockWidth);
     expect(props(t2).blockJustify).toBe(props(t1).blockJustify);
     expect(props(t2).blockLines).toBe(props(t1).blockLines);
+  });
+
+  it('preserves slot e hanging indent', () => {
+    const { first, second } = roundtrip(BLOCK_TEXT_HANGING_INDENT_ZPL);
+    const t1 = first.objects.find((o) => o.type === 'text');
+    const t2 = second.objects.find((o) => o.type === 'text');
+    expect(props(t1).blockHangingIndent).toBe(40);
+    expect(props(t2).blockHangingIndent).toBe(40);
+  });
+
+  it('preserves the ^FT anchor when ^FB shifts the block extent', () => {
+    const { first, second } = roundtrip(BLOCK_TEXT_FT_ZPL);
+    const t1 = first.objects.find((o) => o.type === 'text');
+    const t2 = second.objects.find((o) => o.type === 'text');
+    expect(t1).toBeDefined();
+    expect(t2).toBeDefined();
+    expect(t2!.x).toBe(t1!.x);
+    expect(t2!.y).toBe(t1!.y);
+    expect(t1!.positionType).toBe('FT');
+    expect(t2!.positionType).toBe('FT');
+    // ^FT anchors the LAST baseline at y=300; first line's EM-top must
+    // sit above the anchor by ~blockExtent + fontHeight (block grows up).
+    expect(t1!.y).toBeLessThan(300);
+  });
+
+  it.each(BLOCK_TEXT_FT_ROTATIONS)('roundtrips ^FT+^FB at rotation %s', (rot) => {
+    const { first, second } = roundtrip(blockTextFtRotZpl(rot));
+    const t1 = first.objects.find((o) => o.type === 'text');
+    const t2 = second.objects.find((o) => o.type === 'text');
+    expect(t1).toBeDefined();
+    expect(t2).toBeDefined();
+    expect(t2!.x).toBe(t1!.x);
+    expect(t2!.y).toBe(t1!.y);
+    expect(t1!.positionType).toBe('FT');
+  });
+
+  // Anchor (200,200). Block extends in opposite direction of the
+  // rotation's reading flow, so the FIRST line EM-top lands on the
+  // side away from the anchor: N→above, R→right, I→below, B→left.
+  it.each([
+    ['N', 'y', 'lt' as const, 200],
+    ['R', 'x', 'gt' as const, 200],
+    ['I', 'y', 'gt' as const, 200],
+    ['B', 'x', 'lt' as const, 200],
+  ] as const)('block extent shifts model %s on the %s axis (rotation)', (rot, axis, dir, anchor) => {
+    const { first } = roundtrip(blockTextFtRotZpl(rot));
+    const t = first.objects.find((o) => o.type === 'text');
+    const v = axis === 'x' ? t!.x : t!.y;
+    if (dir === 'lt') expect(v).toBeLessThan(anchor);
+    else expect(v).toBeGreaterThan(anchor);
   });
 });
 
@@ -240,7 +312,7 @@ const LH_OFFSET_ZPL = `
 
 describe('round-trip — ^LH label home offset', () => {
   it('bakes the ^LH offset into absolute object positions', () => {
-    // After import the LH offset is merged into x/y — objects sit at FO+LH.
+    // After import the LH offset is merged into x/y; objects sit at FO+LH.
     // Text additionally subtracts the ZPL-anchor-to-EM shift so obj.x/y
     // is the Konva render position. For ^A0N h=25 FO: dy = 25 * 0.154 = 3.85.
     const { first } = roundtrip(LH_OFFSET_ZPL);
@@ -318,7 +390,7 @@ describe('round-trip — comma in ^FD content', () => {
 // Konva render position (EM-top-left); the ZPL emit / parse pair adds /
 // subtracts a rotation- and positionType-dependent offset. If those two
 // functions drift apart, the rendered Konva position no longer matches
-// the printed ZPL anchor for rotated text — invisibly, until preview /
+// the printed ZPL anchor for rotated text, invisibly, until preview /
 // print catches it. This loops every rotation × {FO, FT} combination at
 // realistic fontHeights and asserts the original ZPL bytes survive a
 // parse → generate cycle.
@@ -332,7 +404,7 @@ describe('round-trip — text rotation × positionType preservation', () => {
             `^XA^${pos}123,456^A0${rot},${fontHeight},0^FDHello^FS^XZ`;
           const { regenerated } = roundtrip(inputZpl);
           // The emitted ZPL must contain the same ^FO/^FT coordinates and
-          // ^A0 declaration as the input — anything else means the
+          // ^A0 declaration as the input; anything else means the
           // model↔ZPL shift drifted between parser and generator.
           expect(regenerated).toContain(`^${pos}123,456`);
           expect(regenerated).toContain(`^A0${rot},${fontHeight},0`);

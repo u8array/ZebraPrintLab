@@ -254,7 +254,7 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
       if (target.parentId && isSelfOrDescendant(objs, id, target.parentId)) {
         return {};
       }
-      // Refuse drops into non-groups (defensive — layers panel never produces this).
+      // Refuse drops into non-groups (defensive; layers panel never produces this).
       if (target.parentId !== null) {
         const parent = findObjectById(objs, target.parentId);
         if (!parent || !isGroup(parent)) return {};

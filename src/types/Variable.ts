@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-/** Hard bounds on `^FN` numbers in classic ZPL: 1-99. Newer firmware allows
- *  more, but staying inside the historical range keeps output portable. */
+/** Classic ZPL ^FN bounds; newer firmware allows more but stay portable. */
 export const FN_NUMBER_MIN = 1;
 export const FN_NUMBER_MAX = 99;
 
@@ -23,9 +22,7 @@ export interface VariableInput {
   comment?: string;
 }
 
-/** Returns the lowest unused fnNumber in [1, 99], or null when all 99 slots
- *  are taken. Callers should surface the null case to the UI rather than
- *  silently dropping the add. */
+/** Lowest unused fnNumber in [1, 99], or null when all 99 taken. */
 export function nextFreeFnNumber(used: readonly number[]): number | null {
   const taken = new Set(used);
   for (let n = FN_NUMBER_MIN; n <= FN_NUMBER_MAX; n++) {
@@ -34,10 +31,7 @@ export function nextFreeFnNumber(used: readonly number[]): number | null {
   return null;
 }
 
-/** True iff every variable has a non-empty trimmed name + an in-range
- *  fnNumber, and no two share either field. Used by every bulk-replace
- *  path (setVariables, applyMappingDraft) so a stray duplicate can't
- *  leave the Variables panel in an unfixable state. */
+/** True iff names+fnNumbers are non-empty, in-range, and unique. */
 export function validateVariablesUnique(variables: readonly Variable[]): boolean {
   const names = new Set<string>();
   const fns = new Set<number>();
@@ -52,10 +46,7 @@ export function validateVariablesUnique(variables: readonly Variable[]): boolean
   return true;
 }
 
-/** Append `_2`, `_3`, … to `base` until it no longer collides with any
- *  existing variable's name. Shared between the parser (auto-naming from
- *  ^FX comments) and the importer (merging across multi-page blocks)
- *  so both paths produce the same disambiguation pattern. */
+/** Append `_2`, `_3`, ... until unique. */
 export function uniqueVariableName(
   base: string,
   existing: readonly Variable[],
@@ -67,11 +58,7 @@ export function uniqueVariableName(
   return `${base}_${i}`;
 }
 
-/** Auto-generated default name for a freshly added variable: `var_N`
- *  where N is the lowest integer that yields a unique name in the
- *  current set. Used both by the Variables panel's add button and by
- *  the mapping modal's inline add. Keeps the naming convention in
- *  one place. */
+/** `var_N` with lowest N that yields a unique name. */
 export function nextDefaultVariableName(existing: readonly Variable[]): string {
   const taken = new Set(existing.map((v) => v.name));
   let i = 1;
@@ -79,18 +66,8 @@ export function nextDefaultVariableName(existing: readonly Variable[]): string {
   return `var_${i}`;
 }
 
-/** Persistent mapping between document Variables and CSV columns.
- *  Lives in the design file (design.json) because it is design-time
- *  config: it references variable.id (only meaningful inside this
- *  document) and dictates how the data feeds the template. Header
- *  NAME, not index, so column reorders between imports don't break
- *  the mapping. */
-/** Parse options remembered alongside the mapping so a re-import of
- *  the same logical dataset uses the same delimiter / encoding /
- *  headerless decision without the user having to re-pick them.
- *  Optional fields: omission means "use default" (auto-detect
- *  delimiter, UTF-8 encoding, header-row present, no rows skipped).
- *  Persisted in design.json so the choice survives Save/Load. */
+/** Parse options remembered so re-import uses the same delimiter/encoding/
+ *  header decision. Omission = default (auto-detect, UTF-8, header present). */
 export const csvParseOptionsPersistedSchema = z.object({
   delimiter: z.string().optional(),
   hasHeaderRow: z.boolean().optional(),
@@ -100,29 +77,17 @@ export const csvParseOptionsPersistedSchema = z.object({
 export type CsvParseOptionsPersisted = z.infer<typeof csvParseOptionsPersistedSchema>;
 
 export const csvMappingSchema = z.object({
-  /** variableId → header name. Variables without an entry fall back
-   *  to their defaultValue when the dataset is active. */
+  /** variableId -> header name. Missing entries fall back to defaultValue. */
   bindings: z.record(z.string(), z.string()),
-  /** Snapshot of the headers the mapping was made against. Empty
-   *  array = no CSV ever imported (mapping shouldn't exist either).
-   *  Re-import with a different header set triggers a UI warning. */
+  /** Headers the mapping was made against; differing re-imports trigger warning. */
   headerSnapshot: z.array(z.string()),
-  /** Parse options used when the mapping was last applied. Re-used
-   *  on re-import so the same delimiter/encoding/headerless choice
-   *  applies without the user re-picking. Optional for back-compat
-   *  with mappings saved before this field existed. */
+  /** Parse options at last apply; optional for back-compat. */
   parseOptions: csvParseOptionsPersistedSchema.optional(),
 });
 export type CsvMapping = z.infer<typeof csvMappingSchema>;
 
-/** Whether a saved CsvMapping still lines up with a freshly parsed
- *  set of headers, so the caller can decide if the mapping can be
- *  reused silently or needs user review. In headerless mode
- *  (`parseOptions.hasHeaderRow === false`) column count is what
- *  matters — synthetic `Column N` names line up trivially when
- *  counts match. In normal header-row mode the comparison is
- *  order-independent on the set of header names so reordered Excel
- *  exports stay compatible. */
+/** Mapping <-> headers compatibility. Headerless: column-count match.
+ *  Header-row: order-independent name-set match. */
 export function isMappingCompatibleWith(
   mapping: CsvMapping,
   headers: readonly string[],
@@ -135,19 +100,13 @@ export function isMappingCompatibleWith(
   return true;
 }
 
-/** Loose header-name comparison for auto-suggesting CSV → Variable
- *  matches at import time. Case-insensitive; spaces, dashes and
- *  underscores collapse so `"Product Code"`, `"product_code"` and
- *  `"ProductCode"` all match a variable named `productCode`. */
+/** Loose header match: case-insensitive, collapse spaces/dashes/underscores. */
 export function normalizeHeaderForMatch(s: string): string {
   return s.toLowerCase().replace(/[\s_-]+/g, "");
 }
 
-/** Build a `variableId → headerName` mapping by matching each variable
- *  against the supplied CSV headers via `normalizeHeaderForMatch`.
- *  Variables with no match are absent from the output (caller can
- *  surface them in the modal so the user picks manually). Each header
- *  is consumed at most once; ties go to the first variable in `variables`. */
+/** variableId -> headerName via normalizeHeaderForMatch; each header
+ *  consumed at most once, ties go to first variable. */
 export function suggestCsvMapping(
   variables: readonly Variable[],
   headers: readonly string[],

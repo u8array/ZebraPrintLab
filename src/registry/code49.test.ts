@@ -68,7 +68,7 @@ describe('code49 — normalizeChanges height clamp on moduleWidth change', () =>
     const obj = baseObj({ height: 20, moduleWidth: 2 });
     const changes = { props: { moduleWidth: 4, height: 64 } };
     const result = code49.normalizeChanges?.(obj, changes);
-    // 64 is at the floor for mw=4 (8*4) — keep as-is.
+    // 64 is at the floor for mw=4 (8*4), keep as-is.
     expect((result?.props as Partial<Code49Props>).height).toBe(64);
   });
 });

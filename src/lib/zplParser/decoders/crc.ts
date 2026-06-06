@@ -5,11 +5,11 @@ const CRC16_MSB_MASK = 0x8000;
 const CRC16_MASK = 0xffff;
 
 /**
- * CRC-16/XMODEM (poly 0x1021, init 0x0000, no reflect, no xorout) —
+ * CRC-16/XMODEM (poly 0x1021, init 0x0000, no reflect, no xorout):
  * Zebra's ZB64/ZB16 wrapper uses this variant. Computed over the
  * base64 (or hex) payload between the `:B64:`/`:Z64:` prefix and the
  * trailing `:CRC` suffix. (Note: this is *not* CRC-16/CCITT-FALSE,
- * which uses init=0xFFFF — empirically verified against Labelary.)
+ * which uses init=0xFFFF; empirically verified against Labelary.)
  */
 function crc16Xmodem(s: string): number {
   let crc = 0;
@@ -28,7 +28,7 @@ type GfWrapperKind = "b64" | "z64";
 
 export interface GfWrapperDecoded {
   kind: GfWrapperKind;
-  /** Raw decoded bytes — for `:Z64:` this is still zlib-compressed. */
+  /** Raw decoded bytes; for `:Z64:` this is still zlib-compressed. */
   bytes: Uint8Array;
   /** True if the trailing CRC matches the base64 payload. */
   crcOk: boolean;
@@ -57,7 +57,7 @@ function base64ToBytes(b64: string): Uint8Array {
 /**
  * Parse a `:B64:<base64>:<crc>` or `:Z64:<base64>:<crc>` wrapper.
  * Returns null if the payload doesn't carry a wrapper. CRC mismatches
- * are surfaced as a flag rather than a hard reject — printers tolerate
+ * are surfaced as a flag rather than a hard reject; printers tolerate
  * mismatches, and we'd rather render a slightly-suspect graphic than
  * silently drop it.
  *
@@ -67,7 +67,7 @@ function base64ToBytes(b64: string): Uint8Array {
 export function parseGfWrapper(payload: string): GfWrapperDecoded | null {
   const m = GF_WRAPPER_RE.exec(payload.trim());
   if (!m) return null;
-  // atob and the CRC both fail on embedded whitespace — strip after
+  // atob and the CRC both fail on embedded whitespace; strip after
   // match so the regex stays permissive but downstream decoders see
   // pure base64.
   const b64 = (m[2] ?? "").replace(/\s/g, "");

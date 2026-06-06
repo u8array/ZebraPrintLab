@@ -11,13 +11,13 @@ export interface ImageProps {
    *  placeholders). */
   widthDots: number;
   /** Override height for placeholder/recall-only images that have no
-   *  cached bytes — without it the box would snap to a fixed default
+   *  cached bytes; without it the box would snap to a fixed default
    *  and ignore the user's drag. Only consulted when `imageId` does
    *  not resolve to a cached image. */
   heightDots?: number;
   /** Luminance threshold for mono conversion (0–255) */
   threshold: number;
-  /** Cached GFA ZPL string — regenerated when image/width/threshold changes */
+  /** Cached GFA ZPL string; regenerated when image/width/threshold changes */
   _gfaCache?: string;
   /** When set, the image is uploaded once via `~DY` (preamble) and referenced
    *  per-instance via `^XG`. Set by the parser when a ZPL stream uses the
@@ -97,7 +97,7 @@ export const image: ObjectTypeCore<ImageProps> = {
   //  - Without cache (recall-only placeholder) → free-form. widthDots
   //    and heightDots scale independently so the user can shape the
   //    placeholder box for layout purposes.
-  // _gfaCache always cleared — for cached images the hex needs regen at
+  // _gfaCache always cleared; for cached images the hex needs regen at
   // the new width; for placeholders it's empty anyway.
   commitTransform: (obj, ctx) => {
     const { sx, sy, snap } = ctx;
@@ -110,8 +110,8 @@ export const image: ObjectTypeCore<ImageProps> = {
     }
     // First-resize fallback for heightDots: use the current widthDots so
     // the implicit default (square placeholder) matches what the canvas
-    // renders before the user has dragged. Drifting from that — e.g. a
-    // hard-coded 200 — would mean the first drag visibly snaps the box.
+    // renders before the user has dragged. Drifting from that (e.g. a
+    // hard-coded 200) would mean the first drag visibly snaps the box.
     const baseHeight = obj.props.heightDots ?? obj.props.widthDots;
     return {
       widthDots: widthDots(sx),
@@ -123,7 +123,7 @@ export const image: ObjectTypeCore<ImageProps> = {
   toZPL: (obj) => {
     const p = obj.props;
     // Recall path: upload happened in the preamble; here we just reference
-    // it via ^XG. The `.GRF` extension is implicit on `~DY{path},A,G,…` —
+    // it via ^XG. The `.GRF` extension is implicit on `~DY{path},A,G,…`;
     // Zebra firmware persists the file as `path.GRF` and `^XG` resolves
     // the dot-suffixed form.
     if (p.storedAs) {

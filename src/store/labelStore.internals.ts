@@ -53,14 +53,14 @@ export function applyObjectChanges(
   // Lock cascades from any ancestor group: a leaf inside a locked group
   // accepts only bypass keys (locked / visible / includeInExport /
   // comment / name) so the user can still toggle visibility or release
-  // the lock from the layers panel. Load-bearing — `expandSelection`-
+  // the lock from the layers panel. Load-bearing; `expandSelection`-
   // driven callers (arrow-key nudges, shift-multi-drag) target the
   // group's leaf children directly and would otherwise sidestep the
   // group's own `locked` flag.
   if ((obj.locked || ancestorLocked) && !isLockBypass(changes)) return obj;
   if (isGroup(obj)) {
     // Groups have no registry entry (no normalize hook) and no props to
-    // merge — apply top-level changes only. Children stay untouched;
+    // merge; apply top-level changes only. Children stay untouched;
     // tree updates reach them through their own mapObjectById call.
     return { ...obj, ...changes } as LabelObject;
   }

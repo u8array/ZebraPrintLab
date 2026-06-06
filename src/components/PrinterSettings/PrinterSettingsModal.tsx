@@ -11,6 +11,7 @@ import { ZplLine } from "../Output/ZplLine";
 import { ClockAndTimeTab } from "./ClockAndTimeTab";
 import { EncodingAndLanguageTab } from "./EncodingAndLanguageTab";
 import { IdentityTab } from "./IdentityTab";
+import { MaintenanceTab } from "./MaintenanceTab";
 import { MediaFeedTab } from "./MediaFeedTab";
 import { PrintQualityTab } from "./PrintQualityTab";
 
@@ -24,6 +25,7 @@ const TOP_TAB_OF = {
   clockTime: 'setupScript',
   encodingLanguage: 'setupScript',
   identity: 'setupScript',
+  maintenance: 'setupScript',
 } as const satisfies Record<PrinterSettingsTab, TopTabId>;
 
 const TOP_TAB_ORDER: readonly TopTabId[] = ['perLabel', 'setupScript'];
@@ -50,6 +52,7 @@ const TAB_COMPONENTS: Partial<Record<PrinterSettingsTab, FC>> = {
   clockTime: ClockAndTimeTab,
   encodingLanguage: EncodingAndLanguageTab,
   identity: IdentityTab,
+  maintenance: MaintenanceTab,
 };
 
 const MODAL_BOX_CLS =
@@ -187,7 +190,7 @@ export function PrinterSettingsModal() {
 }
 
 /** Docked preview pane on the Setup-Script top-tab. Per-Label has no
- *  preview here — its ZPL still lives in the editor's main output. */
+ *  preview here; its ZPL still lives in the editor's main output. */
 function PreviewDock({
   setupScript,
   printerProfile,

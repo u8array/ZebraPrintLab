@@ -14,7 +14,7 @@ export function readColor(raw: string | undefined): "B" | "W" {
   return raw === "W" ? "W" : "B";
 }
 
-/** First non-space char, upper-cased — single-char enum handlers. */
+/** First non-space char, upper-cased; single-char enum handlers. */
 export function firstChar(rest: string): string {
   return (rest.trim()[0] ?? "").toUpperCase();
 }
@@ -71,6 +71,44 @@ export function* tokenize(
 export function int(s: string | undefined, fallback = 0): number {
   const n = Number.parseInt(s ?? "", 10);
   return Number.isNaN(n) ? fallback : n;
+}
+
+/** Optional-form of the dot-quantity reader. Returns undefined when
+ *  the param is missing/NaN. `parseFloat` is load-bearing: ^MUI/^MUM
+ *  admits fractional unit values (`^FO0.5,0.5` = half an inch);
+ *  `parseInt` would silently truncate to 0. */
+export function intDotsOrUndef(
+  s: string | undefined,
+  unitScale: number,
+): number | undefined {
+  const n = Number.parseFloat(s ?? "");
+  if (Number.isNaN(n)) return undefined;
+  return Math.round(n * unitScale);
+}
+
+/** Read a dot-quantity, applying the active ^MU `a`-slot multiplier.
+ *  Use at every site the spec documents as "dots"; non-dot params
+ *  (rotation, mode, counts) stay on plain `int`. */
+export function intDots(
+  s: string | undefined,
+  unitScale: number,
+  fallback = 0,
+): number {
+  return intDotsOrUndef(s, unitScale) ?? fallback;
+}
+
+/** Bind `intDots`/`intDotsOrUndef` to a parser state's live unit
+ *  scale, so handler factories don't each rebuild the same closures.
+ *  Returns helpers that read `state.format.unitScale` at call time
+ *  (load-bearing: ^MU mid-format mutates it). */
+export function dotsFor(state: { format: { unitScale: number } }): {
+  dots: (raw: string | undefined, fb?: number) => number;
+  dotsOrUndef: (raw: string | undefined) => number | undefined;
+} {
+  return {
+    dots: (raw, fb = 0) => intDots(raw, state.format.unitScale, fb),
+    dotsOrUndef: (raw) => intDotsOrUndef(raw, state.format.unitScale),
+  };
 }
 
 /** Returns v if within [r.min, r.max], else undefined. */

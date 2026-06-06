@@ -3,7 +3,7 @@ import { zlibSync } from 'fflate';
 import { parseZPL } from './zplParser';
 import { props } from '../test/helpers';
 
-/** CRC-16/XMODEM — same variant used by the parser to validate
+/** CRC-16/XMODEM; same variant used by the parser to validate
  *  :B64:/:Z64: wrappers (poly 0x1021, init 0x0000). Duplicated here so
  *  tests can build valid CRC values without exporting the parser's
  *  internal helper. */
@@ -49,6 +49,120 @@ describe('parseZPL — label config', () => {
   it('ignores ^PQ with 0', () => {
     const { labelConfig } = parseZPL('^XA^PQ0^XZ', 8);
     expect(labelConfig.printQuantity).toBeUndefined();
+  });
+});
+
+describe('parseZPL — ^MU units of measure', () => {
+  it('^MUI rescales following ^GB coords from inches to dots at 8 dpmm', () => {
+    // 1 inch @ 8 dpmm = 8 * 25.4 = 203.2 dots, rounded to 203
+    const { objects } = parseZPL('^XA^MUI^FO1,2^GB1,1,0.1^FS^XZ', 8);
+    const [obj] = objects;
+    expect(obj?.x).toBe(203);
+    expect(obj?.y).toBe(406);
+  });
+
+  it('^MUM rescales following ^GB coords from mm to dots at 8 dpmm', () => {
+    // 10 mm @ 8 dpmm = 80 dots
+    const { objects } = parseZPL('^XA^MUM^FO10,20^GB10,10,1^FS^XZ', 8);
+    const [obj] = objects;
+    expect(obj?.x).toBe(80);
+    expect(obj?.y).toBe(160);
+  });
+
+  it('^MUD leaves ^GB coords unchanged (dots-canonical, default)', () => {
+    const { objects } = parseZPL('^XA^MUD^FO100,200^GB50,50,2^FS^XZ', 8);
+    const [obj] = objects;
+    expect(obj?.x).toBe(100);
+    expect(obj?.y).toBe(200);
+  });
+
+  it('^MU carries across ^XA per spec (field-by-field until overridden)', () => {
+    // Spec: "^MU carries over from field to field until a new mode is
+    // entered." In production parseZPL is called per-block by
+    // zplImportService so cross-block carry-over never surfaces; this
+    // pins the spec-correct behaviour for the parser-API itself.
+    const { objects } = parseZPL(
+      '^XA^MUI^FO1,1^GB1,1,1^FS^XZ^XA^FO1,1^GB1,1,1^FS^XZ',
+      8,
+    );
+    expect(objects[0]?.x).toBe(203);
+    expect(objects[1]?.x).toBe(203);
+  });
+
+  it('^MU b,c slots persist as a pair on labelConfig for re-emit', () => {
+    const { labelConfig } = parseZPL('^XA^MUD,150,300^XZ', 8);
+    expect(labelConfig.muResampling).toEqual({ formatDpi: 150, outputDpi: 300 });
+  });
+
+  it('^MU with out-of-spec dpi values surfaces as partial finding', () => {
+    const { labelConfig, importReport } = parseZPL('^XA^MUD,77,999^XZ', 8);
+    expect(labelConfig.muResampling).toBeUndefined();
+    expect(importReport.partial).toContain('^MU');
+  });
+
+  it('^MU,150,300 with a-slot omitted resets unit to D and persists the pair', () => {
+    const { labelConfig, objects } = parseZPL(
+      '^XA^MU,150,300^FO100,100^GB10,10,1^FS^XZ',
+      8,
+    );
+    expect(labelConfig.muResampling).toEqual({ formatDpi: 150, outputDpi: 300 });
+    // a-slot defaulted to D so coords stay unscaled
+    expect(objects[0]?.x).toBe(100);
+  });
+
+  it('invalid ^MU a-slot surfaces as partial finding without dropping prior unit', () => {
+    // ^MUI sets unitScale to inches; a follow-up ^MUX must not silently
+    // downgrade subsequent coords to dots.
+    const { objects, importReport } = parseZPL(
+      '^XA^MUI^FO1,1^GB1,1,1^FS^MUX^FO1,1^GB1,1,1^FS^XZ',
+      8,
+    );
+    expect(importReport.partial).toContain('^MU');
+    expect(objects[0]?.x).toBe(203);
+    expect(objects[1]?.x).toBe(203);
+  });
+
+  it('half-set ^MU dpi pair is rejected as partial (both-or-neither invariant)', () => {
+    const { labelConfig, importReport } = parseZPL('^XA^MUD,200^XZ', 8);
+    expect(labelConfig.muResampling).toBeUndefined();
+    expect(importReport.partial).toContain('^MU');
+  });
+
+  it('round-trip: ^MUD,b,c parses + generates back symmetrically', () => {
+    const original = '^XA^MUD,200,600^PW600^LL400^CI28^XZ';
+    const { labelConfig } = parseZPL(original, 8);
+    expect(labelConfig.muResampling).toEqual({ formatDpi: 200, outputDpi: 600 });
+  });
+
+  it('^MUI also rescales dynamic ^A{font} dims (the wildcard-dispatch path)', () => {
+    // 0.5 inch font height @ 8 dpmm = 101.6 → 102 dots
+    const { objects } = parseZPL('^XA^MUI^FO0,0^A1N,0.5,0.5^FDX^FS^XZ', 8);
+    expect(props(objects[0]).fontHeight).toBe(102);
+    expect(props(objects[0]).fontWidth).toBe(102);
+  });
+
+  it('^MUI admits fractional inch values (the whole point of I-mode)', () => {
+    // 0.5 inch @ 8 dpmm = 0.5 * 8 * 25.4 = 101.6 dots, rounded to 102
+    const { objects } = parseZPL('^XA^MUI^FO0.5,0.25^GB1,1,0.05^FS^XZ', 8);
+    const [box] = objects;
+    expect(box?.x).toBe(102);
+    expect(box?.y).toBe(51);
+    expect(props(box).width).toBe(203);
+    expect(props(box).thickness).toBe(10); // 0.05 in = 10.16 dots → 10
+  });
+
+  it('^MUI also rescales ^GB dimensions and ^PW/^LL', () => {
+    const { labelConfig, objects } = parseZPL(
+      '^XA^MUI^PW4^LL3^FO0,0^GB1,2,0.05^FS^XZ',
+      8,
+    );
+    expect(labelConfig.widthMm).toBeCloseTo(101.6, 0); // 4 in = 812.8 dots / 8 = 101.6 mm
+    expect(labelConfig.heightMm).toBeCloseTo(76.2, 0);
+    const box = objects[0];
+    expect(box?.type).toBe('box');
+    // 1 in width = 203 dots, 2 in height = 406, 0.05 in thickness = 10 dots
+    expect(props(box).width).toBe(203);
+    expect(props(box).height).toBe(406);
   });
 });
 
@@ -223,6 +337,28 @@ describe('parseZPL — ^BC Code 128', () => {
   });
 });
 
+describe('parseZPL — ^BR GS1 Databar', () => {
+  it('reads ^BR p[2] as the gs1databar magnification, not byModuleWidth', () => {
+    // ^BY4 sets dot-typed module width 4; ^BR p[2]=6 is the multiplier.
+    // Pre-refactor both wrote into byModuleWidth so the 4 was clobbered.
+    const { objects } = parseZPL(
+      '^XA^BY4,2,100^FO0,0^BRN,1,6,2,100^FD0112345678901^FS^XZ',
+      8,
+    );
+    const obj = objects[0];
+    expect(obj?.type).toBe('gs1databar');
+    expect(props(obj).magnification).toBe(6);
+  });
+
+  it('falls back to ^BY moduleWidth when ^BR omits the magnification slot', () => {
+    const { objects } = parseZPL(
+      '^XA^BY3,2,100^FO0,0^BRN,1^FD0112345678901^FS^XZ',
+      8,
+    );
+    expect(props(objects[0]).magnification).toBe(3);
+  });
+});
+
 // ── ^FX comment ───────────────────────────────────────────────────────────────
 
 describe('parseZPL — ^FX comment', () => {
@@ -347,7 +483,7 @@ describe('parseZPL — ^FH hex escape', () => {
   });
 
   it('reports unsupported ^CI N as partial import', () => {
-    // ^CI50 is not a real Zebra encoding — falls back to UTF-8 default
+    // ^CI50 is not a real Zebra encoding; falls back to UTF-8 default
     const { importReport } = parseZPL('^XA^CI50^FH_^FO0,0^A0N,30,0^FDx^FS^XZ', 8);
     expect(importReport.partial).toContain('^CI50');
   });
@@ -378,6 +514,23 @@ describe('parseZPL — ^FB field block', () => {
     expect(props(objects[0]).blockLineSpacing).toBe(5);
     expect(props(objects[0]).blockJustify).toBe('C');
   });
+
+  it('reads ^FB slot e as hanging indent', () => {
+    const { objects } = parseZPL(
+      '^XA^FO10,20^A0N,30,0^FB400,3,0,L,40^FDMulti-line text^FS^XZ',
+      8,
+    );
+    expect(props(objects[0]).blockHangingIndent).toBe(40);
+  });
+
+  it('clamps negative ^FB hanging indent to 0 (matches Labelary)', () => {
+    const { objects } = parseZPL(
+      '^XA^FO10,20^A0N,30,0^FB400,3,0,L,-40^FDx^FS^XZ',
+      8,
+    );
+    expect(props(objects[0]).blockHangingIndent).toBeUndefined();
+  });
+
 
   it('resets ^FB state after use (next text has no block)', () => {
     const zpl = '^XA^FO0,0^A0N,30,0^FB400,2,0,L,0^FDFirst^FS^FO0,100^A0N,30,0^FDSecond^FS^XZ';
@@ -910,7 +1063,7 @@ describe('parseZPL — printer params', () => {
   it('parses ^CW mapping and pins ^A{alias} as the field-level fontId', () => {
     // The ^CW mapping lives in labelConfig.customFonts; the text field
     // only carries the alias char so re-emitting produces the same
-    // short ^A{id} form. printerFontName remains undefined — that field
+    // short ^A{id} form. printerFontName remains undefined; that field
     // is for the long ^A@,…E:NAME.TTF form, not for alias-based refs.
     const { labelConfig, objects } = parseZPL(
       '^XA^CWM,E:ARIAL.TTF^FO10,10^AMN,30,0^FDHi^FS^XZ',
@@ -1142,7 +1295,7 @@ describe('parseZPL — example shipping label (integration)', () => {
 
   it('parses the permit box as unfilled', () => {
     const boxes = objects.filter((o) => o.type === 'box');
-    // permit box: ^FO600,300^GB150,150,3 — thickness=3 < min(150,150) → unfilled
+    // permit box: ^FO600,300^GB150,150,3, thickness=3 < min(150,150) → unfilled
     const permitBox = boxes.find((b) => b.x === 600 && b.y === 300);
     expect(permitBox).toBeDefined();
     expect(props(permitBox).filled).toBe(false);
@@ -1607,7 +1760,7 @@ describe('parseZPL — importReport.partial', () => {
   });
 
   it('does not flag built-in ^A{letter} fonts (A-H) as partial', () => {
-    // ^AB references the built-in Zebra font B — the parser pins it on
+    // ^AB references the built-in Zebra font B; the parser pins it on
     // the field as fontId="B" and the generator re-emits the short
     // form, so the import is lossless and stays out of partial.
     const { importReport } = parseZPL('^XA^FO0,0^ABN,30,0^FDText^FS^XZ', 8);

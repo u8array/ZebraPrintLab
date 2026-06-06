@@ -50,7 +50,7 @@ export const ellipsePanel: ObjectTypeUi<EllipseProps> = {
                 onChange({ lockAspect: true, width: d, height: d });
               } else {
                 // Disabling: drop the flag (undefined keeps the model
-                // shape parser-emitted props share — they never carry
+                // shape parser-emitted props share; they never carry
                 // an explicit `false`). Dimensions stay put so the
                 // user can adjust them independently from here.
                 onChange({ lockAspect: undefined });

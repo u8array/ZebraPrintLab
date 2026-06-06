@@ -5,10 +5,8 @@ import type { ObjectTypeDefinition } from "../../types/ObjectType";
  *  the active label config. Spec-fixed-physical-size symbols (e.g.
  *  Maxicode) declare `widthMm`/`heightMm` so their footprint stays
  *  correct across dpmm; all other types declare `width`/`height`
- *  directly in dots. Lives next to the palette since that is the
- *  only current drop site, but is its own module so the resolver
- *  stays testable in isolation and any future drop path can reuse
- *  it without depending on the palette component. */
+ *  directly in dots. Extracted from the palette so the resolver
+ *  stays testable in isolation. */
 export function resolveDefaultSizeDots(
   defaultSize: ObjectTypeDefinition["defaultSize"],
   label: LabelConfig,

@@ -5,7 +5,7 @@ import type Konva from "konva";
  *
  * `stage.getAllIntersections` returns Konva nodes in z-order (front first),
  * which may be child shapes of a registered object Group rather than the
- * Group itself — every `KonvaObject` puts `id={obj.id}` on the *outer*
+ * Group itself; every `KonvaObject` puts `id={obj.id}` on the *outer*
  * Group. So we walk each hit upward until we land on a candidate id, dedupe,
  * and emit in the same z-order Konva produced.
  *

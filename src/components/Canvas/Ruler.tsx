@@ -4,7 +4,7 @@ import { DARK_COLORS } from '../../lib/useColorScheme';
 import { rulerTicksMm, rulerLabel } from '../../lib/units';
 import type { Unit } from '../../lib/units';
 
-export const RULER_SIZE = 20; // px — width/height of the ruler strip
+export const RULER_SIZE = 20; // px; width/height of the ruler strip
 
 interface Props {
   labelOffsetX: number;

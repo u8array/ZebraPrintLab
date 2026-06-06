@@ -71,7 +71,7 @@ describe("Printer Settings Modal Tab 1 — parser roundtrip", () => {
   });
 
   it("reads ^MN's first positional even when a second param is present", () => {
-    // ^MNa,b — b is the optional black-mark offset for W/M modes.
+    // ^MNa,b: b is the optional black-mark offset for W/M modes.
     // We don't model b, but a must still be captured.
     const { labelConfig } = parseZPL("^XA^MNY,10^XZ");
     expect(labelConfig.mediaTracking).toBe("Y");

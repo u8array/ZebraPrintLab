@@ -1,17 +1,15 @@
-import { useId, type ReactNode } from "react";
+import { useId, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { labelCls, inputCls } from "../ui/formStyles";
 import { clampBoundedInt, readBoundedInt } from "../../lib/inputParse";
+import { stripUnsafeChars } from "../../types/PrinterProfile";
 
-/** Shared muted-monospace class for ZPL command tags so the visual
- *  weight stays identical across the label-row, checkbox-row and
- *  any future field primitives that dock a tag rightwards. */
 const commandTagCls = "font-mono text-[10px] text-muted/60 tracking-tight";
+const hintCls = "font-mono text-[10px] text-muted/70 normal-case tracking-normal";
 
-/** Field label with a ghost-rendered ZPL command tag docked right.
- *  The distinctive design move of the printer-settings modal: users
- *  see exactly which command each control emits, turning the modal
- *  into a discoverable spec reference without crowding the form.
- *  Density matches the Properties Panel's `labelCls`. */
+export function ZplFieldHint({ children }: { children: ReactNode }) {
+  return <span className={hintCls}>{children}</span>;
+}
+
 export function ZplCommandLabel({
   text,
   command,
@@ -31,10 +29,7 @@ export function ZplCommandLabel({
   );
 }
 
-/** Checkbox row with the same ZPL-command-docked-right treatment as
- *  `ZplCommandLabel`. The command tag sits outside the `<label>` so
- *  clicking it does not toggle the checkbox; the user can still read
- *  the spec hint without changing state. */
+/** Tag sits outside `<label>` so clicking it doesn't toggle. */
 export function ZplCheckbox({
   text,
   command,
@@ -62,18 +57,11 @@ export function ZplCheckbox({
   );
 }
 
-/** Wrapper for a field row to give it consistent vertical spacing.
- *  Children are the label (via ZplCommandLabel) and the control. */
 export function ZplField({ children }: { children: ReactNode }) {
   return <div className="flex flex-col gap-1">{children}</div>;
 }
 
-/** Labelled-cell wrapper for grid slots that share one parent ZPL
- *  tag across multiple positional params (^PR triple, ^MF pair).
- *  Renders only the per-slot `<label>` (the ZPL tag lives at the
- *  parent ZplField) and pipes a `useId`-generated id to the child
- *  control via a render prop so the `htmlFor` link is correct
- *  without making callers manage ids manually. */
+/** Per-slot label for shared-tag grids (^PR, ^MF); pipes useId to child. */
 export function ZplSubField({
   label,
   children,
@@ -92,28 +80,91 @@ export function ZplSubField({
   );
 }
 
-/** Bare bounded-int `<input>` plus the asymmetric edit/commit clamp
- *  pair: `readBoundedInt` caps only the upper bound during typing so
- *  the user can transit through non-negative values below `min`
- *  (e.g. type "1" on the way to "12" when min=2). `onBlur` pulls the
- *  committed value back into the full `[min, max]` range. Shared by
- *  `ZplBoundedIntInput` (full ZPL-tag row) and grid-cell wrappers
- *  that share one parent tag (^PR triple, ^MD pair). Keeping the
- *  pair colocated avoids the two callers drifting on future fixes
- *  (e.g. the gemini-review onBlur addition). */
+/** Local draft prevents sanitiser-rejected revert (frozen-field UX);
+ *  IME composition defers sanitise until compositionend. */
+export function SafeStringInput({
+  id,
+  value,
+  onChange,
+  sanitize = stripUnsafeChars,
+  className,
+  ...rest
+}: {
+  id?: string;
+  value: string;
+  onChange: (next: string) => void;
+  sanitize?: (raw: string) => string;
+} & Omit<
+    InputHTMLAttributes<HTMLInputElement>,
+    "id" | "value" | "onChange" | "onInput" | "defaultValue" | "type"
+  >) {
+  const [draft, setDraft] = useState(value);
+  const [lastExternal, setLastExternal] = useState(value);
+  const [composing, setComposing] = useState(false);
+  if (lastExternal !== value) {
+    setLastExternal(value);
+    setDraft(value);
+  }
+  return (
+    <input
+      {...rest}
+      id={id}
+      type="text"
+      className={className ? `${inputCls} ${className}` : inputCls}
+      value={draft}
+      onCompositionStart={(e) => {
+        setComposing(true);
+        rest.onCompositionStart?.(e);
+      }}
+      onCompositionEnd={(e) => {
+        setComposing(false);
+        const next = sanitize(e.currentTarget.value);
+        setDraft(next);
+        onChange(next);
+        rest.onCompositionEnd?.(e);
+      }}
+      onBlur={(e) => {
+        setComposing(false);
+        rest.onBlur?.(e);
+      }}
+      onChange={(e) => {
+        if (composing) {
+          setDraft(e.target.value);
+          return;
+        }
+        const next = sanitize(e.target.value);
+        setDraft(next);
+        onChange(next);
+      }}
+    />
+  );
+}
+
+/** Required+empty blur snaps back to last committed; optional clears. */
 export function BoundedIntControl({
   id,
   min,
   max,
   value,
   onChange,
+  disabled,
+  required,
 }: {
   id?: string;
   min: number;
   max: number;
   value: number | undefined;
   onChange: (next: number | undefined) => void;
+  disabled?: boolean;
+  required?: boolean;
 }) {
+  const externalText = value === undefined ? "" : String(value);
+  const [draft, setDraft] = useState(externalText);
+  const [lastExternal, setLastExternal] = useState(externalText);
+  if (lastExternal !== externalText) {
+    setLastExternal(externalText);
+    setDraft(externalText);
+  }
   return (
     <input
       id={id}
@@ -121,19 +172,37 @@ export function BoundedIntControl({
       className={inputCls}
       min={min}
       max={max}
-      value={value ?? ""}
-      onChange={(e) => onChange(readBoundedInt(e.target.value, min, max))}
-      onBlur={(e) => onChange(clampBoundedInt(e.target.value, min, max))}
+      value={draft}
+      disabled={disabled}
+      aria-required={required || undefined}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setDraft(raw);
+        const parsed = readBoundedInt(raw, min, max);
+        // Sub-min digits stay in the draft.
+        if (parsed !== undefined && parsed >= min) onChange(parsed);
+      }}
+      onBlur={(e) => {
+        const raw = e.target.value;
+        if (raw === "") {
+          if (required) {
+            setDraft(lastExternal);
+            return;
+          }
+          onChange(undefined);
+          return;
+        }
+        const clamped = clampBoundedInt(raw, min, max);
+        if (clamped !== undefined) {
+          setDraft(String(clamped));
+          onChange(clamped);
+        }
+      }}
     />
   );
 }
 
-/** Inner enum-backed select for grids that share one parent ZPL
- *  tag across multiple positional params (^MF pair, ^SL mode +
- *  language). Same input shape as `ZplEnumSelect` minus the
- *  `command` tag — the tag lives at the parent `ZplField` so
- *  duplicating it on each sub-row would visually suggest two
- *  separate commands. */
+/** No command tag; lives at the shared parent ZplField. */
 export function ZplEnumSubSelect<T extends string>({
   label,
   values,
@@ -175,12 +244,6 @@ export function ZplEnumSubSelect<T extends string>({
   );
 }
 
-/** Generic enum-backed select row: label + ZPL-tag header + select
- *  with a leading "default" placeholder. Replaces the hand-rolled
- *  select scaffolding in MediaFeedTab and PrintQualityTab so the
- *  enum-select pattern lives in one place. `optionLabel` returns
- *  the localised display string for each value; the value itself
- *  is rendered as the select option value. */
 export function ZplEnumSelect<T extends string>({
   label,
   command,
@@ -224,11 +287,6 @@ export function ZplEnumSelect<T extends string>({
   );
 }
 
-/** Bounded-integer number input with the same ZPL-tag + label
- *  treatment as ZplEnumSelect. Optional `unit` renders as a muted
- *  suffix right of the (compact) input so short numbers don't
- *  stretch across the row. Centralises the readBoundedInt onChange
- *  + width treatment that was hand-rolled at every number field. */
 export function ZplBoundedIntInput({
   label,
   command,

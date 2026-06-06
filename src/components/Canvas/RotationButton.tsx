@@ -8,7 +8,7 @@ import type Konva from "konva";
  * barcodes) where rotation is N/R/I/B rather than a free angle from the
  * Konva Transformer.
  *
- * Positioned in stage-space (relative to the Layer) — the caller resolves
+ * Positioned in stage-space (relative to the Layer); the caller resolves
  * the selected node's bbox via getClientRect({ relativeTo: stage }) so the
  * button stays at the visual top-right even when the underlying object is
  * itself rotated to R/I/B.
@@ -21,7 +21,7 @@ interface Props {
 }
 
 const RADIUS = 11;
-// Lucide "rotate-cw" (24x24). Single-arrow rotation glyph — the
+// Lucide "rotate-cw" (24x24). Single-arrow rotation glyph; the
 // universally-recognised "rotate 90°" icon (Photoshop / Figma / Word all
 // use this shape). Drawn as a Konva Path scaled down and centred on the
 // button origin via a wrapping Group.
@@ -36,7 +36,7 @@ export const RotationButton = forwardRef<Konva.Group, Props>(function RotationBu
 ) {
   const [hover, setHover] = useState(false);
   // Track the stage we set a cursor on so unmount-while-hovering can still
-  // clean up (onMouseLeave never fires in that case — e.g. user hits Delete
+  // clean up (onMouseLeave never fires in that case; e.g. user hits Delete
   // or Esc while the cursor is over the button).
   const cursorStageRef = useRef<Konva.Stage | null>(null);
 
@@ -78,7 +78,7 @@ export const RotationButton = forwardRef<Konva.Group, Props>(function RotationBu
         onClick();
       }}
     >
-      {/* Invisible hitbox — gives the icon a comfortable click target
+      {/* Invisible hitbox; gives the icon a comfortable click target
           even though the icon path itself is thin. */}
       <Circle radius={RADIUS} fill="transparent" />
       <Group

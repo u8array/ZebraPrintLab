@@ -45,32 +45,14 @@ export function isConnectionRefused(e: unknown): boolean {
   return e instanceof TypeError && /refused/i.test(e.message);
 }
 
-/**
- * Outcome of a direct network-print attempt.
- *
- *  - `responded`: fetch completed with an HTTP response. Rare for raw-socket
- *    printers (port 9100), more typical for print servers / web frontends.
- *  - `no_response`: fetch threw without a connection-refused signal — most
- *    commonly a timeout. For raw-socket Zebra printers this is the *normal*
- *    success case (they read the bytes and never reply with HTTP), but the
- *    same exception is also raised when the host is unreachable. The browser
- *    cannot tell those apart, so the UI must surface this honestly rather
- *    than reporting an unverified success.
- *  - `refused`: TCP RST — host reachable but nothing listening on the port.
- */
+/** no_response = timeout (raw-socket success OR unreachable; browser
+ *  cannot distinguish); refused = TCP RST; responded = HTTP came back. */
 export type NetworkPrintResult =
   | { kind: "responded"; status: number }
   | { kind: "no_response" }
   | { kind: "refused" };
 
-/**
- * Direct raw-socket print attempt. Returns a Result rather than throwing
- * because the success and unreachable-host paths raise the same exception
- * (the printer never speaks HTTP back). The Browser-Print helpers above
- * throw because they speak HTTP end-to-end and have no such ambiguity.
- *
- * Chrome shows a Private Network Access permission prompt on first use.
- */
+/** Returns Result because raw-socket success and unreachable raise the same exception. */
 export async function sendViaNetwork(
   ip: string,
   port: number,

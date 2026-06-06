@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand';
 import {
   EMPTY_PRINTER_PROFILE,
+  normalizeMaintenanceTypes,
   printerProfileSchema,
   type PrinterProfile,
 } from '../../types/PrinterProfile';
@@ -11,8 +12,7 @@ import type { LabelState } from '../labelStore';
 export interface PrinterProfileSlice {
   /** EEPROM-persistent printer-state. Separate from `label` so design
    *  files (which round-trip `label`) don't leak the user's printer
-   *  name, locale, clock value, etc. Single-profile for now; the
-   *  multi-profile follow-up will swap to `Record<id, PrinterProfile>`. */
+   *  name, locale, clock value, etc. Single profile per installation. */
   printerProfile: PrinterProfile;
   /** Patch the active profile. Same shape as `setLabelConfig` but
    *  writes to this slice so per-installation Setup-Script fields stay
@@ -40,10 +40,14 @@ export const createPrinterProfileSlice: StateCreator<
       // undefined". Validate the merged result through the schema so the
       // cross-field rule (clockMode === 'TOL' ↔ clockTolerance defined)
       // can't be violated from any caller.
-      const next = pruneUndefined<PrinterProfile>({
+      const merged = pruneUndefined<PrinterProfile>({
         ...state.printerProfile,
         ...patch,
       });
+      // Repair cross-field invariants at the store boundary so any
+      // caller (UI partial patch, import, undo replay) gets them for
+      // free. Direction follows patch intent; see normalizeMaintenanceTypes.
+      const next = normalizeMaintenanceTypes(merged, patch);
       const parsed = printerProfileSchema.safeParse(next);
       if (!parsed.success) {
         const msg = '[printerProfile] rejected invalid patch';

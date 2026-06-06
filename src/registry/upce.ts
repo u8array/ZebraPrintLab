@@ -11,7 +11,7 @@ export const upceCoreConfig: Barcode1DCoreConfig = {
     const interp = p.printInterpretation ? 'Y' : 'N';
     // ^B9 params: rotation, height, interpretation, checkDigit.
     // checkDigit=Y matches Zebra's own default and the print
-    // convention — the check digit floats right of the bars.
+    // convention; the check digit floats right of the bars.
     return `^B9${p.rotation},${p.height},${interp},Y`;
   },
   hri: { formatHri: formatUpceHri },

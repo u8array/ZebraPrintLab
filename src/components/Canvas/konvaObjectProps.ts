@@ -23,7 +23,7 @@ export function selectionHandlers(onSelect: (add: boolean) => void): {
 
 /** Shared props for the per-type renderers under KonvaObject (LineObject,
  *  ImageObject, BarcodeObject, KonvaObjectInner). Per-type renderers
- *  always receive a leaf — groups have no Konva counterpart and the
+ *  always receive a leaf; groups have no Konva counterpart and the
  *  dispatcher in LabelCanvas filters them out before mapping. Typed as
  *  LeafObject here so the renderers can reach .props without narrowing. */
 export interface KonvaObjectProps {

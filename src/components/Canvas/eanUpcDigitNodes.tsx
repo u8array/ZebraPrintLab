@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { EanUpcType } from "./bwipHelpers";
 
 /** Visual gap in display px between the UPC-E bar end and the floated
- *  check digit. Chosen by eye to match the Labelary render — the digit
+ *  check digit. Chosen by eye to match the Labelary render; the digit
  *  sits just past the quiet-zone boundary, not flush against the bars. */
 const UPCE_TRAIL_DIGIT_GAP_PX = 2;
 
@@ -22,10 +22,10 @@ interface BuildArgs {
   type: EanUpcType;
   displayText: string;
   layout: { xLeft: number; xRight: number; halfWidth: number };
-  /** Upright bar width in display px — used as the right anchor for
+  /** Upright bar width in display px; used as the right anchor for
    *  the UPC-E trail digit (sits 2px past the bar end). */
   uprightBarW: number;
-  /** Upright bar height in display px — text Y = uprightBarH + textGap. */
+  /** Upright bar height in display px; text Y = uprightBarH + textGap. */
   uprightBarH: number;
   textGap: number;
   textFontSize: number;
@@ -34,7 +34,7 @@ interface BuildArgs {
 /** Build the digit-by-digit HRI overlay for EAN-13 / EAN-8 / UPC-A /
  *  UPC-E in upright coords. Single source of truth shared by the
  *  upright printInterp branch and the rotated inner-Group branch in
- *  BarcodeObject — both produce identical digit positions, only the
+ *  BarcodeObject; both produce identical digit positions, only the
  *  parent wrapper differs (upright clips the bbox; rotated wraps in a
  *  rotatedGroupTransform Group). */
 export function buildEanUpcDigitOverlay(args: BuildArgs): EanUpcDigitOverlay {
@@ -82,7 +82,7 @@ export function buildEanUpcDigitOverlay(args: BuildArgs): EanUpcDigitOverlay {
       };
     case "upca":
       // UPC-A HRI: number system (1) | 5 manuf | 5 product | check (1).
-      // System digit floats left of the bars, check digit floats right —
+      // System digit floats left of the bars, check digit floats right;
       // matches Zebra's ^BU default (checkDigit=Y) which the generator
       // now emits.
       return {

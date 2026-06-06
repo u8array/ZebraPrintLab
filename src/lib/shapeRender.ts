@@ -24,7 +24,7 @@ function drawEllipticalOutline(
     return;
   }
 
-  // Even-odd fill of outer ellipse minus inner ellipse — gives a true
+  // Even-odd fill of outer ellipse minus inner ellipse; gives a true
   // inward-extruded ring (canvas stroke would be centred on the path
   // and overflow the declared bbox).
   const t = Math.max(1, thickness);
@@ -51,8 +51,8 @@ function drawEllipticalOutline(
  * Geometry follows ZPL semantics (Option A from the design discussion):
  * outline thickness extrudes *inward* from the declared bounding box for
  * `^GB`/`^GE`/`^GC`, and *downward / rightward* from `(x, y)` for axis-
- * aligned lines. This is the print-truth geometry — what Labelary renders
- * from the same ZPL — so the canvas matches the printer 1:1.
+ * aligned lines. This is the print-truth geometry; what Labelary renders
+ * from the same ZPL; so the canvas matches the printer 1:1.
  *
  * The caller supplies a 2D context whose units already equal ZPL dots
  * (i.e. 1 unit = 1 dot). At 8dpmm this is the same as 1 px in the
@@ -66,13 +66,8 @@ export function renderShape(
     case "box": {
       const p = obj.props;
       const color = p.color === "B" ? "#000000" : "#ffffff";
-      // TODO: rounding support. ^GB w,h,t,c,r accepts a 0..8 rounding
-      // index that maps to corner radius (r * Math.min(w, h) / 8 in
-      // dots — the formula already in KonvaObject for canvas display).
-      // Implement via ctx.roundRect for outer + inner rect with
-      // evenodd fill once we have a Labelary fixture with rounding>0
-      // to validate against; the current fixtures all use rounding=0
-      // so the four-band approach below is exact.
+      // ^GB rounding (r=1..8) not yet rendered here; current Labelary
+      // fixtures all use r=0, so the four-band stroke below is exact.
       const t = Math.max(1, p.thickness);
       // promoteFilled=true: ^GB rects extrude solid fields to
       // max(w,t) × max(h,t) (Zebra "horizontal line" rule). Without it,
@@ -153,7 +148,7 @@ export function renderShape(
 
     default:
       // Non-shape objects (text, barcodes, images, serial) are out of
-      // scope for this renderer — the barcode regression suite covers
+      // scope for this renderer; the barcode regression suite covers
       // bwip-js outputs separately. Test infrastructure only, so a
       // loud throw is intentional: any pixel-regression case that
       // smuggles a non-shape object through here is a test-author bug,

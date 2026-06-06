@@ -62,7 +62,7 @@ export function useZplImportExport() {
 
   // ZPL surfaced to direct-print: branch on the active source.
   // - 'setupScript': EEPROM-persistent printer config (live-clock
-  //   safe — the generator captures `now` here, at click-time).
+  //   safe; the generator captures `now` here, at click-time).
   // - 'label' (default): batch form when a CSV is in play, otherwise
   //   the same template the editor displays.
   const currentZpl = () => {

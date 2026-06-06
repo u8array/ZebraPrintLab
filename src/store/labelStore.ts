@@ -2,7 +2,8 @@ import { create, useStore } from 'zustand';
 import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { ObjectChanges } from '../types/LabelObject';
-import { PRINTER_PROFILE_FIELDS } from '../types/PrinterProfile';
+import { PRINTER_PROFILE_FIELDS, printerProfileSchema } from '../types/PrinterProfile';
+import { visitLeavesInPages } from '../lib/objectTree';
 import type { LabelObject } from '../types/Group';
 import {
   createPrinterProfileSlice,
@@ -21,7 +22,7 @@ export { __resetPreviewCacheForTests } from './slices/previewSlice';
 export type { ObjectChanges };
 export type { Variable, VariableInput };
 
-/** Composed store shape — intersection of every slice. */
+/** Composed store shape; intersection of every slice. */
 export type LabelState =
   & ObjectSlice
   & PrinterProfileSlice
@@ -95,15 +96,89 @@ export function migrateLegacy(persistedState: unknown, version: number): unknown
     }
   }
 
-  // Belt-and-suspenders: any code path that bypasses the v4→v5 hop
-  // (manual edits, partial rollbacks, future version-bump that forgets
-  // to seed) must still leave `printerProfile` present, otherwise
-  // every `s.printerProfile.foo` selector throws on rehydrate.
+  // Invariant: rehydrated state must carry `printerProfile`, else
+  // every `s.printerProfile.foo` selector throws. Later migrations
+  // assume this shape and don't re-seed it.
   if (!('printerProfile' in (s as Record<string, unknown>))) {
     s = { ...s, printerProfile: {} };
   }
 
+  // v5→v6: gs1databar props.moduleWidth → props.magnification. The
+  // value was always semantically the ^BR magnification multiplier
+  // (1-10), not a dot quantity; the rename clarifies that.
+  if (version < 6) {
+    s = { ...s, pages: migrateGs1DatabarInPages(s.pages) };
+  }
+
+  // v6→v7: ^MA/^MI type codes corrected to match spec (R/C instead of
+  // H/R). The legacy 'H' meant "head cleaning"; the spec letter is 'C'.
+  // 'R' (replacement) was already correct.
+  if (version < 7) {
+    const pp = (s as Record<string, unknown>).printerProfile;
+    if (pp && typeof pp === 'object') {
+      s = { ...s, printerProfile: migrateMaintenanceTypeCodes(pp as Record<string, unknown>) };
+    }
+  }
+
+  // Re-validate the rehydrated profile so a legacy snapshot that
+  // violates the schema or a cross-field rule can't crash the slice's
+  // safeParse on the next patch. Cross-field issues report a path
+  // that may already be absent (clockMode='TOL' without
+  // clockTolerance: path is ['clockTolerance']), so a single delete
+  // pass is not enough. Fixpoint-loop until stable.
+  const profile = (s as Record<string, unknown>).printerProfile;
+  if (profile && typeof profile === 'object') {
+    let next = { ...(profile as Record<string, unknown>) };
+    for (let i = 0; i < 8; i++) {
+      const validation = printerProfileSchema.safeParse(next);
+      if (validation.success) break;
+      const drop = new Set<string>();
+      for (const issue of validation.error.issues) {
+        const topKey = issue.path[0];
+        if (typeof topKey === 'string' && topKey in next) drop.add(topKey);
+      }
+      // No present top-key to drop means the residual violation isn't
+      // something the loop can resolve; bail to {} rather than spin.
+      if (drop.size === 0) {
+        next = {};
+        break;
+      }
+      next = Object.fromEntries(Object.entries(next).filter(([k]) => !drop.has(k)));
+    }
+    s = { ...s, printerProfile: next };
+  }
+
   return s;
+}
+
+function migrateMaintenanceTypeCodes(pp: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...pp };
+  const remap = (obj: unknown): unknown => {
+    if (!obj || typeof obj !== 'object') return obj;
+    const o = obj as Record<string, unknown>;
+    if (o.type === 'H') return { ...o, type: 'C' };
+    return obj;
+  };
+  if (out.maintenanceAlert) out.maintenanceAlert = remap(out.maintenanceAlert);
+  if (out.maintenanceMessage) out.maintenanceMessage = remap(out.maintenanceMessage);
+  return out;
+}
+
+function migrateGs1DatabarInPages(pages: unknown): unknown {
+  // Mutates in place via the shared leaf walker; pages is the persisted
+  // payload not the live store, so mutation is safe.
+  visitLeavesInPages(pages, (leaf) => {
+    if (
+      leaf.type !== 'gs1databar' ||
+      !leaf.props ||
+      typeof leaf.props !== 'object'
+    ) return;
+    const props = leaf.props as Record<string, unknown>;
+    if (!('moduleWidth' in props) || 'magnification' in props) return;
+    props.magnification = props.moduleWidth;
+    delete props.moduleWidth;
+  });
+  return pages;
 }
 
 function migrateCirclesInPages(pages: unknown): unknown {
@@ -139,8 +214,8 @@ function migrateCircleObject(obj: unknown): unknown {
   };
 }
 
-/** localStorage persist subset. `thirdParty` intentionally OUT — build-time
- *  env (VITE_THIRD_PARTY_*) is authoritative until a settings UI lands. */
+/** localStorage persist subset. `thirdParty` is intentionally OUT: the
+ *  build-time env (VITE_THIRD_PARTY_*) is the single source of truth. */
 export const persistPartialize = (state: LabelState) => ({
   label: state.label,
   printerProfile: state.printerProfile,
@@ -154,7 +229,7 @@ export const persistPartialize = (state: LabelState) => ({
   csvMapping: state.csvMapping,
 });
 
-/** zundo undo-timeline subset — narrower than persist, only the
+/** zundo undo-timeline subset; narrower than persist, only the
  *  document state (label/profile/pages/variables/csvMapping) is undoable. */
 export const temporalPartialize = (state: LabelState) => ({
   label: state.label,
@@ -180,7 +255,7 @@ export const useLabelStore = create<LabelState>()(
     }),
     {
       name: 'zpl-designer-session',
-      version: 5,
+      version: 7,
       migrate: (persistedState, version) => migrateLegacy(persistedState, version) as LabelState,
       storage: createJSONStorage(() => localStorage),
       partialize: persistPartialize,

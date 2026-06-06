@@ -6,7 +6,7 @@ import { type ZplRotation } from "./rotation";
 export const MAGNIFICATION_MIN = 1;
 export const MAGNIFICATION_MAX = 10;
 export const EC_LEVEL_MIN = 0;
-// NumberInput can't express the discontinuous AztecProps domain — use the
+// NumberInput can't express the discontinuous AztecProps domain; use the
 // highest valid value (Rune = 300) as the upper bound.
 export const EC_LEVEL_MAX = 300;
 

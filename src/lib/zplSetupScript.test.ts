@@ -5,7 +5,12 @@ import {
   __SETUP_SCRIPT_EMITTERS_FOR_TESTS,
 } from "./zplSetupScript";
 import { parseZPL } from "./zplParser";
-import { printerProfileSchema, type PrinterProfile } from "../types/PrinterProfile";
+import {
+  MAINTENANCE_ALERT_DEFAULTS,
+  MAINTENANCE_DISTANCE_MAX_BY_TYPE,
+  printerProfileSchema,
+  type PrinterProfile,
+} from "../types/PrinterProfile";
 
 const base: PrinterProfile = {};
 
@@ -77,7 +82,7 @@ describe("generateSetupScript — output shape", () => {
   describe("^ST live mode (useCurrentTimeForClock)", () => {
     beforeEach(() => {
       // Local fields: May 30 2026 18:30:45 in whatever TZ the host
-      // is in — toLocalIsoString reads getFullYear/etc, so the
+      // is in; toLocalIsoString reads getFullYear/etc, so the
       // assertion is TZ-independent.
       vi.useFakeTimers();
       vi.setSystemTime(new Date(2026, 4, 30, 18, 30, 45));
@@ -362,7 +367,7 @@ describe("generateSetupScript — output shape", () => {
 
   it("does not orphan-set clockLanguage when the mode parse drops", () => {
     // Without the mode guard, `^SL1500,1` would set
-    // clockLanguage='1' while clockMode stays undefined — emit
+    // clockLanguage='1' while clockMode stays undefined; emit
     // would then drop the orphan language silently, making it
     // write-only state. Pin the guard.
     expect(parseZPL("^XA^SL1500,1^XZ").printerProfile.clockLanguage).toBeUndefined();
@@ -410,18 +415,42 @@ describe("generateSetupScript — output shape", () => {
       "clockMode",
       "clockTolerance",
       "clockLanguage",
+      "earlyWarningMaintenance",
+      "headCleaningIntervalMeters",
+      "maintenanceAlert",
+      "maintenanceMessage",
+      "headColdWarning",
+      "fontLinks",
       "configurationUpdate",
+      "codeValidation",
+      "paSlotA",
+      "paSlotB",
+      "paSlotC",
+      "paSlotD",
     ]);
   });
 
-  it("places configurationUpdate as the last entry so ^JUS commits the block", () => {
+  it("places configurationUpdate as the last persistent entry so ^JUS commits the block", () => {
     // Tripwire: ^JU emits whatever persistent writes precede it, so a
-    // future field added after configurationUpdate would land inside
-    // the same ^XA…^XZ block and only get committed on the next
-    // print job, not at provisioning.
-    expect(SETUP_SCRIPT_FIELDS[SETUP_SCRIPT_FIELDS.length - 1]).toBe(
+    // future persistent field added after configurationUpdate would
+    // land in the same ^XA…^XZ block and only get committed on the
+    // next print job, not at provisioning. Session-scoped entries
+    // (e.g. ^CV) are allowed after because they emit after ^JUS.
+    const persistentFields = SETUP_SCRIPT_FIELDS.filter((f) => {
+      const e = __SETUP_SCRIPT_EMITTERS_FOR_TESTS[f];
+      return e.kind === 'emit' && e.channel === 'block' && e.scope === 'persistent';
+    });
+    expect(persistentFields[persistentFields.length - 1]).toBe(
       "configurationUpdate",
     );
+  });
+
+  it("emits session-scoped commands after ^JUS so the commit can't try to persist them", () => {
+    const script = generateSetupScript({
+      configurationUpdate: 'S',
+      codeValidation: 'Y',
+    });
+    expect(script).toBe("^XA\n^JUS\n^CVY\n^XZ");
   });
 
   it("PrinterProfile carries only Setup-Script fields — no per-label leakage", () => {
@@ -447,10 +476,348 @@ describe("generateSetupScript — output shape", () => {
   });
 });
 
+describe("generateSetupScript — maintenance commands", () => {
+  it("emits ^MA with the 5 positional params", () => {
+    const script = generateSetupScript({
+      ...base,
+      maintenanceAlert: { type: 'C', print: 'Y', threshold: 5, frequency: 1, units: 'M' },
+    });
+    expect(script).toBe("^XA\n^MAC,Y,5,1,M\n^XZ");
+  });
+
+  it("emits ^MI as type + text", () => {
+    const script = generateSetupScript({
+      ...base,
+      maintenanceMessage: { type: 'C', text: 'Clean head soon' },
+    });
+    expect(script).toBe("^XA\n^MIC,Clean head soon\n^XZ");
+  });
+
+  it("emits ^MW for the head-cold-warning flag", () => {
+    expect(generateSetupScript({ ...base, headColdWarning: 'N' })).toBe("^XA\n^MWN\n^XZ");
+  });
+
+  it("emits ^CV for the code-validation toggle", () => {
+    expect(generateSetupScript({ ...base, codeValidation: 'Y' })).toBe("^XA\n^CVY\n^XZ");
+    expect(generateSetupScript({ ...base, codeValidation: 'N' })).toBe("^XA\n^CVN\n^XZ");
+  });
+
+  it("parses ^CV back into the profile", () => {
+    expect(parseZPL("^XA^CVY^XZ").printerProfile.codeValidation).toBe("Y");
+    expect(parseZPL("^XA^CVN^XZ").printerProfile.codeValidation).toBe("N");
+  });
+
+  it("drops ^CV with an invalid value", () => {
+    expect(parseZPL("^XA^CVX^XZ").printerProfile.codeValidation).toBeUndefined();
+  });
+
+  it("emits ^PA composite when any slot is set", () => {
+    expect(generateSetupScript({ ...base, paSlotA: true })).toBe("^XA\n^PA1,0,0,0\n^XZ");
+    expect(generateSetupScript({ ...base, paSlotB: true, paSlotD: true })).toBe("^XA\n^PA0,1,0,1\n^XZ");
+    expect(generateSetupScript({ ...base, paSlotA: true, paSlotB: true, paSlotC: true, paSlotD: true }))
+      .toBe("^XA\n^PA1,1,1,1\n^XZ");
+  });
+
+  it("omits ^PA when no slot is set (default behaviour byte-identical)", () => {
+    expect(generateSetupScript(base)).not.toContain("^PA");
+  });
+
+  it("omits ^PA when every slot is explicitly false (treated as default)", () => {
+    expect(generateSetupScript({
+      ...base, paSlotA: false, paSlotB: false, paSlotC: false, paSlotD: false,
+    })).not.toContain("^PA");
+  });
+
+  it("parses ^PA back into the profile (true-only storage)", () => {
+    const r = parseZPL("^XA^PA1,1,0,1^XZ").printerProfile;
+    expect(r.paSlotA).toBe(true);
+    expect(r.paSlotB).toBe(true);
+    expect(r.paSlotC).toBeUndefined();
+    expect(r.paSlotD).toBe(true);
+  });
+
+  it("round-trips ^PA1,1,1,1", () => {
+    const r = parseZPL("^XA^PA1,1,1,1^XZ").printerProfile;
+    expect(generateSetupScript(r)).toContain("^PA1,1,1,1");
+  });
+
+  it("emits one ^FL per active font link, persistent (before ^JUS)", () => {
+    const script = generateSetupScript({
+      ...base,
+      fontLinks: [{ ext: "E:ARABIC.TTF", base: "E:LATIN.TTF" }],
+      configurationUpdate: "S",
+    });
+    expect(script).toBe("^XA\n^FLE:ARABIC.TTF,E:LATIN.TTF,1\n^JUS\n^XZ");
+  });
+
+  it("omits ^FL when no links are present", () => {
+    expect(generateSetupScript(base)).not.toContain("^FL");
+    expect(generateSetupScript({ ...base, fontLinks: [] })).not.toContain("^FL");
+  });
+
+  it("parses ^FL into the profile (link=1 adds)", () => {
+    const r = parseZPL("^XA^FLE:ARABIC.TTF,E:LATIN.TTF,1^XZ").printerProfile;
+    expect(r.fontLinks).toEqual([{ ext: "E:ARABIC.TTF", base: "E:LATIN.TTF" }]);
+  });
+
+  it("^FL link=0 removes an existing pair", () => {
+    const r = parseZPL(
+      "^XA^FLE:ARABIC.TTF,E:LATIN.TTF,1^FS" +
+      "^FLE:ARABIC.TTF,E:LATIN.TTF,0^FS^XZ",
+    ).printerProfile;
+    expect(r.fontLinks).toBeUndefined();
+  });
+
+  it("^FL is idempotent on duplicate add", () => {
+    const r = parseZPL(
+      "^XA^FLE:ARABIC.TTF,E:LATIN.TTF,1^FS" +
+      "^FLE:ARABIC.TTF,E:LATIN.TTF,1^FS^XZ",
+    ).printerProfile;
+    expect(r.fontLinks).toEqual([{ ext: "E:ARABIC.TTF", base: "E:LATIN.TTF" }]);
+  });
+
+  it("^FL with missing link param defaults to add", () => {
+    const r = parseZPL("^XA^FLE:ARABIC.TTF,E:LATIN.TTF^XZ").printerProfile;
+    expect(r.fontLinks).toEqual([{ ext: "E:ARABIC.TTF", base: "E:LATIN.TTF" }]);
+  });
+
+  it("^FL with invalid link value is ignored (per spec)", () => {
+    const r = parseZPL("^XA^FLE:ARABIC.TTF,E:LATIN.TTF,2^XZ").printerProfile;
+    expect(r.fontLinks).toBeUndefined();
+  });
+
+  it("^FL emit skips rows with empty ext or base (editor drafts)", () => {
+    const script = generateSetupScript({
+      ...base,
+      fontLinks: [{ ext: "", base: "" }, { ext: "E:A.TTF", base: "E:B.TTF" }],
+    });
+    expect(script).toBe("^XA\n^FLE:A.TTF,E:B.TTF,1\n^XZ");
+  });
+
+  it("^FL parser drops rows with oversize or unsafe-char paths", () => {
+    const long = "E:" + "A".repeat(130) + ".TTF";
+    expect(parseZPL(`^XA^FL${long},E:B.TTF,1^XZ`).printerProfile.fontLinks).toBeUndefined();
+    expect(parseZPL("^XA^FLE:A~1.TTF,E:B.TTF,1^XZ").printerProfile.fontLinks).toBeUndefined();
+  });
+
+  it("^FL emit trims whitespace-only rows and trims surviving rows", () => {
+    const script = generateSetupScript({
+      ...base,
+      fontLinks: [{ ext: "  ", base: "  " }, { ext: " E:A.TTF ", base: " E:B.TTF " }],
+    });
+    expect(script).toBe("^XA\n^FLE:A.TTF,E:B.TTF,1\n^XZ");
+  });
+
+  it("round-trips multi-link ^FL", () => {
+    const r = parseZPL(
+      "^XA^FLE:CJK.TTF,E:LATIN.TTF,1" +
+      "^FLE:ARABIC.TTF,E:LATIN.TTF,1^XZ",
+    ).printerProfile;
+    expect(generateSetupScript(r))
+      .toContain("^FLE:CJK.TTF,E:LATIN.TTF,1\n^FLE:ARABIC.TTF,E:LATIN.TTF,1");
+  });
+
+  it("treats omitted ^PA slots as 0 (printer default)", () => {
+    const r = parseZPL("^XA^PA1^XZ").printerProfile;
+    expect(r.paSlotA).toBe(true);
+    expect(r.paSlotB).toBeUndefined();
+    expect(r.paSlotC).toBeUndefined();
+    expect(r.paSlotD).toBeUndefined();
+  });
+
+  it("parses ^PA0,0,0,0 as empty profile and re-emits nothing", () => {
+    const r = parseZPL("^XA^PA0,0,0,0^XZ").printerProfile;
+    expect(r.paSlotA).toBeUndefined();
+    expect(r.paSlotB).toBeUndefined();
+    expect(r.paSlotC).toBeUndefined();
+    expect(r.paSlotD).toBeUndefined();
+    expect(generateSetupScript(r)).not.toContain("^PA");
+  });
+
+  it("tolerates whitespace around ^PA slot values", () => {
+    const r = parseZPL("^XA^PA 1 , 0 , 1 , 0 ^XZ").printerProfile;
+    expect(r.paSlotA).toBe(true);
+    expect(r.paSlotC).toBe(true);
+    expect(r.paSlotB).toBeUndefined();
+    expect(r.paSlotD).toBeUndefined();
+  });
+
+  it("treats out-of-range ^PA values as 0 (strict 1-only)", () => {
+    const r = parseZPL("^XA^PA2,X,1,0^XZ").printerProfile;
+    expect(r.paSlotA).toBeUndefined();
+    expect(r.paSlotB).toBeUndefined();
+    expect(r.paSlotC).toBe(true);
+    expect(r.paSlotD).toBeUndefined();
+  });
+
+  it("ignores extra ^PA slots beyond the 4 spec'd ones", () => {
+    const r = parseZPL("^XA^PA1,0,1,0,1^XZ").printerProfile;
+    expect(r.paSlotA).toBe(true);
+    expect(r.paSlotC).toBe(true);
+    expect(generateSetupScript(r)).toContain("^PA1,0,1,0");
+  });
+
+  it("emits ^JH with f-slot filled and other slots empty", () => {
+    const script = generateSetupScript({ ...base, earlyWarningMaintenance: 'E' });
+    expect(script).toBe("^XA\n^JH,,,,,E,,,,\n^XZ");
+  });
+
+  it("emits ^JH with both f and g slots when both set", () => {
+    const script = generateSetupScript({
+      ...base,
+      earlyWarningMaintenance: 'E',
+      headCleaningIntervalMeters: 150,
+    });
+    expect(script).toBe("^XA\n^JH,,,,,E,1,,,\n^XZ");
+  });
+
+  it("emits ^JH with only g-slot when only the interval is set", () => {
+    const script = generateSetupScript({ ...base, headCleaningIntervalMeters: 200 });
+    expect(script).toBe("^XA\n^JH,,,,,,2,,,\n^XZ");
+  });
+
+  it("parses ^MA / ^MI / ^MW / ^JH back into the profile", () => {
+    const zpl = [
+      "^XA",
+      "^MAC,Y,5,1,M",
+      "^MIC,Clean me",
+      "^MWN",
+      "^JH,,,,,E,1,,,",
+      "^XZ",
+    ].join("\n");
+    const { printerProfile } = parseZPL(zpl);
+    expect(printerProfile.maintenanceAlert).toEqual({
+      type: 'C', print: 'Y', threshold: 5, frequency: 1, units: 'M',
+    });
+    expect(printerProfile.maintenanceMessage).toEqual({ type: 'C', text: 'Clean me' });
+    expect(printerProfile.headColdWarning).toBe('N');
+    expect(printerProfile.earlyWarningMaintenance).toBe('E');
+    expect(printerProfile.headCleaningIntervalMeters).toBe(150);
+  });
+
+  it("round-trips the maintenance batch", () => {
+    const profile: PrinterProfile = {
+      maintenanceAlert: { type: 'R', print: 'N', threshold: 50, frequency: 5, units: 'I' },
+      maintenanceMessage: { type: 'R', text: 'Replace head' },
+      headColdWarning: 'Y',
+      earlyWarningMaintenance: 'E',
+      headCleaningIntervalMeters: 300,
+    };
+    const script = generateSetupScript(profile);
+    const { printerProfile } = parseZPL(script);
+    expect(printerProfile).toEqual(profile);
+  });
+
+  it("emits ^JH before ^MA so the alert gate is set first", () => {
+    const script = generateSetupScript({
+      ...base,
+      earlyWarningMaintenance: 'E',
+      maintenanceAlert: { type: 'C', print: 'Y', threshold: 5, frequency: 1, units: 'I' },
+    });
+    expect(script.indexOf("^JH")).toBeLessThan(script.indexOf("^MA"));
+  });
+
+  it("defaults ^MA print to Y when the slot is blank", () => {
+    const { printerProfile } = parseZPL("^XA^MAC,,5,1,M^XZ");
+    expect(printerProfile.maintenanceAlert?.print).toBe("Y");
+  });
+
+  it("defaults ^MA units to I when the slot is blank", () => {
+    const { printerProfile } = parseZPL("^XA^MAC,Y,5,1^XZ");
+    expect(printerProfile.maintenanceAlert?.units).toBe("I");
+  });
+
+  it("defaults ^MA threshold and frequency to spec values when slots are blank", () => {
+    const { printerProfile } = parseZPL("^XA^MAR,Y,,,M^XZ");
+    expect(printerProfile.maintenanceAlert).toEqual({
+      type: "R", print: "Y", threshold: 5, frequency: 1, units: "M",
+    });
+  });
+
+  it("drops ^MA with invalid type", () => {
+    const { printerProfile } = parseZPL("^XA^MAX,Y,5,1,M^XZ");
+    expect(printerProfile.maintenanceAlert).toBeUndefined();
+  });
+
+  it("drops ^MA type C with threshold over the 2000 m cap", () => {
+    const { printerProfile } = parseZPL("^XA^MAC,Y,2001,1,M^XZ");
+    expect(printerProfile.maintenanceAlert).toBeUndefined();
+  });
+
+  it("accepts ^MA type R with threshold up to 150000 m", () => {
+    const { printerProfile } = parseZPL("^XA^MAR,Y,150000,1,M^XZ");
+    expect(printerProfile.maintenanceAlert?.threshold).toBe(150000);
+  });
+
+  it("accepts ^MA with frequency=0 (disabled-repeat idiom)", () => {
+    const { printerProfile } = parseZPL("^XA^MAC,Y,5,0,M^XZ");
+    expect(printerProfile.maintenanceAlert?.frequency).toBe(0);
+  });
+
+  it("drops ^MI with embedded comma", () => {
+    const { printerProfile } = parseZPL("^XA^MIC,Hi, there^XZ");
+    expect(printerProfile.maintenanceMessage).toBeUndefined();
+  });
+
+  it("drops ^MI exceeding the message length cap", () => {
+    const longText = "A".repeat(64);
+    const { printerProfile } = parseZPL(`^XA^MIC,${longText}^XZ`);
+    expect(printerProfile.maintenanceMessage).toBeUndefined();
+  });
+
+  it("parses ^JH g-slot index 1 as 150 m", () => {
+    const { printerProfile } = parseZPL("^XA^JH,,,,,E,1,,,^XZ");
+    expect(printerProfile.headCleaningIntervalMeters).toBe(150);
+  });
+
+  it("drops ^JH g-slot index out of range", () => {
+    const { printerProfile } = parseZPL("^XA^JH,,,,,E,17,,,^XZ");
+    expect(printerProfile.headCleaningIntervalMeters).toBeUndefined();
+  });
+
+  it("rejects mismatched ^MA/^MI type via schema", () => {
+    const result = printerProfileSchema.safeParse({
+      maintenanceAlert: { type: 'C', print: 'Y', threshold: 5, frequency: 1, units: 'M' },
+      maintenanceMessage: { type: 'R', text: 'Mismatched' },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("parser drops a mismatched ^MI so the import patch never crashes the schema", () => {
+    const { printerProfile } = parseZPL("^XA^MAC,Y,5,1,M^MIR,Replace head^XZ");
+    expect(printerProfile.maintenanceAlert?.type).toBe("C");
+    expect(printerProfile.maintenanceMessage).toBeUndefined();
+  });
+
+  it("parser drops a stale ^MI when a later ^MA flips the type", () => {
+    const { printerProfile } = parseZPL("^XA^MIC,Clean me^MAR,Y,5,1,M^XZ");
+    expect(printerProfile.maintenanceAlert?.type).toBe("R");
+    expect(printerProfile.maintenanceMessage).toBeUndefined();
+  });
+
+  it("reverse-order import: ^MI before ^MA with mismatched types, alert wins", () => {
+    const { printerProfile } = parseZPL("^XA^MIC,Clean me^MAR,Y,5,1,M^XZ");
+    expect(printerProfile.maintenanceAlert?.type).toBe("R");
+    expect(printerProfile.maintenanceMessage).toBeUndefined();
+  });
+
+  it("MAINTENANCE_ALERT_DEFAULTS fit the tighter (C) cap", () => {
+    // Parser blank-slot fallbacks are type-independent; if a future
+    // bump exceeds the C cap the round-trip of a partial ^MAC dump
+    // would silently corrupt. Pin the invariant.
+    const minCap = Math.min(
+      MAINTENANCE_DISTANCE_MAX_BY_TYPE.R,
+      MAINTENANCE_DISTANCE_MAX_BY_TYPE.C,
+    );
+    expect(MAINTENANCE_ALERT_DEFAULTS.threshold).toBeLessThanOrEqual(minCap);
+    expect(MAINTENANCE_ALERT_DEFAULTS.frequency).toBeLessThanOrEqual(minCap);
+  });
+});
+
 describe("SETUP_SCRIPT_EMITTERS structural invariants", () => {
   it("every foldedInto.target points at a kind:'emit' entry, never another foldedInto", () => {
     // A target chain (foldedInto → foldedInto) would mean no entry
-    // actually produces the wire command — the registry would compile
+    // actually produces the wire command; the registry would compile
     // but the emit channel would silently drop. This test catches a
     // typo where `clockTolerance.target` got changed to `clockLanguage`
     // (also a foldedInto) instead of `clockMode`.

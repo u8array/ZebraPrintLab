@@ -17,7 +17,7 @@ import { textBoxMatchCases } from '../../tests/fixtures/textBoxMatchCases';
  *
  * We compare BBOX DIMENSIONS, not pixel content. The two fonts have
  * different glyph designs (Roboto vs. CG Triumvirate), so pixel-perfect
- * match is impossible — but the rendered footprint can and must
+ * match is impossible; but the rendered footprint can and must
  * match for layout to be trustworthy.
  *
  * Test cases are `char × 3` patterns at multiple sizes (see
@@ -43,7 +43,7 @@ const FONT_FAMILY = 'PrintLab ZPL';
  *  ≤3 dots once the font's per-glyph advance and vertical scaling are
  *  applied. The 6-dot allowance covers ascender / descender outliers
  *  where Roboto's inherent vertical proportions disagree with
- *  CG Triumvirate's by a few dots — visible only for `i` (dot above
+ *  CG Triumvirate's by a few dots, visible only for `i` (dot above
  *  x-height), `p` (descender) and `.` (baseline edge). A real layout
  *  regression (wrong advance class, wrong fontSize) produces drift
  *  >12 dots even at small sizes, well above this ceiling. */

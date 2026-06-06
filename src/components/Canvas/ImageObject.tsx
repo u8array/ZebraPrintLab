@@ -13,7 +13,7 @@ type Props = Omit<KonvaObjectProps, "obj"> & { obj: ImageLabelObject };
 /** Image renderer. Hosted as its own component so hooks (useState/
  *  useEffect for async image loading) can run without violating
  *  rules-of-hooks. The dispatcher in KonvaObject narrows `obj`
- *  before passing — no runtime cast needed here. */
+ *  before passing; no runtime cast needed here. */
 export function ImageObject({
   obj,
   scale,
@@ -31,7 +31,7 @@ export function ImageObject({
   const w = dotsToPx(p.widthDots, scale, dpmm);
   // Aspect-lock when a real PNG is cached; fall back to `heightDots` for
   // recall-only placeholders so the user can shape the box freely. Guard
-  // against 0-width cached images (malformed file edge case) — div-by-
+  // against 0-width cached images (malformed file edge case); div-by-
   // zero would otherwise render NaN-sized canvas nodes.
   const h = cached && cached.width > 0
     ? w * (cached.height / cached.width)

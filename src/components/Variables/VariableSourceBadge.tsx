@@ -16,7 +16,7 @@ interface Props {
    *  `sm` for the Variables-panel rows. */
   size?: 'xs' | 'sm';
   /** When false (default in modal rows), render icon only. When true,
-   *  include the column name text — used in the Variables panel where
+   *  include the column name text; used in the Variables panel where
    *  the badge competes with bindings-count text and needs to win. */
   showLabel?: boolean;
 }
@@ -53,7 +53,7 @@ export function VariableSourceBadge({
         : MinusIcon;
   const tip = TIP[source].replace('{header}', boundHeader ?? '');
   // Label uses bare 'orphan' / 'csv' when no header is known instead of
-  // 'orphan: ' (trailing colon-space) — the latter happens on a
+  // 'orphan: ' (trailing colon-space); the latter happens on a
   // freshly-cleared select where boundHeader transiently goes undefined.
   const label =
     source === 'csv'

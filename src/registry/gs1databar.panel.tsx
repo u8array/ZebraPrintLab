@@ -32,11 +32,11 @@ export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
         </div>
 
         <NumberInput
-          label={loc.moduleWidth}
-          value={p.moduleWidth}
+          label={loc.magnification}
+          value={p.magnification}
           min={1}
           max={10}
-          onChange={(moduleWidth) => onChange({ moduleWidth })}
+          onChange={(magnification) => onChange({ magnification })}
         />
 
         <div className="flex flex-col gap-1">

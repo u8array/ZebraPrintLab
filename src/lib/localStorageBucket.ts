@@ -1,22 +1,7 @@
-/**
- * Prefix-keyed localStorage helpers shared by the image / font caches.
- *
- * Both caches persist data-URL-bearing entries so reloads survive, but they
- * must never crash the app: quota exhaustion and corrupt JSON are routine.
- * These helpers centralise the two failure modes (quota on write, corrupt
- * entries on hydration) so each cache module stays focused on its domain.
- */
+// Prefix-keyed localStorage helpers shared by image/font caches. Quota
+// exhaustion and corrupt JSON are routine; hydration must never throw.
 
-/**
- * Iterate every localStorage entry whose key starts with `prefix`, parse it
- * as JSON, and forward the parsed value to `accept`. Corrupt entries and
- * non-object primitives (numbers, booleans, null, arrays) are silently
- * dropped — runtime hydration must never throw, and `T` is contractually
- * an object shape.
- *
- * Keys are snapshotted before iteration so an `accept` callback that
- * removes or adds localStorage entries can't shift indexes mid-loop.
- */
+/** Keys snapshotted before iteration so accept() mutations don't shift indexes. */
 export function hydrateLocalStoragePrefix<T>(
   prefix: string,
   accept: (entry: T) => void,
@@ -40,15 +25,11 @@ export function hydrateLocalStoragePrefix<T>(
   }
 }
 
-/**
- * Best-effort `setItem` that swallows quota errors. Callers keep an
- * in-memory copy as the authoritative state; localStorage is only the
- * cross-reload survival mechanism.
- */
+/** Caller's in-memory copy is authoritative; localStorage is reload-only. */
 export function safeLocalStorageSet(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
   } catch {
-    // localStorage full — caller's in-memory copy stays authoritative
+    // quota full
   }
 }

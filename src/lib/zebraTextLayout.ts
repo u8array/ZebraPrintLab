@@ -1,33 +1,99 @@
-/** Zebra-style layout math for `^FB` block text. Browser-font canvas
- *  measurement (Konva's default for `Text.align`) disagrees with
- *  Zebra's bitmap-font rendering by enough that centred / right-aligned
- *  text on the canvas drifts visibly from the Labelary preview. Zebra's
- *  A0 font advances each glyph by `fontWidth` dots (or `fontHeight`
- *  when `fontWidth == 0`, the "auto-square" default); compute alignment
- *  positions against that fixed advance so the canvas matches the
- *  printer instead of the browser. */
+// ^FB alignment math: Konva's text measurement drifts from Zebra A0;
+// compute against fixed advance to match Labelary.
 
 export type BlockJustify = "L" | "C" | "R" | "J";
 
-/** ZPL Type-0 font default aspect ratio. The built-in A0 font is
- *  defined with a 9×5 dot matrix (height×width); when `^A0,h,0` is
- *  emitted (auto-width), the firmware advances each glyph by
- *  `h × 5/9` dots, not `h`. Using `h` here would make the canvas's
- *  alignment math compute lines as wider than the printed reality and
- *  centred / right-aligned text drift left vs Labelary. */
+/** A0 default 9x5 dot matrix; fontWidth=0 advances by h*5/9. */
 const A0_DEFAULT_ASPECT = 5 / 9;
 
-/** Effective per-glyph advance in dots for ZPL A0 at the given
- *  `fontHeight` / `fontWidth`. `fontWidth = 0` is Zebra shorthand for
- *  "use the font's default aspect" — for A0 that's a 5:9 ratio
- *  applied to the height. */
 export function zebraGlyphAdvanceDots(fontHeight: number, fontWidth: number): number {
   return fontWidth > 0 ? fontWidth : fontHeight * A0_DEFAULT_ASPECT;
 }
 
-/** Text-line width in dots that Zebra's A0 printer would render — the
- *  glyph-count × advance formula `^FB` justification is computed
- *  against. */
+/** ^FB slot a: spec skips print when block is narrower than one glyph
+ *  cell (explicit `fontWidth` or `h * 5/9` for A0 default). */
+export function isBlockTooNarrow(
+  blockWidthDots: number,
+  fontHeight: number,
+  fontWidth: number,
+): boolean {
+  return blockWidthDots > 0 && blockWidthDots < zebraGlyphAdvanceDots(fontHeight, fontWidth);
+}
+
+/** Display-space positions of each word inside one justify=J line. Caller
+ *  passes the line's `startDots` (from blockLineStartDots), the extra gap
+ *  (from zebraJustifyGapDots), and per-glyph advance metrics. Returns one
+ *  entry per word in source order. */
+export function blockJustifyWordPositions(args: {
+  words: string[];
+  rotation: ZplRotation;
+  startDots: { x: number; y: number };
+  fontHeight: number;
+  fontWidth: number;
+  extraGapDots: number;
+}): { x: number; y: number; text: string }[] {
+  const spaceAdvance = zebraGlyphAdvanceDots(args.fontHeight, args.fontWidth);
+  let cursorAdv = 0;
+  return args.words.map((word) => {
+    const adv = blockWordAdvanceDots(args.rotation, cursorAdv);
+    const pos = { x: args.startDots.x + adv.dx, y: args.startDots.y + adv.dy, text: word };
+    cursorAdv += zebraLineWidthDots(word, args.fontHeight, args.fontWidth) + spaceAdvance + args.extraGapDots;
+    return pos;
+  });
+}
+
+/** ^FB FT-anchor offset: inter-line dots above the last baseline, i.e.
+ *  `(blockLines - 1) * lineStep`. Returns 0 when no block is configured. */
+export function blockInterLineExtentDots(args: {
+  blockWidthDots: number;
+  blockLines: number;
+  blockLineSpacing: number;
+  fontHeight: number;
+}): number {
+  if (args.blockWidthDots <= 0) return 0;
+  return Math.max(0, (args.blockLines - 1) * blockLineStepDots(args.fontHeight, args.blockLineSpacing));
+}
+
+/** Canonical Zebra rotation flag. Re-used by registry/text.ts so
+ *  consumers don't redeclare the literal union. */
+export type ZplRotation = "N" | "R" | "I" | "B";
+
+const neg = (v: number) => (v === 0 ? 0 : -v);
+
+/** Display-space start of line `lineIndex` inside a per-Text rotated
+ *  ^FB block. Per-Text rotation rotates each Text around its own (x, y),
+ *  so the offsets must be expressed in display coords. `perpDots` covers
+ *  indent + align perpendicular to the line-stacking axis. */
+export function blockLineStartDots(
+  lineIndex: number,
+  rotation: ZplRotation,
+  perpDots: number,
+  lineStepDots: number,
+): { x: number; y: number } {
+  const step = lineIndex * lineStepDots;
+  switch (rotation) {
+    case "N": return { x: perpDots, y: step };
+    case "R": return { x: neg(step), y: perpDots };
+    case "I": return { x: neg(perpDots), y: neg(step) };
+    case "B": return { x: step, y: neg(perpDots) };
+  }
+}
+
+/** Per-word display-space advance along the line's reading direction
+ *  for justify=J word-gap stretch. Mirrors `blockLineStartDots` axis
+ *  selection. */
+export function blockWordAdvanceDots(
+  rotation: ZplRotation,
+  advanceDots: number,
+): { dx: number; dy: number } {
+  switch (rotation) {
+    case "N": return { dx: advanceDots, dy: 0 };
+    case "R": return { dx: 0, dy: advanceDots };
+    case "I": return { dx: -advanceDots, dy: 0 };
+    case "B": return { dx: 0, dy: -advanceDots };
+  }
+}
+
 export function zebraLineWidthDots(
   line: string,
   fontHeight: number,
@@ -36,10 +102,7 @@ export function zebraLineWidthDots(
   return line.length * zebraGlyphAdvanceDots(fontHeight, fontWidth);
 }
 
-/** Horizontal offset (in dots, relative to the block's left edge) that
- *  a line of `lineLength` glyphs gets at the given `justify` mode
- *  inside a `blockWidth`-dots block. Negative widths clamp to 0 (the
- *  printer never shifts text past the block's left edge). */
+/** L/J start at left; J inner-stretch not visualised. */
 export function zebraAlignOffsetDots(
   lineWidthDots: number,
   blockWidthDots: number,
@@ -47,41 +110,69 @@ export function zebraAlignOffsetDots(
 ): number {
   if (justify === "C") return Math.max(0, (blockWidthDots - lineWidthDots) / 2);
   if (justify === "R") return Math.max(0, blockWidthDots - lineWidthDots);
-  // L and J both start at the left edge — J only stretches the inner
-  // spacing of non-last lines, which we don't visualise on canvas.
   return 0;
 }
 
-/** Per-row advance in dots: font height plus the user-set extra
- *  inter-line spacing. Shared between layout helpers (block bbox)
- *  and per-line text rendering so a future spacing-rule tweak (e.g.
- *  leading vs spacing) only has to land here. */
+/** ^FB slot e: indent lines 2+; line 1 stays flush with the block. */
+export function zebraHangingIndentOffsetDots(
+  lineIndex: number,
+  hangingIndentDots: number,
+): number {
+  return lineIndex > 0 ? hangingIndentDots : 0;
+}
+
+/** ^FB justify=J extra dots per word-gap. Returns 0 on the last line
+ *  and on single-word lines (spec: last line left-aligned). */
+export function zebraJustifyGapDots(
+  lineWidthDots: number,
+  blockWidthDots: number,
+  wordGapCount: number,
+  isLastLine: boolean,
+): number {
+  if (isLastLine || wordGapCount <= 0) return 0;
+  const extra = blockWidthDots - lineWidthDots;
+  return extra > 0 ? extra / wordGapCount : 0;
+}
+
 export function blockLineStepDots(fontHeight: number, blockLineSpacing: number): number {
   return fontHeight + blockLineSpacing;
 }
 
-/** Dots-space bbox of the FB block area, anchored at (0, 0) — the
- *  field's FO position. Used as the invisible Rect that pins the
- *  Transformer's selection bbox to the full block extent so its
- *  left edge stays at the FO anchor when text is C/R-justified
- *  inside the block (the text spans drift rightwards but the
- *  selection rectangle does not). Anchor is fixed and documented
- *  here rather than via a literal type so callers can destructure
- *  without casts. */
+/** ^FB dashed wrap-edge guide: points (x1,y1,x2,y2) for the line that
+ *  sits on the end-of-reading side of the rotated block. */
+export function blockWrapEdgePoints(
+  rotation: ZplRotation,
+  bounds: { x: number; y: number; width: number; height: number },
+): [number, number, number, number] {
+  switch (rotation) {
+    case "N":
+      return [bounds.x + bounds.width, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height];
+    case "R":
+      return [bounds.x, bounds.y + bounds.height, bounds.x + bounds.width, bounds.y + bounds.height];
+    case "I":
+      return [bounds.x, bounds.y, bounds.x, bounds.y + bounds.height];
+    case "B":
+      return [bounds.x, bounds.y, bounds.x + bounds.width, bounds.y];
+  }
+}
+
+/** FB block bbox in Group-local display coords. Rotates with the
+ *  block-line-stack direction so the Transformer covers visible glyphs
+ *  rather than the unrotated layout footprint. */
 export function blockBoundsDots(args: {
   blockWidthDots: number;
   blockLines: number;
   blockLineSpacing: number;
   fontHeight: number;
+  rotation?: ZplRotation;
 }): { x: number; y: number; width: number; height: number } {
-  // N lines have N-1 inter-line gaps, not N. Matches the ZPL emit
-  // path in text.tsx (`fontHeight * lines + spacing * (lines - 1)`),
-  // so canvas bbox, wrap guide and printed block stay consistent.
   const lineStep = blockLineStepDots(args.fontHeight, args.blockLineSpacing);
-  return {
-    x: 0,
-    y: 0,
-    width: args.blockWidthDots,
-    height: args.blockLines > 0 ? (args.blockLines - 1) * lineStep + args.fontHeight : 0,
-  };
+  const blockWidth = args.blockWidthDots;
+  const linesExtent = args.blockLines > 0 ? (args.blockLines - 1) * lineStep + args.fontHeight : 0;
+  switch (args.rotation ?? "N") {
+    case "N": return { x: 0,           y: 0,           width: blockWidth,  height: linesExtent };
+    case "R": return { x: -linesExtent, y: 0,           width: linesExtent, height: blockWidth };
+    case "I": return { x: -blockWidth, y: -linesExtent, width: blockWidth,  height: linesExtent };
+    case "B": return { x: 0,           y: -blockWidth, width: linesExtent, height: blockWidth };
+  }
 }

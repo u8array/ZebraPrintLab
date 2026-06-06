@@ -47,7 +47,16 @@ export interface ParsedZPL {
   importReport: ImportReport;
 }
 
-export type Handler = (p: string[], rest: string) => void;
+export type Handler = (p: string[], rest: string, cmd: string) => void;
+
+/** Pattern-matched handler entry: used when a command's key is
+ *  variable (e.g. `^A{font}` with `{font}` ∈ 0..Z) so an exact-key
+ *  table cannot express the dispatch. Each handler module owns its
+ *  own wildcards and exports them alongside the exact-match table. */
+export interface Wildcard {
+  matches: (cmd: string) => boolean;
+  handle: Handler;
+}
 
 /** Result of decoding any GF-shaped graphic into an image-cache entry. */
 export interface DecodedGraphic {
@@ -62,6 +71,6 @@ export interface DecodedGraphic {
 }
 
 /** Entry in the `~DY → ^XG` lookup map: a graphic uploaded earlier in the
- *  stream. Structurally a `DecodedGraphic` without the per-decode CRC flag —
+ *  stream. Structurally a `DecodedGraphic` without the per-decode CRC flag;
  *  that lives on the partialCmds set instead of on every map entry. */
 export type UploadedGraphic = Omit<DecodedGraphic, "crcOk">;

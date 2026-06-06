@@ -12,7 +12,7 @@ export const msiCoreConfig: Barcode1DCoreConfig = {
   byRatio: 2,
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
-    // ^BM format: ^BM[o,e,h,f,g] — check digit (e) comes before height (h)
+    // ^BM format: ^BM[o,e,h,f,g]; check digit (e) comes before height (h)
     // A=Mod10, B=Mod11, C=Mod10+Mod10, D=Mod11+Mod10, N=none
     const checkType = p.checkDigit ? "A" : "N";
     return `^BM${p.rotation},${checkType},${p.height},${interp},N`;

@@ -6,7 +6,7 @@ import { loadFontBytesSync } from "../../fontCache";
 import { formatStoragePath, parseStoragePath } from "../../storagePath";
 import { getPosType, pushBrowserLimit, type ParserState } from "../context";
 import { decodeGraphicToImage } from "../decoders/graphic";
-import { int, makeObj, readColor, readRotation } from "../helpers";
+import { dotsFor, int, makeObj, readColor, readRotation } from "../helpers";
 import type { Handler } from "../types";
 
 /** Characters of a `^GF`/`~DY` payload retained in browserLimit/skipped
@@ -43,6 +43,7 @@ export function createGraphicsHandlers(
   takeComment: () => string | undefined,
 ): GraphicsFamily {
   const getReverseFlag = () => s.label.lrActive || s.field.frActive || undefined;
+  const { dots } = dotsFor(s);
 
   const pushGBObject: GraphicsExports["pushGBObject"] = (
     gx, gy, w, h, t, color, rounding, reverseFlag, comment,
@@ -103,9 +104,9 @@ export function createGraphicsHandlers(
     GB(p) {
       // ^GB{w},{h},{t},{color},{rounding}
       // ZPL: w=0 or h=0 means "use thickness value" for that dimension
-      const t = int(p[2], 3);
-      const rawW = int(p[0], t);
-      const rawH = int(p[1], t);
+      const t = dots(p[2], 3);
+      const rawW = dots(p[0], t);
+      const rawH = dots(p[1], t);
       const w = rawW === 0 ? t : rawW;
       const h = rawH === 0 ? t : rawH;
       const color = readColor(p[3]);
@@ -127,9 +128,9 @@ export function createGraphicsHandlers(
       commitPendingReverseBg();
       // ^GD{w},{h},{t},{color},{orientation}
       // orientation: L = top-left→bottom-right, R = top-right→bottom-left
-      const gdW = int(p[0], 1);
-      const gdH = int(p[1], 1);
-      const gdT = int(p[2], 3);
+      const gdW = dots(p[0], 1);
+      const gdH = dots(p[1], 1);
+      const gdT = dots(p[2], 3);
       const gdColor = readColor(p[3]);
       const gdOri = (p[4] ?? "L").toUpperCase();
       const gdLen = Math.round(Math.sqrt(gdW * gdW + gdH * gdH));
@@ -228,9 +229,9 @@ export function createGraphicsHandlers(
     GE(p) {
       commitPendingReverseBg();
       // ^GE{w},{h},{t},{color}
-      const w = int(p[0], 100);
-      const h = int(p[1], 100);
-      const t = int(p[2], 3);
+      const w = dots(p[0], 100);
+      const h = dots(p[1], 100);
+      const t = dots(p[2], 3);
       const color = readColor(p[3]);
       const filled = t >= Math.min(w, h);
       s.result.objects.push(
@@ -254,8 +255,8 @@ export function createGraphicsHandlers(
     GC(p) {
       commitPendingReverseBg();
       // ^GC{diameter},{thickness},{color}  → circle = ellipse with equal w/h
-      const d = int(p[0], 100);
-      const t = int(p[1], 3);
+      const d = dots(p[0], 100);
+      const t = dots(p[1], 3);
       const color = readColor(p[2]);
       const filled = t >= d;
       s.result.objects.push(
@@ -281,7 +282,7 @@ export function createGraphicsHandlers(
     // ── Recall stored graphic ──────────────────────────────────────────────
     XG(_, rest) {
       commitPendingReverseBg();
-      // ^XGd:f.x,mx,my — references a graphic uploaded earlier via ~DY.
+      // ^XGd:f.x,mx,my, references a graphic uploaded earlier via ~DY.
       // Two valid imports:
       //  - With preceding ~DY in the stream: full image (bytes + storedAs
       //    with embedInZpl=true) so re-emit produces the same upload+recall.
@@ -338,13 +339,13 @@ export function createGraphicsHandlers(
       );
     },
 
-    // ^GS{rotation},{height},{width} — selects the internal-font
+    // ^GS{rotation},{height},{width}: selects the internal-font
     // legal-symbol glyph (^FD picks which: A=®, B=©, C=™, D=UL, E=CSA).
     GS(p) {
       s.field.fieldType = "symbol";
       s.field.symRot = readRotation(p[0]);
-      s.field.symH = int(p[1], 30);
-      s.field.symW = int(p[2], s.field.symH);
+      s.field.symH = dots(p[1], 30);
+      s.field.symW = dots(p[2], s.field.symH);
     },
 
     // ── ~DY downloaded TrueType / graphic payload ──────────────────────────
@@ -459,7 +460,7 @@ export function createGraphicsHandlers(
         loadFontBytesSync(bytes, filename);
         s.fonts.downloadedFontPaths.add(fullPath);
       } catch {
-        // Oversized or otherwise unloadable — surface as browser-limit.
+        // Oversized or otherwise unloadable, surface as browser-limit.
         pushBrowserLimit(s.result, `~DY${path}`);
       }
     },

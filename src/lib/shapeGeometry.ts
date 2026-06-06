@@ -1,38 +1,14 @@
-/**
- * Pure geometric helpers for ZPL shape primitives (^GB / ^GE / ^GC / ^GD).
- *
- * Mirrors Zebra firmware's rendering semantics so that the on-screen
- * Konva canvas, the @napi-rs/canvas pixel-regression renderer, and the
- * ZPL output all describe the same shape:
- *   - Outlines (box / ellipse) extrude thickness *inward* from
- *     the declared bbox; thickness ≥ min(w, h)/2 collapses to solid.
- *   - Diagonal lines (^GD) place the conceptual line on the *left long
- *     edge* of a parallelogram and extrude thickness in +x only — both
- *     endpoints sit on the same side, never the centreline.
- *
- * Keeping the geometry in one pure module prevents drift between the
- * rendering pathways (tests cover the @napi-rs path against Labelary,
- * which transitively validates anything that consumes these helpers).
- */
+// Pure geometry for ^GB/^GE/^GC/^GD. Outlines extrude inward; 2t >= min(w,h)
+// collapses to solid. ^GD places the line on the parallelogram's left long edge.
 
-/**
- * Inset values for an outline rectangle / ellipse whose
- * declared bbox is (0, 0, w, h) with stroke thickness t. The caller
- * uses these to position a *centred-stroke* primitive whose outer
- * edge lands on the declared bbox.
- *
- * When 2t ≥ min(w, h) the outline would meet itself in the middle and
- * Zebra firmware renders solid; `renderFilled` signals that case so
- * callers can drop the stroke and fill (0, 0, w, h) directly.
- */
 export interface OutlineInset {
-  /** Top-left offset for the inset primitive (= t/2 unless filled). */
+  /** t/2 unless filled. */
   offset: number;
-  /** Width of the inset primitive (= w − t unless filled). */
+  /** w - t unless filled. */
   width: number;
-  /** Height of the inset primitive (= h − t unless filled). */
+  /** h - t unless filled. */
   height: number;
-  /** Whether the firmware clamps this outline to a solid shape. */
+  /** Firmware clamps outline to solid. */
   renderFilled: boolean;
 }
 
@@ -41,12 +17,7 @@ export function outlineInset(
   h: number,
   t: number,
   filled: boolean,
-  /** When true, a solid-rendered field extends to `max(w, t) × max(h, t)`.
-   *  This per-axis promotion is documented for ^GB rects only ("horizontal
-   *  line" rule and its vertical mirror); ^GE / ^GC just collapse to solid
-   *  at their declared bbox dimensions, so callers from those code paths
-   *  leave this off. Pure single-axis lines hit a different parser branch
-   *  and never reach this helper. */
+  /** ^GB only: solid extends to max(w,t) x max(h,t); ^GE/^GC leave off. */
   promoteFilled = false,
 ): OutlineInset {
   const clampsToFilled = !filled && t * 2 >= Math.min(w, h);
@@ -61,9 +32,7 @@ export function outlineInset(
   };
 }
 
-/** Four (x, y) vertices in the flat order Konva.Line and 2D canvas
- *  paths both consume. Tuple-typed so callers can destructure without
- *  any `as`-cast or non-null-assertion noise. */
+/** Flat (x,y) tuple consumed by Konva.Line and 2D canvas paths. */
 export type ParallelogramPoints = [
   number, number,
   number, number,
@@ -71,14 +40,7 @@ export type ParallelogramPoints = [
   number, number,
 ];
 
-/**
- * Four parallelogram vertices for a ^GD diagonal line spanning the bbox
- * from (ax, ay) to (bx, by) with thickness t.
- *
- * The conceptual line runs along the polygon's *left long edge*; the
- * other long edge is offset by +t in x. This is the same convention as
- * Zebra firmware (verified pixel-by-pixel against Labelary fixtures).
- */
+/** ^GD vertices; line on left long edge, +t in x. Validated against Labelary. */
 export function diagonalPolygonPoints(
   ax: number,
   ay: number,

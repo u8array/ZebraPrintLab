@@ -79,6 +79,52 @@ describe('text position transforms — model ↔ ZPL anchor', () => {
     });
   });
 
+  describe('FT + ^FB block extent shift (literals pinned to Labelary fixtures)', () => {
+    // Anchor (200,200), h=30, spacing=5, 3 lines. modelPos literals
+    // verified against tmp/fb_ft_modelpos/ (2026-06-06, ±2 dots).
+    const ANCHOR_X = 200;
+    const ANCHOR_Y = 200;
+    const BLK = 2 * (H + 5);
+
+    it('FT/N block: model.y = 102.4 (above anchor)', () => {
+      const r = zplAnchorToModel(ANCHOR_X, ANCHOR_Y,
+        { fontHeight: H, rotation: 'N' }, 'FT', 0, BLK);
+      expect(r.x).toBeCloseTo(200);
+      expect(r.y).toBeCloseTo(102.4);
+    });
+
+    it('FT/R block: model.x = 297.6 (right of anchor)', () => {
+      const r = zplAnchorToModel(ANCHOR_X, ANCHOR_Y,
+        { fontHeight: H, rotation: 'R' }, 'FT', 0, BLK);
+      expect(r.x).toBeCloseTo(297.6);
+      expect(r.y).toBeCloseTo(200);
+    });
+
+    it('FT/I block: model.y = 297.6 (below anchor)', () => {
+      const r = zplAnchorToModel(ANCHOR_X, ANCHOR_Y,
+        { fontHeight: H, rotation: 'I' }, 'FT', 0, BLK);
+      expect(r.x).toBeCloseTo(200);
+      expect(r.y).toBeCloseTo(297.6);
+    });
+
+    it('FT/B block: model.x = 102.4 (left of anchor)', () => {
+      const r = zplAnchorToModel(ANCHOR_X, ANCHOR_Y,
+        { fontHeight: H, rotation: 'B' }, 'FT', 0, BLK);
+      expect(r.x).toBeCloseTo(102.4);
+      expect(r.y).toBeCloseTo(200);
+    });
+
+    it('FO never applies the block extent shift', () => {
+      for (const rotation of ROT) {
+        const fo = zplAnchorToModel(ANCHOR_X, ANCHOR_Y,
+          { fontHeight: H, rotation }, 'FO', W, BLK);
+        const foNoBlk = zplAnchorToModel(ANCHOR_X, ANCHOR_Y,
+          { fontHeight: H, rotation }, 'FO', W, 0);
+        expect(fo).toEqual(foNoBlk);
+      }
+    });
+  });
+
   describe('round-trip', () => {
     for (const rotation of ROT) {
       for (const positionType of ['FO', 'FT', undefined] as const) {

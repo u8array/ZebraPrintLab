@@ -34,10 +34,9 @@ export function LayersPanel() {
   }, [rows]);
   const allRowIds = useMemo(() => rows.map((r) => r.obj.id), [rows]);
 
-  // Soft tint for every descendant of a currently-selected group, so the
-  // user sees which leaves would move together if they dragged the group
-  // (or pressed an arrow key). Excludes the group itself — its row keeps
-  // the stronger "is selected" accent.
+  // Soft tint for descendants of a selected group, signalling which
+  // leaves move together. The group row itself keeps the stronger
+  // "selected" accent.
   const idsUnderSelectedGroup = useMemo(() => {
     const out = new Set<string>();
     for (const id of selectedIds) {

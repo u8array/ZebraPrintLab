@@ -3,8 +3,8 @@ const TIMEOUT_MS = 10_000;
 const DEFAULT_HOST = 'https://api.labelary.com';
 
 // Build-time Labelary endpoint configuration. Labelary's premium plans
-// (Plus, Business, On-Premise) hand out a private hostname — and for the
-// metered plans also an API key — via email upon sign-up. Operators set:
+// (Plus, Business, On-Premise) hand out a private hostname; and for the
+// metered plans also an API key; via email upon sign-up. Operators set:
 //   - VITE_LABELARY_API_URL – e.g. https://acme.labelary.com
 //   - VITE_LABELARY_API_KEY – the key value, if the plan requires one
 // The key is sent as X-API-Key, matching Labelary's own viewer

@@ -1,33 +1,17 @@
 import type { LeafObject } from '../registry/leafObject';
 import type { LabelObjectBase } from './LabelObject';
 export type { LeafObject };
-/**
- * A Group is the only non-leaf node in the object tree. Leaves render and
- * export themselves; groups exist purely as structural containers that
- * cascade lock / visibility / inclusion to their descendants and let the
- * user move, select and reorder a set of objects together.
- *
- * `type: 'group'` is intentionally outside the registry: groups have no
- * `toZPL`, no `defaultSize`, no `PropertiesPanel` — they are handled by
- * tree-walking consumers (render dispatch, ZPL export, layers panel).
- */
+/** Non-leaf container; cascades lock/visibility/inclusion. Intentionally
+ *  outside the registry (no toZPL/defaultSize/PropertiesPanel). */
 export type GroupObject = LabelObjectBase & {
   type: 'group';
   children: LabelObject[];
 };
 
-/** Any node in the object tree: either a registry-backed leaf or a
- *  structural group container. Most code paths operate on this; use
- *  `isGroup` to narrow. Lives next to `GroupObject` (rather than next
- *  to `LeafObject` in the registry) because the type composes the two
- *  and the tree-walking helpers in this module are its primary
- *  consumers — keeping it here breaks the registry ↔ types cycle. */
+/** Tree node: leaf or group. Lives here (not in registry) to break the
+ *  registry <-> types cycle. */
 export type LabelObject = LeafObject | GroupObject;
 
-/** One page of label objects. The store holds a list of these; consumers
- *  that emit ZPL per-page (zplGenerator, design-file save) take the
- *  `Page` shape directly so the lib layer doesn't have to depend on
- *  the store. */
 export interface Page {
   objects: LabelObject[];
 }
@@ -36,11 +20,7 @@ export function isGroup(obj: LabelObject): obj is GroupObject {
   return obj.type === 'group';
 }
 
-/**
- * Depth-first walk over a tree of objects. Yields every node (groups and
- * leaves) in render order — children come after their parent so consumers
- * that build z-order arrays can push as they go.
- */
+/** DFS yielding parent before children, in render order. */
 export function* walkObjects(objects: LabelObject[]): Iterable<LabelObject> {
   for (const obj of objects) {
     yield obj;
@@ -70,10 +50,7 @@ export function findObjectById(
   return undefined;
 }
 
-/**
- * Returns the chain of group ancestors of the node with `id`, outermost
- * first. Empty when the node is at the top level or not found.
- */
+/** Group ancestors outermost-first; empty for top-level or missing. */
 export function findAncestors(
   objects: LabelObject[],
   id: string,
@@ -94,27 +71,12 @@ export function findAncestors(
   return trail;
 }
 
-/**
- * Resolve the click target for a node hit at `id`: the outermost group
- * containing it, or `id` itself when the node is at the top level. The
- * Figma "auto-select-parent" rule — single click on a child surfaces the
- * group as the unit of interaction.
- */
+/** Figma auto-select-parent: outermost group containing `id`, else `id`. */
 export function selectionTargetId(objects: LabelObject[], id: string): string {
   return findAncestors(objects, id)[0]?.id ?? id;
 }
 
-/**
- * Returns a new tree with the node identified by `id` replaced by
- * `mapper(node)`. Walks recursively into groups so this is the one
- * code path the store needs to mutate either top-level objects or
- * leaves nested inside groups.
- *
- * Identity-preserving: subtrees that don't contain the target id —
- * and the top-level array itself when no match is found — keep their
- * original references. That lets React memoisation skip unaffected
- * branches when a single leaf updates.
- */
+/** Identity-preserving: unaffected subtrees keep their original references. */
 export function mapObjectById(
   objects: LabelObject[],
   id: string,
@@ -139,12 +101,7 @@ export function mapObjectById(
   return changed ? next : objects;
 }
 
-/**
- * Returns a new tree with every leaf's `variableId` cleared when it matches
- * `variableId`. Recurses into groups. Identity-preserving like
- * `mapObjectById`: subtrees that hold no matching binding keep their
- * original references so the store can short-circuit the page update.
- */
+/** Identity-preserving clear of matching variableId across the tree. */
 export function stripVariableIdFromObjects(
   objects: LabelObject[],
   variableId: string,
@@ -166,11 +123,7 @@ export function stripVariableIdFromObjects(
   return changed ? next : objects;
 }
 
-/**
- * Returns the tree with `id` removed and the removed node, or `null`
- * for the node when nothing matched. Used by reparenting flows that
- * need both the detached node and the tree-without-it.
- */
+/** Returns tree with `id` removed plus the removed node (or null). */
 export function detachObjectById(
   objects: LabelObject[],
   id: string,
@@ -192,11 +145,7 @@ export function detachObjectById(
   return { removed, rest };
 }
 
-/**
- * True when `ancestorId` is `id` itself or sits anywhere in the
- * subtree rooted at `id`. Reparenting flows use this to forbid the
- * cycle `move(g, into = g_or_descendant_of_g)`.
- */
+/** Reparent cycle guard. */
 export function isSelfOrDescendant(
   objects: LabelObject[],
   id: string,
@@ -210,12 +159,7 @@ export function isSelfOrDescendant(
   return false;
 }
 
-/**
- * True when the current selection has at least one top-level, unlocked
- * item — i.e. when `groupSelection()` would actually act. Used by the
- * "Group" buttons in the layers panel header and the multi-select
- * properties panel so they hide when the click would no-op.
- */
+/** True when groupSelection() would act (>=1 top-level unlocked). */
 export function canGroupSelection(
   objects: LabelObject[],
   selectedIds: readonly string[],
@@ -225,12 +169,7 @@ export function canGroupSelection(
   );
 }
 
-/**
- * Map an intent-level selection (which may include group ids) to the
- * flat list of Konva-node ids the renderer and transformer can attach
- * to. Group ids expand to their descendant leaves; leaf ids pass
- * through. Order follows the input.
- */
+/** Expand group ids to their descendant leaves; leaf ids pass through. */
 export function expandSelection(
   objects: LabelObject[],
   selectedIds: readonly string[],

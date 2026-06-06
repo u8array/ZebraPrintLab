@@ -68,6 +68,101 @@ describe('parseDesignFile', () => {
     expect(result.error).toBe('invalid_schema');
   });
 
+  it('migrates legacy gs1databar inside a nested group', () => {
+    const legacyJson = JSON.stringify({
+      schemaVersion: 1,
+      label: { widthMm: 100, heightMm: 60, dpmm: 8 },
+      pages: [
+        {
+          objects: [
+            {
+              id: 'g',
+              type: 'group',
+              x: 0,
+              y: 0,
+              rotation: 0,
+              children: [
+                {
+                  id: 'g1',
+                  type: 'gs1databar',
+                  x: 0,
+                  y: 0,
+                  rotation: 0,
+                  props: { content: '0112345678901', moduleWidth: 5, symbology: 1, rotation: 'N' },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const result = parseDesignFile(legacyJson);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const group = result.value.pages[0]?.objects[0] as { children?: unknown[] };
+    const child = group.children?.[0] as { props: Record<string, unknown> };
+    expect(child.props.magnification).toBe(5);
+    expect(child.props.moduleWidth).toBeUndefined();
+  });
+
+  it('gs1databar migration is idempotent and prefers existing magnification', () => {
+    // A re-saved file may already carry both keys; the migration must
+    // leave the new key intact and not overwrite it from the legacy slot.
+    const mixed = JSON.stringify({
+      schemaVersion: 1,
+      label: { widthMm: 100, heightMm: 60, dpmm: 8 },
+      pages: [
+        {
+          objects: [
+            {
+              id: 'g1',
+              type: 'gs1databar',
+              x: 0,
+              y: 0,
+              rotation: 0,
+              props: { content: '01', moduleWidth: 9, magnification: 4, symbology: 1, rotation: 'N' },
+            },
+          ],
+        },
+      ],
+    });
+    const result = parseDesignFile(mixed);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const obj = result.value.pages[0]?.objects[0] as unknown as { props: Record<string, unknown> };
+    expect(obj.props.magnification).toBe(4);
+    expect(obj.props.moduleWidth).toBe(9); // untouched when magnification already present
+  });
+
+  it('migrates legacy gs1databar props.moduleWidth → props.magnification', () => {
+    const legacyJson = JSON.stringify({
+      schemaVersion: 1,
+      label: { widthMm: 100, heightMm: 60, dpmm: 8 },
+      pages: [
+        {
+          objects: [
+            {
+              id: 'g1',
+              type: 'gs1databar',
+              x: 0,
+              y: 0,
+              rotation: 0,
+              props: { content: '0112345678901', moduleWidth: 4, symbology: 1, rotation: 'N' },
+            },
+          ],
+        },
+      ],
+    });
+    const result = parseDesignFile(legacyJson);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const obj = result.value.pages[0]?.objects[0];
+    expect(obj?.type).toBe('gs1databar');
+    const p = (obj as unknown as { props: Record<string, unknown> }).props;
+    expect(p.magnification).toBe(4);
+    expect(p.moduleWidth).toBeUndefined();
+  });
+
   it('rejects an unknown schemaVersion as invalid_schema', () => {
     const futureJson = JSON.stringify({
       schemaVersion: 999,

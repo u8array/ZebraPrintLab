@@ -103,7 +103,7 @@ describe('importZplText: findings.pageIndex', () => {
   it('folds printerProfile across multiple ^XA blocks (last-write-wins per key, non-overlapping preserved)', () => {
     // Block 1 sets reprintAfterError=N + setRealtimeClock.
     // Block 2 overrides reprintAfterError to Y.
-    // Result must carry Y from block 2 AND the clock from block 1 —
+    // Result must carry Y from block 2 AND the clock from block 1:
     // a per-block fold mid-pipeline; a refactor that collapsed the
     // fold to one end-of-stream pass would lose one of the two.
     const zpl = [

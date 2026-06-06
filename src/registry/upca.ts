@@ -10,10 +10,9 @@ export const upcaCoreConfig: Barcode1DCoreConfig = {
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     // ^BU params: rotation, height, interpretation, above, checkDigit.
-    // checkDigit=Y matches Zebra's own default (we previously forced N
-    // and the HRI line dropped the 12th digit) and the retail/UPC-A
-    // print convention — the 12th digit floats right of the bars,
-    // analogous to the system digit on the left.
+    // checkDigit=Y matches Zebra's default and the retail/UPC-A print
+    // convention; the 12th digit floats right of the bars, analogous
+    // to the system digit on the left.
     return `^BU${p.rotation},${p.height},${interp},N,Y`;
   },
   hri: { formatHri: formatUpcaHri },

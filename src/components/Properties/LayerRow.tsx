@@ -27,9 +27,9 @@ export interface LayerRowProps {
    *  group. Drives the soft tint that signals "I move with the group". */
   isInSelectedGroup: boolean;
   isExpanded: boolean;
-  /** Highlight the row body — used for "drop into this group". */
+  /** Highlight the row body; used for "drop into this group". */
   isDropTarget: boolean;
-  /** Show an accent line above this row — used for sibling drops so the
+  /** Show an accent line above this row; used for sibling drops so the
    *  user sees the exact landing slot before releasing. */
   showInsertionLine: boolean;
   /** Add a small bottom gap because the next row in display order leaves
@@ -79,10 +79,9 @@ export function LayerRow({
   const boundVariable = useLabelStore((s) =>
     lookupBoundVariable(obj, s.variables),
   );
-  // Inline-rename is currently only exposed for groups; leaves render
-  // their registry label as a plain (non-editable) span. The single
-  // groupRow check at the entry-point keeps the rest of the edit path
-  // free of repeated guards.
+  // Inline-rename is exposed only for groups; leaves render their
+  // registry label as a non-editable span. The single groupRow check at
+  // the entry-point keeps the rest of the edit path free of guards.
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);

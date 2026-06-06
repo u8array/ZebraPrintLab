@@ -9,17 +9,7 @@ export type MarkerSegment =
 const MARKER_RE = /«([^»]+)»/g;
 const KNOWN_CLOCK_TOKENS = new Set<string>(CLOCK_TOKEN_LABELS.map((x) => x.token));
 
-/** Tokenise template content into literal / marker segments so a
- *  highlight layer can colour markers without breaking literal text.
- *  Marker grammar matches both variable markers (`«name»`) and clock
- *  markers (`«clock:T»`) — same `«…»` family.
- *
- *  Markers are classified into var / clock / orphan:
- *   - var:    variable name resolves to a defined Variable    → accent
- *   - clock:  clock-token letter known to TOKEN_FORMATTERS   → info
- *   - orphan: variable name unknown OR clock token unknown   → red
- *  Orphan-detection is the visual half of validation — the user sees
- *  immediately when a marker won't resolve at render time. */
+/** Classifies markers var/clock/orphan for editor highlighting. */
 export function tokeniseMarkers(
   content: string,
   variableNames: ReadonlySet<string>,
@@ -30,8 +20,9 @@ export function tokeniseMarkers(
     const idx = m.index ?? 0;
     if (idx > last) out.push({ kind: "text", text: content.slice(last, idx) });
     const body = m[1] ?? "";
-    if (body.startsWith("clock:")) {
-      const tok = body.slice("clock:".length);
+    const clockMatch = body.match(/^clock([23]?):([A-Za-z])$/);
+    if (clockMatch) {
+      const tok = clockMatch[2] ?? "";
       out.push({ kind: KNOWN_CLOCK_TOKENS.has(tok) ? "clock" : "orphan", text: m[0] });
     } else {
       out.push({ kind: variableNames.has(body) ? "var" : "orphan", text: m[0] });
@@ -42,17 +33,7 @@ export function tokeniseMarkers(
   return out;
 }
 
-/** Marker range [start, end) containing or adjacent to `pos`, honouring
- *  the atomic-delete edge rules:
- *   - `backspace`: cursor right after the closing `»` (or anywhere
- *     inside the marker) → marker is deletable as one unit
- *   - `delete`:    cursor right before the opening `«` (or anywhere
- *     inside) → same
- *   - any other position → null (caller falls back to default editing)
- *
- *  Used by the content-editor's `onKeyDown` to treat every `«…»` as a
- *  single deletable unit; a `Backspace` mid-marker would otherwise
- *  leave a half-broken `«nam»` that the resolver can't bind. */
+/** backspace: pos after `»` or inside; delete: pos before `«` or inside. */
 export function findAtomicMarker(
   content: string,
   pos: number,
@@ -70,9 +51,7 @@ export function findAtomicMarker(
   return null;
 }
 
-/** Marker range [start, end) containing `pos`, with both endpoints
- *  treated as "inside". Used by the content-editor's `onDoubleClick`
- *  to select the whole marker instead of the default word-fragment. */
+/** Both endpoints treated as inside. */
 export function findMarkerContaining(
   content: string,
   pos: number,

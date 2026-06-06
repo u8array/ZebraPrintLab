@@ -67,8 +67,8 @@ describe("computeSnap — drag (default activeEdges)", () => {
   describe("label alignment", () => {
     it("snaps to label center", () => {
       const labelRect = r("_lbl", 0, 0, 200, 200);
-      // dragged center near label center = 100; place dragged at 73 (center 88) → not in threshold? Place at 76 (center 91) — within 6 of 100
-      const dragged = r("d", 76, 0, 30, 30); // center 91, target 100, distance 9 — outside
+      // dragged center near label center = 100; place dragged at 73 (center 88) → not in threshold? Place at 76 (center 91), within 6 of 100
+      const dragged = r("d", 76, 0, 30, 30); // center 91, target 100, distance 9, outside
       const inThresh = r("d", 86, 0, 30, 30); // center 101, target 100, distance 1
       const out = computeSnap(dragged, [], undefined, labelRect, labelRect);
       expect(out.x).toBe(dragged.x); // outside threshold
@@ -181,7 +181,7 @@ describe("computePointSnap", () => {
 
   it("does NOT consider the other's centre as a snap target (regression: 50%-snap bug)", () => {
     // other rect at (100..200, 50..150). centre y = 100. point at y=98
-    // is 2 px from the centre but >= 6 px from any edge — must not snap.
+    // is 2 px from the centre but >= 6 px from any edge; must not snap.
     const other = r("o", 100, 50, 100, 100);
     const result = computePointSnap({ x: 500, y: 98 }, [other], 6);
     expect(result.y).toBe(98);
@@ -192,7 +192,7 @@ describe("computePointSnap", () => {
 
   it("uses the label rect for edge alignment too", () => {
     const lbl = r("_lbl", 0, 0, 1000, 600);
-    // y=300 sits exactly on the label's vertical centre — a valid
+    // y=300 sits exactly on the label's vertical centre, a valid
     // label-centre snap, so two guides fire (right edge + centre).
     const result = computePointSnap({ x: 998, y: 300 }, [], 6, lbl);
     expect(result.x).toBe(1000); // right edge of label

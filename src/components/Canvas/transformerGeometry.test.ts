@@ -78,7 +78,7 @@ describe("applyHeightSnap", () => {
   // Captured from a real low-zoom box bottom-edge resize that triggered
   // the runaway top-anchor pin. dotPx ≈ 0.116 (≈ 4.3 px / dot at fit-zoom),
   // newBox.y drifted 0.8–10 px from oldBox.y due to Konva FP scale-driven
-  // node-position updates — comfortably above the prior `dotPx * 0.5`
+  // node-position updates, comfortably above the prior `dotPx * 0.5`
   // threshold, which incorrectly identified each frame as top-anchor and
   // pinned the bottom edge, marching the box upward.
   const oldBoxLowZoom = { x: 100, y: 346.809, width: 50, height: 27.426, rotation: 0 };

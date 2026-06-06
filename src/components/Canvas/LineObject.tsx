@@ -13,26 +13,11 @@ import {
 import { diagonalPolygonPoints } from "../../lib/shapeGeometry";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 
-/** Endpoint-handle visuals — small white square with a thin selection
- *  stroke, mirroring the look of the Konva Transformer's anchors. The
- *  hit area is a separate, larger transparent square. */
 const HANDLE_VISIBLE_SIZE = 7;
 const HANDLE_HIT_SIZE = 14;
 
-/**
- * Selection outline for a line — two parallel selection-coloured strokes
- * offset perpendicular to the body. Drawing alongside (not on top) keeps
- * the body's difference-blend intact for reverse (^LRY) lines and matches
- * the Illustrator-style stroke selection affordance. Returns null for
- * zero-length lines (degenerate input).
- *
- * Offset breakdown for a 1 px visual gap between body and selection edges:
- *   bodyStrokeWidth / 2 — half of the body (centre → body edge)
- *   0.5                 — half of the 1 px selection stroke
- *                         (centre → selection's body-side edge)
- *   1                   — actual gap requested between the two adjacent
- *                         edges
- */
+/** Two parallel selection strokes offset perpendicular to the body,
+ *  keeping the body's difference-blend (reverse ^LRY) intact. */
 function LineSelectionOutline({
   x1, y1, x2, y2,
   bodyStrokeWidth,
@@ -72,10 +57,6 @@ function LineSelectionOutline({
 type LineLabelObject = Extract<LabelObject, { type: "line" }>;
 type Props = Omit<KonvaObjectProps, "obj"> & { obj: LineLabelObject };
 
-/** Line renderer. Hosted as its own component so hooks (useState for
- *  live endpoint drag) can run conditionally per object type without
- *  violating rules-of-hooks. The dispatcher in KonvaObject narrows
- *  `obj` before passing — no runtime cast needed here. */
 export function LineObject({
   obj,
   scale,
@@ -92,8 +73,7 @@ export function LineObject({
 }: Props) {
   const p = obj.props;
   const colors = useColorScheme();
-  // All positions are absolute stage coordinates — the Group has no offset.
-  // This eliminates any parent-child draggable conflict.
+  // Absolute stage coords; Group has no offset (avoids draggable conflict).
   const x1 = offsetX + dotsToPx(obj.x, scale, dpmm);
   const y1 = offsetY + dotsToPx(obj.y, scale, dpmm);
   const rad = (p.angle * Math.PI) / 180;
@@ -101,46 +81,25 @@ export function LineObject({
   const x2 = x1 + lenPx * Math.cos(rad);
   const y2 = y1 + lenPx * Math.sin(rad);
 
-  // Reverse (^LRY) uses a difference-blend body — print-correct: renders
-  // black on the white label and inverts darker shapes underneath. The
-  // body keeps that mode even while selected so the inversion visual
-  // doesn't disappear and hide whatever is layered behind; the selection
-  // highlight is rendered as a separate overlay below.
+  // Reverse (^LRY): difference-blend body kept even while selected so the
+  // inversion stays visible; selection halo is a separate overlay.
   const isReverse = !!p.reverse;
   const strokeColor = isReverse
     ? "#ffffff"
     : p.color === "B"
       ? "#000000"
       : "#cccccc";
-  // Live thickness while the side handle is being dragged. Falls back to
-  // the stored prop when no drag is in flight; commits to props on
-  // dragEnd. Wrapping the rendering width in this state means the band,
-  // selection outline and handle anchors all track the cursor in real
-  // time without any one-frame delay on release.
   const [liveThicknessDots, setLiveThicknessDots] = useState<number | null>(null);
   const effectiveThicknessDots = liveThicknessDots ?? p.thickness;
   const rawStrokePx = Math.max(dotsToPx(effectiveThicknessDots, scale, dpmm), 1);
 
-  // Option-A geometry (mirrors src/lib/shapeRender.ts):
-  //   - Axis-aligned lines map to ^GB and extrude thickness downward
-  //     (horizontal) or rightward (vertical) from (obj.x, obj.y) — the
-  //     visible body is shifted by t/2 along that axis so the band fills
-  //     y..y+t / x..x+t exactly. Handles stay at the band's start corner.
-  //   - Diagonal lines map to ^GD: the conceptual line is the left long
-  //     edge of a parallelogram and thickness extrudes purely in +x. The
-  //     diagonalPolygonPoints helper builds the four vertices.
-  //
-  // The axis-aligned / diagonal pick is derived from the *live* display
-  // endpoints rather than `p.angle` (which only updates on dragEnd).
-  // Otherwise dragging a near-horizontal endpoint shows the body locked
-  // to the horizontal band until release, then snaps to the parallelo-
-  // gram — a visible jump the user noticed.
+  // Geometry mirrors shapeRender.ts (axis-aligned -> ^GB band, diagonal
+  // -> ^GD parallelogram). Axis-aligned check uses live endpoints, not
+  // p.angle (which only updates on dragEnd) to avoid release-jump.
 
-  // Live positions while handles are being dragged (snapped preview)
   const [livePt1, setLivePt1] = useState<{ x: number; y: number } | null>(null);
   const [livePt2, setLivePt2] = useState<{ x: number; y: number } | null>(null);
 
-  // Live drag delta while the whole line is being dragged
   const [dragDelta, setDragDelta] = useState<{ x: number; y: number }>({
     x: 0,
     y: 0,
@@ -154,20 +113,13 @@ export function LineObject({
   const dispX2 = livePt2?.x ?? x2 + dx;
   const dispY2 = livePt2?.y ?? y2 + dy;
 
-  // Mid-drag, an endpoint can be pulled inside the current thickness; the
-  // onDragEnd commit then snaps thickness down to the new length, which
-  // would look like a sudden band shrink on release. Cap the visual stroke
-  // at the live endpoint distance so the band always tracks the t ≤ length
-  // invariant we commit to. In steady state the data model already
-  // satisfies this, so the cap is a no-op.
+  // Cap visual stroke at live length so the band stays within the
+  // t <= length invariant we commit to on dragEnd.
   const visualLenPx = Math.hypot(dispX2 - dispX1, dispY2 - dispY1);
   const lineStrokeWidth = Math.min(rawStrokePx, visualLenPx);
   const halfStrokePx = lineStrokeWidth / 2;
 
-  // Half-pixel epsilon: constrainLine's auto-snap commits 45°-step
-  // positions where ddx/ddy land exactly on axis-aligned values, but
-  // float math can leave a tiny residue. <0.5 px collapses to "the
-  // pixel grid sees this as axis-aligned" without false-positives.
+  // <0.5 px epsilon for float residue on constrainLine's 45-step snap.
   const ddxDisp = dispX2 - dispX1;
   const ddyDisp = dispY2 - dispY1;
   const isHorizontal = Math.abs(ddyDisp) < 0.5;
@@ -176,27 +128,15 @@ export function LineObject({
   const visualShiftX = isVertical ? halfStrokePx : 0;
   const visualShiftY = isHorizontal ? halfStrokePx : 0;
 
-  // Shift forces the user-explicit 45°-step constraint; otherwise we use
-  // Figma-style auto-snap (±5° tolerance to the nearest 45° step).
+  // Shift = explicit 45-step lock; else Figma-style auto-snap (+-5deg).
   const resolveMode = (shift: boolean): ConstrainMode =>
     shift ? "shift" : "autoSnap";
 
-  // Cache the other-objects snapshot for the duration of a single endpoint
-  // drag — captured lazily on the first onDragMove and cleared on
-  // onDragEnd. Avoids re-querying every Konva node's clientRect per frame.
+  // Cached per-drag to avoid re-querying every Konva clientRect per frame.
   const othersSnapshotRef = useRef<SnapRect[] | null>(null);
 
-  /**
-   * Run the projected endpoint position through object-snap (other shapes'
-   * edges + label edges). Skips when shift is held — the user-explicit
-   * 45°-step constraint would otherwise fight the snap-nudge.
-   *
-   * The snap pipeline (othersSnapshot, labelRect, returned guides) is in
-   * stage-screen coords. The line's own drag math is in label-group local
-   * coords (which coincide with stage at viewRotation=0 but diverge under
-   * rotation). The `parent` Konva node is used to convert local↔stage so
-   * the snap stays correct in rotated views.
-   */
+  /** Object-snap for an endpoint; uses parent transform so it stays
+   *  correct in rotated views. Skipped when shift is held. */
   function snapEndpoint(
     localPx: { x: number; y: number },
     shift: boolean,
@@ -227,15 +167,8 @@ export function LineObject({
     setGuides?.([]);
   }
 
-  /**
-   * Smart-align snap for the thickness side-handle. Treats the band as a
-   * resize bbox with only the extrusion edge active (`bottom` for horizontal
-   * lines, `right` for vertical) and delegates to `computeResizeSnap`, the
-   * same path the Transformer uses for free resizes. Returns the snapped
-   * thickness in dots. No-ops on diagonals (band axis isn't stage-aligned),
-   * rotated views (AABB conversion would mislabel the active edge), or
-   * shift-bypass.
-   */
+  /** Resize-snap for thickness side-handle; no-op on diagonals, rotated
+   *  views, or shift-bypass. */
   function snapThickness(
     rawT: number,
     shift: boolean,
@@ -260,8 +193,7 @@ export function LineObject({
     }
     const transform = parent.getAbsoluteTransform();
     const thicknessPx = Math.max(dotsToPx(rawT, scale, dpmm), 1);
-    // Band bbox in label-local coords, then mapped to stage so the others
-    // snapshot (already in stage frame) can be compared apples-to-apples.
+    // Map band bbox local -> stage to match others snapshot frame.
     const localBand = isHorizontal
       ? {
           x: Math.min(dispX1, dispX2),
@@ -303,21 +235,13 @@ export function LineObject({
       p.length,
       Math.max(1, Math.round(pxToDots(snappedExtPx, scale, dpmm))),
     );
-    // If the t ≤ length cap forced the band shorter than the snap target,
-    // the guide would point past the visible band edge — clear it so the
-    // hint matches what the user sees commit.
+    // Clear guide when the t<=length cap shortened the band past the snap target.
     const cappedExtPx = dotsToPx(cappedT, scale, dpmm);
     setGuides(Math.abs(cappedExtPx - snappedExtPx) < 0.5 ? result.guides : []);
     return cappedT;
   }
 
-  /**
-   * Full endpoint-drag pipeline: axis constraint → object snap → final
-   * geometry derivation. Returns the same shape as `project` so call
-   * sites stay symmetric; the snapped endpoint may sit slightly off the
-   * axis the constraint chose, which is the standard Figma compromise
-   * (snap nudges trump the auto-snap step, but shift still locks).
-   */
+  /** axis-constraint -> object-snap -> derived geometry. */
   function endpointDrag(
     cursorXPx: number,
     cursorYPx: number,
@@ -343,13 +267,7 @@ export function LineObject({
     };
   }
 
-  // Project the cursor (`cursorPx`) toward the line endpoint that should
-  // stay fixed (`anchorDots`), returning both the constrained line geometry
-  // and the new "moving" endpoint in display pixels. `forStart=true` means
-  // the user is dragging the START handle, so the geometry is computed from
-  // new-start → fixed-end and the new start is `end - projected_delta`.
-  // `forStart=false` is the END-handle case: start stays fixed, the new
-  // end follows the projection from start.
+  // forStart=true: dragging START handle; geometry is new-start -> fixed-end.
   function project(
     cursorXPx: number,
     cursorYPx: number,
@@ -360,8 +278,7 @@ export function LineObject({
   ) {
     const cursorXDots = snap(pxToDots(cursorXPx - offsetX, scale, dpmm));
     const cursorYDots = snap(pxToDots(cursorYPx - offsetY, scale, dpmm));
-    // dx/dy is always the line direction (start → end), so for a
-    // start-handle drag we flip the input vector.
+    // dx/dy is always start->end; flip for start-handle drag.
     const inputDx = forStart
       ? anchorXDots - cursorXDots
       : cursorXDots - anchorXDots;
@@ -383,18 +300,13 @@ export function LineObject({
     };
   }
 
-  // Diagonal-only: the parallelogram vertex list is reused by the body
-  // (filled) and the selection outline (stroke), so compute it once.
-  // Returns garbage for axis-aligned input — but the diagonal branch is
-  // gated on !isAxisAligned, so it's only consumed when valid.
+  // Garbage for axis-aligned input; only consumed in the !isAxisAligned branch.
   const diagPoints = diagonalPolygonPoints(
     dispX1, dispY1, dispX2, dispY2, lineStrokeWidth,
   );
 
-  // Thickness handle anchor — sits on the far long edge of the band:
-  // bottom edge for horizontal lines, right edge otherwise. The handle's
-  // perpendicular drag direction is then y for horizontal and x for
-  // anything else, matching ZPL's ^GB / ^GD extrusion conventions.
+  // Anchored to band's far long edge; perpendicular drag axis matches
+  // ^GB / ^GD extrusion.
   const lineCenterX = (dispX1 + dispX2) / 2;
   const lineCenterY = (dispY1 + dispY2) / 2;
   const thickHandleX =
@@ -404,11 +316,6 @@ export function LineObject({
 
   return (
     <Group>
-      {/* Visible line — tracks both whole-drag and handle-drag live.
-          Difference blend keeps the reverse case print-correct: on the
-          white label it renders black, over darker shapes it inverts
-          those pixels. Stays in reverse mode even when selected so the
-          inversion visualisation isn't masked. */}
       {isAxisAligned ? (
         <>
           <KLine
@@ -437,10 +344,7 @@ export function LineObject({
         </>
       ) : (
         <>
-          {/* Diagonal ^GD body — closed filled parallelogram rather than
-              a centred stroke so the canvas matches Labelary's flat-top /
-              pointy-side geometry. Reverse uses the same difference blend
-              as the stroked case. */}
+          {/* ^GD: filled parallelogram (not stroke) matches Labelary geometry. */}
           <KLine
             points={diagPoints}
             closed
@@ -461,11 +365,7 @@ export function LineObject({
           )}
         </>
       )}
-      {/* Wide transparent hit area — handles click-to-select and whole-line drag.
-          id is here (not on the Group) so the Stage snap handler can find this node
-          via e.target.id() and apply object-snap correctly. The hit area is
-          shifted along with the visible body so clicks register where the
-          user sees the line. */}
+      {/* Hit area carries the id so Stage snap can find this node. */}
       <KLine
         id={obj.id}
         points={[
@@ -479,11 +379,7 @@ export function LineObject({
         draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         onDragMove={(e) => {
-          // Snap the absolute start-point position to the grid (not
-          // the delta), then derive the delta to apply. Snapping the
-          // delta would let an off-grid line stay off-grid forever;
-          // shapes, text and the endpoint handles in this same
-          // component all snap absolute, so the line should too.
+          // Snap absolute (not delta) so off-grid lines drift onto the grid.
           const newX = snap(obj.x + pxToDots(e.target.x(), scale, dpmm));
           const newY = snap(obj.y + pxToDots(e.target.y(), scale, dpmm));
           const deltaXPx = dotsToPx(newX - obj.x, scale, dpmm);
@@ -504,10 +400,7 @@ export function LineObject({
       />
       {isSelected && (
         <>
-          {/* Start point — dragging moves the origin; end point stays fixed.
-              Visuals match the Konva Transformer anchors used for other
-              shapes: small white square with a thin selection-coloured
-              border. The hit area is the larger transparent Rect's box. */}
+          {/* Start point: dragging moves origin; end stays fixed. */}
           <Rect
             x={(livePt1?.x ?? x1 + dx) - HANDLE_HIT_SIZE / 2}
             y={(livePt1?.y ?? y1 + dy) - HANDLE_HIT_SIZE / 2}
@@ -555,10 +448,7 @@ export function LineObject({
                 e.target.getParent(),
               );
               clearSnap();
-              // Shrinking the line below the current thickness would
-              // push the ZPL into the `^GB` promotion regime (t > length
-              // → printed `t × t`); cap thickness to the new length so
-              // the model preserves the t ≤ length invariant.
+              // Cap thickness to length; t > length triggers ^GB promotion (t x t).
               onChange({
                 x: r.movingDotX,
                 y: r.movingDotY,
@@ -580,7 +470,7 @@ export function LineObject({
             strokeWidth={1}
             listening={false}
           />
-          {/* End point — dragging changes length & angle */}
+          {/* End point: dragging changes length & angle */}
           <Rect
             x={(livePt2?.x ?? x2 + dx) - HANDLE_HIT_SIZE / 2}
             y={(livePt2?.y ?? y2 + dy) - HANDLE_HIT_SIZE / 2}
@@ -643,9 +533,7 @@ export function LineObject({
             strokeWidth={1}
             listening={false}
           />
-          {/* Thickness handle — drags perpendicular to the extrusion
-              axis (y for horizontal, x for everything else). Clamps to
-              the 1-dot minimum; flip-on-overshoot is deferred. */}
+          {/* Thickness handle, perpendicular drag; flip-on-overshoot deferred. */}
           <Rect
             x={thickHandleX - HANDLE_HIT_SIZE / 2}
             y={thickHandleY - HANDLE_HIT_SIZE / 2}
@@ -659,10 +547,7 @@ export function LineObject({
               const extPx = isHorizontal
                 ? cursorY - lineCenterY
                 : cursorX - lineCenterX;
-              // Cap at p.length so the line never enters the ZPL ^GB
-              // promotion regime where thickness exceeds length and
-              // Labelary would print `t × t` rather than the band the
-              // user is dragging.
+              // Cap at p.length to avoid ^GB t > length promotion.
               const rawT = Math.min(
                 p.length,
                 Math.max(1, Math.round(pxToDots(extPx, scale, dpmm))),
@@ -673,9 +558,7 @@ export function LineObject({
                 e.target.getParent(),
               );
               setLiveThicknessDots(newT);
-              // Pin the Rect to the (possibly-clamped, possibly-snapped)
-              // anchor so dragging past the minimum doesn't decouple the
-              // handle from the band edge.
+              // Pin Rect to the clamped/snapped anchor so the handle stays on the band edge.
               const newStroke = Math.max(dotsToPx(newT, scale, dpmm), 1);
               e.target.position({
                 x:

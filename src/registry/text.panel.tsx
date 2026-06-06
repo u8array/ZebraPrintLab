@@ -24,7 +24,7 @@ export const textPanel: ObjectTypeUi<TextProps> = {
     const label = useLabelStore((s) => s.label);
 
     // Font picker options: every alias the user can reference from this
-    // field, in this order — "(use label default)" → built-ins (0, A-H)
+    // field, in this order; "(use label default)" → built-ins (0, A-H)
     // → custom ^CW aliases. The selected fontId pins a specific ID on
     // the field via the ^A{id} short form. The legacy filename-based
     // override (printerFontName, ^A@…E:NAME.TTF) lives behind the
@@ -158,7 +158,7 @@ export const textPanel: ObjectTypeUi<TextProps> = {
 
         {/* Block-Text settings sit directly under the content editor
             because they govern how that content renders (wrap width,
-            max lines, justify) — keeping them adjacent makes the
+            max lines, justify); keeping them adjacent makes the
             cause/effect relationship obvious. Other settings (font,
             rotation, reverse) act on the whole field and come below. */}
         <label className="flex items-center gap-2 cursor-pointer">

@@ -55,7 +55,7 @@ export function ZplImportModal({ onClose }: Props) {
       loadDesign({ ...label, ...labelConfig }, importedPages, importedVariables);
     }
     // Setup-Script fields update the active profile regardless of
-    // append/replace — they are per-installation state, not per-design,
+    // append/replace; they are per-installation state, not per-design,
     // so an import of a ZPL that carries Setup-Script commands should
     // reflect those commands' intent on the user's profile.
     if (Object.keys(printerProfile).length > 0) {

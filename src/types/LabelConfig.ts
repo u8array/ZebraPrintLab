@@ -1,31 +1,10 @@
 import { z } from 'zod';
 import { intInRange, makeEnumGuard } from './typeHelpers';
 
-/** A single font mapping. Three row shapes are supported so the editor
- *  can stay 1:1 with what the printer renders:
- *
- *  1. **Printer-resident custom font** — `path` set, optional
- *     `previewFontName`. Emits `^CW{alias},{path}` so the printer
- *     resolves `^A{alias}` against the path. With `previewFontName`
- *     also set the canvas renders that TTF; with `embedInZpl` true the
- *     TTF bytes ship in the ZPL stream via `~DY`.
- *  2. **Built-in font preview binding** — alias is one of `0` / `A-H`
- *     (the fonts every Zebra printer ships with), `path` left empty,
- *     `previewFontName` points at an uploaded TTF. No `^CW` is emitted;
- *     the binding is cosmetic so the canvas can show what the built-in
- *     glyphs actually look like.
- *  3. **Manual printer-resident font** — `path` set, no upload. User
- *     declares "this alias maps to a file already on the printer";
- *     canvas falls back to PrintLab ZPL because it has no bytes.
- *
- *  Both `path` and `previewFontName` allow empty strings: while the user
- *  is editing a fresh row the value may transiently be blank, and we
- *  want that state to survive a persist/rehydrate round-trip so the
- *  reload lands on the same row instead of dropping it. Completeness
- *  ("at least one of the two is non-empty") is enforced at emit time
- *  via the existing `if (m.alias && m.path)` guards in zplGenerator —
- *  not as a schema-level refine, because the schema fronts the
- *  persisted store and the store has to allow in-progress edits. */
+/** Three row shapes: printer-resident custom (path+optional preview),
+ *  built-in alias preview (alias 0/A-H, no path), or manual printer-side
+ *  (path only, no bytes). Empty strings allowed for in-progress UI rows;
+ *  completeness enforced at zplGenerator emit-time. */
 export const customFontMappingSchema = z
   .object({
     alias: z.string().regex(/^[A-Z0-9]$/),
@@ -39,14 +18,10 @@ export const customFontMappingSchema = z
   });
 export type CustomFontMapping = z.infer<typeof customFontMappingSchema>;
 
-/** Source-of-truth value lists for the per-label printer-config
- *  enums. Exported separately so the registry / UI / parser all
- *  iterate the same array instead of inlining the literals. */
 export const MEDIA_TRACKING_VALUES = ['N', 'Y', 'W', 'M', 'A'] as const;
 export type MediaTracking = (typeof MEDIA_TRACKING_VALUES)[number];
 
-/** ^MF feed-action modes. F=Feed, C=Calibration, L=Length, N=No
- *  motion, S=Short calibration. */
+/** ^MF: F=Feed, C=Calibration, L=Length, N=No motion, S=Short calibration. */
 export const MEDIA_FEED_VALUES = ['F', 'C', 'L', 'N', 'S'] as const;
 export type MediaFeedMode = (typeof MEDIA_FEED_VALUES)[number];
 
@@ -75,6 +50,65 @@ export const DARKNESS_INSTANT_RANGE = { min: 0, max: 30 } as const;
 /** ^ML: maximum label length, in dots. Zebra spec accepts 1..32000. */
 export const MAX_LABEL_LENGTH_RANGE = { min: 1, max: 32000 } as const;
 
+/** ^MU b,c dpi tokens; 200 = 203 dpi; ratio drives resampling. */
+export const MU_DPI_VALUES = [150, 200, 300, 600] as const;
+export type MuDpi = (typeof MU_DPI_VALUES)[number];
+export const isMuDpi = (n: number): n is MuDpi =>
+  (MU_DPI_VALUES as readonly number[]).includes(n);
+const muDpiSchema = z.number().refine(isMuDpi);
+
+/** ^MU b,c; both-or-neither (no meaningful ratio with half-set). */
+export const muResamplingSchema = z.object({
+  formatDpi: muDpiSchema,
+  outputDpi: muDpiSchema,
+});
+export type MuResampling = z.infer<typeof muResamplingSchema>;
+
+/** ^SO offset slots; mirrors the b,c,d,e,f,g wire-format order. All
+ *  fields signed; omitted = 0. Schema-natural order in our type is
+ *  years/months/days/hours/minutes/seconds; the parser/generator
+ *  swaps to wire order (months,days,years,...) at the boundary.
+ *  Caps stay inside Int32 so firmware parsers don't reject the wire. */
+const INT32_MAX = 2_147_483_647;
+export const clockOffsetSchema = z.object({
+  years: z.number().int().min(-100).max(100).optional(),
+  months: z.number().int().min(-1200).max(1200).optional(),
+  days: z.number().int().min(-36500).max(36500).optional(),
+  hours: z.number().int().min(-876000).max(876000).optional(),
+  minutes: z.number().int().min(-52560000).max(52560000).optional(),
+  seconds: z.number().int().min(-INT32_MAX).max(INT32_MAX).optional(),
+}).refine(
+  (o) => !clockOffsetIsEmpty(o),
+  { message: "at least one slot must be non-zero" },
+);
+export type ClockOffset = z.infer<typeof clockOffsetSchema>;
+
+/** True when every slot is undefined or 0. */
+export function clockOffsetIsEmpty(o: Record<string, number | undefined>): boolean {
+  return !Object.values(o).some((x) => x !== undefined && x !== 0);
+}
+
+/** Empty / all-zero offsets become undefined so the refine doesn't
+ *  reject the whole label. */
+function coerceEmptyOffset(v: unknown): unknown {
+  if (v === null || typeof v !== "object") return v;
+  return clockOffsetIsEmpty(v as Record<string, number | undefined>) ? undefined : v;
+}
+
+/** New Date with offset applied via native setters (handles month /
+ *  year / DST rollover). Undefined offset returns d verbatim. */
+export function applyClockOffset(d: Date, offset: ClockOffset | undefined): Date {
+  if (!offset) return d;
+  const next = new Date(d);
+  if (offset.years) next.setFullYear(next.getFullYear() + offset.years);
+  if (offset.months) next.setMonth(next.getMonth() + offset.months);
+  if (offset.days) next.setDate(next.getDate() + offset.days);
+  if (offset.hours) next.setHours(next.getHours() + offset.hours);
+  if (offset.minutes) next.setMinutes(next.getMinutes() + offset.minutes);
+  if (offset.seconds) next.setSeconds(next.getSeconds() + offset.seconds);
+  return next;
+}
+
 export const labelConfigSchema = z.object({
   widthMm: z.number(),
   heightMm: z.number(),
@@ -88,13 +122,11 @@ export const labelConfigSchema = z.object({
   overridePauseCount: z.enum(['Y', 'N']).optional(),
   mediaMode: z.enum(MEDIA_MODE_VALUES).optional(),
   labelShift: z.number().optional(),
-  /** ^LH x: horizontal origin offset emitted at export. Field FOs are
-   *  shifted accordingly so the on-screen layout equals the print result. */
+  /** ^LH x; field FOs shifted at export so screen == print. */
   labelHomeX: z.number().int().min(0).optional(),
-  /** ^LH y: vertical origin offset emitted at export. See labelHomeX. */
+  /** ^LH y; see labelHomeX. */
   labelHomeY: z.number().int().min(0).optional(),
-  /** ^LT y: label top shift emitted at export. Same compensation semantics
-   *  as labelHomeY. Zebra supports -120..+120. */
+  /** ^LT y; Zebra -120..+120. */
   labelTop: z.number().int().min(-120).max(120).optional(),
   printSpeed: intInRange(SPEED_RANGE).optional(),
   /** ^PR p2: slew (inter-label) speed. */
@@ -124,6 +156,12 @@ export const labelConfigSchema = z.object({
   mediaFeedHeadClose: z.enum(MEDIA_FEED_VALUES).optional(),
   /** ^XB: suppress backfeed for the next label. Standalone toggle. */
   suppressBackfeed: z.boolean().optional(),
+  /** ^MU b,c; set only when both slots arrived valid. */
+  muResampling: muResamplingSchema.optional(),
+  /** ^SO2: secondary clock offset (`«clock2:T»` markers resolve through this). */
+  secondaryClockOffset: z.preprocess(coerceEmptyOffset, clockOffsetSchema.optional()),
+  /** ^SO3: tertiary clock offset (`«clock3:T»` markers resolve through this). */
+  tertiaryClockOffset: z.preprocess(coerceEmptyOffset, clockOffsetSchema.optional()),
 });
 
 export type LabelConfig = z.infer<typeof labelConfigSchema>;

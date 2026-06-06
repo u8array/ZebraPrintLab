@@ -1,14 +1,46 @@
 import type { CustomFontMapping } from "../../../types/LabelConfig";
 import { FN_NUMBER_MAX, FN_NUMBER_MIN } from "../../../types/Variable";
 import type { SerialProps } from "../../../registry/serial";
+import { ZPL_BUILTIN_FONT_LETTERS } from "../../customFonts";
 import { getDefaultTextH, getDefaultTextW, type ParserState } from "../context";
-import { ciToEncoding, getDecoder, int, makeObj, readRotation } from "../helpers";
-import type { Handler } from "../types";
+import { ciToEncoding, dotsFor, getDecoder, int, makeObj, readRotation } from "../helpers";
+import type { Handler, Wildcard } from "../types";
 
 /** flushField + appendComment are shared with the orchestrator. */
 export interface FieldHelpers {
   flushField: () => void;
   appendComment: Handler;
+}
+
+/** ^A{font}{rotation},{height},{width}: dynamic font (A0/A@ are
+ *  static-mapped). Registered as a `Wildcard` because the font char
+ *  is the variable part of the command name. */
+export function createDynamicFontAWildcard(s: ParserState): Wildcard {
+  const { dots } = dotsFor(s);
+  return {
+    matches: (cmd) => cmd.length === 2 && cmd[0] === "A",
+    handle: (p, rest, cmd) => {
+      s.field.fieldType = "text";
+      s.field.textRot = readRotation(rest[0], s.defaults.fwRotation);
+      s.field.textH = dots(p[1], getDefaultTextH(s.defaults));
+      s.field.textW = dots(p[2], getDefaultTextW(s.defaults));
+      const fontChar = cmd[1] ?? "";
+      // Round-trip: ^A{id} matching the active ^CF drops to "use
+      // default" (no pendingFontId) so re-emit stays terse; otherwise
+      // pin the alias.
+      if (s.defaults.cfFontId && fontChar === s.defaults.cfFontId) {
+        s.field.pendingFontId = undefined;
+      } else {
+        s.field.pendingFontId = fontChar;
+      }
+      if (
+        !s.fonts.aliases.has(fontChar) &&
+        !ZPL_BUILTIN_FONT_LETTERS.includes(fontChar)
+      ) {
+        s.result.partialCmds.add(`^${cmd}`);
+      }
+    },
+  };
 }
 
 /** Field-shaping commands: FO/FT, A0/A@, TB, CF, FW, FB, FH, FD/FS,
@@ -19,20 +51,21 @@ export function createFieldHandlers(
 ): Record<string, Handler> {
   const { flushField, appendComment } = helpers;
   const { labelConfig } = s.result;
+  const { dots, dotsOrUndef } = dotsFor(s);
 
   return {
     // ── Field origin ──────────────────────────────────────────────────────
     FO(p) {
       flushField();
-      s.field.x = int(p[0]) + s.label.lhX;
-      s.field.y = int(p[1]) + s.label.lhY + s.label.ltY;
-      // 3rd param is justification (0/1/2) — stored but not actively used.
+      s.field.x = dots(p[0]) + s.label.lhX;
+      s.field.y = dots(p[1]) + s.label.lhY + s.label.ltY;
+      // 3rd param is justification (0/1/2), stored but not actively used.
       s.field.positionIsFT = false;
     },
     FT(p) {
       flushField();
-      s.field.x = int(p[0]) + s.label.lhX;
-      s.field.y = int(p[1]) + s.label.lhY + s.label.ltY;
+      s.field.x = dots(p[0]) + s.label.lhX;
+      s.field.y = dots(p[1]) + s.label.lhY + s.label.ltY;
       s.field.positionIsFT = true;
     },
 
@@ -41,8 +74,8 @@ export function createFieldHandlers(
     A0(p, rest) {
       s.field.fieldType = "text";
       s.field.textRot = readRotation(rest[0], s.defaults.fwRotation);
-      s.field.textH = int(p[1], getDefaultTextH(s.defaults));
-      s.field.textW = int(p[2], getDefaultTextW(s.defaults));
+      s.field.textH = dots(p[1], getDefaultTextH(s.defaults));
+      s.field.textW = dots(p[2], getDefaultTextW(s.defaults));
       // fontId "0" only when ^CF differs; "0" is the implicit default otherwise.
       s.field.pendingFontId = s.defaults.cfFontId && s.defaults.cfFontId !== "0" ? "0" : undefined;
     },
@@ -51,18 +84,18 @@ export function createFieldHandlers(
     // ^CF{font},{height},{width}  → sets default for fields without ^A
     CF(p) {
       const fontId = (p[0] ?? "").trim();
-      const explicitHeight = parseInt(p[1] ?? "", 10);
-      const explicitWidth = parseInt(p[2] ?? "", 10);
-      s.defaults.cfHeight = isNaN(explicitHeight) ? s.defaults.cfHeight : explicitHeight;
-      s.defaults.cfWidth = isNaN(explicitWidth) ? s.defaults.cfWidth : explicitWidth;
+      const explicitHeight = dotsOrUndef(p[1]);
+      const explicitWidth = dotsOrUndef(p[2]);
+      if (explicitHeight !== undefined) s.defaults.cfHeight = explicitHeight;
+      if (explicitWidth !== undefined) s.defaults.cfWidth = explicitWidth;
       if (fontId) {
         labelConfig.defaultFontId = fontId;
         s.defaults.cfFontId = fontId;
       }
-      if (!isNaN(explicitHeight) && explicitHeight > 0) {
+      if (explicitHeight !== undefined && explicitHeight > 0) {
         labelConfig.defaultFontHeight = explicitHeight;
       }
-      if (!isNaN(explicitWidth) && explicitWidth >= 0) {
+      if (explicitWidth !== undefined && explicitWidth >= 0) {
         labelConfig.defaultFontWidth = explicitWidth;
       }
     },
@@ -79,11 +112,13 @@ export function createFieldHandlers(
     // ── Field block ───────────────────────────────────────────────────────
     // ^FB{width},{lines},{lineSpacing},{justify},{hangingIndent}
     FB(p) {
-      s.defaults.fbWidth = int(p[0], 0);
+      s.defaults.fbWidth = dots(p[0]);
       s.defaults.fbLines = int(p[1], 1);
-      s.defaults.fbSpacing = int(p[2], 0);
+      s.defaults.fbSpacing = dots(p[2]);
       const fbJ = (p[3] ?? "L").toUpperCase();
       s.defaults.fbJustify = fbJ === "C" || fbJ === "R" || fbJ === "J" ? fbJ : "L";
+      // Negative indent observed to clamp to 0 on Labelary; mirror that.
+      s.defaults.fbHangingIndent = Math.max(0, dots(p[4]));
       // ^FB also implies text if no ^A was specified.
       if (!s.field.fieldType) {
         s.field.fieldType = "text";
@@ -126,17 +161,19 @@ export function createFieldHandlers(
       s.field.frActive = false;
       s.field.fpDirection = "H";
       s.field.fpCharGap = 0;
+      s.field.gsMagnification = undefined;
       s.defaults.fbWidth = 0;
       s.defaults.fbLines = 1;
       s.defaults.fbSpacing = 0;
       s.defaults.fbJustify = "L";
+      s.defaults.fbHangingIndent = 0;
       s.comment.fnNumber = null;
       s.comment.fnComment = undefined;
     },
 
     // ── Serialization ─────────────────────────────────────────────────────
     SN(p) {
-      // ^SN{start},{increment},{leadZero} — runs after ^FD; upgrade last text to serial.
+      // ^SN{start},{increment},{leadZero}: runs after ^FD, upgrade last text to serial.
       const snStart = p[0] ?? "";
       const snInc = int(p[1], 1);
       const lastObj = s.result.objects[s.result.objects.length - 1];
@@ -161,7 +198,7 @@ export function createFieldHandlers(
       }
     },
     SF(p) {
-      // ^SF{increment},{padDigits},{leadZero} — runs before ^FD; flushField emits serial.
+      // ^SF{increment},{padDigits},{leadZero}: runs before ^FD, flushField emits serial.
       s.field.snPending = true;
       s.field.snIncrement = int(p[0], 1);
       s.field.snMode = "SF";
@@ -182,21 +219,21 @@ export function createFieldHandlers(
     FP(p) {
       const d = (p[0] ?? "H").toUpperCase();
       s.field.fpDirection = d === "V" || d === "R" ? d : "H";
-      s.field.fpCharGap = Math.max(0, Math.min(9999, int(p[1], 0)));
+      s.field.fpCharGap = Math.max(0, Math.min(9999, dots(p[1])));
     },
 
     // ── Label home (origin offset) ────────────────────────────────────────
     LH(p) {
-      s.label.lhX = int(p[0], 0);
-      s.label.lhY = int(p[1], 0);
+      s.label.lhX = dots(p[0]);
+      s.label.lhY = dots(p[1]);
     },
 
     // ── Label top (vertical offset) ───────────────────────────────────────
     LT(_, rest) {
-      s.label.ltY = int(rest, 0);
+      s.label.ltY = dots(rest);
     },
 
-    // ^CW {alias},{path} — register a printer-resident font alias.
+    // ^CW {alias},{path}: register a printer-resident font alias.
     // Upsert: later ^CW for same alias replaces, no duplicates.
     CW(p) {
       const alias = (p[0] ?? "").trim().toUpperCase();
@@ -208,7 +245,7 @@ export function createFieldHandlers(
       );
       const entry: CustomFontMapping = { alias, path };
       if (s.fonts.downloadedFontPaths.has(path)) {
-        // Bytes shipped via ~DY earlier; mark for re-emit and link the fontCache key.
+        // Bytes shipped via ~DY earlier, mark for re-emit and link the fontCache key.
         entry.embedInZpl = true;
         const colonIdx = path.indexOf(":");
         const filename = colonIdx >= 0 ? path.slice(colonIdx + 1) : path;
@@ -218,25 +255,25 @@ export function createFieldHandlers(
     },
 
     // ── TrueType font / text block ────────────────────────────────────────
-    // ^A@{rotation},{height},{width},{drive}:{font} — TrueType font reference.
-    // Can't load printer TrueType fonts; import as text with best-effort sizing.
+    // ^A@{rotation},{height},{width},{drive}:{font}: TrueType font reference.
+    // Can't load printer TrueType fonts, import as text with best-effort sizing.
     "A@"(p, rest) {
       s.field.fieldType = "text";
       s.field.textRot = readRotation(rest[0], s.defaults.fwRotation);
-      s.field.textH = int(p[1]) || getDefaultTextH(s.defaults);
-      s.field.textW = int(p[2]) || getDefaultTextW(s.defaults);
+      s.field.textH = dots(p[1]) || getDefaultTextH(s.defaults);
+      s.field.textW = dots(p[2]) || getDefaultTextW(s.defaults);
       const fontRef = p[3] ?? "";
       const colonIdx = fontRef.indexOf(":");
       s.field.pendingPrinterFontName =
         (colonIdx >= 0 ? fontRef.slice(colonIdx + 1) : fontRef) || undefined;
       s.result.partialCmds.add("^A@");
     },
-    // ^TB{rotation},{width},{height} — text block (alternative to ^A + ^FB)
+    // ^TB{rotation},{width},{height}: text block (alternative to ^A + ^FB)
     TB(p, rest) {
       s.field.fieldType = "text";
       s.field.textRot = readRotation(rest[0], s.defaults.fwRotation);
-      const tbW = int(p[1], 0);
-      const tbH = int(p[2], 0);
+      const tbW = dots(p[1]);
+      const tbH = dots(p[2]);
       s.field.textH = getDefaultTextH(s.defaults);
       s.field.textW = getDefaultTextW(s.defaults);
       if (tbW > 0) {
@@ -283,9 +320,44 @@ export function createFieldHandlers(
     },
     FE(p) {
       // ^FE<char>: redefine the FN-embed delimiter used inside ^FD/^FV.
-      // Single ASCII character; falls back to '#' when missing/invalid.
+      // Single ASCII character, falls back to '#' when missing/invalid.
       const c = p[0]?.[0];
       s.format.embedChar = c && c !== "^" && c !== "~" ? c : "#";
+    },
+    SO(p) {
+      // ^SOa,b,c,d,e,f,g where a=clock# (2 or 3), then wire order
+      // months,days,years,hours,minutes,seconds. Each slot signed,
+      // empty=0. Writes to labelConfig.{secondary|tertiary}ClockOffset
+      // so the resolver can compute per-channel Dates.
+      const clockNum = (p[0] ?? "").trim();
+      if (clockNum !== "2" && clockNum !== "3") return;
+      const slot = (idx: number) => {
+        const raw = (p[idx] ?? "").trim();
+        if (raw === "") return 0;
+        const n = parseInt(raw, 10);
+        return Number.isFinite(n) ? n : 0;
+      };
+      // Skip zero slots so the stored offset matches the schema's
+      // non-empty invariant and stays uncluttered for the UI.
+      const offset: Record<string, number> = {};
+      const setIf = (key: string, idx: number) => {
+        const n = slot(idx);
+        if (n !== 0) offset[key] = n;
+      };
+      setIf("months", 1);
+      setIf("days", 2);
+      setIf("years", 3);
+      setIf("hours", 4);
+      setIf("minutes", 5);
+      setIf("seconds", 6);
+      if (Object.keys(offset).length === 0) {
+        if (clockNum === "2") delete labelConfig.secondaryClockOffset;
+        else delete labelConfig.tertiaryClockOffset;
+      } else if (clockNum === "2") {
+        labelConfig.secondaryClockOffset = offset;
+      } else {
+        labelConfig.tertiaryClockOffset = offset;
+      }
     },
 
     // ^CC<char> / ~CC<char>: change the command prefix char (default ^).

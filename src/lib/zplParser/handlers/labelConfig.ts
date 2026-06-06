@@ -1,31 +1,33 @@
-import type { LabelConfig } from "../../../types/LabelConfig";
 import { DARKNESS_INSTANT_RANGE, DARKNESS_PERMANENT_RANGE, MAX_LABEL_LENGTH_RANGE, SPEED_RANGE, isMediaFeedMode, isMediaMode, isMediaTracking, isMediaType, isPrintOrientation } from "../../../types/LabelConfig";
 import { parseIntOrUndef } from "../../inputParse";
-import { firstChar, inRange, int, strParam } from "../helpers";
+import type { ParserState } from "../context";
+import { dotsFor, firstChar, inRange, int, strParam } from "../helpers";
 import type { Handler } from "../types";
 
-/** ^PQ extended params (pauseCount, replicates) — Zebra spec caps at
+/** ^PQ extended params (pauseCount, replicates); Zebra spec caps at
  *  8 digits / 99,999,999 per slot. */
 const PQ_EXT_MAX = 99_999_999;
 
-/** Per-label media + print-quality handlers — mutate only `labelConfig`. */
+/** Per-label media + print-quality handlers; mutate only `labelConfig`. */
 export function createLabelConfigHandlers(
-  labelConfig: Partial<LabelConfig>,
+  s: ParserState,
   dpmm: number,
 ): Record<string, Handler> {
+  const labelConfig = s.result.labelConfig;
+  const { dots, dotsOrUndef } = dotsFor(s);
   return {
     PW(_, rest) {
-      const dots = int(rest);
-      if (dots > 0) labelConfig.widthMm = Math.round((dots / dpmm) * 10) / 10;
+      const w = dots(rest);
+      if (w > 0) labelConfig.widthMm = Math.round((w / dpmm) * 10) / 10;
     },
     LL(_, rest) {
-      const dots = int(rest);
-      if (dots > 0) labelConfig.heightMm = Math.round((dots / dpmm) * 10) / 10;
+      const h = dots(rest);
+      if (h > 0) labelConfig.heightMm = Math.round((h / dpmm) * 10) / 10;
     },
     PQ(p) {
       const qty = int(p[0], 0);
       if (qty > 0) labelConfig.printQuantity = qty;
-      // ^PQ q,p,r,o — preserve extended params when present.
+      // ^PQ q,p,r,o: preserve extended params when present.
       if (p.length > 1) {
         const pause = int(p[1], 0);
         if (pause >= 0 && pause <= PQ_EXT_MAX) labelConfig.pauseCount = pause;
@@ -44,7 +46,7 @@ export function createLabelConfigHandlers(
       if (isMediaMode(mode)) labelConfig.mediaMode = mode;
     },
     LS(_, rest) {
-      const shift = int(rest, 0);
+      const shift = dots(rest);
       if (shift !== 0) labelConfig.labelShift = shift;
     },
     PR(p) {
@@ -64,7 +66,7 @@ export function createLabelConfigHandlers(
       if (isMediaType(mt)) labelConfig.mediaType = mt;
     },
     MN(p) {
-      // ^MNa,b — b is an optional black-mark offset for W/M modes,
+      // ^MNa,b: b is an optional black-mark offset for W/M modes,
       // which we don't model. Reading p[0] instead of the raw rest
       // string keeps `^MNY,10` from being mis-read as the single
       // token "Y,10" and silently dropped.
@@ -72,7 +74,7 @@ export function createLabelConfigHandlers(
       if (isMediaTracking(v)) labelConfig.mediaTracking = v;
     },
     ML(p) {
-      const v = inRange(parseIntOrUndef(p[0]), MAX_LABEL_LENGTH_RANGE);
+      const v = inRange(dotsOrUndef(p[0]), MAX_LABEL_LENGTH_RANGE);
       if (v !== undefined) labelConfig.maxLabelLength = v;
     },
     MF(p) {
@@ -92,8 +94,8 @@ export function createLabelConfigHandlers(
       const m = firstChar(rest);
       if (m === "Y" || m === "N") labelConfig.mirror = m;
     },
-    // ~SD — instant darkness set (00..30). Tilde-prefix; the tokenizer
-    // drops the delimiter, so this is the canonical SD handler.
+    // ~SD: instant darkness set (00..30). Tilde-prefix, so the tokenizer
+    // drops the delimiter and this is the canonical SD handler.
     SD(_, rest) {
       const v = inRange(parseIntOrUndef(rest), DARKNESS_INSTANT_RANGE);
       if (v !== undefined) labelConfig.instantDarkness = v;

@@ -36,7 +36,7 @@ export function useAltClickCycle({ containerRef, stageRef, selectObject }: Optio
       const rect = el.getBoundingClientRect();
       const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       // Konva's own hit-graph respects view rotation, pan offset,
-      // per-shape transforms and the listening flag — far cheaper than
+      // per-shape transforms and the listening flag, far cheaper than
       // mirroring all of that in our own bbox math.
       const objIds = new Set(getCurrentObjects().map((o) => o.id));
       const hits = objectIdsAtPoint(stage, point, objIds);
@@ -45,7 +45,7 @@ export function useAltClickCycle({ containerRef, stageRef, selectObject }: Optio
       e.preventDefault();
       const idx = nextCycleIndex(hits, anchorRef.current, point, ALT_CYCLE_TOL_PX);
       // `hits[idx]` is `string | undefined` under noUncheckedIndexedAccess
-      // even though idx is guaranteed valid here — the guard satisfies TS.
+      // even though idx is guaranteed valid here; the guard satisfies TS.
       const nextId = hits[idx];
       if (!nextId) return;
       anchorRef.current = { x: point.x, y: point.y, id: nextId };

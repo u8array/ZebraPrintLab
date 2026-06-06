@@ -6,7 +6,7 @@ import {
 } from '../components/Canvas/bwipConstants';
 export type { Barcode1DProps as UpcEanExtensionProps } from './barcode1d';
 
-/** UPC/EAN extension barcode (^BS) — the 2- or 5-digit supplement
+/** UPC/EAN extension barcode (^BS); the 2- or 5-digit supplement
  *  printed alongside a UPC-A / EAN-13. Common uses: 5-digit ISBN
  *  price code on books, 2-digit issue number on magazines.
  *

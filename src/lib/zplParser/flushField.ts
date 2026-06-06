@@ -8,6 +8,7 @@ import { embedsToMarkers } from "../fnTemplate";
 import { tokensToMarkers } from "../fcTemplate";
 import { decodeFbContent } from "../fbContent";
 import { zplAnchorToModel } from "../labelGeometry/textPositionTransforms";
+import { blockInterLineExtentDots } from "../zebraTextLayout";
 import { computeTextRenderMetrics } from "../labelGeometry/textRenderMetrics";
 import type { TextProps } from "../../registry/text";
 import type { Code128Props } from "../../registry/code128";
@@ -74,7 +75,7 @@ export function createFlushField(
 
   // Bootstrap Variables for FNs referenced by embeds before marker substitution.
   const applyFnEmbeds = (payload: string): string => {
-    // Closed `<e><n><e>` only — a naked `<e><digits>` would dangle phantom Variables.
+    // Closed `<e><n><e>` only; a naked `<e><digits>` would dangle phantom Variables.
     const e = s.format.embedChar.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const embedRe = new RegExp(`${e}(\\d+)(?:,[^${e}]*)?${e}`, "g");
     let m: RegExpExecArray | null;
@@ -96,6 +97,7 @@ export function createFlushField(
     s.defaults.fbLines = 1;
     s.defaults.fbSpacing = 0;
     s.defaults.fbJustify = "L";
+    s.defaults.fbHangingIndent = 0;
   };
 
   const flushField = () => {
@@ -134,7 +136,7 @@ export function createFlushField(
         // ZPL anchors ^FO at cap-top and ^FT at baseline; our internal
         // model stores the Konva render position (EM-top-left) so editor
         // interactions stay shift-free. The FO/I and FO/B shifts also
-        // need the rendered ink width — measure it the same way the
+        // need the rendered ink width; measure it the same way the
         // renderer does so the round-trip stays exact.
         const { inkWidthDots } = computeTextRenderMetrics({
           content: s.field.snPending ? `#${decoded}` : decoded,
@@ -142,12 +144,21 @@ export function createFlushField(
           fontWidth: s.field.textW,
           printerFontName: s.field.pendingPrinterFontName,
         });
+        // ^FT + ^FB: the anchor pins the last baseline, so the EM-top
+        // sits one block-extent above. Computed only when ^FB applies.
+        const blockExtentDots = blockInterLineExtentDots({
+          blockWidthDots: s.defaults.fbWidth,
+          blockLines: s.defaults.fbLines,
+          blockLineSpacing: s.defaults.fbSpacing,
+          fontHeight: s.field.textH,
+        });
         const modelPos = zplAnchorToModel(
           s.field.x,
           s.field.y,
           { fontHeight: s.field.textH, rotation: s.field.textRot },
           posType,
           inkWidthDots,
+          blockExtentDots,
         );
         // ^SF pending: emit serial (not text); flush any reverse-bg first.
         if (s.field.snPending) {
@@ -218,6 +229,9 @@ export function createFlushField(
           textProps.blockLines = s.defaults.fbLines;
           textProps.blockLineSpacing = s.defaults.fbSpacing;
           textProps.blockJustify = s.defaults.fbJustify;
+          if (s.defaults.fbHangingIndent > 0) {
+            textProps.blockHangingIndent = s.defaults.fbHangingIndent;
+          }
         }
         if (s.field.fpDirection !== "H") {
           textProps.fpDirection = s.field.fpDirection;
@@ -367,7 +381,10 @@ export function createFlushField(
             s.field.y,
             {
               content,
-              moduleWidth: s.defaults.byModuleWidth,
+              // ^BR p[2] is the authoritative magnification source;
+              // fall back to ^BY moduleWidth when ^BR omitted p[2]
+              // (Zebra convention: ^BY and ^BR magnification match).
+              magnification: s.field.gsMagnification ?? s.defaults.byModuleWidth,
               symbology: s.field.gsSymbology,
               segments: s.field.gsSegments,
               rotation: s.field.bcRotation,

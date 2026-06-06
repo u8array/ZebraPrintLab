@@ -20,7 +20,7 @@ export interface CsvDataset {
 }
 
 export interface CsvSlice {
-  /** Session-only CSV rows (NOT in persist-partialize — too bulky + leaky). */
+  /** Session-only CSV rows (NOT in persist-partialize; too bulky + leaky). */
   csvDataset: CsvDataset | null;
   /** Persistent mapping between Variables and CSV column names. Lives
    *  in the design file (round-tripped via Save/Load) so a user can

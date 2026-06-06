@@ -1,13 +1,16 @@
 import { useId } from "react";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { inputCls } from "../ui/formStyles";
 import { PRINTER_LOCALE_VALUES, ZPL_MODE_VALUES, isPrinterLocale, isZplMode, type PrinterLocale, type ZplMode } from "../../types/PrinterProfile";
 import {
+  SafeStringInput,
+  ZplCheckbox,
   ZplCommandLabel,
   ZplEnumSelect,
   ZplField,
+  ZplFieldHint,
 } from "./zplFieldPrimitives";
+import { FontLinksField } from "./FontLinksField";
 import { SE_PATH_PATTERN } from "./sePathPattern";
 
 type LocEncodingLanguage = ReturnType<typeof useT>["printerSettings"]["encodingLanguage"];
@@ -34,7 +37,7 @@ const ZPL_MODE_LABEL_KEYS = {
   '2': 'zplMode2',
 } as const satisfies Record<ZplMode, keyof LocEncodingLanguage>;
 
-/** Tab 4 of the Printer Settings Modal — encoding & language setup.
+/** Tab 4 of the Printer Settings Modal; encoding & language setup.
  *  All three commands belong to the Setup-Script output channel
  *  (EEPROM-persistent printer state), surfaced under the "Setup
  *  Script" rail group. */
@@ -59,7 +62,7 @@ export function EncodingAndLanguageTab() {
       />
 
       {/* ^SE: free-form printer file path (e.g. `E:UHANGUL.DAT`).
-          No primitive — path-like inputs are not used elsewhere
+          No primitive; path-like inputs are not used elsewhere
           in the modal; promote to a primitive only when a second
           caller appears. `SE_PATH_PATTERN` is a soft `:invalid`
           hint (see `sePathPattern.ts` for the shape rationale);
@@ -67,19 +70,14 @@ export function EncodingAndLanguageTab() {
           conventions vary. */}
       <ZplField>
         <ZplCommandLabel text={loc.encodingTable} command="^SE" htmlFor={encodingId} />
-        <input
+        <SafeStringInput
           id={encodingId}
-          type="text"
-          className={`${inputCls} invalid:border-warning`}
+          className="invalid:border-warning"
           pattern={SE_PATH_PATTERN}
           value={profile.encodingTable ?? ""}
-          onChange={(e) =>
-            patchPrinterProfile({ encodingTable: e.target.value || undefined })
-          }
+          onChange={(v) => patchPrinterProfile({ encodingTable: v || undefined })}
         />
-        <span className="font-mono text-[10px] text-muted/70 normal-case tracking-normal">
-          {loc.encodingTableHint}
-        </span>
+        <ZplFieldHint>{loc.encodingTableHint}</ZplFieldHint>
       </ZplField>
 
       <ZplEnumSelect
@@ -92,6 +90,47 @@ export function EncodingAndLanguageTab() {
         defaultLabel={t.printerSettings.defaultOption}
         optionLabel={(m) => loc[ZPL_MODE_LABEL_KEYS[m]]}
       />
+
+      {/* ^PA Advanced Text Properties: 4 independent slots, composite
+          emit fires only when ≥1 is set (see zplSetupScript.ts). */}
+      <ZplField>
+        <ZplCheckbox
+          text={loc.paSlotA}
+          command="^PA"
+          checked={profile.paSlotA === true}
+          onChange={(v) => patchPrinterProfile({ paSlotA: v || undefined })}
+        />
+        <ZplFieldHint>{loc.paSlotAHint}</ZplFieldHint>
+      </ZplField>
+      <ZplField>
+        <ZplCheckbox
+          text={loc.paSlotB}
+          command="^PA"
+          checked={profile.paSlotB === true}
+          onChange={(v) => patchPrinterProfile({ paSlotB: v || undefined })}
+        />
+        <ZplFieldHint>{loc.paSlotBHint}</ZplFieldHint>
+      </ZplField>
+      <ZplField>
+        <ZplCheckbox
+          text={loc.paSlotC}
+          command="^PA"
+          checked={profile.paSlotC === true}
+          onChange={(v) => patchPrinterProfile({ paSlotC: v || undefined })}
+        />
+        <ZplFieldHint>{loc.paSlotCHint}</ZplFieldHint>
+      </ZplField>
+      <ZplField>
+        <ZplCheckbox
+          text={loc.paSlotD}
+          command="^PA"
+          checked={profile.paSlotD === true}
+          onChange={(v) => patchPrinterProfile({ paSlotD: v || undefined })}
+        />
+        <ZplFieldHint>{loc.paSlotDHint}</ZplFieldHint>
+      </ZplField>
+
+      <FontLinksField />
     </div>
   );
 }

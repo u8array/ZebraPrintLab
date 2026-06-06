@@ -1,7 +1,7 @@
 /**
  * Per-shape paint values for the field-level `^LR` (reverse) state.
  *
- * Box and ellipse share the same paint rules — black/white knockout via
+ * Box and ellipse share the same paint rules; black/white knockout via
  * a `difference` blend, with a fill/stroke swap so a filled outline
  * doesn't band when the stroke flips to white and the fill flips back
  * to black. The two render paths agreed in the editor by coincidence;

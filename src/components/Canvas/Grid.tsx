@@ -30,7 +30,7 @@ export function Grid({
   const right = labelOffsetX + labelWidthPx;
   const bottom = labelOffsetY + labelHeightPx;
 
-  // Snap grid (primary — always visible, matches snap interval)
+  // Snap grid (primary; always visible, matches snap interval)
   for (let x = labelOffsetX + snapPx; x < right; x += snapPx) {
     lines.push(
       <Line key={`vs-${x}`} points={[x, labelOffsetY, x, bottom]}

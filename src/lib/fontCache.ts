@@ -1,27 +1,20 @@
-/**
- * Font cache for printer TrueType fonts referenced by ^A@.
- * Fonts are stored as data-URLs and persisted to localStorage.
- * Each loaded font is registered with the browser's FontFace API
- * so Konva (canvas) can render text using it.
- */
+// ^A@ printer TTF cache; data-URL + FontFace registration + localStorage persistence.
 
 import { hydrateLocalStoragePrefix, safeLocalStorageSet } from "./localStorageBucket";
 
 export interface CachedFont {
   id: string;
-  /** Original printer filename e.g. "ARIAL.TTF" (uppercased for lookup) */
+  /** Uppercase printer filename. */
   name: string;
-  /** data-URL — data:font/truetype;base64,... */
+  /** data:font/truetype;base64,... */
   dataUrl: string;
-  /** Registered CSS font-family name e.g. "zpl-ARIAL" */
+  /** CSS font-family, e.g. "zpl-ARIAL". */
   fontFamily: string;
 }
 
 const LS_PREFIX = 'zpl-font-';
 
-/** Hard cap on a single font file. Browser MIME types for fonts are
- *  inconsistent (TTF often arrives as `application/octet-stream` or empty);
- *  we accept by extension and rely on this byte cap to bound damage. */
+/** Hard cap; TTF MIME varies, so we accept by extension and cap bytes. */
 export const MAX_FONT_BYTES = 4 * 1024 * 1024;
 
 const FONT_EXT_RE = /\.(ttf|otf)$/i;
@@ -50,13 +43,13 @@ async function registerFontFace(entry: CachedFont): Promise<void> {
     await face.load();
     document.fonts.add(face);
   } catch {
-    // Font invalid or API unavailable — canvas will fall back to default font
+    // Font invalid or API unavailable; canvas will fall back to default font
   }
 }
 
 hydrateLocalStoragePrefix<CachedFont>(LS_PREFIX, (entry) => {
   cache.set(entry.name, entry);
-  // Re-register asynchronously — canvas renders after React mounts.
+  // Re-register asynchronously; canvas renders after React mounts.
   void registerFontFace(entry);
 });
 
@@ -74,11 +67,7 @@ export function getAllFonts(): CachedFont[] {
   return [...cache.values()];
 }
 
-/** Return the raw TTF/OTF bytes for a cached font, or undefined when
- *  the font is unknown. Decoded on demand from the persisted data URL
- *  so the cache stores only one representation. Used by the `~DY`
- *  emitter to ship the bytes inside the ZPL stream — both the printer
- *  and Labelary then resolve the font without a separate upload. */
+/** Decoded on demand from the persisted data URL. */
 export function getFontBytes(printerName: string): Uint8Array | undefined {
   const entry = cache.get(printerName.toUpperCase());
   if (!entry) return undefined;
@@ -93,9 +82,7 @@ export function getFontBytes(printerName: string): Uint8Array | undefined {
   return bytes;
 }
 
-/** Load raw TTF/OTF bytes into the cache. Mirrors `loadFontFile` but
- *  starts from a `Uint8Array` rather than a `File`, which is what the
- *  ZPL parser hands over after decoding a `~DY` payload. */
+/** Uint8Array variant; parser hands these over after decoding ~DY. */
 export async function loadFontBytes(
   bytes: Uint8Array,
   printerName: string,
@@ -106,11 +93,7 @@ export async function loadFontBytes(
   return entry;
 }
 
-/** Synchronous counterpart of `loadFontBytes` used by the ZPL parser,
- *  which can't await per-token. Populates the cache immediately so
- *  subsequent measurement and emit calls see the font, and kicks off
- *  `FontFace.load()` in the background. The canvas re-renders on the
- *  next font-version tick once the FontFace resolves. */
+/** Sync; parser can't await per-token. FontFace.load runs in background. */
 export function loadFontBytesSync(
   bytes: Uint8Array,
   printerName: string,
@@ -143,8 +126,6 @@ function registerBytes(bytes: Uint8Array, printerName: string): CachedFont {
   return entry;
 }
 
-/** Load a TTF/OTF File into the cache under the given printer font name.
- *  Rejects on non-TTF/OTF extension or oversized files. */
 export async function loadFontFile(file: File, printerName: string): Promise<CachedFont> {
   if (!FONT_EXT_RE.test(file.name)) {
     throw new Error(`Not a TTF/OTF font: ${file.name}`);

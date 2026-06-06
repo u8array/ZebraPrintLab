@@ -3,7 +3,7 @@ import { fetchPreview } from "./labelary";
 import type { LabelConfig } from "../types/LabelConfig";
 import type { LabelObject } from "../types/Group";
 import type { Variable } from "../types/Variable";
-import { applyBindingToTree, type ActiveCsvRow } from "./variableBinding";
+import { applyBindingToTree, clockCtxFromLabel, type ActiveCsvRow } from "./variableBinding";
 
 /** Generate the ZPL we hand to Labelary: row-substituted + flat
  *  (no ^FN), so the rendered preview matches what would print for
@@ -16,7 +16,7 @@ export function buildPreviewZpl(
   variables: readonly Variable[],
   active: ActiveCsvRow | null,
 ): string {
-  const substituted = applyBindingToTree(objects, variables, active);
+  const substituted = applyBindingToTree(objects, variables, active, "preview", clockCtxFromLabel(label));
   return generateZPL(label, substituted, []);
 }
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 /** Copy-to-clipboard with a transient "copied" flag for button UI.
  *  `getPayload` is called at copy-time (not at hook-call-time) so
- *  live-generated content reflects the current state — needed for the
+ *  live-generated content reflects the current state; needed for the
  *  Setup-Script live-clock mode where the emitted ^ST stamp must be
  *  "now at click", not "now at last render". */
 export function useCopyToClipboard(getPayload: () => string, resetMs = 1500) {

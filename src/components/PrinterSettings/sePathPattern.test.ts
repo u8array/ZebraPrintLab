@@ -51,7 +51,7 @@ describe('SE_PATH_PATTERN — ^SE encoding-table soft-validation', () => {
   });
 
   it('rejects stems at the 9-char boundary and when empty', () => {
-    // 9 chars pins the exact off-by-one — a hypothetical regex
+    // 9 chars pins the exact off-by-one; a hypothetical regex
     // tweak to `{1,12}` or `{1,9}` would slip past a 12-char-only
     // test, this one catches it.
     expect(re.test('E:NINECHARS.DAT')).toBe(false);

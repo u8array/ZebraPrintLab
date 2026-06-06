@@ -32,7 +32,7 @@ export const qrcode: ObjectTypeCore<QrCodeProps> = {
     const p = obj.props;
     // ZPL prefixes the QR payload with `{ec}A,` inside ^FD. When the field
     // is bound to a variable, the variable's defaultValue stands in for the
-    // full payload including that prefix — Phase 1 keeps fdFieldFor honest
+    // full payload including that prefix; Phase 1 keeps fdFieldFor honest
     // and one-shot; smarter QR-data-only binding is a Phase 2 concern.
     return [
       fieldPos(obj),
@@ -44,7 +44,7 @@ export const qrcode: ObjectTypeCore<QrCodeProps> = {
   // Zebra firmware adds a hardcoded +10 dot Y-offset to ^FO QR codes; Labelary
   // does not handle negative y values cleanly (^FO0,-10 renders at image y=20,
   // not y=0). Clamping y >= 0 here keeps the designer's visual position in sync
-  // with Labelary preview. Only applies when y is being explicitly changed —
+  // with Labelary preview. Only applies when y is being explicitly changed;
   // existing negative values from ZPL import are preserved until edited.
   normalizeChanges: (obj, changes) => {
     if (changes.y === undefined || changes.y >= 0) return changes;

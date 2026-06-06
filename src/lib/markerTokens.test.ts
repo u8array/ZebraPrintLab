@@ -28,7 +28,7 @@ describe("tokeniseMarkers", () => {
 
   it("treats empty marker «» as literal text (not a marker)", () => {
     // The marker regex requires at least one character inside the
-    // brackets. `«»` therefore never tokenises as a marker — users
+    // brackets. `«»` therefore never tokenises as a marker; users
     // typing those glyphs literally don't get them coloured/treated
     // as a broken variable.
     expect(tokeniseMarkers("«»", vars)).toEqual([{ kind: "text", text: "«»" }]);
@@ -87,7 +87,7 @@ describe("findMarkerContaining", () => {
   });
 
   it("returns null between two adjacent markers", () => {
-    // Two markers «a»«b» — cursor between the markers (pos 3, after first ») is reported as
+    // Two markers «a»«b»: cursor between the markers (pos 3, after first ») is reported as
     // the FIRST marker's end-boundary, so findMarkerContaining returns the first one.
     // Doc test for the chosen semantics: matchAll order = first hit wins.
     const r = findMarkerContaining("«a»«b»", 3);

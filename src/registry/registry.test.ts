@@ -24,7 +24,7 @@ describe('text.toZPL', () => {
     const zpl = def.toZPL(makeObj('text', {
       content: 'Hello', fontHeight: 30, fontWidth: 0, rotation: 'N',
     }));
-    // obj is at (100, 200) — the Konva render position. The emitted ^FO
+    // obj is at (100, 200), the Konva render position. The emitted ^FO
     // shifts to the ZPL cap-top anchor: for N h=30, dy = 30 * 0.154 = 4.62,
     // rounded to integer dots = 5 ⇒ 200 + 5 = 205.
     expect(zpl).toContain('^FO100,205');
@@ -61,6 +61,15 @@ describe('text.toZPL', () => {
       blockWidth: 400, blockLines: 3, blockLineSpacing: 5, blockJustify: 'C',
     }));
     expect(zpl).toContain('^FB400,3,5,C,0');
+  });
+
+  it('emits ^FB hanging indent in slot e', () => {
+    const zpl = def.toZPL(makeObj('text', {
+      content: 'Block', fontHeight: 30, fontWidth: 0, rotation: 'N',
+      blockWidth: 400, blockLines: 3, blockLineSpacing: 0, blockJustify: 'L',
+      blockHangingIndent: 40,
+    }));
+    expect(zpl).toContain('^FB400,3,0,L,40');
   });
 
   it('does not emit ^FB when blockWidth is absent', () => {
@@ -520,7 +529,7 @@ describe('ObjectRegistry', () => {
     }
   });
 
-  // 2D codes are always resizable on the canvas — without commitTransform a
+  // 2D codes are always resizable on the canvas; without commitTransform a
   // drag-resize silently has no effect (this was the aztec regression).
   // Every code-2d entry must declare a commit handler, except `heightLocked`
   // ones (e.g. Maxicode) which disable the transformer entirely and

@@ -325,7 +325,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "0112345678901", moduleWidth: 2, symbology: 1, rotation: "N" },
+    props: { content: "0112345678901", magnification: 2, symbology: 1, rotation: "N" },
   },
   barcode_gs1databar_truncated: {
     id: "gs1_2",
@@ -333,7 +333,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "0112345678901", moduleWidth: 2, symbology: 2, rotation: "N" },
+    props: { content: "0112345678901", magnification: 2, symbology: 2, rotation: "N" },
   },
   barcode_gs1databar_stacked: {
     id: "gs1_3",
@@ -341,7 +341,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "0112345678901", moduleWidth: 2, symbology: 3, rotation: "N" },
+    props: { content: "0112345678901", magnification: 2, symbology: 3, rotation: "N" },
   },
   barcode_gs1databar_stacked_omni: {
     id: "gs1_4",
@@ -349,7 +349,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "0112345678901", moduleWidth: 2, symbology: 4, rotation: "N" },
+    props: { content: "0112345678901", magnification: 2, symbology: 4, rotation: "N" },
   },
   barcode_gs1databar_limited: {
     id: "gs1_5",
@@ -357,7 +357,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "0112345678901", moduleWidth: 2, symbology: 5, rotation: "N" },
+    props: { content: "0112345678901", magnification: 2, symbology: 5, rotation: "N" },
   },
   barcode_gs1databar_expanded: {
     id: "gs1_6",
@@ -365,7 +365,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "0112345678901231", moduleWidth: 2, symbology: 6, rotation: "N" },
+    props: { content: "0112345678901231", magnification: 2, symbology: 6, rotation: "N" },
   },
   barcode_upce_standard: {
     id: "29",

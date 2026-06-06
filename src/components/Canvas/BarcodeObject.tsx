@@ -78,7 +78,7 @@ export function BarcodeObject({
   let barcodeCanvas: HTMLCanvasElement | null = null;
   let errorMsg: string | null = null;
   if (obj.type === "tlc39") {
-    // bwip-js has no native tlc39 encoder; render the Code 39 + MicroPDF417
+    // bwip-js has no native tlc39 encoder, render the Code 39 + MicroPDF417
     // composite ourselves. Goes straight to canvas, bypassing buildBwipOptions.
     barcodeCanvas = renderTlc39Canvas(obj.props, scale, dpmm);
     if (!barcodeCanvas) errorMsg = "TLC39 render failed";
@@ -188,7 +188,7 @@ export function BarcodeObject({
     // selectively skips bwip's internal padding (e.g. GS1 DataBar's
     // paddingheight rows) so bars fill the bbox at firmware-correct height.
     const bitmapCrop = dim.bitmapCrop;
-    // Force-off when the symbology has no HRI in ZPL (e.g. GS1 Databar) — the
+    // Force-off when the symbology has no HRI in ZPL (e.g. GS1 Databar); the
     // canvas must match the print output even if a legacy saved object still
     // carries printInterpretation: true.
     const rotation = objectRotation(obj.props);
@@ -268,7 +268,7 @@ export function BarcodeObject({
         });
         // EAN/UPC have barTopPx === 0 (no text zone above), so the
         // helper's bar-relative textY equals the bbox-relative one
-        // here — render directly without an offset wrapper.
+        // here; render directly without an offset wrapper.
         overlayContent = eanOverlay.nodes;
       } else {
         // Other 1D: single centered text. textRef is wired only for the
@@ -276,7 +276,7 @@ export function BarcodeObject({
         // rotated paths the counter-scale math doesn't apply (would
         // scale along upright-Y which after R/B is screen-X), so the
         // ref stays undefined and the bars+text just scale together
-        // during a rotated resize drag — minor visual nit, no broken
+        // during a rotated resize drag, a minor visual nit with no broken
         // print output.
         // Compensate Courier's em-bottom padding only on the ink-height path.
         const inkShiftPx = hri?.fontDots ? textFontSize * COURIER_BOLD_EM_BOTTOM_PAD : 0;
@@ -323,7 +323,7 @@ export function BarcodeObject({
         txt.y(textLocalY(1));
       };
 
-      // Clip-expansion is upright-EAN/UPC only; absent on other paths
+      // Clip-expansion is upright-EAN/UPC only, absent on other paths
       // so Konva computes a natural bbox. Spread-or-empty keeps the
       // JSX free of four parallel ternaries.
       const clipProps = isUprightEanUpc && eanOverlay

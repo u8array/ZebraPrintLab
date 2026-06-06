@@ -4,7 +4,7 @@ import { subscribe } from '../lib/fontCache';
 /** Returns a version counter that increments whenever the font cache
  *  changes or the browser finishes loading additional @font-face fonts.
  *  Consumers (KonvaObject) re-render so any cached `measureText` they
- *  perform reflects the post-load glyph widths — without this the
+ *  perform reflects the post-load glyph widths; without this the
  *  rendered position can drift between mounts when our PrintLab font
  *  finishes loading after first measure. */
 export function useFontCacheVersion(): number {

@@ -1,8 +1,6 @@
 /** One line of rendered ZPL with `^CMD` tokens highlighted in the
- *  accent color. Shared between the per-label ZPL pane in
- *  `ZPLOutput` and the Setup-Script preview pane in the Printer
- *  Settings modal so any future tweak (e.g. handling `~CMD` or
- *  lowercase commands) lands in one place. */
+ *  accent color. Shared between the per-label ZPL pane and the
+ *  Setup-Script preview pane. */
 export function ZplLine({ line }: { line: string }) {
   const parts = line.split(/([\^][A-Z0-9]+)/g);
   return (

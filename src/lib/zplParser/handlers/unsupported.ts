@@ -11,7 +11,7 @@ export function createUnsupportedHandlers(
     (_, rest) => pushBrowserLimit(result, `${delimiter}${prefix}${rest}`);
 
   return {
-    // Noops — present in stream, no design impact.
+    // Noops, present in stream, no design impact.
     FV: noop,
     FM: noop,
     JA: noop,
@@ -23,8 +23,7 @@ export function createUnsupportedHandlers(
     JR: noop,
     JS: noop,
     PP: noop,
-    // Browser-limit factories — surface as "not loaded" findings.
-    FL: mkBrowserLimit("FL"),
+    // Browser-limit factories, surface as "not loaded" findings.
     HT: mkBrowserLimit("HT"),
     LF: mkBrowserLimit("LF"),
     IM: mkBrowserLimit("IM"),

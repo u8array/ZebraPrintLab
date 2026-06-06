@@ -25,7 +25,7 @@
   --color-accent:    #f59e0b;
   --color-accent-dim:#78490a;
   /* Secondary highlight, e.g. clock-token markers in the content
-     editor — distinct from accent so the editor can colour-code
+     editor, distinct from accent so the editor can colour-code
      marker families without collision. */
   --color-info:      #67c8e0;
   /* Validation: amber = warning (truncation, soft mismatch), red =

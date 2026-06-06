@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 /** Verifies that VITE_THIRD_PARTY_LABELARY=false flips the Labelary gate
  *  off at store init. The UI gates Print/Preview buttons on
  *  `thirdParty.labelary` directly, so a false default keeps both buttons
- *  hidden on Tauri/Docker builds — even though the user can still
+ *  hidden on Tauri/Docker builds, even though the user can still
  *  acknowledge the notice (in-memory) for the lifetime of the session.
  *
  *  Lives in a dedicated file because each case needs to re-import the

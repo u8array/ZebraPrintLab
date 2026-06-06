@@ -10,6 +10,7 @@ import {
   isConfigUpdateAction,
 } from "../../types/PrinterProfile";
 import {
+  SafeStringInput,
   ZplCommandLabel,
   ZplEnumSelect,
   ZplField,
@@ -32,7 +33,7 @@ const CONFIG_UPDATE_LABEL_KEYS = {
  *  commit setup. Emits ^KN (name + description), ^KP (4-digit panel
  *  password) and ^JU (configuration update action) on the Setup-
  *  Script channel. ^SL lives in Tab 3 Clock & Time per its semantic
- *  home. See memory:project_ticket_sl_clock_formatting. */
+ *  home. */
 export function IdentityTab() {
   const t = useT();
   const profile = useLabelStore((s) => s.printerProfile);
@@ -40,13 +41,11 @@ export function IdentityTab() {
   const loc = t.printerSettings.identity;
   const nameId = useId();
   const passwordId = useId();
-  // Local mirror for the 4-digit input: progressive typing ("4", "47")
-  // is shown immediately but only commits to the store once the regex
-  // matches. Without this, partial values would always be filtered out
-  // and the user could never finish entering a password. Re-sync on
-  // store changes (import, reset) uses the adjust-state-during-render
-  // pattern so the React compiler doesn't flag a useEffect → setState
-  // cascade.
+  // Progressive-commit draft: store only accepts a complete 4-digit
+  // value, but the user has to type intermediate states. SafeStringInput
+  // is fully controlled and would clobber the partial draft, so the
+  // ^KP input stays hand-rolled. Adjust-state-during-render reseeds on
+  // external changes (import, reset).
   const storedPassword = profile.setPassword ?? "";
   const [passwordDraft, setPasswordDraft] = useState(storedPassword);
   const [lastStoredPassword, setLastStoredPassword] = useState(storedPassword);
@@ -64,15 +63,11 @@ export function IdentityTab() {
           MediaFeedTab). */}
       <ZplField>
         <ZplCommandLabel text={loc.printerName} command="^KN" htmlFor={nameId} />
-        <input
+        <SafeStringInput
           id={nameId}
-          type="text"
           maxLength={PRINTER_NAME_MAX_LEN}
-          className={inputCls}
           value={profile.printerName ?? ""}
-          onChange={(e) =>
-            patchPrinterProfile({ printerName: e.target.value || undefined })
-          }
+          onChange={(v) => patchPrinterProfile({ printerName: v || undefined })}
         />
         <span className={`${labelCls} normal-case tracking-normal text-muted/70`}>
           {loc.printerNameHint}
@@ -80,14 +75,10 @@ export function IdentityTab() {
 
         <ZplSubField label={loc.printerDescription}>
           {(id) => (
-            <input
+            <SafeStringInput
               id={id}
-              type="text"
-              className={inputCls}
               value={profile.printerDescription ?? ""}
-              onChange={(e) =>
-                patchPrinterProfile({ printerDescription: e.target.value || undefined })
-              }
+              onChange={(v) => patchPrinterProfile({ printerDescription: v || undefined })}
             />
           )}
         </ZplSubField>
