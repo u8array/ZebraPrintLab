@@ -521,6 +521,12 @@ describe("generateSetupScript — maintenance commands", () => {
     expect(generateSetupScript(base)).not.toContain("^PA");
   });
 
+  it("omits ^PA when every slot is explicitly false (treated as default)", () => {
+    expect(generateSetupScript({
+      ...base, paSlotA: false, paSlotB: false, paSlotC: false, paSlotD: false,
+    })).not.toContain("^PA");
+  });
+
   it("parses ^PA back into the profile (true-only storage)", () => {
     const r = parseZPL("^XA^PA1,1,0,1^XZ").printerProfile;
     expect(r.paSlotA).toBe(true);

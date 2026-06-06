@@ -204,9 +204,7 @@ const SETUP_SCRIPT_EMITTERS = {
     channel: 'block',
     scope: 'session',
     emit: (p) => {
-      if (p.paSlotA === undefined && p.paSlotB === undefined && p.paSlotC === undefined && p.paSlotD === undefined) {
-        return null;
-      }
+      if (!p.paSlotA && !p.paSlotB && !p.paSlotC && !p.paSlotD) return null;
       const b = (v: boolean | undefined) => v ? '1' : '0';
       return `^PA${b(p.paSlotA)},${b(p.paSlotB)},${b(p.paSlotC)},${b(p.paSlotD)}`;
     },
