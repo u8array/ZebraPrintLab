@@ -174,6 +174,28 @@ const BLOCK_TEXT_ZPL = `
 ^XZ
 `.trim();
 
+const BLOCK_TEXT_HANGING_INDENT_ZPL = `
+^XA
+^PW640^LL400
+^FO50,50^A0N,25,0^FB400,3,0,L,40^FDLine one\\&Line two\\&Line three^FS
+^XZ
+`.trim();
+
+const BLOCK_TEXT_FT_ZPL = `
+^XA
+^PW640^LL400
+^FT50,300^A0N,25,0^FB400,3,5,L,0^FDLine one\\&Line two\\&Line three^FS
+^XZ
+`.trim();
+
+const BLOCK_TEXT_FT_ROTATIONS = ["N", "R", "I", "B"] as const;
+const blockTextFtRotZpl = (rot: typeof BLOCK_TEXT_FT_ROTATIONS[number]) => `
+^XA
+^PW640^LL400
+^FT200,200^A0${rot},30,30^FB200,3,5,L,0^FDA\\&B\\&C^FS
+^XZ
+`.trim();
+
 describe('round-trip — field block text', () => {
   it('preserves block width and justify', () => {
     const { first, second } = roundtrip(BLOCK_TEXT_ZPL);
@@ -184,6 +206,56 @@ describe('round-trip — field block text', () => {
     expect(props(t2).blockWidth).toBe(props(t1).blockWidth);
     expect(props(t2).blockJustify).toBe(props(t1).blockJustify);
     expect(props(t2).blockLines).toBe(props(t1).blockLines);
+  });
+
+  it('preserves slot e hanging indent', () => {
+    const { first, second } = roundtrip(BLOCK_TEXT_HANGING_INDENT_ZPL);
+    const t1 = first.objects.find((o) => o.type === 'text');
+    const t2 = second.objects.find((o) => o.type === 'text');
+    expect(props(t1).blockHangingIndent).toBe(40);
+    expect(props(t2).blockHangingIndent).toBe(40);
+  });
+
+  it('preserves the ^FT anchor when ^FB shifts the block extent', () => {
+    const { first, second } = roundtrip(BLOCK_TEXT_FT_ZPL);
+    const t1 = first.objects.find((o) => o.type === 'text');
+    const t2 = second.objects.find((o) => o.type === 'text');
+    expect(t1).toBeDefined();
+    expect(t2).toBeDefined();
+    expect(t2!.x).toBe(t1!.x);
+    expect(t2!.y).toBe(t1!.y);
+    expect(t1!.positionType).toBe('FT');
+    expect(t2!.positionType).toBe('FT');
+    // ^FT anchors the LAST baseline at y=300; first line's EM-top must
+    // sit above the anchor by ~blockExtent + fontHeight (block grows up).
+    expect(t1!.y).toBeLessThan(300);
+  });
+
+  it.each(BLOCK_TEXT_FT_ROTATIONS)('roundtrips ^FT+^FB at rotation %s', (rot) => {
+    const { first, second } = roundtrip(blockTextFtRotZpl(rot));
+    const t1 = first.objects.find((o) => o.type === 'text');
+    const t2 = second.objects.find((o) => o.type === 'text');
+    expect(t1).toBeDefined();
+    expect(t2).toBeDefined();
+    expect(t2!.x).toBe(t1!.x);
+    expect(t2!.y).toBe(t1!.y);
+    expect(t1!.positionType).toBe('FT');
+  });
+
+  // Anchor (200,200). Block extends in opposite direction of the
+  // rotation's reading flow, so the FIRST line EM-top lands on the
+  // side away from the anchor: N→above, R→right, I→below, B→left.
+  it.each([
+    ['N', 'y', 'lt' as const, 200],
+    ['R', 'x', 'gt' as const, 200],
+    ['I', 'y', 'gt' as const, 200],
+    ['B', 'x', 'lt' as const, 200],
+  ] as const)('block extent shifts model %s on the %s axis (rotation)', (rot, axis, dir, anchor) => {
+    const { first } = roundtrip(blockTextFtRotZpl(rot));
+    const t = first.objects.find((o) => o.type === 'text');
+    const v = axis === 'x' ? t!.x : t!.y;
+    if (dir === 'lt') expect(v).toBeLessThan(anchor);
+    else expect(v).toBeGreaterThan(anchor);
   });
 });
 

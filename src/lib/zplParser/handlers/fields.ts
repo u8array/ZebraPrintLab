@@ -117,6 +117,8 @@ export function createFieldHandlers(
       s.defaults.fbSpacing = dots(p[2]);
       const fbJ = (p[3] ?? "L").toUpperCase();
       s.defaults.fbJustify = fbJ === "C" || fbJ === "R" || fbJ === "J" ? fbJ : "L";
+      // Negative indent observed to clamp to 0 on Labelary; mirror that.
+      s.defaults.fbHangingIndent = Math.max(0, dots(p[4]));
       // ^FB also implies text if no ^A was specified.
       if (!s.field.fieldType) {
         s.field.fieldType = "text";
@@ -164,6 +166,7 @@ export function createFieldHandlers(
       s.defaults.fbLines = 1;
       s.defaults.fbSpacing = 0;
       s.defaults.fbJustify = "L";
+      s.defaults.fbHangingIndent = 0;
       s.comment.fnNumber = null;
       s.comment.fnComment = undefined;
     },

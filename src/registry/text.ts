@@ -4,12 +4,13 @@ import { getTextRenderMetrics } from "../lib/labelGeometry/textRenderMetrics";
 import type { LabelObject } from "../types/Group";
 import { effectiveScale } from "./transformHelpers";
 import { encodeFbContent } from "../lib/fbContent";
+import type { ZplRotation } from "../lib/zebraTextLayout";
 
 export interface TextProps {
   content: string;
   fontHeight: number;
   fontWidth: number;
-  rotation: "N" | "R" | "I" | "B";
+  rotation: ZplRotation;
   reverse?: boolean;
   /** Printer-stored TrueType font filename. Round-trips with the
    *  `^A@{rot},{h},{w},E:NAME.TTF` form when the field references a
@@ -26,6 +27,9 @@ export interface TextProps {
   blockLines?: number;
   blockLineSpacing?: number;
   blockJustify?: "L" | "C" | "R" | "J";
+  /** ^FB hanging indent (dots) applied to lines 2+. Spec range 0..9999,
+   *  negatives are clamped to 0 to match Labelary's observed behavior. */
+  blockHangingIndent?: number;
   /** ^FP field-direction modifier. 'H' = horizontal advance (default,
    *  omitted on emit), 'V' = stack glyphs along the field's
    *  perpendicular axis, 'R' = reverse glyph order (RTL languages). */
@@ -78,7 +82,7 @@ export const text: ObjectTypeCore<TextProps> = {
     const p = obj.props;
     const fontCmd = resolveFontCmd(p, ctx);
     const fbCmd = p.blockWidth
-      ? `^FB${p.blockWidth},${p.blockLines ?? 1},${p.blockLineSpacing ?? 0},${p.blockJustify ?? "L"},0`
+      ? `^FB${p.blockWidth},${p.blockLines ?? 1},${p.blockLineSpacing ?? 0},${p.blockJustify ?? "L"},${p.blockHangingIndent ?? 0}`
       : "";
     // Always emit the gap so the round-trip is unambiguous.
     const fpDir = p.fpDirection ?? "H";

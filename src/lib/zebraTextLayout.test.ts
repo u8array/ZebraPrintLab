@@ -3,8 +3,14 @@ import {
   zebraGlyphAdvanceDots,
   zebraLineWidthDots,
   zebraAlignOffsetDots,
+  zebraHangingIndentOffsetDots,
+  zebraJustifyGapDots,
+  blockJustifyWordPositions,
+  isBlockTooNarrow,
   blockBoundsDots,
+  blockLineStartDots,
   blockLineStepDots,
+  blockWordAdvanceDots,
 } from "./zebraTextLayout";
 
 describe("zebraGlyphAdvanceDots", () => {
@@ -63,7 +69,171 @@ describe("blockLineStepDots", () => {
   });
 });
 
+describe("zebraJustifyGapDots", () => {
+  it("returns extra/gapCount for non-last lines with multiple words", () => {
+    expect(zebraJustifyGapDots(200, 400, 3, false)).toBe(200 / 3);
+  });
+  it("returns 0 on the last line (spec: J leaves last line left)", () => {
+    expect(zebraJustifyGapDots(200, 400, 3, true)).toBe(0);
+  });
+  it("returns 0 when the line has no word gaps", () => {
+    expect(zebraJustifyGapDots(200, 400, 0, false)).toBe(0);
+  });
+  it("returns 0 when the line already overflows the block", () => {
+    expect(zebraJustifyGapDots(500, 400, 3, false)).toBe(0);
+  });
+});
+
+describe("zebraHangingIndentOffsetDots", () => {
+  it("returns 0 on line 1 (no indent for first line)", () => {
+    expect(zebraHangingIndentOffsetDots(0, 40)).toBe(0);
+  });
+  it("returns the indent on lines 2+", () => {
+    expect(zebraHangingIndentOffsetDots(1, 40)).toBe(40);
+    expect(zebraHangingIndentOffsetDots(5, 40)).toBe(40);
+  });
+  it("returns 0 when indent is 0 regardless of line index", () => {
+    expect(zebraHangingIndentOffsetDots(3, 0)).toBe(0);
+  });
+});
+
+describe("isBlockTooNarrow", () => {
+  it("returns true when block is below explicit fontWidth (Labelary fixture 02)", () => {
+    expect(isBlockTooNarrow(20, 30, 30)).toBe(true);
+  });
+  it("returns false when block matches explicit fontWidth", () => {
+    expect(isBlockTooNarrow(30, 30, 30)).toBe(false);
+  });
+  it("uses A0 5/9 aspect for fontWidth=0 (~17 dots for h=30)", () => {
+    expect(isBlockTooNarrow(15, 30, 0)).toBe(true);
+    expect(isBlockTooNarrow(20, 30, 0)).toBe(false);
+  });
+  it("returns false when blockWidth is 0 or absent (no block configured)", () => {
+    expect(isBlockTooNarrow(0, 30, 30)).toBe(false);
+  });
+});
+
+describe("blockLineStartDots: empirical line stacking per rotation", () => {
+  // Empirically verified against tmp/fb_line_stacking/ (2026-06-06):
+  // N: Line0 top, Line2 bottom (stack +y)
+  // R: Line0 rightmost, Line2 leftmost (stack -x)
+  // I: Line0 bottom, Line2 top (stack -y)
+  // B: Line0 leftmost, Line2 rightmost (stack +x)
+  const STEP = 35;
+
+  it("N stacks down (+y) with perpendicular = +x", () => {
+    expect(blockLineStartDots(0, "N", 10, STEP)).toEqual({ x: 10, y: 0 });
+    expect(blockLineStartDots(2, "N", 10, STEP)).toEqual({ x: 10, y: 70 });
+  });
+  it("R stacks right→left (-x) with perpendicular = +y", () => {
+    expect(blockLineStartDots(0, "R", 10, STEP)).toEqual({ x: 0, y: 10 });
+    expect(blockLineStartDots(2, "R", 10, STEP)).toEqual({ x: -70, y: 10 });
+  });
+  it("I stacks bottom→top (-y) with perpendicular = -x", () => {
+    expect(blockLineStartDots(0, "I", 10, STEP)).toEqual({ x: -10, y: 0 });
+    expect(blockLineStartDots(2, "I", 10, STEP)).toEqual({ x: -10, y: -70 });
+  });
+  it("B stacks left→right (+x) with perpendicular = -y", () => {
+    expect(blockLineStartDots(0, "B", 10, STEP)).toEqual({ x: 0, y: -10 });
+    expect(blockLineStartDots(2, "B", 10, STEP)).toEqual({ x: 70, y: -10 });
+  });
+  it("returns (0,0) for line 0 with no perpendicular offset", () => {
+    for (const rot of ["N", "R", "I", "B"] as const) {
+      expect(blockLineStartDots(0, rot, 0, STEP)).toEqual({ x: 0, y: 0 });
+    }
+  });
+});
+
+describe("blockWordAdvanceDots: justify=J word advance axis per rotation", () => {
+  it("N advances in +x (right)", () => {
+    expect(blockWordAdvanceDots("N", 40)).toEqual({ dx: 40, dy: 0 });
+  });
+  it("R advances in +y (down along rotated reading)", () => {
+    expect(blockWordAdvanceDots("R", 40)).toEqual({ dx: 0, dy: 40 });
+  });
+  it("I advances in -x (left, inverted)", () => {
+    expect(blockWordAdvanceDots("I", 40)).toEqual({ dx: -40, dy: 0 });
+  });
+  it("B advances in -y (up)", () => {
+    expect(blockWordAdvanceDots("B", 40)).toEqual({ dx: 0, dy: -40 });
+  });
+});
+
+describe("blockJustifyWordPositions", () => {
+  const COMMON = { fontHeight: 30, fontWidth: 30, extraGapDots: 20 };
+
+  it("N: advances words along +x with extra gap added per gap", () => {
+    const r = blockJustifyWordPositions({
+      ...COMMON, words: ["AB", "CD"], rotation: "N", startDots: { x: 0, y: 0 },
+    });
+    expect(r[0]).toEqual({ x: 0, y: 0, text: "AB" });
+    // AB = 2*30 dots, + spaceAdvance (30) + extraGap (20) = 110
+    expect(r[1]).toEqual({ x: 110, y: 0, text: "CD" });
+  });
+
+  it("R: advances words along +y", () => {
+    const r = blockJustifyWordPositions({
+      ...COMMON, words: ["AB", "CD"], rotation: "R", startDots: { x: 0, y: 0 },
+    });
+    expect(r[1]).toEqual({ x: 0, y: 110, text: "CD" });
+  });
+
+  it("I: advances words along -x (inverted)", () => {
+    const r = blockJustifyWordPositions({
+      ...COMMON, words: ["AB", "CD"], rotation: "I", startDots: { x: 0, y: 0 },
+    });
+    expect(r[1]).toEqual({ x: -110, y: 0, text: "CD" });
+  });
+
+  it("B: advances words along -y (rotated 270)", () => {
+    const r = blockJustifyWordPositions({
+      ...COMMON, words: ["AB", "CD"], rotation: "B", startDots: { x: 0, y: 0 },
+    });
+    expect(r[1]).toEqual({ x: 0, y: -110, text: "CD" });
+  });
+
+  it("accumulates cursor across 3+ words", () => {
+    const r = blockJustifyWordPositions({
+      ...COMMON, words: ["A", "B", "C"], rotation: "N", startDots: { x: 0, y: 0 },
+    });
+    // each step: word width 30 + space 30 + gap 20 = 80
+    expect(r.map((p) => p.x)).toEqual([0, 80, 160]);
+  });
+
+  it("returns empty array for empty words list", () => {
+    expect(blockJustifyWordPositions({
+      ...COMMON, words: [], rotation: "N", startDots: { x: 0, y: 0 },
+    })).toEqual([]);
+  });
+
+  it("preserves startDots offset", () => {
+    const r = blockJustifyWordPositions({
+      ...COMMON, words: ["A"], rotation: "N", startDots: { x: 5, y: 7 },
+    });
+    expect(r[0]).toEqual({ x: 5, y: 7, text: "A" });
+  });
+});
+
 describe("blockBoundsDots", () => {
+  // blockWidth=200, 3 lines, h=30, spacing=5 → linesExtent = 2*35+30 = 100.
+  const ROT_ARGS = { blockWidthDots: 200, blockLines: 3, blockLineSpacing: 5, fontHeight: 30 };
+
+  it("N: axis-aligned (0,0,w,h)", () => {
+    expect(blockBoundsDots({ ...ROT_ARGS, rotation: "N" })).toEqual({ x: 0, y: 0, width: 200, height: 100 });
+  });
+  it("R: shifts left by linesExtent, swaps w/h (lines stack -x)", () => {
+    expect(blockBoundsDots({ ...ROT_ARGS, rotation: "R" })).toEqual({ x: -100, y: 0, width: 100, height: 200 });
+  });
+  it("I: shifts up-left (lines stack -y)", () => {
+    expect(blockBoundsDots({ ...ROT_ARGS, rotation: "I" })).toEqual({ x: -200, y: -100, width: 200, height: 100 });
+  });
+  it("B: shifts up, swaps w/h (lines stack +x)", () => {
+    expect(blockBoundsDots({ ...ROT_ARGS, rotation: "B" })).toEqual({ x: 0, y: -200, width: 100, height: 200 });
+  });
+  it("defaults to N when rotation is omitted (backwards compat)", () => {
+    expect(blockBoundsDots(ROT_ARGS)).toEqual({ x: 0, y: 0, width: 200, height: 100 });
+  });
+
   it("anchors at (0, 0) — left edge stays at the FO position regardless of text justify", () => {
     // No justify/text parameter exists on the helper signature, so
     // C/R-justified text can never shift this bbox rightwards.

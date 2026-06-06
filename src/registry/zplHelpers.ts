@@ -4,6 +4,7 @@ import { hasTemplateMarkers, markersToEmbeds } from "../lib/fnTemplate";
 import { hasClockMarkers, markersToTokens } from "../lib/fcTemplate";
 import { modelToZplAnchor } from "../lib/labelGeometry/textPositionTransforms";
 import { getTextRenderMetrics } from "../lib/labelGeometry/textRenderMetrics";
+import { blockInterLineExtentDots } from "../lib/zebraTextLayout";
 import type { LabelObject } from "../types/Group";
 
 /** Emit `^FT` or `^FO` depending on how the object was originally positioned. */
@@ -18,7 +19,13 @@ export function wrapReverse(reverse: boolean | undefined, body: string): string 
 }
 
 interface TextLikeObjForFieldPos extends LabelObjectBase {
-  props: { fontHeight: number; rotation: "N" | "R" | "I" | "B" };
+  props: {
+    fontHeight: number;
+    rotation: "N" | "R" | "I" | "B";
+    blockWidth?: number;
+    blockLines?: number;
+    blockLineSpacing?: number;
+  };
 }
 
 /** Priority: fontId -> printerFontName -> ctx defaultFontId -> ^A0. */
@@ -50,12 +57,20 @@ export function resolveFontCmd(
 export function textFieldPos(obj: TextLikeObjForFieldPos): string {
   const cmd = obj.positionType === "FT" ? "FT" : "FO";
   const metrics = getTextRenderMetrics(obj as unknown as LabelObject);
+  const p = obj.props;
+  const blockExtentDots = blockInterLineExtentDots({
+    blockWidthDots: p.blockWidth ?? 0,
+    blockLines: p.blockLines ?? 1,
+    blockLineSpacing: p.blockLineSpacing ?? 0,
+    fontHeight: p.fontHeight,
+  });
   const a = modelToZplAnchor(
     obj.x,
     obj.y,
     obj.props,
     obj.positionType,
     metrics?.inkWidthDots ?? 0,
+    blockExtentDots,
   );
   // ^FO/^FT take integers; firmware would truncate fractional residue anyway.
   return `^${cmd}${Math.round(a.x)},${Math.round(a.y)}`;

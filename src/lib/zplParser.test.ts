@@ -515,6 +515,23 @@ describe('parseZPL — ^FB field block', () => {
     expect(props(objects[0]).blockJustify).toBe('C');
   });
 
+  it('reads ^FB slot e as hanging indent', () => {
+    const { objects } = parseZPL(
+      '^XA^FO10,20^A0N,30,0^FB400,3,0,L,40^FDMulti-line text^FS^XZ',
+      8,
+    );
+    expect(props(objects[0]).blockHangingIndent).toBe(40);
+  });
+
+  it('clamps negative ^FB hanging indent to 0 (matches Labelary)', () => {
+    const { objects } = parseZPL(
+      '^XA^FO10,20^A0N,30,0^FB400,3,0,L,-40^FDx^FS^XZ',
+      8,
+    );
+    expect(props(objects[0]).blockHangingIndent).toBeUndefined();
+  });
+
+
   it('resets ^FB state after use (next text has no block)', () => {
     const zpl = '^XA^FO0,0^A0N,30,0^FB400,2,0,L,0^FDFirst^FS^FO0,100^A0N,30,0^FDSecond^FS^XZ';
     const { objects } = parseZPL(zpl, 8);

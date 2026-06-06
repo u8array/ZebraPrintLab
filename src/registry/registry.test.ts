@@ -63,6 +63,15 @@ describe('text.toZPL', () => {
     expect(zpl).toContain('^FB400,3,5,C,0');
   });
 
+  it('emits ^FB hanging indent in slot e', () => {
+    const zpl = def.toZPL(makeObj('text', {
+      content: 'Block', fontHeight: 30, fontWidth: 0, rotation: 'N',
+      blockWidth: 400, blockLines: 3, blockLineSpacing: 0, blockJustify: 'L',
+      blockHangingIndent: 40,
+    }));
+    expect(zpl).toContain('^FB400,3,0,L,40');
+  });
+
   it('does not emit ^FB when blockWidth is absent', () => {
     const zpl = def.toZPL(makeObj('text', {
       content: 'No block', fontHeight: 30, fontWidth: 0, rotation: 'N',

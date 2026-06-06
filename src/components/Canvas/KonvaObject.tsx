@@ -16,7 +16,7 @@ import { getTextRenderMetrics } from "../../lib/labelGeometry/textRenderMetrics"
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import { DEFAULT_GS_SYMBOL_META, GS_SYMBOLS } from "../../registry/symbol";
 import { GS_SYMBOL_PATHS, GS_VECTOR_CODES, type GsVectorCode } from "../../registry/gsSymbolPaths";
-import { blockBoundsDots, zebraAlignOffsetDots, zebraLineWidthDots } from "../../lib/zebraTextLayout";
+import { blockBoundsDots, blockJustifyWordPositions, blockLineStartDots, blockLineStepDots, blockWrapEdgePoints, isBlockTooNarrow, zebraAlignOffsetDots, zebraHangingIndentOffsetDots, zebraJustifyGapDots, zebraLineWidthDots, type ZplRotation } from "../../lib/zebraTextLayout";
 import type { LeafObject } from "../../registry";
 import type { TextProps } from "../../registry/text";
 import type { SerialProps } from "../../registry/serial";
@@ -111,6 +111,37 @@ type TextFieldObj =
   | (LeafObject & { type: "text"; props: TextProps })
   | (LeafObject & { type: "serial"; props: SerialProps });
 
+/** Approx width of an empty single-line placeholder, expressed as
+ *  fontHeight multiples (Glyph-row aspect ratio). */
+const EMPTY_TEXT_PLACEHOLDER_GLYPHS = 4;
+const PLACEHOLDER_STROKE_PX = 3;
+const PLACEHOLDER_DASH: [number, number] = [0.1, 8];
+
+function PlaceholderRect({
+  x, y, width, height, rotation, color, fontVersion,
+}: {
+  x: number; y: number; width: number; height: number;
+  rotation?: number; color: string; fontVersion: number;
+}) {
+  return (
+    <Rect
+      key={fontVersion}
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      rotation={rotation}
+      fill="transparent"
+      stroke={color}
+      strokeWidth={PLACEHOLDER_STROKE_PX}
+      lineCap="round"
+      dash={PLACEHOLDER_DASH}
+      strokeScaleEnabled={false}
+      listening={true}
+    />
+  );
+}
+
 function TextFieldContent({
   obj,
   content,
@@ -118,6 +149,7 @@ function TextFieldContent({
   scale,
   dpmm,
   fontVersion,
+  placeholderColor,
 }: {
   obj: TextFieldObj;
   content: string;
@@ -125,31 +157,98 @@ function TextFieldContent({
   scale: number;
   dpmm: number;
   fontVersion: number;
+  placeholderColor: string;
 }) {
   const shift = base.offsetXPx ?? 0;
   if (obj.type !== "text") {
     return <Text key={fontVersion} x={shift} y={0} text={content} {...base} />;
   }
-  const { blockWidth, blockJustify, blockLineSpacing, fontHeight, fontWidth } = obj.props;
+  const { blockWidth, blockLines, blockJustify, blockLineSpacing, blockHangingIndent, fontHeight, fontWidth } = obj.props;
   if (!blockWidth) {
+    // Single-line text has no spec-defined min width, so only empty
+    // content triggers the placeholder (block also covers too-narrow).
+    if (content.trim().length === 0) {
+      return (
+        <PlaceholderRect
+          fontVersion={fontVersion}
+          x={shift}
+          y={0}
+          width={dotsToPx(fontHeight * EMPTY_TEXT_PLACEHOLDER_GLYPHS, scale, dpmm)}
+          height={dotsToPx(fontHeight, scale, dpmm)}
+          rotation={base.rotation}
+          color={placeholderColor}
+        />
+      );
+    }
     return <Text key={fontVersion} x={shift} y={0} text={content} {...base} />;
   }
+  const tooNarrow = isBlockTooNarrow(blockWidth, fontHeight, fontWidth);
+  const emptyContent = content.trim().length === 0;
+  if (tooNarrow || emptyContent) {
+    const bounds = blockBoundsDots({
+      blockWidthDots: blockWidth,
+      blockLines: blockLines ?? 1,
+      blockLineSpacing: blockLineSpacing ?? 0,
+      fontHeight,
+      rotation: obj.props.rotation,
+    });
+    return (
+      <PlaceholderRect
+        fontVersion={fontVersion}
+        x={dotsToPx(bounds.x, scale, dpmm)}
+        y={dotsToPx(bounds.y, scale, dpmm)}
+        width={dotsToPx(bounds.width, scale, dpmm)}
+        height={dotsToPx(bounds.height, scale, dpmm)}
+        color={placeholderColor}
+      />
+    );
+  }
   const justify = blockJustify ?? "L";
-  const lineStepPx = base.fontSize + dotsToPx(blockLineSpacing ?? 0, scale, dpmm);
+  const indent = blockHangingIndent ?? 0;
+  const lineStepDots = blockLineStepDots(fontHeight, blockLineSpacing ?? 0);
+  // ^FB slot b: overflow lines overprint the last printed line; render
+  // only blockLines worth so canvas matches printer's visible output.
+  const lines = content.split("\n").slice(0, blockLines ?? 1);
   return (
     <>
-      {content.split("\n").map((line, i) => {
+      {lines.flatMap((line, i) => {
+        const indentDots = zebraHangingIndentOffsetDots(i, indent);
         const lineWidthDots = zebraLineWidthDots(line, fontHeight, fontWidth);
-        const offsetDots = zebraAlignOffsetDots(lineWidthDots, blockWidth, justify);
-        return (
+        const effectiveBlockWidth = blockWidth - indentDots;
+        // Justify=J stretches word-gaps to fill the block; last line and
+        // lines without word boundaries fall back to L.
+        if (justify === "J") {
+          const isLast = i === lines.length - 1;
+          const words = line.split(" ");
+          const extraGap = zebraJustifyGapDots(lineWidthDots, effectiveBlockWidth, words.length - 1, isLast);
+          if (extraGap > 0) {
+            const startDots = blockLineStartDots(i, obj.props.rotation, indentDots, lineStepDots);
+            const positions = blockJustifyWordPositions({
+              words, rotation: obj.props.rotation, startDots,
+              fontHeight, fontWidth, extraGapDots: extraGap,
+            });
+            return positions.map((p, wi) => (
+              <Text
+                key={`${fontVersion}-${i}-${wi}`}
+                x={dotsToPx(p.x, scale, dpmm)}
+                y={dotsToPx(p.y, scale, dpmm)}
+                text={p.text}
+                {...base}
+              />
+            ));
+          }
+        }
+        const alignOffsetDots = zebraAlignOffsetDots(lineWidthDots, effectiveBlockWidth, justify);
+        const startDots = blockLineStartDots(i, obj.props.rotation, indentDots + alignOffsetDots, lineStepDots);
+        return [
           <Text
             key={`${fontVersion}-${i}`}
-            x={dotsToPx(offsetDots, scale, dpmm)}
-            y={i * lineStepPx}
+            x={dotsToPx(startDots.x, scale, dpmm)}
+            y={dotsToPx(startDots.y, scale, dpmm)}
             text={line}
             {...base}
-          />
-        );
+          />,
+        ];
       })}
     </>
   );
@@ -163,6 +262,7 @@ function BlockWrapGuide({
   blockLines,
   blockLineSpacing,
   fontHeight,
+  rotation,
   scale,
   dpmm,
   color,
@@ -171,28 +271,29 @@ function BlockWrapGuide({
   blockLines: number;
   blockLineSpacing: number;
   fontHeight: number;
+  rotation: ZplRotation;
   scale: number;
   dpmm: number;
   color: string;
 }) {
-  const bounds = blockBoundsDots({ blockWidthDots, blockLines, blockLineSpacing, fontHeight });
-  const widthPx = dotsToPx(bounds.width, scale, dpmm);
-  const heightPx = dotsToPx(bounds.height, scale, dpmm);
+  const bounds = blockBoundsDots({ blockWidthDots, blockLines, blockLineSpacing, fontHeight, rotation });
+  const edgeDots = blockWrapEdgePoints(rotation, bounds);
   return (
     <>
       <Rect
         x={dotsToPx(bounds.x, scale, dpmm)}
         y={dotsToPx(bounds.y, scale, dpmm)}
-        width={widthPx}
-        height={heightPx}
+        width={dotsToPx(bounds.width, scale, dpmm)}
+        height={dotsToPx(bounds.height, scale, dpmm)}
         fill="transparent"
         listening={false}
       />
       <Line
-        points={[widthPx, 0, widthPx, heightPx]}
+        points={edgeDots.map((d) => dotsToPx(d, scale, dpmm))}
         stroke={color}
         strokeWidth={1}
         dash={[4, 3]}
+        strokeScaleEnabled={false}
         listening={false}
       />
     </>
@@ -437,6 +538,7 @@ function KonvaObjectInner({
         <TextFieldContent
           obj={obj as TextFieldObj}
           content={fpContent}
+          placeholderColor={colors.accent}
           base={{
             fontSize: fontSizePx,
             fontFamily,
@@ -459,6 +561,7 @@ function KonvaObjectInner({
             blockLines={obj.props.blockLines ?? 1}
             blockLineSpacing={obj.props.blockLineSpacing ?? 0}
             fontHeight={obj.props.fontHeight}
+            rotation={obj.props.rotation}
             scale={scale}
             dpmm={dpmm}
             color={colors.accent}

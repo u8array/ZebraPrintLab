@@ -87,6 +87,7 @@ export interface DefaultsState {
   fbLines: number;
   fbSpacing: number;
   fbJustify: TextProps["blockJustify"];
+  fbHangingIndent: number;
   /** 0 = no ^BY height; barcode handlers fall back to 100. */
   byModuleWidth: number;
   byHeight: number;
@@ -240,6 +241,7 @@ export function createParserState(): ParserState {
       fbLines: 1,
       fbSpacing: 0,
       fbJustify: "L",
+      fbHangingIndent: 0,
       byModuleWidth: 2,
       byHeight: 0,
     },

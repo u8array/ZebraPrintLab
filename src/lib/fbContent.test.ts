@@ -30,6 +30,13 @@ describe("fbContent encode/decode", () => {
     expect(decodeFbContent("a\\xb")).toBe("a\\xb");
   });
 
+  it("decodes \\- as soft hyphen (U+00AD) and re-encodes symmetrically", () => {
+    const soft = "­";
+    expect(decodeFbContent("docu\\-ment")).toBe(`docu${soft}ment`);
+    expect(encodeFbContent(`docu${soft}ment`)).toBe("docu\\-ment");
+    expect(decodeFbContent(encodeFbContent(`docu${soft}ment`))).toBe(`docu${soft}ment`);
+  });
+
   it("decodes legacy unescaped \\& to newline (pre-backslash-escape format)", () => {
     // Payloads written before the encoder learned to escape `\` still
     // emitted bare `\&` for newlines. Decoder must keep handling that
