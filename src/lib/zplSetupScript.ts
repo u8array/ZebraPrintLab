@@ -198,8 +198,7 @@ const SETUP_SCRIPT_EMITTERS = {
   },
   // ^PA advanced text properties (4 slots a-d, each 0/1). paSlotA owns
   // the composite emit; b/c/d fold in. Emitted only when at least one
-  // slot is set so default labels stay byte-identical. Slot semantics
-  // are not surfaced in UI; round-trip pass-through only.
+  // slot is set so default labels stay byte-identical.
   paSlotA: {
     kind: 'emit',
     channel: 'block',

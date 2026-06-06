@@ -4,9 +4,11 @@ import { useLabelStore } from "../../store/labelStore";
 import { PRINTER_LOCALE_VALUES, ZPL_MODE_VALUES, isPrinterLocale, isZplMode, type PrinterLocale, type ZplMode } from "../../types/PrinterProfile";
 import {
   SafeStringInput,
+  ZplCheckbox,
   ZplCommandLabel,
   ZplEnumSelect,
   ZplField,
+  ZplFieldHint,
 } from "./zplFieldPrimitives";
 import { SE_PATH_PATTERN } from "./sePathPattern";
 
@@ -74,9 +76,7 @@ export function EncodingAndLanguageTab() {
           value={profile.encodingTable ?? ""}
           onChange={(v) => patchPrinterProfile({ encodingTable: v || undefined })}
         />
-        <span className="font-mono text-[10px] text-muted/70 normal-case tracking-normal">
-          {loc.encodingTableHint}
-        </span>
+        <ZplFieldHint>{loc.encodingTableHint}</ZplFieldHint>
       </ZplField>
 
       <ZplEnumSelect
@@ -89,6 +89,45 @@ export function EncodingAndLanguageTab() {
         defaultLabel={t.printerSettings.defaultOption}
         optionLabel={(m) => loc[ZPL_MODE_LABEL_KEYS[m]]}
       />
+
+      {/* ^PA Advanced Text Properties: 4 independent slots, composite
+          emit fires only when ≥1 is set (see zplSetupScript.ts). */}
+      <ZplField>
+        <ZplCheckbox
+          text={loc.paSlotA}
+          command="^PA"
+          checked={profile.paSlotA === true}
+          onChange={(v) => patchPrinterProfile({ paSlotA: v || undefined })}
+        />
+        <ZplFieldHint>{loc.paSlotAHint}</ZplFieldHint>
+      </ZplField>
+      <ZplField>
+        <ZplCheckbox
+          text={loc.paSlotB}
+          command="^PA"
+          checked={profile.paSlotB === true}
+          onChange={(v) => patchPrinterProfile({ paSlotB: v || undefined })}
+        />
+        <ZplFieldHint>{loc.paSlotBHint}</ZplFieldHint>
+      </ZplField>
+      <ZplField>
+        <ZplCheckbox
+          text={loc.paSlotC}
+          command="^PA"
+          checked={profile.paSlotC === true}
+          onChange={(v) => patchPrinterProfile({ paSlotC: v || undefined })}
+        />
+        <ZplFieldHint>{loc.paSlotCHint}</ZplFieldHint>
+      </ZplField>
+      <ZplField>
+        <ZplCheckbox
+          text={loc.paSlotD}
+          command="^PA"
+          checked={profile.paSlotD === true}
+          onChange={(v) => patchPrinterProfile({ paSlotD: v || undefined })}
+        />
+        <ZplFieldHint>{loc.paSlotDHint}</ZplFieldHint>
+      </ZplField>
     </div>
   );
 }

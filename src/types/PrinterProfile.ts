@@ -144,11 +144,11 @@ export const printerProfileSchema = z.object({
   headColdWarning: z.enum(['Y', 'N']).optional(),
   /** ^CV barcode validation (session-scoped per spec, not persisted by ^JUS). */
   codeValidation: z.enum(['Y', 'N']).optional(),
-  /** ^PA advanced text properties (firmware V60.14.x+). Four 0/1 slots a-d;
-   *  per-slot semantics not empirically verified (Labelary renders slot a
-   *  alone as a no-op; community docs disagree on b/c/d). Stored neutrally
-   *  for round-trip pass-through until a slot is empirically nailed down
-   *  and surfaced in UI. Session-scoped per spec. */
+  /** ^PA advanced text properties (ZPL II PG P1012728 p.299, firmware
+   *  V60.14.x+). Four session-scoped 0/1 slots. 0=printer default,
+   *  1=feature on. a: show font's missing-glyph box (instead of space).
+   *  b: bidi text layout. c: character shaping (joining forms). d:
+   *  OpenType table support (GSUB/GPOS). */
   paSlotA: z.boolean().optional(),
   paSlotB: z.boolean().optional(),
   paSlotC: z.boolean().optional(),

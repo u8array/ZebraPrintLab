@@ -542,6 +542,38 @@ describe("generateSetupScript — maintenance commands", () => {
     expect(r.paSlotD).toBeUndefined();
   });
 
+  it("parses ^PA0,0,0,0 as empty profile and re-emits nothing", () => {
+    const r = parseZPL("^XA^PA0,0,0,0^XZ").printerProfile;
+    expect(r.paSlotA).toBeUndefined();
+    expect(r.paSlotB).toBeUndefined();
+    expect(r.paSlotC).toBeUndefined();
+    expect(r.paSlotD).toBeUndefined();
+    expect(generateSetupScript(r)).not.toContain("^PA");
+  });
+
+  it("tolerates whitespace around ^PA slot values", () => {
+    const r = parseZPL("^XA^PA 1 , 0 , 1 , 0 ^XZ").printerProfile;
+    expect(r.paSlotA).toBe(true);
+    expect(r.paSlotC).toBe(true);
+    expect(r.paSlotB).toBeUndefined();
+    expect(r.paSlotD).toBeUndefined();
+  });
+
+  it("treats out-of-range ^PA values as 0 (strict 1-only)", () => {
+    const r = parseZPL("^XA^PA2,X,1,0^XZ").printerProfile;
+    expect(r.paSlotA).toBeUndefined();
+    expect(r.paSlotB).toBeUndefined();
+    expect(r.paSlotC).toBe(true);
+    expect(r.paSlotD).toBeUndefined();
+  });
+
+  it("ignores extra ^PA slots beyond the 4 spec'd ones", () => {
+    const r = parseZPL("^XA^PA1,0,1,0,1^XZ").printerProfile;
+    expect(r.paSlotA).toBe(true);
+    expect(r.paSlotC).toBe(true);
+    expect(generateSetupScript(r)).toContain("^PA1,0,1,0");
+  });
+
   it("emits ^JH with f-slot filled and other slots empty", () => {
     const script = generateSetupScript({ ...base, earlyWarningMaintenance: 'E' });
     expect(script).toBe("^XA\n^JH,,,,,E,,,,\n^XZ");

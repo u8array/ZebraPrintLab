@@ -4,6 +4,11 @@ import { clampBoundedInt, readBoundedInt } from "../../lib/inputParse";
 import { stripUnsafeChars } from "../../types/PrinterProfile";
 
 const commandTagCls = "font-mono text-[10px] text-muted/60 tracking-tight";
+const hintCls = "font-mono text-[10px] text-muted/70 normal-case tracking-normal";
+
+export function ZplFieldHint({ children }: { children: ReactNode }) {
+  return <span className={hintCls}>{children}</span>;
+}
 
 export function ZplCommandLabel({
   text,
