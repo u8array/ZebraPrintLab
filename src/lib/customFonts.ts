@@ -3,8 +3,17 @@ import { getFontBytes } from "./fontCache";
 /** Strip-pattern; schema's regex `/^[A-Z0-9]$/` is the inverse. */
 export const ALIAS_CHAR_RE = /[^A-Z0-9]/g;
 
-/** Build the `~DY` upload line for a `E:NAME.TTF` style path, bytes from fontCache. */
-export function formatFontDownloadFromPath(path: string): string | undefined {
+const BYTE_HEX = Array.from({ length: 256 }, (_, i) =>
+  i.toString(16).padStart(2, "0").toUpperCase(),
+);
+
+/** Build the `~DY` upload line for a `E:NAME.TTF` style path, bytes
+ *  from fontCache. `cacheKey` overrides the filename used for byte
+ *  lookup when the on-printer name differs from the upload name. */
+export function formatFontDownloadFromPath(
+  path: string,
+  cacheKey?: string,
+): string | undefined {
   const colon = path.indexOf(":");
   if (colon < 0) return undefined;
   const drive = path.slice(0, colon + 1);
@@ -13,11 +22,12 @@ export function formatFontDownloadFromPath(path: string): string | undefined {
   const stem = dot >= 0 ? filename.slice(0, dot) : filename;
   const ext = dot >= 0 ? filename.slice(dot + 1).toUpperCase() : "";
   if (ext !== "TTF" && ext !== "OTF") return undefined;
-  const bytes = getFontBytes(filename);
+  const bytes = getFontBytes(cacheKey ?? filename);
   if (!bytes) return undefined;
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0"))
-    .join("")
-    .toUpperCase();
+  // Lookup table avoids per-byte toString/padStart allocations on
+  // multi-MB TTFs.
+  let hex = "";
+  for (const b of bytes) hex += BYTE_HEX[b];
   return `~DY${drive}${stem},A,T,${bytes.length},,${hex}`;
 }
 

@@ -22,7 +22,7 @@ import { formatStoragePath } from './storagePath';
 
 function formatDownloadObject(m: CustomFontMapping): string | undefined {
   if (!m.embedInZpl || !m.path || !m.previewFontName) return undefined;
-  return formatFontDownloadFromPath(m.path);
+  return formatFontDownloadFromPath(m.path, m.previewFontName);
 }
 
 function flattenObjects(objects: LabelObject[]): LabelObject[] {

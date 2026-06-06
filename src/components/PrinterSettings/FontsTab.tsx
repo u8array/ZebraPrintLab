@@ -17,9 +17,9 @@ export function FontsTab() {
   const fonts = getAllFonts();
   const uploadedPaths = new Set(fonts.map((f) => uploadedFontPath(f.name)));
   // setupFonts entries whose bytes never made it into fontCache (re-imported profile).
-  const orphanPaths = (setupFonts ?? [])
+  const orphanPaths = [...new Set((setupFonts ?? [])
     .map((f) => f.path)
-    .filter((p) => !uploadedPaths.has(p));
+    .filter((p) => !uploadedPaths.has(p)))];
   const setupPaths = new Set((setupFonts ?? []).map((f) => f.path));
 
   const toggle = (path: string, on: boolean) => {
