@@ -42,4 +42,10 @@ export const textTestCases: TextTestCase[] = [
   // widths for dot/hyphen, so this exercises the hmtx table.
   { id: 'h30_n_decimal', fontHeight: 30, text: '12.34',        rotation: 'N', x: 200, y: 200 },
   { id: 'h30_n_date',    fontHeight: 30, text: '2026-05-15',   rotation: 'N', x: 200, y: 200 },
+
+  // Rotated cases at h50 + mixed alphanumeric, same anchor for visual
+  // diff. Exercises FO anchor math, not glyph rendering.
+  { id: 'h50_r_mix',     fontHeight: 50, text: 'AB123',        rotation: 'R', x: 200, y: 200 },
+  { id: 'h50_i_mix',     fontHeight: 50, text: 'AB123',        rotation: 'I', x: 400, y: 400 },
+  { id: 'h50_b_mix',     fontHeight: 50, text: 'AB123',        rotation: 'B', x: 400, y: 400 },
 ];

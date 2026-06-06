@@ -105,8 +105,7 @@ export function IdentityTab() {
             }
           }}
           onBlur={() => {
-            // Snap incomplete drafts back to the stored value so the
-            // visible input and the exported ZPL never disagree.
+            // Snap incomplete drafts back so input and exported ZPL stay in sync.
             if (passwordDraft !== "" && !PRINTER_PASSWORD_REGEX.test(passwordDraft)) {
               setPasswordDraft(lastStoredPassword);
             }

@@ -262,7 +262,6 @@ export function ZplEnumSelect<T extends string>({
   onChange,
   defaultLabel,
   optionLabel,
-  hint,
 }: {
   label: string;
   command: string;
@@ -272,7 +271,6 @@ export function ZplEnumSelect<T extends string>({
   onChange: (next: T | undefined) => void;
   defaultLabel: string;
   optionLabel: (v: T) => string;
-  hint?: ReactNode;
 }) {
   const id = useId();
   return (
@@ -294,7 +292,6 @@ export function ZplEnumSelect<T extends string>({
           </option>
         ))}
       </select>
-      {hint !== undefined && <ZplFieldHint>{hint}</ZplFieldHint>}
     </ZplField>
   );
 }
