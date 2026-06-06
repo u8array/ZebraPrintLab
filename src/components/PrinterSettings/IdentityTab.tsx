@@ -104,6 +104,13 @@ export function IdentityTab() {
               patchPrinterProfile({ setPassword: raw });
             }
           }}
+          onBlur={() => {
+            // Snap incomplete drafts back to the stored value so the
+            // visible input and the exported ZPL never disagree.
+            if (passwordDraft !== "" && !PRINTER_PASSWORD_REGEX.test(passwordDraft)) {
+              setPasswordDraft(lastStoredPassword);
+            }
+          }}
         />
         <span className={`${labelCls} normal-case tracking-normal text-muted/70`}>
           {loc.setPasswordHint}
