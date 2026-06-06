@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { FONT_LINKS_MAX_PER_BASE } from "../../types/PrinterProfile";
@@ -22,11 +23,26 @@ export function FontLinksField() {
   const links = profile.fontLinks ?? [];
   const overflowing = overflowingBases(links);
 
-  const setLinks = (next: { ext: string; base: string }[]) => {
+  // Stable per-row IDs preserve focus when rows are removed mid-list.
+  // Re-synced when links arrive from outside the component (import, rehydrate).
+  const [rowIds, setRowIds] = useState<string[]>(() => links.map(() => crypto.randomUUID()));
+  if (rowIds.length !== links.length) {
+    const next = rowIds.slice(0, links.length);
+    while (next.length < links.length) next.push(crypto.randomUUID());
+    setRowIds(next);
+  }
+
+  const updateRow = (i: number, patchRow: Partial<{ ext: string; base: string }>) => {
+    patch({ fontLinks: links.map((x, idx) => idx === i ? { ...x, ...patchRow } : x) });
+  };
+  const removeRow = (i: number) => {
+    const next = links.filter((_, idx) => idx !== i);
+    setRowIds(rowIds.filter((_, idx) => idx !== i));
     patch({ fontLinks: next.length > 0 ? next : undefined });
   };
-  const updateRow = (i: number, patchRow: Partial<{ ext: string; base: string }>) => {
-    setLinks(links.map((x, idx) => idx === i ? { ...x, ...patchRow } : x));
+  const addRow = () => {
+    setRowIds([...rowIds, crypto.randomUUID()]);
+    patch({ fontLinks: [...links, { ext: "", base: "" }] });
   };
 
   return (
@@ -42,7 +58,7 @@ export function FontLinksField() {
         </p>
       )}
       {links.map((l, i) => (
-        <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-1 items-center">
+        <div key={rowIds[i]} className="grid grid-cols-[1fr_1fr_auto] gap-1 items-center">
           <SafeStringInput
             value={l.ext}
             placeholder={loc.fontLinksExt}
@@ -56,7 +72,7 @@ export function FontLinksField() {
           <button
             type="button"
             className="font-mono text-[10px] text-muted hover:text-red-400 px-1"
-            onClick={() => setLinks(links.filter((_, idx) => idx !== i))}
+            onClick={() => removeRow(i)}
             aria-label={loc.fontLinksRemove}
           >
             ✕
@@ -66,7 +82,7 @@ export function FontLinksField() {
       <button
         type="button"
         className="font-mono text-[10px] text-accent hover:text-accent-bright self-start"
-        onClick={() => setLinks([...links, { ext: "", base: "" }])}
+        onClick={addRow}
       >
         + {loc.fontLinksAdd}
       </button>
