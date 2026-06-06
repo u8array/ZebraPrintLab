@@ -10,6 +10,7 @@ import {
   ZplField,
   ZplFieldHint,
 } from "./zplFieldPrimitives";
+import { FontLinksField } from "./FontLinksField";
 import { SE_PATH_PATTERN } from "./sePathPattern";
 
 type LocEncodingLanguage = ReturnType<typeof useT>["printerSettings"]["encodingLanguage"];
@@ -128,6 +129,8 @@ export function EncodingAndLanguageTab() {
         />
         <ZplFieldHint>{loc.paSlotDHint}</ZplFieldHint>
       </ZplField>
+
+      <FontLinksField />
     </div>
   );
 }

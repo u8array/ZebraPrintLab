@@ -24,7 +24,6 @@ export function createUnsupportedHandlers(
     JS: noop,
     PP: noop,
     // Browser-limit factories, surface as "not loaded" findings.
-    FL: mkBrowserLimit("FL"),
     HT: mkBrowserLimit("HT"),
     LF: mkBrowserLimit("LF"),
     IM: mkBrowserLimit("IM"),

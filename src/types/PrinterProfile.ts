@@ -11,6 +11,8 @@ export const PRINTER_NAME_MAX_LEN = 16;
 // String-based class so the no-control-regex rule does not fire.
 const SETUP_SCRIPT_UNSAFE_CHARS = '\\^~,\\r\\n\\x00-\\x1f';
 export const setupScriptSafeStringRegex = new RegExp(`^[^${SETUP_SCRIPT_UNSAFE_CHARS}]+$`);
+/** Like setupScriptSafeStringRegex but accepts empty strings for editor drafts. */
+export const setupScriptOptionalSafeStringRegex = new RegExp(`^[^${SETUP_SCRIPT_UNSAFE_CHARS}]*$`);
 /** No `g` flag so `.test()` callers don't carry `lastIndex` state. */
 export const setupScriptUnsafeCharRegex = new RegExp(`[${SETUP_SCRIPT_UNSAFE_CHARS}]`);
 const setupScriptUnsafeCharGlobalRegex = new RegExp(`[${SETUP_SCRIPT_UNSAFE_CHARS}]`, 'g');
@@ -83,6 +85,10 @@ export const isMaintenanceAlertUnit = makeEnumGuard(MAINTENANCE_ALERT_UNITS);
 export const MAINTENANCE_DISTANCE_MAX_BY_TYPE = { R: 150000, C: 2000 } as const;
 /** ^MI message length cap from Zebra Quick Reference. */
 export const MAINTENANCE_MESSAGE_MAX_LEN = 63;
+/** ^FL spec cap (PG p.184): up to 5 active links per base font. */
+export const FONT_LINKS_MAX_PER_BASE = 5;
+/** ^FL ext/base path length cap (defensive; covers full Zebra device-path forms). */
+export const FONT_LINKS_PATH_MAX_LEN = 128;
 
 /** Indexed table 0..16; wire value is the index. */
 export const HEAD_CLEANING_INTERVAL_METERS = [
@@ -153,6 +159,14 @@ export const printerProfileSchema = z.object({
   paSlotB: z.boolean().optional(),
   paSlotC: z.boolean().optional(),
   paSlotD: z.boolean().optional(),
+  /** ^FL font links (PG p.184, firmware V60.14.x+): `ext` falls back to
+   *  `base`. Per-base cap {@link FONT_LINKS_MAX_PER_BASE} stays soft
+   *  (printer ignores overflow); empty rows are editor drafts, skipped
+   *  on emit. */
+  fontLinks: z.array(z.object({
+    ext: z.string().max(FONT_LINKS_PATH_MAX_LEN).regex(setupScriptOptionalSafeStringRegex),
+    base: z.string().max(FONT_LINKS_PATH_MAX_LEN).regex(setupScriptOptionalSafeStringRegex),
+  })).optional(),
   /** ^JH f master gate; without `E` ^MA sits dormant. */
   earlyWarningMaintenance: z.enum(['E', 'D']).optional(),
   /** ^JH g; stored as meters for UX, wire is index into table. */

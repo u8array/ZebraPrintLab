@@ -182,6 +182,19 @@ const SETUP_SCRIPT_EMITTERS = {
     scope: 'persistent',
     emit: (p) => p.headColdWarning !== undefined ? `^MW${p.headColdWarning}` : null,
   },
+  // One ^FL per active link; persisted by the trailing ^JUS.
+  fontLinks: {
+    kind: 'emit',
+    channel: 'block',
+    scope: 'persistent',
+    emit: (p) => {
+      // Trim symmetrically with the parser so whitespace-only rows
+      // don't break the round-trip.
+      const valid = p.fontLinks?.filter((l) => l.ext.trim().length > 0 && l.base.trim().length > 0);
+      if (!valid || valid.length === 0) return null;
+      return valid.map((l) => `^FL${l.ext.trim()},${l.base.trim()},1`).join('\n');
+    },
+  },
   // Last persistent entry: ^JUS must follow every persistent write so the
   // EEPROM commits the block. Tripwire in zplSetupScript.test.ts pins this.
   configurationUpdate: {

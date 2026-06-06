@@ -1,4 +1,4 @@
-import { CLOCK_TOLERANCE_RANGE, HEAD_CLEANING_INTERVAL_METERS, HEAD_TEST_INTERVAL_RANGE, JH_SLOT_F, JH_SLOT_G, MAINTENANCE_ALERT_DEFAULTS, MAINTENANCE_DISTANCE_MAX_BY_TYPE, MAINTENANCE_MESSAGE_MAX_LEN, PRINTER_NAME_MAX_LEN, PRINTER_PASSWORD_REGEX, TEAR_OFF_ADJUST_RANGE, isClockFormat, isClockLanguage, isConfigUpdateAction, isMaintenanceAlertPrint, isMaintenanceAlertType, isMaintenanceAlertUnit, isPrinterLocale, isZplMode, setupScriptUnsafeCharRegex } from "../../../types/PrinterProfile";
+import { CLOCK_TOLERANCE_RANGE, FONT_LINKS_PATH_MAX_LEN, HEAD_CLEANING_INTERVAL_METERS, HEAD_TEST_INTERVAL_RANGE, JH_SLOT_F, JH_SLOT_G, MAINTENANCE_ALERT_DEFAULTS, MAINTENANCE_DISTANCE_MAX_BY_TYPE, MAINTENANCE_MESSAGE_MAX_LEN, PRINTER_NAME_MAX_LEN, PRINTER_PASSWORD_REGEX, TEAR_OFF_ADJUST_RANGE, isClockFormat, isClockLanguage, isConfigUpdateAction, isMaintenanceAlertPrint, isMaintenanceAlertType, isMaintenanceAlertUnit, isPrinterLocale, isZplMode, setupScriptUnsafeCharRegex } from "../../../types/PrinterProfile";
 import { parseIntOrUndef } from "../../inputParse";
 import { parseRealtimeClock } from "../../realtimeClock";
 import type { ParserState } from "../context";
@@ -148,6 +148,28 @@ export function createSetupScriptHandlers(s: ParserState): Record<string, Handle
       if (flag(p[1])) printerProfile.paSlotB = true;
       if (flag(p[2])) printerProfile.paSlotC = true;
       if (flag(p[3])) printerProfile.paSlotD = true;
+    },
+    FL(p) {
+      // link=1 adds, link=0 removes; missing link defaults to add.
+      // Length + unsafe-char guards mirror ^SE/^MI so an invalid row
+      // cannot reach the schema and drop the whole profile patch.
+      const ext = (p[0] ?? "").trim();
+      const base = (p[1] ?? "").trim();
+      if (!ext || !base) return;
+      if (ext.length > FONT_LINKS_PATH_MAX_LEN || base.length > FONT_LINKS_PATH_MAX_LEN) return;
+      if (setupScriptUnsafeCharRegex.test(ext) || setupScriptUnsafeCharRegex.test(base)) return;
+      const linkRaw = p[2]?.trim();
+      const link = linkRaw === undefined || linkRaw === "" ? "1" : linkRaw;
+      if (link !== "0" && link !== "1") return;
+      const list = printerProfile.fontLinks ?? [];
+      const idx = list.findIndex((e) => e.ext === ext && e.base === base);
+      if (link === "0") {
+        if (idx >= 0) list.splice(idx, 1);
+      } else if (idx < 0) {
+        list.push({ ext, base });
+      }
+      if (list.length > 0) printerProfile.fontLinks = list;
+      else delete printerProfile.fontLinks;
     },
     // ^JH: only f/g modelled; other slots are runtime reset flags.
     // g is a 0..16 index into HEAD_CLEANING_INTERVAL_METERS per spec.

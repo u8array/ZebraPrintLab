@@ -420,6 +420,7 @@ describe("generateSetupScript — output shape", () => {
       "maintenanceAlert",
       "maintenanceMessage",
       "headColdWarning",
+      "fontLinks",
       "configurationUpdate",
       "codeValidation",
       "paSlotA",
@@ -538,6 +539,82 @@ describe("generateSetupScript — maintenance commands", () => {
   it("round-trips ^PA1,1,1,1", () => {
     const r = parseZPL("^XA^PA1,1,1,1^XZ").printerProfile;
     expect(generateSetupScript(r)).toContain("^PA1,1,1,1");
+  });
+
+  it("emits one ^FL per active font link, persistent (before ^JUS)", () => {
+    const script = generateSetupScript({
+      ...base,
+      fontLinks: [{ ext: "E:ARABIC.TTF", base: "E:LATIN.TTF" }],
+      configurationUpdate: "S",
+    });
+    expect(script).toBe("^XA\n^FLE:ARABIC.TTF,E:LATIN.TTF,1\n^JUS\n^XZ");
+  });
+
+  it("omits ^FL when no links are present", () => {
+    expect(generateSetupScript(base)).not.toContain("^FL");
+    expect(generateSetupScript({ ...base, fontLinks: [] })).not.toContain("^FL");
+  });
+
+  it("parses ^FL into the profile (link=1 adds)", () => {
+    const r = parseZPL("^XA^FLE:ARABIC.TTF,E:LATIN.TTF,1^XZ").printerProfile;
+    expect(r.fontLinks).toEqual([{ ext: "E:ARABIC.TTF", base: "E:LATIN.TTF" }]);
+  });
+
+  it("^FL link=0 removes an existing pair", () => {
+    const r = parseZPL(
+      "^XA^FLE:ARABIC.TTF,E:LATIN.TTF,1^FS" +
+      "^FLE:ARABIC.TTF,E:LATIN.TTF,0^FS^XZ",
+    ).printerProfile;
+    expect(r.fontLinks).toBeUndefined();
+  });
+
+  it("^FL is idempotent on duplicate add", () => {
+    const r = parseZPL(
+      "^XA^FLE:ARABIC.TTF,E:LATIN.TTF,1^FS" +
+      "^FLE:ARABIC.TTF,E:LATIN.TTF,1^FS^XZ",
+    ).printerProfile;
+    expect(r.fontLinks).toEqual([{ ext: "E:ARABIC.TTF", base: "E:LATIN.TTF" }]);
+  });
+
+  it("^FL with missing link param defaults to add", () => {
+    const r = parseZPL("^XA^FLE:ARABIC.TTF,E:LATIN.TTF^XZ").printerProfile;
+    expect(r.fontLinks).toEqual([{ ext: "E:ARABIC.TTF", base: "E:LATIN.TTF" }]);
+  });
+
+  it("^FL with invalid link value is ignored (per spec)", () => {
+    const r = parseZPL("^XA^FLE:ARABIC.TTF,E:LATIN.TTF,2^XZ").printerProfile;
+    expect(r.fontLinks).toBeUndefined();
+  });
+
+  it("^FL emit skips rows with empty ext or base (editor drafts)", () => {
+    const script = generateSetupScript({
+      ...base,
+      fontLinks: [{ ext: "", base: "" }, { ext: "E:A.TTF", base: "E:B.TTF" }],
+    });
+    expect(script).toBe("^XA\n^FLE:A.TTF,E:B.TTF,1\n^XZ");
+  });
+
+  it("^FL parser drops rows with oversize or unsafe-char paths", () => {
+    const long = "E:" + "A".repeat(130) + ".TTF";
+    expect(parseZPL(`^XA^FL${long},E:B.TTF,1^XZ`).printerProfile.fontLinks).toBeUndefined();
+    expect(parseZPL("^XA^FLE:A~1.TTF,E:B.TTF,1^XZ").printerProfile.fontLinks).toBeUndefined();
+  });
+
+  it("^FL emit trims whitespace-only rows and trims surviving rows", () => {
+    const script = generateSetupScript({
+      ...base,
+      fontLinks: [{ ext: "  ", base: "  " }, { ext: " E:A.TTF ", base: " E:B.TTF " }],
+    });
+    expect(script).toBe("^XA\n^FLE:A.TTF,E:B.TTF,1\n^XZ");
+  });
+
+  it("round-trips multi-link ^FL", () => {
+    const r = parseZPL(
+      "^XA^FLE:CJK.TTF,E:LATIN.TTF,1" +
+      "^FLE:ARABIC.TTF,E:LATIN.TTF,1^XZ",
+    ).printerProfile;
+    expect(generateSetupScript(r))
+      .toContain("^FLE:CJK.TTF,E:LATIN.TTF,1\n^FLE:ARABIC.TTF,E:LATIN.TTF,1");
   });
 
   it("treats omitted ^PA slots as 0 (printer default)", () => {
