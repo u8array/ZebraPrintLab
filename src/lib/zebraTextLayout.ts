@@ -139,19 +139,20 @@ export function blockLineStepDots(fontHeight: number, blockLineSpacing: number):
 }
 
 /** ^FB dashed wrap-edge guide: points (x1,y1,x2,y2) for the line that
- *  sits on the far side of the block from the reading start. N/I reach
- *  the right edge, R/B reach the bottom edge of the rotated bbox. */
+ *  sits on the end-of-reading side of the rotated block. */
 export function blockWrapEdgePoints(
   rotation: ZplRotation,
   bounds: { x: number; y: number; width: number; height: number },
 ): [number, number, number, number] {
   switch (rotation) {
-    case "R":
-    case "B":
-      return [bounds.x, bounds.y + bounds.height, bounds.x + bounds.width, bounds.y + bounds.height];
     case "N":
-    case "I":
       return [bounds.x + bounds.width, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height];
+    case "R":
+      return [bounds.x, bounds.y + bounds.height, bounds.x + bounds.width, bounds.y + bounds.height];
+    case "I":
+      return [bounds.x, bounds.y, bounds.x, bounds.y + bounds.height];
+    case "B":
+      return [bounds.x, bounds.y, bounds.x + bounds.width, bounds.y];
   }
 }
 
