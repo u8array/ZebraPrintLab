@@ -197,6 +197,58 @@ function bwipScale1D(
 
 export { eanCheckDigit, upceCheckDigit } from "../../lib/barcodeCheckDigits";
 
+/** Sub-pixel overlap so adjacent module rects don't leave hairline gaps. */
+const RAW_BAR_SEAM = 0.4;
+
+interface BwipRawLinear {
+  sbs?: number[];
+  bbs?: number[];
+}
+
+/** Bars + extended guard tails in one fillRect pass via bwip raw
+ *  geometry. `includetext: true` makes bwip mark guards with `bbs<0`;
+ *  we never draw text it would emit. */
+export function renderEanUpcRawCanvas(
+  type: EanUpcType,
+  text: string,
+  modulePxInt: number,
+  barHeightPx: number,
+  tailHeightPx: number,
+): HTMLCanvasElement | null {
+  if (modulePxInt <= 0 || barHeightPx <= 0) return null;
+  let stack: BwipRawLinear[];
+  try {
+    stack = bwipjs.raw({ bcid: type, text, includetext: true } as never) as BwipRawLinear[];
+  } catch {
+    return null;
+  }
+  const g = stack?.[0];
+  if (!g?.sbs) return null;
+  let totalModules = 0;
+  for (const w of g.sbs) totalModules += w;
+  const canvas = document.createElement("canvas");
+  canvas.width = totalModules * modulePxInt;
+  canvas.height = barHeightPx + Math.max(0, tailHeightPx);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.fillStyle = "#000000";
+  let cx = 0;
+  let isBar = true;
+  let barIdx = 0;
+  for (const w of g.sbs) {
+    const wPx = w * modulePxInt;
+    if (isBar) {
+      const isGuard = (g.bbs?.[barIdx] ?? 0) < 0;
+      const h = isGuard ? canvas.height : barHeightPx;
+      ctx.fillRect(cx, 0, wPx + RAW_BAR_SEAM, h);
+      barIdx++;
+    }
+    cx += wPx;
+    isBar = !isBar;
+  }
+  return canvas;
+}
+
 // Forcing Code B keeps module count in sync with Labelary (^BC default).
 // Returns null for chars outside ASCII 32..126.
 function toCode128BRaw(text: string): string | null {

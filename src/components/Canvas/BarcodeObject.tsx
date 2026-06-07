@@ -12,6 +12,7 @@ import {
   getDisplaySize,
   get1DBwipScale,
   getEanUpcLayout,
+  renderEanUpcRawCanvas,
   renderTlc39Canvas,
   type BarcodeDisplaySize,
   type EanUpcType,
@@ -22,6 +23,7 @@ import { buildEanUpcDigitOverlay } from "./eanUpcDigitNodes";
 import {
   COURIER_BOLD_EM_BOTTOM_PAD,
   COURIER_BOLD_INK_TO_EM,
+  EAN_TEXT_ZONE_DOTS,
   EAN_UPC_TYPES,
   QR_FO_Y_OFFSET_DOTS,
   QR_FT_MODULE_OFFSET,
@@ -75,6 +77,18 @@ export function BarcodeObject({
     }
   }, []);
 
+  // Cross-type props read once so the canvas builder and the HRI overlay
+  // share one source of truth. Single-field casts at the boundary instead
+  // of switch-narrowing keep the cross-type read flat (2D types without
+  // moduleWidth fall through with the default; their branches don't
+  // render HRI text anyway).
+  const moduleWidth =
+    (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
+  const rawContent = (obj.props as { content?: string }).content ?? "";
+  const printInterpEnabled =
+    !ObjectRegistry[obj.type]?.interpretationLocked &&
+    !!(obj.props as { printInterpretation?: boolean }).printInterpretation;
+
   let barcodeCanvas: HTMLCanvasElement | null = null;
   let errorMsg: string | null = null;
   if (obj.type === "tlc39") {
@@ -82,6 +96,24 @@ export function BarcodeObject({
     // composite ourselves. Goes straight to canvas, bypassing buildBwipOptions.
     barcodeCanvas = renderTlc39Canvas(obj.props, scale, dpmm);
     if (!barcodeCanvas) errorMsg = "TLC39 render failed";
+  } else if (EAN_UPC_TYPES.has(obj.type)) {
+    // EAN/UPC use bwip.raw + own fillRect pass so guard tails extend in
+    // the same canvas as the bars (no overlay seam). Guard tails only
+    // extend when HRI is on, matching Zebra firmware.
+    const eanHeight = (obj.props as { height: number }).height;
+    const modulePxInt = get1DBwipScale(moduleWidth, scale, dpmm);
+    const barHeightPx = dotsToPx(eanHeight, scale, dpmm);
+    const tailHeightPx = printInterpEnabled
+      ? dotsToPx(EAN_TEXT_ZONE_DOTS, scale, dpmm)
+      : 0;
+    barcodeCanvas = renderEanUpcRawCanvas(
+      obj.type as EanUpcType,
+      rawContent,
+      modulePxInt,
+      barHeightPx,
+      tailHeightPx,
+    );
+    if (!barcodeCanvas) errorMsg = "EAN/UPC encode failed";
   } else {
     const opts = buildBwipOptions(obj, scale, dpmm);
     if (opts) {
@@ -193,20 +225,7 @@ export function BarcodeObject({
     // carries printInterpretation: true.
     const rotation = objectRotation(obj.props);
     const isUpright = rotation === "N";
-    const printInterpEnabled =
-      !ObjectRegistry[obj.type]?.interpretationLocked &&
-      !!(obj.props as { printInterpretation?: boolean }).printInterpretation;
-    // Cross-type access: this block runs for every barcode and reads moduleWidth
-    // generically (textFontSize is computed for HRI text rendering downstream).
-    // Unlike buildBwipOptions, this function isn't switch-structured by obj.type,
-    // so per-case narrowing would require restructuring the whole block. The
-    // cast + fallback stays as the documented boundary between cross-type code
-    // and the per-type required-typed schemas (2D types without moduleWidth fall
-    // through with the default; their branches don't render HRI text anyway).
-    const moduleWidth =
-      (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
     const textGap = Math.max(dotsToPx(5, scale, dpmm), 3);
-    const rawContent = (obj.props as { content?: string }).content ?? "";
 
     const hri = ObjectRegistry[obj.type]?.hri;
     // Function-form fontDots returns ink dots; inflate to Konva em.
@@ -356,12 +375,37 @@ export function BarcodeObject({
               image={barcodeCanvas}
               crop={bitmapCrop}
               width={ub.barW}
-              height={ub.barH}
+              height={isEanUpc
+                ? ub.barH + dotsToPx(EAN_TEXT_ZONE_DOTS, scale, dpmm)
+                : ub.barH}
+              // Clip Transformer bbox to the bar area so resize handles
+              // ignore the guard tails.
+              ref={isEanUpc ? (node) => {
+                if (node) {
+                  const w = ub.barW;
+                  const h = ub.barH;
+                  node.getSelfRect = () => ({ x: 0, y: 0, width: w, height: h });
+                }
+              } : undefined}
               imageSmoothingEnabled={false}
-              stroke={isSelected ? colors.selection : undefined}
-              strokeWidth={isSelected ? 2 : 0}
+              // EAN/UPC draws its selection stroke as the Rect below so
+              // the highlight skips the guard tails.
+              stroke={!isEanUpc && isSelected ? colors.selection : undefined}
+              strokeWidth={!isEanUpc && isSelected ? 2 : 0}
               strokeScaleEnabled={false}
             />
+            {isEanUpc && isSelected && (
+              <Rect
+                x={ub.barLeftPx}
+                y={ub.barTopPx}
+                width={ub.barW}
+                height={ub.barH}
+                stroke={colors.selection}
+                strokeWidth={2}
+                strokeScaleEnabled={false}
+                listening={false}
+              />
+            )}
             <Group ref={excludeGroupFromBbox}>{overlayContent}</Group>
           </Group>
         </Group>
