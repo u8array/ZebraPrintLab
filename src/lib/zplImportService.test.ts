@@ -172,6 +172,40 @@ describe('importZplText — ~DY font scope (setup vs design)', () => {
     expect(printerProfile.setupFonts).toBeUndefined();
   });
 
+  it('treats a ^A@ direct-path uploaded font (no ^CW) as a design font', () => {
+    const zpl =
+      `~DYE:DIRECT,A,T,4,,${HEX}\n` +
+      `^XA^FO10,10^A@N,20,0,E:DIRECT.TTF^FDhi^FS^XZ`;
+    const { printerProfile, pages } = importZplText(zpl, 8);
+    expect(printerProfile.setupFonts).toBeUndefined();
+    expect(pages[0]?.objects).toHaveLength(1);
+  });
+
+  it('matches a driveless ^A@ ref against a drived ~DY upload by filename', () => {
+    const zpl =
+      `~DYE:FONT,A,T,4,,${HEX}\n` +
+      `^XA^FO10,10^A@N,20,0,FONT.TTF^FDhi^FS^XZ`;
+    const { printerProfile } = importZplText(zpl, 8);
+    expect(printerProfile.setupFonts).toBeUndefined();
+  });
+
+  it('keeps a drived ~DY upload as setup when only a different drive is referenced', () => {
+    // R:FONT referenced but E:FONT uploaded: distinct drives are distinct
+    // files, so the upload stays a setup font (no filename over-match).
+    const zpl = `~DYE:FONT,A,T,4,,${HEX}\n^XA^FO0,0^A@N,20,0,R:FONT.TTF^FDx^FS^XZ`;
+    const { printerProfile } = importZplText(zpl, 8);
+    expect(printerProfile.setupFonts).toEqual([{ path: 'E:FONT.TTF' }]);
+  });
+
+  it('excludes a ^CW-claimed font even when the ^CW sits in a later block', () => {
+    const zpl = [
+      `~DYE:LATE,A,T,${HEX.length / 2},,${HEX}\n^XA^FO0,0^A0N,20,0^FDa^FS^XZ`,
+      `^XA^CWM,E:LATE.TTF^XZ`,
+    ].join('\n');
+    const { printerProfile } = importZplText(zpl, 8);
+    expect(printerProfile.setupFonts).toBeUndefined();
+  });
+
   it('round-trips generateSetupScript setupFonts back into the profile', async () => {
     const { loadFontBytes } = await import('./fontCache');
     await loadFontBytes(new Uint8Array([1, 2, 3, 4]), 'RTFONT.TTF');

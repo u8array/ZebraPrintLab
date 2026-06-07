@@ -42,10 +42,15 @@ export interface ParsedZPL {
   /** Template variables reconstructed from `^FN` slots. */
   variables: Variable[];
   /** Full device paths of fonts uploaded via `~DY` (TTF/OTF) in this
-   *  stream. A path also claimed by a `^CW` is a design font (already in
-   *  `labelConfig.customFonts`); an unclaimed path is a Setup-Script font.
+   *  stream. A path also claimed by a `^CW` alias or referenced by a
+   *  `^A@` direct path is a design font (in `labelConfig.customFonts` or
+   *  the design objects); an unclaimed path is a Setup-Script font.
    *  The service derives `printerProfile.setupFonts` from this set. */
   uploadedFontPaths: string[];
+  /** Full device paths referenced by a `^A@` direct-path font. The
+   *  service treats these as design fonts so an uploaded font used
+   *  without a `^CW` alias is not misclassified as a Setup-Script font. */
+  referencedFontPaths: string[];
   /** Commands not fully imported (browserLimit + unknown). Prefer
    *  importReport for categorised access. */
   skipped: string[];

@@ -118,6 +118,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     objects,
     variables,
     uploadedFontPaths: [...s.fonts.downloadedFontPaths],
+    referencedFontPaths: [...s.fonts.referencedFontPaths],
     skipped,
     importReport: {
       findings,

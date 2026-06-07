@@ -98,6 +98,10 @@ export interface FontsState {
   aliases: Map<string, string>;
   downloadedFontPaths: Set<string>;
   downloadedGraphics: Map<string, UploadedGraphic>;
+  /** Full device paths referenced by a ^A@ direct-path font (no ^CW
+   *  alias). Lets the import classify such an uploaded font as a design
+   *  font rather than a Setup-Script font. */
+  referencedFontPaths: Set<string>;
 }
 
 /** Per-field accumulator, consumed and reset by flushField at ^FS. */
@@ -249,6 +253,7 @@ export function createParserState(): ParserState {
       aliases: new Map<string, string>(),
       downloadedFontPaths: new Set<string>(),
       downloadedGraphics: new Map<string, UploadedGraphic>(),
+      referencedFontPaths: new Set<string>(),
     },
     reverseBg: null,
     field: {

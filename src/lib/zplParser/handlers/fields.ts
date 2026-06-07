@@ -266,6 +266,10 @@ export function createFieldHandlers(
       const colonIdx = fontRef.indexOf(":");
       s.field.pendingPrinterFontName =
         (colonIdx >= 0 ? fontRef.slice(colonIdx + 1) : fontRef) || undefined;
+      // A direct path here claims an uploaded font without a ^CW alias;
+      // record it so the import won't mistake it for a Setup-Script font.
+      const fontRefTrimmed = fontRef.trim();
+      if (fontRefTrimmed) s.fonts.referencedFontPaths.add(fontRefTrimmed);
       s.result.partialCmds.add("^A@");
     },
     // ^TB{rotation},{width},{height}: text block (alternative to ^A + ^FB)
