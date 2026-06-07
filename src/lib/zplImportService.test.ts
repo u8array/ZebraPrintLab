@@ -206,6 +206,17 @@ describe('importZplText - ~DY font scope (setup vs design)', () => {
     expect(printerProfile.setupFonts).toBeUndefined();
   });
 
+  it('cross-block ^CW backfills embedInZpl and previewFontName from the preamble upload', () => {
+    const zpl = [
+      `~DYE:LATE,A,T,${HEX.length / 2},,${HEX}\n^XA^FO0,0^A0N,20,0^FDa^FS^XZ`,
+      `^XA^CWM,E:LATE.TTF^XZ`,
+    ].join('\n');
+    const { labelConfig } = importZplText(zpl, 8);
+    expect(labelConfig.customFonts).toEqual([
+      { alias: 'M', path: 'E:LATE.TTF', embedInZpl: true, previewFontName: 'LATE.TTF' },
+    ]);
+  });
+
   it('round-trips generateSetupScript setupFonts back into the profile', async () => {
     const { loadFontBytes } = await import('./fontCache');
     await loadFontBytes(new Uint8Array([1, 2, 3, 4]), 'RTFONT.TTF');

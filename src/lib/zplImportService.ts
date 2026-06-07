@@ -1,7 +1,7 @@
 import { parseZPL, type ImportFinding, type ImportFindingKind, type ImportReport } from "./zplParser";
 import { pruneUndefined } from "./pruneUndefined";
 import { stripDrivePrefix } from "./customFonts";
-import type { LabelConfig } from "../types/LabelConfig";
+import type { CustomFontMapping, LabelConfig } from "../types/LabelConfig";
 import type { PrinterProfile } from "../types/PrinterProfile";
 import type { LabelObject } from "../types/Group";
 import { uniqueVariableName, type Variable } from "../types/Variable";
@@ -60,24 +60,19 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     };
   }
 
-  // Parse units: each ^XA block becomes a page. The preamble is prepended
-  // to the first block so a font's ~DY and its ^CW alias decode in one
-  // pass (they share downloadedFontPaths). With no ^XA at all, the
-  // preamble is parsed on its own as profile-only input that yields no page.
+  // Prepend the preamble to block 0 so a font's ~DY and its ^CW alias
+  // decode in one parser pass. Without ^XA the preamble runs alone.
   const hasLabelBlocks = blocks.length > 0;
   const parseUnits = hasLabelBlocks
     ? blocks.map((b, i) => (i === 0 ? preamble + b : b))
     : [preamble];
   const uploadedFontPaths: string[] = [];
-  // Paths claimed as design fonts across all blocks: ^CW aliases plus
-  // ^A@ direct-path references. Collected over every block (not just
-  // block 0) so a ^CW in a later block still excludes its font.
-  const normPath = (p: string | undefined) => p?.trim().toUpperCase();
-  // Driveless ^A@/^CW refs (e.g. "FONT.TTF") match a drived ~DY upload
-  // ("E:FONT.TTF") by filename: the printer resolves driveless refs by
-  // searching drives. Strip only the uploaded side so different drives
-  // with the same filename do not collide.
-  const strippedNorm = (p: string) => stripDrivePrefix(normPath(p) ?? "");
+  const normPath = (p: string) => p.trim().toUpperCase();
+  // Strip only the uploaded side: driveless refs match any drive on the
+  // printer, but two drived refs on different drives stay distinct.
+  const strippedNorm = (p: string) => stripDrivePrefix(normPath(p));
+  // ^CW aliases + ^A@ direct refs across all blocks; later-block claims
+  // also exclude a preamble-uploaded font.
   const designFontPaths = new Set<string>();
 
   let labelConfig: Partial<LabelConfig> = {};
@@ -95,17 +90,19 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
   const variables: Variable[] = [];
   const variablesByFn = new Map<number, Variable>();
 
+  // Cross-block customFonts merge by alias. Foreign ZPL can split a font
+  // upload from its ^CW alias (~DY in preamble, ^CW in a later block),
+  // and the per-block parser would otherwise lose the entry when block 0's
+  // labelConfig replaces all later labelConfigs.
+  const aggregatedCustomFonts = new Map<string, CustomFontMapping>();
   parseUnits.forEach((block, i) => {
     const result = parseZPL(block, dpmm);
     uploadedFontPaths.push(...result.uploadedFontPaths);
     for (const m of result.labelConfig.customFonts ?? []) {
-      const n = normPath(m.path);
-      if (n) designFontPaths.add(n);
+      if (m.path) designFontPaths.add(normPath(m.path));
+      if (m.alias) aggregatedCustomFonts.set(m.alias, m);
     }
-    for (const p of result.referencedFontPaths) {
-      const n = normPath(p);
-      if (n) designFontPaths.add(n);
-    }
+    for (const p of result.referencedFontPaths) designFontPaths.add(normPath(p));
     const idRemap = new Map<string, string>();
     for (const v of result.variables) {
       const existing = variablesByFn.get(v.fnNumber);
@@ -146,17 +143,32 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     }
   });
 
-  // Fonts uploaded via ~DY but never claimed as a design font are
-  // Setup-Script fonts. Subtract the design paths (^CW aliases + ^A@
-  // direct-path refs, across all blocks) so a re-imported setup script
-  // restores printerProfile.setupFonts instead of dropping the scope.
-  // Comparison is trim+upper-cased: external streams may differ in casing.
+  // Uploaded fonts not claimed as design fonts are Setup-Script fonts.
+  // Case-insensitive compare since external streams vary in casing.
   const uploadedUnique = [...new Set(uploadedFontPaths)];
+  const uploadedNormed = new Map(uploadedUnique.map((p) => [normPath(p), p]));
   const setupFontPaths = uploadedUnique.filter(
-    (p) => !designFontPaths.has(normPath(p) ?? "") && !designFontPaths.has(strippedNorm(p)),
+    (p) => !designFontPaths.has(normPath(p)) && !designFontPaths.has(strippedNorm(p)),
   );
   if (setupFontPaths.length > 0) {
     printerProfile.setupFonts = setupFontPaths.map((path) => ({ path }));
+  }
+
+  // Backfill embedInZpl + previewFontName on aggregated entries whose
+  // path matches an uploaded font: the parser's ^CW handler can only
+  // see same-block uploads, so a foreign ZPL with split ~DY/^CW would
+  // otherwise drop the embed flag on re-export.
+  for (const m of aggregatedCustomFonts.values()) {
+    if (!m.path) continue;
+    const upload = uploadedNormed.get(normPath(m.path));
+    if (!upload || m.embedInZpl) continue;
+    m.embedInZpl = true;
+    const colon = upload.indexOf(":");
+    const filename = colon >= 0 ? upload.slice(colon + 1) : upload;
+    if (filename && !m.previewFontName) m.previewFontName = filename;
+  }
+  if (aggregatedCustomFonts.size > 0) {
+    labelConfig.customFonts = [...aggregatedCustomFonts.values()];
   }
 
   // Bucket views deduplicate by command code to match the JSDoc contract on
