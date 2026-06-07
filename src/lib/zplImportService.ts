@@ -18,24 +18,38 @@ export interface ZplImportResult {
   report: ImportReport;
 }
 
+interface SplitBlocks {
+  /** Command text before the first `^XA` (e.g. `~DY` font uploads). Empty
+   *  when the head holds no command token, so pasted prose stays discarded. */
+  preamble: string;
+  /** One entry per `^XA...^XZ` document. */
+  blocks: string[];
+}
+
 /**
- * Splits a ZPL stream into one block per `^XA...^XZ` document. Anything before
- * the first `^XA` is discarded. ZPL commands are case-insensitive per spec.
+ * Splits a ZPL stream into one block per `^XA...^XZ` document plus the
+ * preamble that precedes the first `^XA`. ZPL commands are case-insensitive
+ * per spec.
  */
-function splitIntoLabelBlocks(zpl: string): string[] {
+function splitIntoLabelBlocks(zpl: string): SplitBlocks {
   // Capture group preserves the matched delimiter so mixed-case (^xa) survives.
-  const parts = zpl.split(/(\^XA)/i).slice(1);
+  const parts = zpl.split(/(\^XA)/i);
   const blocks: string[] = [];
-  for (let i = 0; i < parts.length; i += 2) {
-    blocks.push(parts[i] + (parts[i + 1] ?? ''));
+  for (let i = 1; i < parts.length; i += 2) {
+    blocks.push((parts[i] ?? '') + (parts[i + 1] ?? ''));
   }
-  return blocks;
+  // ~DY uploads emit before the first ^XA; keep the head only when it
+  // carries a command token (^ or ~). Pure prose is discarded so junk
+  // imports still yield nothing.
+  const head = parts[0] ?? '';
+  const preamble = /[\^~]/.test(head) ? head : '';
+  return { preamble, blocks };
 }
 
 export function importZplText(zpl: string, dpmm: number): ZplImportResult {
-  const blocks = splitIntoLabelBlocks(zpl);
+  const { preamble, blocks } = splitIntoLabelBlocks(zpl);
 
-  if (blocks.length === 0) {
+  if (blocks.length === 0 && !preamble) {
     return {
       labelConfig: {},
       printerProfile: {},
@@ -44,6 +58,16 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
       report: { findings: [], partial: [], browserLimit: [], unknown: [] },
     };
   }
+
+  // Parse units: each ^XA block becomes a page. The preamble is prepended
+  // to the first block so a font's ~DY and its ^CW alias decode in one
+  // pass (they share downloadedFontPaths). With no ^XA at all, the
+  // preamble is parsed on its own as profile-only input that yields no page.
+  const hasLabelBlocks = blocks.length > 0;
+  const parseUnits = hasLabelBlocks
+    ? blocks.map((b, i) => (i === 0 ? preamble + b : b))
+    : [preamble];
+  const uploadedFontPaths: string[] = [];
 
   let labelConfig: Partial<LabelConfig> = {};
   // Merge profile fields across blocks: later blocks' values win so a
@@ -60,8 +84,9 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
   const variables: Variable[] = [];
   const variablesByFn = new Map<number, Variable>();
 
-  blocks.forEach((block, i) => {
+  parseUnits.forEach((block, i) => {
     const result = parseZPL(block, dpmm);
+    uploadedFontPaths.push(...result.uploadedFontPaths);
     const idRemap = new Map<string, string>();
     for (const v of result.variables) {
       const existing = variablesByFn.get(v.fnNumber);
@@ -84,7 +109,8 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     if (idRemap.size > 0) {
       rewireBindings(result.objects, idRemap);
     }
-    pages.push({ objects: result.objects });
+    // A preamble-only unit (no ^XA) carries fonts/profile but no page.
+    if (hasLabelBlocks) pages.push({ objects: result.objects });
     if (i === 0) {
       labelConfig = result.labelConfig;
     }
@@ -100,6 +126,23 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
       findings.push({ ...f, pageIndex: i });
     }
   });
+
+  // Fonts uploaded via ~DY but never claimed by a ^CW alias are
+  // Setup-Script fonts, not design fonts. Subtract the design paths (now
+  // in customFonts) so a re-imported setup script restores
+  // printerProfile.setupFonts instead of dropping the scope. Compare
+  // trim+upper-cased: an externally authored stream may differ in casing.
+  const normPath = (p: string | undefined) => p?.trim().toUpperCase();
+  const designPaths = new Set(
+    (labelConfig.customFonts ?? []).map((m) => normPath(m.path)),
+  );
+  const uploadedUnique = [...new Set(uploadedFontPaths)];
+  const setupFontPaths = uploadedUnique.filter(
+    (p) => !designPaths.has(normPath(p)),
+  );
+  if (setupFontPaths.length > 0) {
+    printerProfile.setupFonts = setupFontPaths.map((path) => ({ path }));
+  }
 
   // Bucket views deduplicate by command code to match the JSDoc contract on
   // ImportReport (see zplParser.ts). The per-occurrence model lives in

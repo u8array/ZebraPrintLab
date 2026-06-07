@@ -41,6 +41,11 @@ export interface ParsedZPL {
   objects: LabelObject[];
   /** Template variables reconstructed from `^FN` slots. */
   variables: Variable[];
+  /** Full device paths of fonts uploaded via `~DY` (TTF/OTF) in this
+   *  stream. A path also claimed by a `^CW` is a design font (already in
+   *  `labelConfig.customFonts`); an unclaimed path is a Setup-Script font.
+   *  The service derives `printerProfile.setupFonts` from this set. */
+  uploadedFontPaths: string[];
   /** Commands not fully imported (browserLimit + unknown). Prefer
    *  importReport for categorised access. */
   skipped: string[];

@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { importZplText } from './zplImportService';
+import { generateSetupScript } from './zplSetupScript';
+import type { PrinterProfile } from '../types/PrinterProfile';
 
 describe('importZplText — single label', () => {
   it('returns one page with the parsed objects', () => {
@@ -113,5 +115,70 @@ describe('importZplText: findings.pageIndex', () => {
     const { printerProfile } = importZplText(zpl, 8);
     expect(printerProfile.reprintAfterError).toBe('Y');
     expect(printerProfile.setRealtimeClock).toBeDefined();
+  });
+});
+
+describe('importZplText — ~DY font scope (setup vs design)', () => {
+  // Hex for bytes [01,02,03,04]; loadFontBytesSync caches without
+  // validating, so any byte string decodes through the parser.
+  const HEX = '01020304';
+
+  it('routes a setup ~DY (no ^CW) before ^XA into printerProfile.setupFonts', () => {
+    const zpl = `~DYE:SETUP,A,T,4,,${HEX}\n^XA^JZY^XZ`;
+    const { printerProfile, pages } = importZplText(zpl, 8);
+    expect(printerProfile.setupFonts).toEqual([{ path: 'E:SETUP.TTF' }]);
+    // The ^XA block still yields its (object-less) page.
+    expect(pages).toHaveLength(1);
+  });
+
+  it('keeps the block objects while routing the preamble font to setupFonts', () => {
+    const zpl =
+      `~DYE:SETUP,A,T,4,,${HEX}\n` +
+      `^XA^FO10,10^A0N,20,0^FDhi^FS^XZ`;
+    const { printerProfile, pages } = importZplText(zpl, 8);
+    expect(printerProfile.setupFonts).toEqual([{ path: 'E:SETUP.TTF' }]);
+    expect(pages).toHaveLength(1);
+    expect(pages[0]?.objects).toHaveLength(1);
+  });
+
+  it('parses a fonts-only stream with no ^XA: setupFonts set, no page', () => {
+    const zpl = `~DYE:ONLY,A,T,4,,${HEX}`;
+    const { printerProfile, pages } = importZplText(zpl, 8);
+    expect(printerProfile.setupFonts).toEqual([{ path: 'E:ONLY.TTF' }]);
+    expect(pages).toHaveLength(0);
+  });
+
+  it('routes a design ~DY claimed by ^CW into customFonts, not setupFonts', () => {
+    const zpl = `~DYE:DSGN,A,T,4,,${HEX}\n^XA^CWM,E:DSGN.TTF^XZ`;
+    const { labelConfig, printerProfile } = importZplText(zpl, 8);
+    expect(printerProfile.setupFonts).toBeUndefined();
+    expect(labelConfig.customFonts).toEqual([
+      expect.objectContaining({ alias: 'M', path: 'E:DSGN.TTF', embedInZpl: true }),
+    ]);
+  });
+
+  it('splits a mixed stream: ^CW-claimed is design, unclaimed is setup', () => {
+    const zpl =
+      `~DYE:DSGN,A,T,4,,${HEX}\n~DYE:SETUP,A,T,4,,${HEX}\n` +
+      `^XA^CWM,E:DSGN.TTF^XZ`;
+    const { labelConfig, printerProfile } = importZplText(zpl, 8);
+    expect(labelConfig.customFonts?.map((m) => m.path)).toEqual(['E:DSGN.TTF']);
+    expect(printerProfile.setupFonts).toEqual([{ path: 'E:SETUP.TTF' }]);
+  });
+
+  it('treats a case-mismatched ^CW path as the same design font', () => {
+    const zpl = `~DYE:DSGN,A,T,4,,${HEX}\n^XA^CWM,e:dsgn.ttf^XZ`;
+    const { printerProfile } = importZplText(zpl, 8);
+    expect(printerProfile.setupFonts).toBeUndefined();
+  });
+
+  it('round-trips generateSetupScript setupFonts back into the profile', async () => {
+    const { loadFontBytes } = await import('./fontCache');
+    await loadFontBytes(new Uint8Array([1, 2, 3, 4]), 'RTFONT.TTF');
+    const script = generateSetupScript({
+      setupFonts: [{ path: 'E:RTFONT.TTF' }],
+    } as PrinterProfile);
+    const { printerProfile } = importZplText(script, 8);
+    expect(printerProfile.setupFonts).toEqual([{ path: 'E:RTFONT.TTF' }]);
   });
 });

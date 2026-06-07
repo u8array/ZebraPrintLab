@@ -117,6 +117,7 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
     printerProfile,
     objects,
     variables,
+    uploadedFontPaths: [...s.fonts.downloadedFontPaths],
     skipped,
     importReport: {
       findings,
