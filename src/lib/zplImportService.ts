@@ -147,6 +147,7 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
   // Case-insensitive compare since external streams vary in casing.
   const uploadedUnique = [...new Set(uploadedFontPaths)];
   const uploadedNormed = new Map(uploadedUnique.map((p) => [normPath(p), p]));
+  const uploadedStripped = new Map(uploadedUnique.map((p) => [strippedNorm(p), p]));
   const setupFontPaths = uploadedUnique.filter(
     (p) => !designFontPaths.has(normPath(p)) && !designFontPaths.has(strippedNorm(p)),
   );
@@ -160,7 +161,8 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
   // otherwise drop the embed flag on re-export.
   for (const m of aggregatedCustomFonts.values()) {
     if (!m.path) continue;
-    const upload = uploadedNormed.get(normPath(m.path));
+    const upload = uploadedNormed.get(normPath(m.path))
+      ?? uploadedStripped.get(strippedNorm(m.path));
     if (!upload || m.embedInZpl) continue;
     m.embedInZpl = true;
     const colon = upload.indexOf(":");
