@@ -3,7 +3,7 @@ import { importZplText } from './zplImportService';
 import { generateSetupScript } from './zplSetupScript';
 import type { PrinterProfile } from '../types/PrinterProfile';
 
-describe('importZplText — single label', () => {
+describe('importZplText - single label', () => {
   it('returns one page with the parsed objects', () => {
     const zpl = '^XA^FO10,20^A0N,30,0^FDHello^FS^XZ';
     const result = importZplText(zpl, 8);
@@ -13,7 +13,7 @@ describe('importZplText — single label', () => {
 
 });
 
-describe('importZplText — multi-label', () => {
+describe('importZplText - multi-label', () => {
   it('splits into one page per ^XA...^XZ block', () => {
     const zpl = [
       '^XA^FO10,20^A0N,30,0^FDOne^FS^XZ',
@@ -50,7 +50,7 @@ describe('importZplText — multi-label', () => {
   });
 });
 
-describe('importZplText — empty / malformed', () => {
+describe('importZplText - empty / malformed', () => {
   it('returns no pages when no ^XA is present', () => {
     const result = importZplText('not zpl at all', 8);
     expect(result.pages).toHaveLength(0);
@@ -118,7 +118,7 @@ describe('importZplText: findings.pageIndex', () => {
   });
 });
 
-describe('importZplText — ~DY font scope (setup vs design)', () => {
+describe('importZplText - ~DY font scope (setup vs design)', () => {
   // Hex for bytes [01,02,03,04]; loadFontBytesSync caches without
   // validating, so any byte string decodes through the parser.
   const HEX = '01020304';
