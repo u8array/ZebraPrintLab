@@ -152,7 +152,7 @@ pnpm install
 pnpm dev
 ```
 
-Requires Node.js ≥ 20 and pnpm. Alternatively use `npm install` / `npm run dev`.
+Requires Node.js ≥ 24 and pnpm. Alternatively use `npm install` / `npm run dev`.
 
 ```bash
 pnpm build   # output goes to dist/
