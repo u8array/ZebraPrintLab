@@ -206,6 +206,15 @@ describe('importZplText - ~DY font scope (setup vs design)', () => {
     expect(printerProfile.setupFonts).toBeUndefined();
   });
 
+  it('backfills embedInZpl on a driveless ^CW alias against a drived ~DY upload', () => {
+    const zpl = `~DYE:DSGN,A,T,4,,${HEX}\n^XA^CWM,DSGN.TTF^XZ`;
+    const { labelConfig, printerProfile } = importZplText(zpl, 8);
+    expect(printerProfile.setupFonts).toBeUndefined();
+    expect(labelConfig.customFonts).toEqual([
+      expect.objectContaining({ alias: 'M', path: 'DSGN.TTF', embedInZpl: true, previewFontName: 'DSGN.TTF' }),
+    ]);
+  });
+
   it('cross-block ^CW backfills embedInZpl and previewFontName from the preamble upload', () => {
     const zpl = [
       `~DYE:LATE,A,T,${HEX.length / 2},,${HEX}\n^XA^FO0,0^A0N,20,0^FDa^FS^XZ`,
