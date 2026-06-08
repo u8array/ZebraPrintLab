@@ -6,6 +6,33 @@ export type BlockJustify = "L" | "C" | "R" | "J";
 /** A0 default 9x5 dot matrix; fontWidth=0 advances by h*5/9. */
 const A0_DEFAULT_ASPECT = 5 / 9;
 
+/** Per-character advance ratios for Font 0 (CG Triumvirate Bold Condensed)
+ *  in fontHeight-units. Calibrated empirically against Labelary so right /
+ *  center justify lands at the same pixel as the firmware print, where a
+ *  uniform 5/9 cell drifts off by 1-2 px on mixed content. Characters not
+ *  in the table fall back to the uniform A0 advance. */
+const A0_CHAR_ADVANCE: Record<string, number> = {
+  '0': 0.48, '1': 0.48, '2': 0.48, '3': 0.48, '4': 0.48,
+  '5': 0.48, '6': 0.48, '7': 0.48, '8': 0.48, '9': 0.48,
+  '@': 0.90, '*': 0.48, '$': 0.48, '#': 0.48,
+  '!': 0.295, '(': 0.295, ')': 0.295, '.': 0.295, ',': 0.295,
+  '/': 0.295, '`': 0.295, ';': 0.295, ':': 0.295, "'": 0.296,
+  '[': 0.295, ']': 0.295, ' ': 0.295,
+  '&': 0.61, '%': 0.903, '+': 0.905, '=': 0.905,
+  '<': 1, '>': 1,
+  '?': 0.441, '"': 0.481, '-': 0.5, '_': 0.5,
+  A: 0.555, B: 0.555, C: 0.535, D: 0.59, E: 0.5,
+  F: 0.5, G: 0.59, H: 0.6101, I: 0.277, J: 0.445,
+  K: 0.555, L: 0.481, M: 0.755, N: 0.6083, O: 0.57,
+  P: 0.555, Q: 0.57, R: 0.59, S: 0.535, T: 0.5,
+  U: 0.609, V: 0.535, W: 0.812, X: 0.555, Y: 0.555, Z: 0.498,
+  a: 0.461, b: 0.497, c: 0.442, d: 0.497, e: 0.461,
+  f: 0.275, g: 0.497, h: 0.497, i: 0.258, j: 0.259,
+  k: 0.444, l: 0.2585, m: 0.754, n: 0.498, o: 0.48,
+  p: 0.498, q: 0.498, r: 0.333, s: 0.424, t: 0.276,
+  u: 0.498, v: 0.442, w: 0.668, x: 0.442, y: 0.444, z: 0.387,
+};
+
 export function zebraGlyphAdvanceDots(fontHeight: number, fontWidth: number): number {
   return fontWidth > 0 ? fontWidth : fontHeight * A0_DEFAULT_ASPECT;
 }
@@ -99,7 +126,17 @@ export function zebraLineWidthDots(
   fontHeight: number,
   fontWidth: number,
 ): number {
-  return line.length * zebraGlyphAdvanceDots(fontHeight, fontWidth);
+  // Explicit fontWidth: ^A0 with non-zero w is a monospaced cell.
+  if (fontWidth > 0) return line.length * fontWidth;
+  // Proportional A0: sum per-char advance ratios (calibrated table) so
+  // right / center justify lines up with Labelary instead of drifting.
+  const fallback = fontHeight * A0_DEFAULT_ASPECT;
+  let total = 0;
+  for (const c of line) {
+    const ratio = A0_CHAR_ADVANCE[c];
+    total += ratio !== undefined ? ratio * fontHeight : fallback;
+  }
+  return total;
 }
 
 /** L/J start at left; J inner-stretch not visualised. */

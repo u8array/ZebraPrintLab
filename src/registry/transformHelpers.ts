@@ -108,8 +108,6 @@ export function commitStacked2DTransform<
     rowAnchor && rowAnchor.nodeHeight > 0 && rowAnchor.rowHeight > 0
       ? Math.max(1, Math.round((scaledH * rowAnchor.rowHeight) / rowAnchor.nodeHeight))
       : Math.max(1, snap(Math.round(obj.props.rowHeight * esy)));
-  // rowAnchor is the only kind today; keeping the variable scoped for
-  // potential future anchor types.
   return {
     rowHeight: newRowHeight,
     moduleWidth: clamp(1, 10, Math.round(obj.props.moduleWidth * esx)),

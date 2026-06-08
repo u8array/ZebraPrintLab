@@ -71,11 +71,20 @@ export const text: ObjectTypeCore<TextProps> = {
   commitTransform: (obj, ctx) => {
     const oldH = obj.props.fontHeight;
     const oldW = obj.props.fontWidth > 0 ? obj.props.fontWidth : oldH;
+    const oldBW = obj.props.blockWidth;
     const { esx, esy } = effectiveScale(obj.props.rotation, ctx);
-    return {
+    const result: Partial<TextProps> = {
       fontHeight: Math.max(1, ctx.snap(Math.round(oldH * esy))),
-      fontWidth: Math.max(1, ctx.snap(Math.round(oldW * esx))),
     };
+    if (oldBW && oldBW > 0) {
+      // ^FB text: X-axis resize grows the container, fontWidth stays.
+      // Otherwise center/right justify would drift as alignOffset
+      // = (blockWidth - lineWidth) / 2 shrinks with wider glyphs.
+      result.blockWidth = Math.max(1, ctx.snap(Math.round(oldBW * esx)));
+    } else {
+      result.fontWidth = Math.max(1, ctx.snap(Math.round(oldW * esx)));
+    }
+    return result;
   },
 
   toZPL: (obj, ctx) => {

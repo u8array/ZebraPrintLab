@@ -422,6 +422,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     objectSnapEnabled: !snapEnabled,
     setGuides,
     viewRotation,
+    previewLocks,
   });
 
   // Step-rotation only (text/serial/barcodes); box/ellipse/line/image use Transformer.

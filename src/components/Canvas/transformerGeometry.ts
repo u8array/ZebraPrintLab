@@ -96,7 +96,6 @@ export function applyModuleWidthSnap(
   return { ...newBox, x, width: snappedW };
 }
 
-
 /** Absorbs px<->dot float rounding so integer positions are preserved. */
 export const POSITION_MOVE_TOLERANCE_DOTS = 1;
 

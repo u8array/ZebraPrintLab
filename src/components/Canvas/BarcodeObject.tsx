@@ -105,14 +105,14 @@ export function BarcodeObject({
     const modulePxInt = get1DBwipScale(moduleWidth, scale, dpmm);
     const barHeightPx = dotsToPx(eanHeight, scale, dpmm);
     const tailHeightPx = dotsToPx(EAN_TEXT_ZONE_DOTS, scale, dpmm);
-    barcodeCanvas = renderEanUpcRawCanvas(
-      obj.type as EanUpcType,
-      rawContent,
+    barcodeCanvas = renderEanUpcRawCanvas({
+      type: obj.type as EanUpcType,
+      text: rawContent,
       modulePxInt,
       barHeightPx,
       tailHeightPx,
-      printInterpEnabled,
-    );
+      extendGuards: printInterpEnabled,
+    });
     if (!barcodeCanvas) errorMsg = "EAN/UPC encode failed";
   } else {
     const opts = buildBwipOptions(obj, scale, dpmm);

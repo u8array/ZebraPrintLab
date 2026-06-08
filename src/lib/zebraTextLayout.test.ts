@@ -30,8 +30,14 @@ describe("zebraLineWidthDots", () => {
     expect(zebraLineWidthDots("ABCDE", 30, 20)).toBe(100);
   });
 
-  it("multiplies glyph count by the auto-width when fontWidth is 0", () => {
-    expect(zebraLineWidthDots("ABCDE", 30, 0)).toBeCloseTo(5 * 30 * (5 / 9));
+  it("sums per-char advance ratios from the calibrated table when fontWidth is 0", () => {
+    // A:0.555, B:0.555, C:0.535, D:0.59, E:0.5 -> 2.735 × 30 = 82.05
+    expect(zebraLineWidthDots("ABCDE", 30, 0)).toBeCloseTo(82.05);
+  });
+
+  it("uses the 5/9 fallback for chars outside the calibration table", () => {
+    // ™ isn't in the table; falls back to 30 * 5/9 = 16.667
+    expect(zebraLineWidthDots("™", 30, 0)).toBeCloseTo(30 * (5 / 9));
   });
 
   it("returns 0 for empty line", () => {

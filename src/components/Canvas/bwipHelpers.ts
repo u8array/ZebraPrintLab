@@ -205,18 +205,27 @@ interface BwipRawLinear {
   bbs?: number[];
 }
 
+export interface EanUpcRawCanvasArgs {
+  type: EanUpcType;
+  text: string;
+  modulePxInt: number;
+  barHeightPx: number;
+  tailHeightPx: number;
+  /** False matches Zebra's HRI-off render (bars only, tails not drawn). */
+  extendGuards: boolean;
+}
+
 /** Bars + extended guard tails in one fillRect pass via bwip raw
  *  geometry. Canvas always reserves the firmware 13-dot text zone so
- *  the consumer's KImage height stays constant; `extendGuards=false`
- *  matches Zebra's HRI-off render (bars only, tails not drawn). */
-export function renderEanUpcRawCanvas(
-  type: EanUpcType,
-  text: string,
-  modulePxInt: number,
-  barHeightPx: number,
-  tailHeightPx: number,
-  extendGuards: boolean,
-): HTMLCanvasElement | null {
+ *  the consumer's KImage height stays constant. */
+export function renderEanUpcRawCanvas({
+  type,
+  text,
+  modulePxInt,
+  barHeightPx,
+  tailHeightPx,
+  extendGuards,
+}: EanUpcRawCanvasArgs): HTMLCanvasElement | null {
   const barH = Math.round(barHeightPx);
   const tailH = Math.max(0, Math.round(tailHeightPx));
   if (modulePxInt <= 0 || barH <= 0) return null;
