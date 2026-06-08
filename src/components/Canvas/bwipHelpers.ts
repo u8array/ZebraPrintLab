@@ -206,19 +206,26 @@ interface BwipRawLinear {
 }
 
 /** Bars + extended guard tails in one fillRect pass via bwip raw
- *  geometry. `includetext: true` makes bwip mark guards with `bbs<0`;
- *  we never draw text it would emit. */
+ *  geometry. Canvas always reserves the firmware 13-dot text zone so
+ *  the consumer's KImage height stays constant; `extendGuards=false`
+ *  matches Zebra's HRI-off render (bars only, tails not drawn). */
 export function renderEanUpcRawCanvas(
   type: EanUpcType,
   text: string,
   modulePxInt: number,
   barHeightPx: number,
   tailHeightPx: number,
+  extendGuards: boolean,
 ): HTMLCanvasElement | null {
-  if (modulePxInt <= 0 || barHeightPx <= 0) return null;
+  const barH = Math.round(barHeightPx);
+  const tailH = Math.max(0, Math.round(tailHeightPx));
+  if (modulePxInt <= 0 || barH <= 0) return null;
+  // UPC-E accepts 6-digit content (Zebra pads to 7); bwip rejects 6,
+  // so pre-pad with the number-system digit to match firmware.
+  const encoded = type === "upce" && text.length === 6 ? `0${text}` : text;
   let stack: BwipRawLinear[];
   try {
-    stack = bwipjs.raw({ bcid: type, text, includetext: true } as never) as BwipRawLinear[];
+    stack = bwipjs.raw({ bcid: type, text: encoded, includetext: true } as never) as BwipRawLinear[];
   } catch {
     return null;
   }
@@ -226,9 +233,10 @@ export function renderEanUpcRawCanvas(
   if (!g?.sbs) return null;
   let totalModules = 0;
   for (const w of g.sbs) totalModules += w;
+  if (totalModules <= 0) return null;
   const canvas = document.createElement("canvas");
   canvas.width = totalModules * modulePxInt;
-  canvas.height = barHeightPx + Math.max(0, tailHeightPx);
+  canvas.height = barH + tailH;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
   ctx.fillStyle = "#000000";
@@ -238,8 +246,8 @@ export function renderEanUpcRawCanvas(
   for (const w of g.sbs) {
     const wPx = w * modulePxInt;
     if (isBar) {
-      const isGuard = (g.bbs?.[barIdx] ?? 0) < 0;
-      const h = isGuard ? canvas.height : barHeightPx;
+      const isGuard = extendGuards && (g.bbs?.[barIdx] ?? 0) < 0;
+      const h = isGuard ? canvas.height : barH;
       ctx.fillRect(cx, 0, wPx + RAW_BAR_SEAM, h);
       barIdx++;
     }

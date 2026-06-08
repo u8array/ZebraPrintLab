@@ -42,23 +42,60 @@ export function isTopAnchorResize(
 /** Row-quantise stacked-2D (PDF417/MicroPDF417/Codablock); skip otherwise
  *  to avoid low-zoom sub-pixel top-anchor runaway. */
 export interface RowAnchor {
+  kind: "row";
   nodeHeight: number;
   rowHeight: number;
 }
+
+/** Module-width quantise for 1D barcodes: bars jump in integer ^BY
+ *  moduleWidth steps during the drag so the live render matches what
+ *  commitBarcodeWidthHeightTransform stores on release. Only applied
+ *  while the barcode is unrotated (N); rotated drag stays smooth. */
+export interface ModuleWidthAnchor {
+  kind: "moduleWidth";
+  nodeWidth: number;
+  moduleWidth: number;
+}
+
+export type TransformAnchor = RowAnchor | ModuleWidthAnchor;
 
 export function applyHeightSnap(
   oldBox: BoundingBox,
   newBox: BoundingBox,
   dotPx: number,
-  anchor: RowAnchor | null,
+  anchor: TransformAnchor | null,
 ): BoundingBox {
-  if (!anchor || anchor.rowHeight <= 0 || anchor.nodeHeight <= 0) return newBox;
+  if (anchor?.kind !== "row" || anchor.rowHeight <= 0 || anchor.nodeHeight <= 0) {
+    return newBox;
+  }
   const stepPx = anchor.nodeHeight / anchor.rowHeight;
   const snappedH = snapBoxHeight(newBox.height, stepPx);
   return isTopAnchorResize(oldBox, newBox, dotPx * 0.5)
     ? pinBottomEdge(oldBox, newBox, snappedH)
     : { ...newBox, height: snappedH };
 }
+
+/** ^BY moduleWidth is clamped to [1,10] integer; rounding the in-drag
+ *  width to the nearest integer-moduleWidth equivalent makes the bars
+ *  step visibly between scans. */
+export function applyModuleWidthSnap(
+  oldBox: BoundingBox,
+  newBox: BoundingBox,
+  anchor: TransformAnchor | null,
+): BoundingBox {
+  if (anchor?.kind !== "moduleWidth" || anchor.nodeWidth <= 0 || anchor.moduleWidth <= 0) {
+    return newBox;
+  }
+  const scale = newBox.width / anchor.nodeWidth;
+  const nextMw = Math.max(1, Math.min(10, Math.round(anchor.moduleWidth * scale)));
+  const snappedW = anchor.nodeWidth * (nextMw / anchor.moduleWidth);
+  // Left-handle drag: pin the right edge so the snapped width grows
+  // outward from the stationary anchor instead of drifting both sides.
+  const leftMoved = Math.abs(newBox.x - oldBox.x) > 0.001;
+  const x = leftMoved ? oldBox.x + oldBox.width - snappedW : oldBox.x;
+  return { ...newBox, x, width: snappedW };
+}
+
 
 /** Absorbs px<->dot float rounding so integer positions are preserved. */
 export const POSITION_MOVE_TOLERANCE_DOTS = 1;

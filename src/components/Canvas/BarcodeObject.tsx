@@ -98,20 +98,20 @@ export function BarcodeObject({
     if (!barcodeCanvas) errorMsg = "TLC39 render failed";
   } else if (EAN_UPC_TYPES.has(obj.type)) {
     // EAN/UPC use bwip.raw + own fillRect pass so guard tails extend in
-    // the same canvas as the bars (no overlay seam). Guard tails only
-    // extend when HRI is on, matching Zebra firmware.
+    // the same canvas as the bars (no overlay seam). The 13-dot text
+    // zone is always reserved on the canvas so the KImage dimensions
+    // stay constant; the tails only get drawn when HRI is on.
     const eanHeight = (obj.props as { height: number }).height;
     const modulePxInt = get1DBwipScale(moduleWidth, scale, dpmm);
     const barHeightPx = dotsToPx(eanHeight, scale, dpmm);
-    const tailHeightPx = printInterpEnabled
-      ? dotsToPx(EAN_TEXT_ZONE_DOTS, scale, dpmm)
-      : 0;
+    const tailHeightPx = dotsToPx(EAN_TEXT_ZONE_DOTS, scale, dpmm);
     barcodeCanvas = renderEanUpcRawCanvas(
       obj.type as EanUpcType,
       rawContent,
       modulePxInt,
       barHeightPx,
       tailHeightPx,
+      printInterpEnabled,
     );
     if (!barcodeCanvas) errorMsg = "EAN/UPC encode failed";
   } else {

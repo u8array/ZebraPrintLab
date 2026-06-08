@@ -8,10 +8,12 @@ import type { ObjectChanges } from "../../../store/labelStore";
 import { findObjectById, isGroup } from "../../../types/Group";
 import {
   applyHeightSnap,
+  applyModuleWidthSnap,
   pinInactiveEdges,
   positionDidMove,
   forceSquareBox,
   type BoundingBox,
+  type TransformAnchor,
 } from "../transformerGeometry";
 import {
   modelPositionFromRenderedTopLeft,
@@ -122,9 +124,10 @@ export function useKonvaTransformer({
   setGuides,
   viewRotation,
 }: Options): TransformerState {
-  // Captures node height and rowHeight at drag start so boundBoxFunc uses a
-  // fixed step size throughout the entire drag session.
-  const transformAnchorRef = useRef<{ nodeHeight: number; rowHeight: number } | null>(null);
+  // Captures the per-type snap reference at drag start so boundBoxFunc uses a
+  // fixed step size throughout the entire drag session (row height for stacked
+  // 2D, moduleWidth for 1D barcodes).
+  const transformAnchorRef = useRef<TransformAnchor | null>(null);
   // Captures the bbox at transform start so deriveActiveEdges can detect which
   // edges are moving relative to the start state (oldBox in boundBoxFunc is the
   // previous frame, which would always look "everything moved").
@@ -231,9 +234,32 @@ export function useKonvaTransformer({
     const node = stageRef.current.findOne<Konva.Node>(`#${singleId}`);
     if (!node) return;
     const obj = objects.find((o) => o.id === singleId);
-    transformAnchorRef.current = obj && STACKED_2D_TYPES.has(obj.type)
-      ? { nodeHeight: node.height(), rowHeight: (obj.props as { rowHeight: number }).rowHeight }
-      : null;
+    transformAnchorRef.current = (() => {
+      if (!obj) return null;
+      if (STACKED_2D_TYPES.has(obj.type)) {
+        return {
+          kind: "row",
+          nodeHeight: node.height(),
+          rowHeight: (obj.props as { rowHeight: number }).rowHeight,
+        };
+      }
+      // Live moduleWidth snap only for unrotated 1D barcodes; rotated
+      // R/B drag axis would need a separate width-pin model.
+      if (
+        BARCODE_1D_TYPES.has(obj.type) &&
+        (obj.props as { rotation?: string }).rotation === "N"
+      ) {
+        // Konva Group .width() returns its attr (0 here); the visible
+        // bbox comes from the children via getClientRect.
+        const rect = node.getClientRect({ skipTransform: true });
+        return {
+          kind: "moduleWidth",
+          nodeWidth: rect.width,
+          moduleWidth: (obj.props as { moduleWidth: number }).moduleWidth,
+        };
+      }
+      return null;
+    })();
     // startBbox is captured lazily on the first boundBoxFunc call; Konva
     // passes those bboxes in the transformer's frame, which on rotated
     // parents differs from getClientRect's stage frame.
@@ -272,6 +298,7 @@ export function useKonvaTransformer({
     }
     const startBbox = transformStartBboxRef.current;
     let bbox = applyHeightSnap(oldBox, newBox, dotPx, transformAnchorRef.current);
+    bbox = applyModuleWidthSnap(oldBox, bbox, transformAnchorRef.current);
     if (objectSnapEnabled && isFreeResize && startBbox) {
       const snapped = applyResizeObjectSnap(bbox, startBbox, othersSnapshotRef.current, labelRect);
       setGuides(snapped.guides);

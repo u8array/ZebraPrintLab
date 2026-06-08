@@ -103,10 +103,13 @@ export function commitStacked2DTransform<
   const { snap, nodeHeight, anchor } = ctx;
   const { esx, esy } = effectiveScale(obj.props.rotation, ctx);
   const scaledH = nodeHeight * esy;
+  const rowAnchor = anchor?.kind === "row" ? anchor : null;
   const newRowHeight =
-    anchor && anchor.nodeHeight > 0 && anchor.rowHeight > 0
-      ? Math.max(1, Math.round((scaledH * anchor.rowHeight) / anchor.nodeHeight))
+    rowAnchor && rowAnchor.nodeHeight > 0 && rowAnchor.rowHeight > 0
+      ? Math.max(1, Math.round((scaledH * rowAnchor.rowHeight) / rowAnchor.nodeHeight))
       : Math.max(1, snap(Math.round(obj.props.rowHeight * esy)));
+  // rowAnchor is the only kind today; keeping the variable scoped for
+  // potential future anchor types.
   return {
     rowHeight: newRowHeight,
     moduleWidth: clamp(1, 10, Math.round(obj.props.moduleWidth * esx)),

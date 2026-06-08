@@ -92,7 +92,7 @@ describe("applyHeightSnap", () => {
 
   it("row-quantises the height for stacked-2D barcodes with a row anchor", () => {
     // anchor: nodeHeight=100, rowHeight=20 → stepPx = 5
-    const anchor = { nodeHeight: 100, rowHeight: 20 };
+    const anchor = { kind: "row" as const, nodeHeight: 100, rowHeight: 20 };
     const oldBox = { x: 0, y: 0, width: 50, height: 100, rotation: 0 };
     const newBox = { x: 0, y: 0, width: 50, height: 113, rotation: 0 };
     const result = applyHeightSnap(oldBox, newBox, 1, anchor);
@@ -101,7 +101,7 @@ describe("applyHeightSnap", () => {
   });
 
   it("pins the bottom edge for stacked-2D top-anchor resize", () => {
-    const anchor = { nodeHeight: 100, rowHeight: 20 };
+    const anchor = { kind: "row" as const, nodeHeight: 100, rowHeight: 20 };
     const oldBox = { x: 0, y: 0, width: 50, height: 100, rotation: 0 };
     // Top moves UP by 30 → top-anchor resize
     const newBox = { x: 0, y: -30, width: 50, height: 130, rotation: 0 };

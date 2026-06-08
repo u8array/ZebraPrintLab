@@ -10,8 +10,13 @@ export interface TransformContext {
   snap: (n: number) => number;
   /** Konva node's intrinsic height after scale was reset. Only meaningful for stacked 2D. */
   nodeHeight: number;
-  /** Captured at drag start; non-null only for stacked 2D barcodes. */
-  anchor: { nodeHeight: number; rowHeight: number } | null;
+  /** Captured at drag start; shape varies by anchor kind (row for
+   *  stacked 2D, moduleWidth for 1D barcodes). Consumers narrow on
+   *  `kind` before reading the type-specific fields. */
+  anchor:
+    | { kind: "row"; nodeHeight: number; rowHeight: number }
+    | { kind: "moduleWidth"; nodeWidth: number; moduleWidth: number }
+    | null;
 }
 
 export interface ZplEmitContext {
