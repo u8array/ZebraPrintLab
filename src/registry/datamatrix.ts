@@ -1,6 +1,5 @@
 import type { ObjectTypeCore } from '../types/ObjectType';
 import { fieldPos, fdFieldFor } from './zplHelpers';
-import { commitUniformScaleTransform } from './transformHelpers';
 import { type ZplRotation } from './rotation';
 
 export const DIMENSION_MIN = 1;
@@ -26,7 +25,7 @@ export const datamatrix: ObjectTypeCore<DataMatrixProps> = {
   },
   defaultSize: { width: 150, height: 150 },
 
-  commitTransform: commitUniformScaleTransform('dimension', DIMENSION_MIN, DIMENSION_MAX),
+  uniformScaleProp: { name: 'dimension', min: DIMENSION_MIN, max: DIMENSION_MAX },
 
   toZPL: (obj, ctx) => {
     const p = obj.props;

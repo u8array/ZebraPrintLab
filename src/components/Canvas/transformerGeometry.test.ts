@@ -6,7 +6,11 @@ import {
   positionDidMove,
   forceSquareBox,
   applyHeightSnap,
+  applyModuleWidthSnap,
+  applyUniformModuleSnap,
   pinInactiveEdges,
+  computeNewModules,
+  activeEdgesFromAnchorName,
   type BoundingBox,
 } from "./transformerGeometry";
 
@@ -92,7 +96,7 @@ describe("applyHeightSnap", () => {
 
   it("row-quantises the height for stacked-2D barcodes with a row anchor", () => {
     // anchor: nodeHeight=100, rowHeight=20 → stepPx = 5
-    const anchor = { kind: "row" as const, nodeHeight: 100, rowHeight: 20 };
+    const anchor = { kind: "row" as const, nodeHeight: 100, rowHeight: 20, nodeWidth: 50, moduleWidth: 2 };
     const oldBox = { x: 0, y: 0, width: 50, height: 100, rotation: 0 };
     const newBox = { x: 0, y: 0, width: 50, height: 113, rotation: 0 };
     const result = applyHeightSnap(oldBox, newBox, 1, anchor);
@@ -101,7 +105,7 @@ describe("applyHeightSnap", () => {
   });
 
   it("pins the bottom edge for stacked-2D top-anchor resize", () => {
-    const anchor = { kind: "row" as const, nodeHeight: 100, rowHeight: 20 };
+    const anchor = { kind: "row" as const, nodeHeight: 100, rowHeight: 20, nodeWidth: 50, moduleWidth: 2 };
     const oldBox = { x: 0, y: 0, width: 50, height: 100, rotation: 0 };
     // Top moves UP by 30 → top-anchor resize
     const newBox = { x: 0, y: -30, width: 50, height: 130, rotation: 0 };
@@ -113,13 +117,8 @@ describe("applyHeightSnap", () => {
 });
 
 describe("pinInactiveEdges + applyHeightSnap (multi-frame regression)", () => {
-  // Simulates a real low-zoom bottom-edge drag where Konva's per-frame
-  // node-position updates drift the y-coordinate sub-pixel. Each frame:
-  //   1. applyHeightSnap (no row anchor → no-op)
-  //   2. derive active edges against the lazily-captured start bbox
-  //   3. pinInactiveEdges restores stationary edges to the start bbox
-  // The invariant under test: the top-edge stays at start.y across all
-  // frames, regardless of Konva's drifted newBox.y.
+  // Invariant: on a pure bottom-edge drag the top stays at start.y even
+  // when Konva's per-frame newBox.y drifts sub-pixel.
 
   // Captured from the buggy reproduction at viewRotation=0, low zoom:
   // Konva's per-frame y drifts by < 2 px on a pure bottom-edge drag
@@ -207,5 +206,109 @@ describe("forceSquareBox", () => {
     expect(forceSquareBox(oldBox, newBox)).toEqual({
       x: 80, y: 100, width: 70, height: 70, rotation: 0,
     });
+  });
+});
+
+describe("computeNewModules", () => {
+  it("rounds to integer module count", () => {
+    expect(computeNewModules(4, 1.4, 1, 10)).toBe(6);
+    expect(computeNewModules(3, 0.9, 1, 10)).toBe(3);
+  });
+
+  it("clamps to min", () => {
+    expect(computeNewModules(4, 0.1, 2, 10)).toBe(2);
+  });
+
+  it("clamps to max", () => {
+    expect(computeNewModules(4, 5, 1, 10)).toBe(10);
+  });
+});
+
+describe("applyModuleWidthSnap", () => {
+  const anchor = { kind: "moduleWidth" as const, nodeWidth: 100, moduleWidth: 2 };
+  const oldBox: BoundingBox = { x: 50, y: 0, width: 100, height: 40, rotation: 0 };
+
+  it("snaps width to the next integer moduleWidth multiple", () => {
+    const newBox: BoundingBox = { ...oldBox, width: 160 };
+    expect(applyModuleWidthSnap(oldBox, newBox, anchor).width).toBe(150);
+  });
+
+  it("pins the right edge when the left handle was dragged", () => {
+    const newBox: BoundingBox = { ...oldBox, x: 20, width: 130 };
+    const out = applyModuleWidthSnap(oldBox, newBox, anchor);
+    expect(out.x + out.width).toBe(oldBox.x + oldBox.width);
+  });
+
+  it("clamps to ^BY range [1,10]", () => {
+    const newBox: BoundingBox = { ...oldBox, width: 1000 };
+    expect(applyModuleWidthSnap(oldBox, newBox, anchor).width).toBe(500);
+  });
+
+  it("no-ops when anchor kind is wrong", () => {
+    const newBox: BoundingBox = { ...oldBox, width: 160 };
+    expect(applyModuleWidthSnap(oldBox, newBox, null).width).toBe(160);
+  });
+});
+
+describe("applyUniformModuleSnap", () => {
+  const anchor = (edges: { left: boolean; right: boolean; top: boolean; bottom: boolean }) => ({
+    kind: "uniformModule" as const,
+    nodeSize: 100,
+    modules: 4,
+    min: 1,
+    max: 10,
+    edges,
+  });
+  const oldBox: BoundingBox = { x: 50, y: 50, width: 100, height: 100, rotation: 0 };
+
+  it("snaps to whole-module square (bottom-right grab keeps top-left)", () => {
+    const a = anchor({ left: false, right: true, top: false, bottom: true });
+    const out = applyUniformModuleSnap(oldBox, { ...oldBox, width: 140, height: 140 }, a);
+    expect(out.width).toBe(150);
+    expect(out.height).toBe(150);
+    expect(out.x).toBe(50);
+    expect(out.y).toBe(50);
+  });
+
+  it("pins bottom-right when top-left was grabbed", () => {
+    const a = anchor({ left: true, right: false, top: true, bottom: false });
+    const out = applyUniformModuleSnap(
+      oldBox,
+      { x: 10, y: 10, width: 140, height: 140, rotation: 0 },
+      a,
+    );
+    expect(out.width).toBe(150);
+    expect(out.x + out.width).toBe(oldBox.x + oldBox.width);
+    expect(out.y + out.height).toBe(oldBox.y + oldBox.height);
+  });
+
+  it("clamps to anchor min", () => {
+    const a = anchor({ left: false, right: true, top: false, bottom: true });
+    const out = applyUniformModuleSnap(oldBox, { ...oldBox, width: 5, height: 5 }, a);
+    expect(out.width).toBe(25);
+  });
+
+  it("no-ops on a non-uniform-2D anchor", () => {
+    const out = applyUniformModuleSnap(oldBox, { ...oldBox, width: 140 }, null);
+    expect(out.width).toBe(140);
+  });
+});
+
+describe("activeEdgesFromAnchorName", () => {
+  it("decodes corner anchor names", () => {
+    expect(activeEdgesFromAnchorName("top-left"))
+      .toEqual({ left: true, right: false, top: true, bottom: false });
+    expect(activeEdgesFromAnchorName("bottom-right"))
+      .toEqual({ left: false, right: true, top: false, bottom: true });
+  });
+
+  it("decodes side anchor names", () => {
+    expect(activeEdgesFromAnchorName("middle-right"))
+      .toEqual({ left: false, right: true, top: false, bottom: false });
+  });
+
+  it("returns null for unknown or null input", () => {
+    expect(activeEdgesFromAnchorName(null)).toBeNull();
+    expect(activeEdgesFromAnchorName("rotater")).toBeNull();
   });
 });

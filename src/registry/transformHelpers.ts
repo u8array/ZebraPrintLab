@@ -16,16 +16,6 @@ export function effectiveScale(
     : { esx: ctx.sx, esy: ctx.sy };
 }
 
-/** Uniform 2D commit factory; prop name + range closed over per registry. */
-export function commitUniformScaleTransform<
-  K extends string,
-  P extends Record<K, number> = Record<K, number>,
->(propName: K, min: number, max: number) {
-  return (obj: LabelObjectBase & { props: P }, ctx: TransformContext): Partial<P> => {
-    const next = clamp(min, max, Math.round(obj.props[propName] * Math.min(ctx.sx, ctx.sy)));
-    return { [propName]: next } as Partial<P>;
-  };
-}
 
 interface WidthHeightProps {
   width: number;
@@ -100,13 +90,15 @@ export function commitStacked2DTransform<
   obj: LabelObjectBase & { props: P },
   ctx: TransformContext,
 ): Partial<P> {
-  const { snap, nodeHeight, anchor } = ctx;
+  const { snap, anchor } = ctx;
   const { esx, esy } = effectiveScale(obj.props.rotation, ctx);
-  const scaledH = nodeHeight * esy;
   const rowAnchor = anchor?.kind === "row" ? anchor : null;
+  // Prefer the start-of-drag anchor height (set from getClientRect in
+  // the hook) over ctx.nodeHeight: for Konva Groups the latter is 0,
+  // collapsing the anchor-path math to newRowHeight=1.
   const newRowHeight =
     rowAnchor && rowAnchor.nodeHeight > 0 && rowAnchor.rowHeight > 0
-      ? Math.max(1, Math.round((scaledH * rowAnchor.rowHeight) / rowAnchor.nodeHeight))
+      ? Math.max(1, Math.round(rowAnchor.rowHeight * esy))
       : Math.max(1, snap(Math.round(obj.props.rowHeight * esy)));
   return {
     rowHeight: newRowHeight,

@@ -529,16 +529,15 @@ describe('ObjectRegistry', () => {
     }
   });
 
-  // 2D codes are always resizable on the canvas; without commitTransform a
-  // drag-resize silently has no effect (this was the aztec regression).
-  // Every code-2d entry must declare a commit handler, except `heightLocked`
-  // ones (e.g. Maxicode) which disable the transformer entirely and
-  // therefore never reach the commit path.
-  it('every resizable code-2d type has a commitTransform handler', () => {
+  // Without commitTransform or uniformScaleProp the drag is a silent
+  // no-op (was the aztec regression). heightLocked types skip the
+  // transformer entirely so they're exempt.
+  it('every resizable code-2d type can commit a resize', () => {
     for (const [key, def] of Object.entries(ObjectRegistry)) {
       if (def.group !== 'code-2d') continue;
       if (def.heightLocked) continue;
-      expect(def.commitTransform, `${key} is missing commitTransform`).toBeDefined();
+      const hasCommit = !!def.commitTransform || !!def.uniformScaleProp;
+      expect(hasCommit, `${key} is missing commitTransform or uniformScaleProp`).toBe(true);
     }
   });
 });

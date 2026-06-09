@@ -1,6 +1,5 @@
 import type { ObjectTypeCore } from '../types/ObjectType';
 import { fieldPos, fdFieldFor } from './zplHelpers';
-import { commitUniformScaleTransform } from './transformHelpers';
 import { type ZplRotation } from './rotation';
 
 export const MAGNIFICATION_MIN = 1;
@@ -26,7 +25,7 @@ export const qrcode: ObjectTypeCore<QrCodeProps> = {
   },
   defaultSize: { width: 200, height: 200 },
 
-  commitTransform: commitUniformScaleTransform('magnification', MAGNIFICATION_MIN, MAGNIFICATION_MAX),
+  uniformScaleProp: { name: 'magnification', min: MAGNIFICATION_MIN, max: MAGNIFICATION_MAX },
 
   toZPL: (obj, ctx) => {
     const p = obj.props;

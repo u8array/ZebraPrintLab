@@ -19,8 +19,13 @@ export interface ObjectTypeCore<P extends object = object> {
   interpretationLocked?: boolean;
   /** Emits ^FD via fdFieldFor; enables bind-to-variable control. */
   bindable?: boolean;
-  /** 1:1 aspect resize (QR, DataMatrix); predicate for per-instance opt-in. */
+  /** 1:1 aspect-locked free resize (ellipse with lockAspect). For
+   *  integer-module 2D symbologies use uniformScaleProp instead. */
   uniformScale?: boolean | ((props: P) => boolean);
+  /** Integer-module 2D symbology (QR/Aztec/DataMatrix): drives drag-time
+   *  module snap and release-time commit from one prop spec; implies
+   *  uniformScale (the canvas is square by construction). */
+  uniformScaleProp?: { name: keyof P & string; min: number; max: number };
   toZPL: (obj: LabelObjectBase & { props: P }, ctx?: ZplEmitContext) => string;
   /** Pure hook for type-specific clamp/invariant on incoming changes. */
   normalizeChanges?: (

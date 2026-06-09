@@ -14,7 +14,7 @@ export interface TransformContext {
    *  stacked 2D, moduleWidth for 1D barcodes). Consumers narrow on
    *  `kind` before reading the type-specific fields. */
   anchor:
-    | { kind: "row"; nodeHeight: number; rowHeight: number }
+    | { kind: "row"; nodeHeight: number; rowHeight: number; nodeWidth: number; moduleWidth: number }
     | { kind: "moduleWidth"; nodeWidth: number; moduleWidth: number }
     | null;
 }
