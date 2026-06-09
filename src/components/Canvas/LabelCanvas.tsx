@@ -430,35 +430,33 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     ? objects.find((o) => o.id === selectedIds[0]) ?? null
     : null;
   const stepRotation = singleSelected ? getStepRotation(singleSelected) : null;
-  const [rotationBtnPos, setRotationBtnPos] = useState<{ x: number; y: number } | null>(null);
   const rotationBtnRef = useRef<Konva.Group>(null);
   useLayoutEffect(() => {
-    if (!singleSelected || !stepRotation) {
-      setRotationBtnPos(null);
-      return;
-    }
+    if (!singleSelected || !stepRotation) return;
     const stage = stageRef.current;
     if (!stage) return;
     const node = stage.findOne(`#${singleSelected.id}`);
-    if (!node) {
-      setRotationBtnPos(null);
-      return;
-    }
-    // Direct node update for 60fps drag; React state kept in sync.
-    // Per-node listener because Konva's transform doesn't bubble.
+    if (!node) return;
+    const layer = node.getLayer();
+    // beforeDraw runs after Konva invalidates the cached transform
+    // matrices, so getClientRect sees the frame's actual position;
+    // dragmove/xChange handlers run earlier and read stale data,
+    // which trails the button one tick behind on snap-jumps.
     const update = () => {
+      const btn = rotationBtnRef.current;
+      if (!btn) return;
       const rect = node.getClientRect({ relativeTo: stage, skipStroke: true });
-      const x = rect.x + rect.width + ROTATE_BUTTON_GAP_PX;
-      const y = rect.y + ROTATE_BUTTON_TOP_OFFSET_PX;
-      rotationBtnRef.current?.position({ x, y });
-      setRotationBtnPos({ x, y });
+      btn.position({
+        x: rect.x + rect.width + ROTATE_BUTTON_GAP_PX,
+        y: rect.y + ROTATE_BUTTON_TOP_OFFSET_PX,
+      });
     };
     update();
-    node.on("dragmove.rotbtn transform.rotbtn", update);
+    layer?.on("beforeDraw.rotbtn", update);
     return () => {
-      node.off("dragmove.rotbtn transform.rotbtn");
+      layer?.off(".rotbtn");
     };
-  }, [singleSelected, stepRotation, scale, viewRotation]);
+  }, [singleSelected, stepRotation]);
 
   const handleRotateStep = () => {
     if (!singleSelected || !stepRotation) return;
@@ -916,11 +914,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               />
             )}
 
-            {!previewLocks && rotationBtnPos && (
+            {!previewLocks && singleSelected && stepRotation && (
               <RotationButton
                 ref={rotationBtnRef}
-                x={rotationBtnPos.x}
-                y={rotationBtnPos.y}
                 color={colors.selection}
                 onClick={handleRotateStep}
               />

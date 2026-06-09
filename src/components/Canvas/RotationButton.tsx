@@ -3,19 +3,12 @@ import { Group, Circle, Path } from "react-konva";
 import type Konva from "konva";
 
 /**
- * Small floating "rotate 90°" button rendered next to the selected object's
- * top-right corner. Only used for step-rotation objects (text, serial,
- * barcodes) where rotation is N/R/I/B rather than a free angle from the
- * Konva Transformer.
- *
- * Positioned in stage-space (relative to the Layer); the caller resolves
- * the selected node's bbox via getClientRect({ relativeTo: stage }) so the
- * button stays at the visual top-right even when the underlying object is
- * itself rotated to R/I/B.
+ * Floating "rotate 90°" glyph for step-rotation objects (text/serial/
+ * barcodes; N/R/I/B). Mounted in stage-space (outside the view-rotation
+ * Group so the glyph stays upright) and positioned imperatively via ref
+ * in a beforeDraw hook.
  */
 interface Props {
-  x: number;
-  y: number;
   color: string;
   onClick: () => void;
 }
@@ -31,7 +24,7 @@ const ICON_SCALE = 0.55;
 const ICON_OFFSET = 12; // 24x24 viewBox → centre at (12, 12)
 
 export const RotationButton = forwardRef<Konva.Group, Props>(function RotationButton(
-  { x, y, color, onClick },
+  { color, onClick },
   ref,
 ) {
   const [hover, setHover] = useState(false);
@@ -65,8 +58,6 @@ export const RotationButton = forwardRef<Konva.Group, Props>(function RotationBu
   return (
     <Group
       ref={ref}
-      x={x}
-      y={y}
       onMouseEnter={cursorIn}
       onMouseLeave={cursorOut}
       onClick={(e) => {
