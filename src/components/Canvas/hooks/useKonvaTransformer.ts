@@ -69,7 +69,7 @@ function commitUniformModuleResize({
   dpmm,
 }: UniformResizeArgs): ObjectChanges {
   const current = (obj.props as unknown as Record<string, number>)[spec.name];
-  if (typeof current !== "number" || current <= 0)
+  if (typeof current !== "number" || !(current > 0))
     return { ...fallbackPos, props: {} };
   const newModules = computeNewModules(
     current,

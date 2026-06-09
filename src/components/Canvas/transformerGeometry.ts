@@ -129,7 +129,7 @@ export function applyUniformModuleSnap(
   newBox: BoundingBox,
   anchor: TransformAnchor | null,
 ): BoundingBox {
-  if (anchor?.kind !== "uniformModule" || anchor.nodeSize <= 0 || anchor.modules <= 0) {
+  if (anchor?.kind !== "uniformModule" || !(anchor.nodeSize > 0) || !(anchor.modules > 0)) {
     return newBox;
   }
   const scale = newBox.width / anchor.nodeSize;
