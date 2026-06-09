@@ -431,11 +431,12 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     : null;
   const stepRotation = singleSelected ? getStepRotation(singleSelected) : null;
   const rotationBtnRef = useRef<Konva.Group>(null);
+  const singleSelectedId = singleSelected?.id;
   useLayoutEffect(() => {
-    if (!singleSelected || !stepRotation) return;
+    if (!singleSelectedId || !stepRotation || previewLocks) return;
     const stage = stageRef.current;
     if (!stage) return;
-    const node = stage.findOne(`#${singleSelected.id}`);
+    const node = stage.findOne(`#${singleSelectedId}`);
     if (!node) return;
     const layer = node.getLayer();
     // beforeDraw runs after Konva invalidates the cached transform
@@ -456,7 +457,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     return () => {
       layer?.off(".rotbtn");
     };
-  }, [singleSelected, stepRotation]);
+  }, [singleSelectedId, stepRotation, previewLocks]);
 
   const handleRotateStep = () => {
     if (!singleSelected || !stepRotation) return;
