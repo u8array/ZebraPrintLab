@@ -4,6 +4,7 @@ import {
   formatEan8Hri,
   formatUpcaHri,
   formatUpceHri,
+  upceData6FromFd,
   formatCode39Hri,
   formatLogmarsHri,
   formatUpcEanExtensionHri,
@@ -41,6 +42,18 @@ describe('HRI formatters', () => {
       expect(r).toHaveLength(8);
       expect(r[0]).toBe('0');
       expect(r.slice(1, 7)).toBe('012345');
+    });
+  });
+
+  describe('upceData6FromFd', () => {
+    it('keeps the 6 data digits when no number-system prefix', () => {
+      expect(upceData6FromFd('012345')).toBe('012345');
+    });
+    it('strips the leading number-system digit from a 7-digit payload', () => {
+      expect(upceData6FromFd('0012345')).toBe('012345');
+    });
+    it('strips number-system and check digit from an 8-digit payload', () => {
+      expect(upceData6FromFd('00123455')).toBe('012345');
     });
   });
 

@@ -1,17 +1,14 @@
 import { Text } from "react-konva";
 import type { ReactNode } from "react";
-import type { EanUpcType } from "./bwipHelpers";
+import type { EanUpcHriFragment } from "./bwipHelpers";
 
-/** Visual gap in display px between the UPC-E bar end and the floated
- *  check digit. Chosen by eye to match the Labelary render; the digit
- *  sits just past the quiet-zone boundary, not flush against the bars. */
-const UPCE_TRAIL_DIGIT_GAP_PX = 2;
+/** bwip's HRI module x is offset ~1 module right of the digit's bar
+ *  cell; shifting it back centers each digit over its bars, matching
+ *  the Labelary render. */
+const BWIP_TXT_X_SHIFT_MODULES = -1;
 
-/** Result of building the EAN/UPC digit overlay: the Konva text nodes
- *  plus the clip-expansion needed on the parent Group so floated
- *  sys/trail digits stay visible. `clipLeft`/`clipRight` are dots
- *  beyond the bar's upright x-range (0..barW) the parent must reserve;
- *  consumers without clipping can ignore them. */
+/** Konva text nodes plus the clip the parent Group must reserve (display
+ *  px beyond 0..barW) so floated system/check digits stay visible. */
 export interface EanUpcDigitOverlay {
   nodes: ReactNode[];
   clipLeft: number;
@@ -19,91 +16,58 @@ export interface EanUpcDigitOverlay {
 }
 
 interface BuildArgs {
-  type: EanUpcType;
-  displayText: string;
-  layout: { xLeft: number; xRight: number; halfWidth: number };
-  /** Upright bar width in display px; used as the right anchor for
-   *  the UPC-E trail digit (sits 2px past the bar end). */
+  /** HRI digits with bwip module positions (see getEanUpcHriFragments). */
+  fragments: EanUpcHriFragment[];
+  /** Display px per encoded bwip module. */
+  modulePx: number;
+  /** Upright bar width in display px. */
   uprightBarW: number;
   /** Upright bar height in display px; text Y = uprightBarH + textGap. */
   uprightBarH: number;
   textGap: number;
   textFontSize: number;
+  /** Vera (mw 1-2) or OCR-B (mw 3+); see eanUpcHriFontFamily. */
+  fontFamily: string;
 }
 
-/** Build the digit-by-digit HRI overlay for EAN-13 / EAN-8 / UPC-A /
- *  UPC-E in upright coords. Single source of truth shared by the
- *  upright printInterp branch and the rotated inner-Group branch in
- *  BarcodeObject; both produce identical digit positions, only the
- *  parent wrapper differs (upright clips the bbox; rotated wraps in a
- *  rotatedGroupTransform Group). */
+/** EAN/UPC HRI overlay from bwip's text fragments: each digit centered on
+ *  its module position, so floats and guard-splits stay grid-accurate at
+ *  any width without hand-tuned offsets. */
 export function buildEanUpcDigitOverlay(args: BuildArgs): EanUpcDigitOverlay {
-  const { type, displayText, layout, uprightBarW, uprightBarH, textGap, textFontSize } = args;
-  const ldW = textFontSize * 1.2;
+  const { fragments, modulePx, uprightBarW, uprightBarH, textGap, textFontSize, fontFamily } = args;
   const textY = Math.max(uprightBarH, 1) + textGap;
-  const { xLeft, xRight, halfWidth: halfW } = layout;
 
-  const tStyle = {
+  // Font switches Vera/OCR-B by module width (eanUpcHriFontFamily).
+  // height + verticalAlign bottom anchor every digit on one baseline.
+  const baseStyle = {
     y: textY,
-    fontSize: textFontSize,
-    fontFamily: "'Courier New', monospace" as const,
-    fontStyle: "bold" as const,
+    height: textFontSize,
+    verticalAlign: "bottom" as const,
+    fontFamily,
+    fontStyle: "normal" as const,
+    align: "center" as const,
     wrap: "none" as const,
     fill: "#000000",
     listening: false,
   };
 
-  const main = (key: string, x: number, width: number, text: string) =>
-    <Text key={key} x={x} width={Math.max(width, 1)} text={text} align="center" {...tStyle} />;
-  const sys = (text: string) =>
-    <Text key="sys" x={-ldW} width={ldW} text={text} align="center" {...tStyle} />;
-  const trail = (text: string) =>
-    <Text key="trail" x={uprightBarW + UPCE_TRAIL_DIGIT_GAP_PX} width={ldW} text={text} align="left" {...tStyle} />;
+  let minX = 0;
+  let maxX = uprightBarW;
+  const nodes: ReactNode[] = fragments.map((f, i) => {
+    // Box wider/taller than the glyph; align center + verticalAlign bottom
+    // do the placement, real spacing comes from xModule.
+    const boxW = textFontSize;
+    const x = (f.xModule + BWIP_TXT_X_SHIFT_MODULES) * modulePx - boxW / 2;
+    if (x < minX) minX = x;
+    if (x + boxW > maxX) maxX = x + boxW;
+    return (
+      <Text key={`hri${i}`} x={x} width={boxW} text={f.char} fontSize={textFontSize} {...baseStyle} />
+    );
+  });
 
-  switch (type) {
-    case "ean13":
-      return {
-        clipLeft: ldW,
-        clipRight: 0,
-        nodes: [
-          sys(displayText[0] ?? ""),
-          main("left", xLeft, halfW, displayText.slice(1, 7)),
-          main("right", xRight, halfW, displayText.slice(7, 13)),
-        ],
-      };
-    case "ean8":
-      return {
-        clipLeft: 0,
-        clipRight: 0,
-        nodes: [
-          main("left", xLeft, halfW, displayText.slice(0, 4)),
-          main("right", xRight, halfW, displayText.slice(4, 8)),
-        ],
-      };
-    case "upca":
-      // UPC-A HRI: number system (1) | 5 manuf | 5 product | check (1).
-      // System digit floats left of the bars, check digit floats right;
-      // matches Zebra's ^BU default (checkDigit=Y) which the generator
-      // now emits.
-      return {
-        clipLeft: ldW,
-        clipRight: ldW,
-        nodes: [
-          sys(displayText[0] ?? ""),
-          main("left", xLeft, halfW, displayText.slice(1, 6)),
-          main("right", xRight, halfW, displayText.slice(6, 11)),
-          trail(displayText[11] ?? ""),
-        ],
-      };
-    case "upce":
-      return {
-        clipLeft: ldW,
-        clipRight: ldW,
-        nodes: [
-          sys(displayText[0] ?? "0"),
-          main("mid", xLeft, halfW, displayText.slice(1, 7)),
-          trail(displayText[7] ?? ""),
-        ],
-      };
-  }
+  return {
+    nodes,
+    clipLeft: Math.max(0, -minX),
+    clipRight: Math.max(0, maxX - uprightBarW),
+  };
 }

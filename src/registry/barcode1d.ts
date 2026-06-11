@@ -34,6 +34,9 @@ export interface Barcode1DCoreConfig {
   interpretationLocked?: boolean;
   /** See {@link HriBehavior}. */
   hri?: HriBehavior;
+  /** Transform stored content into the ^FD payload (e.g. UPC-E prepends
+   *  the number-system digit the spec requires). Default: identity. */
+  fdContent?: (content: string) => string;
 }
 
 export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore<Barcode1DProps> {
@@ -75,7 +78,7 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
         byCmd,
         fieldPos(obj),
         config.zplCommand(p),
-        fdFieldFor(obj, p.content, ctx),
+        fdFieldFor(obj, config.fdContent ? config.fdContent(p.content) : p.content, ctx),
       ].filter(Boolean).join('');
     },
   };

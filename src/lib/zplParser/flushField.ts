@@ -31,6 +31,7 @@ import type { MaxicodeProps } from "../../registry/maxicode";
 import type { MicroPdf417Props } from "../../registry/micropdf417";
 import type { CodablockProps } from "../../registry/codablock";
 import type { Tlc39Props } from "../../registry/tlc39";
+import { upceData6FromFd } from "../../registry/hriFormatters";
 import { decodeFH, makeObj, variableNameFromComment } from "./helpers";
 import { getPosType, type ParserState, REVERSE_BBOX_TOLERANCE_DOTS } from "./context";
 
@@ -340,9 +341,29 @@ export function createFlushField(
           ),
         );
         break;
+      case "upce":
+        objects.push(
+          makeObj(
+            "upce",
+            s.field.x,
+            s.field.y,
+            {
+              // ^B9 ^FD carries the number-system digit; store the 6 data
+              // digits so re-emit re-adds it without double-prefixing.
+              content: upceData6FromFd(content),
+              height: s.field.bcHeight,
+              moduleWidth: s.defaults.byModuleWidth,
+              printInterpretation: s.field.bcInterp,
+              checkDigit: s.field.bcCheck,
+              rotation: s.field.bcRotation,
+            } satisfies Barcode1DProps,
+            posType,
+            comment,
+          ),
+        );
+        break;
       case "upca":
       case "ean8":
-      case "upce":
       case "interleaved2of5":
       case "code93":
       case "code11":

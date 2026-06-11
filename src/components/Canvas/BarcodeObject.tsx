@@ -5,13 +5,14 @@ import type Konva from "konva";
 import { BARCODE_1D_TYPES, ObjectRegistry } from "../../registry";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { useColorScheme } from "../../lib/useColorScheme";
+import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import {
   buildBwipOptions,
   cleanBwipError,
   getDisplaySize,
   get1DBwipScale,
-  getEanUpcLayout,
+  getEanUpcHriFragments,
   renderEanUpcRawCanvas,
   renderTlc39Canvas,
   type BarcodeDisplaySize,
@@ -21,8 +22,12 @@ import { objectRotation } from "../../registry/rotation";
 import { rotatedGroupTransform } from "./rotatedGroupTransform";
 import { buildEanUpcDigitOverlay } from "./eanUpcDigitNodes";
 import {
-  COURIER_BOLD_EM_BOTTOM_PAD,
-  COURIER_BOLD_INK_TO_EM,
+  VERA_MONO_HRI_EM_PER_MODULE,
+  VERA_MONO_HRI_CAP_TOP_PAD,
+  HRI_FONT_A,
+  eanUpcHriFontFamily,
+  ocrbEanHriFontDots,
+  ocrbEanHriGapDots,
   EAN_TEXT_ZONE_DOTS,
   EAN_UPC_TYPES,
   QR_FO_Y_OFFSET_DOTS,
@@ -54,6 +59,10 @@ export function BarcodeObject({
   const groupRef = useRef<Konva.Group>(null);
   const textRef = useRef<Konva.Text>(null);
   const colors = useColorScheme();
+  // Vera Mono (HRI) loads async; Konva won't repaint on an unchanged
+  // fontFamily once the FontFace resolves. Keying the overlay on this
+  // version remounts it on `loadingdone` for a fresh paint.
+  const fontVersion = useFontCacheVersion();
 
   // Exclude the HRI text from the parent Group's getClientRect. This anchors
   // the resize at the bar top (logmars: was anchoring at text top above bars)
@@ -225,15 +234,20 @@ export function BarcodeObject({
     // carries printInterpretation: true.
     const rotation = objectRotation(obj.props);
     const isUpright = rotation === "N";
+    // Generic 1D bar-to-HRI gap (bar bottom to glyph cap top). Labelary's
+    // is a module-independent ~6 dots; 5 sits a hair tighter.
     const textGap = Math.max(dotsToPx(5, scale, dpmm), 3);
 
     const hri = ObjectRegistry[obj.type]?.hri;
-    // Function-form fontDots returns ink dots; inflate to Konva em.
-    // The mw * 10 fallback is em-calibrated already.
+    // fontDots returns em font dots directly (^BS: OCR-B step table);
+    // the per-module fallback is em-calibrated for Vera Font A.
     const fontDots = hri?.fontDots
-      ? hri.fontDots(moduleWidth) * COURIER_BOLD_INK_TO_EM
-      : moduleWidth * 10;
+      ? hri.fontDots(moduleWidth)
+      : moduleWidth * VERA_MONO_HRI_EM_PER_MODULE;
     const textFontSize = Math.max(dotsToPx(fontDots, scale, dpmm), 6);
+    // Generic 1D subtracts this below the bars so the visible bar-to-cap gap
+    // equals textGap and stays module-width-independent (see the constant).
+    const glyphTopPad = textFontSize * VERA_MONO_HRI_CAP_TOP_PAD;
     const displayText = hri?.formatHri?.(rawContent) ?? rawContent;
     const isTextAbove = hri?.textAbove ?? false;
     // 3px floor matches textGap so HRI stays legible at very small
@@ -274,16 +288,23 @@ export function BarcodeObject({
       let overlayContent: React.ReactNode;
       let eanOverlay: ReturnType<typeof buildEanUpcDigitOverlay> | null = null;
       if (isEanUpc) {
-        const bwipSc = get1DBwipScale(moduleWidth, scale, dpmm);
-        const layout = getEanUpcLayout(obj.type as EanUpcType, ub.w, barcodeCanvas.width, bwipSc);
+        // Display px per encoded module = bar width / module count, where
+        // the bwip canvas is moduleCount * renderScale px wide.
+        const renderScale = get1DBwipScale(moduleWidth, scale, dpmm);
+        const moduleCount = Math.max(barcodeCanvas.width / renderScale, 1);
+        const modulePx = ub.barW / moduleCount;
+        // OCR-B HRI: discrete font + gap per module width (caps, then
+        // doubles), unlike the generic Vera linear sizing above.
+        const eanFontSize = Math.max(dotsToPx(ocrbEanHriFontDots(moduleWidth), scale, dpmm), 6);
+        const eanGap = Math.max(dotsToPx(ocrbEanHriGapDots(moduleWidth), scale, dpmm), 3);
         eanOverlay = buildEanUpcDigitOverlay({
-          type: obj.type as EanUpcType,
-          displayText,
-          layout,
+          fragments: getEanUpcHriFragments(obj.type as EanUpcType, displayText),
+          modulePx,
           uprightBarW: ub.barW,
           uprightBarH: ub.barH,
-          textGap,
-          textFontSize,
+          textGap: eanGap,
+          textFontSize: eanFontSize,
+          fontFamily: eanUpcHriFontFamily(moduleWidth),
         });
         // EAN/UPC have barTopPx === 0 (no text zone above), so the
         // helper's bar-relative textY equals the bbox-relative one
@@ -297,18 +318,24 @@ export function BarcodeObject({
         // ref stays undefined and the bars+text just scale together
         // during a rotated resize drag, a minor visual nit with no broken
         // print output.
-        // Compensate Courier's em-bottom padding only on the ink-height path.
-        const inkShiftPx = hri?.fontDots ? textFontSize * COURIER_BOLD_EM_BOTTOM_PAD : 0;
         const textY = isTextAbove
-          ? ub.barTopPx - textFontSize - aboveGapPx + inkShiftPx
-          : ub.barTopPx + ub.barH + textGap;
+          ? ub.barTopPx - textFontSize - aboveGapPx
+          : ub.barTopPx + ub.barH + textGap - glyphTopPad;
+        // ^BS bottom-aligns the glyph in a fontSize-tall box so the baseline
+        // sits a gap above the bars, matching the EAN overlay.
+        const bottomAlign = hri?.fontDots
+          ? { height: textFontSize, verticalAlign: "bottom" as const }
+          : {};
+        const fontFamily =
+          resolveMwValue(hri?.fontFamily, moduleWidth) ?? HRI_FONT_A;
         overlayContent = (
           <Text
             ref={isUpright ? setTextRef : undefined}
             x={ub.barLeftPx} y={textY} width={Math.max(ub.barW, 1)}
             text={displayText} fontSize={textFontSize}
-            fontFamily="'Courier New', monospace" fontStyle="bold"
+            fontFamily={fontFamily}
             align="center" wrap="none" fill="#000000" listening={false}
+            {...bottomAlign}
           />
         );
       }
@@ -321,7 +348,7 @@ export function BarcodeObject({
       const textLocalY = (sy: number) =>
         isTextAbove
           ? ub.barTopPx - (textFontSize + aboveGapPx) / sy
-          : ub.barTopPx + ub.barH + textGap / sy;
+          : ub.barTopPx + ub.barH + (textGap - glyphTopPad) / sy;
       const handleTransform = () => {
         const grp = groupRef.current;
         const txt = textRef.current;
@@ -406,7 +433,7 @@ export function BarcodeObject({
                 listening={false}
               />
             )}
-            <Group ref={excludeGroupFromBbox}>{overlayContent}</Group>
+            <Group key={`hri-${fontVersion}`} ref={excludeGroupFromBbox}>{overlayContent}</Group>
           </Group>
         </Group>
       );

@@ -297,6 +297,16 @@ describe('round-trip — barcode1d types (UPC-A, EAN-8, UPC-E, I2of5, Code93)', 
     expect(b2).toBeDefined();
     expect(props(b2).content).toBe(props(b1).content);
   });
+
+  // ^B9 ^FD carries the number-system digit; the parser strips it back to the
+  // 6 data digits so re-emit re-adds it without drift (idempotent).
+  it('preserves UPC-E as the 6 data digits across round-trips', () => {
+    const { first, second } = roundtrip(BARCODE1D_ZPL);
+    const b1 = first.objects.find((o) => o.type === 'upce');
+    const b2 = second.objects.find((o) => o.type === 'upce');
+    expect(props(b1).content).toBe('123456');
+    expect(props(b2).content).toBe(props(b1).content);
+  });
 });
 
 // ── label home offset round-trip ──────────────────────────────────────────────

@@ -125,48 +125,7 @@ function estimatePdf417Columns(content: string, securityLevel: number): number {
 // row count exceeds what the data strictly requires.
 const BWIP_PDF417_MIN_ROWHEIGHT = 3;
 
-// EAN/UPC bar-pattern module layout (no quiet zones, bwip-js native canvas).
-// All values are module offsets/widths from the left edge of the bar pattern.
-//   ean13/upca: 3 start | 6×7 (42) | 5 centre | 6×7 (42) | 3 end = 95 modules
-//   ean8:       3 start | 4×7 (28) | 5 centre | 4×7 (28) | 3 end = 67 modules
-//   upce:       3 start | 6×7 (42)             | 6 end           = 51 modules
-// UPC-A reuses the EAN-13 bar pattern but only 5 inner digits per side are
-// visible (system digit floats outside-left, check digit outside-right).
-const EAN_UPC_MODULE_OFFSETS = {
-  ean13: { xLeft: 3, xRight: 50, halfWidth: 42 },
-  ean8:  { xLeft: 3, xRight: 36, halfWidth: 28 },
-  upca:  { xLeft: 10, xRight: 50, halfWidth: 35 },
-  upce:  { xLeft: 3, xRight: 0,  halfWidth: 42 }, // single block, xRight unused
-} as const;
-
-export type EanUpcType = keyof typeof EAN_UPC_MODULE_OFFSETS;
-
-export interface EanUpcLayout {
-  /** Display pixels per encoded bwip module. */
-  modulePx: number;
-  /** x-position (display px) of the left/main digit block. */
-  xLeft: number;
-  /** x-position (display px) of the right digit block, 0 for upce. */
-  xRight: number;
-  /** Width (display px) of each digit block. */
-  halfWidth: number;
-}
-
-export function getEanUpcLayout(
-  type: EanUpcType,
-  displayWidth: number,
-  bwipCanvasWidth: number,
-  bwipScale: number,
-): EanUpcLayout {
-  const modulePx = bwipScale * (displayWidth / bwipCanvasWidth);
-  const o = EAN_UPC_MODULE_OFFSETS[type];
-  return {
-    modulePx,
-    xLeft: o.xLeft * modulePx,
-    xRight: o.xRight * modulePx,
-    halfWidth: o.halfWidth * modulePx,
-  };
-}
+export type EanUpcType = "ean13" | "ean8" | "upca" | "upce";
 
 // bwip-js renders postnet/planet bars at 4/3 the per-element width that Zebra
 // firmware uses; this factor compresses the displayed canvas horizontally so
@@ -203,6 +162,39 @@ const RAW_BAR_SEAM = 0.4;
 interface BwipRawLinear {
   sbs?: number[];
   bbs?: number[];
+  /** HRI fragments: [char, xModule, yModule, fontName, fontSizeUnits]. */
+  txt?: [string, number, number, string, number][];
+}
+
+/** One HRI digit as bwip places it. Zebra/Labelary render the whole HRI
+ *  line at one size, so only the position is taken from bwip (its built-in
+ *  shrink of the floated system/check digits is ignored). */
+export interface EanUpcHriFragment {
+  char: string;
+  xModule: number;
+}
+
+/** bwip raw geometry (bars + HRI text) for an EAN/UPC symbol. UPC-E
+ *  accepts 6-digit content but bwip rejects it, so pre-pad with the
+ *  number-system digit as the firmware does. Shared by the bars and HRI
+ *  paths so both encode the identical symbol. */
+function rawEanUpc(type: EanUpcType, text: string): BwipRawLinear | null {
+  const encoded = type === "upce" && text.length === 6 ? `0${text}` : text;
+  try {
+    const stack = bwipjs.raw({ bcid: type, text: encoded, includetext: true } as never) as BwipRawLinear[];
+    return stack?.[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** EAN/UPC HRI digit positions from bwip's text geometry (the engine
+ *  Labelary renders with): floats, guard splits and per-type layout
+ *  come for free, grid-accurate at any width. */
+export function getEanUpcHriFragments(type: EanUpcType, text: string): EanUpcHriFragment[] {
+  const txt = rawEanUpc(type, text)?.txt;
+  if (!txt || txt.length === 0) return [];
+  return txt.map((t) => ({ char: t[0], xModule: t[1] }));
 }
 
 export interface EanUpcRawCanvasArgs {
@@ -229,16 +221,7 @@ export function renderEanUpcRawCanvas({
   const barH = Math.round(barHeightPx);
   const tailH = Math.max(0, Math.round(tailHeightPx));
   if (modulePxInt <= 0 || barH <= 0) return null;
-  // UPC-E accepts 6-digit content (Zebra pads to 7); bwip rejects 6,
-  // so pre-pad with the number-system digit to match firmware.
-  const encoded = type === "upce" && text.length === 6 ? `0${text}` : text;
-  let stack: BwipRawLinear[];
-  try {
-    stack = bwipjs.raw({ bcid: type, text: encoded, includetext: true } as never) as BwipRawLinear[];
-  } catch {
-    return null;
-  }
-  const g = stack?.[0];
+  const g = rawEanUpc(type, text);
   if (!g?.sbs) return null;
   let totalModules = 0;
   for (const w of g.sbs) totalModules += w;

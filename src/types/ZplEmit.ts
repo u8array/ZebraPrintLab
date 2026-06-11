@@ -37,6 +37,11 @@ export interface HriBehavior {
   aboveGapDots?: number | ((moduleWidth: number) => number);
   /** Transform raw content for display; default identity. */
   formatHri?: (content: string) => string;
-  /** Override generic `moduleWidth * 10` for discrete Font 0 steps (^BS). */
+  /** Override the generic per-module em sizing with explicit per-module
+   *  em font dots (^BS reuses the EAN OCR-B step table). */
   fontDots?: (moduleWidth: number) => number;
+  /** HRI font family; default is Labelary's Font A (Vera). Function form
+   *  for moduleWidth dependence (^BS follows the EAN/UPC Vera-then-OCR-B
+   *  switch). */
+  fontFamily?: string | ((moduleWidth: number) => string);
 }
