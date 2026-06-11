@@ -192,7 +192,7 @@ export function LayerRow({
       ) : (
         <span className="w-4 h-4 shrink-0" />
       )}
-      <span className="font-mono text-xs text-accent shrink-0 w-4 text-center">
+      <span className="font-mono text-xs text-accent shrink-0 w-4 text-center whitespace-nowrap">
         {groupRow ? '⊞' : def?.icon}
       </span>
       {boundVariable && (

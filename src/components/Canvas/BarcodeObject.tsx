@@ -21,6 +21,7 @@ import {
 import { objectRotation } from "../../registry/rotation";
 import { rotatedGroupTransform } from "./rotatedGroupTransform";
 import { buildEanUpcDigitOverlay } from "./eanUpcDigitNodes";
+import { buildCode1dStartStopGlyphs } from "./code1dHriOverlay";
 import {
   VERA_MONO_HRI_EM_PER_MODULE,
   VERA_MONO_HRI_CAP_TOP_PAD,
@@ -248,7 +249,8 @@ export function BarcodeObject({
     // Generic 1D subtracts this below the bars so the visible bar-to-cap gap
     // equals textGap and stays module-width-independent (see the constant).
     const glyphTopPad = textFontSize * VERA_MONO_HRI_CAP_TOP_PAD;
-    const displayText = hri?.formatHri?.(rawContent) ?? rawContent;
+    const checkDigit = (obj.props as { checkDigit?: boolean }).checkDigit;
+    const displayText = hri?.formatHri?.(rawContent, checkDigit) ?? rawContent;
     const isTextAbove = hri?.textAbove ?? false;
     // 3px floor matches textGap so HRI stays legible at very small
     // scales regardless of which dots value the spec calls for.
@@ -318,6 +320,8 @@ export function BarcodeObject({
         // ref stays undefined and the bars+text just scale together
         // during a rotated resize drag, a minor visual nit with no broken
         // print output.
+        const fontFamily =
+          resolveMwValue(hri?.fontFamily, moduleWidth) ?? HRI_FONT_A;
         const textY = isTextAbove
           ? ub.barTopPx - textFontSize - aboveGapPx
           : ub.barTopPx + ub.barH + textGap - glyphTopPad;
@@ -326,10 +330,21 @@ export function BarcodeObject({
         const bottomAlign = hri?.fontDots
           ? { height: textFontSize, verticalAlign: "bottom" as const }
           : {};
-        const fontFamily =
-          resolveMwValue(hri?.fontFamily, moduleWidth) ?? HRI_FONT_A;
-        overlayContent = (
+        // Code 11/93: keep the centered text as-is and only add the shape
+        // start/stop glyphs flanking it (Code 11 triangle, Code 93 square).
+        const startStopGlyphs = hri?.startStopGlyph
+          ? buildCode1dStartStopGlyphs({
+              text: displayText, fontFamily, fontSize: textFontSize,
+              barLeftPx: ub.barLeftPx, barW: ub.barW, textY,
+              glyph: hri.startStopGlyph,
+            })
+          : null;
+        // Keyed array (like the EAN path), not a fragment: a keyless data
+        // Text adjacent to keyed start/stop Text nodes of the same type makes
+        // react-konva mis-reconcile and drop the flanking ones (Code 39 *).
+        const dataText = (
           <Text
+            key="hri"
             ref={isUpright ? setTextRef : undefined}
             x={ub.barLeftPx} y={textY} width={Math.max(ub.barW, 1)}
             text={displayText} fontSize={textFontSize}
@@ -338,6 +353,7 @@ export function BarcodeObject({
             {...bottomAlign}
           />
         );
+        overlayContent = startStopGlyphs ? [dataText, ...startStopGlyphs] : dataText;
       }
 
       // Counter-scale only applies to upright Other 1D. textLocalY here

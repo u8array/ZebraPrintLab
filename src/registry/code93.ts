@@ -11,6 +11,9 @@ export const code93CoreConfig: Barcode1DCoreConfig = {
     const check = p.checkDigit ? 'Y' : 'N';
     return `^BA${p.rotation},${p.height},${interp},N,${check}`;
   },
+  // Labelary draws Code 93's start/stop as a square; data shows without
+  // the (non-displayed) check chars, so no formatHri.
+  hri: { startStopGlyph: 'square' },
 };
 
 export const code93 = createBarcode1DCore(code93CoreConfig);

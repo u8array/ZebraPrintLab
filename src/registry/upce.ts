@@ -1,5 +1,5 @@
 import { createBarcode1DCore, type Barcode1DCoreConfig } from './barcode1d';
-import { formatUpceHri, upceData6 } from './hriFormatters';
+import { formatUpceHri, upceData6FromFd } from './hriFormatters';
 export type { Barcode1DProps as UpcEProps } from './barcode1d';
 
 export const upceCoreConfig: Barcode1DCoreConfig = {
@@ -15,10 +15,10 @@ export const upceCoreConfig: Barcode1DCoreConfig = {
     return `^B9${p.rotation},${p.height},${interp},N`;
   },
   hri: { formatHri: formatUpceHri },
-  // ^B9 requires the number-system digit in ^FD; without it Labelary lints
-  // and re-pads. Spec allows NS 0 or 1, but the model stores only the 6 data
-  // digits, so we assume 0 (NS 1 round-trips lossily, see follow-up ticket).
-  fdContent: (c) => `0${upceData6(c)}`,
+  // ^B9 needs the number-system digit in ^FD (else Labelary lints/re-pads).
+  // NS-aware so an already-prefixed content is not double-prefixed. NS
+  // assumed 0 (spec allows 0 or 1; NS 1 round-trips lossily, see ticket).
+  fdContent: (c) => `0${upceData6FromFd(c)}`,
 };
 
 export const upce = createBarcode1DCore(upceCoreConfig);

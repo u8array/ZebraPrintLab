@@ -35,8 +35,13 @@ export interface HriBehavior {
   textAbove?: boolean;
   /** Bar-to-text gap in dots; function form for moduleWidth dependence (^BS). */
   aboveGapDots?: number | ((moduleWidth: number) => number);
-  /** Transform raw content for display; default identity. */
-  formatHri?: (content: string) => string;
+  /** Transform raw content for display; default identity. `checkDigit` is
+   *  the symbology's check-digit flag (Code 11 shows 1 vs 2 check digits). */
+  formatHri?: (content: string, checkDigit?: boolean) => string;
+  /** Start/stop marker flanking the HRI text: Code 11 triangle and Code 93
+   *  square are shapes (no font glyph); Code 39 asterisk is a real glyph but
+   *  rendered as a flanking node so it can be lowered to sit centered. */
+  startStopGlyph?: "triangle" | "square" | "asterisk";
   /** Override the generic per-module em sizing with explicit per-module
    *  em font dots (^BS reuses the EAN OCR-B step table). */
   fontDots?: (moduleWidth: number) => number;

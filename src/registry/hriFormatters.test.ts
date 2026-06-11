@@ -5,7 +5,7 @@ import {
   formatUpcaHri,
   formatUpceHri,
   upceData6FromFd,
-  formatCode39Hri,
+  formatCode11Hri,
   formatLogmarsHri,
   formatUpcEanExtensionHri,
 } from './hriFormatters';
@@ -43,6 +43,21 @@ describe('HRI formatters', () => {
       expect(r[0]).toBe('0');
       expect(r.slice(1, 7)).toBe('012345');
     });
+    it('is idempotent: NS-prefixed content does not accumulate zeros', () => {
+      expect(formatUpceHri('0012345')).toBe(formatUpceHri('012345'));
+    });
+  });
+
+  describe('formatCode11Hri', () => {
+    it('appends C+K check digits when checkDigit is off (e=N, two checks)', () => {
+      expect(formatCode11Hri('12345', false)).toBe('1234528');
+    });
+    it('appends only the C check digit when checkDigit is on (e=Y, one check)', () => {
+      expect(formatCode11Hri('12345', true)).toBe('123452');
+    });
+    it('defaults to two check digits', () => {
+      expect(formatCode11Hri('12345')).toBe('1234528');
+    });
   });
 
   describe('upceData6FromFd', () => {
@@ -54,12 +69,6 @@ describe('HRI formatters', () => {
     });
     it('strips number-system and check digit from an 8-digit payload', () => {
       expect(upceData6FromFd('00123455')).toBe('012345');
-    });
-  });
-
-  describe('formatCode39Hri', () => {
-    it('wraps content with start/stop asterisks', () => {
-      expect(formatCode39Hri('CODE39')).toBe('*CODE39*');
     });
   });
 

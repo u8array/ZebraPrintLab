@@ -3,6 +3,7 @@
 
 import bwipjs from "bwip-js/browser";
 import { ObjectRegistry, type LeafObject } from "../../registry";
+import { upceData6FromFd } from "../../registry/hriFormatters";
 import type { LabelObject } from "../../types/Group";
 import type { Gs1DatabarProps } from "../../registry/gs1databar";
 import { objectRotation } from "../../registry/rotation";
@@ -179,7 +180,9 @@ export interface EanUpcHriFragment {
  *  number-system digit as the firmware does. Shared by the bars and HRI
  *  paths so both encode the identical symbol. */
 function rawEanUpc(type: EanUpcType, text: string): BwipRawLinear | null {
-  const encoded = type === "upce" && text.length === 6 ? `0${text}` : text;
+  // UPC-E: always feed bwip the canonical 7-digit form (NS 0 + 6 data),
+  // NS-aware so a content that already carries the prefix is not doubled.
+  const encoded = type === "upce" ? `0${upceData6FromFd(text)}` : text;
   try {
     const stack = bwipjs.raw({ bcid: type, text: encoded, includetext: true } as never) as BwipRawLinear[];
     return stack?.[0] ?? null;
