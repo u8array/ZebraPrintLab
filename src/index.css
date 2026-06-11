@@ -14,6 +14,27 @@
   font-display: swap;
 }
 
+/* OCR-B by Matthew Skala (2011, 2021); ISO 1073-2 reference Labelary
+   renders the EAN/UPC HRI in. See src/assets/fonts/OCRB-NOTICE.md. */
+@font-face {
+  font-family: 'OCRB';
+  src: url('./assets/fonts/OCRB.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Bitstream Vera Sans Mono (Bitstream, 2003); matches Labelary's Font A
+   for generic 1D HRI (Code 128 / 39 / 2of5). See
+   src/assets/fonts/VeraMono-NOTICE.md. */
+@font-face {
+  font-family: 'Vera Mono';
+  src: url('./assets/fonts/VeraMono.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-bg:        #141414;
   --color-surface:   #1f1f1f;

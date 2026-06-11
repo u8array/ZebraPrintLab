@@ -1,8 +1,9 @@
 import { createBarcode1DCore, type Barcode1DCoreConfig } from './barcode1d';
 import { formatUpcEanExtensionHri } from './hriFormatters';
 import {
+  eanUpcHriFontFamily,
+  ocrbEanHriFontDots,
   upcSuppAboveGapDots,
-  upcSuppFontDots,
 } from '../components/Canvas/bwipConstants';
 export type { Barcode1DProps as UpcEanExtensionProps } from './barcode1d';
 
@@ -29,8 +30,12 @@ export const upcEanExtensionCoreConfig: Barcode1DCoreConfig = {
   },
   hri: {
     textAbove: true,
+    // Supplement is EAN/UPC family: same Vera-then-OCR-B per-module font
+    // switch and stepped sizing as the main HRI (pixel-validated vs
+    // labelary.com), but a tighter above-bars gap than the main below-gap.
+    fontFamily: eanUpcHriFontFamily,
     aboveGapDots: upcSuppAboveGapDots,
-    fontDots: upcSuppFontDots,
+    fontDots: ocrbEanHriFontDots,
     formatHri: formatUpcEanExtensionHri,
   },
 };

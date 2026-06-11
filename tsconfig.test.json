@@ -8,6 +8,7 @@
   "exclude": [
     "src/test/labelarySync.test.ts",
     "src/test/visualRegression.test.ts",
+    "src/**/*.local.test.ts",
     "tests/**/*.local.ts"
   ]
 }

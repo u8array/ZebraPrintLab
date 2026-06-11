@@ -26,8 +26,21 @@ export function formatUpcaHri(content: string): string {
   return d11 + eanCheckDigit(d11, 3, 1);
 }
 
+/** The 6 UPC-E data digits (number system and check digit excluded). */
+export function upceData6(content: string): string {
+  return content.replace(/\D/g, "").slice(0, 6).padEnd(6, "0");
+}
+
+/** Extract the 6 data digits from a parsed ^B9 ^FD payload. ZPL carries
+ *  the number-system digit (and optionally the check digit), so 7- and
+ *  8-digit payloads drop the leading NS before keeping 6 data digits. */
+export function upceData6FromFd(fd: string): string {
+  const digits = fd.replace(/\D/g, "");
+  return upceData6(digits.length >= 7 ? digits.slice(1) : digits);
+}
+
 export function formatUpceHri(content: string): string {
-  const d6 = content.replace(/\D/g, '').slice(0, 6).padEnd(6, '0');
+  const d6 = upceData6(content);
   return `0${d6}${upceCheckDigit(d6)}`;
 }
 
