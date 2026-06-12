@@ -35,10 +35,10 @@ const isCmdStart = (ch: string | undefined) => ch === "^" || ch === "~";
 // Split a parameter run into numbers, commas, and flag tokens. Field data is
 // never passed here, so a comma is always a real separator.
 function pushParams(run: string, out: ZplToken[]): void {
-  for (const m of run.matchAll(/(\d+(?:\.\d+)?|,|[^,\d]+)/g)) {
+  for (const m of run.matchAll(/(\d*\.\d+|\d+|,|[^,\d]+)/g)) {
     const value = m[0];
     if (value === ",") out.push({ type: "separator", value });
-    else if (/^\d/.test(value)) out.push({ type: "number", value });
+    else if (/^\d*\.?\d+$/.test(value)) out.push({ type: "number", value });
     else out.push({ type: "enum", value });
   }
 }

@@ -18,11 +18,14 @@ export function ZplLine({ line }: { line: string }) {
   const tokens = tokenizeZplLine(line);
   return (
     <span className="block">
-      {tokens.map((tok, i) => (
-        <span key={i} className={TOKEN_CLASS[tok.type]}>
-          {tok.value}
-        </span>
-      ))}
+      {/* A blank line collapses to zero height inside <pre>; keep its row. */}
+      {tokens.length === 0
+        ? "\n"
+        : tokens.map((tok, i) => (
+            <span key={i} className={TOKEN_CLASS[tok.type]}>
+              {tok.value}
+            </span>
+          ))}
     </span>
   );
 }

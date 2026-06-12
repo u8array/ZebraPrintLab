@@ -78,6 +78,15 @@ describe("tokenizeZplLine", () => {
     ]);
   });
 
+  it("classifies a leading-dot decimal as a number", () => {
+    expect(compact("^XY.5,2.0")).toEqual([
+      ["command", "^XY"],
+      ["number", ".5"],
+      ["separator", ","],
+      ["number", "2.0"],
+    ]);
+  });
+
   it("colours ^FX content as a comment", () => {
     expect(compact("^FXsection break")).toEqual([
       ["command", "^FX"],
