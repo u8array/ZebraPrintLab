@@ -381,6 +381,7 @@ const hr = {
       fontHeight: 'Visina (točke)',
       fontWidth: 'Širina (točke)',
       rotation: 'Rotacija',
+      hriAbove: 'Iznad crta',
       rotationN: 'Normalno (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

@@ -18,6 +18,7 @@ import {
   CODE11_QUIET_ZONE_DELTA_MODULES,
   CODE93_QUIET_ZONE_DELTA_MODULES,
   EAN_TEXT_ZONE_DOTS,
+  EAN_UPC_TYPES,
   GS1_DATABAR_PADDING_ROWS,
   GS1_DATABAR_SPEC_HEIGHT_MODULES,
   LOGMARS_TEXT_ZONE_DOTS,
@@ -569,6 +570,16 @@ const TEXT_ZONE_DOTS_BY_TYPE: Partial<Record<LabelObject["type"], number>> = {
   logmars: LOGMARS_TEXT_ZONE_DOTS,
 };
 
+/** HRI sits above the bars when the per-object toggle is set or the symbology
+ *  hardcodes it (logmars/^BS). Single source for the render path and the bbox
+ *  sizing so overlay and bbox never disagree (PR #90). */
+export function resolveHriAbove(obj: LeafObject): boolean {
+  return !!(
+    (obj.props as { printInterpretationAbove?: boolean }).printInterpretationAbove ||
+    ObjectRegistry[obj.type]?.hri?.textAbove
+  );
+}
+
 export function getDisplaySize(
   obj: LeafObject,
   canvas: HTMLCanvasElement,
@@ -599,9 +610,11 @@ export function getDisplaySize(
         : 0
       : TEXT_ZONE_DOTS_BY_TYPE[obj.type] ?? 0;
   const textZonePx = dotsToPx(textZoneDots, scale, dpmm);
-  // Must mirror BarcodeObject's HriBehavior, else above-bars text leaks
-  // out of the bbox (PR #90).
-  const isTextAbove = ObjectRegistry[obj.type]?.hri?.textAbove ?? false;
+  const isTextAbove = resolveHriAbove(obj);
+  // EAN/UPC reserve the zone for the guard tails, which stay below the bars
+  // regardless of HRI position; the above HRI floats over the bars (negative
+  // y in BarcodeObject), so the zone never flips for them.
+  const zoneAbove = isTextAbove && !EAN_UPC_TYPES.has(obj.type);
 
   // Map the upright "below the bars" zone onto the rotated bbox: it travels
   // around the rectangle as the symbol rotates.
@@ -614,7 +627,7 @@ export function getDisplaySize(
   let barW = w;
   let barH = h;
   if (textZonePx > 0) {
-    if (!isTextAbove) {
+    if (!zoneAbove) {
       switch (rotation) {
         case "N": barH = h - textZonePx; break;
         case "R": barLeftPx = textZonePx; barW = w - textZonePx; break;
@@ -650,7 +663,7 @@ export function getDisplaySize(
     w: upright.w,
     h: upright.h,
     barLeftPx: 0,
-    barTopPx: isTextAbove && textZonePx > 0 ? textZonePx : 0,
+    barTopPx: zoneAbove && textZonePx > 0 ? textZonePx : 0,
     barW: upright.w,
     barH: textZonePx > 0 ? upright.h - textZonePx : upright.h,
   };

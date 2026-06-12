@@ -10,7 +10,7 @@ export const code11CoreConfig: Barcode1DCoreConfig = {
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     const check = p.checkDigit ? "Y" : "N";
-    return `^B1${p.rotation},${check},${p.height},${interp},N`;
+    return `^B1${p.rotation},${check},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
   },
   hri: { formatHri: formatCode11Hri, startStopGlyph: 'triangle' },
 };

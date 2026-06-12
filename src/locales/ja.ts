@@ -381,6 +381,7 @@ const ja = {
       fontHeight: '高さ (ドット)',
       fontWidth: '幅 (ドット)',
       rotation: '回転',
+      hriAbove: 'バーの上',
       rotationN: '通常 (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

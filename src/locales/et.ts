@@ -381,6 +381,7 @@ const et = {
       fontHeight: 'Kõrgus (punkti)',
       fontWidth: 'Laius (punkti)',
       rotation: 'Pööramine',
+      hriAbove: 'Triipude kohal',
       rotationN: 'Tavaline (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

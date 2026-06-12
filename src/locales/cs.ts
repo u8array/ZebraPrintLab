@@ -381,6 +381,7 @@ const cs = {
       fontHeight: 'Výška (body)',
       fontWidth: 'Šířka (body)',
       rotation: 'Otočení',
+      hriAbove: 'Nad čarami',
       rotationN: 'Normální (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

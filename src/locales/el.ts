@@ -381,6 +381,7 @@ const el = {
       fontHeight: 'Ύψος (κουκκίδες)',
       fontWidth: 'Πλάτος (κουκκίδες)',
       rotation: 'Περιστροφή',
+      hriAbove: 'Πάνω από τις γραμμές',
       rotationN: 'Κανονικό (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

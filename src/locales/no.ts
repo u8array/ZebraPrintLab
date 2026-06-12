@@ -381,6 +381,7 @@ const no = {
       fontHeight: 'Høyde (punkter)',
       fontWidth: 'Bredde (punkter)',
       rotation: 'Rotasjon',
+      hriAbove: 'Over strekene',
       rotationN: 'Normal (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

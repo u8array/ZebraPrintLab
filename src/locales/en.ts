@@ -402,6 +402,7 @@ const en = {
       fontHeight: 'Height (dots)',
       fontWidth: 'Width (dots)',
       rotation: 'Rotation',
+      hriAbove: 'Above bars',
       rotationN: 'Normal (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

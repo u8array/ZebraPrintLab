@@ -381,6 +381,7 @@ const ar = {
       fontHeight: 'الارتفاع (نقطة)',
       fontWidth: 'العرض (نقطة)',
       rotation: 'التدوير',
+      hriAbove: 'فوق الأشرطة',
       rotationN: 'عادي (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

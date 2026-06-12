@@ -381,6 +381,7 @@ const zhHans = {
       fontHeight: '高度 (点)',
       fontWidth: '宽度 (点)',
       rotation: '旋转',
+      hriAbove: '在条码上方',
       rotationN: '正常 (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

@@ -381,6 +381,7 @@ const bg = {
       fontHeight: 'Височина (точки)',
       fontWidth: 'Ширина (точки)',
       rotation: 'Завъртане',
+      hriAbove: 'Над баркода',
       rotationN: 'Нормално (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

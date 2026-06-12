@@ -381,6 +381,7 @@ const he = {
       fontHeight: 'גובה (נקודות)',
       fontWidth: 'רוחב (נקודות)',
       rotation: 'סיבוב',
+      hriAbove: 'מעל הפסים',
       rotationN: 'רגיל (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

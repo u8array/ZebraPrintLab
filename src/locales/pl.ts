@@ -381,6 +381,7 @@ const pl = {
       fontHeight: 'Wysokość (punkty)',
       fontWidth: 'Szerokość (punkty)',
       rotation: 'Obrót',
+      hriAbove: 'Nad kreskami',
       rotationN: 'Normalny (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

@@ -381,6 +381,7 @@ const tr = {
       fontHeight: 'Yükseklik (nokta)',
       fontWidth: 'Genişlik (nokta)',
       rotation: 'Döndürme',
+      hriAbove: 'Çubukların üstünde',
       rotationN: 'Normal (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

@@ -126,6 +126,7 @@ export interface FieldState {
   // Barcode pending (set by ^B*, consumed by flushField)
   bcHeight: number;
   bcInterp: boolean;
+  bcInterpAbove: boolean;
   bcCheck: boolean;
   bcRotation: ZplRotation;
   bcCode49Mode: Code49Props["mode"];
@@ -270,6 +271,7 @@ export function createParserState(): ParserState {
       textW: 0,
       bcHeight: 100,
       bcInterp: true,
+      bcInterpAbove: false,
       bcCheck: false,
       bcRotation: "N",
       bcCode49Mode: "A",

@@ -24,6 +24,8 @@ export interface Barcode1DPanelConfig {
   contentSpec?: ContentSpec;
   heightLocked?: boolean;
   interpretationLocked?: boolean;
+  /** Symbology supports the HRI above/below toggle (ZPL g-param). */
+  hriAboveConfigurable?: boolean;
 }
 
 export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi<Barcode1DProps> {
@@ -84,6 +86,18 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
                 onChange={(e) => onChange({ printInterpretation: e.target.checked })}
               />
               <span className={labelCls}>{loc.printInterpretation}</span>
+            </label>
+          )}
+
+          {!config.interpretationLocked && config.hriAboveConfigurable && p.printInterpretation && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="accent-accent"
+                checked={p.printInterpretationAbove ?? false}
+                onChange={(e) => onChange({ printInterpretationAbove: e.target.checked })}
+              />
+              <span className={labelCls}>{t.registry.text.hriAbove}</span>
             </label>
           )}
 

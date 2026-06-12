@@ -298,6 +298,49 @@ describe('round-trip — barcode1d types (UPC-A, EAN-8, UPC-E, I2of5, Code93)', 
     expect(props(b2).content).toBe(props(b1).content);
   });
 
+  // The g-param (HRI above) sits right after the interpretation flag.
+  it('round-trips the HRI-above g-param (Y) and leaves below as false', () => {
+    const above = roundtrip('^XA^BY2^FO10,10^BCN,80,Y,Y,N^FD12345678^FS^XZ');
+    expect(props(above.first.objects[0]).printInterpretationAbove).toBe(true);
+    expect(props(above.second.objects[0]).printInterpretationAbove).toBe(true);
+    const below = roundtrip('^XA^BY2^FO10,10^BCN,80,Y,N,N^FD12345678^FS^XZ');
+    expect(props(below.first.objects[0]).printInterpretationAbove).toBe(false);
+  });
+
+  // g is meaningless when f is off; a stale above-flag must not emit `,N,Y`.
+  it('forces the HRI-above g-param to N when interpretation is off', () => {
+    const { first, regenerated } = roundtrip('^XA^BY2^FO10,10^BCN,80,N,Y,N^FD12345678^FS^XZ');
+    expect(props(first.objects[0]).printInterpretation).toBe(false);
+    expect(props(first.objects[0]).printInterpretationAbove).toBe(true);
+    expect(regenerated).not.toContain(',N,Y');
+  });
+
+  // EAN/UPC carry the g-param right after the interpretation flag too (^BE).
+  it('round-trips the HRI-above g-param for EAN/UPC', () => {
+    const { first, second, regenerated } = roundtrip(
+      '^XA^BY2^FO10,10^BEN,100,Y,Y^FD590123412345^FS^XZ',
+    );
+    expect(props(first.objects[0]).printInterpretationAbove).toBe(true);
+    expect(props(second.objects[0]).printInterpretationAbove).toBe(true);
+    expect(regenerated).toContain(',Y,Y');
+  });
+
+  // The remaining 1D family carries g at the same slot; ^BM (msi) parses
+  // via a custom handler with g at p[4], so cover one per command shape.
+  it.each([
+    ['industrial2of5', '^XA^BY2^FO10,10^BIN,80,Y,Y^FD12345678^FS^XZ'],
+    ['standard2of5', '^XA^BY2^FO10,10^BJN,80,Y,Y^FD12345678^FS^XZ'],
+    ['msi', '^XA^BY2^FO10,10^BMN,N,80,Y,Y^FD12345678^FS^XZ'],
+    ['plessey', '^XA^BY2^FO10,10^BPN,N,80,Y,Y^FD12345678^FS^XZ'],
+    ['planet', '^XA^BY2^FO10,10^B5N,80,Y,Y^FD12345678901^FS^XZ'],
+    ['postal', '^XA^BY2^FO10,10^BZN,80,Y,Y^FD12345^FS^XZ'],
+  ])('round-trips the HRI-above g-param for %s', (_type, zpl) => {
+    const { first, second, regenerated } = roundtrip(zpl);
+    expect(props(first.objects[0]).printInterpretationAbove).toBe(true);
+    expect(props(second.objects[0]).printInterpretationAbove).toBe(true);
+    expect(regenerated).toContain(',Y,Y');
+  });
+
   // ^B9 ^FD carries the number-system digit; the parser strips it back to the
   // 6 data digits so re-emit re-adds it without drift (idempotent).
   it('preserves UPC-E as the 6 data digits across round-trips', () => {

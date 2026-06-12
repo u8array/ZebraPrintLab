@@ -381,6 +381,7 @@ const pt = {
       fontHeight: 'Altura (pontos)',
       fontWidth: 'Largura (pontos)',
       rotation: 'Rotação',
+      hriAbove: 'Acima das barras',
       rotationN: 'Normal (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

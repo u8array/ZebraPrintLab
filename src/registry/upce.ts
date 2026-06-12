@@ -10,9 +10,7 @@ export const upceCoreConfig: Barcode1DCoreConfig = {
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     // ^B9 params: rotation, height, interpretation, interpretationAbove.
-    // Stay on Zebra's N default so Labelary renders HRI below the bars,
-    // matching the editor; per-design position becomes a follow-up.
-    return `^B9${p.rotation},${p.height},${interp},N`;
+    return `^B9${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'}`;
   },
   hri: { formatHri: formatUpceHri },
   // ^B9 needs the number-system digit in ^FD (else Labelary lints/re-pads).

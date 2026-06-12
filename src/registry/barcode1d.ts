@@ -10,6 +10,8 @@ export interface Barcode1DProps {
   height: number;
   moduleWidth: number;
   printInterpretation: boolean;
+  /** HRI above the bars (ZPL g-param) instead of below; default false. */
+  printInterpretationAbove?: boolean;
   checkDigit: boolean;
   rotation: ZplRotation;
 }
@@ -50,6 +52,7 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
       height: 100,
       moduleWidth: 2,
       printInterpretation: !config.interpretationLocked,
+      printInterpretationAbove: false,
       checkDigit: false,
       rotation: 'N',
     },
@@ -65,12 +68,17 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
       : commitBarcodeWidthHeightTransform,
 
     toZPL: (obj, ctx) => {
-      // Normalize printInterpretation for symbologies that have no HRI in ZPL
-      // (e.g. ^BR). Protects legacy saved objects that still carry
-      // printInterpretation: true from emitting an out-of-spec flag.
-      const p = config.interpretationLocked
-        ? { ...obj.props, printInterpretation: false }
-        : obj.props;
+      // g (HRI above) is only valid when f (interpretation) is on, and
+      // interpretationLocked symbologies (e.g. ^BR) have no HRI in ZPL at all.
+      // Normalize both so a stale/legacy prop never emits an out-of-spec flag.
+      const printInterpretation =
+        !config.interpretationLocked && obj.props.printInterpretation;
+      const p = {
+        ...obj.props,
+        printInterpretation,
+        printInterpretationAbove:
+          printInterpretation && obj.props.printInterpretationAbove,
+      };
       const byCmd = config.byRatio !== undefined
         ? `^BY${p.moduleWidth},${config.byRatio}`
         : `^BY${p.moduleWidth}`;
