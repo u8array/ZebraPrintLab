@@ -14,6 +14,7 @@ import {
   get1DBwipScale,
   getEanUpcHriFragments,
   renderEanUpcRawCanvas,
+  resolveHriAbove,
   renderTlc39Canvas,
   type BarcodeDisplaySize,
   type EanUpcType,
@@ -26,6 +27,7 @@ import {
   VERA_MONO_HRI_EM_PER_MODULE,
   VERA_MONO_HRI_CAP_TOP_PAD,
   HRI_FONT_A,
+  aboveHriGapDots,
   eanUpcHriFontFamily,
   ocrbEanHriFontDots,
   ocrbEanHriGapDots,
@@ -249,15 +251,20 @@ export function BarcodeObject({
     // Generic 1D subtracts this below the bars so the visible bar-to-cap gap
     // equals textGap and stays module-width-independent (see the constant).
     const glyphTopPad = textFontSize * VERA_MONO_HRI_CAP_TOP_PAD;
+    // Konva centers the line in its em box, so a digit baseline sits ~glyphTopPad
+    // above the box bottom. Above-bars centered text adds it back so the visible
+    // glyph bottom (not the box) lands aboveGapPx over the bars; ^BS bottom-aligns
+    // its own box and needs no correction.
+    const aboveBottomPad = hri?.fontDots ? 0 : glyphTopPad;
     const checkDigit = (obj.props as { checkDigit?: boolean }).checkDigit;
     const displayText = hri?.formatHri?.(rawContent, checkDigit) ?? rawContent;
-    const isTextAbove = hri?.textAbove ?? false;
-    // 3px floor matches textGap so HRI stays legible at very small
-    // scales regardless of which dots value the spec calls for.
-    const gapDots = resolveMwValue(hri?.aboveGapDots, moduleWidth);
-    const aboveGapPx = gapDots !== undefined
-      ? Math.max(dotsToPx(gapDots, scale, dpmm), 3)
-      : textGap;
+    const isTextAbove = resolveHriAbove(obj);
+    // Above-gap grows with module width (Labelary); per-symbology override
+    // wins (logmars/^BS), else the shared above-gap table. 3px floor keeps
+    // it legible at tiny scales.
+    const gapDots =
+      resolveMwValue(hri?.aboveGapDots, moduleWidth) ?? aboveHriGapDots(moduleWidth);
+    const aboveGapPx = Math.max(dotsToPx(gapDots, scale, dpmm), 3);
 
     // ── 1D barcode with HRI overlay (all 4 rotations, both EAN/UPC and
     //    Other 1D). Text overlay always lives in upright bbox-relative
@@ -289,7 +296,10 @@ export function BarcodeObject({
       // the parent Group below.
       let overlayContent: React.ReactNode;
       let eanOverlay: ReturnType<typeof buildEanUpcDigitOverlay> | null = null;
-      if (isEanUpc) {
+      // EAN/UPC above renders a single centered HRI line (Vera, Labelary-
+      // validated at all mw), not the split sys/trail fragment layout used
+      // below; route it through the generic centered-text path.
+      if (isEanUpc && !isTextAbove) {
         // Display px per encoded module = bar width / module count, where
         // the bwip canvas is moduleCount * renderScale px wide.
         const renderScale = get1DBwipScale(moduleWidth, scale, dpmm);
@@ -323,7 +333,7 @@ export function BarcodeObject({
         const fontFamily =
           resolveMwValue(hri?.fontFamily, moduleWidth) ?? HRI_FONT_A;
         const textY = isTextAbove
-          ? ub.barTopPx - textFontSize - aboveGapPx
+          ? ub.barTopPx - textFontSize - aboveGapPx + aboveBottomPad
           : ub.barTopPx + ub.barH + textGap - glyphTopPad;
         // ^BS bottom-aligns the glyph in a fontSize-tall box so the baseline
         // sits a gap above the bars, matching the EAN overlay.
@@ -363,7 +373,7 @@ export function BarcodeObject({
       const useUprightTransform = isUpright && !isEanUpc;
       const textLocalY = (sy: number) =>
         isTextAbove
-          ? ub.barTopPx - (textFontSize + aboveGapPx) / sy
+          ? ub.barTopPx - (textFontSize + aboveGapPx - aboveBottomPad) / sy
           : ub.barTopPx + ub.barH + (textGap - glyphTopPad) / sy;
       const handleTransform = () => {
         const grp = groupRef.current;

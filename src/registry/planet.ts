@@ -8,7 +8,7 @@ export const planetCoreConfig: Barcode1DCoreConfig = {
   group: 'code-postal',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
-    return `^B5${p.rotation},${p.height},${interp},N`;
+    return `^B5${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
   },
 };
 

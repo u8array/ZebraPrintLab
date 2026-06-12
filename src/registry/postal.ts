@@ -8,8 +8,8 @@ export const postalCoreConfig: Barcode1DCoreConfig = {
   group: 'code-postal',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
-    // ^BZ{orientation},{height},{interp},{startStop}
-    return `^BZ${p.rotation},${p.height},${interp},N`;
+    // ^BZ{orientation},{height},{interp},{interpAbove}
+    return `^BZ${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
   },
 };
 

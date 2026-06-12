@@ -381,6 +381,7 @@ const ko = {
       fontHeight: '높이 (점)',
       fontWidth: '너비 (점)',
       rotation: '회전',
+      hriAbove: '바 위',
       rotationN: '기본 (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

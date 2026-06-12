@@ -32,6 +32,13 @@ export function eanUpcHriFontFamily(mw: number): string {
 // LOGMARS HRI above bars; ~10 dots gap, wider than the standard 1D textGap.
 export const LOGMARS_TEXT_ABOVE_GAP_DOTS = 10;
 
+// HRI-above bar-to-text gap per ^BY module width (Labelary ~13 dots at BY2);
+// the above gap grows with module width, unlike the tight below-gap.
+const ABOVE_HRI_GAP_DOTS = [10, 12, 14, 16, 18, 20, 22, 24, 26, 28];
+export function aboveHriGapDots(mw: number): number {
+  return ABOVE_HRI_GAP_DOTS[clampMw10(mw) - 1] ?? 12;
+}
+
 // ^BS supplement bbox text-zone: OCR-B ink cap-height + gap per ^BY module.
 // The render bottom-aligns the taller em box, so this ink height bounds it.
 const UPC_SUPP_SIZE_STEPS: { maxMw: number; font: number; gap: number }[] = [

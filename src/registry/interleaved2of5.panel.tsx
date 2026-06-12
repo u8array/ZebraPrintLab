@@ -4,4 +4,5 @@ export const interleaved2of5Panel = createBarcode1DPanel({
   locale: (t) => t.registry.interleaved2of5,
   hasCheckDigit: true,
   contentSpec: { charset: '0-9' },
+  hriAboveConfigurable: true,
 });

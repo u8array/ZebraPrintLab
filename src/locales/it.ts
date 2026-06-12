@@ -381,6 +381,7 @@ const it = {
       fontHeight: 'Altezza (punti)',
       fontWidth: 'Larghezza (punti)',
       rotation: 'Rotazione',
+      hriAbove: 'Sopra le barre',
       rotationN: 'Normale (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

@@ -381,6 +381,7 @@ const da = {
       fontHeight: 'Højde (punkter)',
       fontWidth: 'Bredde (punkter)',
       rotation: 'Rotation',
+      hriAbove: 'Over stregerne',
       rotationN: 'Normal (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

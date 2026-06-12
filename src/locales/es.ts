@@ -381,6 +381,7 @@ const es = {
       fontHeight: 'Altura (puntos)',
       fontWidth: 'Ancho (puntos)',
       rotation: 'Rotación',
+      hriAbove: 'Encima de las barras',
       rotationN: 'Normal (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

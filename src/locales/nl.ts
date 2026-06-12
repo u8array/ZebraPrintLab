@@ -381,6 +381,7 @@ const nl = {
       fontHeight: 'Hoogte (punten)',
       fontWidth: 'Breedte (punten)',
       rotation: 'Rotatie',
+      hriAbove: 'Boven de balken',
       rotationN: 'Normaal (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

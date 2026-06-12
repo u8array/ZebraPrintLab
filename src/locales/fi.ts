@@ -381,6 +381,7 @@ const fi = {
       fontHeight: 'Korkeus (pistettä)',
       fontWidth: 'Leveys (pistettä)',
       rotation: 'Kierto',
+      hriAbove: 'Viivojen yllä',
       rotationN: 'Normaali (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

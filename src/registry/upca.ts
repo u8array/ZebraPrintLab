@@ -13,7 +13,7 @@ export const upcaCoreConfig: Barcode1DCoreConfig = {
     // checkDigit=Y matches Zebra's default and the retail/UPC-A print
     // convention; the 12th digit floats right of the bars, analogous
     // to the system digit on the left.
-    return `^BU${p.rotation},${p.height},${interp},N,Y`;
+    return `^BU${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'},Y`;
   },
   hri: { formatHri: formatUpcaHri },
 };

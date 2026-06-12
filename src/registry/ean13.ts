@@ -9,7 +9,7 @@ export const ean13CoreConfig: Barcode1DCoreConfig = {
   group: 'code-1d',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
-    return `^BE${p.rotation},${p.height},${interp},N`;
+    return `^BE${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'}`;
   },
   hri: { formatHri: formatEan13Hri },
 };

@@ -9,7 +9,7 @@ export const code93CoreConfig: Barcode1DCoreConfig = {
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
-    return `^BA${p.rotation},${p.height},${interp},N,${check}`;
+    return `^BA${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'},${check}`;
   },
   // Labelary draws Code 93's start/stop as a square; data shows without
   // the (non-displayed) check chars, so no formatHri.

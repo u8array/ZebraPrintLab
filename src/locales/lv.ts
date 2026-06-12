@@ -381,6 +381,7 @@ const lv = {
       fontHeight: 'Augstums (punkti)',
       fontWidth: 'Platums (punkti)',
       rotation: 'Rotācija',
+      hriAbove: 'Virs svītrām',
       rotationN: 'Normāls (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

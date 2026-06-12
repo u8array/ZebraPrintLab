@@ -9,7 +9,7 @@ export const code39CoreConfig: Barcode1DCoreConfig = {
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
-    return `^B3${p.rotation},${check},${p.height},${interp},N`;
+    return `^B3${p.rotation},${check},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'}`;
   },
   // Start/stop is the asterisk; rendered as flanking glyphs (lowered to sit
   // centered like Labelary), so the data text carries no `*`.

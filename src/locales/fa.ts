@@ -381,6 +381,7 @@ const fa = {
       fontHeight: 'ارتفاع (نقطه)',
       fontWidth: 'عرض (نقطه)',
       rotation: 'چرخش',
+      hriAbove: 'بالای میله‌ها',
       rotationN: 'عادی (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

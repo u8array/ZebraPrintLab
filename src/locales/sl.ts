@@ -381,6 +381,7 @@ const sl = {
       fontHeight: 'Višina (točke)',
       fontWidth: 'Širina (točke)',
       rotation: 'Rotacija',
+      hriAbove: 'Nad črtami',
       rotationN: 'Normalno (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

@@ -9,7 +9,7 @@ export const codabarCoreConfig: Barcode1DCoreConfig = {
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     const check = p.checkDigit ? "Y" : "N";
-    return `^BK${p.rotation},${check},${p.height},${interp},N`;
+    return `^BK${p.rotation},${check},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
   },
 };
 

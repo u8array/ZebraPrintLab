@@ -9,7 +9,7 @@ export const interleaved2of5CoreConfig: Barcode1DCoreConfig = {
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
-    return `^B2${p.rotation},${p.height},${interp},N,${check}`;
+    return `^B2${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'},${check}`;
   },
 };
 

@@ -381,6 +381,7 @@ const hu = {
       fontHeight: 'Magasság (pont)',
       fontWidth: 'Szélesség (pont)',
       rotation: 'Forgatás',
+      hriAbove: 'Vonalak felett',
       rotationN: 'Normál (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

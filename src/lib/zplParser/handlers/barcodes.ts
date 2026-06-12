@@ -26,6 +26,8 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
       field.bcRotation = readRotation(p[0]);
       field.bcHeight = dots(p[hIdx], defaults.byHeight || 100);
       field.bcInterp = (p[iIdx] ?? iDefault) === "Y";
+      // The g-param (interpretation line above) always sits right after f.
+      field.bcInterpAbove = (p[iIdx + 1] ?? "N") === "Y";
       field.bcCheck = cIdx >= 0 ? (p[cIdx] ?? "N") === "Y" : false;
     };
 
@@ -82,6 +84,7 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
       field.bcCheck = (p[1] ?? "N") !== "N";
       field.bcHeight = dots(p[2], defaults.byHeight || 100);
       field.bcInterp = (p[3] ?? "Y") === "Y";
+      field.bcInterpAbove = (p[4] ?? "N") === "Y";
     },
 
     // GS1 Databar: different param layout, also updates defaults.byModuleWidth.

@@ -381,6 +381,7 @@ const zhHant = {
       fontHeight: '高度 (點)',
       fontWidth: '寬度 (點)',
       rotation: '旋轉',
+      hriAbove: '在條碼上方',
       rotationN: '正常 (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

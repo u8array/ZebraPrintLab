@@ -381,6 +381,7 @@ const sk = {
       fontHeight: 'Výška (body)',
       fontWidth: 'Šírka (body)',
       rotation: 'Otočenie',
+      hriAbove: 'Nad čiarami',
       rotationN: 'Normálne (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

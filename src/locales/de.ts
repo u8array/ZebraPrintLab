@@ -402,6 +402,7 @@ const de = {
       fontHeight: 'Höhe (Punkte)',
       fontWidth: 'Breite (Punkte)',
       rotation: 'Drehung',
+      hriAbove: 'Über Balken',
       rotationN: 'Normal (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

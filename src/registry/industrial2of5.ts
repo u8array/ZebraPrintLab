@@ -8,7 +8,7 @@ export const industrial2of5CoreConfig: Barcode1DCoreConfig = {
   group: 'code-1d',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
-    return `^BI${p.rotation},${p.height},${interp},N`;
+    return `^BI${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
   },
 };
 

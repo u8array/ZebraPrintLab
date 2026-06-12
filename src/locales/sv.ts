@@ -381,6 +381,7 @@ const sv = {
       fontHeight: 'Höjd (punkter)',
       fontWidth: 'Bredd (punkter)',
       rotation: 'Rotation',
+      hriAbove: 'Ovanför streck',
       rotationN: 'Normal (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',

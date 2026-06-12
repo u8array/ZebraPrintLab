@@ -381,6 +381,7 @@ const lt = {
       fontHeight: 'Aukštis (taškai)',
       fontWidth: 'Plotis (taškai)',
       rotation: 'Pasukimas',
+      hriAbove: 'Virš brūkšnių',
       rotationN: 'Normalus (N)',
       rotationR: '90° (R)',
       rotationI: '180° (I)',
