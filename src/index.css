@@ -54,6 +54,10 @@
      from accent so the user can scan severity at a glance. */
   --color-warning:   #f59e0b;
   --color-error:     #ef4444;
+  /* ZPL syntax highlight: field-data payload (^FD), the actual printed
+     content. Green reads as "literal/string" and stays clear of the
+     amber commands and cyan numeric params. */
+  --color-string:    #6a9955;
 
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
@@ -76,6 +80,7 @@
   --color-info:      #0e7490;
   --color-warning:   #b45309;
   --color-error:     #b91c1c;
+  --color-string:    #4a7a35;
 }
 
 *, *::before, *::after {
