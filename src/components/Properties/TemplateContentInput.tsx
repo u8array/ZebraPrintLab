@@ -189,16 +189,23 @@ export function TemplateContentInput({
   // scroll (sidebar scrolls) and resize so it tracks the trigger.
   useLayoutEffect(() => {
     if (!open) return;
+    let frame = 0;
     const place = () => {
       const r = rootRef.current?.getBoundingClientRect();
       if (r) setMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
     };
+    // Coalesce scroll/resize bursts into one measure per frame.
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(place);
+    };
     place();
-    window.addEventListener("scroll", place, true);
-    window.addEventListener("resize", place);
+    window.addEventListener("scroll", schedule, true);
+    window.addEventListener("resize", schedule);
     return () => {
-      window.removeEventListener("scroll", place, true);
-      window.removeEventListener("resize", place);
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule, true);
+      window.removeEventListener("resize", schedule);
     };
   }, [open]);
 
@@ -400,8 +407,9 @@ export function TemplateContentInput({
             top: menuPos.top,
             right: menuPos.right,
             // Cap to the space below the trigger so a tall menu scrolls
-            // internally instead of overflowing the viewport (it is fixed).
-            maxHeight: Math.min(448, window.innerHeight - menuPos.top - 8),
+            // internally instead of overflowing the viewport (it is fixed);
+            // keep a usable floor when the field sits near the bottom.
+            maxHeight: Math.max(120, Math.min(448, window.innerHeight - menuPos.top - 8)),
           }}
           role="menu"
         >
