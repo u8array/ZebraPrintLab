@@ -35,6 +35,36 @@
   font-display: swap;
 }
 
+/* Vera Mono derivative with a Zebra-matched dash; ZPL device fonts A/C/D/F/G.
+   See src/assets/fonts/PrintLabMono-NOTICE.md. */
+@font-face {
+  font-family: 'PrintLab Mono';
+  src: url('./assets/fonts/PrintLabMono.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Bold weight of Bitstream Vera Sans Mono; ZPL device font B.
+   Own family so callers select it without a font-weight toggle. */
+@font-face {
+  font-family: 'Vera Mono Bold';
+  src: url('./assets/fonts/VeraMono-Bold.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* OCR-A by Matthew Skala (from R. B. Wales' METAFONT); ZPL device font H.
+   See src/assets/fonts/OCRA-NOTICE.md. */
+@font-face {
+  font-family: 'OCRA';
+  src: url('./assets/fonts/OCRA.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-bg:        #141414;
   --color-surface:   #1f1f1f;

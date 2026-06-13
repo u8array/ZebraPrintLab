@@ -466,6 +466,21 @@ describe('round-trip — text rotation × positionType preservation', () => {
     }
   }
 
+  // Device fonts (A-H) substitute a different face on the canvas, which would
+  // change inkWidth and thus the FO/I and FO/B rotation anchor shift. The
+  // emit/parse path must stay PrintLab-based (no canvas substitution), so a
+  // rotated ^AB / ^AH field round-trips byte-exact regardless of the substitute.
+  for (const font of ['B', 'H'] as const) {
+    for (const rot of ['I', 'B'] as const) {
+      it(`device font ^A${font}${rot} round-trips byte-exact (no canvas-metric leak)`, () => {
+        const inputZpl = `^XA^FO123,456^A${font}${rot},30,0^FDHELLO^FS^XZ`;
+        const { regenerated } = roundtrip(inputZpl);
+        expect(regenerated).toContain('^FO123,456');
+        expect(regenerated).toContain(`^A${font}${rot},30,0`);
+      });
+    }
+  }
+
   it('preserves coordinates through two parse-generate cycles', () => {
     const inputZpl =
       '^XA^FT100,200^A0R,30,0^FDA^FS^FO50,80^A0I,40,0^FDB^FS^XZ';

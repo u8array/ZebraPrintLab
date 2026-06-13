@@ -81,6 +81,27 @@ export function isBuiltinFontId(alias: string): boolean {
   return alias.length === 1 && ZPL_BUILTIN_FONT_LETTERS.includes(alias);
 }
 
+/** Canvas preview face per built-in device font, matching Labelary's
+ *  appearance: A/C/D/F/G are monospace (Vera Mono), B is its bold weight,
+ *  E is OCR-B, H is OCR-A. Font 0 is omitted so it keeps the default
+ *  PrintLab (CG Triumvirate) face with its calibrated per-glyph table.
+ *  Custom ~DY uploads override this upstream. */
+const MONO = "'PrintLab Mono', 'Vera Mono', monospace";
+const BUILTIN_FONT_FAMILY: Record<string, string> = {
+  A: MONO,
+  B: "'Vera Mono Bold', 'Vera Mono', monospace",
+  C: MONO,
+  D: MONO,
+  E: "'OCRB', 'Vera Mono', monospace",
+  F: MONO,
+  G: MONO,
+  H: "'OCRA', 'OCRB', monospace",
+};
+
+export function builtinFontFamily(fontId: string | undefined): string | undefined {
+  return fontId ? BUILTIN_FONT_FAMILY[fontId] : undefined;
+}
+
 /** Canvas-only preview TTF name; emit/parse ignore this resolver. */
 export function resolvePreviewFontName(
   label: Pick<LabelConfig, "customFonts">,

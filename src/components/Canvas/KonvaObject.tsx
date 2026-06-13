@@ -93,15 +93,17 @@ const FPR_ANCHOR_LEFT_PADDING_RATIO = 0.8;
 interface BaseTextProps {
   fontSize: number;
   fontFamily: string;
-  fontStyle: "bold";
+  fontStyle: "bold" | "normal";
   scaleX: number;
   rotation: number;
   fill: string;
   stroke: string | undefined;
   strokeWidth: number;
   letterSpacing?: number;
-  /** Horizontal shift per glyph (used by ^FPR). */
+  /** Horizontal shift (^FPR, and device-font left-bearing trim). */
   offsetXPx?: number;
+  /** Vertical shift (device-font cap-top trim vs Labelary). */
+  offsetYPx?: number;
 }
 
 /** One `<Text>` per line at Zebra alignment offset when ^FB is active.
@@ -160,8 +162,9 @@ function TextFieldContent({
   placeholderColor: string;
 }) {
   const shift = base.offsetXPx ?? 0;
+  const shiftY = base.offsetYPx ?? 0;
   if (obj.type !== "text") {
-    return <Text key={fontVersion} x={shift} y={0} text={content} {...base} />;
+    return <Text key={fontVersion} x={shift} y={shiftY} text={content} {...base} />;
   }
   const { blockWidth, blockLines, blockJustify, blockLineSpacing, blockHangingIndent, fontHeight, fontWidth } = obj.props;
   if (!blockWidth) {
@@ -180,7 +183,7 @@ function TextFieldContent({
         />
       );
     }
-    return <Text key={fontVersion} x={shift} y={0} text={content} {...base} />;
+    return <Text key={fontVersion} x={shift} y={shiftY} text={content} {...base} />;
   }
   const tooNarrow = isBlockTooNarrow(blockWidth, fontHeight, fontWidth);
   const emptyContent = content.trim().length === 0;
@@ -230,8 +233,8 @@ function TextFieldContent({
             return positions.map((p, wi) => (
               <Text
                 key={`${fontVersion}-${i}-${wi}`}
-                x={dotsToPx(p.x, scale, dpmm)}
-                y={dotsToPx(p.y, scale, dpmm)}
+                x={dotsToPx(p.x, scale, dpmm) + shift}
+                y={dotsToPx(p.y, scale, dpmm) + shiftY}
                 text={p.text}
                 {...base}
               />
@@ -243,8 +246,8 @@ function TextFieldContent({
         return [
           <Text
             key={`${fontVersion}-${i}`}
-            x={dotsToPx(startDots.x, scale, dpmm)}
-            y={dotsToPx(startDots.y, scale, dpmm)}
+            x={dotsToPx(startDots.x, scale, dpmm) + shift}
+            y={dotsToPx(startDots.y, scale, dpmm) + shiftY}
             text={line}
             {...base}
           />,
@@ -413,8 +416,12 @@ function KonvaObjectInner({
       ? {
           ...baseMetrics,
           fontSizePx: Math.max(
-            dotsToPx(obj.props.fontHeight, scale, dpmm) /
-              ZPL_FONT_HEIGHT_TO_CSS_RATIO,
+            // Bitmap device fonts (A-H) carry an explicit snapped size; the
+            // scalable path derives it from the ZPL height.
+            baseMetrics.fontSizeDots != null
+              ? dotsToPx(baseMetrics.fontSizeDots, scale, dpmm)
+              : dotsToPx(obj.props.fontHeight, scale, dpmm) /
+                  ZPL_FONT_HEIGHT_TO_CSS_RATIO,
             6,
           ),
         }
@@ -447,6 +454,14 @@ function KonvaObjectInner({
   if ((obj.type === "text" || obj.type === "serial") && textMetrics) {
     const p = obj.props;
     const { content, fontFamily, fontScaleX, fontSizePx } = textMetrics;
+    // Bitmap device fonts (A-H) carry their own weight via the substitute
+    // family (Vera Mono / Bold, OCR); forcing bold there faux-bolds them
+    // thicker than Labelary. Font 0 / custom uploads stay bold.
+    const fontStyle = textMetrics.fontSizeDots != null ? "normal" : "bold";
+    // Device-font position trims (cap-top / left-bearing) vs Labelary.
+    const deviceXOffPx = dotsToPx(textMetrics.xOffsetDots ?? 0, scale, dpmm);
+    const deviceYOffPx = dotsToPx(textMetrics.yOffsetDots ?? 0, scale, dpmm);
+    const deviceLetterSpacingPx = dotsToPx(textMetrics.letterSpacingDots ?? 0, scale, dpmm);
     const zplRotationDeg: Record<typeof p.rotation, number> = {
       N: 0,
       R: 90,
@@ -498,12 +513,12 @@ function KonvaObjectInner({
             text={fpContent}
             fontSize={fontSizePx}
             fontFamily={fontFamily}
-            fontStyle="bold"
+            fontStyle={fontStyle}
             scaleX={fontScaleX}
             fill="#ffffff"
-            letterSpacing={fpLetterSpacingPx}
-            x={fpShiftXPx}
-            y={0}
+            letterSpacing={fpLetterSpacingPx + deviceLetterSpacingPx}
+            x={fpShiftXPx + deviceXOffPx}
+            y={deviceYOffPx}
           />
         </Group>
       );
@@ -542,14 +557,15 @@ function KonvaObjectInner({
           base={{
             fontSize: fontSizePx,
             fontFamily,
-            fontStyle: "bold",
+            fontStyle,
             scaleX: fontScaleX,
             rotation: zplRotationDeg[p.rotation],
             fill: "#000000",
             stroke: isSelected ? colors.selection : undefined,
             strokeWidth: isSelected ? 1 : 0,
-            letterSpacing: fpLetterSpacingPx,
-            offsetXPx: fpShiftXPx,
+            letterSpacing: fpLetterSpacingPx + deviceLetterSpacingPx,
+            offsetXPx: fpShiftXPx + deviceXOffPx,
+            offsetYPx: deviceYOffPx,
           }}
           scale={scale}
           dpmm={dpmm}

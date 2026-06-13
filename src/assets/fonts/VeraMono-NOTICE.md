@@ -1,7 +1,8 @@
 # Bitstream Vera Sans Mono
 
 Copyright (c) 2003 by Bitstream, Inc. "Bitstream Vera" is a trademark of
-Bitstream, Inc.
+Bitstream, Inc. Bundled weights: `VeraMono.ttf` (regular) and
+`VeraMono-Bold.ttf` (bold); both ship unmodified under the license below.
 
 Source (DejaVu fork; the original gnome.org/fonts distribution is gone):
 https://github.com/dejavu-fonts/dejavu-fonts

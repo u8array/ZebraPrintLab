@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  builtinFontFamily,
   getAvailableFontIds,
   isBuiltinFontId,
   nextFreeAlias,
@@ -8,6 +9,24 @@ import {
   resolvePreviewFontName,
   upsertCustomFontMapping,
 } from "./customFonts";
+
+describe("builtinFontFamily", () => {
+  it("maps device fonts to their Labelary-matching faces", () => {
+    expect(builtinFontFamily("A")).toContain("Vera Mono");
+    expect(builtinFontFamily("B")).toContain("Vera Mono Bold");
+    expect(builtinFontFamily("E")).toContain("OCRB");
+    expect(builtinFontFamily("H")).toContain("OCRA");
+  });
+
+  it("leaves Font 0 on the default face (no override)", () => {
+    expect(builtinFontFamily("0")).toBeUndefined();
+  });
+
+  it("returns undefined for non-built-in or empty ids", () => {
+    expect(builtinFontFamily("Z")).toBeUndefined();
+    expect(builtinFontFamily(undefined)).toBeUndefined();
+  });
+});
 
 describe("normalizeAlias", () => {
   it("uppercases letters", () => {
