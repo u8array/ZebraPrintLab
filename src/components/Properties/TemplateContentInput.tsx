@@ -5,7 +5,7 @@ import {
   useState,
   useLayoutEffect,
 } from "react";
-import { flushSync } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { CLOCK_TOKEN_LABELS, type ClockChannel } from "../../lib/fcTemplate";
@@ -107,8 +107,14 @@ export function TemplateContentInput({
   const [channel, setChannel] = useState<ClockChannel>(1);
   const editorRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const composingRef = useRef(false);
   const [open, setOpen] = useState(false);
+  // Menu is portaled to body so the sidebar's overflow clip and stacking
+  // context can't hide it; track the field rect to anchor it (fixed coords).
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(
+    null,
+  );
 
   const variableNames = useMemo(
     () => new Set(variables.map((v: Variable) => v.name)),
@@ -159,10 +165,14 @@ export function TemplateContentInput({
   }, [editorFocusRequest, objectId]);
 
   // Click-outside + Esc close. Mounted only while the {x} menu is open.
+  // The menu lives in a body portal, so it counts as "inside" too.
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (rootRef.current?.contains(target) || menuRef.current?.contains(target))
+        return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -172,6 +182,23 @@ export function TemplateContentInput({
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // Anchor the portaled menu to the field's bottom-right; reposition on
+  // scroll (sidebar scrolls) and resize so it tracks the trigger.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const r = rootRef.current?.getBoundingClientRect();
+      if (r) setMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    };
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
     };
   }, [open]);
 
@@ -363,11 +390,19 @@ export function TemplateContentInput({
       >
         {"{x}"}
       </button>
-      {open && (
+      {open && menuPos && createPortal(
         <div
-          className={`absolute right-0 top-full mt-1 z-10 max-h-[28rem] overflow-y-auto rounded border border-border bg-surface shadow-lg ${
+          ref={menuRef}
+          className={`fixed z-50 overflow-y-auto rounded border border-border bg-surface shadow-lg ${
             channel === 1 ? "min-w-[10rem]" : "min-w-[18rem]"
           }`}
+          style={{
+            top: menuPos.top,
+            right: menuPos.right,
+            // Cap to the space below the trigger so a tall menu scrolls
+            // internally instead of overflowing the viewport (it is fixed).
+            maxHeight: Math.min(448, window.innerHeight - menuPos.top - 8),
+          }}
           role="menu"
         >
           {variables.length > 0 && (
@@ -417,7 +452,8 @@ export function TemplateContentInput({
               t={t}
             />
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
