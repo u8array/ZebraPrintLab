@@ -1,13 +1,16 @@
 import { useRef, useEffect } from "react";
+import { flushSync } from "react-dom";
 import type Konva from "konva";
-import { pxToDots } from "../../../lib/coordinates";
-import { getCurrentObjects } from "../../../store/labelStore";
+import { dotsToPx, pxToDots } from "../../../lib/coordinates";
+import { blockBoundsDots, blockReflowGeometry } from "../../../lib/zebraTextLayout";
+import { getCurrentObjects, useLabelStore } from "../../../store/labelStore";
 import {
   BARCODE_1D_TYPES,
   STACKED_2D_TYPES,
   getEntry,
 } from "../../../registry";
 import type { LeafObject } from "../../../registry";
+import { resolveBlockResizeMode } from "../../../registry/transformHelpers";
 import type { ObjectChanges } from "../../../store/labelStore";
 import { findObjectById, isGroup } from "../../../types/Group";
 import {
@@ -193,6 +196,7 @@ export interface TransformerState {
   resizeEnabled: boolean;
   enabledAnchors: string[] | undefined;
   onTransformStart: () => void;
+  onTransform: () => void;
   boundBoxFunc: (oldBox: BoundingBox, newBox: BoundingBox) => BoundingBox;
   onTransformEnd: () => void;
 }
@@ -237,6 +241,55 @@ export function useKonvaTransformer({
   // so the opposite corner stays put.
   const activeEdgesRef = useRef<ActiveEdgeFlags | null>(null);
 
+  // Active only while a ^FB block is being live-reflowed (frame mode): the
+  // block re-wraps as blockWidth/blockLines change each tick instead of the
+  // group scaling. Captures the fixed (anchored) edges so the opposite side
+  // stays put. Null for every other transform.
+  const liveReflowRef = useRef<{
+    edges: ActiveEdgeFlags | null;
+    rotation: "N" | "R" | "I" | "B";
+    lineSpacing: number;
+    fontHeight: number;
+    leftX: number;
+    topY: number;
+    rightX: number;
+    bottomY: number;
+    // Pre-drag model snapshot + a dirty flag, so the per-tick (untracked) store
+    // writes collapse into a single undo entry on release.
+    snapshot: { x: number; y: number; blockWidth: number; blockLines: number };
+    changed: boolean;
+  } | null>(null);
+
+  // Block resize mode resolved once at drag start (panel mode + Alt). Reused at
+  // commit so toggling Alt mid-drag can't make start and end disagree.
+  const blockResizeModeRef = useRef<"frame" | "glyph">("frame");
+
+  // Alt held at drag release flips the block resize mode for that one drag.
+  const altKeyRef = useRef(false);
+  useEffect(() => {
+    const sync = (e: KeyboardEvent) => { altKeyRef.current = e.altKey; };
+    // Reset on blur: a keyup during Alt+Tab never fires, so the ref would stick.
+    const clear = () => { altKeyRef.current = false; };
+    window.addEventListener("keydown", sync);
+    window.addEventListener("keyup", sync);
+    window.addEventListener("blur", clear);
+    return () => {
+      window.removeEventListener("keydown", sync);
+      window.removeEventListener("keyup", sync);
+      window.removeEventListener("blur", clear);
+    };
+  }, []);
+
+  // A live reflow pauses undo recording on drag start and resumes in
+  // onTransformEnd. If we unmount mid-drag, transformend never fires, so resume
+  // here too or undo would stay silently disabled app-wide. resume() is an
+  // idempotent set, so the no-active-drag case is a harmless no-op.
+  useEffect(() => {
+    return () => {
+      if (liveReflowRef.current) useLabelStore.temporal.getState().resume();
+    };
+  }, []);
+
   // Stable key of selected object types, avoids re-running on every drag-move
   // position update (which changes objects but not the types of selected objects).
   const selectedTypesKey = selectedIds
@@ -255,8 +308,16 @@ export function useKonvaTransformer({
     })
     .join("|");
 
+  // Toggling the block drag mode swaps the measured frame rect on/off, so the
+  // transformer must re-measure even though no object prop changed.
+  const blockDragMode = useLabelStore((s) => s.blockDragMode);
+
   useEffect(() => {
     if (!transformerRef.current || !stageRef.current) return;
+    // During a live reflow the per-tick store update re-runs this effect;
+    // re-attaching (.nodes()) mid-drag aborts the gesture, so skip it. The
+    // reflow handler keeps the transformer in sync via forceUpdate().
+    if (liveReflowRef.current) return;
     if (selectedIds.length === 0) {
       transformerRef.current.nodes([]);
       return;
@@ -291,6 +352,7 @@ export function useKonvaTransformer({
     selectedIds,
     selectedTypesKey,
     selectedSignature,
+    blockDragMode,
     stageRef,
     transformerRef,
     previewLocks,
@@ -342,6 +404,8 @@ export function useKonvaTransformer({
     othersSnapshotRef.current = [];
     uniformStartRectRef.current = null;
     activeEdgesRef.current = null;
+    liveReflowRef.current = null;
+    blockResizeModeRef.current = "frame";
     setGuides([]);
   }
 
@@ -435,6 +499,111 @@ export function useKonvaTransformer({
       objects,
       singleId,
     );
+    // Live-reflow setup: a frame-mode ^FB block (any rotation) re-wraps during
+    // the drag instead of scaling. Capture the fixed edges so the anchored
+    // side stays put while blockWidth/blockLines change.
+    liveReflowRef.current = null;
+    if (obj && !isGroup(obj) && obj.type === "text") {
+      const bp = obj.props as {
+        blockWidth?: number;
+        blockLines?: number;
+        blockLineSpacing?: number;
+        fontHeight: number;
+        rotation: string;
+      };
+      // Alt is sampled once at drag start to pick the mode for the whole
+      // gesture; toggling it mid-drag intentionally does not switch frame/glyph.
+      blockResizeModeRef.current = resolveBlockResizeMode(
+        useLabelStore.getState().blockDragMode,
+        altKeyRef.current,
+      );
+      const frameMode = blockResizeModeRef.current === "frame";
+      if (bp.blockWidth && bp.blockWidth > 0 && frameMode) {
+        const rot = (["N", "R", "I", "B"].includes(bp.rotation)
+          ? bp.rotation
+          : "N") as "N" | "R" | "I" | "B";
+        const b0 = blockBoundsDots({
+          blockWidthDots: bp.blockWidth,
+          blockLines: bp.blockLines ?? 1,
+          blockLineSpacing: bp.blockLineSpacing ?? 0,
+          fontHeight: bp.fontHeight,
+          rotation: rot,
+        });
+        const x0 = node.x() + dotsToPx(b0.x, scale, dpmm);
+        const y0 = node.y() + dotsToPx(b0.y, scale, dpmm);
+        liveReflowRef.current = {
+          edges: activeEdgesRef.current,
+          rotation: rot,
+          lineSpacing: bp.blockLineSpacing ?? 0,
+          fontHeight: bp.fontHeight,
+          leftX: x0,
+          topY: y0,
+          rightX: x0 + dotsToPx(b0.width, scale, dpmm),
+          bottomY: y0 + dotsToPx(b0.height, scale, dpmm),
+          snapshot: {
+            x: obj.x,
+            y: obj.y,
+            blockWidth: bp.blockWidth,
+            blockLines: bp.blockLines ?? 1,
+          },
+          changed: false,
+        };
+        // Per-tick store writes during the drag would each land in the undo
+        // history; pause recording and collapse to one entry on release.
+        useLabelStore.temporal.getState().pause();
+      }
+    }
+  };
+
+  // Per-tick live reflow for a frame-mode ^FB block: convert the group scale
+  // into blockWidth/blockLines, re-wrap via a synchronous store update, reset
+  // the scale, re-pin the anchored edge, and re-baseline the handles. Keeps
+  // glyphs constant and justify correct because the content actually re-renders.
+  const onTransform = () => {
+    const lr = liveReflowRef.current;
+    if (!lr || selectedIds.length !== 1 || !stageRef.current) return;
+    const id = selectedIds[0];
+    if (!id) return;
+    const node = stageRef.current.findOne<Konva.Node>(`#${id}`);
+    if (!node) return;
+    const sx = node.scaleX();
+    const sy = node.scaleY();
+    if (Math.abs(sx - 1) < 1e-3 && Math.abs(sy - 1) < 1e-3) return;
+    const cur = findObjectById(getCurrentObjects(), id);
+    if (!cur || isGroup(cur)) return;
+    const cp = cur.props as { blockWidth?: number; blockLines?: number };
+    const geo = blockReflowGeometry({
+      scaleX: sx,
+      scaleY: sy,
+      rotation: lr.rotation,
+      blockWidthDots: cp.blockWidth ?? 1,
+      blockLines: cp.blockLines ?? 1,
+      blockLineSpacing: lr.lineSpacing,
+      fontHeight: lr.fontHeight,
+      activeLeft: lr.edges?.left ?? false,
+      activeTop: lr.edges?.top ?? false,
+      leftX: lr.leftX,
+      topY: lr.topY,
+      rightX: lr.rightX,
+      bottomY: lr.bottomY,
+      scale,
+      dpmm,
+      objectsOffsetX,
+      labelOffsetY,
+    });
+    flushSync(() => {
+      updateObject(id, {
+        x: geo.modelXDots,
+        y: geo.modelYDots,
+        props: { blockWidth: geo.blockWidthDots, blockLines: geo.blockLines },
+      });
+    });
+    lr.changed = true;
+    node.scaleX(1);
+    node.scaleY(1);
+    node.x(geo.targetXPx);
+    node.y(geo.targetYPx);
+    transformerRef.current?.forceUpdate();
   };
 
   const boundBoxFunc = (
@@ -444,6 +613,10 @@ export function useKonvaTransformer({
     if (newBox.width < MIN_RESIZE_BOX_PX || newBox.height < MIN_RESIZE_BOX_PX) {
       return oldBox;
     }
+    // A frame-mode block reflow re-pins itself from the drag-start edges in
+    // onTransform; running the snap / inactive-edge pin here too would draw
+    // snap guides that don't match where the block actually lands.
+    if (liveReflowRef.current) return newBox;
     if (isUniformScale) newBox = forceSquareBox(oldBox, newBox);
     // When the canvas view is rotated, Konva's bbox semantics in this
     // callback no longer match an axis-aware snap / pin model; visual
@@ -513,6 +686,43 @@ export function useKonvaTransformer({
   };
 
   const onTransformEnd = () => {
+    // Live reflow applied blockWidth/blockLines + position each tick while undo
+    // recording was paused. Collapse the whole drag into one history entry:
+    // restore the pre-drag snapshot (still paused), resume, then re-apply the
+    // final geometry as a single tracked change.
+    const lr = liveReflowRef.current;
+    if (lr) {
+      const id = selectedIds[0];
+      // A final tick that early-returned (e.g. node briefly unresolved) can
+      // leave a residual scale; reset it so the box doesn't stay stretched.
+      const lrNode = id ? stageRef.current?.findOne<Konva.Node>(`#${id}`) : null;
+      lrNode?.scaleX(1);
+      lrNode?.scaleY(1);
+      const cur = id ? findObjectById(getCurrentObjects(), id) : undefined;
+      const temporal = useLabelStore.temporal.getState();
+      if (lr.changed && id && cur && !isGroup(cur)) {
+        const cp = cur.props as { blockWidth?: number; blockLines?: number };
+        const final = {
+          x: cur.x,
+          y: cur.y,
+          props: { blockWidth: cp.blockWidth, blockLines: cp.blockLines },
+        };
+        updateObject(id, {
+          x: lr.snapshot.x,
+          y: lr.snapshot.y,
+          props: {
+            blockWidth: lr.snapshot.blockWidth,
+            blockLines: lr.snapshot.blockLines,
+          },
+        });
+        temporal.resume();
+        updateObject(id, final);
+      } else {
+        temporal.resume();
+      }
+      cleanupTransformState();
+      return;
+    }
     if (selectedIds.length !== 1 || !selectedIds[0] || !stageRef.current) {
       cleanupTransformState();
       return;
@@ -612,6 +822,7 @@ export function useKonvaTransformer({
         snap,
         nodeHeight,
         anchor: ctxAnchor,
+        resizeMode: blockResizeModeRef.current,
       });
       updateObject(singleId, { ...pos, props: propChanges });
     }
@@ -623,6 +834,7 @@ export function useKonvaTransformer({
     resizeEnabled,
     enabledAnchors,
     onTransformStart,
+    onTransform,
     boundBoxFunc,
     onTransformEnd,
   };

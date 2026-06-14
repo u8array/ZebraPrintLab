@@ -73,18 +73,22 @@ export const text: ObjectTypeCore<TextProps> = {
     const oldW = obj.props.fontWidth > 0 ? obj.props.fontWidth : oldH;
     const oldBW = obj.props.blockWidth;
     const { esx, esy } = effectiveScale(obj.props.rotation, ctx);
-    const result: Partial<TextProps> = {
-      fontHeight: Math.max(1, ctx.snap(Math.round(oldH * esy))),
-    };
-    if (oldBW && oldBW > 0) {
-      // ^FB text: X-axis resize grows the container, fontWidth stays.
-      // Otherwise center/right justify would drift as alignOffset
-      // = (blockWidth - lineWidth) / 2 shrinks with wider glyphs.
-      result.blockWidth = Math.max(1, ctx.snap(Math.round(oldBW * esx)));
-    } else {
-      result.fontWidth = Math.max(1, ctx.snap(Math.round(oldW * esx)));
+    // Frame mode (^FB blocks, default): the box is the wrap frame, so X grows
+    // blockWidth (reflow) and Y grows the line cap; the font stays put. Glyph
+    // mode (and all non-block text): X/Y stretch the font width/height. The
+    // canvas picks the mode from the toggle, with Alt as a per-drag override.
+    const frameMode = oldBW && oldBW > 0 && ctx.resizeMode !== "glyph";
+    if (frameMode) {
+      const oldLines = obj.props.blockLines ?? 1;
+      return {
+        blockWidth: Math.max(1, ctx.snap(Math.round(oldBW * esx))),
+        blockLines: Math.max(1, Math.round(oldLines * esy)),
+      };
     }
-    return result;
+    return {
+      fontHeight: Math.max(1, ctx.snap(Math.round(oldH * esy))),
+      fontWidth: Math.max(1, ctx.snap(Math.round(oldW * esx))),
+    };
   },
 
   toZPL: (obj, ctx) => {
@@ -122,13 +126,11 @@ export const text: ObjectTypeCore<TextProps> = {
     const fallback = p.fontWidth || p.fontHeight;
     const inkW = Math.max(1, Math.round(metrics?.inkWidthDots ?? fallback));
     const vertical = p.rotation === "R" || p.rotation === "B";
-    // ^FB block-text wraps to blockWidth across up to blockLines rows,
-    // so the bg has to cover the block area instead of the single-line
-    // ink bbox. blockLineSpacing is added per row above the first to
-    // mirror Zebra's row advance. The parser skips collapse for
-    // fbWidth>0 so this branch produces a box + reverse-text pair on
-    // round-trip; the box + reverse-text pair is the accepted output until
-    // block-text collapse is implemented.
+    // ^FB block-text wraps to blockWidth across up to blockLines rows, so the
+    // bg covers the block area instead of the single-line ink bbox.
+    // blockLineSpacing is added per row above the first to mirror Zebra's row
+    // advance. The parser collapses this ^GB + ^FR pair back to one reverse
+    // block on re-import, so the round-trip stays idempotent.
     const block = p.blockWidth ?? 0;
     const lines = p.blockLines ?? 1;
     const blockH = p.fontHeight * lines + (p.blockLineSpacing ?? 0) * Math.max(0, lines - 1);

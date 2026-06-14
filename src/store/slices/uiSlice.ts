@@ -41,6 +41,11 @@ export type PrinterSettingsTab =
 
 export type SidebarTab = 'properties' | 'layers' | 'variables' | 'fonts';
 
+/** What a ^FB block's resize handles edit: the wrap frame (blockWidth /
+ *  line cap) or the glyphs (font width = stretch / height). Alt+drag flips
+ *  it for one drag. Transient editor state; never stored in the design. */
+export type BlockDragMode = 'frame' | 'glyph';
+
 export interface UiSlice {
   locale: LocaleCode;
   /** UI theme. Initial value seeded from prefers-color-scheme; once
@@ -58,6 +63,8 @@ export interface UiSlice {
    *  drive the panel (e.g. double-click a text field). Transient; not
    *  in partialize so a reload resets to 'properties'. */
   sidebarTab: SidebarTab;
+  /** Block resize-handle mode; see BlockDragMode. Transient. */
+  blockDragMode: BlockDragMode;
   printerSettingsTab: PrinterSettingsTab | null;
   /** Cross-component trigger for the "send to Zebra" dialog. `null`
    *  keeps the dialog closed. */
@@ -74,6 +81,7 @@ export interface UiSlice {
   acknowledgeLabelaryNotice: () => void;
   setCanvasSettings: (settings: Partial<CanvasSettings>) => void;
   setSidebarTab: (tab: SidebarTab) => void;
+  setBlockDragMode: (mode: BlockDragMode) => void;
   setPrinterSettingsTab: (tab: PrinterSettingsTab | null) => void;
   openZebraPrint: (source: 'label' | 'setupScript') => void;
   closeZebraPrint: () => void;
@@ -98,6 +106,7 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
     csvRenderMode: 'preview',
   },
   sidebarTab: 'properties',
+  blockDragMode: 'frame',
   printerSettingsTab: null,
   zebraPrintSource: null,
   editorFocusRequest: null,
@@ -110,6 +119,7 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
   setCanvasSettings: (settings) =>
     set((state) => ({ canvasSettings: { ...state.canvasSettings, ...settings } })),
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
+  setBlockDragMode: (mode) => set({ blockDragMode: mode }),
   setPrinterSettingsTab: (tab) => set({ printerSettingsTab: tab }),
   openZebraPrint: (source) => set({ zebraPrintSource: source }),
   closeZebraPrint: () => set({ zebraPrintSource: null }),

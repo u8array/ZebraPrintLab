@@ -19,24 +19,32 @@ function zplAnchorDelta(
   positionType: "FO" | "FT" | undefined,
   inkWidthDots = 0,
   blockExtentDots = 0,
+  blockReadingWidthDots = 0,
 ): { dx: number; dy: number } {
   const h = props.fontHeight / ZPL_FONT_HEIGHT_TO_CSS_RATIO;
   const pad = props.fontHeight * EM_TOP_ABOVE_CAP;
   const bias = props.fontHeight * RENDER_Y_BIAS;
   const isFT = positionType === "FT";
-  const w = inkWidthDots;
+  // FO I/B anchor at the far reading end of the field: a single line ends at
+  // anchor+inkWidth, but an ^FB block ends at anchor+blockWidth (the frame).
+  const w = blockReadingWidthDots > 0 ? blockReadingWidthDots : inkWidthDots;
   // FT-anchored ^FB pins the LAST baseline; each 90° rotation swaps the
   // axis and sign of the block-extent shift (derived from Konva's group
   // rotation applied around modelPos, see project_ticket_fb_rotated_ft_anchor).
   const blk = isFT ? blockExtentDots : 0;
+  // FO-anchored ^FB: line 0 sits at the anchor and the block stacks toward the
+  // reading direction. For R / I that stacking runs negative (left / up), so the
+  // block lands one inter-line extent off; bake it into the model the same way
+  // FT does. N / B already stack on the anchor's positive side.
+  const blkFoRI = isFT ? 0 : blockExtentDots;
 
   // FO = ascender pad to cap-top; FT adds cap-height to baseline.
   // Bias subtracts here so printed anchor lands where editor displays.
   switch (props.rotation) {
     case "R":
-      return isFT ? { dx: -h + bias - blk, dy: 0 } : { dx: -h - pad + bias, dy: 0 };
+      return isFT ? { dx: -h + bias - blk, dy: 0 } : { dx: -h - pad + bias - blkFoRI, dy: 0 };
     case "I":
-      return isFT ? { dx: 0, dy: -h + bias - blk } : { dx: -w, dy: -h - pad + bias };
+      return isFT ? { dx: 0, dy: -h + bias - blk } : { dx: -w, dy: -h - pad + bias - blkFoRI };
     case "B":
       return isFT ? { dx: h - bias + blk, dy: 0 } : { dx: pad - bias, dy: -w };
     case "N":
@@ -54,8 +62,9 @@ export function modelToZplAnchor(
   positionType: "FO" | "FT" | undefined,
   inkWidthDots = 0,
   blockExtentDots = 0,
+  blockReadingWidthDots = 0,
 ): { x: number; y: number } {
-  const d = zplAnchorDelta(props, positionType, inkWidthDots, blockExtentDots);
+  const d = zplAnchorDelta(props, positionType, inkWidthDots, blockExtentDots, blockReadingWidthDots);
   return { x: objectX + d.dx, y: objectY + d.dy };
 }
 
@@ -67,7 +76,8 @@ export function zplAnchorToModel(
   positionType: "FO" | "FT" | undefined,
   inkWidthDots = 0,
   blockExtentDots = 0,
+  blockReadingWidthDots = 0,
 ): { x: number; y: number } {
-  const d = zplAnchorDelta(props, positionType, inkWidthDots, blockExtentDots);
+  const d = zplAnchorDelta(props, positionType, inkWidthDots, blockExtentDots, blockReadingWidthDots);
   return { x: anchorX - d.dx, y: anchorY - d.dy };
 }

@@ -71,6 +71,7 @@ export function textFieldPos(obj: TextLikeObjForFieldPos): string {
     obj.positionType,
     metrics?.inkWidthDots ?? 0,
     blockExtentDots,
+    p.blockWidth ?? 0,
   );
   // ^FO/^FT take integers; firmware would truncate fractional residue anyway.
   return `^${cmd}${Math.round(a.x)},${Math.round(a.y)}`;

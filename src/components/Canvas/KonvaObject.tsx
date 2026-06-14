@@ -1,11 +1,12 @@
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
-import { Ellipse, Group, Line, Rect, Shape, Text } from "react-konva";
+import { Ellipse, Group, Rect, Shape, Text } from "react-konva";
 import { lookupBoundVariable, shouldShowFallbackTint } from "../../lib/variableBinding";
 import { BarcodeObject } from "./BarcodeObject";
 import { LineObject } from "./LineObject";
 import { ImageObject } from "./ImageObject";
 import type Konva from "konva";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
+import { measureInkWidthPx } from "../../lib/labelGeometry/measureTextDots";
 import { outlineInset } from "../../lib/shapeGeometry";
 import { reverseShapeStyle } from "./reverseShapeStyle";
 import { useColorScheme } from "../../lib/useColorScheme";
@@ -16,7 +17,7 @@ import { getTextRenderMetrics } from "../../lib/labelGeometry/textRenderMetrics"
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import { DEFAULT_GS_SYMBOL_META, GS_SYMBOLS } from "../../registry/symbol";
 import { GS_SYMBOL_PATHS, GS_VECTOR_CODES, type GsVectorCode } from "../../registry/gsSymbolPaths";
-import { blockBoundsDots, blockJustifyWordPositions, blockLineStartDots, blockLineStepDots, blockWrapEdgePoints, isBlockTooNarrow, zebraAlignOffsetDots, zebraHangingIndentOffsetDots, zebraJustifyGapDots, zebraLineWidthDots, type ZplRotation } from "../../lib/zebraTextLayout";
+import { blockBoundsDots, blockJustifyWordPositions, blockLineStartDots, blockLineStepDots, wrapBlockLines, zebraAlignOffsetDots, zebraHangingIndentOffsetDots, zebraJustifyGapDots, zebraLineWidthDots, type ZplRotation } from "../../lib/zebraTextLayout";
 import type { LeafObject } from "../../registry";
 import type { TextProps } from "../../registry/text";
 import type { SerialProps } from "../../registry/serial";
@@ -185,7 +186,22 @@ function TextFieldContent({
     }
     return <Text key={fontVersion} x={shift} y={shiftY} text={content} {...base} />;
   }
-  const tooNarrow = isBlockTooNarrow(blockWidth, fontHeight, fontWidth);
+  // Font 0 uses the Labelary-calibrated advance (tuned to land center/right
+  // justify on the firmware pixel); explicit-width / device fonts aren't in
+  // that table, so measure the rendered glyphs instead.
+  const isDefaultFont0 =
+    fontWidth === 0 && Math.abs((base.scaleX ?? 1) - 1) < 1e-3;
+  const measureLinePx = (s: string) =>
+    isDefaultFont0
+      ? dotsToPx(zebraLineWidthDots(s, fontHeight, fontWidth), scale, dpmm)
+      : measureInkWidthPx(s, base.fontSize, base.fontFamily, base.fontStyle) *
+        (base.scaleX ?? 1);
+  // Skip the field only when not even one rendered char fits (Labelary wraps to
+  // a single char). Soft hyphens are dropped by the wrap, so never gate on one.
+  const firstChar = content.replace(/\u00AD/g, "").trim()[0] ?? "";
+  const tooNarrow =
+    firstChar !== "" &&
+    dotsToPx(blockWidth, scale, dpmm) < measureLinePx(firstChar);
   const emptyContent = content.trim().length === 0;
   if (tooNarrow || emptyContent) {
     const bounds = blockBoundsDots({
@@ -209,14 +225,24 @@ function TextFieldContent({
   const justify = blockJustify ?? "L";
   const indent = blockHangingIndent ?? 0;
   const lineStepDots = blockLineStepDots(fontHeight, blockLineSpacing ?? 0);
-  // ^FB slot b: overflow lines overprint the last printed line; render
-  // only blockLines worth so canvas matches printer's visible output.
-  const lines = content.split("\n").slice(0, blockLines ?? 1);
+  // Wrap to the rendered block width; ^FB slot b: overflow lines overprint
+  // the last line, so keep only blockLines worth.
+  const lines = wrapBlockLines(
+    content,
+    dotsToPx(blockWidth, scale, dpmm),
+    measureLinePx,
+  ).slice(0, blockLines ?? 1);
+  // Labelary centers / justifies as if a trailing space is present; feed the
+  // rendered space width so both match the preview on scaled / device fonts.
+  const spaceWidthDots = pxToDots(measureLinePx(" "), scale, dpmm);
   return (
     <>
       {lines.flatMap((line, i) => {
         const indentDots = zebraHangingIndentOffsetDots(i, indent);
-        const lineWidthDots = zebraLineWidthDots(line, fontHeight, fontWidth);
+        // Measure the rendered glyphs (same basis as the wrap) so justify
+        // offsets match what is drawn; zebraLineWidthDots over-estimates
+        // scaled / device fonts and would clamp the offset to 0 (stuck left).
+        const lineWidthDots = pxToDots(measureLinePx(line), scale, dpmm);
         const effectiveBlockWidth = blockWidth - indentDots;
         // Justify=J stretches word-gaps to fill the block; last line and
         // lines without word boundaries fall back to L.
@@ -229,6 +255,8 @@ function TextFieldContent({
             const positions = blockJustifyWordPositions({
               words, rotation: obj.props.rotation, startDots,
               fontHeight, fontWidth, extraGapDots: extraGap,
+              wordWidthDots: (w) => pxToDots(measureLinePx(w), scale, dpmm),
+              spaceWidthDots,
             });
             return positions.map((p, wi) => (
               <Text
@@ -241,7 +269,7 @@ function TextFieldContent({
             ));
           }
         }
-        const alignOffsetDots = zebraAlignOffsetDots(lineWidthDots, effectiveBlockWidth, justify);
+        const alignOffsetDots = zebraAlignOffsetDots(lineWidthDots, effectiveBlockWidth, justify, spaceWidthDots);
         const startDots = blockLineStartDots(i, obj.props.rotation, indentDots + alignOffsetDots, lineStepDots);
         return [
           <Text
@@ -257,9 +285,11 @@ function TextFieldContent({
   );
 }
 
-/** Dashed wrap guide at ^FB blockWidth. The invisible Rect over the
- *  full block extent anchors the Group's clientRect so the Transformer
- *  covers the FO-aligned area regardless of C/R justify. */
+/** Dashed wrap frame for a selected ^FB block. In frame mode the invisible
+ *  Rect anchors the Group's clientRect so the Transformer covers the full
+ *  block (FO-aligned regardless of C/R justify); in glyph mode it is omitted
+ *  so the handles hug the rendered text instead. The dashed outline is drawn
+ *  via a sceneFunc Shape (zero clientRect) so it never inflates the bbox. */
 function BlockWrapGuide({
   blockWidthDots,
   blockLines,
@@ -269,6 +299,7 @@ function BlockWrapGuide({
   scale,
   dpmm,
   color,
+  frameMeasured,
 }: {
   blockWidthDots: number;
   blockLines: number;
@@ -278,28 +309,39 @@ function BlockWrapGuide({
   scale: number;
   dpmm: number;
   color: string;
+  frameMeasured: boolean;
 }) {
   const bounds = blockBoundsDots({ blockWidthDots, blockLines, blockLineSpacing, fontHeight, rotation });
-  const edgeDots = blockWrapEdgePoints(rotation, bounds);
-  return (
-    <>
-      <Rect
-        x={dotsToPx(bounds.x, scale, dpmm)}
-        y={dotsToPx(bounds.y, scale, dpmm)}
-        width={dotsToPx(bounds.width, scale, dpmm)}
-        height={dotsToPx(bounds.height, scale, dpmm)}
-        fill="transparent"
-        listening={false}
-      />
-      <Line
-        points={edgeDots.map((d) => dotsToPx(d, scale, dpmm))}
-        stroke={color}
-        strokeWidth={1}
-        dash={[4, 3]}
-        strokeScaleEnabled={false}
-        listening={false}
-      />
-    </>
+  const bx = dotsToPx(bounds.x, scale, dpmm);
+  const by = dotsToPx(bounds.y, scale, dpmm);
+  const bw = dotsToPx(bounds.width, scale, dpmm);
+  const bh = dotsToPx(bounds.height, scale, dpmm);
+  // Frame mode: the transformer handles already outline the frame, so only the
+  // invisible measure rect is needed. Glyph mode: handles hug the text, so draw
+  // the dashed wrap frame (hidden during the drag, see below).
+  return frameMeasured ? (
+    <Rect x={bx} y={by} width={bw} height={bh} fill="transparent" listening={false} />
+  ) : (
+    <Shape
+      listening={false}
+      sceneFunc={(ctx, shape) => {
+        // The frame is drawn relative to the group, which Konva scales during a
+        // glyph-mode drag; that would shift it with the anchor translation, so
+        // hide it while actively transforming (scale != 1) and redraw at rest.
+        // blockWidth is constant in glyph mode, so nothing is lost.
+        const parent = shape.getParent();
+        const sx = parent?.scaleX() || 1;
+        const sy = parent?.scaleY() || 1;
+        if (Math.abs(sx - 1) > 1e-3 || Math.abs(sy - 1) > 1e-3) return;
+        ctx.save();
+        ctx.beginPath();
+        ctx.setLineDash([4, 3]);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx, by, bw, bh);
+        ctx.restore();
+      }}
+    />
   );
 }
 
@@ -408,6 +450,7 @@ function KonvaObjectInner({
   const requestContentEditorFocus = useLabelStore((s) => s.requestContentEditorFocus);
   const setSidebarTab = useLabelStore((s) => s.setSidebarTab);
   const selectObjects = useLabelStore((s) => s.selectObjects);
+  const blockDragMode = useLabelStore((s) => s.blockDragMode);
   // obj.x/y is the EM-bbox top-left; ZPL anchor delta is applied only
   // at the zplGenerator/zplParser boundary.
   const baseMetrics = getTextRenderMetrics(obj, undefined, label);
@@ -451,6 +494,14 @@ function KonvaObjectInner({
     });
   };
 
+  // selectObjects directly so leaf-in-group pierces auto-promotion.
+  const openEditor = () => {
+    if (obj.locked) return;
+    selectObjects([obj.id]);
+    setSidebarTab("properties");
+    requestContentEditorFocus(obj.id);
+  };
+
   if ((obj.type === "text" || obj.type === "serial") && textMetrics) {
     const p = obj.props;
     const { content, fontFamily, fontScaleX, fontSizePx } = textMetrics;
@@ -484,9 +535,67 @@ function KonvaObjectInner({
       fpShiftXPx = -(reservedPx + gapPx);
     }
 
+    if (obj.type === "text" && obj.props.reverse && obj.props.blockWidth) {
+      // ^FB block reverse: the ^GB knockout covers the whole wrapped block
+      // (blockWidth x blockH), and the text wraps / justifies exactly like the
+      // non-reverse path, knocked out in white. Reuse blockBoundsDots (the same
+      // box the generator emits) and TextFieldContent so the preview matches
+      // both the print and the normal render.
+      const bounds = blockBoundsDots({
+        blockWidthDots: obj.props.blockWidth,
+        blockLines: obj.props.blockLines ?? 1,
+        blockLineSpacing: obj.props.blockLineSpacing ?? 0,
+        fontHeight: obj.props.fontHeight,
+        rotation: p.rotation,
+      });
+      return (
+        <Group
+          id={obj.id}
+          x={x}
+          y={y}
+          draggable={!obj.locked}
+          {...selectionHandlers(onSelect)}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+          onDblClick={openEditor}
+          onDblTap={openEditor}
+        >
+          <Rect
+            x={dotsToPx(bounds.x, scale, dpmm)}
+            y={dotsToPx(bounds.y, scale, dpmm)}
+            width={dotsToPx(bounds.width, scale, dpmm)}
+            height={dotsToPx(bounds.height, scale, dpmm)}
+            fill="#000000"
+            stroke={isSelected ? colors.selection : undefined}
+            strokeWidth={isSelected ? 1.5 : 0}
+          />
+          <TextFieldContent
+            obj={obj as TextFieldObj}
+            content={fpContent}
+            placeholderColor={colors.accent}
+            base={{
+              fontSize: fontSizePx,
+              fontFamily,
+              fontStyle,
+              scaleX: fontScaleX,
+              rotation: zplRotationDeg[p.rotation],
+              fill: "#ffffff",
+              stroke: undefined,
+              strokeWidth: 0,
+              letterSpacing: fpLetterSpacingPx + deviceLetterSpacingPx,
+              offsetXPx: fpShiftXPx + deviceXOffPx,
+              offsetYPx: deviceYOffPx,
+            }}
+            scale={scale}
+            dpmm={dpmm}
+            fontVersion={fontVersion}
+          />
+        </Group>
+      );
+    }
+
     if (obj.type === "text" && obj.props.reverse) {
-      // Match the printer's ^GB knockout exactly: width = measured ink,
-      // height = font height. Mirrors the generator's `^GB inkW, fontHeight`.
+      // Single-line reverse mirrors the generator's `^GB inkW, fontHeight`.
       const approxW = dotsToPx(textMetrics.inkWidthDots, scale, dpmm);
       const approxH = fontSizePx;
       return (
@@ -499,6 +608,8 @@ function KonvaObjectInner({
           {...selectionHandlers(onSelect)}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
+          onDblClick={openEditor}
+          onDblTap={openEditor}
         >
           <Rect
             width={approxW}
@@ -527,6 +638,9 @@ function KonvaObjectInner({
     // Outer Group stays axis-aligned for the Transformer; rotation is
     // applied to the inner Text. Direct rotation on the transformer's
     // node produces drift and 1e15-class numbers on commit.
+    // Frame-mode block resize is handled by the transformer hook (live reflow:
+    // blockWidth/blockLines re-wrap each tick). Glyph mode scales the glyphs
+    // (stretch preview) and the dashed frame counter-scales in the guide.
     return (
       <Group
         id={obj.id}
@@ -536,19 +650,8 @@ function KonvaObjectInner({
         {...selectionHandlers(onSelect)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
-        // selectObjects directly so leaf-in-group pierces auto-promotion.
-        onDblClick={() => {
-          if (obj.locked) return;
-          selectObjects([obj.id]);
-          setSidebarTab("properties");
-          requestContentEditorFocus(obj.id);
-        }}
-        onDblTap={() => {
-          if (obj.locked) return;
-          selectObjects([obj.id]);
-          setSidebarTab("properties");
-          requestContentEditorFocus(obj.id);
-        }}
+        onDblClick={openEditor}
+        onDblTap={openEditor}
       >
         <TextFieldContent
           obj={obj as TextFieldObj}
@@ -581,6 +684,7 @@ function KonvaObjectInner({
             scale={scale}
             dpmm={dpmm}
             color={colors.accent}
+            frameMeasured={blockDragMode !== "glyph"}
           />
         )}
       </Group>

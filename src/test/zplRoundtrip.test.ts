@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import { parseZPL } from '../lib/zplParser';
 import { generateZPL } from '../lib/zplGenerator';
 import type { LabelConfig } from '../types/LabelConfig';
-import { props } from './helpers';
+import { props, defined } from './helpers';
 
 const BASE: LabelConfig = { widthMm: 100, heightMm: 60, dpmm: 8 };
 
@@ -206,6 +206,55 @@ describe('round-trip — field block text', () => {
     expect(props(t2).blockWidth).toBe(props(t1).blockWidth);
     expect(props(t2).blockJustify).toBe(props(t1).blockJustify);
     expect(props(t2).blockLines).toBe(props(t1).blockLines);
+  });
+
+  it('canvas wrap never leaks into emit: long ^FB line round-trips verbatim', () => {
+    // Wrapping is render-only; the stored ^FD must keep its raw single line so
+    // emit re-produces it without inserted \& soft-wrap breaks.
+    const long = 'The quick brown fox jumps over the lazy dog again and again';
+    const { first, regenerated, second } = roundtrip(
+      `^XA^PW400^LL400^FO20,20^A0N,30,0^FB300,5,0,L,0^FD${long}^FS^XZ`,
+    );
+    expect(props(first.objects[0]).content).toBe(long);
+    expect(props(second.objects[0]).content).toBe(long);
+    expect(regenerated).toContain(`^FD${long}^FS`);
+    expect(regenerated).not.toContain('\\&');
+  });
+
+  // Build the canonical reverse-block ZPL via the generator, then verify it
+  // re-imports as ONE collapsed reverse block, not box + reverse-text that grows
+  // a ^GB on every save/load cycle. The ^GB box must stay collapsed across
+  // rotation, justify, hanging indent, line spacing and FT vs FO anchoring.
+  const reverseBlockIsIdempotent = (blockZpl: string) => {
+    const base = parseZPL(blockZpl, 8);
+    const obj = base.objects.find((o) => o.type === 'text');
+    expect(obj).toBeDefined();
+    const reversed = {
+      ...obj!,
+      props: { ...props(obj), reverse: true },
+    } as (typeof base.objects)[number];
+    const label: LabelConfig = { ...BASE, ...base.labelConfig, dpmm: 8 };
+    const emit1 = generateZPL(label, [reversed]);
+    const parsed = parseZPL(emit1, 8);
+    expect(parsed.objects).toHaveLength(1);
+    const out = defined(parsed.objects[0]);
+    expect(out.type).toBe('text');
+    expect(props(out).reverse).toBe(true);
+    const emit2 = generateZPL(label, parsed.objects);
+    expect(emit2).toBe(emit1);
+    expect((emit1.match(/\^GB/g) ?? []).length).toBe(1);
+  };
+
+  it.each([
+    ['FO rotation N', '^XA^PW640^LL400^FO80,80^A0N,30,30^FB200,3,5,L,0^FDA\\&B\\&C^FS^XZ'],
+    ['FO rotation R', '^XA^PW640^LL400^FO80,80^A0R,30,30^FB200,3,5,L,0^FDA\\&B\\&C^FS^XZ'],
+    ['FO rotation I', '^XA^PW640^LL400^FO80,80^A0I,30,30^FB200,3,5,L,0^FDA\\&B\\&C^FS^XZ'],
+    ['FO rotation B', '^XA^PW640^LL400^FO80,80^A0B,30,30^FB200,3,5,L,0^FDA\\&B\\&C^FS^XZ'],
+    ['justify C', '^XA^PW640^LL400^FO80,80^A0N,30,30^FB200,3,5,C,0^FDA\\&B\\&C^FS^XZ'],
+    ['hanging indent', '^XA^PW640^LL400^FO80,80^A0N,30,30^FB200,3,5,L,40^FDA\\&B\\&C^FS^XZ'],
+    ['FT anchor', '^XA^PW640^LL400^FT80,300^A0N,30,30^FB200,3,5,L,0^FDA\\&B\\&C^FS^XZ'],
+  ])('reverse + ^FB block stays collapsed on re-import: %s', (_label, zpl) => {
+    reverseBlockIsIdempotent(zpl);
   });
 
   it('preserves slot e hanging indent', () => {

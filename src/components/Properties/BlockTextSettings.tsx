@@ -3,7 +3,13 @@ import { labelCls } from "./styles";
 import { NumberInput } from "./NumberInput";
 import { JustifyButtons } from "./JustifyButtons";
 import type { TextProps } from "../../registry/text";
-import { isBlockTooNarrow, zebraGlyphAdvanceDots } from "../../lib/zebraTextLayout";
+import {
+  isBlockTooNarrow,
+  zebraGlyphAdvanceDots,
+  zebraLineWidthDots,
+  wrapBlockLines,
+} from "../../lib/zebraTextLayout";
+import { useLabelStore } from "../../store/labelStore";
 
 interface Props {
   props: TextProps;
@@ -18,7 +24,17 @@ interface Props {
  *  the mismatch but leaves the choice to the user. */
 export function BlockTextSettings({ props: p, onChange }: Props) {
   const t = useT();
-  const contentLines = p.content.split("\n").length;
+  const blockDragMode = useLabelStore((s) => s.blockDragMode);
+  const setBlockDragMode = useLabelStore((s) => s.setBlockDragMode);
+  // Count wrapped lines, not just hard breaks, so soft-wrap overflow (a long
+  // line spilling past blockLines) also trips the warning. Uses the printer
+  // estimate (same basis as the blockLines cap); the canvas wrap may differ by
+  // a line on scaled fonts, but this is an informational hint.
+  const contentLines = wrapBlockLines(
+    p.content,
+    p.blockWidth ?? 0,
+    (line) => zebraLineWidthDots(line, p.fontHeight, p.fontWidth),
+  ).length;
   const maxLines = p.blockLines ?? 1;
   const truncates = contentLines > maxLines;
   const advance = Math.ceil(zebraGlyphAdvanceDots(p.fontHeight, p.fontWidth));
@@ -28,6 +44,27 @@ export function BlockTextSettings({ props: p, onChange }: Props) {
     // FELDBLOCK checkbox above; same convention as the Font-Advanced
     // block in text.tsx.
     <div className="pl-3 border-l border-border flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <label className={labelCls}>{t.registry.text.dragMode}</label>
+        <div className="flex rounded border border-border overflow-hidden text-xs">
+          {(["frame", "glyph"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setBlockDragMode(m)}
+              className={`px-2 py-0.5 transition-colors ${
+                blockDragMode === m
+                  ? "bg-accent text-surface"
+                  : "text-muted hover:text-text"
+              }`}
+            >
+              {m === "frame"
+                ? t.registry.text.dragModeFrame
+                : t.registry.text.dragModeGlyph}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="flex items-center justify-between gap-2">
         <label className={labelCls}>{t.registry.text.blockJustify}</label>
         <JustifyButtons

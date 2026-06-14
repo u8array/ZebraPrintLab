@@ -5,6 +5,16 @@ export function clamp(min: number, max: number, value: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+/** Block resize intent: the panel toggle's mode, flipped for the drag while
+ *  Alt is held. Single source so the start-gate and the commit can't drift. */
+export function resolveBlockResizeMode(
+  dragMode: "frame" | "glyph",
+  altHeld: boolean,
+): "frame" | "glyph" {
+  if (!altHeld) return dragMode;
+  return dragMode === "glyph" ? "frame" : "glyph";
+}
+
 /** R/B rotation swaps sx/sy so commits stay in pre-rotation x/y props. */
 export function effectiveScale(
   rotation: "N" | "R" | "I" | "B" | undefined,

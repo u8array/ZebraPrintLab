@@ -114,14 +114,47 @@ describe('text position transforms — model ↔ ZPL anchor', () => {
       expect(r.y).toBeCloseTo(200);
     });
 
-    it('FO never applies the block extent shift', () => {
+    it('FO applies the block extent on the R/I stacking axis only', () => {
+      const axis = { N: null, R: 'x', I: 'y', B: null } as const;
       for (const rotation of ROT) {
         const fo = zplAnchorToModel(ANCHOR_X, ANCHOR_Y,
           { fontHeight: H, rotation }, 'FO', W, BLK);
         const foNoBlk = zplAnchorToModel(ANCHOR_X, ANCHOR_Y,
           { fontHeight: H, rotation }, 'FO', W, 0);
-        expect(fo).toEqual(foNoBlk);
+        const shifted = axis[rotation];
+        if (!shifted) {
+          // N/B stack on the anchor's positive side: no extent shift.
+          expect(fo).toEqual(foNoBlk);
+        } else {
+          // R (x) / I (y) stack negative, so the model shifts by +BLK there.
+          expect(fo[shifted]).toBeCloseTo(foNoBlk[shifted] + BLK);
+          const other = shifted === 'x' ? 'y' : 'x';
+          expect(fo[other]).toBeCloseTo(foNoBlk[other]);
+        }
       }
+    });
+  });
+
+  describe('FO + ^FB reading-axis uses blockWidth, not inkWidth', () => {
+    // Labelary: an FO block ends at anchor+blockWidth on the reading axis
+    // (I right edge = anchor.x+blockWidth, B bottom edge = anchor.y+blockWidth),
+    // whereas a single line ends at anchor+inkWidth.
+    const BLOCK_W = 300;
+    it('FO/I block: model.x = anchor.x + blockWidth', () => {
+      const r = zplAnchorToModel(0, 0, { fontHeight: H, rotation: 'I' }, 'FO', W, 0, BLOCK_W);
+      expect(r.x).toBeCloseTo(BLOCK_W);
+    });
+    it('FO/B block: model.y = anchor.y + blockWidth', () => {
+      const r = zplAnchorToModel(0, 0, { fontHeight: H, rotation: 'B' }, 'FO', W, 0, BLOCK_W);
+      expect(r.y).toBeCloseTo(BLOCK_W);
+    });
+    it('single-line FO/I (blockWidth=0) still uses inkWidth', () => {
+      const r = zplAnchorToModel(100, 200, { fontHeight: H, rotation: 'I' }, 'FO', W, 0, 0);
+      expect(r.x).toBeCloseTo(100 + W);
+    });
+    it('single-line FO/B (blockWidth=0) still uses inkWidth', () => {
+      const r = zplAnchorToModel(100, 200, { fontHeight: H, rotation: 'B' }, 'FO', W, 0, 0);
+      expect(r.y).toBeCloseTo(200 + W);
     });
   });
 

@@ -20,6 +20,35 @@ const baseObj = (
   },
 });
 
+const ctx = (over: Partial<Parameters<NonNullable<typeof text.commitTransform>>[1]> = {}) => ({
+  sx: 2,
+  sy: 2,
+  snap: (n: number) => n,
+  nodeHeight: 0,
+  anchor: null,
+  ...over,
+});
+
+describe("text — commitTransform frame vs glyph mode", () => {
+  it("block default (frame): X grows blockWidth, Y grows the line cap, font stays", () => {
+    const r = text.commitTransform!(baseObj({ blockWidth: 400, blockLines: 2 }), ctx());
+    expect(r).toEqual({ blockWidth: 800, blockLines: 4 });
+  });
+
+  it("block glyph mode: X/Y stretch the font, frame stays", () => {
+    const r = text.commitTransform!(
+      baseObj({ blockWidth: 400, blockLines: 2 }),
+      ctx({ resizeMode: "glyph" }),
+    );
+    expect(r).toEqual({ fontHeight: 60, fontWidth: 60 });
+  });
+
+  it("non-block text always stretches the font (no frame to resize)", () => {
+    const r = text.commitTransform!(baseObj(), ctx());
+    expect(r).toEqual({ fontHeight: 60, fontWidth: 60 });
+  });
+});
+
 /**
  * normalizeChanges strips the un-emit shape for ^FP so any prop-write
  * path (panel onChange, import, paste) lands on the same canonical

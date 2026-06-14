@@ -10,6 +10,10 @@ export interface TransformContext {
   snap: (n: number) => number;
   /** Konva node's intrinsic height after scale was reset. Only meaningful for stacked 2D. */
   nodeHeight: number;
+  /** ^FB block resize intent: "frame" edits blockWidth/line cap, "glyph"
+   *  edits font width/height. Set by the canvas (toggle + Alt override);
+   *  undefined for non-block commits, which keep their default behaviour. */
+  resizeMode?: "frame" | "glyph";
   /** Captured at drag start; shape varies by anchor kind (row for
    *  stacked 2D, moduleWidth for 1D barcodes). Consumers narrow on
    *  `kind` before reading the type-specific fields. */

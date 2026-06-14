@@ -160,6 +160,7 @@ export function createFlushField(
           posType,
           inkWidthDots,
           blockExtentDots,
+          s.defaults.fbWidth,
         );
         // ^SF pending: emit serial (not text); flush any reverse-bg first.
         if (s.field.snPending) {
@@ -192,13 +193,20 @@ export function createFlushField(
         // Reverse-text collapse: stashed filled ^GB + ^FR text at same anchor
         // with matching bbox → single reverse-text. Otherwise the bg flushes
         // as a normal box (unrelated ^GB+^FR sequences round-trip unchanged).
+        // ^FB blocks knock out the whole block area; the box then matches
+        // blockWidth x (textH + inter-line extent), with the R/B axis swap.
         const vertical = s.field.textRot === "R" || s.field.textRot === "B";
-        const expectedW = vertical ? s.field.textH : Math.max(1, Math.round(inkWidthDots));
-        const expectedH = vertical ? Math.max(1, Math.round(inkWidthDots)) : s.field.textH;
+        const blockBaseW =
+          s.defaults.fbWidth > 0
+            ? s.defaults.fbWidth
+            : Math.max(1, Math.round(inkWidthDots));
+        const blockBaseH =
+          s.defaults.fbWidth > 0 ? s.field.textH + blockExtentDots : s.field.textH;
+        const expectedW = vertical ? blockBaseH : blockBaseW;
+        const expectedH = vertical ? blockBaseW : blockBaseH;
         const collapse =
           s.reverseBg !== null &&
           s.field.frActive &&
-          s.defaults.fbWidth === 0 &&
           s.reverseBg.x === s.field.x &&
           s.reverseBg.y === s.field.y &&
           Math.abs(s.reverseBg.w - expectedW) <= REVERSE_BBOX_TOLERANCE_DOTS &&

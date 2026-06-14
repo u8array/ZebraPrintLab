@@ -405,6 +405,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     resizeEnabled,
     enabledAnchors,
     onTransformStart,
+    onTransform,
     boundBoxFunc,
     onTransformEnd,
   } = useKonvaTransformer({
@@ -903,6 +904,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 resizeEnabled={resizeEnabled}
                 enabledAnchors={enabledAnchors}
                 onTransformStart={onTransformStart}
+                onTransform={onTransform}
                 boundBoxFunc={boundBoxFunc}
                 onTransformEnd={onTransformEnd}
                 borderStroke={colors.selection}

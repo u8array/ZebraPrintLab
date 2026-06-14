@@ -11,7 +11,42 @@ import {
   blockLineStartDots,
   blockLineStepDots,
   blockWordAdvanceDots,
+  blockReflowGeometry,
+  wrapBlockLines,
 } from "./zebraTextLayout";
+
+describe("wrapBlockLines", () => {
+  // measure = 10 dots per char, so block 50 fits 5 chars.
+  const wrap = (s: string, w = 50) =>
+    wrapBlockLines(s, w, (line) => line.length * 10);
+
+  it("greedy word-wraps to the block width", () => {
+    expect(wrap("ab cd ef gh")).toEqual(["ab cd", "ef gh"]);
+  });
+
+  it("character-breaks a word wider than the block", () => {
+    expect(wrap("abcdefghij")).toEqual(["abcde", "fghij"]);
+  });
+
+  it("collapses runs of spaces to one", () => {
+    expect(wrap("a    b")).toEqual(["a b"]);
+  });
+
+  it("honours hard newline breaks and keeps blank segments", () => {
+    expect(wrap("ab\ncd")).toEqual(["ab", "cd"]);
+    expect(wrap("ab\n\ncd")).toEqual(["ab", "", "cd"]);
+  });
+
+  it("drops soft hyphens (U+00AD), handled by the editor layer", () => {
+    expect(wrap("ab" + String.fromCharCode(0xad) + "cd")).toEqual(["abcd"]);
+  });
+
+  it("does not wrap when blockWidth <= 0 (splits on newline only)", () => {
+    expect(
+      wrapBlockLines("a very long line indeed", 0, (line) => line.length * 10),
+    ).toEqual(["a very long line indeed"]);
+  });
+});
 
 describe("zebraGlyphAdvanceDots", () => {
   it("returns fontWidth when explicitly set", () => {
@@ -60,6 +95,13 @@ describe("zebraAlignOffsetDots", () => {
 
   it("J → same as L (canvas does not visualise inter-word stretch)", () => {
     expect(zebraAlignOffsetDots(150, 400, "J")).toBe(0);
+  });
+
+  it("C subtracts the phantom trailing space (Labelary center bias)", () => {
+    // (400 - 100 - 20) / 2 = 140; only C shifts, R/L are unaffected.
+    expect(zebraAlignOffsetDots(100, 400, "C", 20)).toBe(140);
+    expect(zebraAlignOffsetDots(100, 400, "R", 20)).toBe(300);
+    expect(zebraAlignOffsetDots(100, 400, "L", 20)).toBe(0);
   });
 
   it("clamps to 0 when the line is wider than the block (no negative offsets)", () => {
@@ -175,6 +217,15 @@ describe("blockJustifyWordPositions", () => {
     expect(r[0]).toEqual({ x: 0, y: 0, text: "AB" });
     // AB = 2*30 dots, + spaceAdvance (30) + extraGap (20) = 110
     expect(r[1]).toEqual({ x: 110, y: 0, text: "CD" });
+  });
+
+  it("uses the spaceWidthDots override instead of the uniform cell", () => {
+    const r = blockJustifyWordPositions({
+      ...COMMON, words: ["AB", "CD"], rotation: "N", startDots: { x: 0, y: 0 },
+      spaceWidthDots: 10,
+    });
+    // AB = 2*30 + space override (10) + extraGap (20) = 90
+    expect(r[1]).toEqual({ x: 90, y: 0, text: "CD" });
   });
 
   it("R: advances words along +y", () => {
@@ -304,5 +355,71 @@ describe("blockBoundsDots", () => {
       fontHeight: 30,
     });
     expect(r.height).toBe(0);
+  });
+});
+
+describe("blockReflowGeometry", () => {
+  // scale=1, dpmm=1 keeps px == dots so the pin math is easy to read.
+  // Start bbox edges: left 50, top 20, right 150, bottom 60.
+  const BASE = {
+    blockWidthDots: 100,
+    blockLines: 1,
+    blockLineSpacing: 0,
+    fontHeight: 30,
+    leftX: 50,
+    topY: 20,
+    rightX: 150,
+    bottomY: 60,
+    scale: 1,
+    dpmm: 1,
+    objectsOffsetX: 0,
+    labelOffsetY: 0,
+  };
+
+  it("N drag right edge: grows blockWidth, pins the left edge", () => {
+    const g = blockReflowGeometry({
+      ...BASE, rotation: "N", scaleX: 2, scaleY: 1,
+      activeLeft: false, activeTop: false,
+    });
+    expect(g.blockWidthDots).toBe(200);
+    expect(g.blockLines).toBe(1);
+    expect(g.targetXPx).toBe(50); // left edge stays put
+    expect(g.modelXDots).toBe(50);
+  });
+
+  it("N drag left edge: pins the right edge (box left walks negative)", () => {
+    const g = blockReflowGeometry({
+      ...BASE, rotation: "N", scaleX: 2, scaleY: 1,
+      activeLeft: true, activeTop: false,
+    });
+    // width 200, right edge held at 150 → left = 150 - 200 = -50.
+    expect(g.targetXPx).toBe(-50);
+  });
+
+  it("N drag bottom edge: grows blockLines, pins the top edge", () => {
+    const g = blockReflowGeometry({
+      ...BASE, rotation: "N", scaleX: 1, scaleY: 3,
+      activeLeft: false, activeTop: false,
+    });
+    expect(g.blockLines).toBe(3);
+    expect(g.targetYPx).toBe(20);
+  });
+
+  it("R swaps the scale axes: screen-Y scale drives blockWidth, screen-X drives blockLines", () => {
+    const g = blockReflowGeometry({
+      ...BASE, rotation: "R", scaleX: 2, scaleY: 3,
+      activeLeft: false, activeTop: false,
+    });
+    expect(g.blockWidthDots).toBe(300); // scaleY
+    expect(g.blockLines).toBe(2); // scaleX
+  });
+
+  it("clamps blockWidth / blockLines to a minimum of 1", () => {
+    const g = blockReflowGeometry({
+      ...BASE, rotation: "N", scaleX: 0.001, scaleY: 0.001,
+      activeLeft: false, activeTop: false,
+    });
+    expect(g.blockWidthDots).toBe(1);
+    expect(g.blockLines).toBe(1);
   });
 });

@@ -152,7 +152,9 @@ export const textPanel: ObjectTypeUi<TextProps> = {
           <TemplateContentInput
             objectId={obj.id}
             value={p.content}
-            onChange={(content) => onChange(deriveBlockTextPatch(content, p))}
+            onChange={(content) =>
+              onChange(deriveBlockTextPatch(content, p, p.fontHeight, p.fontWidth))
+            }
           />
         </div>
 
