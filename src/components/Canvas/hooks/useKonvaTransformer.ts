@@ -254,6 +254,11 @@ export function useKonvaTransformer({
     topY: number;
     rightX: number;
     bottomY: number;
+    // Float accumulators for blockWidth/blockLines: multiply the per-tick scale
+    // into these and round only for rendering, so slow sub-dot drags don't lose
+    // progress to re-rounding the stored integers each tick.
+    currentWidthDots: number;
+    currentLines: number;
     // Pre-drag model snapshot + a dirty flag, so the per-tick (untracked) store
     // writes collapse into a single undo entry on release.
     snapshot: { x: number; y: number; blockWidth: number; blockLines: number };
@@ -540,6 +545,8 @@ export function useKonvaTransformer({
           topY: y0,
           rightX: x0 + dotsToPx(b0.width, scale, dpmm),
           bottomY: y0 + dotsToPx(b0.height, scale, dpmm),
+          currentWidthDots: bp.blockWidth,
+          currentLines: bp.blockLines ?? 1,
           snapshot: {
             x: obj.x,
             y: obj.y,
@@ -571,13 +578,17 @@ export function useKonvaTransformer({
     if (Math.abs(sx - 1) < 1e-3 && Math.abs(sy - 1) < 1e-3) return;
     const cur = findObjectById(getCurrentObjects(), id);
     if (!cur || isGroup(cur)) return;
-    const cp = cur.props as { blockWidth?: number; blockLines?: number };
+    // Accumulate the per-tick scale into the float dims and feed the rounded
+    // result with scale 1; blockReflowGeometry then only does the pin geometry.
+    const swap = lr.rotation === "R" || lr.rotation === "B";
+    lr.currentWidthDots = Math.max(1, lr.currentWidthDots * (swap ? sy : sx));
+    lr.currentLines = Math.max(1, lr.currentLines * (swap ? sx : sy));
     const geo = blockReflowGeometry({
-      scaleX: sx,
-      scaleY: sy,
+      scaleX: 1,
+      scaleY: 1,
       rotation: lr.rotation,
-      blockWidthDots: cp.blockWidth ?? 1,
-      blockLines: cp.blockLines ?? 1,
+      blockWidthDots: Math.round(lr.currentWidthDots),
+      blockLines: Math.round(lr.currentLines),
       blockLineSpacing: lr.lineSpacing,
       fontHeight: lr.fontHeight,
       activeLeft: lr.edges?.left ?? false,
