@@ -319,3 +319,35 @@ export function blockReflowGeometry(args: {
     modelYDots: pxToDots(targetYPx - args.labelOffsetY, args.scale, args.dpmm),
   };
 }
+
+/** Stage point that stays fixed when a glyph-mode ^FB block re-bakes its font.
+ *  Advance and stacking axes swap between screen X/Y with rotation, so the pin
+ *  resolves per rotation. `edges` are screen-space flags (not rotated).
+ *  `centeredStacking` mirrors the Konva centeredScaling the preview used: it
+ *  pins the stacking center too, else preview and commit jump on release. */
+export function blockGlyphAnchorPoint(args: {
+  rect: { x: number; y: number; width: number; height: number };
+  rotation: ZplRotation;
+  justify: BlockJustify;
+  edges: { top: boolean; left: boolean } | null;
+  centeredStacking: boolean;
+}): { x: number; y: number } {
+  const { rect, rotation, justify, edges, centeredStacking } = args;
+  const advanceVertical = rotation === "R" || rotation === "B";
+  const advancePositive = rotation === "N" || rotation === "R";
+  // J fills the body but left-aligns its last line, so it anchors like L (start).
+  const justifyFrac = justify === "C" ? 0.5 : justify === "R" ? 1 : 0;
+  const advFrac = advancePositive ? justifyFrac : 1 - justifyFrac;
+  const stackCoord = (min: number, size: number, draggedAtStart: boolean) =>
+    centeredStacking ? min + size / 2 : draggedAtStart ? min + size : min;
+  if (advanceVertical) {
+    return {
+      x: stackCoord(rect.x, rect.width, !!edges?.left),
+      y: rect.y + rect.height * advFrac,
+    };
+  }
+  return {
+    x: rect.x + rect.width * advFrac,
+    y: stackCoord(rect.y, rect.height, !!edges?.top),
+  };
+}

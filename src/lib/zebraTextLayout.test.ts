@@ -12,6 +12,7 @@ import {
   blockLineStepDots,
   blockWordAdvanceDots,
   blockReflowGeometry,
+  blockGlyphAnchorPoint,
   wrapBlockLines,
 } from "./zebraTextLayout";
 
@@ -421,5 +422,75 @@ describe("blockReflowGeometry", () => {
     });
     expect(g.blockWidthDots).toBe(1);
     expect(g.blockLines).toBe(1);
+  });
+});
+
+describe("blockGlyphAnchorPoint", () => {
+  // left 10, right 110, top 20, bottom 60, centerX 60, centerY 40.
+  const RECT = { x: 10, y: 20, width: 100, height: 40 };
+  const at = (
+    rotation: "N" | "R" | "I" | "B",
+    justify: "L" | "C" | "R" | "J",
+    edges: { top: boolean; left: boolean } | null = null,
+    centeredStacking = false,
+  ) => blockGlyphAnchorPoint({ rect: RECT, rotation, justify, edges, centeredStacking });
+
+  describe("N: advance=+x, stack=+y", () => {
+    it("justify L pins the left ink edge, top by default", () => {
+      expect(at("N", "L")).toEqual({ x: 10, y: 20 });
+    });
+    it("justify J anchors like L (start)", () => {
+      expect(at("N", "J")).toEqual({ x: 10, y: 20 });
+    });
+    it("justify R pins the right ink edge", () => {
+      expect(at("N", "R")).toEqual({ x: 110, y: 20 });
+    });
+    it("justify C pins the advance center; stack still edge-pins without centeredScaling", () => {
+      expect(at("N", "C")).toEqual({ x: 60, y: 20 });
+    });
+    it("justify C centers both axes under centeredScaling", () => {
+      expect(at("N", "C", null, true)).toEqual({ x: 60, y: 40 });
+    });
+    it("dragging the top edge pins the bottom", () => {
+      expect(at("N", "L", { top: true, left: false })).toEqual({ x: 10, y: 60 });
+    });
+    it("centeredScaling keeps the stacking center even when an edge is dragged", () => {
+      // The centered preview moves both edges; pinning one here would jump on release.
+      expect(at("N", "C", { top: true, left: false }, true)).toEqual({ x: 60, y: 40 });
+    });
+  });
+
+  describe("I: advance=-x, stack=-y", () => {
+    it("justify R clings to the advance-end, which is the left edge", () => {
+      expect(at("I", "R")).toEqual({ x: 10, y: 20 });
+    });
+    it("justify L clings to the advance-start, which is the right edge", () => {
+      expect(at("I", "L")).toEqual({ x: 110, y: 20 });
+    });
+  });
+
+  describe("R: advance=+y, stack=-x", () => {
+    it("justify carries the Y axis: R pins the bottom", () => {
+      expect(at("R", "R")).toEqual({ x: 10, y: 60 });
+    });
+    it("justify L pins the top; C centers both axes under centeredScaling", () => {
+      expect(at("R", "L")).toEqual({ x: 10, y: 20 });
+      expect(at("R", "C", null, true)).toEqual({ x: 60, y: 40 });
+    });
+    it("the stacking axis is X: dragging left pins the right edge", () => {
+      expect(at("R", "L", { top: false, left: true })).toEqual({ x: 110, y: 20 });
+    });
+    it("centeredScaling beats a dragged edge on the vertical-stack axis too", () => {
+      expect(at("R", "C", { top: false, left: true }, true)).toEqual({ x: 60, y: 40 });
+    });
+  });
+
+  describe("B: advance=-y, stack=+x", () => {
+    it("justify R clings to the advance-end, which is the top", () => {
+      expect(at("B", "R")).toEqual({ x: 10, y: 20 });
+    });
+    it("justify L clings to the advance-start, which is the bottom", () => {
+      expect(at("B", "L")).toEqual({ x: 10, y: 60 });
+    });
   });
 });

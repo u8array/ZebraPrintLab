@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import { flushSync } from "react-dom";
 import type Konva from "konva";
 import { dotsToPx, pxToDots } from "../../../lib/coordinates";
-import { blockBoundsDots, blockReflowGeometry } from "../../../lib/zebraTextLayout";
+import { blockBoundsDots, blockGlyphAnchorPoint, blockReflowGeometry, type BlockJustify, type ZplRotation } from "../../../lib/zebraTextLayout";
 import { getCurrentObjects, useLabelStore } from "../../../store/labelStore";
 import {
   BARCODE_1D_TYPES,
@@ -195,6 +195,9 @@ export interface TransformerState {
   rotateEnabled: false;
   resizeEnabled: boolean;
   enabledAnchors: string[] | undefined;
+  /** Center-justified glyph blocks scale from the center so the box grows
+   *  symmetrically and tracks the centered text live. */
+  centeredScaling: boolean;
   onTransformStart: () => void;
   onTransform: () => void;
   boundBoxFunc: (oldBox: BoundingBox, newBox: BoundingBox) => BoundingBox;
@@ -240,6 +243,15 @@ export function useKonvaTransformer({
   // Anchor name at drag start; commit skips grid-snap on inactive axes
   // so the opposite corner stays put.
   const activeEdgesRef = useRef<ActiveEdgeFlags | null>(null);
+  // Block node rect at glyph-mode drag start (unrotated view only); commit
+  // re-measures with the baked font to pin the stable point, so a justified
+  // block doesn't jump when the font re-justifies in the same width.
+  const glyphBlockStartRectRef = useRef<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   // Active only while a ^FB block is being live-reflowed (frame mode): the
   // block re-wraps as blockWidth/blockLines change each tick instead of the
@@ -397,6 +409,16 @@ export function useKonvaTransformer({
             : undefined;
   const isFreeResize = enabledAnchors === undefined;
 
+  // The commit reuses this exact value (not a re-derivation) so the anchor pin
+  // can't disagree with the preview when Alt flips the mode this prop can't see.
+  const centeredScaling =
+    !!singleSelected &&
+    !isGroup(singleSelected) &&
+    singleSelected.type === "text" &&
+    !!(singleSelected.props as { blockWidth?: number }).blockWidth &&
+    resolveBlockResizeMode(blockDragMode, false) === "glyph" &&
+    (singleSelected.props as { blockJustify?: BlockJustify }).blockJustify === "C";
+
   /** Reset all transform-time state. Idempotent; safe to call from any exit path. */
   function cleanupTransformState() {
     transformAnchorRef.current = null;
@@ -405,6 +427,7 @@ export function useKonvaTransformer({
     uniformStartRectRef.current = null;
     activeEdgesRef.current = null;
     liveReflowRef.current = null;
+    glyphBlockStartRectRef.current = null;
     blockResizeModeRef.current = "frame";
     setGuides([]);
   }
@@ -551,6 +574,14 @@ export function useKonvaTransformer({
         // Per-tick store writes during the drag would each land in the undo
         // history; pause recording and collapse to one entry on release.
         useLabelStore.temporal.getState().pause();
+      } else if (!frameMode && (bp.blockWidth ?? 0) > 0 && viewRotation === 0) {
+        // Glyph mode bakes on end: capture the start rect so commit can re-pin
+        // the stable point after the font re-justifies.
+        glyphBlockStartRectRef.current = node.getClientRect({
+          relativeTo: stageRef.current ?? undefined,
+          skipStroke: true,
+          skipShadow: true,
+        });
       }
     }
   };
@@ -824,6 +855,62 @@ export function useKonvaTransformer({
         anchor: ctxAnchor,
         resizeMode: blockResizeModeRef.current,
       });
+      const start = glyphBlockStartRectRef.current;
+      if (
+        obj.type === "text" &&
+        ((obj.props as { blockWidth?: number }).blockWidth ?? 0) > 0 &&
+        blockResizeModeRef.current === "glyph" &&
+        start
+      ) {
+        // Bake the font, re-measure the ink, and pin the stable point (via
+        // blockGlyphAnchorPoint) so a justified block doesn't drift on release.
+        const fp = obj.props as {
+          fontWidth: number;
+          fontHeight: number;
+          rotation: ZplRotation;
+          blockJustify?: BlockJustify;
+        };
+        const temporal = useLabelStore.temporal.getState();
+        // try/finally so a throw from flushSync/getClientRect can't leave undo
+        // recording globally paused (resume is idempotent).
+        temporal.pause();
+        try {
+          // Konva left the node at the drag position; the font-only commit does
+          // not change x/y so react-konva won't reset it. Move it back to the
+          // model origin so the re-measure reflects the block at obj.x/y.
+          node.x(objectsOffsetX + dotsToPx(obj.x, scale, dpmm));
+          node.y(labelOffsetY + dotsToPx(obj.y, scale, dpmm));
+          flushSync(() => updateObject(singleId, { props: propChanges }));
+          const newRect = node.getClientRect({
+            relativeTo: stageRef.current ?? undefined,
+            skipStroke: true,
+            skipShadow: true,
+          });
+          const edges = activeEdgesRef.current;
+          const justify = fp.blockJustify ?? "L";
+          const anchorArgs = { rotation: fp.rotation, justify, edges, centeredStacking: centeredScaling };
+          const startA = blockGlyphAnchorPoint({ rect: start, ...anchorArgs });
+          const newA = blockGlyphAnchorPoint({ rect: newRect, ...anchorArgs });
+          const model = modelPositionFromRenderedTopLeft(
+            obj,
+            pxToDots(node.x() + (startA.x - newA.x) - objectsOffsetX, scale, dpmm),
+            pxToDots(node.y() + (startA.y - newA.y) - labelOffsetY, scale, dpmm),
+          );
+          // Restore pre-drag state while paused, resume, then apply the final as
+          // one tracked change so undo records pre-drag -> final once.
+          updateObject(singleId, {
+            x: obj.x,
+            y: obj.y,
+            props: { fontWidth: fp.fontWidth, fontHeight: fp.fontHeight },
+          });
+          temporal.resume();
+          updateObject(singleId, { x: model.x, y: model.y, props: propChanges });
+        } finally {
+          temporal.resume();
+          cleanupTransformState();
+        }
+        return;
+      }
       updateObject(singleId, { ...pos, props: propChanges });
     }
     cleanupTransformState();
@@ -833,6 +920,7 @@ export function useKonvaTransformer({
     rotateEnabled: false,
     resizeEnabled,
     enabledAnchors,
+    centeredScaling,
     onTransformStart,
     onTransform,
     boundBoxFunc,

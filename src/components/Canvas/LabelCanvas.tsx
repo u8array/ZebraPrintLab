@@ -404,6 +404,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     rotateEnabled,
     resizeEnabled,
     enabledAnchors,
+    centeredScaling,
     onTransformStart,
     onTransform,
     boundBoxFunc,
@@ -903,6 +904,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 rotateEnabled={rotateEnabled}
                 resizeEnabled={resizeEnabled}
                 enabledAnchors={enabledAnchors}
+                centeredScaling={centeredScaling}
                 onTransformStart={onTransformStart}
                 onTransform={onTransform}
                 boundBoxFunc={boundBoxFunc}
