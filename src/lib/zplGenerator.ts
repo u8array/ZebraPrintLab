@@ -12,6 +12,7 @@ import {
   isDefaultClockChars,
 } from './fcTemplate';
 import { getObjectStringContent } from './variableBinding';
+import { formatLabelMetaComment } from './zplLabelMeta';
 import type { ClockOffset, CustomFontMapping, LabelConfig } from '../types/LabelConfig';
 import type { ZplEmitContext } from '../types/ZplEmit';
 import type { Variable } from '../types/Variable';
@@ -236,6 +237,13 @@ export function generateZPL(
   }
 
   lines.push('^XA');
+  // Leading geometry sidecar: recovers exact width/height/dpmm on re-import,
+  // which plain ^PW/^LL (dots, no dpmm) can't. A comment, so print is unaffected.
+  lines.push(formatLabelMetaComment({
+    dpmm: label.dpmm,
+    widthMm: label.widthMm,
+    heightMm: label.heightMm,
+  }));
   // a=D since model is dots-canonical.
   if (label.muResampling) {
     lines.push(`^MUD,${label.muResampling.formatDpi},${label.muResampling.outputDpi}`);

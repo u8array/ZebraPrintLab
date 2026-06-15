@@ -43,6 +43,13 @@ export const PRINT_ORIENTATION_VALUES = ['N', 'I'] as const;
 export type PrintOrientation = (typeof PRINT_ORIENTATION_VALUES)[number];
 export const isPrintOrientation = makeEnumGuard(PRINT_ORIENTATION_VALUES);
 
+/** Print densities Zebra ships (152/203/300/600 dpi). The label settings UI
+ *  offers exactly these; the ZPL geometry sidecar validates against the set. */
+export const DPMM_VALUES = [6, 8, 12, 24] as const;
+export type Dpmm = (typeof DPMM_VALUES)[number];
+export const isDpmm = (n: number): n is Dpmm =>
+  (DPMM_VALUES as readonly number[]).includes(n);
+
 /** Numeric ranges shared between Zod schema, parser clamps and UI inputs. */
 export const SPEED_RANGE = { min: 2, max: 14 } as const;
 export const DARKNESS_PERMANENT_RANGE = { min: -30, max: 30 } as const;

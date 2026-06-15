@@ -1,0 +1,53 @@
+// Label-geometry sidecar carried in a leading ^FX comment. Plain ZPL can't
+// express dpmm and rounds mm through ^PW/^LL dots, so a re-imported label loses
+// the exact width/height/dpmm. We stash them in a namespaced comment the
+// printer and Labelary ignore, and recover them on import.
+
+import { isDpmm } from "../types/LabelConfig";
+
+/** Namespace so a foreign ^FX comment can't be mistaken for our metadata. */
+export const LABEL_META_PREFIX = "ZPLLAB:";
+
+const MM_MIN = 1;
+const MM_MAX = 5000;
+
+export interface LabelMeta {
+  dpmm: number;
+  widthMm: number;
+  heightMm: number;
+}
+
+const isMm = (v: unknown): v is number =>
+  typeof v === "number" && Number.isFinite(v) && v >= MM_MIN && v <= MM_MAX;
+
+/** The leading sidecar line. Numbers only, no `^`/`~`, so it is a valid ^FX
+ *  comment terminated by ^FS (verified against the ZPL spec and Labelary). */
+export function formatLabelMetaComment(meta: LabelMeta): string {
+  const body = JSON.stringify({
+    dpmm: meta.dpmm,
+    wMm: meta.widthMm,
+    hMm: meta.heightMm,
+  });
+  return `^FX${LABEL_META_PREFIX}${body}^FS`;
+}
+
+/** Parse a ^FX comment body (text after `^FX`) into validated label meta, or
+ *  null if it is not our sentinel or any field is out of range. Defensive
+ *  against foreign comments and corrupt payloads. */
+export function parseLabelMetaComment(commentBody: string): LabelMeta | null {
+  const trimmed = commentBody.trim();
+  if (!trimmed.startsWith(LABEL_META_PREFIX)) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed.slice(LABEL_META_PREFIX.length));
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object") return null;
+  const { dpmm, wMm, hMm } = parsed as Record<string, unknown>;
+  // Emit assumes dpmm ∈ DPMM_VALUES (the only densities the UI produces); keep
+  // emit and this guard on the same source of truth.
+  if (typeof dpmm !== "number" || !isDpmm(dpmm)) return null;
+  if (!isMm(wMm) || !isMm(hMm)) return null;
+  return { dpmm, widthMm: wMm, heightMm: hMm };
+}

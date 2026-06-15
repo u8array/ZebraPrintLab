@@ -194,7 +194,6 @@ export function createGraphicsHandlers(
         return;
       }
 
-      const gfSummary = `^GF${rest.slice(0, IMPORT_FINDING_PAYLOAD_LIMIT)}…`;
       // Pass bytes-headers verbatim so re-export keeps the firmware buffer hint.
       const gfImage = decodeGraphicToImage(
         gfRawData,
@@ -205,7 +204,30 @@ export function createGraphicsHandlers(
         `imported_${crypto.randomUUID().slice(0, 8)}.png`,
       );
       if (!gfImage) {
-        pushBrowserLimit(s.result, gfSummary);
+        // Undecodable, but the header still describes the bitmap, so preserve
+        // the field verbatim instead of dropping it. Height is param c (field
+        // count), not b (compressed length). Rebuild the header with the default
+        // delimiter so a ^CD source still round-trips (generator never re-emits ^CD).
+        const gfFieldCount = int(gfParams[1], 0);
+        const opaqueWidth = gfBytesPerRow * 8;
+        s.result.partialCmds.add("^GF");
+        s.result.objects.push(
+          makeObj(
+            "image",
+            s.field.x,
+            s.field.y,
+            {
+              imageId: "",
+              widthDots: opaqueWidth,
+              // Fall back to a square (grabbable) placeholder for malformed c<=0.
+              heightDots: gfFieldCount > 0 ? Math.floor(gfFieldCount / gfBytesPerRow) : opaqueWidth,
+              threshold: 128,
+              rawGf: `^GF${format},${gfParams[0]},${gfParams[1]},${gfParams[2]},${gfRawData}`,
+            } satisfies ImageProps,
+            getPosType(s.field),
+            takeComment(),
+          ),
+        );
         return;
       }
       if (!gfImage.crcOk) s.result.partialCmds.add("^GF");

@@ -1,4 +1,5 @@
 import { DEFAULT_CLOCK_CHARS } from "./fcTemplate";
+import { parseLabelMetaComment, type LabelMeta } from "./zplLabelMeta";
 import { tokenize } from "./zplParser/helpers";
 import { createParserState } from "./zplParser/context";
 import { createFlushField } from "./zplParser/flushField";
@@ -48,10 +49,21 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
   const resetComment: Handler = (_, rest) => {
     s.comment.pending = rest.trim() || undefined;
   };
+  // Our geometry sidecar, consumed (not shown as an object comment) from the
+  // leading slot only, so a stray body ^FX can't rewrite the label settings.
+  // Holder object so the closure write survives TS flow narrowing.
+  const labelMeta: { value: LabelMeta | null } = { value: null };
   // Multi-line ^FX before a field accumulate; XA/XZ reset at label boundaries.
   const appendComment: Handler = (_, rest) => {
     const next = rest.trim();
     if (!next) return;
+    if (!labelMeta.value && objects.length === 0) {
+      const meta = parseLabelMetaComment(next);
+      if (meta) {
+        labelMeta.value = meta;
+        return;
+      }
+    }
     s.comment.pending = s.comment.pending ? `${s.comment.pending}\n${next}` : next;
   };
 
@@ -93,6 +105,14 @@ export function parseZPL(zpl: string, dpmm = 8): ParsedZPL {
       skipped.push(token);
       unknown.push(token);
     }
+  }
+
+  // Apply the geometry sidecar last so it wins over ^PW/^LL-derived mm and
+  // restores dpmm, which plain ZPL can't carry.
+  if (labelMeta.value) {
+    labelConfig.dpmm = labelMeta.value.dpmm;
+    labelConfig.widthMm = labelMeta.value.widthMm;
+    labelConfig.heightMm = labelMeta.value.heightMm;
   }
 
   // pageIndex stays 0; zplImportService fills it per ^XA…^XZ block.

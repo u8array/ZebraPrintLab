@@ -584,3 +584,51 @@ describe('parseZPL — real-world structural commands are silently ignored', () 
     expect(importReport.unknown.some((s) => s.startsWith('^XF'))).toBe(true);
   });
 });
+
+// ── opaque ^GF pass-through ──────────────────────────────────────────────────
+
+/** CRC-16/XMODEM, matching the parser's :Z64: wrapper check, so the corrupt
+ *  payload passes wrapper validation and fails only at inflate. */
+function crc16(s: string): string {
+  let crc = 0;
+  for (const ch of s) {
+    crc ^= ch.charCodeAt(0) << 8;
+    for (let j = 0; j < 8; j++)
+      crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+  }
+  return crc.toString(16).padStart(4, '0').toUpperCase();
+}
+
+describe('round-trip — label geometry sidecar', () => {
+  it('recovers dpmm + exact mm even when re-parsed at a different dpmm', () => {
+    const label: LabelConfig = { widthMm: 57, heightMm: 32, dpmm: 12 };
+    const zpl = generateZPL(label, []);
+    expect(zpl).toContain('^FXZPLLAB:');
+    // Re-parse at the wrong external dpmm: ^PW/^LL alone would give 85.5×48mm
+    // at 8dpmm, but the sidecar restores the authored geometry exactly.
+    const parsed = parseZPL(zpl, 8);
+    expect(parsed.labelConfig.dpmm).toBe(12);
+    expect(parsed.labelConfig.widthMm).toBe(57);
+    expect(parsed.labelConfig.heightMm).toBe(32);
+  });
+});
+
+describe('round-trip — opaque ^GF pass-through', () => {
+  // Valid wrapper + matching CRC but garbage deflate bytes: we can't decode it,
+  // so the command is preserved verbatim instead of dropped.
+  const b64 = btoa('not a real zlib stream');
+  const field = `:Z64:${b64}:${crc16(b64)}`;
+  const ZPL = `^XA^FO40,60^GFC,4,16,2,${field}^FS^XZ`;
+
+  it('re-emits the undecodable ^GF verbatim and survives re-parse', () => {
+    const { first, second, regenerated } = roundtrip(ZPL);
+    expect(first.objects).toHaveLength(1);
+    expect(props(first.objects[0]).rawGf).toBe(`^GFC,4,16,2,${field}`);
+    expect(regenerated).toContain(`^GFC,4,16,2,${field}`);
+    // Idempotent: same opaque image at the same origin after a full round-trip.
+    expect(second.objects).toHaveLength(1);
+    expect(props(second.objects[0]).rawGf).toBe(`^GFC,4,16,2,${field}`);
+    expect(defined(second.objects[0]).x).toBe(40);
+    expect(defined(second.objects[0]).y).toBe(60);
+  });
+});
