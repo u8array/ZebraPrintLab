@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolveDefaultSizeDots } from "./resolveDefaultSize";
-import type { LabelConfig } from "../../types/LabelConfig";
+import type { LabelConfig } from "../types/LabelConfig";
 const labelAt = (dpmm: number): LabelConfig =>
   ({ widthMm: 100, heightMm: 50, dpmm }) as LabelConfig;
 

@@ -4,7 +4,7 @@ import {
   eanUpcHriFontFamily,
   ocrbEanHriFontDots,
   upcSuppAboveGapDots,
-} from '../components/Canvas/bwipConstants';
+} from '../lib/bwipConstants';
 export type { Barcode1DProps as UpcEanExtensionProps } from './barcode1d';
 
 /** UPC/EAN extension barcode (^BS); the 2- or 5-digit supplement

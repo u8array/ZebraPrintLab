@@ -1,6 +1,6 @@
 import { BARCODE_1D_TYPES } from "../../registry";
 import type { LeafObject } from "../../registry";
-import { QR_FO_Y_OFFSET_DOTS } from "./bwipConstants";
+import { QR_FO_Y_OFFSET_DOTS } from "../../lib/bwipConstants";
 
 /** QR FO: subtract Zebra-artifact +10 Y. 1D FT: add new bar height back
  *  so obj.y stays on the FT baseline (else resize walks barcode up). */

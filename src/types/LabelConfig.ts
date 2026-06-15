@@ -113,6 +113,9 @@ export const labelConfigSchema = z.object({
   widthMm: z.number(),
   heightMm: z.number(),
   dpmm: z.number(),
+  /** Design-time safe-area inset (mm) from every edge. Drives the align/pin
+   *  reference rect and a canvas guide; optional so older designs stay valid. */
+  safeAreaMm: z.number().min(0).optional(),
   printQuantity: z.number().optional(),
   /** ^PQ p2: pause every N labels (0 = none). */
   pauseCount: z.number().int().min(0).max(99999999).optional(),

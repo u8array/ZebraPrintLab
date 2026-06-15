@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { Ellipse, Group, Rect, Shape, Text } from "react-konva";
 import { lookupBoundVariable, shouldShowFallbackTint } from "../../lib/variableBinding";
@@ -15,6 +16,7 @@ import { applyBindingToObject, buildActiveCsvRow, clockCtxFromLabel } from "../.
 import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "../../lib/labelGeometry/textPositionTransforms";
 import { getTextRenderMetrics } from "../../lib/labelGeometry/textRenderMetrics";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
+import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 import { DEFAULT_GS_SYMBOL_META, GS_SYMBOLS } from "../../registry/symbol";
 import { GS_SYMBOL_PATHS, GS_VECTOR_CODES, type GsVectorCode } from "../../registry/gsSymbolPaths";
 import { blockBoundsDots, blockJustifyWordPositions, blockLineStartDots, blockLineStepDots, wrapBlockLines, zebraAlignOffsetDots, zebraHangingIndentOffsetDots, zebraJustifyGapDots, zebraLineWidthDots, type ZplRotation } from "../../lib/zebraTextLayout";
@@ -472,6 +474,37 @@ function KonvaObjectInner({
 
   const x = offsetX + dotsToPx(obj.x, scale, dpmm);
   const y = offsetY + dotsToPx(obj.y, scale, dpmm);
+
+  // Publish the single-line text/serial footprint (dots) for align/distribute.
+  // Block (^FB) text is purely computable via blockBoundsDots, so only the
+  // single-line case needs the measured ink width. Upright is inkWidth x
+  // fontHeight; a quarter turn swaps the axes.
+  const isSingleLineText =
+    (obj.type === "text" || obj.type === "serial") &&
+    !!textMetrics &&
+    !(obj.type === "text" && obj.props.blockWidth);
+  const inkWidthDots = textMetrics?.inkWidthDots ?? 0;
+  const fontHeightDots =
+    obj.type === "text" || obj.type === "serial" ? obj.props.fontHeight : 0;
+  const rotation =
+    obj.type === "text" || obj.type === "serial" ? obj.props.rotation : "N";
+  const isQuarterTurn = rotation === "R" || rotation === "B";
+  useEffect(() => {
+    if (!isSingleLineText) return;
+    // Footprint dropped to zero (e.g. content cleared): drop the stale entry.
+    if (inkWidthDots <= 0 || fontHeightDots <= 0) {
+      clearMeasuredBounds(obj.id);
+      return;
+    }
+    setMeasuredBounds(obj.id, {
+      width: isQuarterTurn ? fontHeightDots : inkWidthDots,
+      height: isQuarterTurn ? inkWidthDots : fontHeightDots,
+    });
+  }, [obj.id, isSingleLineText, inkWidthDots, fontHeightDots, isQuarterTurn]);
+  useEffect(() => {
+    if (!isSingleLineText) return;
+    return () => clearMeasuredBounds(obj.id);
+  }, [obj.id, isSingleLineText]);
 
   // Snap a stage-position to the nearest grid point, returns stage-position.
   const snapPos = (stageX: number, stageY: number) => ({

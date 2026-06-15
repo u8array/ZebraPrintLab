@@ -26,7 +26,7 @@ import {
   MICROPDF417_QUIET_ZONE_ROWS,
   PLESSEY_BWIP_TO_ZEBRA_WIDTH_RATIO,
   upcSuppTextZoneDots,
-} from "./bwipConstants";
+} from "../../lib/bwipConstants";
 
 // AI 01 + 11 digits is not a valid GTIN-14. Zebra falls back to General
 // Compaction (~149 modules at 8dpmm); routing through (99) matches that

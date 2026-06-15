@@ -6,7 +6,7 @@ import {
   buildBwipOptions,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
-import { upcSuppTextZoneDots } from "../components/Canvas/bwipConstants";
+import { upcSuppTextZoneDots } from "../lib/bwipConstants";
 import { ObjectRegistry } from "../registry";
 import { objectRotation } from "../registry/rotation";
 import { defined } from "./helpers";

@@ -46,6 +46,13 @@ export type SidebarTab = 'properties' | 'layers' | 'variables' | 'fonts';
  *  it for one drag. Transient editor state; never stored in the design. */
 export type BlockDragMode = 'frame' | 'glyph';
 
+/** Reference frame for the "Align" section's toggle. 'selection' = the
+ *  selection union bbox, 'key' = the last-selected object (selection order is
+ *  preserved, so the key is the final entry of selectedIds). The "Align to
+ *  label" section always uses the label rect and so is not part of this union.
+ *  Transient editor tool state; never persisted (not in partialize). */
+export type AlignSelectionRef = 'selection' | 'key';
+
 export interface UiSlice {
   locale: LocaleCode;
   /** UI theme. Initial value seeded from prefers-color-scheme; once
@@ -65,6 +72,8 @@ export interface UiSlice {
   sidebarTab: SidebarTab;
   /** Block resize-handle mode; see BlockDragMode. Transient. */
   blockDragMode: BlockDragMode;
+  /** Reference for the "Align" section toggle; see AlignSelectionRef. Transient. */
+  alignRef: AlignSelectionRef;
   printerSettingsTab: PrinterSettingsTab | null;
   /** Cross-component trigger for the "send to Zebra" dialog. `null`
    *  keeps the dialog closed. */
@@ -82,6 +91,7 @@ export interface UiSlice {
   setCanvasSettings: (settings: Partial<CanvasSettings>) => void;
   setSidebarTab: (tab: SidebarTab) => void;
   setBlockDragMode: (mode: BlockDragMode) => void;
+  setAlignRef: (ref: AlignSelectionRef) => void;
   setPrinterSettingsTab: (tab: PrinterSettingsTab | null) => void;
   openZebraPrint: (source: 'label' | 'setupScript') => void;
   closeZebraPrint: () => void;
@@ -107,6 +117,7 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
   },
   sidebarTab: 'properties',
   blockDragMode: 'frame',
+  alignRef: 'selection',
   printerSettingsTab: null,
   zebraPrintSource: null,
   editorFocusRequest: null,
@@ -120,6 +131,7 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
     set((state) => ({ canvasSettings: { ...state.canvasSettings, ...settings } })),
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
   setBlockDragMode: (mode) => set({ blockDragMode: mode }),
+  setAlignRef: (ref) => set({ alignRef: ref }),
   setPrinterSettingsTab: (tab) => set({ printerSettingsTab: tab }),
   openZebraPrint: (source) => set({ zebraPrintSource: source }),
   closeZebraPrint: () => set({ zebraPrintSource: null }),
