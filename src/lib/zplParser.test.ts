@@ -919,6 +919,18 @@ describe('parseZPL — ^GFA graphic field', () => {
     expect(importReport.browserLimit).toHaveLength(0);
   });
 
+  it('falls back to a square when an opaque ^GF c is under one full row (height would floor to 0)', () => {
+    // c=1 < d=2 -> floor(1/2)=0; the placeholder must stay grabbable, so height
+    // falls back to the square width (d*8) instead of a 0-dot sliver.
+    const b64 = btoa('not a valid zlib stream');
+    const field = `:Z64:${b64}:${testCrc16(b64)}`;
+    const { objects } = parseZPL(`^XA^FO0,0^GFC,4,1,2,${field}^FS^XZ`, 8);
+    expect(objects).toHaveLength(1);
+    const p = props(objects[0]);
+    expect(p.widthDots).toBe(16);
+    expect(p.heightDots).toBe(16);
+  });
+
   it('normalizes the opaque ^GF header delimiter so a ^CD source survives re-parse', () => {
     // ^CD; switches the delimiter to ';'. The generator never re-emits ^CD, so
     // the preserved header is rebuilt with commas to round-trip a second time.

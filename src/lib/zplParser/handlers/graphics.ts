@@ -210,6 +210,9 @@ export function createGraphicsHandlers(
         // delimiter so a ^CD source still round-trips (generator never re-emits ^CD).
         const gfFieldCount = int(gfParams[1], 0);
         const opaqueWidth = gfBytesPerRow * 8;
+        // Malformed c (<=0 or under one full row, flooring to a 0-dot sliver)
+        // falls back to a square so the placeholder stays grabbable.
+        const opaqueHeight = gfFieldCount > 0 ? Math.floor(gfFieldCount / gfBytesPerRow) : 0;
         s.result.partialCmds.add("^GF");
         s.result.objects.push(
           makeObj(
@@ -219,8 +222,7 @@ export function createGraphicsHandlers(
             {
               imageId: "",
               widthDots: opaqueWidth,
-              // Fall back to a square (grabbable) placeholder for malformed c<=0.
-              heightDots: gfFieldCount > 0 ? Math.floor(gfFieldCount / gfBytesPerRow) : opaqueWidth,
+              heightDots: opaqueHeight > 0 ? opaqueHeight : opaqueWidth,
               threshold: 128,
               rawGf: `^GF${format},${gfParams[0]},${gfParams[1]},${gfParams[2]},${gfRawData}`,
             } satisfies ImageProps,
