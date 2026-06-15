@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { zlibSync } from 'fflate';
 import { parseZPL } from './zplParser';
+import { formatLabelMetaComment } from './zplLabelMeta';
 import { props } from '../test/helpers';
 
 /** CRC-16/XMODEM; same variant used by the parser to validate
@@ -898,18 +899,34 @@ describe('parseZPL — ^GFA graphic field', () => {
     expect(importReport.partial).not.toContain('^GF');
   });
 
-  it('records :Z64: with corrupt deflate stream as browserLimit', () => {
-    // Valid base64 but garbage bytes that fflate will reject as a deflate
-    // stream. CRC must match so we know the failure is in inflate, not the
-    // wrapper-shape detection.
+  it('preserves an undecodable :Z64: ^GF verbatim, sizing height from c not b', () => {
+    // Valid base64, matching CRC, but garbage bytes that fflate rejects as a
+    // deflate stream → can't decode, so preserve the command verbatim instead
+    // of dropping it. b=4 (compressed stream length) is deliberately smaller
+    // than c=16 (uncompressed field count); height must come from c/d, not b/d.
     const b64 = btoa('not a valid zlib stream');
     const field = `:Z64:${b64}:${testCrc16(b64)}`;
     const { objects, importReport } = parseZPL(
-      `^XA^FO0,0^GFC,8,8,1,${field}^FS^XZ`,
+      `^XA^FO0,0^GFC,4,16,2,${field}^FS^XZ`,
       8,
     );
-    expect(objects).toHaveLength(0);
-    expect(importReport.browserLimit.some((s) => s.startsWith('^GF'))).toBe(true);
+    expect(objects).toHaveLength(1);
+    const p = props(objects[0]);
+    expect(p.widthDots).toBe(16); // d=2 → 2*8
+    expect(p.heightDots).toBe(8); // c/d = 16/2, not b/d = 4/2
+    expect(p.rawGf).toBe(`^GFC,4,16,2,${field}`);
+    expect(importReport.partial).toContain('^GF');
+    expect(importReport.browserLimit).toHaveLength(0);
+  });
+
+  it('normalizes the opaque ^GF header delimiter so a ^CD source survives re-parse', () => {
+    // ^CD; switches the delimiter to ';'. The generator never re-emits ^CD, so
+    // the preserved header is rebuilt with commas to round-trip a second time.
+    const b64 = btoa('not a real zlib stream');
+    const field = `:Z64:${b64}:${testCrc16(b64)}`;
+    const { objects } = parseZPL(`^XA^FO0,0^CD;^GFC;4;16;2;${field}^FS^XZ`, 8);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).rawGf).toBe(`^GFC,4,16,2,${field}`);
   });
 
   it('creates an image object from compressed ^GFA data', () => {
@@ -920,6 +937,38 @@ describe('parseZPL — ^GFA graphic field', () => {
     const { objects } = parseZPL('^XA^FO0,0^GFA,2,2,1,FF,:^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('image');
+  });
+});
+
+// ── ^FX label metadata sidecar ────────────────────────────────────────────────
+
+describe('parseZPL — ^FX label metadata sidecar', () => {
+  it('recovers dpmm/width/height from the leading sidecar, overriding ^PW/^LL', () => {
+    const zpl = `^XA${formatLabelMetaComment({ dpmm: 12, widthMm: 57, heightMm: 32 })}^PW800^LL600^FO0,0^A0N,30,0^FDx^FS^XZ`;
+    // External dpmm 8 is deliberately wrong; the sidecar must win.
+    const { labelConfig } = parseZPL(zpl, 8);
+    expect(labelConfig.dpmm).toBe(12);
+    expect(labelConfig.widthMm).toBe(57);
+    expect(labelConfig.heightMm).toBe(32);
+  });
+
+  it('does not attach the sidecar as the next object comment', () => {
+    const zpl = `^XA${formatLabelMetaComment({ dpmm: 8, widthMm: 100, heightMm: 60 })}^FO0,0^A0N,30,0^FDx^FS^XZ`;
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.comment).toBeUndefined();
+  });
+
+  it('ignores a sidecar that appears after an object (non-leading slot)', () => {
+    const zpl = `^XA^FO0,0^A0N,30,0^FDx^FS${formatLabelMetaComment({ dpmm: 24, widthMm: 20, heightMm: 20 })}^FO0,50^A0N,30,0^FDy^FS^XZ`;
+    const { labelConfig, objects } = parseZPL(zpl, 8);
+    expect(labelConfig.dpmm).not.toBe(24);
+    expect(props(objects[1]).content).toBe('y');
+  });
+
+  it('keeps a foreign ^FX as a normal object comment', () => {
+    const { objects } = parseZPL('^XA^FXserial run 42^FO0,0^A0N,30,0^FDx^FS^XZ', 8);
+    expect(objects[0]?.comment).toBe('serial run 42');
   });
 });
 
@@ -1812,9 +1861,13 @@ describe('parseZPL — importReport.unknown', () => {
     expect(importReport.unknown.some((s) => s.startsWith('^XX'))).toBe(true);
   });
 
-  it('records ^GFB (unsupported GF format) in importReport.browserLimit', () => {
-    const { importReport } = parseZPL('^XA^FO0,0^GFB,32,32,4,AABBCCDD^FS^XZ', 8);
-    expect(importReport.browserLimit.some((s) => s.startsWith('^GF'))).toBe(true);
+  it('preserves an undecodable ^GFB format as an opaque verbatim image', () => {
+    const { objects, importReport } = parseZPL('^XA^FO0,0^GFB,32,32,4,AABBCCDD^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('image');
+    expect(props(objects[0]).rawGf).toBe('^GFB,32,32,4,AABBCCDD');
+    expect(importReport.partial).toContain('^GF');
+    expect(importReport.browserLimit.some((s) => s.startsWith('^GF'))).toBe(false);
     expect(importReport.unknown.some((s) => s.startsWith('^GF'))).toBe(false);
   });
 

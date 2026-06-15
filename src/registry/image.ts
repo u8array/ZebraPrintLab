@@ -19,6 +19,10 @@ export interface ImageProps {
   threshold: number;
   /** Cached GFA ZPL string; regenerated when image/width/threshold changes */
   _gfaCache?: string;
+  /** Verbatim `^GF` for graphics we can't decode into an editable bitmap
+   *  (binary B, compressed C, `:Z64:`, ACS run-length); re-emitted as-is to
+   *  round-trip. Mutually exclusive with a cached `imageId`. */
+  rawGf?: string;
   /** When set, the image is uploaded once via `~DY` (preamble) and referenced
    *  per-instance via `^XG`. Set by the parser when a ZPL stream uses the
    *  upload+recall pattern, preserved on re-export. Without this the image
@@ -100,6 +104,9 @@ export const image: ObjectTypeCore<ImageProps> = {
   // _gfaCache always cleared; for cached images the hex needs regen at
   // the new width; for placeholders it's empty anyway.
   commitTransform: (obj, ctx) => {
+    // Opaque verbatim graphics carry fixed bytes we can't re-encode, so the
+    // box size is locked; ignore the resize.
+    if (obj.props.rawGf) return {};
     const { sx, sy, snap } = ctx;
     const cached = getImage(obj.props.imageId);
     const widthDots = (scale: number): number =>
@@ -122,6 +129,9 @@ export const image: ObjectTypeCore<ImageProps> = {
 
   toZPL: (obj) => {
     const p = obj.props;
+    // Opaque graphic: re-emit the original ^GF verbatim at the (possibly moved)
+    // field position. The bytes were never decoded, so there's nothing to regen.
+    if (p.rawGf) return `${fieldPos(obj)}${p.rawGf}^FS`;
     // Recall path: upload happened in the preamble; here we just reference
     // it via ^XG. The `.GRF` extension is implicit on `~DY{path},A,G,…`;
     // Zebra firmware persists the file as `path.GRF` and `^XG` resolves
