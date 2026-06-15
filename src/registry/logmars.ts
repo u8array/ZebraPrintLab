@@ -1,6 +1,6 @@
 import { createBarcode1DCore, type Barcode1DCoreConfig } from './barcode1d';
 import { formatLogmarsHri } from "./hriFormatters";
-import { LOGMARS_TEXT_ABOVE_GAP_DOTS } from "../components/Canvas/bwipConstants";
+import { LOGMARS_TEXT_ABOVE_GAP_DOTS } from "../lib/bwipConstants";
 export type { Barcode1DProps as LogmarsProps } from "./barcode1d";
 
 export const logmarsCoreConfig: Barcode1DCoreConfig = {

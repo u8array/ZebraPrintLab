@@ -1,6 +1,6 @@
 import { Line, Rect, Text } from "react-konva";
 import type { ReactNode } from "react";
-import { VERA_MONO_HRI_CAP_TOP_PAD } from "./bwipConstants";
+import { VERA_MONO_HRI_CAP_TOP_PAD } from "../../lib/bwipConstants";
 
 // Monospace advance (cell width / em), used to estimate the centered HRI
 // text's width so the glyphs flank it (assumes a monospace fontFamily, which

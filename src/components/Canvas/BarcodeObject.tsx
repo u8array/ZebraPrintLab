@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import bwipjs from "bwip-js/browser";
 import { Image as KImage, Group, Rect, Text } from "react-konva";
 import type Konva from "konva";
@@ -7,6 +7,7 @@ import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
+import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 import {
   buildBwipOptions,
   cleanBwipError,
@@ -35,7 +36,7 @@ import {
   EAN_UPC_TYPES,
   QR_FO_Y_OFFSET_DOTS,
   QR_FT_MODULE_OFFSET,
-} from "./bwipConstants";
+} from "../../lib/bwipConstants";
 
 /** Resolve a registry value that may be a constant or a function of
  *  moduleWidth. Mirrors the pattern formatHri uses for content. */
@@ -151,6 +152,34 @@ export function BarcodeObject({
     ? getDisplaySize(obj, barcodeCanvas, scale, dpmm)
     : { w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0,
         upright: { w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0 } };
+
+  // Publish the rotated visual footprint (dots) for the align/distribute math.
+  // dim.w/dim.h are the post-rotation px extent; objectBounds consumes the
+  // already-rotated footprint verbatim.
+  const footprintWDots = pxToDots(dim.w, scale, dpmm);
+  const footprintHDots = pxToDots(dim.h, scale, dpmm);
+  // Bar sub-rect height (rotation-aware) so objectBounds anchors FT barcodes
+  // the same way the render path does (ftYShiftDots below uses dim.barH).
+  const footprintBarHDots = pxToDots(dim.barH, scale, dpmm);
+  // Text-zone offset (dots) of the bbox top-left from the bars, mirroring the
+  // render shift (-barLeftPx, -barTopPx) so objectBounds lands the same origin.
+  const footprintBarLeftDots = pxToDots(dim.barLeftPx, scale, dpmm);
+  const footprintBarTopDots = pxToDots(dim.barTopPx, scale, dpmm);
+  useEffect(() => {
+    // Footprint dropped to zero (e.g. content cleared): drop the stale entry.
+    if (footprintWDots <= 0 || footprintHDots <= 0) {
+      clearMeasuredBounds(obj.id);
+      return;
+    }
+    setMeasuredBounds(obj.id, {
+      width: footprintWDots,
+      height: footprintHDots,
+      barHeightDots: footprintBarHDots,
+      barLeftDots: footprintBarLeftDots,
+      barTopDots: footprintBarTopDots,
+    });
+  }, [obj.id, footprintWDots, footprintHDots, footprintBarHDots, footprintBarLeftDots, footprintBarTopDots]);
+  useEffect(() => () => clearMeasuredBounds(obj.id), [obj.id]);
 
   // Y delta in dots between the FT baseline (bar bottom) and the bbox
   // top-left, plus the QR-specific firmware offset. Used forward in the

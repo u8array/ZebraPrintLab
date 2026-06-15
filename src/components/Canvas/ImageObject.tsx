@@ -6,6 +6,7 @@ import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { getImage } from "../../lib/imageCache";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
+import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 
 type ImageLabelObject = Extract<LabelObject, { type: "image" }>;
 type Props = Omit<KonvaObjectProps, "obj"> & { obj: ImageLabelObject };
@@ -38,6 +39,20 @@ export function ImageObject({
     : dotsToPx(p.heightDots ?? p.widthDots, scale, dpmm);
   const x = offsetX + dotsToPx(obj.x, scale, dpmm);
   const y = offsetY + dotsToPx(obj.y, scale, dpmm);
+
+  // Publish the rendered footprint (dots) for align/distribute; height tracks
+  // the aspect-locked PNG size, not the stale heightDots prop.
+  const footprintWDots = pxToDots(w, scale, dpmm);
+  const footprintHDots = pxToDots(h, scale, dpmm);
+  useEffect(() => {
+    // Footprint dropped to zero (e.g. content cleared): drop the stale entry.
+    if (footprintWDots <= 0 || footprintHDots <= 0) {
+      clearMeasuredBounds(obj.id);
+      return;
+    }
+    setMeasuredBounds(obj.id, { width: footprintWDots, height: footprintHDots });
+  }, [obj.id, footprintWDots, footprintHDots]);
+  useEffect(() => () => clearMeasuredBounds(obj.id), [obj.id]);
 
   const [htmlImg, setHtmlImg] = useState<HTMLImageElement | null>(null);
   // Reset the cached HTMLImageElement during render when the source changes,

@@ -2,11 +2,12 @@ import { useId, type RefObject } from "react";
 import { InformationCircleIcon, FolderPlusIcon } from "@heroicons/react/16/solid";
 import { useLabelStore, useCurrentObjects } from "../../store/labelStore";
 import type { LabelCanvasHandle } from "../Canvas/LabelCanvas";
-import type { AlignAxis } from "../../lib/alignment";
+import type { AlignOp, DistributeAxis, AlignRef } from "../../lib/align";
+import type { AlignSelectionRef } from "../../store/slices/uiSlice";
 import { getEntry } from "../../registry";
 import { getPanel } from "../../registry/panels";
 import { canGroupSelection, findObjectById, isGroup } from "../../types/Group";
-import { BWIP_APPROX_SEVERITY } from "../Canvas/bwipConstants";
+import { BWIP_APPROX_SEVERITY } from "../../lib/bwipConstants";
 import { stripZplCommandChars } from "../../registry/zplHelpers";
 import { dotsToMm, mmToDots } from "../../lib/coordinates";
 import {
@@ -20,7 +21,7 @@ import type { Unit } from "../../lib/units";
 import { useT } from "../../lib/useT";
 import { parseIntOrUndef } from "../../lib/inputParse";
 import { CollapsibleSection } from "../ui/CollapsibleSection";
-import { AlignButtons } from "./AlignButtons";
+import { AlignToolbar } from "./AlignToolbar";
 import { VariableBindingControl } from "../Variables/VariableBindingControl";
 import { applyBindingToObject, clockCtxFromLabel, lookupBoundVariable } from "../../lib/variableBinding";
 import { inputCls, labelCls } from "./styles";
@@ -50,28 +51,45 @@ function BwipApproxIcon({ type }: { type: string }) {
   );
 }
 
-/** POSITION section header with centre-on-label tools docked right;
- *  same Figma/Sketch/Affinity convention used across leaf, group and
- *  multi-select panels. `unitSuffix` shows only when X/Y inputs sit
- *  below (leaf case); group + multi-select pass it bare. `useId`
- *  ties the label to the AlignButtons group so screen readers
- *  announce "Position, button group" instead of three loose icons. */
+/** POSITION section with align + distribute tools and the Align-To
+ *  selector; same Figma/Sketch/Affinity convention used across leaf,
+ *  group and multi-select panels. `unitSuffix` shows only when X/Y
+ *  inputs sit below (leaf case). `useId` ties the section label to the
+ *  toolbar group so screen readers announce a labelled button group. */
 function PositionSectionHeader({
   unitSuffix,
   onAlign,
+  onDistribute,
+  onTidy,
+  alignRef,
+  onAlignRefChange,
+  selectionCount,
 }: {
   unitSuffix?: string;
-  onAlign: (axis: AlignAxis) => void;
+  onAlign: (op: AlignOp, ref: AlignRef) => void;
+  onDistribute: (axis: DistributeAxis) => void;
+  onTidy: () => void;
+  alignRef: AlignSelectionRef;
+  onAlignRefChange: (ref: AlignSelectionRef) => void;
+  selectionCount: number;
 }) {
   const t = useT();
   const labelId = useId();
   return (
-    <div className="flex items-center justify-between gap-2">
+    <div className="flex flex-col gap-2">
       <p id={labelId} className={labelCls}>
         {t.properties.positionSection}
         {unitSuffix ? ` (${unitSuffix})` : ""}
       </p>
-      <AlignButtons onAlign={onAlign} ariaLabelledBy={labelId} />
+      <AlignToolbar
+        onAlign={onAlign}
+        onDistribute={onDistribute}
+        onTidy={onTidy}
+        alignRef={alignRef}
+        onAlignRefChange={onAlignRefChange}
+        selectionCount={selectionCount}
+        ariaLabelledBy={labelId}
+      />
     </div>
   );
 }
@@ -95,6 +113,8 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
     setLabelConfig,
     canvasSettings,
     setCanvasSettings,
+    alignRef,
+    setAlignRef,
   } = useLabelStore();
   const objects = useCurrentObjects();
   const unit = canvasSettings.unit;
@@ -104,8 +124,11 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
   // through to LabelConfigPanel.
   const firstId = selectedIds[0];
   const obj = firstId !== undefined ? findObjectById(objects, firstId) : undefined;
-  const handleAlign = (axis: AlignAxis) =>
-    canvasRef.current?.alignSelectionToLabel(axis);
+  const handleAlign = (op: AlignOp, ref: AlignRef) =>
+    canvasRef.current?.alignSelection(op, ref);
+  const handleDistribute = (axis: DistributeAxis) =>
+    canvasRef.current?.distributeSelection(axis);
+  const handleTidy = () => canvasRef.current?.tidySelection();
 
   if (selectedIds.length > 1) {
     const canGroup = canGroupSelection(objects, selectedIds);
@@ -119,7 +142,14 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
         </div>
         <div className="px-3 py-3 flex flex-col gap-3">
           <div className="flex flex-col gap-2">
-            <PositionSectionHeader onAlign={handleAlign} />
+            <PositionSectionHeader
+              onAlign={handleAlign}
+              onDistribute={handleDistribute}
+              onTidy={handleTidy}
+              alignRef={alignRef}
+              onAlignRefChange={setAlignRef}
+              selectionCount={selectedIds.length}
+            />
             <p className="text-xs text-muted">
               {t.properties.x} / {t.properties.y}: {t.properties.multipleSelectedHint}
             </p>
@@ -206,10 +236,25 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
         <div className="flex flex-col gap-2">
           {groupRow ? (
             // Groups have no per-leaf position inputs; header alone.
-            <PositionSectionHeader onAlign={handleAlign} />
+            <PositionSectionHeader
+              onAlign={handleAlign}
+              onDistribute={handleDistribute}
+              onTidy={handleTidy}
+              alignRef={alignRef}
+              onAlignRefChange={setAlignRef}
+              selectionCount={selectedIds.length}
+            />
           ) : (
             <>
-              <PositionSectionHeader onAlign={handleAlign} unitSuffix={unitLabel(unit)} />
+              <PositionSectionHeader
+                onAlign={handleAlign}
+                onDistribute={handleDistribute}
+                onTidy={handleTidy}
+                alignRef={alignRef}
+                onAlignRefChange={setAlignRef}
+                selectionCount={selectedIds.length}
+                unitSuffix={unitLabel(unit)}
+              />
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col gap-1">
                   <label className={labelCls}>{t.properties.x}</label>
@@ -535,6 +580,30 @@ function LabelConfigPanel({
             <option value={12}>{t.label.dpmm12}</option>
             <option value={24}>{t.label.dpmm24}</option>
           </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>
+            {t.label.safeArea}
+            <InformationCircleIcon
+              className="w-3.5 h-3.5 ml-1 inline-block align-text-bottom text-muted cursor-help"
+              title={t.label.safeAreaHint}
+            />
+          </label>
+          <input
+            type="number"
+            className={inputCls}
+            value={
+              label.safeAreaMm === undefined ? "" : mmToUnit(label.safeAreaMm, unit)
+            }
+            min={0}
+            step={unitStep(unit)}
+            onChange={(e) => {
+              const raw = e.target.value.trim();
+              const mm = raw === "" ? undefined : unitToMm(Number(raw), unit);
+              onUpdate({ safeAreaMm: mm && mm > 0 ? mm : undefined });
+            }}
+          />
         </div>
 
         <CollapsibleSection

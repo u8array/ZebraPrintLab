@@ -12,7 +12,7 @@ import {
   buildBwipOptions,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
-import { QR_FO_Y_OFFSET_DOTS, upcSuppTextZoneDots } from "../components/Canvas/bwipConstants";
+import { QR_FO_Y_OFFSET_DOTS, upcSuppTextZoneDots } from "../lib/bwipConstants";
 
 const FIXTURES_DIR = path.resolve(
   process.cwd(),

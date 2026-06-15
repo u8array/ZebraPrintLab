@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { modelPositionFromRenderedTopLeft } from "./transformPosition";
-import { QR_FO_Y_OFFSET_DOTS } from "./bwipConstants";
+import { QR_FO_Y_OFFSET_DOTS } from "../../lib/bwipConstants";
 import type { LabelObject } from "../../types/Group";
 
 const qrFo: LabelObject = {

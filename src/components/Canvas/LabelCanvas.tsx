@@ -19,9 +19,14 @@ import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
 import { computeSnap } from "../../lib/snapGuides";
 import type { SnapGuide } from "../../lib/snapGuides";
-import { computeGroupCenterDelta } from "../../lib/alignment";
+import { computeAlignDeltas, computeDistribute, computeTidy } from "../../lib/align";
+import type { AlignOp, AlignBox, DistributeAxis, AlignRef } from "../../lib/align";
+import { objectBoundsDots, selectionUnionDots } from "../../lib/objectBounds";
+import { selectTidyTargets } from "../../lib/tidyClassify";
+import { safeAreaRectDots } from "../../lib/safeArea";
+import { measuredBoundsMap } from "./measuredBoundsCache";
+import { mmToDots } from "../../lib/coordinates";
 import { isEditableTarget } from "../../lib/dom";
-import type { AlignAxis } from "../../lib/alignment";
 import { KonvaObject } from "./KonvaObject";
 import { Grid } from "./Grid";
 import { GuideLines } from "./GuideLines";
@@ -68,7 +73,9 @@ interface Props {
 }
 
 export interface LabelCanvasHandle {
-  alignSelectionToLabel: (axis: AlignAxis) => void;
+  alignSelection: (op: AlignOp, ref: AlignRef) => void;
+  distributeSelection: (axis: DistributeAxis) => void;
+  tidySelection: () => void;
 }
 
 export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCanvas({
@@ -308,6 +315,15 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const rulerHeightMm = axisSwapped ? effectiveWidthMm : label.heightMm;
   const rulerReversal = axisReversal(viewRotation);
 
+  // Safe-area guide rect in screen px (dots scaled, object-offset aligned).
+  const safeAreaDots = safeAreaRectDots(label);
+  const safeAreaPx = safeAreaDots && {
+    x: objectsOffsetX + (safeAreaDots.x / label.dpmm) * scale,
+    y: labelOffsetY + (safeAreaDots.y / label.dpmm) * scale,
+    width: (safeAreaDots.width / label.dpmm) * scale,
+    height: (safeAreaDots.height / label.dpmm) * scale,
+  };
+
   const snapUnit = Math.round(snapSizeMm * label.dpmm);
   const snap = (dots: number) =>
     snapEnabled ? Math.round(dots / snapUnit) * snapUnit : dots;
@@ -351,53 +367,114 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
 
   useImperativeHandle(
     ref,
-    () => ({
-      alignSelectionToLabel: (axis) => {
-        const stage = stageRef.current;
-        if (!stage) return;
+    () => {
+      // Build one AlignBox per top-level selected object (group = one bbox)
+      // plus the per-id apply closure. All in DOTS, so align/distribute is
+      // independent of zoom and view rotation. A group delta shifts every
+      // leaf (children carry absolute coordinates), mirroring group drag.
+      const buildSelection = (alignRef: AlignRef): {
+        boxes: AlignBox[];
+        ref: ReturnType<typeof selectionUnionDots>;
+        container: NonNullable<ReturnType<typeof selectionUnionDots>>;
+        apply: (delta: { id: string; dx: number; dy: number }) => { id: string; changes: { x: number; y: number } }[];
+      } | null => {
         const state = useLabelStore.getState();
         const ids = state.selectedIds;
-        if (ids.length === 0) return;
+        if (ids.length === 0) return null;
         const objs = currentObjects(state);
-        // Konva nodes exist only for leaves; expand group ids.
-        const attachable = expandSelection(objs, ids);
+        const measured = measuredBoundsMap();
+        const ctx = { label: state.label, measured };
 
-        const boxes = attachable.flatMap((id) => {
-          const node = stage.findOne<Konva.Node>(`#${id}`);
+        // Locked/hidden objects are non-participants (like drag/nudge/lasso).
+        const movable = ids
+          .map((id) => findObjectById(objs, id))
+          .filter((o): o is LabelObject => o !== undefined && !o.locked && o.visible !== false);
+        if (movable.length === 0) return null;
+
+        const labelWDots = mmToDots(state.label.widthMm, state.label.dpmm);
+        const labelHDots = mmToDots(state.label.heightMm, state.label.dpmm);
+        // Exclude structural primitives (full-label frame, spanning dividers) so
+        // they neither inflate the reference nor get rearranged; content only,
+        // consistent with tidy. Falls back to all when fewer than 2 content.
+        const items = movable.map((o) => ({
+          id: o.id,
+          type: isGroup(o) ? "group" : o.type,
+          box: objectBoundsDots(o, ctx),
+        }));
+        const contentIds = new Set(selectTidyTargets(items, labelWDots, labelHDots));
+        const content = movable.filter((o) => contentIds.has(o.id));
+        const contentIdList = content.map((o) => o.id);
+        const boxes: AlignBox[] = items
+          .filter((it) => contentIds.has(it.id))
+          .map((it) => ({ id: it.id, ...it.box }));
+
+        // Align-to-label pins to the safe-area inset when configured, so the
+        // 6-edge buttons keep a uniform margin; otherwise the full label rect.
+        const labelBox = safeAreaRectDots(state.label) ?? {
+          x: 0,
+          y: 0,
+          width: labelWDots,
+          height: labelHDots,
+        };
+        let refBox: ReturnType<typeof selectionUnionDots>;
+        // A single unit (one object or one group) has no meaningful "selection"
+        // or "key" frame of its own, so it aligns to the label (Figma: a single
+        // element aligns to its parent). Multi-select honors the chosen ref.
+        if (alignRef === "label" || content.length === 1) {
+          refBox = labelBox;
+        } else if (alignRef === "key") {
+          const keyObj = content[content.length - 1];
+          refBox = keyObj ? objectBoundsDots(keyObj, ctx) : selectionUnionDots(objs, contentIdList, ctx);
+        } else {
+          refBox = selectionUnionDots(objs, contentIdList, ctx);
+        }
+
+        const byId = new Map(content.map((o) => [o.id, o]));
+        const apply = (delta: { id: string; dx: number; dy: number }) => {
+          const dx = Math.round(delta.dx);
+          const dy = Math.round(delta.dy);
+          if (dx === 0 && dy === 0) return [];
+          const node = byId.get(delta.id);
           if (!node) return [];
-          const r = node.getClientRect({ relativeTo: stage });
-          return [{ id, x: r.x, y: r.y, width: r.width, height: r.height }];
-        });
-        if (boxes.length === 0) return;
+          // A group has no own x/y; shift each leaf by the same delta.
+          const targets = isGroup(node) ? getAllLeaves(node.children) : [node];
+          return targets.map((leaf) => ({
+            id: leaf.id,
+            changes: { x: leaf.x + dx, y: leaf.y + dy },
+          }));
+        };
 
-        const { dx: screenDx, dy: screenDy } = computeGroupCenterDelta(
-          boxes,
-          transformerSnapLabelRect,
-          axis,
-        );
-        if (screenDx === 0 && screenDy === 0) return;
+        return { boxes, ref: refBox, container: labelBox, apply };
+      };
 
-        const [layoutDx, layoutDy] = inverseRotateDelta(
-          screenDx,
-          screenDy,
-          viewRotation,
-        );
-        // Integer dots preserves store invariant; mmToDots convention.
-        const pxPerDot = scale / label.dpmm;
-        const dxDots = Math.round(layoutDx / pxPerDot);
-        const dyDots = Math.round(layoutDy / pxPerDot);
-
-        const updates = attachable.flatMap((id) => {
-          const obj = findObjectById(objs, id);
-          if (!obj) return [];
-          return [
-            { id, changes: { x: obj.x + dxDots, y: obj.y + dyDots } },
-          ];
-        });
-        if (updates.length > 0) updateObjects(updates);
-      },
-    }),
-    [transformerSnapLabelRect, scale, label.dpmm, viewRotation, updateObjects],
+      return {
+        alignSelection: (op: AlignOp, ref: AlignRef) => {
+          const sel = buildSelection(ref);
+          if (!sel || !sel.ref || sel.boxes.length === 0) return;
+          const deltas = computeAlignDeltas(sel.boxes, sel.ref, op);
+          const updates = deltas.flatMap(sel.apply);
+          if (updates.length > 0) updateObjects(updates);
+        },
+        // Distribute is inherently selection-relative; ref is fixed.
+        distributeSelection: (axis: DistributeAxis) => {
+          const sel = buildSelection("selection");
+          if (!sel || sel.boxes.length < 3) return;
+          const deltas = computeDistribute(sel.boxes, axis, { kind: "equalGap" });
+          const updates = deltas.flatMap(sel.apply);
+          if (updates.length > 0) updateObjects(updates);
+        },
+        // Tidy spreads the content across the safe area (else label) and centers
+        // it. buildSelection already excludes structural frame/divider primitives.
+        tidySelection: () => {
+          const sel = buildSelection("selection");
+          if (!sel || sel.boxes.length < 2) return;
+          const deltas = computeTidy(sel.boxes, sel.container);
+          const updates = deltas.flatMap(sel.apply);
+          if (updates.length > 0) updateObjects(updates);
+        },
+      };
+    },
+    [updateObjects],
   );
 
   const {
@@ -811,6 +888,20 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 shadowOffsetY={previewLocks ? 0 : 2}
                 onClick={() => selectObjects([])}
               />
+
+              {/* Safe-area guide: non-interactive dashed inset, accent like the ^FB wrap-guide. */}
+              {!previewLocks && safeAreaPx && (
+                <Rect
+                  x={safeAreaPx.x}
+                  y={safeAreaPx.y}
+                  width={safeAreaPx.width}
+                  height={safeAreaPx.height}
+                  stroke={colors.accent}
+                  strokeWidth={1}
+                  dash={[4, 3]}
+                  listening={false}
+                />
+              )}
 
               {showGrid && (
                 <Grid

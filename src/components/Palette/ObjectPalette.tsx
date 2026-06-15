@@ -6,7 +6,7 @@ import { useLabelStore } from '../../store/labelStore';
 import { mmToDots } from '../../lib/coordinates';
 import type { ObjectGroup } from '../../types/LabelObject';
 import type { ObjectTypeDefinition } from '../../types/ObjectType';
-import { resolveDefaultSizeDots } from './resolveDefaultSize';
+import { resolveDefaultSizeDots } from '../../lib/resolveDefaultSize';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 import { CollapsibleSection } from '../ui/CollapsibleSection';
 import type { PaletteDragData } from '../../dnd/types';
