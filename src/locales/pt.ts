@@ -175,6 +175,11 @@ const pt = {
       mediaFeedN: 'Sem movimento',
       mediaFeedS: 'Calibração curta',
       suppressBackfeed: 'Suprimir retorno',
+      backfeedSeqO: 'Desativado',
+      backfeedSeqN: 'Normal (padrão)',
+      backfeedSeqB: 'Antes da próxima etiqueta',
+      backfeedSeqA: '100% após impressão',
+      backfeedSequence: 'Sequência de retrocesso',
     },
     printQuality: {
       printOrientation: 'Orientação de impressão',

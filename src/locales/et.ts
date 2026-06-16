@@ -175,6 +175,11 @@ const et = {
       mediaFeedN: 'Liikumiseta',
       mediaFeedS: 'Lühike kalibreerimine',
       suppressBackfeed: 'Tagasisöötmise summutamine',
+      backfeedSeqO: 'Väljas',
+      backfeedSeqN: 'Tavaline (vaikimisi)',
+      backfeedSeqB: 'Enne järgmist etiketti',
+      backfeedSeqA: '100% pärast printimist',
+      backfeedSequence: 'Tagasisöötmise jada',
     },
     printQuality: {
       printOrientation: 'Prindi suund',

@@ -175,6 +175,11 @@ const zhHans = {
       mediaFeedN: '不动作',
       mediaFeedS: '简短校准',
       suppressBackfeed: '抑制回退',
+      backfeedSeqO: '关闭',
+      backfeedSeqN: '正常（默认）',
+      backfeedSeqB: '在下一张标签前',
+      backfeedSeqA: '打印后100%',
+      backfeedSequence: '回拉顺序',
     },
     printQuality: {
       printOrientation: '打印方向',

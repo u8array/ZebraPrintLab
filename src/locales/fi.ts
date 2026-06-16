@@ -175,6 +175,11 @@ const fi = {
       mediaFeedN: 'Ei liikettä',
       mediaFeedS: 'Lyhyt kalibrointi',
       suppressBackfeed: 'Estä takaisinsyöttö',
+      backfeedSeqO: 'Pois',
+      backfeedSeqN: 'Normaali (oletus)',
+      backfeedSeqB: 'Ennen seuraavaa etikettiä',
+      backfeedSeqA: '100% tulostuksen jälkeen',
+      backfeedSequence: 'Takaisinsyöttöjärjestys',
     },
     printQuality: {
       printOrientation: 'Tulostussuunta',

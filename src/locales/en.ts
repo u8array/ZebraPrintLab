@@ -175,6 +175,11 @@ const en = {
       mediaFeedN: 'No motion',
       mediaFeedS: 'Short calibration',
       suppressBackfeed: 'Suppress backfeed',
+      backfeedSeqO: 'Off',
+      backfeedSeqN: 'Normal (default)',
+      backfeedSeqB: 'Before next label',
+      backfeedSeqA: '100% after print',
+      backfeedSequence: 'Backfeed sequence',
     },
     printQuality: {
       printOrientation: 'Print orientation',

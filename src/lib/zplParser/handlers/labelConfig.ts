@@ -1,4 +1,4 @@
-import { DARKNESS_INSTANT_RANGE, DARKNESS_PERMANENT_RANGE, MAX_LABEL_LENGTH_RANGE, SPEED_RANGE, isMediaFeedMode, isMediaMode, isMediaTracking, isMediaType, isPrintOrientation } from "../../../types/LabelConfig";
+import { DARKNESS_INSTANT_RANGE, DARKNESS_PERMANENT_RANGE, MAX_LABEL_LENGTH_RANGE, SPEED_RANGE, isBackfeedSequence, isMediaFeedMode, isMediaMode, isMediaTracking, isMediaType, isPrintOrientation } from "../../../types/LabelConfig";
 import { parseIntOrUndef } from "../../inputParse";
 import type { ParserState } from "../context";
 import { dotsFor, firstChar, inRange, int, strParam } from "../helpers";
@@ -99,6 +99,12 @@ export function createLabelConfigHandlers(
     SD(_, rest) {
       const v = inRange(parseIntOrUndef(rest), DARKNESS_INSTANT_RANGE);
       if (v !== undefined) labelConfig.instantDarkness = v;
+    },
+    // ~JS: change backfeed sequence. A/B/N/O modeled; percent forms
+    // (10-90) fall under the known param-fidelity limit.
+    JS(_, rest) {
+      const v = firstChar(rest);
+      if (isBackfeedSequence(v)) labelConfig.backfeedSequence = v;
     },
   };
 }

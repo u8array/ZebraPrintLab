@@ -175,6 +175,11 @@ const zhHant = {
       mediaFeedN: '不動作',
       mediaFeedS: '簡短校準',
       suppressBackfeed: '抑制回退',
+      backfeedSeqO: '關閉',
+      backfeedSeqN: '正常（預設）',
+      backfeedSeqB: '在下一張標籤前',
+      backfeedSeqA: '列印後100%',
+      backfeedSequence: '回拉順序',
     },
     printQuality: {
       printOrientation: '列印方向',

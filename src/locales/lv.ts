@@ -175,6 +175,11 @@ const lv = {
       mediaFeedN: 'Bez kustības',
       mediaFeedS: 'Īsa kalibrēšana',
       suppressBackfeed: 'Slāpēt atpakaļpadevi',
+      backfeedSeqO: 'Izslēgts',
+      backfeedSeqN: 'Parasts (noklusējums)',
+      backfeedSeqB: 'Pirms nākamās etiķetes',
+      backfeedSeqA: '100% pēc drukāšanas',
+      backfeedSequence: 'Atpakaļpadeves secība',
     },
     printQuality: {
       printOrientation: 'Drukas orientācija',

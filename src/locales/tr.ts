@@ -175,6 +175,11 @@ const tr = {
       mediaFeedN: 'Hareket yok',
       mediaFeedS: 'Kısa kalibrasyon',
       suppressBackfeed: 'Geri beslemeyi bastır',
+      backfeedSeqO: 'Kapalı',
+      backfeedSeqN: 'Normal (varsayılan)',
+      backfeedSeqB: 'Sonraki etiketten önce',
+      backfeedSeqA: 'Baskıdan sonra %100',
+      backfeedSequence: 'Geri besleme sırası',
     },
     printQuality: {
       printOrientation: 'Yazdırma yönü',

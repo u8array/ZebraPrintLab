@@ -1184,6 +1184,12 @@ describe('parseZPL — printer params', () => {
     expect(parseZPL('~SD30^XA^XZ', 8).labelConfig.instantDarkness).toBe(30);
   });
 
+  it('parses ~JS backfeed sequence, ignoring unmodeled percent forms', () => {
+    expect(parseZPL('~JSA^XA^XZ', 8).labelConfig.backfeedSequence).toBe('A');
+    expect(parseZPL('~JSO^XA^XZ', 8).labelConfig.backfeedSequence).toBe('O');
+    expect(parseZPL('~JS40^XA^XZ', 8).labelConfig.backfeedSequence).toBeUndefined();
+  });
+
   it('parses ^MD darkness including 0', () => {
     expect(parseZPL('^XA^MD0^XZ', 8).labelConfig.darkness).toBe(0);
     expect(parseZPL('^XA^MD15^XZ', 8).labelConfig.darkness).toBe(15);

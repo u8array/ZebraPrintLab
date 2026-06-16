@@ -175,6 +175,11 @@ const cs = {
       mediaFeedN: 'Bez pohybu',
       mediaFeedS: 'Krátká kalibrace',
       suppressBackfeed: 'Potlačit zpětný posuv',
+      backfeedSeqO: 'Vypnuto',
+      backfeedSeqN: 'Normální (výchozí)',
+      backfeedSeqB: 'Před dalším štítkem',
+      backfeedSeqA: '100% po tisku',
+      backfeedSequence: 'Sekvence zpětného posuvu',
     },
     printQuality: {
       printOrientation: 'Orientace tisku',

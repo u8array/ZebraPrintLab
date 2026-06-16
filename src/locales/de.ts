@@ -175,6 +175,11 @@ const de = {
       mediaFeedN: 'Keine Bewegung',
       mediaFeedS: 'Kurze Kalibrierung',
       suppressBackfeed: 'Rücklauf unterdrücken',
+      backfeedSeqO: 'Aus',
+      backfeedSeqN: 'Normal (Standard)',
+      backfeedSeqB: 'Vor nächstem Etikett',
+      backfeedSeqA: '100% nach Druck',
+      backfeedSequence: 'Rückführungssequenz',
     },
     printQuality: {
       printOrientation: 'Druckorientierung',

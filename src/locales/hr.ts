@@ -175,6 +175,11 @@ const hr = {
       mediaFeedN: 'Bez kretanja',
       mediaFeedS: 'Kratka kalibracija',
       suppressBackfeed: 'Onemogući povratni pomak',
+      backfeedSeqO: 'Isključeno',
+      backfeedSeqN: 'Normalno (zadano)',
+      backfeedSeqB: 'Prije sljedeće naljepnice',
+      backfeedSeqA: '100% nakon ispisa',
+      backfeedSequence: 'Slijed povratnog uvlačenja',
     },
     printQuality: {
       printOrientation: 'Orijentacija ispisa',

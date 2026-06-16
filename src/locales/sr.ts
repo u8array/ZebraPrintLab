@@ -175,6 +175,11 @@ const sr = {
       mediaFeedN: 'Без кретања',
       mediaFeedS: 'Кратка калибрација',
       suppressBackfeed: 'Потисни повратно увлачење',
+      backfeedSeqO: 'Искључено',
+      backfeedSeqN: 'Нормално (подразумевано)',
+      backfeedSeqB: 'Пре следеће налепнице',
+      backfeedSeqA: '100% након штампе',
+      backfeedSequence: 'Редослед повратног увлачења',
     },
     printQuality: {
       printOrientation: 'Orijentacija štampe',

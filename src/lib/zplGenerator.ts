@@ -236,6 +236,9 @@ export function generateZPL(
     lines.push(`~SD${v}`);
   }
 
+  // ~JS is immediate/transient like ~SD; emit before ^XA.
+  if (label.backfeedSequence) lines.push(`~JS${label.backfeedSequence}`);
+
   lines.push('^XA');
   // Leading geometry sidecar: recovers exact width/height/dpmm on re-import,
   // which plain ^PW/^LL (dots, no dpmm) can't. A comment, so print is unaffected.

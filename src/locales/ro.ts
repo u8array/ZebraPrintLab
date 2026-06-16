@@ -175,6 +175,11 @@ const ro = {
       mediaFeedN: 'Fără mișcare',
       mediaFeedS: 'Calibrare scurtă',
       suppressBackfeed: 'Suprimă revenirea',
+      backfeedSeqO: 'Dezactivat',
+      backfeedSeqN: 'Normal (implicit)',
+      backfeedSeqB: 'Înainte de următoarea etichetă',
+      backfeedSeqA: '100% după imprimare',
+      backfeedSequence: 'Secvență de retragere',
     },
     printQuality: {
       printOrientation: 'Orientarea tipăririi',

@@ -175,6 +175,11 @@ const el = {
       mediaFeedN: 'Χωρίς κίνηση',
       mediaFeedS: 'Σύντομη βαθμονόμηση',
       suppressBackfeed: 'Καταστολή οπίσθιας τροφοδοσίας',
+      backfeedSeqO: 'Απενεργοποίηση',
+      backfeedSeqN: 'Κανονικό (προεπιλογή)',
+      backfeedSeqB: 'Πριν από την επόμενη ετικέτα',
+      backfeedSeqA: '100% μετά την εκτύπωση',
+      backfeedSequence: 'Ακολουθία ανάδρομης τροφοδοσίας',
     },
     printQuality: {
       printOrientation: 'Προσανατολισμός εκτύπωσης',

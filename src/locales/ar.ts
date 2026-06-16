@@ -175,6 +175,11 @@ const ar = {
       mediaFeedN: 'بدون حركة',
       mediaFeedS: 'معايرة قصيرة',
       suppressBackfeed: 'كبح التغذية العكسية',
+      backfeedSeqO: 'إيقاف',
+      backfeedSeqN: 'عادي (افتراضي)',
+      backfeedSeqB: 'قبل الملصق التالي',
+      backfeedSeqA: '100% بعد الطباعة',
+      backfeedSequence: 'تسلسل التغذية العكسية',
     },
     printQuality: {
       printOrientation: 'اتجاه الطباعة',

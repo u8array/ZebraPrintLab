@@ -175,6 +175,11 @@ const sv = {
       mediaFeedN: 'Ingen rörelse',
       mediaFeedS: 'Kort kalibrering',
       suppressBackfeed: 'Undertryck återmatning',
+      backfeedSeqO: 'Av',
+      backfeedSeqN: 'Normal (standard)',
+      backfeedSeqB: 'Före nästa etikett',
+      backfeedSeqA: '100% efter utskrift',
+      backfeedSequence: 'Bakmatningssekvens',
     },
     printQuality: {
       printOrientation: 'Utskriftsriktning',

@@ -175,6 +175,11 @@ const nl = {
       mediaFeedN: 'Geen beweging',
       mediaFeedS: 'Korte kalibratie',
       suppressBackfeed: 'Terugvoer onderdrukken',
+      backfeedSeqO: 'Uit',
+      backfeedSeqN: 'Normaal (standaard)',
+      backfeedSeqB: 'Voor volgend etiket',
+      backfeedSeqA: '100% na afdrukken',
+      backfeedSequence: 'Backfeed-volgorde',
     },
     printQuality: {
       printOrientation: 'Afdrukrichting',

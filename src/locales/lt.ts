@@ -175,6 +175,11 @@ const lt = {
       mediaFeedN: 'Be judesio',
       mediaFeedS: 'Trumpas kalibravimas',
       suppressBackfeed: 'Slopinti atgalinį tiekimą',
+      backfeedSeqO: 'Išjungta',
+      backfeedSeqN: 'Įprastas (numatytasis)',
+      backfeedSeqB: 'Prieš kitą etiketę',
+      backfeedSeqA: '100% po spausdinimo',
+      backfeedSequence: 'Grįžimo seka',
     },
     printQuality: {
       printOrientation: 'Spausdinimo orientacija',

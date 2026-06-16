@@ -29,6 +29,12 @@ export type MediaFeedMode = (typeof MEDIA_FEED_VALUES)[number];
 export const isMediaTracking = makeEnumGuard(MEDIA_TRACKING_VALUES);
 export const isMediaFeedMode = makeEnumGuard(MEDIA_FEED_VALUES);
 
+/** ~JS backfeed sequence: A=100% after, B=before next label, N=normal,
+ *  O=off. Percent forms 10-90 are not modeled (param-fidelity limit). */
+export const BACKFEED_SEQUENCE_VALUES = ['A', 'B', 'N', 'O'] as const;
+export type BackfeedSequence = (typeof BACKFEED_SEQUENCE_VALUES)[number];
+export const isBackfeedSequence = makeEnumGuard(BACKFEED_SEQUENCE_VALUES);
+
 /** ^MM print mode (per-label cut/peel/tear behaviour). */
 export const MEDIA_MODE_VALUES = ['T', 'V', 'D', 'K'] as const;
 export type MediaMode = (typeof MEDIA_MODE_VALUES)[number];
@@ -167,6 +173,8 @@ export const labelConfigSchema = z.object({
   mediaFeedHeadClose: z.enum(MEDIA_FEED_VALUES).optional(),
   /** ^XB: suppress backfeed for the next label. Standalone toggle. */
   suppressBackfeed: z.boolean().optional(),
+  /** ~JS: backfeed sequence. Immediate/transient, emitted before ^XA. */
+  backfeedSequence: z.enum(BACKFEED_SEQUENCE_VALUES).optional(),
   /** ^MU b,c; set only when both slots arrived valid. */
   muResampling: muResamplingSchema.optional(),
   /** ^SO2: secondary clock offset (`«clock2:T»` markers resolve through this). */

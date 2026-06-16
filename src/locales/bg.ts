@@ -175,6 +175,11 @@ const bg = {
       mediaFeedN: 'Без движение',
       mediaFeedS: 'Кратко калибриране',
       suppressBackfeed: 'Потискане на обратното подаване',
+      backfeedSeqO: 'Изключено',
+      backfeedSeqN: 'Нормално (по подразбиране)',
+      backfeedSeqB: 'Преди следващия етикет',
+      backfeedSeqA: '100% след печат',
+      backfeedSequence: 'Последователност на обратно подаване',
     },
     printQuality: {
       printOrientation: 'Ориентация на печат',

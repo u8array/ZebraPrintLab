@@ -175,6 +175,11 @@ const pl = {
       mediaFeedN: 'Bez ruchu',
       mediaFeedS: 'Krótka kalibracja',
       suppressBackfeed: 'Wyłącz cofanie',
+      backfeedSeqO: 'Wyłączone',
+      backfeedSeqN: 'Normalny (domyślny)',
+      backfeedSeqB: 'Przed następną etykietą',
+      backfeedSeqA: '100% po wydruku',
+      backfeedSequence: 'Sekwencja cofania',
     },
     printQuality: {
       printOrientation: 'Orientacja druku',

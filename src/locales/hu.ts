@@ -175,6 +175,11 @@ const hu = {
       mediaFeedN: 'Nincs mozgás',
       mediaFeedS: 'Rövid kalibrálás',
       suppressBackfeed: 'Visszahúzás elnyomása',
+      backfeedSeqO: 'Ki',
+      backfeedSeqN: 'Normál (alapértelmezett)',
+      backfeedSeqB: 'Következő címke előtt',
+      backfeedSeqA: '100% nyomtatás után',
+      backfeedSequence: 'Visszahúzási sorrend',
     },
     printQuality: {
       printOrientation: 'Nyomtatási irány',

@@ -1,6 +1,6 @@
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { MAX_LABEL_LENGTH_RANGE, MEDIA_FEED_VALUES, MEDIA_MODE_VALUES, MEDIA_TRACKING_VALUES, MEDIA_TYPE_VALUES, isMediaFeedMode, isMediaMode, isMediaTracking, isMediaType, type MediaFeedMode, type MediaMode, type MediaTracking, type MediaType } from "../../types/LabelConfig";
+import { BACKFEED_SEQUENCE_VALUES, MAX_LABEL_LENGTH_RANGE, MEDIA_FEED_VALUES, MEDIA_MODE_VALUES, MEDIA_TRACKING_VALUES, MEDIA_TYPE_VALUES, isBackfeedSequence, isMediaFeedMode, isMediaMode, isMediaTracking, isMediaType, type BackfeedSequence, type MediaFeedMode, type MediaMode, type MediaTracking, type MediaType } from "../../types/LabelConfig";
 import {
   ZplBoundedIntInput,
   ZplCheckbox,
@@ -44,6 +44,13 @@ const MEDIA_TYPE_LABEL_KEYS = {
   T: "mediaTypeT",
   D: "mediaTypeD",
 } as const satisfies Record<MediaType, keyof LocMediaFeed>;
+
+const BACKFEED_LABEL_KEYS = {
+  A: "backfeedSeqA",
+  B: "backfeedSeqB",
+  N: "backfeedSeqN",
+  O: "backfeedSeqO",
+} as const satisfies Record<BackfeedSequence, keyof LocMediaFeed>;
 
 /** Tab 1 of the Printer Settings Modal. All fields write to the
  *  shared `labelConfig` store; the ZPL generator emits the
@@ -134,6 +141,17 @@ export function MediaFeedTab() {
         command="^XB"
         checked={!!label.suppressBackfeed}
         onChange={(v) => setLabelConfig({ suppressBackfeed: v ? true : undefined })}
+      />
+
+      <ZplEnumSelect
+        label={loc.backfeedSequence}
+        command="~JS"
+        values={BACKFEED_SEQUENCE_VALUES}
+        isValid={isBackfeedSequence}
+        value={label.backfeedSequence}
+        onChange={(v) => setLabelConfig({ backfeedSequence: v })}
+        defaultLabel={t.printerSettings.defaultOption}
+        optionLabel={(m) => `${m} ${loc[BACKFEED_LABEL_KEYS[m]]}`}
       />
     </div>
   );

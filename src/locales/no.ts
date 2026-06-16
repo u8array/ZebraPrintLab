@@ -175,6 +175,11 @@ const no = {
       mediaFeedN: 'Ingen bevegelse',
       mediaFeedS: 'Kort kalibrering',
       suppressBackfeed: 'Undertrykk tilbakemating',
+      backfeedSeqO: 'Av',
+      backfeedSeqN: 'Normal (standard)',
+      backfeedSeqB: 'Før neste etikett',
+      backfeedSeqA: '100% etter utskrift',
+      backfeedSequence: 'Tilbaketrekkssekvens',
     },
     printQuality: {
       printOrientation: 'Utskriftsretning',

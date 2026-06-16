@@ -175,6 +175,11 @@ const sk = {
       mediaFeedN: 'Bez pohybu',
       mediaFeedS: 'Krátka kalibrácia',
       suppressBackfeed: 'Potlačiť spätný posuv',
+      backfeedSeqO: 'Vypnuté',
+      backfeedSeqN: 'Normálne (predvolené)',
+      backfeedSeqB: 'Pred ďalším štítkom',
+      backfeedSeqA: '100% po tlači',
+      backfeedSequence: 'Sekvencia spätného posuvu',
     },
     printQuality: {
       printOrientation: 'Orientácia tlače',

@@ -175,6 +175,11 @@ const he = {
       mediaFeedN: 'ללא תנועה',
       mediaFeedS: 'כיול קצר',
       suppressBackfeed: 'דיכוי הזנה לאחור',
+      backfeedSeqO: 'כבוי',
+      backfeedSeqN: 'רגיל (ברירת מחדל)',
+      backfeedSeqB: 'לפני התווית הבאה',
+      backfeedSeqA: '100% אחרי הדפסה',
+      backfeedSequence: 'רצף הזנה לאחור',
     },
     printQuality: {
       printOrientation: 'כיוון הדפסה',

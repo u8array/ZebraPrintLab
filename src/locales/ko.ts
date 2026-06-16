@@ -175,6 +175,11 @@ const ko = {
       mediaFeedN: '동작 없음',
       mediaFeedS: '간단 보정',
       suppressBackfeed: '백피드 억제',
+      backfeedSeqO: '끄기',
+      backfeedSeqN: '표준(기본값)',
+      backfeedSeqB: '다음 라벨 전',
+      backfeedSeqA: '인쇄 후 100%',
+      backfeedSequence: '백피드 순서',
     },
     printQuality: {
       printOrientation: '인쇄 방향',

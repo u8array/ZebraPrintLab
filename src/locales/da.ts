@@ -175,6 +175,11 @@ const da = {
       mediaFeedN: 'Ingen bevægelse',
       mediaFeedS: 'Kort kalibrering',
       suppressBackfeed: 'Undertryk tilbagefremføring',
+      backfeedSeqO: 'Fra',
+      backfeedSeqN: 'Normal (standard)',
+      backfeedSeqB: 'Før næste etiket',
+      backfeedSeqA: '100% efter udskrivning',
+      backfeedSequence: 'Tilbageføringssekvens',
     },
     printQuality: {
       printOrientation: 'Udskriftsretning',

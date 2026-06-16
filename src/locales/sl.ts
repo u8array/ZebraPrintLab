@@ -175,6 +175,11 @@ const sl = {
       mediaFeedN: 'Brez gibanja',
       mediaFeedS: 'Kratko umerjanje',
       suppressBackfeed: 'Zatri povratno podajanje',
+      backfeedSeqO: 'Izklopljeno',
+      backfeedSeqN: 'Normalno (privzeto)',
+      backfeedSeqB: 'Pred naslednjo etiketo',
+      backfeedSeqA: '100% po tisku',
+      backfeedSequence: 'Zaporedje povratnega podajanja',
     },
     printQuality: {
       printOrientation: 'Usmerjenost tiskanja',

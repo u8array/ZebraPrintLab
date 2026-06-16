@@ -175,6 +175,11 @@ const fa = {
       mediaFeedN: 'بدون حرکت',
       mediaFeedS: 'کالیبراسیون کوتاه',
       suppressBackfeed: 'سرکوب تغذیه معکوس',
+      backfeedSeqO: 'خاموش',
+      backfeedSeqN: 'عادی (پیش‌فرض)',
+      backfeedSeqB: 'قبل از برچسب بعدی',
+      backfeedSeqA: '۱۰۰٪ بعد از چاپ',
+      backfeedSequence: 'توالی پسخور',
     },
     printQuality: {
       printOrientation: 'جهت چاپ',

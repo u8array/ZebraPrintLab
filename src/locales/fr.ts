@@ -175,6 +175,11 @@ const fr = {
       mediaFeedN: 'Aucun mouvement',
       mediaFeedS: 'Calibration courte',
       suppressBackfeed: 'Supprimer le recul',
+      backfeedSeqO: 'Désactivé',
+      backfeedSeqN: 'Normal (par défaut)',
+      backfeedSeqB: 'Avant la prochaine étiquette',
+      backfeedSeqA: '100% après impression',
+      backfeedSequence: 'Séquence de recul',
     },
     printQuality: {
       printOrientation: 'Orientation d’impression',

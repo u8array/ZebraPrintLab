@@ -175,6 +175,11 @@ const ja = {
       mediaFeedN: '動作なし',
       mediaFeedS: '簡易キャリブレーション',
       suppressBackfeed: 'バックフィードを抑制',
+      backfeedSeqO: 'オフ',
+      backfeedSeqN: '標準（デフォルト）',
+      backfeedSeqB: '次のラベルの前',
+      backfeedSeqA: '印刷後100%',
+      backfeedSequence: 'バックフィード順序',
     },
     printQuality: {
       printOrientation: '印刷方向',
