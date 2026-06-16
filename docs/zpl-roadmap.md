@@ -174,14 +174,16 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 | `[x]` | `~TA` | tear off adjust | |
 | `[ ]` | `^PA` | advanced text properties | `Coming soon` |
 | `[x]` | `^JH` | early warning settings | |
-| `[ ]` | `^PF` | slew dot rows | `Coming soon` |
-| `[ ]` | `^PH` / `~PH` | slew to home | `Coming soon` |
-| `[ ]` | `^PN` | present now | `Coming soon` |
-| `[ ]` | `^PP` / `~PP` | programmable pause | `Coming soon` |
-| `[ ]` | `~PR` | applicator reprint | `Coming soon` |
-| `[ ]` | `~PS` | print start | `Coming soon` |
-| `[ ]` | `~JS` | change backfeed sequence | `Coming soon` |
-| `[ ]` | `^JW` | set ribbon tension | `Coming soon` |
+| `[x]` | `~JS` | change backfeed sequence | |
+| `[ ]` | `^PF` | slew given number of dot rows | `Coming soon` |
+| `[ ]` | `^PH` | slew home (feed one blank label) | `Coming soon` |
+| `[ ]` | `~PH` | slew home (immediate) | `Native build` |
+| `[ ]` | `^PP` | programmable pause (in format) | `Coming soon` |
+| `[ ]` | `~PP` | pause (immediate) | `Native build` |
+| `[ ]` | `~PR` | applicator reprint | `Native build` |
+| `[ ]` | `~PS` | print start (resume from pause) | `Native build` |
+| `[ ]` | `^PN` | presenter cycle (KR403 kiosk only) | `Out of scope` |
+| `[ ]` | `^JW` | set ribbon tension (PAX series only) | `Out of scope` |
 | `[x]` | `^JU` | configuration update | |
 
 ## Clock & time
