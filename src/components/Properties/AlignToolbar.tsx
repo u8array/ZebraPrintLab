@@ -164,7 +164,7 @@ export function AlignToolbar({
           <button
             type="button"
             className={BUTTON_CLS}
-            title={t.properties.distributeH}
+            title={distributeDisabled ? t.properties.distributeHint : t.properties.distributeH}
             aria-label={t.properties.distributeH}
             disabled={distributeDisabled}
             onClick={() => onDistribute("h")}
@@ -174,7 +174,7 @@ export function AlignToolbar({
           <button
             type="button"
             className={BUTTON_CLS}
-            title={t.properties.distributeV}
+            title={distributeDisabled ? t.properties.distributeHint : t.properties.distributeV}
             aria-label={t.properties.distributeV}
             disabled={distributeDisabled}
             onClick={() => onDistribute("v")}
@@ -182,11 +182,6 @@ export function AlignToolbar({
             <DistributeVIcon className="w-3.5 h-3.5" />
           </button>
         </div>
-        {distributeDisabled && (
-          <span className="text-[10px] text-muted">
-            {t.properties.distributeHint}
-          </span>
-        )}
       </div>
 
       {/* Tidy up: auto-arrange the selection into an even row/column. */}
@@ -205,11 +200,6 @@ export function AlignToolbar({
           <TidyIcon className="w-3.5 h-3.5" />
           <span className="text-[10px]">{t.properties.tidyUp}</span>
         </button>
-        {tidyDisabled && (
-          <span className="text-[10px] text-muted">
-            {t.properties.tidyHint}
-          </span>
-        )}
       </div>
     </div>
   );
