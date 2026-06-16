@@ -12,6 +12,7 @@ import { useT } from '../../lib/useT';
 import { useLabelStore } from '../../store/labelStore';
 import type { LabelCanvasHandle } from '../Canvas/LabelCanvas';
 import { AaIcon } from './AaIcon';
+import { Tooltip } from '../ui/Tooltip';
 
 type TabId = 'properties' | 'layers' | 'variables' | 'fonts';
 
@@ -49,21 +50,21 @@ export function RightSidebar({ canvasRef }: Props) {
         {tabs.map(({ id, label, Icon }) => {
           const active = tab === id;
           return (
-            <button
-              key={id}
-              role="tab"
-              aria-selected={active}
-              aria-label={label}
-              title={label}
-              onClick={() => setTab(id)}
-              className={`flex-1 flex items-center justify-center py-2 transition-colors ${
-                active
-                  ? 'text-accent border-b-2 border-accent'
-                  : 'text-muted hover:text-text'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-            </button>
+            <Tooltip key={id} content={label} className="flex-1">
+              <button
+                role="tab"
+                aria-selected={active}
+                aria-label={label}
+                onClick={() => setTab(id)}
+                className={`flex-1 flex items-center justify-center py-2 transition-colors ${
+                  active
+                    ? 'text-accent border-b-2 border-accent'
+                    : 'text-muted hover:text-text'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+              </button>
+            </Tooltip>
           );
         })}
       </div>

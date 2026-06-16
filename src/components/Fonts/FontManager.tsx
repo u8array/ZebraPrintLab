@@ -21,6 +21,7 @@ import {
 import { inputCls, labelCls } from '../Properties/styles';
 import { CollapsibleSection } from '../ui/CollapsibleSection';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { Tooltip } from '../ui/Tooltip';
 import type { CustomFontMapping } from '../../types/LabelConfig';
 const PATHS_DATALIST_ID = 'zpl-custom-font-paths';
 
@@ -295,54 +296,60 @@ function FontEntry({
         >
           {name}
         </span>
-        <input
-          type="text"
-          className={`${inputCls} text-center ${
-            duplicate
-              ? '!border-red-500'
-              : overridesBuiltin
-                ? '!border-amber-500'
-                : ''
-          }`}
-          maxLength={1}
-          placeholder="A-Z"
-          title={
+        <Tooltip
+          className="w-full"
+          content={
             duplicate
               ? t.label.customFontsDuplicateAlias
               : alias
                 ? t.fonts.aliasAssigned
                 : t.fonts.aliasHint
           }
-          aria-invalid={duplicate || undefined}
-          value={alias}
-          onChange={(e) => onAliasChange(e.target.value)}
-        />
-        <label
-          className={`flex items-center gap-1 text-[10px] font-mono ${
-            embedDisabled
-              ? 'text-muted opacity-40 cursor-not-allowed'
-              : 'text-muted hover:text-text cursor-pointer'
-          }`}
-          title={t.fonts.embedInZplHint}
         >
           <input
-            type="checkbox"
-            className="accent-accent"
-            checked={embedActive}
-            disabled={embedDisabled}
-            onChange={(e) => onEmbedChange(e.target.checked)}
+            type="text"
+            className={`${inputCls} text-center ${
+              duplicate
+                ? '!border-red-500'
+                : overridesBuiltin
+                  ? '!border-amber-500'
+                  : ''
+            }`}
+            maxLength={1}
+            placeholder="A-Z"
+            aria-invalid={duplicate || undefined}
+            value={alias}
+            onChange={(e) => onAliasChange(e.target.value)}
           />
-          {t.fonts.embedInZpl}
-        </label>
-        <button
-          type="button"
-          onClick={onRequestDelete}
-          className="p-1 text-muted hover:text-red-400 transition-colors"
-          title={t.fonts.delete}
-          aria-label={t.fonts.delete}
-        >
-          <TrashIcon className="w-3.5 h-3.5" />
-        </button>
+        </Tooltip>
+        <Tooltip content={t.fonts.embedInZplHint}>
+          <label
+            className={`flex items-center gap-1 text-[10px] font-mono ${
+              embedDisabled
+                ? 'text-muted opacity-40 cursor-not-allowed'
+                : 'text-muted hover:text-text cursor-pointer'
+            }`}
+          >
+            <input
+              type="checkbox"
+              className="accent-accent"
+              checked={embedActive}
+              disabled={embedDisabled}
+              onChange={(e) => onEmbedChange(e.target.checked)}
+            />
+            {t.fonts.embedInZpl}
+          </label>
+        </Tooltip>
+        <Tooltip content={t.fonts.delete}>
+          <button
+            type="button"
+            onClick={onRequestDelete}
+            className="p-1 text-muted hover:text-red-400 transition-colors"
+            aria-label={t.fonts.delete}
+          >
+            <TrashIcon className="w-3.5 h-3.5" />
+          </button>
+        </Tooltip>
       </div>
       {overridesBuiltin && (
         <p className="text-[10px] text-amber-500 leading-snug pl-1">
@@ -414,20 +421,24 @@ function ManualMappingsSection({
             className="grid grid-cols-[3rem_1fr_auto] gap-2 items-center"
             onBlur={(e) => handleBlur(e, index, path, m.alias)}
           >
-            <input
-              type="text"
-              className={`${inputCls} text-center ${dup ? '!border-red-500' : ''}`}
-              maxLength={1}
-              placeholder="A-Z"
-              title={
+            <Tooltip
+              className="w-full"
+              content={
                 dup
                   ? t.label.customFontsDuplicateAlias
                   : t.label.customFontsAliasHint
               }
-              aria-invalid={dup || undefined}
-              value={m.alias}
-              onChange={(e) => onUpdate(index, { alias: e.target.value })}
-            />
+            >
+              <input
+                type="text"
+                className={`${inputCls} text-center ${dup ? '!border-red-500' : ''}`}
+                maxLength={1}
+                placeholder="A-Z"
+                aria-invalid={dup || undefined}
+                value={m.alias}
+                onChange={(e) => onUpdate(index, { alias: e.target.value })}
+              />
+            </Tooltip>
             <input
               type="text"
               className={inputCls}

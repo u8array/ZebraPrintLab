@@ -16,6 +16,7 @@ import { useT } from '../../lib/useT';
 import { useLabelStore } from '../../store/labelStore';
 import { lookupBoundVariable } from '../../lib/variableBinding';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
+import { Tooltip } from '../ui/Tooltip';
 import { INDENT_STEP } from './layerLayout';
 
 export interface LayerRowProps {
@@ -176,19 +177,20 @@ export function LayerRow({
         className={`w-2 h-3.5 shrink-0 text-muted transition-opacity ${isLocked ? 'opacity-0' : 'opacity-0 group-hover:opacity-60'}`}
       />
       {groupRow ? (
-        <button
-          type="button"
-          onPointerDown={stopRowClick}
-          onClick={(e) => { stopRowClick(e); onToggleExpand(); }}
-          title={isExpanded ? t.app.collapse : t.app.expand}
-          aria-label={isExpanded ? t.app.collapse : t.app.expand}
-          aria-expanded={isExpanded}
-          className="w-4 h-4 flex items-center justify-center rounded text-muted hover:text-text hover:bg-surface shrink-0"
-        >
-          {isExpanded
-            ? <ChevronDownIcon className="w-3 h-3" />
-            : <ChevronRightIcon className="w-3 h-3" />}
-        </button>
+        <Tooltip content={isExpanded ? t.app.collapse : t.app.expand}>
+          <button
+            type="button"
+            onPointerDown={stopRowClick}
+            onClick={(e) => { stopRowClick(e); onToggleExpand(); }}
+            aria-label={isExpanded ? t.app.collapse : t.app.expand}
+            aria-expanded={isExpanded}
+            className="w-4 h-4 flex items-center justify-center rounded text-muted hover:text-text hover:bg-surface shrink-0"
+          >
+            {isExpanded
+              ? <ChevronDownIcon className="w-3 h-3" />
+              : <ChevronRightIcon className="w-3 h-3" />}
+          </button>
+        </Tooltip>
       ) : (
         <span className="w-4 h-4 shrink-0" />
       )}
@@ -196,10 +198,9 @@ export function LayerRow({
         {groupRow ? '⊞' : def?.icon}
       </span>
       {boundVariable && (
-        <VariableIcon
-          className="w-3 h-3 shrink-0 text-accent/70"
-          title={`Bound to ${boundVariable.name}`}
-        />
+        <Tooltip content={t.variables.badgeBoundFmt.replace('{name}', boundVariable.name)}>
+          <VariableIcon className="w-3 h-3 shrink-0 text-accent/70" />
+        </Tooltip>
       )}
       <div className="flex flex-col flex-1 min-w-0">
         {editing ? (
@@ -229,37 +230,40 @@ export function LayerRow({
         <span className="font-mono text-[9px] text-muted">{obj.id.slice(0, 8)}</span>
       </div>
       {groupRow && (
+        <Tooltip content={t.layers.ungroup}>
+          <button
+            type="button"
+            onPointerDown={stopRowClick}
+            onClick={(e) => { stopRowClick(e); onUngroup(); }}
+            aria-label={t.layers.ungroup}
+            className="w-5 h-5 flex items-center justify-center rounded transition-colors text-muted opacity-0 group-hover:opacity-100 hover:text-text hover:bg-surface"
+          >
+            <LinkSlashIcon className="w-3.5 h-3.5" />
+          </button>
+        </Tooltip>
+      )}
+      <Tooltip content={isHidden ? t.layers.show : t.layers.hide}>
         <button
           type="button"
           onPointerDown={stopRowClick}
-          onClick={(e) => { stopRowClick(e); onUngroup(); }}
-          title={t.layers.ungroup}
-          aria-label={t.layers.ungroup}
-          className="w-5 h-5 flex items-center justify-center rounded transition-colors text-muted opacity-0 group-hover:opacity-100 hover:text-text hover:bg-surface"
+          onClick={(e) => { stopRowClick(e); onToggleVisible(); }}
+          aria-label={isHidden ? t.layers.show : t.layers.hide}
+          className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${isHidden ? 'text-accent' : 'text-muted opacity-0 group-hover:opacity-100'} hover:text-text hover:bg-surface`}
         >
-          <LinkSlashIcon className="w-3.5 h-3.5" />
+          {isHidden ? <EyeSlashIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
         </button>
-      )}
-      <button
-        type="button"
-        onPointerDown={stopRowClick}
-        onClick={(e) => { stopRowClick(e); onToggleVisible(); }}
-        title={isHidden ? t.layers.show : t.layers.hide}
-        aria-label={isHidden ? t.layers.show : t.layers.hide}
-        className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${isHidden ? 'text-accent' : 'text-muted opacity-0 group-hover:opacity-100'} hover:text-text hover:bg-surface`}
-      >
-        {isHidden ? <EyeSlashIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
-      </button>
-      <button
-        type="button"
-        onPointerDown={stopRowClick}
-        onClick={(e) => { stopRowClick(e); onToggleLock(); }}
-        title={isLocked ? t.layers.unlock : t.layers.lock}
-        aria-label={isLocked ? t.layers.unlock : t.layers.lock}
-        className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${isLocked ? 'text-accent' : 'text-muted opacity-0 group-hover:opacity-100'} hover:text-text hover:bg-surface`}
-      >
-        {isLocked ? <LockClosedIcon className="w-3.5 h-3.5" /> : <LockOpenIcon className="w-3.5 h-3.5" />}
-      </button>
+      </Tooltip>
+      <Tooltip content={isLocked ? t.layers.unlock : t.layers.lock}>
+        <button
+          type="button"
+          onPointerDown={stopRowClick}
+          onClick={(e) => { stopRowClick(e); onToggleLock(); }}
+          aria-label={isLocked ? t.layers.unlock : t.layers.lock}
+          className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${isLocked ? 'text-accent' : 'text-muted opacity-0 group-hover:opacity-100'} hover:text-text hover:bg-surface`}
+        >
+          {isLocked ? <LockClosedIcon className="w-3.5 h-3.5" /> : <LockOpenIcon className="w-3.5 h-3.5" />}
+        </button>
+      </Tooltip>
     </div>
     </>
   );

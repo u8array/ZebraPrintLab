@@ -20,6 +20,7 @@ import { walkObjects, type LabelObject } from '../../types/Group';
 import { inputCls } from '../Properties/styles';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { FieldLabel } from '../ui/FieldLabel';
+import { Tooltip } from '../ui/Tooltip';
 import { useT } from '../../lib/useT';
 import type { Translations } from '../../locales';
 import { getObjectStringContent, getVariableSource, type VariableSource } from '../../lib/variableBinding';
@@ -113,28 +114,31 @@ export function VariablesPanel() {
           {tv.panelHint}
         </p>
         {variables.length > 0 && (
-          <button
-            onClick={() =>
-              setCanvasSettings({
-                csvRenderMode:
-                  csvRenderMode === 'preview' ? 'schema' : 'preview',
-              })
-            }
-            title={
+          <Tooltip
+            content={
               csvRenderMode === 'preview'
                 ? csvDataset
                   ? tv.csvBadgePreviewTip
                   : tv.csvBadgePreviewTipNoCsv
                 : tv.csvBadgeSchemaTip
             }
-            className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
-              csvRenderMode === 'preview'
-                ? 'text-accent bg-[--color-accent-dim]'
-                : 'text-muted hover:text-text hover:bg-surface-2 border border-border'
-            }`}
           >
-            {csvRenderMode === 'preview' ? tv.csvBadgePreviewMode : tv.csvBadgeSchemaMode}
-          </button>
+            <button
+              onClick={() =>
+                setCanvasSettings({
+                  csvRenderMode:
+                    csvRenderMode === 'preview' ? 'schema' : 'preview',
+                })
+              }
+              className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
+                csvRenderMode === 'preview'
+                  ? 'text-accent bg-[--color-accent-dim]'
+                  : 'text-muted hover:text-text hover:bg-surface-2 border border-border'
+              }`}
+            >
+              {csvRenderMode === 'preview' ? tv.csvBadgePreviewMode : tv.csvBadgeSchemaMode}
+            </button>
+          </Tooltip>
         )}
       </div>
 
@@ -150,14 +154,15 @@ export function VariablesPanel() {
             <span className="flex-1 min-w-0 text-amber-300">
               {tv.csvSavedMappingTitle}
             </span>
-            <button
-              onClick={() => setCsvMapping(null)}
-              aria-label={tv.csvSavedMappingDiscard}
-              title={tv.csvSavedMappingDiscard}
-              className="shrink-0 text-muted hover:text-amber-400 transition-colors"
-            >
-              <XMarkIcon className="w-3 h-3" />
-            </button>
+            <Tooltip content={tv.csvSavedMappingDiscard}>
+              <button
+                onClick={() => setCsvMapping(null)}
+                aria-label={tv.csvSavedMappingDiscard}
+                className="shrink-0 text-muted hover:text-amber-400 transition-colors"
+              >
+                <XMarkIcon className="w-3 h-3" />
+              </button>
+            </Tooltip>
           </div>
           <p className="text-muted">
             {tv.csvSavedMappingDescFmt
@@ -178,22 +183,24 @@ export function VariablesPanel() {
             >
               {csvDataset.source.filename}
             </span>
-            <button
-              onClick={openCsvMappingModal}
-              aria-label={tv.csvBadgeConfigureMapping}
-              title={tv.csvBadgeConfigureMapping}
-              className="shrink-0 text-muted hover:text-text transition-colors"
-            >
-              <Cog6ToothIcon className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setPendingCsvDiscard(true)}
-              aria-label={tv.csvBadgeDiscardCsv}
-              title={tv.csvBadgeDiscardCsv}
-              className="shrink-0 text-muted hover:text-amber-400 transition-colors"
-            >
-              <XMarkIcon className="w-3 h-3" />
-            </button>
+            <Tooltip content={tv.csvBadgeConfigureMapping}>
+              <button
+                onClick={openCsvMappingModal}
+                aria-label={tv.csvBadgeConfigureMapping}
+                className="shrink-0 text-muted hover:text-text transition-colors"
+              >
+                <Cog6ToothIcon className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
+            <Tooltip content={tv.csvBadgeDiscardCsv}>
+              <button
+                onClick={() => setPendingCsvDiscard(true)}
+                aria-label={tv.csvBadgeDiscardCsv}
+                className="shrink-0 text-muted hover:text-amber-400 transition-colors"
+              >
+                <XMarkIcon className="w-3 h-3" />
+              </button>
+            </Tooltip>
           </div>
           <p className="text-muted">
             {tv.csvBadgeRowsMappedFmt
@@ -203,17 +210,18 @@ export function VariablesPanel() {
           </p>
           {csvDataset.rows.length > 0 && (
             <div className="flex items-center gap-1 pt-0.5">
-              <button
-                onClick={() => setActiveRow(csvDataset.activeRowIndex - 1)}
-                disabled={
-                  csvDataset.activeRowIndex === 0 || csvRenderMode === 'schema'
-                }
-                aria-label={tv.csvBadgePrevRow}
-                title={tv.csvBadgePrevRow}
-                className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronLeftIcon className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip content={tv.csvBadgePrevRow}>
+                <button
+                  onClick={() => setActiveRow(csvDataset.activeRowIndex - 1)}
+                  disabled={
+                    csvDataset.activeRowIndex === 0 || csvRenderMode === 'schema'
+                  }
+                  aria-label={tv.csvBadgePrevRow}
+                  className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeftIcon className="w-3.5 h-3.5" />
+                </button>
+              </Tooltip>
               <span className="text-muted">{tv.csvBadgeRowLabel}</span>
               <input
                 type="number"
@@ -228,18 +236,19 @@ export function VariablesPanel() {
                 className="w-10 bg-surface-2 border border-border rounded px-1 py-0 text-[10px] font-mono text-text focus:border-accent focus:outline-none text-center disabled:opacity-30 disabled:cursor-not-allowed"
               />
               <span className="text-muted">/ {csvDataset.rows.length}</span>
-              <button
-                onClick={() => setActiveRow(csvDataset.activeRowIndex + 1)}
-                disabled={
-                  csvDataset.activeRowIndex === csvDataset.rows.length - 1 ||
-                  csvRenderMode === 'schema'
-                }
-                aria-label={tv.csvBadgeNextRow}
-                title={tv.csvBadgeNextRow}
-                className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronRightIcon className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip content={tv.csvBadgeNextRow}>
+                <button
+                  onClick={() => setActiveRow(csvDataset.activeRowIndex + 1)}
+                  disabled={
+                    csvDataset.activeRowIndex === csvDataset.rows.length - 1 ||
+                    csvRenderMode === 'schema'
+                  }
+                  aria-label={tv.csvBadgeNextRow}
+                  className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronRightIcon className="w-3.5 h-3.5" />
+                </button>
+              </Tooltip>
             </div>
           )}
         </div>

@@ -21,6 +21,7 @@ import type { Unit } from "../../lib/units";
 import { useT } from "../../lib/useT";
 import { parseIntOrUndef } from "../../lib/inputParse";
 import { CollapsibleSection } from "../ui/CollapsibleSection";
+import { Tooltip } from "../ui/Tooltip";
 import { AlignToolbar } from "./AlignToolbar";
 import { VariableBindingControl } from "../Variables/VariableBindingControl";
 import { applyBindingToObject, clockCtxFromLabel, lookupBoundVariable } from "../../lib/variableBinding";
@@ -44,10 +45,9 @@ function BwipApproxIcon({ type }: { type: string }) {
       ? t.properties.visualApproxHint
       : t.properties.visualApproxUnverifiedHint;
   return (
-    <InformationCircleIcon
-      className="w-3.5 h-3.5 text-muted/60 cursor-help"
-      title={title}
-    />
+    <Tooltip content={title}>
+      <InformationCircleIcon className="w-3.5 h-3.5 text-muted/60 cursor-help" />
+    </Tooltip>
   );
 }
 
@@ -385,10 +385,9 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
             }
           />
           <span>{t.properties.lock}</span>
-          <InformationCircleIcon
-            className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0"
-            title={t.properties.lockHint}
-          />
+          <Tooltip content={t.properties.lockHint}>
+            <InformationCircleIcon className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0" />
+          </Tooltip>
         </label>
 
         {/* Include in ZPL output; paired with the LayersPanel eye toggle:
@@ -404,10 +403,9 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
             }
           />
           <span>{t.properties.includeInExport}</span>
-          <InformationCircleIcon
-            className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0"
-            title={t.properties.includeInExportHint}
-          />
+          <Tooltip content={t.properties.includeInExportHint}>
+            <InformationCircleIcon className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0" />
+          </Tooltip>
         </label>
       </div>
     </div>
@@ -585,10 +583,9 @@ function LabelConfigPanel({
         <div className="flex flex-col gap-1">
           <label className={labelCls}>
             {t.label.safeArea}
-            <InformationCircleIcon
-              className="w-3.5 h-3.5 ml-1 inline-block align-text-bottom text-muted cursor-help"
-              title={t.label.safeAreaHint}
-            />
+            <Tooltip content={t.label.safeAreaHint}>
+              <InformationCircleIcon className="w-3.5 h-3.5 ml-1 inline-block align-text-bottom text-muted cursor-help" />
+            </Tooltip>
           </label>
           <input
             type="number"
@@ -615,10 +612,9 @@ function LabelConfigPanel({
         <div className="flex flex-col gap-1">
           <label className={labelCls}>
             {t.label.offsetsHeading}
-            <InformationCircleIcon
-              className="w-3.5 h-3.5 ml-1 inline-block align-text-bottom text-muted cursor-help"
-              title={t.label.offsetsHint}
-            />
+            <Tooltip content={t.label.offsetsHint}>
+              <InformationCircleIcon className="w-3.5 h-3.5 ml-1 inline-block align-text-bottom text-muted cursor-help" />
+            </Tooltip>
           </label>
           <div className="grid grid-cols-3 gap-2">
             <div className="flex flex-col gap-1">

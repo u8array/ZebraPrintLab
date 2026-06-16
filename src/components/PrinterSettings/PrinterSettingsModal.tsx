@@ -7,6 +7,7 @@ import { useLabelStore } from "../../store/labelStore";
 import type { PrinterSettingsTab } from "../../store/slices/uiSlice";
 import type { PrinterProfile } from "../../types/PrinterProfile";
 import { DialogShell } from "../ui/DialogShell";
+import { Tooltip } from "../ui/Tooltip";
 import { ZplLine } from "../Output/ZplLine";
 import { ClockAndTimeTab } from "./ClockAndTimeTab";
 import { EncodingAndLanguageTab } from "./EncodingAndLanguageTab";
@@ -221,28 +222,30 @@ function PreviewDock({
           {/* Clear: separated from Send by a divider; red hover +
               red focus-visible ring so destructive intent is visible
               to both pointer and keyboard users. */}
-          <button
-            type="button"
-            onClick={onClear}
-            disabled={!hasScript}
-            title={t.printerSettings.previewClear}
-            className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 rounded disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-          >
-            <TrashIcon className="w-4 h-4" />
-            {t.printerSettings.previewClear}
-          </button>
+          <Tooltip content={t.printerSettings.previewClear}>
+            <button
+              type="button"
+              onClick={onClear}
+              disabled={!hasScript}
+              className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 rounded disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            >
+              <TrashIcon className="w-4 h-4" />
+              {t.printerSettings.previewClear}
+            </button>
+          </Tooltip>
           <span aria-hidden="true" className="w-px h-4 bg-border" />
-          <button
-            type="button"
-            onClick={copy}
-            disabled={!hasScript}
-            title={t.output.copy}
-            className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-          >
-            {copied
-              ? <><CheckIcon className="w-4 h-4" />{t.output.copied}</>
-              : <><ClipboardDocumentIcon className="w-4 h-4" />{t.output.copy}</>}
-          </button>
+          <Tooltip content={t.output.copy}>
+            <button
+              type="button"
+              onClick={copy}
+              disabled={!hasScript}
+              className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            >
+              {copied
+                ? <><CheckIcon className="w-4 h-4" />{t.output.copied}</>
+                : <><ClipboardDocumentIcon className="w-4 h-4" />{t.output.copy}</>}
+            </button>
+          </Tooltip>
           <button
             type="button"
             onClick={onSend}

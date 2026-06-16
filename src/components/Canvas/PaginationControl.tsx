@@ -3,6 +3,7 @@ import { TrashIcon } from "@heroicons/react/16/solid";
 import { useLabelStore, selectPreviewLocksEditor } from "../../store/labelStore";
 import { useT } from "../../lib/useT";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { Tooltip } from "../ui/Tooltip";
 
 export function PaginationControl() {
   const t = useT();
@@ -24,37 +25,45 @@ export function PaginationControl() {
 
   return (
     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 bg-surface border border-border rounded px-1 py-0.5">
-      <button
-        onClick={() => canPrev && setCurrentPage(currentPageIndex - 1)}
-        disabled={!canPrev}
-        title="Previous page (Page Up)"
-        aria-label="Previous page"
-        className="w-6 h-6 flex items-center justify-center text-muted hover:text-text disabled:opacity-25 disabled:cursor-not-allowed font-mono text-sm transition-colors"
+      <Tooltip content={t.app.prevPage}>
+        <button
+          onClick={() => canPrev && setCurrentPage(currentPageIndex - 1)}
+          disabled={!canPrev}
+          aria-label={t.app.prevPage}
+          className="w-6 h-6 flex items-center justify-center text-muted hover:text-text disabled:opacity-25 disabled:cursor-not-allowed font-mono text-sm transition-colors"
+        >
+          ‹
+        </button>
+      </Tooltip>
+      <span
+        aria-label={t.app.pageIndicatorFmt
+          .replace("{current}", String(currentPageIndex + 1))
+          .replace("{total}", String(pageCount))}
+        className="font-mono text-[10px] text-text px-2 select-none whitespace-nowrap"
       >
-        ‹
-      </button>
-      <span className="font-mono text-[10px] text-text px-2 select-none whitespace-nowrap">
-        Page {currentPageIndex + 1} / {pageCount}
+        {currentPageIndex + 1} / {pageCount}
       </span>
-      <button
-        onClick={() => canNext && setCurrentPage(currentPageIndex + 1)}
-        disabled={!canNext}
-        title="Next page (Page Down)"
-        aria-label="Next page"
-        className="w-6 h-6 flex items-center justify-center text-muted hover:text-text disabled:opacity-25 disabled:cursor-not-allowed font-mono text-sm transition-colors"
-      >
-        ›
-      </button>
+      <Tooltip content={t.app.nextPage}>
+        <button
+          onClick={() => canNext && setCurrentPage(currentPageIndex + 1)}
+          disabled={!canNext}
+          aria-label={t.app.nextPage}
+          className="w-6 h-6 flex items-center justify-center text-muted hover:text-text disabled:opacity-25 disabled:cursor-not-allowed font-mono text-sm transition-colors"
+        >
+          ›
+        </button>
+      </Tooltip>
       <div className="w-px h-3.5 bg-border mx-0.5" />
-      <button
-        onClick={() => setConfirmOpen(true)}
-        disabled={previewLocks}
-        title="Delete current page"
-        aria-label="Delete current page"
-        className="w-6 h-6 flex items-center justify-center text-muted hover:text-red-400 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-      >
-        <TrashIcon className="w-3.5 h-3.5" />
-      </button>
+      <Tooltip content={t.app.deletePage}>
+        <button
+          onClick={() => setConfirmOpen(true)}
+          disabled={previewLocks}
+          aria-label={t.app.deletePage}
+          className="w-6 h-6 flex items-center justify-center text-muted hover:text-red-400 disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+        >
+          <TrashIcon className="w-3.5 h-3.5" />
+        </button>
+      </Tooltip>
       {confirmOpen && (
         <ConfirmDialog
           message={t.app.deletePageConfirm}

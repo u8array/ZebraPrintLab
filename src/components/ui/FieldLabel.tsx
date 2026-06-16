@@ -1,5 +1,6 @@
 import { InformationCircleIcon } from '@heroicons/react/16/solid';
 import { labelCls } from '../Properties/styles';
+import { Tooltip } from './Tooltip';
 
 /** Section / input label styled like the rest of the right sidebar
  *  (small-caps muted text), optionally with a hover-help info icon.
@@ -13,10 +14,9 @@ export function FieldLabel({ text, help }: { text: string; help?: string }) {
   return (
     <span className={`${labelCls} flex items-center gap-1`}>
       {text}
-      <InformationCircleIcon
-        className="w-3 h-3 text-muted/60 cursor-help"
-        title={help}
-      />
+      <Tooltip content={help}>
+        <InformationCircleIcon className="w-3 h-3 text-muted/60 cursor-help" />
+      </Tooltip>
     </span>
   );
 }

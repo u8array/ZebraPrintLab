@@ -6,6 +6,7 @@ import { useCopyToClipboard } from '../../lib/useCopyToClipboard';
 import { useT } from '../../lib/useT';
 import { LabelaryNoticeModal } from './LabelaryNoticeModal';
 import { ZplLine } from './ZplLine';
+import { Tooltip } from '../ui/Tooltip';
 
 interface Props {
   collapsed?: boolean;
@@ -53,20 +54,21 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
         onCollapseToggle={collapsed ? onExpand : onCollapse}
         collapseLabel={collapsed ? t.app.expand : t.app.collapse}
         extraActions={labelaryEnabled && (
-          <button
-            onClick={togglePreview}
-            disabled={!zpl && !previewActive}
-            title={t.output.previewHeading}
-            aria-pressed={previewActive}
-            className={`flex items-center gap-1 font-mono text-[10px] disabled:opacity-25 disabled:cursor-not-allowed transition-colors ${
-              previewActive
-                ? 'text-accent hover:text-text'
-                : 'text-muted hover:text-accent'
-            }`}
-          >
-            <EyeIcon className="w-4 h-4" />
-            {t.output.previewHeading}
-          </button>
+          <Tooltip content={t.output.previewHeading}>
+            <button
+              onClick={togglePreview}
+              disabled={!zpl && !previewActive}
+              aria-pressed={previewActive}
+              className={`flex items-center gap-1 font-mono text-[10px] disabled:opacity-25 disabled:cursor-not-allowed transition-colors ${
+                previewActive
+                  ? 'text-accent hover:text-text'
+                  : 'text-muted hover:text-accent'
+              }`}
+            >
+              <EyeIcon className="w-4 h-4" />
+              {t.output.previewHeading}
+            </button>
+          </Tooltip>
         )}
       />
 
@@ -113,29 +115,31 @@ function OutputSection({
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
           {onCollapseToggle && (
-            <button
-              className="p-0.5 rounded text-muted hover:text-text hover:bg-border transition-colors"
-              onClick={onCollapseToggle}
-              title={collapseLabel}
-              aria-label={collapseLabel}
-            >
-              {collapsed ? <ChevronUpIcon className="w-3.5 h-3.5" /> : <ChevronDownIcon className="w-3.5 h-3.5" />}
-            </button>
+            <Tooltip content={collapseLabel}>
+              <button
+                className="p-0.5 rounded text-muted hover:text-text hover:bg-border transition-colors"
+                onClick={onCollapseToggle}
+                aria-label={collapseLabel}
+              >
+                {collapsed ? <ChevronUpIcon className="w-3.5 h-3.5" /> : <ChevronDownIcon className="w-3.5 h-3.5" />}
+              </button>
+            </Tooltip>
           )}
           <span className="font-mono text-[10px] text-muted uppercase tracking-widest">{heading}</span>
         </div>
         <div className="flex items-center gap-3">
           {extraActions}
-          <button
-            onClick={copy}
-            disabled={!content}
-            title={t.output.copy}
-            className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
-          >
-            {copied
-              ? <><CheckIcon className="w-4 h-4" />{t.output.copied}</>
-              : <><ClipboardDocumentIcon className="w-4 h-4" />{t.output.copy}</>}
-          </button>
+          <Tooltip content={t.output.copy}>
+            <button
+              onClick={copy}
+              disabled={!content}
+              className="flex items-center gap-1 font-mono text-[10px] text-muted hover:text-accent disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            >
+              {copied
+                ? <><CheckIcon className="w-4 h-4" />{t.output.copied}</>
+                : <><ClipboardDocumentIcon className="w-4 h-4" />{t.output.copy}</>}
+            </button>
+          </Tooltip>
         </div>
       </div>
 

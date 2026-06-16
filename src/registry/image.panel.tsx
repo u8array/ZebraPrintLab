@@ -14,6 +14,7 @@ import {
   type StorageDevice,
 } from '../lib/storagePath';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
+import { Tooltip } from '../components/ui/Tooltip';
 import type { ImageProps } from './image';
 
 export const imagePanel: ObjectTypeUi<ImageProps> = {
@@ -102,14 +103,16 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
                   objects referencing the same imageId. Skip when the
                   current image-object has no source selected. */}
               {p.imageId && (
-                <button
-                  type="button"
-                  className="p-1.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors shrink-0"
-                  title={t.registry.image.removeFromCache}
-                  onClick={() => setPendingCacheDelete(true)}
-                >
-                  <TrashIcon className="w-3.5 h-3.5" />
-                </button>
+                <Tooltip content={t.registry.image.removeFromCache}>
+                  <button
+                    type="button"
+                    className="p-1.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors shrink-0"
+                    aria-label={t.registry.image.removeFromCache}
+                    onClick={() => setPendingCacheDelete(true)}
+                  >
+                    <TrashIcon className="w-3.5 h-3.5" />
+                  </button>
+                </Tooltip>
               )}
             </div>
           )}
@@ -187,10 +190,9 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
         <div className="flex flex-col gap-1 mt-1 pt-3 border-t border-border">
           <div className="flex items-center gap-2">
             <label className={labelCls}>{t.registry.image.storage}</label>
-            <InformationCircleIcon
-              className="w-3 h-3 text-muted/60 cursor-help shrink-0"
-              title={t.registry.image.storeOnPrinterHint}
-            />
+            <Tooltip content={t.registry.image.storeOnPrinterHint}>
+              <InformationCircleIcon className="w-3 h-3 text-muted/60 cursor-help shrink-0" />
+            </Tooltip>
           </div>
           {storedAs ? (
             <>
@@ -246,10 +248,9 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
                   }
                 />
                 <span className={labelCls}>{t.registry.image.embedInZpl}</span>
-                <InformationCircleIcon
-                  className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0"
-                  title={t.registry.image.embedInZplHint}
-                />
+                <Tooltip content={t.registry.image.embedInZplHint}>
+                  <InformationCircleIcon className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0" />
+                </Tooltip>
               </label>
               <button
                 type="button"

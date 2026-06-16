@@ -20,6 +20,7 @@ import { CollapsibleSection } from '../ui/CollapsibleSection';
 import { inputCls } from '../Properties/styles';
 import { getVariableSource } from '../../lib/variableBinding';
 import { VariableSourceBadge } from './VariableSourceBadge';
+import { Tooltip } from '../ui/Tooltip';
 
 
 interface Props {
@@ -383,14 +384,15 @@ export function VariableMappingModal({ onClose }: Props) {
                           }}
                         />
                         {isNew && (
-                          <button
-                            onClick={() => handleRemoveDraftVariable(v.id)}
-                            aria-label={tv.csvRemoveDraftAria}
-                            title={tv.csvRemoveDraftAria}
-                            className="shrink-0 p-1 rounded text-muted hover:text-amber-400 hover:bg-surface-2 transition-colors"
-                          >
-                            <XMarkIcon className="w-3 h-3" />
-                          </button>
+                          <Tooltip content={tv.csvRemoveDraftAria}>
+                            <button
+                              onClick={() => handleRemoveDraftVariable(v.id)}
+                              aria-label={tv.csvRemoveDraftAria}
+                              className="shrink-0 p-1 rounded text-muted hover:text-amber-400 hover:bg-surface-2 transition-colors"
+                            >
+                              <XMarkIcon className="w-3 h-3" />
+                            </button>
+                          </Tooltip>
                         )}
                       </div>
                       {nameError ? (

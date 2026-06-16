@@ -4,6 +4,7 @@ import { useLabelStore } from '../../store/labelStore';
 import type { LabelObject } from '../../types/Group';
 import { inputCls } from '../Properties/styles';
 import { FieldLabel } from '../ui/FieldLabel';
+import { Tooltip } from '../ui/Tooltip';
 import { useT } from '../../lib/useT';
 import { getObjectStringContent } from '../../lib/variableBinding';
 
@@ -134,14 +135,15 @@ export function VariableBindingControl({ obj }: Props) {
             <option value={CREATE_NEW_SENTINEL}>{tv.createNew}</option>
           </select>
           {boundVariable && (
-            <button
-              onClick={() => updateObject(obj.id, { variableId: undefined })}
-              aria-label={tv.unbindAria}
-              title={tv.unbindAria}
-              className="p-1 rounded text-muted hover:text-amber-400 hover:bg-surface-2 transition-colors"
-            >
-              <XMarkIcon className="w-3.5 h-3.5" />
-            </button>
+            <Tooltip content={tv.unbindAria}>
+              <button
+                onClick={() => updateObject(obj.id, { variableId: undefined })}
+                aria-label={tv.unbindAria}
+                className="p-1 rounded text-muted hover:text-amber-400 hover:bg-surface-2 transition-colors"
+              >
+                <XMarkIcon className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
           )}
         </div>
       )}

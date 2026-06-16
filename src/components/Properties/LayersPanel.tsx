@@ -8,6 +8,7 @@ import { useT } from '../../lib/useT';
 import { buildBulkToggleUpdates, type ToggleField } from '../../lib/bulkToggle';
 import { buildFlatRows, useLayerDnd, type FlatRow } from './useLayerDnd';
 import { LayerRow } from './LayerRow';
+import { Tooltip } from '../ui/Tooltip';
 
 export function LayersPanel() {
   const t = useT();
@@ -91,15 +92,16 @@ export function LayersPanel() {
       onDragCancel={onDragCancel}
     >
       <div className="flex items-center justify-end px-2 py-1.5 border-b border-border shrink-0">
-        <button
-          type="button"
-          onClick={onNewGroup}
-          title={t.layers.newGroup}
-          aria-label={t.layers.newGroup}
-          className="w-5 h-5 flex items-center justify-center rounded text-muted hover:text-text hover:bg-surface-2 transition-colors"
-        >
-          <FolderPlusIcon className="w-3.5 h-3.5" />
-        </button>
+        <Tooltip content={t.layers.newGroup}>
+          <button
+            type="button"
+            onClick={onNewGroup}
+            aria-label={t.layers.newGroup}
+            className="w-5 h-5 flex items-center justify-center rounded text-muted hover:text-text hover:bg-surface-2 transition-colors"
+          >
+            <FolderPlusIcon className="w-3.5 h-3.5" />
+          </button>
+        </Tooltip>
       </div>
       {objects.length === 0 ? (
         <div className="p-4 text-center text-muted text-xs mt-6">

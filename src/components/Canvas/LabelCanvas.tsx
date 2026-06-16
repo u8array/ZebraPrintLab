@@ -40,6 +40,7 @@ import { useCanvasPanZoom } from "./hooks/useCanvasPanZoom";
 import { useCanvasLasso } from "./hooks/useCanvasLasso";
 import { useKonvaTransformer } from "./hooks/useKonvaTransformer";
 import { PaginationControl } from "./PaginationControl";
+import { Tooltip } from "../ui/Tooltip";
 import {
   axisReversal,
   inverseRotateDelta,
@@ -792,20 +793,22 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
 
       {/* Bottom-right controls: view options + zoom */}
       <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 bg-surface border border-border rounded px-1 py-0.5">
-        <button
-          onClick={onGridToggle}
-          title="Grid (G)"
-          className={`px-2 h-6 rounded text-xs font-mono transition-colors ${showGrid ? "text-accent bg-[--color-accent-dim]" : "text-muted hover:text-text hover:bg-surface-2"}`}
-        >
-          Grid
-        </button>
-        <button
-          onClick={onSnapToggle}
-          title="Snap (S)"
-          className={`px-2 h-6 rounded text-xs font-mono transition-colors ${snapEnabled ? "text-accent bg-[--color-accent-dim]" : "text-muted hover:text-text hover:bg-surface-2"}`}
-        >
-          Snap
-        </button>
+        <Tooltip content={`${t.app.toggleGrid} (G)`}>
+          <button
+            onClick={onGridToggle}
+            className={`px-2 h-6 rounded text-xs font-mono transition-colors ${showGrid ? "text-accent bg-[--color-accent-dim]" : "text-muted hover:text-text hover:bg-surface-2"}`}
+          >
+            {t.app.toggleGrid}
+          </button>
+        </Tooltip>
+        <Tooltip content={`${t.app.toggleSnap} (S)`}>
+          <button
+            onClick={onSnapToggle}
+            className={`px-2 h-6 rounded text-xs font-mono transition-colors ${snapEnabled ? "text-accent bg-[--color-accent-dim]" : "text-muted hover:text-text hover:bg-surface-2"}`}
+          >
+            {t.app.toggleSnap}
+          </button>
+        </Tooltip>
         <select
           value={snapSizeMm}
           onChange={(e) => onSnapSizeChange(Number(e.target.value))}
@@ -838,14 +841,15 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
           +
         </button>
         <div className="w-px h-3.5 bg-border mx-0.5" />
-        <button
-          onClick={rotateView}
-          title="Rotate view (R)"
-          aria-label="Rotate view"
-          className={`w-6 h-6 flex items-center justify-center text-sm transition-colors ${viewRotation !== 0 ? "text-accent" : "text-muted hover:text-text"}`}
-        >
-          ↻
-        </button>
+        <Tooltip content={`${t.app.rotateView} (R)`}>
+          <button
+            onClick={rotateView}
+            aria-label={t.app.rotateView}
+            className={`w-6 h-6 flex items-center justify-center text-sm transition-colors ${viewRotation !== 0 ? "text-accent" : "text-muted hover:text-text"}`}
+          >
+            ↻
+          </button>
+        </Tooltip>
         {viewRotation !== 0 && (
           <span className="font-mono text-[10px] text-accent w-6 text-center">{viewRotation}°</span>
         )}

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useT } from "../../lib/useT";
+import { Tooltip } from "../ui/Tooltip";
 import { labelCls } from "./styles";
 import { NumberInput } from "./NumberInput";
 import type { TextProps } from "../../registry/text";
@@ -61,21 +62,21 @@ export function FpSettings({ props: p, onChange }: Props) {
           {items.map(({ v, title }) => {
             const active = dir === v;
             return (
-              <button
-                key={v}
-                type="button"
-                title={title}
-                aria-label={title}
-                aria-pressed={active}
-                onClick={() => onChange({ fpDirection: v })}
-                className={`w-7 h-6 flex items-center justify-center rounded border transition-colors ${
-                  active
-                    ? "border-accent bg-accent-dim text-accent"
-                    : "border-border text-muted hover:text-text hover:bg-surface-2"
-                }`}
-              >
-                {ICONS[v]}
-              </button>
+              <Tooltip key={v} content={title}>
+                <button
+                  type="button"
+                  aria-label={title}
+                  aria-pressed={active}
+                  onClick={() => onChange({ fpDirection: v })}
+                  className={`w-7 h-6 flex items-center justify-center rounded border transition-colors ${
+                    active
+                      ? "border-accent bg-accent-dim text-accent"
+                      : "border-border text-muted hover:text-text hover:bg-surface-2"
+                  }`}
+                >
+                  {ICONS[v]}
+                </button>
+              </Tooltip>
             );
           })}
         </div>
