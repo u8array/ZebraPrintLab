@@ -13,9 +13,13 @@ export interface SelectionSlice {
    *  the Delete keystroke spared. Cross-writes pages; owned by
    *  objectSlice but the trigger lives with the selection it acts on. */
   removeSelectedObjects: () => void;
+  /** Set the locked flag on every selected top-level object. Single owner for
+   *  the lock-the-selection op (action bar + Ctrl+L); delegates to updateObjects
+   *  whose lock-bypass lets a locked object toggle its own flag. */
+  setSelectionLocked: (locked: boolean) => void;
 }
 
-export const createSelectionSlice: StateCreator<LabelState, [], [], SelectionSlice> = (set) => ({
+export const createSelectionSlice: StateCreator<LabelState, [], [], SelectionSlice> = (set, get) => ({
   selectedIds: [],
 
   selectObject: (id) =>
@@ -57,4 +61,9 @@ export const createSelectionSlice: StateCreator<LabelState, [], [], SelectionSli
         selectedIds: lockedIds,
       };
     }),
+
+  setSelectionLocked: (locked) => {
+    const { selectedIds, updateObjects } = get();
+    updateObjects(selectedIds.map((id) => ({ id, changes: { locked } })));
+  },
 });

@@ -10,6 +10,8 @@ import {
   detachObjectById,
   isSelfOrDescendant,
   canGroupSelection,
+  canDeleteSelection,
+  isSelectionLocked,
   mapObjectById,
   type GroupObject,
   type LabelObject,
@@ -198,6 +200,53 @@ describe('Group helpers', () => {
     it('returns true when one of several selected items is groupable', () => {
       const locked = { ...leaf('a'), locked: true };
       expect(canGroupSelection([locked, leaf('b')], ['a', 'b'])).toBe(true);
+    });
+  });
+
+  describe('canDeleteSelection', () => {
+    it('returns true when at least one top-level unlocked item is selected', () => {
+      expect(canDeleteSelection([leaf('a'), leaf('b')], ['a'])).toBe(true);
+    });
+
+    it('returns false for an empty selection', () => {
+      expect(canDeleteSelection([leaf('a')], [])).toBe(false);
+    });
+
+    it('ignores nested ids (only top-level counts)', () => {
+      const tree = [group('g', [leaf('inside')])];
+      expect(canDeleteSelection(tree, ['inside'])).toBe(false);
+    });
+
+    it('returns false when only locked top-level items are selected', () => {
+      const locked = { ...leaf('a'), locked: true };
+      expect(canDeleteSelection([locked], ['a'])).toBe(false);
+    });
+
+    it('returns true when one of several selected items is unlocked', () => {
+      const locked = { ...leaf('a'), locked: true };
+      expect(canDeleteSelection([locked, leaf('b')], ['a', 'b'])).toBe(true);
+    });
+  });
+
+  describe('isSelectionLocked', () => {
+    it('returns false for an empty selection', () => {
+      expect(isSelectionLocked([leaf('a')], [])).toBe(false);
+    });
+
+    it('returns true when every selected top-level item is locked', () => {
+      const a = { ...leaf('a'), locked: true };
+      const b = { ...leaf('b'), locked: true };
+      expect(isSelectionLocked([a, b], ['a', 'b'])).toBe(true);
+    });
+
+    it('returns false when any selected item is unlocked', () => {
+      const a = { ...leaf('a'), locked: true };
+      expect(isSelectionLocked([a, leaf('b')], ['a', 'b'])).toBe(false);
+    });
+
+    it('ignores nested ids (only top-level counts)', () => {
+      const tree = [group('g', [{ ...leaf('inside'), locked: true }])];
+      expect(isSelectionLocked(tree, ['inside'])).toBe(false);
     });
   });
 

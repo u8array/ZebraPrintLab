@@ -59,10 +59,10 @@ export function useCanvasLasso({ containerRef, stageRef, spaceDown, selectObject
     lassoRectRef.current = null;
     setLasso(null);
     if (!rect || !stageRef.current) return;
-    // Figma-style: locked objects opt out of lasso selection; they can't
-    // be moved or transformed, so grabbing them into a marquee selection
-    // would make the post-lasso drag feel dead. Direct click and the
-    // LayersPanel still target locked items, so bulk-unlock stays possible.
+    // Locked objects opt out of lasso selection: they can't be moved or
+    // transformed, so a broad marquee sweep should not grab locked
+    // backgrounds. A deliberate direct click and the LayersPanel still target
+    // locked items, so selecting one to unlock it stays possible.
     // Leaves are the only Konva-rendered things, so intersect on those, then
     // map each captured leaf to its outermost group so a lasso over a
     // grouped child surfaces the group as the selection unit.

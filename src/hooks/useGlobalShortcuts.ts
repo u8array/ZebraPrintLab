@@ -10,7 +10,7 @@ export function useGlobalShortcuts() {
   const selectObjects = useLabelStore((s) => s.selectObjects);
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
   const setCurrentPage = useLabelStore((s) => s.setCurrentPage);
-  const updateObjects = useLabelStore((s) => s.updateObjects);
+  const setSelectionLocked = useLabelStore((s) => s.setSelectionLocked);
   const groupSelection = useLabelStore((s) => s.groupSelection);
   const ungroup = useLabelStore((s) => s.ungroup);
   const { undo, redo } = useHistory();
@@ -60,8 +60,7 @@ export function useGlobalShortcuts() {
         const ids = useLabelStore.getState().selectedIds;
         if (ids.length === 0) return;
         e.preventDefault();
-        const locked = !e.shiftKey;
-        updateObjects(ids.map((id) => ({ id, changes: { locked } })));
+        setSelectionLocked(!e.shiftKey);
         return;
       }
       if (mod && e.code === "KeyG") {
@@ -98,5 +97,5 @@ export function useGlobalShortcuts() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [undo, redo, duplicateSelectedObjects, copySelectedObjects, pasteObjects, selectObjects, setCanvasSettings, setCurrentPage, updateObjects, groupSelection, ungroup]);
+  }, [undo, redo, duplicateSelectedObjects, copySelectedObjects, pasteObjects, selectObjects, setCanvasSettings, setCurrentPage, setSelectionLocked, groupSelection, ungroup]);
 }

@@ -169,6 +169,28 @@ export function canGroupSelection(
   );
 }
 
+/** True when removeSelectedObjects() would act (>=1 top-level unlocked). */
+export function canDeleteSelection(
+  objects: LabelObject[],
+  selectedIds: readonly string[],
+): boolean {
+  return selectedIds.some((id) =>
+    objects.some((o) => o.id === id && !o.locked),
+  );
+}
+
+/** True when the selection is non-empty and every selected top-level object
+ *  is locked; drives the lock/unlock toggle direction. */
+export function isSelectionLocked(
+  objects: LabelObject[],
+  selectedIds: readonly string[],
+): boolean {
+  if (selectedIds.length === 0) return false;
+  return selectedIds.every((id) =>
+    objects.some((o) => o.id === id && !!o.locked),
+  );
+}
+
 /** Expand group ids to their descendant leaves; leaf ids pass through. */
 export function expandSelection(
   objects: LabelObject[],
