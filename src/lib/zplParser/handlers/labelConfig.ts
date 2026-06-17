@@ -101,10 +101,11 @@ export function createLabelConfigHandlers(
       if (v !== undefined) labelConfig.instantDarkness = v;
     },
     // ~JS: change backfeed sequence. A/B/N/O modeled; percent forms
-    // (10-90) fall under the known param-fidelity limit.
+    // (10-90) aren't, so track them as a partial-import loss.
     JS(_, rest) {
       const v = firstChar(rest);
       if (isBackfeedSequence(v)) labelConfig.backfeedSequence = v;
+      else if (rest) s.result.partialCmds.add("~JS");
     },
   };
 }
