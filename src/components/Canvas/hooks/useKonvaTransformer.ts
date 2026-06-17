@@ -312,11 +312,12 @@ export function useKonvaTransformer({
   // commitTransform → forces the transformer to re-measure the attached node
   // so its bounding box matches the new rendered size. Position is excluded:
   // moves don't change bbox dimensions, and Konva tracks the node's position
-  // automatically.
+  // automatically. Lock state is included so toggling lock re-runs the attach
+  // effect (locked nodes detach; unlocked nodes re-attach).
   const selectedSignature = selectedIds
     .map((id) => {
       const o = objects.find((obj) => obj.id === id);
-      return o ? `${id}:${JSON.stringify(o.props)}` : id;
+      return o ? `${id}:${o.locked ? "L" : ""}:${JSON.stringify(o.props)}` : id;
     })
     .join("|");
 

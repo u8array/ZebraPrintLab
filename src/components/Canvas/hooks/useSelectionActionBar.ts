@@ -1,0 +1,98 @@
+import { useLayoutEffect, useRef } from "react";
+import type Konva from "konva";
+import { RULER_SIZE } from "../Ruler";
+import { RADIUS as BUTTON_RADIUS_PX } from "../FloatingCanvasButton";
+
+const ACTION_BAR_GAP_PX = 22;
+
+interface Options {
+  stageRef: React.RefObject<Konva.Stage | null>;
+  attachableIds: string[];
+  lockedLeafIds: string[];
+  previewLocks: boolean;
+}
+
+/**
+ * Positions the floating selection action bar (centred above the selection,
+ * flipped below when it would clip past the ruler, clamped horizontally) and an
+ * amber outline per locked leaf (the transformer skips locked nodes). Imperative
+ * via beforeDraw so the chrome tracks live node positions during drags, the same
+ * timing useKonvaTransformer relies on.
+ */
+export function useSelectionActionBar({
+  stageRef,
+  attachableIds,
+  lockedLeafIds,
+  previewLocks,
+}: Options) {
+  const actionBarRef = useRef<Konva.Group>(null);
+  const lockedFrameRef = useRef<Konva.Group>(null);
+
+  useLayoutEffect(() => {
+    if (previewLocks || attachableIds.length === 0) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    // Object layer (shared by the bar and the selected nodes); grabbing the
+    // layer, not a node, survives node mount timing.
+    const layer = stage.getLayers()[0];
+    // beforeDraw runs after Konva invalidates the cached transform matrices, so
+    // getClientRect sees actual positions; dragmove/xChange read stale data and
+    // trail one tick behind on snap-jumps.
+    const update = () => {
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const id of attachableIds) {
+        const node = stage.findOne(`#${id}`);
+        if (!node) continue;
+        const r = node.getClientRect({ relativeTo: stage, skipStroke: true });
+        minX = Math.min(minX, r.x);
+        minY = Math.min(minY, r.y);
+        maxX = Math.max(maxX, r.x + r.width);
+        maxY = Math.max(maxY, r.y + r.height);
+      }
+      if (minX === Infinity) return;
+
+      const bar = actionBarRef.current;
+      if (bar) {
+        const halfW = bar.getClientRect({ relativeTo: stage }).width / 2;
+        const minCx = RULER_SIZE + halfW;
+        const maxCx = Math.max(minCx, stage.width() - halfW);
+        const cx = Math.min(Math.max((minX + maxX) / 2, minCx), maxCx);
+        // Prefer above the selection; flip below if it clips the ruler; pin just
+        // under the ruler when a tall selection leaves no room either side.
+        const aboveY = minY - ACTION_BAR_GAP_PX;
+        const belowY = maxY + ACTION_BAR_GAP_PX;
+        let y = aboveY;
+        if (aboveY - BUTTON_RADIUS_PX < RULER_SIZE) {
+          y =
+            belowY + BUTTON_RADIUS_PX <= stage.height()
+              ? belowY
+              : RULER_SIZE + BUTTON_RADIUS_PX;
+        }
+        bar.position({ x: cx, y });
+      }
+
+      // Per-leaf amber frames, mapped to lockedLeafIds in render order.
+      const frames = lockedFrameRef.current?.getChildren();
+      if (frames) {
+        lockedLeafIds.forEach((id, i) => {
+          const node = stage.findOne(`#${id}`);
+          const rect = frames[i] as Konva.Rect | undefined;
+          if (!node || !rect) return;
+          const r = node.getClientRect({ relativeTo: stage, skipStroke: true });
+          rect.position({ x: r.x, y: r.y });
+          rect.size({ width: r.width, height: r.height });
+        });
+      }
+    };
+    update();
+    layer?.on("beforeDraw.actionbar", update);
+    return () => {
+      layer?.off(".actionbar");
+    };
+  }, [stageRef, attachableIds, lockedLeafIds, previewLocks]);
+
+  return { actionBarRef, lockedFrameRef };
+}

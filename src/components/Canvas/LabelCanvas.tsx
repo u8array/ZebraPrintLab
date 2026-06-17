@@ -1,7 +1,6 @@
 import {
   forwardRef,
   useImperativeHandle,
-  useLayoutEffect,
   useMemo,
   useRef,
   useEffect,
@@ -13,7 +12,7 @@ import type { PaletteDragData } from "../../dnd/types";
 import { Stage, Layer, Group, Image as KImage, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects, selectPreviewLocksEditor } from "../../store/labelStore";
-import { isGroup, getAllLeaves, expandSelection, selectionTargetId, findObjectById, type LabelObject } from "../../types/Group";
+import { isGroup, getAllLeaves, expandSelection, selectionTargetId, findObjectById, canDeleteSelection, isSelectionLocked, type LabelObject } from "../../types/Group";
 import { pxToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
 import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
@@ -34,7 +33,6 @@ import { Ruler, RULER_SIZE } from "./Ruler";
 import { getEntry } from "../../registry";
 import type { LeafObject } from "../../registry";
 import { useColorScheme } from "../../lib/useColorScheme";
-import { objectIdsAtPoint } from "./hitTesting";
 import { useT } from "../../lib/useT";
 import { useCanvasPanZoom } from "./hooks/useCanvasPanZoom";
 import { useCanvasLasso } from "./hooks/useCanvasLasso";
@@ -49,15 +47,17 @@ import {
   type ViewRotation,
 } from "./rotationGeometry";
 import { useAltClickCycle } from "./hooks/useAltClickCycle";
-import { RotationButton } from "./RotationButton";
+import { useSelectionActionBar } from "./hooks/useSelectionActionBar";
+import { FloatingCanvasButton } from "./FloatingCanvasButton";
+import { ROTATE_ICON, TRASH_ICON, LOCK_ICON, UNLOCK_ICON } from "./canvasIcons";
 import {
   getStepRotation,
   nextZplRotation,
 } from "../../registry/rotation";
 
 const PADDING = 40;
-const ROTATE_BUTTON_GAP_PX = 16;
-const ROTATE_BUTTON_TOP_OFFSET_PX = -2;
+// Horizontal stride between action-bar buttons (render-side row layout).
+const BUTTON_STEP_PX = 28;
 
 interface Props {
   unit: Unit;
@@ -123,6 +123,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     selectObject,
     toggleSelectObject,
     selectObjects,
+    removeSelectedObjects,
+    setSelectionLocked,
   } = useLabelStore();
   const objects = useCurrentObjects();
   const previewMode = useLabelStore((s) => s.previewMode);
@@ -164,11 +166,13 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   }, [objects]);
 
   // Expand selection so group-click feels like Figma multi-drag.
-  const allLeaves = useMemo(() => getAllLeaves(objects), [objects]);
   const attachableIds = useMemo(
     () => expandSelection(objects, selectedIds),
     [objects, selectedIds],
   );
+  // Gate the trash glyph on the same predicate removeSelectedObjects uses, so
+  // a locked-only selection gets no dead affordance.
+  const hasDeletable = canDeleteSelection(objects, selectedIds);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -489,7 +493,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     transformerRef,
     stageRef,
     selectedIds: attachableIds,
-    objects: allLeaves,
+    // Cascade-aware leaves so a child of a locked group reads as locked and the
+    // transformer detaches (raw leaves would show dead resize handles).
+    objects: visibleLeaves,
     scale,
     dpmm: label.dpmm,
     objectsOffsetX,
@@ -508,34 +514,23 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     ? objects.find((o) => o.id === selectedIds[0]) ?? null
     : null;
   const stepRotation = singleSelected ? getStepRotation(singleSelected) : null;
-  const rotationBtnRef = useRef<Konva.Group>(null);
-  const singleSelectedId = singleSelected?.id;
-  useLayoutEffect(() => {
-    if (!singleSelectedId || !stepRotation || previewLocks) return;
-    const stage = stageRef.current;
-    if (!stage) return;
-    const node = stage.findOne(`#${singleSelectedId}`);
-    if (!node) return;
-    const layer = node.getLayer();
-    // beforeDraw runs after Konva invalidates the cached transform
-    // matrices, so getClientRect sees the frame's actual position;
-    // dragmove/xChange handlers run earlier and read stale data,
-    // which trails the button one tick behind on snap-jumps.
-    const update = () => {
-      const btn = rotationBtnRef.current;
-      if (!btn) return;
-      const rect = node.getClientRect({ relativeTo: stage, skipStroke: true });
-      btn.position({
-        x: rect.x + rect.width + ROTATE_BUTTON_GAP_PX,
-        y: rect.y + ROTATE_BUTTON_TOP_OFFSET_PX,
-      });
-    };
-    update();
-    layer?.on("beforeDraw.rotbtn", update);
-    return () => {
-      layer?.off(".rotbtn");
-    };
-  }, [singleSelectedId, stepRotation, previewLocks]);
+  const allSelectedLocked = isSelectionLocked(objects, selectedIds);
+
+  // Selected leaves whose effective (cascaded) lock is on; each gets an amber
+  // outline since the transformer skips locked nodes.
+  const lockedLeafIds = useMemo(() => {
+    const locked = new Set(
+      visibleLeaves.flatMap((l) => (l.locked ? [l.id] : [])),
+    );
+    return attachableIds.filter((id) => locked.has(id));
+  }, [visibleLeaves, attachableIds]);
+
+  const { actionBarRef, lockedFrameRef } = useSelectionActionBar({
+    stageRef,
+    attachableIds,
+    lockedLeafIds,
+    previewLocks,
+  });
 
   const handleRotateStep = () => {
     if (!singleSelected || !stepRotation) return;
@@ -543,6 +538,43 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       props: { rotation: nextZplRotation(stepRotation) },
     });
   };
+
+  // Contextual action bar. Rotate is a 90-degree step (ZPL only stores N/R/I/B,
+  // so a button beats the free-rotation drag handle other tools use); lock and
+  // delete mirror Canva's floating cluster. The bar itself is gated on
+  // !previewLocks at the render site.
+  const actionButtons: {
+    key: string;
+    iconPath: string;
+    color: string;
+    onClick: () => void;
+  }[] = [];
+  if (singleSelected && stepRotation && !singleSelected.locked) {
+    actionButtons.push({
+      key: "rotate",
+      iconPath: ROTATE_ICON,
+      color: colors.selection,
+      onClick: handleRotateStep,
+    });
+  }
+  if (selectedIds.length > 0) {
+    actionButtons.push({
+      key: "lock",
+      iconPath: allSelectedLocked ? UNLOCK_ICON : LOCK_ICON,
+      // Amber unlock matches the locked-state frame; plain lock stays in
+      // selection chrome since the selection is not locked yet.
+      color: allSelectedLocked ? colors.accent : colors.selection,
+      onClick: () => setSelectionLocked(!allSelectedLocked),
+    });
+  }
+  if (hasDeletable) {
+    actionButtons.push({
+      key: "delete",
+      iconPath: TRASH_ICON,
+      color: colors.selection,
+      onClick: removeSelectedObjects,
+    });
+  }
 
   const handleObjectChange = (
     id: string,
@@ -641,27 +673,6 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     if (consumeDidPan()) return;
     if (consumeDidLasso()) return;
     if (e.target === e.target.getStage()) selectObjects([]);
-  };
-
-  /** Figma idiom: locked object passes click through to next non-locked hit. */
-  const handleLockedClick = (add: boolean) => {
-    const stage = stageRef.current;
-    const cr = containerRef.current?.getBoundingClientRect();
-    if (!stage || !cr) return;
-    const point = {
-      x: lastPointerRef.current.x - cr.left,
-      y: lastPointerRef.current.y - cr.top,
-    };
-    const nonLocked = new Set(
-      getCurrentObjects().flatMap((o) => o.locked ? [] : [o.id]),
-    );
-    const hit = objectIdsAtPoint(stage, point, nonLocked)[0];
-    if (hit) {
-      if (add) toggleSelectObject(hit);
-      else selectObject(hit);
-      return;
-    }
-    if (!add) selectObjects([]);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -940,12 +951,11 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                     offsetY={labelOffsetY}
                     isSelected={attachableIds.includes(obj.id)}
                     onSelect={(add) => {
-                      // Click child -> select outermost group; lock cascades to handleLockedClick.
+                      // Click child -> select outermost group. Locked objects
+                      // are selectable so the action bar's unlock is reachable;
+                      // the lock guard still blocks any move/transform.
                       const target = selectionTargetId(objects, obj.id);
-                      const targetObj =
-                        target === obj.id ? obj : findObjectById(objects, target);
-                      if (targetObj?.locked) handleLockedClick(add);
-                      else if (add) toggleSelectObject(target);
+                      if (add) toggleSelectObject(target);
                       else selectObject(target);
                     }}
                     onChange={(changes) => handleObjectChange(obj.id, changes)}
@@ -1012,12 +1022,35 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               />
             )}
 
-            {!previewLocks && singleSelected && stepRotation && (
-              <RotationButton
-                ref={rotationBtnRef}
-                color={colors.selection}
-                onClick={handleRotateStep}
-              />
+            {!previewLocks && lockedLeafIds.length > 0 && (
+              <Group ref={lockedFrameRef}>
+                {lockedLeafIds.map((id) => (
+                  <Rect
+                    key={id}
+                    stroke={colors.accent}
+                    strokeWidth={1.5}
+                    dash={[4, 3]}
+                    listening={false}
+                  />
+                ))}
+              </Group>
+            )}
+
+            {!previewLocks && attachableIds.length > 0 && actionButtons.length > 0 && (
+              <Group ref={actionBarRef}>
+                {actionButtons.map((b, i) => (
+                  <Group
+                    key={b.key}
+                    x={(i - (actionButtons.length - 1) / 2) * BUTTON_STEP_PX}
+                  >
+                    <FloatingCanvasButton
+                      color={b.color}
+                      onClick={b.onClick}
+                      iconPath={b.iconPath}
+                    />
+                  </Group>
+                ))}
+              </Group>
             )}
           </Layer>
 

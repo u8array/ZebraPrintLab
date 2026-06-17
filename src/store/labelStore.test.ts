@@ -204,6 +204,40 @@ describe('lock', () => {
   });
 });
 
+// ── setSelectionLocked ────────────────────────────────────────────────────────
+
+describe('setSelectionLocked', () => {
+  it('locks every selected top-level object', () => {
+    state().addObject('text');
+    state().addObject('text');
+    const a = defined(objs()[0]).id;
+    const b = defined(objs()[1]).id;
+    state().selectObjects([a, b]);
+    state().setSelectionLocked(true);
+    expect(objs().every((o) => o.locked)).toBe(true);
+  });
+
+  it('unlocks a locked selection (lock-bypass permits the toggle)', () => {
+    state().addObject('text');
+    const id = defined(objs()[0]).id;
+    state().updateObject(id, { locked: true });
+    state().selectObjects([id]);
+    state().setSelectionLocked(false);
+    expect(defined(objs()[0]).locked).toBeFalsy();
+  });
+
+  it('leaves unselected objects untouched', () => {
+    state().addObject('text');
+    state().addObject('text');
+    const a = defined(objs()[0]).id;
+    const b = defined(objs()[1]).id;
+    state().selectObjects([a]);
+    state().setSelectionLocked(true);
+    expect(objs().find((o) => o.id === a)?.locked).toBe(true);
+    expect(objs().find((o) => o.id === b)?.locked).toBeFalsy();
+  });
+});
+
 // ── duplicateObject ───────────────────────────────────────────────────────────
 
 describe('duplicateObject', () => {
