@@ -159,6 +159,7 @@ const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
   { cmd: 'PP', status: 'structural', description: 'Programmable pause: pauses after each label (hardware)' },
   { cmd: 'PR', status: 'structural', description: 'Print rate: sets print speed (hardware)' },
   { cmd: 'PS', status: 'structural', description: 'Print start: resumes printing after a pause (hardware)' },
+  { cmd: 'JS', status: 'supported', description: 'Change backfeed sequence (A/B/N/O)', loss: 'Percent backfeed forms (10-90) are not modeled; A/B/N/O are supported' },
 
   // ── Printer storage & resources ───────────────────────────────────────────
   {
