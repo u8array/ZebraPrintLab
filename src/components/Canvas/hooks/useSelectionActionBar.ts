@@ -56,7 +56,8 @@ export function useSelectionActionBar({
 
       const bar = actionBarRef.current;
       if (bar) {
-        const halfW = bar.getClientRect({ relativeTo: stage }).width / 2;
+        const halfW =
+          bar.getClientRect({ relativeTo: stage, skipShadow: true }).width / 2;
         const minCx = RULER_SIZE + halfW;
         const maxCx = Math.max(minCx, stage.width() - halfW);
         const cx = Math.min(Math.max((minX + maxX) / 2, minCx), maxCx);

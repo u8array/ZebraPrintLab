@@ -48,7 +48,7 @@ import {
 } from "./rotationGeometry";
 import { useAltClickCycle } from "./hooks/useAltClickCycle";
 import { useSelectionActionBar } from "./hooks/useSelectionActionBar";
-import { FloatingCanvasButton } from "./FloatingCanvasButton";
+import { FloatingCanvasButton, RADIUS as BUTTON_RADIUS } from "./FloatingCanvasButton";
 import { ROTATE_ICON, TRASH_ICON, LOCK_ICON, UNLOCK_ICON } from "./canvasIcons";
 import {
   getStepRotation,
@@ -1038,6 +1038,29 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
 
             {!previewLocks && attachableIds.length > 0 && actionButtons.length > 0 && (
               <Group ref={actionBarRef}>
+                {/* Semi-transparent scrim so the buttons stay legible over
+                    whatever the selection overlaps (e.g. barcode HRI text). */}
+                {(() => {
+                  const w =
+                    (actionButtons.length - 1) * BUTTON_STEP_PX +
+                    2 * BUTTON_RADIUS +
+                    16;
+                  const h = 2 * BUTTON_RADIUS + 12;
+                  return (
+                    <Rect
+                      x={-w / 2}
+                      y={-h / 2}
+                      width={w}
+                      height={h}
+                      cornerRadius={h / 2}
+                      fill="rgba(255,255,255,0.9)"
+                      // Amber when locked to match the locked-state frame,
+                      // else selection indigo (mirrors the lock button).
+                      stroke={allSelectedLocked ? colors.accent : colors.selection}
+                      strokeWidth={1}
+                    />
+                  );
+                })()}
                 {actionButtons.map((b, i) => (
                   <Group
                     key={b.key}
