@@ -733,65 +733,56 @@ function LabelConfigPanel({
 
         <SectionCard
           id="label-fonts"
-          title={t.label.fontsHeading}
+          title={t.label.defaultFont}
           defaultOpen={false}
         >
         <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.label.defaultFont}</label>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-muted">
-                {t.label.defaultFontId}
-              </label>
-              <select
-                className={inputCls}
-                value={label.defaultFontId ?? ""}
-                onChange={(e) =>
-                  onUpdate({ defaultFontId: e.target.value || undefined })
-                }
-              >
-                <option value="">{t.label.defaultFontIdNone}</option>
-                {fontIdOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.value}
-                    {opt.label ? ` — ${opt.label}` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-muted">
-                {t.label.defaultFontHeight}
-              </label>
-              <input
-                type="number"
-                className={inputCls}
-                min={1}
-                value={label.defaultFontHeight ?? ""}
-                onChange={(e) =>
-                  onUpdate({
-                    defaultFontHeight: parseIntOrUndef(e.target.value),
-                  })
-                }
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-muted">
-                {t.label.defaultFontWidth}
-              </label>
-              <input
-                type="number"
-                className={inputCls}
-                min={0}
-                value={label.defaultFontWidth ?? ""}
-                onChange={(e) =>
-                  onUpdate({
-                    defaultFontWidth: parseIntOrUndef(e.target.value),
-                  })
-                }
-              />
-            </div>
+          <label className={labelCls}>{t.label.defaultFontId}</label>
+          <select
+            className={inputCls}
+            value={label.defaultFontId ?? ""}
+            onChange={(e) =>
+              onUpdate({ defaultFontId: e.target.value || undefined })
+            }
+          >
+            <option value="">{t.label.defaultFontIdNone}</option>
+            {fontIdOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.value}
+                {opt.label ? ` — ${opt.label}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-muted">
+              {t.label.defaultFontHeight}
+            </label>
+            <input
+              type="number"
+              className={inputCls}
+              min={1}
+              value={label.defaultFontHeight ?? ""}
+              onChange={(e) =>
+                onUpdate({ defaultFontHeight: parseIntOrUndef(e.target.value) })
+              }
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-muted">
+              {t.label.defaultFontWidth}
+            </label>
+            <input
+              type="number"
+              className={inputCls}
+              min={0}
+              value={label.defaultFontWidth ?? ""}
+              onChange={(e) =>
+                onUpdate({ defaultFontWidth: parseIntOrUndef(e.target.value) })
+              }
+            />
           </div>
         </div>
         </div>
