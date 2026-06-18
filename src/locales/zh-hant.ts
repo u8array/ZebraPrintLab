@@ -8,6 +8,8 @@ const zhHant = {
     groupCode2d: '二維矩陣',
     groupCodePostal: '郵政 & 舊式',
     groupShapes: '形狀',
+    searchPlaceholder: '搜尋物件…',
+    noResults: '沒有符合「{q}」的結果',
   },
 
   types: {

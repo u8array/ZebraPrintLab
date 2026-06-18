@@ -8,6 +8,8 @@ const el = {
     groupCode2d: '2D Μήτρα',
     groupCodePostal: 'Ταχυδρομικά & Παλαιά',
     groupShapes: 'Σχήματα',
+    searchPlaceholder: 'Αναζήτηση αντικειμένων…',
+    noResults: 'Καμία αντιστοιχία για «{q}»',
   },
 
   types: {

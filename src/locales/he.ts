@@ -8,6 +8,8 @@ const he = {
     groupCode2d: '2D מטריצה',
     groupCodePostal: 'דואר ומורשת',
     groupShapes: 'צורות',
+    searchPlaceholder: 'חיפוש אובייקטים…',
+    noResults: 'אין תוצאות עבור "{q}"',
   },
 
   types: {

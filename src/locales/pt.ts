@@ -8,6 +8,8 @@ const pt = {
     groupCode2d: '2D Matricial',
     groupCodePostal: 'Postal e Legados',
     groupShapes: 'Formas',
+    searchPlaceholder: 'Pesquisar objetos…',
+    noResults: 'Nenhum resultado para "{q}"',
   },
 
   types: {

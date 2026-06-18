@@ -8,6 +8,8 @@ const ar = {
     groupCode2d: 'مصفوفة 2D',
     groupCodePostal: 'بريدي وإرث',
     groupShapes: 'أشكال',
+    searchPlaceholder: 'بحث عن كائنات…',
+    noResults: 'لا نتائج لـ "{q}"',
   },
 
   types: {

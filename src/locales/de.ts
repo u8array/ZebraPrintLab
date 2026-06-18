@@ -8,6 +8,8 @@ const de = {
     groupCode2d: '2D Matrix',
     groupCodePostal: 'Postal & Legacy',
     groupShapes: 'Formen',
+    searchPlaceholder: 'Objekte suchen…',
+    noResults: 'Keine Treffer für „{q}“',
   },
 
   types: {

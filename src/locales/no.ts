@@ -8,6 +8,8 @@ const no = {
     groupCode2d: '2D Matrise',
     groupCodePostal: 'Post & Legacy',
     groupShapes: 'Former',
+    searchPlaceholder: 'Søk etter objekter…',
+    noResults: 'Ingen treff for "{q}"',
   },
 
   types: {

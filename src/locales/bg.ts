@@ -8,6 +8,8 @@ const bg = {
     groupCode2d: '2D Матричен',
     groupCodePostal: 'Пощенски и Legacy',
     groupShapes: 'Форми',
+    searchPlaceholder: 'Търсене на обекти…',
+    noResults: 'Няма съвпадения за „{q}“',
   },
 
   types: {

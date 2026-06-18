@@ -8,6 +8,8 @@ const fa = {
     groupCode2d: 'ماتریسی 2D',
     groupCodePostal: 'پستی و قدیمی',
     groupShapes: 'اشکال',
+    searchPlaceholder: 'جستجوی اشیا…',
+    noResults: 'نتیجه‌ای برای «{q}» یافت نشد',
   },
 
   types: {

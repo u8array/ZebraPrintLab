@@ -8,6 +8,8 @@ const hu = {
     groupCode2d: '2D Mátrix',
     groupCodePostal: 'Postai és Legacy',
     groupShapes: 'Alakzatok',
+    searchPlaceholder: 'Objektumok keresése…',
+    noResults: 'Nincs találat erre: „{q}”',
   },
 
   types: {

@@ -8,6 +8,8 @@ const fr = {
     groupCode2d: '2D Matriciel',
     groupCodePostal: 'Postal & Obsolètes',
     groupShapes: 'Formes',
+    searchPlaceholder: 'Rechercher des objets…',
+    noResults: 'Aucun résultat pour «{q}»',
   },
 
   types: {

@@ -8,6 +8,8 @@ const lv = {
     groupCode2d: '2D Matrica',
     groupCodePostal: 'Pasta & Legacy',
     groupShapes: 'Formas',
+    searchPlaceholder: 'Meklēt objektus…',
+    noResults: 'Nav rezultātu vaicājumam “{q}”',
   },
 
   types: {

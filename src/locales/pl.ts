@@ -8,6 +8,8 @@ const pl = {
     groupCode2d: '2D Matrycowy',
     groupCodePostal: 'Pocztowe i Legacy',
     groupShapes: 'Kształty',
+    searchPlaceholder: 'Szukaj obiektów…',
+    noResults: 'Brak wyników dla „{q}”',
   },
 
   types: {

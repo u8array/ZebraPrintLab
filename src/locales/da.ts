@@ -8,6 +8,8 @@ const da = {
     groupCode2d: '2D Matrix',
     groupCodePostal: 'Post & Legacy',
     groupShapes: 'Former',
+    searchPlaceholder: 'Søg efter objekter…',
+    noResults: 'Ingen resultater for "{q}"',
   },
 
   types: {

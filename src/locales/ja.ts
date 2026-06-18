@@ -8,6 +8,8 @@ const ja = {
     groupCode2d: '2Dマトリクス',
     groupCodePostal: '郵便 & レガシー',
     groupShapes: '図形',
+    searchPlaceholder: 'オブジェクトを検索…',
+    noResults: '「{q}」に一致する項目がありません',
   },
 
   types: {

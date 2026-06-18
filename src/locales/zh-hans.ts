@@ -8,6 +8,8 @@ const zhHans = {
     groupCode2d: '二维矩阵',
     groupCodePostal: '邮政 & 旧式',
     groupShapes: '形状',
+    searchPlaceholder: '搜索对象…',
+    noResults: '没有匹配“{q}”的结果',
   },
 
   types: {

@@ -8,6 +8,8 @@ const cs = {
     groupCode2d: '2D Maticový',
     groupCodePostal: 'Poštovní a Legacy',
     groupShapes: 'Tvary',
+    searchPlaceholder: 'Hledat objekty…',
+    noResults: 'Žádné výsledky pro „{q}“',
   },
 
   types: {

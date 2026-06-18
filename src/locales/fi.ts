@@ -8,6 +8,8 @@ const fi = {
     groupCode2d: '2D Matriisi',
     groupCodePostal: 'Postit & Legacy',
     groupShapes: 'Muodot',
+    searchPlaceholder: 'Hae objekteja…',
+    noResults: 'Ei osumia haulle "{q}"',
   },
 
   types: {

@@ -8,6 +8,8 @@ const ro = {
     groupCode2d: '2D Matricial',
     groupCodePostal: 'Poștal și Legacy',
     groupShapes: 'Forme',
+    searchPlaceholder: 'Caută obiecte…',
+    noResults: 'Niciun rezultat pentru „{q}”',
   },
 
   types: {

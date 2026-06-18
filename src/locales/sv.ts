@@ -8,6 +8,8 @@ const sv = {
     groupCode2d: '2D Matris',
     groupCodePostal: 'Post & Legacy',
     groupShapes: 'Former',
+    searchPlaceholder: 'Sök objekt…',
+    noResults: 'Inga träffar för "{q}"',
   },
 
   types: {

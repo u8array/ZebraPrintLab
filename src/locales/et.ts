@@ -8,6 +8,8 @@ const et = {
     groupCode2d: '2D Maatriks',
     groupCodePostal: 'Postindeks ja Legacy',
     groupShapes: 'Kujundid',
+    searchPlaceholder: 'Otsi objekte…',
+    noResults: 'Tulemusi pole päringule „{q}“',
   },
 
   types: {

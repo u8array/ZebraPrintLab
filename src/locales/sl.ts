@@ -8,6 +8,8 @@ const sl = {
     groupCode2d: '2D Matrica',
     groupCodePostal: 'Poštni in Legacy',
     groupShapes: 'Oblike',
+    searchPlaceholder: 'Iskanje objektov…',
+    noResults: 'Ni zadetkov za „{q}“',
   },
 
   types: {

@@ -8,6 +8,8 @@ const lt = {
     groupCode2d: '2D Matrica',
     groupCodePostal: 'Pašto & Legacy',
     groupShapes: 'Figūros',
+    searchPlaceholder: 'Ieškoti objektų…',
+    noResults: 'Nėra atitikmenų „{q}“',
   },
 
   types: {
