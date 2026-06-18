@@ -51,6 +51,8 @@ const fr = {
 
   properties: {
     positionSection: 'Position',
+    optionsSection: 'Options',
+    typographySection: 'Typographie',
     name: 'Nom',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const fr = {
     tidySection: 'Ranger',
     tidyUp: 'Ranger',
     tidyTooltip: 'Disposer automatiquement en ligne ou colonne régulière',
-    tidyHint: 'Sélectionnez 2+ pour ranger',
   },
 
   label: {
@@ -104,6 +105,7 @@ const fr = {
     overridePauseCount: 'Remplacer le nombre de pauses',
     overridePauseCountHint: 'Couper uniquement la dernière étiquette du lot au lieu de chaque limite de pause.',
     outputHeading: 'Sortie',
+    formatSection: 'Format',
     labelShift: 'Décalage d\'étiquette (dots)',
     offsetsHeading: 'Décalages',
     offsetsHint: 'Décale l\'origine d\'impression. Les positions des champs dans l\'éditeur restent absolues.',
@@ -415,7 +417,6 @@ const fr = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Texte vertical / RTL',
       fpDirection: 'Direction',
       fpDirH: 'H — Horizontal',
       fpDirV: 'V — Vertical (empilé)',

@@ -51,6 +51,8 @@ const fi = {
 
   properties: {
     positionSection: 'Sijainti',
+    optionsSection: 'Asetukset',
+    typographySection: 'Typografia',
     name: 'Nimi',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const fi = {
     tidySection: 'Järjestä',
     tidyUp: 'Järjestä',
     tidyTooltip: 'Järjestä automaattisesti tasaiseksi riviksi tai sarakkeeksi',
-    tidyHint: 'Valitse 2+ järjestääksesi',
   },
 
   label: {
@@ -104,6 +105,7 @@ const fi = {
     overridePauseCount: 'Ohita taukolaskuri',
     overridePauseCountHint: 'Leikkaa vain erän viimeinen etiketti jokaisen taukorajan sijaan.',
     outputHeading: 'Tuloste',
+    formatSection: 'Muoto',
     labelShift: 'Tarrasiirtymä (dots)',
     offsetsHeading: 'Siirtymät',
     offsetsHint: 'Siirtää tulostuksen origoa. Kenttien sijainnit editorissa pysyvät absoluuttisina.',
@@ -415,7 +417,6 @@ const fi = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Pystysuora / RTL-teksti',
       fpDirection: 'Suunta',
       fpDirH: 'H — Vaakasuora',
       fpDirV: 'V — Pystysuora (pino)',

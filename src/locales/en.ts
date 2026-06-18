@@ -51,6 +51,8 @@ const en = {
 
   properties: {
     positionSection: 'Position',
+    optionsSection: 'Options',
+    typographySection: 'Typography',
     name: 'Name',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const en = {
     tidySection: 'Tidy up',
     tidyUp: 'Tidy up',
     tidyTooltip: 'Auto-arrange into an even row or column',
-    tidyHint: 'Select 2+ to tidy up',
   },
 
   label: {
@@ -104,6 +105,7 @@ const en = {
     overridePauseCount: 'Override pause count',
     overridePauseCountHint: 'Cut only the last label in the batch instead of every pause-count boundary.',
     outputHeading: 'Output',
+    formatSection: 'Format',
     labelShift: 'Label shift (dots)',
     offsetsHeading: 'Offsets',
     offsetsHint: 'Shifts the print origin. Field positions in the editor stay absolute.',
@@ -436,7 +438,6 @@ const en = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Vertical / right-to-left text',
       fpDirection: 'Direction',
       fpDirH: 'H — Horizontal',
       fpDirV: 'V — Vertical (stack)',

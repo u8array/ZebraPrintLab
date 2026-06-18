@@ -51,6 +51,8 @@ const ar = {
 
   properties: {
     positionSection: 'الموضع (مم)',
+    optionsSection: 'خيارات',
+    typographySection: 'الطباعة',
     name: 'الاسم',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const ar = {
     tidySection: 'ترتيب',
     tidyUp: 'ترتيب',
     tidyTooltip: 'ترتيب تلقائي في صف أو عمود متساوٍ',
-    tidyHint: 'حدّد عنصرين أو أكثر للترتيب',
   },
 
   label: {
@@ -104,6 +105,7 @@ const ar = {
     overridePauseCount: 'تجاوز عدد التوقف',
     overridePauseCountHint: 'قص الملصق الأخير فقط في الدفعة بدلاً من كل حد توقف.',
     outputHeading: 'الإخراج',
+    formatSection: 'تنسيق',
     labelShift: 'إزاحة الملصق (dots)',
     offsetsHeading: 'الإزاحات',
     offsetsHint: 'يزيح أصل الطباعة. تبقى مواضع الحقول في المحرر مطلقة.',
@@ -415,7 +417,6 @@ const ar = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'النص العمودي / من اليمين إلى اليسار',
       fpDirection: 'الاتجاه',
       fpDirH: 'H — أفقي',
       fpDirV: 'V — رأسي (تكديس)',

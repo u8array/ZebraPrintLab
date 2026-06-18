@@ -51,6 +51,8 @@ const it = {
 
   properties: {
     positionSection: 'Posizione',
+    optionsSection: 'Opzioni',
+    typographySection: 'Tipografia',
     name: 'Nome',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const it = {
     tidySection: 'Riordina',
     tidyUp: 'Riordina',
     tidyTooltip: 'Disponi automaticamente in riga o colonna uniforme',
-    tidyHint: 'Seleziona 2+ per riordinare',
   },
 
   label: {
@@ -104,6 +105,7 @@ const it = {
     overridePauseCount: 'Sostituisci conteggio pause',
     overridePauseCountHint: 'Taglia solo l\'ultima etichetta del lotto invece di ogni limite di pausa.',
     outputHeading: 'Output',
+    formatSection: 'Formato',
     labelShift: 'Spostamento etichetta (dots)',
     offsetsHeading: 'Offset',
     offsetsHint: 'Sposta l\'origine di stampa. Le posizioni dei campi nell\'editor restano assolute.',
@@ -415,7 +417,6 @@ const it = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Testo verticale / RTL',
       fpDirection: 'Direzione',
       fpDirH: 'H — Orizzontale',
       fpDirV: 'V — Verticale (impilato)',

@@ -51,6 +51,8 @@ const ko = {
 
   properties: {
     positionSection: '위치',
+    optionsSection: '옵션',
+    typographySection: '타이포그래피',
     name: '이름',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const ko = {
     tidySection: '정돈',
     tidyUp: '정돈',
     tidyTooltip: '균등한 행 또는 열로 자동 배치',
-    tidyHint: '정돈하려면 2개 이상 선택',
   },
 
   label: {
@@ -104,6 +105,7 @@ const ko = {
     overridePauseCount: '일시정지 카운트 재정의',
     overridePauseCountHint: '각 일시정지 경계가 아닌 배치의 마지막 라벨만 자릅니다.',
     outputHeading: '출력',
+    formatSection: '형식',
     labelShift: '라벨 이동 (dots)',
     offsetsHeading: '오프셋',
     offsetsHint: '인쇄 원점을 이동합니다. 편집기의 필드 위치는 절대값으로 유지됩니다.',
@@ -415,7 +417,6 @@ const ko = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: '세로 / RTL 텍스트',
       fpDirection: '방향',
       fpDirH: 'H — 가로',
       fpDirV: 'V — 세로 (스택)',

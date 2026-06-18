@@ -51,6 +51,8 @@ const ro = {
 
   properties: {
     positionSection: 'Poziție',
+    optionsSection: 'Opțiuni',
+    typographySection: 'Tipografie',
     name: 'Nume',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const ro = {
     tidySection: 'Ordonare',
     tidyUp: 'Ordonare',
     tidyTooltip: 'Aranjează automat într-un rând sau o coloană uniformă',
-    tidyHint: 'Selectați 2+ pentru ordonare',
   },
 
   label: {
@@ -104,6 +105,7 @@ const ro = {
     overridePauseCount: 'Suprascrie nr. pauze',
     overridePauseCountHint: 'Taie doar ultima etichetă din lot în loc de fiecare limită de pauză.',
     outputHeading: 'Ieșire',
+    formatSection: 'Format',
     labelShift: 'Deplasare etichetă (dots)',
     offsetsHeading: 'Decalaje',
     offsetsHint: 'Mută originea de tipărire. Pozițiile câmpurilor în editor rămân absolute.',
@@ -415,7 +417,6 @@ const ro = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Text vertical / RTL',
       fpDirection: 'Direcție',
       fpDirH: 'H — Orizontal',
       fpDirV: 'V — Vertical (stivă)',

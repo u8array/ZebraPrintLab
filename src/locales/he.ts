@@ -51,6 +51,8 @@ const he = {
 
   properties: {
     positionSection: 'מיקום (מ"מ)',
+    optionsSection: 'אפשרויות',
+    typographySection: 'טיפוגרפיה',
     name: 'שם',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const he = {
     tidySection: 'סידור',
     tidyUp: 'סידור',
     tidyTooltip: 'סידור אוטומטי בשורה או עמודה אחידה',
-    tidyHint: 'בחר 2+ לסידור',
   },
 
   label: {
@@ -104,6 +105,7 @@ const he = {
     overridePauseCount: 'עקוף ספירת השהיה',
     overridePauseCountHint: 'חתוך רק את התווית האחרונה באצווה במקום בכל גבול השהיה.',
     outputHeading: 'פלט',
+    formatSection: 'פורמט',
     labelShift: 'הסטת תווית (dots)',
     offsetsHeading: 'היסטים',
     offsetsHint: 'מזיז את ראשית ההדפסה. מיקומי השדות בעורך נשארים מוחלטים.',
@@ -415,7 +417,6 @@ const he = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'טקסט אנכי / RTL',
       fpDirection: 'כיוון',
       fpDirH: 'H — אופקי',
       fpDirV: 'V — אנכי (ערימה)',

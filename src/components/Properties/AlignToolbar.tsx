@@ -46,11 +46,9 @@ interface AlignOpDef {
 function AlignOpRow({
   ops,
   onClick,
-  disabled = false,
 }: {
   ops: AlignOpDef[];
   onClick: (op: AlignOp) => void;
-  disabled?: boolean;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-1">
@@ -60,7 +58,6 @@ function AlignOpRow({
             type="button"
             className={BUTTON_CLS}
             aria-label={title}
-            disabled={disabled}
             onClick={() => onClick(op)}
           >
             <Icon className="w-3.5 h-3.5" />
@@ -98,15 +95,14 @@ export function AlignToolbar({
     { op: "bottom", title: t.properties.alignBottom, Icon: AlignBottomIcon },
   ];
 
-  // A single object aligns to the label via the section below; "Align" (relative
-  // to the selection) only makes sense for 2+, so disable it to avoid duplicating
-  // "Align to label".
-  const alignSelectionDisabled = selectionCount < 2;
+  // A single object can only align to the label, so the selection-relative
+  // sections (Align, Distribute, Tidy) are hidden for one object and shown
+  // for 2+. Distribute still needs >=3 to act, so it stays guarded.
+  const multi = selectionCount >= 2;
   const distributeDisabled = selectionCount < 3;
-  const tidyDisabled = selectionCount < 2;
 
   const segCls = (active: boolean) =>
-    `px-1.5 py-0.5 transition-colors disabled:opacity-40 disabled:pointer-events-none ${active ? "bg-accent text-bg" : "text-muted hover:text-text"}`;
+    `px-1.5 py-0.5 transition-colors ${active ? "bg-accent text-bg" : "text-muted hover:text-text"}`;
 
   return (
     <div
@@ -114,39 +110,39 @@ export function AlignToolbar({
       role={ariaLabelledBy ? "group" : undefined}
       aria-labelledby={ariaLabelledBy}
     >
-      {/* Align: relative to the selection (or key object). */}
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] uppercase tracking-wide text-muted">
-            {t.properties.alignSectionSelection}
-          </span>
-          <div
-            className="flex rounded overflow-hidden border border-border text-[10px] font-mono"
-            role="group"
-            aria-label={t.properties.alignSectionSelection}
-          >
-            <button
-              type="button"
-              className={segCls(alignRef === "selection")}
-              aria-pressed={alignRef === "selection"}
-              disabled={alignSelectionDisabled}
-              onClick={() => onAlignRefChange("selection")}
+      {/* Align: relative to the selection (or key object). Multi-select only. */}
+      {multi && (
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] uppercase tracking-wide text-muted">
+              {t.properties.alignSectionSelection}
+            </span>
+            <div
+              className="flex rounded overflow-hidden border border-border text-[10px] font-mono"
+              role="group"
+              aria-label={t.properties.alignSectionSelection}
             >
-              {t.properties.alignRefSelection}
-            </button>
-            <button
-              type="button"
-              className={segCls(alignRef === "key")}
-              aria-pressed={alignRef === "key"}
-              disabled={alignSelectionDisabled}
-              onClick={() => onAlignRefChange("key")}
-            >
-              {t.properties.alignRefKey}
-            </button>
+              <button
+                type="button"
+                className={segCls(alignRef === "selection")}
+                aria-pressed={alignRef === "selection"}
+                onClick={() => onAlignRefChange("selection")}
+              >
+                {t.properties.alignRefSelection}
+              </button>
+              <button
+                type="button"
+                className={segCls(alignRef === "key")}
+                aria-pressed={alignRef === "key"}
+                onClick={() => onAlignRefChange("key")}
+              >
+                {t.properties.alignRefKey}
+              </button>
+            </div>
           </div>
+          <AlignOpRow ops={alignOps} onClick={(op) => onAlign(op, alignRef)} />
         </div>
-        <AlignOpRow ops={alignOps} disabled={alignSelectionDisabled} onClick={(op) => onAlign(op, alignRef)} />
-      </div>
+      )}
 
       {/* Align to label: all six edges to the label rect, always visible. */}
       <div className="flex flex-col gap-1.5">
@@ -156,55 +152,59 @@ export function AlignToolbar({
         <AlignOpRow ops={alignOps} onClick={(op) => onAlign(op, "label")} />
       </div>
 
-      {/* Distribute: always selection-relative; needs >=3 objects. */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-[10px] uppercase tracking-wide text-muted">
-          {t.properties.distributeSection}
-        </span>
-        <div className="flex items-center gap-1">
-          <Tooltip content={distributeDisabled ? t.properties.distributeHint : t.properties.distributeH}>
+      {/* Distribute: selection-relative; multi-select only, needs >=3 to act. */}
+      {multi && (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[10px] uppercase tracking-wide text-muted">
+            {t.properties.distributeSection}
+          </span>
+          <div className="flex items-center gap-1">
+            <Tooltip content={distributeDisabled ? t.properties.distributeHint : t.properties.distributeH}>
+              <button
+                type="button"
+                className={BUTTON_CLS}
+                aria-label={t.properties.distributeH}
+                disabled={distributeDisabled}
+                onClick={() => onDistribute("h")}
+              >
+                <DistributeHIcon className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
+            <Tooltip content={distributeDisabled ? t.properties.distributeHint : t.properties.distributeV}>
+              <button
+                type="button"
+                className={BUTTON_CLS}
+                aria-label={t.properties.distributeV}
+                disabled={distributeDisabled}
+                onClick={() => onDistribute("v")}
+              >
+                <DistributeVIcon className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+      )}
+
+      {/* Tidy up: auto-arrange the selection into an even row/column.
+          Multi-select only. */}
+      {multi && (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[10px] uppercase tracking-wide text-muted">
+            {t.properties.tidySection}
+          </span>
+          <Tooltip content={t.properties.tidyTooltip} className="self-start">
             <button
               type="button"
-              className={BUTTON_CLS}
-              aria-label={t.properties.distributeH}
-              disabled={distributeDisabled}
-              onClick={() => onDistribute("h")}
+              className={`${BUTTON_CLS} flex items-center gap-1.5`}
+              aria-label={t.properties.tidyUp}
+              onClick={onTidy}
             >
-              <DistributeHIcon className="w-3.5 h-3.5" />
-            </button>
-          </Tooltip>
-          <Tooltip content={distributeDisabled ? t.properties.distributeHint : t.properties.distributeV}>
-            <button
-              type="button"
-              className={BUTTON_CLS}
-              aria-label={t.properties.distributeV}
-              disabled={distributeDisabled}
-              onClick={() => onDistribute("v")}
-            >
-              <DistributeVIcon className="w-3.5 h-3.5" />
+              <TidyIcon className="w-3.5 h-3.5" />
+              <span className="text-[10px]">{t.properties.tidyUp}</span>
             </button>
           </Tooltip>
         </div>
-      </div>
-
-      {/* Tidy up: auto-arrange the selection into an even row/column. */}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-[10px] uppercase tracking-wide text-muted">
-          {t.properties.tidySection}
-        </span>
-        <Tooltip content={tidyDisabled ? t.properties.tidyHint : t.properties.tidyTooltip} className="self-start">
-          <button
-            type="button"
-            className={`${BUTTON_CLS} flex items-center gap-1.5`}
-            aria-label={t.properties.tidyUp}
-            disabled={tidyDisabled}
-            onClick={onTidy}
-          >
-            <TidyIcon className="w-3.5 h-3.5" />
-            <span className="text-[10px]">{t.properties.tidyUp}</span>
-          </button>
-        </Tooltip>
-      </div>
+      )}
     </div>
   );
 }

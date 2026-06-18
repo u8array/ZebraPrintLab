@@ -51,6 +51,8 @@ const de = {
 
   properties: {
     positionSection: 'Position',
+    optionsSection: 'Optionen',
+    typographySection: 'Typografie',
     name: 'Name',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const de = {
     tidySection: 'Aufräumen',
     tidyUp: 'Aufräumen',
     tidyTooltip: 'Automatisch in gleichmäßiger Reihe oder Spalte anordnen',
-    tidyHint: '2+ auswählen zum Aufräumen',
   },
 
   label: {
@@ -104,6 +105,7 @@ const de = {
     overridePauseCount: 'Pausenanzahl überschreiben',
     overridePauseCountHint: 'Nur das letzte Etikett der Charge schneiden, statt an jeder Pausengrenze.',
     outputHeading: 'Ausgabe',
+    formatSection: 'Format',
     labelShift: 'Label-Versatz (Punkte)',
     offsetsHeading: 'Offsets',
     offsetsHint: 'Verschiebt den Druckursprung. Feldpositionen im Editor bleiben absolut.',
@@ -436,7 +438,6 @@ const de = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invertieren',
-      fpAdvanced: 'Vertikaler / RTL-Text',
       fpDirection: 'Richtung',
       fpDirH: 'H — Horizontal',
       fpDirV: 'V — Vertikal (Stapel)',

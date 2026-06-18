@@ -51,6 +51,8 @@ const cs = {
 
   properties: {
     positionSection: 'Pozice',
+    optionsSection: 'Možnosti',
+    typographySection: 'Typografie',
     name: 'Název',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const cs = {
     tidySection: 'Uspořádat',
     tidyUp: 'Uspořádat',
     tidyTooltip: 'Automaticky uspořádat do rovnoměrného řádku či sloupce',
-    tidyHint: 'Vyberte 2+ k uspořádání',
   },
 
   label: {
@@ -104,6 +105,7 @@ const cs = {
     overridePauseCount: 'Přepsat počet pauz',
     overridePauseCountHint: 'Řezat pouze poslední štítek dávky místo na každé hranici pauzy.',
     outputHeading: 'Výstup',
+    formatSection: 'Formát',
     labelShift: 'Posun štítku (dots)',
     offsetsHeading: 'Posuny',
     offsetsHint: 'Posune počátek tisku. Pozice polí v editoru zůstávají absolutní.',
@@ -415,7 +417,6 @@ const cs = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Svislý / RTL text',
       fpDirection: 'Směr',
       fpDirH: 'H — Vodorovně',
       fpDirV: 'V — Svisle (stoh)',

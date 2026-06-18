@@ -51,6 +51,8 @@ const da = {
 
   properties: {
     positionSection: 'Position',
+    optionsSection: 'Indstillinger',
+    typographySection: 'Typografi',
     name: 'Navn',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const da = {
     tidySection: 'Ryd op',
     tidyUp: 'Ryd op',
     tidyTooltip: 'Arranger automatisk i en jævn række eller kolonne',
-    tidyHint: 'Vælg 2+ for at rydde op',
   },
 
   label: {
@@ -104,6 +105,7 @@ const da = {
     overridePauseCount: 'Tilsidesæt pausetæller',
     overridePauseCountHint: 'Skær kun den sidste etiket i batchen i stedet for ved hver pausegrænse.',
     outputHeading: 'Output',
+    formatSection: 'Format',
     labelShift: 'Etiketforskydning (dots)',
     offsetsHeading: 'Forskydninger',
     offsetsHint: 'Forskyder udskriftens origo. Feltpositioner i editoren forbliver absolutte.',
@@ -415,7 +417,6 @@ const da = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Lodret / højre-mod-venstre tekst',
       fpDirection: 'Retning',
       fpDirH: 'H — Vandret',
       fpDirV: 'V — Lodret (stak)',

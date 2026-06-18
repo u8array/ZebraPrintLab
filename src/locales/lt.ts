@@ -51,6 +51,8 @@ const lt = {
 
   properties: {
     positionSection: 'Padėtis',
+    optionsSection: 'Parinktys',
+    typographySection: 'Tipografija',
     name: 'Pavadinimas',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const lt = {
     tidySection: 'Sutvarkyti',
     tidyUp: 'Sutvarkyti',
     tidyTooltip: 'Automatiškai išdėstyti tolygia eilute ar stulpeliu',
-    tidyHint: 'Pasirinkite 2+, kad sutvarkytumėte',
   },
 
   label: {
@@ -104,6 +105,7 @@ const lt = {
     overridePauseCount: 'Nepaisyti pauzės skaitiklio',
     overridePauseCountHint: 'Kirpti tik paskutinę partijos etiketę vietoj kiekvienos pauzės ribos.',
     outputHeading: 'Išvestis',
+    formatSection: 'Formatas',
     labelShift: 'Etiketės poslinkis (dots)',
     offsetsHeading: 'Poslinkiai',
     offsetsHint: 'Perkelia spaudos pradžios tašką. Laukų pozicijos redaktoriuje lieka absoliučios.',
@@ -415,7 +417,6 @@ const lt = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Vertikalus / RTL tekstas',
       fpDirection: 'Kryptis',
       fpDirH: 'H — Horizontaliai',
       fpDirV: 'V — Vertikaliai (rietuvė)',

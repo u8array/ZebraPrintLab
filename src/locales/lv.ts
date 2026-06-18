@@ -51,6 +51,8 @@ const lv = {
 
   properties: {
     positionSection: 'Pozīcija',
+    optionsSection: 'Opcijas',
+    typographySection: 'Tipogrāfija',
     name: 'Nosaukums',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const lv = {
     tidySection: 'Sakārtot',
     tidyUp: 'Sakārtot',
     tidyTooltip: 'Automātiski izkārtot vienmērīgā rindā vai kolonnā',
-    tidyHint: 'Atlasiet 2+, lai sakārtotu',
   },
 
   label: {
@@ -104,6 +105,7 @@ const lv = {
     overridePauseCount: 'Pārrakstīt pauzes skaitītāju',
     overridePauseCountHint: 'Griezt tikai pēdējo partijas etiķeti, nevis pie katras pauzes robežas.',
     outputHeading: 'Izvade',
+    formatSection: 'Formāts',
     labelShift: 'Etiķetes nobīde (dots)',
     offsetsHeading: 'Nobīdes',
     offsetsHint: 'Pārvieto druku sākumpunktu. Lauku pozīcijas redaktorā paliek absolūtas.',
@@ -415,7 +417,6 @@ const lv = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Vertikāls / RTL teksts',
       fpDirection: 'Virziens',
       fpDirH: 'H — Horizontāli',
       fpDirV: 'V — Vertikāli (kaudze)',

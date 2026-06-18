@@ -51,6 +51,8 @@ const sl = {
 
   properties: {
     positionSection: 'Položaj',
+    optionsSection: 'Možnosti',
+    typographySection: 'Tipografija',
     name: 'Ime',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const sl = {
     tidySection: 'Uredi',
     tidyUp: 'Uredi',
     tidyTooltip: 'Samodejno razporedi v enakomerno vrstico ali stolpec',
-    tidyHint: 'Izberite 2+ za ureditev',
   },
 
   label: {
@@ -104,6 +105,7 @@ const sl = {
     overridePauseCount: 'Razveljavi števec premorov',
     overridePauseCountHint: 'Reže le zadnjo etiketo serije namesto pri vsaki meji premora.',
     outputHeading: 'Izhod',
+    formatSection: 'Oblika',
     labelShift: 'Zamik nalepke (dots)',
     offsetsHeading: 'Odmiki',
     offsetsHint: 'Premakne izhodišče tiska. Položaji polj v urejevalniku ostanejo absolutni.',
@@ -415,7 +417,6 @@ const sl = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Navpično / RTL besedilo',
       fpDirection: 'Smer',
       fpDirH: 'H — Vodoravno',
       fpDirV: 'V — Navpično (sklad)',

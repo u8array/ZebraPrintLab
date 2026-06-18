@@ -20,7 +20,7 @@ import {
 import type { Unit } from "../../lib/units";
 import { useT } from "../../lib/useT";
 import { parseIntOrUndef } from "../../lib/inputParse";
-import { CollapsibleSection } from "../ui/CollapsibleSection";
+import { SectionCard, StaticSectionCard } from "./SectionCard";
 import { Tooltip } from "../ui/Tooltip";
 import { AlignToolbar } from "./AlignToolbar";
 import { VariableBindingControl } from "../Variables/VariableBindingControl";
@@ -58,6 +58,7 @@ function BwipApproxIcon({ type }: { type: string }) {
  *  toolbar group so screen readers announce a labelled button group. */
 function PositionSectionHeader({
   unitSuffix,
+  hideHeading,
   onAlign,
   onDistribute,
   onTidy,
@@ -66,6 +67,9 @@ function PositionSectionHeader({
   selectionCount,
 }: {
   unitSuffix?: string;
+  /** Hide the visible heading (kept for screen readers) when a card title
+   *  already names the section, avoiding a duplicate label. */
+  hideHeading?: boolean;
   onAlign: (op: AlignOp, ref: AlignRef) => void;
   onDistribute: (axis: DistributeAxis) => void;
   onTidy: () => void;
@@ -77,7 +81,7 @@ function PositionSectionHeader({
   const labelId = useId();
   return (
     <div className="flex flex-col gap-2">
-      <p id={labelId} className={labelCls}>
+      <p id={labelId} className={hideHeading ? "sr-only" : labelCls}>
         {t.properties.positionSection}
         {unitSuffix ? ` (${unitSuffix})` : ""}
       </p>
@@ -209,126 +213,31 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
         </span>
       </div>
 
-      <div className="p-3 flex flex-col gap-4">
-        {/* Name field: exposed only for groups; leaf rows fall back to
-            their registry label in the layers panel. The field is on
-            LabelObjectBase so adding it for other types would not need
-            a schema change. */}
+      {/* Panel stays bg-surface (bg-bg would merge with the canvas); each
+          SectionCard lifts off it via border + shadow. */}
+      <div className="p-2 flex flex-col gap-2">
+        {/* Name field: groups only (leaf rows fall back to their registry
+            label in the layers panel). */}
         {groupRow && (
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.properties.name}</label>
+          <StaticSectionCard title={t.properties.name}>
             <input
               type="text"
               className={inputCls}
+              aria-label={t.properties.name}
               value={obj.name ?? ''}
               placeholder={t.types.group}
               onChange={(e) =>
                 updateObject(obj.id, { name: e.target.value || undefined })
               }
             />
-          </div>
+          </StaticSectionCard>
         )}
 
-        {/* Position: groups have no meaningful x/y of their own (children
-            store world coordinates), so the inputs are hidden. Align
-            still applies; it expands to the group's leaves at the
-            canvas layer. */}
-        <div className="flex flex-col gap-2">
-          {groupRow ? (
-            // Groups have no per-leaf position inputs; header alone.
-            <PositionSectionHeader
-              onAlign={handleAlign}
-              onDistribute={handleDistribute}
-              onTidy={handleTidy}
-              alignRef={alignRef}
-              onAlignRefChange={setAlignRef}
-              selectionCount={selectedIds.length}
-            />
-          ) : (
-            <>
-              <PositionSectionHeader
-                onAlign={handleAlign}
-                onDistribute={handleDistribute}
-                onTidy={handleTidy}
-                alignRef={alignRef}
-                onAlignRefChange={setAlignRef}
-                selectionCount={selectedIds.length}
-                unitSuffix={unitLabel(unit)}
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className={labelCls}>{t.properties.x}</label>
-                  <input
-                    type="number"
-                    className={inputCls}
-                    value={mmToUnit(dotsToMm(obj.x, label.dpmm), unit)}
-                    step={unitStep(unit)}
-                    onChange={(e) =>
-                      updateObject(obj.id, {
-                        x: mmToDots(
-                          unitToMm(Number(e.target.value), unit),
-                          label.dpmm,
-                        ),
-                      })
-                    }
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className={labelCls}>{t.properties.y}</label>
-                  <input
-                    type="number"
-                    className={inputCls}
-                    value={mmToUnit(dotsToMm(obj.y, label.dpmm), unit)}
-                    step={unitStep(unit)}
-                    onChange={(e) =>
-                      updateObject(obj.id, {
-                        y: mmToDots(
-                          unitToMm(Number(e.target.value), unit),
-                          label.dpmm,
-                        ),
-                      })
-                    }
-                  />
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="border-t border-border" />
-
-        {/* Variable binding: shown for types that emit a ^FD content
-            block (text + barcodes minus serial). Collapsed by default
-            for unbound fields so beginners aren't distracted; opens
-            automatically when the field is already bound so the
-            binding state is visible without an extra click. The
-            CollapsibleSection persists the user's manual toggle
-            per-state in localStorage (separate ids for bound vs
-            unbound), so each preference sticks. */}
-        {definition?.bindable && !groupRow && (
-          <>
-            <CollapsibleSection
-              id={obj.variableId ? 'properties-variable-bound' : 'properties-variable-unbound'}
-              title={t.variables.sectionTitle}
-              defaultOpen={!!obj.variableId}
-            >
-              <VariableBindingControl obj={obj} />
-            </CollapsibleSection>
-            <div className="border-t border-border" />
-          </>
-        )}
-
-        {/* Per-type panel: only leaves have a registry entry, so TypePanel
-            is never present for groups. The isGroup guard narrows obj for
-            TypeScript at the call site since registry panels expect the
-            leaf shape (props field present).
-
-            When a binding is active we hand TypePanel a patched obj where
-            props.content is the variable's defaultValue (so the CONTENT
-            input mirrors the canvas) and we re-route content edits into
-            updateVariable so typing into the per-type input directly
-            edits the variable's default. Non-content props (fontHeight,
-            rotation, …) keep flowing to updateObject untouched. */}
+        {/* Per-type panel first. Text renders its own SectionCards (Content,
+            Typography, Field block); other types still render flat content
+            until their panels are migrated (Phase 2). Binding routing is
+            unchanged: a patched obj feeds the panel and content edits
+            re-route to updateVariable while other props go to updateObject. */}
         {TypePanel && !groupRow && (() => {
           const boundVariable = lookupBoundVariable(obj, variables);
           const patchedObj = boundVariable
@@ -348,65 +257,139 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
                 }
               }
             : (props: object) => updateObject(obj.id, { props });
-          return (
-            <>
-              <TypePanel obj={patchedObj} onChange={handleChange} />
-              <div className="border-t border-border" />
-            </>
-          );
+          // Key by id so switching objects remounts the panel and resets its
+          // transient reveal state (e.g. the Typography "Advanced" toggle).
+          return <TypePanel key={obj.id} obj={patchedObj} onChange={handleChange} />;
         })()}
 
-        {/* Comment (^FX); leaves only: groups emit no ZPL of their own
-            so the comment would never reach the output. */}
-        {!groupRow && (
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.properties.comment}</label>
-            <textarea
-              className={`${inputCls} resize-none`}
-              rows={2}
-              value={obj.comment ?? ""}
-              onChange={(e) =>
-                updateObject(obj.id, { comment: stripZplCommandChars(e.target.value) || undefined })
-              }
-            />
-          </div>
+        {/* Position & alignment. Groups have no per-leaf x/y (children store
+            world coordinates), so the inputs are hidden; align still applies
+            and expands to the group's leaves at the canvas layer. The card
+            title names the section, so the inner heading is sr-only. */}
+        <SectionCard
+          id="properties-position"
+          title={
+            groupRow
+              ? t.properties.positionSection
+              : `${t.properties.positionSection} (${unitLabel(unit)})`
+          }
+        >
+          {!groupRow && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>{t.properties.x}</label>
+                <input
+                  type="number"
+                  className={inputCls}
+                  value={mmToUnit(dotsToMm(obj.x, label.dpmm), unit)}
+                  step={unitStep(unit)}
+                  onChange={(e) =>
+                    updateObject(obj.id, {
+                      x: mmToDots(
+                        unitToMm(Number(e.target.value), unit),
+                        label.dpmm,
+                      ),
+                    })
+                  }
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className={labelCls}>{t.properties.y}</label>
+                <input
+                  type="number"
+                  className={inputCls}
+                  value={mmToUnit(dotsToMm(obj.y, label.dpmm), unit)}
+                  step={unitStep(unit)}
+                  onChange={(e) =>
+                    updateObject(obj.id, {
+                      y: mmToDots(
+                        unitToMm(Number(e.target.value), unit),
+                        label.dpmm,
+                      ),
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
+          <PositionSectionHeader
+            hideHeading
+            unitSuffix={!groupRow ? unitLabel(unit) : undefined}
+            onAlign={handleAlign}
+            onDistribute={handleDistribute}
+            onTidy={handleTidy}
+            alignRef={alignRef}
+            onAlignRefChange={setAlignRef}
+            selectionCount={selectedIds.length}
+          />
+        </SectionCard>
+
+        {/* Variable binding: types that emit a ^FD content block. Opens
+            automatically when already bound; the open-state persists per
+            bound/unbound id in localStorage. */}
+        {definition?.bindable && !groupRow && (
+          <SectionCard
+            id={obj.variableId ? 'properties-variable-bound' : 'properties-variable-unbound'}
+            title={t.variables.sectionTitle}
+            defaultOpen={!!obj.variableId}
+          >
+            <VariableBindingControl obj={obj} />
+          </SectionCard>
         )}
 
-        {/* Lock; paired with the LayersPanel lock icon; mirroring it here
-            so a user already in PropertiesPanel can flip lock state without
-            jumping panels. Lock itself is a meta-field bypass in the store,
-            so the checkbox stays interactive even when the object is locked. */}
-        <label className="flex items-center gap-2 text-xs text-text cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={!!obj.locked}
-            onChange={(e) =>
-              updateObject(obj.id, { locked: e.target.checked || undefined })
-            }
-          />
-          <span>{t.properties.lock}</span>
-          <Tooltip content={t.properties.lockHint}>
-            <InformationCircleIcon className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0" />
-          </Tooltip>
-        </label>
+        {/* Options: comment (^FX, leaves only), lock, include-in-export.
+            Collapsed by default since these are set rarely. */}
+        <SectionCard
+          id="properties-options"
+          title={t.properties.optionsSection}
+          defaultOpen={false}
+        >
+          {!groupRow && (
+            <div className="flex flex-col gap-1">
+              <label className={labelCls}>{t.properties.comment}</label>
+              <textarea
+                className={`${inputCls} resize-none`}
+                rows={2}
+                value={obj.comment ?? ""}
+                onChange={(e) =>
+                  updateObject(obj.id, { comment: stripZplCommandChars(e.target.value) || undefined })
+                }
+              />
+            </div>
+          )}
 
-        {/* Include in ZPL output; paired with the LayersPanel eye toggle:
-            visible controls editor render, includeInExport controls ZPL
-            emission. Stored as undefined when on so default state stays
-            absent from persisted JSON. */}
-        <label className="flex items-center gap-2 text-xs text-text cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={obj.includeInExport !== false}
-            onChange={(e) =>
-              updateObject(obj.id, { includeInExport: e.target.checked ? undefined : false })
-            }
-          />
-          <span>{t.properties.includeInExport}</span>
-          <Tooltip content={t.properties.includeInExportHint}>
-            <InformationCircleIcon className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0" />
-          </Tooltip>
-        </label>
+          {/* Lock mirrors the LayersPanel lock icon; meta-field bypass keeps
+              the checkbox interactive even when the object is locked. */}
+          <label className="flex items-center gap-2 text-xs text-text cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={!!obj.locked}
+              onChange={(e) =>
+                updateObject(obj.id, { locked: e.target.checked || undefined })
+              }
+            />
+            <span>{t.properties.lock}</span>
+            <Tooltip content={t.properties.lockHint}>
+              <InformationCircleIcon className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0" />
+            </Tooltip>
+          </label>
+
+          {/* includeInExport controls ZPL emission (vs the eye toggle's
+              editor visibility); stored undefined when on. */}
+          <label className="flex items-center gap-2 text-xs text-text cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={obj.includeInExport !== false}
+              onChange={(e) =>
+                updateObject(obj.id, { includeInExport: e.target.checked ? undefined : false })
+              }
+            />
+            <span>{t.properties.includeInExport}</span>
+            <Tooltip content={t.properties.includeInExportHint}>
+              <InformationCircleIcon className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0" />
+            </Tooltip>
+          </label>
+        </SectionCard>
       </div>
     </div>
   );
@@ -501,7 +484,8 @@ function LabelConfigPanel({
         <span className="text-xs font-medium text-text">{t.label.heading}</span>
       </div>
 
-      <div className="p-3 flex flex-col gap-3">
+      <div className="p-2 flex flex-col gap-2">
+        <StaticSectionCard title={t.label.formatSection}>
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.label.preset}</label>
           <select
@@ -517,8 +501,6 @@ function LabelConfigPanel({
             ))}
           </select>
         </div>
-
-        <div className="border-t border-border" />
 
         <div className="flex items-center justify-between">
           <span className={labelCls}>
@@ -602,8 +584,9 @@ function LabelConfigPanel({
             }}
           />
         </div>
+        </StaticSectionCard>
 
-        <CollapsibleSection
+        <SectionCard
           id="label-output"
           title={t.label.outputHeading}
           defaultOpen={false}
@@ -694,9 +677,9 @@ function LabelConfigPanel({
         </div>
 
         </div>
-        </CollapsibleSection>
+        </SectionCard>
 
-        <CollapsibleSection
+        <SectionCard
           id="label-quantity-advanced"
           title={t.label.quantityAdvancedHeading}
           defaultOpen={false}
@@ -746,9 +729,9 @@ function LabelConfigPanel({
           {t.label.overridePauseCount}
         </label>
         </div>
-        </CollapsibleSection>
+        </SectionCard>
 
-        <CollapsibleSection
+        <SectionCard
           id="label-fonts"
           title={t.label.fontsHeading}
           defaultOpen={false}
@@ -812,7 +795,7 @@ function LabelConfigPanel({
           </div>
         </div>
         </div>
-        </CollapsibleSection>
+        </SectionCard>
       </div>
     </div>
   );

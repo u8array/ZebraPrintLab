@@ -51,6 +51,8 @@ const no = {
 
   properties: {
     positionSection: 'Posisjon',
+    optionsSection: 'Alternativer',
+    typographySection: 'Typografi',
     name: 'Navn',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const no = {
     tidySection: 'Rydd opp',
     tidyUp: 'Rydd opp',
     tidyTooltip: 'Ordne automatisk i en jevn rad eller kolonne',
-    tidyHint: 'Velg 2+ for å rydde opp',
   },
 
   label: {
@@ -104,6 +105,7 @@ const no = {
     overridePauseCount: 'Overstyr pauseteller',
     overridePauseCountHint: 'Kutt kun siste etikett i partiet i stedet for ved hver pausegrense.',
     outputHeading: 'Utdata',
+    formatSection: 'Format',
     labelShift: 'Etikettforskyvning (dots)',
     offsetsHeading: 'Forskyvninger',
     offsetsHint: 'Forskyver utskriftsorigo. Feltposisjoner i editoren forblir absolutte.',
@@ -415,7 +417,6 @@ const no = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Loddrett / RTL-tekst',
       fpDirection: 'Retning',
       fpDirH: 'H — Vannrett',
       fpDirV: 'V — Loddrett (stabel)',

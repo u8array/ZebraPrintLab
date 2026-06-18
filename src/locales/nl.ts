@@ -51,6 +51,8 @@ const nl = {
 
   properties: {
     positionSection: 'Positie',
+    optionsSection: 'Opties',
+    typographySection: 'Typografie',
     name: 'Naam',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const nl = {
     tidySection: 'Opruimen',
     tidyUp: 'Opruimen',
     tidyTooltip: 'Automatisch in een gelijkmatige rij of kolom schikken',
-    tidyHint: 'Selecteer er 2+ om op te ruimen',
   },
 
   label: {
@@ -104,6 +105,7 @@ const nl = {
     overridePauseCount: 'Pauzeteller overschrijven',
     overridePauseCountHint: 'Snijdt alleen het laatste label van de batch in plaats van bij elke pauzegrens.',
     outputHeading: 'Uitvoer',
+    formatSection: 'Formaat',
     labelShift: 'Etiketverschuiving (dots)',
     offsetsHeading: 'Offsets',
     offsetsHint: 'Verschuift de afdrukoorsprong. Veldposities in de editor blijven absoluut.',
@@ -415,7 +417,6 @@ const nl = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Verticale / RTL tekst',
       fpDirection: 'Richting',
       fpDirH: 'H — Horizontaal',
       fpDirV: 'V — Verticaal (gestapeld)',

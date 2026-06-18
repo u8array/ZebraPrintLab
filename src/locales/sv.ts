@@ -51,6 +51,8 @@ const sv = {
 
   properties: {
     positionSection: 'Position',
+    optionsSection: 'Alternativ',
+    typographySection: 'Typografi',
     name: 'Namn',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const sv = {
     tidySection: 'Städa upp',
     tidyUp: 'Städa upp',
     tidyTooltip: 'Ordna automatiskt i jämn rad eller kolumn',
-    tidyHint: 'Välj 2+ för att städa upp',
   },
 
   label: {
@@ -104,6 +105,7 @@ const sv = {
     overridePauseCount: 'Åsidosätt pausräknare',
     overridePauseCountHint: 'Klipp endast den sista etiketten i partiet istället för vid varje pausgräns.',
     outputHeading: 'Utmatning',
+    formatSection: 'Format',
     labelShift: 'Etikettförskjutning (dots)',
     offsetsHeading: 'Förskjutningar',
     offsetsHint: 'Förskjuter utskriftens ursprung. Fältpositioner i redigeraren förblir absoluta.',
@@ -415,7 +417,6 @@ const sv = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Lodrät / RTL-text',
       fpDirection: 'Riktning',
       fpDirH: 'H — Vågrät',
       fpDirV: 'V — Lodrät (stack)',

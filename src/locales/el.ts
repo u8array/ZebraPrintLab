@@ -51,6 +51,8 @@ const el = {
 
   properties: {
     positionSection: 'Θέση',
+    optionsSection: 'Επιλογές',
+    typographySection: 'Τυπογραφία',
     name: 'Όνομα',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const el = {
     tidySection: 'Τακτοποίηση',
     tidyUp: 'Τακτοποίηση',
     tidyTooltip: 'Αυτόματη διάταξη σε ομοιόμορφη γραμμή ή στήλη',
-    tidyHint: 'Επιλέξτε 2+ για τακτοποίηση',
   },
 
   label: {
@@ -104,6 +105,7 @@ const el = {
     overridePauseCount: 'Παράκαμψη μετρητή παύσης',
     overridePauseCountHint: 'Κόψτε μόνο την τελευταία ετικέτα της παρτίδας αντί σε κάθε όριο παύσης.',
     outputHeading: 'Έξοδος',
+    formatSection: 'Μορφή',
     labelShift: 'Μετατόπιση ετικέτας (dots)',
     offsetsHeading: 'Μετατοπίσεις',
     offsetsHint: 'Μετατοπίζει την αρχή εκτύπωσης. Οι θέσεις των πεδίων στον επεξεργαστή παραμένουν απόλυτες.',
@@ -415,7 +417,6 @@ const el = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Κατακόρυφο / RTL κείμενο',
       fpDirection: 'Κατεύθυνση',
       fpDirH: 'H — Οριζόντια',
       fpDirV: 'V — Κατακόρυφα (στοίβα)',
