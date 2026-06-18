@@ -11,7 +11,7 @@ const de = {
     searchPlaceholder: 'Objekte suchen…',
     noResults: 'Keine Treffer für „{q}“',
     favorites: 'Favoriten',
-    favoritesHint: 'Mit ☆ Typen anpinnen.',
+    favoritesHint: 'Typen mit dem Stern anpinnen.',
     pinFavorite: 'Zu Favoriten hinzufügen',
     unpinFavorite: 'Aus Favoriten entfernen',
   },

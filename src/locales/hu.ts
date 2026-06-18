@@ -11,7 +11,7 @@ const hu = {
     searchPlaceholder: 'Objektumok keresése…',
     noResults: 'Nincs találat erre: „{q}”',
     favorites: 'Kedvencek',
-    favoritesHint: 'Rögzítsen típusokat a ☆ ikonnal.',
+    favoritesHint: 'Rögzítsen típusokat a csillaggal.',
     pinFavorite: 'Hozzáadás a kedvencekhez',
     unpinFavorite: 'Eltávolítás a kedvencekből',
   },

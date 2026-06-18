@@ -11,7 +11,7 @@ const da = {
     searchPlaceholder: 'Søg efter objekter…',
     noResults: 'Ingen resultater for "{q}"',
     favorites: 'Favoritter',
-    favoritesHint: 'Fastgør typer med ☆.',
+    favoritesHint: 'Fastgør typer med stjernen.',
     pinFavorite: 'Føj til favoritter',
     unpinFavorite: 'Fjern fra favoritter',
   },

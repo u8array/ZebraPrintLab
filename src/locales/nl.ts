@@ -11,7 +11,7 @@ const nl = {
     searchPlaceholder: 'Objecten zoeken…',
     noResults: 'Geen resultaten voor "{q}"',
     favorites: 'Favorieten',
-    favoritesHint: 'Maak types vast met ☆.',
+    favoritesHint: 'Maak types vast met de ster.',
     pinFavorite: 'Toevoegen aan favorieten',
     unpinFavorite: 'Verwijderen uit favorieten',
   },

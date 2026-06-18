@@ -11,7 +11,7 @@ const lt = {
     searchPlaceholder: 'Ieškoti objektų…',
     noResults: 'Nėra atitikmenų „{q}“',
     favorites: 'Mėgstami',
-    favoritesHint: 'Prisekite tipus su ☆.',
+    favoritesHint: 'Prisekite tipus žvaigždute.',
     pinFavorite: 'Pridėti prie mėgstamų',
     unpinFavorite: 'Pašalinti iš mėgstamų',
   },

@@ -11,7 +11,7 @@ const sr = {
     searchPlaceholder: 'Претражи објекте…',
     noResults: 'Нема резултата за „{q}“',
     favorites: 'Омиљено',
-    favoritesHint: 'Закачите типове помоћу ☆.',
+    favoritesHint: 'Закачите типове звездицом.',
     pinFavorite: 'Додај у омиљено',
     unpinFavorite: 'Уклони из омиљеног',
   },

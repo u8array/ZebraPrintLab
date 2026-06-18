@@ -31,7 +31,7 @@ interface PaletteEntryProps {
 
 function PaletteEntry({ id, type, icon, label, defaultSize, propsOverride, isFavorite, onToggleFavorite, favoriteLabel }: PaletteEntryProps) {
   const addObject = useLabelStore((s) => s.addObject);
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({
     id: `palette-${id}`,
     data: { type, propsOverride } satisfies PaletteDragData,
   });
@@ -52,33 +52,43 @@ function PaletteEntry({ id, type, icon, label, defaultSize, propsOverride, isFav
   return (
     <div
       ref={setNodeRef}
-      style={{ touchAction: 'none' }}
-      {...attributes}
-      {...listeners}
       onDoubleClick={handleDoubleClick}
       className={`
-        group flex items-center gap-2.5 px-2 py-1.5 rounded
+        group flex items-center gap-2 px-1.5 py-1.5 rounded
         border border-transparent
         hover:border-border-2 hover:bg-surface-2
-        cursor-grab active:cursor-grabbing select-none
-        transition-colors
+        select-none transition-colors
         ${isDragging ? 'opacity-40' : ''}
       `}
     >
-      <DragHandleIcon className="w-2 h-3.5 shrink-0 text-muted opacity-0 group-hover:opacity-60 transition-opacity" />
+      {/* The grip is the drag activator so the row stays a plain container;
+          a nested interactive (the star) inside a draggable role=button row
+          would be invalid. The whole row still spawns on double-click. */}
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        aria-label={label}
+        style={{ touchAction: 'none' }}
+        {...attributes}
+        {...listeners}
+        className="-mr-1 shrink-0 p-0.5 rounded cursor-grab active:cursor-grabbing text-muted opacity-40 group-hover:opacity-70 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent transition-opacity"
+      >
+        <DragHandleIcon className="w-2 h-3.5" />
+      </button>
       <span className="font-mono text-[11px] text-muted group-hover:text-accent w-6 text-center shrink-0 transition-colors">{icon}</span>
       <span className="text-xs text-text truncate">{label}</span>
-      {/* stopPropagation on pointerdown so the star tap doesn't start a drag. */}
+      {/* Stop click + dblclick (the row's double-click spawns an object) so a
+          star tap only toggles. */}
       <button
         type="button"
         aria-label={favoriteLabel}
         aria-pressed={isFavorite}
-        onPointerDown={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();
           onToggleFavorite();
         }}
-        className={`ml-auto shrink-0 p-0.5 transition-colors ${
+        className={`ml-auto shrink-0 p-0.5 rounded transition-colors focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${
           isFavorite
             ? 'text-accent'
             : 'text-muted opacity-0 group-hover:opacity-100 hover:text-accent'
@@ -105,13 +115,8 @@ function resolveEntries(
 ): ResolvedEntry[] {
   return Object.entries(ObjectRegistry)
     .filter(([, def]) => def.group === group)
-    .map(([type, def]): ResolvedEntry => ({
-      id: type,
-      type,
-      icon: def.icon,
-      label: types[type] ?? def.label,
-      defaultSize: def.defaultSize,
-    }));
+    .map(([type]) => resolveEntry(type, types))
+    .filter((e): e is ResolvedEntry => e !== null);
 }
 
 /** Resolve a single registry type to a palette entry (favorites reference
@@ -164,11 +169,14 @@ export function ObjectPalette() {
     .map((type) => resolveEntry(type, types))
     .filter((e): e is ResolvedEntry => e !== null);
 
-  const renderEntries = (entries: ResolvedEntry[]) =>
+  // `scope` keeps drag ids unique: a favorited type renders both in the
+  // Favorites section and its own group, so the draggable id is scoped per
+  // render site while the drag data (type) stays identical.
+  const renderEntries = (entries: ResolvedEntry[], scope: string) =>
     entries.map((e) => (
       <PaletteEntry
-        key={e.id}
-        id={e.id}
+        key={`${scope}-${e.id}`}
+        id={`${scope}-${e.id}`}
         type={e.type}
         icon={e.icon}
         label={e.label}
@@ -182,7 +190,7 @@ export function ObjectPalette() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="shrink-0 bg-surface border-b border-border px-3 pt-3 pb-2">
+      <div className="shrink-0 bg-surface border-b border-border px-2 pt-3 pb-2">
         <input
           type="search"
           className={inputCls}
@@ -193,10 +201,10 @@ export function ObjectPalette() {
         />
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 flex flex-col gap-3">
+      <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-3 flex flex-col gap-3">
         {q && groups.length === 0 && (
           <p className="text-xs text-muted px-1">
-            {t.palette.noResults.replace('{q}', query.trim())}
+            {t.palette.noResults.replace('{q}', () => query.trim())}
           </p>
         )}
 
@@ -207,7 +215,7 @@ export function ObjectPalette() {
             title={<GroupTitle label={t.palette.favorites} count={favEntries.length} />}
           >
             {favEntries.length > 0 ? (
-              renderEntries(favEntries)
+              renderEntries(favEntries, 'favorites')
             ) : (
               <p className="text-xs text-muted px-1 py-1">{t.palette.favoritesHint}</p>
             )}
@@ -222,7 +230,7 @@ export function ObjectPalette() {
               <p className="font-mono text-[10px] font-medium uppercase tracking-widest text-muted px-1 pb-1">
                 <GroupTitle label={t.palette[group.labelKey]} count={entries.length} />
               </p>
-              {renderEntries(entries)}
+              {renderEntries(entries, group.key)}
             </div>
           ) : (
             <CollapsibleSection
@@ -230,7 +238,7 @@ export function ObjectPalette() {
               id={`palette-${group.key}`}
               title={<GroupTitle label={t.palette[group.labelKey]} count={entries.length} />}
             >
-              {renderEntries(entries)}
+              {renderEntries(entries, group.key)}
             </CollapsibleSection>
           ),
         )}

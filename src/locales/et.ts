@@ -11,7 +11,7 @@ const et = {
     searchPlaceholder: 'Otsi objekte…',
     noResults: 'Tulemusi pole päringule „{q}“',
     favorites: 'Lemmikud',
-    favoritesHint: 'Kinnita tüübid märgiga ☆.',
+    favoritesHint: 'Kinnita tüübid tärniga.',
     pinFavorite: 'Lisa lemmikutesse',
     unpinFavorite: 'Eemalda lemmikutest',
   },

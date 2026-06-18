@@ -11,7 +11,7 @@ const ro = {
     searchPlaceholder: 'Caută obiecte…',
     noResults: 'Niciun rezultat pentru „{q}”',
     favorites: 'Favorite',
-    favoritesHint: 'Fixați tipuri cu ☆.',
+    favoritesHint: 'Fixați tipuri cu steaua.',
     pinFavorite: 'Adaugă la favorite',
     unpinFavorite: 'Elimină din favorite',
   },

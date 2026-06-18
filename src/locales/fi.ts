@@ -11,7 +11,7 @@ const fi = {
     searchPlaceholder: 'Hae objekteja…',
     noResults: 'Ei osumia haulle "{q}"',
     favorites: 'Suosikit',
-    favoritesHint: 'Kiinnitä tyyppejä symbolilla ☆.',
+    favoritesHint: 'Kiinnitä tyyppejä tähdellä.',
     pinFavorite: 'Lisää suosikkeihin',
     unpinFavorite: 'Poista suosikeista',
   },

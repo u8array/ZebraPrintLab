@@ -11,7 +11,7 @@ const sl = {
     searchPlaceholder: 'Iskanje objektov…',
     noResults: 'Ni zadetkov za „{q}“',
     favorites: 'Priljubljene',
-    favoritesHint: 'Pripnite vrste z ☆.',
+    favoritesHint: 'Pripnite vrste z zvezdico.',
     pinFavorite: 'Dodaj med priljubljene',
     unpinFavorite: 'Odstrani iz priljubljenih',
   },

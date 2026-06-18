@@ -11,7 +11,7 @@ const sv = {
     searchPlaceholder: 'Sök objekt…',
     noResults: 'Inga träffar för "{q}"',
     favorites: 'Favoriter',
-    favoritesHint: 'Fäst typer med ☆.',
+    favoritesHint: 'Fäst typer med stjärnan.',
     pinFavorite: 'Lägg till i favoriter',
     unpinFavorite: 'Ta bort från favoriter',
   },

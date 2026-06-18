@@ -11,7 +11,7 @@ const tr = {
     searchPlaceholder: 'Nesne ara…',
     noResults: '"{q}" için sonuç yok',
     favorites: 'Favoriler',
-    favoritesHint: 'Türleri ☆ ile sabitleyin.',
+    favoritesHint: 'Türleri yıldız ile sabitleyin.',
     pinFavorite: 'Favorilere ekle',
     unpinFavorite: 'Favorilerden kaldır',
   },

@@ -11,7 +11,7 @@ const lv = {
     searchPlaceholder: 'Meklēt objektus…',
     noResults: 'Nav rezultātu vaicājumam “{q}”',
     favorites: 'Izlase',
-    favoritesHint: 'Piespraudiet tipus ar ☆.',
+    favoritesHint: 'Piespraudiet tipus ar zvaigzni.',
     pinFavorite: 'Pievienot izlasei',
     unpinFavorite: 'Noņemt no izlases',
   },

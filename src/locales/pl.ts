@@ -11,7 +11,7 @@ const pl = {
     searchPlaceholder: 'Szukaj obiektów…',
     noResults: 'Brak wyników dla „{q}”',
     favorites: 'Ulubione',
-    favoritesHint: 'Przypnij typy za pomocą ☆.',
+    favoritesHint: 'Przypnij typy gwiazdką.',
     pinFavorite: 'Dodaj do ulubionych',
     unpinFavorite: 'Usuń z ulubionych',
   },

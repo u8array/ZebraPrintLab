@@ -11,7 +11,7 @@ const fa = {
     searchPlaceholder: 'جستجوی اشیا…',
     noResults: 'نتیجه‌ای برای «{q}» یافت نشد',
     favorites: 'علاقه‌مندی‌ها',
-    favoritesHint: 'نوع‌ها را با ☆ سنجاق کنید.',
+    favoritesHint: 'نوع‌ها را با ستاره سنجاق کنید.',
     pinFavorite: 'افزودن به علاقه‌مندی‌ها',
     unpinFavorite: 'حذف از علاقه‌مندی‌ها',
   },

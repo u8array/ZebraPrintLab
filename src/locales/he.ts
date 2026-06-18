@@ -11,7 +11,7 @@ const he = {
     searchPlaceholder: 'חיפוש אובייקטים…',
     noResults: 'אין תוצאות עבור "{q}"',
     favorites: 'מועדפים',
-    favoritesHint: 'הצמידו סוגים עם ☆.',
+    favoritesHint: 'הצמידו סוגים באמצעות הכוכב.',
     pinFavorite: 'הוספה למועדפים',
     unpinFavorite: 'הסרה מהמועדפים',
   },

@@ -11,7 +11,7 @@ const ja = {
     searchPlaceholder: 'オブジェクトを検索…',
     noResults: '「{q}」に一致する項目がありません',
     favorites: 'お気に入り',
-    favoritesHint: '☆ でタイプを固定。',
+    favoritesHint: '星でタイプを固定。',
     pinFavorite: 'お気に入りに追加',
     unpinFavorite: 'お気に入りから削除',
   },

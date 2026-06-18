@@ -11,7 +11,7 @@ const hr = {
     searchPlaceholder: 'Pretraži objekte…',
     noResults: 'Nema rezultata za „{q}“',
     favorites: 'Favoriti',
-    favoritesHint: 'Prikvačite tipove pomoću ☆.',
+    favoritesHint: 'Prikvačite tipove zvjezdicom.',
     pinFavorite: 'Dodaj u favorite',
     unpinFavorite: 'Ukloni iz favorita',
   },

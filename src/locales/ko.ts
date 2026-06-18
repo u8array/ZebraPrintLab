@@ -11,7 +11,7 @@ const ko = {
     searchPlaceholder: '객체 검색…',
     noResults: '"{q}"에 대한 결과 없음',
     favorites: '즐겨찾기',
-    favoritesHint: '☆ 로 유형을 고정하세요.',
+    favoritesHint: '별로 유형을 고정하세요.',
     pinFavorite: '즐겨찾기에 추가',
     unpinFavorite: '즐겨찾기에서 제거',
   },

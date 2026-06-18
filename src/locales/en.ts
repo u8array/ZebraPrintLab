@@ -11,7 +11,7 @@ const en = {
     searchPlaceholder: 'Search objects…',
     noResults: 'No matches for "{q}"',
     favorites: 'Favorites',
-    favoritesHint: 'Pin types with ☆.',
+    favoritesHint: 'Pin types with the star.',
     pinFavorite: 'Pin to favorites',
     unpinFavorite: 'Remove from favorites',
   },
