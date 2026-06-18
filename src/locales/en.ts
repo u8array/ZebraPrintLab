@@ -10,6 +10,10 @@ const en = {
     groupShapes: 'Shapes',
     searchPlaceholder: 'Search objects…',
     noResults: 'No matches for "{q}"',
+    favorites: 'Favorites',
+    favoritesHint: 'Pin types with ☆.',
+    pinFavorite: 'Pin to favorites',
+    unpinFavorite: 'Remove from favorites',
   },
 
   types: {

@@ -10,6 +10,10 @@ const ar = {
     groupShapes: 'أشكال',
     searchPlaceholder: 'بحث عن كائنات…',
     noResults: 'لا نتائج لـ "{q}"',
+    favorites: 'المفضلة',
+    favoritesHint: 'ثبّت الأنواع بالرمز ☆.',
+    pinFavorite: 'إضافة إلى المفضلة',
+    unpinFavorite: 'إزالة من المفضلة',
   },
 
   types: {

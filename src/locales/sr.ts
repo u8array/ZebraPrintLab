@@ -10,6 +10,10 @@ const sr = {
     groupShapes: 'Облици',
     searchPlaceholder: 'Претражи објекте…',
     noResults: 'Нема резултата за „{q}“',
+    favorites: 'Омиљено',
+    favoritesHint: 'Закачите типове помоћу ☆.',
+    pinFavorite: 'Додај у омиљено',
+    unpinFavorite: 'Уклони из омиљеног',
   },
 
   types: {

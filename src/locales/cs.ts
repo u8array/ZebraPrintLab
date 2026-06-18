@@ -10,6 +10,10 @@ const cs = {
     groupShapes: 'Tvary',
     searchPlaceholder: 'Hledat objekty…',
     noResults: 'Žádné výsledky pro „{q}“',
+    favorites: 'Oblíbené',
+    favoritesHint: 'Připněte typy pomocí ☆.',
+    pinFavorite: 'Přidat do oblíbených',
+    unpinFavorite: 'Odebrat z oblíbených',
   },
 
   types: {

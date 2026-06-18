@@ -10,6 +10,10 @@ const hr = {
     groupShapes: 'Oblici',
     searchPlaceholder: 'Pretraži objekte…',
     noResults: 'Nema rezultata za „{q}“',
+    favorites: 'Favoriti',
+    favoritesHint: 'Prikvačite tipove pomoću ☆.',
+    pinFavorite: 'Dodaj u favorite',
+    unpinFavorite: 'Ukloni iz favorita',
   },
 
   types: {

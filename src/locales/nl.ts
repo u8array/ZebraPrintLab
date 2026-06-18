@@ -10,6 +10,10 @@ const nl = {
     groupShapes: 'Vormen',
     searchPlaceholder: 'Objecten zoeken…',
     noResults: 'Geen resultaten voor "{q}"',
+    favorites: 'Favorieten',
+    favoritesHint: 'Maak types vast met ☆.',
+    pinFavorite: 'Toevoegen aan favorieten',
+    unpinFavorite: 'Verwijderen uit favorieten',
   },
 
   types: {

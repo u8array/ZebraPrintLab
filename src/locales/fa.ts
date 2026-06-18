@@ -10,6 +10,10 @@ const fa = {
     groupShapes: 'اشکال',
     searchPlaceholder: 'جستجوی اشیا…',
     noResults: 'نتیجه‌ای برای «{q}» یافت نشد',
+    favorites: 'علاقه‌مندی‌ها',
+    favoritesHint: 'نوع‌ها را با ☆ سنجاق کنید.',
+    pinFavorite: 'افزودن به علاقه‌مندی‌ها',
+    unpinFavorite: 'حذف از علاقه‌مندی‌ها',
   },
 
   types: {

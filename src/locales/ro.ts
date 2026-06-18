@@ -10,6 +10,10 @@ const ro = {
     groupShapes: 'Forme',
     searchPlaceholder: 'Caută obiecte…',
     noResults: 'Niciun rezultat pentru „{q}”',
+    favorites: 'Favorite',
+    favoritesHint: 'Fixați tipuri cu ☆.',
+    pinFavorite: 'Adaugă la favorite',
+    unpinFavorite: 'Elimină din favorite',
   },
 
   types: {

@@ -10,6 +10,10 @@ const bg = {
     groupShapes: 'Форми',
     searchPlaceholder: 'Търсене на обекти…',
     noResults: 'Няма съвпадения за „{q}“',
+    favorites: 'Любими',
+    favoritesHint: 'Закачете типове с ☆.',
+    pinFavorite: 'Добавяне към любими',
+    unpinFavorite: 'Премахване от любими',
   },
 
   types: {

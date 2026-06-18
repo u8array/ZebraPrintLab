@@ -10,6 +10,10 @@ const da = {
     groupShapes: 'Former',
     searchPlaceholder: 'Søg efter objekter…',
     noResults: 'Ingen resultater for "{q}"',
+    favorites: 'Favoritter',
+    favoritesHint: 'Fastgør typer med ☆.',
+    pinFavorite: 'Føj til favoritter',
+    unpinFavorite: 'Fjern fra favoritter',
   },
 
   types: {

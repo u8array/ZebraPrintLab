@@ -10,6 +10,10 @@ const lt = {
     groupShapes: 'Figūros',
     searchPlaceholder: 'Ieškoti objektų…',
     noResults: 'Nėra atitikmenų „{q}“',
+    favorites: 'Mėgstami',
+    favoritesHint: 'Prisekite tipus su ☆.',
+    pinFavorite: 'Pridėti prie mėgstamų',
+    unpinFavorite: 'Pašalinti iš mėgstamų',
   },
 
   types: {

@@ -10,6 +10,10 @@ const zhHant = {
     groupShapes: '形狀',
     searchPlaceholder: '搜尋物件…',
     noResults: '沒有符合「{q}」的結果',
+    favorites: '收藏',
+    favoritesHint: '用 ☆ 釘選類型。',
+    pinFavorite: '加入收藏',
+    unpinFavorite: '從收藏中移除',
   },
 
   types: {

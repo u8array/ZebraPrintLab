@@ -10,6 +10,10 @@ const tr = {
     groupShapes: 'Şekiller',
     searchPlaceholder: 'Nesne ara…',
     noResults: '"{q}" için sonuç yok',
+    favorites: 'Favoriler',
+    favoritesHint: 'Türleri ☆ ile sabitleyin.',
+    pinFavorite: 'Favorilere ekle',
+    unpinFavorite: 'Favorilerden kaldır',
   },
 
   types: {

@@ -10,6 +10,10 @@ const sl = {
     groupShapes: 'Oblike',
     searchPlaceholder: 'Iskanje objektov…',
     noResults: 'Ni zadetkov za „{q}“',
+    favorites: 'Priljubljene',
+    favoritesHint: 'Pripnite vrste z ☆.',
+    pinFavorite: 'Dodaj med priljubljene',
+    unpinFavorite: 'Odstrani iz priljubljenih',
   },
 
   types: {

@@ -10,6 +10,10 @@ const el = {
     groupShapes: 'Σχήματα',
     searchPlaceholder: 'Αναζήτηση αντικειμένων…',
     noResults: 'Καμία αντιστοιχία για «{q}»',
+    favorites: 'Αγαπημένα',
+    favoritesHint: 'Καρφιτσώστε τύπους με ☆.',
+    pinFavorite: 'Προσθήκη στα αγαπημένα',
+    unpinFavorite: 'Αφαίρεση από τα αγαπημένα',
   },
 
   types: {

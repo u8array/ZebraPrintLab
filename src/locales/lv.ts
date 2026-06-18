@@ -10,6 +10,10 @@ const lv = {
     groupShapes: 'Formas',
     searchPlaceholder: 'Meklēt objektus…',
     noResults: 'Nav rezultātu vaicājumam “{q}”',
+    favorites: 'Izlase',
+    favoritesHint: 'Piespraudiet tipus ar ☆.',
+    pinFavorite: 'Pievienot izlasei',
+    unpinFavorite: 'Noņemt no izlases',
   },
 
   types: {

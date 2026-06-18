@@ -65,6 +65,9 @@ export interface UiSlice {
   /** Whether the user has dismissed the one-time Labelary privacy notice. */
   labelaryNoticeAcknowledged: boolean;
   canvasSettings: CanvasSettings;
+  /** Palette favorites: registry type-IDs the user pinned to the top of the
+   *  object palette. Persisted (a UI preference), not undoable. */
+  paletteFavorites: string[];
 
   /** Right-sidebar tab. Lives in the store so canvas interactions can
    *  drive the panel (e.g. double-click a text field). Transient; not
@@ -89,6 +92,8 @@ export interface UiSlice {
   setThirdPartyEnabled: (service: 'labelary', enabled: boolean) => void;
   acknowledgeLabelaryNotice: () => void;
   setCanvasSettings: (settings: Partial<CanvasSettings>) => void;
+  /** Pin/unpin a registry type in the palette favorites. */
+  toggleFavorite: (type: string) => void;
   setSidebarTab: (tab: SidebarTab) => void;
   setBlockDragMode: (mode: BlockDragMode) => void;
   setAlignRef: (ref: AlignSelectionRef) => void;
@@ -115,6 +120,7 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
     viewRotation: 0,
     csvRenderMode: 'preview',
   },
+  paletteFavorites: [],
   sidebarTab: 'properties',
   blockDragMode: 'frame',
   alignRef: 'selection',
@@ -129,6 +135,12 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
   acknowledgeLabelaryNotice: () => set({ labelaryNoticeAcknowledged: true }),
   setCanvasSettings: (settings) =>
     set((state) => ({ canvasSettings: { ...state.canvasSettings, ...settings } })),
+  toggleFavorite: (type) =>
+    set((state) => ({
+      paletteFavorites: state.paletteFavorites.includes(type)
+        ? state.paletteFavorites.filter((t) => t !== type)
+        : [...state.paletteFavorites, type],
+    })),
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
   setBlockDragMode: (mode) => set({ blockDragMode: mode }),
   setAlignRef: (ref) => set({ alignRef: ref }),

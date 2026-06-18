@@ -10,6 +10,10 @@ const et = {
     groupShapes: 'Kujundid',
     searchPlaceholder: 'Otsi objekte…',
     noResults: 'Tulemusi pole päringule „{q}“',
+    favorites: 'Lemmikud',
+    favoritesHint: 'Kinnita tüübid märgiga ☆.',
+    pinFavorite: 'Lisa lemmikutesse',
+    unpinFavorite: 'Eemalda lemmikutest',
   },
 
   types: {

@@ -10,6 +10,10 @@ const sk = {
     groupShapes: 'Tvary',
     searchPlaceholder: 'Hľadať objekty…',
     noResults: 'Žiadne výsledky pre „{q}“',
+    favorites: 'Obľúbené',
+    favoritesHint: 'Pripnite typy pomocou ☆.',
+    pinFavorite: 'Pridať do obľúbených',
+    unpinFavorite: 'Odstrániť z obľúbených',
   },
 
   types: {

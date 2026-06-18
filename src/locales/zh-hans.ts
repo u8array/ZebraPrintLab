@@ -10,6 +10,10 @@ const zhHans = {
     groupShapes: '形状',
     searchPlaceholder: '搜索对象…',
     noResults: '没有匹配“{q}”的结果',
+    favorites: '收藏',
+    favoritesHint: '用 ☆ 固定类型。',
+    pinFavorite: '添加到收藏',
+    unpinFavorite: '从收藏中移除',
   },
 
   types: {

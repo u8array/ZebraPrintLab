@@ -10,6 +10,10 @@ const fi = {
     groupShapes: 'Muodot',
     searchPlaceholder: 'Hae objekteja…',
     noResults: 'Ei osumia haulle "{q}"',
+    favorites: 'Suosikit',
+    favoritesHint: 'Kiinnitä tyyppejä symbolilla ☆.',
+    pinFavorite: 'Lisää suosikkeihin',
+    unpinFavorite: 'Poista suosikeista',
   },
 
   types: {

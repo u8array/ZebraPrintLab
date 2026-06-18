@@ -10,6 +10,10 @@ const hu = {
     groupShapes: 'Alakzatok',
     searchPlaceholder: 'Objektumok keresése…',
     noResults: 'Nincs találat erre: „{q}”',
+    favorites: 'Kedvencek',
+    favoritesHint: 'Rögzítsen típusokat a ☆ ikonnal.',
+    pinFavorite: 'Hozzáadás a kedvencekhez',
+    unpinFavorite: 'Eltávolítás a kedvencekből',
   },
 
   types: {

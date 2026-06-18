@@ -10,6 +10,10 @@ const de = {
     groupShapes: 'Formen',
     searchPlaceholder: 'Objekte suchen…',
     noResults: 'Keine Treffer für „{q}“',
+    favorites: 'Favoriten',
+    favoritesHint: 'Mit ☆ Typen anpinnen.',
+    pinFavorite: 'Zu Favoriten hinzufügen',
+    unpinFavorite: 'Aus Favoriten entfernen',
   },
 
   types: {

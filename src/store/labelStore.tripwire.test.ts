@@ -11,6 +11,7 @@ const EXPECTED_PERSIST_KEYS = [
   'labelaryNoticeAcknowledged',
   'locale',
   'pages',
+  'paletteFavorites',
   'printerProfile',
   'theme',
   'variables',

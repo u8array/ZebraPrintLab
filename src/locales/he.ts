@@ -10,6 +10,10 @@ const he = {
     groupShapes: 'צורות',
     searchPlaceholder: 'חיפוש אובייקטים…',
     noResults: 'אין תוצאות עבור "{q}"',
+    favorites: 'מועדפים',
+    favoritesHint: 'הצמידו סוגים עם ☆.',
+    pinFavorite: 'הוספה למועדפים',
+    unpinFavorite: 'הסרה מהמועדפים',
   },
 
   types: {

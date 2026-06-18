@@ -10,6 +10,10 @@ const sv = {
     groupShapes: 'Former',
     searchPlaceholder: 'Sök objekt…',
     noResults: 'Inga träffar för "{q}"',
+    favorites: 'Favoriter',
+    favoritesHint: 'Fäst typer med ☆.',
+    pinFavorite: 'Lägg till i favoriter',
+    unpinFavorite: 'Ta bort från favoriter',
   },
 
   types: {
