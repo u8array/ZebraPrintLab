@@ -356,8 +356,8 @@ export function AppShell() {
         {leftPanel.collapsed ? (
           <ExpandStrip side="left" onExpand={leftPanel.expand} title={t.app.expand} />
         ) : (
-          <aside className="w-44 shrink-0 border-r border-border bg-surface overflow-y-auto">
-            <div className="sticky top-0 z-10 flex justify-end border-b border-border bg-surface px-1 py-0.5">
+          <aside className="w-44 shrink-0 border-r border-border bg-surface flex flex-col min-h-0">
+            <div className="shrink-0 flex justify-end border-b border-border bg-surface px-1 py-0.5">
               <button
                 onClick={leftPanel.collapse}
                 title={t.app.collapse}

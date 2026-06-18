@@ -129,8 +129,8 @@ export function ObjectPalette() {
     ));
 
   return (
-    <div className="flex flex-col">
-      <div className="sticky top-0 z-10 bg-surface px-3 pt-3 pb-2">
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="shrink-0 bg-surface border-b border-border px-3 pt-3 pb-2">
         <input
           type="search"
           className={inputCls}
@@ -141,7 +141,7 @@ export function ObjectPalette() {
         />
       </div>
 
-      <div className="px-3 pb-3 flex flex-col gap-3">
+      <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 flex flex-col gap-3">
         {q && groups.length === 0 && (
           <p className="text-xs text-muted px-1">
             {t.palette.noResults.replace('{q}', query.trim())}
