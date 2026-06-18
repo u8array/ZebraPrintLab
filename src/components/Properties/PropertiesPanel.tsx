@@ -223,6 +223,7 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
             <input
               type="text"
               className={inputCls}
+              aria-label={t.properties.name}
               value={obj.name ?? ''}
               placeholder={t.types.group}
               onChange={(e) =>
@@ -256,7 +257,9 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
                 }
               }
             : (props: object) => updateObject(obj.id, { props });
-          return <TypePanel obj={patchedObj} onChange={handleChange} />;
+          // Key by id so switching objects remounts the panel and resets its
+          // transient reveal state (e.g. the Typography "Advanced" toggle).
+          return <TypePanel key={obj.id} obj={patchedObj} onChange={handleChange} />;
         })()}
 
         {/* Position & alignment. Groups have no per-leaf x/y (children store
@@ -311,6 +314,7 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
           )}
           <PositionSectionHeader
             hideHeading
+            unitSuffix={!groupRow ? unitLabel(unit) : undefined}
             onAlign={handleAlign}
             onDistribute={handleDistribute}
             onTidy={handleTidy}
