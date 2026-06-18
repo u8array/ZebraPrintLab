@@ -51,6 +51,8 @@ const sr = {
 
   properties: {
     positionSection: 'Položaj',
+    optionsSection: 'Опције',
+    typographySection: 'Типографија',
     name: 'Naziv',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const sr = {
     tidySection: 'Сложи',
     tidyUp: 'Сложи',
     tidyTooltip: 'Аутоматски распореди у равномеран ред или колону',
-    tidyHint: 'Изаберите 2+ за слагање',
   },
 
   label: {
@@ -104,6 +105,7 @@ const sr = {
     overridePauseCount: 'Премости бројач паузе',
     overridePauseCountHint: 'Сече само последњу етикету серије уместо на свакој граници паузе.',
     outputHeading: 'Излаз',
+    formatSection: 'Формат',
     labelShift: 'Померај етикете (dots)',
     offsetsHeading: 'Помераји',
     offsetsHint: 'Помера исходиште штампе. Позиције поља у уреднику остају апсолутне.',
@@ -415,7 +417,6 @@ const sr = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Vertikalni / RTL tekst',
       fpDirection: 'Smer',
       fpDirH: 'H — Vodoravno',
       fpDirV: 'V — Vertikalno (stek)',

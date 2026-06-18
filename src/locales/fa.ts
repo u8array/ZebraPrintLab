@@ -51,6 +51,8 @@ const fa = {
 
   properties: {
     positionSection: 'موقعیت (میلی‌متر)',
+    optionsSection: 'گزینه‌ها',
+    typographySection: 'تایپوگرافی',
     name: 'نام',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const fa = {
     tidySection: 'مرتب‌سازی',
     tidyUp: 'مرتب‌سازی',
     tidyTooltip: 'چینش خودکار در یک ردیف یا ستون یکنواخت',
-    tidyHint: 'برای مرتب‌سازی ۲+ مورد انتخاب کنید',
   },
 
   label: {
@@ -104,6 +105,7 @@ const fa = {
     overridePauseCount: 'نادیده گرفتن شمارش توقف',
     overridePauseCountHint: 'فقط آخرین برچسب دسته را برش بزن، نه در هر مرز توقف.',
     outputHeading: 'خروجی',
+    formatSection: 'قالب',
     labelShift: 'جابجایی برچسب (dots)',
     offsetsHeading: 'افست‌ها',
     offsetsHint: 'مبدا چاپ را جابجا می‌کند. موقعیت فیلدها در ویرایشگر مطلق باقی می‌ماند.',
@@ -415,7 +417,6 @@ const fa = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'متن عمودی / RTL',
       fpDirection: 'جهت',
       fpDirH: 'H — افقی',
       fpDirV: 'V — عمودی (پشته)',

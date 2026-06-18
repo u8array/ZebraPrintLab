@@ -51,6 +51,8 @@ const hu = {
 
   properties: {
     positionSection: 'Pozíció',
+    optionsSection: 'Beállítások',
+    typographySection: 'Tipográfia',
     name: 'Név',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const hu = {
     tidySection: 'Rendezés',
     tidyUp: 'Rendezés',
     tidyTooltip: 'Automatikus rendezés egyenletes sorba vagy oszlopba',
-    tidyHint: 'Jelölj ki 2+ a rendezéshez',
   },
 
   label: {
@@ -104,6 +105,7 @@ const hu = {
     overridePauseCount: 'Szünetszám felülbírálása',
     overridePauseCountHint: 'Csak a köteg utolsó címkéjét vágja minden szünethatár helyett.',
     outputHeading: 'Kimenet',
+    formatSection: 'Formátum',
     labelShift: 'Címke eltolás (dots)',
     offsetsHeading: 'Eltolások',
     offsetsHint: 'Eltolja a nyomtatás origóját. A mezők pozíciói a szerkesztőben abszolútak maradnak.',
@@ -415,7 +417,6 @@ const hu = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Függőleges / RTL szöveg',
       fpDirection: 'Irány',
       fpDirH: 'H — Vízszintes',
       fpDirV: 'V — Függőleges (rakott)',

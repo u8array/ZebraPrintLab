@@ -51,6 +51,8 @@ const ja = {
 
   properties: {
     positionSection: '位置',
+    optionsSection: 'オプション',
+    typographySection: 'タイポグラフィ',
     name: '名前',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const ja = {
     tidySection: '整頓',
     tidyUp: '整頓',
     tidyTooltip: '均等な行または列に自動配置',
-    tidyHint: '整頓するには2つ以上選択',
   },
 
   label: {
@@ -104,6 +105,7 @@ const ja = {
     overridePauseCount: '一時停止カウントを上書き',
     overridePauseCountHint: '各一時停止境界ではなく、バッチの最後のラベルのみカットします。',
     outputHeading: '出力',
+    formatSection: 'フォーマット',
     labelShift: 'ラベルシフト (dots)',
     offsetsHeading: 'オフセット',
     offsetsHint: '印刷原点をずらします。エディタ内のフィールド位置は絶対のまま。',
@@ -415,7 +417,6 @@ const ja = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: '縦書き / 右から左 テキスト',
       fpDirection: '方向',
       fpDirH: 'H — 横',
       fpDirV: 'V — 縦 (積み重ね)',

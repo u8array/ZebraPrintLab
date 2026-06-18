@@ -51,6 +51,8 @@ const pl = {
 
   properties: {
     positionSection: 'Pozycja',
+    optionsSection: 'Opcje',
+    typographySection: 'Typografia',
     name: 'Nazwa',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const pl = {
     tidySection: 'Uporządkuj',
     tidyUp: 'Uporządkuj',
     tidyTooltip: 'Automatycznie ułóż w równy wiersz lub kolumnę',
-    tidyHint: 'Zaznacz 2+, aby uporządkować',
   },
 
   label: {
@@ -104,6 +105,7 @@ const pl = {
     overridePauseCount: 'Zastąp licznik pauzy',
     overridePauseCountHint: 'Przytnij tylko ostatnią etykietę partii zamiast przy każdej granicy pauzy.',
     outputHeading: 'Wyjście',
+    formatSection: 'Format',
     labelShift: 'Przesunięcie etykiety (dots)',
     offsetsHeading: 'Przesunięcia',
     offsetsHint: 'Przesuwa początek wydruku. Pozycje pól w edytorze pozostają absolutne.',
@@ -415,7 +417,6 @@ const pl = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Pionowy / RTL tekst',
       fpDirection: 'Kierunek',
       fpDirH: 'H — Poziomo',
       fpDirV: 'V — Pionowo (stos)',

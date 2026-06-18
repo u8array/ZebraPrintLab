@@ -51,6 +51,8 @@ const zhHans = {
 
   properties: {
     positionSection: '位置 (毫米)',
+    optionsSection: '选项',
+    typographySection: '排版',
     name: '名称',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const zhHans = {
     tidySection: '整理',
     tidyUp: '整理',
     tidyTooltip: '自动排列成均匀的行或列',
-    tidyHint: '选择 2+ 个以整理',
   },
 
   label: {
@@ -104,6 +105,7 @@ const zhHans = {
     overridePauseCount: '覆盖暂停计数',
     overridePauseCountHint: '仅切批次最后一个标签，而不是每个暂停边界。',
     outputHeading: '输出',
+    formatSection: '格式',
     labelShift: '标签偏移 (dots)',
     offsetsHeading: '偏移',
     offsetsHint: '偏移打印原点。编辑器中字段位置保持绝对。',
@@ -415,7 +417,6 @@ const zhHans = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: '纵向 / 右起 文本',
       fpDirection: '方向',
       fpDirH: 'H — 水平',
       fpDirV: 'V — 垂直 (堆叠)',

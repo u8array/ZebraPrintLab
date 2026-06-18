@@ -51,6 +51,8 @@ const et = {
 
   properties: {
     positionSection: 'Asukoht',
+    optionsSection: 'Valikud',
+    typographySection: 'Tüpograafia',
     name: 'Nimi',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const et = {
     tidySection: 'Korrasta',
     tidyUp: 'Korrasta',
     tidyTooltip: 'Korralda automaatselt ühtlasse ritta või veergu',
-    tidyHint: 'Korrastamiseks vali 2+',
   },
 
   label: {
@@ -104,6 +105,7 @@ const et = {
     overridePauseCount: 'Tühista pausi loendur',
     overridePauseCountHint: 'Lõika ainult partii viimane silt iga pausi piiri asemel.',
     outputHeading: 'Väljund',
+    formatSection: 'Vorming',
     labelShift: 'Etiketi nihe (dots)',
     offsetsHeading: 'Nihked',
     offsetsHint: 'Nihutab trükikoha alguspunkti. Väljade asukohad redaktoris jäävad absoluutseks.',
@@ -415,7 +417,6 @@ const et = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Vertikaalne / RTL tekst',
       fpDirection: 'Suund',
       fpDirH: 'H — Horisontaalne',
       fpDirV: 'V — Vertikaalne (virn)',

@@ -51,6 +51,8 @@ const hr = {
 
   properties: {
     positionSection: 'Položaj',
+    optionsSection: 'Opcije',
+    typographySection: 'Tipografija',
     name: 'Naziv',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const hr = {
     tidySection: 'Posloži',
     tidyUp: 'Posloži',
     tidyTooltip: 'Automatski rasporedi u ravnomjeran red ili stupac',
-    tidyHint: 'Odaberi 2+ za slaganje',
   },
 
   label: {
@@ -104,6 +105,7 @@ const hr = {
     overridePauseCount: 'Premosti brojač pauze',
     overridePauseCountHint: 'Reže samo posljednju etiketu serije umjesto na svakoj granici pauze.',
     outputHeading: 'Izlaz',
+    formatSection: 'Format',
     labelShift: 'Pomak naljepnice (dots)',
     offsetsHeading: 'Pomaci',
     offsetsHint: 'Pomiče ishodište ispisa. Pozicije polja u uredniku ostaju apsolutne.',
@@ -415,7 +417,6 @@ const hr = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Okomiti / RTL tekst',
       fpDirection: 'Smjer',
       fpDirH: 'H — Vodoravno',
       fpDirV: 'V — Okomito (snop)',

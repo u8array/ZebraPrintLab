@@ -51,6 +51,8 @@ const bg = {
 
   properties: {
     positionSection: 'Позиция',
+    optionsSection: 'Опции',
+    typographySection: 'Типография',
     name: 'Име',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const bg = {
     tidySection: 'Подреждане',
     tidyUp: 'Подреждане',
     tidyTooltip: 'Автоматично подреждане в равен ред или колона',
-    tidyHint: 'Изберете 2+ за подреждане',
   },
 
   label: {
@@ -104,6 +105,7 @@ const bg = {
     overridePauseCount: 'Замени брояча на пауза',
     overridePauseCountHint: 'Отрязва само последния етикет от партидата вместо при всяка граница на пауза.',
     outputHeading: 'Изход',
+    formatSection: 'Формат',
     labelShift: 'Отместване на етикета (dots)',
     offsetsHeading: 'Отмествания',
     offsetsHint: 'Премества началото на печат. Позициите на полетата в редактора остават абсолютни.',
@@ -415,7 +417,6 @@ const bg = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Вертикален / RTL текст',
       fpDirection: 'Посока',
       fpDirH: 'H — Хоризонтално',
       fpDirV: 'V — Вертикално (натрупано)',

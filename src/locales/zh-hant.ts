@@ -51,6 +51,8 @@ const zhHant = {
 
   properties: {
     positionSection: '位置 (公釐)',
+    optionsSection: '選項',
+    typographySection: '排版',
     name: '名稱',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const zhHant = {
     tidySection: '整理',
     tidyUp: '整理',
     tidyTooltip: '自動排列成均勻的列或欄',
-    tidyHint: '選擇 2+ 個以整理',
   },
 
   label: {
@@ -104,6 +105,7 @@ const zhHant = {
     overridePauseCount: '覆寫暫停計數',
     overridePauseCountHint: '僅切批次最後一個標籤，而不是每個暫停邊界。',
     outputHeading: '輸出',
+    formatSection: '格式',
     labelShift: '標籤偏移 (dots)',
     offsetsHeading: '偏移',
     offsetsHint: '偏移列印原點。編輯器中欄位位置保持絕對。',
@@ -415,7 +417,6 @@ const zhHant = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: '縱向 / 右起 文字',
       fpDirection: '方向',
       fpDirH: 'H — 水平',
       fpDirV: 'V — 垂直 (堆疊)',

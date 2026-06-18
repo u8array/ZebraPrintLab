@@ -1,5 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/16/solid';
+import { useCollapsibleState } from './useCollapsibleState';
 
 interface CollapsibleSectionProps {
   /** Stable identifier, used as the localStorage key for the open state. */
@@ -7,13 +8,6 @@ interface CollapsibleSectionProps {
   title: ReactNode;
   defaultOpen?: boolean;
   children: ReactNode;
-}
-
-const LS_PREFIX = 'zpl:section:';
-
-function readStored(id: string, fallback: boolean): boolean {
-  const saved = localStorage.getItem(LS_PREFIX + id);
-  return saved === null ? fallback : saved === '1';
 }
 
 /**
@@ -27,22 +21,7 @@ export function CollapsibleSection({
   defaultOpen = true,
   children,
 }: CollapsibleSectionProps) {
-  const [open, setOpen] = useState(() => readStored(id, defaultOpen));
-
-  // Re-sync open state when `id` changes so the component can be reused for
-  // a different section without leaking the previous open state into the new
-  // id's storage slot. React's blessed pattern for deriving state from
-  // props: setState during render under a prev-vs-current guard.
-  // https://react.dev/reference/react/useState#storing-information-from-previous-renders
-  const [prevId, setPrevId] = useState(id);
-  if (prevId !== id) {
-    setPrevId(id);
-    setOpen(readStored(id, defaultOpen));
-  }
-
-  useEffect(() => {
-    localStorage.setItem(LS_PREFIX + id, open ? '1' : '0');
-  }, [id, open]);
+  const [open, setOpen] = useCollapsibleState(id, defaultOpen);
 
   const contentId = `section-content-${id}`;
 

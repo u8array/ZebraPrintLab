@@ -40,10 +40,7 @@ export function BlockTextSettings({ props: p, onChange }: Props) {
   const advance = Math.ceil(zebraGlyphAdvanceDots(p.fontHeight, p.fontWidth));
   const tooNarrow = isBlockTooNarrow(p.blockWidth ?? 0, p.fontHeight, p.fontWidth);
   return (
-    // Indent + left border marks the sub-panel as belonging to the
-    // FELDBLOCK checkbox above; same convention as the Font-Advanced
-    // block in text.tsx.
-    <div className="pl-3 border-l border-border flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <label className={labelCls}>{t.registry.text.dragMode}</label>
         <div className="flex rounded border border-border overflow-hidden text-xs">

@@ -51,6 +51,8 @@ const tr = {
 
   properties: {
     positionSection: 'Konum',
+    optionsSection: 'Seçenekler',
+    typographySection: 'Tipografi',
     name: 'Ad',
     x: 'X',
     y: 'Y',
@@ -81,7 +83,6 @@ const tr = {
     tidySection: 'Düzenle',
     tidyUp: 'Düzenle',
     tidyTooltip: 'Eşit satır veya sütun halinde otomatik düzenle',
-    tidyHint: 'Düzenlemek için 2+ seçin',
   },
 
   label: {
@@ -104,6 +105,7 @@ const tr = {
     overridePauseCount: 'Duraklatma sayısını geçersiz kıl',
     overridePauseCountHint: 'Her duraklatma sınırında değil, partinin yalnızca son etiketini kes.',
     outputHeading: 'Çıktı',
+    formatSection: 'Biçim',
     labelShift: 'Etiket kaydırma (dots)',
     offsetsHeading: 'Ofsetler',
     offsetsHint: 'Yazdırma orijinini kaydırır. Düzenleyicideki alan konumları mutlak kalır.',
@@ -415,7 +417,6 @@ const tr = {
       rotationI: '180° (I)',
       rotationB: '270° (B)',
       reverse: 'Invert',
-      fpAdvanced: 'Dikey / RTL metin',
       fpDirection: 'Yön',
       fpDirH: 'H — Yatay',
       fpDirV: 'V — Dikey (yığın)',

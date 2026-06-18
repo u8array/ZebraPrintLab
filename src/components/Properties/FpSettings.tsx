@@ -55,7 +55,7 @@ export function FpSettings({ props: p, onChange }: Props) {
     { v: "R", title: t.registry.text.fpDirR },
   ];
   return (
-    <div className="pl-3 border-l border-border flex flex-col gap-3">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <label className={labelCls}>{t.registry.text.fpDirection}</label>
         <div className="flex gap-1" role="group" aria-label={t.registry.text.fpDirection}>
