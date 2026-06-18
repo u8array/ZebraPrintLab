@@ -33,6 +33,8 @@ import {
   XMarkIcon,
   SunIcon,
   MoonIcon,
+  ChevronDoubleLeftIcon,
+  ChevronDoubleRightIcon,
 } from "@heroicons/react/16/solid";
 import { useLabelStore, useHistory, selectLabelaryNoticeRequired } from "../store/labelStore";
 import { LabelaryNoticeModal } from "./Output/LabelaryNoticeModal";
@@ -47,6 +49,33 @@ import { useDesignFileActions } from "../hooks/useDesignFileActions";
 import { useCsvImportActions } from "../hooks/useCsvImportActions";
 import { useZplImportExport } from "../hooks/useZplImportExport";
 import { useOutputPanel, OUTPUT_DEFAULT_H } from "../hooks/useOutputPanel";
+import { useCollapsiblePanel } from "../hooks/useCollapsiblePanel";
+
+/** Thin clickable rail shown in place of a collapsed side panel; clicking it
+ *  brings the panel back. Chevrons point toward the canvas (the panel's slot). */
+function ExpandStrip({
+  side,
+  onExpand,
+  title,
+}: {
+  side: "left" | "right";
+  onExpand: () => void;
+  title: string;
+}) {
+  const Icon = side === "left" ? ChevronDoubleRightIcon : ChevronDoubleLeftIcon;
+  return (
+    <button
+      onClick={onExpand}
+      title={title}
+      aria-label={title}
+      className={`w-5 shrink-0 ${
+        side === "left" ? "border-r" : "border-l"
+      } border-border bg-surface hover:bg-surface-2 flex items-start justify-center pt-2 text-muted hover:text-text transition-colors`}
+    >
+      <Icon className="w-3.5 h-3.5" />
+    </button>
+  );
+}
 
 export function AppShell() {
   const t = useT();
@@ -111,6 +140,8 @@ export function AppShell() {
     handlePrint,
   } = useZplImportExport();
   const outputPanel = useOutputPanel(OUTPUT_DEFAULT_H);
+  const leftPanel = useCollapsiblePanel("zpl-panel-left");
+  const rightPanel = useCollapsiblePanel("zpl-panel-right");
   // Imperative handle to the canvas for actions PropertiesPanel needs live
   // render bboxes for (e.g. align-to-label centring).
   const canvasRef = useRef<LabelCanvasHandle>(null);
@@ -322,9 +353,23 @@ export function AppShell() {
       {/* Main area: 3 columns */}
       <DndContext sensors={sensors}>
       <div className="flex flex-1 min-h-0">
-        <aside className="w-44 shrink-0 border-r border-border bg-surface overflow-y-auto">
-          <ObjectPalette />
-        </aside>
+        {leftPanel.collapsed ? (
+          <ExpandStrip side="left" onExpand={leftPanel.expand} title={t.app.expand} />
+        ) : (
+          <aside className="w-44 shrink-0 border-r border-border bg-surface overflow-y-auto">
+            <div className="sticky top-0 z-10 flex justify-end border-b border-border bg-surface px-1 py-0.5">
+              <button
+                onClick={leftPanel.collapse}
+                title={t.app.collapse}
+                aria-label={t.app.collapse}
+                className="p-0.5 text-muted hover:text-text transition-colors"
+              >
+                <ChevronDoubleLeftIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <ObjectPalette />
+          </aside>
+        )}
 
         <main className="flex-1 overflow-hidden">
           <LabelCanvas
@@ -343,7 +388,11 @@ export function AppShell() {
           />
         </main>
 
-        <RightSidebar canvasRef={canvasRef} />
+        {rightPanel.collapsed ? (
+          <ExpandStrip side="right" onExpand={rightPanel.expand} title={t.app.expand} />
+        ) : (
+          <RightSidebar canvasRef={canvasRef} onCollapse={rightPanel.collapse} />
+        )}
       </div>
       </DndContext>
 
