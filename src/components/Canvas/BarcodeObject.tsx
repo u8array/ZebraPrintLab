@@ -61,30 +61,19 @@ export function BarcodeObject({
   snap,
 }: KonvaObjectProps) {
   const groupRef = useRef<Konva.Group>(null);
-  const textRef = useRef<Konva.Text>(null);
+  const overlayGroupRef = useRef<Konva.Group>(null);
   const colors = useColorScheme();
   // Vera Mono (HRI) loads async; Konva won't repaint on an unchanged
   // fontFamily once the FontFace resolves. Keying the overlay on this
   // version remounts it on `loadingdone` for a fresh paint.
   const fontVersion = useFontCacheVersion();
 
-  // Exclude the HRI text from the parent Group's getClientRect. This anchors
-  // the resize at the bar top (logmars: was anchoring at text top above bars)
-  // and keeps the Transformer's bbox tight around the bars, eliminating the
-  // (h + textArea)*sy vs h*sy + textArea discrepancy during drag.
-  const setTextRef = useCallback((node: Konva.Text | null) => {
-    textRef.current = node;
-    if (node) {
-      node.getSelfRect = () => ({ x: 0, y: 0, width: 0, height: 0 });
-    }
-  }, []);
-
-  // Multi-text HRI variants (EAN/UPC digits) are wrapped in a Group whose
-  // getClientRect is overridden to zero, so the parent barcode Group's
-  // bbox collapses to the bar image only. Same intent as setTextRef but
-  // applied at the group level: avoids threading the ref through 10+
-  // individual Text components.
-  const excludeGroupFromBbox = useCallback((node: Konva.Group | null) => {
+  // Overlay group (HRI text + start/stop glyphs, or EAN/UPC digits) with
+  // getClientRect zeroed so the parent bbox stays tight on the bars, and the
+  // counter-scale target during resize so every element keeps constant size
+  // while the bars stretch (see handleTransform), not just the centered text.
+  const setOverlayGroupRef = useCallback((node: Konva.Group | null) => {
+    overlayGroupRef.current = node;
     if (node) {
       node.getClientRect = () => ({ x: 0, y: 0, width: 0, height: 0 });
     }
@@ -352,13 +341,10 @@ export function BarcodeObject({
         // here; render directly without an offset wrapper.
         overlayContent = eanOverlay.nodes;
       } else {
-        // Other 1D: single centered text. textRef is wired only for the
-        // upright case so handleTransform/End can counter-scale it; for
-        // rotated paths the counter-scale math doesn't apply (would
-        // scale along upright-Y which after R/B is screen-X), so the
-        // ref stays undefined and the bars+text just scale together
-        // during a rotated resize drag, a minor visual nit with no broken
-        // print output.
+        // Other 1D: centered text, optionally flanked by start/stop glyphs.
+        // Counter-scaled as a group when upright (handleTransform); rotated
+        // paths can't (upright-Y is screen-X after R/B) and scale with the
+        // bars, a minor visual nit with no broken print output.
         const fontFamily =
           resolveMwValue(hri?.fontFamily, moduleWidth) ?? HRI_FONT_A;
         const textY = isTextAbove
@@ -384,7 +370,6 @@ export function BarcodeObject({
         const dataText = (
           <Text
             key="hri"
-            ref={isUpright ? setTextRef : undefined}
             x={ub.barLeftPx} y={textY} width={Math.max(ub.barW, 1)}
             text={displayText} fontSize={textFontSize}
             fontFamily={fontFamily}
@@ -395,33 +380,28 @@ export function BarcodeObject({
         overlayContent = startStopGlyphs ? [dataText, ...startStopGlyphs] : dataText;
       }
 
-      // Counter-scale only applies to upright Other 1D. textLocalY here
-      // returns the position in inner-Group local coords (bbox-relative
-      // upright). For above-bars (logmars): barTopPx - (font+gap)/sy.
-      // For below: barTopPx + barH + gap/sy.
+      // Counter-scale the overlay group around the bar edge it hugs (bottom
+      // below-bars, top above-bars) so an element at local y c lands at
+      // anchor*sy + (c - anchor): constant size, gap to the bars preserved.
       const useUprightTransform = isUpright && !isEanUpc;
-      const textLocalY = (sy: number) =>
-        isTextAbove
-          ? ub.barTopPx - (textFontSize + aboveGapPx - aboveBottomPad) / sy
-          : ub.barTopPx + ub.barH + (textGap - glyphTopPad) / sy;
+      const counterAnchorY = isTextAbove
+        ? ub.barTopPx
+        : ub.barTopPx + ub.barH;
       const handleTransform = () => {
         const grp = groupRef.current;
-        const txt = textRef.current;
-        if (!grp || !txt) return;
+        const overlay = overlayGroupRef.current;
+        if (!grp || !overlay) return;
         const sy = grp.scaleY();
         if (sy <= 0) return;
-        txt.scaleY(1 / sy);
-        txt.y(textLocalY(sy));
+        overlay.scaleY(1 / sy);
+        overlay.y(counterAnchorY * (1 - 1 / sy));
       };
-      // react-konva does not track imperatively-set scaleY/y; reset
-      // both so the next drag starts clean. For logmars the JSX y is a
-      // constant non-zero value, so without explicit reset react-konva
-      // would not re-apply it on the post-commit render.
+      // react-konva doesn't track imperative scaleY/y; reset to JSX defaults.
       const handleTransformEnd = () => {
-        const txt = textRef.current;
-        if (!txt) return;
-        txt.scaleY(1);
-        txt.y(textLocalY(1));
+        const overlay = overlayGroupRef.current;
+        if (!overlay) return;
+        overlay.scaleY(1);
+        overlay.y(0);
       };
 
       // Clip-expansion is upright-EAN/UPC only, absent on other paths
@@ -488,7 +468,7 @@ export function BarcodeObject({
                 listening={false}
               />
             )}
-            <Group key={`hri-${fontVersion}`} ref={excludeGroupFromBbox}>{overlayContent}</Group>
+            <Group key={`hri-${fontVersion}`} ref={setOverlayGroupRef}>{overlayContent}</Group>
           </Group>
         </Group>
       );
