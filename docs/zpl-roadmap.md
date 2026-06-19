@@ -15,7 +15,7 @@ What's supported, what's next, what's planned.
 |---|---|
 | `Coming soon` | Next sweep of registry / parser work, no infrastructure dependency |
 | `Native build` | Requires bidirectional printer connection (host queries, calibration feedback, RFID read, serial config); waits for Tauri |
-| `Out of scope` | Intentionally not modelled (e.g. ^SO RTC offset, ~SE encoding-table tilde-form) — see related Modal-tab field for the supported alternative |
+| `Out of scope` | Intentionally not modelled (e.g. ~SE encoding-table tilde-form) — see related Modal-tab field for the supported alternative |
 
 The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encoding & Language / Identity) is now shipped; commands that didn't make the first cut sit under `Coming soon` and slot into the existing tab UI without infrastructure work.
 
@@ -55,11 +55,11 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 | `[x]` | `^FB` | multi line text block | |
 | `[x]` | `^TB` | text block | |
 | `[x]` | `^FN` | variable placeholder | |
-| `[x]` | `^FV` | variable data | |
+| `[ ]` | `^FV` | variable data | `Coming soon` |
 | `[x]` | `^FE` | field number embed character | |
 | `[x]` | `^FC` | field clock (date / time) | |
 | `[x]` | `^BY` | barcode field default | |
-| `[ ]` | `^FM` | multiple field origins | `Coming soon` |
+| `[ ]` | `^FM` | PDF417/MicroPDF417 structured-append origins (niche; ignored by all other commands) | `Out of scope` |
 | `[x]` | `^FP` | vertical / reverse field layout (CJK / RTL) | |
 | `[ ]` | `^CO` | font cache size | `Coming soon` |
 | `[ ]` | `^CP` | change parser | `Coming soon` |
@@ -75,7 +75,7 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 | `[x]` | `^CF` | change default font | |
 | `[x]` | `^CI` | international encoding | |
 | `[x]` | `^CW` | font alias (printer resident) | |
-| `[ ]` | `^FL` | font linking | `Native build` |
+| `[x]` | `^FL` | font linking | |
 | `[ ]` | `^LF` | list font links | `Native build` |
 | `[ ]` | `~DB` | download bitmap font | `Native build` |
 | `[ ]` | `~DS` | download scalable font | `Native build` |
@@ -172,7 +172,7 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 | `[x]` | `^JZ` | reprint after error | |
 | `[x]` | `^JT` | head test interval | |
 | `[x]` | `~TA` | tear off adjust | |
-| `[ ]` | `^PA` | advanced text properties | `Coming soon` |
+| `[x]` | `^PA` | advanced text properties | |
 | `[x]` | `^JH` | early warning settings | |
 | `[x]` | `~JS` | change backfeed sequence | |
 | `[ ]` | `^PF` | slew given number of dot rows | `Coming soon` |
@@ -192,7 +192,7 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 |:-:|---|---|---|
 | `[x]` | `^ST` | set date & time (static + live-clock mode) | |
 | `[x]` | `^KD` | date & time format | |
-| `[ ]` | `^SO` | RTC offset | `Out of scope` |
+| `[x]` | `^SO` | RTC offset (secondary / tertiary clock) | |
 
 ## Encoding & language
 
