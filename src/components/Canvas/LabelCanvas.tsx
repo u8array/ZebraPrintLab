@@ -853,17 +853,19 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
         </button>
         <div className="w-px h-3.5 bg-border mx-0.5" />
         <Tooltip content={`${t.app.rotateView} (R)`}>
+          {/* Degree readout lives inside the button so the whole chip rotates,
+              not just the arrow. */}
           <button
             onClick={rotateView}
             aria-label={t.app.rotateView}
-            className={`w-6 h-6 flex items-center justify-center text-sm transition-colors ${viewRotation !== 0 ? "text-accent" : "text-muted hover:text-text"}`}
+            className={`h-6 px-1.5 flex items-center justify-center gap-1 text-sm transition-colors ${viewRotation !== 0 ? "text-accent" : "text-muted hover:text-text"}`}
           >
-            ↻
+            <span>↻</span>
+            {viewRotation !== 0 && (
+              <span className="font-mono text-[10px]">{viewRotation}°</span>
+            )}
           </button>
         </Tooltip>
-        {viewRotation !== 0 && (
-          <span className="font-mono text-[10px] text-accent w-6 text-center">{viewRotation}°</span>
-        )}
       </div>
       {containerSize.width > 0 && (
         <Stage

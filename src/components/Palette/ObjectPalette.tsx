@@ -50,39 +50,42 @@ function PaletteEntry({ id, type, icon, label, defaultSize, propsOverride, isFav
   };
 
   return (
+    // Pointer-drag listeners live on the whole row so it's grabbable anywhere;
+    // keyboard activation + role=button stay on the grip (setActivatorNodeRef +
+    // attributes) so the row is a plain div, not an interactive element wrapping
+    // the star button. Double-click still spawns.
     <div
       ref={setNodeRef}
+      {...listeners}
       onDoubleClick={handleDoubleClick}
+      style={{ touchAction: 'none' }}
       className={`
         group flex items-center gap-2 px-1.5 py-1.5 rounded
         border border-transparent
         hover:border-border-2 hover:bg-surface-2
-        select-none transition-colors
+        cursor-grab active:cursor-grabbing select-none transition-colors
         ${isDragging ? 'opacity-40' : ''}
       `}
     >
-      {/* The grip is the drag activator so the row stays a plain container;
-          a nested interactive (the star) inside a draggable role=button row
-          would be invalid. The whole row still spawns on double-click. */}
       <button
         ref={setActivatorNodeRef}
         type="button"
         aria-label={label}
-        style={{ touchAction: 'none' }}
         {...attributes}
-        {...listeners}
         className="-mr-1 shrink-0 p-0.5 rounded cursor-grab active:cursor-grabbing text-muted opacity-40 group-hover:opacity-70 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent transition-opacity"
       >
         <DragHandleIcon className="w-2 h-3.5" />
       </button>
       <span className="font-mono text-[11px] text-muted group-hover:text-accent w-6 text-center shrink-0 transition-colors">{icon}</span>
       <span className="text-xs text-text truncate">{label}</span>
-      {/* Stop click + dblclick (the row's double-click spawns an object) so a
-          star tap only toggles. */}
+      {/* Stop pointerdown (the row's drag activator), click, and dblclick (the
+          row's double-click spawns an object) so a star tap only toggles and a
+          small drag on the star never starts a palette drag. */}
       <button
         type="button"
         aria-label={favoriteLabel}
         aria-pressed={isFavorite}
+        onPointerDown={(e) => e.stopPropagation()}
         onDoubleClick={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();
