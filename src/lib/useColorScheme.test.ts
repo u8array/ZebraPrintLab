@@ -19,13 +19,20 @@ const SHARED: Record<string, string> = {
   error: '--color-error',
 };
 
-/** Extract `--color-*: #hex;` declarations from the first `{...}` block after
- *  the given selector. The theme blocks have no nested braces. */
+/** Extract `--color-*: #hex;` declarations from the `{...}` block after the
+ *  given selector. Tracks brace depth so a future nested rule or comment
+ *  inside the block doesn't truncate the parse at the wrong `}`. */
 function blockVars(selector: string): Record<string, string> {
   const start = css.indexOf(selector);
   if (start < 0) throw new Error(`theme block not found: ${selector}`);
   const open = css.indexOf('{', start);
-  const body = css.slice(open + 1, css.indexOf('}', open));
+  let depth = 1;
+  let i = open + 1;
+  for (; depth > 0 && i < css.length; i++) {
+    if (css[i] === '{') depth++;
+    else if (css[i] === '}') depth--;
+  }
+  const body = css.slice(open + 1, i - 1);
   const vars: Record<string, string> = {};
   for (const m of body.matchAll(/(--color-[\w-]+):\s*(#[0-9a-fA-F]+)\s*;/g)) {
     const [, name, value] = m;
@@ -48,10 +55,13 @@ describe('canvas colors mirror the index.css theme tokens', () => {
   }
 });
 
-/** WCAG relative luminance from a `#rrggbb` string. */
+/** WCAG relative luminance from a `#rgb` or `#rrggbb` string. */
 function luminance(hex: string): number {
+  if (!hex) throw new Error('luminance: missing color (a theme token was renamed or removed?)');
+  const full =
+    hex.length === 4 ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}` : hex;
   const ch = [1, 3, 5].map((i) => {
-    const v = parseInt(hex.slice(i, i + 2), 16) / 255;
+    const v = parseInt(full.slice(i, i + 2), 16) / 255;
     return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
   });
   return 0.2126 * ch[0]! + 0.7152 * ch[1]! + 0.0722 * ch[2]!;
