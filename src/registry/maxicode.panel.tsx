@@ -3,6 +3,7 @@ import { useT } from "../lib/useT";
 import { inputCls, labelCls } from "../components/Properties/styles";
 import { validateMaxicodeBwip } from "../components/Canvas/bwipHelpers";
 import { RotationSelect } from "../components/Properties/RotationSelect";
+import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
 import { type MaxicodeProps, ALL_MODES } from "./maxicode";
 
 export const maxicodePanel: ObjectTypeUi<MaxicodeProps> = {
@@ -21,40 +22,42 @@ export const maxicodePanel: ObjectTypeUi<MaxicodeProps> = {
         ? { text: advisory, className: "text-muted" }
         : null;
     return (
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{loc.content}</label>
+      <>
+        <StaticSectionCard title={t.properties.contentSection}>
           <input
             className={inputCls}
+            aria-label={loc.content}
             value={p.content}
             onChange={(e) => onChange({ content: e.target.value })}
           />
-        </div>
+        </StaticSectionCard>
 
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{loc.mode}</label>
-          <select
-            className={inputCls}
-            value={p.mode}
-            onChange={(e) =>
-              onChange({ mode: Number(e.target.value) as MaxicodeProps["mode"] })
-            }
-          >
-            {ALL_MODES.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-          {diagnostic && (
-            <p className={`text-[10px] leading-snug ${diagnostic.className}`}>
-              {diagnostic.text}
-            </p>
-          )}
-        </div>
+        <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
+          <div className="flex flex-col gap-1">
+            <label className={labelCls}>{loc.mode}</label>
+            <select
+              className={inputCls}
+              value={p.mode}
+              onChange={(e) =>
+                onChange({ mode: Number(e.target.value) as MaxicodeProps["mode"] })
+              }
+            >
+              {ALL_MODES.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+            {diagnostic && (
+              <p className={`text-[10px] leading-snug ${diagnostic.className}`}>
+                {diagnostic.text}
+              </p>
+            )}
+          </div>
 
-        <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
-      </div>
+          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
+        </SectionCard>
+      </>
     );
   },
 };

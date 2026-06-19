@@ -58,6 +58,8 @@ const it = {
   properties: {
     positionSection: 'Posizione',
     optionsSection: 'Opzioni',
+    contentSection: 'Contenuto',
+    settingsSection: 'Impostazioni',
     typographySection: 'Tipografia',
     name: 'Nome',
     x: 'X',

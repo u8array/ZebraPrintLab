@@ -58,6 +58,8 @@ const lv = {
   properties: {
     positionSection: 'Pozīcija',
     optionsSection: 'Opcijas',
+    contentSection: 'Saturs',
+    settingsSection: 'Iestatījumi',
     typographySection: 'Tipogrāfija',
     name: 'Nosaukums',
     x: 'X',

@@ -58,6 +58,8 @@ const lt = {
   properties: {
     positionSection: 'Padėtis',
     optionsSection: 'Parinktys',
+    contentSection: 'Turinys',
+    settingsSection: 'Nustatymai',
     typographySection: 'Tipografija',
     name: 'Pavadinimas',
     x: 'X',

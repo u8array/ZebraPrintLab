@@ -58,6 +58,8 @@ const ar = {
   properties: {
     positionSection: 'الموضع (مم)',
     optionsSection: 'خيارات',
+    contentSection: 'المحتوى',
+    settingsSection: 'الإعدادات',
     typographySection: 'الطباعة',
     name: 'الاسم',
     x: 'X',

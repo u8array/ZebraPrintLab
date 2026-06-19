@@ -58,6 +58,8 @@ const bg = {
   properties: {
     positionSection: 'Позиция',
     optionsSection: 'Опции',
+    contentSection: 'Съдържание',
+    settingsSection: 'Настройки',
     typographySection: 'Типография',
     name: 'Име',
     x: 'X',

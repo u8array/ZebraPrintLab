@@ -57,7 +57,9 @@ const fi = {
 
   properties: {
     positionSection: 'Sijainti',
-    optionsSection: 'Asetukset',
+    optionsSection: 'Valinnat',
+    contentSection: 'Sisältö',
+    settingsSection: 'Asetukset',
     typographySection: 'Typografia',
     name: 'Nimi',
     x: 'X',

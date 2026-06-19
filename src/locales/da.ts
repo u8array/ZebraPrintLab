@@ -57,7 +57,9 @@ const da = {
 
   properties: {
     positionSection: 'Position',
-    optionsSection: 'Indstillinger',
+    optionsSection: 'Valg',
+    contentSection: 'Indhold',
+    settingsSection: 'Indstillinger',
     typographySection: 'Typografi',
     name: 'Navn',
     x: 'X',

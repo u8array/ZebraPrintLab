@@ -2,6 +2,7 @@ import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { NumberInput } from '../components/Properties/NumberInput';
+import { SectionCard } from '../components/Properties/SectionCard';
 import type { EllipseProps } from './ellipse';
 
 export const ellipsePanel: ObjectTypeUi<EllipseProps> = {
@@ -9,7 +10,7 @@ export const ellipsePanel: ObjectTypeUi<EllipseProps> = {
     const t = useT();
     const p = obj.props;
     return (
-      <div className="flex flex-col gap-3">
+      <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
         {p.lockAspect ? (
           <NumberInput
             label={t.registry.circle.diameter}
@@ -100,7 +101,7 @@ export const ellipsePanel: ObjectTypeUi<EllipseProps> = {
           />
           <span className={labelCls}>{t.registry.ellipse.reverse}</span>
         </label>
-      </div>
+      </SectionCard>
     );
   },
 };

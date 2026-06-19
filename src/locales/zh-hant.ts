@@ -58,6 +58,8 @@ const zhHant = {
   properties: {
     positionSection: '位置 (公釐)',
     optionsSection: '選項',
+    contentSection: '內容',
+    settingsSection: '設定',
     typographySection: '排版',
     name: '名稱',
     x: 'X',

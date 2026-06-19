@@ -3,6 +3,7 @@ import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { RotationSelect } from '../components/Properties/RotationSelect';
+import { SectionCard } from '../components/Properties/SectionCard';
 import { type SymbolProps, type SymbolCode, GS_SYMBOLS } from './symbol';
 
 export const symbolPanel: ObjectTypeUi<SymbolProps> = {
@@ -10,7 +11,7 @@ export const symbolPanel: ObjectTypeUi<SymbolProps> = {
     const t = useT();
     const p = obj.props;
     return (
-      <div className="flex flex-col gap-3">
+      <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.registry.symbol.symbol}</label>
           <select
@@ -43,7 +44,7 @@ export const symbolPanel: ObjectTypeUi<SymbolProps> = {
           value={p.rotation}
           onChange={(rotation) => onChange({ rotation })}
         />
-      </div>
+      </SectionCard>
     );
   },
 };

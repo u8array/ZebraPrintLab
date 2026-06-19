@@ -6,6 +6,7 @@ import { filterContent, hasValidLength, type ContentSpec } from './contentSpec';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { TemplateContentInput } from '../components/Properties/TemplateContentInput';
+import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import type { Barcode1DProps } from './barcode1d';
 
 /** Per-symbology locale block: labels rendered by the panel. */
@@ -35,89 +36,93 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
       const loc = config.locale(t);
       const p = obj.props;
       return (
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <label className={labelCls}>{loc.content}</label>
-            <TemplateContentInput
-              objectId={obj.id}
-              multiline={false}
-              value={p.content}
-              onChange={(content) => onChange({ content })}
-              sanitise={(raw) =>
-                // Preserve `«name»` markers; sanitise the literal slices between them.
-                raw
-                  .split(/(«[^»]+»)/)
-                  .map((s, i) =>
-                    i % 2 === 0 ? filterContent(s, config.contentSpec) : s,
-                  )
-                  .join('')
-              }
-              maxLength={config.contentSpec?.maxLength}
-              placeholder={loc.placeholder}
+        <>
+          <StaticSectionCard title={t.properties.contentSection}>
+            <div className="flex flex-col gap-1">
+              <label className={labelCls}>{loc.content}</label>
+              <TemplateContentInput
+                objectId={obj.id}
+                multiline={false}
+                value={p.content}
+                onChange={(content) => onChange({ content })}
+                sanitise={(raw) =>
+                  // Preserve `«name»` markers; sanitise the literal slices between them.
+                  raw
+                    .split(/(«[^»]+»)/)
+                    .map((s, i) =>
+                      i % 2 === 0 ? filterContent(s, config.contentSpec) : s,
+                    )
+                    .join('')
+                }
+                maxLength={config.contentSpec?.maxLength}
+                placeholder={loc.placeholder}
+              />
+              {!hasValidLength(p.content, config.contentSpec) && loc.placeholder && (
+                <p className="font-mono text-[10px] text-warning">{loc.placeholder}</p>
+              )}
+            </div>
+          </StaticSectionCard>
+
+          <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
+            <NumberInput
+              label={loc.height}
+              value={p.height}
+              min={1}
+              disabled={config.heightLocked}
+              readOnly={config.heightLocked}
+              onChange={(height) => onChange({ height })}
             />
-            {!hasValidLength(p.content, config.contentSpec) && loc.placeholder && (
-              <p className="font-mono text-[10px] text-amber-400">{loc.placeholder}</p>
+
+            <NumberInput
+              label={loc.moduleWidth}
+              value={p.moduleWidth}
+              min={1}
+              max={10}
+              onChange={(moduleWidth) => onChange({ moduleWidth })}
+            />
+
+            {!config.interpretationLocked && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="accent-accent"
+                  checked={p.printInterpretation}
+                  onChange={(e) => onChange({ printInterpretation: e.target.checked })}
+                />
+                <span className={labelCls}>{loc.printInterpretation}</span>
+              </label>
             )}
-          </div>
 
-          <NumberInput
-            label={loc.height}
-            value={p.height}
-            min={1}
-            disabled={config.heightLocked}
-            readOnly={config.heightLocked}
-            onChange={(height) => onChange({ height })}
-          />
+            {!config.interpretationLocked && config.hriAboveConfigurable && p.printInterpretation && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="accent-accent"
+                  checked={p.printInterpretationAbove ?? false}
+                  onChange={(e) => onChange({ printInterpretationAbove: e.target.checked })}
+                />
+                <span className={labelCls}>{t.registry.text.hriAbove}</span>
+              </label>
+            )}
 
-          <NumberInput
-            label={loc.moduleWidth}
-            value={p.moduleWidth}
-            min={1}
-            max={10}
-            onChange={(moduleWidth) => onChange({ moduleWidth })}
-          />
+            {config.hasCheckDigit && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="accent-accent"
+                  checked={p.checkDigit}
+                  onChange={(e) => onChange({ checkDigit: e.target.checked })}
+                />
+                <span className={labelCls}>{loc.checkDigit}</span>
+              </label>
+            )}
 
-          {!config.interpretationLocked && (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="accent-accent"
-                checked={p.printInterpretation}
-                onChange={(e) => onChange({ printInterpretation: e.target.checked })}
-              />
-              <span className={labelCls}>{loc.printInterpretation}</span>
-            </label>
-          )}
-
-          {!config.interpretationLocked && config.hriAboveConfigurable && p.printInterpretation && (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="accent-accent"
-                checked={p.printInterpretationAbove ?? false}
-                onChange={(e) => onChange({ printInterpretationAbove: e.target.checked })}
-              />
-              <span className={labelCls}>{t.registry.text.hriAbove}</span>
-            </label>
-          )}
-
-          {config.hasCheckDigit && (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="accent-accent"
-                checked={p.checkDigit}
-                onChange={(e) => onChange({ checkDigit: e.target.checked })}
-              />
-              <span className={labelCls}>{loc.checkDigit}</span>
-            </label>
-          )}
-
-          <RotationSelect
-            value={p.rotation}
-            onChange={(rotation) => onChange({ rotation })}
-          />
-        </div>
+            <RotationSelect
+              value={p.rotation}
+              onChange={(rotation) => onChange({ rotation })}
+            />
+          </SectionCard>
+        </>
       );
     },
   };

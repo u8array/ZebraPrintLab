@@ -58,6 +58,8 @@ const hr = {
   properties: {
     positionSection: 'Položaj',
     optionsSection: 'Opcije',
+    contentSection: 'Sadržaj',
+    settingsSection: 'Postavke',
     typographySection: 'Tipografija',
     name: 'Naziv',
     x: 'X',

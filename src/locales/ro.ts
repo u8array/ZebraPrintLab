@@ -58,6 +58,8 @@ const ro = {
   properties: {
     positionSection: 'Poziție',
     optionsSection: 'Opțiuni',
+    contentSection: 'Conținut',
+    settingsSection: 'Setări',
     typographySection: 'Tipografie',
     name: 'Nume',
     x: 'X',

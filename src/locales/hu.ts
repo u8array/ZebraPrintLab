@@ -57,7 +57,9 @@ const hu = {
 
   properties: {
     positionSection: 'Pozíció',
-    optionsSection: 'Beállítások',
+    optionsSection: 'Lehetőségek',
+    contentSection: 'Tartalom',
+    settingsSection: 'Beállítások',
     typographySection: 'Tipográfia',
     name: 'Név',
     x: 'X',

@@ -58,6 +58,8 @@ const et = {
   properties: {
     positionSection: 'Asukoht',
     optionsSection: 'Valikud',
+    contentSection: 'Sisu',
+    settingsSection: 'Sätted',
     typographySection: 'Tüpograafia',
     name: 'Nimi',
     x: 'X',

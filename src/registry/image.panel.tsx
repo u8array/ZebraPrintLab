@@ -15,6 +15,7 @@ import {
 } from '../lib/storagePath';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Tooltip } from '../components/ui/Tooltip';
+import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import type { ImageProps } from './image';
 
 export const imagePanel: ObjectTypeUi<ImageProps> = {
@@ -81,197 +82,202 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
     const storedAs = p.storedAs;
 
     return (
-      <div className="flex flex-col gap-3">
-        {/* Image select / upload */}
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.image.source}</label>
-          {allImages.length > 0 && (
-            <div className="flex items-center gap-1">
-              <select
-                className={`${inputCls} flex-1`}
-                value={p.imageId}
-                onChange={(e) => handleImageSelect(e.target.value)}
-              >
-                <option value="">{t.registry.image.selectImage}</option>
-                {allImages.map((img) => (
-                  <option key={img.id} value={img.id}>{img.name}</option>
-                ))}
-              </select>
-              {/* Delete the *cached* file (data-URL) from imageCache +
-                  localStorage. Different from removing the image-object
-                  via Del: this clears the bytes shared across all
-                  objects referencing the same imageId. Skip when the
-                  current image-object has no source selected. */}
-              {p.imageId && (
-                <Tooltip content={t.registry.image.removeFromCache}>
-                  <button
-                    type="button"
-                    className="p-1.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors shrink-0"
-                    aria-label={t.registry.image.removeFromCache}
-                    onClick={() => setPendingCacheDelete(true)}
-                  >
-                    <TrashIcon className="w-3.5 h-3.5" />
-                  </button>
-                </Tooltip>
-              )}
-            </div>
-          )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleUpload(file);
-              e.target.value = '';
-            }}
-          />
-          <button
-            type="button"
-            className={buttonCls}
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-          >
-            {uploading ? t.registry.image.uploading : t.registry.image.upload}
-          </button>
-          {uploadFailed && (
-            <p className="text-[10px] font-mono text-red-400">{t.registry.image.uploadError}</p>
-          )}
-        </div>
-
-        {/* Preview thumbnail */}
-        {cached && (
+      <>
+        <StaticSectionCard title={t.properties.contentSection}>
+          {/* Image select / upload */}
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.image.preview}</label>
-            <img
-              src={cached.dataUrl}
-              alt={cached.name}
-              className="max-w-full max-h-20 object-contain rounded border border-border bg-white"
-            />
-            <span className="text-[10px] text-muted font-mono">
-              {cached.width} × {cached.height} px
-            </span>
-          </div>
-        )}
-
-        {/* Width in dots */}
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.image.widthDots}</label>
-          <input
-            type="number"
-            className={inputCls}
-            value={p.widthDots}
-            min={8}
-            step={8}
-            onChange={(e) => handleWidthChange(Number(e.target.value))}
-          />
-        </div>
-
-        {/* Mono threshold */}
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.image.threshold}</label>
-          <input
-            type="range"
-            min={1}
-            max={255}
-            value={p.threshold}
-            onChange={(e) => handleThresholdChange(Number(e.target.value))}
-            className="accent-accent"
-          />
-          <span className="text-[10px] text-muted font-mono text-right">{p.threshold}</span>
-        </div>
-
-        {/* Printer storage (~DY + ^XG). Section label + info icon are
-            always visible so the feature is discoverable in both states;
-            the body switches between an Activate-button (off) and the
-            device/name editor (on). Border-top separates it visually
-            from the rendering properties above. */}
-        <div className="flex flex-col gap-1 mt-1 pt-3 border-t border-border">
-          <div className="flex items-center gap-2">
-            <label className={labelCls}>{t.registry.image.storage}</label>
-            <Tooltip content={t.registry.image.storeOnPrinterHint}>
-              <InformationCircleIcon className="w-3 h-3 text-muted/60 cursor-help shrink-0" />
-            </Tooltip>
-          </div>
-          {storedAs ? (
-            <>
-              <div className="grid grid-cols-[auto_1fr] gap-2">
+            <label className={labelCls}>{t.registry.image.source}</label>
+            {allImages.length > 0 && (
+              <div className="flex items-center gap-1">
                 <select
-                  className={inputCls}
-                  value={storedAs.device}
-                  onChange={(e) =>
-                    onChange({
-                      storedAs: {
-                        ...storedAs,
-                        device: e.target.value as StorageDevice,
-                      },
-                    })
-                  }
+                  className={`${inputCls} flex-1`}
+                  value={p.imageId}
+                  onChange={(e) => handleImageSelect(e.target.value)}
                 >
-                  {STORAGE_DEVICES.map((d) => (
-                    <option key={d} value={d}>{d}:</option>
+                  <option value="">{t.registry.image.selectImage}</option>
+                  {allImages.map((img) => (
+                    <option key={img.id} value={img.id}>{img.name}</option>
                   ))}
                 </select>
-                <input
-                  className={inputCls}
-                  value={storedAs.name}
-                  maxLength={MAX_STORAGE_NAME_LEN}
-                  onChange={(e) => {
-                    const next = e.target.value
-                      .toUpperCase()
-                      .replace(STORAGE_NAME_FILTER_RE, '')
-                      .slice(0, MAX_STORAGE_NAME_LEN);
-                    // Silently ignore keystrokes that would empty the name:
-                    // an empty stem produces broken ZPL (`~DYR:,A,G,...`),
-                    // and a controlled-component "refuses-to-delete-last-char"
-                    // is a clearer constraint signal than a tooltip.
-                    if (!next) return;
-                    onChange({
-                      storedAs: { ...storedAs, name: next },
-                    });
-                  }}
-                />
+                {/* Delete the *cached* file (data-URL) from imageCache +
+                    localStorage. Different from removing the image-object
+                    via Del: this clears the bytes shared across all
+                    objects referencing the same imageId. Skip when the
+                    current image-object has no source selected. */}
+                {p.imageId && (
+                  <Tooltip content={t.registry.image.removeFromCache}>
+                    <button
+                      type="button"
+                      className="p-1.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors shrink-0"
+                      aria-label={t.registry.image.removeFromCache}
+                      onClick={() => setPendingCacheDelete(true)}
+                    >
+                      <TrashIcon className="w-3.5 h-3.5" />
+                    </button>
+                  </Tooltip>
+                )}
               </div>
-              <span className="text-[10px] text-muted font-mono">
-                {formatStoragePath(storedAs, true)}
-              </span>
-              <label className="flex items-center gap-2 cursor-pointer mt-1">
-                <input
-                  type="checkbox"
-                  className="accent-accent"
-                  checked={storedAs.embedInZpl !== false}
-                  onChange={(e) =>
-                    onChange({
-                      storedAs: { ...storedAs, embedInZpl: e.target.checked },
-                    })
-                  }
-                />
-                <span className={labelCls}>{t.registry.image.embedInZpl}</span>
-                <Tooltip content={t.registry.image.embedInZplHint}>
-                  <InformationCircleIcon className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0" />
-                </Tooltip>
-              </label>
-              <button
-                type="button"
-                className={buttonCls}
-                onClick={() => onChange({ storedAs: undefined })}
-              >
-                {t.registry.image.storeInline}
-              </button>
-            </>
-          ) : (
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleUpload(file);
+                e.target.value = '';
+              }}
+            />
             <button
               type="button"
               className={buttonCls}
-              onClick={() =>
-                onChange({ storedAs: { device: 'R', name: defaultStorageName() } })
-              }
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
             >
-              {t.registry.image.storeOnPrinter}
+              {uploading ? t.registry.image.uploading : t.registry.image.upload}
             </button>
+            {uploadFailed && (
+              <p className="text-[10px] font-mono text-error">{t.registry.image.uploadError}</p>
+            )}
+          </div>
+
+          {/* Preview thumbnail */}
+          {cached && (
+            <div className="flex flex-col gap-1">
+              <label className={labelCls}>{t.registry.image.preview}</label>
+              <img
+                src={cached.dataUrl}
+                alt={cached.name}
+                className="max-w-full max-h-20 object-contain rounded border border-border bg-white"
+              />
+              <span className="text-[10px] text-muted font-mono">
+                {cached.width} × {cached.height} px
+              </span>
+            </div>
           )}
-        </div>
+        </StaticSectionCard>
+
+        <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
+          {/* Width in dots */}
+          <div className="flex flex-col gap-1">
+            <label className={labelCls}>{t.registry.image.widthDots}</label>
+            <input
+              type="number"
+              className={inputCls}
+              value={p.widthDots}
+              min={8}
+              step={8}
+              onChange={(e) => handleWidthChange(Number(e.target.value))}
+            />
+          </div>
+
+          {/* Mono threshold */}
+          <div className="flex flex-col gap-1">
+            <label className={labelCls}>{t.registry.image.threshold}</label>
+            <input
+              type="range"
+              min={1}
+              max={255}
+              value={p.threshold}
+              onChange={(e) => handleThresholdChange(Number(e.target.value))}
+              className="accent-accent"
+            />
+            <span className="text-[10px] text-muted font-mono text-right">{p.threshold}</span>
+          </div>
+
+          {/* Printer storage (~DY + ^XG). Section label + info icon are
+              always visible so the feature is discoverable in both states;
+              the body switches between an Activate-button (off) and the
+              device/name editor (on). Border-top separates it visually
+              from the rendering properties above. */}
+          <div className="flex flex-col gap-1 mt-1 pt-3 border-t border-border">
+            <div className="flex items-center gap-2">
+              <label className={labelCls}>{t.registry.image.storage}</label>
+              <Tooltip content={t.registry.image.storeOnPrinterHint}>
+                <InformationCircleIcon className="w-3 h-3 text-muted/60 cursor-help shrink-0" />
+              </Tooltip>
+            </div>
+            {storedAs ? (
+              <>
+                <div className="grid grid-cols-[auto_1fr] gap-2">
+                  <select
+                    className={inputCls}
+                    value={storedAs.device}
+                    onChange={(e) =>
+                      onChange({
+                        storedAs: {
+                          ...storedAs,
+                          device: e.target.value as StorageDevice,
+                        },
+                      })
+                    }
+                  >
+                    {STORAGE_DEVICES.map((d) => (
+                      <option key={d} value={d}>{d}:</option>
+                    ))}
+                  </select>
+                  <input
+                    className={inputCls}
+                    value={storedAs.name}
+                    maxLength={MAX_STORAGE_NAME_LEN}
+                    onChange={(e) => {
+                      const next = e.target.value
+                        .toUpperCase()
+                        .replace(STORAGE_NAME_FILTER_RE, '')
+                        .slice(0, MAX_STORAGE_NAME_LEN);
+                      // Silently ignore keystrokes that would empty the name:
+                      // an empty stem produces broken ZPL (`~DYR:,A,G,...`),
+                      // and a controlled-component "refuses-to-delete-last-char"
+                      // is a clearer constraint signal than a tooltip.
+                      if (!next) return;
+                      onChange({
+                        storedAs: { ...storedAs, name: next },
+                      });
+                    }}
+                  />
+                </div>
+                <span className="text-[10px] text-muted font-mono">
+                  {formatStoragePath(storedAs, true)}
+                </span>
+                <label className="flex items-center gap-2 cursor-pointer mt-1">
+                  <input
+                    type="checkbox"
+                    className="accent-accent"
+                    checked={storedAs.embedInZpl !== false}
+                    onChange={(e) =>
+                      onChange({
+                        storedAs: { ...storedAs, embedInZpl: e.target.checked },
+                      })
+                    }
+                  />
+                  <span className={labelCls}>{t.registry.image.embedInZpl}</span>
+                  <Tooltip content={t.registry.image.embedInZplHint}>
+                    <InformationCircleIcon className="w-3.5 h-3.5 text-muted/60 cursor-help shrink-0" />
+                  </Tooltip>
+                </label>
+                <button
+                  type="button"
+                  className={buttonCls}
+                  onClick={() => onChange({ storedAs: undefined })}
+                >
+                  {t.registry.image.storeInline}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className={buttonCls}
+                onClick={() =>
+                  onChange({ storedAs: { device: 'R', name: defaultStorageName() } })
+                }
+              >
+                {t.registry.image.storeOnPrinter}
+              </button>
+            )}
+          </div>
+        </SectionCard>
+
         {pendingCacheDelete && (
           <ConfirmDialog
             message={t.registry.image.removeFromCacheConfirm}
@@ -286,7 +292,7 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
             onCancel={() => setPendingCacheDelete(false)}
           />
         )}
-      </div>
+      </>
     );
   },
 };

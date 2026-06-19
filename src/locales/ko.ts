@@ -58,6 +58,8 @@ const ko = {
   properties: {
     positionSection: '위치',
     optionsSection: '옵션',
+    contentSection: '콘텐츠',
+    settingsSection: '설정',
     typographySection: '타이포그래피',
     name: '이름',
     x: 'X',

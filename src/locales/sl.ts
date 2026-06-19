@@ -58,6 +58,8 @@ const sl = {
   properties: {
     positionSection: 'Položaj',
     optionsSection: 'Možnosti',
+    contentSection: 'Vsebina',
+    settingsSection: 'Nastavitve',
     typographySection: 'Tipografija',
     name: 'Ime',
     x: 'X',
