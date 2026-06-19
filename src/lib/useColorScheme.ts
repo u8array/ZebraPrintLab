@@ -21,7 +21,10 @@ export interface CanvasColors {
    *  it apart from selection/transformer chrome. */
   accent: string;
   /** Panel surface / muted text / hairline / destructive — mirror the DOM
-   *  theme tokens so canvas chrome (e.g. the action bar pill) matches. */
+   *  theme tokens in index.css so canvas chrome (e.g. the action bar pill)
+   *  matches. index.css is the source of truth; useColorScheme.test.ts pins
+   *  these (+ accent) to it so the two can't drift. Konva can't read CSS
+   *  variables and jsdom can't resolve them in tests, hence the JS copy. */
   surface: string;
   surface2: string;
   border: string;
@@ -45,11 +48,11 @@ export const DARK_COLORS: CanvasColors = {
   surface:        '#1f1f1f',
   surface2:       '#282828',
   border:         '#333333',
-  muted:          '#666666',
+  muted:          '#8f8f8f',
   error:          '#ef4444',
 };
 
-const LIGHT_COLORS: CanvasColors = {
+export const LIGHT_COLORS: CanvasColors = {
   canvasBg:       '#e4e4e7',
   canvasDot:      '#dcdce0',
   gridLine:       '#a1a1aa',
