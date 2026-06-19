@@ -58,6 +58,8 @@ const ja = {
   properties: {
     positionSection: '位置',
     optionsSection: 'オプション',
+    contentSection: 'コンテンツ',
+    settingsSection: '設定',
     typographySection: 'タイポグラフィ',
     name: '名前',
     x: 'X',

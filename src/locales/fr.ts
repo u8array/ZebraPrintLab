@@ -58,6 +58,8 @@ const fr = {
   properties: {
     positionSection: 'Position',
     optionsSection: 'Options',
+    contentSection: 'Contenu',
+    settingsSection: 'Paramètres',
     typographySection: 'Typographie',
     name: 'Nom',
     x: 'X',

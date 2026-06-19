@@ -58,6 +58,8 @@ const nl = {
   properties: {
     positionSection: 'Positie',
     optionsSection: 'Opties',
+    contentSection: 'Inhoud',
+    settingsSection: 'Instellingen',
     typographySection: 'Typografie',
     name: 'Naam',
     x: 'X',

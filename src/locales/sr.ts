@@ -58,6 +58,8 @@ const sr = {
   properties: {
     positionSection: 'Položaj',
     optionsSection: 'Опције',
+    contentSection: 'Садржај',
+    settingsSection: 'Подешавања',
     typographySection: 'Типографија',
     name: 'Naziv',
     x: 'X',

@@ -2,6 +2,7 @@ import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { NumberInput } from '../components/Properties/NumberInput';
+import { SectionCard } from '../components/Properties/SectionCard';
 import type { BoxProps } from './box';
 
 export const boxPanel: ObjectTypeUi<BoxProps> = {
@@ -9,7 +10,7 @@ export const boxPanel: ObjectTypeUi<BoxProps> = {
     const t = useT();
     const p = obj.props;
     return (
-      <div className="flex flex-col gap-3">
+      <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
         <div className="grid grid-cols-2 gap-2">
           <NumberInput
             label={t.registry.box.width}
@@ -74,7 +75,7 @@ export const boxPanel: ObjectTypeUi<BoxProps> = {
           />
           <span className={labelCls}>{t.registry.box.reverse}</span>
         </label>
-      </div>
+      </SectionCard>
     );
   },
 };

@@ -58,6 +58,8 @@ const de = {
   properties: {
     positionSection: 'Position',
     optionsSection: 'Optionen',
+    contentSection: 'Inhalt',
+    settingsSection: 'Einstellungen',
     typographySection: 'Typografie',
     name: 'Name',
     x: 'X',

@@ -58,6 +58,8 @@ const sv = {
   properties: {
     positionSection: 'Position',
     optionsSection: 'Alternativ',
+    contentSection: 'Innehåll',
+    settingsSection: 'Inställningar',
     typographySection: 'Typografi',
     name: 'Namn',
     x: 'X',

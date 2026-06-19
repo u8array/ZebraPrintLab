@@ -58,6 +58,8 @@ const tr = {
   properties: {
     positionSection: 'Konum',
     optionsSection: 'Seçenekler',
+    contentSection: 'İçerik',
+    settingsSection: 'Ayarlar',
     typographySection: 'Tipografi',
     name: 'Ad',
     x: 'X',

@@ -58,6 +58,8 @@ const no = {
   properties: {
     positionSection: 'Posisjon',
     optionsSection: 'Alternativer',
+    contentSection: 'Innhold',
+    settingsSection: 'Innstillinger',
     typographySection: 'Typografi',
     name: 'Navn',
     x: 'X',

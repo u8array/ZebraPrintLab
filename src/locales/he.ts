@@ -58,6 +58,8 @@ const he = {
   properties: {
     positionSection: 'מיקום (מ"מ)',
     optionsSection: 'אפשרויות',
+    contentSection: 'תוכן',
+    settingsSection: 'הגדרות',
     typographySection: 'טיפוגרפיה',
     name: 'שם',
     x: 'X',

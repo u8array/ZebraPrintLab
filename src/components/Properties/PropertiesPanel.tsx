@@ -198,17 +198,17 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
 
   return (
     <div className="flex flex-col">
-      {/* Type header */}
-      <div className="px-3 py-2.5 border-b border-border flex items-center gap-2">
-        <span className="font-mono text-xs text-accent">
+      {/* Type header: icon in an accent-tinted chip, id as a surface pill. */}
+      <div className="px-3 py-2.5 border-b border-border flex items-center gap-2.5">
+        <span className="flex items-center justify-center w-[22px] h-[22px] rounded-md bg-accent-dim text-accent font-mono text-xs font-semibold shrink-0">
           {icon}
         </span>
-        <span className="text-xs font-medium text-text">
+        <span className="text-[13px] font-semibold text-text">
           {typeLabel}
         </span>
         <BwipApproxIcon type={obj.type} />
 
-        <span className="font-mono text-[10px] text-muted ml-auto truncate">
+        <span className="font-mono text-[9px] text-muted bg-surface-2 px-1.5 py-0.5 rounded ml-auto shrink-0">
           {obj.id.slice(0, 8)}
         </span>
       </div>
@@ -233,11 +233,10 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
           </StaticSectionCard>
         )}
 
-        {/* Per-type panel first. Text renders its own SectionCards (Content,
-            Typography, Field block); other types still render flat content
-            until their panels are migrated (Phase 2). Binding routing is
-            unchanged: a patched obj feeds the panel and content edits
-            re-route to updateVariable while other props go to updateObject. */}
+        {/* Per-type panel first; each panel renders its own SectionCards
+            (Content and/or Settings). Binding routing is unchanged: a patched obj
+            feeds the panel and content edits re-route to updateVariable while
+            other props go to updateObject. */}
         {TypePanel && !groupRow && (() => {
           const boundVariable = lookupBoundVariable(obj, variables);
           const patchedObj = boundVariable

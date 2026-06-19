@@ -58,6 +58,8 @@ const fa = {
   properties: {
     positionSection: 'موقعیت (میلی‌متر)',
     optionsSection: 'گزینه‌ها',
+    contentSection: 'محتوا',
+    settingsSection: 'تنظیمات',
     typographySection: 'تایپوگرافی',
     name: 'نام',
     x: 'X',

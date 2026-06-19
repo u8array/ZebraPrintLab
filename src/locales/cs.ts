@@ -58,6 +58,8 @@ const cs = {
   properties: {
     positionSection: 'Pozice',
     optionsSection: 'Možnosti',
+    contentSection: 'Obsah',
+    settingsSection: 'Nastavení',
     typographySection: 'Typografie',
     name: 'Název',
     x: 'X',

@@ -58,6 +58,8 @@ const zhHans = {
   properties: {
     positionSection: '位置 (毫米)',
     optionsSection: '选项',
+    contentSection: '内容',
+    settingsSection: '设置',
     typographySection: '排版',
     name: '名称',
     x: 'X',

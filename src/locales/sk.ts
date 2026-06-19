@@ -58,6 +58,8 @@ const sk = {
   properties: {
     positionSection: 'Pozícia',
     optionsSection: 'Možnosti',
+    contentSection: 'Obsah',
+    settingsSection: 'Nastavenia',
     typographySection: 'Typografia',
     name: 'Názov',
     x: 'X',

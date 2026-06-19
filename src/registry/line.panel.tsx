@@ -3,6 +3,7 @@ import { useT } from '../lib/useT';
 import { useLabelStore } from '../store/labelStore';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { NumberInput } from '../components/Properties/NumberInput';
+import { SectionCard } from '../components/Properties/SectionCard';
 import { type LineProps, pickAngle } from './line';
 
 /**
@@ -34,7 +35,7 @@ export const linePanel: ObjectTypeUi<LineProps> = {
     const p = obj.props;
     const viewRotation = useLabelStore((s) => s.canvasSettings.viewRotation);
     return (
-      <div className="flex flex-col gap-3">
+      <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
         <div className="grid grid-cols-2 gap-2">
           <NumberInput
             label={t.registry.line.length}
@@ -122,7 +123,7 @@ export const linePanel: ObjectTypeUi<LineProps> = {
           />
           <span className={labelCls}>{t.registry.line.reverse}</span>
         </label>
-      </div>
+      </SectionCard>
     );
   },
 };

@@ -58,6 +58,8 @@ const el = {
   properties: {
     positionSection: 'Θέση',
     optionsSection: 'Επιλογές',
+    contentSection: 'Περιεχόμενο',
+    settingsSection: 'Ρυθμίσεις',
     typographySection: 'Τυπογραφία',
     name: 'Όνομα',
     x: 'X',
