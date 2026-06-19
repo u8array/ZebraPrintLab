@@ -16,3 +16,11 @@ export const LOCK_ICON =
 /** Lucide "lock-open": open shackle over a body. */
 export const UNLOCK_ICON =
   "M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z M7 11V7a5 5 0 0 1 9.9-1";
+
+/** Lucide "group": corner brackets framing two overlapping tiles. */
+export const GROUP_ICON =
+  "M3 7V5a2 2 0 0 1 2-2h2 M17 3h2a2 2 0 0 1 2 2v2 M21 17v2a2 2 0 0 1-2 2h-2 M7 21H5a2 2 0 0 1-2-2v-2 M8 8h6v4H8z M11 12h6v4h-6z";
+
+/** Lucide "ungroup": two separated tiles (no frame). */
+export const UNGROUP_ICON =
+  "M5 4h8v6H5z M11 14h8v6h-8z";

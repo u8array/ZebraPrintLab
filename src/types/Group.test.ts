@@ -10,6 +10,7 @@ import {
   detachObjectById,
   isSelfOrDescendant,
   canGroupSelection,
+  canUngroupSelection,
   canDeleteSelection,
   isSelectionLocked,
   mapObjectById,
@@ -200,6 +201,27 @@ describe('Group helpers', () => {
     it('returns true when one of several selected items is groupable', () => {
       const locked = { ...leaf('a'), locked: true };
       expect(canGroupSelection([locked, leaf('b')], ['a', 'b'])).toBe(true);
+    });
+  });
+
+  describe('canUngroupSelection', () => {
+    it('returns true when a selected top-level group is unlocked', () => {
+      const tree = [group('g', [leaf('a')]), leaf('b')];
+      expect(canUngroupSelection(tree, ['g'])).toBe(true);
+    });
+
+    it('returns false when only leaves are selected', () => {
+      expect(canUngroupSelection([group('g', [leaf('a')]), leaf('b')], ['b'])).toBe(false);
+    });
+
+    it('returns false for a locked group', () => {
+      const locked = { ...group('g', [leaf('a')]), locked: true };
+      expect(canUngroupSelection([locked], ['g'])).toBe(false);
+    });
+
+    it('ignores nested groups (only top-level counts)', () => {
+      const tree = [group('outer', [group('inner', [leaf('a')])])];
+      expect(canUngroupSelection(tree, ['inner'])).toBe(false);
     });
   });
 

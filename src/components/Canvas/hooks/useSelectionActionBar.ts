@@ -1,7 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import type Konva from "konva";
 import { RULER_SIZE } from "../Ruler";
-import { RADIUS as BUTTON_RADIUS_PX } from "../FloatingCanvasButton";
 
 const ACTION_BAR_GAP_PX = 22;
 
@@ -56,21 +55,21 @@ export function useSelectionActionBar({
 
       const bar = actionBarRef.current;
       if (bar) {
-        const halfW =
-          bar.getClientRect({ relativeTo: stage, skipShadow: true }).width / 2;
+        const barRect = bar.getClientRect({ relativeTo: stage, skipShadow: true });
+        const halfW = barRect.width / 2;
+        const halfH = barRect.height / 2;
         const minCx = RULER_SIZE + halfW;
         const maxCx = Math.max(minCx, stage.width() - halfW);
         const cx = Math.min(Math.max((minX + maxX) / 2, minCx), maxCx);
-        // Prefer above the selection; flip below if it clips the ruler; pin just
-        // under the ruler when a tall selection leaves no room either side.
-        const aboveY = minY - ACTION_BAR_GAP_PX;
-        const belowY = maxY + ACTION_BAR_GAP_PX;
+        // Anchor the bar's near EDGE a fixed gap from the selection (not its
+        // centre), so a tall/rotated/top-sitting object never gets overlapped:
+        // bottom edge `gap` above minY when placed above; top edge `gap` below
+        // maxY when flipped under. Pin just below the ruler if neither fits.
+        const aboveY = minY - ACTION_BAR_GAP_PX - halfH;
+        const belowY = maxY + ACTION_BAR_GAP_PX + halfH;
         let y = aboveY;
-        if (aboveY - BUTTON_RADIUS_PX < RULER_SIZE) {
-          y =
-            belowY + BUTTON_RADIUS_PX <= stage.height()
-              ? belowY
-              : RULER_SIZE + BUTTON_RADIUS_PX;
+        if (aboveY - halfH < RULER_SIZE) {
+          y = belowY + halfH <= stage.height() ? belowY : RULER_SIZE + halfH;
         }
         bar.position({ x: cx, y });
       }

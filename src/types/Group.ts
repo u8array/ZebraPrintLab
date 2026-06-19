@@ -179,6 +179,17 @@ export function canDeleteSelection(
   );
 }
 
+/** True when ungroup() would act: a selected top-level object is an unlocked
+ *  group. The lock check mirrors ungroupIds, which skips locked groups. */
+export function canUngroupSelection(
+  objects: LabelObject[],
+  selectedIds: readonly string[],
+): boolean {
+  return objects.some(
+    (o) => selectedIds.includes(o.id) && isGroup(o) && !o.locked,
+  );
+}
+
 /** True when the selection is non-empty and every selected top-level object
  *  is locked; drives the lock/unlock toggle direction. */
 export function isSelectionLocked(

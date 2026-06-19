@@ -20,6 +20,13 @@ export interface CanvasColors {
    *  on the canvas; e.g. the ^FB wrap-guide line so the user can tell
    *  it apart from selection/transformer chrome. */
   accent: string;
+  /** Panel surface / muted text / hairline / destructive — mirror the DOM
+   *  theme tokens so canvas chrome (e.g. the action bar pill) matches. */
+  surface: string;
+  surface2: string;
+  border: string;
+  muted: string;
+  error: string;
 }
 
 export const DARK_COLORS: CanvasColors = {
@@ -35,6 +42,11 @@ export const DARK_COLORS: CanvasColors = {
   rulerSeparator: '#2a2a2a',
   selection:      '#6366f1',
   accent:         '#f59e0b',
+  surface:        '#1f1f1f',
+  surface2:       '#282828',
+  border:         '#333333',
+  muted:          '#666666',
+  error:          '#ef4444',
 };
 
 const LIGHT_COLORS: CanvasColors = {
@@ -50,6 +62,11 @@ const LIGHT_COLORS: CanvasColors = {
   rulerSeparator: '#d4d4d8',
   selection:      '#6366f1',
   accent:         '#d97706',
+  surface:        '#fafafa',
+  surface2:       '#f4f4f5',
+  border:         '#d4d4d8',
+  muted:          '#52525b',
+  error:          '#b91c1c',
 };
 
 export function useColorScheme(): CanvasColors {

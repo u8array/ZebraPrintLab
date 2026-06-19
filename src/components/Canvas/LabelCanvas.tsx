@@ -12,7 +12,7 @@ import type { PaletteDragData } from "../../dnd/types";
 import { Stage, Layer, Group, Image as KImage, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects, selectPreviewLocksEditor } from "../../store/labelStore";
-import { isGroup, getAllLeaves, expandSelection, selectionTargetId, findObjectById, canDeleteSelection, isSelectionLocked, type LabelObject } from "../../types/Group";
+import { isGroup, getAllLeaves, expandSelection, selectionTargetId, findObjectById, canDeleteSelection, canGroupSelection, canUngroupSelection, isSelectionLocked, type LabelObject } from "../../types/Group";
 import { pxToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
 import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
@@ -48,8 +48,8 @@ import {
 } from "./rotationGeometry";
 import { useAltClickCycle } from "./hooks/useAltClickCycle";
 import { useSelectionActionBar } from "./hooks/useSelectionActionBar";
-import { FloatingCanvasButton, RADIUS as BUTTON_RADIUS } from "./FloatingCanvasButton";
-import { ROTATE_ICON, TRASH_ICON, LOCK_ICON, UNLOCK_ICON } from "./canvasIcons";
+import { FloatingCanvasButton, RADIUS as BUTTON_RADIUS, type ButtonTone } from "./FloatingCanvasButton";
+import { ROTATE_ICON, TRASH_ICON, LOCK_ICON, UNLOCK_ICON, GROUP_ICON, UNGROUP_ICON } from "./canvasIcons";
 import {
   getStepRotation,
   nextZplRotation,
@@ -57,7 +57,7 @@ import {
 
 const PADDING = 40;
 // Horizontal stride between action-bar buttons (render-side row layout).
-const BUTTON_STEP_PX = 28;
+const BUTTON_STEP_PX = 32;
 
 interface Props {
   unit: Unit;
@@ -125,6 +125,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     selectObjects,
     removeSelectedObjects,
     setSelectionLocked,
+    groupSelection,
+    ungroup,
   } = useLabelStore();
   const objects = useCurrentObjects();
   const previewMode = useLabelStore((s) => s.previewMode);
@@ -539,31 +541,52 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     });
   };
 
+  // Group when 2+ top-level objects are selectable; ungroup when the selection
+  // holds at least one top-level group. Both can be true at once (a group plus
+  // a loose object), so both buttons can show.
+  const canGroup = selectedIds.length > 1 && canGroupSelection(objects, selectedIds);
+  const canUngroup = canUngroupSelection(objects, selectedIds);
+
   // Contextual action bar. Rotate is a 90-degree step (ZPL only stores N/R/I/B,
-  // so a button beats the free-rotation drag handle other tools use); lock and
-  // delete mirror Canva's floating cluster. The bar itself is gated on
-  // !previewLocks at the render site.
+  // so a button beats the free-rotation drag handle other tools use). Icons rest
+  // neutral and accent on hover; delete is set apart (divider) and destructive
+  // (red). The bar itself is gated on !previewLocks at the render site.
   const actionButtons: {
     key: string;
     iconPath: string;
-    color: string;
+    tone: ButtonTone;
     onClick: () => void;
   }[] = [];
   if (singleSelected && stepRotation && !singleSelected.locked) {
     actionButtons.push({
       key: "rotate",
       iconPath: ROTATE_ICON,
-      color: colors.selection,
+      tone: "neutral",
       onClick: handleRotateStep,
+    });
+  }
+  if (canGroup) {
+    actionButtons.push({
+      key: "group",
+      iconPath: GROUP_ICON,
+      tone: "neutral",
+      onClick: groupSelection,
+    });
+  }
+  if (canUngroup) {
+    actionButtons.push({
+      key: "ungroup",
+      iconPath: UNGROUP_ICON,
+      tone: "neutral",
+      onClick: ungroup,
     });
   }
   if (selectedIds.length > 0) {
     actionButtons.push({
       key: "lock",
       iconPath: allSelectedLocked ? UNLOCK_ICON : LOCK_ICON,
-      // Amber unlock matches the locked-state frame; plain lock stays in
-      // selection chrome since the selection is not locked yet.
-      color: allSelectedLocked ? colors.accent : colors.selection,
+      // Amber while locked to match the locked-state frame.
+      tone: allSelectedLocked ? "active" : "neutral",
       onClick: () => setSelectionLocked(!allSelectedLocked),
     });
   }
@@ -571,7 +594,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     actionButtons.push({
       key: "delete",
       iconPath: TRASH_ICON,
-      color: colors.selection,
+      tone: "destructive",
       onClick: removeSelectedObjects,
     });
   }
@@ -1040,27 +1063,41 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
 
             {!previewLocks && attachableIds.length > 0 && actionButtons.length > 0 && (
               <Group ref={actionBarRef}>
-                {/* Semi-transparent scrim so the buttons stay legible over
-                    whatever the selection overlaps (e.g. barcode HRI text). */}
                 {(() => {
-                  const w =
-                    (actionButtons.length - 1) * BUTTON_STEP_PX +
-                    2 * BUTTON_RADIUS +
-                    16;
-                  const h = 2 * BUTTON_RADIUS + 12;
+                  const n = actionButtons.length;
+                  const w = (n - 1) * BUTTON_STEP_PX + 2 * BUTTON_RADIUS + 16;
+                  const h = 2 * BUTTON_RADIUS + 8;
+                  // Divider sits just left of the delete button to set it apart.
+                  const deleteIndex = actionButtons.findIndex((b) => b.key === "delete");
+                  const dividerX =
+                    deleteIndex > 0
+                      ? (deleteIndex - (n - 1) / 2) * BUTTON_STEP_PX - BUTTON_STEP_PX / 2
+                      : null;
                   return (
-                    <Rect
-                      x={-w / 2}
-                      y={-h / 2}
-                      width={w}
-                      height={h}
-                      cornerRadius={h / 2}
-                      fill="rgba(255,255,255,0.9)"
-                      // Amber when locked to match the locked-state frame,
-                      // else selection indigo (mirrors the lock button).
-                      stroke={allSelectedLocked ? colors.accent : colors.selection}
-                      strokeWidth={1}
-                    />
+                    <>
+                      {/* Opaque pill (not alpha) so icons stay legible over busy
+                          content; flat hairline matches the rest of the canvas
+                          chrome (no shadow). Amber while the selection is locked. */}
+                      <Rect
+                        x={-w / 2}
+                        y={-h / 2}
+                        width={w}
+                        height={h}
+                        cornerRadius={h / 2}
+                        fill={colors.surface}
+                        stroke={allSelectedLocked ? colors.accent : colors.selection}
+                        strokeWidth={1}
+                      />
+                      {dividerX !== null && (
+                        <Rect
+                          x={dividerX}
+                          y={-h / 2 + 5}
+                          width={1}
+                          height={h - 10}
+                          fill={colors.border}
+                        />
+                      )}
+                    </>
                   );
                 })()}
                 {actionButtons.map((b, i) => (
@@ -1069,7 +1106,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                     x={(i - (actionButtons.length - 1) / 2) * BUTTON_STEP_PX}
                   >
                     <FloatingCanvasButton
-                      color={b.color}
+                      tone={b.tone}
                       onClick={b.onClick}
                       iconPath={b.iconPath}
                     />
