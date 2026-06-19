@@ -64,7 +64,7 @@ The **ZPL output** panel at the bottom shows the generated ZPL. It updates in re
 
 File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 
-> Import round-trips text, barcodes, shapes, images (including printer-stored and compressed graphics), label-header settings, and template fields (`^FN`/`^FV` slots land in the **Variables** tab; `^FE` inline embeds like `^FD#1#-#2#` import as `«name»` markers in the field content). Anything else the parser doesn't recognize is skipped and listed in the import report.
+> Import round-trips text, barcodes, shapes, images (including printer-stored and compressed graphics), label-header settings, and template fields (`^FN` slots land in the **Variables** tab; `^FE` inline embeds like `^FD#1#-#2#` import as `«name»` markers in the field content). Anything else the parser doesn't recognize is skipped and listed in the import report.
 
 ### Multiple labels (pages)
 
@@ -106,7 +106,7 @@ Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable conte
 
 - Smart alignment and spacing guides
 - Layers panel with reordering
-- Variables: bind text and barcode fields to named defaults that emit as `^FN`/`^FV` slots (or `^FE` inline embeds when one field references multiple variables), round-tripping with printer-side templates
+- Variables: bind text and barcode fields to named defaults that emit as `^FN` slots (or `^FE` inline embeds when one field references multiple variables), round-tripping with printer-side templates
 - CSV batch printing: import a CSV, map columns to Variables, print or export with efficient printer-side data merge (template ships once, each row sends only its overrides)
 - Printer settings: label-level hardware tuning plus a Setup Script for clock, locale, encoding, and printer identity
 - 32 UI languages (auto-detected from browser)

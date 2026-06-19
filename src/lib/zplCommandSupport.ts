@@ -51,11 +51,11 @@ const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
   { cmd: 'FW', status: 'supported', description: 'Field orientation: sets default rotation for subsequent fields' },
   { cmd: 'FB', status: 'supported', description: 'Field block: multi-line text with word-wrap and justification' },
   { cmd: 'FC', status: 'supported', description: 'Field clock: redefines the clock chars used for inline date/time tokens inside ^FD. Tokens import as «clock:T» markers; canvas previews the current date, generator round-trips through ^FC + tokens.' },
-  { cmd: 'FE', status: 'supported', description: 'Field-number embed character: redefines the ^FN inline-embed delimiter (default #) used by ^FD/^FV. Imported embeds become «name» template markers; round-trips through generate.' },
+  { cmd: 'FE', status: 'supported', description: 'Field-number embed character: redefines the ^FN inline-embed delimiter (default #) used by ^FD. Imported embeds become «name» template markers; round-trips through generate.' },
   { cmd: 'FM', status: 'unsupported', description: 'Multiple field origin locations' },
   { cmd: 'FN', status: 'supported', description: 'Field number: variable field placeholder, lands in the Variables tab on import and emits as ^FN{slot} on export' },
   { cmd: 'FP', status: 'supported', description: 'Field parameter; sets character-by-character text direction (vertical CJK / reverse RTL layout)' },
-  { cmd: 'FV', status: 'supported', description: 'Field variable: supplies data for a ^FN field at print time; populates the bound Variable\'s default on import' },
+  { cmd: 'FV', status: 'unsupported', description: 'Field variable: supplies data for a ^FN field at print time; dropped on import (variable defaults come from ^FN)' },
 
   // ── Fonts & text ──────────────────────────────────────────────────────────
   { cmd: 'A0', status: 'supported', description: 'Scalable/bitmap font 0: primary designer font' },
@@ -66,6 +66,7 @@ const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
     loss: 'Font face is not imported; text content and point size are preserved with best-effort sizing',
   },
   { cmd: 'TB', status: 'supported', description: 'Text block: alternative to ^A + ^FB for wrapped/justified text' },
+  { cmd: 'PA', status: 'supported', description: 'Advanced text properties: glyph/bidi/shaping/OpenType flags; round-trips through the Printer Settings setup script' },
   {
     cmd: 'CW', status: 'browser-limit',
     description: 'Font identifier: assigns a single-letter alias to a printer-resident font',
@@ -141,6 +142,9 @@ const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
   // ── Serialisation ─────────────────────────────────────────────────────────
   { cmd: 'SN', status: 'supported', description: 'Serialisation data (post-field counter: ^SN appears after ^FD)' },
   { cmd: 'SF', status: 'supported', description: 'Serialize field (pre-field counter: ^SF appears before ^FD)' },
+
+  // ── Clock & time ──────────────────────────────────────────────────────────
+  { cmd: 'SO', status: 'supported', description: 'Set offset: secondary/tertiary RTC clock offsets; round-trips via labelConfig' },
 
   // ── Encoding ──────────────────────────────────────────────────────────────
   { cmd: 'CI', status: 'structural', description: 'Change international font/encoding: not required; UTF-8 is used natively in the browser' },
