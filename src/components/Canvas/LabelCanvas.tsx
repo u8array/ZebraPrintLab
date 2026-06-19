@@ -853,8 +853,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
         </button>
         <div className="w-px h-3.5 bg-border mx-0.5" />
         <Tooltip content={`${t.app.rotateView} (R)`}>
-          {/* Degree readout lives inside the button so the whole chip rotates,
-              not just the arrow. */}
+          {/* Degree readout lives inside the button so the whole chip is one
+              click target, not just the arrow with a separate label beside it. */}
           <button
             onClick={rotateView}
             aria-label={t.app.rotateView}

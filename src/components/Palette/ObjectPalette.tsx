@@ -58,7 +58,9 @@ function PaletteEntry({ id, type, icon, label, defaultSize, propsOverride, isFav
       ref={setNodeRef}
       {...listeners}
       onDoubleClick={handleDoubleClick}
-      style={{ touchAction: 'none' }}
+      // pan-y, not none: lets touch users still scroll the palette list
+      // vertically while a horizontal drag onto the canvas starts a drag.
+      style={{ touchAction: 'pan-y' }}
       className={`
         group flex items-center gap-2 px-1.5 py-1.5 rounded
         border border-transparent
