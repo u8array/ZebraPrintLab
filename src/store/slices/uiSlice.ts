@@ -68,6 +68,9 @@ export interface UiSlice {
   /** Palette favorites: registry type-IDs the user pinned to the top of the
    *  object palette. Persisted (a UI preference), not undoable. */
   paletteFavorites: string[];
+  /** Power-user opt-in: show the emitted ZPL command next to each properties
+   *  field. Persisted UI preference; default off so beginners aren't burdened. */
+  showZplCommands: boolean;
 
   /** Right-sidebar tab. Lives in the store so canvas interactions can
    *  drive the panel (e.g. double-click a text field). Transient; not
@@ -94,6 +97,7 @@ export interface UiSlice {
   setCanvasSettings: (settings: Partial<CanvasSettings>) => void;
   /** Pin/unpin a registry type in the palette favorites. */
   toggleFavorite: (type: string) => void;
+  setShowZplCommands: (show: boolean) => void;
   setSidebarTab: (tab: SidebarTab) => void;
   setBlockDragMode: (mode: BlockDragMode) => void;
   setAlignRef: (ref: AlignSelectionRef) => void;
@@ -121,6 +125,7 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
     csvRenderMode: 'preview',
   },
   paletteFavorites: [],
+  showZplCommands: false,
   sidebarTab: 'properties',
   blockDragMode: 'frame',
   alignRef: 'selection',
@@ -141,6 +146,7 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
         ? state.paletteFavorites.filter((t) => t !== type)
         : [...state.paletteFavorites, type],
     })),
+  setShowZplCommands: (show) => set({ showZplCommands: show }),
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
   setBlockDragMode: (mode) => set({ blockDragMode: mode }),
   setAlignRef: (ref) => set({ alignRef: ref }),

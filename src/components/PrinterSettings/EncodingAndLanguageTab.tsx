@@ -1,12 +1,13 @@
 import { useId } from "react";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { PRINTER_LOCALE_VALUES, ZPL_MODE_VALUES, isPrinterLocale, isZplMode, type PrinterLocale, type ZplMode } from "../../types/PrinterProfile";
+import { PRINTER_LOCALE_VALUES, ZPL_MODE_VALUES, type PrinterLocale, type ZplMode } from "../../types/PrinterProfile";
 import {
   SafeStringInput,
   ZplCheckbox,
   ZplCommandLabel,
-  ZplEnumSelect,
+  ZplEnumCustomSelect,
+  ZplEnumSegmented,
   ZplField,
   ZplFieldHint,
 } from "./zplFieldPrimitives";
@@ -49,15 +50,14 @@ export function EncodingAndLanguageTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ZplEnumSelect
+      <ZplEnumCustomSelect
         label={loc.printerLocale}
         command="^KL"
         values={PRINTER_LOCALE_VALUES}
-        isValid={isPrinterLocale}
         value={profile.printerLocale}
         onChange={(v) => patchPrinterProfile({ printerLocale: v })}
         defaultLabel={t.printerSettings.defaultOption}
-        optionLabel={(m) => `${m} ${loc[PRINTER_LOCALE_LABEL_KEYS[m]]}`}
+        optionLabel={(m) => loc[PRINTER_LOCALE_LABEL_KEYS[m]]}
       />
 
       {/* ^SE: free-form printer file path (e.g. `E:UHANGUL.DAT`).
@@ -79,11 +79,10 @@ export function EncodingAndLanguageTab() {
         <ZplFieldHint>{loc.encodingTableHint}</ZplFieldHint>
       </ZplField>
 
-      <ZplEnumSelect
+      <ZplEnumSegmented
         label={loc.zplMode}
         command="^SZ"
         values={ZPL_MODE_VALUES}
-        isValid={isZplMode}
         value={profile.zplMode}
         onChange={(v) => patchPrinterProfile({ zplMode: v })}
         defaultLabel={t.printerSettings.defaultOption}

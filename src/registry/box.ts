@@ -15,6 +15,7 @@ export interface BoxProps {
 export const box: ObjectTypeCore<BoxProps> = {
   label: 'Box',
   icon: '□',
+  zplCmd: '^GB',
   group: 'shape',
   defaultProps: {
     width: 200,

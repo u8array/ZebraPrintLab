@@ -1,9 +1,10 @@
 import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
-import { inputCls, labelCls } from '../components/Properties/styles';
+import { inputCls } from '../components/Properties/styles';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
+import { FieldLabel } from '../components/Properties/ZplCmd';
 import { type QrCodeProps, MAGNIFICATION_MIN, MAGNIFICATION_MAX } from './qrcode';
 
 export const qrcodePanel: ObjectTypeUi<QrCodeProps> = {
@@ -12,7 +13,7 @@ export const qrcodePanel: ObjectTypeUi<QrCodeProps> = {
     const p = obj.props;
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection}>
+        <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <input
             className={inputCls}
             aria-label={t.registry.qrcode.content}
@@ -28,10 +29,11 @@ export const qrcodePanel: ObjectTypeUi<QrCodeProps> = {
             min={MAGNIFICATION_MIN}
             max={MAGNIFICATION_MAX}
             onChange={(magnification) => onChange({ magnification })}
+            zplCmd="^BQ"
           />
 
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.qrcode.errorCorrection}</label>
+            <FieldLabel cmd="^BQ">{t.registry.qrcode.errorCorrection}</FieldLabel>
             <select
               className={inputCls}
               value={p.errorCorrection}
@@ -44,7 +46,7 @@ export const qrcodePanel: ObjectTypeUi<QrCodeProps> = {
             </select>
           </div>
 
-          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
+          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^BQ" />
         </SectionCard>
       </>
     );

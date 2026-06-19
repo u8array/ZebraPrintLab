@@ -21,16 +21,15 @@ import type { Unit } from "../../lib/units";
 import { useT } from "../../lib/useT";
 import { parseIntOrUndef } from "../../lib/inputParse";
 import { SectionCard, StaticSectionCard } from "./SectionCard";
+import { FieldLabel, ZplCmd } from "./ZplCmd";
 import { Tooltip } from "../ui/Tooltip";
+import { Select } from "../ui/Select";
+import { fontSelectGroups } from "./fontSelectGroups";
 import { AlignToolbar } from "./AlignToolbar";
 import { VariableBindingControl } from "../Variables/VariableBindingControl";
 import { applyBindingToObject, clockCtxFromLabel, lookupBoundVariable } from "../../lib/variableBinding";
 import { inputCls, labelCls } from "./styles";
 import type { LabelConfig } from "../../types/LabelConfig";
-import {
-  getAvailableFontIds,
-  stripDrivePrefix,
-} from "../../lib/customFonts";
 
 /** Tooltip-icon flagging that the canvas render is approximate for
  *  the given object type. Two severities collapse into one icon
@@ -119,6 +118,7 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
     setCanvasSettings,
     alignRef,
     setAlignRef,
+    showZplCommands,
   } = useLabelStore();
   const objects = useCurrentObjects();
   const unit = canvasSettings.unit;
@@ -192,6 +192,9 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
   // Groups intentionally have no registry entry; surface a folder-shape
   // glyph here so the header reads as something rather than blank.
   const icon = groupRow ? '⊞' : definition?.icon;
+  // Power-user mode swaps the mnemonic chip for the type's ZPL command, matching
+  // the palette icon slot. Groups have no command, so they keep the glyph.
+  const headerBadge = showZplCommands && !groupRow ? definition?.zplCmd ?? icon : icon;
   const typeLabel = groupRow
     ? t.types.group
     : (t.types as Record<string, string>)[obj.type] ?? definition?.label;
@@ -200,8 +203,8 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
     <div className="flex flex-col">
       {/* Type header: icon in an accent-tinted chip, id as a surface pill. */}
       <div className="px-3 py-2.5 border-b border-border flex items-center gap-2.5">
-        <span className="flex items-center justify-center w-[22px] h-[22px] rounded-md bg-accent-dim text-accent font-mono text-xs font-semibold shrink-0">
-          {icon}
+        <span className="flex items-center justify-center min-w-[22px] h-[22px] px-1 rounded-md bg-accent-dim text-accent font-mono text-xs font-semibold shrink-0">
+          {headerBadge}
         </span>
         <span className="text-[13px] font-semibold text-text">
           {typeLabel}
@@ -276,7 +279,9 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
           {!groupRow && (
             <div className="grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-1">
-                <label className={labelCls}>{t.properties.x}</label>
+                <FieldLabel cmd={obj.positionType === "FT" ? "^FT" : "^FO"}>
+                  {t.properties.x}
+                </FieldLabel>
                 <input
                   type="number"
                   className={inputCls}
@@ -293,7 +298,9 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className={labelCls}>{t.properties.y}</label>
+                <FieldLabel cmd={obj.positionType === "FT" ? "^FT" : "^FO"}>
+                  {t.properties.y}
+                </FieldLabel>
                 <input
                   type="number"
                   className={inputCls}
@@ -345,7 +352,7 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
         >
           {!groupRow && (
             <div className="flex flex-col gap-1">
-              <label className={labelCls}>{t.properties.comment}</label>
+              <FieldLabel cmd="^FX">{t.properties.comment}</FieldLabel>
               <textarea
                 className={`${inputCls} resize-none`}
                 rows={2}
@@ -470,12 +477,7 @@ function LabelConfigPanel({
   // the per-field selector show identical labels. A preview TTF wins
   // over the printer path in the suffix because it is what the canvas
   // is actually rendering with.
-  const fontIdOptions = getAvailableFontIds(label).map((opt) => {
-    const previewName =
-      opt.previewFontName ??
-      (opt.path ? stripDrivePrefix(opt.path) : undefined);
-    return { value: opt.id, label: previewName };
-  });
+  const fontGroups = fontSelectGroups(label, t, t.label.defaultFontIdNone);
 
   return (
     <div className="flex flex-col">
@@ -520,7 +522,7 @@ function LabelConfigPanel({
 
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.label.width}</label>
+            <FieldLabel cmd="^PW">{t.label.width}</FieldLabel>
             <input
               type="number"
               className={inputCls}
@@ -533,7 +535,7 @@ function LabelConfigPanel({
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.label.height}</label>
+            <FieldLabel cmd="^LL">{t.label.height}</FieldLabel>
             <input
               type="number"
               className={inputCls}
@@ -600,9 +602,10 @@ function LabelConfigPanel({
           </label>
           <div className="grid grid-cols-3 gap-2">
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-muted">
-                {t.label.labelHomeX}
-              </label>
+              <div className="flex items-baseline justify-between gap-2">
+                <label className="text-[10px] text-muted">{t.label.labelHomeX}</label>
+                <ZplCmd cmd="^LH" />
+              </div>
               <input
                 type="number"
                 className={inputCls}
@@ -614,9 +617,10 @@ function LabelConfigPanel({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-muted">
-                {t.label.labelHomeY}
-              </label>
+              <div className="flex items-baseline justify-between gap-2">
+                <label className="text-[10px] text-muted">{t.label.labelHomeY}</label>
+                <ZplCmd cmd="^LH" />
+              </div>
               <input
                 type="number"
                 className={inputCls}
@@ -628,9 +632,10 @@ function LabelConfigPanel({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-muted">
-                {t.label.labelTop}
-              </label>
+              <div className="flex items-baseline justify-between gap-2">
+                <label className="text-[10px] text-muted">{t.label.labelTop}</label>
+                <ZplCmd cmd="^LT" />
+              </div>
               <input
                 type="number"
                 className={inputCls}
@@ -646,7 +651,7 @@ function LabelConfigPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.label.labelShift}</label>
+          <FieldLabel cmd="^LS">{t.label.labelShift}</FieldLabel>
           <input
             type="number"
             className={inputCls}
@@ -658,7 +663,7 @@ function LabelConfigPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.label.printQuantity}</label>
+          <FieldLabel cmd="^PQ">{t.label.printQuantity}</FieldLabel>
           <input
             type="number"
             className={inputCls}
@@ -685,7 +690,7 @@ function LabelConfigPanel({
         >
         <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.label.pauseCount}</label>
+          <FieldLabel cmd="^PQ">{t.label.pauseCount}</FieldLabel>
           <input
             type="number"
             className={inputCls}
@@ -699,7 +704,7 @@ function LabelConfigPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.label.replicates}</label>
+          <FieldLabel cmd="^PQ">{t.label.replicates}</FieldLabel>
           <input
             type="number"
             className={inputCls}
@@ -737,28 +742,20 @@ function LabelConfigPanel({
         >
         <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.label.defaultFontId}</label>
-          <select
-            className={inputCls}
+          <FieldLabel cmd="^CF">{t.label.defaultFontId}</FieldLabel>
+          <Select
+            aria-label={t.label.defaultFontId}
             value={label.defaultFontId ?? ""}
-            onChange={(e) =>
-              onUpdate({ defaultFontId: e.target.value || undefined })
-            }
-          >
-            <option value="">{t.label.defaultFontIdNone}</option>
-            {fontIdOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.value}
-                {opt.label ? ` — ${opt.label}` : ""}
-              </option>
-            ))}
-          </select>
+            groups={fontGroups}
+            onChange={(v) => onUpdate({ defaultFontId: v || undefined })}
+          />
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-muted">
-              {t.label.defaultFontHeight}
-            </label>
+            <div className="flex items-baseline justify-between gap-2">
+              <label className="text-[10px] text-muted">{t.label.defaultFontHeight}</label>
+              <ZplCmd cmd="^CF" />
+            </div>
             <input
               type="number"
               className={inputCls}
@@ -770,9 +767,10 @@ function LabelConfigPanel({
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-muted">
-              {t.label.defaultFontWidth}
-            </label>
+            <div className="flex items-baseline justify-between gap-2">
+              <label className="text-[10px] text-muted">{t.label.defaultFontWidth}</label>
+              <ZplCmd cmd="^CF" />
+            </div>
             <input
               type="number"
               className={inputCls}

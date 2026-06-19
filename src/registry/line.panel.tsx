@@ -4,6 +4,7 @@ import { useLabelStore } from '../store/labelStore';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { SectionCard } from '../components/Properties/SectionCard';
+import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { type LineProps, pickAngle } from './line';
 
 /**
@@ -34,6 +35,10 @@ export const linePanel: ObjectTypeUi<LineProps> = {
     const t = useT();
     const p = obj.props;
     const viewRotation = useLabelStore((s) => s.canvasSettings.viewRotation);
+    // Axis-aligned lines emit ^GB (a thin box); diagonals emit ^GD. Badge
+    // reflects what the current angle produces.
+    const norm = ((p.angle % 180) + 180) % 180;
+    const cmd = norm === 0 || norm === 90 ? '^GB' : '^GD';
     return (
       <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
         <div className="grid grid-cols-2 gap-2">
@@ -52,6 +57,7 @@ export const linePanel: ObjectTypeUi<LineProps> = {
                   : { length },
               )
             }
+            zplCmd={cmd}
           />
           <NumberInput
             label={t.registry.line.angle}
@@ -59,6 +65,7 @@ export const linePanel: ObjectTypeUi<LineProps> = {
             min={-359}
             max={359}
             onChange={(angle) => onChange({ angle })}
+            zplCmd={cmd}
           />
         </div>
 
@@ -71,10 +78,11 @@ export const linePanel: ObjectTypeUi<LineProps> = {
           // would extend the line beyond its declared length.
           max={p.length}
           onChange={(thickness) => onChange({ thickness })}
+          zplCmd={cmd}
         />
 
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.line.color}</label>
+          <FieldLabel cmd={cmd}>{t.registry.line.color}</FieldLabel>
           <select
             className={inputCls}
             value={p.color}
@@ -86,7 +94,7 @@ export const linePanel: ObjectTypeUi<LineProps> = {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className={labelCls}>{t.registry.line.orientation}</label>
+          <FieldLabel cmd={cmd}>{t.registry.line.orientation}</FieldLabel>
           <div className="flex gap-1">
             {ORIENTATION_PICKER.map(({ id, screenAngles, path }) => (
               <button
@@ -114,15 +122,18 @@ export const linePanel: ObjectTypeUi<LineProps> = {
           </div>
         </div>
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            className="accent-accent"
-            checked={p.reverse ?? false}
-            onChange={(e) => onChange({ reverse: e.target.checked })}
-          />
-          <span className={labelCls}>{t.registry.line.reverse}</span>
-        </label>
+        <div className="flex items-center justify-between gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              className="accent-accent"
+              checked={p.reverse ?? false}
+              onChange={(e) => onChange({ reverse: e.target.checked })}
+            />
+            <span className={labelCls}>{t.registry.line.reverse}</span>
+          </label>
+          <ZplCmd cmd="^FR" />
+        </div>
       </SectionCard>
     );
   },

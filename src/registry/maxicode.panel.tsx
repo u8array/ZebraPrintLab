@@ -1,9 +1,10 @@
 import type { ObjectTypeUi } from "../types/ObjectType";
 import { useT } from "../lib/useT";
-import { inputCls, labelCls } from "../components/Properties/styles";
+import { inputCls } from "../components/Properties/styles";
 import { validateMaxicodeBwip } from "../components/Canvas/bwipHelpers";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
+import { FieldLabel } from "../components/Properties/ZplCmd";
 import { type MaxicodeProps, ALL_MODES } from "./maxicode";
 
 export const maxicodePanel: ObjectTypeUi<MaxicodeProps> = {
@@ -23,7 +24,7 @@ export const maxicodePanel: ObjectTypeUi<MaxicodeProps> = {
         : null;
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection}>
+        <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <input
             className={inputCls}
             aria-label={loc.content}
@@ -34,7 +35,7 @@ export const maxicodePanel: ObjectTypeUi<MaxicodeProps> = {
 
         <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{loc.mode}</label>
+            <FieldLabel cmd="^BV">{loc.mode}</FieldLabel>
             <select
               className={inputCls}
               value={p.mode}
@@ -55,7 +56,7 @@ export const maxicodePanel: ObjectTypeUi<MaxicodeProps> = {
             )}
           </div>
 
-          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
+          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^BV" />
         </SectionCard>
       </>
     );

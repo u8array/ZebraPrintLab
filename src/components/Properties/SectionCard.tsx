@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/16/solid';
 import { useCollapsibleState } from '../ui/useCollapsibleState';
+import { ZplCmd } from './ZplCmd';
 
 const titleCls =
   'font-mono text-[10px] font-semibold uppercase tracking-widest text-text';
@@ -46,6 +47,9 @@ interface SectionCardProps {
   id: string;
   title: ReactNode;
   defaultOpen?: boolean;
+  /** ZPL command this single-command section maps to (e.g. ^FN); shown when
+   *  showZplCommands is on. Omit for multi-command sections. */
+  cmd?: string;
   children: ReactNode;
 }
 
@@ -59,6 +63,7 @@ export function SectionCard({
   id,
   title,
   defaultOpen = true,
+  cmd,
   children,
 }: SectionCardProps) {
   const [open, setOpen] = useCollapsibleState(id, defaultOpen);
@@ -73,9 +78,12 @@ export function SectionCard({
         className="flex items-center gap-2 w-full px-2.5 py-2.5 text-left"
       >
         <CardLabel active={open} title={title} />
-        <ChevronDownIcon
-          className={`w-3 h-3 shrink-0 ml-auto transition-transform ${open ? '' : '-rotate-90'}`}
-        />
+        <span className="ml-auto flex items-center gap-2">
+          <ZplCmd cmd={cmd} />
+          <ChevronDownIcon
+            className={`w-3 h-3 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`}
+          />
+        </span>
       </button>
       {open && (
         <div id={contentId} className={bodyCls}>
@@ -92,15 +100,22 @@ export function SectionCard({
  */
 export function StaticSectionCard({
   title,
+  cmd,
   children,
 }: {
   title: ReactNode;
+  /** ZPL command this single-field section emits (e.g. ^FD); shown as a tag
+   *  when showZplCommands is on. Only for sections that map to one command. */
+  cmd?: string;
   children: ReactNode;
 }) {
   return (
     <div className={cardCls}>
       <div className="flex items-center gap-2 px-2.5 py-2.5">
         <CardLabel active title={title} />
+        <div className="ml-auto">
+          <ZplCmd cmd={cmd} />
+        </div>
       </div>
       <div className={bodyCls}>{children}</div>
     </div>
@@ -115,11 +130,14 @@ export function StaticSectionCard({
  */
 export function ToggleSectionCard({
   title,
+  cmd,
   checked,
   onCheckedChange,
   children,
 }: {
   title: ReactNode;
+  /** ZPL command this toggle controls (e.g. ^FB); shown when showZplCommands is on. */
+  cmd?: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   children: ReactNode;
@@ -130,19 +148,22 @@ export function ToggleSectionCard({
     <div className={cardCls}>
       <div className="flex items-center gap-2 px-2.5 py-2.5">
         <CardLabel active={checked} title={title} titleId={titleId} />
-        <button
-          type="button"
-          role="switch"
-          aria-checked={checked}
-          aria-labelledby={titleId}
-          aria-controls={checked ? contentId : undefined}
-          onClick={() => onCheckedChange(!checked)}
-          className={`ml-auto relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${checked ? 'bg-accent' : 'bg-border-2'}`}
-        >
-          <span
-            className={`inline-block h-3 w-3 rounded-full bg-surface transition-transform ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`}
-          />
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <ZplCmd cmd={cmd} />
+          <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            aria-labelledby={titleId}
+            aria-controls={checked ? contentId : undefined}
+            onClick={() => onCheckedChange(!checked)}
+            className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors ${checked ? 'bg-accent' : 'bg-border-2'}`}
+          >
+            <span
+              className={`inline-block h-3 w-3 rounded-full bg-surface transition-transform ${checked ? 'translate-x-3.5' : 'translate-x-0.5'}`}
+            />
+          </button>
+        </div>
       </div>
       {checked && (
         <div id={contentId} className={bodyCls}>

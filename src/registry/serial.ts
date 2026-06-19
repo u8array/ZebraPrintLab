@@ -17,6 +17,7 @@ export interface SerialProps {
 export const serial: ObjectTypeCore<SerialProps> = {
   label: "Serial",
   icon: "#",
+  zplCmd: "^SN",
   group: "text" as const,
   defaultProps: {
     content: "001",

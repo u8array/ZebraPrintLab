@@ -3,7 +3,6 @@ import type { ObjectTypeUi } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { buttonCls, inputCls, labelCls } from "../components/Properties/styles";
 import { getFont, loadFontFile } from "../lib/fontCache";
-import { getAvailableFontIds, stripDrivePrefix } from "../lib/customFonts";
 import { useFontCacheVersion } from "../hooks/useFontCacheVersion";
 import { useLabelStore } from "../store/labelStore";
 import { RotationSelect } from "../components/Properties/RotationSelect";
@@ -12,6 +11,9 @@ import { TemplateContentInput } from "../components/Properties/TemplateContentIn
 import { BlockTextSettings } from "../components/Properties/BlockTextSettings";
 import { FpSettings } from "../components/Properties/FpSettings";
 import { SectionCard, StaticSectionCard, ToggleSectionCard } from "../components/Properties/SectionCard";
+import { FieldLabel, ZplCmd } from "../components/Properties/ZplCmd";
+import { Select } from "../components/ui/Select";
+import { fontSelectGroups } from "../components/Properties/fontSelectGroups";
 import { deriveBlockTextPatch, FB_DEFAULTS } from "../lib/textBlock";
 import type { TextProps } from "./text";
 
@@ -31,7 +33,7 @@ export const textPanel: ObjectTypeUi<TextProps> = {
     // override (printerFontName, ^A@…E:NAME.TTF) lives behind the
     // advanced reveal because round-trip-imported labels still rely on
     // it, but the alias dropdown covers every fresh design.
-    const fontIdOptions = getAvailableFontIds(label);
+    const fontGroups = fontSelectGroups(label, t, t.registry.text.useLabelDefault);
     const fontLoaded = !!p.printerFontName && !!getFont(p.printerFontName);
     const fontAssignedButMissing = !!p.printerFontName && !fontLoaded;
     // One "Advanced" reveal for both the legacy font-filename override and
@@ -54,7 +56,7 @@ export const textPanel: ObjectTypeUi<TextProps> = {
 
     return (
       <>
-        <StaticSectionCard title={t.registry.text.content}>
+        <StaticSectionCard title={t.registry.text.content} cmd="^FD">
           <TemplateContentInput
             objectId={obj.id}
             value={p.content}
@@ -66,36 +68,19 @@ export const textPanel: ObjectTypeUi<TextProps> = {
 
         <SectionCard id="text-typography" title={t.properties.typographySection}>
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.text.printerFont}</label>
-            <select
-              className={inputCls}
+            <FieldLabel cmd="^A">{t.registry.text.printerFont}</FieldLabel>
+            <Select
+              aria-label={t.registry.text.printerFont}
               value={p.fontId ?? ""}
-              onChange={(e) =>
+              groups={fontGroups}
+              onChange={(v) =>
                 onChange({
-                  fontId: e.target.value || undefined,
+                  fontId: v || undefined,
                   // Selecting an alias supersedes the legacy filename form.
-                  printerFontName: e.target.value ? undefined : p.printerFontName,
+                  printerFontName: v ? undefined : p.printerFontName,
                 })
               }
-            >
-              <option value="">{t.registry.text.useLabelDefault}</option>
-              {fontIdOptions.map((opt) => {
-                const previewName =
-                  opt.previewFontName ??
-                  (opt.path ? stripDrivePrefix(opt.path) : undefined);
-                const suffix = previewName
-                  ? ` — ${previewName}`
-                  : opt.builtin
-                    ? `  ${t.registry.text.builtinSuffix}`
-                    : "";
-                return (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.id}
-                    {suffix}
-                  </option>
-                );
-              })}
-            </select>
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -104,29 +89,35 @@ export const textPanel: ObjectTypeUi<TextProps> = {
               value={p.fontHeight}
               min={1}
               onChange={(fontHeight) => onChange({ fontHeight })}
+              zplCmd="^A"
             />
             <NumberInput
               label={t.registry.text.fontWidth}
               value={p.fontWidth}
               min={0}
               onChange={(fontWidth) => onChange({ fontWidth })}
+              zplCmd="^A"
             />
           </div>
 
           <RotationSelect
             value={p.rotation}
             onChange={(rotation) => onChange({ rotation })}
+            zplCmd="^A"
           />
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              className="accent-accent"
-              checked={p.reverse ?? false}
-              onChange={(e) => onChange({ reverse: e.target.checked })}
-            />
-            <span className={labelCls}>{t.registry.text.reverse}</span>
-          </label>
+          <div className="flex items-center justify-between gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="accent-accent"
+                checked={p.reverse ?? false}
+                onChange={(e) => onChange({ reverse: e.target.checked })}
+              />
+              <span className={labelCls}>{t.registry.text.reverse}</span>
+            </label>
+            <ZplCmd cmd="^FR" />
+          </div>
 
           <div className="flex flex-col gap-1">
             <button
@@ -142,9 +133,12 @@ export const textPanel: ObjectTypeUi<TextProps> = {
             {showAdvanced && (
               <div className="flex flex-col gap-2 mt-1 pl-3 border-l border-border">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] text-muted">
-                    {t.registry.text.fontFilenameLabel}
-                  </label>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <label className="text-[10px] text-muted">
+                      {t.registry.text.fontFilenameLabel}
+                    </label>
+                    <ZplCmd cmd="^A@" />
+                  </div>
                   <input
                     type="text"
                     className={inputCls}
@@ -201,6 +195,7 @@ export const textPanel: ObjectTypeUi<TextProps> = {
             (BlockTextSettings, drag-mode first) shows only while on. */}
         <ToggleSectionCard
           title={t.registry.text.fieldBlock}
+          cmd="^FB"
           checked={!!p.blockWidth}
           onCheckedChange={(on) =>
             onChange(

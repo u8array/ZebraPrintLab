@@ -22,6 +22,7 @@ export interface EllipseProps {
 export const ellipse: ObjectTypeCore<EllipseProps> = {
   label: 'Ellipse',
   icon: '○',
+  zplCmd: '^GE',
   group: 'shape',
   defaultProps: {
     width: 150,

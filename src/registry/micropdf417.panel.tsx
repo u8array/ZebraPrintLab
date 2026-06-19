@@ -13,7 +13,7 @@ export const micropdf417Panel: ObjectTypeUi<MicroPdf417Props> = {
     const loc = t.registry.micropdf417;
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection}>
+        <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <input
             className={inputCls}
             aria-label={loc.content}
@@ -29,6 +29,7 @@ export const micropdf417Panel: ObjectTypeUi<MicroPdf417Props> = {
               value={p.rowHeight}
               min={1}
               onChange={(rowHeight) => onChange({ rowHeight })}
+              zplCmd="^BF"
             />
             <NumberInput
               label={loc.moduleWidth}
@@ -36,6 +37,7 @@ export const micropdf417Panel: ObjectTypeUi<MicroPdf417Props> = {
               min={1}
               max={10}
               onChange={(moduleWidth) => onChange({ moduleWidth })}
+              zplCmd="^BY"
             />
           </div>
 
@@ -45,9 +47,10 @@ export const micropdf417Panel: ObjectTypeUi<MicroPdf417Props> = {
             min={0}
             max={33}
             onChange={(mode) => onChange({ mode })}
+            zplCmd="^BF"
           />
 
-          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
+          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^BF" />
         </SectionCard>
       </>
     );

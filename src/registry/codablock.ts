@@ -14,6 +14,7 @@ export interface CodablockProps {
 export const codablock: ObjectTypeCore<CodablockProps> = {
   label: "CODABLOCK",
   icon: "▥B",
+  zplCmd: "^BB",
   group: "code-2d",
   bindable: true,
   defaultProps: {

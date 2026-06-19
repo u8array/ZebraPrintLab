@@ -42,6 +42,7 @@ export interface TextProps {
 export const text: ObjectTypeCore<TextProps> = {
   label: "Text",
   icon: "T",
+  zplCmd: "^A",
   group: "text" as const,
   bindable: true,
   defaultProps: {

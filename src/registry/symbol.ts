@@ -48,6 +48,7 @@ export interface SymbolProps {
 export const symbol: ObjectTypeCore<SymbolProps> = {
   label: 'Symbol',
   icon: '©',
+  zplCmd: '^GS',
   group: 'text' as const,
   defaultProps: {
     symbol: 'B',

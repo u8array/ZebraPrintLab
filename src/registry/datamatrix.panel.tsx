@@ -1,9 +1,10 @@
 import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
-import { inputCls, labelCls } from '../components/Properties/styles';
+import { inputCls } from '../components/Properties/styles';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
+import { FieldLabel } from '../components/Properties/ZplCmd';
 import { type DataMatrixProps, DIMENSION_MIN, DIMENSION_MAX } from './datamatrix';
 
 export const datamatrixPanel: ObjectTypeUi<DataMatrixProps> = {
@@ -12,7 +13,7 @@ export const datamatrixPanel: ObjectTypeUi<DataMatrixProps> = {
     const p = obj.props;
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection}>
+        <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <input
             className={inputCls}
             aria-label={t.registry.datamatrix.content}
@@ -28,10 +29,11 @@ export const datamatrixPanel: ObjectTypeUi<DataMatrixProps> = {
             min={DIMENSION_MIN}
             max={DIMENSION_MAX}
             onChange={(dimension) => onChange({ dimension })}
+            zplCmd="^BX"
           />
 
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.datamatrix.quality}</label>
+            <FieldLabel cmd="^BX">{t.registry.datamatrix.quality}</FieldLabel>
             <select
               className={inputCls}
               value={p.quality}
@@ -45,7 +47,7 @@ export const datamatrixPanel: ObjectTypeUi<DataMatrixProps> = {
             </select>
           </div>
 
-          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
+          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^BX" />
         </SectionCard>
       </>
     );

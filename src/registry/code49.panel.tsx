@@ -4,6 +4,7 @@ import { inputCls, labelCls } from '../components/Properties/styles';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
+import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import {
   type Code49Props,
   type Code49Mode,
@@ -19,7 +20,7 @@ export const code49Panel: ObjectTypeUi<Code49Props> = {
     const loc = t.registry.code49;
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection}>
+        <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <input
             className={inputCls}
             aria-label={loc.content}
@@ -36,6 +37,7 @@ export const code49Panel: ObjectTypeUi<Code49Props> = {
               min={code49MinHeight(p.moduleWidth)}
               max={code49MaxHeight(p.moduleWidth)}
               onChange={(height) => onChange({ height })}
+              zplCmd="^B4"
             />
             <NumberInput
               label={loc.moduleWidth}
@@ -43,11 +45,12 @@ export const code49Panel: ObjectTypeUi<Code49Props> = {
               min={1}
               max={10}
               onChange={(moduleWidth) => onChange({ moduleWidth })}
+              zplCmd="^BY"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{loc.mode}</label>
+            <FieldLabel cmd="^B4">{loc.mode}</FieldLabel>
             <select
               className={inputCls}
               value={p.mode}
@@ -61,17 +64,20 @@ export const code49Panel: ObjectTypeUi<Code49Props> = {
             </select>
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              className="accent-accent"
-              checked={p.printInterpretation}
-              onChange={(e) => onChange({ printInterpretation: e.target.checked })}
-            />
-            <span className={labelCls}>{loc.printInterpretation}</span>
-          </label>
+          <div className="flex items-center justify-between gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="accent-accent"
+                checked={p.printInterpretation}
+                onChange={(e) => onChange({ printInterpretation: e.target.checked })}
+              />
+              <span className={labelCls}>{loc.printInterpretation}</span>
+            </label>
+            <ZplCmd cmd="^B4" />
+          </div>
 
-          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
+          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^B4" />
         </SectionCard>
       </>
     );

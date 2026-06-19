@@ -2,15 +2,16 @@ import { useId } from "react";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { inputCls, labelCls } from "../ui/formStyles";
-import { CLOCK_FORMAT_VALUES, CLOCK_LANGUAGE_VALUES, CLOCK_MODE_VALUES, CLOCK_TOLERANCE_DEFAULT, CLOCK_TOLERANCE_RANGE, isClockFormat, isClockLanguage, isClockMode, type ClockFormat, type ClockLanguage, type ClockMode } from "../../types/PrinterProfile";
+import { CLOCK_FORMAT_VALUES, CLOCK_LANGUAGE_VALUES, CLOCK_MODE_VALUES, CLOCK_TOLERANCE_DEFAULT, CLOCK_TOLERANCE_RANGE, isClockMode, type ClockFormat, type ClockLanguage, type ClockMode } from "../../types/PrinterProfile";
 import {
   BoundedIntControl,
   ZplCommandLabel,
-  ZplEnumSelect,
-  ZplEnumSubSelect,
+  ZplEnumCustomSelect,
+  ZplEnumSubCustomSelect,
   ZplField,
   ZplSubField,
 } from "./zplFieldPrimitives";
+import { Select } from "../ui/Select";
 
 type LocClockTime = ReturnType<typeof useT>["printerSettings"]["clockTime"];
 
@@ -97,11 +98,10 @@ export function ClockAndTimeTab() {
         </span>
       </ZplField>
 
-      <ZplEnumSelect
+      <ZplEnumCustomSelect
         label={loc.clockFormat}
         command="^KD"
         values={CLOCK_FORMAT_VALUES}
-        isValid={isClockFormat}
         value={profile.clockFormat}
         onChange={(v) => patchPrinterProfile({ clockFormat: v })}
         defaultLabel={t.printerSettings.defaultOption}
@@ -116,12 +116,23 @@ export function ClockAndTimeTab() {
           triple in PrintQualityTab). */}
       <ZplField>
         <ZplCommandLabel text={loc.clockMode} command="^SL" htmlFor={modeId} />
-        <select
+        <Select
           id={modeId}
-          className={inputCls}
+          aria-label={loc.clockMode}
           value={profile.clockMode ?? ""}
-          onChange={(e) => {
-            const v = e.target.value;
+          groups={[
+            {
+              options: [
+                { value: "", label: t.printerSettings.defaultOption },
+                ...CLOCK_MODE_VALUES.map((m) => ({
+                  value: m,
+                  label: loc[CLOCK_MODE_LABEL_KEYS[m]],
+                  badge: m,
+                })),
+              ],
+            },
+          ]}
+          onChange={(v) => {
             const nextMode = isClockMode(v) ? v : undefined;
             // Schema's cross-field rule pairs `clockMode === 'TOL'`
             // with a defined `clockTolerance` (and vice versa). Seed
@@ -134,12 +145,7 @@ export function ClockAndTimeTab() {
               : undefined;
             patchPrinterProfile({ clockMode: nextMode, clockTolerance: nextTolerance });
           }}
-        >
-          <option value="">{t.printerSettings.defaultOption}</option>
-          {CLOCK_MODE_VALUES.map((m) => (
-            <option key={m} value={m}>{loc[CLOCK_MODE_LABEL_KEYS[m]]}</option>
-          ))}
-        </select>
+        />
         {profile.clockMode === 'TOL' && (
           <ZplSubField label={loc.clockTolerance}>
             {(id) => (
@@ -157,14 +163,13 @@ export function ClockAndTimeTab() {
             )}
           </ZplSubField>
         )}
-        <ZplEnumSubSelect
+        <ZplEnumSubCustomSelect
           label={loc.clockLanguage}
           values={CLOCK_LANGUAGE_VALUES}
-          isValid={isClockLanguage}
           value={profile.clockLanguage}
           onChange={(v) => patchPrinterProfile({ clockLanguage: v })}
           defaultLabel={t.printerSettings.defaultOption}
-          optionLabel={(m) => `${m} – ${loc[CLOCK_LANGUAGE_LABEL_KEYS[m]]}`}
+          optionLabel={(m) => loc[CLOCK_LANGUAGE_LABEL_KEYS[m]]}
         />
         <span className={`${labelCls} normal-case tracking-normal text-muted/70`}>
           {loc.clockSlPersistenceHint}

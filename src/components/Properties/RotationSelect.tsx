@@ -1,17 +1,20 @@
 import { ZPL_ROTATIONS, isZplRotation, type ZplRotation } from '../../registry/rotation';
 import { useT } from '../../lib/useT';
-import { inputCls, labelCls } from './styles';
+import { inputCls } from './styles';
+import { FieldLabel } from './ZplCmd';
 
 interface Props {
   value: ZplRotation;
   onChange: (next: ZplRotation) => void;
+  /** Optional ZPL command this field emits; shown when showZplCommands is on. */
+  zplCmd?: string;
 }
 
-export function RotationSelect({ value, onChange }: Props) {
+export function RotationSelect({ value, onChange, zplCmd }: Props) {
   const t = useT();
   return (
     <div className="flex flex-col gap-1">
-      <label className={labelCls}>{t.registry.text.rotation}</label>
+      <FieldLabel cmd={zplCmd}>{t.registry.text.rotation}</FieldLabel>
       <select
         className={inputCls}
         value={value}

@@ -15,6 +15,7 @@ export interface DataMatrixProps {
 export const datamatrix: ObjectTypeCore<DataMatrixProps> = {
   label: 'DataMatrix',
   icon: '▦',
+  zplCmd: '^BX',
   group: 'code-2d',
   bindable: true,
   defaultProps: {

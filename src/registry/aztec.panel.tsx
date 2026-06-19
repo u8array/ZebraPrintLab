@@ -19,7 +19,7 @@ export const aztecPanel: ObjectTypeUi<AztecProps> = {
     const loc = t.registry.aztec;
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection}>
+        <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <input
             className={inputCls}
             aria-label={loc.content}
@@ -35,6 +35,7 @@ export const aztecPanel: ObjectTypeUi<AztecProps> = {
             min={MAGNIFICATION_MIN}
             max={MAGNIFICATION_MAX}
             onChange={(magnification) => onChange({ magnification })}
+            zplCmd="^B0"
           />
 
           <NumberInput
@@ -43,9 +44,10 @@ export const aztecPanel: ObjectTypeUi<AztecProps> = {
             min={EC_LEVEL_MIN}
             max={EC_LEVEL_MAX}
             onChange={(ecLevel) => onChange({ ecLevel })}
+            zplCmd="^B0"
           />
 
-          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
+          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^B0" />
         </SectionCard>
       </>
     );

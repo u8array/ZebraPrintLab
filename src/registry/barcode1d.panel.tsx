@@ -7,6 +7,7 @@ import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { TemplateContentInput } from '../components/Properties/TemplateContentInput';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
+import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import type { Barcode1DProps } from './barcode1d';
 
 /** Per-symbology locale block: labels rendered by the panel. */
@@ -27,6 +28,10 @@ export interface Barcode1DPanelConfig {
   interpretationLocked?: boolean;
   /** Symbology supports the HRI above/below toggle (ZPL g-param). */
   hriAboveConfigurable?: boolean;
+  /** The symbology's ZPL command (e.g. `^BC`), shown as a per-field tag when
+   *  showZplCommands is on. Height / HRI / check-digit / rotation are params
+   *  of this command; module width is `^BY`, content is `^FD`. */
+  zplCommand: string;
 }
 
 export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi<Barcode1DProps> {
@@ -39,7 +44,7 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
         <>
           <StaticSectionCard title={t.properties.contentSection}>
             <div className="flex flex-col gap-1">
-              <label className={labelCls}>{loc.content}</label>
+              <FieldLabel cmd="^FD">{loc.content}</FieldLabel>
               <TemplateContentInput
                 objectId={obj.id}
                 multiline={false}
@@ -71,6 +76,7 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
               disabled={config.heightLocked}
               readOnly={config.heightLocked}
               onChange={(height) => onChange({ height })}
+              zplCmd={config.zplCommand}
             />
 
             <NumberInput
@@ -79,47 +85,58 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
               min={1}
               max={10}
               onChange={(moduleWidth) => onChange({ moduleWidth })}
+              zplCmd="^BY"
             />
 
             {!config.interpretationLocked && (
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="accent-accent"
-                  checked={p.printInterpretation}
-                  onChange={(e) => onChange({ printInterpretation: e.target.checked })}
-                />
-                <span className={labelCls}>{loc.printInterpretation}</span>
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="accent-accent"
+                    checked={p.printInterpretation}
+                    onChange={(e) => onChange({ printInterpretation: e.target.checked })}
+                  />
+                  <span className={labelCls}>{loc.printInterpretation}</span>
+                </label>
+                <ZplCmd cmd={config.zplCommand} />
+              </div>
             )}
 
             {!config.interpretationLocked && config.hriAboveConfigurable && p.printInterpretation && (
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="accent-accent"
-                  checked={p.printInterpretationAbove ?? false}
-                  onChange={(e) => onChange({ printInterpretationAbove: e.target.checked })}
-                />
-                <span className={labelCls}>{t.registry.text.hriAbove}</span>
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="accent-accent"
+                    checked={p.printInterpretationAbove ?? false}
+                    onChange={(e) => onChange({ printInterpretationAbove: e.target.checked })}
+                  />
+                  <span className={labelCls}>{t.registry.text.hriAbove}</span>
+                </label>
+                <ZplCmd cmd={config.zplCommand} />
+              </div>
             )}
 
             {config.hasCheckDigit && (
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="accent-accent"
-                  checked={p.checkDigit}
-                  onChange={(e) => onChange({ checkDigit: e.target.checked })}
-                />
-                <span className={labelCls}>{loc.checkDigit}</span>
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="accent-accent"
+                    checked={p.checkDigit}
+                    onChange={(e) => onChange({ checkDigit: e.target.checked })}
+                  />
+                  <span className={labelCls}>{loc.checkDigit}</span>
+                </label>
+                <ZplCmd cmd={config.zplCommand} />
+              </div>
             )}
 
             <RotationSelect
               value={p.rotation}
               onChange={(rotation) => onChange({ rotation })}
+              zplCmd={config.zplCommand}
             />
           </SectionCard>
         </>

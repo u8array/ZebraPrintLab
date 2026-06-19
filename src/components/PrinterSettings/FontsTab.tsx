@@ -3,6 +3,7 @@ import { getAllFonts } from "../../lib/fontCache";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { uploadedFontPath } from "../../lib/customFonts";
 import { useLabelStore } from "../../store/labelStore";
+import { zplCommandTagCls } from "../ui/formStyles";
 import { FontLinksField } from "./FontLinksField";
 
 /** Setup-Script rail entry: per-printer font choices.
@@ -33,9 +34,12 @@ export function FontsTab() {
   return (
     <div className="flex flex-col gap-4">
       <section className="flex flex-col gap-2">
-        <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">
-          {loc.uploadHeading}
-        </h3>
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">
+            {loc.uploadHeading}
+          </h3>
+          <span className={zplCommandTagCls}>~DY</span>
+        </div>
         <p className="text-[11px] text-muted">{loc.uploadHint}</p>
         {fonts.length === 0 && orphanPaths.length === 0 ? (
           <p className="text-xs text-muted/70">{loc.noFonts}</p>

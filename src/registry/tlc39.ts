@@ -25,6 +25,7 @@ export interface Tlc39Props {
 export const tlc39: ObjectTypeCore<Tlc39Props> = {
   label: "TLC39",
   icon: "▦T",
+  zplCmd: "^BT",
   group: "code-2d",
   bindable: true,
   defaultProps: {

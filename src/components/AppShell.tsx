@@ -33,6 +33,7 @@ import {
   XMarkIcon,
   SunIcon,
   MoonIcon,
+  CommandLineIcon,
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
 } from "@heroicons/react/16/solid";
@@ -88,6 +89,8 @@ export function AppShell() {
   const setLocale = useLabelStore((s) => s.setLocale);
   const theme = useLabelStore((s) => s.theme);
   const setTheme = useLabelStore((s) => s.setTheme);
+  const showZplCommands = useLabelStore((s) => s.showZplCommands);
+  const setShowZplCommands = useLabelStore((s) => s.setShowZplCommands);
   const labelaryEnabled = useLabelStore((s) => s.thirdParty.labelary);
   const noticeRequired = useLabelStore(selectLabelaryNoticeRequired);
   const [showPrintNotice, setShowPrintNotice] = useState(false);
@@ -218,6 +221,18 @@ export function AppShell() {
                 </DropdownItem>
               ),
             )}
+          </DropdownMenu>
+
+          <DropdownMenu
+            label={<CommandLineIcon className="w-3.5 h-3.5" />}
+            ariaLabel={t.app.showZplCommands}
+          >
+            <DropdownItem
+              onClick={() => setShowZplCommands(!showZplCommands)}
+              shortcut={showZplCommands ? "✓" : undefined}
+            >
+              {t.app.showZplCommands}
+            </DropdownItem>
           </DropdownMenu>
 
           <Tooltip content="GitHub">

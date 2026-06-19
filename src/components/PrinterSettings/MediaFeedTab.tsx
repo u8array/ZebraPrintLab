@@ -1,12 +1,12 @@
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { BACKFEED_SEQUENCE_VALUES, MAX_LABEL_LENGTH_RANGE, MEDIA_FEED_VALUES, MEDIA_MODE_VALUES, MEDIA_TRACKING_VALUES, MEDIA_TYPE_VALUES, isBackfeedSequence, isMediaFeedMode, isMediaMode, isMediaTracking, isMediaType, type BackfeedSequence, type MediaFeedMode, type MediaMode, type MediaTracking, type MediaType } from "../../types/LabelConfig";
+import { BACKFEED_SEQUENCE_VALUES, MAX_LABEL_LENGTH_RANGE, MEDIA_FEED_VALUES, MEDIA_MODE_VALUES, MEDIA_TRACKING_VALUES, MEDIA_TYPE_VALUES, type BackfeedSequence, type MediaFeedMode, type MediaMode, type MediaTracking, type MediaType } from "../../types/LabelConfig";
 import {
   ZplBoundedIntInput,
   ZplCheckbox,
   ZplCommandLabel,
-  ZplEnumSelect,
-  ZplEnumSubSelect,
+  ZplEnumCustomSelect,
+  ZplEnumSubCustomSelect,
   ZplField,
 } from "./zplFieldPrimitives";
 
@@ -64,37 +64,34 @@ export function MediaFeedTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ZplEnumSelect
+      <ZplEnumCustomSelect
         label={loc.mediaMode}
         command="^MM"
         values={MEDIA_MODE_VALUES}
-        isValid={isMediaMode}
         value={label.mediaMode}
         onChange={(v) => setLabelConfig({ mediaMode: v })}
         defaultLabel={t.printerSettings.defaultOption}
-        optionLabel={(m) => `${m} ${loc[MEDIA_MODE_LABEL_KEYS[m]]}`}
+        optionLabel={(m) => loc[MEDIA_MODE_LABEL_KEYS[m]]}
       />
 
-      <ZplEnumSelect
+      <ZplEnumCustomSelect
         label={loc.mediaType}
         command="^MT"
         values={MEDIA_TYPE_VALUES}
-        isValid={isMediaType}
         value={label.mediaType}
         onChange={(v) => setLabelConfig({ mediaType: v })}
         defaultLabel={t.printerSettings.defaultOption}
         optionLabel={(m) => loc[MEDIA_TYPE_LABEL_KEYS[m]]}
       />
 
-      <ZplEnumSelect
+      <ZplEnumCustomSelect
         label={loc.mediaTracking}
         command="^MN"
         values={MEDIA_TRACKING_VALUES}
-        isValid={isMediaTracking}
         value={label.mediaTracking}
         onChange={(v) => setLabelConfig({ mediaTracking: v })}
         defaultLabel={t.printerSettings.defaultOption}
-        optionLabel={(m) => `${m} ${loc[TRACKING_LABEL_KEYS[m]]}`}
+        optionLabel={(m) => loc[TRACKING_LABEL_KEYS[m]]}
       />
 
       <ZplBoundedIntInput
@@ -115,23 +112,21 @@ export function MediaFeedTab() {
       <ZplField>
         <ZplCommandLabel text={loc.mediaFeedHeading} command="^MF" />
         <div className="grid grid-cols-2 gap-2">
-          <ZplEnumSubSelect
+          <ZplEnumSubCustomSelect
             label={loc.mediaFeedPowerUp}
             values={MEDIA_FEED_VALUES}
-            isValid={isMediaFeedMode}
             value={label.mediaFeedPowerUp}
             onChange={(v) => setLabelConfig({ mediaFeedPowerUp: v })}
             defaultLabel={t.printerSettings.defaultOption}
-            optionLabel={(m) => `${m} ${loc[FEED_LABEL_KEYS[m]]}`}
+            optionLabel={(m) => loc[FEED_LABEL_KEYS[m]]}
           />
-          <ZplEnumSubSelect
+          <ZplEnumSubCustomSelect
             label={loc.mediaFeedHeadClose}
             values={MEDIA_FEED_VALUES}
-            isValid={isMediaFeedMode}
             value={label.mediaFeedHeadClose}
             onChange={(v) => setLabelConfig({ mediaFeedHeadClose: v })}
             defaultLabel={t.printerSettings.defaultOption}
-            optionLabel={(m) => `${m} ${loc[FEED_LABEL_KEYS[m]]}`}
+            optionLabel={(m) => loc[FEED_LABEL_KEYS[m]]}
           />
         </div>
       </ZplField>
@@ -143,15 +138,14 @@ export function MediaFeedTab() {
         onChange={(v) => setLabelConfig({ suppressBackfeed: v ? true : undefined })}
       />
 
-      <ZplEnumSelect
+      <ZplEnumCustomSelect
         label={loc.backfeedSequence}
         command="~JS"
         values={BACKFEED_SEQUENCE_VALUES}
-        isValid={isBackfeedSequence}
         value={label.backfeedSequence}
         onChange={(v) => setLabelConfig({ backfeedSequence: v })}
         defaultLabel={t.printerSettings.defaultOption}
-        optionLabel={(m) => `${m} ${loc[BACKFEED_LABEL_KEYS[m]]}`}
+        optionLabel={(m) => loc[BACKFEED_LABEL_KEYS[m]]}
       />
     </div>
   );

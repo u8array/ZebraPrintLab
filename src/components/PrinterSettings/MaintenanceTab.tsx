@@ -1,7 +1,8 @@
 import { useId } from "react";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { inputCls, labelCls } from "../ui/formStyles";
+import { labelCls } from "../ui/formStyles";
+import { Select } from "../ui/Select";
 import type { PrinterProfile } from "../../types/PrinterProfile";
 import {
   HEAD_CLEANING_INTERVAL_METERS,
@@ -12,9 +13,6 @@ import {
   MAINTENANCE_DISTANCE_MAX_BY_TYPE,
   MAINTENANCE_MESSAGE_MAX_LEN,
   isHeadCleaningIntervalMeters,
-  isMaintenanceAlertPrint,
-  isMaintenanceAlertType,
-  isMaintenanceAlertUnit,
   type HeadCleaningIntervalMeters,
   type MaintenanceAlertType,
   type MaintenanceAlertUnit,
@@ -23,7 +21,8 @@ import {
   BoundedIntControl,
   SafeStringInput,
   ZplCommandLabel,
-  ZplEnumSelect,
+  ZplEnumSegmented,
+  ZplEnumSubCustomSelect,
   ZplField,
   ZplSubField,
 } from "./zplFieldPrimitives";
@@ -61,67 +60,48 @@ export function MaintenanceTab() {
     <div className="flex flex-col gap-4">
       <ZplField>
         <ZplCommandLabel text={loc.maintenanceAlertHeading} command="^MA" />
-        <ZplSubField label={loc.alertType}>
-          {(id) => (
-            <select
-              id={id}
-              className={inputCls}
-              value={alert?.type ?? ""}
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (raw === "") {
-                  patchPrinterProfile({ maintenanceAlert: undefined });
-                  return;
+        <ZplEnumSubCustomSelect
+          label={loc.alertType}
+          values={MAINTENANCE_ALERT_TYPES}
+          value={alert?.type}
+          defaultLabel={t.printerSettings.defaultOption}
+          optionLabel={(v) => loc[ALERT_TYPE_LABEL_KEYS[v]]}
+          onChange={(raw) => {
+            if (!raw) {
+              patchPrinterProfile({ maintenanceAlert: undefined });
+              return;
+            }
+            // First creation seeds defaults; later edits re-spread.
+            // Threshold/frequency clamp to the new type's cap so a switch
+            // R→C with stale 50000 doesn't trip the schema and snap back.
+            const cap = MAINTENANCE_DISTANCE_MAX_BY_TYPE[raw];
+            patchPrinterProfile({
+              maintenanceAlert: alert
+                ? {
+                  ...alert,
+                  type: raw,
+                  threshold: Math.min(alert.threshold, cap),
+                  frequency: Math.min(alert.frequency, cap),
                 }
-                if (!isMaintenanceAlertType(raw)) return;
-                // First creation seeds defaults; later edits re-spread.
-                // Threshold/frequency clamp to the new type's cap so a switch
-                // R→C with stale 50000 doesn't trip the schema and snap back.
-                const cap = MAINTENANCE_DISTANCE_MAX_BY_TYPE[raw];
-                patchPrinterProfile({
-                  maintenanceAlert: alert
-                    ? {
-                      ...alert,
-                      type: raw,
-                      threshold: Math.min(alert.threshold, cap),
-                      frequency: Math.min(alert.frequency, cap),
-                    }
-                    : { ...MAINTENANCE_ALERT_DEFAULTS, type: raw },
-                });
-              }}
-            >
-              <option value="">{t.printerSettings.defaultOption}</option>
-              {MAINTENANCE_ALERT_TYPES.map((v) => (
-                <option key={v} value={v}>{loc[ALERT_TYPE_LABEL_KEYS[v]]}</option>
-              ))}
-            </select>
-          )}
-        </ZplSubField>
+                : { ...MAINTENANCE_ALERT_DEFAULTS, type: raw },
+            });
+          }}
+        />
         <div
           className={`grid grid-cols-4 items-end gap-2 pl-2 mt-1 border-l-2 ${
             alert ? "border-accent/60" : "border-border/40"
           }`}
         >
-          <ZplSubField label={loc.alertPrint}>
-            {(id) => (
-              <select
-                id={id}
-                className={inputCls}
-                value={alert?.print ?? ""}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (isMaintenanceAlertPrint(raw)) updateAlert("print", raw);
-                }}
-                disabled={!alert}
-              >
-                {/* placeholder shown only while the alert is undefined */}
-                <option value="" disabled hidden></option>
-                {MAINTENANCE_ALERT_PRINT_VALUES.map((v) => (
-                  <option key={v} value={v}>{v === "Y" ? loc.alertPrintY : loc.alertPrintN}</option>
-                ))}
-              </select>
-            )}
-          </ZplSubField>
+          <ZplEnumSubCustomSelect
+            label={loc.alertPrint}
+            values={MAINTENANCE_ALERT_PRINT_VALUES}
+            value={alert?.print}
+            disabled={!alert}
+            optionLabel={(v) => (v === "Y" ? loc.alertPrintY : loc.alertPrintN)}
+            onChange={(v) => {
+              if (v) updateAlert("print", v);
+            }}
+          />
           <ZplSubField label={loc.alertThreshold}>
             {(id) => (
               <BoundedIntControl
@@ -152,25 +132,16 @@ export function MaintenanceTab() {
               />
             )}
           </ZplSubField>
-          <ZplSubField label={loc.alertUnits}>
-            {(id) => (
-              <select
-                id={id}
-                className={inputCls}
-                value={alert?.units ?? ""}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (isMaintenanceAlertUnit(raw)) updateAlert("units", raw);
-                }}
-                disabled={!alert}
-              >
-                <option value="" disabled hidden></option>
-                {MAINTENANCE_ALERT_UNITS.map((v) => (
-                  <option key={v} value={v}>{loc[ALERT_UNIT_LABEL_KEYS[v]]}</option>
-                ))}
-              </select>
-            )}
-          </ZplSubField>
+          <ZplEnumSubCustomSelect
+            label={loc.alertUnits}
+            values={MAINTENANCE_ALERT_UNITS}
+            value={alert?.units}
+            disabled={!alert}
+            optionLabel={(v) => loc[ALERT_UNIT_LABEL_KEYS[v]]}
+            onChange={(v) => {
+              if (v) updateAlert("units", v);
+            }}
+          />
         </div>
       </ZplField>
 
@@ -202,11 +173,10 @@ export function MaintenanceTab() {
         </div>
       </ZplField>
 
-      <ZplEnumSelect
+      <ZplEnumSegmented
         label={loc.earlyWarningMaintenance}
         command="^JH"
         values={['E', 'D'] as const}
-        isValid={(v): v is 'E' | 'D' => v === 'E' || v === 'D'}
         value={profile.earlyWarningMaintenance}
         onChange={(earlyWarningMaintenance) => patchPrinterProfile({ earlyWarningMaintenance })}
         defaultLabel={t.printerSettings.defaultOption}
@@ -229,11 +199,10 @@ export function MaintenanceTab() {
         {loc.headCleaningIntervalHint}
       </span>
 
-      <ZplEnumSelect
+      <ZplEnumSegmented
         label={loc.headColdWarning}
         command="^MW"
         values={['Y', 'N'] as const}
-        isValid={(v): v is 'Y' | 'N' => v === 'Y' || v === 'N'}
         value={profile.headColdWarning}
         onChange={(headColdWarning) => patchPrinterProfile({ headColdWarning })}
         defaultLabel={t.printerSettings.defaultOption}
@@ -260,25 +229,27 @@ function HeadCleaningIntervalSelect({
   return (
     <ZplField>
       <ZplCommandLabel text={label} command="^JH" htmlFor={id} />
-      <div className="flex items-center gap-2">
-        <select
-          id={id}
-          className={inputCls}
-          value={value ?? ""}
-          onChange={(e) => {
-            const raw = e.target.value;
-            if (raw === "") { onChange(undefined); return; }
-            const n = Number(raw);
-            if (isHeadCleaningIntervalMeters(n)) onChange(n);
-          }}
-        >
-          <option value="">{defaultLabel}</option>
-          {HEAD_CLEANING_INTERVAL_METERS.map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </select>
-        <span className={labelCls}>{unit}</span>
-      </div>
+      <Select
+        id={id}
+        aria-label={label}
+        value={value !== undefined ? String(value) : ""}
+        groups={[
+          {
+            options: [
+              { value: "", label: defaultLabel },
+              ...HEAD_CLEANING_INTERVAL_METERS.map((m) => ({
+                value: String(m),
+                label: `${m} ${unit}`,
+              })),
+            ],
+          },
+        ]}
+        onChange={(raw) => {
+          if (raw === "") { onChange(undefined); return; }
+          const n = Number(raw);
+          if (isHeadCleaningIntervalMeters(n)) onChange(n);
+        }}
+      />
     </ZplField>
   );
 }

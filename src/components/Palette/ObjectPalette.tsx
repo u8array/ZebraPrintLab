@@ -21,6 +21,8 @@ interface PaletteEntryProps {
   /** Registry type to instantiate. Equals `id` for non-virtual entries. */
   type: string;
   icon: string;
+  /** Primary ZPL command, shown in the icon slot in power-user mode. */
+  zplCmd?: string;
   label: string;
   defaultSize: ObjectTypeDefinition["defaultSize"];
   propsOverride?: object;
@@ -29,8 +31,9 @@ interface PaletteEntryProps {
   favoriteLabel: string;
 }
 
-function PaletteEntry({ id, type, icon, label, defaultSize, propsOverride, isFavorite, onToggleFavorite, favoriteLabel }: PaletteEntryProps) {
+function PaletteEntry({ id, type, icon, zplCmd, label, defaultSize, propsOverride, isFavorite, onToggleFavorite, favoriteLabel }: PaletteEntryProps) {
   const addObject = useLabelStore((s) => s.addObject);
+  const showZplCommands = useLabelStore((s) => s.showZplCommands);
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({
     id: `palette-${id}`,
     data: { type, propsOverride } satisfies PaletteDragData,
@@ -78,7 +81,14 @@ function PaletteEntry({ id, type, icon, label, defaultSize, propsOverride, isFav
       >
         <DragHandleIcon className="w-2 h-3.5" />
       </button>
-      <span className="font-mono text-[11px] text-muted group-hover:text-accent w-6 text-center shrink-0 transition-colors">{icon}</span>
+      {/* Fixed-width slot so toggling command/glyph never shifts the label. */}
+      <span className="w-8 shrink-0 flex justify-center">
+        {showZplCommands && zplCmd ? (
+          <span className="bg-accent-dim text-accent font-mono text-[10px] leading-none rounded px-1 py-0.5">{zplCmd}</span>
+        ) : (
+          <span className="font-mono text-[11px] text-muted group-hover:text-accent transition-colors">{icon}</span>
+        )}
+      </span>
       <span className="text-xs text-text truncate">{label}</span>
       {/* Stop pointerdown (the row's drag activator), click, and dblclick (the
           row's double-click spawns an object) so a star tap only toggles and a
@@ -109,6 +119,7 @@ interface ResolvedEntry {
   id: string;
   type: string;
   icon: string;
+  zplCmd?: string;
   label: string;
   defaultSize: ObjectTypeDefinition["defaultSize"];
   propsOverride?: object;
@@ -136,6 +147,7 @@ function resolveEntry(
     id: type,
     type,
     icon: def.icon,
+    zplCmd: def.zplCmd,
     label: types[type] ?? def.label,
     defaultSize: def.defaultSize,
   };
@@ -184,6 +196,7 @@ export function ObjectPalette() {
         id={`${scope}-${e.id}`}
         type={e.type}
         icon={e.icon}
+        zplCmd={e.zplCmd}
         label={e.label}
         defaultSize={e.defaultSize}
         propsOverride={e.propsOverride}

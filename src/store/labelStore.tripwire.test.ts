@@ -13,6 +13,7 @@ const EXPECTED_PERSIST_KEYS = [
   'pages',
   'paletteFavorites',
   'printerProfile',
+  'showZplCommands',
   'theme',
   'variables',
 ].sort();

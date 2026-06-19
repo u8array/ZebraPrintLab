@@ -19,6 +19,7 @@ export interface AztecProps {
 export const aztec: ObjectTypeCore<AztecProps> = {
   label: "Aztec",
   icon: "◇",
+  zplCmd: "^B0",
   group: "code-2d",
   bindable: true,
   defaultProps: {

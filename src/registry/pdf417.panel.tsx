@@ -13,7 +13,7 @@ export const pdf417Panel: ObjectTypeUi<Pdf417Props> = {
     const loc = t.registry.pdf417;
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection}>
+        <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <input
             className={inputCls}
             aria-label={loc.content}
@@ -29,6 +29,7 @@ export const pdf417Panel: ObjectTypeUi<Pdf417Props> = {
               value={p.rowHeight}
               min={1}
               onChange={(rowHeight) => onChange({ rowHeight })}
+              zplCmd="^B7"
             />
             <NumberInput
               label={loc.moduleWidth}
@@ -36,6 +37,7 @@ export const pdf417Panel: ObjectTypeUi<Pdf417Props> = {
               min={1}
               max={10}
               onChange={(moduleWidth) => onChange({ moduleWidth })}
+              zplCmd="^BY"
             />
           </div>
 
@@ -46,6 +48,7 @@ export const pdf417Panel: ObjectTypeUi<Pdf417Props> = {
               min={0}
               max={8}
               onChange={(securityLevel) => onChange({ securityLevel })}
+              zplCmd="^B7"
             />
             <NumberInput
               label={loc.columns}
@@ -53,10 +56,11 @@ export const pdf417Panel: ObjectTypeUi<Pdf417Props> = {
               min={0}
               max={30}
               onChange={(columns) => onChange({ columns })}
+              zplCmd="^B7"
             />
           </div>
 
-          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
+          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^B7" />
         </SectionCard>
       </>
     );

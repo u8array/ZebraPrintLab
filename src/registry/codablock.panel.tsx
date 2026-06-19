@@ -4,6 +4,7 @@ import { inputCls, labelCls } from "../components/Properties/styles";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { NumberInput } from "../components/Properties/NumberInput";
 import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
+import { ZplCmd } from "../components/Properties/ZplCmd";
 import type { CodablockProps } from "./codablock";
 
 export const codablockPanel: ObjectTypeUi<CodablockProps> = {
@@ -13,7 +14,7 @@ export const codablockPanel: ObjectTypeUi<CodablockProps> = {
     const loc = t.registry.codablock;
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection}>
+        <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <input
             className={inputCls}
             aria-label={loc.content}
@@ -29,6 +30,7 @@ export const codablockPanel: ObjectTypeUi<CodablockProps> = {
               value={p.rowHeight}
               min={1}
               onChange={(rowHeight) => onChange({ rowHeight })}
+              zplCmd="^BB"
             />
             <NumberInput
               label={loc.moduleWidth}
@@ -36,22 +38,26 @@ export const codablockPanel: ObjectTypeUi<CodablockProps> = {
               min={1}
               max={10}
               onChange={(moduleWidth) => onChange({ moduleWidth })}
+              zplCmd="^BY"
             />
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              className="accent-accent"
-              checked={p.securityLevel === "Y"}
-              onChange={(e) =>
-                onChange({ securityLevel: e.target.checked ? "Y" : "N" })
-              }
-            />
-            <span className={labelCls}>{loc.security}</span>
-          </label>
+          <div className="flex items-center justify-between gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="accent-accent"
+                checked={p.securityLevel === "Y"}
+                onChange={(e) =>
+                  onChange({ securityLevel: e.target.checked ? "Y" : "N" })
+                }
+              />
+              <span className={labelCls}>{loc.security}</span>
+            </label>
+            <ZplCmd cmd="^BB" />
+          </div>
 
-          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
+          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^BB" />
         </SectionCard>
       </>
     );

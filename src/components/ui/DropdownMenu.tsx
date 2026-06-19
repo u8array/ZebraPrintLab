@@ -18,6 +18,8 @@ interface MenuProps {
   label: React.ReactNode;
   children: React.ReactNode;
   maxHeight?: string;
+  /** Accessible name for the trigger; required when `label` is icon-only. */
+  ariaLabel?: string;
 }
 
 // ── Components ────────────────────────────────────────────────────────────────
@@ -40,7 +42,7 @@ export function DropdownItem({ onClick, disabled, shortcut, icon: Icon, children
   );
 }
 
-export function DropdownMenu({ label, children, maxHeight }: MenuProps) {
+export function DropdownMenu({ label, children, maxHeight, ariaLabel }: MenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +66,9 @@ export function DropdownMenu({ label, children, maxHeight }: MenuProps) {
     <div ref={rootRef} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
+        aria-label={ariaLabel}
+        aria-haspopup="menu"
+        aria-expanded={open}
         className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono transition-colors ${
           open
             ? 'text-accent bg-[--color-accent-dim]'

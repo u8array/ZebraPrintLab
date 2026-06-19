@@ -1,5 +1,6 @@
 import { clampMin } from '../../lib/inputParse';
-import { inputCls, labelCls } from './styles';
+import { inputCls } from './styles';
+import { FieldLabel } from './ZplCmd';
 
 interface NumberInputProps {
   label: string;
@@ -11,6 +12,9 @@ interface NumberInputProps {
   onChange: (next: number) => void;
   disabled?: boolean;
   readOnly?: boolean;
+  /** Optional ZPL command this field emits; shown as a tag when the
+   *  showZplCommands preference is on. */
+  zplCmd?: string;
 }
 
 /**
@@ -27,10 +31,11 @@ export function NumberInput({
   onChange,
   disabled,
   readOnly,
+  zplCmd,
 }: NumberInputProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label className={labelCls}>{label}</label>
+      <FieldLabel cmd={zplCmd}>{label}</FieldLabel>
       <input
         type="number"
         className={inputCls}

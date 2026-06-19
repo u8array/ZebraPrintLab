@@ -4,6 +4,7 @@ import { useLabelStore } from '../../store/labelStore';
 import type { LabelObject } from '../../types/Group';
 import { inputCls } from '../Properties/styles';
 import { FieldLabel } from '../ui/FieldLabel';
+import { ZplCmd } from '../Properties/ZplCmd';
 import { Tooltip } from '../ui/Tooltip';
 import { useT } from '../../lib/useT';
 import { getObjectStringContent } from '../../lib/variableBinding';
@@ -86,7 +87,10 @@ export function VariableBindingControl({ obj }: Props) {
 
   return (
     <div className="flex flex-col gap-1">
-      <FieldLabel text={tv.sectionTitle} help={tv.bindingHelp} />
+      <div className="flex items-center justify-between gap-2">
+        <FieldLabel text={tv.sectionTitle} help={tv.bindingHelp} />
+        <ZplCmd cmd="^FN" />
+      </div>
 
       {creating ? (
         <div className="flex flex-col gap-1">
@@ -123,6 +127,7 @@ export function VariableBindingControl({ obj }: Props) {
         <div className="flex items-center gap-1.5">
           <select
             className={`${inputCls} flex-1`}
+            aria-label={tv.sectionTitle}
             value={boundVariable?.id ?? ''}
             onChange={handleSelect}
           >

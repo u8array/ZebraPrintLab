@@ -24,6 +24,7 @@ export interface Code49Props {
 export const code49: ObjectTypeCore<Code49Props> = {
   label: 'Code 49',
   icon: 'C49',
+  zplCmd: '^B4',
   group: 'code-1d',
   bindable: true,
   defaultProps: {

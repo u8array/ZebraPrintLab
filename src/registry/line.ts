@@ -45,6 +45,7 @@ export function pickAngle(
 export const line: ObjectTypeCore<LineProps> = {
   label: 'Line',
   icon: '—',
+  zplCmd: '^GB',
   group: 'shape',
   defaultProps: {
     angle: 0,

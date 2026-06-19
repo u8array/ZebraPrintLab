@@ -1,13 +1,13 @@
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { DARKNESS_INSTANT_RANGE, DARKNESS_PERMANENT_RANGE, PRINT_ORIENTATION_VALUES, SPEED_RANGE, isPrintOrientation, type PrintOrientation } from "../../types/LabelConfig";
+import { DARKNESS_INSTANT_RANGE, DARKNESS_PERMANENT_RANGE, PRINT_ORIENTATION_VALUES, SPEED_RANGE, type PrintOrientation } from "../../types/LabelConfig";
 import { HEAD_TEST_INTERVAL_RANGE, TEAR_OFF_ADJUST_RANGE } from "../../types/PrinterProfile";
 import {
   BoundedIntControl,
   ZplBoundedIntInput,
   ZplCheckbox,
   ZplCommandLabel,
-  ZplEnumSelect,
+  ZplEnumSegmented,
   ZplField,
   ZplSubField,
 } from "./zplFieldPrimitives";
@@ -32,11 +32,10 @@ export function PrintQualityTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ZplEnumSelect
+      <ZplEnumSegmented
         label={loc.printOrientation}
         command="^PO"
         values={PRINT_ORIENTATION_VALUES}
-        isValid={isPrintOrientation}
         value={label.printOrientation}
         onChange={(v) => setLabelConfig({ printOrientation: v })}
         defaultLabel={t.printerSettings.defaultOption}
@@ -144,11 +143,10 @@ export function PrintQualityTab() {
         unit={t.printerSettings.dotsUnit}
       />
 
-      <ZplEnumSelect
+      <ZplEnumSegmented
         label={loc.codeValidation}
         command="^CV"
         values={['Y', 'N'] as const}
-        isValid={(v): v is 'Y' | 'N' => v === 'Y' || v === 'N'}
         value={profile.codeValidation}
         onChange={(codeValidation) => patchPrinterProfile({ codeValidation })}
         defaultLabel={t.printerSettings.defaultOption}

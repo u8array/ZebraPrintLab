@@ -35,6 +35,7 @@ export const SYMBOLOGY_LABELS: Record<Gs1DatabarProps['symbology'], string> = {
 export const gs1databar: ObjectTypeCore<Gs1DatabarProps> = {
   label: 'GS1 Databar',
   icon: 'GS1',
+  zplCmd: '^BR',
   group: 'code-1d',
   bindable: true,
   defaultProps: {

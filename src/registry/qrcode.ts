@@ -15,6 +15,7 @@ export interface QrCodeProps {
 export const qrcode: ObjectTypeCore<QrCodeProps> = {
   label: 'QR Code',
   icon: '⬚',
+  zplCmd: '^BQ',
   group: 'code-2d',
   bindable: true,
   defaultProps: {

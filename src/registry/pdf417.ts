@@ -15,6 +15,7 @@ export interface Pdf417Props {
 export const pdf417: ObjectTypeCore<Pdf417Props> = {
   label: "PDF417",
   icon: "▥",
+  zplCmd: "^B7",
   group: "code-2d",
   bindable: true,
   defaultProps: {

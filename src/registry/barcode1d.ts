@@ -42,20 +42,25 @@ export interface Barcode1DCoreConfig {
 }
 
 export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore<Barcode1DProps> {
+  const defaultProps: Barcode1DProps = {
+    content: config.defaultContent,
+    height: 100,
+    moduleWidth: 2,
+    printInterpretation: !config.interpretationLocked,
+    printInterpretationAbove: false,
+    checkDigit: false,
+    rotation: 'N',
+  };
+  // Single source for the palette command icon: derive the `^Bx` prefix from
+  // the same zplCommand the generator uses, so there's no second literal.
+  const zplCmd = config.zplCommand(defaultProps).match(/^\^[A-Z0-9]{2}/)?.[0];
   return {
     label: config.label,
     icon: config.icon,
+    zplCmd,
     group: config.group,
     bindable: true,
-    defaultProps: {
-      content: config.defaultContent,
-      height: 100,
-      moduleWidth: 2,
-      printInterpretation: !config.interpretationLocked,
-      printInterpretationAbove: false,
-      checkDigit: false,
-      rotation: 'N',
-    },
+    defaultProps,
     defaultSize: { width: 300, height: 120 },
     heightLocked: config.heightLocked,
     interpretationLocked: config.interpretationLocked,

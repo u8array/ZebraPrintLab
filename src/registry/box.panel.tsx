@@ -3,6 +3,7 @@ import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { SectionCard } from '../components/Properties/SectionCard';
+import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import type { BoxProps } from './box';
 
 export const boxPanel: ObjectTypeUi<BoxProps> = {
@@ -17,24 +18,29 @@ export const boxPanel: ObjectTypeUi<BoxProps> = {
             value={p.width}
             min={1}
             onChange={(width) => onChange({ width })}
+            zplCmd="^GB"
           />
           <NumberInput
             label={t.registry.box.height}
             value={p.height}
             min={1}
             onChange={(height) => onChange({ height })}
+            zplCmd="^GB"
           />
         </div>
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            className="accent-accent"
-            checked={p.filled}
-            onChange={(e) => onChange({ filled: e.target.checked })}
-          />
-          <span className={labelCls}>{t.registry.box.filled}</span>
-        </label>
+        <div className="flex items-center justify-between gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              className="accent-accent"
+              checked={p.filled}
+              onChange={(e) => onChange({ filled: e.target.checked })}
+            />
+            <span className={labelCls}>{t.registry.box.filled}</span>
+          </label>
+          <ZplCmd cmd="^GB" />
+        </div>
 
         {!p.filled && (
           <NumberInput
@@ -42,12 +48,13 @@ export const boxPanel: ObjectTypeUi<BoxProps> = {
             value={p.thickness}
             min={1}
             onChange={(thickness) => onChange({ thickness })}
+            zplCmd="^GB"
           />
         )}
 
         <div className="grid grid-cols-2 gap-2">
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.box.color}</label>
+            <FieldLabel cmd="^GB">{t.registry.box.color}</FieldLabel>
             <select
               className={inputCls}
               value={p.color}
@@ -63,18 +70,22 @@ export const boxPanel: ObjectTypeUi<BoxProps> = {
             min={0}
             max={8}
             onChange={(rounding) => onChange({ rounding })}
+            zplCmd="^GB"
           />
         </div>
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            className="accent-accent"
-            checked={p.reverse ?? false}
-            onChange={(e) => onChange({ reverse: e.target.checked })}
-          />
-          <span className={labelCls}>{t.registry.box.reverse}</span>
-        </label>
+        <div className="flex items-center justify-between gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              className="accent-accent"
+              checked={p.reverse ?? false}
+              onChange={(e) => onChange({ reverse: e.target.checked })}
+            />
+            <span className={labelCls}>{t.registry.box.reverse}</span>
+          </label>
+          <ZplCmd cmd="^FR" />
+        </div>
       </SectionCard>
     );
   },

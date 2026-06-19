@@ -14,6 +14,7 @@ export interface MicroPdf417Props {
 export const micropdf417: ObjectTypeCore<MicroPdf417Props> = {
   label: "MicroPDF417",
   icon: "▤",
+  zplCmd: "^BF",
   group: "code-2d",
   bindable: true,
   defaultProps: {

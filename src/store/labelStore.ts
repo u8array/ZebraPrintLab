@@ -247,6 +247,7 @@ export const persistPartialize = (state: LabelState) => ({
   labelaryNoticeAcknowledged: state.labelaryNoticeAcknowledged,
   canvasSettings: state.canvasSettings,
   paletteFavorites: state.paletteFavorites,
+  showZplCommands: state.showZplCommands,
   variables: state.variables,
   csvMapping: state.csvMapping,
 });

@@ -1,6 +1,6 @@
 import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
-import { inputCls, labelCls } from '../components/Properties/styles';
+import { inputCls } from '../components/Properties/styles';
 import { filterContent } from './contentSpec';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
@@ -9,6 +9,7 @@ import {
   GS1_DATABAR_EXPANDED_SYMBOLOGIES,
 } from '../lib/gs1';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
+import { FieldLabel } from '../components/Properties/ZplCmd';
 import { type Gs1DatabarProps, SYMBOLOGY_LABELS } from './gs1databar';
 
 export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
@@ -19,7 +20,7 @@ export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
     const isExpanded = GS1_DATABAR_EXPANDED_SYMBOLOGIES.has(p.symbology);
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection}>
+        <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <input
             className={inputCls}
             aria-label={loc.content}
@@ -39,10 +40,11 @@ export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
             min={1}
             max={10}
             onChange={(magnification) => onChange({ magnification })}
+            zplCmd="^BR"
           />
 
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{loc.symbology}</label>
+            <FieldLabel cmd="^BR">{loc.symbology}</FieldLabel>
             <select
               className={inputCls}
               value={p.symbology}
@@ -56,7 +58,7 @@ export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
 
           {p.symbology === 7 && (
             <div className="flex flex-col gap-1">
-              <label className={labelCls}>{loc.segments}</label>
+              <FieldLabel cmd="^BR">{loc.segments}</FieldLabel>
               <input
                 type="number"
                 className={inputCls}
@@ -76,6 +78,7 @@ export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
           <RotationSelect
             value={p.rotation}
             onChange={(rotation) => onChange({ rotation })}
+            zplCmd="^BR"
           />
         </SectionCard>
       </>

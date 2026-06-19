@@ -1,9 +1,11 @@
 import { useId, useState, type InputHTMLAttributes, type ReactNode } from "react";
-import { labelCls, inputCls } from "../ui/formStyles";
+import { labelCls, inputCls, zplCommandTagCls } from "../ui/formStyles";
+import { SegmentedControl } from "../ui/SegmentedControl";
+import { Select } from "../ui/Select";
 import { clampBoundedInt, readBoundedInt } from "../../lib/inputParse";
 import { stripUnsafeChars } from "../../types/PrinterProfile";
 
-const commandTagCls = "font-mono text-[10px] text-muted/60 tracking-tight";
+const commandTagCls = zplCommandTagCls;
 const hintCls = "font-mono text-[10px] text-muted/70 normal-case tracking-normal";
 
 export function ZplFieldHint({ children }: { children: ReactNode }) {
@@ -211,53 +213,109 @@ export function BoundedIntControl({
   );
 }
 
-/** No command tag; lives at the shared parent ZplField. */
-export function ZplEnumSubSelect<T extends string>({
+/** Themed custom-listbox variant of ZplEnumSelect for richer enums (value +
+ *  name). The single-letter ZPL value shows as a right-badge; `optionLabel`
+ *  should therefore be the name WITHOUT a letter prefix. */
+export function ZplEnumCustomSelect<T extends string>({
   label,
+  command,
   values,
-  isValid,
   value,
   onChange,
   defaultLabel,
   optionLabel,
+  optionBadge,
 }: {
   label: string;
+  command: string;
   values: readonly T[];
-  isValid: (v: string) => v is T;
   value: T | undefined;
   onChange: (next: T | undefined) => void;
-  defaultLabel: string;
+  /** Omit for a required field (no "unset" segment). */
+  defaultLabel?: string;
   optionLabel: (v: T) => string;
+  /** Right-badge; defaults to the value itself (the ZPL parameter letter). */
+  optionBadge?: (v: T) => string;
 }) {
+  const groups = [
+    {
+      options: [
+        ...(defaultLabel !== undefined ? [{ value: "", label: defaultLabel }] : []),
+        ...values.map((v) => ({
+          value: v as string,
+          label: optionLabel(v),
+          badge: optionBadge ? optionBadge(v) : v,
+        })),
+      ],
+    },
+  ];
   return (
-    <ZplSubField label={label}>
-      {(id) => (
-        <select
-          id={id}
-          className={inputCls}
-          value={value ?? ""}
-          onChange={(e) => {
-            const raw = e.target.value;
-            onChange(isValid(raw) ? raw : undefined);
-          }}
-        >
-          <option value="">{defaultLabel}</option>
-          {values.map((v) => (
-            <option key={v} value={v}>
-              {optionLabel(v)}
-            </option>
-          ))}
-        </select>
-      )}
-    </ZplSubField>
+    <ZplField>
+      <ZplCommandLabel text={label} command={command} />
+      <Select
+        aria-label={label}
+        value={value ?? ""}
+        groups={groups}
+        onChange={(v) => onChange(v === "" ? undefined : (v as T))}
+      />
+    </ZplField>
   );
 }
 
-export function ZplEnumSelect<T extends string>({
+/** Custom-listbox sub-select for shared-tag grids (^MF); no command tag, the
+ *  parent ZplField carries it. Letter value shows as a right-badge. */
+export function ZplEnumSubCustomSelect<T extends string>({
+  label,
+  values,
+  value,
+  onChange,
+  defaultLabel,
+  optionLabel,
+  optionBadge,
+  disabled,
+}: {
+  label: string;
+  values: readonly T[];
+  value: T | undefined;
+  onChange: (next: T | undefined) => void;
+  /** Omit for a required field (no "unset" segment). */
+  defaultLabel?: string;
+  optionLabel: (v: T) => string;
+  optionBadge?: (v: T) => string;
+  disabled?: boolean;
+}) {
+  const groups = [
+    {
+      options: [
+        ...(defaultLabel !== undefined ? [{ value: "", label: defaultLabel }] : []),
+        ...values.map((v) => ({
+          value: v as string,
+          label: optionLabel(v),
+          badge: optionBadge ? optionBadge(v) : v,
+        })),
+      ],
+    },
+  ];
+  return (
+    <div className="flex flex-col gap-1">
+      <label className={labelCls}>{label}</label>
+      <Select
+        aria-label={label}
+        value={value ?? ""}
+        groups={groups}
+        disabled={disabled}
+        onChange={(v) => onChange(v === "" ? undefined : (v as T))}
+      />
+    </div>
+  );
+}
+
+/** Segmented-button variant of ZplEnumSelect for short enums (three-tier
+ *  rule). Same props minus `isValid` (no free-text entry to validate). */
+export function ZplEnumSegmented<T extends string>({
   label,
   command,
   values,
-  isValid,
   value,
   onChange,
   defaultLabel,
@@ -266,32 +324,21 @@ export function ZplEnumSelect<T extends string>({
   label: string;
   command: string;
   values: readonly T[];
-  isValid: (v: string) => v is T;
   value: T | undefined;
   onChange: (next: T | undefined) => void;
   defaultLabel: string;
   optionLabel: (v: T) => string;
 }) {
-  const id = useId();
   return (
     <ZplField>
-      <ZplCommandLabel text={label} command={command} htmlFor={id} />
-      <select
-        id={id}
-        className={inputCls}
-        value={value ?? ""}
-        onChange={(e) => {
-          const raw = e.target.value;
-          onChange(isValid(raw) ? raw : undefined);
-        }}
-      >
-        <option value="">{defaultLabel}</option>
-        {values.map((v) => (
-          <option key={v} value={v}>
-            {optionLabel(v)}
-          </option>
-        ))}
-      </select>
+      <ZplCommandLabel text={label} command={command} />
+      <SegmentedControl
+        aria-label={label}
+        value={value}
+        onChange={onChange}
+        defaultLabel={defaultLabel}
+        options={values.map((v) => ({ value: v, label: optionLabel(v) }))}
+      />
     </ZplField>
   );
 }

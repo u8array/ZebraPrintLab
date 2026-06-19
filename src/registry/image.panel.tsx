@@ -16,6 +16,7 @@ import {
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Tooltip } from '../components/ui/Tooltip';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
+import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import type { ImageProps } from './image';
 
 export const imagePanel: ObjectTypeUi<ImageProps> = {
@@ -83,7 +84,7 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
 
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection}>
+        <StaticSectionCard title={t.properties.contentSection} cmd={p.storedAs ? "^XG" : "^GF"}>
           {/* Image select / upload */}
           <div className="flex flex-col gap-1">
             <label className={labelCls}>{t.registry.image.source}</label>
@@ -161,7 +162,7 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
         <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
           {/* Width in dots */}
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.image.widthDots}</label>
+            <FieldLabel cmd={p.storedAs ? "~DY" : "^GF"}>{t.registry.image.widthDots}</FieldLabel>
             <input
               type="number"
               className={inputCls}
@@ -174,7 +175,7 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
 
           {/* Mono threshold */}
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>{t.registry.image.threshold}</label>
+            <FieldLabel cmd={p.storedAs ? "~DY" : "^GF"}>{t.registry.image.threshold}</FieldLabel>
             <input
               type="range"
               min={1}
@@ -197,6 +198,9 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
               <Tooltip content={t.registry.image.storeOnPrinterHint}>
                 <InformationCircleIcon className="w-3 h-3 text-muted/60 cursor-help shrink-0" />
               </Tooltip>
+              <div className="ml-auto">
+                <ZplCmd cmd="~DY" />
+              </div>
             </div>
             {storedAs ? (
               <>

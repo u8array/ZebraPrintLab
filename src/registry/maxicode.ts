@@ -19,6 +19,7 @@ export interface MaxicodeProps {
 export const maxicode: ObjectTypeCore<MaxicodeProps> = {
   label: "Maxicode",
   icon: "⬡",
+  zplCmd: "^BV",
   group: "code-2d",
   bindable: true,
   defaultProps: {

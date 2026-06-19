@@ -7,12 +7,11 @@ import {
   type ConfigUpdateAction,
   PRINTER_NAME_MAX_LEN,
   PRINTER_PASSWORD_REGEX,
-  isConfigUpdateAction,
 } from "../../types/PrinterProfile";
 import {
   SafeStringInput,
   ZplCommandLabel,
-  ZplEnumSelect,
+  ZplEnumCustomSelect,
   ZplField,
   ZplSubField,
 } from "./zplFieldPrimitives";
@@ -117,11 +116,10 @@ export function IdentityTab() {
         </span>
       </ZplField>
 
-      <ZplEnumSelect
+      <ZplEnumCustomSelect
         label={loc.configurationUpdate}
         command="^JU"
         values={CONFIG_UPDATE_VALUES}
-        isValid={isConfigUpdateAction}
         value={profile.configurationUpdate}
         onChange={(configurationUpdate) => patchPrinterProfile({ configurationUpdate })}
         defaultLabel={loc.configurationUpdateUnset}

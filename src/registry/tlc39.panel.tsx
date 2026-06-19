@@ -13,7 +13,7 @@ export const tlc39Panel: ObjectTypeUi<Tlc39Props> = {
     const loc = t.registry.tlc39;
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection}>
+        <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <input
             className={inputCls}
             aria-label={loc.content}
@@ -29,6 +29,7 @@ export const tlc39Panel: ObjectTypeUi<Tlc39Props> = {
               value={p.height}
               min={1}
               onChange={(height) => onChange({ height })}
+              zplCmd="^BT"
             />
             <NumberInput
               label={loc.moduleWidth}
@@ -36,6 +37,7 @@ export const tlc39Panel: ObjectTypeUi<Tlc39Props> = {
               min={1}
               max={10}
               onChange={(moduleWidth) => onChange({ moduleWidth })}
+              zplCmd="^BY"
             />
           </div>
 
@@ -46,6 +48,7 @@ export const tlc39Panel: ObjectTypeUi<Tlc39Props> = {
               min={1}
               max={255}
               onChange={(microPdfRowHeight) => onChange({ microPdfRowHeight })}
+              zplCmd="^BT"
             />
             <NumberInput
               label={loc.microPdfRows}
@@ -53,10 +56,11 @@ export const tlc39Panel: ObjectTypeUi<Tlc39Props> = {
               min={1}
               max={10}
               onChange={(microPdfRows) => onChange({ microPdfRows })}
+              zplCmd="^BT"
             />
           </div>
 
-          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} />
+          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^BT" />
         </SectionCard>
       </>
     );

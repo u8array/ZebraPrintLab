@@ -1,4 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+// Panels pull in Headless UI, whose react-aria dep runs global focus setup at
+// import and needs DOM globals (this suite is node-env, key checks only, never
+// renders). Stub it so the import chain stays node-safe.
+vi.mock("@headlessui/react", () => {
+  const Stub = () => null;
+  return { Listbox: Stub, ListboxButton: Stub, ListboxOptions: Stub, ListboxOption: Stub };
+});
 import { ObjectRegistry, BARCODE_1D_TYPES, STACKED_2D_TYPES } from "./index";
 import { ObjectPanels } from "./panels";
 

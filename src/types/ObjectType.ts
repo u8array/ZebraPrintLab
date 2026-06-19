@@ -6,6 +6,9 @@ import type { HriBehavior, TransformContext, ZplEmitContext } from './ZplEmit';
 export interface ObjectTypeCore<P extends object = object> {
   label: string;
   icon: string;
+  /** Primary ZPL command this type emits (e.g. `^BC`, `^GB`, `^A`). Single
+   *  source for the palette's power-user command icon. */
+  zplCmd?: string;
   group: ObjectGroup;
   defaultProps: P;
   /** Drop footprint: dots (editor default) or mm (spec-fixed types

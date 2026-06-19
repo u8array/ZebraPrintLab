@@ -5,3 +5,7 @@ export const labelCls = 'font-mono text-[10px] text-muted uppercase tracking-wid
  *  surface-2 + border styling used by `inputCls` so buttons sit naturally
  *  next to form fields without dominating the visual hierarchy. */
 export const buttonCls = 'px-3 py-1.5 rounded text-xs font-mono bg-surface-2 border border-border text-text hover:bg-border transition-colors';
+/** Read-only ZPL command tag shown next to a field, e.g. `^A`. One style
+ *  across the app (properties fields + Printer Settings tabs) so the command
+ *  hint reads the same everywhere. */
+export const zplCommandTagCls = 'font-mono text-[10px] text-muted/60 tracking-tight shrink-0';

@@ -529,6 +529,14 @@ describe('ObjectRegistry', () => {
     }
   });
 
+  // The palette swaps the mnemonic glyph for `zplCmd` in power-user mode; a
+  // missing one silently falls back to the glyph, so guard every type has it.
+  it('every registered type has a non-empty zplCmd', () => {
+    for (const [key, def] of Object.entries(ObjectRegistry)) {
+      expect(def.zplCmd, `${key} is missing zplCmd`).toMatch(/^\^[A-Z0-9]{1,2}$/);
+    }
+  });
+
   // Without commitTransform or uniformScaleProp the drag is a silent
   // no-op (was the aztec regression). heightLocked types skip the
   // transformer entirely so they're exempt.
