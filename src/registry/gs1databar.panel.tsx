@@ -1,5 +1,6 @@
 import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
+import { useLabelStore } from '../store/labelStore';
 import { inputCls } from '../components/Properties/styles';
 import { filterContent } from './contentSpec';
 import { RotationSelect } from '../components/Properties/RotationSelect';
@@ -7,30 +8,54 @@ import { NumberInput } from '../components/Properties/NumberInput';
 import {
   GS1_DATABAR_DEFAULT_SEGMENTS,
   GS1_DATABAR_EXPANDED_SYMBOLOGIES,
+  GS1_EXPANDED_CHARSET,
+  gtinBodyFromContent,
+  elementStringToContent,
 } from '../lib/gs1';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel } from '../components/Properties/ZplCmd';
 import { type Gs1DatabarProps, SYMBOLOGY_LABELS } from './gs1databar';
+
+// Stable specs so filterContent's WeakMap cache hits across keystrokes.
+const EXPANDED_SPEC = { charset: GS1_EXPANDED_CHARSET };
+const GTIN_SPEC = { charset: '0-9' };
 
 export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
   PropertiesPanel: ({ obj, onChange }) => {
     const t = useT();
     const p = obj.props;
     const loc = t.registry.gs1databar;
+    const openGs1Builder = useLabelStore((s) => s.openGs1Builder);
     const isExpanded = GS1_DATABAR_EXPANDED_SYMBOLOGIES.has(p.symbology);
     return (
       <>
         <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <input
             className={inputCls}
-            aria-label={loc.content}
+            aria-label={isExpanded ? loc.content : loc.gtinLabel}
             value={p.content}
-            onChange={(e) => onChange({
-              content: filterContent(e.target.value, {
-                charset: isExpanded ? '0-9A-Za-z()' : '0-9',
-              }),
-            })}
+            onChange={(e) => {
+              const raw = e.target.value;
+              // Paste of an element string "(01)…(10)…" (whitespace tolerated):
+              // store as raw content with GS separators so the filter doesn't
+              // silently drop the parens and merge variable AIs.
+              const pasted = isExpanded ? elementStringToContent(raw) : null;
+              if (pasted !== null) { onChange({ content: pasted }); return; }
+              onChange({ content: filterContent(raw, isExpanded ? EXPANDED_SPEC : GTIN_SPEC) });
+            }}
           />
+          {isExpanded ? (
+            <button
+              type="button"
+              onClick={() => openGs1Builder(obj.id)}
+              className="self-start text-xs px-2 py-1 rounded border border-border bg-surface-2 hover:bg-border transition-colors"
+            >
+              {t.gs1builder.button}
+            </button>
+          ) : (
+            // Sym 1-5 carry only a GTIN; the multi-AI builder needs Expanded.
+            <span className="text-[10px] text-muted">{loc.multiAiHint}</span>
+          )}
         </StaticSectionCard>
 
         <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
@@ -48,7 +73,13 @@ export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
             <select
               className={inputCls}
               value={p.symbology}
-              onChange={(e) => onChange({ symbology: Number(e.target.value) as Gs1DatabarProps['symbology'] })}
+              onChange={(e) => {
+                const symbology = Number(e.target.value) as Gs1DatabarProps['symbology'];
+                // Leaving Expanded: reduce multi-AI content to a bare GTIN so the
+                // preview (derived GTIN) and the emitted ZPL stay in sync.
+                const leavingExpanded = isExpanded && !GS1_DATABAR_EXPANDED_SYMBOLOGIES.has(symbology);
+                onChange(leavingExpanded ? { symbology, content: gtinBodyFromContent(p.content) } : { symbology });
+              }}
             >
               {Object.entries(SYMBOLOGY_LABELS).map(([val, name]) => (
                 <option key={val} value={val}>{name}</option>

@@ -12,7 +12,7 @@ import {
   GS1_DATABAR_DEFAULT_SEGMENTS,
   GS1_DATABAR_EXPANDED_SYMBOLOGIES,
   gtin14WithCheck,
-  wrapGs1AIs,
+  gs1ContentToElementString,
 } from "../../lib/gs1";
 import {
   CODE11_QUIET_ZONE_DELTA_MODULES,
@@ -37,7 +37,9 @@ function isAi01ElevenDigitFragment(content: string): boolean {
 
 function gs1ExpandedBwipText(content: string): string {
   if (isAi01ElevenDigitFragment(content)) return `(99)${content}`;
-  return wrapGs1AIs(content);
+  // Catalog parser handles variable AIs (GS-separated); falls back to the
+  // legacy fixed-AI wrapper for content it can't cleanly segment.
+  return gs1ContentToElementString(content);
 }
 
 const GS1_DATABAR_BCID: Record<Gs1DatabarProps["symbology"], string> = {
