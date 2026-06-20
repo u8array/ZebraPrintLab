@@ -86,6 +86,8 @@ export interface UiSlice {
   zebraPrintSource: 'label' | 'setupScript' | null;
   /** Barcode object id whose GS1 content builder modal is open; null = closed. */
   gs1BuilderObjectId: string | null;
+  /** QR object id whose QR content builder modal is open; null = closed. */
+  qrBuilderObjectId: string | null;
   /** One-shot focus request scoped to a single object. The nonce
    *  increments per call so consumers can re-fire even for the same
    *  id; TemplateContentInput's effect compares its own `objectId`
@@ -108,6 +110,8 @@ export interface UiSlice {
   closeZebraPrint: () => void;
   openGs1Builder: (objectId: string) => void;
   closeGs1Builder: () => void;
+  openQrBuilder: (objectId: string) => void;
+  closeQrBuilder: () => void;
   /** Fire a focus request. Does NOT touch the sidebar tab; caller
    *  composes `setSidebarTab('properties')` when the request would
    *  otherwise land on an unmounted editor. */
@@ -136,6 +140,7 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
   printerSettingsTab: null,
   zebraPrintSource: null,
   gs1BuilderObjectId: null,
+  qrBuilderObjectId: null,
   editorFocusRequest: null,
 
   setLocale: (locale) => set({ locale }),
@@ -160,6 +165,8 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
   closeZebraPrint: () => set({ zebraPrintSource: null }),
   openGs1Builder: (objectId) => set({ gs1BuilderObjectId: objectId }),
   closeGs1Builder: () => set({ gs1BuilderObjectId: null }),
+  openQrBuilder: (objectId) => set({ qrBuilderObjectId: objectId }),
+  closeQrBuilder: () => set({ qrBuilderObjectId: null }),
   requestContentEditorFocus: (id) =>
     set((state) => ({
       editorFocusRequest: {

@@ -1,6 +1,6 @@
-import { useId, useState } from "react";
-import { XMarkIcon, TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
-import { DialogShell } from "../ui/DialogShell";
+import { useState } from "react";
+import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { BarcodeContentModalShell } from "./BarcodeContentModalShell";
 import { useT } from "../../lib/useT";
 import { inputCls } from "../ui/formStyles";
 import { useLabelStore, getCurrentObjects } from "../../store/labelStore";
@@ -42,8 +42,6 @@ export function Gs1ContentModal() {
 
 function Gs1Builder({ objectId }: { objectId: string }) {
   const t = useT();
-  const titleId = useId();
-  const subtitleId = useId();
   const closeGs1Builder = useLabelStore((s) => s.closeGs1Builder);
   const updateObject = useLabelStore((s) => s.updateObject);
 
@@ -82,124 +80,101 @@ function Gs1Builder({ objectId }: { objectId: string }) {
   };
 
   return (
-    <DialogShell
-      portal
-      labelledBy={titleId}
-      describedBy={subtitleId}
+    <BarcodeContentModalShell
+      title={tg.title}
+      subtitle={tg.subtitle}
       onClose={closeGs1Builder}
-      boxClassName="bg-surface border border-border rounded-lg shadow-2xl w-[640px] max-w-[95vw] max-h-[85vh] flex flex-col overflow-hidden"
+      onApply={apply}
+      applyDisabled={!valid}
+      applyLabel={tg.apply}
+      cancelLabel={tg.cancel}
+      closeLabel={tg.close}
     >
-      <header className="px-5 py-4 border-b border-border flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-0.5">
-          <h2 id={titleId} className="text-sm font-medium text-text">{tg.title}</h2>
-          <p id={subtitleId} className="text-[11px] text-muted">{tg.subtitle}</p>
-        </div>
-        <button type="button" aria-label={tg.close} onClick={closeGs1Builder} className="text-muted hover:text-text">
-          <XMarkIcon className="w-5 h-5" />
-        </button>
-      </header>
-
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 flex flex-col gap-4">
-        <section className="flex flex-col gap-2">
-          <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{tg.paletteHeading}</h3>
-          {GROUP_ORDER.map((group) => (
-            <div key={group} className="flex flex-col gap-1">
-              <span className="text-[10px] text-muted/70">
-                {(tg as Record<string, string>)[`group${group.charAt(0).toUpperCase()}${group.slice(1)}`]}
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {AI_BY_GROUP[group].map((spec) => (
-                  <button
-                    key={spec.ai}
-                    type="button"
-                    onClick={() => addSegment(spec.ai)}
-                    className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-surface-2 hover:bg-border text-xs transition-colors"
-                  >
-                    <PlusIcon className="w-3 h-3 text-muted" />
-                    <span className="font-mono text-[10px] text-accent">({spec.ai})</span>
-                    <span className="text-text">{aiName(spec.ai)}</span>
-                  </button>
-                ))}
-              </div>
+      <section className="flex flex-col gap-2">
+        <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{tg.paletteHeading}</h3>
+        {GROUP_ORDER.map((group) => (
+          <div key={group} className="flex flex-col gap-1">
+            <span className="text-[10px] text-muted/70">
+              {(tg as Record<string, string>)[`group${group.charAt(0).toUpperCase()}${group.slice(1)}`]}
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {AI_BY_GROUP[group].map((spec) => (
+                <button
+                  key={spec.ai}
+                  type="button"
+                  onClick={() => addSegment(spec.ai)}
+                  className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-surface-2 hover:bg-border text-xs transition-colors"
+                >
+                  <PlusIcon className="w-3 h-3 text-muted" />
+                  <span className="font-mono text-[10px] text-accent">({spec.ai})</span>
+                  <span className="text-text">{aiName(spec.ai)}</span>
+                </button>
+              ))}
             </div>
-          ))}
-        </section>
+          </div>
+        ))}
+      </section>
 
-        <section className="flex flex-col gap-2">
-          <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{tg.segmentsHeading}</h3>
-          {segments.length === 0 ? (
-            <p className="text-xs text-muted px-1">{tg.emptyHint}</p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {segments.map((seg, i) => {
-                const spec = aiSpec(seg.ai);
-                const err = errors[i];
-                return (
-                  <li key={i} className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[10px] bg-accent-dim text-accent rounded px-1 py-0.5 shrink-0">({seg.ai})</span>
-                      <span className="text-xs text-text shrink-0 w-28 truncate">{aiName(seg.ai)}</span>
-                      <span className="font-mono text-[10px] text-muted shrink-0">{spec ? formatHint(spec) : ""}</span>
-                      <input
-                        className={`${inputCls} flex-1 ${err ? "border-error" : ""}`}
-                        value={seg.value}
-                        onChange={(e) => setValue(i, e.target.value)}
-                        aria-label={aiName(seg.ai)}
-                      />
-                      {fnc1After(i) && (
-                        <span className="font-mono text-[9px] text-muted shrink-0" title={tg.fnc1}>FNC1</span>
-                      )}
-                      <button type="button" aria-label={tg.remove} onClick={() => removeAt(i)} className="text-muted hover:text-error shrink-0">
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </div>
-                    {err ? (
-                      <span className="text-[10px] text-error pl-1">{errMsg(err)}</span>
-                    ) : spec?.kind === "gtin" && seg.value.length > 0 && seg.value.length < 14 ? (
-                      <span className="text-[10px] text-muted pl-1">{tg.gtinAutocomplete}</span>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-
-        {fieldsOk && setError && setError !== "empty" && (
-          <p className="text-[10px] text-error px-1">{errMsg(setError)}</p>
+      <section className="flex flex-col gap-2">
+        <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{tg.segmentsHeading}</h3>
+        {segments.length === 0 ? (
+          <p className="text-xs text-muted px-1">{tg.emptyHint}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {segments.map((seg, i) => {
+              const spec = aiSpec(seg.ai);
+              const err = errors[i];
+              return (
+                <li key={i} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[10px] bg-accent-dim text-accent rounded px-1 py-0.5 shrink-0">({seg.ai})</span>
+                    <span className="text-xs text-text shrink-0 w-28 truncate">{aiName(seg.ai)}</span>
+                    <span className="font-mono text-[10px] text-muted shrink-0">{spec ? formatHint(spec) : ""}</span>
+                    <input
+                      className={`${inputCls} flex-1 ${err ? "border-error" : ""}`}
+                      value={seg.value}
+                      onChange={(e) => setValue(i, e.target.value)}
+                      aria-label={aiName(seg.ai)}
+                    />
+                    {fnc1After(i) && (
+                      <span className="font-mono text-[9px] text-muted shrink-0" title={tg.fnc1}>FNC1</span>
+                    )}
+                    <button type="button" aria-label={tg.remove} onClick={() => removeAt(i)} className="text-muted hover:text-error shrink-0">
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {err ? (
+                    <span className="text-[10px] text-error pl-1">{errMsg(err)}</span>
+                  ) : spec?.kind === "gtin" && seg.value.length > 0 && seg.value.length < 14 ? (
+                    <span className="text-[10px] text-muted pl-1">{tg.gtinAutocomplete}</span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
         )}
+      </section>
 
-        {valid && (
-          <section className="flex flex-col gap-2">
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] text-muted">{tg.elementLabel}</span>
-              <code className="text-xs font-mono text-text break-all bg-surface-2 rounded px-2 py-1">
-                {segmentsToElementString(segments)}
-              </code>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] text-muted">{tg.rawLabel}</span>
-              <code className="text-xs font-mono text-text break-all bg-surface-2 rounded px-2 py-1">
-                {segmentsToContent(segments).replaceAll(GS1_GS, "⟨GS⟩")}
-              </code>
-            </div>
-          </section>
-        )}
-      </div>
+      {fieldsOk && setError && setError !== "empty" && (
+        <p className="text-[10px] text-error px-1">{errMsg(setError)}</p>
+      )}
 
-      <footer className="px-5 py-3 border-t border-border flex justify-end gap-2">
-        <button type="button" onClick={closeGs1Builder} className="px-3 py-1.5 rounded text-xs text-text hover:bg-surface-2">
-          {tg.cancel}
-        </button>
-        <button
-          type="button"
-          onClick={apply}
-          disabled={!valid}
-          className="px-3 py-1.5 rounded text-xs bg-accent text-bg disabled:opacity-40 disabled:pointer-events-none"
-        >
-          {tg.apply}
-        </button>
-      </footer>
-    </DialogShell>
+      {valid && (
+        <section className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] text-muted">{tg.elementLabel}</span>
+            <code className="text-xs font-mono text-text break-all bg-surface-2 rounded px-2 py-1">
+              {segmentsToElementString(segments)}
+            </code>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] text-muted">{tg.rawLabel}</span>
+            <code className="text-xs font-mono text-text break-all bg-surface-2 rounded px-2 py-1">
+              {segmentsToContent(segments).replaceAll(GS1_GS, "⟨GS⟩")}
+            </code>
+          </div>
+        </section>
+      )}
+    </BarcodeContentModalShell>
   );
 }
