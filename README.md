@@ -108,8 +108,8 @@ Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable conte
 - Layers panel with reordering
 - Variables: bind text and barcode fields to named defaults that emit as `^FN` slots (or `^FE` inline embeds when one field references multiple variables), round-tripping with printer-side templates
 - CSV batch printing: import a CSV, map columns to Variables, print or export with efficient printer-side data merge (template ships once, each row sends only its overrides)
-- GS1 content builder: assemble GS1 DataBar Expanded content from Application Identifiers, validated per field and against GS1 combination rules
-- QR content builder: generate typed QR content (URL, WiFi, contact, email, phone, SMS, geo) with the right encoding and escaping
+- GS1 content builder: assemble GS1 content from Application Identifiers (DataBar Expanded and GS1 DataMatrix), validated per field and against GS1 combination rules
+- Content builder: generate typed QR/DataMatrix content (URL, WiFi, contact, email, phone, SMS, geo) with the right encoding and escaping
 - Printer settings: label-level hardware tuning plus a Setup Script for clock, locale, encoding, and printer identity
 - 32 UI languages (auto-detected from browser)
 - Light / dark mode (follows OS setting)

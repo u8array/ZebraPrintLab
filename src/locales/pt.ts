@@ -58,11 +58,11 @@ const pt = {
     errMissingGtin: 'Requer um GTIN (01)',
     errDuplicateAi: 'Identificador de aplicação duplicado',
   },
-  qrbuilder: {
-    button: 'Criar conteúdo QR…',
-    title: 'Gerador de conteúdo QR',
-    subtitle: 'Escolha um tipo de dados e preencha os campos; o gerador codifica o conteúdo QR.',
-    preview: 'Conteúdo QR',
+  contentBuilder: {
+    button: 'Criar conteúdo…',
+    title: 'Gerador de conteúdo',
+    subtitle: 'Escolha um tipo de dados e preencha os campos; o gerador codifica o conteúdo.',
+    preview: 'Conteúdo',
     charsFmt: '{n} caracteres',
     ecHintFmt: 'Correção de erros sugerida: {ec}',
     ecApply: 'Usar {ec}',
@@ -596,6 +596,7 @@ const pt = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'Modo GS1',
     },
     ellipse: {
       width: 'Largura (pontos)',

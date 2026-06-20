@@ -58,11 +58,11 @@ const tr = {
     errMissingGtin: 'Bir GTIN (01) gerektirir',
     errDuplicateAi: 'Yinelenen uygulama tanımlayıcısı',
   },
-  qrbuilder: {
-    button: 'QR içeriği oluştur…',
-    title: 'QR İçerik Oluşturucu',
-    subtitle: 'Bir veri türü seçin ve alanları doldurun; oluşturucu QR içeriğini kodlar.',
-    preview: 'QR içeriği',
+  contentBuilder: {
+    button: 'İçerik oluştur…',
+    title: 'İçerik Oluşturucu',
+    subtitle: 'Bir veri türü seçin ve alanları doldurun; oluşturucu içeriği kodlar.',
+    preview: 'İçerik',
     charsFmt: '{n} karakter',
     ecHintFmt: 'Önerilen hata düzeltme: {ec}',
     ecApply: '{ec} kullan',
@@ -596,6 +596,7 @@ const tr = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1 modu',
     },
     ellipse: {
       width: 'Genişlik (nokta)',

@@ -58,11 +58,11 @@ const zhHant = {
     errMissingGtin: '需要 GTIN (01)',
     errDuplicateAi: '重複的應用程式識別碼',
   },
-  qrbuilder: {
-    button: '產生 QR 內容…',
-    title: 'QR 內容產生器',
-    subtitle: '選擇資料類型並填寫欄位，產生器將編碼 QR 內容。',
-    preview: 'QR 內容',
+  contentBuilder: {
+    button: '產生內容…',
+    title: '內容產生器',
+    subtitle: '選擇資料類型並填寫欄位，產生器將編碼內容。',
+    preview: '內容',
     charsFmt: '{n} 個字元',
     ecHintFmt: '建議的錯誤更正等級：{ec}',
     ecApply: '使用 {ec}',
@@ -596,6 +596,7 @@ const zhHant = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1 模式',
     },
     ellipse: {
       width: '寬度 (點)',

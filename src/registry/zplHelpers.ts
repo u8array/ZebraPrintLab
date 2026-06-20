@@ -98,11 +98,14 @@ export function fdField(payload: string): string {
   return `^FH${FH_DELIM}^FD${escaped}^FS`;
 }
 
-/** Bound variableId emits `^FN{n}` + default; orphan falls back to literal. */
+/** Bound variableId emits `^FN{n}` + default; orphan falls back to literal.
+ *  `transform` (e.g. GS1 FNC1 escaping) is applied to the final field-data
+ *  payload so it composes with binding instead of bypassing it. */
 export function fdFieldFor(
   obj: LabelObjectBase,
   content: string,
   ctx?: ZplEmitContext,
+  transform: (payload: string) => string = (s) => s,
 ): string {
   // ^FE first then ^FC; absent ctx delim signals "templates not emittable".
   let payload = content;
@@ -112,10 +115,10 @@ export function fdFieldFor(
   if (ctx?.clockChars && hasClockMarkers(payload)) {
     payload = markersToTokens(payload, ctx.clockChars);
   }
-  if (payload !== content) return fdField(payload);
+  if (payload !== content) return fdField(transform(payload));
   const id = obj.variableId;
-  if (!id || !ctx?.variables) return fdField(content);
+  if (!id || !ctx?.variables) return fdField(transform(content));
   const variable = ctx.variables.find((v) => v.id === id);
-  if (!variable) return fdField(content);
-  return `^FN${variable.fnNumber}${fdField(variable.defaultValue)}`;
+  if (!variable) return fdField(transform(content));
+  return `^FN${variable.fnNumber}${fdField(transform(variable.defaultValue))}`;
 }

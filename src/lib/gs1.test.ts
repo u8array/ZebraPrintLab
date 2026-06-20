@@ -11,6 +11,9 @@ import {
   segmentsToContent,
   parseGs1ToSegments,
   gs1ContentToElementString,
+  gs1ContentToDataMatrixFd,
+  dataMatrixFdToGs1Content,
+  GS1_DATAMATRIX_ESCAPE,
   GS1_GS,
   GS1_DATABAR_EXPANDED_SYMBOLOGIES,
   GS1_DATABAR_DEFAULT_SEGMENTS,
@@ -218,6 +221,38 @@ describe("segments serialize/parse", () => {
     const out = gs1ContentToElementString("01123");
     expect(out.startsWith("(01)")).toBe(true);
     expect(out.slice(4)).toHaveLength(14);
+  });
+});
+
+describe("GS1 DataMatrix field data", () => {
+  // (01)09501101530003(10)ABC123(21)12345 in raw model form (GS after the
+  // non-last variable AI 10).
+  const content = `010950110153000310ABC123${GS1_GS}2112345`;
+  const fd = "_1010950110153000310ABC123_12112345";
+
+  it("encodes a leading FNC1 and turns each GS into the escape sequence", () => {
+    expect(gs1ContentToDataMatrixFd(content)).toBe(fd);
+    expect(GS1_DATAMATRIX_ESCAPE).toBe("_");
+  });
+
+  it("round-trips through the inverse", () => {
+    expect(dataMatrixFdToGs1Content(fd, GS1_DATAMATRIX_ESCAPE)).toBe(content);
+  });
+
+  it("returns null when field data has no leading FNC1 (non-GS1)", () => {
+    expect(dataMatrixFdToGs1Content("1234567890", "_")).toBeNull();
+  });
+
+  it("strips a trailing GS so no dangling FNC1 is emitted", () => {
+    expect(gs1ContentToDataMatrixFd(`0109501101530003${GS1_GS}`)).toBe("_10109501101530003");
+  });
+
+  it("doubles a literal escape char in data and round-trips it", () => {
+    // AI 21 serial legitimately contains the escape sequence `_1`.
+    const c = "010950110153000310LOT_1";
+    const enc = gs1ContentToDataMatrixFd(c);
+    expect(enc).toBe("_1010950110153000310LOT__1");
+    expect(dataMatrixFdToGs1Content(enc, GS1_DATAMATRIX_ESCAPE)).toBe(c);
   });
 });
 

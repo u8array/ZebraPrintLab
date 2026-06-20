@@ -388,10 +388,19 @@ describe('datamatrix.toZPL', () => {
 
   it('emits ^BX with dimension and quality', () => {
     const zpl = def.toZPL(makeObj('datamatrix', {
-      content: 'DM123', dimension: 8, quality: 200, rotation: 'N',
+      content: 'DM123', dimension: 8, quality: 200, rotation: 'N', gs1: false,
     }));
     expect(zpl).toContain('^BXN,8,200');
     expect(zpl).toContain('^FDDM123^FS');
+  });
+
+  it('GS1 mode sets the escape param and FNC1-escaped field data', () => {
+    const zpl = def.toZPL(makeObj('datamatrix', {
+      content: `010950110153000310ABC123\x1d2112345`,
+      dimension: 8, quality: 200, rotation: 'N', gs1: true,
+    }));
+    expect(zpl).toContain('^BXN,8,200,,,,_');
+    expect(zpl).toContain('^FD_1010950110153000310ABC123_12112345^FS');
   });
 });
 

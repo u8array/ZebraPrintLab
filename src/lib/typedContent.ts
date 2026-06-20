@@ -1,21 +1,21 @@
 /**
- * Typed QR content: encode a chosen data type (URL, WiFi, vCard, …) to the
- * canonical QR string, and parse an existing string back to {type, fields} for
- * round-trip editing. Pure, no UI.
+ * Typed barcode content: encode a chosen data type (URL, WiFi, vCard, …) to the
+ * canonical string, and parse an existing string back to {type, fields} for
+ * round-trip editing. Symbology-agnostic (QR, DataMatrix, …). Pure, no UI.
  *
  * Encodings follow the de-facto ZXing "Barcode Contents" conventions and the
- * relevant RFCs (mailto 6068, tel 3966, geo 5870), verified against a QR
+ * relevant RFCs (mailto 6068, tel 3966, geo 5870), verified against a barcode
  * decoder. Parsing never throws and falls back to plain text, so it can't
  * corrupt unrecognized content.
  */
 
-export type QrType = "url" | "text" | "wifi" | "vcard" | "email" | "tel" | "sms" | "geo";
+export type ContentType = "url" | "text" | "wifi" | "vcard" | "email" | "tel" | "sms" | "geo";
 
-export const QR_TYPES: readonly QrType[] = [
+export const CONTENT_TYPES: readonly ContentType[] = [
   "url", "text", "wifi", "vcard", "email", "tel", "sms", "geo",
 ];
 
-export type QrFields = Record<string, string>;
+export type ContentFields = Record<string, string>;
 
 /** WiFi/MECARD value escaping: backslash FIRST, then ; , " : . An all-hex value
  *  is wrapped in quotes so a scanner doesn't read it as hex. */
@@ -41,7 +41,7 @@ function normalizeTel(s: string): string {
 
 /** Whether `f` has enough valid input for `type` to produce a sound payload.
  *  Gates the modal's Apply: tel/sms need a digit, geo needs in-range numbers. */
-export function isQrComplete(type: QrType, f: QrFields): boolean {
+export function isContentComplete(type: ContentType, f: ContentFields): boolean {
   switch (type) {
     case "url": return !!f.url?.trim();
     case "text": return !!f.text;
@@ -60,7 +60,7 @@ function inRange(s: string | undefined, min: number, max: number): boolean {
   return Number.isFinite(n) && n >= min && n <= max;
 }
 
-export function encodeQr(type: QrType, f: QrFields): string {
+export function encodeContent(type: ContentType, f: ContentFields): string {
   switch (type) {
     case "url": {
       const url = (f.url ?? "").trim();
@@ -142,9 +142,9 @@ function safeDecode(s: string): string {
   }
 }
 
-function parseWifi(content: string): QrFields {
+function parseWifi(content: string): ContentFields {
   const body = content.slice(content.indexOf(":") + 1); // after "WIFI:"
-  const f: QrFields = {};
+  const f: ContentFields = {};
   for (const field of splitUnescaped(body, ";")) {
     if (!field) continue;
     const c = field.indexOf(":");
@@ -161,8 +161,8 @@ function parseWifi(content: string): QrFields {
   return f;
 }
 
-function parseVcard(content: string): QrFields {
-  const f: QrFields = {};
+function parseVcard(content: string): ContentFields {
+  const f: ContentFields = {};
   for (const line of content.split(/\r?\n/)) {
     const idx = line.indexOf(":");
     if (idx < 0) continue;
@@ -181,11 +181,11 @@ function parseVcard(content: string): QrFields {
   return f;
 }
 
-function parseEmail(content: string): QrFields {
+function parseEmail(content: string): ContentFields {
   const rest = content.slice("mailto:".length);
   const q = rest.indexOf("?");
   const to = q < 0 ? rest : rest.slice(0, q);
-  const f: QrFields = { to: safeDecode(to) };
+  const f: ContentFields = { to: safeDecode(to) };
   if (q >= 0) {
     for (const pair of rest.slice(q + 1).split("&")) {
       const eq = pair.indexOf("=");
@@ -201,7 +201,7 @@ function parseEmail(content: string): QrFields {
 
 /** Classify and parse existing QR content. Specific prefixes first; URI schemes
  *  matched case-insensitively. Unknown content becomes plain text. */
-export function parseQr(content: string): { type: QrType; fields: QrFields } {
+export function parseContent(content: string): { type: ContentType; fields: ContentFields } {
   const t = content.trimStart();
   if (/^wifi:/i.test(t)) return { type: "wifi", fields: parseWifi(t) };
   if (/^begin:vcard/i.test(t)) return { type: "vcard", fields: parseVcard(t) };

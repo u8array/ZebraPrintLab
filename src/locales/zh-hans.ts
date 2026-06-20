@@ -58,11 +58,11 @@ const zhHans = {
     errMissingGtin: '需要 GTIN (01)',
     errDuplicateAi: '重复的应用标识符',
   },
-  qrbuilder: {
-    button: '生成二维码内容…',
-    title: '二维码内容生成器',
-    subtitle: '选择数据类型并填写字段，生成器将编码二维码内容。',
-    preview: '二维码内容',
+  contentBuilder: {
+    button: '生成内容…',
+    title: '内容生成器',
+    subtitle: '选择数据类型并填写字段，生成器将编码内容。',
+    preview: '内容',
     charsFmt: '{n} 个字符',
     ecHintFmt: '建议的纠错级别：{ec}',
     ecApply: '使用 {ec}',
@@ -596,6 +596,7 @@ const zhHans = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1 模式',
     },
     ellipse: {
       width: '宽度 (点)',

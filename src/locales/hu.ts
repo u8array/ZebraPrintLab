@@ -58,11 +58,11 @@ const hu = {
     errMissingGtin: 'GTIN (01) szükséges',
     errDuplicateAi: 'Ismétlődő alkalmazásazonosító',
   },
-  qrbuilder: {
-    button: 'QR-tartalom létrehozása…',
-    title: 'QR-tartalom készítő',
-    subtitle: 'Válasszon adattípust és töltse ki a mezőket; a készítő kódolja a QR-tartalmat.',
-    preview: 'QR-tartalom',
+  contentBuilder: {
+    button: 'Tartalom létrehozása…',
+    title: 'Tartalom készítő',
+    subtitle: 'Válasszon adattípust és töltse ki a mezőket; a készítő kódolja a tartalmat.',
+    preview: 'Tartalom',
     charsFmt: '{n} karakter',
     ecHintFmt: 'Javasolt hibajavítás: {ec}',
     ecApply: '{ec} használata',
@@ -596,6 +596,7 @@ const hu = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1 mód',
     },
     ellipse: {
       width: 'Szélesség (pont)',

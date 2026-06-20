@@ -145,6 +145,8 @@ export interface FieldState {
   qrMag: number;
   dmDim: number;
   dmQuality: DataMatrixProps["quality"];
+  /** ^BX escape char (g param); set => GS1 DataMatrix field data. */
+  dmEscape: string | undefined;
   // Stacked-2D pending
   pdfRowHeight: number;
   pdfSecurity: number;
@@ -284,6 +286,7 @@ export function createParserState(): ParserState {
       qrMag: 4,
       dmDim: 5,
       dmQuality: 200,
+      dmEscape: undefined,
       pdfRowHeight: 10,
       pdfSecurity: 0,
       pdfColumns: 0,

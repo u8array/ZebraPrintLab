@@ -980,6 +980,37 @@ describe('generateZPL — parse/generate roundtrip', () => {
     expect(generated).toMatch(/\^FDItem #@1@\^FS/);
   });
 
+  it('GS1 DataMatrix binding emits ^FN with the FNC1-escaped default', () => {
+    const variable = { id: 'v1', name: 'gtin', fnNumber: 5, defaultValue: '0109501101530003' };
+    const obj: LabelObject = {
+      id: 'd',
+      type: 'datamatrix',
+      x: 10,
+      y: 10,
+      rotation: 0,
+      variableId: 'v1',
+      props: { content: '0109501101530003', dimension: 8, quality: 200, rotation: 'N', gs1: true },
+    };
+    const zpl = generateZPL(BASE_LABEL, [obj], [variable]);
+    expect(zpl).toContain('^BXN,8,200,,,,_');
+    expect(zpl).toContain('^FN5^FD_10109501101530003^FS');
+  });
+
+  it('GS1 DataMatrix keeps the leading FNC1 when content has a template marker', () => {
+    const variable = { id: 'v1', name: 'gtin', fnNumber: 5, defaultValue: '0109501101530003' };
+    const obj: LabelObject = {
+      id: 'd',
+      type: 'datamatrix',
+      x: 10,
+      y: 10,
+      rotation: 0,
+      props: { content: '«gtin»', dimension: 8, quality: 200, rotation: 'N', gs1: true },
+    };
+    const zpl = generateZPL(BASE_LABEL, [obj], [variable]);
+    // Marker expanded to the inline embed AND still prefixed with FNC1 (_1).
+    expect(zpl).toContain('^FD_1#5#^FS');
+  });
+
   it('does not leak ^B4 mode from one symbol to the next', () => {
     // Two B4 fields back-to-back: first explicit mode=3, second omits
     // the mode parameter. The second must default to 'A' even though

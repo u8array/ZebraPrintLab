@@ -58,11 +58,11 @@ const ar = {
     errMissingGtin: 'يتطلب GTIN ‏(01)',
     errDuplicateAi: 'معرّف تطبيق مكرر',
   },
-  qrbuilder: {
-    button: 'إنشاء محتوى QR…',
-    title: 'منشئ محتوى QR',
-    subtitle: 'اختر نوع البيانات واملأ الحقول؛ سيقوم المنشئ بترميز محتوى QR.',
-    preview: 'محتوى QR',
+  contentBuilder: {
+    button: 'إنشاء المحتوى…',
+    title: 'منشئ المحتوى',
+    subtitle: 'اختر نوع البيانات واملأ الحقول؛ سيقوم المنشئ بترميز المحتوى.',
+    preview: 'المحتوى',
     charsFmt: '{n} حرف',
     ecHintFmt: 'تصحيح الأخطاء المقترح: {ec}',
     ecApply: 'استخدام {ec}',
@@ -596,6 +596,7 @@ const ar = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'وضع GS1',
     },
     ellipse: {
       width: 'العرض (نقطة)',

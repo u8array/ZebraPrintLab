@@ -58,11 +58,11 @@ const fa = {
     errMissingGtin: 'به GTIN ‏(01) نیاز دارد',
     errDuplicateAi: 'شناسه برنامه تکراری',
   },
-  qrbuilder: {
-    button: 'ساخت محتوای QR…',
-    title: 'سازنده محتوای QR',
-    subtitle: 'یک نوع داده انتخاب کنید و فیلدها را پر کنید؛ سازنده محتوای QR را کدگذاری می‌کند.',
-    preview: 'محتوای QR',
+  contentBuilder: {
+    button: 'ساخت محتوا…',
+    title: 'سازنده محتوا',
+    subtitle: 'یک نوع داده انتخاب کنید و فیلدها را پر کنید؛ سازنده محتوا را کدگذاری می‌کند.',
+    preview: 'محتوا',
     charsFmt: '{n} نویسه',
     ecHintFmt: 'تصحیح خطای پیشنهادی: {ec}',
     ecApply: 'استفاده از {ec}',
@@ -596,6 +596,7 @@ const fa = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'حالت GS1',
     },
     ellipse: {
       width: 'عرض (نقطه)',

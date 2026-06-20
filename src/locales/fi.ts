@@ -58,11 +58,11 @@ const fi = {
     errMissingGtin: 'Vaatii GTIN-koodin (01)',
     errDuplicateAi: 'Päällekkäinen sovellustunniste',
   },
-  qrbuilder: {
-    button: 'Luo QR-sisältö…',
-    title: 'QR-sisällön luonti',
-    subtitle: 'Valitse tietotyyppi ja täytä kentät; työkalu koodaa QR-sisällön.',
-    preview: 'QR-sisältö',
+  contentBuilder: {
+    button: 'Luo sisältö…',
+    title: 'Sisällön luonti',
+    subtitle: 'Valitse tietotyyppi ja täytä kentät; työkalu koodaa sisällön.',
+    preview: 'Sisältö',
     charsFmt: '{n} merkkiä',
     ecHintFmt: 'Suositeltu virheenkorjaus: {ec}',
     ecApply: 'Käytä {ec}',
@@ -596,6 +596,7 @@ const fi = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1-tila',
     },
     ellipse: {
       width: 'Leveys (pistettä)',

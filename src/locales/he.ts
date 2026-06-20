@@ -58,11 +58,11 @@ const he = {
     errMissingGtin: 'נדרש GTIN (01)',
     errDuplicateAi: 'מזהה יישום כפול',
   },
-  qrbuilder: {
-    button: 'יצירת תוכן QR…',
-    title: 'יוצר תוכן QR',
-    subtitle: 'בחרו סוג נתונים ומלאו את השדות; היוצר מקודד את תוכן ה-QR.',
-    preview: 'תוכן QR',
+  contentBuilder: {
+    button: 'יצירת תוכן…',
+    title: 'יוצר תוכן',
+    subtitle: 'בחרו סוג נתונים ומלאו את השדות; היוצר מקודד את התוכן.',
+    preview: 'תוכן',
     charsFmt: '{n} תווים',
     ecHintFmt: 'תיקון שגיאות מומלץ: {ec}',
     ecApply: 'השתמש ב-{ec}',
@@ -596,6 +596,7 @@ const he = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'מצב GS1',
     },
     ellipse: {
       width: 'רוחב (נקודות)',

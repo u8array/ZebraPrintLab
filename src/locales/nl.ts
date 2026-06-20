@@ -58,11 +58,11 @@ const nl = {
     errMissingGtin: 'Vereist een GTIN (01)',
     errDuplicateAi: 'Dubbele toepassingsidentificatie',
   },
-  qrbuilder: {
-    button: 'QR-inhoud maken…',
-    title: 'QR-inhoudgenerator',
-    subtitle: 'Kies een gegevenstype en vul de velden in; de generator codeert de QR-inhoud.',
-    preview: 'QR-inhoud',
+  contentBuilder: {
+    button: 'Inhoud maken…',
+    title: 'Inhoudgenerator',
+    subtitle: 'Kies een gegevenstype en vul de velden in; de generator codeert de inhoud.',
+    preview: 'Inhoud',
     charsFmt: '{n} tekens',
     ecHintFmt: 'Aanbevolen foutcorrectie: {ec}',
     ecApply: '{ec} gebruiken',
@@ -596,6 +596,7 @@ const nl = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1-modus',
     },
     ellipse: {
       width: 'Breedte (punten)',

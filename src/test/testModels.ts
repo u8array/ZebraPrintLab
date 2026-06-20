@@ -88,7 +88,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 50,
     y: 50,
     rotation: 0,
-    props: { content: "DataMatrixTest", dimension: 5, quality: 200, rotation: "N" },
+    props: { content: "DataMatrixTest", dimension: 5, quality: 200, rotation: "N", gs1: false },
   },
   barcode_code39_standard: {
     id: "8",
@@ -415,7 +415,7 @@ export const testModels: Record<string, LabelObject> = {
     x: 100,
     y: 100,
     rotation: 0,
-    props: { content: "DataMatrixTest", dimension: 5, quality: 200, rotation: "R" },
+    props: { content: "DataMatrixTest", dimension: 5, quality: 200, rotation: "R", gs1: false },
   },
   barcode_code39_rot_R: {
     id: "rot6",

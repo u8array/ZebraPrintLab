@@ -58,11 +58,11 @@ const lt = {
     errMissingGtin: 'Reikalingas GTIN (01)',
     errDuplicateAi: 'Pasikartojantis programos identifikatorius',
   },
-  qrbuilder: {
-    button: 'Kurti QR turinį…',
-    title: 'QR turinio kūrimo priemonė',
-    subtitle: 'Pasirinkite duomenų tipą ir užpildykite laukus; priemonė užkoduos QR turinį.',
-    preview: 'QR turinys',
+  contentBuilder: {
+    button: 'Kurti turinį…',
+    title: 'Turinio kūrimo priemonė',
+    subtitle: 'Pasirinkite duomenų tipą ir užpildykite laukus; priemonė užkoduos turinį.',
+    preview: 'Turinys',
     charsFmt: '{n} simbolių',
     ecHintFmt: 'Siūloma klaidų taisa: {ec}',
     ecApply: 'Naudoti {ec}',
@@ -596,6 +596,7 @@ const lt = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1 režimas',
     },
     ellipse: {
       width: 'Plotis (taškai)',

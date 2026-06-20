@@ -35,7 +35,7 @@ function isAi01ElevenDigitFragment(content: string): boolean {
   return /^01\d{11}$/.test(content);
 }
 
-function gs1ExpandedBwipText(content: string): string {
+function gs1BwipText(content: string): string {
   if (isAi01ElevenDigitFragment(content)) return `(99)${content}`;
   // Catalog parser handles variable AIs (GS-separated); falls back to the
   // legacy fixed-AI wrapper for content it can't cleanly segment.
@@ -433,7 +433,7 @@ export function buildBwipOptions(
       // bwip needs (AI)data parens; model stores raw digits.
       // Sym 1..5 require AI 01 + valid 14-digit GTIN with check.
       const text = isExpanded
-        ? gs1ExpandedBwipText(p.content)
+        ? gs1BwipText(p.content)
         : `(01)${gtin14WithCheck(p.content)}`;
       opts = {
         bcid: GS1_DATABAR_BCID[sym],
@@ -491,7 +491,10 @@ export function buildBwipOptions(
     }
     case "datamatrix": {
       const p = obj.props;
-      opts = { bcid, text: p.content || " ", scale: BWIP_SCALE };
+      // GS1 mode: bwip auto-inserts FNC1 from the (AI)… element string.
+      opts = p.gs1
+        ? { bcid: "gs1datamatrix", text: gs1ContentToElementString(p.content) || " ", scale: BWIP_SCALE }
+        : { bcid, text: p.content || " ", scale: BWIP_SCALE };
       break;
     }
     case "aztec": {

@@ -644,6 +644,23 @@ describe('parseZPL — ^BX DataMatrix', () => {
     expect(props(objects[0]).content).toBe('1234567890');
     expect(props(objects[0]).dimension).toBe(8);
     expect(props(objects[0]).quality).toBe(200);
+    expect(props(objects[0]).gs1).toBe(false);
+  });
+
+  it('reads GS1 mode from the escape param and decodes FNC1 separators', () => {
+    const { objects } = parseZPL(
+      '^XA^FO0,0^BXN,8,200,,,,_^FD_1010950110153000310ABC123_12112345^FS^XZ',
+      8,
+    );
+    expect(objects[0]?.type).toBe('datamatrix');
+    expect(props(objects[0]).gs1).toBe(true);
+    expect(props(objects[0]).content).toBe('010950110153000310ABC123\x1d2112345');
+  });
+
+  it('does not treat the escape param as GS1 below quality 200', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BXN,8,140,,,,_^FD_1010950110153000310^FS^XZ', 8);
+    expect(props(objects[0]).gs1).toBe(false);
+    expect(props(objects[0]).content).toBe('_1010950110153000310');
   });
 });
 

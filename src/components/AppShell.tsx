@@ -41,7 +41,7 @@ import { useLabelStore, useHistory, selectLabelaryNoticeRequired } from "../stor
 import { LabelaryNoticeModal } from "./Output/LabelaryNoticeModal";
 import { PrinterSettingsModal } from "./PrinterSettings/PrinterSettingsModal";
 import { Gs1ContentModal } from "./Barcode/Gs1ContentModal";
-import { QrContentModal } from "./Barcode/QrContentModal";
+import { ContentBuilderModal } from "./Barcode/ContentBuilderModal";
 import { localeNames } from "../locales";
 import type { LocaleCode } from "../locales";
 import { mmToUnit } from "../lib/units";
@@ -456,7 +456,7 @@ export function AppShell() {
       )}
       <PrinterSettingsModal />
       <Gs1ContentModal />
-      <QrContentModal />
+      <ContentBuilderModal />
     </div>
   );
 }

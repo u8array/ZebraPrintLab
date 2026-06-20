@@ -58,11 +58,11 @@ const ro = {
     errMissingGtin: 'Necesită un GTIN (01)',
     errDuplicateAi: 'Identificator de aplicație duplicat',
   },
-  qrbuilder: {
-    button: 'Creează conținut QR…',
-    title: 'Generator de conținut QR',
-    subtitle: 'Alegeți un tip de date și completați câmpurile; generatorul codifică conținutul QR.',
-    preview: 'Conținut QR',
+  contentBuilder: {
+    button: 'Creează conținut…',
+    title: 'Generator de conținut',
+    subtitle: 'Alegeți un tip de date și completați câmpurile; generatorul codifică conținutul.',
+    preview: 'Conținut',
     charsFmt: '{n} caractere',
     ecHintFmt: 'Corecție de erori sugerată: {ec}',
     ecApply: 'Folosește {ec}',
@@ -596,6 +596,7 @@ const ro = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'Mod GS1',
     },
     ellipse: {
       width: 'Lățime (puncte)',

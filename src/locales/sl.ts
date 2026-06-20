@@ -58,11 +58,11 @@ const sl = {
     errMissingGtin: 'Zahteva GTIN (01)',
     errDuplicateAi: 'Podvojen identifikator aplikacije',
   },
-  qrbuilder: {
-    button: 'Ustvari vsebino QR…',
-    title: 'Ustvarjalnik vsebine QR',
-    subtitle: 'Izberite vrsto podatkov in izpolnite polja; ustvarjalnik zakodira vsebino QR.',
-    preview: 'Vsebina QR',
+  contentBuilder: {
+    button: 'Ustvari vsebino…',
+    title: 'Ustvarjalnik vsebine',
+    subtitle: 'Izberite vrsto podatkov in izpolnite polja; ustvarjalnik zakodira vsebino.',
+    preview: 'Vsebina',
     charsFmt: '{n} znakov',
     ecHintFmt: 'Priporočeno popravljanje napak: {ec}',
     ecApply: 'Uporabi {ec}',
@@ -596,6 +596,7 @@ const sl = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'Način GS1',
     },
     ellipse: {
       width: 'Širina (točke)',

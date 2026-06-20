@@ -116,6 +116,48 @@ const CSET82 = /^[0-9A-Za-z!"%&'*+,\-./:;<=>?_]*$/;
  *  Expanded content: CSET 82 (no parens) plus the GS separator. Hyphen last. */
 export const GS1_EXPANDED_CHARSET = `0-9A-Za-z!"%&'*+,./:;<=>?_${GS1_GS}-`;
 
+/** Valid GS1 seed (raw model form: AI 01 + a check-valid GTIN-14) used when a
+ *  symbol switches into GS1 mode and its current content is not GS1, so the
+ *  encoder renders a sample instead of throwing. */
+export const GS1_SAMPLE_CONTENT = "0109501101530003";
+
+/** Escape-sequence control character we emit for GS1 DataMatrix (^BX g param).
+ *  FNC1 is then written as `<escape>1`, both leading and as AI separator. */
+export const GS1_DATAMATRIX_ESCAPE = "_";
+
+/** ^FD field data for GS1 DataMatrix: a leading FNC1, each GS separator as the
+ *  escape sequence (`_1`), and any literal escape char in the data doubled
+ *  (`__`). `_` is a valid GS1 char, so it must be escaped per the ^BX
+ *  quality-200 rule, else it would read as a stray FNC. Pairs with `^BX…,,,,_`. */
+export function gs1ContentToDataMatrixFd(content: string): string {
+  const esc = GS1_DATAMATRIX_ESCAPE;
+  const fnc1 = esc + "1";
+  // A trailing GS would emit a dangling FNC1 (separator with no data); drop it.
+  let body = content;
+  while (body.endsWith(GS1_GS)) body = body.slice(0, -1);
+  const segments = body.split(GS1_GS).map((s) => s.replaceAll(esc, esc + esc));
+  return fnc1 + segments.join(fnc1);
+}
+
+/** Inverse of gs1ContentToDataMatrixFd. Returns null when `fd` lacks the leading
+ *  FNC1, so the parser keeps non-GS1 field data verbatim. `<esc><esc>` decodes
+ *  to a literal escape char, `<esc>1` to a GS separator. */
+export function dataMatrixFdToGs1Content(fd: string, escape: string): string | null {
+  const fnc1 = escape + "1";
+  if (!fd.startsWith(fnc1)) return null;
+  let out = "";
+  for (let i = fnc1.length; i < fd.length; i++) {
+    const c = fd.charAt(i);
+    if (c === escape) {
+      const next = fd.charAt(i + 1);
+      if (next === escape) { out += escape; i++; continue; }
+      if (next === "1") { out += GS1_GS; i++; continue; }
+    }
+    out += c;
+  }
+  return out;
+}
+
 /** AIs that may stand alone; every other AI is a trade-item attribute that
  *  requires a GTIN (01) in the same DataBar Expanded symbol (bwip enforces). */
 const GS1_STANDALONE_AIS = new Set(["00", "01"]);

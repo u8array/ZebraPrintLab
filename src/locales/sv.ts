@@ -58,11 +58,11 @@ const sv = {
     errMissingGtin: 'Kräver ett GTIN (01)',
     errDuplicateAi: 'Duplicerad applikationsidentifierare',
   },
-  qrbuilder: {
-    button: 'Skapa QR-innehåll…',
-    title: 'QR-innehållsgenerator',
-    subtitle: 'Välj en datatyp och fyll i fälten; generatorn kodar QR-innehållet.',
-    preview: 'QR-innehåll',
+  contentBuilder: {
+    button: 'Skapa innehåll…',
+    title: 'Innehållsgenerator',
+    subtitle: 'Välj en datatyp och fyll i fälten; generatorn kodar innehållet.',
+    preview: 'Innehåll',
     charsFmt: '{n} tecken',
     ecHintFmt: 'Föreslagen felkorrigering: {ec}',
     ecApply: 'Använd {ec}',
@@ -596,6 +596,7 @@ const sv = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1-läge',
     },
     ellipse: {
       width: 'Bredd (punkter)',

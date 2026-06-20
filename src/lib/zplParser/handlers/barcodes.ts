@@ -110,12 +110,13 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
       field.qrMag = int(p[2], 4);
     },
 
-    // ^BXN,{dimension},{quality}; DataMatrix
+    // ^BXN,{dimension},{quality},,,,{escape}; DataMatrix. p[6] = GS1 escape char.
     BX(p) {
       field.fieldType = "datamatrix";
       field.bcRotation = readRotation(p[0]);
       field.dmDim = dots(p[1], 5);
       field.dmQuality = int(p[2], 200) as DataMatrixProps["quality"];
+      field.dmEscape = p[6] || undefined;
     },
 
     // ^B7N,{rowHeight},{securityLevel},{columns},,,; PDF417

@@ -58,11 +58,11 @@ const ja = {
     errMissingGtin: 'GTIN (01) が必要です',
     errDuplicateAi: '重複したアプリケーション識別子',
   },
-  qrbuilder: {
-    button: 'QRコンテンツを作成…',
-    title: 'QRコンテンツビルダー',
-    subtitle: 'データタイプを選んでフィールドを入力すると、QRコンテンツがエンコードされます。',
-    preview: 'QRコンテンツ',
+  contentBuilder: {
+    button: 'コンテンツを作成…',
+    title: 'コンテンツビルダー',
+    subtitle: 'データタイプを選んでフィールドを入力すると、コンテンツがエンコードされます。',
+    preview: 'コンテンツ',
     charsFmt: '{n}文字',
     ecHintFmt: '推奨される誤り訂正レベル: {ec}',
     ecApply: '{ec}を使用',
@@ -596,6 +596,7 @@ const ja = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1モード',
     },
     ellipse: {
       width: '幅 (ドット)',

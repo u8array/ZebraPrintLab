@@ -58,11 +58,11 @@ const da = {
     errMissingGtin: 'Kræver et GTIN (01)',
     errDuplicateAi: 'Dubleret applikationsidentifikator',
   },
-  qrbuilder: {
-    button: 'Opret QR-indhold…',
-    title: 'QR-indholdsgenerator',
-    subtitle: 'Vælg en datatype og udfyld felterne; generatoren koder QR-indholdet.',
-    preview: 'QR-indhold',
+  contentBuilder: {
+    button: 'Opret indhold…',
+    title: 'Indholdsgenerator',
+    subtitle: 'Vælg en datatype og udfyld felterne; generatoren koder indholdet.',
+    preview: 'Indhold',
     charsFmt: '{n} tegn',
     ecHintFmt: 'Foreslået fejlkorrektion: {ec}',
     ecApply: 'Brug {ec}',
@@ -596,6 +596,7 @@ const da = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1-tilstand',
     },
     ellipse: {
       width: 'Bredde (punkter)',

@@ -58,11 +58,11 @@ const no = {
     errMissingGtin: 'Krever et GTIN (01)',
     errDuplicateAi: 'Duplisert applikasjonsidentifikator',
   },
-  qrbuilder: {
-    button: 'Lag QR-innhold…',
-    title: 'QR-innholdsgenerator',
-    subtitle: 'Velg en datatype og fyll ut feltene; generatoren koder QR-innholdet.',
-    preview: 'QR-innhold',
+  contentBuilder: {
+    button: 'Lag innhold…',
+    title: 'Innholdsgenerator',
+    subtitle: 'Velg en datatype og fyll ut feltene; generatoren koder innholdet.',
+    preview: 'Innhold',
     charsFmt: '{n} tegn',
     ecHintFmt: 'Foreslått feilkorrigering: {ec}',
     ecApply: 'Bruk {ec}',
@@ -596,6 +596,7 @@ const no = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1-modus',
     },
     ellipse: {
       width: 'Bredde (punkter)',

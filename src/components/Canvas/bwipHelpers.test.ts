@@ -172,6 +172,29 @@ describe("buildBwipOptions gs1databar Expanded fallback", () => {
   });
 });
 
+describe("buildBwipOptions datamatrix GS1 mode", () => {
+  const dm = (content: string, gs1: boolean): LabelObject => ({
+    id: "1",
+    type: "datamatrix",
+    x: 0,
+    y: 0,
+    rotation: 0,
+    props: { content, dimension: 5, quality: 200, rotation: "N", gs1 },
+  });
+
+  it("GS1 mode switches bcid and feeds the (AI) element string", () => {
+    const opts = buildBwipOptions(dm("0109501101530003", true), 1, 8);
+    expect(opts?.bcid).toBe("gs1datamatrix");
+    expect(opts?.text).toBe("(01)09501101530003");
+  });
+
+  it("plain mode keeps the datamatrix bcid and raw content", () => {
+    const opts = buildBwipOptions(dm("DM123", false), 1, 8);
+    expect(opts?.bcid).toBe("datamatrix");
+    expect(opts?.text).toBe("DM123");
+  });
+});
+
 describe("getDisplaySize coverage (ZPL-first policy)", () => {
   // Static parse of bwipHelpers.ts: every barcode type registered via BCID
   // must have an explicit `case "type":` in getUprightDisplaySize, otherwise

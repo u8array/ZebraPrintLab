@@ -12,7 +12,7 @@ export const qrcodePanel: ObjectTypeUi<QrCodeProps> = {
   PropertiesPanel: ({ obj, onChange }) => {
     const t = useT();
     const p = obj.props;
-    const openQrBuilder = useLabelStore((s) => s.openQrBuilder);
+    const openContentBuilder = useLabelStore((s) => s.openContentBuilder);
     return (
       <>
         <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
@@ -25,10 +25,10 @@ export const qrcodePanel: ObjectTypeUi<QrCodeProps> = {
           />
           <button
             type="button"
-            onClick={() => openQrBuilder(obj.id)}
+            onClick={() => openContentBuilder(obj.id)}
             className="self-start text-xs px-2 py-1 rounded border border-border bg-surface-2 hover:bg-border transition-colors"
           >
-            {t.qrbuilder.button}
+            {t.contentBuilder.button}
           </button>
         </StaticSectionCard>
 

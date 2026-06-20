@@ -58,11 +58,11 @@ const lv = {
     errMissingGtin: 'Nepieciešams GTIN (01)',
     errDuplicateAi: 'Dublēts lietojumprogrammas identifikators',
   },
-  qrbuilder: {
-    button: 'Izveidot QR saturu…',
-    title: 'QR satura veidotājs',
-    subtitle: 'Izvēlieties datu veidu un aizpildiet laukus; veidotājs kodē QR saturu.',
-    preview: 'QR saturs',
+  contentBuilder: {
+    button: 'Izveidot saturu…',
+    title: 'Satura veidotājs',
+    subtitle: 'Izvēlieties datu veidu un aizpildiet laukus; veidotājs kodē saturu.',
+    preview: 'Saturs',
     charsFmt: '{n} rakstzīmes',
     ecHintFmt: 'Ieteicamā kļūdu labošana: {ec}',
     ecApply: 'Izmantot {ec}',
@@ -596,6 +596,7 @@ const lv = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1 režīms',
     },
     ellipse: {
       width: 'Platums (punkti)',

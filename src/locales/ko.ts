@@ -58,11 +58,11 @@ const ko = {
     errMissingGtin: 'GTIN (01)이 필요합니다',
     errDuplicateAi: '중복된 애플리케이션 식별자',
   },
-  qrbuilder: {
-    button: 'QR 콘텐츠 만들기…',
-    title: 'QR 콘텐츠 빌더',
-    subtitle: '데이터 유형을 선택하고 필드를 입력하면 QR 콘텐츠가 인코딩됩니다.',
-    preview: 'QR 콘텐츠',
+  contentBuilder: {
+    button: '콘텐츠 만들기…',
+    title: '콘텐츠 빌더',
+    subtitle: '데이터 유형을 선택하고 필드를 입력하면 콘텐츠가 인코딩됩니다.',
+    preview: '콘텐츠',
     charsFmt: '{n}자',
     ecHintFmt: '권장 오류 정정 수준: {ec}',
     ecApply: '{ec} 사용',
@@ -596,6 +596,7 @@ const ko = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1 모드',
     },
     ellipse: {
       width: '너비 (점)',

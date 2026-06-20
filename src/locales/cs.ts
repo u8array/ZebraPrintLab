@@ -58,11 +58,11 @@ const cs = {
     errMissingGtin: 'Vyžaduje GTIN (01)',
     errDuplicateAi: 'Duplicitní identifikátor aplikace',
   },
-  qrbuilder: {
-    button: 'Vytvořit obsah QR…',
-    title: 'Generátor obsahu QR',
-    subtitle: 'Vyberte typ dat a vyplňte pole; generátor zakóduje obsah QR.',
-    preview: 'Obsah QR',
+  contentBuilder: {
+    button: 'Vytvořit obsah…',
+    title: 'Generátor obsahu',
+    subtitle: 'Vyberte typ dat a vyplňte pole; generátor zakóduje obsah.',
+    preview: 'Obsah',
     charsFmt: '{n} znaků',
     ecHintFmt: 'Doporučená korekce chyb: {ec}',
     ecApply: 'Použít {ec}',
@@ -596,6 +596,7 @@ const cs = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'Režim GS1',
     },
     ellipse: {
       width: 'Šířka (body)',

@@ -58,11 +58,11 @@ const et = {
     errMissingGtin: 'Nõuab GTIN-i (01)',
     errDuplicateAi: 'Dubleeritud rakenduse identifikaator',
   },
-  qrbuilder: {
-    button: 'Loo QR-sisu…',
-    title: 'QR-sisu generaator',
-    subtitle: 'Vali andmetüüp ja täida väljad; generaator kodeerib QR-sisu.',
-    preview: 'QR-sisu',
+  contentBuilder: {
+    button: 'Loo sisu…',
+    title: 'Sisugeneraator',
+    subtitle: 'Vali andmetüüp ja täida väljad; generaator kodeerib sisu.',
+    preview: 'Sisu',
     charsFmt: '{n} märki',
     ecHintFmt: 'Soovitatav veaparandus: {ec}',
     ecApply: 'Kasuta {ec}',
@@ -596,6 +596,7 @@ const et = {
       quality80: '80 — 3 of 9',
       quality140: '140 — 4 of 9',
       quality200: '200 — ECC 200',
+      gs1Mode: 'GS1-režiim',
     },
     ellipse: {
       width: 'Laius (punkti)',

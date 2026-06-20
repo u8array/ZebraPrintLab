@@ -7,6 +7,7 @@ import {
 import { embedsToMarkers } from "../fnTemplate";
 import { tokensToMarkers } from "../fcTemplate";
 import { decodeFbContent } from "../fbContent";
+import { dataMatrixFdToGs1Content } from "../gs1";
 import { zplAnchorToModel } from "../labelGeometry/textPositionTransforms";
 import { blockInterLineExtentDots } from "../zebraTextLayout";
 import { computeTextRenderMetrics } from "../labelGeometry/textRenderMetrics";
@@ -335,23 +336,30 @@ export function createFlushField(
         );
         break;
       }
-      case "datamatrix":
+      case "datamatrix": {
+        // The ^BX escape param is honored only at quality 200, so GS1 mode is
+        // valid only there; otherwise `_1` is literal field data.
+        const gs1Content = s.field.dmEscape && s.field.dmQuality === 200
+          ? dataMatrixFdToGs1Content(content, s.field.dmEscape)
+          : null;
         objects.push(
           makeObj(
             "datamatrix",
             s.field.x,
             s.field.y,
             {
-              content,
+              content: gs1Content ?? content,
               dimension: s.field.dmDim,
               quality: s.field.dmQuality,
               rotation: s.field.bcRotation,
+              gs1: gs1Content !== null,
             } satisfies DataMatrixProps,
             posType,
             comment,
           ),
         );
         break;
+      }
       case "upce":
         objects.push(
           makeObj(
