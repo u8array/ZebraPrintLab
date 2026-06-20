@@ -195,6 +195,35 @@ describe("buildBwipOptions datamatrix GS1 mode", () => {
   });
 });
 
+describe("buildBwipOptions aztec ecLevel mapping", () => {
+  const az = (ecLevel: number): LabelObject => ({
+    id: "1",
+    type: "aztec",
+    x: 0,
+    y: 0,
+    rotation: 0,
+    props: { content: "TEST1234", magnification: 4, ecLevel, rotation: "N" },
+  });
+
+  it("maps the ecLevel domain to bwip bcid/format/size options", () => {
+    // Default + EC% stay compact (Zebra compact-preferred auto sizing).
+    expect(buildBwipOptions(az(0), 1, 8)).toMatchObject({ bcid: "azteccodecompact" });
+    expect(buildBwipOptions(az(0), 1, 8)).not.toHaveProperty("format");
+    expect(buildBwipOptions(az(50), 1, 8)).toMatchObject({ bcid: "azteccodecompact", eclevel: 50 });
+    expect(buildBwipOptions(az(101), 1, 8)).toMatchObject({ bcid: "azteccodecompact", layers: 1 });
+    expect(buildBwipOptions(az(104), 1, 8)).toMatchObject({ bcid: "azteccodecompact", layers: 4 });
+    expect(buildBwipOptions(az(201), 1, 8)).toMatchObject({ bcid: "azteccode", format: "full", layers: 1 });
+    expect(buildBwipOptions(az(210), 1, 8)).toMatchObject({ bcid: "azteccode", format: "full", layers: 10 });
+    expect(buildBwipOptions(az(232), 1, 8)).toMatchObject({ bcid: "azteccode", format: "full", layers: 32 });
+    expect(buildBwipOptions(az(300), 1, 8)).toMatchObject({ bcid: "azteccode", format: "rune" });
+  });
+
+  it("rounds a non-integer ecLevel so bwip never gets a float layer count", () => {
+    expect(buildBwipOptions(az(210.4), 1, 8)).toMatchObject({ format: "full", layers: 10 });
+    expect(buildBwipOptions(az(Number.NaN), 1, 8)).toMatchObject({ bcid: "azteccodecompact" });
+  });
+});
+
 describe("getDisplaySize coverage (ZPL-first policy)", () => {
   // Static parse of bwipHelpers.ts: every barcode type registered via BCID
   // must have an explicit `case "type":` in getUprightDisplaySize, otherwise
