@@ -47,10 +47,12 @@ function gs1BwipText(content: string): string {
  *  sizing; 101-104/201-232 force a compact/full symbol of that layer count; 300
  *  is the fixed Rune. Layer counts verified against Labelary. */
 function aztecBwipOptions(ecLevel: number): Record<string, unknown> {
-  if (ecLevel === 300) return { bcid: "azteccode", format: "rune" };
-  if (ecLevel >= 201 && ecLevel <= 232) return { bcid: "azteccode", format: "full", layers: ecLevel - 200 };
-  if (ecLevel >= 101 && ecLevel <= 104) return { bcid: "azteccodecompact", layers: ecLevel - 100 };
-  if (ecLevel >= 1 && ecLevel <= 99) return { bcid: "azteccodecompact", eclevel: ecLevel };
+  // Round so a non-integer never reaches bwip's `layers`; NaN falls to default.
+  const ec = Math.round(ecLevel) || 0;
+  if (ec === 300) return { bcid: "azteccode", format: "rune" };
+  if (ec >= 201 && ec <= 232) return { bcid: "azteccode", format: "full", layers: ec - 200 };
+  if (ec >= 101 && ec <= 104) return { bcid: "azteccodecompact", layers: ec - 100 };
+  if (ec >= 1 && ec <= 99) return { bcid: "azteccodecompact", eclevel: ec };
   return { bcid: "azteccodecompact" };
 }
 

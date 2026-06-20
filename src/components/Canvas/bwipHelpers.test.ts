@@ -217,6 +217,11 @@ describe("buildBwipOptions aztec ecLevel mapping", () => {
     expect(buildBwipOptions(az(232), 1, 8)).toMatchObject({ bcid: "azteccode", format: "full", layers: 32 });
     expect(buildBwipOptions(az(300), 1, 8)).toMatchObject({ bcid: "azteccode", format: "rune" });
   });
+
+  it("rounds a non-integer ecLevel so bwip never gets a float layer count", () => {
+    expect(buildBwipOptions(az(210.4), 1, 8)).toMatchObject({ format: "full", layers: 10 });
+    expect(buildBwipOptions(az(Number.NaN), 1, 8)).toMatchObject({ bcid: "azteccodecompact" });
+  });
 });
 
 describe("getDisplaySize coverage (ZPL-first policy)", () => {
