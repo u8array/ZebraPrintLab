@@ -41,11 +41,11 @@ export function EanInlineStatus({ type, content }: { type: EanUpcType; content: 
   const color = STATUS_COLOR[v.status];
   const message = ((): string => {
     switch (v.status) {
-      case 'empty': return tc.enterDigitsFmt.replace('{n}', String(v.dataLen));
-      case 'short': return tc.remainingFmt.replace('{k}', String(v.remaining));
-      case 'complete': return tc.checkAppendedFmt.replace('{d}', v.checkDigit ?? '');
-      case 'badCheck': return tc.badCheckFmt.replace('{x}', v.expected ?? '').replace('{y}', v.got ?? '');
-      case 'tooLong': return tc.tooLongFmt.replace('{n}', String(v.dataLen));
+      case 'empty': return tc.enterDigitsFmt.replaceAll('{n}', String(v.dataLen));
+      case 'short': return tc.remainingFmt.replaceAll('{k}', String(v.remaining));
+      case 'complete': return tc.checkAppendedFmt.replaceAll('{d}', v.checkDigit ?? '');
+      case 'badCheck': return tc.badCheckFmt.replaceAll('{x}', v.expected ?? '').replaceAll('{y}', v.got ?? '');
+      case 'tooLong': return tc.tooLongFmt.replaceAll('{n}', String(v.dataLen));
     }
   })();
   const hri = v.status === 'complete' ? FULL_HRI[type](content) : '';

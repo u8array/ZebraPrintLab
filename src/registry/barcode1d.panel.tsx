@@ -67,7 +67,7 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
                 maxLength={config.contentSpec?.maxLength}
                 placeholder={loc.placeholder}
               />
-              {!hasValidLength(p.content, config.contentSpec) && loc.placeholder && (
+              {!config.eanValidation && !hasValidLength(p.content, config.contentSpec) && loc.placeholder && (
                 <p className="font-mono text-[10px] text-warning">{loc.placeholder}</p>
               )}
               {config.eanValidation && (
