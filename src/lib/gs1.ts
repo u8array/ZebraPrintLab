@@ -143,7 +143,11 @@ export function gtinBodyFromContent(content: string): string {
   const segs = parseGs1ToSegments(content);
   const gtin = segs?.find((s) => s.ai === "01");
   if (gtin) return gtin.value;
-  return content.replace(/\D/g, "").slice(0, 14);
+  // Unparseable fallback: strip a leading 01 AI prefix so the GTIN isn't
+  // truncated with the prefix baked in.
+  let digits = content.replace(/\D/g, "");
+  if (digits.startsWith("01") && digits.length > 14) digits = digits.slice(2);
+  return digits.slice(0, 14);
 }
 
 /**

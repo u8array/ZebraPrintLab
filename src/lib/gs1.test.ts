@@ -161,6 +161,10 @@ describe("gtinBodyFromContent", () => {
   it("falls back to the digits of unstructured content", () => {
     expect(gtinBodyFromContent("0112345678901")).toBe("0112345678901");
   });
+  it("strips a leading 01 AI prefix in the unparseable fallback (no truncation)", () => {
+    // 01 + 15 digits fails the parser; the GTIN must not keep the 01 prefix.
+    expect(gtinBodyFromContent("01095011015300031")).toBe("09501101530003");
+  });
 });
 
 describe("segments serialize/parse", () => {
