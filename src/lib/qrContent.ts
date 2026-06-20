@@ -147,8 +147,10 @@ function parseWifi(content: string): QrFields {
   const f: QrFields = {};
   for (const field of splitUnescaped(body, ";")) {
     if (!field) continue;
-    const k = field.slice(0, field.indexOf(":"));
-    let v = field.slice(field.indexOf(":") + 1);
+    const c = field.indexOf(":");
+    if (c < 0) continue;
+    const k = field.slice(0, c);
+    let v = field.slice(c + 1);
     if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1);
     v = unescape(v);
     if (k === "S") f.ssid = v;
@@ -186,7 +188,9 @@ function parseEmail(content: string): QrFields {
   const f: QrFields = { to: safeDecode(to) };
   if (q >= 0) {
     for (const pair of rest.slice(q + 1).split("&")) {
-      const [k, v = ""] = pair.split("=");
+      const eq = pair.indexOf("=");
+      const k = eq < 0 ? pair : pair.slice(0, eq);
+      const v = eq < 0 ? "" : pair.slice(eq + 1);
       const dv = safeDecode(v.replace(/\+/g, "%20"));
       if (k === "subject") f.subject = dv;
       else if (k === "body") f.body = dv.replace(/\r\n/g, "\n");

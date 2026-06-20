@@ -81,6 +81,9 @@ describe("parseQr never throws on malformed input", () => {
     expect(parseQr("mailto:%E0%A4%A").type).toBe("email"); // truncated escape
     expect(parseQr("mailto:a@b.c?subject=%").fields.subject).toBe("%");
   });
+  it("keeps '=' inside a mailto body (splits on the first = only)", () => {
+    expect(parseQr("mailto:a@b.c?body=a=b").fields.body).toBe("a=b");
+  });
 });
 
 describe("parseQr classification", () => {
