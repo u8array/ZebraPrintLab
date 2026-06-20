@@ -406,6 +406,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // reflects the real union, not a rigid translate.
   const selectionFrameRef = useRef<Konva.Rect>(null);
   const isMultiFrame = attachableIds.length > 1;
+  // Distinguish a persistent group (one group selected -> solid frame) from an
+  // ad-hoc multi-selection (several top-level picks -> dashed frame).
+  const isMultiSelection = selectedIds.length > 1;
   const frameCtx = { label, measured: measuredBoundsMap() };
   // Hidden leaves never render, so the old client-rect path ignored them; keep
   // them out of the model-based bounds too.
@@ -1124,6 +1127,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                   ref={selectionFrameRef}
                   stroke={colors.selection}
                   strokeWidth={1.5}
+                  dash={isMultiSelection ? [6, 4] : undefined}
                   listening={false}
                 />
               )}
