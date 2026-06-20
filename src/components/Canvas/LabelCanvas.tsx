@@ -48,7 +48,7 @@ import {
   type ViewRotation,
 } from "./rotationGeometry";
 import { useAltClickCycle } from "./hooks/useAltClickCycle";
-import { useSelectionActionBar, ACTION_BAR_GAP_PX } from "./hooks/useSelectionActionBar";
+import { useSelectionActionBar, actionBarPosition, type BarBounds } from "./hooks/useSelectionActionBar";
 import { FloatingCanvasButton, RADIUS as BUTTON_RADIUS, type ButtonTone } from "./FloatingCanvasButton";
 import { ROTATE_ICON, TRASH_ICON, LOCK_ICON, UNLOCK_ICON, GROUP_ICON, UNGROUP_ICON } from "./canvasIcons";
 import {
@@ -116,7 +116,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const actionBarRef = useRef<Konva.Group>(null);
   const lockedFrameRef = useRef<Konva.Group>(null);
   const dragActiveRef = useRef(false);
-  const barHalfHeightRef = useRef(0);
+  const transformActiveRef = useRef(false);
+  const barHalfRef = useRef({ w: 0, h: 0 });
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const rotateView = () => onViewRotationChange(nextRotation(viewRotation));
   const [guides, setGuides] = useState<SnapGuide[]>([]);
@@ -406,11 +407,15 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const selectionFrameRef = useRef<Konva.Rect>(null);
   const isMultiFrame = attachableIds.length > 1;
   const frameCtx = { label, measured: measuredBoundsMap() };
-  const movableSelIds = attachableIds.filter((id) => {
-    const o = findObjectById(objects, id);
-    return !!o && !o.locked && o.visible !== false;
-  });
-  const staticSelIds = attachableIds.filter((id) => !movableSelIds.includes(id));
+  // Hidden leaves never render, so the old client-rect path ignored them; keep
+  // them out of the model-based bounds too.
+  // visibleLeaves carries the cascaded (effective) lock; read it, not the raw
+  // leaf in `objects`, so a locked group's children count as static here just
+  // like the controller skips them.
+  const visibleLeafById = new Map(visibleLeaves.map((l) => [l.id, l]));
+  const visibleSelIds = attachableIds.filter((id) => visibleLeafById.has(id));
+  const movableSelIds = visibleSelIds.filter((id) => !visibleLeafById.get(id)?.locked);
+  const staticSelIds = visibleSelIds.filter((id) => !movableSelIds.includes(id));
   const toFramePx = (b: { x: number; y: number; width: number; height: number } | null) =>
     b && {
       x: objectsOffsetX + dotsToPx(b.x, scale, label.dpmm),
@@ -418,9 +423,32 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       width: dotsToPx(b.width, scale, label.dpmm),
       height: dotsToPx(b.height, scale, label.dpmm),
     };
-  const selectionFrameBase = isMultiFrame ? toFramePx(selectionUnionDots(objects, selectedIds, frameCtx)) : null;
-  const movableFrameBase = isMultiFrame ? toFramePx(selectionUnionDots(objects, movableSelIds, frameCtx)) : null;
-  const staticFrameBase = isMultiFrame ? toFramePx(selectionUnionDots(objects, staticSelIds, frameCtx)) : null;
+  // Frame Rect is multi-only; the movable/static bases also drive the action bar
+  // (single drags too), so compute them for any selection.
+  const hasSelection = visibleSelIds.length > 0;
+  const selectionFrameBase = isMultiFrame ? toFramePx(selectionUnionDots(objects, visibleSelIds, frameCtx)) : null;
+  const movableFrameBase = hasSelection ? toFramePx(selectionUnionDots(objects, movableSelIds, frameCtx)) : null;
+  const staticFrameBase = hasSelection ? toFramePx(selectionUnionDots(objects, staticSelIds, frameCtx)) : null;
+  // Action-bar bounds: live client-rects during a transformer resize (model
+  // commits only at the end), else optical model bounds (matches the drag center).
+  const getBarBounds = (): BarBounds | null => {
+    const stage = stageRef.current;
+    if (transformActiveRef.current && stage) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const id of visibleSelIds) {
+        const node = stage.findOne(`#${id}`);
+        if (!node) continue;
+        const r = node.getClientRect({ relativeTo: stage, skipStroke: true });
+        minX = Math.min(minX, r.x);
+        minY = Math.min(minY, r.y);
+        maxX = Math.max(maxX, r.x + r.width);
+        maxY = Math.max(maxY, r.y + r.height);
+      }
+      return minX === Infinity ? null : { minX, minY, maxX, maxY };
+    }
+    const u = toFramePx(selectionUnionDots(getCurrentObjects(), visibleSelIds, frameCtx));
+    return u ? { minX: u.x, minY: u.y, maxX: u.x + u.width, maxY: u.y + u.height } : null;
+  };
   useLayoutEffect(() => {
     const r = selectionFrameRef.current;
     if (!r || !selectionFrameBase) return;
@@ -459,15 +487,24 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       if (!live) return;
       selectionFrameRef.current?.position({ x: live.x, y: live.y });
       selectionFrameRef.current?.size({ width: live.width, height: live.height });
-      // Action bar centered above the live union; its own beforeDraw is
-      // suppressed mid-drag (dragActiveRef). Skip the (0,0) end reset so it
-      // stays until beforeDraw repositions it with the full flip/clamp logic.
+      // Shared clamp/flip policy; measure the bar lazily since a drag that selects
+      // a new object renders it only after selectObject (absent at drag start).
       const bar = actionBarRef.current;
-      if (bar && dragActiveRef.current && (dx !== 0 || dy !== 0)) {
-        bar.position({
-          x: live.x + live.width / 2,
-          y: live.y - ACTION_BAR_GAP_PX - barHalfHeightRef.current,
-        });
+      const stage = stageRef.current;
+      if (bar && stage && dragActiveRef.current && (dx !== 0 || dy !== 0)) {
+        if (barHalfRef.current.h === 0) {
+          const r = bar.getClientRect({ relativeTo: stage, skipShadow: true });
+          barHalfRef.current = { w: r.width / 2, h: r.height / 2 };
+        }
+        bar.position(
+          actionBarPosition(
+            { minX: live.x, minY: live.y, maxX: live.x + live.width, maxY: live.y + live.height },
+            barHalfRef.current.w,
+            barHalfRef.current.h,
+            stage.width(),
+            stage.height(),
+          ),
+        );
       }
     },
   });
@@ -635,6 +672,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     dragActiveRef,
     actionBarRef,
     lockedFrameRef,
+    getBarBounds,
   });
 
   const handleRotateStep = () => {
@@ -954,15 +992,20 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               e.target.stopDrag();
               return;
             }
-            dragController.onDragStart(e);
-            // Object drags (not transformer anchors) drive the action bar live;
-            // capture its half-height for centering and freeze its own beforeDraw.
+            // Dragging a non-selected object selects it first, so the chrome
+            // (group frame, action bar) tracks what actually moves instead of
+            // sticking to the prior selection.
             const id = e.target.id();
-            dragActiveRef.current = !!id && !!findObjectById(getCurrentObjects(), id);
-            if (dragActiveRef.current && actionBarRef.current && stageRef.current) {
-              const r = actionBarRef.current.getClientRect({ relativeTo: stageRef.current, skipShadow: true });
-              barHalfHeightRef.current = r.height / 2;
+            const objs = getCurrentObjects();
+            if (id && findObjectById(objs, id)) {
+              const target = selectionTargetId(objs, id);
+              if (!useLabelStore.getState().selectedIds.includes(target)) selectObject(target);
             }
+            dragController.onDragStart(e);
+            // onDelta drives/measures the bar (its beforeDraw lags); reset its
+            // size so onDelta re-measures fresh for this selection.
+            dragActiveRef.current = !!id && !!findObjectById(getCurrentObjects(), id);
+            barHalfRef.current = { w: 0, h: 0 };
           }}
           onDragEnd={() => {
             dragActiveRef.current = false;
@@ -1113,10 +1156,19 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 resizeEnabled={resizeEnabled}
                 enabledAnchors={enabledAnchors}
                 centeredScaling={centeredScaling}
-                onTransformStart={onTransformStart}
+                onTransformStart={() => {
+                  transformActiveRef.current = true;
+                  onTransformStart();
+                }}
                 onTransform={onTransform}
                 boundBoxFunc={boundBoxFunc}
-                onTransformEnd={onTransformEnd}
+                onTransformEnd={() => {
+                  try {
+                    onTransformEnd();
+                  } finally {
+                    transformActiveRef.current = false;
+                  }
+                }}
                 borderStroke={colors.selection}
                 anchorStroke={colors.selection}
                 anchorFill="#ffffff"

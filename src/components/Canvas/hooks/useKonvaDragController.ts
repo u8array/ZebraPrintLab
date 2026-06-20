@@ -140,7 +140,9 @@ export function useKonvaDragController(args: DragControllerArgs): DragHandlers {
     for (const id of set) {
       const obj = findObjectById(objs, id);
       const node = stage.findOne<Konva.Node>(`#${id}`);
-      if (!obj || obj.locked || obj.visible === false || !node) continue;
+      // node.draggable() carries the cascaded lock (renderers set it), so a
+      // locked group's children are skipped even though their raw leaf isn't.
+      if (!obj || obj.visible === false || !node || !node.draggable()) continue;
       startLocal.set(id, { x: node.x(), y: node.y() });
       startModel.set(id, { x: obj.x, y: obj.y });
       ids.push(id);

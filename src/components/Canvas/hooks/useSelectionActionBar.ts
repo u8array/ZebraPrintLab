@@ -4,6 +4,30 @@ import { RULER_SIZE } from "../Ruler";
 
 export const ACTION_BAR_GAP_PX = 22;
 
+export interface BarBounds { minX: number; minY: number; maxX: number; maxY: number }
+/** Shared action-bar placement: centered over the selection, clamped to the
+ *  canvas, flipped below when it would clip the ruler. */
+export function actionBarPosition(
+  sel: BarBounds,
+  halfW: number,
+  halfH: number,
+  stageWidth: number,
+  stageHeight: number,
+): { x: number; y: number } {
+  const minCx = RULER_SIZE + halfW;
+  const maxCx = Math.max(minCx, stageWidth - halfW);
+  const x = Math.min(Math.max((sel.minX + sel.maxX) / 2, minCx), maxCx);
+  const aboveY = sel.minY - ACTION_BAR_GAP_PX - halfH;
+  const belowY = sel.maxY + ACTION_BAR_GAP_PX + halfH;
+  const y =
+    aboveY - halfH < RULER_SIZE
+      ? belowY + halfH <= stageHeight
+        ? belowY
+        : RULER_SIZE + halfH
+      : aboveY;
+  return { x, y };
+}
+
 interface Options {
   stageRef: React.RefObject<Konva.Stage | null>;
   attachableIds: string[];
@@ -16,6 +40,9 @@ interface Options {
   /** Owned by LabelCanvas (so the drag onDelta can translate the bar live). */
   actionBarRef: React.RefObject<Konva.Group | null>;
   lockedFrameRef: React.RefObject<Konva.Group | null>;
+  /** Selection bounds in stage px from objectBoundsDots (the optical box, incl.
+   *  the ^GD diagonal overhang) so the rest position matches the drag center. */
+  getBarBounds: () => BarBounds | null;
 }
 
 /**
@@ -33,6 +60,7 @@ export function useSelectionActionBar({
   dragActiveRef,
   actionBarRef,
   lockedFrameRef,
+  getBarBounds,
 }: Options) {
   useLayoutEffect(() => {
     if (previewLocks || attachableIds.length === 0) return;
@@ -45,43 +73,19 @@ export function useSelectionActionBar({
     // getClientRect sees actual positions; dragmove/xChange read stale data and
     // trail one tick behind on snap-jumps.
     const update = () => {
-      // During a controller drag the bar is translated by the drag delta; the
-      // client-rects below would lag for the imperatively-moved siblings.
+      // During a controller drag the bar is translated by onDelta instead.
       if (dragActiveRef.current) return;
-      let minX = Infinity;
-      let minY = Infinity;
-      let maxX = -Infinity;
-      let maxY = -Infinity;
-      for (const id of attachableIds) {
-        const node = stage.findOne(`#${id}`);
-        if (!node) continue;
-        const r = node.getClientRect({ relativeTo: stage, skipStroke: true });
-        minX = Math.min(minX, r.x);
-        minY = Math.min(minY, r.y);
-        maxX = Math.max(maxX, r.x + r.width);
-        maxY = Math.max(maxY, r.y + r.height);
-      }
-      if (minX === Infinity) return;
+      // Optical bounds (objectBoundsDots), so the rest position matches the drag
+      // center; the store is updated live during resize, so this also tracks it.
+      const sel = getBarBounds();
+      if (!sel) return;
 
       const bar = actionBarRef.current;
       if (bar) {
         const barRect = bar.getClientRect({ relativeTo: stage, skipShadow: true });
-        const halfW = barRect.width / 2;
-        const halfH = barRect.height / 2;
-        const minCx = RULER_SIZE + halfW;
-        const maxCx = Math.max(minCx, stage.width() - halfW);
-        const cx = Math.min(Math.max((minX + maxX) / 2, minCx), maxCx);
-        // Anchor the bar's near EDGE a fixed gap from the selection (not its
-        // centre), so a tall/rotated/top-sitting object never gets overlapped:
-        // bottom edge `gap` above minY when placed above; top edge `gap` below
-        // maxY when flipped under. Pin just below the ruler if neither fits.
-        const aboveY = minY - ACTION_BAR_GAP_PX - halfH;
-        const belowY = maxY + ACTION_BAR_GAP_PX + halfH;
-        let y = aboveY;
-        if (aboveY - halfH < RULER_SIZE) {
-          y = belowY + halfH <= stage.height() ? belowY : RULER_SIZE + halfH;
-        }
-        bar.position({ x: cx, y });
+        bar.position(
+          actionBarPosition(sel, barRect.width / 2, barRect.height / 2, stage.width(), stage.height()),
+        );
       }
 
       // Per-leaf amber frames, mapped to lockedLeafIds in render order.
@@ -102,5 +106,5 @@ export function useSelectionActionBar({
     return () => {
       layer?.off(".actionbar");
     };
-  }, [stageRef, attachableIds, lockedLeafIds, previewLocks, dragActiveRef, actionBarRef, lockedFrameRef]);
+  }, [stageRef, attachableIds, lockedLeafIds, previewLocks, dragActiveRef, actionBarRef, lockedFrameRef, getBarBounds]);
 }
