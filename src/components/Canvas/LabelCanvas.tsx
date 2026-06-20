@@ -4,6 +4,7 @@ import {
   useMemo,
   useRef,
   useEffect,
+  useLayoutEffect,
   useState,
   useCallback,
 } from "react";
@@ -13,7 +14,7 @@ import { Stage, Layer, Group, Image as KImage, Rect, Transformer } from "react-k
 import type Konva from "konva";
 import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects, selectPreviewLocksEditor } from "../../store/labelStore";
 import { isGroup, getAllLeaves, expandSelection, selectionTargetId, findObjectById, canDeleteSelection, canGroupSelection, canUngroupSelection, isSelectionLocked, type LabelObject } from "../../types/Group";
-import { pxToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
+import { pxToDots, dotsToPx, SCREEN_PX_PER_MM } from "../../lib/coordinates";
 import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
 import type { SnapGuide } from "../../lib/snapGuides";
@@ -47,7 +48,7 @@ import {
   type ViewRotation,
 } from "./rotationGeometry";
 import { useAltClickCycle } from "./hooks/useAltClickCycle";
-import { useSelectionActionBar } from "./hooks/useSelectionActionBar";
+import { useSelectionActionBar, ACTION_BAR_GAP_PX } from "./hooks/useSelectionActionBar";
 import { FloatingCanvasButton, RADIUS as BUTTON_RADIUS, type ButtonTone } from "./FloatingCanvasButton";
 import { ROTATE_ICON, TRASH_ICON, LOCK_ICON, UNLOCK_ICON, GROUP_ICON, UNGROUP_ICON } from "./canvasIcons";
 import {
@@ -58,6 +59,21 @@ import {
 const PADDING = 40;
 // Horizontal stride between action-bar buttons (render-side row layout).
 const BUTTON_STEP_PX = 32;
+
+interface Rect { x: number; y: number; width: number; height: number }
+/** Union of two optional rects (px); null only when both are null. */
+function unionPx(a: Rect | null, b: Rect | null): Rect | null {
+  if (!a) return b;
+  if (!b) return a;
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  return {
+    x,
+    y,
+    width: Math.max(a.x + a.width, b.x + b.width) - x,
+    height: Math.max(a.y + a.height, b.y + b.height) - y,
+  };
+}
 
 interface Props {
   unit: Unit;
@@ -95,9 +111,19 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  // Action-bar chrome refs live here so the drag onDelta can translate the bar
+  // live (its own beforeDraw lags for controller-moved siblings).
+  const actionBarRef = useRef<Konva.Group>(null);
+  const lockedFrameRef = useRef<Konva.Group>(null);
+  const dragActiveRef = useRef(false);
+  const barHalfHeightRef = useRef(0);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const rotateView = () => onViewRotationChange(nextRotation(viewRotation));
   const [guides, setGuides] = useState<SnapGuide[]>([]);
+  // Drag-snap guides live in group-local space (rendered inside the rotation
+  // group) so they rotate with the view; line-endpoint guides stay in `guides`
+  // (stage space, outside the group).
+  const [dragGuides, setDragGuides] = useState<SnapGuide[]>([]);
   const [ghost, setGhost] = useState<LeafObject | null>(null);
 
   // Bypasses @dnd-kit scroll-adjusted delta; palette scroll momentum
@@ -372,19 +398,78 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     [visualLabelX, visualLabelY, visualLabelWidthPx, visualLabelHeightPx],
   );
 
-  // Whole-object drag (single + multi snap, commit), the move counterpart to
-  // useKonvaTransformer. Renderers spread its node handlers onto their draggable
-  // node; the drag-start capture rides on the Stage via bubbling.
+  // Group frame from selectionUnionDots so it matches the snap borders.
+  // Positioned imperatively (no x/y props) so a mid-drag re-render can't reset
+  // the live position the controller's onDelta applies. Split into a movable
+  // part (follows the drag) and a static part (locked, stays put) so the chrome
+  // reflects the real union, not a rigid translate.
+  const selectionFrameRef = useRef<Konva.Rect>(null);
+  const isMultiFrame = attachableIds.length > 1;
+  const frameCtx = { label, measured: measuredBoundsMap() };
+  const movableSelIds = attachableIds.filter((id) => {
+    const o = findObjectById(objects, id);
+    return !!o && !o.locked && o.visible !== false;
+  });
+  const staticSelIds = attachableIds.filter((id) => !movableSelIds.includes(id));
+  const toFramePx = (b: { x: number; y: number; width: number; height: number } | null) =>
+    b && {
+      x: objectsOffsetX + dotsToPx(b.x, scale, label.dpmm),
+      y: labelOffsetY + dotsToPx(b.y, scale, label.dpmm),
+      width: dotsToPx(b.width, scale, label.dpmm),
+      height: dotsToPx(b.height, scale, label.dpmm),
+    };
+  const selectionFrameBase = isMultiFrame ? toFramePx(selectionUnionDots(objects, selectedIds, frameCtx)) : null;
+  const movableFrameBase = isMultiFrame ? toFramePx(selectionUnionDots(objects, movableSelIds, frameCtx)) : null;
+  const staticFrameBase = isMultiFrame ? toFramePx(selectionUnionDots(objects, staticSelIds, frameCtx)) : null;
+  useLayoutEffect(() => {
+    const r = selectionFrameRef.current;
+    if (!r || !selectionFrameBase) return;
+    r.position({ x: selectionFrameBase.x, y: selectionFrameBase.y });
+    r.size({ width: selectionFrameBase.width, height: selectionFrameBase.height });
+    // Depend on the geometry primitives, not the freshly-built object, so a
+    // mid-drag re-render can't reset the frame the onDelta handler moved.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    selectionFrameBase?.x,
+    selectionFrameBase?.y,
+    selectionFrameBase?.width,
+    selectionFrameBase?.height,
+  ]);
+
+  // Whole-object drag controller; nodes spread its handlers, Stage captures start.
   const dragController = useKonvaDragController({
     stageRef,
     transformerRef,
     scale,
     dpmm: label.dpmm,
+    objectsOffsetX,
+    labelOffsetY,
     snapEnabled,
     snapUnitDots: snapUnit,
-    labelRectPx: transformerSnapLabelRect,
-    viewRotation,
-    setGuides,
+    setGuides: setDragGuides,
+    onDelta: (dx, dy) => {
+      // Live union: movable part shifted by the drag, locked part where it sits.
+      const moved = movableFrameBase && {
+        x: movableFrameBase.x + dx,
+        y: movableFrameBase.y + dy,
+        width: movableFrameBase.width,
+        height: movableFrameBase.height,
+      };
+      const live = unionPx(moved, staticFrameBase);
+      if (!live) return;
+      selectionFrameRef.current?.position({ x: live.x, y: live.y });
+      selectionFrameRef.current?.size({ width: live.width, height: live.height });
+      // Action bar centered above the live union; its own beforeDraw is
+      // suppressed mid-drag (dragActiveRef). Skip the (0,0) end reset so it
+      // stays until beforeDraw repositions it with the full flip/clamp logic.
+      const bar = actionBarRef.current;
+      if (bar && dragActiveRef.current && (dx !== 0 || dy !== 0)) {
+        bar.position({
+          x: live.x + live.width / 2,
+          y: live.y - ACTION_BAR_GAP_PX - barHalfHeightRef.current,
+        });
+      }
+    },
   });
 
   useImperativeHandle(
@@ -542,11 +627,14 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     return attachableIds.filter((id) => locked.has(id));
   }, [visibleLeaves, attachableIds]);
 
-  const { actionBarRef, lockedFrameRef } = useSelectionActionBar({
+  useSelectionActionBar({
     stageRef,
     attachableIds,
     lockedLeafIds,
     previewLocks,
+    dragActiveRef,
+    actionBarRef,
+    lockedFrameRef,
   });
 
   const handleRotateStep = () => {
@@ -867,6 +955,17 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               return;
             }
             dragController.onDragStart(e);
+            // Object drags (not transformer anchors) drive the action bar live;
+            // capture its half-height for centering and freeze its own beforeDraw.
+            const id = e.target.id();
+            dragActiveRef.current = !!id && !!findObjectById(getCurrentObjects(), id);
+            if (dragActiveRef.current && actionBarRef.current && stageRef.current) {
+              const r = actionBarRef.current.getClientRect({ relativeTo: stageRef.current, skipShadow: true });
+              barHalfHeightRef.current = r.height / 2;
+            }
+          }}
+          onDragEnd={() => {
+            dragActiveRef.current = false;
           }}
         >
           {/* Object layer */}
@@ -974,6 +1073,20 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                   />
                 </Group>
               )}
+
+              {/* Multi-select/group frame from model bounds (matches snap borders);
+                  positioned imperatively in useLayoutEffect + the drag onDelta. */}
+              {!previewLocks && selectionFrameBase && (
+                <Rect
+                  ref={selectionFrameRef}
+                  stroke={colors.selection}
+                  strokeWidth={1.5}
+                  listening={false}
+                />
+              )}
+
+              {/* Drag-snap guides: group-local, so they rotate with the view. */}
+              {!previewLocks && <GuideLines guides={dragGuides} />}
             </Group>
 
             {/* Outside the rotation Group; clientRect/Transformer respect parent transforms. */}

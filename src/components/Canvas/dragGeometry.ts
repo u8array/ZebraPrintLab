@@ -1,10 +1,28 @@
-// Pure drag-snap geometry, shared by the Konva drag controller. Keeps the
-// snap policy (grid vs smart, single vs multi) testable without a stage:
-// every function takes plain numbers and returns a delta to apply to the
-// whole drag, so the controller stays a thin imperative layer.
+// Pure drag-snap geometry: each function takes plain numbers and returns a
+// delta to apply to the whole drag, so the snap policy stays testable without a
+// stage and the controller stays a thin imperative layer.
 
 import { computeSnap, type SnapGuide, type SnapRect } from "../../lib/snapGuides";
 import type { BoundingBoxDots } from "../../lib/objectBounds";
+import { mmToDots } from "../../lib/coordinates";
+
+/** Printable-area snap rect (dots). ^LS shifts content right by labelShift, so
+ *  the area starts at -labelShift in object space and is that much wider. */
+export function labelSnapRectDots(label: {
+  widthMm: number;
+  heightMm: number;
+  dpmm: number;
+  labelShift?: number;
+}): SnapRect {
+  const shift = label.labelShift ?? 0;
+  return {
+    id: "_lbl",
+    x: shift ? -shift : 0,
+    y: 0,
+    width: mmToDots(label.widthMm, label.dpmm) + shift,
+    height: mmToDots(label.heightMm, label.dpmm),
+  };
+}
 
 /** Round to the nearest grid multiple; identity when the grid is off. */
 export function snapToGrid(value: number, gridDots: number): number {
@@ -12,10 +30,8 @@ export function snapToGrid(value: number, gridDots: number): number {
 }
 
 /**
- * Grid-snap delta for a box's top-left (dots): the offset that lands the box on
- * the nearest grid line. The caller applies this single delta to the whole drag
- * (the controller snaps the grabbed object and shifts the rest by the same
- * amount), so a multi-selection keeps its relative offsets.
+ * Grid-snap delta for a box's top-left (dots). One delta for the whole drag, so
+ * a multi-selection keeps its relative offsets.
  */
 export function gridSnapDelta(box: BoundingBoxDots, gridDots: number): { dx: number; dy: number } {
   return {
@@ -25,10 +41,8 @@ export function gridSnapDelta(box: BoundingBoxDots, gridDots: number): { dx: num
 }
 
 /**
- * Smart-snap delta for one rect against the other objects + label. All inputs
- * share a single coordinate space (the controller passes stage pixels so the
- * returned guides line up with the rendered guide layer). One delta for the
- * whole drag; the union rect snaps as a unit.
+ * Smart-snap delta for one rect against the other objects + label, all in model
+ * dots. One delta for the whole drag, so the union snaps as a unit.
  */
 export function smartSnapDelta(
   box: SnapRect,

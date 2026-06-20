@@ -54,13 +54,14 @@ describe("objectBoundsDots", () => {
     expect(b.height).toBe(4);
   });
 
-  it("line: diagonal bbox spans both endpoints", () => {
-    // 3-4-5: angle ~36.87deg, length 100 -> dx 80, dy 60.
+  it("line: diagonal optical bbox includes the ^GD horizontal shear", () => {
+    // 3-4-5: angle ~36.87deg, length 100 -> dx 80, dy 60. ^GD shears the band
+    // horizontally by thickness, so the optical width is dx + t = 82.
     const ln = leaf("line", 0, 0, { angle: Math.atan2(60, 80) * 180 / Math.PI, length: 100, thickness: 2, color: "B" });
     const b = objectBoundsDots(ln, ctx());
     expect(b.x).toBeCloseTo(0, 6);
     expect(b.y).toBeCloseTo(0, 6);
-    expect(b.width).toBeCloseTo(80, 6);
+    expect(b.width).toBeCloseTo(82, 6);
     expect(b.height).toBeCloseTo(60, 6);
   });
 

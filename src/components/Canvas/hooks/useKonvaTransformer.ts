@@ -344,12 +344,11 @@ export function useKonvaTransformer({
         : null;
       transformerRef.current.nodes(node ? [node] : []);
     } else {
-      const nodes = selectedIds
-        .map((id) => objects.find((o) => o.id === id))
-        .filter((o): o is LeafObject => !!o && o.type !== "line" && !o.locked)
-        .map((o) => stageRef.current?.findOne<Konva.Node>(`#${o.id}`))
-        .filter((n): n is Konva.Node => n != null);
-      transformerRef.current.nodes(nodes);
+      // Multi-select has no resize/rotate anchors and its frame is drawn from
+      // selectionUnionDots (model bounds) to match the snap borders. Detach the
+      // transformer so it doesn't also draw a disagreeing client-rect frame
+      // (fat diagonals, barcode HRI, etc.).
+      transformerRef.current.nodes([]);
     }
     // Force a re-measure: after commitTransform the node's getClientRect has
     // changed but the transformer caches its bounds from the last interaction.

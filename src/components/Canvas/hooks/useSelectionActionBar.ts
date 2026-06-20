@@ -1,14 +1,21 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect } from "react";
 import type Konva from "konva";
 import { RULER_SIZE } from "../Ruler";
 
-const ACTION_BAR_GAP_PX = 22;
+export const ACTION_BAR_GAP_PX = 22;
 
 interface Options {
   stageRef: React.RefObject<Konva.Stage | null>;
   attachableIds: string[];
   lockedLeafIds: string[];
   previewLocks: boolean;
+  /** True while a controller drag is live; the bar is translated by the drag
+   *  delta instead. Re-reading client-rects here would lag, since only the
+   *  grabbed node's matrices are freshly invalidated, not the siblings'. */
+  dragActiveRef: React.RefObject<boolean>;
+  /** Owned by LabelCanvas (so the drag onDelta can translate the bar live). */
+  actionBarRef: React.RefObject<Konva.Group | null>;
+  lockedFrameRef: React.RefObject<Konva.Group | null>;
 }
 
 /**
@@ -23,10 +30,10 @@ export function useSelectionActionBar({
   attachableIds,
   lockedLeafIds,
   previewLocks,
+  dragActiveRef,
+  actionBarRef,
+  lockedFrameRef,
 }: Options) {
-  const actionBarRef = useRef<Konva.Group>(null);
-  const lockedFrameRef = useRef<Konva.Group>(null);
-
   useLayoutEffect(() => {
     if (previewLocks || attachableIds.length === 0) return;
     const stage = stageRef.current;
@@ -38,6 +45,9 @@ export function useSelectionActionBar({
     // getClientRect sees actual positions; dragmove/xChange read stale data and
     // trail one tick behind on snap-jumps.
     const update = () => {
+      // During a controller drag the bar is translated by the drag delta; the
+      // client-rects below would lag for the imperatively-moved siblings.
+      if (dragActiveRef.current) return;
       let minX = Infinity;
       let minY = Infinity;
       let maxX = -Infinity;
@@ -92,7 +102,5 @@ export function useSelectionActionBar({
     return () => {
       layer?.off(".actionbar");
     };
-  }, [stageRef, attachableIds, lockedLeafIds, previewLocks]);
-
-  return { actionBarRef, lockedFrameRef };
+  }, [stageRef, attachableIds, lockedLeafIds, previewLocks, dragActiveRef, actionBarRef, lockedFrameRef]);
 }

@@ -1,7 +1,21 @@
 import { describe, it, expect } from "vitest";
-import { snapToGrid, gridSnapDelta, smartSnapDelta } from "./dragGeometry";
+import { snapToGrid, gridSnapDelta, smartSnapDelta, labelSnapRectDots } from "./dragGeometry";
 import type { BoundingBoxDots } from "../../lib/objectBounds";
 import type { SnapRect } from "../../lib/snapGuides";
+
+describe("labelSnapRectDots", () => {
+  it("is the plain printable area without ^LS", () => {
+    expect(labelSnapRectDots({ widthMm: 10, heightMm: 5, dpmm: 8 })).toEqual({
+      id: "_lbl", x: 0, y: 0, width: 80, height: 40,
+    });
+  });
+
+  it("accounts for the ^LS shift: starts at -shift and is that much wider", () => {
+    expect(labelSnapRectDots({ widthMm: 10, heightMm: 5, dpmm: 8, labelShift: 12 })).toEqual({
+      id: "_lbl", x: -12, y: 0, width: 92, height: 40,
+    });
+  });
+});
 
 describe("snapToGrid", () => {
   it("rounds to the nearest grid multiple", () => {

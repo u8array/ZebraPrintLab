@@ -182,20 +182,24 @@ export function objectBoundsDots(obj: LabelObject, ctx: ObjectBoundsCtx): Boundi
   }
 }
 
-/** Line bbox from its two endpoints (origin + angle/length). Mirrors the
+/** Optical line bbox (the rendered band, not just the endpoints). Mirrors the
  *  LineObject render: x2 = x + len*cos, y2 = y + len*sin in dot space. */
 function lineBounds(obj: LeafObject & { type: "line" }): BoundingBoxDots {
   const { angle, length, thickness } = obj.props;
   const rad = (angle * Math.PI) / 180;
   const x2 = obj.x + length * Math.cos(rad);
   const y2 = obj.y + length * Math.sin(rad);
+  const dx = Math.abs(x2 - obj.x);
+  const dy = Math.abs(y2 - obj.y);
   const minX = Math.min(obj.x, x2);
   const minY = Math.min(obj.y, y2);
-  // A pure horizontal/vertical line has zero extent on its thin axis; give it
-  // the stroke thickness so the bbox is non-degenerate, matching the rendered band.
-  const width = Math.max(Math.abs(x2 - obj.x), thickness);
-  const height = Math.max(Math.abs(y2 - obj.y), thickness);
-  return { x: minX, y: minY, width, height };
+  // Axis-aligned emits ^GB (plain band): thickness fills the thin axis.
+  if (dx < 0.5 || dy < 0.5) {
+    return { x: minX, y: minY, width: Math.max(dx, thickness), height: Math.max(dy, thickness) };
+  }
+  // Diagonal emits ^GD, which shears the band horizontally by thickness (see
+  // diagonalPolygonPoints): the optical box is (w + t) wide, h tall.
+  return { x: minX, y: minY, width: dx + thickness, height: dy };
 }
 
 /** Union of every leaf descendant. Group children are absolute-coordinated,

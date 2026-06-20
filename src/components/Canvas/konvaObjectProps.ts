@@ -36,10 +36,8 @@ export interface KonvaObjectProps {
   onSelect: (addToSelection: boolean) => void;
   onChange: (changes: ObjectChanges) => void;
   snap: (dots: number) => number;
-  /** Per-node whole-object drag handlers from useKonvaDragController. Renderers
-   *  spread these onto their draggable node so move/snap/commit live in one
-   *  place (the move counterpart to the Transformer hook). The drag-start
-   *  capture rides on the Stage via event bubbling. */
+  /** Whole-object drag handlers from useKonvaDragController; renderers spread
+   *  these onto their draggable node. Drag-start is captured on the Stage. */
   dragHandlers?: {
     onDragMove: (e: Konva.KonvaEventObject<DragEvent>) => void;
     onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => void;
