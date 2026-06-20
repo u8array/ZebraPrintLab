@@ -60,9 +60,9 @@ const PADDING = 40;
 // Horizontal stride between action-bar buttons (render-side row layout).
 const BUTTON_STEP_PX = 32;
 
-interface Rect { x: number; y: number; width: number; height: number }
+interface RectPx { x: number; y: number; width: number; height: number }
 /** Union of two optional rects (px); null only when both are null. */
-function unionPx(a: Rect | null, b: Rect | null): Rect | null {
+function unionPx(a: RectPx | null, b: RectPx | null): RectPx | null {
   if (!a) return b;
   if (!b) return a;
   const x = Math.min(a.x, b.x);
