@@ -40,6 +40,7 @@ import {
 import { useLabelStore, useHistory, selectLabelaryNoticeRequired } from "../store/labelStore";
 import { LabelaryNoticeModal } from "./Output/LabelaryNoticeModal";
 import { PrinterSettingsModal } from "./PrinterSettings/PrinterSettingsModal";
+import { Gs1ContentModal } from "./Barcode/Gs1ContentModal";
 import { localeNames } from "../locales";
 import type { LocaleCode } from "../locales";
 import { mmToUnit } from "../lib/units";
@@ -453,6 +454,7 @@ export function AppShell() {
         />
       )}
       <PrinterSettingsModal />
+      <Gs1ContentModal />
     </div>
   );
 }
