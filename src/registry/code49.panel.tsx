@@ -3,6 +3,7 @@ import { useT } from '../lib/useT';
 import { inputCls, labelCls } from '../components/Properties/styles';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
+import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
@@ -33,12 +34,12 @@ export const code49Panel: ObjectTypeUi<Code49Props> = {
 
         <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
           <div className={`grid grid-cols-2 ${fieldGridCols}`}>
-            <NumberInput
+            <UnitNumberInput
               label={loc.height}
-              value={p.height}
-              min={code49MinHeight(p.moduleWidth)}
-              max={code49MaxHeight(p.moduleWidth)}
-              onChange={(height) => onChange({ height })}
+              valueDots={p.height}
+              minDots={code49MinHeight(p.moduleWidth)}
+              maxDots={code49MaxHeight(p.moduleWidth)}
+              onChangeDots={(height) => onChange({ height })}
               zplCmd="^B4"
               className={fieldGridCell}
             />

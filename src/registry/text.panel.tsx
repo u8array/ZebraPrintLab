@@ -6,7 +6,7 @@ import { getFont, loadFontFile } from "../lib/fontCache";
 import { useFontCacheVersion } from "../hooks/useFontCacheVersion";
 import { useLabelStore } from "../store/labelStore";
 import { RotationSelect } from "../components/Properties/RotationSelect";
-import { NumberInput } from "../components/Properties/NumberInput";
+import { UnitNumberInput } from "../components/Properties/UnitNumberInput";
 import { TemplateContentInput } from "../components/Properties/TemplateContentInput";
 import { BlockTextSettings } from "../components/Properties/BlockTextSettings";
 import { FpSettings } from "../components/Properties/FpSettings";
@@ -85,19 +85,19 @@ export const textPanel: ObjectTypeUi<TextProps> = {
           </div>
 
           <div className={`grid grid-cols-2 ${fieldGridCols}`}>
-            <NumberInput
+            <UnitNumberInput
               label={t.registry.text.fontHeight}
-              value={p.fontHeight}
-              min={1}
-              onChange={(fontHeight) => onChange({ fontHeight })}
+              valueDots={p.fontHeight}
+              minDots={1}
+              onChangeDots={(fontHeight) => onChange({ fontHeight })}
               zplCmd="^A"
               className={fieldGridCell}
             />
-            <NumberInput
+            <UnitNumberInput
               label={t.registry.text.fontWidth}
-              value={p.fontWidth}
-              min={0}
-              onChange={(fontWidth) => onChange({ fontWidth })}
+              valueDots={p.fontWidth}
+              minDots={0}
+              onChangeDots={(fontWidth) => onChange({ fontWidth })}
               zplCmd="^A"
               className={fieldGridCell}
             />

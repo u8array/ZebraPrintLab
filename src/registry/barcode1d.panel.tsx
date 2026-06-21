@@ -5,6 +5,7 @@ import { labelCls } from '../components/Properties/styles';
 import { filterContent, hasValidLength, type ContentSpec } from './contentSpec';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
+import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { TemplateContentInput } from '../components/Properties/TemplateContentInput';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
@@ -77,13 +78,12 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
           </StaticSectionCard>
 
           <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
-            <NumberInput
+            <UnitNumberInput
               label={loc.height}
-              value={p.height}
-              min={1}
+              valueDots={p.height}
+              minDots={1}
               disabled={config.heightLocked}
-              readOnly={config.heightLocked}
-              onChange={(height) => onChange({ height })}
+              onChangeDots={(height) => onChange({ height })}
               zplCmd={config.zplCommand}
             />
 

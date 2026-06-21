@@ -21,6 +21,7 @@ import type { Unit } from "../../lib/units";
 import { useT } from "../../lib/useT";
 import { parseIntOrUndef } from "../../lib/inputParse";
 import { SectionCard, StaticSectionCard } from "./SectionCard";
+import { UnitNumberInput } from "./UnitNumberInput";
 import { FieldLabel, ZplCmd } from "./ZplCmd";
 import { Tooltip } from "../ui/Tooltip";
 import { Select } from "../ui/Select";
@@ -31,6 +32,15 @@ import { applyBindingToObject, clockCtxFromLabel, lookupBoundVariable } from "..
 import { inputCls, labelCls } from "./styles";
 import { fieldGridCols, fieldGridCell } from "../ui/formStyles";
 import type { LabelConfig } from "../../types/LabelConfig";
+
+/** Optional dot value from a unit-string input: empty stays unset, otherwise
+ *  the entered unit value is converted back to dots. */
+function dotsFromUnitOrUndef(raw: string, unit: Unit, dpmm: number): number | undefined {
+  if (raw.trim() === "") return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return undefined;
+  return Math.round(mmToDots(unitToMm(n, unit), dpmm));
+}
 
 /** Tooltip-icon flagging that the canvas render is approximate for
  *  the given object type. Two severities collapse into one icon
@@ -608,64 +618,62 @@ function LabelConfigPanel({
           <div className={`grid grid-cols-3 ${fieldGridCols}`}>
             <div className={fieldGridCell}>
               <div className="flex items-start justify-between gap-2">
-                <label className="text-[10px] text-muted">{t.label.labelHomeX}</label>
+                <label className="text-[10px] text-muted">{`${t.label.labelHomeX} (${unitLabel(unit)})`}</label>
                 <ZplCmd cmd="^LH" />
               </div>
               <input
                 type="number"
                 className={inputCls}
-                value={label.labelHomeX ?? ""}
+                value={label.labelHomeX === undefined ? "" : mmToUnit(dotsToMm(label.labelHomeX, label.dpmm), unit)}
                 min={0}
+                step={unitStep(unit)}
                 onChange={(e) =>
-                  onUpdate({ labelHomeX: parseIntOrUndef(e.target.value) })
+                  onUpdate({ labelHomeX: dotsFromUnitOrUndef(e.target.value, unit, label.dpmm) })
                 }
               />
             </div>
             <div className={fieldGridCell}>
               <div className="flex items-start justify-between gap-2">
-                <label className="text-[10px] text-muted">{t.label.labelHomeY}</label>
+                <label className="text-[10px] text-muted">{`${t.label.labelHomeY} (${unitLabel(unit)})`}</label>
                 <ZplCmd cmd="^LH" />
               </div>
               <input
                 type="number"
                 className={inputCls}
-                value={label.labelHomeY ?? ""}
+                value={label.labelHomeY === undefined ? "" : mmToUnit(dotsToMm(label.labelHomeY, label.dpmm), unit)}
                 min={0}
+                step={unitStep(unit)}
                 onChange={(e) =>
-                  onUpdate({ labelHomeY: parseIntOrUndef(e.target.value) })
+                  onUpdate({ labelHomeY: dotsFromUnitOrUndef(e.target.value, unit, label.dpmm) })
                 }
               />
             </div>
             <div className={fieldGridCell}>
               <div className="flex items-start justify-between gap-2">
-                <label className="text-[10px] text-muted">{t.label.labelTop}</label>
+                <label className="text-[10px] text-muted">{`${t.label.labelTop} (${unitLabel(unit)})`}</label>
                 <ZplCmd cmd="^LT" />
               </div>
               <input
                 type="number"
                 className={inputCls}
-                value={label.labelTop ?? ""}
-                min={-120}
-                max={120}
+                value={label.labelTop === undefined ? "" : mmToUnit(dotsToMm(label.labelTop, label.dpmm), unit)}
+                min={mmToUnit(dotsToMm(-120, label.dpmm), unit)}
+                max={mmToUnit(dotsToMm(120, label.dpmm), unit)}
+                step={unitStep(unit)}
                 onChange={(e) =>
-                  onUpdate({ labelTop: parseIntOrUndef(e.target.value) })
+                  onUpdate({ labelTop: dotsFromUnitOrUndef(e.target.value, unit, label.dpmm) })
                 }
               />
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <FieldLabel cmd="^LS">{t.label.labelShift}</FieldLabel>
-          <input
-            type="number"
-            className={inputCls}
-            value={label.labelShift ?? 0}
-            onChange={(e) =>
-              onUpdate({ labelShift: Number(e.target.value) || undefined })
-            }
-          />
-        </div>
+        <UnitNumberInput
+          label={t.label.labelShift}
+          valueDots={label.labelShift ?? 0}
+          onChangeDots={(v) => onUpdate({ labelShift: v || undefined })}
+          zplCmd="^LS"
+        />
 
         <div className="flex flex-col gap-1">
           <FieldLabel cmd="^PQ">{t.label.printQuantity}</FieldLabel>
@@ -756,36 +764,22 @@ function LabelConfigPanel({
           />
         </div>
         <div className={`grid grid-cols-2 ${fieldGridCols}`}>
-          <div className={fieldGridCell}>
-            <div className="flex items-start justify-between gap-2">
-              <label className="text-[10px] text-muted">{t.label.defaultFontHeight}</label>
-              <ZplCmd cmd="^CF" />
-            </div>
-            <input
-              type="number"
-              className={inputCls}
-              min={1}
-              value={label.defaultFontHeight ?? ""}
-              onChange={(e) =>
-                onUpdate({ defaultFontHeight: parseIntOrUndef(e.target.value) })
-              }
-            />
-          </div>
-          <div className={fieldGridCell}>
-            <div className="flex items-start justify-between gap-2">
-              <label className="text-[10px] text-muted">{t.label.defaultFontWidth}</label>
-              <ZplCmd cmd="^CF" />
-            </div>
-            <input
-              type="number"
-              className={inputCls}
-              min={0}
-              value={label.defaultFontWidth ?? ""}
-              onChange={(e) =>
-                onUpdate({ defaultFontWidth: parseIntOrUndef(e.target.value) })
-              }
-            />
-          </div>
+          <UnitNumberInput
+            label={t.label.defaultFontHeight}
+            valueDots={label.defaultFontHeight ?? 0}
+            minDots={1}
+            onChangeDots={(v) => onUpdate({ defaultFontHeight: v || undefined })}
+            zplCmd="^CF"
+            className={fieldGridCell}
+          />
+          <UnitNumberInput
+            label={t.label.defaultFontWidth}
+            valueDots={label.defaultFontWidth ?? 0}
+            minDots={0}
+            onChangeDots={(v) => onUpdate({ defaultFontWidth: v || undefined })}
+            zplCmd="^CF"
+            className={fieldGridCell}
+          />
         </div>
         </div>
         </SectionCard>

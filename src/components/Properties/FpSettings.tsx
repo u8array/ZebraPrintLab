@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useT } from "../../lib/useT";
 import { Tooltip } from "../ui/Tooltip";
 import { labelCls } from "./styles";
-import { NumberInput } from "./NumberInput";
+import { UnitNumberInput } from "./UnitNumberInput";
 import type { TextProps } from "../../registry/text";
 
 type FpDir = NonNullable<TextProps["fpDirection"]>;
@@ -82,12 +82,12 @@ export function FpSettings({ props: p, onChange }: Props) {
         </div>
       </div>
       <div title={gapDisabled ? t.registry.text.fpCharGapVHint : undefined}>
-        <NumberInput
+        <UnitNumberInput
           label={t.registry.text.fpCharGap}
-          value={p.fpCharGap ?? 0}
-          min={0}
+          valueDots={p.fpCharGap ?? 0}
+          minDots={0}
           disabled={gapDisabled}
-          onChange={(fpCharGap) => onChange({ fpCharGap })}
+          onChangeDots={(fpCharGap) => onChange({ fpCharGap })}
         />
       </div>
     </div>

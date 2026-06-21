@@ -3,6 +3,7 @@ import { useT } from "../lib/useT";
 import { inputCls } from "../components/Properties/styles";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { NumberInput } from "../components/Properties/NumberInput";
+import { UnitNumberInput } from "../components/Properties/UnitNumberInput";
 import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
 import { fieldGridCols, fieldGridCell } from "../components/ui/formStyles";
 import type { Tlc39Props } from "./tlc39";
@@ -25,11 +26,11 @@ export const tlc39Panel: ObjectTypeUi<Tlc39Props> = {
 
         <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
           <div className={`grid grid-cols-2 ${fieldGridCols}`}>
-            <NumberInput
+            <UnitNumberInput
               label={loc.height}
-              value={p.height}
-              min={1}
-              onChange={(height) => onChange({ height })}
+              valueDots={p.height}
+              minDots={1}
+              onChangeDots={(height) => onChange({ height })}
               zplCmd="^BT"
               className={fieldGridCell}
             />
@@ -45,12 +46,12 @@ export const tlc39Panel: ObjectTypeUi<Tlc39Props> = {
           </div>
 
           <div className={`grid grid-cols-2 ${fieldGridCols}`}>
-            <NumberInput
+            <UnitNumberInput
               label={loc.microPdfRowHeight}
-              value={p.microPdfRowHeight}
-              min={1}
-              max={255}
-              onChange={(microPdfRowHeight) => onChange({ microPdfRowHeight })}
+              valueDots={p.microPdfRowHeight}
+              minDots={1}
+              maxDots={255}
+              onChangeDots={(microPdfRowHeight) => onChange({ microPdfRowHeight })}
               zplCmd="^BT"
               className={fieldGridCell}
             />

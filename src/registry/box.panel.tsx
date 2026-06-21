@@ -3,6 +3,7 @@ import { useT } from '../lib/useT';
 import { useLabelStore } from '../store/labelStore';
 import { labelCls } from '../components/Properties/styles';
 import { NumberInput } from '../components/Properties/NumberInput';
+import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { SectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
@@ -17,19 +18,19 @@ export const boxPanel: ObjectTypeUi<BoxProps> = {
     return (
       <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
         <div className={`grid grid-cols-2 ${fieldGridCols}`}>
-          <NumberInput
+          <UnitNumberInput
             label={t.registry.box.width}
-            value={p.width}
-            min={1}
-            onChange={(width) => onChange({ width })}
+            valueDots={p.width}
+            minDots={1}
+            onChangeDots={(width) => onChange({ width })}
             zplCmd="^GB"
             className={fieldGridCell}
           />
-          <NumberInput
+          <UnitNumberInput
             label={t.registry.box.height}
-            value={p.height}
-            min={1}
-            onChange={(height) => onChange({ height })}
+            valueDots={p.height}
+            minDots={1}
+            onChangeDots={(height) => onChange({ height })}
             zplCmd="^GB"
             className={fieldGridCell}
           />
@@ -49,11 +50,11 @@ export const boxPanel: ObjectTypeUi<BoxProps> = {
         </div>
 
         {!p.filled && (
-          <NumberInput
+          <UnitNumberInput
             label={t.registry.box.thickness}
-            value={p.thickness}
-            min={1}
-            onChange={(thickness) => onChange({ thickness })}
+            valueDots={p.thickness}
+            minDots={1}
+            onChangeDots={(thickness) => onChange({ thickness })}
             zplCmd="^GB"
           />
         )}

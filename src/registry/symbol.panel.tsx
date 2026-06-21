@@ -1,6 +1,6 @@
 import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
-import { NumberInput } from '../components/Properties/NumberInput';
+import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { SectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel } from '../components/Properties/ZplCmd';
@@ -27,19 +27,19 @@ export const symbolPanel: ObjectTypeUi<SymbolProps> = {
           />
         </div>
         <div className={`grid grid-cols-2 ${fieldGridCols}`}>
-          <NumberInput
+          <UnitNumberInput
             label={t.registry.symbol.height}
-            value={p.height}
-            min={1}
-            onChange={(height) => onChange({ height })}
+            valueDots={p.height}
+            minDots={1}
+            onChangeDots={(height) => onChange({ height })}
             zplCmd="^GS"
             className={fieldGridCell}
           />
-          <NumberInput
+          <UnitNumberInput
             label={t.registry.symbol.width}
-            value={p.width}
-            min={1}
-            onChange={(width) => onChange({ width })}
+            valueDots={p.width}
+            minDots={1}
+            onChangeDots={(width) => onChange({ width })}
             zplCmd="^GS"
             className={fieldGridCell}
           />

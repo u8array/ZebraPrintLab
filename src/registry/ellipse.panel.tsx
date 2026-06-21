@@ -2,7 +2,7 @@ import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { useLabelStore } from '../store/labelStore';
 import { labelCls } from '../components/Properties/styles';
-import { NumberInput } from '../components/Properties/NumberInput';
+import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { SectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
@@ -20,28 +20,28 @@ export const ellipsePanel: ObjectTypeUi<EllipseProps> = {
     return (
       <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
         {p.lockAspect ? (
-          <NumberInput
+          <UnitNumberInput
             label={t.registry.circle.diameter}
-            value={p.width}
-            min={1}
-            onChange={(d) => onChange({ width: d, height: d })}
+            valueDots={p.width}
+            minDots={1}
+            onChangeDots={(d) => onChange({ width: d, height: d })}
             zplCmd={cmd}
           />
         ) : (
           <div className={`grid grid-cols-2 ${fieldGridCols}`}>
-            <NumberInput
+            <UnitNumberInput
               label={t.registry.ellipse.width}
-              value={p.width}
-              min={1}
-              onChange={(width) => onChange({ width })}
+              valueDots={p.width}
+              minDots={1}
+              onChangeDots={(width) => onChange({ width })}
               zplCmd={cmd}
               className={fieldGridCell}
             />
-            <NumberInput
+            <UnitNumberInput
               label={t.registry.ellipse.height}
-              value={p.height}
-              min={1}
-              onChange={(height) => onChange({ height })}
+              valueDots={p.height}
+              minDots={1}
+              onChangeDots={(height) => onChange({ height })}
               zplCmd={cmd}
               className={fieldGridCell}
             />
@@ -91,11 +91,11 @@ export const ellipsePanel: ObjectTypeUi<EllipseProps> = {
         </div>
 
         {!p.filled && (
-          <NumberInput
+          <UnitNumberInput
             label={t.registry.ellipse.thickness}
-            value={p.thickness}
-            min={1}
-            onChange={(thickness) => onChange({ thickness })}
+            valueDots={p.thickness}
+            minDots={1}
+            onChangeDots={(thickness) => onChange({ thickness })}
             zplCmd={cmd}
           />
         )}

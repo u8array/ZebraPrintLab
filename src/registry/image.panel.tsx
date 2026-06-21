@@ -15,6 +15,7 @@ import {
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Tooltip } from '../components/ui/Tooltip';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
+import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import type { ImageProps } from './image';
@@ -161,18 +162,14 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
         </StaticSectionCard>
 
         <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
-          {/* Width in dots */}
-          <div className="flex flex-col gap-1">
-            <FieldLabel cmd={p.storedAs ? "~DY" : "^GF"}>{t.registry.image.widthDots}</FieldLabel>
-            <input
-              type="number"
-              className={inputCls}
-              value={p.widthDots}
-              min={8}
-              step={8}
-              onChange={(e) => handleWidthChange(Number(e.target.value))}
-            />
-          </div>
+          {/* Width */}
+          <UnitNumberInput
+            label={t.registry.image.widthDots}
+            valueDots={p.widthDots}
+            minDots={8}
+            onChangeDots={handleWidthChange}
+            zplCmd={p.storedAs ? "~DY" : "^GF"}
+          />
 
           {/* Mono threshold */}
           <div className="flex flex-col gap-1">
