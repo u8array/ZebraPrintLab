@@ -28,6 +28,7 @@ import { measuredBoundsMap } from "./measuredBoundsCache";
 import { mmToDots } from "../../lib/coordinates";
 import { isEditableTarget } from "../../lib/dom";
 import { KonvaObject } from "./KonvaObject";
+import { CAPTURE_CHROME } from "./konvaObjectProps";
 import { Grid } from "./Grid";
 import { GuideLines } from "./GuideLines";
 import { Ruler, RULER_SIZE } from "./Ruler";
@@ -66,10 +67,6 @@ import { nodeToPngBlob, downloadBlob, copyPngToClipboard } from "../../lib/canva
 /** Object types offered by the context menu's "Add object here". */
 // Curated quick-add subset for the context menu, not every registry type; the
 // full catalogue lives in the palette.
-
-// Konva name on editor-only chrome (grid, safe-area, selection frames) so image
-// capture can hide it and export just the label paper plus its objects.
-const CAPTURE_CHROME = "capture-chrome";
 
 const PADDING = 40;
 // Horizontal stride between action-bar buttons (render-side row layout).

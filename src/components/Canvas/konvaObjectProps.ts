@@ -3,6 +3,10 @@ import type { LeafObject } from "../../registry";
 import type { ObjectChanges } from "../../store/labelStore";
 import type { SnapGuide, SnapRect } from "../../lib/snapGuides";
 
+/** Konva `name` on editor-only chrome (grid, safe-area, overset ghost, …) so
+ *  image capture can hide it. Shared by LabelCanvas and the renderers. */
+export const CAPTURE_CHROME = "capture-chrome";
+
 /**
  * Click / tap handlers shared across every per-type renderer. Click reads
  * shift / ctrl / meta to toggle multi-select; tap (touch) is always a

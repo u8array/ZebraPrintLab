@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import type Konva from "konva";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { Ellipse, Group, Rect, Shape, Text } from "react-konva";
 import { lookupBoundVariable, shouldShowFallbackTint } from "../../lib/variableBinding";
@@ -15,7 +14,7 @@ import { useLabelStore } from "../../store/labelStore";
 import { applyBindingToObject, buildActiveCsvRow, clockCtxFromLabel } from "../../lib/variableBinding";
 import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "../../lib/labelGeometry/textPositionTransforms";
 import { getTextRenderMetrics } from "../../lib/labelGeometry/textRenderMetrics";
-import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
+import { selectionHandlers, CAPTURE_CHROME, type KonvaObjectProps } from "./konvaObjectProps";
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 import { DEFAULT_GS_SYMBOL_META, GS_SYMBOLS } from "../../registry/symbol";
 import { GS_SYMBOL_PATHS, GS_VECTOR_CODES, type GsVectorCode } from "../../registry/gsSymbolPaths";
@@ -148,6 +147,9 @@ function PlaceholderRect({
   );
 }
 
+/** Opacity of the ^TB overset ghost (the clipped-off value shown for editing). */
+const TB_OVERSET_GHOST_OPACITY = 0.3;
+
 function TextFieldContent({
   obj,
   content,
@@ -156,6 +158,7 @@ function TextFieldContent({
   dpmm,
   fontVersion,
   placeholderColor,
+  isSelected = false,
 }: {
   obj: TextFieldObj;
   content: string;
@@ -164,6 +167,7 @@ function TextFieldContent({
   dpmm: number;
   fontVersion: number;
   placeholderColor: string;
+  isSelected?: boolean;
 }) {
   const shift = base.offsetXPx ?? 0;
   const shiftY = base.offsetYPx ?? 0;
@@ -229,36 +233,6 @@ function TextFieldContent({
       />
     );
   }
-  // Konva's getClientRect ignores a Group's clip and returns the full children
-  // bounds, which would inflate the Transformer box past the ^TB clip. Report
-  // the clip rect instead (the actual visible region) so the box matches.
-  const tbClipRef = (node: Konva.Group | null) => {
-    if (!node) return;
-    node.getClientRect = (config?: { skipTransform?: boolean; relativeTo?: Konva.Container }) => {
-      const local = {
-        x: node.clipX() || 0,
-        y: node.clipY() || 0,
-        width: node.clipWidth(),
-        height: node.clipHeight(),
-      };
-      if (config?.skipTransform) return local;
-      const tr = config?.relativeTo
-        ? node.getAbsoluteTransform(config.relativeTo)
-        : node.getAbsoluteTransform();
-      const corners = [
-        { x: local.x, y: local.y },
-        { x: local.x + local.width, y: local.y },
-        { x: local.x + local.width, y: local.y + local.height },
-        { x: local.x, y: local.y + local.height },
-      ].map((p) => tr.point(p));
-      const xs = corners.map((c) => c.x);
-      const ys = corners.map((c) => c.y);
-      const minX = Math.min(...xs);
-      const minY = Math.min(...ys);
-      return { x: minX, y: minY, width: Math.max(...xs) - minX, height: Math.max(...ys) - minY };
-    };
-  };
-
   // ^TB: word-wrap left-aligned, no spacing/indent/justify, clipped at the
   // block height (Labelary truncates mid-glyph, so clip rather than drop whole
   // lines). At 90deg rotations the block rect stays axis-aligned.
@@ -271,27 +245,41 @@ function TextFieldContent({
     const clip = tbBoundsDots(blockWidth, blockHeight ?? fontHeight, obj.props.rotation);
     // Lines sit exactly like ^FB (first line at the block top with Konva's cap
     // pad); matches the Labelary preview so toggling it doesn't shift the text.
+    const tbLineNodes = (extra?: Partial<BaseTextProps>) =>
+      tbLines.map((line, i) => {
+        const startDots = blockLineStartDots(i, obj.props.rotation, 0, tbStep);
+        return (
+          <Text
+            key={`${fontVersion}-${i}`}
+            x={dotsToPx(startDots.x, scale, dpmm) + shift}
+            y={dotsToPx(startDots.y, scale, dpmm) + shiftY}
+            text={line}
+            {...base}
+            {...extra}
+          />
+        );
+      });
     return (
-      <Group
-        ref={tbClipRef}
-        clipX={dotsToPx(clip.x, scale, dpmm) + shift}
-        clipY={dotsToPx(clip.y, scale, dpmm) + shiftY}
-        clipWidth={dotsToPx(clip.width, scale, dpmm)}
-        clipHeight={dotsToPx(clip.height, scale, dpmm)}
-      >
-        {tbLines.map((line, i) => {
-          const startDots = blockLineStartDots(i, obj.props.rotation, 0, tbStep);
-          return (
-            <Text
-              key={`${fontVersion}-${i}`}
-              x={dotsToPx(startDots.x, scale, dpmm) + shift}
-              y={dotsToPx(startDots.y, scale, dpmm) + shiftY}
-              text={line}
-              {...base}
-            />
-          );
-        })}
-      </Group>
+      <>
+        {/* Overset ghost: the full value including the part the box clips,
+            dimmed and editor-only, so the hidden text stays visible and the
+            transformer (whole-text bounds) can still scale it. */}
+        {isSelected && (
+          <Group name={CAPTURE_CHROME} listening={false} opacity={TB_OVERSET_GHOST_OPACITY}>
+            {tbLineNodes({ stroke: undefined, strokeWidth: 0 })}
+          </Group>
+        )}
+        {/* Printing text, clipped to the ^TB box. getClientRect ignores the
+            clip, so the selection bounds stay the full text (scalable). */}
+        <Group
+          clipX={dotsToPx(clip.x, scale, dpmm) + shift}
+          clipY={dotsToPx(clip.y, scale, dpmm) + shiftY}
+          clipWidth={dotsToPx(clip.width, scale, dpmm)}
+          clipHeight={dotsToPx(clip.height, scale, dpmm)}
+        >
+          {tbLineNodes()}
+        </Group>
+      </>
     );
   }
   const justify = blockJustify ?? "L";
@@ -767,6 +755,7 @@ function KonvaObjectInner({
           scale={scale}
           dpmm={dpmm}
           fontVersion={fontVersion}
+          isSelected={isSelected}
         />
         {obj.type === "text" && isSelected && obj.props.blockWidth && (
           <BlockWrapGuide
