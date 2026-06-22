@@ -115,6 +115,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // Action-bar chrome refs live here so the drag onDelta can translate the bar
   // live (its own beforeDraw lags for controller-moved siblings).
   const actionBarRef = useRef<Konva.Group>(null);
+  // The view-rotation group; the action bar lives outside it (stage coords), so
+  // its rest bounds must be mapped through this group's transform when rotated.
+  const rotationGroupRef = useRef<Konva.Group>(null);
   const lockedFrameRef = useRef<Konva.Group>(null);
   const dragActiveRef = useRef(false);
   const transformActiveRef = useRef(false);
@@ -451,6 +454,28 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   }
   // Action-bar bounds: live client-rects during a transformer resize (model
   // commits only at the end), else optical model bounds (matches the drag center).
+  // Map group-local bounds into stage coords (identity when unrotated). Single
+  // source for the rest position (getBarBounds) and on-drag position (onDelta).
+  const barBoundsToStage = (b: BarBounds): BarBounds => {
+    const rg = rotationGroupRef.current;
+    if (!rg || viewRotation === 0) return b;
+    const tf = rg.getAbsoluteTransform();
+    const pts = [
+      tf.point({ x: b.minX, y: b.minY }),
+      tf.point({ x: b.maxX, y: b.minY }),
+      tf.point({ x: b.minX, y: b.maxY }),
+      tf.point({ x: b.maxX, y: b.maxY }),
+    ];
+    const xs = pts.map((p) => p.x);
+    const ys = pts.map((p) => p.y);
+    return {
+      minX: Math.min(...xs),
+      minY: Math.min(...ys),
+      maxX: Math.max(...xs),
+      maxY: Math.max(...ys),
+    };
+  };
+
   const getBarBounds = (): BarBounds | null => {
     const stage = stageRef.current;
     if (transformActiveRef.current && stage) {
@@ -467,7 +492,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       return minX === Infinity ? null : { minX, minY, maxX, maxY };
     }
     const u = toFramePx(selectionUnionDots(getCurrentObjects(), visibleSelIds, frameCtx));
-    return u ? { minX: u.x, minY: u.y, maxX: u.x + u.width, maxY: u.y + u.height } : null;
+    return u
+      ? barBoundsToStage({ minX: u.x, minY: u.y, maxX: u.x + u.width, maxY: u.y + u.height })
+      : null;
   };
   useLayoutEffect(() => {
     const r = selectionFrameRef.current;
@@ -520,7 +547,14 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
         }
         bar.position(
           actionBarPosition(
-            { minX: live.x, minY: live.y, maxX: live.x + live.width, maxY: live.y + live.height },
+            // `live` is group-local (the drag delta is in model space); map it to
+            // stage coords so the bar tracks the rotated selection on-drag too.
+            barBoundsToStage({
+              minX: live.x,
+              minY: live.y,
+              maxX: live.x + live.width,
+              maxY: live.y + live.height,
+            }),
             barHalfRef.current.w,
             barHalfRef.current.h,
             stage.width(),
@@ -1037,6 +1071,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
           <Layer>
             {/* Pivot at labelCenter; node.x()/y() stays group-local during drags. */}
             <Group
+              ref={rotationGroupRef}
               x={labelCenterX}
               y={labelCenterY}
               rotation={viewRotation}

@@ -275,6 +275,13 @@ export function useKonvaTransformer({
     changed: boolean;
   } | null>(null);
 
+  // Box/ellipse reflow per tick so stroke inset and corners stay correct under
+  // raw scale; snapshot + dirty flag collapse the writes into one undo entry.
+  const shapeReflowRef = useRef<{
+    snapshot: { x: number; y: number; width: number; height: number };
+    changed: boolean;
+  } | null>(null);
+
   // Block resize mode resolved once at drag start (panel mode + Alt). Reused at
   // commit so toggling Alt mid-drag can't make start and end disagree.
   const blockResizeModeRef = useRef<"frame" | "glyph">("frame");
@@ -301,7 +308,9 @@ export function useKonvaTransformer({
   // idempotent set, so the no-active-drag case is a harmless no-op.
   useEffect(() => {
     return () => {
-      if (liveReflowRef.current) useLabelStore.temporal.getState().resume();
+      if (liveReflowRef.current || shapeReflowRef.current) {
+        useLabelStore.temporal.getState().resume();
+      }
     };
   }, []);
 
@@ -333,7 +342,7 @@ export function useKonvaTransformer({
     // During a live reflow the per-tick store update re-runs this effect;
     // re-attaching (.nodes()) mid-drag aborts the gesture, so skip it. The
     // reflow handler keeps the transformer in sync via forceUpdate().
-    if (liveReflowRef.current) return;
+    if (liveReflowRef.current || shapeReflowRef.current) return;
     if (selectedIds.length === 0) {
       transformerRef.current.nodes([]);
       return;
@@ -430,6 +439,7 @@ export function useKonvaTransformer({
     uniformStartRectRef.current = null;
     activeEdgesRef.current = null;
     liveReflowRef.current = null;
+    shapeReflowRef.current = null;
     glyphBlockStartRectRef.current = null;
     blockResizeModeRef.current = "frame";
     setGuides([]);
@@ -596,6 +606,16 @@ export function useKonvaTransformer({
         });
       }
     }
+    // Free-resize shapes reflow live (see onTransform): pause undo so the
+    // per-tick writes collapse into one entry on release.
+    if (obj && !isGroup(obj) && (obj.type === "box" || obj.type === "ellipse")) {
+      const sp = obj.props as { width: number; height: number };
+      shapeReflowRef.current = {
+        snapshot: { x: obj.x, y: obj.y, width: sp.width, height: sp.height },
+        changed: false,
+      };
+      useLabelStore.temporal.getState().pause();
+    }
   };
 
   // Per-tick live reflow for a frame-mode ^FB block: convert the group scale
@@ -603,8 +623,7 @@ export function useKonvaTransformer({
   // the scale, re-pin the anchored edge, and re-baseline the handles. Keeps
   // glyphs constant and justify correct because the content actually re-renders.
   const onTransform = () => {
-    const lr = liveReflowRef.current;
-    if (!lr || selectedIds.length !== 1 || !stageRef.current) return;
+    if (selectedIds.length !== 1 || !stageRef.current) return;
     const id = selectedIds[0];
     if (!id) return;
     const node = stageRef.current.findOne<Konva.Node>(`#${id}`);
@@ -614,51 +633,82 @@ export function useKonvaTransformer({
     if (Math.abs(sx - 1) < 1e-3 && Math.abs(sy - 1) < 1e-3) return;
     const cur = findObjectById(getCurrentObjects(), id);
     if (!cur || isGroup(cur)) return;
-    const cp = cur.props as { blockWidth?: number; blockLines?: number; blockHeight?: number };
-    const common = {
-      scaleX: sx,
-      scaleY: sy,
-      rotation: lr.rotation,
-      blockWidthDots: cp.blockWidth ?? 1,
-      activeLeft: lr.edges?.left ?? false,
-      activeTop: lr.edges?.top ?? false,
-      leftX: lr.leftX,
-      topY: lr.topY,
-      rightX: lr.rightX,
-      bottomY: lr.bottomY,
-      scale,
-      dpmm,
-      objectsOffsetX,
-      labelOffsetY,
-    };
-    const geo =
-      lr.mode === "tb"
-        ? (() => {
-            const g = tbReflowGeometry({ ...common, blockHeightDots: cp.blockHeight ?? lr.fontHeight });
-            return { ...g, props: { blockWidth: g.blockWidthDots, blockHeight: g.blockHeightDots } };
-          })()
-        : (() => {
-            const g = blockReflowGeometry({
-              ...common,
-              blockLines: cp.blockLines ?? 1,
-              blockLineSpacing: lr.lineSpacing,
-              fontHeight: lr.fontHeight,
-            });
-            return { ...g, props: { blockWidth: g.blockWidthDots, blockLines: g.blockLines } };
-          })();
-    flushSync(() => {
-      updateObject(id, {
-        x: geo.modelXDots,
-        y: geo.modelYDots,
-        props: geo.props,
+    const lr = liveReflowRef.current;
+    if (lr) {
+      const cp = cur.props as { blockWidth?: number; blockLines?: number; blockHeight?: number };
+      const common = {
+        scaleX: sx,
+        scaleY: sy,
+        rotation: lr.rotation,
+        blockWidthDots: cp.blockWidth ?? 1,
+        activeLeft: lr.edges?.left ?? false,
+        activeTop: lr.edges?.top ?? false,
+        leftX: lr.leftX,
+        topY: lr.topY,
+        rightX: lr.rightX,
+        bottomY: lr.bottomY,
+        scale,
+        dpmm,
+        objectsOffsetX,
+        labelOffsetY,
+      };
+      const geo =
+        lr.mode === "tb"
+          ? (() => {
+              const g = tbReflowGeometry({ ...common, blockHeightDots: cp.blockHeight ?? lr.fontHeight });
+              return { ...g, props: { blockWidth: g.blockWidthDots, blockHeight: g.blockHeightDots } };
+            })()
+          : (() => {
+              const g = blockReflowGeometry({
+                ...common,
+                blockLines: cp.blockLines ?? 1,
+                blockLineSpacing: lr.lineSpacing,
+                fontHeight: lr.fontHeight,
+              });
+              return { ...g, props: { blockWidth: g.blockWidthDots, blockLines: g.blockLines } };
+            })();
+      flushSync(() => {
+        updateObject(id, {
+          x: geo.modelXDots,
+          y: geo.modelYDots,
+          props: geo.props,
+        });
       });
-    });
-    lr.changed = true;
-    node.scaleX(1);
-    node.scaleY(1);
-    node.x(geo.targetXPx);
-    node.y(geo.targetYPx);
-    transformerRef.current?.forceUpdate();
+      lr.changed = true;
+      node.scaleX(1);
+      node.scaleY(1);
+      node.x(geo.targetXPx);
+      node.y(geo.targetYPx);
+      transformerRef.current?.forceUpdate();
+      return;
+    }
+
+    // Box/ellipse: bake the group scale into width/height each tick for correct
+    // stroke inset; dims stay float until release to avoid per-tick rounding drift.
+    const sr = shapeReflowRef.current;
+    if (sr) {
+      const sp = cur.props as { width: number; height: number; lockAspect?: boolean };
+      // boundBoxFunc is skipped during reflow, so a locked circle enforces its
+      // own uniform scale here, matching the ellipse commit's min-axis collapse.
+      const [scaleW, scaleH] = sp.lockAspect
+        ? [Math.min(sx, sy), Math.min(sx, sy)]
+        : [sx, sy];
+      const newW = Math.max(1, sp.width * scaleW);
+      const newH = Math.max(1, sp.height * scaleH);
+      // Konva already pinned the anchored edge via node.x/y; commit that, then
+      // re-pin from the same dots so node and store agree after the re-render.
+      const xDots = pxToDots(node.x() - objectsOffsetX, scale, dpmm);
+      const yDots = pxToDots(node.y() - labelOffsetY, scale, dpmm);
+      flushSync(() => {
+        updateObject(id, { x: xDots, y: yDots, props: { width: newW, height: newH } });
+      });
+      sr.changed = true;
+      node.scaleX(1);
+      node.scaleY(1);
+      node.x(objectsOffsetX + dotsToPx(xDots, scale, dpmm));
+      node.y(labelOffsetY + dotsToPx(yDots, scale, dpmm));
+      transformerRef.current?.forceUpdate();
+    }
   };
 
   const boundBoxFunc = (
@@ -668,10 +718,16 @@ export function useKonvaTransformer({
     if (newBox.width < MIN_RESIZE_BOX_PX || newBox.height < MIN_RESIZE_BOX_PX) {
       return oldBox;
     }
-    // A frame-mode block reflow re-pins itself from the drag-start edges in
-    // onTransform; running the snap / inactive-edge pin here too would draw
-    // snap guides that don't match where the block actually lands.
+    // The text-block reflow re-pins from its own captured edges, so the snap /
+    // inactive-edge pin below would fight it; skip entirely.
     if (liveReflowRef.current) return newBox;
+    // Locked-circle reflow needs forceSquareBox so Konva keeps sx==sy; node and
+    // reflow only agree when the bbox stays square. Snap/pin below is free-axis only.
+    if (shapeReflowRef.current && isUniformScale) {
+      return forceSquareBox(oldBox, newBox);
+    }
+    // Free-resize shapes fall through: object-snap + inactive-edge pin still
+    // apply (reflow pins from the same node position), keeping edge snapping.
     if (isUniformScale) newBox = forceSquareBox(oldBox, newBox);
     // When the canvas view is rotated, Konva's bbox semantics in this
     // callback no longer match an axis-aware snap / pin model; visual
@@ -776,6 +832,43 @@ export function useKonvaTransformer({
             blockWidth: lr.snapshot.blockWidth,
             ...snapAxis,
           },
+        });
+        temporal.resume();
+        updateObject(id, final);
+      } else {
+        temporal.resume();
+      }
+      cleanupTransformState();
+      return;
+    }
+    // Shape live reflow: same collapse-to-one-entry as the text block. Dims were
+    // kept float during the drag; round + snap them once here for the commit.
+    const sr = shapeReflowRef.current;
+    if (sr) {
+      const id = selectedIds[0];
+      const srNode = id ? stageRef.current?.findOne<Konva.Node>(`#${id}`) : null;
+      srNode?.scaleX(1);
+      srNode?.scaleY(1);
+      const cur = id ? findObjectById(getCurrentObjects(), id) : undefined;
+      const temporal = useLabelStore.temporal.getState();
+      if (sr.changed && id && cur && !isGroup(cur)) {
+        const sp = cur.props as { width: number; height: number };
+        // Same snap/round/clamp contract as commitWidthHeightTransform, applied
+        // to the already-baked float dims.
+        const width = Math.max(1, snap(Math.round(sp.width)));
+        const height = Math.max(1, snap(Math.round(sp.height)));
+        // Pin the anchored edge: when dragging left/top, derive x/y from the
+        // snapped size so the opposite edge doesn't walk by the snap delta.
+        const edges = activeEdgesRef.current;
+        const final = {
+          x: Math.round(edges?.left ? cur.x + sp.width - width : cur.x),
+          y: Math.round(edges?.top ? cur.y + sp.height - height : cur.y),
+          props: { width, height },
+        };
+        updateObject(id, {
+          x: sr.snapshot.x,
+          y: sr.snapshot.y,
+          props: { width: sr.snapshot.width, height: sr.snapshot.height },
         });
         temporal.resume();
         updateObject(id, final);

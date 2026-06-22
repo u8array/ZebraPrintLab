@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLabelStore } from '../../store/labelStore';
 import { inputCls } from './styles';
 import { FieldLabel } from './ZplCmd';
@@ -22,10 +23,11 @@ interface UnitNumberInputProps {
 }
 
 /**
- * Number input for a physical length stored in dots but shown/edited in the
- * active unit (mm/cm/in), so every size field reads in the same unit as the
- * X/Y position and label dimensions. The `(unit)` suffix is appended to the
- * label; the value never leaves the store as anything but dots.
+ * Number input for a length stored in dots but shown/edited in the active unit
+ * (mm/cm/in); the `(unit)` suffix is appended to the label, the store stays dots.
+ *
+ * While focused it holds a raw draft string; clamp/round happens on blur. Without
+ * this, sub-display-step fields (e.g. line thickness) snapped back each keystroke.
  */
 export function UnitNumberInput({
   label,
@@ -41,28 +43,47 @@ export function UnitNumberInput({
   const unit = useLabelStore((s) => s.canvasSettings.unit);
   const dpmm = useLabelStore((s) => s.label.dpmm);
   const toUnit = (dots: number) => mmToUnit(dotsToMm(dots, dpmm), unit);
+  // null = not editing; show the canonical store value. Otherwise show the raw
+  // keystrokes verbatim so the input never fights the user mid-entry.
+  const [draft, setDraft] = useState<string | null>(null);
+
+  const commit = (raw: string) => {
+    if (raw.trim() === '') {
+      if (allowUnset) onChangeDots(undefined);
+      return;
+    }
+    let dots = mmToDots(unitToMm(Number(raw), unit), dpmm);
+    if (isNaN(dots)) return;
+    if (minDots !== undefined && dots < minDots) dots = minDots;
+    if (maxDots !== undefined && dots > maxDots) dots = maxDots;
+    onChangeDots(Math.round(dots));
+  };
+
+  // Canonical (not-editing) display: the store value in the active unit.
+  const canonical = valueDots === undefined ? '' : String(toUnit(valueDots));
+  const display = draft !== null ? draft : canonical;
+
   return (
     <div className={className ?? 'flex flex-col gap-1'}>
       <FieldLabel cmd={zplCmd}>{`${label} (${unitLabel(unit)})`}</FieldLabel>
       <input
         type="number"
         className={inputCls}
-        value={valueDots === undefined ? '' : toUnit(valueDots)}
+        value={display}
         min={minDots !== undefined ? toUnit(minDots) : undefined}
         max={maxDots !== undefined ? toUnit(maxDots) : undefined}
         step={unitStep(unit)}
         disabled={disabled}
+        onFocus={() => setDraft(canonical)}
         onChange={(e) => {
-          if (allowUnset && e.target.value === '') {
-            onChangeDots(undefined);
-            return;
-          }
-          let dots = mmToDots(unitToMm(Number(e.target.value), unit), dpmm);
-          if (isNaN(dots)) return;
-          if (minDots !== undefined && dots < minDots) dots = minDots;
-          if (maxDots !== undefined && dots > maxDots) dots = maxDots;
-          onChangeDots(Math.round(dots));
+          // Keep raw keystrokes in `draft` (no snap-back) but commit live so the
+          // canvas tracks; commit clamps without touching `draft`.
+          setDraft(e.target.value);
+          commit(e.target.value);
         }}
+        // Drop the draft on blur so the field re-renders the canonical, clamped
+        // value in the active unit.
+        onBlur={() => setDraft(null)}
       />
     </div>
   );
