@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type Konva from "konva";
+import Konva from "konva";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { Ellipse, Group, Rect, Shape, Text } from "react-konva";
 import { lookupBoundVariable, shouldShowFallbackTint } from "../../lib/variableBinding";
@@ -229,33 +229,43 @@ function TextFieldContent({
       />
     );
   }
-  // Konva's getClientRect ignores a Group's clip and returns the full children
-  // bounds, which would inflate the Transformer box past the ^TB clip. Report
-  // the clip rect instead (the actual visible region) so the box matches.
+  // Konva's getClientRect ignores a Group's clip, so the raw children bounds
+  // include lines hidden below the ^TB clip. Intersect them with the clip: in
+  // glyph mode the box then hugs the visible text (like ^FB), and in frame mode
+  // the measure rect fills the clip so the box still covers the block.
   const tbClipRef = (node: Konva.Group | null) => {
     if (!node) return;
     node.getClientRect = (config?: { skipTransform?: boolean; relativeTo?: Konva.Container }) => {
+      const natural = Konva.Group.prototype.getClientRect.call(node, config);
       const local = {
         x: node.clipX() || 0,
         y: node.clipY() || 0,
         width: node.clipWidth(),
         height: node.clipHeight(),
       };
-      if (config?.skipTransform) return local;
-      const tr = config?.relativeTo
-        ? node.getAbsoluteTransform(config.relativeTo)
-        : node.getAbsoluteTransform();
-      const corners = [
-        { x: local.x, y: local.y },
-        { x: local.x + local.width, y: local.y },
-        { x: local.x + local.width, y: local.y + local.height },
-        { x: local.x, y: local.y + local.height },
-      ].map((p) => tr.point(p));
-      const xs = corners.map((c) => c.x);
-      const ys = corners.map((c) => c.y);
-      const minX = Math.min(...xs);
-      const minY = Math.min(...ys);
-      return { x: minX, y: minY, width: Math.max(...xs) - minX, height: Math.max(...ys) - minY };
+      let clip = local;
+      if (!config?.skipTransform) {
+        const tr = config?.relativeTo
+          ? node.getAbsoluteTransform(config.relativeTo)
+          : node.getAbsoluteTransform();
+        const corners = [
+          { x: local.x, y: local.y },
+          { x: local.x + local.width, y: local.y },
+          { x: local.x + local.width, y: local.y + local.height },
+          { x: local.x, y: local.y + local.height },
+        ].map((p) => tr.point(p));
+        const xs = corners.map((c) => c.x);
+        const ys = corners.map((c) => c.y);
+        const minX = Math.min(...xs);
+        const minY = Math.min(...ys);
+        clip = { x: minX, y: minY, width: Math.max(...xs) - minX, height: Math.max(...ys) - minY };
+      }
+      const x = Math.max(natural.x, clip.x);
+      const y = Math.max(natural.y, clip.y);
+      const width = Math.min(natural.x + natural.width, clip.x + clip.width) - x;
+      const height = Math.min(natural.y + natural.height, clip.y + clip.height) - y;
+      // No overlap (e.g. empty block) falls back to the clip box.
+      return width > 0 && height > 0 ? { x, y, width, height } : clip;
     };
   };
 
