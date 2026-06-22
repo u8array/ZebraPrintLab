@@ -1,0 +1,130 @@
+import { MinusIcon, Bars3BottomLeftIcon, WindowIcon } from "@heroicons/react/16/solid";
+import { useT } from "../../lib/useT";
+import { UnitNumberInput } from "./UnitNumberInput";
+import { BlockTextSettings } from "./BlockTextSettings";
+import { BlockDragModeToggle } from "./BlockDragModeToggle";
+import { SectionCard } from "./SectionCard";
+import { ZplCmd } from "./ZplCmd";
+import { fieldGridCols, fieldGridCell } from "../ui/formStyles";
+import { FB_DEFAULTS } from "../../lib/textBlock";
+import { resolveTextMode, type TextMode, type TextProps } from "../../registry/text";
+
+type IconType = typeof MinusIcon;
+
+/** Icon passed as a prop (not a render-created component) to satisfy the
+ *  static-components lint rule. */
+function ModeIcon({ icon: Icon }: { icon: IconType }) {
+  return <Icon className="w-4 h-4 shrink-0" />;
+}
+
+/** Three-way text layout selector (plain / ^FB field block / ^TB text block)
+ *  plus the active mode's settings. Switching preserves the shared block width
+ *  and converts between the ^FB max-lines and the ^TB clip height so the block
+ *  keeps its size. */
+export function TextModeSection({
+  props: p,
+  onChange,
+}: {
+  props: TextProps;
+  onChange: (patch: Partial<TextProps>) => void;
+}) {
+  const t = useT();
+  const mode = resolveTextMode(p);
+  const fontH = Math.max(1, p.fontHeight);
+
+  const setMode = (next: TextMode) => {
+    if (next === mode) return;
+    if (next === "normal") {
+      onChange({
+        textMode: undefined,
+        blockWidth: undefined,
+        blockLines: undefined,
+        blockLineSpacing: undefined,
+        blockJustify: undefined,
+        blockHangingIndent: undefined,
+        blockHeight: undefined,
+      });
+    } else if (next === "fb") {
+      const lines = p.blockHeight ? Math.max(1, Math.round(p.blockHeight / fontH)) : p.blockLines ?? 3;
+      onChange({
+        textMode: undefined,
+        blockWidth: p.blockWidth ?? FB_DEFAULTS.blockWidth,
+        blockLines: lines,
+        blockLineSpacing: p.blockLineSpacing ?? FB_DEFAULTS.blockLineSpacing,
+        blockJustify: p.blockJustify ?? FB_DEFAULTS.blockJustify,
+        blockHangingIndent: p.blockHangingIndent,
+        blockHeight: undefined,
+      });
+    } else {
+      const height = p.blockHeight ?? (p.blockLines ?? 3) * fontH;
+      onChange({
+        textMode: "tb",
+        blockWidth: p.blockWidth ?? FB_DEFAULTS.blockWidth,
+        blockHeight: height,
+        blockLines: undefined,
+        blockLineSpacing: undefined,
+        blockJustify: undefined,
+        blockHangingIndent: undefined,
+      });
+    }
+  };
+
+  const modes: { key: TextMode; label: string; hint: string; cmd: string; icon: IconType }[] = [
+    { key: "normal", label: t.registry.text.modeNormal, hint: t.registry.text.modeNormalHint, cmd: "^A", icon: MinusIcon },
+    { key: "fb", label: t.registry.text.modeFieldBlock, hint: t.registry.text.modeFieldBlockHint, cmd: "^FB", icon: Bars3BottomLeftIcon },
+    { key: "tb", label: t.registry.text.modeTextBlock, hint: t.registry.text.modeTextBlockHint, cmd: "^TB", icon: WindowIcon },
+  ];
+
+  return (
+    <SectionCard id="text-mode" title={t.registry.text.textMode}>
+      <div className="grid grid-cols-3 gap-1">
+        {modes.map((m) => (
+          <button
+            key={m.key}
+            type="button"
+            title={m.hint}
+            aria-label={`${m.label}: ${m.hint}`}
+            aria-pressed={mode === m.key}
+            className={`flex flex-col items-center gap-0.5 rounded border px-1 py-1.5 text-[11px] transition-colors ${
+              mode === m.key
+                ? "border-accent ring-1 ring-accent text-text"
+                : "border-border text-muted hover:text-text"
+            }`}
+            onClick={() => setMode(m.key)}
+          >
+            <ModeIcon icon={m.icon} />
+            <span>{m.label}</span>
+            <ZplCmd cmd={m.cmd} />
+          </button>
+        ))}
+      </div>
+
+      {mode === "fb" && <BlockTextSettings props={p} onChange={onChange} />}
+
+      {mode === "tb" && (
+        <div className="flex flex-col gap-3">
+          <BlockDragModeToggle />
+          <div className={`grid grid-cols-2 ${fieldGridCols}`}>
+            <UnitNumberInput
+              label={t.registry.text.blockWidth}
+              valueDots={p.blockWidth ?? 0}
+              minDots={1}
+              onChangeDots={(blockWidth) => onChange({ blockWidth })}
+              zplCmd="^TB"
+              className={fieldGridCell}
+            />
+            <UnitNumberInput
+              label={t.registry.text.blockHeight}
+              valueDots={p.blockHeight ?? 0}
+              minDots={1}
+              onChangeDots={(blockHeight) => onChange({ blockHeight })}
+              zplCmd="^TB"
+              className={fieldGridCell}
+            />
+          </div>
+          <p className="text-[10px] text-muted">{t.registry.text.textBlockFirmwareHint}</p>
+        </div>
+      )}
+    </SectionCard>
+  );
+}

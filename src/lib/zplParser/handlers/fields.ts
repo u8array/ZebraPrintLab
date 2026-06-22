@@ -167,6 +167,7 @@ export function createFieldHandlers(
       s.defaults.fbSpacing = 0;
       s.defaults.fbJustify = "L";
       s.defaults.fbHangingIndent = 0;
+      s.defaults.tbHeight = 0;
       s.comment.fnNumber = null;
       s.comment.fnComment = undefined;
     },
@@ -272,7 +273,9 @@ export function createFieldHandlers(
       if (fontRefTrimmed) s.fonts.referencedFontPaths.add(fontRefTrimmed);
       s.result.partialCmds.add("^A@");
     },
-    // ^TB{rotation},{width},{height}: text block (alternative to ^A + ^FB)
+    // ^TB{rotation},{width},{height}: text block. Stored natively (width +
+    // clip height) so it round-trips as ^TB, unlike the prior lossy collapse
+    // to ^FB lines. Justify/spacing/indent are not ^TB params.
     TB(p, rest) {
       s.field.fieldType = "text";
       s.field.textRot = readRotation(rest[0], s.defaults.fwRotation);
@@ -280,11 +283,10 @@ export function createFieldHandlers(
       const tbH = dots(p[2]);
       s.field.textH = getDefaultTextH(s.defaults);
       s.field.textW = getDefaultTextW(s.defaults);
-      if (tbW > 0) {
-        s.defaults.fbWidth = tbW;
-        s.defaults.fbLines = tbH > 0 ? Math.floor(tbH / (s.field.textH || 30)) : 1;
-        s.defaults.fbJustify = "L";
-      }
+      // Spec defaults width/height to 1 dot; clamp (never drop) so even a bare
+      // ^TB round-trips as ^TB instead of silently degrading to plain text.
+      s.defaults.fbWidth = tbW > 0 ? tbW : 1;
+      s.defaults.tbHeight = tbH > 0 ? tbH : s.field.textH;
     },
 
     FX: appendComment,

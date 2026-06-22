@@ -237,6 +237,14 @@ export function blockLineStepDots(fontHeight: number, blockLineSpacing: number):
   return fontHeight + blockLineSpacing;
 }
 
+/** ^TB line pitch ratio. Unlike ^FB (pitch = fontHeight), ^TB spaces lines at
+ *  ~1.25x fontHeight (calibrated against Labelary for the default font). */
+export const TB_LINE_HEIGHT_RATIO = 1.25;
+
+export function tbLineStepDots(fontHeight: number): number {
+  return fontHeight * TB_LINE_HEIGHT_RATIO;
+}
+
 /** FB block bbox in Group-local display coords. Rotates with the
  *  block-line-stack direction so the Transformer covers visible glyphs
  *  rather than the unrotated layout footprint. */
@@ -255,6 +263,24 @@ export function blockBoundsDots(args: {
     case "R": return { x: -linesExtent, y: 0,           width: linesExtent, height: blockWidth };
     case "I": return { x: -blockWidth, y: -linesExtent, width: blockWidth,  height: linesExtent };
     case "B": return { x: 0,           y: -blockWidth, width: linesExtent, height: blockWidth };
+  }
+}
+
+/** ^TB clip rect in Group-local display coords. The block is width x height
+ *  (height is the truncation clip, not a line count); at 90deg rotations the
+ *  rotated rect stays axis-aligned, so an AABB suffices. */
+export function tbBoundsDots(
+  blockWidthDots: number,
+  blockHeightDots: number,
+  rotation: ZplRotation,
+): { x: number; y: number; width: number; height: number } {
+  const w = blockWidthDots;
+  const h = blockHeightDots;
+  switch (rotation) {
+    case "N": return { x: 0,   y: 0,   width: w, height: h };
+    case "R": return { x: -h,  y: 0,   width: h, height: w };
+    case "I": return { x: -w,  y: -h,  width: w, height: h };
+    case "B": return { x: 0,   y: -w,  width: h, height: w };
   }
 }
 
@@ -313,6 +339,55 @@ export function blockReflowGeometry(args: {
   return {
     blockWidthDots,
     blockLines,
+    targetXPx,
+    targetYPx,
+    modelXDots: pxToDots(targetXPx - args.objectsOffsetX, args.scale, args.dpmm),
+    modelYDots: pxToDots(targetYPx - args.labelOffsetY, args.scale, args.dpmm),
+  };
+}
+
+/** Frame-mode ^TB live-resize math: like blockReflowGeometry but the second
+ *  axis is the clip height in dots, not a line count. Keeps glyphs constant so
+ *  the box reflows during the drag instead of stretching the text. */
+export function tbReflowGeometry(args: {
+  scaleX: number;
+  scaleY: number;
+  rotation: ZplRotation;
+  blockWidthDots: number;
+  blockHeightDots: number;
+  activeLeft: boolean;
+  activeTop: boolean;
+  leftX: number;
+  topY: number;
+  rightX: number;
+  bottomY: number;
+  scale: number;
+  dpmm: number;
+  objectsOffsetX: number;
+  labelOffsetY: number;
+}): {
+  blockWidthDots: number;
+  blockHeightDots: number;
+  targetXPx: number;
+  targetYPx: number;
+  modelXDots: number;
+  modelYDots: number;
+} {
+  const swap = args.rotation === "R" || args.rotation === "B";
+  const esx = swap ? args.scaleY : args.scaleX;
+  const esy = swap ? args.scaleX : args.scaleY;
+  const blockWidthDots = Math.max(1, Math.round(args.blockWidthDots * esx));
+  const blockHeightDots = Math.max(1, Math.round(args.blockHeightDots * esy));
+  const b = tbBoundsDots(blockWidthDots, blockHeightDots, args.rotation);
+  const bxPx = dotsToPx(b.x, args.scale, args.dpmm);
+  const byPx = dotsToPx(b.y, args.scale, args.dpmm);
+  const bwPx = dotsToPx(b.width, args.scale, args.dpmm);
+  const bhPx = dotsToPx(b.height, args.scale, args.dpmm);
+  const targetXPx = args.activeLeft ? args.rightX - bxPx - bwPx : args.leftX - bxPx;
+  const targetYPx = args.activeTop ? args.bottomY - byPx - bhPx : args.topY - byPx;
+  return {
+    blockWidthDots,
+    blockHeightDots,
     targetXPx,
     targetYPx,
     modelXDots: pxToDots(targetXPx - args.objectsOffsetX, args.scale, args.dpmm),

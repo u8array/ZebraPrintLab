@@ -88,6 +88,9 @@ export interface DefaultsState {
   fbSpacing: number;
   fbJustify: TextProps["blockJustify"];
   fbHangingIndent: number;
+  /** >0 marks ^TB (text block) mode, carrying the block height in dots.
+   *  ^TB shares fbWidth for the wrap width but emits/decodes differently. */
+  tbHeight: number;
   /** 0 = no ^BY height; barcode handlers fall back to 100. */
   byModuleWidth: number;
   byHeight: number;
@@ -249,6 +252,7 @@ export function createParserState(): ParserState {
       fbSpacing: 0,
       fbJustify: "L",
       fbHangingIndent: 0,
+      tbHeight: 0,
       byModuleWidth: 2,
       byHeight: 0,
     },

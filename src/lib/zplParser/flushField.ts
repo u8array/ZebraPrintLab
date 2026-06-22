@@ -7,6 +7,7 @@ import {
 import { embedsToMarkers } from "../fnTemplate";
 import { tokensToMarkers } from "../fcTemplate";
 import { decodeFbContent } from "../fbContent";
+import { decodeTbContent } from "../tbContent";
 import { dataMatrixFdToGs1Content } from "../gs1";
 import { zplAnchorToModel } from "../labelGeometry/textPositionTransforms";
 import { blockInterLineExtentDots } from "../zebraTextLayout";
@@ -100,6 +101,7 @@ export function createFlushField(
     s.defaults.fbSpacing = 0;
     s.defaults.fbJustify = "L";
     s.defaults.fbHangingIndent = 0;
+    s.defaults.tbHeight = 0;
   };
 
   const flushField = () => {
@@ -127,9 +129,18 @@ export function createFlushField(
     const posType = getPosType(s.field);
     const comment = takeComment();
 
-    // Decode \& line breaks (and \\ escapes) in ^FB text blocks via the
-    // shared helper so parser and generator stay symmetric.
-    const decoded = s.defaults.fbWidth > 0 ? decodeFbContent(content) : content;
+    // Decode block payloads symmetric with the generator: ^TB unescapes
+    // `<<>`, ^FB unescapes `\&`/`\-`/`\\`, plain text passes through.
+    // Captured before resetFB so the ^FN bind below can pick the tb default.
+    // Gated on the field actually being text: a malformed field that mixes ^TB
+    // with a later barcode command leaves tbHeight set but flips fieldType, and
+    // the bind block must then use raw content, not the tb-decoded value.
+    const isTbField = s.defaults.tbHeight > 0 && s.field.fieldType === "text";
+    const decoded = isTbField
+      ? decodeTbContent(content)
+      : s.defaults.fbWidth > 0
+        ? decodeFbContent(content)
+        : content;
 
     // Only text can pair with a stashed reverse-bg; non-text flushes first.
     if (s.field.fieldType !== "text") commitPendingReverseBg();
@@ -146,14 +157,19 @@ export function createFlushField(
           fontWidth: s.field.textW,
           printerFontName: s.field.pendingPrinterFontName,
         });
-        // ^FT + ^FB: the anchor pins the last baseline, so the EM-top
-        // sits one block-extent above. Computed only when ^FB applies.
-        const blockExtentDots = blockInterLineExtentDots({
-          blockWidthDots: s.defaults.fbWidth,
-          blockLines: s.defaults.fbLines,
-          blockLineSpacing: s.defaults.fbSpacing,
-          fontHeight: s.field.textH,
-        });
+        // FT pins the last baseline, so the EM-top sits one block-extent above;
+        // FO R/I stack the same way. ^TB is a fixed clip height, ^FB stacks
+        // lines. Must match the generator's blockExtentFor for byte-exact
+        // round-trips and matching WYSIWYG.
+        const blockExtentDots =
+          s.defaults.tbHeight > 0
+            ? Math.max(0, s.defaults.tbHeight - s.field.textH)
+            : blockInterLineExtentDots({
+                blockWidthDots: s.defaults.fbWidth,
+                blockLines: s.defaults.fbLines,
+                blockLineSpacing: s.defaults.fbSpacing,
+                fontHeight: s.field.textH,
+              });
         const modelPos = zplAnchorToModel(
           s.field.x,
           s.field.y,
@@ -201,8 +217,14 @@ export function createFlushField(
           s.defaults.fbWidth > 0
             ? s.defaults.fbWidth
             : Math.max(1, Math.round(inkWidthDots));
+        // ^TB knockout height is the raw clip height (matches the generator's
+        // ^GB), not textH + extent which floors at textH for tbHeight < textH.
         const blockBaseH =
-          s.defaults.fbWidth > 0 ? s.field.textH + blockExtentDots : s.field.textH;
+          s.defaults.tbHeight > 0
+            ? s.defaults.tbHeight
+            : s.defaults.fbWidth > 0
+              ? s.field.textH + blockExtentDots
+              : s.field.textH;
         const expectedW = vertical ? blockBaseH : blockBaseW;
         const expectedH = vertical ? blockBaseW : blockBaseH;
         const collapse =
@@ -234,7 +256,11 @@ export function createFlushField(
         };
         s.field.pendingPrinterFontName = undefined;
         s.field.pendingFontId = undefined;
-        if (s.defaults.fbWidth > 0) {
+        if (s.defaults.tbHeight > 0) {
+          textProps.textMode = "tb";
+          textProps.blockWidth = s.defaults.fbWidth;
+          textProps.blockHeight = s.defaults.tbHeight;
+        } else if (s.defaults.fbWidth > 0) {
           textProps.blockWidth = s.defaults.fbWidth;
           textProps.blockLines = s.defaults.fbLines;
           textProps.blockLineSpacing = s.defaults.fbSpacing;
@@ -591,7 +617,10 @@ export function createFlushField(
     if (s.comment.fnNumber !== null) {
       const justPushed = objects[objects.length - 1];
       if (justPushed) {
-        const variable = upsertVariable(s.comment.fnNumber, content, s.comment.fnComment);
+        // ^TB encodes the bound default (`<<>`), so store the decoded plain
+        // value to stay symmetric with the generator; ^FB/plain keep content.
+        const varDefault = isTbField ? decoded : content;
+        const variable = upsertVariable(s.comment.fnNumber, varDefault, s.comment.fnComment);
         justPushed.variableId = variable.id;
       }
       s.comment.fnNumber = null;

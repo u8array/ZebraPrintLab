@@ -8,15 +8,15 @@ import { useLabelStore } from "../store/labelStore";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { UnitNumberInput } from "../components/Properties/UnitNumberInput";
 import { VariableContentField } from "../components/Properties/VariableContentField";
-import { BlockTextSettings } from "../components/Properties/BlockTextSettings";
 import { FpSettings } from "../components/Properties/FpSettings";
-import { SectionCard, StaticSectionCard, ToggleSectionCard } from "../components/Properties/SectionCard";
+import { TextModeSection } from "../components/Properties/TextModeSection";
+import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
 import { FieldLabel, ZplCmd } from "../components/Properties/ZplCmd";
 import { Select } from "../components/ui/Select";
 import { fontSelectGroups } from "../components/Properties/fontSelectGroups";
-import { deriveBlockTextPatch, FB_DEFAULTS } from "../lib/textBlock";
+import { deriveBlockTextPatch } from "../lib/textBlock";
 import { fieldGridCols, fieldGridCell } from "../components/ui/formStyles";
-import type { TextProps } from "./text";
+import { resolveTextMode, type TextProps } from "./text";
 
 export const textPanel: ObjectTypeUi<TextProps> = {
   PropertiesPanel: ({ obj, onChange }) => {
@@ -60,7 +60,12 @@ export const textPanel: ObjectTypeUi<TextProps> = {
         <StaticSectionCard title={t.registry.text.content} cmd="^FD">
           <VariableContentField
             obj={obj}
-            extraPatch={(content) => deriveBlockTextPatch(content, p, p.fontHeight, p.fontWidth)}
+            extraPatch={(content) =>
+              // ^TB has no hard breaks, so a newline must not auto-activate ^FB.
+              resolveTextMode(p) === "tb"
+                ? {}
+                : deriveBlockTextPatch(content, p, p.fontHeight, p.fontWidth)
+            }
           />
         </StaticSectionCard>
 
@@ -191,27 +196,7 @@ export const textPanel: ObjectTypeUi<TextProps> = {
           </div>
         </SectionCard>
 
-        {/* The card header switch is the ^FB enable control; the body
-            (BlockTextSettings, drag-mode first) shows only while on. */}
-        <ToggleSectionCard
-          title={t.registry.text.fieldBlock}
-          cmd="^FB"
-          checked={!!p.blockWidth}
-          onCheckedChange={(on) =>
-            onChange(
-              on
-                ? { ...FB_DEFAULTS, blockLines: 3 }
-                : {
-                    blockWidth: undefined,
-                    blockLines: undefined,
-                    blockLineSpacing: undefined,
-                    blockJustify: undefined,
-                  },
-            )
-          }
-        >
-          <BlockTextSettings props={p} onChange={onChange} />
-        </ToggleSectionCard>
+        <TextModeSection props={p} onChange={onChange} />
       </>
     );
   },

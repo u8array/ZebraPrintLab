@@ -79,6 +79,22 @@ describe("objectBoundsDots", () => {
     expect(objectBoundsDots(t, ctx())).toEqual({ x: 50, y: 30, width: 160, height: 140 });
   });
 
+  it("text ^TB block (N): extent uses blockHeight, not the line count", () => {
+    const t = leaf("text", 50, 30, {
+      content: "x", fontHeight: 40, fontWidth: 0, rotation: "N",
+      textMode: "tb", blockWidth: 160, blockHeight: 120,
+    });
+    expect(objectBoundsDots(t, ctx())).toEqual({ x: 50, y: 30, width: 160, height: 120 });
+  });
+
+  it("text ^TB block (R): axes swap with the clip height", () => {
+    const t = leaf("text", 50, 30, {
+      content: "x", fontHeight: 40, fontWidth: 0, rotation: "R",
+      textMode: "tb", blockWidth: 160, blockHeight: 120,
+    });
+    expect(objectBoundsDots(t, ctx())).toEqual({ x: -70, y: 30, width: 120, height: 160 });
+  });
+
   it("text ^FB block (R): axes swap and negative x shift fold into model space", () => {
     // R: x = -linesExtent (-140), y = 0, width = linesExtent (140), height = blockWidth (160).
     const t = leaf("text", 50, 30, {

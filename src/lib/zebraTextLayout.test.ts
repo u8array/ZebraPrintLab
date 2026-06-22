@@ -14,7 +14,38 @@ import {
   blockReflowGeometry,
   blockGlyphAnchorPoint,
   wrapBlockLines,
+  tbBoundsDots,
+  tbLineStepDots,
+  tbReflowGeometry,
 } from "./zebraTextLayout";
+
+describe("tbLineStepDots", () => {
+  it("uses the 1.25 ratio (looser than ^FB's 1.0)", () => {
+    expect(tbLineStepDots(40)).toBe(50);
+    expect(tbLineStepDots(80)).toBe(100);
+  });
+});
+
+describe("tbBoundsDots", () => {
+  it("is width x clip-height for N; axes swap for R", () => {
+    expect(tbBoundsDots(200, 120, "N")).toEqual({ x: 0, y: 0, width: 200, height: 120 });
+    expect(tbBoundsDots(200, 120, "R")).toEqual({ x: -120, y: 0, width: 120, height: 200 });
+  });
+});
+
+describe("tbReflowGeometry", () => {
+  it("scales width + clip height by the drag, no glyph stretch", () => {
+    const g = tbReflowGeometry({
+      scaleX: 2, scaleY: 0.5, rotation: "N",
+      blockWidthDots: 100, blockHeightDots: 200,
+      activeLeft: false, activeTop: false,
+      leftX: 0, topY: 0, rightX: 100, bottomY: 200,
+      scale: 1, dpmm: 1, objectsOffsetX: 0, labelOffsetY: 0,
+    });
+    expect(g.blockWidthDots).toBe(200);
+    expect(g.blockHeightDots).toBe(100);
+  });
+});
 
 describe("wrapBlockLines", () => {
   // measure = 10 dots per char, so block 50 fits 5 chars.

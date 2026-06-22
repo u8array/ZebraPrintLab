@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import { flushSync } from "react-dom";
 import type Konva from "konva";
 import { dotsToPx, pxToDots } from "../../../lib/coordinates";
-import { blockBoundsDots, blockGlyphAnchorPoint, blockReflowGeometry, type BlockJustify, type ZplRotation } from "../../../lib/zebraTextLayout";
+import { blockBoundsDots, blockGlyphAnchorPoint, blockReflowGeometry, tbBoundsDots, tbReflowGeometry, type BlockJustify, type ZplRotation } from "../../../lib/zebraTextLayout";
 import { getCurrentObjects, useLabelStore } from "../../../store/labelStore";
 import {
   BARCODE_1D_TYPES,
@@ -11,6 +11,7 @@ import {
 } from "../../../registry";
 import type { LeafObject } from "../../../registry";
 import { resolveBlockResizeMode } from "../../../registry/transformHelpers";
+import { resolveTextMode, type TextProps } from "../../../registry/text";
 import type { ObjectChanges } from "../../../store/labelStore";
 import { findObjectById, isGroup } from "../../../types/Group";
 import {
@@ -258,6 +259,7 @@ export function useKonvaTransformer({
   // group scaling. Captures the fixed (anchored) edges so the opposite side
   // stays put. Null for every other transform.
   const liveReflowRef = useRef<{
+    mode: "fb" | "tb";
     edges: ActiveEdgeFlags | null;
     rotation: "N" | "R" | "I" | "B";
     lineSpacing: number;
@@ -267,8 +269,9 @@ export function useKonvaTransformer({
     rightX: number;
     bottomY: number;
     // Pre-drag model snapshot + a dirty flag, so the per-tick (untracked) store
-    // writes collapse into a single undo entry on release.
-    snapshot: { x: number; y: number; blockWidth: number; blockLines: number };
+    // writes collapse into a single undo entry on release. blockLines is the
+    // ^FB second axis; blockHeight the ^TB one.
+    snapshot: { x: number; y: number; blockWidth: number; blockLines: number; blockHeight: number };
     changed: boolean;
   } | null>(null);
 
@@ -531,6 +534,7 @@ export function useKonvaTransformer({
         blockWidth?: number;
         blockLines?: number;
         blockLineSpacing?: number;
+        blockHeight?: number;
         fontHeight: number;
         rotation: string;
       };
@@ -541,20 +545,27 @@ export function useKonvaTransformer({
         altKeyRef.current,
       );
       const frameMode = blockResizeModeRef.current === "frame";
+      // ^FB and ^TB both reflow live in frame mode (no glyph stretch); the only
+      // difference is the second axis (^FB lines vs ^TB clip height).
+      const tbMode = resolveTextMode(obj.props as TextProps) === "tb";
       if (bp.blockWidth && bp.blockWidth > 0 && frameMode) {
         const rot = (["N", "R", "I", "B"].includes(bp.rotation)
           ? bp.rotation
           : "N") as "N" | "R" | "I" | "B";
-        const b0 = blockBoundsDots({
-          blockWidthDots: bp.blockWidth,
-          blockLines: bp.blockLines ?? 1,
-          blockLineSpacing: bp.blockLineSpacing ?? 0,
-          fontHeight: bp.fontHeight,
-          rotation: rot,
-        });
+        const blockHeight = bp.blockHeight ?? bp.fontHeight;
+        const b0 = tbMode
+          ? tbBoundsDots(bp.blockWidth, blockHeight, rot)
+          : blockBoundsDots({
+              blockWidthDots: bp.blockWidth,
+              blockLines: bp.blockLines ?? 1,
+              blockLineSpacing: bp.blockLineSpacing ?? 0,
+              fontHeight: bp.fontHeight,
+              rotation: rot,
+            });
         const x0 = node.x() + dotsToPx(b0.x, scale, dpmm);
         const y0 = node.y() + dotsToPx(b0.y, scale, dpmm);
         liveReflowRef.current = {
+          mode: tbMode ? "tb" : "fb",
           edges: activeEdgesRef.current,
           rotation: rot,
           lineSpacing: bp.blockLineSpacing ?? 0,
@@ -568,6 +579,7 @@ export function useKonvaTransformer({
             y: obj.y,
             blockWidth: bp.blockWidth,
             blockLines: bp.blockLines ?? 1,
+            blockHeight,
           },
           changed: false,
         };
@@ -602,15 +614,12 @@ export function useKonvaTransformer({
     if (Math.abs(sx - 1) < 1e-3 && Math.abs(sy - 1) < 1e-3) return;
     const cur = findObjectById(getCurrentObjects(), id);
     if (!cur || isGroup(cur)) return;
-    const cp = cur.props as { blockWidth?: number; blockLines?: number };
-    const geo = blockReflowGeometry({
+    const cp = cur.props as { blockWidth?: number; blockLines?: number; blockHeight?: number };
+    const common = {
       scaleX: sx,
       scaleY: sy,
       rotation: lr.rotation,
       blockWidthDots: cp.blockWidth ?? 1,
-      blockLines: cp.blockLines ?? 1,
-      blockLineSpacing: lr.lineSpacing,
-      fontHeight: lr.fontHeight,
       activeLeft: lr.edges?.left ?? false,
       activeTop: lr.edges?.top ?? false,
       leftX: lr.leftX,
@@ -621,12 +630,27 @@ export function useKonvaTransformer({
       dpmm,
       objectsOffsetX,
       labelOffsetY,
-    });
+    };
+    const geo =
+      lr.mode === "tb"
+        ? (() => {
+            const g = tbReflowGeometry({ ...common, blockHeightDots: cp.blockHeight ?? lr.fontHeight });
+            return { ...g, props: { blockWidth: g.blockWidthDots, blockHeight: g.blockHeightDots } };
+          })()
+        : (() => {
+            const g = blockReflowGeometry({
+              ...common,
+              blockLines: cp.blockLines ?? 1,
+              blockLineSpacing: lr.lineSpacing,
+              fontHeight: lr.fontHeight,
+            });
+            return { ...g, props: { blockWidth: g.blockWidthDots, blockLines: g.blockLines } };
+          })();
     flushSync(() => {
       updateObject(id, {
         x: geo.modelXDots,
         y: geo.modelYDots,
-        props: { blockWidth: geo.blockWidthDots, blockLines: geo.blockLines },
+        props: geo.props,
       });
     });
     lr.changed = true;
@@ -732,18 +756,25 @@ export function useKonvaTransformer({
       const cur = id ? findObjectById(getCurrentObjects(), id) : undefined;
       const temporal = useLabelStore.temporal.getState();
       if (lr.changed && id && cur && !isGroup(cur)) {
-        const cp = cur.props as { blockWidth?: number; blockLines?: number };
+        const cp = cur.props as { blockWidth?: number; blockLines?: number; blockHeight?: number };
+        // ^TB collapses width + clip height; ^FB width + line count.
+        const secondAxis = lr.mode === "tb"
+          ? { blockHeight: cp.blockHeight }
+          : { blockLines: cp.blockLines };
+        const snapAxis = lr.mode === "tb"
+          ? { blockHeight: lr.snapshot.blockHeight }
+          : { blockLines: lr.snapshot.blockLines };
         const final = {
           x: cur.x,
           y: cur.y,
-          props: { blockWidth: cp.blockWidth, blockLines: cp.blockLines },
+          props: { blockWidth: cp.blockWidth, ...secondAxis },
         };
         updateObject(id, {
           x: lr.snapshot.x,
           y: lr.snapshot.y,
           props: {
             blockWidth: lr.snapshot.blockWidth,
-            blockLines: lr.snapshot.blockLines,
+            ...snapAxis,
           },
         });
         temporal.resume();

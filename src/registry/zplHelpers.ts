@@ -25,7 +25,23 @@ interface TextLikeObjForFieldPos extends LabelObjectBase {
     blockWidth?: number;
     blockLines?: number;
     blockLineSpacing?: number;
+    textMode?: "normal" | "fb" | "tb";
+    blockHeight?: number;
   };
+}
+
+/** Vertical extent of a block beyond its first line, in dots. Shifts the
+ *  FT baseline / FO-R/I anchor. ^TB is a fixed clip height; ^FB stacks lines. */
+function blockExtentFor(p: TextLikeObjForFieldPos["props"]): number {
+  if (p.textMode === "tb") {
+    return Math.max(0, (p.blockHeight ?? p.fontHeight) - p.fontHeight);
+  }
+  return blockInterLineExtentDots({
+    blockWidthDots: p.blockWidth ?? 0,
+    blockLines: p.blockLines ?? 1,
+    blockLineSpacing: p.blockLineSpacing ?? 0,
+    fontHeight: p.fontHeight,
+  });
 }
 
 /** Priority: fontId -> printerFontName -> ctx defaultFontId -> ^A0. */
@@ -58,12 +74,7 @@ export function textFieldPos(obj: TextLikeObjForFieldPos): string {
   const cmd = obj.positionType === "FT" ? "FT" : "FO";
   const metrics = getTextRenderMetrics(obj as unknown as LabelObject);
   const p = obj.props;
-  const blockExtentDots = blockInterLineExtentDots({
-    blockWidthDots: p.blockWidth ?? 0,
-    blockLines: p.blockLines ?? 1,
-    blockLineSpacing: p.blockLineSpacing ?? 0,
-    fontHeight: p.fontHeight,
-  });
+  const blockExtentDots = blockExtentFor(p);
   const a = modelToZplAnchor(
     obj.x,
     obj.y,
@@ -100,12 +111,16 @@ export function fdField(payload: string): string {
 
 /** Bound variableId emits `^FN{n}` + default; orphan falls back to literal.
  *  `transform` (e.g. GS1 FNC1 escaping) is applied to the final field-data
- *  payload so it composes with binding instead of bypassing it. */
+ *  payload so it composes with binding instead of bypassing it. `encodeDefault`
+ *  block-encodes only the bound default (e.g. ^TB `<<>` escaping); literal/
+ *  template `content` must already be encoded by the caller, since encoding
+ *  after marker substitution would corrupt the inserted ^FE/^FC tokens. */
 export function fdFieldFor(
   obj: LabelObjectBase,
   content: string,
   ctx?: ZplEmitContext,
   transform: (payload: string) => string = (s) => s,
+  encodeDefault: (payload: string) => string = (s) => s,
 ): string {
   // Single-bind wins, mirroring preview (`applyBindingToObject`): emit the
   // variable's ^FN + default literally, never expanding a marker that happens
@@ -114,7 +129,7 @@ export function fdFieldFor(
   const id = obj.variableId;
   if (id && ctx?.variables) {
     const variable = ctx.variables.find((v) => v.id === id);
-    if (variable) return `^FN${variable.fnNumber}${fdField(transform(variable.defaultValue))}`;
+    if (variable) return `^FN${variable.fnNumber}${fdField(transform(encodeDefault(variable.defaultValue)))}`;
   }
   // Template path: ^FE embeds first then ^FC clock; absent ctx delim signals
   // "templates not emittable" and the content stays literal.

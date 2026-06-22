@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import type Konva from "konva";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { Ellipse, Group, Rect, Shape, Text } from "react-konva";
 import { lookupBoundVariable, shouldShowFallbackTint } from "../../lib/variableBinding";
@@ -18,7 +19,8 @@ import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 import { DEFAULT_GS_SYMBOL_META, GS_SYMBOLS } from "../../registry/symbol";
 import { GS_SYMBOL_PATHS, GS_VECTOR_CODES, type GsVectorCode } from "../../registry/gsSymbolPaths";
-import { blockBoundsDots, blockJustifyWordPositions, blockLineStartDots, blockLineStepDots, wrapBlockLines, zebraAlignOffsetDots, zebraHangingIndentOffsetDots, zebraJustifyGapDots, zebraLineWidthDots, type ZplRotation } from "../../lib/zebraTextLayout";
+import { blockBoundsDots, blockJustifyWordPositions, blockLineStartDots, blockLineStepDots, tbBoundsDots, tbLineStepDots, wrapBlockLines, zebraAlignOffsetDots, zebraHangingIndentOffsetDots, zebraJustifyGapDots, zebraLineWidthDots, type ZplRotation } from "../../lib/zebraTextLayout";
+import { resolveTextMode } from "../../registry/text";
 import type { LeafObject } from "../../registry";
 import type { TextProps } from "../../registry/text";
 import type { SerialProps } from "../../registry/serial";
@@ -168,8 +170,9 @@ function TextFieldContent({
   if (obj.type !== "text") {
     return <Text key={fontVersion} x={shift} y={shiftY} text={content} {...base} />;
   }
-  const { blockWidth, blockLines, blockJustify, blockLineSpacing, blockHangingIndent, fontHeight, fontWidth } = obj.props;
-  if (!blockWidth) {
+  const { blockWidth, blockLines, blockHeight, blockJustify, blockLineSpacing, blockHangingIndent, fontHeight, fontWidth } = obj.props;
+  const mode = resolveTextMode(obj.props);
+  if (mode === "normal" || !blockWidth) {
     // Single-line text has no spec-defined min width, so only empty
     // content triggers the placeholder (block also covers too-narrow).
     if (content.trim().length === 0) {
@@ -205,13 +208,16 @@ function TextFieldContent({
     dotsToPx(blockWidth, scale, dpmm) < measureLinePx(firstChar);
   const emptyContent = content.trim().length === 0;
   if (tooNarrow || emptyContent) {
-    const bounds = blockBoundsDots({
-      blockWidthDots: blockWidth,
-      blockLines: blockLines ?? 1,
-      blockLineSpacing: blockLineSpacing ?? 0,
-      fontHeight,
-      rotation: obj.props.rotation,
-    });
+    const bounds =
+      mode === "tb"
+        ? tbBoundsDots(blockWidth, blockHeight ?? fontHeight, obj.props.rotation)
+        : blockBoundsDots({
+            blockWidthDots: blockWidth,
+            blockLines: blockLines ?? 1,
+            blockLineSpacing: blockLineSpacing ?? 0,
+            fontHeight,
+            rotation: obj.props.rotation,
+          });
     return (
       <PlaceholderRect
         fontVersion={fontVersion}
@@ -223,23 +229,90 @@ function TextFieldContent({
       />
     );
   }
+  // Konva's getClientRect ignores a Group's clip and returns the full children
+  // bounds, which would inflate the Transformer box past the ^TB clip. Report
+  // the clip rect instead (the actual visible region) so the box matches.
+  const tbClipRef = (node: Konva.Group | null) => {
+    if (!node) return;
+    node.getClientRect = (config?: { skipTransform?: boolean; relativeTo?: Konva.Container }) => {
+      const local = {
+        x: node.clipX() || 0,
+        y: node.clipY() || 0,
+        width: node.clipWidth(),
+        height: node.clipHeight(),
+      };
+      if (config?.skipTransform) return local;
+      const tr = config?.relativeTo
+        ? node.getAbsoluteTransform(config.relativeTo)
+        : node.getAbsoluteTransform();
+      const corners = [
+        { x: local.x, y: local.y },
+        { x: local.x + local.width, y: local.y },
+        { x: local.x + local.width, y: local.y + local.height },
+        { x: local.x, y: local.y + local.height },
+      ].map((p) => tr.point(p));
+      const xs = corners.map((c) => c.x);
+      const ys = corners.map((c) => c.y);
+      const minX = Math.min(...xs);
+      const minY = Math.min(...ys);
+      return { x: minX, y: minY, width: Math.max(...xs) - minX, height: Math.max(...ys) - minY };
+    };
+  };
+
+  // ^TB: word-wrap left-aligned, no spacing/indent/justify, clipped at the
+  // block height (Labelary truncates mid-glyph, so clip rather than drop whole
+  // lines). At 90deg rotations the block rect stays axis-aligned.
+  if (mode === "tb") {
+    // ^TB has no hard break; emit collapses newlines to spaces, so the canvas
+    // must too or it would show line breaks that won't print.
+    const tbText = content.replace(/\n/g, " ");
+    const tbLines = wrapBlockLines(tbText, dotsToPx(blockWidth, scale, dpmm), measureLinePx);
+    const tbStep = tbLineStepDots(fontHeight);
+    const clip = tbBoundsDots(blockWidth, blockHeight ?? fontHeight, obj.props.rotation);
+    // Lines sit exactly like ^FB (first line at the block top with Konva's cap
+    // pad); matches the Labelary preview so toggling it doesn't shift the text.
+    return (
+      <Group
+        ref={tbClipRef}
+        clipX={dotsToPx(clip.x, scale, dpmm) + shift}
+        clipY={dotsToPx(clip.y, scale, dpmm) + shiftY}
+        clipWidth={dotsToPx(clip.width, scale, dpmm)}
+        clipHeight={dotsToPx(clip.height, scale, dpmm)}
+      >
+        {tbLines.map((line, i) => {
+          const startDots = blockLineStartDots(i, obj.props.rotation, 0, tbStep);
+          return (
+            <Text
+              key={`${fontVersion}-${i}`}
+              x={dotsToPx(startDots.x, scale, dpmm) + shift}
+              y={dotsToPx(startDots.y, scale, dpmm) + shiftY}
+              text={line}
+              {...base}
+            />
+          );
+        })}
+      </Group>
+    );
+  }
   const justify = blockJustify ?? "L";
   const indent = blockHangingIndent ?? 0;
   const lineStepDots = blockLineStepDots(fontHeight, blockLineSpacing ?? 0);
-  // Wrap to the rendered block width; ^FB slot b: overflow lines overprint
-  // the last line, so keep only blockLines worth.
+  // Wrap to the rendered block width; ^FB slot b: text exceeding blockLines
+  // overprints onto the last line (matches Labelary), so pin overflow rows to
+  // the last index rather than dropping them.
+  const cap = blockLines ?? 1;
   const lines = wrapBlockLines(
     content,
     dotsToPx(blockWidth, scale, dpmm),
     measureLinePx,
-  ).slice(0, blockLines ?? 1);
+  ).map((line, i) => ({ line, row: Math.min(i, cap - 1) }));
   // Labelary centers / justifies as if a trailing space is present; feed the
   // rendered space width so both match the preview on scaled / device fonts.
   const spaceWidthDots = pxToDots(measureLinePx(" "), scale, dpmm);
   return (
     <>
-      {lines.flatMap((line, i) => {
-        const indentDots = zebraHangingIndentOffsetDots(i, indent);
+      {lines.flatMap(({ line, row }, i) => {
+        const indentDots = zebraHangingIndentOffsetDots(row, indent);
         // Measure the rendered glyphs (same basis as the wrap) so justify
         // offsets match what is drawn; zebraLineWidthDots over-estimates
         // scaled / device fonts and would clamp the offset to 0 (stuck left).
@@ -252,7 +325,7 @@ function TextFieldContent({
           const words = line.split(" ");
           const extraGap = zebraJustifyGapDots(lineWidthDots, effectiveBlockWidth, words.length - 1, isLast);
           if (extraGap > 0) {
-            const startDots = blockLineStartDots(i, obj.props.rotation, indentDots, lineStepDots);
+            const startDots = blockLineStartDots(row, obj.props.rotation, indentDots, lineStepDots);
             const positions = blockJustifyWordPositions({
               words, rotation: obj.props.rotation, startDots,
               fontHeight, fontWidth, extraGapDots: extraGap,
@@ -271,7 +344,7 @@ function TextFieldContent({
           }
         }
         const alignOffsetDots = zebraAlignOffsetDots(lineWidthDots, effectiveBlockWidth, justify, spaceWidthDots);
-        const startDots = blockLineStartDots(i, obj.props.rotation, indentDots + alignOffsetDots, lineStepDots);
+        const startDots = blockLineStartDots(row, obj.props.rotation, indentDots + alignOffsetDots, lineStepDots);
         return [
           <Text
             key={`${fontVersion}-${i}`}
@@ -295,6 +368,7 @@ function BlockWrapGuide({
   blockWidthDots,
   blockLines,
   blockLineSpacing,
+  blockHeightDots,
   fontHeight,
   rotation,
   scale,
@@ -305,6 +379,8 @@ function BlockWrapGuide({
   blockWidthDots: number;
   blockLines: number;
   blockLineSpacing: number;
+  /** Set for ^TB: the frame is the width x clip-height rect, not line-stacked. */
+  blockHeightDots?: number;
   fontHeight: number;
   rotation: ZplRotation;
   scale: number;
@@ -312,7 +388,10 @@ function BlockWrapGuide({
   color: string;
   frameMeasured: boolean;
 }) {
-  const bounds = blockBoundsDots({ blockWidthDots, blockLines, blockLineSpacing, fontHeight, rotation });
+  const bounds =
+    blockHeightDots != null
+      ? tbBoundsDots(blockWidthDots, blockHeightDots, rotation)
+      : blockBoundsDots({ blockWidthDots, blockLines, blockLineSpacing, fontHeight, rotation });
   const bx = dotsToPx(bounds.x, scale, dpmm);
   const by = dotsToPx(bounds.y, scale, dpmm);
   const bw = dotsToPx(bounds.width, scale, dpmm);
@@ -553,13 +632,16 @@ function KonvaObjectInner({
       // non-reverse path, knocked out in white. Reuse blockBoundsDots (the same
       // box the generator emits) and TextFieldContent so the preview matches
       // both the print and the normal render.
-      const bounds = blockBoundsDots({
-        blockWidthDots: obj.props.blockWidth,
-        blockLines: obj.props.blockLines ?? 1,
-        blockLineSpacing: obj.props.blockLineSpacing ?? 0,
-        fontHeight: obj.props.fontHeight,
-        rotation: p.rotation,
-      });
+      const bounds =
+        resolveTextMode(obj.props) === "tb"
+          ? tbBoundsDots(obj.props.blockWidth, obj.props.blockHeight ?? obj.props.fontHeight, p.rotation)
+          : blockBoundsDots({
+              blockWidthDots: obj.props.blockWidth,
+              blockLines: obj.props.blockLines ?? 1,
+              blockLineSpacing: obj.props.blockLineSpacing ?? 0,
+              fontHeight: obj.props.fontHeight,
+              rotation: p.rotation,
+            });
       return (
         <Group
           id={obj.id}
@@ -691,6 +773,7 @@ function KonvaObjectInner({
             blockWidthDots={obj.props.blockWidth}
             blockLines={obj.props.blockLines ?? 1}
             blockLineSpacing={obj.props.blockLineSpacing ?? 0}
+            blockHeightDots={resolveTextMode(obj.props) === "tb" ? obj.props.blockHeight ?? obj.props.fontHeight : undefined}
             fontHeight={obj.props.fontHeight}
             rotation={obj.props.rotation}
             scale={scale}

@@ -617,6 +617,108 @@ describe('generateZPL — ^FP field-direction modifier', () => {
   });
 });
 
+describe('generateZPL — ^TB text block', () => {
+  it('emits ^TB{rot},{w},{h} for a text-block object', () => {
+    const { objects } = parseZPL('^XA^A0N,30^FO0,0^TBN,400,120^FDText block^FS^XZ', 8);
+    const zpl = generateZPL(BASE_LABEL, objects);
+    expect(zpl).toContain('^TBN,400,120');
+    expect(zpl).not.toContain('^FB');
+  });
+
+  it('round-trips ^TB (native, no lossy collapse to ^FB)', () => {
+    const original = '^XA^A0N,30^FO0,0^TBN,400,120^FDText block^FS^XZ';
+    const { objects } = parseZPL(original, 8);
+    const zpl = generateZPL(BASE_LABEL, objects);
+    const { objects: reparsed } = parseZPL(zpl, 8);
+    expect(props(reparsed[0]).textMode).toBe('tb');
+    expect(props(reparsed[0]).blockWidth).toBe(400);
+    expect(props(reparsed[0]).blockHeight).toBe(120);
+    expect(props(reparsed[0]).content).toBe('Text block');
+  });
+
+  it('round-trips an FT-anchored ^TB position (extent uses blockHeight)', () => {
+    const original = '^XA^A0N,30^FT400,150^TBN,300,90^FDsample^FS^XZ';
+    const a = parseZPL(original, 8);
+    const z = generateZPL(BASE_LABEL, a.objects);
+    const b = parseZPL(z, 8);
+    expect(props(b.objects[0]).blockHeight).toBe(90);
+    // Position must survive the FT extent round-trip unchanged.
+    expect(b.objects[0]?.x).toBe(a.objects[0]?.x);
+    expect(b.objects[0]?.y).toBe(a.objects[0]?.y);
+    expect(z).toContain('^FT400,150');
+  });
+
+  it('does not re-escape a ^TB clock token when content forces the < time char', () => {
+    // A literal `{` makes the clock time-char fall to `<`; the substituted
+    // token must survive, not get re-escaped to `<<>` (post-substitution
+    // encoding regression).
+    const obj: LabelObject = {
+      id: 't', type: 'text', x: 0, y: 0, rotation: 0,
+      props: { content: '«clock:H»{', fontHeight: 30, fontWidth: 0, rotation: 'N', textMode: 'tb', blockWidth: 300, blockHeight: 60 },
+    };
+    const zpl = generateZPL(BASE_LABEL, [obj]);
+    expect(zpl).toContain('^FC');
+    expect(zpl).not.toContain('<<>H');
+  });
+
+  it('round-trips ^TBR (R-rotation anchor path)', () => {
+    const original = '^XA^A0R,30^FO100,40^TBR,200,90^FDrotated block sample^FS^XZ';
+    const a = parseZPL(original, 8);
+    const z = generateZPL(BASE_LABEL, a.objects);
+    const b = parseZPL(z, 8);
+    expect(props(b.objects[0]).textMode).toBe('tb');
+    expect(props(b.objects[0]).blockHeight).toBe(90);
+    expect(props(b.objects[0]).rotation).toBe('R');
+    expect(b.objects[0]?.x).toBe(a.objects[0]?.x);
+    expect(b.objects[0]?.y).toBe(a.objects[0]?.y);
+  });
+
+  it('escapes < in a bound variable default for ^TB (no field-swallow)', () => {
+    const variable = { id: 'v1', name: 'n', fnNumber: 4, defaultValue: 'a<b' };
+    const obj: LabelObject = {
+      id: 't', type: 'text', x: 0, y: 0, rotation: 0, variableId: 'v1',
+      props: { content: '', fontHeight: 30, fontWidth: 0, rotation: 'N', textMode: 'tb', blockWidth: 300, blockHeight: 60 },
+    };
+    const zpl = generateZPL(BASE_LABEL, [obj], [variable]);
+    expect(zpl).toContain('^FN4');
+    expect(zpl).toContain('a<<>b');
+    expect(zpl).not.toContain('^FDa<b');
+    // Round-trip: parser must decode the bound default back to the plain value
+    // (not the encoded form) so re-emit is byte-identical (no drift).
+    const reparsed = parseZPL(zpl, 8);
+    expect(defined(reparsed.variables[0]).defaultValue).toBe('a<b');
+    expect(generateZPL(BASE_LABEL, reparsed.objects, reparsed.variables)).toBe(zpl);
+  });
+
+  it('round-trips a reverse ^TB (^GB knockout collapses back, even h < fontHeight)', () => {
+    for (const blockHeight of [90, 5]) {
+      const obj: LabelObject = {
+        id: 't', type: 'text', x: 10, y: 10, rotation: 0,
+        props: { content: 'rev', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: true, textMode: 'tb', blockWidth: 200, blockHeight },
+      };
+      const zpl = generateZPL(BASE_LABEL, [obj]);
+      const { objects } = parseZPL(zpl, 8);
+      // The ^GB + ^FR + ^TB triple must collapse back to ONE reverse text.
+      expect(objects).toHaveLength(1);
+      expect(objects[0]?.type).toBe('text');
+      expect(props(objects[0]).reverse).toBe(true);
+      expect(props(objects[0]).textMode).toBe('tb');
+      expect(props(objects[0]).blockHeight).toBe(blockHeight);
+    }
+  });
+
+  it('round-trips a literal < through the <<> escape', () => {
+    const obj = {
+      id: 't1', type: 'text' as const, x: 0, y: 0, rotation: 0,
+      props: { content: 'A<B', fontHeight: 30, fontWidth: 0, rotation: 'N' as const, textMode: 'tb' as const, blockWidth: 300, blockHeight: 60 },
+    };
+    const zpl = generateZPL(BASE_LABEL, [obj as unknown as LabelObject]);
+    expect(zpl).toContain('^FDA<<>B');
+    const { objects } = parseZPL(zpl, 8);
+    expect(props(objects[0]).content).toBe('A<B');
+  });
+});
+
 describe('generateZPL — box object', () => {
   it('emits ^GB for a box object', () => {
     const { objects } = parseZPL('^XA^FO10,20^GB200,100,3,B,0^FS^XZ', 8);

@@ -16,7 +16,7 @@ import type { LeafObject } from "../registry";
 import { BARCODE_1D_TYPES, STACKED_2D_TYPES, getEntry } from "../registry";
 import type { LabelConfig } from "../types/LabelConfig";
 import type { ZplRotation } from "../registry/rotation";
-import { blockBoundsDots, zebraLineWidthDots } from "./zebraTextLayout";
+import { blockBoundsDots, tbBoundsDots, zebraLineWidthDots } from "./zebraTextLayout";
 import { resolveDefaultSizeDots } from "./resolveDefaultSize";
 import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET } from "./bwipConstants";
 
@@ -148,14 +148,18 @@ export function objectBoundsDots(obj: LabelObject, ctx: ObjectBoundsCtx): Boundi
     case "text": {
       const p = obj.props;
       if (p.blockWidth && p.blockWidth > 0) {
-        const b = blockBoundsDots({
-          blockWidthDots: p.blockWidth,
-          blockLines: p.blockLines ?? 1,
-          blockLineSpacing: p.blockLineSpacing ?? 0,
-          fontHeight: p.fontHeight,
-          rotation: p.rotation,
-        });
-        // blockBoundsDots is field-anchor-relative (can be negative for R/I/B);
+        // ^TB extent is width x clip-height; ^FB stacks blockLines rows.
+        const b =
+          p.textMode === "tb"
+            ? tbBoundsDots(p.blockWidth, p.blockHeight ?? p.fontHeight, p.rotation)
+            : blockBoundsDots({
+                blockWidthDots: p.blockWidth,
+                blockLines: p.blockLines ?? 1,
+                blockLineSpacing: p.blockLineSpacing ?? 0,
+                fontHeight: p.fontHeight,
+                rotation: p.rotation,
+              });
+        // bounds are field-anchor-relative (can be negative for R/I/B);
         // shift into absolute model space.
         return { x: obj.x + b.x, y: obj.y + b.y, width: b.width, height: b.height };
       }

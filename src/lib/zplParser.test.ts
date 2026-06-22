@@ -553,13 +553,38 @@ describe('parseZPL — ^FB field block', () => {
 // ── ^TB text block ────────────────────────────────────────────────────────────
 
 describe('parseZPL — ^TB text block', () => {
-  it('creates a text object with ^FB-like properties derived from ^TB', () => {
+  it('creates a native text-block object (width + clip height, no line count)', () => {
     const { objects } = parseZPL('^XA^CF0,30^FO0,0^TBN,400,120^FDText block^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).content).toBe('Text block');
+    expect(props(objects[0]).textMode).toBe('tb');
     expect(props(objects[0]).blockWidth).toBe(400);
-    // 120 / 30 = 4 lines
-    expect(props(objects[0]).blockLines).toBe(4);
+    expect(props(objects[0]).blockHeight).toBe(120);
+    expect(props(objects[0]).blockLines).toBeUndefined();
+  });
+
+  it('decodes the <<> escape to a literal <', () => {
+    const { objects } = parseZPL('^XA^A0N,30^FO0,0^TBN,400,60^FDA<<>B^FS^XZ', 8);
+    expect(props(objects[0]).content).toBe('A<B');
+  });
+
+  it('keeps a bare ^TB as a text block (width clamped, not dropped)', () => {
+    const { objects } = parseZPL('^XA^A0N,30^FO0,0^TBN^FDx^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).textMode).toBe('tb');
+    expect(props(objects[0]).blockWidth).toBe(1);
+  });
+
+  it('a ^TB+barcode malformed field does not tb-decode the bound default', () => {
+    // ^TB sets fieldType=text, then ^BC flips it to a barcode; the bound
+    // default must stay raw (match the barcode content), not tb-decoded.
+    const { objects, variables } = parseZPL(
+      '^XA^FO10,10^TBN,200,50^BCN,100,Y,N^FN1^FD<<>HELLO^FS^XZ',
+      8,
+    );
+    expect(objects[0]?.type).toBe('code128');
+    expect(props(objects[0]).content).toBe('<<>HELLO');
+    expect(variables[0]?.defaultValue).toBe('<<>HELLO');
   });
 });
 

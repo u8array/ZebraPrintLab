@@ -4,6 +4,7 @@ import { fieldGridCols, fieldGridCell } from "../ui/formStyles";
 import { NumberInput } from "./NumberInput";
 import { UnitNumberInput } from "./UnitNumberInput";
 import { JustifyButtons } from "./JustifyButtons";
+import { BlockDragModeToggle } from "./BlockDragModeToggle";
 import type { TextProps } from "../../registry/text";
 import {
   isBlockTooNarrow,
@@ -11,7 +12,6 @@ import {
   zebraLineWidthDots,
   wrapBlockLines,
 } from "../../lib/zebraTextLayout";
-import { useLabelStore } from "../../store/labelStore";
 
 interface Props {
   props: TextProps;
@@ -26,8 +26,6 @@ interface Props {
  *  the mismatch but leaves the choice to the user. */
 export function BlockTextSettings({ props: p, onChange }: Props) {
   const t = useT();
-  const blockDragMode = useLabelStore((s) => s.blockDragMode);
-  const setBlockDragMode = useLabelStore((s) => s.setBlockDragMode);
   // Count wrapped lines, not just hard breaks, so soft-wrap overflow (a long
   // line spilling past blockLines) also trips the warning. Uses the printer
   // estimate (same basis as the blockLines cap); the canvas wrap may differ by
@@ -43,27 +41,7 @@ export function BlockTextSettings({ props: p, onChange }: Props) {
   const tooNarrow = isBlockTooNarrow(p.blockWidth ?? 0, p.fontHeight, p.fontWidth);
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <label className={labelCls}>{t.registry.text.dragMode}</label>
-        <div className="flex rounded border border-border overflow-hidden text-xs">
-          {(["frame", "glyph"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setBlockDragMode(m)}
-              className={`px-2 py-0.5 transition-colors ${
-                blockDragMode === m
-                  ? "bg-accent text-surface"
-                  : "text-muted hover:text-text"
-              }`}
-            >
-              {m === "frame"
-                ? t.registry.text.dragModeFrame
-                : t.registry.text.dragModeGlyph}
-            </button>
-          ))}
-        </div>
-      </div>
+      <BlockDragModeToggle />
       <div className="flex items-center justify-between gap-2">
         <label className={labelCls}>{t.registry.text.blockJustify}</label>
         <JustifyButtons
