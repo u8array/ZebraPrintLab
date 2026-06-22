@@ -811,34 +811,37 @@ export function useKonvaTransformer({
       lrNode?.scaleY(1);
       const cur = id ? findObjectById(getCurrentObjects(), id) : undefined;
       const temporal = useLabelStore.temporal.getState();
-      if (lr.changed && id && cur && !isGroup(cur)) {
-        const cp = cur.props as { blockWidth?: number; blockLines?: number; blockHeight?: number };
-        // ^TB collapses width + clip height; ^FB width + line count.
-        const secondAxis = lr.mode === "tb"
-          ? { blockHeight: cp.blockHeight }
-          : { blockLines: cp.blockLines };
-        const snapAxis = lr.mode === "tb"
-          ? { blockHeight: lr.snapshot.blockHeight }
-          : { blockLines: lr.snapshot.blockLines };
-        const final = {
-          x: cur.x,
-          y: cur.y,
-          props: { blockWidth: cp.blockWidth, ...secondAxis },
-        };
-        updateObject(id, {
-          x: lr.snapshot.x,
-          y: lr.snapshot.y,
-          props: {
-            blockWidth: lr.snapshot.blockWidth,
-            ...snapAxis,
-          },
-        });
+      // try/finally so a throw can't leave undo paused (resume is idempotent).
+      try {
+        if (lr.changed && id && cur && !isGroup(cur)) {
+          const cp = cur.props as { blockWidth?: number; blockLines?: number; blockHeight?: number };
+          // ^TB collapses width + clip height; ^FB width + line count.
+          const secondAxis = lr.mode === "tb"
+            ? { blockHeight: cp.blockHeight }
+            : { blockLines: cp.blockLines };
+          const snapAxis = lr.mode === "tb"
+            ? { blockHeight: lr.snapshot.blockHeight }
+            : { blockLines: lr.snapshot.blockLines };
+          const final = {
+            x: cur.x,
+            y: cur.y,
+            props: { blockWidth: cp.blockWidth, ...secondAxis },
+          };
+          updateObject(id, {
+            x: lr.snapshot.x,
+            y: lr.snapshot.y,
+            props: {
+              blockWidth: lr.snapshot.blockWidth,
+              ...snapAxis,
+            },
+          });
+          temporal.resume();
+          updateObject(id, final);
+        }
+      } finally {
         temporal.resume();
-        updateObject(id, final);
-      } else {
-        temporal.resume();
+        cleanupTransformState();
       }
-      cleanupTransformState();
       return;
     }
     // Shape live reflow: same collapse-to-one-entry as the text block. Dims were
@@ -851,31 +854,34 @@ export function useKonvaTransformer({
       srNode?.scaleY(1);
       const cur = id ? findObjectById(getCurrentObjects(), id) : undefined;
       const temporal = useLabelStore.temporal.getState();
-      if (sr.changed && id && cur && !isGroup(cur)) {
-        const sp = cur.props as { width: number; height: number };
-        // Same snap/round/clamp contract as commitWidthHeightTransform, applied
-        // to the already-baked float dims.
-        const width = Math.max(1, snap(Math.round(sp.width)));
-        const height = Math.max(1, snap(Math.round(sp.height)));
-        // Pin the anchored edge: when dragging left/top, derive x/y from the
-        // snapped size so the opposite edge doesn't walk by the snap delta.
-        const edges = activeEdgesRef.current;
-        const final = {
-          x: Math.round(edges?.left ? cur.x + sp.width - width : cur.x),
-          y: Math.round(edges?.top ? cur.y + sp.height - height : cur.y),
-          props: { width, height },
-        };
-        updateObject(id, {
-          x: sr.snapshot.x,
-          y: sr.snapshot.y,
-          props: { width: sr.snapshot.width, height: sr.snapshot.height },
-        });
+      // try/finally so a throw can't leave undo paused (resume is idempotent).
+      try {
+        if (sr.changed && id && cur && !isGroup(cur)) {
+          const sp = cur.props as { width: number; height: number };
+          // Same snap/round/clamp contract as commitWidthHeightTransform, applied
+          // to the already-baked float dims.
+          const width = Math.max(1, snap(Math.round(sp.width)));
+          const height = Math.max(1, snap(Math.round(sp.height)));
+          // Pin the anchored edge: when dragging left/top, derive x/y from the
+          // snapped size so the opposite edge doesn't walk by the snap delta.
+          const edges = activeEdgesRef.current;
+          const final = {
+            x: Math.round(edges?.left ? cur.x + sp.width - width : cur.x),
+            y: Math.round(edges?.top ? cur.y + sp.height - height : cur.y),
+            props: { width, height },
+          };
+          updateObject(id, {
+            x: sr.snapshot.x,
+            y: sr.snapshot.y,
+            props: { width: sr.snapshot.width, height: sr.snapshot.height },
+          });
+          temporal.resume();
+          updateObject(id, final);
+        }
+      } finally {
         temporal.resume();
-        updateObject(id, final);
-      } else {
-        temporal.resume();
+        cleanupTransformState();
       }
-      cleanupTransformState();
       return;
     }
     if (selectedIds.length !== 1 || !selectedIds[0] || !stageRef.current) {
