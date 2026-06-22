@@ -15,11 +15,11 @@ import {
   get1DBwipScale,
   getEanUpcHriFragments,
   renderEanUpcRawCanvas,
-  resolveHriAbove,
   renderTlc39Canvas,
   type BarcodeDisplaySize,
   type EanUpcType,
 } from "./bwipHelpers";
+import { resolveHriAbove } from "../../lib/barcodeHri";
 import { objectRotation } from "../../registry/rotation";
 import { rotatedGroupTransform } from "./rotatedGroupTransform";
 import { buildEanUpcDigitOverlay } from "./eanUpcDigitNodes";

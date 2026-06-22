@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  barSubRect,
   eanUpcHriFontFamily,
   upcSuppAboveGapDots,
   upcSuppTextZoneDots,
@@ -37,4 +38,27 @@ describe("^BS supplement HRI sizing", () => {
       expect(upcSuppTextZoneDots(mw)).toBe(zone);
     });
   }
+});
+
+// The HRI text zone travels around the rotated footprint; render path and the
+// group-rotation bbox probe share this so they can't drift apart.
+describe("barSubRect", () => {
+  it("zero text zone leaves the bars filling the footprint", () => {
+    expect(barSubRect("N", false, 0, 100, 60)).toEqual({ barTop: 0, barLeft: 0, barW: 100, barH: 60 });
+    expect(barSubRect("R", true, 0, 100, 60)).toEqual({ barTop: 0, barLeft: 0, barW: 100, barH: 60 });
+  });
+
+  it("below HRI: zone sits opposite the reading direction (N bottom, R left, I top, B right)", () => {
+    expect(barSubRect("N", false, 13, 100, 60)).toEqual({ barTop: 0, barLeft: 0, barW: 100, barH: 47 });
+    expect(barSubRect("R", false, 13, 100, 60)).toEqual({ barTop: 0, barLeft: 13, barW: 87, barH: 60 });
+    expect(barSubRect("I", false, 13, 100, 60)).toEqual({ barTop: 13, barLeft: 0, barW: 100, barH: 47 });
+    expect(barSubRect("B", false, 13, 100, 60)).toEqual({ barTop: 0, barLeft: 0, barW: 87, barH: 60 });
+  });
+
+  it("above HRI: zone flips to the reading side (N top, R right, I bottom, B left)", () => {
+    expect(barSubRect("N", true, 13, 100, 60)).toEqual({ barTop: 13, barLeft: 0, barW: 100, barH: 47 });
+    expect(barSubRect("R", true, 13, 100, 60)).toEqual({ barTop: 0, barLeft: 0, barW: 87, barH: 60 });
+    expect(barSubRect("I", true, 13, 100, 60)).toEqual({ barTop: 0, barLeft: 0, barW: 100, barH: 47 });
+    expect(barSubRect("B", true, 13, 100, 60)).toEqual({ barTop: 0, barLeft: 13, barW: 87, barH: 60 });
+  });
 });

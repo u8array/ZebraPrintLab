@@ -1,3 +1,5 @@
+import type { ZplRotation } from "../registry/rotation";
+
 export const QR_FO_Y_OFFSET_DOTS = 10;
 export const QR_FT_MODULE_OFFSET = 3;
 
@@ -124,3 +126,45 @@ export const EAN_UPC_TYPES = new Set<string>([
   "upca",
   "upce",
 ]);
+
+export interface BarSubRect {
+  barTop: number;
+  barLeft: number;
+  barW: number;
+  barH: number;
+}
+
+/** Place the firmware-reserved HRI text zone within the rotated barcode
+ *  footprint; the upright "below the bars" zone travels around the rectangle as
+ *  the symbol rotates. Unit-agnostic (px or dots). Single source for the render
+ *  path (getDisplaySize) and the rotation bbox probe (groupRotation), no drift. */
+export function barSubRect(
+  rotation: ZplRotation,
+  zoneAbove: boolean,
+  textZone: number,
+  width: number,
+  height: number,
+): BarSubRect {
+  let barTop = 0;
+  let barLeft = 0;
+  let barW = width;
+  let barH = height;
+  if (textZone > 0) {
+    if (!zoneAbove) {
+      switch (rotation) {
+        case "N": barH = height - textZone; break;
+        case "R": barLeft = textZone; barW = width - textZone; break;
+        case "I": barTop = textZone; barH = height - textZone; break;
+        case "B": barW = width - textZone; break;
+      }
+    } else {
+      switch (rotation) {
+        case "N": barTop = textZone; barH = height - textZone; break;
+        case "R": barW = width - textZone; break;
+        case "I": barH = height - textZone; break;
+        case "B": barLeft = textZone; barW = width - textZone; break;
+      }
+    }
+  }
+  return { barTop, barLeft, barW, barH };
+}

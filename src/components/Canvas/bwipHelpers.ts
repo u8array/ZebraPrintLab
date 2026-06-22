@@ -2,7 +2,8 @@
 // canvas. Per-symbology rationale lives at each case in getUprightDisplaySize.
 
 import bwipjs from "bwip-js/browser";
-import { ObjectRegistry, type LeafObject } from "../../registry";
+import { type LeafObject } from "../../registry";
+import { barcodeTextZoneDots, barcodeZoneAbove } from "../../lib/barcodeHri";
 import { upceData6FromFd } from "../../registry/hriFormatters";
 import type { LabelObject } from "../../types/Group";
 import type { Gs1DatabarProps } from "../../registry/gs1databar";
@@ -15,10 +16,10 @@ import {
   gs1ContentToElementString,
 } from "../../lib/gs1";
 import {
+  barSubRect,
   CODE11_QUIET_ZONE_DELTA_MODULES,
   CODE93_QUIET_ZONE_DELTA_MODULES,
   EAN_TEXT_ZONE_DOTS,
-  EAN_UPC_TYPES,
   GS1_DATABAR_PADDING_ROWS,
   GS1_DATABAR_SPEC_HEIGHT_MODULES,
   LOGMARS_TEXT_ZONE_DOTS,
@@ -582,25 +583,6 @@ export interface BarcodeDisplaySize {
   bitmapCrop?: { x: number; y: number; width: number; height: number };
 }
 
-/** Firmware-reserved text-zone height in dots (below bars in upright). */
-const TEXT_ZONE_DOTS_BY_TYPE: Partial<Record<LabelObject["type"], number>> = {
-  ean13: EAN_TEXT_ZONE_DOTS,
-  ean8: EAN_TEXT_ZONE_DOTS,
-  upca: EAN_TEXT_ZONE_DOTS,
-  upce: EAN_TEXT_ZONE_DOTS,
-  logmars: LOGMARS_TEXT_ZONE_DOTS,
-};
-
-/** HRI sits above the bars when the per-object toggle is set or the symbology
- *  hardcodes it (logmars/^BS). Single source for the render path and the bbox
- *  sizing so overlay and bbox never disagree (PR #90). */
-export function resolveHriAbove(obj: LeafObject): boolean {
-  return !!(
-    (obj.props as { printInterpretationAbove?: boolean }).printInterpretationAbove ||
-    ObjectRegistry[obj.type]?.hri?.textAbove
-  );
-}
-
 export function getDisplaySize(
   obj: LeafObject,
   canvas: HTMLCanvasElement,
@@ -622,48 +604,18 @@ export function getDisplaySize(
   const w = isQuarter ? upright.h : upright.w;
   const h = isQuarter ? upright.w : upright.h;
 
-  // ^BS reserves text zone only when printInterpretation=Y; other EAN/UPC
-  // reserve the 13-dot zone unconditionally (firmware ships a fixed guard).
-  const textZoneDots =
-    obj.type === "upcEanExtension"
-      ? obj.props.printInterpretation
-        ? upcSuppTextZoneDots(obj.props.moduleWidth)
-        : 0
-      : TEXT_ZONE_DOTS_BY_TYPE[obj.type] ?? 0;
-  const textZonePx = dotsToPx(textZoneDots, scale, dpmm);
-  const isTextAbove = resolveHriAbove(obj);
-  // EAN/UPC reserve the zone for the guard tails, which stay below the bars
-  // regardless of HRI position; the above HRI floats over the bars (negative
-  // y in BarcodeObject), so the zone never flips for them.
-  const zoneAbove = isTextAbove && !EAN_UPC_TYPES.has(obj.type);
+  const textZonePx = dotsToPx(barcodeTextZoneDots(obj), scale, dpmm);
+  const zoneAbove = barcodeZoneAbove(obj);
 
   // Map the upright "below the bars" zone onto the rotated bbox: it travels
-  // around the rectangle as the symbol rotates.
-  //   N (0°)   text zone at bottom → barTopPx=0,           barH = h - textZonePx
-  //   R (90°)  text zone at left   → barLeftPx=textZonePx, barW = w - textZonePx
-  //   I (180°) text zone at top    → barTopPx=textZonePx,  barH = h - textZonePx
-  //   B (270°) text zone at right  → barLeftPx=0,          barW = w - textZonePx
-  let barTopPx = 0;
-  let barLeftPx = 0;
-  let barW = w;
-  let barH = h;
-  if (textZonePx > 0) {
-    if (!zoneAbove) {
-      switch (rotation) {
-        case "N": barH = h - textZonePx; break;
-        case "R": barLeftPx = textZonePx; barW = w - textZonePx; break;
-        case "I": barTopPx = textZonePx; barH = h - textZonePx; break;
-        case "B": barW = w - textZonePx; break;
-      }
-    } else {
-      switch (rotation) {
-        case "N": barTopPx = textZonePx; barH = h - textZonePx; break;
-        case "R": barW = w - textZonePx; break;
-        case "I": barH = h - textZonePx; break;
-        case "B": barLeftPx = textZonePx; barW = w - textZonePx; break;
-      }
-    }
-  }
+  // around the rectangle as the symbol rotates (shared with groupRotation's bbox).
+  const { barTop: barTopPx, barLeft: barLeftPx, barW, barH } = barSubRect(
+    rotation,
+    zoneAbove,
+    textZonePx,
+    w,
+    h,
+  );
 
   // Crop GS1 DataBar paddingheight rows so bars fill the firmware-reserved height.
   let bitmapCrop: BarcodeDisplaySize["bitmapCrop"];

@@ -6,6 +6,7 @@ import {
   useEffect,
   useLayoutEffect,
   useState,
+  useSyncExternalStore,
   useCallback,
 } from "react";
 import { useDroppable, useDndMonitor } from "@dnd-kit/core";
@@ -22,9 +23,10 @@ import type { SnapGuide } from "../../lib/snapGuides";
 import { computeAlignDeltas, computeDistribute, computeTidy } from "../../lib/align";
 import type { AlignOp, AlignBox, DistributeAxis, AlignRef } from "../../lib/align";
 import { objectBoundsDots, selectionUnionDots } from "../../lib/objectBounds";
+import { rotateSelectionChanges } from "../../lib/groupRotation";
 import { selectTidyTargets } from "../../lib/tidyClassify";
 import { safeAreaRectDots } from "../../lib/safeArea";
-import { measuredBoundsMap } from "./measuredBoundsCache";
+import { measuredBoundsMap, subscribeMeasuredBounds, getMeasuredSnapshot } from "./measuredBoundsCache";
 import { mmToDots } from "../../lib/coordinates";
 import { isEditableTarget } from "../../lib/dom";
 import { KonvaObject } from "./KonvaObject";
@@ -139,6 +141,11 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const transformActiveRef = useRef(false);
   const barHalfRef = useRef({ w: 0, h: 0 });
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  // Reactive view of the measured-footprint cache. The render layer publishes
+  // footprints in a post-render effect (barcodes only after their async draw),
+  // so reading the snapshot here is what makes the selection frame recompute once
+  // they settle, e.g. after a group rotation swaps a barcode's footprint.
+  const measuredSnapshot = useSyncExternalStore(subscribeMeasuredBounds, getMeasuredSnapshot);
   const rotateView = () => onViewRotationChange(nextRotation(viewRotation));
   const [guides, setGuides] = useState<SnapGuide[]>([]);
   // Drag-snap guides live in group-local space (rendered inside the rotation
@@ -438,7 +445,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const isMultiFrame = attachableIds.length > 1;
   // One selected group = solid frame (persistent); several picks = dashed (ad-hoc).
   const isMultiSelection = selectedIds.length > 1;
-  const frameCtx = { label, measured: measuredBoundsMap() };
+  // Snapshot (not the live map) so the frame derivations recompute when a
+  // settled footprint changes; the changing snapshot reference is the signal.
+  const frameCtx = { label, measured: measuredSnapshot };
   // Hidden leaves never render, so the old client-rect path ignored them; keep
   // them out of the model-based bounds too.
   // visibleLeaves carries the cascaded (effective) lock; read it, not the raw
@@ -762,6 +771,19 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     });
   };
 
+  // Group / multi-select rotate: one clockwise quarter turn about the union
+  // centre, applied as a single batch so undo treats it as one step.
+  const canRotateGroup =
+    !allSelectedLocked &&
+    (selectedIds.length > 1 || (!!singleSelected && isGroup(singleSelected)));
+  const handleRotateGroup = () => {
+    if (!canRotateGroup) return;
+    const changes = rotateSelectionChanges(objects, selectedIds, frameCtx, 1);
+    if (changes.size === 0) return;
+    updateObjects([...changes].map(([id, c]) => ({ id, changes: c })));
+    // Frame recomputes via subscribeMeasuredBounds once children republish.
+  };
+
   // Group when 2+ top-level objects are selectable; ungroup when the selection
   // holds at least one top-level group. Both can be true at once (a group plus
   // a loose object), so both buttons can show.
@@ -784,6 +806,14 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       iconPath: ROTATE_ICON,
       tone: "neutral",
       onClick: handleRotateStep,
+    });
+  }
+  if (canRotateGroup) {
+    actionButtons.push({
+      key: "rotate-group",
+      iconPath: ROTATE_ICON,
+      tone: "neutral",
+      onClick: handleRotateGroup,
     });
   }
   if (canGroup) {
