@@ -526,6 +526,27 @@ const ar = {
     previewNoticePrivacyLink: 'خطط Labelary والاحتفاظ بالبيانات',
     previewNoticeAcknowledge: 'فهمت، تابع',
   },
+  contextMenu: {
+    copy: 'نسخ',
+    cut: 'قص',
+    duplicate: 'تكرار',
+    delete: 'حذف',
+    pasteHere: 'لصق هنا',
+    bringToFront: 'إحضار إلى الأمام',
+    bringForward: 'تقديم للأمام',
+    sendBackward: 'إرسال للخلف',
+    sendToBack: 'إرسال إلى الخلف',
+    group: 'تجميع',
+    ungroup: 'إلغاء التجميع',
+    lock: 'قفل',
+    unlock: 'إلغاء القفل',
+    copyZplSelected: 'نسخ ZPL (التحديد)',
+    copyZplLabel: 'نسخ ZPL (الملصق)',
+    copyImage: 'نسخ الصورة',
+    exportImage: 'تصدير الصورة (PNG)',
+    addObjectHere: 'إضافة كائن هنا',
+    selectAll: 'تحديد الكل',
+  },
 
   registry: {
     text: {

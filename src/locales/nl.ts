@@ -526,6 +526,27 @@ const nl = {
     previewNoticePrivacyLink: 'Labelary-abonnementen en gegevensbewaring',
     previewNoticeAcknowledge: 'Begrepen, doorgaan',
   },
+  contextMenu: {
+    copy: 'Kopiëren',
+    cut: 'Knippen',
+    duplicate: 'Dupliceren',
+    delete: 'Verwijderen',
+    pasteHere: 'Hier plakken',
+    bringToFront: 'Naar voorgrond',
+    bringForward: 'Naar voren',
+    sendBackward: 'Naar achteren',
+    sendToBack: 'Naar achtergrond',
+    group: 'Groeperen',
+    ungroup: 'Groepering opheffen',
+    lock: 'Vergrendelen',
+    unlock: 'Ontgrendelen',
+    copyZplSelected: 'ZPL kopiëren (selectie)',
+    copyZplLabel: 'ZPL kopiëren (label)',
+    copyImage: 'Afbeelding kopiëren',
+    exportImage: 'Afbeelding exporteren (PNG)',
+    addObjectHere: 'Object hier toevoegen',
+    selectAll: 'Alles selecteren',
+  },
 
   registry: {
     text: {

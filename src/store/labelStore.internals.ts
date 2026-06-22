@@ -152,6 +152,38 @@ export function cloneChildrenFresh(children: LabelObject[]): LabelObject[] {
   });
 }
 
+/** Deep-clone one node with fresh ids, shifted by (dx, dy). Group children
+ *  carry absolute coords, so the shift recurses into them; shifting only the
+ *  group's structural x/y would leave the copy on top of the original. */
+export function cloneShifted(src: LabelObject, dx: number, dy: number): LabelObject {
+  if (isGroup(src)) {
+    return {
+      ...src,
+      id: crypto.randomUUID(),
+      x: src.x + dx,
+      y: src.y + dy,
+      children: src.children.map((c) => cloneShifted(c, dx, dy)),
+    };
+  }
+  return {
+    ...src,
+    id: crypto.randomUUID(),
+    x: src.x + dx,
+    y: src.y + dy,
+    props: { ...src.props },
+  } as LabelObject;
+}
+
+/** Clone clipboard entries with fresh ids, shifted by (dx, dy). Fresh ids per
+ *  paste avoid collisions across repeated pastes from the same clipboard. */
+export function freshPasteCopies(
+  clipboard: readonly LabelObject[],
+  dx: number,
+  dy: number,
+): LabelObject[] {
+  return clipboard.map((src) => cloneShifted(src, dx, dy));
+}
+
 /** Build offset copies of objects identified by `ids`. Missing ids are
  *  silently dropped. Props are shallow-cloned to avoid sharing the
  *  reference with the original. */
@@ -160,22 +192,7 @@ export function buildOffsetCopies(objs: LabelObject[], ids: readonly string[]): 
   return ids.flatMap((id) => {
     const src = byId.get(id);
     if (!src) return [];
-    if (isGroup(src)) {
-      return [{
-        ...src,
-        id: crypto.randomUUID(),
-        x: src.x + DUPLICATE_OFFSET_DOTS,
-        y: src.y + DUPLICATE_OFFSET_DOTS,
-        children: cloneChildrenFresh(src.children),
-      }];
-    }
-    return [{
-      ...src,
-      id: crypto.randomUUID(),
-      x: src.x + DUPLICATE_OFFSET_DOTS,
-      y: src.y + DUPLICATE_OFFSET_DOTS,
-      props: { ...src.props },
-    } as LabelObject];
+    return [cloneShifted(src, DUPLICATE_OFFSET_DOTS, DUPLICATE_OFFSET_DOTS)];
   });
 }
 

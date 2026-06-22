@@ -15,8 +15,12 @@ export function selectionHandlers(onSelect: (add: boolean) => void): {
   onTap: () => void;
 } {
   return {
-    onClick: (e) =>
-      onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey),
+    // Right-click leaves the selection untouched so a multi-select / group
+    // survives; the context-menu handler selects an unselected target itself.
+    onClick: (e) => {
+      if (e.evt.button === 2) return;
+      onSelect(e.evt.shiftKey || e.evt.ctrlKey || e.evt.metaKey);
+    },
     onTap: () => onSelect(false),
   };
 }

@@ -526,6 +526,27 @@ const sv = {
     previewNoticePrivacyLink: 'Labelary-abonnemang och datalagring',
     previewNoticeAcknowledge: 'Uppfattat, fortsätt',
   },
+  contextMenu: {
+    copy: 'Kopiera',
+    cut: 'Klipp ut',
+    duplicate: 'Duplicera',
+    delete: 'Ta bort',
+    pasteHere: 'Klistra in här',
+    bringToFront: 'Placera överst',
+    bringForward: 'Flytta framåt',
+    sendBackward: 'Flytta bakåt',
+    sendToBack: 'Placera underst',
+    group: 'Gruppera',
+    ungroup: 'Dela upp grupp',
+    lock: 'Lås',
+    unlock: 'Lås upp',
+    copyZplSelected: 'Kopiera ZPL (urval)',
+    copyZplLabel: 'Kopiera ZPL (etikett)',
+    copyImage: 'Kopiera bild',
+    exportImage: 'Exportera bild (PNG)',
+    addObjectHere: 'Lägg till objekt här',
+    selectAll: 'Markera allt',
+  },
 
   registry: {
     text: {

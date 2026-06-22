@@ -526,6 +526,27 @@ const cs = {
     previewNoticePrivacyLink: 'Tarify a uchovávání dat Labelary',
     previewNoticeAcknowledge: 'Rozumím, pokračovat',
   },
+  contextMenu: {
+    copy: 'Kopírovat',
+    cut: 'Vyjmout',
+    duplicate: 'Duplikovat',
+    delete: 'Odstranit',
+    pasteHere: 'Vložit sem',
+    bringToFront: 'Přenést do popředí',
+    bringForward: 'Přenést blíž',
+    sendBackward: 'Přenést dál',
+    sendToBack: 'Přenést do pozadí',
+    group: 'Seskupit',
+    ungroup: 'Zrušit seskupení',
+    lock: 'Zamknout',
+    unlock: 'Odemknout',
+    copyZplSelected: 'Kopírovat ZPL (výběr)',
+    copyZplLabel: 'Kopírovat ZPL (etiketa)',
+    copyImage: 'Kopírovat obrázek',
+    exportImage: 'Exportovat obrázek (PNG)',
+    addObjectHere: 'Přidat objekt sem',
+    selectAll: 'Vybrat vše',
+  },
 
   registry: {
     text: {

@@ -526,6 +526,27 @@ const el = {
     previewNoticePrivacyLink: 'Πλάνα και διατήρηση δεδομένων Labelary',
     previewNoticeAcknowledge: 'Κατάλαβα, συνέχεια',
   },
+  contextMenu: {
+    copy: 'Αντιγραφή',
+    cut: 'Αποκοπή',
+    duplicate: 'Διπλασιασμός',
+    delete: 'Διαγραφή',
+    pasteHere: 'Επικόλληση εδώ',
+    bringToFront: 'Μεταφορά μπροστά',
+    bringForward: 'Μετακίνηση εμπρός',
+    sendBackward: 'Μετακίνηση πίσω',
+    sendToBack: 'Μεταφορά πίσω',
+    group: 'Ομαδοποίηση',
+    ungroup: 'Κατάργηση ομαδοποίησης',
+    lock: 'Κλείδωμα',
+    unlock: 'Ξεκλείδωμα',
+    copyZplSelected: 'Αντιγραφή ZPL (επιλογή)',
+    copyZplLabel: 'Αντιγραφή ZPL (ετικέτα)',
+    copyImage: 'Αντιγραφή εικόνας',
+    exportImage: 'Εξαγωγή εικόνας (PNG)',
+    addObjectHere: 'Προσθήκη αντικειμένου εδώ',
+    selectAll: 'Επιλογή όλων',
+  },
 
   registry: {
     text: {

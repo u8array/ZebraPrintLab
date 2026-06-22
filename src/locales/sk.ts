@@ -526,6 +526,27 @@ const sk = {
     previewNoticePrivacyLink: 'Plány Labelary a uchovávanie údajov',
     previewNoticeAcknowledge: 'Rozumiem, pokračovať',
   },
+  contextMenu: {
+    copy: 'Kopírovať',
+    cut: 'Vystrihnúť',
+    duplicate: 'Duplikovať',
+    delete: 'Odstrániť',
+    pasteHere: 'Vložiť sem',
+    bringToFront: 'Preniesť do popredia',
+    bringForward: 'Preniesť bližšie',
+    sendBackward: 'Preniesť ďalej',
+    sendToBack: 'Preniesť do pozadia',
+    group: 'Zoskupiť',
+    ungroup: 'Zrušiť zoskupenie',
+    lock: 'Uzamknúť',
+    unlock: 'Odomknúť',
+    copyZplSelected: 'Kopírovať ZPL (výber)',
+    copyZplLabel: 'Kopírovať ZPL (etiketa)',
+    copyImage: 'Kopírovať obrázok',
+    exportImage: 'Exportovať obrázok (PNG)',
+    addObjectHere: 'Pridať objekt sem',
+    selectAll: 'Vybrať všetko',
+  },
 
   registry: {
     text: {

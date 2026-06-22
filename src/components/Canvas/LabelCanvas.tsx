@@ -31,8 +31,9 @@ import { KonvaObject } from "./KonvaObject";
 import { Grid } from "./Grid";
 import { GuideLines } from "./GuideLines";
 import { Ruler, RULER_SIZE } from "./Ruler";
-import { getEntry } from "../../registry";
+import { getEntry, ObjectRegistry } from "../../registry";
 import type { LeafObject } from "../../registry";
+import { PALETTE_GROUPS } from "../Palette/paletteGroups";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { useT } from "../../lib/useT";
 import { useCanvasPanZoom } from "./hooks/useCanvasPanZoom";
@@ -56,6 +57,19 @@ import {
   getStepRotation,
   nextZplRotation,
 } from "../../registry/rotation";
+import { CanvasContextMenu } from "./CanvasContextMenu";
+import { buildContextMenu, type MenuSection } from "./canvasActions";
+import { zplForSelection } from "../../lib/zplForSelection";
+import { generateMultiPageZPL } from "../../lib/zplGenerator";
+import { nodeToPngBlob, downloadBlob, copyPngToClipboard } from "../../lib/canvasImage";
+
+/** Object types offered by the context menu's "Add object here". */
+// Curated quick-add subset for the context menu, not every registry type; the
+// full catalogue lives in the palette.
+
+// Konva name on editor-only chrome (grid, safe-area, selection frames) so image
+// capture can hide it and export just the label paper plus its objects.
+const CAPTURE_CHROME = "capture-chrome";
 
 const PADDING = 40;
 // Horizontal stride between action-bar buttons (render-side row layout).
@@ -115,9 +129,14 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // Action-bar chrome refs live here so the drag onDelta can translate the bar
   // live (its own beforeDraw lags for controller-moved siblings).
   const actionBarRef = useRef<Konva.Group>(null);
-  // The view-rotation group; the action bar lives outside it (stage coords), so
-  // its rest bounds must be mapped through this group's transform when rotated.
+  // The view-rotation / label group. The action bar lives outside it (stage
+  // coords), so its rest bounds map through this group's transform when rotated;
+  // image export also captures it to exclude the transformer / action-bar chrome.
   const rotationGroupRef = useRef<Konva.Group>(null);
+  // The white label paper; its drop shadow is dropped during image capture so
+  // the PNG is the label rect, not a shadow-padded box.
+  const labelPaperRef = useRef<Konva.Rect>(null);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; sections: MenuSection[] } | null>(null);
   const lockedFrameRef = useRef<Konva.Group>(null);
   const dragActiveRef = useRef(false);
   const transformActiveRef = useRef(false);
@@ -158,8 +177,16 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     setSelectionLocked,
     groupSelection,
     ungroup,
+    copySelectedObjects,
+    pasteObjectsAt,
+    duplicateSelectedObjects,
+    reorderSelection,
+    clipboard,
+    variables,
+    pages,
   } = useLabelStore();
   const objects = useCurrentObjects();
+  const paletteFavorites = useLabelStore((s) => s.paletteFavorites);
   const previewMode = useLabelStore((s) => s.previewMode);
   const previewLocks = useLabelStore(selectPreviewLocksEditor);
   const exitPreviewMode = useLabelStore((s) => s.exitPreviewMode);
@@ -875,6 +902,121 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     };
   };
 
+  // PNG of the label paper and its objects only: hide editor chrome (grid,
+  // safe-area, selection frames) and drop the view rotation so the image is the
+  // canonical label, not the rotated viewport. Restore both afterwards.
+  const captureLabelImage = async (): Promise<Blob | null> => {
+    const group = rotationGroupRef.current;
+    if (!group) return null;
+    const chrome = group.find(`.${CAPTURE_CHROME}`);
+    const rotation = group.rotation();
+    const paper = labelPaperRef.current;
+    chrome.forEach((n) => n.visible(false));
+    // The paper shadow pads the node bbox; drop it so the PNG crops to the label.
+    paper?.shadowEnabled(false);
+    group.rotation(0);
+    try {
+      return await nodeToPngBlob(group);
+    } finally {
+      chrome.forEach((n) => n.visible(true));
+      paper?.shadowEnabled(true);
+      group.rotation(rotation);
+    }
+  };
+
+  const openContextMenu = (e: Konva.KonvaEventObject<PointerEvent>) => {
+    e.evt.preventDefault();
+    // No menu during a preview lock; every action would be disabled anyway and
+    // we must not mutate the selection behind it.
+    if (previewLocks) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    // Find the object under the click by walking up to the first node whose id
+    // is a known object; the white label Rect / stage count as empty.
+    let targetId: string | null = null;
+    let node: Konva.Node | null = e.target;
+    while (node && node !== stage) {
+      const id = node.id?.();
+      if (id && findObjectById(objects, id)) {
+        // Resolve a grouped child to its outermost group, like the drag handler.
+        targetId = selectionTargetId(objects, id);
+        break;
+      }
+      node = node.getParent();
+    }
+    const onObject = targetId !== null;
+    // Right-clicking an unselected object selects just it; an already-selected
+    // one keeps the (possibly multi) selection.
+    if (onObject && targetId && !selectedIds.includes(targetId)) selectObject(targetId);
+    const sel =
+      targetId && !selectedIds.includes(targetId) ? [targetId] : selectedIds;
+    const click = pointerToLabelDots(e.evt.clientX, e.evt.clientY) ?? { x: 0, y: 0 };
+    const dispatch = {
+      copy: copySelectedObjects,
+      cut: () => {
+        copySelectedObjects();
+        removeSelectedObjects();
+      },
+      duplicate: duplicateSelectedObjects,
+      remove: removeSelectedObjects,
+      pasteHere: () => pasteObjectsAt(click.x, click.y),
+      reorder: reorderSelection,
+      group: groupSelection,
+      ungroup,
+      toggleLock: () => setSelectionLocked(!isSelectionLocked(objects, sel)),
+      addHere: (type: string) => addObject(type, click),
+      copyZplSelected: () => {
+        void navigator.clipboard?.writeText(zplForSelection(label, objects, sel, variables));
+      },
+      copyZplLabel: () => {
+        void navigator.clipboard?.writeText(generateMultiPageZPL(label, pages, variables));
+      },
+      copyImage: () => {
+        // Call write synchronously with the pending blob so the user activation
+        // survives the async capture. Unsupported / failure stays a silent no-op.
+        const blob = captureLabelImage().then((b) => {
+          if (!b) throw new Error("capture-failed");
+          return b;
+        });
+        void copyPngToClipboard(blob).catch(() => undefined);
+      },
+      exportImage: async () => {
+        const blob = await captureLabelImage();
+        if (blob) downloadBlob(blob, "label.png");
+      },
+      selectAll: () => selectObjects(objects.map((o) => o.id)),
+    };
+    // Add-here mirrors the palette: favorites first (when pinned), then the
+    // registry groups in palette order. Empty groups drop out.
+    const typeLabel = (type: string) =>
+      (t.types as Record<string, string>)[type] ?? getEntry(type)?.label ?? type;
+    const typesInGroup = (key: string) =>
+      Object.entries(ObjectRegistry)
+        .filter(([, def]) => def.group === key)
+        .map(([type]) => ({ type, label: typeLabel(type) }));
+    const favTypes = paletteFavorites
+      .filter((type) => getEntry(type))
+      .map((type) => ({ type, label: typeLabel(type) }));
+    const addableGroups = [
+      ...(favTypes.length ? [{ id: "favorites", label: t.palette.favorites, types: favTypes }] : []),
+      ...PALETTE_GROUPS.map((g) => ({ id: g.key, label: t.palette[g.labelKey], types: typesInGroup(g.key) })),
+    ].filter((g) => g.types.length > 0);
+    const sections = buildContextMenu({
+      onObject,
+      hasSelection: sel.length > 0,
+      canGroup: sel.length > 1 && canGroupSelection(objects, sel),
+      canUngroup: canUngroupSelection(objects, sel),
+      canDelete: canDeleteSelection(objects, sel),
+      locked: isSelectionLocked(objects, sel),
+      hasClipboard: clipboard.length > 0,
+      hasObjects: objects.length > 0,
+      previewLocks,
+      addableGroups,
+      dispatch,
+    });
+    setCtxMenu({ x: e.evt.clientX, y: e.evt.clientY, sections });
+  };
+
   useDndMonitor({
     onDragMove(event) {
       if (previewLocks || event.over?.id !== "canvas") {
@@ -1041,6 +1183,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
           width={containerSize.width}
           height={containerSize.height}
           onClick={handleStageClick}
+          onContextMenu={openContextMenu}
           onMouseDown={onStageMouseDown}
           onDragStart={(e) => {
             cancelLasso();
@@ -1079,6 +1222,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               offsetY={labelCenterY}
             >
               <Rect
+                ref={labelPaperRef}
                 x={labelOffsetX}
                 y={labelOffsetY}
                 width={labelWidthPx}
@@ -1094,6 +1238,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               {/* Safe-area guide: non-interactive dashed inset, accent like the ^FB wrap-guide. */}
               {!previewLocks && safeAreaPx && (
                 <Rect
+                  name={CAPTURE_CHROME}
                   x={safeAreaPx.x}
                   y={safeAreaPx.y}
                   width={safeAreaPx.width}
@@ -1106,15 +1251,17 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               )}
 
               {showGrid && (
-                <Grid
-                  labelOffsetX={labelOffsetX}
-                  labelOffsetY={labelOffsetY}
-                  labelWidthPx={labelWidthPx}
-                  labelHeightPx={labelHeightPx}
-                  scale={scale}
-                  snapSizeMm={snapSizeMm}
-                  colors={colors}
-                />
+                <Group name={CAPTURE_CHROME} listening={false}>
+                  <Grid
+                    labelOffsetX={labelOffsetX}
+                    labelOffsetY={labelOffsetY}
+                    labelWidthPx={labelWidthPx}
+                    labelHeightPx={labelHeightPx}
+                    scale={scale}
+                    snapSizeMm={snapSizeMm}
+                    colors={colors}
+                  />
+                </Group>
               )}
 
               {/* Preview replaces editor leaves so user sees the Labelary render at same scale. */}
@@ -1179,6 +1326,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               {!previewLocks && selectionFrameBase && (
                 <Rect
                   ref={selectionFrameRef}
+                  name={CAPTURE_CHROME}
                   stroke={allSelectedLocked ? colors.accent : colors.selection}
                   strokeWidth={1.5}
                   dash={isMultiSelection || allSelectedLocked ? [6, 4] : undefined}
@@ -1189,7 +1337,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
               {/* Box per group member: movable parts (blue) drag; locked parts
                   (amber, the locked convention) stay put. */}
               {!previewLocks && movableGroupRects.length > 0 && (
-                <Group ref={subOutlineGroupRef} listening={false}>
+                <Group ref={subOutlineGroupRef} name={CAPTURE_CHROME} listening={false}>
                   {movableGroupRects.map((r, i) => (
                     <Rect
                       key={i}
@@ -1205,7 +1353,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 </Group>
               )}
               {!previewLocks && staticGroupRects.length > 0 && (
-                <Group listening={false}>
+                <Group name={CAPTURE_CHROME} listening={false}>
                   {staticGroupRects.map((r, i) => (
                     <Rect
                       key={i}
@@ -1359,6 +1507,15 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
             />
           </Layer>
         </Stage>
+      )}
+      {ctxMenu && (
+        <CanvasContextMenu
+          sections={ctxMenu.sections}
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          labels={t.contextMenu as unknown as Record<string, string>}
+          onClose={() => setCtxMenu(null)}
+        />
       )}
     </div>
   );

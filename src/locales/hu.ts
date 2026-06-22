@@ -526,6 +526,27 @@ const hu = {
     previewNoticePrivacyLink: 'Labelary csomagok és adatmegőrzés',
     previewNoticeAcknowledge: 'Értem, folytatás',
   },
+  contextMenu: {
+    copy: 'Másolás',
+    cut: 'Kivágás',
+    duplicate: 'Megkettőzés',
+    delete: 'Törlés',
+    pasteHere: 'Beillesztés ide',
+    bringToFront: 'Előrébb hozás',
+    bringForward: 'Előre hozás',
+    sendBackward: 'Hátrébb küldés',
+    sendToBack: 'Hátulra küldés',
+    group: 'Csoportosítás',
+    ungroup: 'Csoport bontása',
+    lock: 'Zárolás',
+    unlock: 'Feloldás',
+    copyZplSelected: 'ZPL másolása (kijelölés)',
+    copyZplLabel: 'ZPL másolása (címke)',
+    copyImage: 'Kép másolása',
+    exportImage: 'Kép exportálása (PNG)',
+    addObjectHere: 'Objektum hozzáadása ide',
+    selectAll: 'Összes kijelölése',
+  },
 
   registry: {
     text: {

@@ -526,6 +526,27 @@ const ja = {
     previewNoticePrivacyLink: 'Labelary プランとデータ保持',
     previewNoticeAcknowledge: '了解しました、続行',
   },
+  contextMenu: {
+    copy: 'コピー',
+    cut: '切り取り',
+    duplicate: '複製',
+    delete: '削除',
+    pasteHere: 'ここに貼り付け',
+    bringToFront: '最前面へ移動',
+    bringForward: '前面へ移動',
+    sendBackward: '背面へ移動',
+    sendToBack: '最背面へ移動',
+    group: 'グループ化',
+    ungroup: 'グループ解除',
+    lock: 'ロック',
+    unlock: 'ロック解除',
+    copyZplSelected: 'ZPLをコピー（選択範囲）',
+    copyZplLabel: 'ZPLをコピー（ラベル）',
+    copyImage: '画像をコピー',
+    exportImage: '画像をエクスポート（PNG）',
+    addObjectHere: 'ここにオブジェクトを追加',
+    selectAll: 'すべて選択',
+  },
 
   registry: {
     text: {

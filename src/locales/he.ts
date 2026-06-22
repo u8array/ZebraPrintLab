@@ -526,6 +526,27 @@ const he = {
     previewNoticePrivacyLink: 'תוכניות Labelary ושימור נתונים',
     previewNoticeAcknowledge: 'הבנתי, המשך',
   },
+  contextMenu: {
+    copy: 'העתק',
+    cut: 'גזור',
+    duplicate: 'שכפל',
+    delete: 'מחק',
+    pasteHere: 'הדבק כאן',
+    bringToFront: 'הבא לחזית',
+    bringForward: 'הזז קדימה',
+    sendBackward: 'הזז אחורה',
+    sendToBack: 'שלח לרקע',
+    group: 'קבץ',
+    ungroup: 'בטל קיבוץ',
+    lock: 'נעל',
+    unlock: 'בטל נעילה',
+    copyZplSelected: 'העתק ZPL (בחירה)',
+    copyZplLabel: 'העתק ZPL (תווית)',
+    copyImage: 'העתק תמונה',
+    exportImage: 'ייצא תמונה (PNG)',
+    addObjectHere: 'הוסף אובייקט כאן',
+    selectAll: 'בחר הכול',
+  },
 
   registry: {
     text: {

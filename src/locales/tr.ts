@@ -526,6 +526,27 @@ const tr = {
     previewNoticePrivacyLink: 'Labelary planları ve veri saklama',
     previewNoticeAcknowledge: 'Anladım, devam et',
   },
+  contextMenu: {
+    copy: 'Kopyala',
+    cut: 'Kes',
+    duplicate: 'Çoğalt',
+    delete: 'Sil',
+    pasteHere: 'Buraya yapıştır',
+    bringToFront: 'Öne getir',
+    bringForward: 'İleri al',
+    sendBackward: 'Geri al',
+    sendToBack: 'Arkaya gönder',
+    group: 'Grupla',
+    ungroup: 'Grubu çöz',
+    lock: 'Kilitle',
+    unlock: 'Kilidi aç',
+    copyZplSelected: 'ZPL kopyala (seçim)',
+    copyZplLabel: 'ZPL kopyala (etiket)',
+    copyImage: 'Görüntüyü kopyala',
+    exportImage: 'Görüntüyü dışa aktar (PNG)',
+    addObjectHere: 'Buraya nesne ekle',
+    selectAll: 'Tümünü seç',
+  },
 
   registry: {
     text: {

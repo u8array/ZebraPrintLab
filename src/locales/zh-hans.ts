@@ -526,6 +526,27 @@ const zhHans = {
     previewNoticePrivacyLink: 'Labelary 套餐与数据保留',
     previewNoticeAcknowledge: '知道了，继续',
   },
+  contextMenu: {
+    copy: '复制',
+    cut: '剪切',
+    duplicate: '创建副本',
+    delete: '删除',
+    pasteHere: '粘贴到此处',
+    bringToFront: '移到最前',
+    bringForward: '上移一层',
+    sendBackward: '下移一层',
+    sendToBack: '移到最后',
+    group: '组合',
+    ungroup: '取消组合',
+    lock: '锁定',
+    unlock: '解锁',
+    copyZplSelected: '复制 ZPL（所选）',
+    copyZplLabel: '复制 ZPL（标签）',
+    copyImage: '复制图像',
+    exportImage: '导出图像（PNG）',
+    addObjectHere: '在此处添加对象',
+    selectAll: '全选',
+  },
 
   registry: {
     text: {

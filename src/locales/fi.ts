@@ -526,6 +526,27 @@ const fi = {
     previewNoticePrivacyLink: 'Labelary-tilaukset ja tietojen säilytys',
     previewNoticeAcknowledge: 'Selvä, jatka',
   },
+  contextMenu: {
+    copy: 'Kopioi',
+    cut: 'Leikkaa',
+    duplicate: 'Monista',
+    delete: 'Poista',
+    pasteHere: 'Liitä tähän',
+    bringToFront: 'Tuo eteen',
+    bringForward: 'Siirrä eteenpäin',
+    sendBackward: 'Siirrä taaksepäin',
+    sendToBack: 'Vie taakse',
+    group: 'Ryhmitä',
+    ungroup: 'Pura ryhmitys',
+    lock: 'Lukitse',
+    unlock: 'Avaa lukitus',
+    copyZplSelected: 'Kopioi ZPL (valinta)',
+    copyZplLabel: 'Kopioi ZPL (etiketti)',
+    copyImage: 'Kopioi kuva',
+    exportImage: 'Vie kuva (PNG)',
+    addObjectHere: 'Lisää objekti tähän',
+    selectAll: 'Valitse kaikki',
+  },
 
   registry: {
     text: {

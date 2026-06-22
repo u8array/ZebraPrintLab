@@ -547,6 +547,27 @@ const en = {
     previewNoticePrivacyLink: 'Labelary plans & data retention',
     previewNoticeAcknowledge: 'Got it, continue',
   },
+  contextMenu: {
+    copy: 'Copy',
+    cut: 'Cut',
+    duplicate: 'Duplicate',
+    delete: 'Delete',
+    pasteHere: 'Paste here',
+    bringToFront: 'Bring to front',
+    bringForward: 'Bring forward',
+    sendBackward: 'Send backward',
+    sendToBack: 'Send to back',
+    group: 'Group',
+    ungroup: 'Ungroup',
+    lock: 'Lock',
+    unlock: 'Unlock',
+    copyZplSelected: 'Copy ZPL (selection)',
+    copyZplLabel: 'Copy ZPL (label)',
+    copyImage: 'Copy image',
+    exportImage: 'Export image (PNG)',
+    addObjectHere: 'Add object here',
+    selectAll: 'Select all',
+  },
 
   registry: {
     text: {

@@ -526,6 +526,27 @@ const lt = {
     previewNoticePrivacyLink: 'Labelary planai ir duomenų saugojimas',
     previewNoticeAcknowledge: 'Supratau, tęsti',
   },
+  contextMenu: {
+    copy: 'Kopijuoti',
+    cut: 'Iškirpti',
+    duplicate: 'Dubliuoti',
+    delete: 'Ištrinti',
+    pasteHere: 'Įklijuoti čia',
+    bringToFront: 'Perkelti į priekį',
+    bringForward: 'Pakelti aukštyn',
+    sendBackward: 'Nuleisti žemyn',
+    sendToBack: 'Perkelti į galą',
+    group: 'Grupuoti',
+    ungroup: 'Išgrupuoti',
+    lock: 'Užrakinti',
+    unlock: 'Atrakinti',
+    copyZplSelected: 'Kopijuoti ZPL (pasirinkimą)',
+    copyZplLabel: 'Kopijuoti ZPL (etiketę)',
+    copyImage: 'Kopijuoti vaizdą',
+    exportImage: 'Eksportuoti vaizdą (PNG)',
+    addObjectHere: 'Pridėti objektą čia',
+    selectAll: 'Pasirinkti viską',
+  },
 
   registry: {
     text: {

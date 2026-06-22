@@ -526,6 +526,27 @@ const sl = {
     previewNoticePrivacyLink: 'Labelary naročnine in hramba podatkov',
     previewNoticeAcknowledge: 'Razumem, nadaljuj',
   },
+  contextMenu: {
+    copy: 'Kopiraj',
+    cut: 'Izreži',
+    duplicate: 'Podvoji',
+    delete: 'Izbriši',
+    pasteHere: 'Prilepi sem',
+    bringToFront: 'Premakni v ospredje',
+    bringForward: 'Premakni naprej',
+    sendBackward: 'Premakni nazaj',
+    sendToBack: 'Premakni v ozadje',
+    group: 'Združi',
+    ungroup: 'Razdruži',
+    lock: 'Zakleni',
+    unlock: 'Odkleni',
+    copyZplSelected: 'Kopiraj ZPL (izbor)',
+    copyZplLabel: 'Kopiraj ZPL (etiketa)',
+    copyImage: 'Kopiraj sliko',
+    exportImage: 'Izvozi sliko (PNG)',
+    addObjectHere: 'Dodaj predmet sem',
+    selectAll: 'Izberi vse',
+  },
 
   registry: {
     text: {

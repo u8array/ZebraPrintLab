@@ -526,6 +526,27 @@ const fa = {
     previewNoticePrivacyLink: 'طرح‌های Labelary و نگه‌داری داده‌ها',
     previewNoticeAcknowledge: 'متوجه شدم، ادامه',
   },
+  contextMenu: {
+    copy: 'کپی',
+    cut: 'برش',
+    duplicate: 'تکثیر',
+    delete: 'حذف',
+    pasteHere: 'چسباندن اینجا',
+    bringToFront: 'آوردن به جلو',
+    bringForward: 'انتقال به جلو',
+    sendBackward: 'انتقال به عقب',
+    sendToBack: 'بردن به پشت',
+    group: 'گروه‌بندی',
+    ungroup: 'لغو گروه‌بندی',
+    lock: 'قفل',
+    unlock: 'باز کردن قفل',
+    copyZplSelected: 'کپی ZPL (انتخاب)',
+    copyZplLabel: 'کپی ZPL (برچسب)',
+    copyImage: 'کپی تصویر',
+    exportImage: 'خروجی تصویر (PNG)',
+    addObjectHere: 'افزودن شیء اینجا',
+    selectAll: 'انتخاب همه',
+  },
 
   registry: {
     text: {

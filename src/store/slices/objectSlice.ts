@@ -2,6 +2,8 @@ import type { StateCreator } from 'zustand';
 import type { ObjectChanges } from '../../types/LabelObject';
 import {
   isGroup,
+  getAllLeaves,
+  isSelectionLocked,
   mapObjectById,
   detachObjectById,
   findObjectById,
@@ -12,12 +14,14 @@ import {
   type Page,
 } from '../../types/Group';
 import { getEntry } from '../../registry';
+import { reorderForZ, type ZOrderDir } from '../../lib/zorder';
 import {
   applyObjectChanges,
   insertAt,
   DUPLICATE_OFFSET_DOTS,
   buildOffsetCopies,
   cloneChildrenFresh,
+  freshPasteCopies,
   updateCurrentObjects,
 } from '../labelStore.internals';
 import { selectPreviewLocksEditor, currentObjects } from '../labelStore.selectors';
@@ -41,6 +45,9 @@ export interface ObjectSlice {
   duplicateSelectedObjects: () => void;
   copySelectedObjects: () => void;
   pasteObjects: () => void;
+  /** Paste the clipboard anchored so its top-left origin lands at the given
+   *  point (in dots); used by the context menu's "paste here". */
+  pasteObjectsAt: (xDots: number, yDots: number) => void;
   /** Wraps every selected top-level, unlocked object in a new GroupObject
    *  at the position of the topmost (last-in-array) selected item. */
   groupSelection: () => void;
@@ -59,6 +66,9 @@ export interface ObjectSlice {
   moveObjectToFront: (id: string) => void;
   moveObjectToBack: (id: string) => void;
   reorderObject: (id: string, toIndex: number) => void;
+  /** Stacking-order move for the current top-level selection (front/back/
+   *  forward/backward); nested-only selections are a no-op. */
+  reorderSelection: (dir: ZOrderDir) => void;
 
   addPage: () => void;
   removePage: (index: number) => void;
@@ -190,16 +200,33 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
       if (state.clipboard.length === 0) return {};
       const pasteCount = state.pasteCount + 1;
       const offset = pasteCount * DUPLICATE_OFFSET_DOTS;
-      const copies: LabelObject[] = state.clipboard.map((src) => ({
-        ...src,
-        id: crypto.randomUUID(),
-        x: src.x + offset,
-        y: src.y + offset,
-      } as LabelObject));
+      const copies = freshPasteCopies(state.clipboard, offset, offset);
       return {
         ...updateCurrentObjects(state, (curr) => [...curr, ...copies]),
         selectedIds: copies.map((c) => c.id),
         pasteCount,
+      };
+    }),
+
+  pasteObjectsAt: (xDots, yDots) =>
+    set((state) => {
+      if (selectPreviewLocksEditor(state)) return {};
+      if (state.clipboard.length === 0) return {};
+      // Anchor the clipboard's visual top-left to the point. Groups are
+      // structural (x/y 0, absolute children), so the bound must come from the
+      // leaves, not the top-level x/y.
+      const leaves = state.clipboard.flatMap((o) =>
+        isGroup(o) ? getAllLeaves(o.children) : [o],
+      );
+      const minX = Math.min(...leaves.map((l) => l.x));
+      const minY = Math.min(...leaves.map((l) => l.y));
+      const dx = xDots - minX;
+      const dy = yDots - minY;
+      const copies = freshPasteCopies(state.clipboard, dx, dy);
+      return {
+        ...updateCurrentObjects(state, (curr) => [...curr, ...copies]),
+        selectedIds: copies.map((c) => c.id),
+        pasteCount: 0,
       };
     }),
 
@@ -388,6 +415,17 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
         if (item) next.splice(toIndex, 0, item);
         return next;
       });
+    }),
+
+  reorderSelection: (dir) =>
+    set((state) => {
+      if (selectPreviewLocksEditor(state)) return {};
+      const objs = currentObjects(state);
+      // Lock blocks reordering too, mirroring delete/group/ungroup.
+      if (isSelectionLocked(objs, state.selectedIds)) return {};
+      const next = reorderForZ(objs, new Set(state.selectedIds), dir);
+      if (next === objs) return {};
+      return updateCurrentObjects(state, () => next as LabelObject[]);
     }),
 
   addPage: () =>

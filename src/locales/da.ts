@@ -526,6 +526,27 @@ const da = {
     previewNoticePrivacyLink: 'Labelary-abonnementer og dataopbevaring',
     previewNoticeAcknowledge: 'Forstået, fortsæt',
   },
+  contextMenu: {
+    copy: 'Kopiér',
+    cut: 'Klip',
+    duplicate: 'Dublér',
+    delete: 'Slet',
+    pasteHere: 'Indsæt her',
+    bringToFront: 'Placér forrest',
+    bringForward: 'Flyt fremad',
+    sendBackward: 'Flyt bagud',
+    sendToBack: 'Placér bagest',
+    group: 'Gruppér',
+    ungroup: 'Opdel gruppe',
+    lock: 'Lås',
+    unlock: 'Lås op',
+    copyZplSelected: 'Kopiér ZPL (markering)',
+    copyZplLabel: 'Kopiér ZPL (etiket)',
+    copyImage: 'Kopiér billede',
+    exportImage: 'Eksportér billede (PNG)',
+    addObjectHere: 'Tilføj objekt her',
+    selectAll: 'Markér alt',
+  },
 
   registry: {
     text: {

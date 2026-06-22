@@ -526,6 +526,27 @@ const sr = {
     previewNoticePrivacyLink: 'Labelary планови и чување података',
     previewNoticeAcknowledge: 'Разумем, настави',
   },
+  contextMenu: {
+    copy: 'Копирај',
+    cut: 'Исеци',
+    duplicate: 'Дуплирај',
+    delete: 'Обриши',
+    pasteHere: 'Налепи овде',
+    bringToFront: 'Помери напред',
+    bringForward: 'Помери унапред',
+    sendBackward: 'Помери уназад',
+    sendToBack: 'Помери назад',
+    group: 'Групиши',
+    ungroup: 'Разгрупиши',
+    lock: 'Закључај',
+    unlock: 'Откључај',
+    copyZplSelected: 'Копирај ZPL (избор)',
+    copyZplLabel: 'Копирај ZPL (етикета)',
+    copyImage: 'Копирај слику',
+    exportImage: 'Извези слику (PNG)',
+    addObjectHere: 'Додај објекат овде',
+    selectAll: 'Изабери све',
+  },
 
   registry: {
     text: {

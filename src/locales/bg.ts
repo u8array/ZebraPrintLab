@@ -526,6 +526,27 @@ const bg = {
     previewNoticePrivacyLink: 'Планове и съхранение на данни на Labelary',
     previewNoticeAcknowledge: 'Разбрах, продължи',
   },
+  contextMenu: {
+    copy: 'Копиране',
+    cut: 'Изрязване',
+    duplicate: 'Дублиране',
+    delete: 'Изтриване',
+    pasteHere: 'Поставяне тук',
+    bringToFront: 'Премести най-отпред',
+    bringForward: 'Премести напред',
+    sendBackward: 'Премести назад',
+    sendToBack: 'Премести най-отзад',
+    group: 'Групиране',
+    ungroup: 'Разгрупиране',
+    lock: 'Заключване',
+    unlock: 'Отключване',
+    copyZplSelected: 'Копиране на ZPL (избор)',
+    copyZplLabel: 'Копиране на ZPL (етикет)',
+    copyImage: 'Копиране на изображение',
+    exportImage: 'Експортиране на изображение (PNG)',
+    addObjectHere: 'Добавяне на обект тук',
+    selectAll: 'Избор на всичко',
+  },
 
   registry: {
     text: {

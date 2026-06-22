@@ -526,6 +526,27 @@ const lv = {
     previewNoticePrivacyLink: 'Labelary plāni un datu glabāšana',
     previewNoticeAcknowledge: 'Saprotu, turpināt',
   },
+  contextMenu: {
+    copy: 'Kopēt',
+    cut: 'Izgriezt',
+    duplicate: 'Dublēt',
+    delete: 'Dzēst',
+    pasteHere: 'Ielīmēt šeit',
+    bringToFront: 'Pārvietot priekšplānā',
+    bringForward: 'Pārvietot uz priekšu',
+    sendBackward: 'Pārvietot atpakaļ',
+    sendToBack: 'Pārvietot fonā',
+    group: 'Grupēt',
+    ungroup: 'Atgrupēt',
+    lock: 'Bloķēt',
+    unlock: 'Atbloķēt',
+    copyZplSelected: 'Kopēt ZPL (atlasi)',
+    copyZplLabel: 'Kopēt ZPL (etiķeti)',
+    copyImage: 'Kopēt attēlu',
+    exportImage: 'Eksportēt attēlu (PNG)',
+    addObjectHere: 'Pievienot objektu šeit',
+    selectAll: 'Atlasīt visu',
+  },
 
   registry: {
     text: {

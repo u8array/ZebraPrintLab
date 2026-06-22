@@ -526,6 +526,27 @@ const no = {
     previewNoticePrivacyLink: 'Labelary-planer og datalagring',
     previewNoticeAcknowledge: 'Forstått, fortsett',
   },
+  contextMenu: {
+    copy: 'Kopier',
+    cut: 'Klipp ut',
+    duplicate: 'Dupliser',
+    delete: 'Slett',
+    pasteHere: 'Lim inn her',
+    bringToFront: 'Flytt fremst',
+    bringForward: 'Flytt fremover',
+    sendBackward: 'Flytt bakover',
+    sendToBack: 'Flytt bakerst',
+    group: 'Grupper',
+    ungroup: 'Del opp gruppe',
+    lock: 'Lås',
+    unlock: 'Lås opp',
+    copyZplSelected: 'Kopier ZPL (utvalg)',
+    copyZplLabel: 'Kopier ZPL (etikett)',
+    copyImage: 'Kopier bilde',
+    exportImage: 'Eksporter bilde (PNG)',
+    addObjectHere: 'Legg til objekt her',
+    selectAll: 'Merk alt',
+  },
 
   registry: {
     text: {

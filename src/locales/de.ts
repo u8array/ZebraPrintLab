@@ -547,6 +547,27 @@ const de = {
     previewNoticePrivacyLink: 'Labelary-Tarife & Datenaufbewahrung',
     previewNoticeAcknowledge: 'Verstanden, fortfahren',
   },
+  contextMenu: {
+    copy: 'Kopieren',
+    cut: 'Ausschneiden',
+    duplicate: 'Duplizieren',
+    delete: 'Löschen',
+    pasteHere: 'Hier einfügen',
+    bringToFront: 'In den Vordergrund',
+    bringForward: 'Eine Ebene nach vorne',
+    sendBackward: 'Eine Ebene nach hinten',
+    sendToBack: 'In den Hintergrund',
+    group: 'Gruppieren',
+    ungroup: 'Gruppierung aufheben',
+    lock: 'Sperren',
+    unlock: 'Entsperren',
+    copyZplSelected: 'ZPL kopieren (Auswahl)',
+    copyZplLabel: 'ZPL kopieren (Etikett)',
+    copyImage: 'Bild kopieren',
+    exportImage: 'Bild exportieren (PNG)',
+    addObjectHere: 'Objekt hier hinzufügen',
+    selectAll: 'Alles auswählen',
+  },
 
   registry: {
     text: {

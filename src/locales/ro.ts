@@ -526,6 +526,27 @@ const ro = {
     previewNoticePrivacyLink: 'Planuri și păstrarea datelor Labelary',
     previewNoticeAcknowledge: 'Am înțeles, continuă',
   },
+  contextMenu: {
+    copy: 'Copiază',
+    cut: 'Decupează',
+    duplicate: 'Duplică',
+    delete: 'Șterge',
+    pasteHere: 'Lipește aici',
+    bringToFront: 'Adu în prim-plan',
+    bringForward: 'Adu mai în față',
+    sendBackward: 'Trimite mai în spate',
+    sendToBack: 'Trimite în fundal',
+    group: 'Grupează',
+    ungroup: 'Anulează gruparea',
+    lock: 'Blochează',
+    unlock: 'Deblochează',
+    copyZplSelected: 'Copiază ZPL (selecție)',
+    copyZplLabel: 'Copiază ZPL (etichetă)',
+    copyImage: 'Copiază imaginea',
+    exportImage: 'Exportă imaginea (PNG)',
+    addObjectHere: 'Adaugă obiect aici',
+    selectAll: 'Selectează tot',
+  },
 
   registry: {
     text: {

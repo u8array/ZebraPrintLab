@@ -6,7 +6,7 @@ import {
   __resetPreviewCacheForTests,
   migrateLegacy,
 } from './labelStore';
-import { isGroup, type LabelObject } from '../types/Group';
+import { isGroup, getAllLeaves, type LabelObject } from '../types/Group';
 import { defined, props } from '../test/helpers';
 
 // Mock the Labelary client so cache tests run without network I/O.
@@ -336,6 +336,60 @@ describe('copy / paste', () => {
     const allIds = ids();
     expect(new Set(allIds).size).toBe(allIds.length);
   });
+
+  it('pasteObjectsAt anchors the clipboard top-left to the point', () => {
+    state().addObject('text', { x: 100, y: 60 });
+    state().selectObject(defined(objs()[0]).id);
+    state().copySelectedObjects();
+    state().pasteObjectsAt(300, 200);
+    expect(objs()).toHaveLength(2);
+    const pasted = defined(objs()[1]);
+    expect(pasted.x).toBe(300);
+    expect(pasted.y).toBe(200);
+    expect(state().selectedIds).toEqual([pasted.id]);
+  });
+
+  it('pasteObjectsAt is a no-op with an empty clipboard', () => {
+    state().pasteObjectsAt(50, 50);
+    expect(objs()).toHaveLength(0);
+  });
+
+  it('repeated paste of a group regenerates child ids (no collisions)', () => {
+    state().addObject('text', { x: 10, y: 10 });
+    state().addObject('box', { x: 40, y: 40 });
+    state().selectObjects(objs().map((o) => o.id));
+    state().groupSelection();
+    state().copySelectedObjects();
+    state().pasteObjects();
+    state().pasteObjectsAt(200, 200);
+    const allLeafIds = getAllLeaves(objs()).map((l) => l.id);
+    expect(new Set(allLeafIds).size).toBe(allLeafIds.length);
+  });
+
+  it('pasteObjectsAt anchors a group visual top-left to the point (children shift)', () => {
+    state().addObject('text', { x: 10, y: 10 });
+    state().addObject('box', { x: 40, y: 40 });
+    state().selectObjects(objs().map((o) => o.id));
+    state().groupSelection();
+    state().copySelectedObjects();
+    state().pasteObjectsAt(300, 200);
+    const pasted = defined(objs().find((o) => isGroup(o) && state().selectedIds.includes(o.id)));
+    const leaves = getAllLeaves([pasted]);
+    expect(Math.min(...leaves.map((l) => l.x))).toBe(300);
+    expect(Math.min(...leaves.map((l) => l.y))).toBe(200);
+  });
+
+  it('duplicating a group offsets its children, not just the structural x/y', () => {
+    state().addObject('text', { x: 10, y: 10 });
+    state().addObject('box', { x: 40, y: 40 });
+    state().selectObjects(objs().map((o) => o.id));
+    state().groupSelection();
+    state().duplicateSelectedObjects();
+    const dup = defined(objs().find((o) => isGroup(o) && state().selectedIds.includes(o.id)));
+    const leaves = getAllLeaves([dup]);
+    expect(Math.min(...leaves.map((l) => l.x))).toBe(30); // 10 + DUPLICATE_OFFSET
+    expect(Math.min(...leaves.map((l) => l.y))).toBe(30);
+  });
 });
 
 // ── selection ─────────────────────────────────────────────────────────────────
@@ -454,6 +508,29 @@ describe('reorderObject', () => {
     state().addObject('box');
     const before = ids();
     state().reorderObject(defined(before[1]), 1);
+    expect(ids()).toEqual(before);
+  });
+});
+
+describe('reorderSelection', () => {
+  it('reorders the selection when unlocked', () => {
+    state().addObject('text');
+    state().addObject('box');
+    state().addObject('line');
+    const before = ids();
+    state().selectObject(defined(before[1]));
+    state().reorderSelection('front');
+    expect(ids()).not.toEqual(before);
+  });
+
+  it('is a no-op for a locked selection (lock blocks reordering)', () => {
+    state().addObject('text');
+    state().addObject('box');
+    state().addObject('line');
+    const before = ids();
+    state().selectObject(defined(before[1]));
+    state().setSelectionLocked(true);
+    state().reorderSelection('front');
     expect(ids()).toEqual(before);
   });
 });

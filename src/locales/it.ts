@@ -526,6 +526,27 @@ const it = {
     previewNoticePrivacyLink: 'Piani e conservazione dei dati di Labelary',
     previewNoticeAcknowledge: 'Ho capito, continua',
   },
+  contextMenu: {
+    copy: 'Copia',
+    cut: 'Taglia',
+    duplicate: 'Duplica',
+    delete: 'Elimina',
+    pasteHere: 'Incolla qui',
+    bringToFront: 'Porta in primo piano',
+    bringForward: 'Porta avanti',
+    sendBackward: 'Porta indietro',
+    sendToBack: 'Porta in fondo',
+    group: 'Raggruppa',
+    ungroup: 'Separa',
+    lock: 'Blocca',
+    unlock: 'Sblocca',
+    copyZplSelected: 'Copia ZPL (selezione)',
+    copyZplLabel: 'Copia ZPL (etichetta)',
+    copyImage: 'Copia immagine',
+    exportImage: 'Esporta immagine (PNG)',
+    addObjectHere: 'Aggiungi oggetto qui',
+    selectAll: 'Seleziona tutto',
+  },
 
   registry: {
     text: {

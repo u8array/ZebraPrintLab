@@ -210,6 +210,47 @@ export function generateBatchZpl(
   return [templateStored, ...recallBlocks].join('\n');
 }
 
+/** Template header lines plus the per-object field bodies, shared by the full
+ *  generator and selection copy so the two never drift. Applies the label
+ *  home/top shift (dropping negative origins) and the template/clock emit
+ *  context, but emits no ^XA / label config / ^XZ. */
+export function planFieldEmission(
+  label: LabelConfig,
+  objects: LabelObject[],
+  variables: readonly Variable[] = [],
+): { headerLines: string[]; bodyLines: string[] } {
+  const homeX = label.labelHomeX ?? 0;
+  const homeY = label.labelHomeY ?? 0;
+  const top = label.labelTop ?? 0;
+  // Drop leaves whose shifted origin is negative; Zebra rejects negative
+  // ^FO and clamping would relocate them silently.
+  const shiftOrDrop = (obj: LabelObject): LabelObject[] => {
+    if (isGroup(obj)) {
+      return [{ ...obj, children: obj.children.flatMap(shiftOrDrop) }];
+    }
+    const x = obj.x - homeX;
+    const y = obj.y - homeY - top;
+    return x < 0 || y < 0 ? [] : [{ ...obj, x, y }];
+  };
+  const shifted =
+    homeX !== 0 || homeY !== 0 || top !== 0
+      ? objects.flatMap(shiftOrDrop)
+      : objects;
+
+  const { headerLines, emitCtx } = planTemplateHeader(shifted, label, variables);
+
+  // Groups are structural; includeInExport=false cascades to the subtree.
+  const emitLeaf = (obj: LabelObject): string[] => {
+    if (obj.includeInExport === false) return [];
+    if (isGroup(obj)) return obj.children.flatMap(emitLeaf);
+    const zpl = getEntry(obj.type)?.toZPL(obj, emitCtx) ?? '';
+    return obj.comment
+      ? [`^FX${stripZplCommandChars(obj.comment)}\n${zpl}`]
+      : [zpl];
+  };
+  return { headerLines, bodyLines: shifted.flatMap(emitLeaf) };
+}
+
 export function generateZPL(
   label: LabelConfig,
   objects: LabelObject[],
@@ -323,35 +364,8 @@ export function generateZPL(
     lines.push(`^CF${slots.join(",")}`);
   }
 
-  // Drop leaves whose shifted origin is negative; Zebra rejects negative
-  // ^FO and clamping would relocate them silently.
-  const shiftOrDrop = (obj: LabelObject): LabelObject[] => {
-    if (isGroup(obj)) {
-      return [{ ...obj, children: obj.children.flatMap(shiftOrDrop) }];
-    }
-    const x = obj.x - homeX;
-    const y = obj.y - homeY - top;
-    return x < 0 || y < 0 ? [] : [{ ...obj, x, y }];
-  };
-
-  const shifted =
-    homeX !== 0 || homeY !== 0 || top !== 0
-      ? objects.flatMap(shiftOrDrop)
-      : objects;
-
-  const { headerLines, emitCtx } = planTemplateHeader(shifted, label, variables);
-  lines.push(...headerLines);
-
-  // Groups are structural; includeInExport=false cascades to the subtree.
-  const emitLeaf = (obj: LabelObject): string[] => {
-    if (obj.includeInExport === false) return [];
-    if (isGroup(obj)) return obj.children.flatMap(emitLeaf);
-    const zpl = getEntry(obj.type)?.toZPL(obj, emitCtx) ?? '';
-    return obj.comment
-      ? [`^FX${stripZplCommandChars(obj.comment)}\n${zpl}`]
-      : [zpl];
-  };
-  lines.push(...shifted.flatMap(emitLeaf));
+  const { headerLines, bodyLines } = planFieldEmission(label, objects, variables);
+  lines.push(...headerLines, ...bodyLines);
 
   // ^PQ q,p,r,o (defaults q=1 p=0 r=0 o=N); emit if q>1 or any extended set.
   const pq = label.printQuantity ?? 1;

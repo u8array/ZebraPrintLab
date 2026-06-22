@@ -526,6 +526,27 @@ const ko = {
     previewNoticePrivacyLink: 'Labelary 요금제 및 데이터 보관',
     previewNoticeAcknowledge: '이해했습니다, 계속',
   },
+  contextMenu: {
+    copy: '복사',
+    cut: '잘라내기',
+    duplicate: '복제',
+    delete: '삭제',
+    pasteHere: '여기에 붙여넣기',
+    bringToFront: '맨 앞으로 가져오기',
+    bringForward: '앞으로 가져오기',
+    sendBackward: '뒤로 보내기',
+    sendToBack: '맨 뒤로 보내기',
+    group: '그룹화',
+    ungroup: '그룹 해제',
+    lock: '잠금',
+    unlock: '잠금 해제',
+    copyZplSelected: 'ZPL 복사 (선택 항목)',
+    copyZplLabel: 'ZPL 복사 (라벨)',
+    copyImage: '이미지 복사',
+    exportImage: '이미지 내보내기 (PNG)',
+    addObjectHere: '여기에 개체 추가',
+    selectAll: '모두 선택',
+  },
 
   registry: {
     text: {

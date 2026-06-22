@@ -526,6 +526,27 @@ const et = {
     previewNoticePrivacyLink: 'Labelary plaanid ja andmete säilitamine',
     previewNoticeAcknowledge: 'Selge, jätka',
   },
+  contextMenu: {
+    copy: 'Kopeeri',
+    cut: 'Lõika',
+    duplicate: 'Dubleeri',
+    delete: 'Kustuta',
+    pasteHere: 'Kleebi siia',
+    bringToFront: 'Too ette',
+    bringForward: 'Too ettepoole',
+    sendBackward: 'Saada tahapoole',
+    sendToBack: 'Saada taha',
+    group: 'Rühmita',
+    ungroup: 'Tühista rühmitus',
+    lock: 'Lukusta',
+    unlock: 'Ava lukk',
+    copyZplSelected: 'Kopeeri ZPL (valik)',
+    copyZplLabel: 'Kopeeri ZPL (silt)',
+    copyImage: 'Kopeeri pilt',
+    exportImage: 'Ekspordi pilt (PNG)',
+    addObjectHere: 'Lisa objekt siia',
+    selectAll: 'Vali kõik',
+  },
 
   registry: {
     text: {

@@ -526,6 +526,27 @@ const zhHant = {
     previewNoticePrivacyLink: 'Labelary 方案與資料保留',
     previewNoticeAcknowledge: '了解，繼續',
   },
+  contextMenu: {
+    copy: '複製',
+    cut: '剪下',
+    duplicate: '建立複本',
+    delete: '刪除',
+    pasteHere: '貼到此處',
+    bringToFront: '移到最前',
+    bringForward: '上移一層',
+    sendBackward: '下移一層',
+    sendToBack: '移到最後',
+    group: '組成群組',
+    ungroup: '取消群組',
+    lock: '鎖定',
+    unlock: '解除鎖定',
+    copyZplSelected: '複製 ZPL（選取範圍）',
+    copyZplLabel: '複製 ZPL（標籤）',
+    copyImage: '複製影像',
+    exportImage: '匯出影像（PNG）',
+    addObjectHere: '在此處新增物件',
+    selectAll: '全選',
+  },
 
   registry: {
     text: {
