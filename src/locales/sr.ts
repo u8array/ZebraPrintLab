@@ -640,6 +640,10 @@ const sr = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Модел',
+      modelEnhanced: 'Побољшан (препоручено)',
+      modelOriginal: 'Изворни',
+      modelHint: 'Модел 2 се препоручује за већину употреба; Модел 1 само за старе системе.',
     },
     ean13: {
       content: 'Sadržaj (12 cifara)',

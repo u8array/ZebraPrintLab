@@ -640,6 +640,10 @@ const ko = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: '모델',
+      modelEnhanced: '향상됨(권장)',
+      modelOriginal: '원본',
+      modelHint: '대부분의 용도에는 모델 2를 권장합니다. 모델 1은 레거시 시스템 전용입니다.',
     },
     ean13: {
       content: '내용 (12자리)',

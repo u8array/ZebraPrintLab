@@ -640,6 +640,10 @@ const cs = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Model',
+      modelEnhanced: 'Vylepšený (doporučeno)',
+      modelOriginal: 'Původní',
+      modelHint: 'Pro většinu použití se doporučuje Model 2; Model 1 jen pro starší systémy.',
     },
     ean13: {
       content: 'Obsah (12 číslic)',

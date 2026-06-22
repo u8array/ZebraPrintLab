@@ -354,6 +354,8 @@ export function createFlushField(
               content: data,
               magnification: s.field.qrMag,
               errorCorrection: ec,
+              // ^BQ b: only 1 and 2 are valid; anything else falls to 2.
+              model: s.field.qrModel === 1 ? 1 : 2,
               rotation: s.field.bcRotation,
             } satisfies QrCodeProps,
             posType,

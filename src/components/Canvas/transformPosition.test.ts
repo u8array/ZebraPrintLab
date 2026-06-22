@@ -10,7 +10,7 @@ const qrFo: LabelObject = {
   y: 0,
   rotation: 0,
   positionType: "FO",
-  props: { content: "x", magnification: 4, errorCorrection: "Q", rotation: "N" },
+  props: { content: "x", magnification: 4, errorCorrection: "Q", model: 2, rotation: "N" },
 };
 
 const ellipse: LabelObject = {

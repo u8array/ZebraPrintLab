@@ -640,6 +640,10 @@ const ro = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Model',
+      modelEnhanced: 'Îmbunătățit (recomandat)',
+      modelOriginal: 'Original',
+      modelHint: 'Modelul 2 este recomandat pentru majoritatea utilizărilor; Modelul 1 doar pentru sisteme vechi.',
     },
     ean13: {
       content: 'Conținut (12 cifre)',

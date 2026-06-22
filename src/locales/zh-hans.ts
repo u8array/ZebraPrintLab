@@ -640,6 +640,10 @@ const zhHans = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: '型号',
+      modelEnhanced: '增强型（推荐）',
+      modelOriginal: '原始型',
+      modelHint: '大多数用途推荐使用型号2；型号1仅适用于旧系统。',
     },
     ean13: {
       content: '内容 (12位数字)',

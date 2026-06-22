@@ -640,6 +640,10 @@ const ja = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'モデル',
+      modelEnhanced: '拡張（推奨）',
+      modelOriginal: 'オリジナル',
+      modelHint: 'ほとんどの用途ではモデル2を推奨します。モデル1は旧システム専用です。',
     },
     ean13: {
       content: 'コンテンツ (12桁)',

@@ -640,6 +640,10 @@ const sl = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Model',
+      modelEnhanced: 'Izboljšan (priporočeno)',
+      modelOriginal: 'Izvirni',
+      modelHint: 'Za večino primerov uporabe je priporočen Model 2; Model 1 le za stare sisteme.',
     },
     ean13: {
       content: 'Vsebina (12 črkic)',

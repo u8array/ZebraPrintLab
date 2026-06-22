@@ -55,6 +55,22 @@ export const qrcodePanel: ObjectTypeUi<QrCodeProps> = {
             />
           </div>
 
+          {showZpl && (
+            <div className="flex flex-col gap-1">
+              <FieldLabel cmd="^BQ">{t.registry.qrcode.model}</FieldLabel>
+              <Select<QrCodeProps['model']>
+                value={p.model}
+                onChange={(model) => onChange({ model })}
+                aria-label={t.registry.qrcode.model}
+                groups={[{ options: [
+                  { value: 2, label: t.registry.qrcode.modelEnhanced, badge: '2' },
+                  { value: 1, label: t.registry.qrcode.modelOriginal, badge: '1' },
+                ] }]}
+              />
+              <span className="text-[10px] text-muted">{t.registry.qrcode.modelHint}</span>
+            </div>
+          )}
+
           <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^BQ" />
         </SectionCard>
       </>

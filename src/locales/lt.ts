@@ -640,6 +640,10 @@ const lt = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Modelis',
+      modelEnhanced: 'Patobulintas (rekomenduojama)',
+      modelOriginal: 'Pradinis',
+      modelHint: 'Daugumai naudojimo atvejų rekomenduojamas 2 modelis; 1 modelis tik senoms sistemoms.',
     },
     ean13: {
       content: 'Turinys (12 skaitmenų)',

@@ -661,6 +661,10 @@ const de = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Modell',
+      modelEnhanced: 'Erweitert (empfohlen)',
+      modelOriginal: 'Original',
+      modelHint: 'Modell 2 wird für die meisten Anwendungen empfohlen; Modell 1 nur für Altsysteme.',
     },
     ean13: {
       content: 'Inhalt (12 Ziffern)',

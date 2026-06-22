@@ -640,6 +640,10 @@ const es = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Modelo',
+      modelEnhanced: 'Mejorado (recomendado)',
+      modelOriginal: 'Original',
+      modelHint: 'Se recomienda el Modelo 2 para la mayoría de los usos; el Modelo 1 solo para sistemas heredados.',
     },
     ean13: {
       content: 'Contenido (12 dígitos)',

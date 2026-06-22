@@ -17,6 +17,8 @@ export interface QrCodeProps {
   content: string;
   magnification: number;       // dot size per module
   errorCorrection: 'H' | 'Q' | 'M' | 'L';
+  /** ^BQ b: 1 = original, 2 = enhanced (recommended, default). */
+  model: 1 | 2;
   rotation: ZplRotation;
 }
 
@@ -30,6 +32,7 @@ export const qrcode: ObjectTypeCore<QrCodeProps> = {
     content: 'https://example.com',
     magnification: 4,
     errorCorrection: 'Q',
+    model: 2,
     rotation: 'N',
   },
   defaultSize: { width: 200, height: 200 },
@@ -45,7 +48,7 @@ export const qrcode: ObjectTypeCore<QrCodeProps> = {
     // all get the prefix instead of the payload being emitted raw.
     return [
       fieldPos(obj),
-      `^BQ${p.rotation},2,${p.magnification}`,
+      `^BQ${p.rotation},${p.model},${p.magnification}`,
       fdFieldFor(obj, p.content, ctx, qrFdTransform(obj)),
     ].join('');
   },

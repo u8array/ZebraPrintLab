@@ -640,6 +640,10 @@ const et = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Mudel',
+      modelEnhanced: 'Täiustatud (soovitatav)',
+      modelOriginal: 'Algne',
+      modelHint: 'Enamiku kasutusjuhtude jaoks on soovitatav mudel 2; mudel 1 ainult vanade süsteemide jaoks.',
     },
     ean13: {
       content: 'Sisu (12 numbrit)',

@@ -640,6 +640,10 @@ const nl = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Model',
+      modelEnhanced: 'Verbeterd (aanbevolen)',
+      modelOriginal: 'Origineel',
+      modelHint: 'Voor de meeste toepassingen wordt model 2 aanbevolen; model 1 alleen voor oudere systemen.',
     },
     ean13: {
       content: 'Inhoud (12 cijfers)',

@@ -640,6 +640,10 @@ const sv = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Modell',
+      modelEnhanced: 'Förbättrad (rekommenderas)',
+      modelOriginal: 'Ursprunglig',
+      modelHint: 'Modell 2 rekommenderas för de flesta användningsområden; modell 1 endast för äldre system.',
     },
     ean13: {
       content: 'Innehåll (12 siffror)',

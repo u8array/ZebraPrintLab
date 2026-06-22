@@ -640,6 +640,10 @@ const da = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Model',
+      modelEnhanced: 'Forbedret (anbefales)',
+      modelOriginal: 'Original',
+      modelHint: 'Model 2 anbefales til de fleste formål; Model 1 kun til ældre systemer.',
     },
     ean13: {
       content: 'Indhold (12 cifre)',

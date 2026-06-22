@@ -640,6 +640,10 @@ const hu = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Modell',
+      modelEnhanced: 'Bővített (ajánlott)',
+      modelOriginal: 'Eredeti',
+      modelHint: 'A legtöbb felhasználáshoz a 2. modell ajánlott; az 1. modell csak régi rendszerekhez.',
     },
     ean13: {
       content: 'Tartalom (12 számjegy)',

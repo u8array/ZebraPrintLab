@@ -658,6 +658,17 @@ describe('parseZPL — ^BQ QR Code', () => {
     expect(props(objects[0]).content).toBe('https://example.com');
     expect(props(objects[0]).magnification).toBe(6);
     expect(props(objects[0]).errorCorrection).toBe('Q');
+    expect(props(objects[0]).model).toBe(2);
+  });
+
+  it('preserves Model 1 from ^BQ b (round-trip, no silent change to 2)', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BQN,1,4^FDQA,X^FS^XZ', 8);
+    expect(props(objects[0]).model).toBe(1);
+  });
+
+  it('falls back to Model 2 for a missing/invalid ^BQ b', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BQN,,4^FDQA,X^FS^XZ', 8);
+    expect(props(objects[0]).model).toBe(2);
   });
 });
 

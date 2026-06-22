@@ -103,10 +103,11 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
           : undefined;
     },
 
-    // ^BQN,2,{magnification}; QR Code
+    // ^BQN,{model},{magnification}; QR Code
     BQ(p) {
       field.fieldType = "qrcode";
       field.bcRotation = readRotation(p[0]);
+      field.qrModel = int(p[1], 2);
       field.qrMag = int(p[2], 4);
     },
 

@@ -640,6 +640,10 @@ const tr = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Model',
+      modelEnhanced: 'Gelişmiş (önerilen)',
+      modelOriginal: 'Orijinal',
+      modelHint: 'Çoğu kullanım için Model 2 önerilir; Model 1 yalnızca eski sistemler içindir.',
     },
     ean13: {
       content: 'İçerik (12 basamak)',

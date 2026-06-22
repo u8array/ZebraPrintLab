@@ -146,6 +146,7 @@ export interface FieldState {
   gsMagnification: number | undefined;
   // 2D matrix pending
   qrMag: number;
+  qrModel: number;
   dmDim: number;
   dmQuality: DataMatrixProps["quality"];
   /** ^BX escape char (g param); set => GS1 DataMatrix field data. */
@@ -288,6 +289,7 @@ export function createParserState(): ParserState {
       gsSegments: undefined,
       gsMagnification: undefined,
       qrMag: 4,
+      qrModel: 2,
       dmDim: 5,
       dmQuality: 200,
       dmEscape: undefined,

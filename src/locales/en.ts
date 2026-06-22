@@ -661,6 +661,10 @@ const en = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Model',
+      modelEnhanced: 'Enhanced (recommended)',
+      modelOriginal: 'Original',
+      modelHint: 'Model 2 is recommended for most uses; Model 1 only for legacy systems.',
     },
     ean13: {
       content: 'Content (12 digits)',

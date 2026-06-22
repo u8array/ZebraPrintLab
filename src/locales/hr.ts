@@ -640,6 +640,10 @@ const hr = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Model',
+      modelEnhanced: 'Poboljšan (preporučeno)',
+      modelOriginal: 'Izvorni',
+      modelHint: 'Model 2 preporučuje se za većinu namjena; Model 1 samo za starije sustave.',
     },
     ean13: {
       content: 'Sadržaj (12 znamenki)',

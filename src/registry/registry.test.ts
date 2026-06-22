@@ -336,10 +336,17 @@ describe('qrcode.toZPL', () => {
 
   it('emits ^BQ with magnification and ^FD with error correction prefix', () => {
     const zpl = def.toZPL(makeObj('qrcode', {
-      content: 'https://example.com', magnification: 6, errorCorrection: 'Q', rotation: 'N',
+      content: 'https://example.com', magnification: 6, errorCorrection: 'Q', model: 2, rotation: 'N',
     }));
     expect(zpl).toContain('^BQN,2,6');
     expect(zpl).toContain('^FDQA,https://example.com^FS');
+  });
+
+  it('emits the model (^BQ b) so Model 1 is not silently changed to 2', () => {
+    const zpl = def.toZPL(makeObj('qrcode', {
+      content: 'x', magnification: 4, errorCorrection: 'Q', model: 1, rotation: 'N',
+    }));
+    expect(zpl).toContain('^BQN,1,4');
   });
 });
 

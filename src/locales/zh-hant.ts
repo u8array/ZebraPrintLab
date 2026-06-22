@@ -640,6 +640,10 @@ const zhHant = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: '型號',
+      modelEnhanced: '增強型（建議）',
+      modelOriginal: '原始型',
+      modelHint: '大多數用途建議使用型號2；型號1僅適用於舊系統。',
     },
     ean13: {
       content: '內容 (12位數字)',

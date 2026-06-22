@@ -640,6 +640,10 @@ const fi = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Malli',
+      modelEnhanced: 'Parannettu (suositeltu)',
+      modelOriginal: 'Alkuperäinen',
+      modelHint: 'Useimpiin käyttötarkoituksiin suositellaan mallia 2; malli 1 vain vanhoille järjestelmille.',
     },
     ean13: {
       content: 'Sisältö (12 numeroa)',

@@ -640,6 +640,10 @@ const lv = {
       ecM: '15%',
       ecQ: '25%',
       ecH: '30%',
+      model: 'Modelis',
+      modelEnhanced: 'Uzlabots (ieteicams)',
+      modelOriginal: 'Sākotnējais',
+      modelHint: 'Lielākajai daļai lietojumu ieteicams 2. modelis; 1. modelis tikai novecojušām sistēmām.',
     },
     ean13: {
       content: 'Saturs (12 cipari)',
