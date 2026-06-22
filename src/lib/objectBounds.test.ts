@@ -110,10 +110,24 @@ describe("objectBoundsDots", () => {
     expect(objectBoundsDots(t, ctx(measured))).toEqual({ x: 12, y: 24, width: 77, height: 30 });
   });
 
-  it("single-line text: measured footprint is used verbatim (producer already rotated it)", () => {
+  it("single-line text: rotated footprint size is verbatim, top-left shifts for R", () => {
     const t = leaf("text", 12, 24, { content: "Hello", fontHeight: 30, fontWidth: 0, rotation: "R" });
     const measured = new Map([[t.id, { width: 30, height: 77 }]]); // already rotated
-    expect(objectBoundsDots(t, ctx(measured))).toEqual({ x: 12, y: 24, width: 30, height: 77 });
+    // Size used verbatim (not re-rotated); R rotates about the anchor, so the
+    // visual top-left moves left by the rotated width (mirrors blockBoundsDots).
+    expect(objectBoundsDots(t, ctx(measured))).toEqual({ x: -18, y: 24, width: 30, height: 77 });
+  });
+
+  it("single-line text: B rotates about the anchor, top-left moves up", () => {
+    const t = leaf("text", 12, 24, { content: "Hello", fontHeight: 30, fontWidth: 0, rotation: "B" });
+    const measured = new Map([[t.id, { width: 30, height: 77 }]]); // already rotated
+    expect(objectBoundsDots(t, ctx(measured))).toEqual({ x: 12, y: -53, width: 30, height: 77 });
+  });
+
+  it("single-line text: I rotates about the anchor, top-left moves left and up", () => {
+    const t = leaf("text", 12, 24, { content: "Hello", fontHeight: 30, fontWidth: 0, rotation: "I" });
+    const measured = new Map([[t.id, { width: 77, height: 30 }]]); // already rotated
+    expect(objectBoundsDots(t, ctx(measured))).toEqual({ x: -65, y: -6, width: 77, height: 30 });
   });
 
   it("single-line text: fallback estimate swaps axes for R", () => {

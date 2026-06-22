@@ -60,6 +60,23 @@ function fallbackSizeDots(
   return def ? resolveDefaultSizeDots(def, label) : { width: 0, height: 0 };
 }
 
+/** Anchor to visual-top-left shift for one rotated line: the renderer rotates
+ *  the node about obj.x/obj.y, so R/I/B move the AABB off the anchor. Takes the
+ *  already-rotated footprint; mirrors blockBoundsDots. */
+function rotatedLineOffset(
+  rotation: ZplRotation,
+  fpWidth: number,
+  fpHeight: number,
+): { x: number; y: number } {
+  switch (rotation) {
+    case "R": return { x: -fpWidth, y: 0 };
+    case "I": return { x: -fpWidth, y: -fpHeight };
+    case "B": return { x: 0, y: -fpHeight };
+    case "N":
+    default: return { x: 0, y: 0 };
+  }
+}
+
 /** Single-line text/serial footprint estimate from props when no measured
  *  size exists. Width is the Font-0 calibrated advance sum; height is the
  *  font height. Rotation swaps the axes. */
@@ -166,11 +183,13 @@ export function objectBoundsDots(obj: LabelObject, ctx: ObjectBoundsCtx): Boundi
       // Measured is the already-rotated footprint (the producer rotates it); the
       // fallback estimate computes upright and rotates itself.
       const fp = ctx.measured?.get(obj.id) ?? singleLineEstimate(obj);
-      return { x: obj.x, y: obj.y, width: fp.width, height: fp.height };
+      const off = rotatedLineOffset(p.rotation, fp.width, fp.height);
+      return { x: obj.x + off.x, y: obj.y + off.y, width: fp.width, height: fp.height };
     }
     case "serial": {
       const fp = ctx.measured?.get(obj.id) ?? singleLineEstimate(obj);
-      return { x: obj.x, y: obj.y, width: fp.width, height: fp.height };
+      const off = rotatedLineOffset(obj.props.rotation, fp.width, fp.height);
+      return { x: obj.x + off.x, y: obj.y + off.y, width: fp.width, height: fp.height };
     }
     default: {
       if (isBarcode(obj)) {
