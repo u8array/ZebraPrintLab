@@ -227,7 +227,6 @@ export function LayerRow({
             {labelText}
           </span>
         )}
-        <span className="font-mono text-[9px] text-muted">{obj.id.slice(0, 8)}</span>
       </div>
       {groupRow && (
         <Tooltip content={t.layers.ungroup}>

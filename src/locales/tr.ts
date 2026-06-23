@@ -625,6 +625,13 @@ const tr = {
       rounding: 'Yuvarlama (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Şekil',
+      line: 'Çizgi',
+      box: 'Kutu',
+      diagonalHint: 'Çapraz çizgiyi kutuya dönüştürmek için önce düzleştirin.',
+      outlineHint: 'Yalnızca köşeleri yuvarlatılmamış dolu bir kutu çizgiye dönüştürülebilir.',
+    },
     code39: {
       content: 'İçerik',
       height: 'Yükseklik',

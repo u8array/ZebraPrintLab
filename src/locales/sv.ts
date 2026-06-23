@@ -625,6 +625,13 @@ const sv = {
       rounding: 'Avrundning (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Form',
+      line: 'Linje',
+      box: 'Ruta',
+      diagonalHint: 'Räta först ut den diagonala linjen för att göra den till en ruta.',
+      outlineHint: 'Endast en fylld ruta utan rundning kan bli en linje.',
+    },
     code39: {
       content: 'Innehåll',
       height: 'Höjd',

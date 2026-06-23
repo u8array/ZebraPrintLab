@@ -11,8 +11,35 @@ import {
   pinInactiveEdges,
   computeNewModules,
   activeEdgesFromAnchorName,
+  shrinkingBelowFloor,
   type BoundingBox,
 } from "./transformerGeometry";
+
+describe("shrinkingBelowFloor", () => {
+  const box = (width: number, height: number): BoundingBox => ({ x: 0, y: 0, width, height, rotation: 0 });
+
+  it("vetoes shrinking an axis below the floor", () => {
+    expect(shrinkingBelowFloor(box(100, 100), box(5, 100), 10)).toBe(true);
+    expect(shrinkingBelowFloor(box(100, 100), box(100, 5), 10)).toBe(true);
+  });
+
+  it("allows a thin box (already below floor) to grow", () => {
+    // A box converted from a horizontal line: ~1.4px tall. Growing height must pass.
+    expect(shrinkingBelowFloor(box(200, 1.4), box(200, 60), 10)).toBe(false);
+  });
+
+  it("allows a thin box to be widened while staying thin", () => {
+    expect(shrinkingBelowFloor(box(200, 1.4), box(400, 1.4), 10)).toBe(false);
+  });
+
+  it("does not veto a normal shrink that stays above the floor", () => {
+    expect(shrinkingBelowFloor(box(100, 100), box(60, 60), 10)).toBe(false);
+  });
+
+  it("allows shrinking exactly to the floor (strict <)", () => {
+    expect(shrinkingBelowFloor(box(100, 100), box(10, 100), 10)).toBe(false);
+  });
+});
 
 describe("snapBoxHeight", () => {
   it("rounds to the nearest multiple of stepPx", () => {

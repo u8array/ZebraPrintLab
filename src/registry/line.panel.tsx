@@ -8,6 +8,7 @@ import { SectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { fieldGridCols, fieldGridCell } from '../components/ui/formStyles';
+import { ShapeModeToggle } from '../components/Properties/ShapeModeToggle';
 import { type LineProps, pickAngle } from './line';
 
 /**
@@ -44,7 +45,11 @@ export const linePanel: ObjectTypeUi<LineProps> = {
     const norm = ((p.angle % 180) + 180) % 180;
     const cmd = norm === 0 || norm === 90 ? '^GB' : '^GD';
     return (
-      <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
+      <SectionCard
+        id={`${obj.type}-settings`}
+        title={t.registry.shapeMode.label}
+        headerAction={<ShapeModeToggle obj={obj} />}
+      >
         <div className={`grid grid-cols-2 ${fieldGridCols}`}>
           <UnitNumberInput
             label={t.registry.line.length}

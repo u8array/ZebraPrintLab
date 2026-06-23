@@ -625,6 +625,13 @@ const fa = {
       rounding: 'گردی (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'شکل',
+      line: 'خط',
+      box: 'کادر',
+      diagonalHint: 'ابتدا خط مورب را صاف کنید تا به یک کادر تبدیل شود.',
+      outlineHint: 'فقط یک کادر پر بدون گردی گوشه می‌تواند به خط تبدیل شود.',
+    },
     code39: {
       content: 'محتوا',
       height: 'ارتفاع',

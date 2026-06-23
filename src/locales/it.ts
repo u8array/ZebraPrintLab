@@ -625,6 +625,13 @@ const it = {
       rounding: 'Arrotondamento (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Forma',
+      line: 'Linea',
+      box: 'Riquadro',
+      diagonalHint: 'Raddrizza prima la linea diagonale per trasformarla in un riquadro.',
+      outlineHint: 'Solo una casella piena senza arrotondamento può diventare una linea.',
+    },
     code39: {
       content: 'Contenuto',
       height: 'Altezza',

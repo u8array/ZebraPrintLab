@@ -55,7 +55,8 @@ import {
 import { useAltClickCycle } from "./hooks/useAltClickCycle";
 import { useSelectionActionBar, actionBarPosition, type BarBounds } from "./hooks/useSelectionActionBar";
 import { FloatingCanvasButton, RADIUS as BUTTON_RADIUS, type ButtonTone } from "./FloatingCanvasButton";
-import { ROTATE_ICON, TRASH_ICON, LOCK_ICON, UNLOCK_ICON, GROUP_ICON, UNGROUP_ICON } from "./canvasIcons";
+import { ROTATE_ICON, TRASH_ICON, LOCK_ICON, UNLOCK_ICON, GROUP_ICON, UNGROUP_ICON, LINE_ICON, BOX_ICON } from "./canvasIcons";
+import { isShapeToggleable, canToggleShapeMode, oppositeShapeMode, toggleShapeMode } from "../../lib/lineBoxConvert";
 import {
   getStepRotation,
   nextZplRotation,
@@ -174,6 +175,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     addObject,
     updateObject,
     updateObjects,
+    convertObjectType,
     selectObject,
     toggleSelectObject,
     selectObjects,
@@ -799,7 +801,21 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     iconPath: string;
     tone: ButtonTone;
     onClick: () => void;
+    disabled?: boolean;
   }[] = [];
+  // Line | Box mode toggle: same ^GB primitive, different handles. The icon
+  // shows the target mode; a diagonal line can't become a box losslessly, so
+  // that direction is disabled (still shown, greyed, to hint the affordance).
+  if (singleSelected && isShapeToggleable(singleSelected) && !singleSelected.locked) {
+    const toBox = oppositeShapeMode(singleSelected) === "box";
+    actionButtons.push({
+      key: "shape-mode",
+      iconPath: toBox ? BOX_ICON : LINE_ICON,
+      tone: "neutral",
+      disabled: !canToggleShapeMode(singleSelected),
+      onClick: () => convertObjectType(singleSelected.id, toggleShapeMode),
+    });
+  }
   if (singleSelected && stepRotation && !singleSelected.locked) {
     actionButtons.push({
       key: "rotate",
@@ -1510,6 +1526,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                       tone={b.tone}
                       onClick={b.onClick}
                       iconPath={b.iconPath}
+                      disabled={b.disabled}
                     />
                   </Group>
                 ))}

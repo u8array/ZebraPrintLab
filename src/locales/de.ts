@@ -646,6 +646,13 @@ const de = {
       rounding: 'Rundung (0–8)',
       reverse: 'Invertieren',
     },
+    shapeMode: {
+      label: 'Form',
+      line: 'Linie',
+      box: 'Box',
+      diagonalHint: 'Diagonale Linie erst gerade ziehen, um sie in eine Box umzuwandeln.',
+      outlineHint: 'Nur eine gefüllte Box ohne Rundung lässt sich in eine Linie umwandeln.',
+    },
     code39: {
       content: 'Inhalt',
       height: 'Höhe',

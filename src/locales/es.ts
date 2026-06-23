@@ -625,6 +625,13 @@ const es = {
       rounding: 'Redondeo (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Forma',
+      line: 'Línea',
+      box: 'Caja',
+      diagonalHint: 'Endereza primero la línea diagonal para convertirla en una caja.',
+      outlineHint: 'Solo una caja rellena sin redondeo puede convertirse en línea.',
+    },
     code39: {
       content: 'Contenido',
       height: 'Altura',

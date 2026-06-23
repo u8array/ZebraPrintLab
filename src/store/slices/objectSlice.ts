@@ -40,6 +40,11 @@ export interface ObjectSlice {
   ) => void;
   updateObject: (id: string, changes: ObjectChanges) => void;
   updateObjects: (updates: { id: string; changes: ObjectChanges }[]) => void;
+  /** Replace a leaf node wholesale via `mapper` (e.g. line<->box: swaps `type`
+   *  and the entire props object, which `updateObject` cannot do since props
+   *  merge and `type` is excluded from ObjectChanges). Refuses locked nodes and
+   *  groups; one history entry. */
+  convertObjectType: (id: string, mapper: (obj: LabelObject) => LabelObject) => void;
   removeObject: (id: string) => void;
   duplicateObject: (id: string) => void;
   duplicateSelectedObjects: () => void;
@@ -112,6 +117,18 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
           applyObjectChanges(obj, changes, ancestorLocked),
         ),
       );
+    }),
+
+  convertObjectType: (id, mapper) =>
+    set((state) => {
+      if (selectPreviewLocksEditor(state)) return {};
+      const objs = currentObjects(state);
+      const target = findObjectById(objs, id);
+      if (!target || isGroup(target) || target.locked) return {};
+      if (findAncestors(objs, id).some((g) => !!g.locked)) return {};
+      // Wholesale node replacement, so registry normalizeChanges is bypassed by
+      // design; the mapper owns the result's validity (line/box have no hook).
+      return updateCurrentObjects(state, (curr) => mapObjectById(curr, id, mapper));
     }),
 
   updateObjects: (updates) =>

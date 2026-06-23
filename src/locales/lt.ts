@@ -625,6 +625,13 @@ const lt = {
       rounding: 'Apvalinimas (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Figūra',
+      line: 'Linija',
+      box: 'Stačiakampis',
+      diagonalHint: 'Pirmiausia ištiesinkite įstrižą liniją, kad paverstumėte ją stačiakampiu.',
+      outlineHint: 'Į liniją galima paversti tik užpildytą stačiakampį be suapvalinimo.',
+    },
     code39: {
       content: 'Turinys',
       height: 'Aukštis',

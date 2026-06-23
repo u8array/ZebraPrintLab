@@ -50,6 +50,9 @@ interface SectionCardProps {
   /** ZPL command this single-command section maps to (e.g. ^FN); shown when
    *  showZplCommands is on. Omit for multi-command sections. */
   cmd?: string;
+  /** Compact control rendered right-aligned in the header, outside the collapse
+   *  toggle so its own clicks don't fold the section (e.g. the Line|Box mode). */
+  headerAction?: ReactNode;
   children: ReactNode;
 }
 
@@ -64,27 +67,39 @@ export function SectionCard({
   title,
   defaultOpen = true,
   cmd,
+  headerAction,
   children,
 }: SectionCardProps) {
   const [open, setOpen] = useCollapsibleState(id, defaultOpen);
   const contentId = useId();
+  const toggle = () => setOpen((o) => !o);
   return (
     <div className={cardCls}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-controls={contentId}
-        className="flex items-center gap-2 w-full px-2.5 py-2.5 text-left"
-      >
-        <CardLabel active={open} title={title} />
-        <span className="ml-auto flex items-center gap-2">
-          <ZplCmd cmd={cmd} />
+      <div className="flex items-center gap-2 px-2.5 py-2.5">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          aria-controls={contentId}
+          className="flex items-center gap-2 flex-1 min-w-0 text-left"
+        >
+          <CardLabel active={open} title={title} />
+        </button>
+        {headerAction}
+        <ZplCmd cmd={cmd} />
+        {/* Redundant pointer affordance; the label button is the AT disclosure. */}
+        <button
+          type="button"
+          onClick={toggle}
+          tabIndex={-1}
+          aria-hidden="true"
+          className="shrink-0"
+        >
           <ChevronDownIcon
             className={`w-3 h-3 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`}
           />
-        </span>
-      </button>
+        </button>
+      </div>
       {open && (
         <div id={contentId} className={bodyCls}>
           {children}

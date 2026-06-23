@@ -625,6 +625,13 @@ const fr = {
       rounding: 'Arrondi (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Forme',
+      line: 'Ligne',
+      box: 'Cadre',
+      diagonalHint: "Redressez d'abord la ligne diagonale pour la transformer en cadre.",
+      outlineHint: 'Seule une boîte pleine sans arrondi peut devenir une ligne.',
+    },
     code39: {
       content: 'Contenu',
       height: 'Hauteur',

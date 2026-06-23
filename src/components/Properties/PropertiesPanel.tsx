@@ -208,7 +208,7 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
 
   return (
     <div className="flex flex-col">
-      {/* Type header: icon in an accent-tinted chip, id as a surface pill. */}
+      {/* Type header: icon in an accent-tinted chip. */}
       <div className="px-3 py-2.5 border-b border-border flex items-center gap-2.5">
         <span className="flex items-center justify-center min-w-[22px] h-[22px] px-1 rounded-md bg-accent-dim text-accent font-mono text-xs font-semibold shrink-0">
           {headerBadge}
@@ -217,10 +217,6 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
           {typeLabel}
         </span>
         <BwipApproxIcon type={obj.type} />
-
-        <span className="font-mono text-[9px] text-muted bg-surface-2 px-1.5 py-0.5 rounded ml-auto shrink-0">
-          {obj.id.slice(0, 8)}
-        </span>
       </div>
 
       {/* Panel stays bg-surface (bg-bg would merge with the canvas); each

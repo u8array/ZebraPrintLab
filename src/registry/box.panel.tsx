@@ -8,6 +8,7 @@ import { SectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { fieldGridCols, fieldGridCell } from '../components/ui/formStyles';
+import { ShapeModeToggle } from '../components/Properties/ShapeModeToggle';
 import type { BoxProps } from './box';
 
 export const boxPanel: ObjectTypeUi<BoxProps> = {
@@ -16,7 +17,11 @@ export const boxPanel: ObjectTypeUi<BoxProps> = {
     const p = obj.props;
     const showZpl = useLabelStore((s) => s.showZplCommands);
     return (
-      <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
+      <SectionCard
+        id={`${obj.type}-settings`}
+        title={t.registry.shapeMode.label}
+        headerAction={<ShapeModeToggle obj={obj} />}
+      >
         <div className={`grid grid-cols-2 ${fieldGridCols}`}>
           <UnitNumberInput
             label={t.registry.box.width}

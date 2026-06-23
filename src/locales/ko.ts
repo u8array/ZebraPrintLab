@@ -625,6 +625,13 @@ const ko = {
       rounding: '모서리 둥글기 (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: '도형',
+      line: '선',
+      box: '상자',
+      diagonalHint: '대각선을 상자로 바꾸려면 먼저 선을 곧게 펴세요.',
+      outlineHint: '모서리가 둥글지 않은 채워진 상자만 선으로 바꿀 수 있습니다.',
+    },
     code39: {
       content: '내용',
       height: '높이',

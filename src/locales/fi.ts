@@ -625,6 +625,13 @@ const fi = {
       rounding: 'Pyöristys (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Muoto',
+      line: 'Viiva',
+      box: 'Laatikko',
+      diagonalHint: 'Suorista viisto viiva ensin muuttaaksesi sen laatikoksi.',
+      outlineHint: 'Vain täytetty laatikko ilman pyöristystä voi muuttua viivaksi.',
+    },
     code39: {
       content: 'Sisältö',
       height: 'Korkeus',

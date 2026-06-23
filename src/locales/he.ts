@@ -625,6 +625,13 @@ const he = {
       rounding: 'עיגול (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'צורה',
+      line: 'קו',
+      box: 'תיבה',
+      diagonalHint: 'יישר תחילה את הקו האלכסוני כדי להפוך אותו לתיבה.',
+      outlineHint: 'רק תיבה מלאה ללא עיגול פינות יכולה להפוך לקו.',
+    },
     code39: {
       content: 'תוכן',
       height: 'גובה',

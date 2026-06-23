@@ -625,6 +625,13 @@ const pt = {
       rounding: 'Arredondamento (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Forma',
+      line: 'Linha',
+      box: 'Caixa',
+      diagonalHint: 'Endireite primeiro a linha diagonal para transformá-la numa caixa.',
+      outlineHint: 'Apenas uma caixa preenchida sem arredondamento pode tornar-se uma linha.',
+    },
     code39: {
       content: 'Conteúdo',
       height: 'Altura',

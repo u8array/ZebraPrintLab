@@ -13,6 +13,8 @@ interface Props {
   /** 24x24 SVG path data; centred and scaled into the button. */
   iconPath: string;
   tone?: ButtonTone;
+  /** Greys the icon and ignores clicks/hover (e.g. diagonal line -> box). */
+  disabled?: boolean;
 }
 
 export const RADIUS = 15;
@@ -28,7 +30,7 @@ const ICON_OFFSET = 12; // 24x24 viewBox centre
  * bar Group is positioned imperatively in a beforeDraw hook.
  */
 export const FloatingCanvasButton = forwardRef<Konva.Group, Props>(
-  function FloatingCanvasButton({ onClick, iconPath, tone = "neutral" }, ref) {
+  function FloatingCanvasButton({ onClick, iconPath, tone = "neutral", disabled = false }, ref) {
     const colors = useColorScheme();
     const [hover, setHover] = useState(false);
     // Track the stage so an unmount-while-hovering (e.g. the action clears the
@@ -41,9 +43,10 @@ export const FloatingCanvasButton = forwardRef<Konva.Group, Props>(
         : tone === "active"
           ? { rest: colors.accent, active: colors.accent, fill: colors.surface2, fillOpacity: 1 }
           : { rest: colors.muted, active: colors.selection, fill: colors.surface2, fillOpacity: 1 };
-    const iconColor = hover ? palette.active : palette.rest;
+    const iconColor = !disabled && hover ? palette.active : palette.rest;
 
     const cursorIn = (e: Konva.KonvaEventObject<MouseEvent>) => {
+      if (disabled) return;
       const stage = e.target.getStage();
       if (stage) {
         stage.container().style.cursor = "pointer";
@@ -72,11 +75,11 @@ export const FloatingCanvasButton = forwardRef<Konva.Group, Props>(
         onMouseLeave={cursorOut}
         onClick={(e) => {
           e.cancelBubble = true;
-          onClick();
+          if (!disabled) onClick();
         }}
         onTap={(e) => {
           e.cancelBubble = true;
-          onClick();
+          if (!disabled) onClick();
         }}
       >
         {/* Invisible hitbox; gives the thin icon a comfortable click target. */}
@@ -103,6 +106,7 @@ export const FloatingCanvasButton = forwardRef<Konva.Group, Props>(
             lineCap="round"
             lineJoin="round"
             fill="transparent"
+            opacity={disabled ? 0.4 : 1}
           />
         </Group>
       </Group>

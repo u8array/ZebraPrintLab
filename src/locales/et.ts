@@ -625,6 +625,13 @@ const et = {
       rounding: 'Ümardus (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Kuju',
+      line: 'Joon',
+      box: 'Kast',
+      diagonalHint: 'Sirgesta esmalt diagonaaljoon, et muuta see kastiks.',
+      outlineHint: 'Jooneks saab muuta ainult täidetud kasti ilma ümarduseta.',
+    },
     code39: {
       content: 'Sisu',
       height: 'Kõrgus',

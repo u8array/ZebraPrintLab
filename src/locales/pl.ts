@@ -625,6 +625,13 @@ const pl = {
       rounding: 'Zaokrąglenie (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Kształt',
+      line: 'Linia',
+      box: 'Prostokąt',
+      diagonalHint: 'Najpierw wyprostuj linię ukośną, aby zmienić ją w prostokąt.',
+      outlineHint: 'Tylko wypełnione pole bez zaokrąglenia może stać się linią.',
+    },
     code39: {
       content: 'Zawartość',
       height: 'Wysokość',
