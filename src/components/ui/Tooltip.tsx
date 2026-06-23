@@ -38,7 +38,7 @@ export function Tooltip({ content, children, placement = "top", delayMs = 120, c
     return resolveTooltipPosition(
       a,
       { width: t?.width ?? 0, height: t?.height ?? 0 },
-      { width: window.innerWidth, height: window.innerHeight },
+      { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight },
       { preferred: placement },
     );
   });

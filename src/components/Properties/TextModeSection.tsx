@@ -83,7 +83,6 @@ export function TextModeSection({
           <Tooltip key={m.key} content={m.hint} className="w-full">
             <button
               type="button"
-              aria-label={`${m.label}: ${m.hint}`}
               aria-pressed={mode === m.key}
               className={`w-full flex flex-col items-center gap-0.5 rounded border px-1 py-1.5 text-[11px] transition-colors ${
                 mode === m.key

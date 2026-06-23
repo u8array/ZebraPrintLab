@@ -700,8 +700,8 @@ function LabelConfigPanel({
           />
         </div>
 
-        <Tooltip content={t.label.overridePauseCountHint} className="w-full">
-          <label className="flex w-full items-center gap-2 text-xs">
+        <label className="flex w-full items-center gap-2 text-xs">
+          <Tooltip content={t.label.overridePauseCountHint}>
             <input
               type="checkbox"
               checked={label.overridePauseCount === "Y"}
@@ -711,9 +711,9 @@ function LabelConfigPanel({
                 })
               }
             />
-            {t.label.overridePauseCount}
-          </label>
-        </Tooltip>
+          </Tooltip>
+          {t.label.overridePauseCount}
+        </label>
         </div>
         </SectionCard>
 
