@@ -625,6 +625,13 @@ const cs = {
       rounding: 'Zaoblení (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Tvar',
+      line: 'Čára',
+      box: 'Obdélník',
+      diagonalHint: 'Nejprve narovnejte šikmou čáru, abyste ji převedli na obdélník.',
+      outlineHint: 'Na čáru lze převést pouze vyplněný obdélník bez zaoblení.',
+    },
     code39: {
       content: 'Obsah',
       height: 'Výška',

@@ -625,6 +625,13 @@ const sl = {
       rounding: 'Zaobljenje (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Oblika',
+      line: 'Črta',
+      box: 'Okvir',
+      diagonalHint: 'Najprej zravnajte diagonalno črto, da jo spremenite v okvir.',
+      outlineHint: 'V črto je mogoče pretvoriti samo zapolnjeno polje brez zaobljenja.',
+    },
     code39: {
       content: 'Vsebina',
       height: 'Višina',

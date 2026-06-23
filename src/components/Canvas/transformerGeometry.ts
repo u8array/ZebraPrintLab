@@ -18,6 +18,20 @@ export function snapBoxHeight(height: number, stepPx: number): number {
   return Math.max(stepPx, Math.round(height / stepPx) * stepPx);
 }
 
+/** Reject a resize only when it shrinks an axis below the floor. A box already
+ *  thinner than the floor (e.g. converted from a thin line) stays growable and
+ *  movable; only active shrinking past the floor is vetoed. */
+export function shrinkingBelowFloor(
+  oldBox: BoundingBox,
+  newBox: BoundingBox,
+  floor: number,
+): boolean {
+  return (
+    (newBox.width < floor && newBox.width < oldBox.width) ||
+    (newBox.height < floor && newBox.height < oldBox.height)
+  );
+}
+
 /** Anchor inferred from non-moving edge (Konva hides it from boundBoxFunc). */
 export function forceSquareBox(oldBox: BoundingBox, newBox: BoundingBox): BoundingBox {
   const leftMoved = Math.abs(newBox.x - oldBox.x) > 0.001;

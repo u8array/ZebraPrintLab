@@ -625,6 +625,13 @@ const lv = {
       rounding: 'Noapaļojums (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Forma',
+      line: 'Līnija',
+      box: 'Taisnstūris',
+      diagonalHint: 'Vispirms iztaisnojiet diagonālo līniju, lai pārvērstu to taisnstūrī.',
+      outlineHint: 'Par līniju var pārvērst tikai aizpildītu lodziņu bez noapaļojuma.',
+    },
     code39: {
       content: 'Saturs',
       height: 'Augstums',

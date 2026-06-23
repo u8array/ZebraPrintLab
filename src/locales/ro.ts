@@ -625,6 +625,13 @@ const ro = {
       rounding: 'Rotunjire (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Formă',
+      line: 'Linie',
+      box: 'Casetă',
+      diagonalHint: 'Îndreptați mai întâi linia diagonală pentru a o transforma într-o casetă.',
+      outlineHint: 'Doar o casetă plină fără colțuri rotunjite poate deveni o linie.',
+    },
     code39: {
       content: 'Conținut',
       height: 'Înălțime',

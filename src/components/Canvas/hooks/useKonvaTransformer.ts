@@ -23,6 +23,7 @@ import {
   pinInactiveEdges,
   positionDidMove,
   forceSquareBox,
+  shrinkingBelowFloor,
   type ActiveEdgeFlags,
   type BoundingBox,
   type TransformAnchor,
@@ -715,9 +716,7 @@ export function useKonvaTransformer({
     oldBox: BoundingBox,
     newBox: BoundingBox,
   ): BoundingBox => {
-    if (newBox.width < MIN_RESIZE_BOX_PX || newBox.height < MIN_RESIZE_BOX_PX) {
-      return oldBox;
-    }
+    if (shrinkingBelowFloor(oldBox, newBox, MIN_RESIZE_BOX_PX)) return oldBox;
     // The text-block reflow re-pins from its own captured edges, so the snap /
     // inactive-edge pin below would fight it; skip entirely.
     if (liveReflowRef.current) return newBox;

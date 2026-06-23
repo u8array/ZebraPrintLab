@@ -625,6 +625,13 @@ const ar = {
       rounding: 'التدوير (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'شكل',
+      line: 'خط',
+      box: 'مربع',
+      diagonalHint: 'قم بفرد الخط المائل أولاً لتحويله إلى مربع.',
+      outlineHint: 'يمكن تحويل المربع المملوء بدون زوايا مستديرة فقط إلى خط.',
+    },
     code39: {
       content: 'المحتوى',
       height: 'الارتفاع',

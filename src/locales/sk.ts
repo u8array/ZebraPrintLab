@@ -625,6 +625,13 @@ const sk = {
       rounding: 'Zaoblenie (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Tvar',
+      line: 'Čiara',
+      box: 'Obdĺžnik',
+      diagonalHint: 'Najprv narovnajte šikmú čiaru, aby ste ju zmenili na obdĺžnik.',
+      outlineHint: 'Na čiaru možno previesť iba vyplnený obdĺžnik bez zaoblenia.',
+    },
     code39: {
       content: 'Obsah',
       height: 'Výška',

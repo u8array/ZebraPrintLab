@@ -625,6 +625,13 @@ const zhHans = {
       rounding: '圆角 (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: '形状',
+      line: '线条',
+      box: '方框',
+      diagonalHint: '请先将对角线拉直，以将其转换为方框。',
+      outlineHint: '只有没有圆角的填充框才能转换为线条。',
+    },
     code39: {
       content: '内容',
       height: '高度',

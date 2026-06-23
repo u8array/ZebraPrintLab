@@ -625,6 +625,13 @@ const hr = {
       rounding: 'Zaobljenje (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Oblik',
+      line: 'Linija',
+      box: 'Okvir',
+      diagonalHint: 'Prvo izravnajte dijagonalnu liniju kako biste je pretvorili u okvir.',
+      outlineHint: 'Samo ispunjeni okvir bez zaobljenja može postati linija.',
+    },
     code39: {
       content: 'Sadržaj',
       height: 'Visina',

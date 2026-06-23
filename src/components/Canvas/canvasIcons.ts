@@ -24,3 +24,10 @@ export const GROUP_ICON =
 /** Lucide "ungroup": two separated tiles (no frame). */
 export const UNGROUP_ICON =
   "M5 4h8v6H5z M11 14h8v6h-8z";
+
+/** Lucide "minus": a single horizontal stroke; switch-to-line mode. */
+export const LINE_ICON = "M5 12h14";
+
+/** Lucide "square": switch-to-box mode. */
+export const BOX_ICON =
+  "M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z";

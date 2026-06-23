@@ -625,6 +625,13 @@ const nl = {
       rounding: 'Afronding (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Vorm',
+      line: 'Lijn',
+      box: 'Kader',
+      diagonalHint: 'Maak eerst de diagonale lijn recht om er een kader van te maken.',
+      outlineHint: 'Alleen een gevuld vak zonder afronding kan een lijn worden.',
+    },
     code39: {
       content: 'Inhoud',
       height: 'Hoogte',

@@ -7,6 +7,7 @@ import {
   migrateLegacy,
 } from './labelStore';
 import { isGroup, getAllLeaves, type LabelObject } from '../types/Group';
+import { toggleShapeMode } from '../lib/lineBoxConvert';
 import { defined, props } from '../test/helpers';
 
 // Mock the Labelary client so cache tests run without network I/O.
@@ -125,6 +126,75 @@ describe('updateObject — props merging', () => {
     state().updateObject(obj.id, { x: 999 });
     expect(defined(objs()[0]).x).toBe(999);
     expect(props(defined(objs()[0])).content).toBe('Text');
+  });
+});
+
+// ── convertObjectType ─────────────────────────────────────────────────────────
+
+describe('convertObjectType', () => {
+  it('replaces type and props wholesale (no stale prop leak)', () => {
+    state().addObject('line', { x: 0, y: 0 });
+    const obj = defined(objs()[0]);
+    state().convertObjectType(obj.id, (o) => ({
+      ...o,
+      type: 'box',
+      props: { width: 200, height: 3, thickness: 3, filled: true, color: 'B', rounding: 0 },
+    }));
+    const next = defined(objs()[0]);
+    expect(next.id).toBe(obj.id);
+    expect(next.type).toBe('box');
+    expect(props(next)).not.toHaveProperty('angle');
+    expect(props(next)).not.toHaveProperty('length');
+  });
+
+  it('refuses to convert a locked object', () => {
+    state().addObject('line');
+    const id = defined(objs()[0]).id;
+    state().updateObject(id, { locked: true });
+    state().convertObjectType(id, toggleShapeMode);
+    expect(defined(objs()[0]).type).toBe('line');
+  });
+
+  it('converts a line to a box end-to-end via the real toggleShapeMode mapper', () => {
+    state().addObject('line', { x: 0, y: 0 });
+    const id = defined(objs()[0]).id;
+    state().convertObjectType(id, toggleShapeMode);
+    const next = defined(objs()[0]);
+    expect(next.type).toBe('box');
+    expect(props(next)).toMatchObject({ width: 200, height: 3, filled: true });
+    expect(props(next)).not.toHaveProperty('angle');
+  });
+
+  it('refuses to convert a leaf inside a locked group', () => {
+    state().addObject('line');
+    state().addObject('line');
+    state().selectObjects(ids());
+    state().groupSelection();
+    const group = defined(objs()[0]);
+    state().updateObject(group.id, { locked: true });
+    const leafId = getAllLeaves(objs())[0]!.id;
+    state().convertObjectType(leafId, toggleShapeMode);
+    expect(getAllLeaves(objs()).every((l) => l.type === 'line')).toBe(true);
+  });
+
+  it('converts a leaf inside an unlocked group', () => {
+    state().addObject('line');
+    state().addObject('line');
+    state().selectObjects(ids());
+    state().groupSelection();
+    const leafId = getAllLeaves(objs())[0]!.id;
+    state().convertObjectType(leafId, toggleShapeMode);
+    expect(getAllLeaves(objs()).find((l) => l.id === leafId)?.type).toBe('box');
+  });
+
+  it('is a single undo entry and keeps the selection', () => {
+    state().addObject('line', { x: 0, y: 0 });
+    const id = defined(objs()[0]).id;
+    state().selectObject(id);
+    useLabelStore.temporal.getState().clear();
+    state().convertObjectType(id, toggleShapeMode);
+    expect(useLabelStore.temporal.getState().pastStates.length).toBe(1);
+    expect(state().selectedIds).toContain(id);
   });
 });
 

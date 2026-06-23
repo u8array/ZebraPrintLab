@@ -625,6 +625,13 @@ const zhHant = {
       rounding: '圓角 (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: '形狀',
+      line: '線條',
+      box: '方框',
+      diagonalHint: '請先將對角線拉直，以將其轉換為方框。',
+      outlineHint: '只有沒有圓角的填滿方框才能轉換為線條。',
+    },
     code39: {
       content: '內容',
       height: '高度',

@@ -625,6 +625,13 @@ const ja = {
       rounding: '角丸 (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'シェイプ',
+      line: '線',
+      box: 'ボックス',
+      diagonalHint: '斜めの線をボックスに変換するには、まず線をまっすぐにしてください。',
+      outlineHint: '塗りつぶされた角丸なしのボックスのみを線に変換できます。',
+    },
     code39: {
       content: 'コンテンツ',
       height: '高さ',

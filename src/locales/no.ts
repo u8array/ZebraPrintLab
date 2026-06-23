@@ -625,6 +625,13 @@ const no = {
       rounding: 'Avrunding (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Form',
+      line: 'Linje',
+      box: 'Boks',
+      diagonalHint: 'Rett ut den diagonale linjen først for å gjøre den om til en boks.',
+      outlineHint: 'Bare en fylt boks uten avrunding kan bli en linje.',
+    },
     code39: {
       content: 'Innhold',
       height: 'Høyde',

@@ -625,6 +625,13 @@ const hu = {
       rounding: 'Lekerekítés (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Alakzat',
+      line: 'Vonal',
+      box: 'Doboz',
+      diagonalHint: 'Először egyenesítse ki az átlós vonalat, hogy dobozzá alakítsa.',
+      outlineHint: 'Csak kitöltött, lekerekítés nélküli doboz alakítható vonallá.',
+    },
     code39: {
       content: 'Tartalom',
       height: 'Magasság',

@@ -646,6 +646,13 @@ const en = {
       rounding: 'Rounding (0–8)',
       reverse: 'Invert',
     },
+    shapeMode: {
+      label: 'Shape',
+      line: 'Line',
+      box: 'Box',
+      diagonalHint: 'Straighten the diagonal line first to turn it into a box.',
+      outlineHint: 'Only a filled box without rounding can become a line.',
+    },
     code39: {
       content: 'Content',
       height: 'Height',
