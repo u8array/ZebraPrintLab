@@ -9,7 +9,7 @@ import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { fieldGridCols, fieldGridCell } from '../components/ui/formStyles';
 import { ShapeModeToggle } from '../components/Properties/ShapeModeToggle';
-import { type LineProps, pickAngle } from './line';
+import { type LineProps, pickAngle, lineZplCmd } from './line';
 
 /**
  * Quick-orientation picker.
@@ -40,10 +40,8 @@ export const linePanel: ObjectTypeUi<LineProps> = {
     const p = obj.props;
     const viewRotation = useLabelStore((s) => s.canvasSettings.viewRotation);
     const showZpl = useLabelStore((s) => s.showZplCommands);
-    // Axis-aligned lines emit ^GB (a thin box); diagonals emit ^GD. Badge
-    // reflects what the current angle produces.
-    const norm = ((p.angle % 180) + 180) % 180;
-    const cmd = norm === 0 || norm === 90 ? '^GB' : '^GD';
+    // Badge reflects what the current angle produces (^GB axis-aligned, ^GD diagonal).
+    const cmd = lineZplCmd(p.angle);
     return (
       <SectionCard
         id={`${obj.type}-settings`}

@@ -1,6 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { pickAngle, line } from "./line";
+import { pickAngle, line, lineZplCmd } from "./line";
 import type { LabelObject } from "../types/Group";
+
+describe("lineZplCmd", () => {
+  it("axis-aligned angles emit ^GB", () => {
+    for (const angle of [0, 90, 180, 270, -90, 360]) expect(lineZplCmd(angle)).toBe("^GB");
+  });
+  it("diagonal angles emit ^GD", () => {
+    for (const angle of [45, -45, 30, 135, 1]) expect(lineZplCmd(angle)).toBe("^GD");
+  });
+});
 
 const makeLine = (overrides: Partial<{
   x: number; y: number; angle: number; length: number; thickness: number;

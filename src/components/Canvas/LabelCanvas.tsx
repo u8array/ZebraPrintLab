@@ -34,9 +34,10 @@ import { CAPTURE_CHROME } from "./konvaObjectProps";
 import { Grid } from "./Grid";
 import { GuideLines } from "./GuideLines";
 import { Ruler, RULER_SIZE } from "./Ruler";
-import { getEntry, ObjectRegistry } from "../../registry";
+import { getEntry } from "../../registry";
 import type { LeafObject } from "../../registry";
 import { PALETTE_GROUPS } from "../Palette/paletteGroups";
+import { addablesInGroup, resolveAddable, type AddableEntry } from "../Palette/palettePresets";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { useT } from "../../lib/useT";
 import { useCanvasPanZoom } from "./hooks/useCanvasPanZoom";
@@ -1007,7 +1008,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       group: groupSelection,
       ungroup,
       toggleLock: () => setSelectionLocked(!isSelectionLocked(objects, sel)),
-      addHere: (type: string) => addObject(type, click),
+      addHere: (type: string, propsOverride?: object) => addObject(type, click, propsOverride),
       copyZplSelected: () => {
         void navigator.clipboard?.writeText(zplForSelection(label, objects, sel, variables));
       },
@@ -1030,19 +1031,15 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       selectAll: () => selectObjects(objects.map((o) => o.id)),
     };
     // Add-here mirrors the palette: favorites first (when pinned), then the
-    // registry groups in palette order. Empty groups drop out.
-    const typeLabel = (type: string) =>
-      (t.types as Record<string, string>)[type] ?? getEntry(type)?.label ?? type;
-    const typesInGroup = (key: string) =>
-      Object.entries(ObjectRegistry)
-        .filter(([, def]) => def.group === key)
-        .map(([type]) => ({ type, label: typeLabel(type) }));
+    // registry groups in palette order, presets included. Empty groups drop out.
+    const toAddable = (e: AddableEntry) => ({ id: e.id, type: e.type, label: e.label, propsOverride: e.propsOverride });
     const favTypes = paletteFavorites
-      .filter((type) => getEntry(type))
-      .map((type) => ({ type, label: typeLabel(type) }));
+      .map((id) => resolveAddable(id, t))
+      .filter((e): e is AddableEntry => e !== null)
+      .map(toAddable);
     const addableGroups = [
       ...(favTypes.length ? [{ id: "favorites", label: t.palette.favorites, types: favTypes }] : []),
-      ...PALETTE_GROUPS.map((g) => ({ id: g.key, label: t.palette[g.labelKey], types: typesInGroup(g.key) })),
+      ...PALETTE_GROUPS.map((g) => ({ id: g.key, label: t.palette[g.labelKey], types: addablesInGroup(g.key, t).map(toAddable) })),
     ].filter((g) => g.types.length > 0);
     const sections = buildContextMenu({
       onObject,

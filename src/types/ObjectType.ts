@@ -9,6 +9,10 @@ export interface ObjectTypeCore<P extends object = object> {
   /** Primary ZPL command this type emits (e.g. `^BC`, `^GB`, `^A`). Single
    *  source for the palette's power-user command icon. */
   zplCmd?: string;
+  /** Per-object override of `zplCmd` for types whose command depends on props
+   *  (e.g. a line emits `^GB` axis-aligned but `^GD` diagonal). Falls back to
+   *  `zplCmd` when absent. */
+  zplCmdFor?: (obj: LabelObjectBase & { props: P }) => string;
   group: ObjectGroup;
   defaultProps: P;
   /** Drop footprint: dots (editor default) or mm (spec-fixed types

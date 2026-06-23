@@ -19,6 +19,13 @@ export function resolveTextMode(p: Pick<TextProps, "textMode" | "blockWidth">): 
   return p.blockWidth ? "fb" : "normal";
 }
 
+/** Primary command the text emits in its current mode: plain `^A`, field-block
+ *  `^FB`, or text-block `^TB`. Drives the properties header command badge. */
+export function textZplCmd(p: Pick<TextProps, "textMode" | "blockWidth">): "^A" | "^FB" | "^TB" {
+  const mode = resolveTextMode(p);
+  return mode === "fb" ? "^FB" : mode === "tb" ? "^TB" : "^A";
+}
+
 export interface TextProps {
   content: string;
   fontHeight: number;
@@ -62,6 +69,7 @@ export const text: ObjectTypeCore<TextProps> = {
   label: "Text",
   icon: "T",
   zplCmd: "^A",
+  zplCmdFor: (obj) => textZplCmd(obj.props),
   group: "text" as const,
   bindable: true,
   defaultProps: {

@@ -30,6 +30,7 @@ import { AlignToolbar } from "./AlignToolbar";
 import { inputCls, labelCls } from "./styles";
 import { fieldGridCols, fieldGridCell } from "../ui/formStyles";
 import type { LabelConfig } from "../../types/LabelConfig";
+import type { LabelObjectBase } from "../../types/LabelObject";
 
 /** Optional dot value from a unit-string input: empty stays unset, otherwise
  *  the entered unit value is converted back to dots. */
@@ -200,8 +201,12 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
   // glyph here so the header reads as something rather than blank.
   const icon = groupRow ? '⊞' : definition?.icon;
   // Power-user mode swaps the mnemonic chip for the type's ZPL command, matching
-  // the palette icon slot. Groups have no command, so they keep the glyph.
-  const headerBadge = showZplCommands && !groupRow ? definition?.zplCmd ?? icon : icon;
+  // the palette icon slot. zplCmdFor resolves a props-dependent command (line
+  // ^GB vs ^GD); groups have no command, so they keep the glyph.
+  const headerBadge =
+    showZplCommands && !groupRow
+      ? definition?.zplCmdFor?.(obj as LabelObjectBase & { props: object }) ?? definition?.zplCmd ?? icon
+      : icon;
   const typeLabel = groupRow
     ? t.types.group
     : (t.types as Record<string, string>)[obj.type] ?? definition?.label;

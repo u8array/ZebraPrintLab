@@ -1,7 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { text } from './text';
+import { text, textZplCmd } from './text';
 import type { TextProps } from './text';
 import type { LabelObjectBase } from '../types/LabelObject';
+
+describe('textZplCmd', () => {
+  it('plain text emits ^A', () => {
+    expect(textZplCmd({})).toBe('^A');
+  });
+  it('blockWidth (field block) emits ^FB', () => {
+    expect(textZplCmd({ blockWidth: 400 })).toBe('^FB');
+  });
+  it('textMode tb emits ^TB', () => {
+    expect(textZplCmd({ textMode: 'tb', blockWidth: 400 })).toBe('^TB');
+  });
+});
 
 const baseObj = (
   overrides: Partial<TextProps> = {},

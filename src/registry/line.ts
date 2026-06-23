@@ -42,10 +42,18 @@ export function pickAngle(
   return distA <= distB ? a : b;
 }
 
+/** Axis-aligned lines emit a thin `^GB` box; diagonals emit `^GD`. Single
+ *  source for the panel field badges and the properties header command badge. */
+export function lineZplCmd(angle: number): '^GB' | '^GD' {
+  const norm = ((angle % 180) + 180) % 180;
+  return norm === 0 || norm === 90 ? '^GB' : '^GD';
+}
+
 export const line: ObjectTypeCore<LineProps> = {
   label: 'Line',
   icon: '—',
   zplCmd: '^GB',
+  zplCmdFor: (obj) => lineZplCmd(obj.props.angle),
   group: 'shape',
   defaultProps: {
     angle: 0,

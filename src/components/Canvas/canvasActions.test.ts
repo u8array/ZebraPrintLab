@@ -12,7 +12,7 @@ const ctx = (over: Partial<ContextMenuCtx> = {}): ContextMenuCtx => ({
   onObject: true, hasSelection: true, canGroup: false, canUngroup: false,
   canDelete: true, locked: false, hasClipboard: false, hasObjects: true,
   previewLocks: false,
-  addableGroups: [{ id: "text", label: "Text", types: [{ type: "text", label: "Text" }] }],
+  addableGroups: [{ id: "text", label: "Text", types: [{ id: "text", type: "text", label: "Text" }] }],
   dispatch: dispatch(), ...over,
 });
 
@@ -35,12 +35,26 @@ describe("buildContextMenu", () => {
     expect(addHere?.submenu?.[0]?.submenu?.map((s) => s.id)).toEqual(["add:text"]);
   });
 
-  it("add-here type runs addHere with its type", () => {
+  it("add-here type runs addHere with its type and propsOverride", () => {
     const d = dispatch();
     const sections = buildContextMenu(ctx({ onObject: false, hasSelection: false, dispatch: d }));
     const addHere = sections.flatMap((s) => s.items).find((i) => i.id === "addHere");
     addHere?.submenu?.[0]?.submenu?.[0]?.run?.();
-    expect(d.addHere).toHaveBeenCalledWith("text");
+    expect(d.addHere).toHaveBeenCalledWith("text", undefined);
+  });
+
+  it("add-here preset uses its id and passes propsOverride", () => {
+    const d = dispatch();
+    const sections = buildContextMenu(ctx({
+      onObject: false, hasSelection: false, dispatch: d,
+      addableGroups: [{ id: "shape", label: "Shapes", types: [
+        { id: "line-diagonal", type: "line", label: "Diagonal line", propsOverride: { angle: 45 } },
+      ] }],
+    }));
+    const addHere = sections.flatMap((s) => s.items).find((i) => i.id === "addHere");
+    expect(addHere?.submenu?.[0]?.submenu?.map((s) => s.id)).toEqual(["add:line-diagonal"]);
+    addHere?.submenu?.[0]?.submenu?.[0]?.run?.();
+    expect(d.addHere).toHaveBeenCalledWith("line", { angle: 45 });
   });
 
   it("shows group only when canGroup, ungroup only when canUngroup", () => {
