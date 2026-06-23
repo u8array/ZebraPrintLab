@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { StarIcon } from '@heroicons/react/16/solid';
 import { StarIcon as StarOutlineIcon } from '@heroicons/react/24/outline';
-import { ObjectRegistry, getEntry } from '../../registry';
 import { PALETTE_GROUPS } from './paletteGroups';
+import { addablesInGroup, resolveAddable, type AddableEntry } from './palettePresets';
 import { useT } from '../../lib/useT';
 import { useLabelStore } from '../../store/labelStore';
 import { mmToDots } from '../../lib/coordinates';
-import type { ObjectGroup } from '../../types/LabelObject';
 import type { ObjectTypeDefinition } from '../../types/ObjectType';
 import { resolveDefaultSizeDots } from '../../lib/resolveDefaultSize';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
@@ -115,43 +114,6 @@ function PaletteEntry({ id, type, icon, zplCmd, label, defaultSize, propsOverrid
   );
 }
 
-interface ResolvedEntry {
-  id: string;
-  type: string;
-  icon: string;
-  zplCmd?: string;
-  label: string;
-  defaultSize: ObjectTypeDefinition["defaultSize"];
-  propsOverride?: object;
-}
-
-function resolveEntries(
-  group: ObjectGroup,
-  types: Record<string, string>,
-): ResolvedEntry[] {
-  return Object.entries(ObjectRegistry)
-    .filter(([, def]) => def.group === group)
-    .map(([type]) => resolveEntry(type, types))
-    .filter((e): e is ResolvedEntry => e !== null);
-}
-
-/** Resolve a single registry type to a palette entry (favorites reference
- *  the registry by type rather than duplicating icon/label/size). */
-function resolveEntry(
-  type: string,
-  types: Record<string, string>,
-): ResolvedEntry | null {
-  const def = getEntry(type);
-  if (!def) return null;
-  return {
-    id: type,
-    type,
-    icon: def.icon,
-    zplCmd: def.zplCmd,
-    label: types[type] ?? def.label,
-    defaultSize: def.defaultSize,
-  };
-}
 
 /** Entry-count badge shown beside a group title. */
 function GroupTitle({ label, count }: { label: string; count: number }) {
@@ -169,27 +131,27 @@ export function ObjectPalette() {
   const favorites = useLabelStore((s) => s.paletteFavorites);
   const toggleFavorite = useLabelStore((s) => s.toggleFavorite);
   const q = query.trim().toLowerCase();
-  const types = t.types as Record<string, string>;
   const favSet = new Set(favorites);
 
   // Resolve + filter every group once; drop empty groups so search collapses
   // the list to just the hits (and the no-results branch can fire).
   const groups = PALETTE_GROUPS.map((group) => ({
     group,
-    entries: resolveEntries(group.key, types).filter(
+    entries: addablesInGroup(group.key, t).filter(
       (e) => !q || e.label.toLowerCase().includes(q),
     ),
   })).filter((g) => g.entries.length > 0);
 
-  // Favorites keep their pin order; drop ids whose type no longer exists.
+  // Favorites keep their pin order; drop ids that no longer resolve. Favorites
+  // are stored by entry id, so presets (line-diagonal, text-fb, ...) pin too.
   const favEntries = favorites
-    .map((type) => resolveEntry(type, types))
-    .filter((e): e is ResolvedEntry => e !== null);
+    .map((id) => resolveAddable(id, t))
+    .filter((e): e is AddableEntry => e !== null);
 
-  // `scope` keeps drag ids unique: a favorited type renders both in the
+  // `scope` keeps drag ids unique: a favorited entry renders both in the
   // Favorites section and its own group, so the draggable id is scoped per
-  // render site while the drag data (type) stays identical.
-  const renderEntries = (entries: ResolvedEntry[], scope: string) =>
+  // render site while the drag data (type + propsOverride) stays identical.
+  const renderEntries = (entries: AddableEntry[], scope: string) =>
     entries.map((e) => (
       <PaletteEntry
         key={`${scope}-${e.id}`}
@@ -200,9 +162,9 @@ export function ObjectPalette() {
         label={e.label}
         defaultSize={e.defaultSize}
         propsOverride={e.propsOverride}
-        isFavorite={favSet.has(e.type)}
-        onToggleFavorite={() => toggleFavorite(e.type)}
-        favoriteLabel={favSet.has(e.type) ? t.palette.unpinFavorite : t.palette.pinFavorite}
+        isFavorite={favSet.has(e.id)}
+        onToggleFavorite={() => toggleFavorite(e.id)}
+        favoriteLabel={favSet.has(e.id) ? t.palette.unpinFavorite : t.palette.pinFavorite}
       />
     ));
 

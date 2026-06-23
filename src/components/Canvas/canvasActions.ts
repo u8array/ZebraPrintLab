@@ -36,7 +36,7 @@ export interface ContextMenuCtx {
   /** "Add object here" types, grouped + labelled by the caller (mirrors the
    *  palette categories; first group is favorites when any are pinned). Each
    *  group becomes a submenu, its types the third level. */
-  addableGroups: { id: string; label: string; types: { type: string; label: string }[] }[];
+  addableGroups: { id: string; label: string; types: { id: string; type: string; label: string; propsOverride?: object }[] }[];
   dispatch: {
     copy: () => void;
     cut: () => void;
@@ -47,7 +47,7 @@ export interface ContextMenuCtx {
     group: () => void;
     ungroup: () => void;
     toggleLock: () => void;
-    addHere: (type: string) => void;
+    addHere: (type: string, propsOverride?: object) => void;
     copyZplSelected: () => void;
     copyZplLabel: () => void;
     copyImage: () => void;
@@ -129,9 +129,9 @@ export function buildContextMenu(ctx: ContextMenuCtx): MenuSection[] {
             label: g.label,
             disabled: off,
             submenu: g.types.map((a) => ({
-              id: `add:${a.type}`,
+              id: `add:${a.id}`,
               label: a.label,
-              run: () => d.addHere(a.type),
+              run: () => d.addHere(a.type, a.propsOverride),
               disabled: off,
             })),
           })),
