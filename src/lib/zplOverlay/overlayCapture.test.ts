@@ -150,6 +150,11 @@ describe("parseZPL overlay capture", () => {
     expect(o.regenSafe).toBe(true);
   });
 
+  it("keeps a barcode with lowercase inline ^by regenSafe (ZPL is case-insensitive)", () => {
+    const o = captured("^XA^FO10,10^by3^BCN,100,Y,N,N^FD12345^FS^XZ");
+    expect(o.regenSafe).toBe(true);
+  });
+
   it("keeps a 2D code (QR) regenSafe even without ^BY (it ignores ^BY)", () => {
     expect(captured("^XA^FO10,10^BQN,2,5^FDQA,hello^FS^XZ").regenSafe).toBe(true);
   });

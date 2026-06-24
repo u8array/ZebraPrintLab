@@ -223,7 +223,7 @@ export function parseZPL(
           if (
             own &&
             BY_CONSUMING_BARCODE_TYPES.has(own.type) &&
-            !zpl.slice(ovStart, fieldEnd).includes("^BY")
+            !/\^BY/i.test(zpl.slice(ovStart, fieldEnd))
           ) {
             sawBareBarcode = true;
           }

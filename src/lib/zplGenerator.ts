@@ -304,10 +304,11 @@ export function emitOverlayPage(
     for (const o of newShifted) if (!isGroup(o)) appendLines.push(emitFieldBody(o, emitCtx));
     const block = appendLines.join('\n');
     // New fields go inside the block, just before ^XZ. ZPL command letters are
-    // case-insensitive; check the common uppercase form first and only pay the
-    // full uppercase scan for a rare lowercase terminator on a large payload.
+    // case-insensitive; check the common uppercase form first, then a regex on
+    // the original for a rare lowercase terminator (matching the original keeps
+    // slice indices accurate, unlike toUpperCase which can grow e.g. ß into SS).
     let idx = result.lastIndexOf('^XZ');
-    if (idx < 0) idx = result.toUpperCase().lastIndexOf('^XZ');
+    if (idx < 0) idx = [...result.matchAll(/\^[xX][zZ]/g)].pop()?.index ?? -1;
     result =
       idx >= 0 ? `${result.slice(0, idx)}${block}\n${result.slice(idx)}` : `${result}\n${block}`;
   }

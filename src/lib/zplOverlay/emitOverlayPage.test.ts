@@ -82,6 +82,26 @@ describe("emitOverlayPage", () => {
     expect(out.indexOf("^FDNEW")).toBeLessThan(out.toUpperCase().lastIndexOf("^XZ"));
   });
 
+  it("keeps a lowercase ^xz terminator intact when content has case-growing Unicode", () => {
+    // 'ß'.toUpperCase() is 'SS' (1->2 chars): a toUpperCase-based terminator
+    // search would shift the slice index and corrupt the ^xz on append.
+    const src = "^XA\n^FO50,50^A0N,30,30^FDStraße^FS\n^xz";
+    const page = importedPage(src);
+    const added: LabelObject = {
+      id: "new-u",
+      type: "text",
+      x: 10,
+      y: 200,
+      rotation: 0,
+      props: { content: "NEW", fontHeight: 30, fontWidth: 0, rotation: "N" },
+    } as unknown as LabelObject;
+    page.objects = [...page.objects, added];
+    const out = emitOverlayPage(LABEL, page);
+    expect(out).toContain("^FDStraße^FS"); // original verbatim, not mangled
+    expect(out.trimEnd().endsWith("^xz")).toBe(true); // terminator intact
+    expect(out.indexOf("^FDNEW")).toBeLessThan(out.lastIndexOf("^xz"));
+  });
+
   it("emits a dirty field home-relative under ^LH (no double-shift)", () => {
     const src = "^XA^LH50,20^FO10,10^A0N,30,30^FDx^FS^XZ";
     const page = importedPage(src);
