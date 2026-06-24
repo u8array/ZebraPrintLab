@@ -23,7 +23,6 @@ export interface AddableEntry {
  *  filled box, text ^FB/^TB). The badge shows the mode-specific command. */
 interface PalettePreset {
   id: string;
-  group: ObjectGroup;
   type: string;
   icon: string;
   zplCmd: string;
@@ -33,22 +32,25 @@ interface PalettePreset {
 }
 
 const PALETTE_PRESETS: PalettePreset[] = [
-  { id: 'line-diagonal', group: 'shape', type: 'line', icon: '╱', zplCmd: '^GD',
+  { id: 'line-diagonal', type: 'line', icon: '╱', zplCmd: '^GD',
     label: (t) => t.types.lineDiagonal, propsOverride: { angle: 45 }, defaultSize: { width: 140, height: 140 } },
-  { id: 'box-filled', group: 'shape', type: 'box', icon: '■', zplCmd: '^GB',
+  { id: 'box-filled', type: 'box', icon: '■', zplCmd: '^GB',
     label: (t) => t.types.boxFilled, propsOverride: { filled: true }, defaultSize: { width: 200, height: 100 } },
-  { id: 'text-fb', group: 'text', type: 'text', icon: '¶', zplCmd: '^FB',
+  { id: 'text-fb', type: 'text', icon: '¶', zplCmd: '^FB',
     label: (t) => t.registry.text.modeFieldBlock, propsOverride: { blockWidth: 400, blockLines: 3 }, defaultSize: { width: 400, height: 90 } },
-  { id: 'text-tb', group: 'text', type: 'text', icon: '▭', zplCmd: '^TB',
+  { id: 'text-tb', type: 'text', icon: '▭', zplCmd: '^TB',
     label: (t) => t.registry.text.modeTextBlock, propsOverride: { textMode: 'tb', blockWidth: 400, blockHeight: 120 }, defaultSize: { width: 400, height: 120 } },
-  { id: 'text-serial', group: 'text', type: 'text', icon: '#', zplCmd: '^SN',
+  { id: 'text-serial', type: 'text', icon: '#', zplCmd: '^SN',
     label: (t) => t.types.serial, propsOverride: { content: '001', serial: { increment: 1, zplMode: 'SN' } }, defaultSize: { width: 100, height: 30 } },
-  { id: 'datamatrix-gs1', group: 'code-2d', type: 'datamatrix', icon: '▩', zplCmd: '^BX',
+  { id: 'datamatrix-gs1', type: 'datamatrix', icon: '▩', zplCmd: '^BX',
     label: (t) => t.types.datamatrixGs1, propsOverride: { gs1: true, content: GS1_SAMPLE_CONTENT },
     defaultSize: { width: 150, height: 150 } },
 ];
 
 const PRESET_BY_ID = new Map(PALETTE_PRESETS.map((p) => [p.id, p]));
+
+/** All preset ids; the test guards each stays reachable in a curated row. */
+export const PALETTE_PRESET_IDS: readonly string[] = PALETTE_PRESETS.map((p) => p.id);
 
 function presetEntry(p: PalettePreset, t: Translations): AddableEntry {
   return { id: p.id, type: p.type, icon: p.icon, zplCmd: p.zplCmd, label: p.label(t), defaultSize: p.defaultSize, propsOverride: p.propsOverride };
@@ -67,12 +69,28 @@ export function resolveAddable(id: string, t: Translations): AddableEntry | null
   return preset ? presetEntry(preset, t) : registryEntry(id, t);
 }
 
-/** Addable entries for a group: registry types in registry order, then presets. */
-export function addablesInGroup(group: ObjectGroup, t: Translations): AddableEntry[] {
-  const base = Object.entries(ObjectRegistry)
+/** `baseIds` with each preset spliced in after its base type. One interleave
+ *  rule for flat browse and the curated rows, so presets can't drift between. */
+export function withPresetVariants(baseIds: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const id of baseIds) {
+    out.push(id);
+    for (const p of PALETTE_PRESETS) if (p.type === id) out.push(p.id);
+  }
+  return out;
+}
+
+/** Addable ids for a group: registry types in registry order, presets interleaved. */
+export function addableIdsInGroup(group: ObjectGroup): string[] {
+  const types = Object.entries(ObjectRegistry)
     .filter(([, def]) => def.group === group)
-    .map(([type]) => registryEntry(type, t))
+    .map(([type]) => type);
+  return withPresetVariants(types);
+}
+
+/** Addable entries for a group in {@link addableIdsInGroup} order. */
+export function addablesInGroup(group: ObjectGroup, t: Translations): AddableEntry[] {
+  return addableIdsInGroup(group)
+    .map((id) => resolveAddable(id, t))
     .filter((e): e is AddableEntry => e !== null);
-  const presets = PALETTE_PRESETS.filter((p) => p.group === group).map((p) => presetEntry(p, t));
-  return [...base, ...presets];
 }
