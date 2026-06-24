@@ -143,6 +143,7 @@ const el = {
     ean13: 'EAN-13',
     qrcode: 'Κωδικός QR',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Ορθογώνιο',
     boxFilled: 'Γεμάτο πλαίσιο',
     ellipse: 'Έλλειψη',

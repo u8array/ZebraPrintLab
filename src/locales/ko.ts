@@ -143,6 +143,7 @@ const ko = {
     ean13: 'EAN-13',
     qrcode: 'QR 코드',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: '사각형',
     boxFilled: '채워진 상자',
     ellipse: '타원',

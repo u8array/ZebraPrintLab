@@ -143,6 +143,7 @@ const et = {
     ean13: 'EAN-13',
     qrcode: 'QR-kood',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Ristkülik',
     boxFilled: 'Täidetud kast',
     ellipse: 'Ellips',

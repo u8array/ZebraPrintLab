@@ -143,6 +143,7 @@ const ro = {
     ean13: 'EAN-13',
     qrcode: 'Cod QR',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Dreptunghi',
     boxFilled: 'Casetă umplută',
     ellipse: 'Elipsă',

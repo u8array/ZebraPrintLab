@@ -143,6 +143,7 @@ const fi = {
     ean13: 'EAN-13',
     qrcode: 'QR-koodi',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Suorakulmio',
     boxFilled: 'Täytetty laatikko',
     ellipse: 'Ellipsi',

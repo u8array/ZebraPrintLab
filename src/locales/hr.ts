@@ -143,6 +143,7 @@ const hr = {
     ean13: 'EAN-13',
     qrcode: 'QR kod',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Pravokutnik',
     boxFilled: 'Ispunjeni okvir',
     ellipse: 'Elipsa',

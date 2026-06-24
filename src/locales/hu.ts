@@ -143,6 +143,7 @@ const hu = {
     ean13: 'EAN-13',
     qrcode: 'QR-kód',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Téglalap',
     boxFilled: 'Kitöltött doboz',
     ellipse: 'Ellipszis',

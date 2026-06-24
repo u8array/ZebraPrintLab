@@ -143,6 +143,7 @@ const zhHans = {
     ean13: 'EAN-13',
     qrcode: '二维码',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: '矩形',
     boxFilled: '填充框',
     ellipse: '椭圆',

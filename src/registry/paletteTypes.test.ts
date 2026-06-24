@@ -23,4 +23,11 @@ describe('paletteTypes', () => {
     expect(variantsOfType('code-1d').length).toBeGreaterThan(5);
     expect(variantsOfType('unknown')).toEqual([]);
   });
+
+  it('code-2d carries a GS1 DataMatrix preset right after datamatrix that seeds gs1:true', () => {
+    const variants = variantsOfType('code-2d');
+    expect(variants[variants.indexOf('datamatrix') + 1]).toBe('datamatrix-gs1');
+    const entry = resolveAddable('datamatrix-gs1', en);
+    expect(entry).toMatchObject({ type: 'datamatrix', propsOverride: { gs1: true, content: '0109501101530003' } });
+  });
 });

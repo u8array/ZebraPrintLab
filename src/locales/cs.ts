@@ -143,6 +143,7 @@ const cs = {
     ean13: 'EAN-13',
     qrcode: 'QR kód',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Obdélník',
     boxFilled: 'Vyplněný rámeček',
     ellipse: 'Elipsa',

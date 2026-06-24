@@ -26,7 +26,7 @@ export const PALETTE_TYPES: PaletteType[] = [
   { id: 'text', variants: ['text', 'text-fb', 'text-tb', 'symbol', 'text-serial'] },
   { id: 'shape', variants: ['line', 'line-diagonal', 'box', 'box-filled', 'ellipse'] },
   { id: 'code-1d', variants: groupTypes('code-1d') },
-  { id: 'code-2d', variants: groupTypes('code-2d') },
+  { id: 'code-2d', variants: groupTypes('code-2d').flatMap((t) => (t === 'datamatrix' ? [t, 'datamatrix-gs1'] : [t])) },
   { id: 'code-postal', variants: groupTypes('code-postal') },
   { id: 'image', variants: ['image'] },
 ];

@@ -143,6 +143,7 @@ const sk = {
     ean13: 'EAN-13',
     qrcode: 'QR kód',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Obdĺžnik',
     boxFilled: 'Vyplnený rámček',
     ellipse: 'Elipsa',

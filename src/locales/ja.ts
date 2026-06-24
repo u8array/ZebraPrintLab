@@ -143,6 +143,7 @@ const ja = {
     ean13: 'EAN-13',
     qrcode: 'QRコード',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: '矩形',
     boxFilled: '塗りつぶしボックス',
     ellipse: '楕円',

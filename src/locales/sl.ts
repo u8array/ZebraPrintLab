@@ -143,6 +143,7 @@ const sl = {
     ean13: 'EAN-13',
     qrcode: 'QR koda',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Pravokotnik',
     boxFilled: 'Zapolnjeno polje',
     ellipse: 'Elipsa',

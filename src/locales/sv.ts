@@ -143,6 +143,7 @@ const sv = {
     ean13: 'EAN-13',
     qrcode: 'QR-kod',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Rektangel',
     boxFilled: 'Fylld ruta',
     ellipse: 'Ellips',

@@ -143,6 +143,7 @@ const sr = {
     ean13: 'EAN-13',
     qrcode: 'QR код',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Правоугаоник',
     boxFilled: 'Попуњени оквир',
     ellipse: 'Елипса',

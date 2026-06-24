@@ -143,6 +143,7 @@ const tr = {
     ean13: 'EAN-13',
     qrcode: 'QR Kodu',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Dikdörtgen',
     boxFilled: 'Dolu kutu',
     ellipse: 'Elips',

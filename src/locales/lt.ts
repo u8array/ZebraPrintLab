@@ -143,6 +143,7 @@ const lt = {
     ean13: 'EAN-13',
     qrcode: 'QR kodas',
     datamatrix: 'DataMatrix',
+    datamatrixGs1: 'GS1 DataMatrix',
     box: 'Stačiakampis',
     boxFilled: 'Užpildytas langelis',
     ellipse: 'Elipsė',
