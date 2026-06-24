@@ -10,6 +10,8 @@ const TONE: Record<ImportFindingKind, string> = {
   partial: 'text-amber-400',
   browserLimit: 'text-amber-400',
   unknown: 'text-muted',
+  // Higher severity: a printer-config command that runs on the device.
+  replayRisk: 'text-red-400',
 };
 
 function FindingRow({ finding, showPage }: { finding: ImportFinding; showPage: boolean }) {

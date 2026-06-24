@@ -16,7 +16,8 @@ import { formatLabelMetaComment } from './zplLabelMeta';
 import type { ClockOffset, CustomFontMapping, LabelConfig } from '../types/LabelConfig';
 import type { ZplEmitContext } from '../types/ZplEmit';
 import type { Variable } from '../types/Variable';
-import { isGroup, walkObjects, type LabelObject, type Page } from '../types/Group';
+import { isGroup, walkObjects, type LabelObject, type LeafObject, type Page } from '../types/Group';
+import { isOverlayConsistent } from './zplOverlay/overlay';
 import { formatFontDownloadFromPath } from './customFonts';
 import type { ImageProps } from '../registry/image';
 import { formatStoragePath } from './storagePath';
@@ -24,6 +25,14 @@ import { formatStoragePath } from './storagePath';
 function formatDownloadObject(m: CustomFontMapping): string | undefined {
   if (!m.embedInZpl || !m.path || !m.previewFontName) return undefined;
   return formatFontDownloadFromPath(m.path, m.previewFontName);
+}
+
+/** Render a leaf to its field bytes, prefixed with its ^FX comment when set.
+ *  Shared by the model generator and the overlay regeneration path so the two
+ *  never drift on comment handling. */
+function emitFieldBody(obj: LeafObject, emitCtx: ZplEmitContext): string {
+  const zpl = getEntry(obj.type)?.toZPL(obj, emitCtx) ?? '';
+  return obj.comment ? `^FX${stripZplCommandChars(obj.comment)}\n${zpl}` : zpl;
 }
 
 function flattenObjects(objects: LabelObject[]): LabelObject[] {
@@ -41,7 +50,7 @@ function flattenObjects(objects: LabelObject[]): LabelObject[] {
 /** Plan `^FE` + header `^FN` declarations for inline-embed templates,
  *  plus the emit context. embedChar is only set when a safe char exists,
  *  which fdFieldFor uses as the "templates allowed" gate. */
-function planTemplateHeader(
+export function planTemplateHeader(
   shifted: LabelObject[],
   label: LabelConfig,
   variables: readonly Variable[],
@@ -144,13 +153,167 @@ function formatGraphicUpload(p: ImageProps): string | undefined {
   return `~DY${formatStoragePath(p.storedAs, false)},${format},G,${total},${bpr},${data}`;
 }
 
-/** Each page becomes its own ^XA..^XZ block (separate labels to the printer). */
+/** Each page becomes its own ^XA..^XZ block (separate labels to the printer).
+ *  A page imported with a source-patch overlay replays its original bytes
+ *  verbatim except for edited/added/removed objects; everything else
+ *  regenerates from the model. Any inconsistency falls back to regeneration. */
 export function generateMultiPageZPL(
   label: LabelConfig,
   pages: Page[],
   variables: readonly Variable[] = [],
 ): string {
-  return pages.map((p) => generateZPL(label, p.objects, variables)).join('\n');
+  let out = '';
+  for (const p of pages) {
+    let block: string;
+    try {
+      block = emitOverlayPage(label, p, variables);
+    } catch (err) {
+      // emitOverlayPage handles expected inconsistencies internally, so a throw
+      // here is an unexpected bug. Surface it (still degrading to regeneration)
+      // rather than silently disabling the overlay.
+      console.warn('emitOverlayPage failed, regenerating page from model', err);
+      block = generateZPL(label, p.objects, variables);
+    }
+    // An overlay page already carries the inter-block separator captured at
+    // import (the splitter folds it into the preceding block). Only insert a
+    // newline when the previous block didn't end with one (a fresh or
+    // fallback page), so multi-page round-trips stay byte-identical and stable.
+    if (out.length > 0 && !out.endsWith('\n')) out += '\n';
+    out += block;
+  }
+  return out;
+}
+
+/** Leaves that would actually export, honouring the `includeInExport=false`
+ *  cascade through groups (mirrors `emitLeaf`). */
+function exportableLeaves(objects: LabelObject[]): LeafObject[] {
+  const out: LeafObject[] = [];
+  const walk = (list: LabelObject[]): void => {
+    for (const o of list) {
+      if (o.includeInExport === false) continue;
+      if (isGroup(o)) walk(o.children);
+      else out.push(o);
+    }
+  };
+  walk(objects);
+  return out;
+}
+
+/** Emit one page from its overlay: verbatim segments for untouched objects,
+ *  in-place regeneration for dirty ones, appended fields for new ones, raw
+ *  segments (config/comments/unmodeled commands/whitespace) replayed as-is.
+ *  Falls back to full regeneration when the overlay is missing/inconsistent,
+ *  or when an edit exists in a block whose running state (^MU/prefix/^CI/^FE)
+ *  would re-interpret a regenerated field. */
+export function emitOverlayPage(
+  label: LabelConfig,
+  page: Page,
+  variables: readonly Variable[] = [],
+): string {
+  const overlay = page.overlay;
+  if (!overlay || !isOverlayConsistent(overlay)) {
+    return generateZPL(label, page.objects, variables);
+  }
+
+  const exportable = exportableLeaves(page.objects);
+  const exportableById = new Map(exportable.map((l) => [l.id, l]));
+  const segmentObjectOrder = overlay.segments.flatMap((s) =>
+    s.kind === 'object' ? [s.objectId] : [],
+  );
+  const segmentIds = new Set(segmentObjectOrder);
+
+  // Order guard: segments are pinned to source order, so a reorder/reparent
+  // (z-order, group, ungroup) that changes the relative order of segment-linked
+  // objects can't be expressed by per-segment patching. Detect it by comparing
+  // the live order of still-present linked objects against their segment order,
+  // and fall back to full regeneration (which emits in model order).
+  const liveLinkedOrder = exportable.filter((l) => segmentIds.has(l.id)).map((l) => l.id);
+  const segmentLiveOrder = segmentObjectOrder.filter((id) => exportableById.has(id));
+  if (liveLinkedOrder.some((id, i) => id !== segmentLiveOrder[i])) {
+    return generateZPL(label, page.objects, variables);
+  }
+  // New objects are appended after all segments, so they must sit at the model
+  // tail. If a segment-linked object follows a new one in model order, appending
+  // would reorder it; fall back to full regeneration (model order).
+  let sawNew = false;
+  for (const l of exportable) {
+    if (!segmentIds.has(l.id)) sawNew = true;
+    else if (sawNew) return generateZPL(label, page.objects, variables);
+  }
+
+  const dirtyLeaves = exportable.filter((l) => segmentIds.has(l.id) && l.dirty);
+  const newLeaves = exportable.filter((l) => !segmentIds.has(l.id));
+
+  // A verbatim 0-edit replay is always byte-safe; a regeneration in a
+  // non-regenSafe block is not, so fall back wholesale the moment an edit
+  // (dirty or new) exists there.
+  if ((dirtyLeaves.length > 0 || newLeaves.length > 0) && !overlay.regenSafe) {
+    return generateZPL(label, page.objects, variables);
+  }
+
+  const fx = overlay.frame?.homeX ?? 0;
+  const fy = overlay.frame?.homeY ?? 0;
+  const ft = overlay.frame?.top ?? 0;
+  // Regenerated objects must be home-relative so they compose with the raw
+  // ^LH/^LT that still execute on replay (no double-shift). One shared emit
+  // context so a picked ^FE/^FC covers dirty and new fields alike.
+  const dirtyShifted = shiftObjectsByHome(dirtyLeaves, fx, fy, ft);
+  const newShifted = shiftObjectsByHome(newLeaves, fx, fy, ft);
+  const { headerLines, emitCtx } = planTemplateHeader(
+    [...dirtyShifted, ...newShifted],
+    label,
+    variables,
+  );
+
+  // No ^A@->^A{alias} rewrite on the regen path: a regenerated direct-path ^A@
+  // is valid and order-independent, whereas aliasing would break when the
+  // block's ^CW sits after the field. Aliasing is a whole-document
+  // normalization that only the model generator needs.
+  const dirtyShiftedById = new Map(dirtyShifted.map((o) => [o.id, o]));
+
+  const out: string[] = [];
+  let headerEmitted = false;
+  const emitHeaderOnce = () => {
+    if (headerEmitted) return;
+    headerEmitted = true;
+    if (headerLines.length > 0) out.push(`${headerLines.join('\n')}\n`);
+  };
+
+  for (const seg of overlay.segments) {
+    if (seg.kind === 'raw' || seg.kind === 'config') {
+      out.push(seg.text);
+      continue;
+    }
+    // object segment
+    const live = exportableById.get(seg.objectId);
+    if (!live) continue; // deleted or hidden
+    if (!live.dirty) {
+      out.push(seg.text); // untouched -> verbatim
+      continue;
+    }
+    emitHeaderOnce(); // template/clock header precedes the first regenerated field
+    const shifted = dirtyShiftedById.get(seg.objectId);
+    if (shifted && !isGroup(shifted)) out.push(emitFieldBody(shifted, emitCtx));
+  }
+
+  let result = out.join('');
+
+  if (newShifted.length > 0) {
+    const appendLines: string[] = [];
+    if (!headerEmitted && headerLines.length > 0) appendLines.push(...headerLines);
+    for (const o of newShifted) if (!isGroup(o)) appendLines.push(emitFieldBody(o, emitCtx));
+    const block = appendLines.join('\n');
+    // New fields go inside the block, just before ^XZ. ZPL command letters are
+    // case-insensitive; check the common uppercase form first, then a regex on
+    // the original for a rare lowercase terminator (matching the original keeps
+    // slice indices accurate, unlike toUpperCase which can grow e.g. ß into SS).
+    let idx = result.lastIndexOf('^XZ');
+    if (idx < 0) idx = [...result.matchAll(/\^[xX][zZ]/g)].pop()?.index ?? -1;
+    result =
+      idx >= 0 ? `${result.slice(0, idx)}${block}\n${result.slice(idx)}` : `${result}\n${block}`;
+  }
+
+  return result;
 }
 
 /** R: is volatile RAM, matches single-run batch scope. */
@@ -210,6 +373,28 @@ export function generateBatchZpl(
   return [templateStored, ...recallBlocks].join('\n');
 }
 
+/** Subtract label home/top from each object so emit matches the editor, the
+ *  inverse of the parser folding ^LH/^LT into absolute coords. Leaves whose
+ *  shifted origin goes negative are dropped (Zebra rejects negative ^FO and
+ *  clamping would relocate them silently). Identity when no shift applies. */
+function shiftObjectsByHome(
+  objects: LabelObject[],
+  homeX: number,
+  homeY: number,
+  top: number,
+): LabelObject[] {
+  if (homeX === 0 && homeY === 0 && top === 0) return objects;
+  const shiftOrDrop = (obj: LabelObject): LabelObject[] => {
+    if (isGroup(obj)) {
+      return [{ ...obj, children: obj.children.flatMap(shiftOrDrop) }];
+    }
+    const x = obj.x - homeX;
+    const y = obj.y - homeY - top;
+    return x < 0 || y < 0 ? [] : [{ ...obj, x, y }];
+  };
+  return objects.flatMap(shiftOrDrop);
+}
+
 /** Template header lines plus the per-object field bodies, shared by the full
  *  generator and selection copy so the two never drift. Applies the label
  *  home/top shift (dropping negative origins) and the template/clock emit
@@ -222,31 +407,17 @@ export function planFieldEmission(
   const homeX = label.labelHomeX ?? 0;
   const homeY = label.labelHomeY ?? 0;
   const top = label.labelTop ?? 0;
-  // Drop leaves whose shifted origin is negative; Zebra rejects negative
-  // ^FO and clamping would relocate them silently.
-  const shiftOrDrop = (obj: LabelObject): LabelObject[] => {
-    if (isGroup(obj)) {
-      return [{ ...obj, children: obj.children.flatMap(shiftOrDrop) }];
-    }
-    const x = obj.x - homeX;
-    const y = obj.y - homeY - top;
-    return x < 0 || y < 0 ? [] : [{ ...obj, x, y }];
-  };
-  const shifted =
-    homeX !== 0 || homeY !== 0 || top !== 0
-      ? objects.flatMap(shiftOrDrop)
-      : objects;
+  const shifted = shiftObjectsByHome(objects, homeX, homeY, top);
 
   const { headerLines, emitCtx } = planTemplateHeader(shifted, label, variables);
 
   // Groups are structural; includeInExport=false cascades to the subtree.
+  // Byte-identical round-trip lives in the overlay path (emitOverlayPage); this
+  // model generator always regenerates.
   const emitLeaf = (obj: LabelObject): string[] => {
     if (obj.includeInExport === false) return [];
     if (isGroup(obj)) return obj.children.flatMap(emitLeaf);
-    const zpl = getEntry(obj.type)?.toZPL(obj, emitCtx) ?? '';
-    return obj.comment
-      ? [`^FX${stripZplCommandChars(obj.comment)}\n${zpl}`]
-      : [zpl];
+    return [emitFieldBody(obj, emitCtx)];
   };
   return { headerLines, bodyLines: shifted.flatMap(emitLeaf) };
 }
@@ -381,20 +552,24 @@ export function generateZPL(
 
   lines.push('^XZ');
 
-  // Rewrite ^A@...PATH -> ^A{alias} for paths the user registered via ^CW.
+  return aliasFontPaths(lines.join('\n'), label);
+}
+
+/** Rewrite `^A@…PATH` to `^A{alias}` for paths the user registered via `^CW`.
+ *  Used only by the full model generator over its whole output; the overlay
+ *  export deliberately does NOT alias (a regenerated direct-path ^A@ is valid
+ *  and order-independent, avoiding a ^CW forward-reference). */
+function aliasFontPaths(text: string, label: LabelConfig): string {
   const aliasByPath = new Map<string, string>();
   for (const m of label.customFonts ?? []) {
     if (m.alias && m.path) aliasByPath.set(m.path, m.alias);
   }
-  let output = lines.join('\n');
-  if (aliasByPath.size > 0) {
-    output = output.replace(
-      /\^A@([NIRB]),(\d+),(\d+),([A-Z]:[^^\n]+?)(?=\^|\n|$)/g,
-      (full, rot, h, w, path) => {
-        const alias = aliasByPath.get(path);
-        return alias ? `^A${alias}${rot},${h},${w}` : full;
-      },
-    );
-  }
-  return output;
+  if (aliasByPath.size === 0) return text;
+  return text.replace(
+    /\^A@([NIRB]),(\d+),(\d+),([A-Z]:[^^\n]+?)(?=\^|\n|$)/g,
+    (full, rot, h, w, path) => {
+      const alias = aliasByPath.get(path);
+      return alias ? `^A${alias}${rot},${h},${w}` : full;
+    },
+  );
 }

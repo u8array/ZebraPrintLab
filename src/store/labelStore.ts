@@ -1,6 +1,7 @@
 import { create, useStore } from 'zustand';
 import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { dirtyTracking } from './dirtyTracking';
 import type { ObjectChanges } from '../types/LabelObject';
 import { PRINTER_PROFILE_FIELDS, printerProfileSchema } from '../types/PrinterProfile';
 import { visitLeavesInPages } from '../lib/objectTree';
@@ -297,6 +298,7 @@ export const temporalPartialize = (state: LabelState) => ({
 
 export const useLabelStore = create<LabelState>()(
   temporal(
+    dirtyTracking(
     persist(
     (set, get, store) => ({
       ...createObjectSlice(set, get, store),
@@ -315,6 +317,7 @@ export const useLabelStore = create<LabelState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: persistPartialize,
     }
+    )
     ),
     {
       partialize: temporalPartialize,

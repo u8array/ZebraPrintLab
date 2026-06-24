@@ -128,7 +128,11 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
       if (findAncestors(objs, id).some((g) => !!g.locked)) return {};
       // Wholesale node replacement, so registry normalizeChanges is bypassed by
       // design; the mapper owns the result's validity (line/box have no hook).
-      return updateCurrentObjects(state, (curr) => mapObjectById(curr, id, mapper));
+      // The type/props change is stamped dirty centrally by the dirtyTracking
+      // middleware.
+      return updateCurrentObjects(state, (curr) =>
+        mapObjectById(curr, id, (o) => mapper(o)),
+      );
     }),
 
   updateObjects: (updates) =>
@@ -486,22 +490,9 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
       if (index < 0 || index >= state.pages.length) return {};
       const source = state.pages[index];
       if (!source) return {};
-      const cloned: Page = {
-        objects: source.objects.map((o) => {
-          if (isGroup(o)) {
-            return {
-              ...o,
-              id: crypto.randomUUID(),
-              children: cloneChildrenFresh(o.children),
-            };
-          }
-          return {
-            ...o,
-            id: crypto.randomUUID(),
-            props: { ...o.props },
-          } as LabelObject;
-        }),
-      };
+      // Fresh ids + dropped provenance: the clone is net-new (no overlay), so
+      // it regenerates from the model. Omitting `overlay` keeps it that way.
+      const cloned: Page = { objects: cloneChildrenFresh(source.objects) };
       const insertPos = index + 1;
       const newPages = [
         ...state.pages.slice(0, insertPos),

@@ -16,6 +16,53 @@ export function isLockBypass(changes: ObjectChanges): boolean {
   return keys.length > 0 && keys.every((k) => LOCK_BYPASS_KEYS.has(k));
 }
 
+/** Object keys whose change alters emitted ZPL bytes, invalidating the
+ *  overlay's verbatim replay for that object. `comment` is included because it
+ *  emits as a leading `^FX`. Pure metadata (lock/visible/name/includeInExport)
+ *  keeps the replay valid. The `dirtyTracking` middleware reads this to stamp
+ *  `dirty` centrally; mutators no longer set it themselves. */
+export const EMIT_AFFECTING_KEYS = new Set(['x', 'y', 'rotation', 'positionType', 'variableId', 'props', 'comment', 'type']);
+
+/** Label-config keys that never reach emitted ZPL (design-time editor aids
+ *  only). Everything else maps to a config command, so changing it would make
+ *  a page overlay's raw config bytes stale. Exported for a tripwire test: a key
+ *  wrongly added here would silently skip the overlay drop and emit stale config. */
+export const NON_EMITTING_CONFIG_KEYS = new Set(['safeAreaMm']);
+
+/** True when a config patch changes a field that reaches emitted ZPL. Used to
+ *  drop page overlays: until config-segment linkage lands, an overlay replays
+ *  config verbatim, so an emit-affecting edit must force full regeneration. */
+export function configPatchAffectsEmit(
+  prev: Record<string, unknown>,
+  patch: Record<string, unknown>,
+): boolean {
+  return Object.keys(patch).some(
+    (k) => !NON_EMITTING_CONFIG_KEYS.has(k) && prev[k] !== patch[k],
+  );
+}
+
+/** Strip overlays from every page (identity-preserving when none carry one).
+ *  A page with no overlay regenerates from the model, the safe fallback when
+ *  config edits would otherwise replay stale raw config bytes. */
+export function dropPageOverlays(pages: Page[]): Page[] {
+  if (!pages.some((p) => p.overlay)) return pages;
+  return pages.map((p) => {
+    if (!p.overlay) return p;
+    const next = { ...p };
+    delete next.overlay;
+    return next;
+  });
+}
+
+/** Drop round-trip provenance from a leaf: a clone/copy is a net-new object with
+ *  a new id, so it has no overlay segment and must regenerate from the model. */
+function dropProvenance<T extends LabelObject>(node: T): T {
+  if (node.dirty === undefined) return node;
+  const next = { ...node };
+  delete next.dirty;
+  return next;
+}
+
 /** Apply `renameTemplateMarker` to every leaf's `content` in a subtree.
  *  Identity-preserving: returns the same array (and same node refs)
  *  when no markers needed rewriting, so React memoisation downstream
@@ -93,11 +140,14 @@ export function applyObjectChanges(
   }
   const normalize = getEntry(obj.type)?.normalizeChanges;
   const normalized = normalize ? normalize(obj, changes) : changes;
-  return {
+  const next = {
     ...obj,
     ...normalized,
     props: normalized.props ? Object.assign({}, obj.props, normalized.props) : obj.props,
   } as LabelObject;
+  // Dirty-tracking is centralized in the dirtyTracking middleware (a state diff),
+  // so this mutator no longer stamps dirty itself.
+  return next;
 }
 
 /** Immutable insert-at-index that clamps `idx` into the array's bounds.
@@ -144,11 +194,11 @@ export function cloneChildrenFresh(children: LabelObject[]): LabelObject[] {
         children: cloneChildrenFresh(c.children),
       };
     }
-    return {
+    return dropProvenance({
       ...c,
       id: crypto.randomUUID(),
       props: { ...c.props },
-    } as LabelObject;
+    } as LabelObject);
   });
 }
 
@@ -165,13 +215,13 @@ export function cloneShifted(src: LabelObject, dx: number, dy: number): LabelObj
       children: src.children.map((c) => cloneShifted(c, dx, dy)),
     };
   }
-  return {
+  return dropProvenance({
     ...src,
     id: crypto.randomUUID(),
     x: src.x + dx,
     y: src.y + dy,
     props: { ...src.props },
-  } as LabelObject;
+  } as LabelObject);
 }
 
 /** Clone clipboard entries with fresh ids, shifted by (dx, dy). Fresh ids per

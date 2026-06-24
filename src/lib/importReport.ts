@@ -41,6 +41,12 @@ export function describeFinding(f: ImportFinding): { title: string; detail: stri
       detail: f.command,
     };
   }
+  if (f.kind === 'replayRisk') {
+    return {
+      title: 'Printer setup command: runs on the printer when exported/printed',
+      detail: f.command,
+    };
+  }
   return {
     title: 'Skipped: command not recognised',
     detail: f.command,

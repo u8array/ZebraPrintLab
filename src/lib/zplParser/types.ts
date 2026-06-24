@@ -2,8 +2,9 @@ import type { LabelConfig } from "../../types/LabelConfig";
 import type { LabelObject } from "../../types/Group";
 import type { Variable } from "../../types/Variable";
 import type { PrinterProfile } from "../../types/PrinterProfile";
+import type { BlockOverlay } from "../zplOverlay/overlay";
 
-export type ImportFindingKind = "partial" | "browserLimit" | "unknown";
+export type ImportFindingKind = "partial" | "browserLimit" | "unknown" | "replayRisk";
 
 /**
  * One import finding. Created per-occurrence so each entry can be navigated
@@ -30,6 +31,10 @@ export interface ImportReport {
   browserLimit: string[];
   /** Commands not recognised at all. */
   unknown: string[];
+  /** Setup-Script / printer-configuration commands that persist or change
+   *  device state when the design is printed or exported (e.g. ^ST, ^KN, ^KP,
+   *  ^JU, ^SE). Lossless replay re-emits them, so the user is warned. */
+  replayRisk: string[];
 }
 
 export interface ParsedZPL {
@@ -55,6 +60,12 @@ export interface ParsedZPL {
    *  importReport for categorised access. */
   skipped: string[];
   importReport: ImportReport;
+  /** Source-patch overlay for the parsed block, present only when
+   *  `captureOverlay` is set and every parsed object linked to a source
+   *  span. Lets export replay untouched fields/config/comments/whitespace
+   *  byte-identically. `undefined` when capture was off or a field shape
+   *  couldn't be linked (the block then regenerates from the model). */
+  overlay?: BlockOverlay;
 }
 
 export type Handler = (p: string[], rest: string, cmd: string) => void;

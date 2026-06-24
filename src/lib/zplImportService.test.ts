@@ -1,7 +1,40 @@
 import { describe, it, expect } from 'vitest';
 import { importZplText } from './zplImportService';
 import { generateSetupScript } from './zplSetupScript';
+import { describeFinding } from './importReport';
 import type { PrinterProfile } from '../types/PrinterProfile';
+
+describe('importZplText - replay-risk findings', () => {
+  it('flags printer setup commands (run on the printer when exported/printed)', () => {
+    const r = importZplText('^XA^KNFOO^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
+    expect(r.report.replayRisk).toContain('^KN');
+    const finding = r.report.findings.find((f) => f.kind === 'replayRisk');
+    expect(finding).toBeDefined();
+    expect(describeFinding(finding!).detail).toBe('^KN');
+  });
+
+  it('does not flag a label without setup commands', () => {
+    const r = importZplText('^XA^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
+    expect(r.report.replayRisk).toEqual([]);
+    expect(r.report.findings.some((f) => f.kind === 'replayRisk')).toBe(false);
+  });
+
+  it('dedupes a setup command repeated across pages', () => {
+    const r = importZplText('^XA^STsome^XZ\n^XA^STmore^XZ', 8);
+    expect(r.report.replayRisk).toEqual(['^ST']);
+  });
+
+  it('flags device-action commands (calibration/reset) that were silently noop-ed', () => {
+    const r = importZplText('^XA~JC~JR^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
+    expect(r.report.replayRisk).toContain('^JC');
+    expect(r.report.replayRisk).toContain('^JR');
+  });
+
+  it('does not flag design noops (^FV/^FM) or visible label settings (^MD/^PR)', () => {
+    const r = importZplText('^XA^MD8^PR4^FV5^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
+    expect(r.report.replayRisk).toEqual([]);
+  });
+});
 
 describe('importZplText - single label', () => {
   it('returns one page with the parsed objects', () => {
@@ -9,6 +42,18 @@ describe('importZplText - single label', () => {
     const result = importZplText(zpl, 8);
     expect(result.pages).toHaveLength(1);
     expect(result.pages[0]?.objects).toHaveLength(1);
+  });
+
+  it('attaches a consistent source-patch overlay to the page', () => {
+    const zpl = '^XA^FO10,20^A0N,30,0^FDHello^FS^XZ';
+    const result = importZplText(zpl, 8);
+    const overlay = result.pages[0]?.overlay;
+    expect(overlay).toBeDefined();
+    // Segments rebuild the full block byte-for-byte.
+    expect(overlay!.segments.map((s) => s.text).join('')).toBe(zpl);
+    // The single field links to the one parsed object.
+    const objId = result.pages[0]!.objects[0]!.id;
+    expect(overlay!.segments.some((s) => s.kind === 'object' && s.objectId === objId)).toBe(true);
   });
 
 });

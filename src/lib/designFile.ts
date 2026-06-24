@@ -8,6 +8,7 @@ import {
   type CsvMapping,
 } from "../types/Variable";
 import type { LabelObject } from "../types/Group";
+import { blockOverlaySchema, type BlockOverlay } from "./zplOverlay/overlay";
 import { visitLeavesInPages } from "./objectTree";
 import { ok, err, type Result } from "./result";
 
@@ -19,7 +20,7 @@ import { ok, err, type Result } from "./result";
 export const CURRENT_DESIGN_SCHEMA_VERSION = 1;
 
 export type DesignFileError = "parse_error" | "invalid_schema";
-export interface DesignFilePage { objects: LabelObject[] }
+export interface DesignFilePage { objects: LabelObject[]; overlay?: BlockOverlay }
 export interface DesignFile {
   label: LabelConfig;
   pages: DesignFilePage[];
@@ -52,7 +53,12 @@ const groupSchema: z.ZodType<unknown> = z.lazy(() =>
 
 const labelObjectSchema: z.ZodType<unknown> = z.union([groupSchema, leafSchema]);
 
-const pageSchema = z.object({ objects: z.array(labelObjectSchema) });
+// A persisted overlay that fails its invariant drops to undefined (the page
+// regenerates) rather than failing the whole design load.
+const pageSchema = z.object({
+  objects: z.array(labelObjectSchema),
+  overlay: blockOverlaySchema.optional().catch(undefined),
+});
 
 const designFileV1Schema = z.object({
   schemaVersion: z.literal(1),

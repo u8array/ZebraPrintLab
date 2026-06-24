@@ -3,7 +3,7 @@ import { pruneUndefined } from "./pruneUndefined";
 import { stripDrivePrefix } from "./customFonts";
 import type { CustomFontMapping, LabelConfig } from "../types/LabelConfig";
 import type { PrinterProfile } from "../types/PrinterProfile";
-import type { LabelObject } from "../types/Group";
+import type { LabelObject, Page } from "../types/Group";
 import { uniqueVariableName, type Variable } from "../types/Variable";
 
 export interface ZplImportResult {
@@ -14,7 +14,7 @@ export interface ZplImportResult {
    *  NOT auto-apply these so a shared `.zpl` can't silently
    *  reconfigure the user's printer. */
   printerProfile: Partial<PrinterProfile>;
-  pages: { objects: LabelObject[] }[];
+  pages: Page[];
   variables: Variable[];
   report: ImportReport;
 }
@@ -56,7 +56,7 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
       printerProfile: {},
       pages: [],
       variables: [],
-      report: { findings: [], partial: [], browserLimit: [], unknown: [] },
+      report: { findings: [], partial: [], browserLimit: [], unknown: [], replayRisk: [] },
     };
   }
 
@@ -81,7 +81,7 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
   // the last-seen state (mirrors what the printer would actually end
   // up with after executing the stream).
   const printerProfile: Partial<PrinterProfile> = {};
-  const pages: { objects: LabelObject[] }[] = [];
+  const pages: Page[] = [];
   const findings: ImportFinding[] = [];
   // Variables are document-level, but the parser reconstructs them per
   // block. Merge across blocks by fnNumber (same slot used on multiple
@@ -96,7 +96,7 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
   // labelConfig replaces all later labelConfigs.
   const aggregatedCustomFonts = new Map<string, CustomFontMapping>();
   parseUnits.forEach((block, i) => {
-    const result = parseZPL(block, dpmm);
+    const result = parseZPL(block, dpmm, { captureOverlay: true });
     uploadedFontPaths.push(...result.uploadedFontPaths);
     for (const m of result.labelConfig.customFonts ?? []) {
       if (m.path) designFontPaths.add(normPath(m.path));
@@ -126,7 +126,7 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
       rewireBindings(result.objects, idRemap);
     }
     // A preamble-only unit (no ^XA) carries fonts/profile but no page.
-    if (hasLabelBlocks) pages.push({ objects: result.objects });
+    if (hasLabelBlocks) pages.push({ objects: result.objects, overlay: result.overlay });
     if (i === 0) {
       labelConfig = result.labelConfig;
     }
@@ -184,6 +184,7 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     partial: dedupBy('partial'),
     browserLimit: dedupBy('browserLimit'),
     unknown: dedupBy('unknown'),
+    replayRisk: dedupBy('replayRisk'),
   };
 
   return { labelConfig, printerProfile, pages, variables, report };
@@ -199,6 +200,10 @@ function rewireBindings(
 ): void {
   for (const obj of objects) {
     if (obj.variableId && idRemap.has(obj.variableId)) {
+      // Cross-block merge is by fnNumber, so the remapped variable keeps the
+      // same ^FN number: the captured bytes stay valid and must NOT be marked
+      // dirty, or an unedited later page would lose its original ^FD default on
+      // export (byte-identity break). The remap only repoints the model binding.
       obj.variableId = idRemap.get(obj.variableId);
     }
     if (obj.type === "group" && "children" in obj) {

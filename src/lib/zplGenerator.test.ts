@@ -5,12 +5,29 @@ import { parseZPL } from './zplParser';
 import type { LabelConfig } from '../types/LabelConfig';
 import type { GroupObject, LabelObject } from '../types/Group';
 import { defined, props } from '../test/helpers';
+import { NON_EMITTING_CONFIG_KEYS } from '../store/labelStore.internals';
 
 const BASE_LABEL: LabelConfig = {
   widthMm: 100,
   heightMm: 50,
   dpmm: 8,
 };
+
+describe('NON_EMITTING_CONFIG_KEYS tripwire', () => {
+  // A config key wrongly listed as non-emitting would skip the overlay drop and
+  // export stale config. Lock the membership and prove each member is invariant.
+  it('contains only safeAreaMm', () => {
+    expect([...NON_EMITTING_CONFIG_KEYS]).toEqual(['safeAreaMm']);
+  });
+
+  it('changing safeAreaMm does not change generated ZPL', () => {
+    const objs = [
+      { id: 'a', type: 'text', x: 10, y: 10, rotation: 0,
+        props: { content: 'Hi', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: false } },
+    ] as unknown as LabelObject[];
+    expect(generateZPL({ ...BASE_LABEL, safeAreaMm: 7 }, objs)).toBe(generateZPL(BASE_LABEL, objs));
+  });
+});
 
 describe('generateZPL — structure', () => {
   it('wraps output in ^XA and ^XZ', () => {

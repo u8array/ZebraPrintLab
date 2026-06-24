@@ -33,6 +33,13 @@ export const labelObjectBaseSchema = z.object({
    *  prop is kept as fallback when the binding is removed. Exported
    *  as `^FN{n}^FD{default}^FS` instead of plain `^FD{content}^FS`. */
   variableId: z.string().optional(),
+  /** Lossless round-trip provenance: set once an imported object diverges from
+   *  its source bytes, so the page overlay regenerates it instead of replaying
+   *  the original segment verbatim. Absent for net-new and untouched objects.
+   *  Stamped centrally by the dirtyTracking store middleware. Transient state,
+   *  so a corrupt persisted value drops to undefined rather than failing the
+   *  whole design-file load. */
+  dirty: z.boolean().optional().catch(undefined),
 });
 
 export type LabelObjectBase = z.infer<typeof labelObjectBaseSchema>;

@@ -5,6 +5,7 @@ import type { Variable, CsvMapping } from '../../types/Variable';
 import { forgetImport } from '../../lib/csvImport';
 import { dropLegacyFontBindings } from '../../lib/customFonts';
 import { selectPreviewLocksEditor } from '../labelStore.selectors';
+import { configPatchAffectsEmit, dropPageOverlays } from '../labelStore.internals';
 import type { LabelState } from '../labelStore';
 
 export interface LabelConfigSlice {
@@ -33,7 +34,12 @@ export const createLabelConfigSlice: StateCreator<LabelState, [], [], LabelConfi
   setLabelConfig: (config) =>
     set((state) => {
       if (selectPreviewLocksEditor(state)) return {};
-      return { label: { ...state.label, ...config } };
+      const label = { ...state.label, ...config };
+      // An emit-affecting config edit invalidates each page overlay's verbatim
+      // config bytes; drop overlays so those pages regenerate with the new
+      // value (config-segment patching is a later stage).
+      if (!configPatchAffectsEmit(state.label, config)) return { label };
+      return { label, pages: dropPageOverlays(state.pages) };
     }),
 
   loadDesign: (label, pages, variables, csvMapping) => {
@@ -58,7 +64,10 @@ export const createLabelConfigSlice: StateCreator<LabelState, [], [], LabelConfi
     set((state) => {
       if (selectPreviewLocksEditor(state)) return {};
       if (pages.length === 0) return {};
-      const newPages = [...state.pages, ...pages];
+      // Strip overlays from appended pages: they are recontextualized into the
+      // current design (whose label config replaces the imported one), so their
+      // captured source config/^FN bytes no longer apply and must regenerate.
+      const newPages = [...state.pages, ...dropPageOverlays(pages)];
       return {
         pages: newPages,
         currentPageIndex: state.pages.length,

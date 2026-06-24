@@ -1,8 +1,37 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { zlibSync } from 'fflate';
-import { parseZPL } from './zplParser';
+import { parseZPL, BY_CONSUMING_BARCODE_TYPES } from './zplParser';
 import { formatLabelMetaComment } from './zplLabelMeta';
+import { ObjectRegistry } from '../registry';
 import { props } from '../test/helpers';
+
+// Drift guard for the bare-^BY hazard set. Every 1D and postal barcode emits a
+// ^BY on regen, so it must be classified ^BY-consuming; a forgotten new one
+// would silently let a neighbour's ^BY leak. 2D mag-codes must stay excluded.
+describe('BY_CONSUMING_BARCODE_TYPES drift guard', () => {
+  it('includes every code-1d and code-postal type', () => {
+    for (const [type, entry] of Object.entries(ObjectRegistry)) {
+      if (entry.group === 'code-1d' || entry.group === 'code-postal') {
+        expect(BY_CONSUMING_BARCODE_TYPES.has(type), `${type} (${entry.group})`).toBe(true);
+      }
+    }
+  });
+
+  it('excludes 2D mag-codes and includes the ^BY-using stacked 2D codes', () => {
+    for (const t of ['qrcode', 'datamatrix', 'aztec', 'maxicode']) {
+      expect(BY_CONSUMING_BARCODE_TYPES.has(t), t).toBe(false);
+    }
+    for (const t of ['pdf417', 'micropdf417', 'codablock', 'tlc39']) {
+      expect(BY_CONSUMING_BARCODE_TYPES.has(t), t).toBe(true);
+    }
+  });
+
+  it('lists only real registry leaf types', () => {
+    for (const t of BY_CONSUMING_BARCODE_TYPES) {
+      expect(Object.prototype.hasOwnProperty.call(ObjectRegistry, t), t).toBe(true);
+    }
+  });
+});
 
 /** CRC-16/XMODEM; same variant used by the parser to validate
  *  :B64:/:Z64: wrappers (poly 0x1021, init 0x0000). Duplicated here so

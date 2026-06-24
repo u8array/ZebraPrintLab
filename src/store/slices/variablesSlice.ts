@@ -14,6 +14,7 @@ import {
   substituteTemplateMarkers,
   applyObjectChanges,
   updateCurrentObjects,
+  dropPageOverlays,
 } from '../labelStore.internals';
 import { selectPreviewLocksEditor, currentObjects } from '../labelStore.selectors';
 import type { LabelState } from '../labelStore';
@@ -102,16 +103,26 @@ export const createVariablesSlice: StateCreator<LabelState, [], [], VariablesSli
       const next: Partial<LabelState> = {
         variables: state.variables.map((v) => (v.id === id ? { ...v, ...patched } : v)),
       };
+      let pages = state.pages;
       // Rename ripple: every `«oldName»` marker in any object's content
       // needs to point at the new name, otherwise the templates dangle.
       if (patched.name !== undefined && patched.name !== existing.name) {
         const oldName = existing.name;
         const newName = patched.name;
-        next.pages = state.pages.map((page) => ({
+        pages = pages.map((page) => ({
           ...page,
           objects: rewriteTemplateMarkers(page.objects, oldName, newName),
         }));
       }
+      // fnNumber / defaultValue feed both inline ^FN{n}^FD{default} (single-bind)
+      // and the header ^FN declarations of marker-based template fields, the
+      // latter living in raw overlay segments. Drop overlays so those pages
+      // regenerate the headers instead of replaying stale ones.
+      const fnChanged = patched.fnNumber !== undefined && patched.fnNumber !== existing.fnNumber;
+      const defChanged =
+        patched.defaultValue !== undefined && patched.defaultValue !== existing.defaultValue;
+      if (fnChanged || defChanged) pages = dropPageOverlays(pages);
+      if (pages !== state.pages) next.pages = pages;
       return next;
     }),
 
@@ -130,12 +141,15 @@ export const createVariablesSlice: StateCreator<LabelState, [], [], VariablesSli
       const ancestorLocked = findAncestors(currentObjects(state), objectId).some(
         (g) => !!g.locked,
       );
-      const pages = updateCurrentObjects(state, (curr) =>
+      const updated = updateCurrentObjects(state, (curr) =>
         mapObjectById(curr, objectId, (obj) =>
           applyObjectChanges(obj, objectChanges, ancestorLocked),
         ),
       );
-      return { variables, ...pages };
+      // The new default feeds every field reading this variable (other binds and
+      // «name» template headers, some in raw overlay segments), so drop overlays
+      // for a full regen, matching updateVariable's default-change path.
+      return { variables, pages: dropPageOverlays(updated.pages) };
     }),
 
   setVariables: (variables) =>
@@ -174,9 +188,13 @@ export const createVariablesSlice: StateCreator<LabelState, [], [], VariablesSli
         );
         nextMapping = { ...state.csvMapping, bindings: rest };
       }
+      // Drop overlays too: a deleted variable's ^FN declaration may sit in a raw
+      // overlay segment with no bound object to dirty, so a full regen is the
+      // only way to remove it from export.
+      const finalPages = dropPageOverlays(pagesChanged ? nextPages : state.pages);
       return {
         variables: state.variables.filter((v) => v.id !== id),
-        ...(pagesChanged ? { pages: nextPages } : {}),
+        ...(finalPages !== state.pages ? { pages: finalPages } : {}),
         ...(nextMapping !== state.csvMapping ? { csvMapping: nextMapping } : {}),
       };
     }),

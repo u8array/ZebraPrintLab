@@ -25,6 +25,10 @@ export interface PendingReverseBg {
   rounding: number;
   reverseFlag: boolean | undefined;
   comment?: string;
+  /** Overlay capture only: source span of the ^GB field, recorded at its ^FS so
+   *  the object it later produces (deferred commit, or reverse-collapse merge)
+   *  can be linked to its original bytes. */
+  span?: { start: number; end: number };
 }
 
 /** Public output accumulators handed back via `ParsedZPL`. */
@@ -37,6 +41,9 @@ export interface ParserResult {
   partialCmds: Set<string>;
   browserLimit: string[];
   unknown: string[];
+  /** Setup-Script / printer-config commands seen (persist/change device state
+   *  on print/export); surfaced as a replay-risk import finding. */
+  replayRisk: string[];
 }
 
 /** Label-frame state from ^LH / ^LT / ^LR; per spec these are persistent
@@ -220,6 +227,7 @@ export function createParserState(): ParserState {
       partialCmds: new Set<string>(),
       browserLimit: [],
       unknown: [],
+      replayRisk: [],
     },
     label: {
       lhX: 0,

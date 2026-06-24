@@ -33,7 +33,7 @@ export interface TokenizerChars {
 export function* tokenize(
   zpl: string,
   chars: TokenizerChars,
-): Generator<{ cmd: string; rest: string }> {
+): Generator<{ cmd: string; rest: string; start: number; end: number }> {
   let pos = 0;
   while (pos < zpl.length) {
     let cmdStart = -1;
@@ -52,7 +52,7 @@ export function* tokenize(
     if (cmd === "CC" || cmd === "CT" || cmd === "CD") {
       const argChar = zpl[cmdStart + 3] ?? "";
       pos = cmdStart + 4;
-      yield { cmd, rest: argChar };
+      yield { cmd, rest: argChar, start: cmdStart, end: pos };
       continue;
     }
     let endPos = zpl.length;
@@ -64,7 +64,9 @@ export function* tokenize(
       }
     }
     pos = endPos;
-    yield { cmd, rest: zpl.slice(cmdStart + 3, endPos) };
+    // `end` is exclusive: the index where the next command's prefix begins (or
+    // end of input), so source.slice(start, end) is this token's verbatim text.
+    yield { cmd, rest: zpl.slice(cmdStart + 3, endPos), start: cmdStart, end: endPos };
   }
 }
 

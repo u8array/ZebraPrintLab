@@ -66,6 +66,8 @@ File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 
 > Import round-trips text, barcodes, shapes, images (including printer-stored and compressed graphics), label-header settings, and template fields (`^FN` slots land in the **Variables** tab; `^FE` inline embeds like `^FD#1#-#2#` import as `«name»` markers in the field content). Anything else the parser doesn't recognize is skipped and listed in the import report.
 
+**Lossless re-export:** edit an imported label and export it again, and the parts you didn't touch come back byte-for-byte. Untouched fields, settings, comments, and even commands the editor doesn't model are preserved exactly; only the objects you edit, add, or remove are regenerated. Setup or device commands that would re-run when the ZPL is sent again are flagged in the import report.
+
 ### Multiple labels (pages)
 
 File menu → **Add page** creates a new page. With multiple pages, the control at the bottom-center of the canvas switches between them and removes them. All pages share the same dimensions; export and import handle each page as a separate label.
@@ -106,6 +108,7 @@ Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable conte
 
 - Smart alignment and spacing guides
 - Layers panel with reordering
+- Lossless ZPL round-trip: imported ZPL re-exports byte-for-byte, regenerating only the objects you edit and preserving everything else, including comments and commands the editor doesn't model
 - Variables: bind text and barcode fields to named defaults that emit as `^FN` slots (or `^FE` inline embeds when one field references multiple variables), round-tripping with printer-side templates
 - CSV batch printing: import a CSV, map columns to Variables, print or export with efficient printer-side data merge (template ships once, each row sends only its overrides)
 - GS1 content builder: assemble GS1 content from Application Identifiers (DataBar Expanded and GS1 DataMatrix), validated per field and against GS1 combination rules

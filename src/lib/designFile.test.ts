@@ -57,6 +57,49 @@ describe('parseDesignFile', () => {
     expect(result.value.pages[0]?.objects).toHaveLength(1);
   });
 
+  it('round-trips a page overlay through serialize + parse', () => {
+    const source = '^XA^FO10,10^FDx^FS^XZ';
+    const overlay = {
+      segments: [
+        { kind: 'raw' as const, text: '^XA' },
+        { kind: 'object' as const, objectId: 'obj-1', text: '^FO10,10^FDx^FS' },
+        { kind: 'raw' as const, text: '^XZ' },
+      ],
+      v: 3,
+      regenSafe: true,
+    };
+    const json = serializeDesign(
+      { widthMm: 100, heightMm: 60, dpmm: 8 },
+      [{ objects: SAMPLE_OBJECTS, overlay }],
+    );
+    const result = parseDesignFile(json);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const loaded = result.value.pages[0]?.overlay;
+    expect(loaded?.segments).toHaveLength(3);
+    expect(loaded?.segments.map((s) => s.text).join('')).toBe(source);
+  });
+
+  it('drops a stale-version overlay (keeps the page)', () => {
+    const json = serializeDesign(
+      { widthMm: 100, heightMm: 60, dpmm: 8 },
+      [{
+        objects: SAMPLE_OBJECTS,
+        overlay: {
+          segments: [{ kind: 'raw', text: '^XA^FDx^FS^XZ' }],
+          v: 1,
+          regenSafe: true,
+        },
+      }],
+    );
+    const result = parseDesignFile(json);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    // Page still loads; only the stale overlay is dropped.
+    expect(result.value.pages).toHaveLength(1);
+    expect(result.value.pages[0]?.overlay).toBeUndefined();
+  });
+
   it('rejects files without a schemaVersion field', () => {
     const json = JSON.stringify({
       label: { widthMm: 100, heightMm: 60, dpmm: 8 },

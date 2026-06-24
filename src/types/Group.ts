@@ -1,5 +1,6 @@
 import type { LeafObject } from '../registry/leafObject';
 import type { LabelObjectBase } from './LabelObject';
+import type { BlockOverlay } from '../lib/zplOverlay/overlay';
 export type { LeafObject };
 /** Non-leaf container; cascades lock/visibility/inclusion. Intentionally
  *  outside the registry (no toZPL/defaultSize/PropertiesPanel). */
@@ -14,6 +15,11 @@ export type LabelObject = LeafObject | GroupObject;
 
 export interface Page {
   objects: LabelObject[];
+  /** Source-patch overlay of the ^XA…^XZ block this page was imported from,
+   *  letting export replay untouched bytes verbatim. Absent on fresh designs
+   *  and on pages the parser couldn't fully link; those regenerate from the
+   *  model. Rides persist + zundo as part of the page. */
+  overlay?: BlockOverlay;
 }
 
 export function isGroup(obj: LabelObject): obj is GroupObject {
@@ -116,6 +122,8 @@ export function stripVariableIdFromObjects(
     }
     if (o.variableId !== variableId) return o;
     changed = true;
+    // Unbinding switches ^FN→^FD output; the dirtyTracking middleware stamps
+    // dirty centrally from the variableId change.
     const cleared: LabelObject = { ...o };
     delete cleared.variableId;
     return cleared;
