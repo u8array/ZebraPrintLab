@@ -49,6 +49,10 @@ export interface PaletteRow {
   id: string;
   type: string;
   variant: string;
+  /** Single element pinned to one variant: no chevron, marked "· fest". Absent
+   *  (or false) is a switchable group row. Optional so older persisted rows load
+   *  as group rows. */
+  fixed?: boolean;
 }
 export type PaletteView = 'list' | 'flat';
 
@@ -120,8 +124,10 @@ export interface UiSlice {
   setThirdPartyEnabled: (service: 'labelary', enabled: boolean) => void;
   acknowledgeLabelaryNotice: () => void;
   setCanvasSettings: (settings: Partial<CanvasSettings>) => void;
-  /** Append a row for `type` at its default variant (duplicates allowed). */
-  addPaletteRow: (type: string) => void;
+  /** Append a palette row for `type`. With `variant` it is a single-element row
+   *  pinned to that variant (fixed, no chevron); without, a switchable group row
+   *  at the type's default variant. */
+  addPaletteRow: (type: string, variant?: string) => void;
   removePaletteRow: (index: number) => void;
   /** Move the row with `activeId` to where `overId` sits (drag-reorder). */
   reorderPaletteRows: (activeId: string, overId: string) => void;
@@ -182,12 +188,18 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
   acknowledgeLabelaryNotice: () => set({ labelaryNoticeAcknowledged: true }),
   setCanvasSettings: (settings) =>
     set((state) => ({ canvasSettings: { ...state.canvasSettings, ...settings } })),
-  addPaletteRow: (type) =>
+  addPaletteRow: (type, variant) =>
     set((state) => {
-      const variant = variantsOfType(type)[0];
-      if (!variant) return {};
+      // An explicit variant pins a fixed single-element row; otherwise a
+      // switchable group row at the type's default variant.
+      const resolved = variant ?? variantsOfType(type)[0];
+      if (!resolved) return {};
       const id = `${type}-${crypto.randomUUID().slice(0, 8)}`;
-      return { paletteRows: [...state.paletteRows, { id, type, variant }] };
+      const row =
+        variant !== undefined
+          ? { id, type, variant: resolved, fixed: true }
+          : { id, type, variant: resolved };
+      return { paletteRows: [...state.paletteRows, row] };
     }),
   removePaletteRow: (index) =>
     set((state) => ({ paletteRows: state.paletteRows.filter((_, i) => i !== index) })),

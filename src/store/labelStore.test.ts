@@ -270,6 +270,17 @@ describe('palette rows', () => {
     expect(state().paletteRows[1]?.id).not.toBe(state().paletteRows[0]?.id);
   });
 
+  it('addPaletteRow makes a switchable group row (not fixed)', () => {
+    state().addPaletteRow('shape');
+    expect(state().paletteRows[1]?.fixed).toBeFalsy();
+  });
+
+  it('addPaletteRow with a variant pins a fixed single-element row', () => {
+    state().addPaletteRow('shape', 'box-filled');
+    expect(state().paletteRows[1]).toMatchObject({ type: 'shape', variant: 'box-filled', fixed: true });
+    expect(state().paletteRows[1]?.id).not.toBe(state().paletteRows[0]?.id);
+  });
+
   it('removePaletteRow drops by index', () => {
     state().addPaletteRow('shape');
     state().removePaletteRow(0);

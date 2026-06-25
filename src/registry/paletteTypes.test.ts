@@ -37,7 +37,7 @@ describe('paletteTypes', () => {
   });
 
   it('text/shape rows interleave their presets after the base type', () => {
-    expect(variantsOfType('text')).toEqual(['text', 'text-fb', 'text-tb', 'symbol', 'serial']);
+    expect(variantsOfType('text')).toEqual(['text', 'text-fb', 'text-tb', 'text-serial', 'symbol']);
     expect(variantsOfType('shape')).toEqual(['line', 'line-diagonal', 'box', 'box-filled', 'ellipse']);
   });
 
