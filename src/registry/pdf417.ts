@@ -3,6 +3,9 @@ import { fieldPos, fdFieldFor } from "./zplHelpers";
 import { commitStacked2DTransform } from "./transformHelpers";
 import { type ZplRotation } from "./rotation";
 
+/** ^BY module width with ^B7 is 2 to 10 (spec p.82), unlike the general 1. */
+const PDF417_MODULE_WIDTH_MIN = 2;
+
 export interface Pdf417Props {
   content: string;
   rowHeight: number;
@@ -28,7 +31,8 @@ export const pdf417: ObjectTypeCore<Pdf417Props> = {
   },
   defaultSize: { width: 300, height: 150 },
 
-  commitTransform: commitStacked2DTransform,
+  moduleWidthMin: PDF417_MODULE_WIDTH_MIN,
+  commitTransform: (obj, ctx) => commitStacked2DTransform(obj, ctx, PDF417_MODULE_WIDTH_MIN),
 
   toZPL: (obj, ctx) => {
     const p = obj.props;

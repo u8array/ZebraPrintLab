@@ -4,6 +4,7 @@ import { Image as KImage, Group, Rect, Text } from "react-konva";
 import type Konva from "konva";
 import { BARCODE_1D_TYPES, ObjectRegistry } from "../../registry";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
+import { barcodeFtAnchorOffset } from "../../lib/objectBounds";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
@@ -146,13 +147,16 @@ export function BarcodeObject({
   // already-rotated footprint verbatim.
   const footprintWDots = pxToDots(dim.w, scale, dpmm);
   const footprintHDots = pxToDots(dim.h, scale, dpmm);
-  // Bar sub-rect height (rotation-aware) so objectBounds anchors FT barcodes
-  // the same way the render path does (ftYShiftDots below uses dim.barH).
+  // Rotation-aware bar sub-rect height; objectBounds reads it only as the
+  // fallback for the upright FT anchor when upright dims aren't published yet.
   const footprintBarHDots = pxToDots(dim.barH, scale, dpmm);
   // Text-zone offset (dots) of the bbox top-left from the bars, mirroring the
   // render shift (-barLeftPx, -barTopPx) so objectBounds lands the same origin.
   const footprintBarLeftDots = pxToDots(dim.barLeftPx, scale, dpmm);
   const footprintBarTopDots = pxToDots(dim.barTopPx, scale, dpmm);
+  // Upright (unrotated) bar-rect size, for the rotation-aware ^FT anchor.
+  const uprightBarWDots = pxToDots(dim.upright.barW, scale, dpmm);
+  const uprightBarHDots = pxToDots(dim.upright.barH, scale, dpmm);
   useEffect(() => {
     // Footprint dropped to zero (e.g. content cleared): drop the stale entry.
     if (footprintWDots <= 0 || footprintHDots <= 0) {
@@ -165,43 +169,37 @@ export function BarcodeObject({
       barHeightDots: footprintBarHDots,
       barLeftDots: footprintBarLeftDots,
       barTopDots: footprintBarTopDots,
+      uprightBarWDots,
+      uprightBarHDots,
     });
-  }, [obj.id, footprintWDots, footprintHDots, footprintBarHDots, footprintBarLeftDots, footprintBarTopDots]);
+  }, [obj.id, footprintWDots, footprintHDots, footprintBarHDots, footprintBarLeftDots, footprintBarTopDots, uprightBarWDots, uprightBarHDots]);
   useEffect(() => () => clearMeasuredBounds(obj.id), [obj.id]);
 
-  // Y delta in dots between the FT baseline (bar bottom) and the bbox
-  // top-left, plus the QR-specific firmware offset. Used forward in the
-  // render path and inverted in the drag-end handler.
-  //   FT-positioned: subtract this from FT.y to get bbox-top-Y
-  //   FO-positioned: zero except for QR's +10-dot artifact
-  // Computed once and reused so render and drag-end stay in lockstep.
-  const ftYShiftDots = (() => {
-    let d = 0;
-    if (barcodeCanvas) {
-      d += pxToDots(dim.barH, scale, dpmm);
-    } else if (BARCODE_1D_TYPES.has(obj.type)) {
-      d += (obj.props as { height: number }).height;
-    }
-    if (obj.type === "qrcode") {
-      // Zebra firmware artifact: ^FT for QR shifts the symbol up by exactly
-      // 3 modules (= 3 * magnification dots), independent of dpmm or content.
-      // Verified against Labelary across magnifications 4–10 at 8 and 12 dpmm.
-      // Leading theory: firmware reserves a dummy text-interpretation bbox
-      // even though QR codes have no human-readable text.
-      d += QR_FT_MODULE_OFFSET *
-        (obj.props as { magnification: number }).magnification;
-    }
-    return d;
-  })();
-
-  // Zebra firmware artifact: ^FO QR codes render with a hardcoded +10-dot
-  // Y-offset, independent of magnification and dpmm. Verified via Labelary.
+  // ^FT anchor (bar base, left edge) -> bbox top-left, rotation-aware: N shifts
+  // up by the bar height; R/I/B rotate the anchor with the field. Shared source
+  // (barcodeFtAnchorOffset) so objectBounds lands the same origin.
+  const rotation = objectRotation(obj.props);
+  const ftBarHDots =
+    uprightBarHDots > 0
+      ? uprightBarHDots
+      : BARCODE_1D_TYPES.has(obj.type)
+        ? (obj.props as { height: number }).height
+        : 0;
+  const ftOffset = barcodeFtAnchorOffset(rotation, uprightBarWDots, ftBarHDots);
+  // Zebra firmware artifact: ^FT for QR shifts the symbol up by exactly 3 modules
+  // (= 3 * magnification dots), independent of dpmm or content; ^FO QR is +10 dots.
+  // Verified against Labelary across magnifications 4-10 at 8 and 12 dpmm.
+  const qrFtShiftDots =
+    obj.type === "qrcode"
+      ? QR_FT_MODULE_OFFSET * (obj.props as { magnification: number }).magnification
+      : 0;
   const foYShiftDots = obj.type === "qrcode" ? QR_FO_Y_OFFSET_DOTS : 0;
 
-  const displayX = obj.x;
-  const displayY = obj.positionType === "FT"
-    ? obj.y - ftYShiftDots
-    : obj.y + foYShiftDots;
+  const displayX = obj.positionType === "FT" ? obj.x + ftOffset.x : obj.x;
+  const displayY =
+    obj.positionType === "FT"
+      ? obj.y + ftOffset.y - qrFtShiftDots
+      : obj.y + foYShiftDots;
 
   // Bars draw at FO; bbox top-left shifts by (-barLeftPx, -barTopPx)
   // when the text zone extends LEFT/ABOVE the bars (rotated EAN/UPC,
@@ -223,7 +221,6 @@ export function BarcodeObject({
     // Force-off when the symbology has no HRI in ZPL (e.g. GS1 Databar); the
     // canvas must match the print output even if a legacy saved object still
     // carries printInterpretation: true.
-    const rotation = objectRotation(obj.props);
     const isUpright = rotation === "N";
     // Generic 1D bar-to-HRI gap (bar bottom to glyph cap top). Labelary's
     // is a module-independent ~6 dots; 5 sits a hair tighter.

@@ -1,3 +1,5 @@
+import { isAxisSwapped, type ZplRotation } from "../../registry/rotation";
+
 export interface BoundingBox {
   x: number;
   y: number;
@@ -42,40 +44,29 @@ export function forceSquareBox(oldBox: BoundingBox, newBox: BoundingBox): Boundi
   return { ...newBox, x, y, width: size, height: size };
 }
 
-export function pinBottomEdge(
-  oldBox: BoundingBox,
-  newBox: BoundingBox,
-  snappedH: number,
-): BoundingBox {
-  const bottom = oldBox.y + oldBox.height;
-  return { ...newBox, y: bottom - snappedH, height: snappedH };
-}
-
-/** True if the resize originated from the top handle (y moved noticeably). */
-export function isTopAnchorResize(
-  oldBox: BoundingBox,
-  newBox: BoundingBox,
-  thresholdPx: number,
-): boolean {
-  return Math.abs(newBox.y - oldBox.y) > thresholdPx;
-}
-
 /** Stacked-2D (PDF417/MicroPDF417/Codablock): height steps by rowHeight,
- *  width by moduleWidth. Both axes must snap in lock-step with the
- *  commit so the dropped bbox matches the post-render bitmap. */
+ *  width by moduleWidth. Both axes must snap in lock-step with the commit so
+ *  the dropped bbox matches the post-render bitmap. R/B swap the screen axes;
+ *  CODABLOCK A's ^BY min is 2, so the min is carried per anchor. */
 export interface RowAnchor {
   kind: "row";
   nodeHeight: number;
   rowHeight: number;
   nodeWidth: number;
   moduleWidth: number;
+  moduleWidthMin: number;
+  rotation: ZplRotation;
 }
 
-/** 1D ^BY moduleWidth quantise anchor (unrotated only). */
+/** 1D ^BY moduleWidth quantise anchor. The moduleWidth axis is the screen
+ *  width for N/I and the screen height for R/B (the bars turn a quarter), so
+ *  the snap needs both extents plus the rotation to pick the axis. */
 export interface ModuleWidthAnchor {
   kind: "moduleWidth";
   nodeWidth: number;
+  nodeHeight: number;
   moduleWidth: number;
+  rotation: "N" | "R" | "I" | "B";
 }
 
 /** Uniform 2D (QR/Aztec/DataMatrix) anchor; `edges` from Konva's active
@@ -102,39 +93,76 @@ export function computeNewModules(
   return Math.max(min, Math.min(max, Math.round(currentModules * scale)));
 }
 
+/** Drag-handle move epsilon: below this an edge counts as stationary. */
+const HANDLE_MOVE_EPS = 0.001;
+
+/** Replace one screen axis's extent with `snapped`, pinning the non-grabbed
+ *  edge so the stationary side holds while the snapped extent grows from it. */
+function pinSnappedAxis(
+  oldBox: BoundingBox,
+  newBox: BoundingBox,
+  axis: "x" | "y",
+  snapped: number,
+  eps: number,
+): BoundingBox {
+  if (axis === "y") {
+    const topMoved = Math.abs(newBox.y - oldBox.y) > eps;
+    const y = topMoved ? oldBox.y + oldBox.height - snapped : oldBox.y;
+    return { ...newBox, y, height: snapped };
+  }
+  const leftMoved = Math.abs(newBox.x - oldBox.x) > eps;
+  const x = leftMoved ? oldBox.x + oldBox.width - snapped : oldBox.x;
+  return { ...newBox, x, width: snapped };
+}
+
 export function applyHeightSnap(
   oldBox: BoundingBox,
   newBox: BoundingBox,
   dotPx: number,
   anchor: TransformAnchor | null,
 ): BoundingBox {
-  if (anchor?.kind !== "row" || anchor.rowHeight <= 0 || anchor.nodeHeight <= 0) {
-    return newBox;
-  }
-  const stepPx = anchor.nodeHeight / anchor.rowHeight;
-  const snappedH = snapBoxHeight(newBox.height, stepPx);
-  return isTopAnchorResize(oldBox, newBox, dotPx * 0.5)
-    ? pinBottomEdge(oldBox, newBox, snappedH)
-    : { ...newBox, height: snappedH };
+  if (anchor?.kind !== "row" || anchor.rowHeight <= 0) return newBox;
+  // rowHeight axis is the screen height for N/I, the screen width for R/B.
+  const swapped = isAxisSwapped(anchor.rotation);
+  const axisNode = swapped ? anchor.nodeWidth : anchor.nodeHeight;
+  if (axisNode <= 0) return newBox;
+  const stepPx = axisNode / anchor.rowHeight;
+  const snapped = snapBoxHeight(swapped ? newBox.width : newBox.height, stepPx);
+  return pinSnappedAxis(oldBox, newBox, swapped ? "x" : "y", snapped, dotPx * 0.5);
 }
 
-/** Shared by 1D and stacked-2D since both commit width via the same
- *  ^BY moduleWidth [1,10] rounding. */
+/** Snap one axis extent to the nearest integer ^BY moduleWidth multiple. */
+function snapModuleExtent(
+  extent: number,
+  anchorExtent: number,
+  moduleWidth: number,
+  min: number,
+): number {
+  const nextMw = computeNewModules(moduleWidth, extent / anchorExtent, min, 10);
+  return anchorExtent * (nextMw / moduleWidth);
+}
+
+/** Shared by 1D and stacked-2D since both commit width via the same ^BY
+ *  moduleWidth [min,10] rounding. The moduleWidth axis is the screen width for
+ *  N/I and the screen height for R/B (the bars turn a quarter). */
 export function applyModuleWidthSnap(
   oldBox: BoundingBox,
   newBox: BoundingBox,
   anchor: TransformAnchor | null,
 ): BoundingBox {
   if (anchor?.kind !== "moduleWidth" && anchor?.kind !== "row") return newBox;
-  if (anchor.nodeWidth <= 0 || anchor.moduleWidth <= 0) return newBox;
-  const scale = newBox.width / anchor.nodeWidth;
-  const nextMw = computeNewModules(anchor.moduleWidth, scale, 1, 10);
-  const snappedW = anchor.nodeWidth * (nextMw / anchor.moduleWidth);
-  // Left-handle drag: pin the right edge so the snapped width grows
-  // outward from the stationary anchor instead of drifting both sides.
-  const leftMoved = Math.abs(newBox.x - oldBox.x) > 0.001;
-  const x = leftMoved ? oldBox.x + oldBox.width - snappedW : oldBox.x;
-  return { ...newBox, x, width: snappedW };
+  if (anchor.moduleWidth <= 0) return newBox;
+  const swapped = isAxisSwapped(anchor.rotation);
+  const axisNode = swapped ? anchor.nodeHeight : anchor.nodeWidth;
+  if (axisNode <= 0) return newBox;
+  const min = anchor.kind === "row" ? anchor.moduleWidthMin : 1;
+  const snapped = snapModuleExtent(
+    swapped ? newBox.height : newBox.width,
+    axisNode,
+    anchor.moduleWidth,
+    min,
+  );
+  return pinSnappedAxis(oldBox, newBox, swapped ? "y" : "x", snapped, HANDLE_MOVE_EPS);
 }
 
 /** Assumes forceSquareBox has run; pins the corner formed by anchor.edges. */

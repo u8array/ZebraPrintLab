@@ -21,6 +21,13 @@ export function objectRotation(props: object): ZplRotation {
   return r !== undefined && isZplRotation(r) ? r : 'N';
 }
 
+/** R/B turn the field a quarter, so the upright width axis maps to the screen
+ *  height axis (and vice versa). Single source for that swap, shared by the
+ *  resize scale mapping, the moduleWidth snap, and the anchor inverse. */
+export function isAxisSwapped(r: ZplRotation): boolean {
+  return r === 'R' || r === 'B';
+}
+
 /** Next 90° step in the N → R → I → B → N cycle. */
 export function nextZplRotation(r: ZplRotation): ZplRotation {
   const i = ZPL_ROTATIONS.indexOf(r);

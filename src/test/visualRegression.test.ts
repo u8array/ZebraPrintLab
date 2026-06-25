@@ -12,7 +12,8 @@ import {
   buildBwipOptions,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
-import { QR_FO_Y_OFFSET_DOTS, upcSuppTextZoneDots } from "../lib/bwipConstants";
+import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET, upcSuppTextZoneDots } from "../lib/bwipConstants";
+import { barcodeFtAnchorOffset, isBarcode } from "../lib/objectBounds";
 
 const FIXTURES_DIR = path.resolve(
   process.cwd(),
@@ -144,8 +145,18 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
       ctx.save();
       // Translate to the rotated bbox top-left (= FO - rotated bar offset),
       // then apply rotatedGroupTransform-equivalent rotation around that.
-      const bboxTopLeftX = obj.x - displaySize.barLeftPx;
-      const bboxTopLeftY = drawY - displaySize.barTopPx;
+      // FT barcodes anchor at the rotation-aware bar base (mirrors the render);
+      // FO uses drawY above. px == dots here (getDisplaySize scale 8, dpmm 8).
+      const ftOff =
+        obj.positionType === "FT" && isBarcode(obj)
+          ? barcodeFtAnchorOffset(rot, ub.barW, ub.barH)
+          : { x: 0, y: 0 };
+      const ftQrShift =
+        obj.positionType === "FT" && obj.type === "qrcode"
+          ? QR_FT_MODULE_OFFSET * (obj.props as { magnification: number }).magnification
+          : 0;
+      const bboxTopLeftX = obj.x + ftOff.x - displaySize.barLeftPx;
+      const bboxTopLeftY = drawY + ftOff.y - ftQrShift - displaySize.barTopPx;
       ctx.translate(bboxTopLeftX, bboxTopLeftY);
       if (rot === "R") {
         ctx.translate(ub.h, 0);

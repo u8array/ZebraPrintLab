@@ -29,9 +29,13 @@ import {
   type TransformAnchor,
 } from "../transformerGeometry";
 import {
+  committedUprightBarDots,
   modelPositionFromRenderedTopLeft,
   renderedTopLeftFromModel,
 } from "../transformPosition";
+import { isBarcode } from "../../../lib/objectBounds";
+import { objectRotation } from "../../../registry/rotation";
+import { getMeasuredSnapshot } from "../measuredBoundsCache";
 import {
   computeResizeSnap,
   deriveActiveEdges,
@@ -93,10 +97,22 @@ function commitUniformModuleResize({
   const renderedY = anchor.edges.top
     ? startRect.y + startRect.height - newH
     : startRect.y;
+  // Uniform resize scales both axes by sizeRatio (clamped via newModules), so an
+  // FT barcode's anchor inversion uses the committed post-resize bar size. For a
+  // QR the firmware shift scales with magnification, so pass the committed value
+  // (newModules) too, else the inverse uses the old shift and the code jumps.
+  // Pass undefined (not 0) when a dim isn't cached so the downstream nullish
+  // fallback applies instead of being defeated by a 0.
+  const cache = getMeasuredSnapshot().get(obj.id);
+  const uprightW = cache?.uprightBarWDots;
+  const uprightH = cache?.uprightBarHDots;
   const model = modelPositionFromRenderedTopLeft(
     obj,
     pxToDots(renderedX - objectsOffsetX, scale, dpmm),
     pxToDots(renderedY - labelOffsetY, scale, dpmm),
+    uprightW !== undefined ? uprightW * sizeRatio : undefined,
+    uprightH !== undefined ? uprightH * sizeRatio : undefined,
+    newModules,
   );
   return { x: model.x, y: model.y, props };
 }
@@ -409,11 +425,11 @@ export function useKonvaTransformer({
           ? [
               "top-center",
               "bottom-center",
-              // middle-left / middle-right drag the module-width axis.
-              // The bar count is fixed by content, so the resulting width
-              // is rounded to a valid ZPL ^BY moduleWidth (1..10) in
-              // commitBarcodeWidthHeightTransform on release; during the
-              // drag the bitmap stretches free-form for visual feedback.
+              // The screen handles map to the bar axes by rotation: for N/I
+              // middle-left/right is the moduleWidth axis, for R/B it's
+              // top/bottom-center (the bars turn a quarter). The live snap
+              // rounds whichever screen axis carries moduleWidth to a valid ^BY
+              // value (1..10) on release; mid-drag the bitmap stretches free.
               "middle-left",
               "middle-right",
             ]
@@ -472,6 +488,8 @@ export function useKonvaTransformer({
           rowHeight: (obj.props as { rowHeight: number }).rowHeight,
           nodeWidth: rect.width,
           moduleWidth: (obj.props as { moduleWidth: number }).moduleWidth,
+          moduleWidthMin: getEntry(obj.type)?.moduleWidthMin ?? 1,
+          rotation: objectRotation(obj.props),
         };
       }
       const uniformProp = getEntry(obj.type)?.uniformScaleProp;
@@ -506,12 +524,10 @@ export function useKonvaTransformer({
           };
         }
       }
-      // Live moduleWidth snap only for unrotated 1D barcodes; rotated
-      // R/B drag axis would need a separate width-pin model.
-      if (
-        BARCODE_1D_TYPES.has(obj.type) &&
-        (obj.props as { rotation?: string }).rotation === "N"
-      ) {
+      // Live moduleWidth snap for 1D barcodes, all rotations: quantise the
+      // moduleWidth axis (screen width for N/I, screen height for R/B) so
+      // overshoot is blocked and the anchored edge stays put, like N.
+      if (BARCODE_1D_TYPES.has(obj.type)) {
         // Konva Group .width() returns its attr (0 here); the visible
         // bbox comes from the children via getClientRect.
         const rect = node.getClientRect({
@@ -522,7 +538,9 @@ export function useKonvaTransformer({
         return {
           kind: "moduleWidth",
           nodeWidth: rect.width,
+          nodeHeight: rect.height,
           moduleWidth: (obj.props as { moduleWidth: number }).moduleWidth,
+          rotation: objectRotation(obj.props),
         };
       }
       return null;
@@ -905,27 +923,33 @@ export function useKonvaTransformer({
     }
     const renderedXDots = pxToDots(node.x() - objectsOffsetX, scale, dpmm);
     const renderedYDots = pxToDots(node.y() - labelOffsetY, scale, dpmm);
-    // For FT-anchored 1D barcodes, model.y is the bar baseline, which needs the
-    // post-resize bar height to convert from the bbox top back. Pipe the
-    // scaled height through the same snap() commitBarcodeWidthHeight-
-    // Transform uses so the baseline math sees the *committed* value and
-    // there's no 1-dot drift between the two pathways.
-    const newBarHeightDots =
-      obj.positionType === "FT" && BARCODE_1D_TYPES.has(obj.type)
-        ? Math.max(
-            1,
-            snap(Math.round((obj.props as { height: number }).height * sy)),
-          )
-        : undefined;
-    // Invert per-type render offsets (e.g. QR's hardcoded +10 dot Y) so
-    // the stored model position matches what each per-type
-    // handleDragEnd / render path produces. Text/serial render at
-    // obj.x/y directly, so they pass through unchanged.
+    // FT anchor inverse from the continuous drag scale, not the snapped commit
+    // props (rounding fed back makes rotated barcodes jump); see committedUprightBarDots.
+    const ftEntry = getEntry(obj.type);
+    let committedW: number | undefined;
+    let committedH: number | undefined;
+    if (obj.positionType === "FT" && isBarcode(obj) && !ftEntry?.uniformScaleProp) {
+      const cache = getMeasuredSnapshot().get(singleId);
+      const fallbackH = (obj.props as { height?: number }).height ?? 0;
+      const dims = committedUprightBarDots(
+        objectRotation(obj.props),
+        sx,
+        sy,
+        cache?.uprightBarWDots ?? 0,
+        cache?.uprightBarHDots ?? fallbackH,
+      );
+      committedW = dims.w;
+      committedH = dims.h;
+    }
+    // Invert per-type render offsets (QR's +10 Y, the rotation-aware FT bar
+    // anchor) so the stored model matches the render path. Text/serial render at
+    // obj.x/y directly.
     const modelPos = modelPositionFromRenderedTopLeft(
       obj,
       renderedXDots,
       renderedYDots,
-      newBarHeightDots,
+      committedW,
+      committedH,
     );
     // Grid-snap an axis only when the user grabbed an edge on it; an
     // inactive-axis snap walks the anchored opposite corner. Without

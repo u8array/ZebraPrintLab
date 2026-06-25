@@ -1,5 +1,6 @@
 import type { LabelObjectBase } from "../types/LabelObject";
 import type { TransformContext } from "../types/ZplEmit";
+import { isAxisSwapped } from "./rotation";
 /** Clamp a value into [min, max]. */
 export function clamp(min: number, max: number, value: number): number {
   return Math.max(min, Math.min(max, value));
@@ -20,8 +21,7 @@ export function effectiveScale(
   rotation: "N" | "R" | "I" | "B" | undefined,
   ctx: TransformContext,
 ): { esx: number; esy: number } {
-  const swap = rotation === "R" || rotation === "B";
-  return swap
+  return rotation && isAxisSwapped(rotation)
     ? { esx: ctx.sy, esy: ctx.sx }
     : { esx: ctx.sx, esy: ctx.sy };
 }
@@ -93,12 +93,14 @@ interface Stacked2DProps {
   moduleWidth: number;
 }
 
-/** Drag-start anchor pins the rowHeight grid so commit matches the in-drag snap. */
+/** Drag-start anchor pins the rowHeight grid so commit matches the in-drag snap.
+ *  `moduleWidthMin` defaults to the ^BY floor of 1; CODABLOCK A passes 2. */
 export function commitStacked2DTransform<
   P extends Stacked2DProps & { rotation: "N" | "R" | "I" | "B" },
 >(
   obj: LabelObjectBase & { props: P },
   ctx: TransformContext,
+  moduleWidthMin = 1,
 ): Partial<P> {
   const { snap, anchor } = ctx;
   const { esx, esy } = effectiveScale(obj.props.rotation, ctx);
@@ -112,6 +114,6 @@ export function commitStacked2DTransform<
       : Math.max(1, snap(Math.round(obj.props.rowHeight * esy)));
   return {
     rowHeight: newRowHeight,
-    moduleWidth: clamp(1, 10, Math.round(obj.props.moduleWidth * esx)),
+    moduleWidth: clamp(moduleWidthMin, 10, Math.round(obj.props.moduleWidth * esx)),
   } as Partial<P>;
 }

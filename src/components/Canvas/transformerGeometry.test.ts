@@ -1,8 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   snapBoxHeight,
-  pinBottomEdge,
-  isTopAnchorResize,
   positionDidMove,
   forceSquareBox,
   applyHeightSnap,
@@ -58,40 +56,6 @@ describe("snapBoxHeight", () => {
   });
 });
 
-describe("pinBottomEdge", () => {
-  const oldBox = { x: 0, y: 100, width: 50, height: 60, rotation: 0 };
-
-  it("anchors the bottom edge while reducing height", () => {
-    const result = pinBottomEdge(oldBox, { ...oldBox, y: 130, height: 30 }, 30);
-    expect(result.y).toBe(130);
-    expect(result.height).toBe(30);
-    expect(result.y + result.height).toBe(oldBox.y + oldBox.height);
-  });
-
-  it("anchors the bottom edge while expanding height", () => {
-    const result = pinBottomEdge(oldBox, { ...oldBox, y: 50, height: 110 }, 110);
-    expect(result.y).toBe(50);
-    expect(result.height).toBe(110);
-    expect(result.y + result.height).toBe(oldBox.y + oldBox.height);
-  });
-});
-
-describe("isTopAnchorResize", () => {
-  const oldBox = { x: 0, y: 100, width: 50, height: 60, rotation: 0 };
-
-  it("returns true when y moves more than threshold", () => {
-    expect(isTopAnchorResize(oldBox, { ...oldBox, y: 105 }, 1)).toBe(true);
-  });
-
-  it("returns false when y stays within threshold", () => {
-    expect(isTopAnchorResize(oldBox, { ...oldBox, y: 100.3 }, 1)).toBe(false);
-  });
-
-  it("returns false on bottom-anchor resize (y unchanged)", () => {
-    expect(isTopAnchorResize(oldBox, { ...oldBox, height: 80 }, 1)).toBe(false);
-  });
-});
-
 describe("positionDidMove", () => {
   it("returns false when the position matches within the tolerance", () => {
     expect(positionDidMove(100, 100)).toBe(false);
@@ -123,7 +87,7 @@ describe("applyHeightSnap", () => {
 
   it("row-quantises the height for stacked-2D barcodes with a row anchor", () => {
     // anchor: nodeHeight=100, rowHeight=20 → stepPx = 5
-    const anchor = { kind: "row" as const, nodeHeight: 100, rowHeight: 20, nodeWidth: 50, moduleWidth: 2 };
+    const anchor = { kind: "row" as const, nodeHeight: 100, rowHeight: 20, nodeWidth: 50, moduleWidth: 2, moduleWidthMin: 1, rotation: "N" as const };
     const oldBox = { x: 0, y: 0, width: 50, height: 100, rotation: 0 };
     const newBox = { x: 0, y: 0, width: 50, height: 113, rotation: 0 };
     const result = applyHeightSnap(oldBox, newBox, 1, anchor);
@@ -132,7 +96,7 @@ describe("applyHeightSnap", () => {
   });
 
   it("pins the bottom edge for stacked-2D top-anchor resize", () => {
-    const anchor = { kind: "row" as const, nodeHeight: 100, rowHeight: 20, nodeWidth: 50, moduleWidth: 2 };
+    const anchor = { kind: "row" as const, nodeHeight: 100, rowHeight: 20, nodeWidth: 50, moduleWidth: 2, moduleWidthMin: 1, rotation: "N" as const };
     const oldBox = { x: 0, y: 0, width: 50, height: 100, rotation: 0 };
     // Top moves UP by 30 → top-anchor resize
     const newBox = { x: 0, y: -30, width: 50, height: 130, rotation: 0 };
@@ -140,6 +104,17 @@ describe("applyHeightSnap", () => {
     expect(result.height).toBe(130);
     // Bottom stays where it was (oldBox.y + oldBox.height = 100)
     expect(result.y + result.height).toBe(oldBox.y + oldBox.height);
+  });
+
+  it("R/B quantise the rowHeight axis on screen WIDTH, leaving height", () => {
+    // Rotated stacked: rowHeight axis = screen width. nodeWidth=100, rowHeight=20
+    // → stepPx = 5; width 113 -> 115, height untouched.
+    const anchor = { kind: "row" as const, nodeHeight: 50, rowHeight: 20, nodeWidth: 100, moduleWidth: 2, moduleWidthMin: 1, rotation: "R" as const };
+    const oldBox = { x: 0, y: 0, width: 100, height: 50, rotation: 0 };
+    const newBox = { x: 0, y: 0, width: 113, height: 50, rotation: 0 };
+    const result = applyHeightSnap(oldBox, newBox, 1, anchor);
+    expect(result.width).toBe(115);
+    expect(result.height).toBe(50);
   });
 });
 
@@ -252,7 +227,7 @@ describe("computeNewModules", () => {
 });
 
 describe("applyModuleWidthSnap", () => {
-  const anchor = { kind: "moduleWidth" as const, nodeWidth: 100, moduleWidth: 2 };
+  const anchor = { kind: "moduleWidth" as const, nodeWidth: 100, nodeHeight: 40, moduleWidth: 2, rotation: "N" as const };
   const oldBox: BoundingBox = { x: 50, y: 0, width: 100, height: 40, rotation: 0 };
 
   it("snaps width to the next integer moduleWidth multiple", () => {
@@ -274,6 +249,38 @@ describe("applyModuleWidthSnap", () => {
   it("no-ops when anchor kind is wrong", () => {
     const newBox: BoundingBox = { ...oldBox, width: 160 };
     expect(applyModuleWidthSnap(oldBox, newBox, null).width).toBe(160);
+  });
+
+  // R/B put the moduleWidth axis on the screen height (bars turn a quarter):
+  // the snap quantises height and pins the vertical edge, not width.
+  describe("rotated R/B (height axis)", () => {
+    const rot = { kind: "moduleWidth" as const, nodeWidth: 40, nodeHeight: 100, moduleWidth: 2, rotation: "B" as const };
+    const oldRot: BoundingBox = { x: 0, y: 50, width: 40, height: 100, rotation: 0 };
+
+    it("snaps height to the next integer moduleWidth multiple, leaves width", () => {
+      const out = applyModuleWidthSnap(oldRot, { ...oldRot, height: 160 }, rot);
+      expect(out.height).toBe(150);
+      expect(out.width).toBe(40);
+    });
+
+    it("pins the bottom edge when the top handle was dragged", () => {
+      const out = applyModuleWidthSnap(oldRot, { ...oldRot, y: 20, height: 130 }, rot);
+      expect(out.y + out.height).toBe(oldRot.y + oldRot.height);
+    });
+
+    it("clamps overshoot to ^BY min (height stops, anchored edge holds)", () => {
+      // Drag top way past min: height clamps to 1 module (50), bottom stays.
+      const out = applyModuleWidthSnap(oldRot, { ...oldRot, y: 145, height: 5 }, rot);
+      expect(out.height).toBe(50);
+      expect(out.y + out.height).toBe(oldRot.y + oldRot.height);
+    });
+  });
+
+  it("honours a row anchor's moduleWidthMin (CODABLOCK A = 2)", () => {
+    // nodeWidth=100, moduleWidth=2 → 50px/module; shrink hard, min 2 holds at 100px.
+    const row = { kind: "row" as const, nodeHeight: 40, rowHeight: 20, nodeWidth: 100, moduleWidth: 2, moduleWidthMin: 2, rotation: "N" as const };
+    const out = applyModuleWidthSnap(oldBox, { ...oldBox, width: 10 }, row);
+    expect(out.width).toBe(100); // 2 modules * 50px, not 1
   });
 });
 

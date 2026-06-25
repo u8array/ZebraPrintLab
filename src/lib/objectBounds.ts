@@ -15,7 +15,7 @@ import { getAllLeaves, isGroup } from "../types/Group";
 import type { LeafObject } from "../registry";
 import { BARCODE_1D_TYPES, STACKED_2D_TYPES, getEntry } from "../registry";
 import type { LabelConfig } from "../types/LabelConfig";
-import type { ZplRotation } from "../registry/rotation";
+import { isAxisSwapped, objectRotation, type ZplRotation } from "../registry/rotation";
 import { blockBoundsDots, tbBoundsDots, zebraLineWidthDots } from "./zebraTextLayout";
 import { resolveDefaultSizeDots } from "./resolveDefaultSize";
 import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET } from "./bwipConstants";
@@ -31,10 +31,20 @@ export interface ObjectBoundsCtx {
   label: LabelConfig;
   /** Measured footprints (dots) published by the render layer for types whose
    *  size isn't purely computable (barcodes, single-line text). Keyed by obj.id.
-   *  `barHeightDots` (barcodes) is the rotation-aware bar extent for FT anchoring. */
+   *  The FT anchor uses uprightBar*Dots; barHeightDots is the legacy fallback. */
   measured?: ReadonlyMap<
     string,
-    { width: number; height: number; barHeightDots?: number; barLeftDots?: number; barTopDots?: number }
+    {
+      width: number;
+      height: number;
+      barHeightDots?: number;
+      barLeftDots?: number;
+      barTopDots?: number;
+      /** Upright (unrotated) bar-rect size in dots, for the rotation-aware ^FT
+       *  anchor. The ^FT origin (bar base, left edge) rotates with the field. */
+      uprightBarWDots?: number;
+      uprightBarHDots?: number;
+    }
   >;
 }
 
@@ -45,7 +55,7 @@ function rotatedFootprint(
   height: number,
   rotation: ZplRotation,
 ): { width: number; height: number } {
-  return rotation === "R" || rotation === "B"
+  return isAxisSwapped(rotation)
     ? { width: height, height: width }
     : { width, height };
 }
@@ -88,30 +98,65 @@ function singleLineEstimate(
   return rotatedFootprint(width, fontHeight, rotation);
 }
 
-/** Visual bbox top-left for a barcode. Mirrors BarcodeObject's displayX/displayY
- *  and its ftYShiftDots: FT anchors at the bar bottom, so the top sits one
- *  rotation-aware bar extent (`barHeightDots`, published by the renderer) up;
- *  before the renderer publishes it, 1D falls back to props.height. QR adds a
- *  firmware Y artifact (FT: -3 modules on top of the bar extent, FO: +10 dots).
- *  The renderer also shifts the bbox top-left by `(-barLeftDots, -barTopDots)`
- *  when the HRI text zone extends left/above the bars; subtract the same here. */
+/** Visual-top-left offset of a ^FT barcode from its typeset anchor (bar base,
+ *  left edge), per rotation, using the upright bar-rect size. The ^FT anchor
+ *  rotates with the field, so R/I/B differ from N. Mirrors the verified ^FO
+ *  render path; derived to match Labelary (verify there when touching). */
+export function barcodeFtAnchorOffset(
+  rotation: ZplRotation,
+  uprightBarW: number,
+  uprightBarH: number,
+): { x: number; y: number } {
+  switch (rotation) {
+    case "R": return { x: 0, y: 0 };
+    case "I": return { x: -uprightBarW, y: 0 };
+    case "B": return { x: -uprightBarH, y: -uprightBarW };
+    case "N":
+    default: return { x: 0, y: -uprightBarH };
+  }
+}
+
+/** Visual bbox top-left for a barcode: the ^FT typeset anchor shifted by the
+ *  rotation-aware offset, or ^FO at the field origin (QR adds its firmware Y
+ *  artifacts). barLeft/barTop mirror the render's HRI-zone shift. Uses the same
+ *  barcodeFtAnchorOffset path as BarcodeObject so render and bounds agree even
+ *  before the renderer publishes the upright dims (width 0 then, like render). */
 function barcodeTopLeft(
   obj: LeafObject,
   fallbackHeight: number,
-  measured: { barHeightDots?: number; barLeftDots?: number; barTopDots?: number } | undefined,
+  fallbackWidth: number,
+  measured:
+    | {
+        barHeightDots?: number;
+        barLeftDots?: number;
+        barTopDots?: number;
+        uprightBarWDots?: number;
+        uprightBarHDots?: number;
+      }
+    | undefined,
 ): { x: number; y: number } {
   const barLeft = measured?.barLeftDots ?? 0;
   const barTop = measured?.barTopDots ?? 0;
   if (obj.positionType === "FT") {
-    let yShift =
+    const upH =
+      measured?.uprightBarHDots ??
       measured?.barHeightDots ??
       (BARCODE_1D_TYPES.has(obj.type)
         ? (obj.props as { height?: number }).height ?? fallbackHeight
         : 0);
-    if (obj.type === "qrcode") {
-      yShift += QR_FT_MODULE_OFFSET * (obj.props as { magnification: number }).magnification;
-    }
-    return { x: obj.x - barLeft, y: obj.y - yShift - barTop };
+    // Pre-publish (no measured dims) the width-dependent I/B anchors fall back to
+    // the same footprint width the bbox uses, so the returned box stays self-
+    // consistent (else x is offset as if width 0 while width = the fallback).
+    const off = barcodeFtAnchorOffset(
+      objectRotation(obj.props),
+      measured?.uprightBarWDots ?? fallbackWidth,
+      upH,
+    );
+    const qrShift =
+      obj.type === "qrcode"
+        ? QR_FT_MODULE_OFFSET * (obj.props as { magnification: number }).magnification
+        : 0;
+    return { x: obj.x + off.x - barLeft, y: obj.y + off.y - qrShift - barTop };
   }
   if (obj.type === "qrcode") return { x: obj.x - barLeft, y: obj.y + QR_FO_Y_OFFSET_DOTS - barTop };
   return { x: obj.x - barLeft, y: obj.y - barTop };
@@ -128,7 +173,7 @@ const BARCODE_TYPES = new Set<string>([
   "aztec",
   "maxicode",
 ]);
-function isBarcode(obj: LeafObject): boolean {
+export function isBarcode(obj: { type: string }): boolean {
   return BARCODE_TYPES.has(obj.type);
 }
 
@@ -195,7 +240,7 @@ export function objectBoundsDots(obj: LabelObject, ctx: ObjectBoundsCtx): Boundi
       if (isBarcode(obj)) {
         const m = ctx.measured?.get(obj.id);
         const fp = m ?? fallbackSizeDots(obj, ctx.label);
-        const { x, y } = barcodeTopLeft(obj, fp.height, m);
+        const { x, y } = barcodeTopLeft(obj, fp.height, fp.width, m);
         return { x, y, width: fp.width, height: fp.height };
       }
       // Unknown leaf: fall back to its registry footprint at the origin.

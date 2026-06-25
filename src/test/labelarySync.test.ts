@@ -6,7 +6,8 @@ import {
   buildBwipOptions,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
-import { upcSuppTextZoneDots } from "../lib/bwipConstants";
+import { upcSuppTextZoneDots, QR_FT_MODULE_OFFSET } from "../lib/bwipConstants";
+import { barcodeFtAnchorOffset } from "../lib/objectBounds";
 import { ObjectRegistry } from "../registry";
 import { objectRotation } from "../registry/rotation";
 import { defined } from "./helpers";
@@ -95,16 +96,22 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
 
       // Verify visual position (top-left of the rendered bounding box in dots).
       // This mimics the positioning logic in BarcodeObject.tsx.
-      const visualX = obj.x;
+      let visualX = obj.x;
       let visualY = obj.y;
 
       if (obj.positionType === "FT") {
-        // FT positions relative to the baseline.
-        visualY -= displaySize.h * 8;
-
+        // Mirror the real render/bounds anchor (objectBounds.barcodeTopLeft):
+        // rotation-aware bar-base offset + HRI text-zone shift (px*8 -> dots).
+        const off = barcodeFtAnchorOffset(
+          rotation,
+          displaySize.upright.barW * 8,
+          displaySize.upright.barH * 8,
+        );
+        visualX += off.x - displaySize.barLeftPx * 8;
+        visualY += off.y - displaySize.barTopPx * 8;
         if (obj.type === "qrcode") {
           const mag = (obj.props as { magnification?: number }).magnification ?? 1;
-          visualY -= 3 * mag;
+          visualY -= QR_FT_MODULE_OFFSET * mag;
         }
       } else {
         // FO positions relative to top-left, with specific quirks.
@@ -119,14 +126,26 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
         }
       }
 
-      // EAN/UPC have extended guard bars whose visible extent rotates with the
-      // symbol. Under R rotation those guards sit LEFT of the FO anchor, so
-      // the bbox.x is below obj.x. The model still holds obj.x as FO, so the
-      // strict x-equality check is dropped for rotated EAN/UPC.
-      if (!(isEanUpc && isQuarterRotated)) {
-        expect(visualX).toBe(tc.expected_bounds.x);
+      if (obj.positionType === "FT") {
+        // Tolerance only on the axis whose anchor offset depends on the bwip bar
+        // size (a couple dots off from Labelary's encoder); the other axis is
+        // exact, so an anchor regression there can't hide behind the tolerance.
+        // off.x != 0 for I/B (uses W/H); off.y != 0 for N/B; QR adds a Y shift.
+        const xUsesSize = rotation === "I" || rotation === "B" || displaySize.barLeftPx !== 0;
+        const yUsesSize =
+          rotation === "N" || rotation === "B" || displaySize.barTopPx !== 0 || obj.type === "qrcode";
+        expect(Math.abs(visualX - tc.expected_bounds.x)).toBeLessThanOrEqual(xUsesSize ? 3 : 0);
+        expect(Math.abs(visualY - tc.expected_bounds.y)).toBeLessThanOrEqual(yUsesSize ? 3 : 0);
+      } else {
+        // EAN/UPC have extended guard bars whose visible extent rotates with the
+        // symbol. Under R rotation those guards sit LEFT of the FO anchor, so
+        // the bbox.x is below obj.x. The model still holds obj.x as FO, so the
+        // strict x-equality check is dropped for rotated EAN/UPC.
+        if (!(isEanUpc && isQuarterRotated)) {
+          expect(visualX).toBe(tc.expected_bounds.x);
+        }
+        expect(visualY).toBeCloseTo(tc.expected_bounds.y, 0);
       }
-      expect(visualY).toBeCloseTo(tc.expected_bounds.y, 0);
 
       expect(displaySize.w).toBeGreaterThan(0);
       expect(displaySize.h).toBeGreaterThan(0);

@@ -18,6 +18,30 @@ export const testCases: TestCase[] = [
     image_ref: "barcode_code128_standard.png",
   },
   {
+    id: "barcode_code128_ft_n",
+    zpl_input: "^XA^BY2^FT300,300^BCN,100,N,N,N^FD123456^FS^XZ",
+    expected_bounds: { x: 300, y: 200, width: 202, height: 100 },
+    image_ref: "barcode_code128_ft_n.png",
+  },
+  {
+    id: "barcode_code128_ft_r",
+    zpl_input: "^XA^BY2^FT300,300^BCR,100,N,N,N^FD123456^FS^XZ",
+    expected_bounds: { x: 300, y: 300, width: 100, height: 202 },
+    image_ref: "barcode_code128_ft_r.png",
+  },
+  {
+    id: "barcode_code128_ft_i",
+    zpl_input: "^XA^BY2^FT300,300^BCI,100,N,N,N^FD123456^FS^XZ",
+    expected_bounds: { x: 98, y: 300, width: 202, height: 100 },
+    image_ref: "barcode_code128_ft_i.png",
+  },
+  {
+    id: "barcode_code128_ft_b",
+    zpl_input: "^XA^BY2^FT300,300^BCB,100,N,N,N^FD123456^FS^XZ",
+    expected_bounds: { x: 200, y: 98, width: 100, height: 202 },
+    image_ref: "barcode_code128_ft_b.png",
+  },
+  {
     id: "barcode_code128_small_no_text",
     zpl_input: "^XA^BY1^FO100,100^BCN,50,N,N,N^FDTEST^FS^XZ",
     expected_bounds: { x: 100, y: 100, width: 100, height: 50 },

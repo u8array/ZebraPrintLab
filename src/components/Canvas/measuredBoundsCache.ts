@@ -18,6 +18,11 @@ export interface MeasuredFootprint {
    *  sits left of (rotated EAN/UPC) or above (inverted/above-HRI) the bars. */
   barLeftDots?: number;
   barTopDots?: number;
+  /** Upright (unrotated) bar-rect size in dots, for the rotation-aware ^FT
+   *  anchor: the ^FT origin (bar base, left edge) rotates with the field, so
+   *  R/I/B place the bbox differently than N. */
+  uprightBarWDots?: number;
+  uprightBarHDots?: number;
 }
 
 const cache = new Map<string, MeasuredFootprint>();
@@ -53,7 +58,9 @@ function footprintsEqual(a: MeasuredFootprint, b: MeasuredFootprint): boolean {
     a.height === b.height &&
     a.barHeightDots === b.barHeightDots &&
     a.barLeftDots === b.barLeftDots &&
-    a.barTopDots === b.barTopDots
+    a.barTopDots === b.barTopDots &&
+    a.uprightBarWDots === b.uprightBarWDots &&
+    a.uprightBarHDots === b.uprightBarHDots
   );
 }
 

@@ -3,6 +3,9 @@ import { fieldPos, fdFieldFor } from "./zplHelpers";
 import { commitStacked2DTransform } from "./transformHelpers";
 import { type ZplRotation } from "./rotation";
 
+/** CODABLOCK A requires ^BY module width >= 2 (spec). */
+const CODABLOCK_MODULE_WIDTH_MIN = 2;
+
 export interface CodablockProps {
   content: string;
   moduleWidth: number; // bar width in dots
@@ -26,7 +29,8 @@ export const codablock: ObjectTypeCore<CodablockProps> = {
   },
   defaultSize: { width: 250, height: 120 },
 
-  commitTransform: commitStacked2DTransform,
+  moduleWidthMin: CODABLOCK_MODULE_WIDTH_MIN,
+  commitTransform: (obj, ctx) => commitStacked2DTransform(obj, ctx, CODABLOCK_MODULE_WIDTH_MIN),
 
   toZPL: (obj, ctx) => {
     const p = obj.props;

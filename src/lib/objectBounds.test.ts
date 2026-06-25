@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { objectBoundsDots, selectionUnionDots, type ObjectBoundsCtx } from "./objectBounds";
+import { objectBoundsDots, selectionUnionDots, barcodeFtAnchorOffset, type ObjectBoundsCtx } from "./objectBounds";
+import type { ZplRotation } from "../registry/rotation";
+import { QR_FT_MODULE_OFFSET } from "./bwipConstants";
 import type { LabelConfig } from "../types/LabelConfig";
 import type { LabelObject } from "../types/Group";
 import type { LeafObject } from "../registry";
@@ -184,17 +186,16 @@ describe("objectBoundsDots", () => {
     expect(objectBoundsDots(bc, ctx(measured))).toEqual({ x: 20, y: 20, width: 150, height: 93 });
   });
 
-  it("barcode (FT 1D rotated R): FT shift uses the published bar extent, not props.height", () => {
-    // R rotation: the rendered bar extent (barHeightDots) is the rotated height,
-    // not the upright props.height; the FT anchor must use it.
+  it("barcode (FT rotated R): anchors at the field origin (R offset is zero)", () => {
+    // R: the bar base/left edge maps to the bbox top-left, so no shift at all,
+    // regardless of size. (The old N-style code wrongly shifted it up by the bar.)
     const bc = leaf(
       "code128", 20, 100,
       { content: "123", moduleWidth: 2, height: 80, rotation: "R", printInterpretation: true } as never,
       { positionType: "FT" },
     );
-    const measured = new Map([[bc.id, { width: 40, height: 200, barHeightDots: 200 }]]);
-    // yShift = barHeightDots 200 -> top = 100 - 200 = -100 (props.height 80 would be wrong).
-    expect(objectBoundsDots(bc, ctx(measured))).toEqual({ x: 20, y: -100, width: 40, height: 200 });
+    const measured = new Map([[bc.id, { width: 40, height: 200, uprightBarWDots: 200, uprightBarHDots: 40 }]]);
+    expect(objectBoundsDots(bc, ctx(measured))).toEqual({ x: 20, y: 100, width: 40, height: 200 });
   });
 
   it("barcode (FO with above-HRI zone): top shifts up by the text-zone offset", () => {
@@ -217,15 +218,15 @@ describe("objectBoundsDots", () => {
     expect(objectBoundsDots(bc, ctx(measured))).toEqual({ x: 5, y: 40, width: 95, height: 150 });
   });
 
-  it("barcode (FT with text-zone offsets): subtracts bar extent and both zone offsets", () => {
+  it("barcode (FT rotated I, text-zone offsets): anchor uses bar width plus zone offsets", () => {
     const bc = leaf(
       "ean13", 20, 100,
       { content: "4006381333931", moduleWidth: 2, height: 80, rotation: "I", printInterpretation: true } as never,
       { positionType: "FT" },
     );
-    const measured = new Map([[bc.id, { width: 150, height: 95, barHeightDots: 80, barLeftDots: 10, barTopDots: 15 }]]);
-    // x: 20 - 10 = 10; y: 100 - 80 - 15 = 5.
-    expect(objectBoundsDots(bc, ctx(measured))).toEqual({ x: 10, y: 5, width: 150, height: 95 });
+    const measured = new Map([[bc.id, { width: 150, height: 95, uprightBarWDots: 130, uprightBarHDots: 80, barLeftDots: 10, barTopDots: 15 }]]);
+    // I offset = (-uprightBarW, 0): x = 20 - 130 - 10 = -120; y = 100 + 0 - 15 = 85.
+    expect(objectBoundsDots(bc, ctx(measured))).toEqual({ x: -120, y: 85, width: 150, height: 95 });
   });
 
   it("barcode: registry fallback when unmeasured", () => {
@@ -271,5 +272,77 @@ describe("groups and selection union", () => {
   it("selectionUnionDots: null for empty or unknown ids", () => {
     expect(selectionUnionDots([group], [], ctx())).toBeNull();
     expect(selectionUnionDots([group], ["missing"], ctx())).toBeNull();
+  });
+});
+
+describe("barcode ^FT rotation anchor", () => {
+  // Regression for the bug where rotated ^FT barcodes were anchored N-only and
+  // came out offset (only imported barcodes use ^FT; the editor creates ^FO).
+  it("barcodeFtAnchorOffset rotates the FT anchor (bar base, left) per rotation", () => {
+    expect(barcodeFtAnchorOffset("N", 200, 100)).toEqual({ x: 0, y: -100 });
+    expect(barcodeFtAnchorOffset("R", 200, 100)).toEqual({ x: 0, y: 0 });
+    expect(barcodeFtAnchorOffset("I", 200, 100)).toEqual({ x: -200, y: 0 });
+    expect(barcodeFtAnchorOffset("B", 200, 100)).toEqual({ x: -100, y: -200 });
+  });
+
+  // Upright bars 200x100; the measured footprint is already rotated.
+  const bc = (rotation: ZplRotation, footW: number, footH: number) => {
+    const o = leaf(
+      "code128",
+      400,
+      300,
+      { content: "X", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation },
+      { positionType: "FT" },
+    );
+    const measured = new Map([
+      [o.id, { width: footW, height: footH, uprightBarWDots: 200, uprightBarHDots: 100 }],
+    ]);
+    return objectBoundsDots(o, ctx(measured));
+  };
+
+  it("anchors a rotated ^FT barcode to the field, not the N corner", () => {
+    expect(bc("N", 200, 100)).toEqual({ x: 400, y: 200, width: 200, height: 100 });
+    expect(bc("R", 100, 200)).toEqual({ x: 400, y: 300, width: 100, height: 200 });
+    expect(bc("I", 200, 100)).toEqual({ x: 200, y: 300, width: 200, height: 100 });
+    expect(bc("B", 100, 200)).toEqual({ x: 300, y: 100, width: 100, height: 200 });
+  });
+
+  it("^FO barcodes ignore the FT anchor offset (origin is rotation-independent)", () => {
+    const o = leaf(
+      "code128", 400, 300,
+      { content: "X", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "B" },
+      { positionType: "FO" },
+    );
+    const measured = new Map([[o.id, { width: 100, height: 200, uprightBarWDots: 200, uprightBarHDots: 100 }]]);
+    expect(objectBoundsDots(o, ctx(measured))).toEqual({ x: 400, y: 300, width: 100, height: 200 });
+  });
+
+  it("QR ^FT composes the firmware module shift with the anchor offset", () => {
+    const o = leaf(
+      "qrcode", 400, 300,
+      { content: "x", magnification: 4, errorCorrection: "Q", model: 2, rotation: "N" },
+      { positionType: "FT" },
+    );
+    const measured = new Map([[o.id, { width: 80, height: 80, uprightBarWDots: 80, uprightBarHDots: 80 }]]);
+    // y = obj.y - uprightBarH - QR_FT_MODULE_OFFSET * magnification
+    expect(objectBoundsDots(o, ctx(measured))).toMatchObject({ x: 400, y: 300 - 80 - QR_FT_MODULE_OFFSET * 4 });
+  });
+
+  it("before dims publish, the anchor uses the same fallback width as the bbox", () => {
+    // code128 fallbackSize = 300x120; height anchor uses props.height (100).
+    const fp = (rotation: "N" | "R" | "I" | "B") =>
+      objectBoundsDots(
+        leaf("code128", 400, 300,
+          { content: "X", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation },
+          { positionType: "FT" }),
+        ctx(),
+      );
+    // R offset is (0,0); N shifts up by props.height.
+    expect(fp("R")).toMatchObject({ x: 400, y: 300 });
+    expect(fp("N")).toMatchObject({ x: 400, y: 200 });
+    // I/B depend on width: pre-publish they fall back to the bbox width (300)
+    // so x is not stuck at the field origin (would desync from the rendered box).
+    expect(fp("I")).toMatchObject({ x: 100, y: 300 }); // x = 400 - 300
+    expect(fp("B")).toMatchObject({ x: 300, y: 0 }); // x = 400 - 100, y = 300 - 300
   });
 });

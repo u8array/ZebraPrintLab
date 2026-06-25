@@ -33,6 +33,9 @@ export interface ObjectTypeCore<P extends object = object> {
    *  module snap and release-time commit from one prop spec; implies
    *  uniformScale (the canvas is square by construction). */
   uniformScaleProp?: { name: keyof P & string; min: number; max: number };
+  /** ^BY moduleWidth lower bound for stacked-2D resize (default 1); CODABLOCK A
+   *  requires 2. Drives both the drag-time snap and the release commit. */
+  moduleWidthMin?: number;
   toZPL: (obj: LabelObjectBase & { props: P }, ctx?: ZplEmitContext) => string;
   /** Optional ^FD payload transform (QR `{ec}A,` prefix, UPC-E compaction, GS1
    *  FNC1 escaping). Returned per object so the single emit AND the CSV batch

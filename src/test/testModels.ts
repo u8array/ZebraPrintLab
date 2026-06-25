@@ -16,6 +16,22 @@ export const testModels: Record<string, LabelObject> = {
       rotation: "N",
     },
   },
+  barcode_code128_ft_n: {
+    id: "ftN", type: "code128", x: 300, y: 300, rotation: 0, positionType: "FT",
+    props: { content: "123456", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
+  },
+  barcode_code128_ft_r: {
+    id: "ftR", type: "code128", x: 300, y: 300, rotation: 0, positionType: "FT",
+    props: { content: "123456", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "R" },
+  },
+  barcode_code128_ft_i: {
+    id: "ftI", type: "code128", x: 300, y: 300, rotation: 0, positionType: "FT",
+    props: { content: "123456", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "I" },
+  },
+  barcode_code128_ft_b: {
+    id: "ftB", type: "code128", x: 300, y: 300, rotation: 0, positionType: "FT",
+    props: { content: "123456", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "B" },
+  },
   barcode_code128_small_no_text: {
     id: "2",
     type: "code128",
