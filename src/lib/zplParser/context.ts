@@ -198,9 +198,6 @@ export interface ParserState {
   field: FieldState;
 }
 
-/** Dot tolerance for ^GB+^FR reverse-text collapse (rounding drift). */
-export const REVERSE_BBOX_TOLERANCE_DOTS = 2;
-
 /** Append to `skipped` and `browserLimit` (invariant: browserLimit ⊆ skipped). */
 export function pushBrowserLimit(result: ParserResult, token: string): void {
   result.skipped.push(token);

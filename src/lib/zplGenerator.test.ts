@@ -99,18 +99,17 @@ describe('generateZPL — structure', () => {
     expect(muIdx).toBeLessThan(pwIdx);
   });
 
-  it('reverse text round-trips: emit ^GB+^FR, parse collapses back to one reverse text', () => {
-    // Generator emits a filled black ^GB knockout-background followed by
-    // an ^FR text at the same anchor. The parser detects that pair and
-    // collapses it back into a single text object with reverse:true —
-    // so the editor never sees two objects after a save/load cycle.
+  it('reverse text round-trips: bare ^FR, no synthesized ^GB', () => {
+    // Spec-true reverse: the generator emits ^FR (no background box), so the
+    // text round-trips to a single reverse text with its anchor intact. The
+    // black background, if any, is the user's own ^GB object.
     const objs = [
       { id: 'r', type: 'text', x: 50, y: 50, rotation: 0,
         props: { content: 'Hi', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: true } },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ] as any;
     const zpl = generateZPL(BASE_LABEL, objs);
-    expect(zpl).toContain('^GB');
+    expect(zpl).not.toContain('^GB');
     expect(zpl).toContain('^FR^FD');
     expect(zpl).not.toContain('^LRY');
     const { objects } = parseZPL(zpl, 8);
@@ -120,10 +119,9 @@ describe('generateZPL — structure', () => {
     expect(props(objects[0]).content).toBe('Hi');
   });
 
-  it.each(['N', 'R', 'I', 'B'])('rotated reverse text round-trips for %s (^GB on the rotated footprint, collapses back)', (rot) => {
-    // The reverse ^GB is placed on the text's rotated model footprint so it
-    // overlaps for every rotation; the parser's collapse re-derives that
-    // footprint, so a rotated reverse text round-trips to ONE object (FO and FT).
+  it.each(['N', 'R', 'I', 'B'])('rotated reverse text round-trips for %s (bare ^FR, no box)', (rot) => {
+    // Reverse text emits a bare ^FR with no background, so it round-trips to
+    // ONE object for every rotation and position type, anchor preserved.
     for (const positionType of ['FO', 'FT'] as const) {
       const objs = [
         { id: 'r', type: 'text', x: 60, y: 60, rotation: 0, positionType,
@@ -784,7 +782,7 @@ describe('generateZPL — ^TB text block', () => {
     expect(generateZPL(BASE_LABEL, reparsed.objects, reparsed.variables)).toBe(zpl);
   });
 
-  it('round-trips a reverse ^TB (^GB knockout collapses back, even h < fontHeight)', () => {
+  it('round-trips a reverse ^TB (bare ^FR, no box, even h < fontHeight)', () => {
     for (const blockHeight of [90, 5]) {
       const obj: LabelObject = {
         id: 't', type: 'text', x: 10, y: 10, rotation: 0,
@@ -792,7 +790,7 @@ describe('generateZPL — ^TB text block', () => {
       };
       const zpl = generateZPL(BASE_LABEL, [obj]);
       const { objects } = parseZPL(zpl, 8);
-      // The ^GB + ^FR + ^TB triple must collapse back to ONE reverse text.
+      // ^FR + ^TB emits no background box, so it re-imports as ONE reverse text.
       expect(objects).toHaveLength(1);
       expect(objects[0]?.type).toBe('text');
       expect(props(objects[0]).reverse).toBe(true);
@@ -1631,21 +1629,26 @@ describe('generateZPL — ^FT graphic anchors (bottom corner, spec p.205)', () =
     expect(zpl).not.toContain('^FT50,1069'); // not 70 + stale 999
   });
 
-  it('normalizes a ^FT-anchored filled ^GB before the reverse-text collapse', () => {
-    // A known-collapsing reverse text: the generator emits the ^GB at the model
-    // top-left as ^FO. Re-anchor only the box as ^FT (y + height); the parser
-    // must normalize it back to the same top-left so the pair still collapses
-    // (raw ^FT bottom would miss the match by the height).
-    const fo = generateZPL(BASE_LABEL, [{ id: 'r', type: 'text', x: 60, y: 60, rotation: 0,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      props: { content: 'X', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: true } }] as any);
-    expect(parseZPL(fo, 8).objects).toHaveLength(1); // baseline: FO form collapses
-    const gb = fo.match(/\^FO(\d+),(\d+)\^GB(\d+),(\d+),/)!;
-    const ft = fo.replace(/\^FO\d+,\d+\^GB/, `^FT${gb[1]},${Number(gb[2]) + Number(gb[4])}^GB`);
-    const { objects } = parseZPL(ft, 8);
-    expect(objects).toHaveLength(1);
-    expect(objects[0]?.type).toBe('text');
-    expect(props(objects[0]).reverse).toBe(true);
+  it('keeps a hand-authored ^FT reverse box + ^FR text as two FT objects and round-trips them', () => {
+    // Spec-true reverse: the filled ^FT ^GB stays its own box and the ^FR text
+    // stays a separate reverse text; neither is collapsed or rewritten to ^FO,
+    // so the foreign label round-trips with box, text, and position type intact.
+    const src =
+      '^XA^FT145,172^GB246,44,44,B,0^FS^FT145,172^A0N,44,34^FR^FDPESO LIQUIDO^FS^XZ';
+    const { objects } = parseZPL(src, 8);
+    expect(objects).toHaveLength(2);
+    const [bar, text] = objects;
+    // ^GB246,44,44 (thickness == height) is a filled horizontal bar = line.
+    expect(bar?.type).toBe('line');
+    expect(bar?.positionType).toBe('FT');
+    expect(text?.type).toBe('text');
+    expect(text?.positionType).toBe('FT');
+    expect(props(text).reverse).toBe(true);
+    // Re-emit preserves both FT anchors and the ^FR, no silent ^FO rewrite.
+    const out = generateZPL(BASE_LABEL, objects);
+    expect(out).toContain('^FT145,172^GB246,44,44,B,0^FS');
+    expect(out).toContain('^FR^FD');
+    expect(out).not.toContain('^FO');
   });
 
   it('cached image right-justified ^FT: anchor x uses the byte-padded ^GF width', () => {

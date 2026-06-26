@@ -10,7 +10,7 @@ import { decodeFbContent } from "../fbContent";
 import { decodeTbContent } from "../tbContent";
 import { dataMatrixFdToGs1Content } from "../gs1";
 import { zplAnchorToModel } from "../labelGeometry/textPositionTransforms";
-import { blockInterLineExtentDots, rotatedLineOffset } from "../zebraTextLayout";
+import { blockInterLineExtentDots } from "../zebraTextLayout";
 import { computeTextRenderMetrics } from "../labelGeometry/textRenderMetrics";
 import type { TextProps } from "../../registry/text";
 import type { Code128Props } from "../../registry/code128";
@@ -34,8 +34,8 @@ import type { MicroPdf417Props } from "../../registry/micropdf417";
 import type { CodablockProps } from "../../registry/codablock";
 import type { Tlc39Props } from "../../registry/tlc39";
 import { upceData6FromFd } from "../../registry/hriFormatters";
-import { decodeFH, ftTopLeft, makeObj, variableNameFromComment } from "./helpers";
-import { getPosType, type ParserState, REVERSE_BBOX_TOLERANCE_DOTS } from "./context";
+import { decodeFH, makeObj, variableNameFromComment } from "./helpers";
+import { getPosType, type ParserState } from "./context";
 
 /** Cross-family deps flushField borrows from graphics (^GB+^FR) and parseZPL (^FX). */
 export interface FlushFieldDeps {
@@ -207,65 +207,18 @@ export function createFlushField(
           resetFB();
           break;
         }
-        // Reverse-text collapse: stashed filled ^GB + ^FR text at same anchor
-        // with matching bbox → single reverse-text. Otherwise the bg flushes
-        // as a normal box (unrelated ^GB+^FR sequences round-trip unchanged).
-        // ^FB blocks knock out the whole block area; the box then matches
-        // blockWidth x (textH + inter-line extent), with the R/B axis swap.
-        const vertical = s.field.textRot === "R" || s.field.textRot === "B";
-        const blockBaseW =
-          s.defaults.fbWidth > 0
-            ? s.defaults.fbWidth
-            : Math.max(1, Math.round(inkWidthDots));
-        // ^TB knockout height is the raw clip height (matches the generator's
-        // ^GB), not textH + extent which floors at textH for tbHeight < textH.
-        const blockBaseH =
-          s.defaults.tbHeight > 0
-            ? s.defaults.tbHeight
-            : s.defaults.fbWidth > 0
-              ? s.field.textH + blockExtentDots
-              : s.field.textH;
-        const expectedW = vertical ? blockBaseH : blockBaseW;
-        const expectedH = vertical ? blockBaseW : blockBaseH;
-        // The generator places the reverse ^GB on the text's rotated model
-        // footprint (^FO at modelPos + rotatedLineOffset, the same AABB the
-        // render uses). Match that so our reverse collapses back to one object;
-        // a ^GB elsewhere (third-party reverse that genuinely prints beside the
-        // rotated text) stays a separate box instead of a faked overlap.
-        const fpOff = rotatedLineOffset(s.field.textRot, expectedW, expectedH);
-        const expBoxX = Math.round(modelPos.x + fpOff.x);
-        const expBoxY = Math.round(modelPos.y + fpOff.y);
-        // The stashed ^GB anchor is raw (^FT bottom corner for FT boxes), but
-        // expBoxX/Y are model top-left; normalize before comparing so a hand-
-        // authored ^FT reverse box collapses, not just our ^FO output.
-        const bgTopLeft = s.reverseBg
-          ? ftTopLeft(s.reverseBg.x, s.reverseBg.y, s.reverseBg.w, s.reverseBg.h, s.reverseBg.positionType ?? "FO", s.reverseBg.justify ?? "L")
-          : null;
-        const collapse =
-          s.reverseBg !== null &&
-          bgTopLeft !== null &&
-          s.field.frActive &&
-          Math.abs(bgTopLeft.x - expBoxX) <= REVERSE_BBOX_TOLERANCE_DOTS &&
-          Math.abs(bgTopLeft.y - expBoxY) <= REVERSE_BBOX_TOLERANCE_DOTS &&
-          Math.abs(s.reverseBg.w - expectedW) <= REVERSE_BBOX_TOLERANCE_DOTS &&
-          Math.abs(s.reverseBg.h - expectedH) <= REVERSE_BBOX_TOLERANCE_DOTS;
-        // Merge any ^FX banner that was attached to the stashed ^GB.
-        let mergedComment = comment;
-        if (collapse) {
-          const bgComment = s.reverseBg?.comment;
-          if (bgComment) {
-            mergedComment = mergedComment ? `${bgComment}\n${mergedComment}` : bgComment;
-          }
-          s.reverseBg = null;
-        } else {
-          commitPendingReverseBg();
-        }
+        // A stashed filled-black ^GB commits as its own box just before the
+        // text, so it sits behind it; ^FR then knocks the glyph ink out of that
+        // box at render time. We never merge the box into the text, so a hand
+        // authored reverse label round-trips with its box and position type
+        // intact.
+        commitPendingReverseBg();
         const textProps: TextProps = {
           content: decoded,
           fontHeight: s.field.textH,
           fontWidth: s.field.textW,
           rotation: s.field.textRot,
-          reverse: collapse ? true : getReverseFlag(),
+          reverse: getReverseFlag(),
           printerFontName: s.field.pendingPrinterFontName,
           fontId: s.field.pendingFontId,
         };
@@ -291,7 +244,7 @@ export function createFlushField(
           textProps.fpCharGap = s.field.fpCharGap;
         }
         objects.push(
-          makeObj("text", modelPos.x, modelPos.y, textProps, posType, mergedComment),
+          makeObj("text", modelPos.x, modelPos.y, textProps, posType, comment),
         );
         resetFB();
         break;

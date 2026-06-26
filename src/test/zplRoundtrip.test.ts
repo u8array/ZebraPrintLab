@@ -255,10 +255,10 @@ describe('round-trip — field block text', () => {
     expect(regenerated).not.toContain('\\&');
   });
 
-  // Build the canonical reverse-block ZPL via the generator, then verify it
-  // re-imports as ONE collapsed reverse block, not box + reverse-text that grows
-  // a ^GB on every save/load cycle. The ^GB box must stay collapsed across
-  // rotation, justify, hanging indent, line spacing and FT vs FO anchoring.
+  // A reverse ^FB block emits a bare ^FR (spec-true knockout, no synthesized
+  // background box), so it must re-import as ONE reverse text and stay idempotent
+  // across rotation, justify, hanging indent, line spacing and FT vs FO anchoring
+  // without ever growing a ^GB.
   const reverseBlockIsIdempotent = (blockZpl: string) => {
     const base = parseZPL(blockZpl, 8);
     const obj = base.objects.find((o) => o.type === 'text');
@@ -276,7 +276,8 @@ describe('round-trip — field block text', () => {
     expect(props(out).reverse).toBe(true);
     const emit2 = generateZPL(label, parsed.objects);
     expect(emit2).toBe(emit1);
-    expect((emit1.match(/\^GB/g) ?? []).length).toBe(1);
+    expect(emit1).toContain('^FR');
+    expect(emit1).not.toContain('^GB');
   };
 
   it.each([
@@ -287,7 +288,7 @@ describe('round-trip — field block text', () => {
     ['justify C', '^XA^PW640^LL400^FO80,80^A0N,30,30^FB200,3,5,C,0^FDA\\&B\\&C^FS^XZ'],
     ['hanging indent', '^XA^PW640^LL400^FO80,80^A0N,30,30^FB200,3,5,L,40^FDA\\&B\\&C^FS^XZ'],
     ['FT anchor', '^XA^PW640^LL400^FT80,300^A0N,30,30^FB200,3,5,L,0^FDA\\&B\\&C^FS^XZ'],
-  ])('reverse + ^FB block stays collapsed on re-import: %s', (_label, zpl) => {
+  ])('reverse + ^FB block round-trips as one reverse text (bare ^FR): %s', (_label, zpl) => {
     reverseBlockIsIdempotent(zpl);
   });
 

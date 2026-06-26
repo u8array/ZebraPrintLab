@@ -1,11 +1,9 @@
 import type { ObjectTypeCore } from "../types/ObjectType";
 import { textFieldPos, fdFieldFor, resolveFontCmd } from "./zplHelpers";
-import { getTextRenderMetrics } from "../lib/labelGeometry/textRenderMetrics";
-import type { LabelObject } from "../types/Group";
 import { effectiveScale } from "./transformHelpers";
 import { encodeFbContent } from "../lib/fbContent";
 import { encodeTbContent } from "../lib/tbContent";
-import { rotatedLineOffset, type ZplRotation } from "../lib/zebraTextLayout";
+import { type ZplRotation } from "../lib/zebraTextLayout";
 
 /** Text layout mode. 'normal' = plain ^A (no wrap), 'fb' = ^FB field
  *  block (max-lines cap, justify, hanging indent), 'tb' = ^TB text block
@@ -149,54 +147,11 @@ export const text: ObjectTypeCore<TextProps> = {
     const fpCmd = fpDir !== "H" || fpGap > 0 ? `^FP${fpDir},${fpGap}` : "";
     const anchor = textFieldPos(obj);
     const fd = fdFieldFor(obj, content, ctx, undefined, encodeDefault);
-    if (!p.reverse) {
-      return [anchor, fpCmd, fontCmd, blockCmd, fd].filter(Boolean).join("");
-    }
-    // Reverse text = white-on-black knockout. Standard ZPL pattern:
-    // a filled black ^GB at the field anchor, then the text with ^FR
-    // (Field Reverse) which inverts the ink within the field bounds,
-    // knocking the glyphs out of the black. ^GB and the text share
-    // the same ^FO so the box top aligns with the text cap-top.
-    // Box dimensions match the rendered ink: width from measured
-    // metrics, height from fontHeight. For R/B rotations the visible
-    // bbox is fontHeight wide by inkWidth tall, so the dimensions
-    // swap.
-    const metrics = getTextRenderMetrics(obj as unknown as LabelObject);
-    const fallback = p.fontWidth || p.fontHeight;
-    const inkW = Math.max(1, Math.round(metrics?.inkWidthDots ?? fallback));
-    const vertical = p.rotation === "R" || p.rotation === "B";
-    // Block text covers the block area instead of the single-line ink bbox:
-    // ^FB spans blockLines rows (plus per-row spacing), ^TB spans its clip
-    // height. The parser collapses this ^GB + ^FR pair back to one reverse
-    // block on re-import, so the round-trip stays idempotent.
-    let baseW: number;
-    let baseH: number;
-    if (mode === "tb") {
-      baseW = p.blockWidth ?? inkW;
-      baseH = p.blockHeight ?? p.fontHeight;
-    } else if (mode === "fb") {
-      const lines = p.blockLines ?? 1;
-      baseW = p.blockWidth ?? inkW;
-      baseH = p.fontHeight * lines + (p.blockLineSpacing ?? 0) * Math.max(0, lines - 1);
-    } else {
-      baseW = inkW;
-      baseH = p.fontHeight;
-    }
-    const gbW = vertical ? baseH : baseW;
-    const gbH = vertical ? baseW : baseH;
-    // Thickness = min(w,h) keeps the box filled (Zebra requires t >=
-    // min(w,h) for a solid fill) without triggering the dimension
-    // promotion. ZPL promotes the box to `max(w,t) × max(h,t)`; using
-    // max here would inflate a 200×30 banner into a 200×200 square.
-    const gbThickness = Math.min(gbW, gbH);
-    // Place the ^GB on the text's rotated footprint, the same AABB the render's
-    // self-bg uses (rotatedLineOffset around obj.x/obj.y). ^FO = model top-left,
-    // so it overlaps the text for every rotation and for FO/FT alike, without an
-    // anchor-relative shift. The text keeps its own ^FT/^FO baseline anchor.
-    const off = rotatedLineOffset(p.rotation, gbW, gbH);
-    const gbX = Math.round(obj.x + off.x);
-    const gbY = Math.round(obj.y + off.y);
-    const gb = `^FO${gbX},${gbY}^GB${gbW},${gbH},${gbThickness},B,0^FS`;
-    return [gb, anchor, fpCmd, fontCmd, blockCmd, "^FR", fd].filter(Boolean).join("");
+    // ^FR is the spec-true reverse: it knocks the glyph ink out of whatever is
+    // already drawn (e.g. a black ^GB placed behind the text), so we emit it as
+    // a bare field flag and never synthesize a background box. The field's
+    // position type and any separately-authored box round-trip unchanged.
+    const frCmd = p.reverse ? "^FR" : "";
+    return [anchor, fpCmd, fontCmd, blockCmd, frCmd, fd].filter(Boolean).join("");
   },
 };

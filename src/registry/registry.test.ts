@@ -41,17 +41,15 @@ describe('text.toZPL', () => {
     expect(zpl).toContain('^FT100,218');
   });
 
-  it('emits ^GB knockout-background + ^FR for reverse text', () => {
+  it('emits a bare ^FR for reverse text (knocks out of a separate box)', () => {
     const zpl = def.toZPL(makeObj('text', {
       content: 'Rev', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: true,
     }));
-    // Filled black ^GB at the field anchor (height = fontHeight, width
-    // from ink metrics), then ^FR before ^FD so the printer knocks the
-    // glyphs out of the black. Replaces the legacy ^LRY/^LRN wrap
-    // which Zebra firmware treated as a global label flip rather than
-    // per-field inversion.
-    expect(zpl).toMatch(/\^GB\d+,30,\d+,B,0\^FS/);
+    // Spec-true reverse: ^FR before ^FD knocks the glyphs out of whatever is
+    // drawn behind the field. No synthesized background box, so the field
+    // round-trips with its own anchor; the black box is the user's own object.
     expect(zpl).toContain('^FR^FD');
+    expect(zpl).not.toContain('^GB');
     expect(zpl).not.toContain('^LRY');
   });
 

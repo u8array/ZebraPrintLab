@@ -107,6 +107,9 @@ interface BaseTextProps {
   offsetXPx?: number;
   /** Vertical shift (device-font cap-top trim vs Labelary). */
   offsetYPx?: number;
+  /** `difference` for ^FR reverse text, so the white glyphs knock out of
+   *  whatever black is drawn behind them (matches reverseShapeStyle). */
+  globalCompositeOperation?: "difference" | "source-over";
 }
 
 /** One `<Text>` per line at Zebra alignment offset when ^FB is active.
@@ -614,108 +617,10 @@ function KonvaObjectInner({
       fpShiftXPx = -(reservedPx + gapPx);
     }
 
-    if (obj.type === "text" && obj.props.reverse && obj.props.blockWidth) {
-      // ^FB block reverse: the ^GB knockout covers the whole wrapped block
-      // (blockWidth x blockH), and the text wraps / justifies exactly like the
-      // non-reverse path, knocked out in white. Reuse blockBoundsDots (the same
-      // box the generator emits) and TextFieldContent so the preview matches
-      // both the print and the normal render.
-      const bounds =
-        resolveTextMode(obj.props) === "tb"
-          ? tbBoundsDots(obj.props.blockWidth, obj.props.blockHeight ?? obj.props.fontHeight, p.rotation)
-          : blockBoundsDots({
-              blockWidthDots: obj.props.blockWidth,
-              blockLines: obj.props.blockLines ?? 1,
-              blockLineSpacing: obj.props.blockLineSpacing ?? 0,
-              fontHeight: obj.props.fontHeight,
-              rotation: p.rotation,
-            });
-      return (
-        <Group
-          id={obj.id}
-          x={x}
-          y={y}
-          draggable={!obj.locked}
-          {...selectionHandlers(onSelect)}
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
-          onDblClick={openEditor}
-          onDblTap={openEditor}
-        >
-          <Rect
-            x={dotsToPx(bounds.x, scale, dpmm)}
-            y={dotsToPx(bounds.y, scale, dpmm)}
-            width={dotsToPx(bounds.width, scale, dpmm)}
-            height={dotsToPx(bounds.height, scale, dpmm)}
-            fill="#000000"
-            stroke={isSelected ? colors.selection : undefined}
-            strokeWidth={isSelected ? 1.5 : 0}
-          />
-          <TextFieldContent
-            obj={obj as TextFieldObj}
-            content={fpContent}
-            placeholderColor={colors.accent}
-            base={{
-              fontSize: fontSizePx,
-              fontFamily,
-              fontStyle,
-              scaleX: fontScaleX,
-              rotation: zplRotationDeg[p.rotation],
-              fill: "#ffffff",
-              stroke: undefined,
-              strokeWidth: 0,
-              letterSpacing: fpLetterSpacingPx + deviceLetterSpacingPx,
-              offsetXPx: fpShiftXPx + deviceXOffPx,
-              offsetYPx: deviceYOffPx,
-            }}
-            scale={scale}
-            dpmm={dpmm}
-            fontVersion={fontVersion}
-          />
-        </Group>
-      );
-    }
-
-    if (obj.type === "text" && obj.props.reverse) {
-      // Single-line reverse mirrors the generator's `^GB inkW, fontHeight`.
-      const approxW = dotsToPx(textMetrics.inkWidthDots, scale, dpmm);
-      const approxH = fontSizePx;
-      return (
-        <Group
-          id={obj.id}
-          x={x}
-          y={y}
-          rotation={zplRotationDeg[p.rotation]}
-          draggable={!obj.locked}
-          {...selectionHandlers(onSelect)}
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
-          onDblClick={openEditor}
-          onDblTap={openEditor}
-        >
-          <Rect
-            width={approxW}
-            height={approxH}
-            fill="#000000"
-            stroke={isSelected ? colors.selection : undefined}
-            strokeWidth={isSelected ? 1.5 : 0}
-          />
-          <Text
-            // Drop Konva's text-width cache on @font-face load.
-            key={fontVersion}
-            text={fpContent}
-            fontSize={fontSizePx}
-            fontFamily={fontFamily}
-            fontStyle={fontStyle}
-            scaleX={fontScaleX}
-            fill="#ffffff"
-            letterSpacing={fpLetterSpacingPx + deviceLetterSpacingPx}
-            x={fpShiftXPx + deviceXOffPx}
-            y={deviceYOffPx}
-          />
-        </Group>
-      );
-    }
+    // ^FR reverse routes through the normal text path with a knockout paint
+    // (white + difference, see base below); no self background, so the box
+    // stays a separate object and the field round-trips with its own anchor.
+    const reverseText = obj.type === "text" && obj.props.reverse;
 
     // Outer Group stays axis-aligned for the Transformer; rotation is
     // applied to the inner Text. Direct rotation on the transformer's
@@ -745,7 +650,8 @@ function KonvaObjectInner({
             fontStyle,
             scaleX: fontScaleX,
             rotation: zplRotationDeg[p.rotation],
-            fill: "#000000",
+            fill: reverseText ? "#ffffff" : "#000000",
+            globalCompositeOperation: reverseText ? "difference" : "source-over",
             stroke: isSelected ? colors.selection : undefined,
             strokeWidth: isSelected ? 1 : 0,
             letterSpacing: fpLetterSpacingPx + deviceLetterSpacingPx,

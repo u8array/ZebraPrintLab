@@ -73,9 +73,9 @@ describe("parseZPL overlay capture", () => {
     expect(objSeg(overlay!, objects[0]!.id)?.text).toBe("^FO5,5^GB80,80,80,B^FS");
   });
 
-  it("links a reverse-collapse (^GB + ^FR text) into one merged span", () => {
-    // Use the generator so the ^GB bbox is guaranteed to match the text ink and
-    // the parser actually collapses the pair into one reverse-text object.
+  it("captures a bare ^FR reverse text as one span (no synthesized ^GB)", () => {
+    // Spec-true reverse emits ^FR with no background box, so the field is a
+    // single reverse-text object spanning just its own ^FR^FD.
     const reverseText = [
       { id: "r", type: "text", x: 50, y: 50, rotation: 0,
         props: { content: "Hi", fontHeight: 30, fontWidth: 0, rotation: "N", reverse: true } },
@@ -84,11 +84,10 @@ describe("parseZPL overlay capture", () => {
     const { overlay, objects } = parseZPL(zpl, 8, { captureOverlay: true });
     expect(overlay).toBeDefined();
     expect(overlayText(overlay!)).toBe(zpl);
-    // Collapse yields a single reverse-text object spanning the ^GB and ^FR fields.
     expect(objects).toHaveLength(1);
     const seg = objSeg(overlay!, objects[0]!.id);
-    expect(seg?.text).toContain("^GB");
     expect(seg?.text).toContain("^FR^FD");
+    expect(seg?.text).not.toContain("^GB");
   });
 
   it("links the standalone box and the following field when bg does not collapse", () => {

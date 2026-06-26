@@ -127,9 +127,10 @@ export function parseZPL(
   // start (^FO/^FT), `ovBase` the object count when the field opened; a deferred
   // reverse-bg that commits mid-field bumps `ovBase` so the field's own object is
   // still found at `ovBase`. Linking is intentionally conservative: only clean
-  // single-object fields, deferred reverse-bg boxes, and reverse-collapse merges
-  // are linked. Any other shape leaves an object unlinked, which trips the
-  // all-linked gate below and drops the overlay so the block regenerates.
+  // single-object fields and deferred reverse-bg boxes (committed standalone
+  // before the field's own object) are linked. Any other shape leaves an object
+  // unlinked, which trips the all-linked gate below and drops the overlay so the
+  // block regenerates.
   const overlaySpans: LinkedSpan[] = [];
   const linkedIds = new Set<string>();
   let ovStart: number | null = null;
@@ -231,11 +232,6 @@ export function parseZPL(
             // This field stashed a reverse-bg (no object yet); record its span
             // so the box can be linked when it commits later.
             s.reverseBg.span = { start: ovStart, end: fieldEnd };
-          } else if (reverseBefore?.span && s.reverseBg === null && objects.length === ovBase + 1) {
-            // Reverse-collapse: stashed box + this ^FR text merged into one
-            // object spanning both fields (the gap rides along in the segment).
-            const merged = objects[ovBase];
-            if (merged) linkObject(reverseBefore.span.start, fieldEnd, merged.id);
           } else if (reverseBefore?.span && s.reverseBg === null && objects.length === ovBase + 2) {
             // Stashed box committed standalone during this flush (box at ovBase),
             // then the field's own object (text/barcode) at ovBase+1.
