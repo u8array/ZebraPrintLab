@@ -263,6 +263,20 @@ describe('generateZPL — printer params', () => {
     expect(zpl).not.toContain('^GB');
   });
 
+  it('keeps a right-justified ^FT image using its byte-padded ^GF width', () => {
+    // widthDots 121 emits at 128 (byte boundary); right anchor x = 0 + 128 -
+    // home 125 = 3 (valid). The unpadded 121 would read -4 and wrongly drop it.
+    const ftImage: LabelObject = {
+      id: 'im', type: 'image', x: 0, y: 100, rotation: 0, positionType: 'FT', fieldJustify: 'R',
+      props: { imageId: '', widthDots: 121, heightDots: 60, threshold: 128,
+        storedAs: { device: 'R', name: 'LOGO', embedInZpl: false } },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+    const zpl = generateZPL({ ...BASE_LABEL, labelHomeX: 125 }, [ftImage]);
+    expect(zpl).toContain('^FT3,160,1'); // x 0+128-125=3, y 100+60
+    expect(zpl).toContain('^XG');
+  });
+
   it('drops only the clipped children of a group, keeping the rest', () => {
     const group: GroupObject = {
       id: 'g1',

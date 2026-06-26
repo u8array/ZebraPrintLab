@@ -3,6 +3,13 @@ import { graphicFieldPos } from './zplHelpers';
 import { getImage } from '../lib/imageCache';
 import { formatStoragePath } from '../lib/storagePath';
 
+/** ^GF rows are byte-packed, so the emitted (and re-parsed) width is the next
+ *  multiple of 8. Shared by the emitter and the home-shift drop check so a
+ *  right-justified ^FT image keys its anchor off the same width. */
+export function gfByteWidth(widthDots: number): number {
+  return Math.ceil(widthDots / 8) * 8;
+}
+
 export interface ImageProps {
   /** ID into the image cache */
   imageId: string;
@@ -15,7 +22,7 @@ export interface ImageProps {
    *  and ignore the user's drag. Only consulted when `imageId` does
    *  not resolve to a cached image. */
   heightDots?: number;
-  /** Luminance threshold for mono conversion (0–255) */
+  /** Luminance threshold for mono conversion (0-255) */
   threshold: number;
   /** Cached GFA ZPL string; regenerated when image/width/threshold changes */
   _gfaCache?: string;
@@ -138,11 +145,9 @@ export const image: ObjectTypeCore<ImageProps> = {
     const height = cached
       ? Math.round(p.widthDots * (cached.height / cached.width))
       : p.heightDots ?? p.widthDots;
-    // ^GF rows are byte-packed, so the printed width is the next multiple of 8
-    // (what the parser reconstructs as bytesPerRow*8). Right-justified ^FT keys
-    // its x off that width, so pad here or the round-trip drifts by up to 7.
-    const anchorWidth = Math.ceil(p.widthDots / 8) * 8;
-    const anchor = graphicFieldPos(obj, anchorWidth, height);
+    // Right-justified ^FT keys its x off the byte-padded ^GF width, so pad here
+    // or the round-trip drifts by up to 7 dots.
+    const anchor = graphicFieldPos(obj, gfByteWidth(p.widthDots), height);
     // Opaque graphic: re-emit the original ^GF verbatim at the (possibly moved)
     // field position. The bytes were never decoded, so there's nothing to regen.
     if (p.rawGf) return `${anchor}${p.rawGf}^FS`;

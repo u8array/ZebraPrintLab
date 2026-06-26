@@ -25,6 +25,9 @@ export interface ImportFinding {
 
 export interface ImportReport {
   findings: ImportFinding[];
+  // The buckets below are command-code dedup views for the command-based kinds
+  // only. Block-level kinds without a command (e.g. 'lossyEdit') live solely in
+  // `findings`; iterate `findings` (not the buckets) for a kind-complete view.
   /** Commands imported with known loss. Deduplicated by command code. */
   partial: string[];
   /** Commands skipped because they require printer hardware or file storage. */

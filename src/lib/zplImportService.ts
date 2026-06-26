@@ -182,8 +182,9 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
 
   // Bucket views deduplicate by command code to match the JSDoc contract on
   // ImportReport (see zplParser.ts). The per-occurrence model lives in
-  // `findings`; consumers that only need the set of distinct affected
-  // commands read these buckets unchanged.
+  // `findings`; consumers that only need the set of distinct affected commands
+  // read these buckets unchanged. Only command-based kinds get a bucket; a
+  // block-level kind like 'lossyEdit' stays in `findings` by design.
   const dedupBy = (kind: ImportFindingKind) =>
     [...new Set(findings.filter((f) => f.kind === kind).map((f) => f.command))];
   const report: ImportReport = {

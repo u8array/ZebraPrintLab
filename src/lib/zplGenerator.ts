@@ -20,7 +20,7 @@ import { isGroup, walkObjects, type LabelObject, type LeafObject, type Page } fr
 import { isOverlayConsistent } from './zplOverlay/overlay';
 import { objectBoundsDots, type ObjectBoundsCtx } from './objectBounds';
 import { formatFontDownloadFromPath } from './customFonts';
-import type { ImageProps } from '../registry/image';
+import { gfByteWidth, type ImageProps } from '../registry/image';
 import { formatStoragePath } from './storagePath';
 
 function formatDownloadObject(m: CustomFontMapping): string | undefined {
@@ -403,7 +403,12 @@ function shiftObjectsByHome(
     // (footprint bottom, right edge when justify R) rather than the top-left.
     if (obj.positionType === 'FT' && FT_BOTTOM_ANCHOR_TYPES.has(obj.type)) {
       const b = objectBoundsDots(obj, ctx);
-      const anchorX = (obj.fieldJustify === 'R' ? b.x + b.width : b.x) - homeX;
+      // Images emit a byte-padded ^GF width; match it so a right-justified ^FT
+      // image isn't dropped over the 0-7 dots of padding.
+      const w = obj.type === 'image'
+        ? gfByteWidth((obj.props as { widthDots: number }).widthDots)
+        : b.width;
+      const anchorX = (obj.fieldJustify === 'R' ? b.x + w : b.x) - homeX;
       const anchorY = b.y + b.height - homeY - top;
       return anchorX < 0 || anchorY < 0 ? [] : [{ ...obj, x, y }];
     }
