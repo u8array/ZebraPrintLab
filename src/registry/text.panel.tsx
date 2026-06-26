@@ -1,10 +1,12 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState } from "react";
 import type { ObjectTypeUi } from "../types/ObjectType";
 import { useT } from "../lib/useT";
 import { buttonCls, inputCls, labelCls } from "../components/Properties/styles";
 import { getFont, loadFontFile } from "../lib/fontCache";
 import { useFontCacheVersion } from "../hooks/useFontCacheVersion";
 import { useLabelStore } from "../store/labelStore";
+import { currentObjects } from "../store/labelStore.selectors";
+import { reverseTextHasBacking, reverseTextHasOwnBacking } from "../lib/reverseBacking";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { UnitNumberInput } from "../components/Properties/UnitNumberInput";
 import { VariableContentField } from "../components/Properties/VariableContentField";
@@ -26,6 +28,14 @@ export const textPanel: ObjectTypeUi<TextProps> = {
     const [uploading, setUploading] = useState(false);
     useFontCacheVersion();
     const label = useLabelStore((s) => s.label);
+    const addReverseBackground = useLabelStore((s) => s.addReverseBackground);
+    const removeReverseBackground = useLabelStore((s) => s.removeReverseBackground);
+    const hasReverseBacking = useLabelStore((s) =>
+      reverseTextHasBacking(currentObjects(s), obj.id, s.label),
+    );
+    const hasOwnReverseBacking = useLabelStore((s) =>
+      reverseTextHasOwnBacking(currentObjects(s), obj.id, s.label),
+    );
 
     // Font picker options: every alias the user can reference from this
     // field, in this order; "(use label default)" → built-ins (0, A-H)
@@ -42,18 +52,15 @@ export const textPanel: ObjectTypeUi<TextProps> = {
     const fpInUse = p.fpDirection !== undefined || (p.fpCharGap ?? 0) > 0;
     const [showAdvanced, setShowAdvanced] = useState(!!p.printerFontName || fpInUse);
 
-    const handleFontUpload = useCallback(
-      async (file: File) => {
-        if (!p.printerFontName) return;
-        setUploading(true);
-        try {
-          await loadFontFile(file, p.printerFontName);
-        } finally {
-          setUploading(false);
-        }
-      },
-      [p.printerFontName],
-    );
+    const handleFontUpload = async (file: File) => {
+      if (!p.printerFontName) return;
+      setUploading(true);
+      try {
+        await loadFontFile(file, p.printerFontName);
+      } finally {
+        setUploading(false);
+      }
+    };
 
     return (
       <>
@@ -111,17 +118,32 @@ export const textPanel: ObjectTypeUi<TextProps> = {
             zplCmd="^A"
           />
 
-          <div className="flex items-center justify-between gap-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="accent-accent"
-                checked={p.reverse ?? false}
-                onChange={(e) => onChange({ reverse: e.target.checked })}
-              />
-              <span className={labelCls}>{t.registry.text.reverse}</span>
-            </label>
-            <ZplCmd cmd="^FR" />
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="accent-accent"
+                  checked={p.reverse ?? false}
+                  onChange={(e) => onChange({ reverse: e.target.checked })}
+                />
+                <span className={labelCls}>{t.registry.text.reverse}</span>
+              </label>
+              <ZplCmd cmd="^FR" />
+            </div>
+            {/* ^FR knocks out of whatever is behind it, so white-on-black needs
+                a real black box; one click drops one sized to this text. The box
+                is a separate object, so offer to clear it once reverse is off. */}
+            {p.reverse && !hasReverseBacking && (
+              <button type="button" className={buttonCls} onClick={() => addReverseBackground(obj.id)}>
+                {t.registry.text.addReverseBg}
+              </button>
+            )}
+            {!p.reverse && hasOwnReverseBacking && (
+              <button type="button" className={buttonCls} onClick={() => removeReverseBackground(obj.id)}>
+                {t.registry.text.removeReverseBg}
+              </button>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">

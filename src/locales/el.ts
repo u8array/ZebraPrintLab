@@ -568,6 +568,8 @@ const el = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Προσθήκη πλαισίου φόντου',
+      removeReverseBg: 'Αφαίρεση πλαισίου φόντου',
       fpDirection: 'Κατεύθυνση',
       fpDirH: 'Οριζόντια',
       fpDirV: 'Κατακόρυφα (στοίβα)',

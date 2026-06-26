@@ -568,6 +568,8 @@ const he = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'הוסף תיבת רקע',
+      removeReverseBg: 'הסר תיבת רקע',
       fpDirection: 'כיוון',
       fpDirH: 'אופקי',
       fpDirV: 'אנכי (ערימה)',

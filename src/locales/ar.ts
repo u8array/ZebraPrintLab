@@ -568,6 +568,8 @@ const ar = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'إضافة مربع خلفية',
+      removeReverseBg: 'إزالة مربع الخلفية',
       fpDirection: 'الاتجاه',
       fpDirH: 'أفقي',
       fpDirV: 'رأسي (تكديس)',

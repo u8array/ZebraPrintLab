@@ -568,6 +568,8 @@ const bg = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Добавяне на фоново поле',
+      removeReverseBg: 'Премахване на фоново поле',
       fpDirection: 'Посока',
       fpDirH: 'Хоризонтално',
       fpDirV: 'Вертикално (натрупано)',

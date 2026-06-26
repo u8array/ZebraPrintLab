@@ -568,6 +568,8 @@ const sl = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Dodaj ozadje',
+      removeReverseBg: 'Odstrani ozadje',
       fpDirection: 'Smer',
       fpDirH: 'Vodoravno',
       fpDirV: 'Navpično (sklad)',

@@ -568,6 +568,8 @@ const pl = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Dodaj tło',
+      removeReverseBg: 'Usuń tło',
       fpDirection: 'Kierunek',
       fpDirH: 'Poziomo',
       fpDirV: 'Pionowo (stos)',

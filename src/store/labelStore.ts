@@ -5,8 +5,9 @@ import { dirtyTracking } from './dirtyTracking';
 import type { ObjectChanges } from '../types/LabelObject';
 import { PRINTER_PROFILE_FIELDS, printerProfileSchema } from '../types/PrinterProfile';
 import { visitLeavesInPages } from '../lib/objectTree';
+import { insertReverseBackingBoxes, pageNeedsReverseBacking } from '../lib/reverseBacking';
 import { dropLegacyFontBindings } from '../lib/customFonts';
-import type { CustomFontMapping } from '../types/LabelConfig';
+import type { CustomFontMapping, LabelConfig } from '../types/LabelConfig';
 import type { LabelObject } from '../types/Group';
 import {
   createPrinterProfileSlice,
@@ -173,6 +174,31 @@ export function migrateLegacy(persistedState: unknown, version: number): unknown
     }
   }
 
+  // v9→v10: reverse text dropped its synthesized self-background ^GB for a
+  // spec-true ^FR knockout. Give every legacy reverse text a real black box
+  // behind it so the white-on-black look survives the model change.
+  if (version < 10 && Array.isArray((s as Record<string, unknown>).pages)) {
+    const label = (s as Record<string, unknown>).label as
+      | Pick<LabelConfig, 'customFonts' | 'defaultFontId'>
+      | undefined;
+    s = {
+      ...s,
+      pages: ((s as Record<string, unknown>).pages as unknown[]).map((pg) => {
+        const p = pg && typeof pg === 'object' ? (pg as Record<string, unknown>) : {};
+        if (!Array.isArray(p.objects)) return p;
+        const objects = p.objects as LabelObject[];
+        // Drop the overlay on a touched page: a new model object the overlay
+        // doesn't link would force full regeneration and lose its bytes.
+        const next: Record<string, unknown> = {
+          ...p,
+          objects: insertReverseBackingBoxes(objects, label),
+        };
+        if (pageNeedsReverseBacking(objects, label)) delete next.overlay;
+        return next;
+      }),
+    };
+  }
+
   // Re-validate the rehydrated profile so a legacy snapshot that
   // violates the schema or a cross-field rule can't crash the slice's
   // safeParse on the next patch. Cross-field issues report a path
@@ -312,7 +338,7 @@ export const useLabelStore = create<LabelState>()(
     }),
     {
       name: 'zpl-designer-session',
-      version: 9,
+      version: 10,
       migrate: (persistedState, version) => migrateLegacy(persistedState, version) as LabelState,
       storage: createJSONStorage(() => localStorage),
       partialize: persistPartialize,

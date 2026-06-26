@@ -568,6 +568,8 @@ const fa = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'افزودن کادر پس‌زمینه',
+      removeReverseBg: 'حذف کادر پس‌زمینه',
       fpDirection: 'جهت',
       fpDirH: 'افقی',
       fpDirV: 'عمودی (پشته)',

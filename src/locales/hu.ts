@@ -568,6 +568,8 @@ const hu = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Háttérdoboz hozzáadása',
+      removeReverseBg: 'Háttérdoboz eltávolítása',
       fpDirection: 'Irány',
       fpDirH: 'Vízszintes',
       fpDirV: 'Függőleges (rakott)',

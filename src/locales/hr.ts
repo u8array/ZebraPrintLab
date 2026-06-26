@@ -568,6 +568,8 @@ const hr = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Dodaj pozadinski okvir',
+      removeReverseBg: 'Ukloni pozadinski okvir',
       fpDirection: 'Smjer',
       fpDirH: 'Vodoravno',
       fpDirV: 'Okomito (snop)',

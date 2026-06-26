@@ -108,6 +108,59 @@ describe('addObject', () => {
   });
 });
 
+describe('addReverseBackground', () => {
+  it('inserts a black backing just before a reverse text and selects it', () => {
+    state().addObject('text');
+    const text = defined(objs()[0]);
+    state().updateObject(text.id, { props: { reverse: true } });
+    state().addReverseBackground(text.id);
+    const after = objs();
+    expect(after).toHaveLength(2);
+    const bg = defined(after[0]); // renders behind the text
+    expect(['box', 'line']).toContain(bg.type);
+    expect(props(bg).color).toBe('B');
+    expect(defined(after[1]).id).toBe(text.id);
+    expect(state().selectedIds).toEqual([bg.id]);
+  });
+
+  it('is idempotent: no second backing when one already sits behind', () => {
+    state().addObject('text');
+    const text = defined(objs()[0]);
+    state().updateObject(text.id, { props: { reverse: true } });
+    state().addReverseBackground(text.id);
+    state().addReverseBackground(text.id);
+    expect(objs()).toHaveLength(2); // not 3
+  });
+
+  it('ignores a non-text target', () => {
+    state().addObject('box');
+    const box = defined(objs()[0]);
+    state().addReverseBackground(box.id);
+    expect(objs()).toHaveLength(1);
+  });
+});
+
+describe('removeReverseBackground', () => {
+  it('removes the covering backing behind a text', () => {
+    state().addObject('text');
+    const text = defined(objs()[0]);
+    state().updateObject(text.id, { props: { reverse: true } });
+    state().addReverseBackground(text.id);
+    expect(objs()).toHaveLength(2);
+    state().removeReverseBackground(text.id);
+    const after = objs();
+    expect(after).toHaveLength(1);
+    expect(defined(after[0]).id).toBe(text.id);
+  });
+
+  it('no-ops when there is no backing behind', () => {
+    state().addObject('text');
+    const text = defined(objs()[0]);
+    state().removeReverseBackground(text.id);
+    expect(objs()).toHaveLength(1);
+  });
+});
+
 // ── updateObject (props merging) ──────────────────────────────────────────────
 
 describe('updateObject — props merging', () => {
@@ -1407,6 +1460,53 @@ describe('migrateLegacy — v2→v3 circle→ellipse', () => {
     };
     const migrated = migrateLegacy(persisted, 2) as typeof persisted;
     expect(migrated.pages[0]?.objects[0]).toEqual(persisted.pages[0]?.objects[0]);
+  });
+});
+
+describe('migrateLegacy — v9→v10 reverse text backing', () => {
+  it('inserts a black backing before a legacy reverse text', () => {
+    const persisted = {
+      pages: [
+        {
+          objects: [
+            {
+              id: 't',
+              type: 'text',
+              x: 50,
+              y: 50,
+              rotation: 0,
+              props: { content: 'Hi', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: true },
+            },
+          ],
+        },
+      ],
+    };
+    const migrated = migrateLegacy(persisted, 9) as typeof persisted;
+    const objs = migrated.pages[0]?.objects ?? [];
+    expect(objs).toHaveLength(2);
+    expect(['box', 'line']).toContain((objs[0] as { type: string }).type);
+    expect((objs[1] as { type: string }).type).toBe('text');
+  });
+
+  it('leaves a non-reverse text untouched', () => {
+    const persisted = {
+      pages: [
+        {
+          objects: [
+            {
+              id: 't',
+              type: 'text',
+              x: 50,
+              y: 50,
+              rotation: 0,
+              props: { content: 'Hi', fontHeight: 30, fontWidth: 0, rotation: 'N' },
+            },
+          ],
+        },
+      ],
+    };
+    const migrated = migrateLegacy(persisted, 9) as typeof persisted;
+    expect(migrated.pages[0]?.objects).toHaveLength(1);
   });
 });
 

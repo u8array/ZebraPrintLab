@@ -568,6 +568,8 @@ const es = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Añadir caja de fondo',
+      removeReverseBg: 'Quitar caja de fondo',
       fpDirection: 'Dirección',
       fpDirH: 'Horizontal',
       fpDirV: 'Vertical (apilado)',

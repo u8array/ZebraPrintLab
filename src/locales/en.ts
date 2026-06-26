@@ -589,6 +589,8 @@ const en = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Add background box',
+      removeReverseBg: 'Remove background box',
       fpDirection: 'Direction',
       fpDirH: 'Horizontal',
       fpDirV: 'Vertical (stack)',

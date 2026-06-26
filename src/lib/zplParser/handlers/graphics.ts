@@ -14,7 +14,8 @@ import type { Handler } from "../types";
  *  base64 blob doesn't drown out the import report. */
 const IMPORT_FINDING_PAYLOAD_LIMIT = 80;
 
-/** Helpers re-exported to parseZPL so flushField can drive reverse-bg collapse. */
+/** Helpers re-exported to parseZPL so flushField can commit a stashed reverse-bg
+ *  box just before the field that follows it. */
 export interface GraphicsExports {
   commitPendingReverseBg: () => void;
   pushGBObject: (
@@ -39,7 +40,7 @@ export interface GraphicsFamily {
   helpers: GraphicsExports;
 }
 
-/** Graphic primitives (^GB/^GC/^GD/^GE/^GF/^GS/^XG/~DY) + reverse-bg collapse. */
+/** Graphic primitives (^GB/^GC/^GD/^GE/^GF/^GS/^XG/~DY) + reverse-bg commit. */
 export function createGraphicsHandlers(
   s: ParserState,
   takeComment: () => string | undefined,

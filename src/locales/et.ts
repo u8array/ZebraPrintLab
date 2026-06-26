@@ -568,6 +568,8 @@ const et = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Lisa taustakast',
+      removeReverseBg: 'Eemalda taustakast',
       fpDirection: 'Suund',
       fpDirH: 'Horisontaalne',
       fpDirV: 'Vertikaalne (virn)',

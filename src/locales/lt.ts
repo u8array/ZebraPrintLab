@@ -568,6 +568,8 @@ const lt = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Pridėti fono laukelį',
+      removeReverseBg: 'Pašalinti fono laukelį',
       fpDirection: 'Kryptis',
       fpDirH: 'Horizontaliai',
       fpDirV: 'Vertikaliai (rietuvė)',

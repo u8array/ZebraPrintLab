@@ -568,6 +568,8 @@ const pt = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Adicionar caixa de fundo',
+      removeReverseBg: 'Remover caixa de fundo',
       fpDirection: 'Direção',
       fpDirH: 'Horizontal',
       fpDirV: 'Vertical (empilhado)',

@@ -568,6 +568,8 @@ const it = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Aggiungi sfondo',
+      removeReverseBg: 'Rimuovi sfondo',
       fpDirection: 'Direzione',
       fpDirH: 'Orizzontale',
       fpDirV: 'Verticale (impilato)',

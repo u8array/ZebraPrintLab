@@ -568,6 +568,8 @@ const lv = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Pievienot fona lodziņu',
+      removeReverseBg: 'Noņemt fona lodziņu',
       fpDirection: 'Virziens',
       fpDirH: 'Horizontāli',
       fpDirV: 'Vertikāli (kaudze)',

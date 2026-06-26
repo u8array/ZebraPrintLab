@@ -568,6 +568,8 @@ const fi = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Lisää taustalaatikko',
+      removeReverseBg: 'Poista taustalaatikko',
       fpDirection: 'Suunta',
       fpDirH: 'Vaakasuora',
       fpDirV: 'Pystysuora (pino)',

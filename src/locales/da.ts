@@ -568,6 +568,8 @@ const da = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Tilføj baggrundsboks',
+      removeReverseBg: 'Fjern baggrundsboks',
       fpDirection: 'Retning',
       fpDirH: 'Vandret',
       fpDirV: 'Lodret (stak)',

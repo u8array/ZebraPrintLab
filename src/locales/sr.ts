@@ -568,6 +568,8 @@ const sr = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Додај позадину',
+      removeReverseBg: 'Уклони позадину',
       fpDirection: 'Smer',
       fpDirH: 'Vodoravno',
       fpDirV: 'Vertikalno (stek)',

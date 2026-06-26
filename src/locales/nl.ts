@@ -568,6 +568,8 @@ const nl = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Achtergrondvak toevoegen',
+      removeReverseBg: 'Achtergrondvak verwijderen',
       fpDirection: 'Richting',
       fpDirH: 'Horizontaal',
       fpDirV: 'Verticaal (gestapeld)',

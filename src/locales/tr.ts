@@ -568,6 +568,8 @@ const tr = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Arka plan kutusu ekle',
+      removeReverseBg: 'Arka plan kutusunu kaldır',
       fpDirection: 'Yön',
       fpDirH: 'Yatay',
       fpDirV: 'Dikey (yığın)',

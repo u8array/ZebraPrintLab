@@ -568,6 +568,8 @@ const sv = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Lägg till bakgrundsruta',
+      removeReverseBg: 'Ta bort bakgrundsruta',
       fpDirection: 'Riktning',
       fpDirH: 'Vågrät',
       fpDirV: 'Lodrät (stack)',

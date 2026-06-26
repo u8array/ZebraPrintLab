@@ -57,6 +57,87 @@ describe('parseDesignFile', () => {
     expect(result.value.pages[0]?.objects).toHaveLength(1);
   });
 
+  it('v1->v2: gives a legacy reverse text a black backing object', () => {
+    const v1 = JSON.stringify({
+      schemaVersion: 1,
+      label: { widthMm: 100, heightMm: 60, dpmm: 8 },
+      pages: [
+        {
+          objects: [
+            {
+              id: 't',
+              type: 'text',
+              x: 50,
+              y: 50,
+              rotation: 0,
+              props: { content: 'Hi', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: true },
+            },
+          ],
+        },
+      ],
+    });
+    const result = parseDesignFile(v1);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const objs = result.value.pages[0]?.objects ?? [];
+    expect(objs).toHaveLength(2); // backing inserted before the text
+    expect(['box', 'line']).toContain(objs[0]?.type);
+    expect(objs[1]?.type).toBe('text');
+  });
+
+  it('v1->v2: drops the overlay on a page that gains a reverse backing', () => {
+    const v1 = JSON.stringify({
+      schemaVersion: 1,
+      label: { widthMm: 100, heightMm: 60, dpmm: 8 },
+      pages: [
+        {
+          objects: [
+            {
+              id: 't',
+              type: 'text',
+              x: 50,
+              y: 50,
+              rotation: 0,
+              props: { content: 'Hi', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: true },
+            },
+          ],
+          overlay: {
+            segments: [{ kind: 'raw', text: '^XA^FR^FDHi^FS^XZ' }],
+            v: 3,
+            regenSafe: true,
+          },
+        },
+      ],
+    });
+    const result = parseDesignFile(v1);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const page = result.value.pages[0];
+    expect(page?.objects).toHaveLength(2); // backing inserted
+    expect(page?.overlay).toBeUndefined(); // stale overlay dropped
+  });
+
+  it('v1->v2: keeps the overlay on a page with no reverse text', () => {
+    const v1 = JSON.stringify({
+      schemaVersion: 1,
+      label: { widthMm: 100, heightMm: 60, dpmm: 8 },
+      pages: [
+        {
+          objects: SAMPLE_OBJECTS,
+          overlay: {
+            segments: [{ kind: 'raw', text: '^XA^FO10,10^FDx^FS^XZ' }],
+            v: 3,
+            regenSafe: true,
+          },
+        },
+      ],
+    });
+    const result = parseDesignFile(v1);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.pages[0]?.overlay).toBeDefined();
+  });
+
   it('round-trips a page overlay through serialize + parse', () => {
     const source = '^XA^FO10,10^FDx^FS^XZ';
     const overlay = {

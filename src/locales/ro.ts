@@ -568,6 +568,8 @@ const ro = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Adaugă casetă de fundal',
+      removeReverseBg: 'Elimină caseta de fundal',
       fpDirection: 'Direcție',
       fpDirH: 'Orizontal',
       fpDirV: 'Vertical (stivă)',

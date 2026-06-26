@@ -568,6 +568,8 @@ const ja = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: '背景ボックスを追加',
+      removeReverseBg: '背景ボックスを削除',
       fpDirection: '方向',
       fpDirH: '横',
       fpDirV: '縦 (積み重ね)',

@@ -15,6 +15,7 @@ import {
 } from '../../types/Group';
 import { getEntry } from '../../registry';
 import { reorderForZ, type ZOrderDir } from '../../lib/zorder';
+import { makeReverseBackingBox, precedingBackingExists, isOwnReverseBacking } from '../../lib/reverseBacking';
 import {
   applyObjectChanges,
   insertAt,
@@ -40,6 +41,12 @@ export interface ObjectSlice {
   ) => void;
   updateObject: (id: string, changes: ObjectChanges) => void;
   updateObjects: (updates: { id: string; changes: ObjectChanges }[]) => void;
+  /** Insert a black backing box just behind a reverse text so its ^FR knockout
+   *  prints white-on-black; the box is a normal editable object. */
+  addReverseBackground: (textId: string) => void;
+  /** Remove a covering black backing sitting behind a text (e.g. after turning
+   *  reverse off, so a stale black box doesn't hide the now-black text). */
+  removeReverseBackground: (textId: string) => void;
   /** Replace a leaf node wholesale via `mapper` (e.g. line<->box: swaps `type`
    *  and the entire props object, which `updateObject` cannot do since props
    *  merge and `type` is excluded from ObjectChanges). Refuses locked nodes and
@@ -106,6 +113,62 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
       selectedIds: [obj.id],
     }));
   },
+
+  addReverseBackground: (textId) =>
+    set((state) => {
+      if (selectPreviewLocksEditor(state)) return {};
+      const objs = currentObjects(state);
+      const text = findObjectById(objs, textId);
+      if (!text || isGroup(text) || text.type !== 'text') return {};
+      if (text.locked || findAncestors(objs, textId).some((g) => !!g.locked)) return {};
+      const box = makeReverseBackingBox(text, state.label);
+      // Insert into the text's own container, right before it, so it renders
+      // behind. Idempotent: skip if a backing already sits there.
+      let inserted = false;
+      const insertBehind = (list: LabelObject[]): LabelObject[] => {
+        const i = list.findIndex((o) => o.id === textId);
+        if (i >= 0) {
+          if (precedingBackingExists(list, i, text, state.label)) return list;
+          inserted = true;
+          const next = [...list];
+          next.splice(i, 0, box);
+          return next;
+        }
+        return list.map((o) =>
+          isGroup(o) ? { ...o, children: insertBehind(o.children) } : o,
+        );
+      };
+      const updated = updateCurrentObjects(state, insertBehind);
+      if (!inserted) return {};
+      return { ...updated, selectedIds: [box.id] };
+    }),
+
+  removeReverseBackground: (textId) =>
+    set((state) => {
+      if (selectPreviewLocksEditor(state)) return {};
+      const objs = currentObjects(state);
+      const text = findObjectById(objs, textId);
+      if (!text || isGroup(text) || text.type !== 'text') return {};
+      if (text.locked || findAncestors(objs, textId).some((g) => !!g.locked)) return {};
+      let removedId: string | undefined;
+      const removeBehind = (list: LabelObject[]): LabelObject[] => {
+        const i = list.findIndex((o) => o.id === textId);
+        if (i >= 0) {
+          // Closest feature-style backing before the text (z-order: nearest
+          // behind). Strict match so a shared banner/header isn't deleted.
+          for (let j = i - 1; j >= 0 && !removedId; j--) {
+            if (isOwnReverseBacking(list[j], text, state.label)) removedId = list[j]?.id;
+          }
+          return removedId ? list.filter((o) => o.id !== removedId) : list;
+        }
+        return list.map((o) =>
+          isGroup(o) ? { ...o, children: removeBehind(o.children) } : o,
+        );
+      };
+      const updated = updateCurrentObjects(state, removeBehind);
+      if (!removedId) return {};
+      return { ...updated, selectedIds: [textId] };
+    }),
 
   updateObject: (id, changes) =>
     set((state) => {

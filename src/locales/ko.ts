@@ -568,6 +568,8 @@ const ko = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: '배경 상자 추가',
+      removeReverseBg: '배경 상자 제거',
       fpDirection: '방향',
       fpDirH: '가로',
       fpDirV: '세로 (스택)',

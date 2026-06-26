@@ -14,7 +14,8 @@ import { DEFAULT_CLOCK_CHARS, type ClockChars } from "../fcTemplate";
 import { getDecoder } from "./helpers";
 import type { UploadedGraphic } from "./types";
 
-/** Pending ^GB stash for the reverse-text collapse heuristic. */
+/** Pending ^GB stash so a filled-black box commits just before the following
+ *  field, sitting behind it (e.g. the black box an ^FR text knocks out of). */
 export interface PendingReverseBg {
   x: number;
   y: number;
@@ -30,8 +31,8 @@ export interface PendingReverseBg {
   /** z-justification at the stashed ^GB ('R' = right corner). */
   justify?: "L" | "R";
   /** Overlay capture only: source span of the ^GB field, recorded at its ^FS so
-   *  the object it later produces (deferred commit, or reverse-collapse merge)
-   *  can be linked to its original bytes. */
+   *  the box it later produces on its deferred commit can be linked to its
+   *  original bytes. */
   span?: { start: number; end: number };
 }
 

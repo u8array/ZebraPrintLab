@@ -568,6 +568,8 @@ const zhHans = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: '添加背景框',
+      removeReverseBg: '移除背景框',
       fpDirection: '方向',
       fpDirH: '水平',
       fpDirV: '垂直 (堆叠)',

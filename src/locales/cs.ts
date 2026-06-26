@@ -568,6 +568,8 @@ const cs = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Přidat pozadí',
+      removeReverseBg: 'Odebrat pozadí',
       fpDirection: 'Směr',
       fpDirH: 'Vodorovně',
       fpDirV: 'Svisle (stoh)',

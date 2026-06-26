@@ -568,6 +568,8 @@ const sk = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Pridať pozadie',
+      removeReverseBg: 'Odstrániť pozadie',
       fpDirection: 'Smer',
       fpDirH: 'Vodorovne',
       fpDirV: 'Zvisle (stoh)',

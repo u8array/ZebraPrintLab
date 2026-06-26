@@ -589,6 +589,8 @@ const de = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invertieren',
+      addReverseBg: 'Hintergrundbox hinzufügen',
+      removeReverseBg: 'Hintergrundbox entfernen',
       fpDirection: 'Richtung',
       fpDirH: 'Horizontal',
       fpDirV: 'Vertikal (Stapel)',

@@ -568,6 +568,8 @@ const no = {
       rotationI: '180°',
       rotationB: '270°',
       reverse: 'Invert',
+      addReverseBg: 'Legg til bakgrunnsboks',
+      removeReverseBg: 'Fjern bakgrunnsboks',
       fpDirection: 'Retning',
       fpDirH: 'Vannrett',
       fpDirV: 'Loddrett (stabel)',
