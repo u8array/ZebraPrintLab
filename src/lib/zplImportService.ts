@@ -125,8 +125,15 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     if (idRemap.size > 0) {
       rewireBindings(result.objects, idRemap);
     }
-    // A preamble-only unit (no ^XA) carries fonts/profile but no page.
-    if (hasLabelBlocks) pages.push({ objects: result.objects, overlay: result.overlay });
+    // A preamble-only unit (no ^XA) usually carries just fonts/profile. But a
+    // wrapper-less paste of real fields also lands here; import those as a page
+    // so they aren't silently dropped (no overlay: the wrapper-less source has
+    // nothing to replay byte-for-byte, and re-export adds the ^XA/^XZ wrapper).
+    if (hasLabelBlocks) {
+      pages.push({ objects: result.objects, overlay: result.overlay });
+    } else if (result.objects.length > 0) {
+      pages.push({ objects: result.objects });
+    }
     if (i === 0) {
       labelConfig = result.labelConfig;
     }
@@ -137,8 +144,11 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     // signal for any consumer that bypasses patchPrinterProfile.
     Object.assign(printerProfile, pruneUndefined(result.printerProfile));
     // Per-block findings come from the parser with pageIndex=0; stamp the
-    // real page index here so the UI can navigate to them.
+    // real page index here so the UI can navigate to them. A wrapper-less unit
+    // is pushed without an overlay, so its lossyEdit caveat (which only matters
+    // when an overlay would be replayed) is moot; drop it.
     for (const f of result.importReport.findings) {
+      if (!hasLabelBlocks && f.kind === "lossyEdit") continue;
       findings.push({ ...f, pageIndex: i });
     }
   });
@@ -175,8 +185,9 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
 
   // Bucket views deduplicate by command code to match the JSDoc contract on
   // ImportReport (see zplParser.ts). The per-occurrence model lives in
-  // `findings`; consumers that only need the set of distinct affected
-  // commands read these buckets unchanged.
+  // `findings`; consumers that only need the set of distinct affected commands
+  // read these buckets unchanged. Only command-based kinds get a bucket; a
+  // block-level kind like 'lossyEdit' stays in `findings` by design.
   const dedupBy = (kind: ImportFindingKind) =>
     [...new Set(findings.filter((f) => f.kind === kind).map((f) => f.command))];
   const report: ImportReport = {

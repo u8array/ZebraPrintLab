@@ -4,7 +4,7 @@ import type { Variable } from "../../types/Variable";
 import type { PrinterProfile } from "../../types/PrinterProfile";
 import type { BlockOverlay } from "../zplOverlay/overlay";
 
-export type ImportFindingKind = "partial" | "browserLimit" | "unknown" | "replayRisk";
+export type ImportFindingKind = "partial" | "browserLimit" | "unknown" | "replayRisk" | "lossyEdit";
 
 /**
  * One import finding. Created per-occurrence so each entry can be navigated
@@ -15,7 +15,7 @@ export interface ImportFinding {
   kind: ImportFindingKind;
   /** Command token. For 'partial' the bare code (e.g. "^A@"); for
    *  'browserLimit' / 'unknown' the full token including parameters
-   *  (e.g. "^IM,R:LOGO.GRF"). */
+   *  (e.g. "^IM,R:LOGO.GRF"); for 'lossyEdit' a human-readable reason. */
   command: string;
   /** Page index this finding originated from. The parser doesn't know about
    *  pages and emits 0; `zplImportService` overwrites it when it merges the
@@ -25,6 +25,9 @@ export interface ImportFinding {
 
 export interface ImportReport {
   findings: ImportFinding[];
+  // The buckets below are command-code dedup views for the command-based kinds
+  // only. Block-level kinds without a command (e.g. 'lossyEdit') live solely in
+  // `findings`; iterate `findings` (not the buckets) for a kind-complete view.
   /** Commands imported with known loss. Deduplicated by command code. */
   partial: string[];
   /** Commands skipped because they require printer hardware or file storage. */

@@ -244,6 +244,53 @@ describe('generateZPL — printer params', () => {
     expect(zpl).not.toContain('^GB');
   });
 
+  const ftBox = (y: number, height: number): LabelObject => ({
+    id: 'ft', type: 'box', x: 0, y, rotation: 0, positionType: 'FT',
+    props: { width: 50, height, thickness: 3, filled: false, color: 'B', rounding: 0 },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+
+  it('keeps an ^FT graphic whose top-left dips negative but anchor stays valid', () => {
+    // ^FT anchors at the bottom-left: top-left 80 - home 100 = -20, but the
+    // emitted ^FT (top-left + height 40) lands at y=20, a valid field.
+    const zpl = generateZPL({ ...BASE_LABEL, labelHomeY: 100 }, [ftBox(80, 40)]);
+    expect(zpl).toContain('^FT0,20^GB50,40,');
+  });
+
+  it('still drops an ^FT graphic whose emitted anchor would be negative', () => {
+    // anchor y = top-left 20 + height 40 - home 100 = -40 → off-label, dropped.
+    const zpl = generateZPL({ ...BASE_LABEL, labelHomeY: 100 }, [ftBox(20, 40)]);
+    expect(zpl).not.toContain('^GB');
+  });
+
+  it('keeps a right-justified ^FT image using its byte-padded ^GF width', () => {
+    // widthDots 121 emits at 128 (byte boundary); right anchor x = 0 + 128 -
+    // home 125 = 3 (valid). The unpadded 121 would read -4 and wrongly drop it.
+    const ftImage: LabelObject = {
+      id: 'im', type: 'image', x: 0, y: 100, rotation: 0, positionType: 'FT', fieldJustify: 'R',
+      props: { imageId: '', widthDots: 121, heightDots: 60, threshold: 128,
+        storedAs: { device: 'R', name: 'LOGO', embedInZpl: false } },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+    const zpl = generateZPL({ ...BASE_LABEL, labelHomeX: 125 }, [ftImage]);
+    expect(zpl).toContain('^FT3,160,1'); // x 0+128-125=3, y 100+60
+    expect(zpl).toContain('^XG');
+  });
+
+  it('keeps a cached ^FT image using its aspect height, not a stale heightDots', () => {
+    putImage({ id: 'imgC', name: 'c', dataUrl: 'data:,', width: 100, height: 200 });
+    const ftImage: LabelObject = {
+      id: 'imc', type: 'image', x: 0, y: 10, rotation: 0, positionType: 'FT',
+      props: { imageId: 'imgC', widthDots: 120, heightDots: 10, threshold: 128, _gfaCache: '^GFA1,1,1,00' },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+    // aspect height = round(120 * 200/100) = 240; anchor y = 10 + 240 - home 200 = 50
+    // (valid). The stale heightDots 10 would read 10 + 10 - 200 = -180 and wrongly drop.
+    const zpl = generateZPL({ ...BASE_LABEL, labelHomeY: 200 }, [ftImage]);
+    expect(zpl).toContain('^FT0,50');
+    expect(zpl).toContain('^GFA'); // kept, not dropped
+  });
+
   it('drops only the clipped children of a group, keeping the rest', () => {
     const group: GroupObject = {
       id: 'g1',

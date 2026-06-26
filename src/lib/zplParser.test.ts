@@ -2101,6 +2101,24 @@ describe('^FN / template variables', () => {
   });
 });
 
+// ── lossyEdit finding (overlay exists but is regen-unsafe) ────────────────────
+
+describe('parseZPL — lossyEdit finding for regen-unsafe blocks', () => {
+  it('flags a block with a standalone ^FN declaration', () => {
+    const zpl = '^XA^FN1^FDdefault^FS^FO10,10^A0N,30,0^FDx^FS^XZ';
+    const { importReport } = parseZPL(zpl, 8, { captureOverlay: true });
+    const f = importReport.findings.find((x) => x.kind === 'lossyEdit');
+    expect(f).toBeDefined();
+    expect(f?.command).toContain('^FN');
+  });
+
+  it('does not flag a clean, regen-safe block', () => {
+    const zpl = '^XA^FO10,10^A0N,30,0^FDx^FS^XZ';
+    const { importReport } = parseZPL(zpl, 8, { captureOverlay: true });
+    expect(importReport.findings.some((x) => x.kind === 'lossyEdit')).toBe(false);
+  });
+});
+
 // ── ^FT graphic anchor (bottom corner, spec p.205) ───────────────────────────
 
 describe('parseZPL — ^FT graphic anchors lift to model top-left', () => {

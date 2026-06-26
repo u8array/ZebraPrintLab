@@ -36,6 +36,21 @@ describe('importZplText - replay-risk findings', () => {
   });
 });
 
+describe('importZplText - wrapper-less paste', () => {
+  it('imports a bare body without ^XA/^XZ as a page', () => {
+    const r = importZplText('^FO50,50^A0N,30,30^FDHello^FS', 8);
+    expect(r.pages).toHaveLength(1);
+    expect(r.pages[0]?.objects).toHaveLength(1);
+    expect(r.pages[0]?.objects[0]?.type).toBe('text');
+    expect(r.pages[0]?.overlay).toBeUndefined(); // re-export regenerates the wrapper
+  });
+
+  it('does not create a page for a fields-less preamble', () => {
+    const r = importZplText('^CWA,E:FONT.TTF', 8);
+    expect(r.pages).toHaveLength(0);
+  });
+});
+
 describe('importZplText - single label', () => {
   it('returns one page with the parsed objects', () => {
     const zpl = '^XA^FO10,20^A0N,30,0^FDHello^FS^XZ';

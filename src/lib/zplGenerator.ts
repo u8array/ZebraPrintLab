@@ -18,8 +18,9 @@ import type { ZplEmitContext } from '../types/ZplEmit';
 import type { Variable } from '../types/Variable';
 import { isGroup, walkObjects, type LabelObject, type LeafObject, type Page } from '../types/Group';
 import { isOverlayConsistent } from './zplOverlay/overlay';
+import { objectBoundsDots, type ObjectBoundsCtx } from './objectBounds';
 import { formatFontDownloadFromPath } from './customFonts';
-import type { ImageProps } from '../registry/image';
+import { gfByteWidth, imageEmitHeight, type ImageProps } from '../registry/image';
 import { formatStoragePath } from './storagePath';
 
 function formatDownloadObject(m: CustomFontMapping): string | undefined {
@@ -257,8 +258,8 @@ export function emitOverlayPage(
   // Regenerated objects must be home-relative so they compose with the raw
   // ^LH/^LT that still execute on replay (no double-shift). One shared emit
   // context so a picked ^FE/^FC covers dirty and new fields alike.
-  const dirtyShifted = shiftObjectsByHome(dirtyLeaves, fx, fy, ft);
-  const newShifted = shiftObjectsByHome(newLeaves, fx, fy, ft);
+  const dirtyShifted = shiftObjectsByHome(dirtyLeaves, fx, fy, ft, label);
+  const newShifted = shiftObjectsByHome(newLeaves, fx, fy, ft, label);
   const { headerLines, emitCtx } = planTemplateHeader(
     [...dirtyShifted, ...newShifted],
     label,
@@ -373,23 +374,50 @@ export function generateBatchZpl(
   return [templateStored, ...recallBlocks].join('\n');
 }
 
+/** Graphic types whose ^FT anchor is a bottom corner (spec p.205), not the
+ *  model top-left. Their emitted ^FT can stay valid even when the shifted
+ *  top-left dips negative, so the drop test below uses the anchor for these.
+ *  Barcodes emit ^FT at the model coord (the plain check holds); rotated text
+ *  ^FT uses a baseline anchor, where the top-left check is only approximate (a
+ *  pre-existing edge, untouched here). */
+const FT_BOTTOM_ANCHOR_TYPES = new Set(['box', 'ellipse', 'image', 'line']);
+
 /** Subtract label home/top from each object so emit matches the editor, the
  *  inverse of the parser folding ^LH/^LT into absolute coords. Leaves whose
- *  shifted origin goes negative are dropped (Zebra rejects negative ^FO and
+ *  emitted origin goes negative are dropped (Zebra rejects negative ^FO/^FT and
  *  clamping would relocate them silently). Identity when no shift applies. */
 function shiftObjectsByHome(
   objects: LabelObject[],
   homeX: number,
   homeY: number,
   top: number,
+  label: LabelConfig,
 ): LabelObject[] {
   if (homeX === 0 && homeY === 0 && top === 0) return objects;
+  const ctx: ObjectBoundsCtx = { label };
   const shiftOrDrop = (obj: LabelObject): LabelObject[] => {
     if (isGroup(obj)) {
       return [{ ...obj, children: obj.children.flatMap(shiftOrDrop) }];
     }
     const x = obj.x - homeX;
     const y = obj.y - homeY - top;
+    // ^FT graphics anchor at a bottom corner, so test the emitted anchor
+    // (footprint bottom, right edge when justify R) rather than the top-left.
+    if (obj.positionType === 'FT' && FT_BOTTOM_ANCHOR_TYPES.has(obj.type)) {
+      const b = objectBoundsDots(obj, ctx);
+      let w = b.width;
+      let h = b.height;
+      // Images emit a byte-padded ^GF width and an aspect-derived height; match
+      // those (the generator has no measured cache) so neither edge is dropped
+      // over the difference. Other graphics emit their footprint verbatim.
+      if (obj.type === 'image') {
+        w = gfByteWidth(obj.props.widthDots);
+        h = imageEmitHeight(obj.props);
+      }
+      const anchorX = (obj.fieldJustify === 'R' ? b.x + w : b.x) - homeX;
+      const anchorY = b.y + h - homeY - top;
+      return anchorX < 0 || anchorY < 0 ? [] : [{ ...obj, x, y }];
+    }
     return x < 0 || y < 0 ? [] : [{ ...obj, x, y }];
   };
   return objects.flatMap(shiftOrDrop);
@@ -407,7 +435,7 @@ export function planFieldEmission(
   const homeX = label.labelHomeX ?? 0;
   const homeY = label.labelHomeY ?? 0;
   const top = label.labelTop ?? 0;
-  const shifted = shiftObjectsByHome(objects, homeX, homeY, top);
+  const shifted = shiftObjectsByHome(objects, homeX, homeY, top, label);
 
   const { headerLines, emitCtx } = planTemplateHeader(shifted, label, variables);
 

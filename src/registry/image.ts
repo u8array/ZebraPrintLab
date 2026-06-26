@@ -3,6 +3,24 @@ import { graphicFieldPos } from './zplHelpers';
 import { getImage } from '../lib/imageCache';
 import { formatStoragePath } from '../lib/storagePath';
 
+/** ^GF rows are byte-packed, so the emitted (and re-parsed) width is the next
+ *  multiple of 8. Shared by the emitter and the home-shift drop check so a
+ *  right-justified ^FT image keys its anchor off the same width. */
+export function gfByteWidth(widthDots: number): number {
+  return Math.ceil(widthDots / 8) * 8;
+}
+
+/** Emitted image height in dots. A cached image scales widthDots by the natural
+ *  aspect (resize keeps only widthDots in sync, so heightDots can be stale);
+ *  placeholders/opaque graphics fall back to the stored heightDots. Shared by
+ *  the emitter and the home-shift drop check so the ^FT bottom anchor agrees. */
+export function imageEmitHeight(p: ImageProps): number {
+  const cached = getImage(p.imageId);
+  return cached
+    ? Math.round(p.widthDots * (cached.height / cached.width))
+    : p.heightDots ?? p.widthDots;
+}
+
 export interface ImageProps {
   /** ID into the image cache */
   imageId: string;
@@ -15,7 +33,7 @@ export interface ImageProps {
    *  and ignore the user's drag. Only consulted when `imageId` does
    *  not resolve to a cached image. */
   heightDots?: number;
-  /** Luminance threshold for mono conversion (0–255) */
+  /** Luminance threshold for mono conversion (0-255) */
   threshold: number;
   /** Cached GFA ZPL string; regenerated when image/width/threshold changes */
   _gfaCache?: string;
@@ -131,18 +149,10 @@ export const image: ObjectTypeCore<ImageProps> = {
   toZPL: (obj) => {
     const p = obj.props;
     const cached = getImage(p.imageId);
-    // ^FT anchors the graphic's bottom-left (spec p.205). A cached image's height
-    // is widthDots scaled by the natural aspect (resize keeps only widthDots in
-    // sync, so heightDots can be stale); placeholders/opaque graphics fall back
-    // to the stored heightDots. ^FO ignores the height.
-    const height = cached
-      ? Math.round(p.widthDots * (cached.height / cached.width))
-      : p.heightDots ?? p.widthDots;
-    // ^GF rows are byte-packed, so the printed width is the next multiple of 8
-    // (what the parser reconstructs as bytesPerRow*8). Right-justified ^FT keys
-    // its x off that width, so pad here or the round-trip drifts by up to 7.
-    const anchorWidth = Math.ceil(p.widthDots / 8) * 8;
-    const anchor = graphicFieldPos(obj, anchorWidth, height);
+    // ^FT anchors the graphic's bottom-left (spec p.205); right-justified ^FT
+    // keys its x off the byte-padded ^GF width. Both via shared helpers so the
+    // home-shift drop check agrees. ^FO ignores the footprint.
+    const anchor = graphicFieldPos(obj, gfByteWidth(p.widthDots), imageEmitHeight(p));
     // Opaque graphic: re-emit the original ^GF verbatim at the (possibly moved)
     // field position. The bytes were never decoded, so there's nothing to regen.
     if (p.rawGf) return `${anchor}${p.rawGf}^FS`;
