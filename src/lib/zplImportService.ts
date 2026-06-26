@@ -125,8 +125,15 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     if (idRemap.size > 0) {
       rewireBindings(result.objects, idRemap);
     }
-    // A preamble-only unit (no ^XA) carries fonts/profile but no page.
-    if (hasLabelBlocks) pages.push({ objects: result.objects, overlay: result.overlay });
+    // A preamble-only unit (no ^XA) usually carries just fonts/profile. But a
+    // wrapper-less paste of real fields also lands here; import those as a page
+    // so they aren't silently dropped (no overlay: the wrapper-less source has
+    // nothing to replay byte-for-byte, and re-export adds the ^XA/^XZ wrapper).
+    if (hasLabelBlocks) {
+      pages.push({ objects: result.objects, overlay: result.overlay });
+    } else if (result.objects.length > 0) {
+      pages.push({ objects: result.objects });
+    }
     if (i === 0) {
       labelConfig = result.labelConfig;
     }
