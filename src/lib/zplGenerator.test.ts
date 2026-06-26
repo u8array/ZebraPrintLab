@@ -244,6 +244,25 @@ describe('generateZPL — printer params', () => {
     expect(zpl).not.toContain('^GB');
   });
 
+  const ftBox = (y: number, height: number): LabelObject => ({
+    id: 'ft', type: 'box', x: 0, y, rotation: 0, positionType: 'FT',
+    props: { width: 50, height, thickness: 3, filled: false, color: 'B', rounding: 0 },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+
+  it('keeps an ^FT graphic whose top-left dips negative but anchor stays valid', () => {
+    // ^FT anchors at the bottom-left: top-left 80 - home 100 = -20, but the
+    // emitted ^FT (top-left + height 40) lands at y=20, a valid field.
+    const zpl = generateZPL({ ...BASE_LABEL, labelHomeY: 100 }, [ftBox(80, 40)]);
+    expect(zpl).toContain('^FT0,20^GB50,40,');
+  });
+
+  it('still drops an ^FT graphic whose emitted anchor would be negative', () => {
+    // anchor y = top-left 20 + height 40 - home 100 = -40 → off-label, dropped.
+    const zpl = generateZPL({ ...BASE_LABEL, labelHomeY: 100 }, [ftBox(20, 40)]);
+    expect(zpl).not.toContain('^GB');
+  });
+
   it('drops only the clipped children of a group, keeping the rest', () => {
     const group: GroupObject = {
       id: 'g1',
