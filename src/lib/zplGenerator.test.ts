@@ -277,6 +277,20 @@ describe('generateZPL — printer params', () => {
     expect(zpl).toContain('^XG');
   });
 
+  it('keeps a cached ^FT image using its aspect height, not a stale heightDots', () => {
+    putImage({ id: 'imgC', name: 'c', dataUrl: 'data:,', width: 100, height: 200 });
+    const ftImage: LabelObject = {
+      id: 'imc', type: 'image', x: 0, y: 10, rotation: 0, positionType: 'FT',
+      props: { imageId: 'imgC', widthDots: 120, heightDots: 10, threshold: 128, _gfaCache: '^GFA1,1,1,00' },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+    // aspect height = round(120 * 200/100) = 240; anchor y = 10 + 240 - home 200 = 50
+    // (valid). The stale heightDots 10 would read 10 + 10 - 200 = -180 and wrongly drop.
+    const zpl = generateZPL({ ...BASE_LABEL, labelHomeY: 200 }, [ftImage]);
+    expect(zpl).toContain('^FT0,50');
+    expect(zpl).toContain('^GFA'); // kept, not dropped
+  });
+
   it('drops only the clipped children of a group, keeping the rest', () => {
     const group: GroupObject = {
       id: 'g1',

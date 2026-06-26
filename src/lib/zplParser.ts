@@ -324,7 +324,7 @@ export function parseZPL(
         ? "a barcode without an explicit ^BY"
         : sawFnDeclaration
           ? "a standalone ^FN declaration"
-          : "a non-default command prefix, delimiter, or ^FC/^LR state";
+          : "a non-default format state (prefix, delimiter, unit, embed char, ^FC, or ^LR)";
     findings.push({ kind: "lossyEdit", command: reason, pageIndex: 0 });
   }
 

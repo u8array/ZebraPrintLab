@@ -20,7 +20,7 @@ import { isGroup, walkObjects, type LabelObject, type LeafObject, type Page } fr
 import { isOverlayConsistent } from './zplOverlay/overlay';
 import { objectBoundsDots, type ObjectBoundsCtx } from './objectBounds';
 import { formatFontDownloadFromPath } from './customFonts';
-import { gfByteWidth, type ImageProps } from '../registry/image';
+import { gfByteWidth, imageEmitHeight, type ImageProps } from '../registry/image';
 import { formatStoragePath } from './storagePath';
 
 function formatDownloadObject(m: CustomFontMapping): string | undefined {
@@ -377,7 +377,9 @@ export function generateBatchZpl(
 /** Graphic types whose ^FT anchor is a bottom corner (spec p.205), not the
  *  model top-left. Their emitted ^FT can stay valid even when the shifted
  *  top-left dips negative, so the drop test below uses the anchor for these.
- *  Text and barcodes emit ^FT at the model coord, so the plain check holds. */
+ *  Barcodes emit ^FT at the model coord (the plain check holds); rotated text
+ *  ^FT uses a baseline anchor, where the top-left check is only approximate (a
+ *  pre-existing edge, untouched here). */
 const FT_BOTTOM_ANCHOR_TYPES = new Set(['box', 'ellipse', 'image', 'line']);
 
 /** Subtract label home/top from each object so emit matches the editor, the
@@ -403,13 +405,17 @@ function shiftObjectsByHome(
     // (footprint bottom, right edge when justify R) rather than the top-left.
     if (obj.positionType === 'FT' && FT_BOTTOM_ANCHOR_TYPES.has(obj.type)) {
       const b = objectBoundsDots(obj, ctx);
-      // Images emit a byte-padded ^GF width; match it so a right-justified ^FT
-      // image isn't dropped over the 0-7 dots of padding.
-      const w = obj.type === 'image'
-        ? gfByteWidth((obj.props as { widthDots: number }).widthDots)
-        : b.width;
+      let w = b.width;
+      let h = b.height;
+      // Images emit a byte-padded ^GF width and an aspect-derived height; match
+      // those (the generator has no measured cache) so neither edge is dropped
+      // over the difference. Other graphics emit their footprint verbatim.
+      if (obj.type === 'image') {
+        w = gfByteWidth(obj.props.widthDots);
+        h = imageEmitHeight(obj.props);
+      }
       const anchorX = (obj.fieldJustify === 'R' ? b.x + w : b.x) - homeX;
-      const anchorY = b.y + b.height - homeY - top;
+      const anchorY = b.y + h - homeY - top;
       return anchorX < 0 || anchorY < 0 ? [] : [{ ...obj, x, y }];
     }
     return x < 0 || y < 0 ? [] : [{ ...obj, x, y }];

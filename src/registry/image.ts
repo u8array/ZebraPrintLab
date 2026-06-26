@@ -10,6 +10,17 @@ export function gfByteWidth(widthDots: number): number {
   return Math.ceil(widthDots / 8) * 8;
 }
 
+/** Emitted image height in dots. A cached image scales widthDots by the natural
+ *  aspect (resize keeps only widthDots in sync, so heightDots can be stale);
+ *  placeholders/opaque graphics fall back to the stored heightDots. Shared by
+ *  the emitter and the home-shift drop check so the ^FT bottom anchor agrees. */
+export function imageEmitHeight(p: ImageProps): number {
+  const cached = getImage(p.imageId);
+  return cached
+    ? Math.round(p.widthDots * (cached.height / cached.width))
+    : p.heightDots ?? p.widthDots;
+}
+
 export interface ImageProps {
   /** ID into the image cache */
   imageId: string;
@@ -138,16 +149,10 @@ export const image: ObjectTypeCore<ImageProps> = {
   toZPL: (obj) => {
     const p = obj.props;
     const cached = getImage(p.imageId);
-    // ^FT anchors the graphic's bottom-left (spec p.205). A cached image's height
-    // is widthDots scaled by the natural aspect (resize keeps only widthDots in
-    // sync, so heightDots can be stale); placeholders/opaque graphics fall back
-    // to the stored heightDots. ^FO ignores the height.
-    const height = cached
-      ? Math.round(p.widthDots * (cached.height / cached.width))
-      : p.heightDots ?? p.widthDots;
-    // Right-justified ^FT keys its x off the byte-padded ^GF width, so pad here
-    // or the round-trip drifts by up to 7 dots.
-    const anchor = graphicFieldPos(obj, gfByteWidth(p.widthDots), height);
+    // ^FT anchors the graphic's bottom-left (spec p.205); right-justified ^FT
+    // keys its x off the byte-padded ^GF width. Both via shared helpers so the
+    // home-shift drop check agrees. ^FO ignores the footprint.
+    const anchor = graphicFieldPos(obj, gfByteWidth(p.widthDots), imageEmitHeight(p));
     // Opaque graphic: re-emit the original ^GF verbatim at the (possibly moved)
     // field position. The bytes were never decoded, so there's nothing to regen.
     if (p.rawGf) return `${anchor}${p.rawGf}^FS`;

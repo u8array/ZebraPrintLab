@@ -144,8 +144,11 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     // signal for any consumer that bypasses patchPrinterProfile.
     Object.assign(printerProfile, pruneUndefined(result.printerProfile));
     // Per-block findings come from the parser with pageIndex=0; stamp the
-    // real page index here so the UI can navigate to them.
+    // real page index here so the UI can navigate to them. A wrapper-less unit
+    // is pushed without an overlay, so its lossyEdit caveat (which only matters
+    // when an overlay would be replayed) is moot; drop it.
     for (const f of result.importReport.findings) {
+      if (!hasLabelBlocks && f.kind === "lossyEdit") continue;
       findings.push({ ...f, pageIndex: i });
     }
   });
