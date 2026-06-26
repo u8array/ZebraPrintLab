@@ -313,6 +313,21 @@ export function parseZPL(
     ),
   ];
 
+  // An overlay that exists but isn't regenSafe replays verbatim only until the
+  // first edit, then falls back to full regeneration (untouched comments /
+  // whitespace / unmodeled commands are not preserved). Surface that so the
+  // user knows the byte-exact guarantee is conditional for this block.
+  if (overlay && !regenSafe) {
+    const reason = sawNonUtf8Ci
+      ? "a non-UTF-8 ^CI encoding"
+      : sawBareBarcode
+        ? "a barcode without an explicit ^BY"
+        : sawFnDeclaration
+          ? "a standalone ^FN declaration"
+          : "a non-default command prefix, delimiter, or ^FC/^LR state";
+    findings.push({ kind: "lossyEdit", command: reason, pageIndex: 0 });
+  }
+
   return {
     labelConfig,
     printerProfile,

@@ -47,6 +47,12 @@ export function describeFinding(f: ImportFinding): { title: string; detail: stri
       detail: f.command,
     };
   }
+  if (f.kind === 'lossyEdit') {
+    return {
+      title: 'First edit re-emits the whole label (not byte-exact)',
+      detail: f.command,
+    };
+  }
   return {
     title: 'Skipped: command not recognised',
     detail: f.command,
