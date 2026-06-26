@@ -28,7 +28,7 @@ export interface LabelConfigSlice {
   appendPages: (pages: Page[]) => void;
 }
 
-export const createLabelConfigSlice: StateCreator<LabelState, [], [], LabelConfigSlice> = (set, get) => ({
+export const createLabelConfigSlice: StateCreator<LabelState, [], [], LabelConfigSlice> = (set, get, api) => ({
   label: { widthMm: 100, heightMm: 60, dpmm: 8 },
 
   setLabelConfig: (config) =>
@@ -47,7 +47,11 @@ export const createLabelConfigSlice: StateCreator<LabelState, [], [], LabelConfi
     // Drop the prior design's CSV cache: the raw text in the module
     // cache belongs to that file, not the one being loaded.
     forgetImport();
-    set({
+    // Whole-document replace via the raw store setState, NOT the dirty-tracking
+    // wrapped `set`: a loaded file's `dirty` flags are authoritative, so diffing
+    // the incoming pages against the current document (stable ids survive a save)
+    // would falsely stamp untouched objects dirty and break overlay replay.
+    api.setState({
       // Scrub legacy path-less font bindings at the load boundary so no
       // component logic or extra undo step is needed.
       label: { ...label, customFonts: dropLegacyFontBindings(label.customFonts) },

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { useLabelStore } from "../store/labelStore";
 import { importZplText } from "./zplImportService";
 import { generateMultiPageZPL } from "./zplGenerator";
+import { serializeDesign, parseDesignFile } from "./designFile";
 
 // Integration: drive the REAL user paths (importZplText -> loadDesign -> store ->
 // generateMultiPageZPL), not parseZPL/generate in isolation. Asserts the actual
@@ -186,6 +187,27 @@ describe("round-trip integration (real import -> store -> export)", () => {
     // The cross-block merge must not dirty page 2; its original ^FD default
     // replays verbatim instead of regenerating with the merged variable's value.
     expect(exportZpl()).toBe(src);
+  });
+
+  it("save → edit → reload restores a clean, byte-lossless document", () => {
+    // The recommended "save design, keep working later" path. Saved object ids
+    // are stable, so reloading must not diff the file against the in-memory
+    // (edited) document and falsely stamp the reverted objects dirty, which
+    // would regenerate them instead of replaying the overlay byte-for-byte.
+    importInto(DOC);
+    const original = exportZpl();
+    const json = serializeDesign(store().label, store().pages, store().variables, store().csvMapping);
+    const textId = store().pages[0]!.objects.find((o) => o.type === "text")!.id;
+    store().updateObject(textId, { props: { content: "EDITED", fontHeight: 30, fontWidth: 0, rotation: "N" } });
+
+    const parsed = parseDesignFile(json);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    store().loadDesign(parsed.value.label, parsed.value.pages, parsed.value.variables, parsed.value.csvMapping);
+
+    const reloaded = store().pages[0]!.objects.find((o) => o.type === "text")!;
+    expect(reloaded.dirty).toBeUndefined(); // not falsely stamped by the reload
+    expect(exportZpl()).toBe(original); // overlay replays, byte-identical
   });
 
   it("setBoundDefault drops page overlays so the new default exports", () => {
