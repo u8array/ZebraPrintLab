@@ -36,6 +36,11 @@ function canBuildBackingBox(props: unknown): props is TextProps {
   );
 }
 
+/** A finite number, or undefined for anything else (null, NaN, string). */
+function finiteOrUndefined(v: unknown): number | undefined {
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+}
+
 /** Geometry of the black background a reverse text needs to print white-on-black.
  *  Reproduces the legacy self-bg `^GB` (ink-sized, on the text's rotated model
  *  footprint). `label` resolves device/custom/default fonts so the box matches
@@ -53,29 +58,36 @@ export function reverseBackingBoxGeometry(
   // so migration degrades to best-effort instead of crashing.
   let inkWidthDots: number;
   try {
-    inkWidthDots = getTextRenderMetrics(text as unknown as LabelObject, undefined, label)?.inkWidthDots ?? 0;
+    inkWidthDots =
+      getTextRenderMetrics(text as unknown as LabelObject, undefined, label)?.inkWidthDots ?? 0;
+    if (!inkWidthDots) {
+      inkWidthDots = computeTextRenderMetrics({
+        content: p.content,
+        fontHeight: p.fontHeight,
+        fontWidth: p.fontWidth ?? 0,
+        printerFontName: p.printerFontName,
+      }).inkWidthDots;
+    }
   } catch {
     inkWidthDots = 0;
   }
-  if (!inkWidthDots) {
-    inkWidthDots = computeTextRenderMetrics({
-      content: p.content,
-      fontHeight: p.fontHeight,
-      fontWidth: p.fontWidth ?? 0,
-      printerFontName: p.printerFontName,
-    }).inkWidthDots;
-  }
   const inkW = Math.max(1, Math.round(inkWidthDots || p.fontWidth || p.fontHeight));
+  // Block props may be non-numeric on unvalidated migration json; treat any
+  // non-finite value as absent so the ink-sized fallbacks apply instead of NaN.
+  const blockWidth = finiteOrUndefined(p.blockWidth);
+  const blockHeight = finiteOrUndefined(p.blockHeight);
+  const blockLines = finiteOrUndefined(p.blockLines);
+  const blockSpacing = finiteOrUndefined(p.blockLineSpacing) ?? 0;
   const vertical = p.rotation === "R" || p.rotation === "B";
   let baseW: number;
   let baseH: number;
   if (mode === "tb") {
-    baseW = p.blockWidth ?? inkW;
-    baseH = p.blockHeight ?? p.fontHeight;
+    baseW = blockWidth ?? inkW;
+    baseH = blockHeight ?? p.fontHeight;
   } else if (mode === "fb") {
-    const lines = p.blockLines ?? 1;
-    baseW = p.blockWidth ?? inkW;
-    baseH = p.fontHeight * lines + (p.blockLineSpacing ?? 0) * Math.max(0, lines - 1);
+    const lines = blockLines ?? 1;
+    baseW = blockWidth ?? inkW;
+    baseH = p.fontHeight * lines + blockSpacing * Math.max(0, lines - 1);
   } else {
     baseW = inkW;
     baseH = p.fontHeight;
@@ -157,8 +169,9 @@ function candidateBackingFootprint(o: LabelObject): Rect | null {
   if (o.type === "line") {
     const len = Number(p.length);
     const th = Number(p.thickness);
-    if (p.angle === 0) return { x: o.x, y: o.y, width: len, height: th };
-    if (p.angle === 90) return { x: o.x, y: o.y, width: th, height: len };
+    const angle = Number(p.angle);
+    if (angle === 0) return { x: o.x, y: o.y, width: len, height: th };
+    if (angle === 90) return { x: o.x, y: o.y, width: th, height: len };
     return null; // diagonal line never backs text
   }
   return null;

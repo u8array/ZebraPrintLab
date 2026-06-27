@@ -145,6 +145,31 @@ describe("insertReverseBackingBoxes", () => {
     expect(insertReverseBackingBoxes([rev], badLabel)).toHaveLength(2);
   });
 
+  it("recognizes a covering line whose angle is a string (unvalidated json)", () => {
+    const rev = text({ reverse: true });
+    const lineStrAngle = {
+      id: "ln",
+      type: "line",
+      x: 50,
+      y: 50,
+      rotation: 0,
+      props: { angle: "0", length: 300, thickness: 30, color: "B" },
+    } as unknown as LabelObject;
+    const out = insertReverseBackingBoxes([lineStrAngle, rev]);
+    expect(out).toHaveLength(2); // string angle still detected, no duplicate
+  });
+
+  it("produces finite dimensions for malformed block props", () => {
+    const geo = reverseBackingBoxGeometry({
+      x: 0,
+      y: 0,
+      props: { content: "Hi", fontHeight: 30, fontWidth: 0, rotation: "N", reverse: true, textMode: "fb", blockWidth: "abc" },
+    } as never);
+    expect(Number.isFinite(geo.props.width)).toBe(true);
+    expect(Number.isFinite(geo.props.height)).toBe(true);
+    expect(Number.isFinite(geo.props.thickness)).toBe(true);
+  });
+
   it("recurses into groups", () => {
     const group = {
       id: "g",
