@@ -12,60 +12,72 @@ export type BindableLeaf = LabelObjectBase & { props: { content: string } };
 export const asLabelObject = (obj: BindableLeaf): LabelObject => obj as unknown as LabelObject;
 
 /**
- * Single source of truth for the unified token field. A bindable field is
- * either Single-Bind (`variableId` set, content is a stale fallback) or
- * Template (`«name»`/`«clock:T»` markers in content). These are mutually
- * exclusive: exactly one known variable chip and nothing else means
- * Single-Bind; anything else means Template. That invariant is the only state
- * shape where preview (`applyBindingToObject`) and export (`fdFieldFor`) agree.
+ * Single source of truth for the unified token field. `content` is the only
+ * state: content that is exactly one known variable marker is Single-Bind
+ * (emits the inline `^FN{n}^FD{default}^FS`); any other `«name»`/`«clock:T»`
+ * marker shape is Template; no markers is Literal. Preview
+ * (`applyBindingToObject`) and export (`fdFieldFor`) consume the same
+ * `classifyField` decision, so they can never diverge.
  */
 
 /** Matches a token string that is exactly one marker, no surrounding text. */
 const SINGLE_MARKER_RE = /^«([^»]+)»$/;
 
+/** True when content is exactly one `«marker»` and nothing else: the shape that
+ *  emits inline (single-bind) rather than expanding to `^FE` embeds. */
+export function isLoneMarker(content: string): boolean {
+  return SINGLE_MARKER_RE.test(content);
+}
+
+/** The single-bound Variable for a field (content === exactly one known
+ *  marker), or undefined for template/literal/empty content. Drives the layer
+ *  badge and the canvas fallback tint. */
+export function lookupBoundVariable(
+  obj: LabelObject,
+  variables: readonly Variable[],
+): Variable | undefined {
+  const content = getObjectStringContent(obj);
+  if (content === undefined) return undefined;
+  const cls = classifyField(content, variables);
+  return cls.kind === "single" ? cls.variable : undefined;
+}
+
 export type FieldMode = "single" | "template" | "literal" | "empty";
 
-export interface NormalizedTokenInput {
-  variableId: string | undefined;
-  content: string;
-}
+/** Content-only classification, the variableId-free model: content that is
+ *  exactly one known variable marker is Single-Bind (emits the inline
+ *  `^FN{n}^FD{default}^FS`); any other marker shape is Template (`^FD` + `^FE`
+ *  embeds + header); no known markers is Literal. This is the single decision
+ *  emit and preview both consume, so they can never diverge. Ignores
+ *  `variableId` entirely. */
+export type FieldClassification =
+  | { kind: "single"; variable: Variable }
+  | { kind: "template"; refs: Variable[] }
+  | { kind: "literal" };
 
-/** Edit value for the field: the bound variable as one chip, else raw content
- *  (orphan `variableId` falls through to content so the stale chip vanishes). */
-export function tokenStringForObject(
-  obj: LabelObject,
+export function classifyField(
+  content: string,
   variables: readonly Variable[],
-): string {
-  const id = obj.variableId;
-  if (id) {
-    const v = variables.find((x) => x.id === id);
-    if (v) return `«${v.name}»`;
+): FieldClassification {
+  const single = SINGLE_MARKER_RE.exec(content);
+  if (single && single[1] !== undefined) {
+    const v = variables.find((x) => x.name === single[1]);
+    if (v) return { kind: "single", variable: v };
   }
-  return getObjectStringContent(obj) ?? "";
-}
-
-/** Derive the canonical {variableId, content} from an edited token string. */
-export function normalizeTokenInput(
-  tokenString: string,
-  obj: LabelObject,
-  variables: readonly Variable[],
-): NormalizedTokenInput {
-  const m = SINGLE_MARKER_RE.exec(tokenString);
-  if (m && m[1] !== undefined) {
-    const name = m[1];
-    const v = variables.find((x) => x.name === name);
-    if (v) {
-      // Keep the existing fallback when the binding is unchanged: a no-op edit
-      // must not overwrite content with a (possibly newer) defaultValue, which
-      // would drift the fallback and push a phantom undo entry.
-      const content =
-        obj.variableId === v.id
-          ? getObjectStringContent(obj) ?? ""
-          : v.defaultValue;
-      return { variableId: v.id, content };
+  // Known variable refs only; clock markers and orphan names resolve to nothing
+  // here (clock is emitted via ^FC, an orphan stays literal).
+  const names = extractTemplateRefs(content);
+  const byName = new Map(variables.map((v) => [v.name, v]));
+  const refs: Variable[] = [];
+  const seen = new Set<string>();
+  for (const name of names) {
+    const v = byName.get(name);
+    if (v && !seen.has(v.id)) {
+      seen.add(v.id);
+      refs.push(v);
     }
   }
-  return { variableId: undefined, content: tokenString };
+  return names.length > 0 ? { kind: "template", refs } : { kind: "literal" };
 }
 
 /** Drives the always-visible mode badge. */
@@ -73,12 +85,9 @@ export function fieldMode(
   obj: LabelObject,
   variables: readonly Variable[],
 ): FieldMode {
-  if (obj.variableId && variables.some((v) => v.id === obj.variableId)) {
-    return "single";
-  }
   const content = getObjectStringContent(obj) ?? "";
   if (content === "") return "empty";
-  return extractTemplateRefs(content).length > 0 ? "template" : "literal";
+  return classifyField(content, variables).kind;
 }
 
 /** The literal value a field prints absent a CSV row: a single-bind field
@@ -90,11 +99,9 @@ export function boundDefaultOrContent(
   obj: LabelObject,
   variables: readonly Variable[],
 ): string {
-  if (obj.variableId) {
-    const v = variables.find((x) => x.id === obj.variableId);
-    if (v) return v.defaultValue;
-  }
-  return getObjectStringContent(obj) ?? "";
+  const content = getObjectStringContent(obj) ?? "";
+  const cls = classifyField(content, variables);
+  return cls.kind === "single" ? cls.variable.defaultValue : content;
 }
 
 /** True when the field carries a variable (single-bind or template); callers
@@ -108,48 +115,42 @@ export function fieldHasVariable(
   return m === "single" || m === "template";
 }
 
-/** The field's ^FN variables (single-bind ∪ marker refs), deduped; excludes
- *  clock tokens and orphan markers. Feeds the "used in this field" inspector. */
+/** The field's ^FN variables (single-bind marker ∪ template marker refs),
+ *  deduped; excludes clock tokens and orphan markers. Feeds the "used in this
+ *  field" inspector. */
 export function fieldVariableRefs(
   obj: LabelObject,
   variables: readonly Variable[],
 ): Variable[] {
-  const byId = new Map(variables.map((v) => [v.id, v]));
   const byName = new Map(variables.map((v) => [v.name, v]));
   const out: Variable[] = [];
   const seen = new Set<string>();
-  const push = (v: Variable | undefined) => {
+  const content = getObjectStringContent(obj) ?? "";
+  for (const name of extractTemplateRefs(content)) {
+    const v = byName.get(name);
     if (v && !seen.has(v.id)) {
       seen.add(v.id);
       out.push(v);
     }
-  };
-  if (obj.variableId) push(byId.get(obj.variableId));
-  const content = getObjectStringContent(obj) ?? "";
-  for (const name of extractTemplateRefs(content)) push(byName.get(name));
+  }
   return out;
 }
 
 /** Walk every page (groups too) and tally how many fields reference each
- *  variable, either via single-bind `variableId` OR via inline `«name»`
- *  template markers in their content. Returns a Map keyed by variable.id.
- *  Variables with no bindings are absent; callers default to 0. */
+ *  variable via inline `«name»` markers in their content (single-bind is the
+ *  lone-marker case). Returns a Map keyed by variable.id. Variables with no
+ *  bindings are absent; callers default to 0. */
 export function countBindings(
   pages: readonly { objects: LabelObject[] }[],
   variables: readonly Variable[],
 ): Map<string, number> {
-  const known = new Set(variables.map((v) => v.id));
   const byName = new Map(variables.map((v) => [v.name, v.id]));
   const counts = new Map<string, number>();
   for (const page of pages) {
     for (const obj of walkObjects(page.objects)) {
-      // De-dupe per OBJECT across both binding styles: a field with both
-      // `variableId === V` and `«V»` in its content counts as one usage of V,
+      // De-dupe per OBJECT: a field repeating `«V»` counts as one usage of V,
       // not two. One field = one place, mirroring how the user thinks about it.
       const refsInThisObj = new Set<string>();
-      if (obj.variableId && known.has(obj.variableId)) {
-        refsInThisObj.add(obj.variableId);
-      }
       const c = getObjectStringContent(obj);
       if (c !== undefined) {
         for (const name of extractTemplateRefs(c)) {
@@ -165,16 +166,12 @@ export function countBindings(
   return counts;
 }
 
-/** Token counts for the disclosure header ("2× ^FN · 1× ^FC"). */
+/** Token counts for the disclosure header ("2× ^FN · 1× ^FC"). Single-bind is
+ *  the lone-marker case, so the generic content scan already yields fn=1. */
 export function fieldTokenSummary(
   obj: LabelObject,
   variables: readonly Variable[],
 ): { fn: number; fc: number } {
-  if (obj.variableId && variables.some((v) => v.id === obj.variableId)) {
-    // Single-bind content is a pure fallback with no markers by invariant
-    // (see normalizeTokenInput), so there are no clock tokens to count here.
-    return { fn: 1, fc: 0 };
-  }
   const content = getObjectStringContent(obj) ?? "";
   const names = new Set(variables.map((v) => v.name));
   const fn = extractTemplateRefs(content).filter((n) => names.has(n)).length;

@@ -10,8 +10,8 @@ import { ObjectRegistry, BARCODE_1D_TYPES, STACKED_2D_TYPES } from "./index";
 import { ObjectPanels } from "./panels";
 
 describe("registry isolation baseline", () => {
-  it("registers 35 object types", () => {
-    expect(Object.keys(ObjectRegistry)).toHaveLength(35);
+  it("registers 34 object types", () => {
+    expect(Object.keys(ObjectRegistry)).toHaveLength(34);
   });
 
   it("classifies 20 1D barcodes", () => {

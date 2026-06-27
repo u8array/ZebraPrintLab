@@ -2,30 +2,36 @@ import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { useLabelStore } from '../store/labelStore';
 import { inputCls } from '../components/Properties/styles';
-import { filterContent } from './contentSpec';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import {
   GS1_DATABAR_DEFAULT_SEGMENTS,
   GS1_DATABAR_EXPANDED_SYMBOLOGIES,
   GS1_EXPANDED_CHARSET,
-  gtinBodyFromContent,
   elementStringToContent,
+  gtinBodyFromContent,
 } from '../lib/gs1';
+import type { ContentSpec } from './contentSpec';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
-import { VariableContentField } from '../components/Properties/VariableContentField';
+import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
 import { FieldLabel } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { builderButtonCls } from '../components/ui/formStyles';
 import { fieldHasVariable, asLabelObject } from '../lib/variableField';
-import { sanitiseAroundMarkers } from '../lib/markerTokens';
 import { type Gs1DatabarProps, SYMBOLOGY_LABELS } from './gs1databar';
 
-// Stable specs so filterContent's WeakMap cache hits across keystrokes.
-const EXPANDED_SPEC = { charset: GS1_EXPANDED_CHARSET };
-const GTIN_SPEC = { charset: '0-9' };
+// Stable specs so the sanitiser/regex WeakMap caches hit across keystrokes.
+// Expanded carries multi-AI GS1 data: restrict to the GS1 charset and keep the
+// "(01)…(10)…" element-string paste shortcut. Non-expanded (sym 1-5) is a bare
+// numeric GTIN.
+const EXPANDED_SPEC: ContentSpec = { charset: GS1_EXPANDED_CHARSET, normalize: elementStringToContent };
+const GTIN_SPEC: ContentSpec = { charset: '0-9' };
 
 export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
+  contentSpec: (props) =>
+    GS1_DATABAR_EXPANDED_SYMBOLOGIES.has((props as Gs1DatabarProps).symbology)
+      ? EXPANDED_SPEC
+      : GTIN_SPEC,
   PropertiesPanel: ({ obj, onChange }) => {
     const t = useT();
     const p = obj.props;
@@ -33,25 +39,11 @@ export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
     const openGs1Builder = useLabelStore((s) => s.openGs1Builder);
     const variables = useLabelStore((s) => s.variables);
     const isExpanded = GS1_DATABAR_EXPANDED_SYMBOLOGIES.has(p.symbology);
-    const spec = isExpanded ? EXPANDED_SPEC : GTIN_SPEC;
     const bound = fieldHasVariable(asLabelObject(obj), variables);
     return (
       <>
         <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
-          <VariableContentField
-            obj={obj}
-            multiline={false}
-            placeholder={isExpanded ? loc.content : loc.gtinLabel}
-            sanitise={(raw) => {
-              // No markers: keep the element-string paste shortcut "(01)…(10)…".
-              if (!raw.includes('«')) {
-                const pasted = isExpanded ? elementStringToContent(raw) : null;
-                return pasted !== null ? pasted : filterContent(raw, spec);
-              }
-              // With chips, filter only the literal slices so markers survive.
-              return sanitiseAroundMarkers(raw, (s) => filterContent(s, spec));
-            }}
-          />
+          <ContentEditorButton obj={obj} />
           {isExpanded ? (
             <button type="button" disabled={bound} onClick={() => openGs1Builder(obj.id)} className={builderButtonCls}>
               {t.gs1builder.button}

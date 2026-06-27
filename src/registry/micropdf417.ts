@@ -35,7 +35,7 @@ export const micropdf417: ObjectTypeCore<MicroPdf417Props> = {
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BF${p.rotation},${p.rowHeight},${p.mode}`,
-      fdFieldFor(obj, p.content, ctx),
+      fdFieldFor(p.content, ctx),
     ]
       .filter(Boolean)
       .join("");

@@ -39,7 +39,7 @@ export const codablock: ObjectTypeCore<CodablockProps> = {
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BB${p.rotation},${p.rowHeight},${p.securityLevel}`,
-      fdFieldFor(obj, p.content, ctx),
+      fdFieldFor(p.content, ctx),
     ]
       .filter(Boolean)
       .join("");

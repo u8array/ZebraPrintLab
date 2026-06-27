@@ -78,11 +78,10 @@ export function getTextRenderMetrics(
   fontHeightOverride?: number,
   label?: Pick<LabelConfig, "customFonts" | "defaultFontId">,
 ): TextRenderMetrics | null {
-  if (obj.type !== "text" && obj.type !== "serial") return null;
+  if (obj.type !== "text") return null;
   const p = obj.props;
-  const fieldFontId = obj.type === "text" ? obj.props.fontId : undefined;
-  const fieldPrinterFontName =
-    obj.type === "text" ? obj.props.printerFontName : undefined;
+  const fieldFontId = obj.props.fontId;
+  const fieldPrinterFontName = obj.props.printerFontName;
   const customName = label
     ? resolvePreviewFontName(label, fieldFontId)
     : undefined;
@@ -103,10 +102,9 @@ export function getTextRenderMetrics(
   const fontFamilyOverride = deviceId ? builtinFontFamily(deviceId) : undefined;
   const fontHeight = fontHeightOverride ?? p.fontHeight;
   const device = deviceFontMetrics(deviceId, fontHeight, p.fontWidth);
-  const rawContent = obj.type === "serial" ? `#${p.content}` : p.content;
   return {
     ...computeTextRenderMetrics({
-      content: applyDeviceFontCase(deviceId, rawContent),
+      content: applyDeviceFontCase(deviceId, p.content),
       fontHeight,
       fontWidth: p.fontWidth,
       printerFontName,

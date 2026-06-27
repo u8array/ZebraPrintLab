@@ -461,56 +461,47 @@ describe('symbol.toZPL', () => {
   });
 });
 
-// ── serial ────────────────────────────────────────────────────────────────────
+// ── serial (text field mode) ───────────────────────────────────────────────────
 
-describe('serial.toZPL', () => {
-  const def = defined(ObjectRegistry['serial']);
+describe('text.toZPL serial mode', () => {
+  const def = defined(ObjectRegistry['text']);
+  const serialText = (content: string, zplMode: 'SN' | 'SF') =>
+    makeObj('text', {
+      content, fontHeight: 30, fontWidth: 0, rotation: 'N', serial: { increment: 1, zplMode },
+    });
 
-  it('emits ^SN for SN mode', () => {
-    const zpl = def.toZPL(makeObj('serial', {
-      content: '001', increment: 1, fontHeight: 30, fontWidth: 0, rotation: 'N', zplMode: 'SN',
-    }));
-    expect(zpl).toContain('^FD001^FS');
-    expect(zpl).toContain('^SN001,1,Y');
+  it('emits ^SN as the field data (no ^FD) for SN mode', () => {
+    const zpl = def.toZPL(serialText('001', 'SN'));
+    expect(zpl).toContain('^SN001,1,Y^FS');
+    expect(zpl).not.toContain('^FD');
   });
 
-  it('emits ^SF for SF mode', () => {
-    const zpl = def.toZPL(makeObj('serial', {
-      content: '001', increment: 1, fontHeight: 30, fontWidth: 0, rotation: 'N', zplMode: 'SF',
-    }));
-    expect(zpl).toContain('^SF1,3,Y');
-    expect(zpl).toContain('^FD001^FS');
+  it('emits ^FD + masked ^SF for SF mode', () => {
+    const zpl = def.toZPL(serialText('001', 'SF'));
+    // seed '001' → mask 'ddd' (all decimal), increment 1.
+    expect(zpl).toContain('^FD001^SFddd,1^FS');
   });
 
   it('honours label.defaultFontId in the ^A fallback', () => {
-    const zpl = def.toZPL(
-      makeObj('serial', {
-        content: '001', increment: 1, fontHeight: 30, fontWidth: 0, rotation: 'N', zplMode: 'SN',
-      }),
-      { label: { widthMm: 100, heightMm: 60, dpmm: 8, defaultFontId: 'M' } },
-    );
+    const zpl = def.toZPL(serialText('001', 'SN'), {
+      label: { widthMm: 100, heightMm: 60, dpmm: 8, defaultFontId: 'M' },
+    });
     expect(zpl).toContain('^AMN,30,0');
     expect(zpl).not.toContain('^A0');
   });
 
   it('strips ^/~ and other non-charset chars from ZPL-imported content', () => {
-    // contentSpec restricts to alphanumerics at input; toZPL re-applies the
-    // filter so ZPL-imported designs can't smuggle ^ (command), ~ (format),
-    // or , (parameter separator) into the ^SN start parameter or FD payload.
-    const zpl = def.toZPL(makeObj('serial', {
-      content: 'a^b,c', increment: 1, fontHeight: 30, fontWidth: 0, rotation: 'N', zplMode: 'SN',
-    }));
-    expect(zpl).toContain('^SNabc,1,Y^FDabc^FS');
+    // contentSpec restricts to alphanumerics at input; the serial emit re-applies
+    // the filter so ZPL-imported designs can't smuggle ^ (command), ~ (format),
+    // or , (parameter separator) into the ^SN start parameter.
+    const zpl = def.toZPL(serialText('a^b,c', 'SN'));
+    expect(zpl).toContain('^SNabc,1,Y^FS');
   });
 
-  it('uses sanitized length for ^SF pad-digits', () => {
-    // Pad-digits must match the actually-emitted FD payload, not the raw
-    // (pre-sanitisation) content length.
-    const zpl = def.toZPL(makeObj('serial', {
-      content: 'ab^cd', increment: 1, fontHeight: 30, fontWidth: 0, rotation: 'N', zplMode: 'SF',
-    }));
-    // 'ab^cd' → 'abcd' (4 chars after stripping ^)
-    expect(zpl).toContain('^SF1,4,Y^FDabcd^FS');
+  it('builds the ^SF mask from the sanitized seed', () => {
+    // 'ab^cd' → 'abcd' (^ stripped); mask all-lowercase-alpha 'aaaa'.
+    const zpl = def.toZPL(serialText('ab^cd', 'SF'));
+    expect(zpl).toContain('^FDabcd^SFaaaa,1^FS');
   });
 });
 
@@ -520,7 +511,7 @@ describe('ObjectRegistry', () => {
   const expectedTypes = [
     'text', 'code128', 'code39', 'ean13', 'upca', 'ean8', 'upce',
     'interleaved2of5', 'code93', 'qrcode', 'datamatrix', 'pdf417',
-    'box', 'ellipse', 'line', 'serial', 'image',
+    'box', 'ellipse', 'line', 'image',
   ];
 
   it('contains all expected object types', () => {

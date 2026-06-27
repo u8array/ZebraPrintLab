@@ -1,7 +1,7 @@
 import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { labelCls } from '../components/Properties/styles';
-import { VariableContentField } from '../components/Properties/VariableContentField';
+import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
@@ -25,7 +25,7 @@ export const code49Panel: ObjectTypeUi<Code49Props> = {
     return (
       <>
         <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
-          <VariableContentField obj={obj} multiline={false} placeholder={loc.content} />
+          <ContentEditorButton obj={obj} />
         </StaticSectionCard>
 
         <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>

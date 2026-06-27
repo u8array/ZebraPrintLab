@@ -4,7 +4,7 @@ import { generateZPL, generateMultiPageZPL, generateBatchZpl } from './zplGenera
 import { parseZPL } from './zplParser';
 import type { LabelConfig } from '../types/LabelConfig';
 import type { GroupObject, LabelObject } from '../types/Group';
-import { defined, props } from '../test/helpers';
+import { defined, props, serialOf } from '../test/helpers';
 import { NON_EMITTING_CONFIG_KEYS } from '../store/labelStore.internals';
 import { putImage } from '../lib/imageCache';
 
@@ -145,6 +145,87 @@ describe('generateZPL — structure', () => {
       8,
     );
     expect(objects.length).toBe(2);
+  });
+
+  it('serial text round-trips: emit ^SN/^SF, parse restores text+serial prop', () => {
+    // Serial is a text field mode (props.serial), not a distinct type. ^SN's
+    // start value IS the field data (no ^FD, spec-conform); the parser restores
+    // a plain text object carrying the serial prop.
+    const objs = [
+      { id: 's', type: 'text', x: 10, y: 20, rotation: 0,
+        props: { content: '001', fontHeight: 30, fontWidth: 0, rotation: 'N',
+          serial: { increment: 5, zplMode: 'SN' } } },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any;
+    const zpl = generateZPL(BASE_LABEL, objs);
+    expect(zpl).toContain('^SN001,5,Y^FS');
+    expect(zpl).not.toContain('^FD'); // ^SN carries the data itself
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(props(objects[0]).content).toBe('001');
+    expect(serialOf(objects[0])?.increment).toBe(5);
+    expect(serialOf(objects[0])?.zplMode).toBe('SN');
+  });
+
+  it('serial ^SF emits a ^FD plus a per-character mask + increment', () => {
+    const objs = [
+      { id: 's', type: 'text', x: 0, y: 0, rotation: 0,
+        props: { content: 'AB42', fontHeight: 30, fontWidth: 0, rotation: 'N',
+          serial: { increment: 1, zplMode: 'SF' } } },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any;
+    const zpl = generateZPL(BASE_LABEL, objs);
+    // mask: A,B → 'AA' (upper alpha), 4,2 → 'dd' (decimal); increment 1.
+    expect(zpl).toContain('^FDAB42^SFAAdd,1^FS');
+    const { objects } = parseZPL(zpl, 8);
+    expect(props(objects[0]).content).toBe('AB42');
+    expect(serialOf(objects[0])?.increment).toBe(1);
+    expect(serialOf(objects[0])?.zplMode).toBe('SF');
+  });
+
+  it('serial barcode round-trips: ^SN provides the serialized barcode data', () => {
+    const objs = [
+      { id: 'b', type: 'code128', x: 10, y: 20, rotation: 0,
+        props: { content: '001', height: 100, moduleWidth: 2,
+          printInterpretation: true, checkDigit: false, rotation: 'N',
+          serial: { increment: 5, zplMode: 'SN' } } },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any;
+    const zpl = generateZPL(BASE_LABEL, objs);
+    expect(zpl).toContain('^SN001,5,Y^FS');
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('code128');
+    expect(serialOf(objects[0])?.increment).toBe(5);
+    expect(serialOf(objects[0])?.zplMode).toBe('SN');
+  });
+
+  it('serial UPC-E applies the same fdContent (NS prefix) as a non-serial UPC-E', () => {
+    const baseProps = { content: '012345', height: 100, moduleWidth: 2,
+      printInterpretation: false, checkDigit: false, rotation: 'N' };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mk = (extra: object): any[] => [{ id: 'u', type: 'upce', x: 0, y: 0, rotation: 0, props: { ...baseProps, ...extra } }];
+    const fd = generateZPL(BASE_LABEL, mk({})).match(/\^FD([0-9]*)\^FS/)?.[1];
+    const sn = generateZPL(BASE_LABEL, mk({ serial: { increment: 1, zplMode: 'SN' } }))
+      .match(/\^SN([0-9]*),/)?.[1];
+    expect(fd).toBeTruthy();
+    expect(sn).toBe(fd); // serial seed carries the same transformed payload
+  });
+
+  it('serial with an empty seed survives round-trip (field not dropped)', () => {
+    const objs = [
+      { id: 's', type: 'text', x: 0, y: 0, rotation: 0,
+        props: { content: '', fontHeight: 30, fontWidth: 0, rotation: 'N',
+          serial: { increment: 1, zplMode: 'SN' } } },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any;
+    const zpl = generateZPL(BASE_LABEL, objs);
+    expect(zpl).toContain('^SN,1,Y^FS');
+    const { objects } = parseZPL(zpl, 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(serialOf(objects[0])?.zplMode).toBe('SN');
   });
 
   it('omits objects with includeInExport=false', () => {
@@ -768,8 +849,8 @@ describe('generateZPL — ^TB text block', () => {
   it('escapes < in a bound variable default for ^TB (no field-swallow)', () => {
     const variable = { id: 'v1', name: 'n', fnNumber: 4, defaultValue: 'a<b' };
     const obj: LabelObject = {
-      id: 't', type: 'text', x: 0, y: 0, rotation: 0, variableId: 'v1',
-      props: { content: '', fontHeight: 30, fontWidth: 0, rotation: 'N', textMode: 'tb', blockWidth: 300, blockHeight: 60 },
+      id: 't', type: 'text', x: 0, y: 0, rotation: 0,
+      props: { content: '«n»', fontHeight: 30, fontWidth: 0, rotation: 'N', textMode: 'tb', blockWidth: 300, blockHeight: 60 },
     };
     const zpl = generateZPL(BASE_LABEL, [obj], [variable]);
     expect(zpl).toContain('^FN4');
@@ -780,6 +861,48 @@ describe('generateZPL — ^TB text block', () => {
     const reparsed = parseZPL(zpl, 8);
     expect(defined(reparsed.variables[0]).defaultValue).toBe('a<b');
     expect(generateZPL(BASE_LABEL, reparsed.objects, reparsed.variables)).toBe(zpl);
+  });
+
+  // Byte-stability guard for the variableId->content refactor (plan stages 1-4):
+  // single-bind emits an inline ^FN, a template field uses ^FE embeds, and the
+  // header declares only the template-only fns (single-bind fn1 is deduped out).
+  // This exact string must survive each stage that reworks emit/parse.
+  it('GOLDEN: single-bind inline + template embeds with deduped header', () => {
+    const vars = [
+      { id: 'v1', name: 'sku', fnNumber: 1, defaultValue: 'DEF' },
+      { id: 'v2', name: 'lot', fnNumber: 7, defaultValue: 'L7' },
+    ];
+    const single = {
+      id: 'a', type: 'text', x: 10, y: 10, rotation: 0,
+      props: { content: '«sku»', fontHeight: 30, fontWidth: 0, rotation: 'N' },
+    } as unknown as LabelObject;
+    const template = {
+      id: 'b', type: 'text', x: 10, y: 50, rotation: 0,
+      props: { content: '«sku»-«lot»', fontHeight: 30, fontWidth: 0, rotation: 'N' },
+    } as unknown as LabelObject;
+    const zpl = generateZPL(BASE_LABEL, [single, template], vars);
+    expect(zpl).toMatchInlineSnapshot(`
+      "^XA
+      ^FXZPLLAB:{"dpmm":8,"wMm":100,"hMm":50}^FS
+      ^PW800
+      ^LL400
+      ^CI28
+      ^FN7^FDL7^FS
+      ^FO10,15^A0N,30,0^FN1^FDDEF^FS
+      ^FO10,55^A0N,30,0^FD#1#-#7#^FS
+      ^XZ"
+    `);
+  });
+
+  it('single-marker content emits inline ^FN once, never also in header', () => {
+    const vars = [{ id: 'v1', name: 'sku', fnNumber: 1, defaultValue: 'DEF' }];
+    const byContent = {
+      id: 'a', type: 'text', x: 10, y: 10, rotation: 0,
+      props: { content: '«sku»', fontHeight: 30, fontWidth: 0, rotation: 'N' },
+    } as unknown as LabelObject;
+    const out = generateZPL(BASE_LABEL, [byContent], vars);
+    expect(out).toContain('^FN1^FDDEF^FS');
+    expect(out.match(/\^FN1/g)?.length).toBe(1); // inline only, never also in header
   });
 
   it('round-trips a reverse ^TB (bare ^FR, no box, even h < fontHeight)', () => {
@@ -1174,23 +1297,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
     expect(generated).toMatch(/\^FDItem #@1@\^FS/);
   });
 
-  it('GS1 DataMatrix binding emits ^FN with the FNC1-escaped default', () => {
-    const variable = { id: 'v1', name: 'gtin', fnNumber: 5, defaultValue: '0109501101530003' };
-    const obj: LabelObject = {
-      id: 'd',
-      type: 'datamatrix',
-      x: 10,
-      y: 10,
-      rotation: 0,
-      variableId: 'v1',
-      props: { content: '0109501101530003', dimension: 8, quality: 200, rotation: 'N', gs1: true },
-    };
-    const zpl = generateZPL(BASE_LABEL, [obj], [variable]);
-    expect(zpl).toContain('^BXN,8,200,,,,_');
-    expect(zpl).toContain('^FN5^FD_10109501101530003^FS');
-  });
-
-  it('GS1 DataMatrix keeps the leading FNC1 when content has a template marker', () => {
+  it('GS1 DataMatrix keeps the leading FNC1 for a single-marker (single-bind) field', () => {
     const variable = { id: 'v1', name: 'gtin', fnNumber: 5, defaultValue: '0109501101530003' };
     const obj: LabelObject = {
       id: 'd',
@@ -1201,8 +1308,9 @@ describe('generateZPL — parse/generate roundtrip', () => {
       props: { content: '«gtin»', dimension: 8, quality: 200, rotation: 'N', gs1: true },
     };
     const zpl = generateZPL(BASE_LABEL, [obj], [variable]);
-    // Marker expanded to the inline embed AND still prefixed with FNC1 (_1).
-    expect(zpl).toContain('^FD_1#5#^FS');
+    // Content == one known marker is single-bind: inline ^FN with the FNC1 (_1)
+    // prefixed default, not a template embed.
+    expect(zpl).toContain('^FN5^FD_10109501101530003^FS');
   });
 
   it('UPC-E single-bind emits the ^FN default through fdContent (NS-prefixed)', () => {
@@ -1212,9 +1320,8 @@ describe('generateZPL — parse/generate roundtrip', () => {
       type: 'upce',
       x: 10,
       y: 10,
-      variableId: 'v1',
       props: {
-        content: '012345',
+        content: '«upc»',
         height: 100,
         moduleWidth: 2,
         printInterpretation: true,
@@ -1257,8 +1364,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
       type: 'text',
       x: 10,
       y: 10,
-      variableId: 'v1',
-      props: { content: '«inner»', fontHeight: 30, fontWidth: 0, rotation: 'N' },
+      props: { content: '«outer»', fontHeight: 30, fontWidth: 0, rotation: 'N' },
     } as unknown as LabelObject;
     const zpl = generateZPL(BASE_LABEL, [obj], [outer, inner]);
     expect(zpl).toContain('^FN1^FD«inner»');
@@ -1273,8 +1379,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
       type: 'qrcode',
       x: 10,
       y: 10,
-      variableId: 'v1',
-      props: { content: 'https://x.io', magnification: 4, errorCorrection: 'Q', rotation: 'N' },
+      props: { content: '«url»', magnification: 4, errorCorrection: 'Q', rotation: 'N' },
     } as unknown as LabelObject;
     const zpl = generateZPL(BASE_LABEL, [obj], [variable]);
     // Prefix composes with the binding; the default is not emitted raw.
@@ -1386,9 +1491,8 @@ describe('generateZPL — variable bindings', () => {
     x: 50,
     y: 50,
     rotation: 0,
-    variableId: 'var-1',
     props: {
-      content: 'placeholder',
+      content: '«sku»',
       fontHeight: 30,
       fontWidth: 0,
       rotation: 'N',
@@ -1398,20 +1502,21 @@ describe('generateZPL — variable bindings', () => {
   it('emits ^FN{n} before the field and uses the variable default as ^FD payload', () => {
     const zpl = generateZPL(BASE_LABEL, [textObj], [variable]);
     expect(zpl).toContain('^FN7^FDABC-123^FS');
-    expect(zpl).not.toContain('placeholder');
+    // Single-bind: the marker is resolved to ^FN, not emitted literally.
+    expect(zpl).not.toContain('«sku»');
   });
 
-  it('falls back to literal content when no variables are supplied', () => {
+  it('emits the marker literally when no variables are supplied', () => {
     const zpl = generateZPL(BASE_LABEL, [textObj]);
-    expect(zpl).toContain('placeholder');
+    expect(zpl).toContain('«sku»');
     expect(zpl).not.toContain('^FN');
   });
 
-  it('falls back to literal content when the binding is orphaned', () => {
+  it('emits the marker literally when no variable matches the name (orphan)', () => {
     const zpl = generateZPL(BASE_LABEL, [textObj], [
-      { ...variable, id: 'different-id' },
+      { ...variable, name: 'other' },
     ]);
-    expect(zpl).toContain('placeholder');
+    expect(zpl).toContain('«sku»');
     expect(zpl).not.toContain('^FN');
   });
 
@@ -1421,28 +1526,40 @@ describe('generateZPL — variable bindings', () => {
     expect(variables).toHaveLength(1);
     expect(variables[0]?.fnNumber).toBe(7);
     expect(variables[0]?.defaultValue).toBe('ABC-123');
-    expect(objects[0]?.variableId).toBe(variables[0]?.id);
+    // New model: the field references the variable by its content marker. ZPL
+    // carries only the ^FN number, so the name re-derives to field_7 on import.
+    expect(props(objects[0]).content).toBe(`«${variables[0]?.name}»`);
+  });
+
+  it('parses ^FN single-bind to a content marker and re-emits inline byte-stable', () => {
+    const { objects, variables } = parseZPL('^XA^FO10,20^A0N,30,30^FN5^FDABC^FS^XZ');
+    expect(props(objects[0]).content).toBe('«field_5»');
+    expect(variables[0]?.fnNumber).toBe(5);
+    expect(variables[0]?.defaultValue).toBe('ABC');
+    const out = generateZPL(BASE_LABEL, objects, variables);
+    expect(out).toContain('^FN5^FDABC^FS');
+    expect(out.match(/\^FN5/g)?.length).toBe(1); // inline only, no header dup
   });
 });
 
 describe('generateBatchZpl', () => {
   const baseLabel: LabelConfig = { widthMm: 50, heightMm: 30, dpmm: 8 };
-  const textObj = (variableId: string): LabelObject =>
+  // Single-bind field: content is the variable's lone marker.
+  const textObj = (markerName: string): LabelObject =>
     ({
-      id: `obj-${variableId}`,
+      id: `obj-${markerName}`,
       type: 'text',
       x: 10,
       y: 10,
       rotation: 0,
-      variableId,
-      props: { content: '', fontHeight: 30, fontWidth: 0, rotation: 'N' },
+      props: { content: `«${markerName}»`, fontHeight: 30, fontWidth: 0, rotation: 'N' },
     }) as unknown as LabelObject;
 
   it('emits ^DFR template + one ^XFR recall block per row', () => {
     const variables = [
       { id: 'v1', name: 'sku', fnNumber: 1, defaultValue: 'DEF' },
     ];
-    const objects = [textObj('v1')];
+    const objects = [textObj('sku')];
     const dataset = {
       headers: ['sku'],
       rows: [['A1'], ['B2'], ['C3']],
@@ -1466,7 +1583,7 @@ describe('generateBatchZpl', () => {
       { id: 'v1', name: 'sku', fnNumber: 1, defaultValue: '' },
       { id: 'v2', name: 'qty', fnNumber: 2, defaultValue: '' },
     ];
-    const objects = [textObj('v1'), textObj('v2')];
+    const objects = [textObj('sku'), textObj('qty')];
     const dataset = { headers: ['sku'], rows: [['A1']] };
     const mapping = { bindings: { v1: 'sku' } };
 
@@ -1482,7 +1599,7 @@ describe('generateBatchZpl', () => {
     const variables = [
       { id: 'v1', name: 'sku', fnNumber: 1, defaultValue: '' },
     ];
-    const objects = [textObj('v1')];
+    const objects = [textObj('sku')];
     const dataset = { headers: ['qty'], rows: [['10']] };
     const mapping = { bindings: { v1: 'sku' } };
 
@@ -1496,7 +1613,7 @@ describe('generateBatchZpl', () => {
     const variables = [
       { id: 'v1', name: 'note', fnNumber: 1, defaultValue: 'fallback' },
     ];
-    const objects = [textObj('v1')];
+    const objects = [textObj('note')];
     const dataset = { headers: ['note'], rows: [['']] };
     const mapping = { bindings: { v1: 'note' } };
 
@@ -1506,7 +1623,7 @@ describe('generateBatchZpl', () => {
 
   it('injects ^DFR even when ~DY/~SD preamble lines precede ^XA', () => {
     const variables = [{ id: 'v1', name: 'sku', fnNumber: 1, defaultValue: '' }];
-    const objects = [textObj('v1')];
+    const objects = [textObj('sku')];
     const dataset = { headers: ['sku'], rows: [['A1']] };
     const mapping = { bindings: { v1: 'sku' } };
     // instantDarkness adds a `~SD` preamble line before ^XA; a start-
@@ -1522,7 +1639,7 @@ describe('generateBatchZpl', () => {
 
   it('hex-escapes ^ and ~ in CSV cell values via ^FH', () => {
     const variables = [{ id: 'v1', name: 'name', fnNumber: 1, defaultValue: '' }];
-    const objects = [textObj('v1')];
+    const objects = [textObj('name')];
     const dataset = { headers: ['name'], rows: [['A^B~C Corp']] };
     const mapping = { bindings: { v1: 'name' } };
     const result = generateBatchZpl(baseLabel, objects, variables, dataset, mapping);
@@ -1535,7 +1652,7 @@ describe('generateBatchZpl', () => {
 
   it('zero rows yields template-only output (no recall blocks)', () => {
     const variables = [{ id: 'v1', name: 'sku', fnNumber: 1, defaultValue: '' }];
-    const objects = [textObj('v1')];
+    const objects = [textObj('sku')];
     const dataset = { headers: ['sku'], rows: [] };
     const mapping = { bindings: { v1: 'sku' } };
 
@@ -1547,8 +1664,8 @@ describe('generateBatchZpl', () => {
   it('applies the QR {ec}A, transform to each CSV override (not raw)', () => {
     const variables = [{ id: 'v1', name: 'url', fnNumber: 1, defaultValue: 'https://d' }];
     const qr = {
-      id: 'q', type: 'qrcode', x: 10, y: 10, variableId: 'v1',
-      props: { content: 'https://d', magnification: 4, errorCorrection: 'Q', rotation: 'N' },
+      id: 'q', type: 'qrcode', x: 10, y: 10,
+      props: { content: '«url»', magnification: 4, errorCorrection: 'Q', rotation: 'N' },
     } as unknown as LabelObject;
     const dataset = { headers: ['url'], rows: [['https://row']] };
     const result = generateBatchZpl(baseLabel, [qr], variables, dataset, { bindings: { v1: 'url' } });
@@ -1560,9 +1677,9 @@ describe('generateBatchZpl', () => {
   it('applies the UPC-E compaction transform to each CSV override', () => {
     const variables = [{ id: 'v1', name: 'upc', fnNumber: 1, defaultValue: '123456' }];
     const upceObj = {
-      id: 'u', type: 'upce', x: 10, y: 10, variableId: 'v1',
+      id: 'u', type: 'upce', x: 10, y: 10,
       props: {
-        content: '123456', height: 100, moduleWidth: 2,
+        content: '«upc»', height: 100, moduleWidth: 2,
         printInterpretation: true, printInterpretationAbove: false, checkDigit: false, rotation: 'N',
       },
     } as unknown as LabelObject;

@@ -49,7 +49,7 @@ export const qrcode: ObjectTypeCore<QrCodeProps> = {
     return [
       fieldPos(obj),
       `^BQ${p.rotation},${p.model},${p.magnification}`,
-      fdFieldFor(obj, p.content, ctx, qrFdTransform(obj)),
+      fdFieldFor(p.content, ctx, qrFdTransform(obj)),
     ].join('');
   },
 

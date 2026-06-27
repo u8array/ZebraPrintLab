@@ -9,7 +9,6 @@ import type { DataMatrixProps } from './datamatrix';
 import type { BoxProps } from './box';
 import type { EllipseProps } from './ellipse';
 import type { LineProps } from './line';
-import type { SerialProps } from './serial';
 import type { ImageProps } from './image';
 import type { UpcAProps } from './upca';
 import type { Ean8Props } from './ean8';
@@ -52,7 +51,6 @@ export type LeafObject =
   | Leaf<'box', BoxProps>
   | Leaf<'ellipse', EllipseProps>
   | Leaf<'line', LineProps>
-  | Leaf<'serial', SerialProps>
   | Leaf<'image', ImageProps>
   | Leaf<'upca', UpcAProps>
   | Leaf<'ean8', Ean8Props>

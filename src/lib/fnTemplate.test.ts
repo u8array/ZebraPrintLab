@@ -9,6 +9,7 @@ import {
   capLiteralLength,
   literalInsertRoom,
   substituteTemplateMarker,
+  renameTemplateMarkers,
 } from "./fnTemplate";
 import type { Variable } from "../types/Variable";
 
@@ -153,5 +154,26 @@ describe("substituteTemplateMarker", () => {
   });
   it("can delete a marker by replacing with empty string", () => {
     expect(substituteTemplateMarker("a«sku»b", "sku", "")).toBe("ab");
+  });
+});
+
+describe("renameTemplateMarkers (single pass, collision-safe)", () => {
+  it("swaps two names without cascading", () => {
+    const out = renameTemplateMarkers("«a»-«b»", new Map([["a", "b"], ["b", "a"]]));
+    expect(out).toBe("«b»-«a»");
+  });
+
+  it("renames a chain by original name only (a->b, b->c)", () => {
+    const out = renameTemplateMarkers("«a» «b»", new Map([["a", "b"], ["b", "c"]]));
+    expect(out).toBe("«b» «c»");
+  });
+
+  it("leaves unmapped markers (incl. clock) untouched", () => {
+    const out = renameTemplateMarkers("«a» «clock:Y» «x»", new Map([["a", "z"]]));
+    expect(out).toBe("«z» «clock:Y» «x»");
+  });
+
+  it("is identity on an empty map", () => {
+    expect(renameTemplateMarkers("«a»", new Map())).toBe("«a»");
   });
 });

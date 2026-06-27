@@ -740,7 +740,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     previewLocks,
   });
 
-  // Step-rotation only (text/serial/barcodes); box/ellipse/line/image use Transformer.
+  // Step-rotation only (text/barcodes); box/ellipse/line/image use Transformer.
   const singleSelected = selectedIds.length === 1
     ? objects.find((o) => o.id === selectedIds[0]) ?? null
     : null;

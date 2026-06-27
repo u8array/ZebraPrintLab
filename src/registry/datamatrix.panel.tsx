@@ -5,19 +5,22 @@ import { labelCls, builderButtonCls } from '../components/ui/formStyles';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
-import { VariableContentField } from '../components/Properties/VariableContentField';
+import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
-import { filterContent } from './contentSpec';
 import { fieldHasVariable, asLabelObject } from '../lib/variableField';
-import { sanitiseAroundMarkers } from '../lib/markerTokens';
-import { GS1_EXPANDED_CHARSET, GS1_SAMPLE_CONTENT, elementStringToContent, parseGs1ToSegments } from '../lib/gs1';
+import { GS1_SAMPLE_CONTENT, GS1_EXPANDED_CHARSET, elementStringToContent, parseGs1ToSegments } from '../lib/gs1';
+import type { ContentSpec } from './contentSpec';
 import { type DataMatrixProps, DIMENSION_MIN, DIMENSION_MAX } from './datamatrix';
 
-// Stable spec so filterContent's WeakMap cache hits across keystrokes.
-const GS1_SPEC = { charset: GS1_EXPANDED_CHARSET };
+// Stable spec so the sanitiser/regex WeakMap caches hit across keystrokes.
+// `normalize` keeps the "(01)…(10)…" element-string paste shortcut.
+const GS1_SPEC: ContentSpec = { charset: GS1_EXPANDED_CHARSET, normalize: elementStringToContent };
 
 export const datamatrixPanel: ObjectTypeUi<DataMatrixProps> = {
+  // GS1 mode restricts the editor to the GS1 charset (and enables the element-
+  // string paste shortcut); plain ECC200 accepts a wide byte range, unfiltered.
+  contentSpec: (props) => ((props as DataMatrixProps).gs1 ? GS1_SPEC : undefined),
   PropertiesPanel: ({ obj, onChange }) => {
     const t = useT();
     const p = obj.props;
@@ -31,24 +34,7 @@ export const datamatrixPanel: ObjectTypeUi<DataMatrixProps> = {
     return (
       <>
         <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
-          <VariableContentField
-            obj={obj}
-            multiline
-            placeholder={loc.content}
-            sanitise={
-              p.gs1
-                ? (raw) => {
-                    // No markers: keep the element-string paste shortcut.
-                    if (!raw.includes('«')) {
-                      const pasted = elementStringToContent(raw);
-                      return pasted !== null ? pasted : filterContent(raw, GS1_SPEC);
-                    }
-                    // With chips, filter only literal slices so markers survive.
-                    return sanitiseAroundMarkers(raw, (s) => filterContent(s, GS1_SPEC));
-                  }
-                : undefined
-            }
-          />
+          <ContentEditorButton obj={obj} />
           {p.gs1 ? (
             <button type="button" disabled={bound} onClick={() => openGs1Builder(obj.id)} className={builderButtonCls}>
               {t.gs1builder.button}

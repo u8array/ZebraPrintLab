@@ -48,7 +48,7 @@ export const tlc39: ObjectTypeCore<Tlc39Props> = {
       // r1 (wide:narrow ratio) is not exposed as a prop; emit the
       // canonical "2" so the field round-trips.
       `^BT${p.rotation},${p.moduleWidth},2,${p.height},${p.microPdfRowHeight},${p.microPdfRows}`,
-      fdFieldFor(obj, p.content, ctx),
+      fdFieldFor(p.content, ctx),
     ]
       .filter(Boolean)
       .join("");

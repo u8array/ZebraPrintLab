@@ -2,6 +2,7 @@
 // «clock2:T» (secondary, ^SO2 offset), «clock3:T» (tertiary, ^SO3 offset).
 // Preview uses new Date(); printer RTC is authoritative at print time.
 import { applyClockOffset, type ClockOffset } from "../types/LabelConfig";
+import { CLOCK_BODY_RE, CLOCK_MARKER_RE, clockMarkerReGlobal } from "../types/clockMarker";
 
 const TOKEN_FORMATTERS: Record<string, (d: Date) => string> = {
   Y: (d) => String(d.getFullYear()),
@@ -57,8 +58,8 @@ export interface ChannelDates {
   tertiary: Date;
 }
 
-const CLOCK_BODY = /«clock([23]?):([A-Za-z])»/;
-const clockRe = () => /«clock([23]?):([A-Za-z])»/g;
+const CLOCK_BODY = CLOCK_MARKER_RE;
+const clockRe = clockMarkerReGlobal;
 
 function channelOf(suffix: string | undefined): ClockChannel {
   return suffix === "2" ? 2 : suffix === "3" ? 3 : 1;
@@ -75,7 +76,7 @@ export function clockMarkerBody(channel: ClockChannel, token: string): string {
 export function parseClockBody(
   body: string,
 ): { channel: ClockChannel; entry: (typeof CLOCK_TOKEN_LABELS)[number] } | null {
-  const m = body.match(/^clock([23]?):([A-Za-z])$/);
+  const m = body.match(CLOCK_BODY_RE);
   if (!m) return null;
   const entry = CLOCK_TOKEN_LABELS.find((x) => x.token === m[2]);
   return entry ? { channel: channelOf(m[1]), entry } : null;

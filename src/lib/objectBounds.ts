@@ -5,7 +5,7 @@
 // Rotation note (verified, not guessed): the numeric `LabelObjectBase.rotation`
 // is never read by any renderer (only a store default of 0). What actually
 // drives rendered orientation is the per-type `props.rotation` ("N"|"R"|"I"|"B")
-// for text/serial/symbol and every barcode. box/ellipse/image carry NO rotation
+// for text/symbol and every barcode. box/ellipse/image carry NO rotation
 // at all and their renderers never rotate the node, so their bbox is the raw
 // prop footprint. line orientation lives in `props.angle`; its bbox comes from
 // the two endpoints.
@@ -16,6 +16,7 @@ import type { LeafObject } from "../registry";
 import { BARCODE_1D_TYPES, STACKED_2D_TYPES, getEntry } from "../registry";
 import type { LabelConfig } from "../types/LabelConfig";
 import { isAxisSwapped, objectRotation, type ZplRotation } from "../registry/rotation";
+import { resolveTextMode } from "../registry/text";
 import { blockBoundsDots, rotatedLineOffset, tbBoundsDots, zebraLineWidthDots } from "./zebraTextLayout";
 import { resolveDefaultSizeDots } from "./resolveDefaultSize";
 import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET } from "./bwipConstants";
@@ -192,10 +193,14 @@ export function objectBoundsDots(obj: LabelObject, ctx: ObjectBoundsCtx): Boundi
     }
     case "text": {
       const p = obj.props;
-      if (p.blockWidth && p.blockWidth > 0) {
+      // Single source for the mode decision: a serial field resolves to 'normal'
+      // (its block props lie dormant), so it takes the single-line path instead
+      // of computing block bounds from a stale blockWidth.
+      const mode = resolveTextMode(p);
+      if (mode !== "normal" && p.blockWidth && p.blockWidth > 0) {
         // ^TB extent is width x clip-height; ^FB stacks blockLines rows.
         const b =
-          p.textMode === "tb"
+          mode === "tb"
             ? tbBoundsDots(p.blockWidth, p.blockHeight ?? p.fontHeight, p.rotation)
             : blockBoundsDots({
                 blockWidthDots: p.blockWidth,
@@ -212,11 +217,6 @@ export function objectBoundsDots(obj: LabelObject, ctx: ObjectBoundsCtx): Boundi
       // fallback estimate computes upright and rotates itself.
       const fp = ctx.measured?.get(obj.id) ?? singleLineEstimate(obj);
       const off = rotatedLineOffset(p.rotation, fp.width, fp.height);
-      return { x: obj.x + off.x, y: obj.y + off.y, width: fp.width, height: fp.height };
-    }
-    case "serial": {
-      const fp = ctx.measured?.get(obj.id) ?? singleLineEstimate(obj);
-      const off = rotatedLineOffset(obj.props.rotation, fp.width, fp.height);
       return { x: obj.x + off.x, y: obj.y + off.y, width: fp.width, height: fp.height };
     }
     default: {

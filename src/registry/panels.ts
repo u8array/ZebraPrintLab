@@ -34,7 +34,6 @@ import { postalPanel } from './postal.panel';
 import { boxPanel } from './box.panel';
 import { ellipsePanel } from './ellipse.panel';
 import { linePanel } from './line.panel';
-import { serialPanel } from './serial.panel';
 import { imagePanel } from './image.panel';
 
 // satisfies = exhaustiveness check; export type stays permissive.
@@ -72,7 +71,6 @@ const _ObjectPanels = {
   box: boxPanel,
   ellipse: ellipsePanel,
   line: linePanel,
-  serial: serialPanel,
   image: imagePanel,
 } satisfies ObjectPanelsMap;
 

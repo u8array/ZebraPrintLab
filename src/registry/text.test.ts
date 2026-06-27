@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { text, textZplCmd } from './text';
+import { text, textZplCmd, resolveTextMode } from './text';
 import type { TextProps } from './text';
 import type { LabelObjectBase } from '../types/LabelObject';
 
@@ -110,5 +110,40 @@ describe('text — normalizeChanges ^FP un-emit shape', () => {
     const changes = { x: 10 };
     const result = text.normalizeChanges?.(obj, changes);
     expect(result).toBe(changes);
+  });
+});
+
+/**
+ * Serial is a plain single-line counter that suppresses block/reverse/^FP at
+ * emit and render, but must not DESTROY those props: turning serial off has to
+ * restore the formatting. So they lie dormant on the model while serial is on.
+ */
+describe('text — serial suppresses block/reverse without destroying them', () => {
+  const serial = { increment: 1, zplMode: 'SN' as const };
+
+  it('resolveTextMode reports normal for a serial field despite block props', () => {
+    expect(resolveTextMode({ serial, textMode: 'tb', blockWidth: 400 })).toBe('normal');
+  });
+
+  it('normalizeChanges does not strip block/reverse when serial is set', () => {
+    const obj = baseObj({ reverse: true, blockWidth: 400, blockLines: 3 });
+    const changes = { props: { serial } };
+    const result = text.normalizeChanges?.(obj, changes);
+    const props = result?.props as Partial<TextProps>;
+    // The patch must not force the dormant props to undefined ...
+    expect('reverse' in props).toBe(false);
+    expect('blockWidth' in props).toBe(false);
+    // ... and the stored formatting survives the switch, ready to return.
+    expect(obj.props.reverse).toBe(true);
+    expect(obj.props.blockWidth).toBe(400);
+  });
+
+  it('toZPL emits the plain serial form, ignoring dormant block/reverse', () => {
+    const zpl = text.toZPL(
+      baseObj({ content: 'A001', reverse: true, blockWidth: 400, textMode: 'fb', blockLines: 3, serial }),
+    );
+    expect(zpl).toContain('^SNA001,1,Y^FS');
+    expect(zpl).not.toContain('^FB');
+    expect(zpl).not.toContain('^FR');
   });
 });

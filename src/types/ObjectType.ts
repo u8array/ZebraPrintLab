@@ -1,6 +1,7 @@
 import type React from 'react';
 import type { LabelObjectBase, ObjectChanges, ObjectGroup } from './LabelObject';
 import type { HriBehavior, TransformContext, ZplEmitContext } from './ZplEmit';
+import type { ContentSpec } from './contentSpec';
 
 /** Domain half of a registry entry: emits ZPL, no React deps. */
 export interface ObjectTypeCore<P extends object = object> {
@@ -26,6 +27,10 @@ export interface ObjectTypeCore<P extends object = object> {
   interpretationLocked?: boolean;
   /** Emits ^FD via fdFieldFor; enables bind-to-variable control. */
   bindable?: boolean;
+  /** Emitter honours `props.serial` (^SN/^SF). Only text and the free-data 1D
+   *  family do; 2D/stacked emitters and fixed-check EAN/UPC do not, so the
+   *  Variable-Builder hides the serial option there. */
+  serialisable?: boolean;
   /** 1:1 aspect-locked free resize (ellipse with lockAspect). For
    *  integer-module 2D symbologies use uniformScaleProp instead. */
   uniformScale?: boolean | ((props: P) => boolean);
@@ -63,6 +68,11 @@ export interface ObjectTypeUi<P extends object = object> {
     obj: LabelObjectBase & { props: P };
     onChange: (props: Partial<P>) => void;
   }>;
+  /** Per-symbology content charset/length rule, exposed on the panel entry so
+   *  the generic content editor (inline field + Variable-Builder modal) filters
+   *  input like the panel's own validation. A function lets the rule depend on
+   *  props (e.g. DataMatrix only restricts to the GS1 charset in GS1 mode). */
+  contentSpec?: ContentSpec | ((props: object) => ContentSpec | undefined);
 }
 
 export type ObjectTypeDefinition<P extends object = object> = ObjectTypeCore<P> & ObjectTypeUi<P>;

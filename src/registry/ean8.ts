@@ -7,6 +7,7 @@ export const ean8CoreConfig: Barcode1DCoreConfig = {
   icon: 'E8',
   defaultContent: '1234567',
   group: 'code-1d',
+  serialisable: false,
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     return `^B8${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'}`;

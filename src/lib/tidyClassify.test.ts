@@ -43,7 +43,7 @@ describe("classifyForTidy", () => {
 
   it("keeps non-shape types as content regardless of size", () => {
     const huge = { x: 0, y: 0, width: 800, height: 400 };
-    for (const t of ["text", "serial", "symbol", "image", "qrcode", "code128", "group"]) {
+    for (const t of ["text", "symbol", "image", "qrcode", "code128", "group"]) {
       expect(classifyForTidy(t, huge, LW, LH)).toBe("content");
     }
   });

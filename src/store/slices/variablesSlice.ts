@@ -2,26 +2,24 @@ import type { StateCreator } from 'zustand';
 import {
   nextFreeFnNumber,
   validateVariablesUnique,
+  isValidVariableName,
+  stripMarkerDelimiters,
   FN_NUMBER_MIN,
   FN_NUMBER_MAX,
   type Variable,
   type VariableInput,
 } from '../../types/Variable';
-import { stripVariableIdFromObjects, findAncestors, mapObjectById } from '../../types/Group';
-import type { ObjectChanges } from '../../types/LabelObject';
 import {
   rewriteTemplateMarkers,
   substituteTemplateMarkers,
-  applyObjectChanges,
-  updateCurrentObjects,
   dropPageOverlays,
 } from '../labelStore.internals';
-import { selectPreviewLocksEditor, currentObjects } from '../labelStore.selectors';
+import { selectPreviewLocksEditor } from '../labelStore.selectors';
 import type { LabelState } from '../labelStore';
 
 export interface VariablesSlice {
-  /** Document-level template variables. Fields reference them via
-   *  `variableId`; export emits `^FN{fnNumber}^FD{defaultValue}^FS`.
+  /** Document-level template variables. Fields reference them via `«name»`
+   *  content markers; export emits `^FN{fnNumber}^FD{defaultValue}^FS`.
    *  Order is user-controlled and surfaces in the Variables panel. */
   variables: Variable[];
 
@@ -29,18 +27,10 @@ export interface VariablesSlice {
    *  are taken or the supplied fnNumber is out of range / already used. */
   addVariable: (input: VariableInput) => string | null;
   /** Patch fields on an existing variable. Validates name + fnNumber
-   *  uniqueness; rejects silently (no-op) on conflict. */
+   *  uniqueness; rejects silently (no-op) on conflict. A name change ripples
+   *  through every `«oldName»` content marker; an fnNumber/default change drops
+   *  page overlays so headers regenerate. */
   updateVariable: (id: string, changes: Partial<Omit<Variable, 'id'>>) => void;
-  /** Set a single-bound variable's default value AND mirror it onto the
-   *  bound object in one write, so the undo timeline records a single entry
-   *  (the field's content tracks the default for the unbind fallback and
-   *  ^FB re-derivation). */
-  setBoundDefault: (
-    variableId: string,
-    defaultValue: string,
-    objectId: string,
-    objectChanges: ObjectChanges,
-  ) => void;
   /** Delete a variable and unbind every field that referenced it
    *  across every page. */
   removeVariable: (id: string) => void;
@@ -57,7 +47,7 @@ export const createVariablesSlice: StateCreator<LabelState, [], [], VariablesSli
     const state = get();
     if (selectPreviewLocksEditor(state)) return null;
     const trimmedName = input.name.trim();
-    if (trimmedName === '') return null;
+    if (!isValidVariableName(trimmedName)) return null;
     if (state.variables.some((v) => v.name === trimmedName)) return null;
 
     let fnNumber: number;
@@ -75,7 +65,10 @@ export const createVariablesSlice: StateCreator<LabelState, [], [], VariablesSli
       id: crypto.randomUUID(),
       name: trimmedName,
       fnNumber,
-      defaultValue: input.defaultValue ?? '',
+      // A default is a literal fallback; strip marker delimiters so it can't
+      // smuggle a nested «marker» that preview resolves but single-bind export
+      // emits verbatim (silent preview/export drift).
+      defaultValue: stripMarkerDelimiters(input.defaultValue ?? ''),
       ...(input.comment !== undefined ? { comment: input.comment } : {}),
     };
     set((s) => ({ variables: [...s.variables, variable] }));
@@ -91,13 +84,19 @@ export const createVariablesSlice: StateCreator<LabelState, [], [], VariablesSli
       let patched = changes;
       if (changes.name !== undefined) {
         const trimmed = changes.name.trim();
-        if (trimmed === '') return {};
+        if (!isValidVariableName(trimmed)) return {};
         if (state.variables.some((v) => v.id !== id && v.name === trimmed)) return {};
         patched = { ...patched, name: trimmed };
       }
       if (changes.fnNumber !== undefined) {
         if (changes.fnNumber < FN_NUMBER_MIN || changes.fnNumber > FN_NUMBER_MAX) return {};
         if (state.variables.some((v) => v.id !== id && v.fnNumber === changes.fnNumber)) return {};
+      }
+      // A default is a literal fallback: strip marker delimiters so it can't
+      // carry a nested «marker» (preview would resolve it, single-bind export
+      // emits it verbatim).
+      if (changes.defaultValue !== undefined) {
+        patched = { ...patched, defaultValue: stripMarkerDelimiters(changes.defaultValue) };
       }
 
       const next: Partial<LabelState> = {
@@ -126,32 +125,6 @@ export const createVariablesSlice: StateCreator<LabelState, [], [], VariablesSli
       return next;
     }),
 
-  setBoundDefault: (variableId, defaultValue, objectId, objectChanges) =>
-    set((state) => {
-      if (selectPreviewLocksEditor(state)) return {};
-      const existing = state.variables.find((v) => v.id === variableId);
-      if (!existing) return {};
-      // No-op guard: an onChange that re-emits the same value must not push an
-      // undo entry. The mirrored content is deterministic in defaultValue, so
-      // an unchanged default means an unchanged write.
-      if (existing.defaultValue === defaultValue) return {};
-      const variables = state.variables.map((v) =>
-        v.id === variableId ? { ...v, defaultValue } : v,
-      );
-      const ancestorLocked = findAncestors(currentObjects(state), objectId).some(
-        (g) => !!g.locked,
-      );
-      const updated = updateCurrentObjects(state, (curr) =>
-        mapObjectById(curr, objectId, (obj) =>
-          applyObjectChanges(obj, objectChanges, ancestorLocked),
-        ),
-      );
-      // The new default feeds every field reading this variable (other binds and
-      // «name» template headers, some in raw overlay segments), so drop overlays
-      // for a full regen, matching updateVariable's default-change path.
-      return { variables, pages: dropPageOverlays(updated.pages) };
-    }),
-
   setVariables: (variables) =>
     set((state) => {
       if (selectPreviewLocksEditor(state)) return {};
@@ -168,13 +141,12 @@ export const createVariablesSlice: StateCreator<LabelState, [], [], VariablesSli
       // Strip marker delimiters from the replacement: the content model can't
       // store a literal `«…»`, so a default containing one would re-parse as a
       // new marker (a phantom re-bind) after substitution. Keep it literal.
-      const literalDefault = removed.defaultValue.replace(/[«»]/g, '');
+      const literalDefault = stripMarkerDelimiters(removed.defaultValue);
       const nextPages = state.pages.map((p) => {
-        // Drop the single-bind id AND substitute any `«name»` template marker
+        // Substitute every `«name»` marker (single-bind is the lone-marker case)
         // with the deleted variable's default, so no orphan marker survives to
         // print literally (mirrors the unbind-keeps-value flow).
-        const stripped = stripVariableIdFromObjects(p.objects, id);
-        const substituted = substituteTemplateMarkers(stripped, removed.name, literalDefault);
+        const substituted = substituteTemplateMarkers(p.objects, removed.name, literalDefault);
         if (substituted === p.objects) return p;
         pagesChanged = true;
         return { ...p, objects: substituted };

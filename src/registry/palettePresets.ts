@@ -40,6 +40,8 @@ const PALETTE_PRESETS: PalettePreset[] = [
     label: (t) => t.registry.text.modeFieldBlock, propsOverride: { blockWidth: 400, blockLines: 3 }, defaultSize: { width: 400, height: 90 } },
   { id: 'text-tb', group: 'text', type: 'text', icon: '▭', zplCmd: '^TB',
     label: (t) => t.registry.text.modeTextBlock, propsOverride: { textMode: 'tb', blockWidth: 400, blockHeight: 120 }, defaultSize: { width: 400, height: 120 } },
+  { id: 'text-serial', group: 'text', type: 'text', icon: '#', zplCmd: '^SN',
+    label: (t) => t.types.serial, propsOverride: { content: '001', serial: { increment: 1, zplMode: 'SN' } }, defaultSize: { width: 100, height: 30 } },
 ];
 
 const PRESET_BY_ID = new Map(PALETTE_PRESETS.map((p) => [p.id, p]));

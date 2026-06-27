@@ -9,16 +9,15 @@ import { currentObjects } from "../store/labelStore.selectors";
 import { reverseTextHasBacking, reverseTextHasOwnBacking } from "../lib/reverseBacking";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { UnitNumberInput } from "../components/Properties/UnitNumberInput";
-import { VariableContentField } from "../components/Properties/VariableContentField";
+import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
 import { FpSettings } from "../components/Properties/FpSettings";
 import { TextModeSection } from "../components/Properties/TextModeSection";
 import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
 import { FieldLabel, ZplCmd } from "../components/Properties/ZplCmd";
 import { Select } from "../components/ui/Select";
 import { fontSelectGroups } from "../components/Properties/fontSelectGroups";
-import { deriveBlockTextPatch } from "../lib/textBlock";
 import { fieldGridCols, fieldGridCell } from "../components/ui/formStyles";
-import { resolveTextMode, type TextProps } from "./text";
+import { type TextProps } from "./text";
 
 export const textPanel: ObjectTypeUi<TextProps> = {
   PropertiesPanel: ({ obj, onChange }) => {
@@ -51,6 +50,11 @@ export const textPanel: ObjectTypeUi<TextProps> = {
     // the niche ^FP direction/gap (CJK / RTL); auto-open when either is in use.
     const fpInUse = p.fpDirection !== undefined || (p.fpCharGap ?? 0) > 0;
     const [showAdvanced, setShowAdvanced] = useState(!!p.printerFontName || fpInUse);
+    // Serial mode is a plain single-line ^A counter: reverse, ^FB/^TB blocks and
+    // ^FP direction don't apply, so their controls are hidden. The props lie
+    // dormant (suppressed via resolveTextMode, not dropped), so turning serial
+    // off restores the formatting.
+    const isSerial = !!p.serial;
 
     const handleFontUpload = async (file: File) => {
       if (!p.printerFontName) return;
@@ -65,15 +69,7 @@ export const textPanel: ObjectTypeUi<TextProps> = {
     return (
       <>
         <StaticSectionCard title={t.registry.text.content} cmd="^FD">
-          <VariableContentField
-            obj={obj}
-            extraPatch={(content) =>
-              // ^TB has no hard breaks, so a newline must not auto-activate ^FB.
-              resolveTextMode(p) === "tb"
-                ? {}
-                : deriveBlockTextPatch(content, p, p.fontHeight, p.fontWidth)
-            }
-          />
+          <ContentEditorButton obj={obj} />
         </StaticSectionCard>
 
         <SectionCard id="text-typography" title={t.properties.typographySection}>
@@ -118,33 +114,35 @@ export const textPanel: ObjectTypeUi<TextProps> = {
             zplCmd="^A"
           />
 
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between gap-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="accent-accent"
-                  checked={p.reverse ?? false}
-                  onChange={(e) => onChange({ reverse: e.target.checked })}
-                />
-                <span className={labelCls}>{t.registry.text.reverse}</span>
-              </label>
-              <ZplCmd cmd="^FR" />
+          {!isSerial && (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="accent-accent"
+                    checked={p.reverse ?? false}
+                    onChange={(e) => onChange({ reverse: e.target.checked })}
+                  />
+                  <span className={labelCls}>{t.registry.text.reverse}</span>
+                </label>
+                <ZplCmd cmd="^FR" />
+              </div>
+              {/* ^FR knocks out of whatever is behind it, so white-on-black needs
+                  a real black box; one click drops one sized to this text. The box
+                  is a separate object, so offer to clear it once reverse is off. */}
+              {p.reverse && !hasReverseBacking && (
+                <button type="button" className={buttonCls} onClick={() => addReverseBackground(obj.id)}>
+                  {t.registry.text.addReverseBg}
+                </button>
+              )}
+              {!p.reverse && hasOwnReverseBacking && (
+                <button type="button" className={buttonCls} onClick={() => removeReverseBackground(obj.id)}>
+                  {t.registry.text.removeReverseBg}
+                </button>
+              )}
             </div>
-            {/* ^FR knocks out of whatever is behind it, so white-on-black needs
-                a real black box; one click drops one sized to this text. The box
-                is a separate object, so offer to clear it once reverse is off. */}
-            {p.reverse && !hasReverseBacking && (
-              <button type="button" className={buttonCls} onClick={() => addReverseBackground(obj.id)}>
-                {t.registry.text.addReverseBg}
-              </button>
-            )}
-            {!p.reverse && hasOwnReverseBacking && (
-              <button type="button" className={buttonCls} onClick={() => removeReverseBackground(obj.id)}>
-                {t.registry.text.removeReverseBg}
-              </button>
-            )}
-          </div>
+          )}
 
           <div className="flex flex-col gap-1">
             <button
@@ -212,13 +210,13 @@ export const textPanel: ObjectTypeUi<TextProps> = {
                     </>
                   )}
                 </div>
-                <FpSettings props={p} onChange={onChange} />
+                {!isSerial && <FpSettings props={p} onChange={onChange} />}
               </div>
             )}
           </div>
         </SectionCard>
 
-        <TextModeSection props={p} onChange={onChange} />
+        {!isSerial && <TextModeSection props={p} onChange={onChange} />}
       </>
     );
   },

@@ -4,6 +4,7 @@ import {
   findMarkerContaining,
   tokeniseMarkers,
   sanitiseAroundMarkers,
+  removeMarkerAt,
 } from "./markerTokens";
 
 describe("tokeniseMarkers", () => {
@@ -115,5 +116,24 @@ describe("findMarkerContaining", () => {
     // Doc test for the chosen semantics: matchAll order = first hit wins.
     const r = findMarkerContaining("«a»«b»", 3);
     expect(r).toEqual({ start: 0, end: 3 });
+  });
+});
+
+describe("removeMarkerAt", () => {
+  const vars = new Set(["sku", "lot"]);
+
+  it("drops the index-th marker, keeping text and other markers", () => {
+    expect(removeMarkerAt("a «sku» b «lot» c", 0, vars)).toBe("a  b «lot» c");
+    expect(removeMarkerAt("a «sku» b «lot» c", 1, vars)).toBe("a «sku» b  c");
+  });
+
+  it("removes a clock and an orphan marker by index", () => {
+    expect(removeMarkerAt("«sku»«clock:Y»«ghost»", 1, vars)).toBe("«sku»«ghost»");
+    expect(removeMarkerAt("«sku»«clock:Y»«ghost»", 2, vars)).toBe("«sku»«clock:Y»");
+  });
+
+  it("returns content unchanged for an out-of-range index", () => {
+    expect(removeMarkerAt("«sku» x", 5, vars)).toBe("«sku» x");
+    expect(removeMarkerAt("plain text", 0, vars)).toBe("plain text");
   });
 });

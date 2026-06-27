@@ -1,4 +1,5 @@
 import { CLOCK_TOKEN_LABELS } from "./fcTemplate";
+import { CLOCK_BODY_RE } from "../types/clockMarker";
 
 /** Segment kinds the content editor's colour-mirror layer renders. */
 export type MarkerSegment =
@@ -8,6 +9,21 @@ export type MarkerSegment =
 
 const MARKER_RE = /«([^»]+)»/g;
 const KNOWN_CLOCK_TOKENS = new Set<string>(CLOCK_TOKEN_LABELS.map((x) => x.token));
+
+/** Classifies a marker body (the text between `«»`) as a known variable, a
+ *  known clock token, or an orphan. Single source for tokeniseMarkers and the
+ *  editor's click/keyboard selection so the two never drift. */
+export function classifyMarkerBody(
+  body: string,
+  variableNames: ReadonlySet<string>,
+): "var" | "clock" | "orphan" {
+  const clockMatch = body.match(CLOCK_BODY_RE);
+  if (clockMatch) {
+    const tok = clockMatch[2] ?? "";
+    return KNOWN_CLOCK_TOKENS.has(tok) ? "clock" : "orphan";
+  }
+  return variableNames.has(body) ? "var" : "orphan";
+}
 
 /** Classifies markers var/clock/orphan for editor highlighting. */
 export function tokeniseMarkers(
@@ -19,17 +35,31 @@ export function tokeniseMarkers(
   for (const m of content.matchAll(MARKER_RE)) {
     const idx = m.index ?? 0;
     if (idx > last) out.push({ kind: "text", text: content.slice(last, idx) });
-    const body = m[1] ?? "";
-    const clockMatch = body.match(/^clock([23]?):([A-Za-z])$/);
-    if (clockMatch) {
-      const tok = clockMatch[2] ?? "";
-      out.push({ kind: KNOWN_CLOCK_TOKENS.has(tok) ? "clock" : "orphan", text: m[0] });
-    } else {
-      out.push({ kind: variableNames.has(body) ? "var" : "orphan", text: m[0] });
-    }
+    out.push({ kind: classifyMarkerBody(m[1] ?? "", variableNames), text: m[0] });
     last = idx + m[0].length;
   }
   if (last < content.length) out.push({ kind: "text", text: content.slice(last) });
+  return out;
+}
+
+/** Drop the index-th marker (var/clock/orphan, in document order) from the
+ *  content, leaving literal text and the other markers intact. Out-of-range
+ *  indices return the content unchanged. */
+export function removeMarkerAt(
+  content: string,
+  index: number,
+  variableNames: ReadonlySet<string>,
+): string {
+  let markerIndex = -1;
+  let out = "";
+  for (const seg of tokeniseMarkers(content, variableNames)) {
+    if (seg.kind === "text") {
+      out += seg.text;
+      continue;
+    }
+    markerIndex += 1;
+    if (markerIndex !== index) out += seg.text;
+  }
   return out;
 }
 

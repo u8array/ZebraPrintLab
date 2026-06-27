@@ -1,6 +1,6 @@
 // Module-level measured-footprint cache, published by the render layer for the
 // object types whose size is not purely computable (barcodes, single-line text,
-// serial, image). Deliberately NOT zustand: writes happen every render and must
+// image). Deliberately NOT zustand: writes happen every render and must
 // never trigger a re-render. The align handler reads it as ctx.measured.
 //
 // Convention: store the ALREADY-ROTATED visual footprint in dots, keyed by

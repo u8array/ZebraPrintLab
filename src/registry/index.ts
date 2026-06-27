@@ -12,7 +12,6 @@ import { datamatrix } from './datamatrix';
 import { box } from './box';
 import { ellipse } from './ellipse';
 import { line } from './line';
-import { serial } from './serial';
 import { image } from './image';
 import { upca } from './upca';
 import { ean8 } from './ean8';
@@ -87,7 +86,6 @@ const _ObjectRegistry = {
   box,
   ellipse,
   line,
-  serial,
   image,
 } satisfies ObjectRegistryMap;
 

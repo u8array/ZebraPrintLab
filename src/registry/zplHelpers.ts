@@ -2,6 +2,7 @@ import type { LabelObjectBase } from "../types/LabelObject";
 import type { ZplEmitContext } from "../types/ZplEmit";
 import { hasTemplateMarkers, markersToEmbeds } from "../lib/fnTemplate";
 import { hasClockMarkers, markersToTokens } from "../lib/fcTemplate";
+import { classifyField } from "../lib/variableField";
 import { modelToZplAnchor } from "../lib/labelGeometry/textPositionTransforms";
 import { getTextRenderMetrics } from "../lib/labelGeometry/textRenderMetrics";
 import { blockInterLineExtentDots } from "../lib/zebraTextLayout";
@@ -140,27 +141,28 @@ export function fdField(payload: string): string {
   return `^FH${FH_DELIM}^FD${escaped}^FS`;
 }
 
-/** Bound variableId emits `^FN{n}` + default; orphan falls back to literal.
- *  `transform` (e.g. GS1 FNC1 escaping) is applied to the final field-data
- *  payload so it composes with binding instead of bypassing it. `encodeDefault`
- *  block-encodes only the bound default (e.g. ^TB `<<>` escaping); literal/
- *  template `content` must already be encoded by the caller, since encoding
- *  after marker substitution would corrupt the inserted ^FE/^FC tokens. */
+/** Single-bind content (`«name»`) emits `^FN{n}` + default; a template expands
+ *  to `^FE` embeds, everything else stays literal. `transform` (e.g. GS1 FNC1
+ *  escaping) is applied to the final field-data payload so it composes with
+ *  binding instead of bypassing it. `encodeDefault` block-encodes only the
+ *  bound default (e.g. ^TB `<<>` escaping); literal/template `content` must
+ *  already be encoded by the caller, since encoding after marker substitution
+ *  would corrupt the inserted ^FE/^FC tokens. */
 export function fdFieldFor(
-  obj: LabelObjectBase,
   content: string,
   ctx?: ZplEmitContext,
   transform: (payload: string) => string = (s) => s,
   encodeDefault: (payload: string) => string = (s) => s,
 ): string {
-  // Single-bind wins, mirroring preview (`applyBindingToObject`): emit the
-  // variable's ^FN + default literally, never expanding a marker that happens
-  // to sit inside the (mirrored) default. Resolving variableId before markers
-  // is what keeps preview and export from diverging on such a value.
-  const id = obj.variableId;
-  if (id && ctx?.variables) {
-    const variable = ctx.variables.find((v) => v.id === id);
-    if (variable) return `^FN${variable.fnNumber}${fdField(transform(encodeDefault(variable.defaultValue)))}`;
+  // Single-bind emits the variable's ^FN + default literally (never expanding a
+  // marker inside the mirrored default), so preview and export agree. Derived
+  // from content: content == exactly one known marker.
+  if (ctx?.variables) {
+    const cls = classifyField(content, ctx.variables);
+    if (cls.kind === "single") {
+      const v = cls.variable;
+      return `^FN${v.fnNumber}${fdField(transform(encodeDefault(v.defaultValue)))}`;
+    }
   }
   // Template path: ^FE embeds first then ^FC clock; absent ctx delim signals
   // "templates not emittable" and the content stays literal.

@@ -7,7 +7,7 @@ import { barcodeTextZoneDots, barcodeZoneAbove } from "../../lib/barcodeHri";
 import { upceData6FromFd } from "../../registry/hriFormatters";
 import type { LabelObject } from "../../types/Group";
 import type { Gs1DatabarProps } from "../../registry/gs1databar";
-import { objectRotation } from "../../registry/rotation";
+import { isAxisSwapped, objectRotation } from "../../registry/rotation";
 import { dotsToPx } from "../../lib/coordinates";
 import {
   GS1_DATABAR_DEFAULT_SEGMENTS,
@@ -597,7 +597,7 @@ export function getDisplaySize(
   }
 
   const rotation = objectRotation(obj.props);
-  const isQuarter = rotation === "R" || rotation === "B";
+  const isQuarter = isAxisSwapped(rotation);
   const upright = getUprightDisplaySize(obj, canvas.width, canvas.height, scale, dpmm);
 
   // Bbox after rotation: R/B swap upright w/h; N/I keep them.

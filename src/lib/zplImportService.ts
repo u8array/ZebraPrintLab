@@ -1,6 +1,7 @@
 import { parseZPL, type ImportFinding, type ImportFindingKind, type ImportReport } from "./zplParser";
 import { pruneUndefined } from "./pruneUndefined";
 import { stripDrivePrefix } from "./customFonts";
+import { renameTemplateMarkers } from "./fnTemplate";
 import type { CustomFontMapping, LabelConfig } from "../types/LabelConfig";
 import type { PrinterProfile } from "../types/PrinterProfile";
 import type { LabelObject, Page } from "../types/Group";
@@ -103,27 +104,30 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
       if (m.alias) aggregatedCustomFonts.set(m.alias, m);
     }
     for (const p of result.referencedFontPaths) designFontPaths.add(normPath(p));
-    const idRemap = new Map<string, string>();
+    // Objects link to their variable by marker NAME. When this block's variable
+    // merges into an earlier block's (same ^FN number) under a different name,
+    // OR a new fnNumber's name collides and gets disambiguated, its `«name»`
+    // markers must be renamed to the kept variable's name.
+    const nameRemap = new Map<string, string>();
     for (const v of result.variables) {
       const existing = variablesByFn.get(v.fnNumber);
       if (existing) {
-        idRemap.set(v.id, existing.id);
+        if (v.name !== existing.name) nameRemap.set(v.name, existing.name);
       } else {
-        // New fnNumber: keep the entry but disambiguate the name if a
-        // prior block has the same (e.g. two `field_1` derived from
-        // different blocks). No id remap, since the spread reuses v.id and
-        // the block's objects already reference that id.
-        const kept: Variable = { ...v, name: uniqueVariableName(v.name, variables) };
+        // New fnNumber: keep the entry but disambiguate the name if a prior
+        // block has the same (e.g. two `field_1` from different blocks).
+        const uniqueName = uniqueVariableName(v.name, variables);
+        if (uniqueName !== v.name) nameRemap.set(v.name, uniqueName);
+        const kept: Variable = { ...v, name: uniqueName };
         variables.push(kept);
         variablesByFn.set(kept.fnNumber, kept);
       }
     }
-    // Apply id remap to this block's objects so their `variableId`
-    // points at the merged Variable rather than the orphaned per-block
-    // entry. Defensive walk into groups; the parser does not produce
-    // groups, but the helper is shape-agnostic.
-    if (idRemap.size > 0) {
-      rewireBindings(result.objects, idRemap);
+    // Rename this block's content markers onto the kept variable names.
+    // Defensive walk into groups; the parser does not produce groups, but the
+    // helper is shape-agnostic.
+    if (nameRemap.size > 0) {
+      rewireBindings(result.objects, nameRemap);
     }
     // A preamble-only unit (no ^XA) usually carries just fonts/profile. But a
     // wrapper-less paste of real fields also lands here; import those as a page
@@ -201,24 +205,24 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
   return { labelConfig, printerProfile, pages, variables, report };
 }
 
-/** In-place rewrite of `variableId` references on freshly-parsed objects
- *  (not yet in the store, so mutation is safe). Lets the importer dedupe
- *  cross-block variables without re-walking the tree to construct
- *  immutable copies. */
+/** In-place rewrite of cross-block variable references on freshly-parsed objects
+ *  (not yet in the store, so mutation is safe). Renames `«name»` content markers
+ *  to the merged variable's name. The merge is by ^FN number, so the kept
+ *  variable keeps the same number: captured bytes stay valid and must NOT be
+ *  marked dirty (an unedited later page would lose its original ^FD default on
+ *  export otherwise). */
 function rewireBindings(
   objects: LabelObject[],
-  idRemap: ReadonlyMap<string, string>,
+  nameRemap: ReadonlyMap<string, string>,
 ): void {
   for (const obj of objects) {
-    if (obj.variableId && idRemap.has(obj.variableId)) {
-      // Cross-block merge is by fnNumber, so the remapped variable keeps the
-      // same ^FN number: the captured bytes stay valid and must NOT be marked
-      // dirty, or an unedited later page would lose its original ^FD default on
-      // export (byte-identity break). The remap only repoints the model binding.
-      obj.variableId = idRemap.get(obj.variableId);
+    const leaf = obj as { props?: { content?: string } };
+    if (typeof leaf.props?.content === "string") {
+      // Single pass against original names: a cross-block swap can't cascade.
+      leaf.props.content = renameTemplateMarkers(leaf.props.content, nameRemap);
     }
     if (obj.type === "group" && "children" in obj) {
-      rewireBindings(obj.children, idRemap);
+      rewireBindings(obj.children, nameRemap);
     }
   }
 }

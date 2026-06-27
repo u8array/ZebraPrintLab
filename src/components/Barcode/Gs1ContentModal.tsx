@@ -69,9 +69,9 @@ function Gs1Builder({ objectId }: { objectId: string }) {
   const removeAt = (i: number) => setSegments((prev) => prev.filter((_, j) => j !== i));
 
   const apply = () => {
-    // Clear any single-bind: the builder writes a literal GS1 string, which
-    // must not stay ^FN-bound (preview/export dual-state).
-    updateObject(objectId, { variableId: undefined, props: { content: segmentsToContent(segments) } });
+    // Builder writes a literal GS1 string, overwriting any prior `«name»` marker
+    // so the field is no longer single-bound.
+    updateObject(objectId, { props: { content: segmentsToContent(segments) } });
     closeGs1Builder();
   };
 

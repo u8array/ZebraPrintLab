@@ -2,7 +2,7 @@ import { isGroup, type LabelObject, type Page } from '../types/Group';
 import type { ObjectChanges } from '../types/LabelObject';
 import type { LocaleCode } from '../locales';
 import { locales } from '../locales';
-import { renameTemplateMarker, substituteTemplateMarker } from '../lib/fnTemplate';
+import { renameTemplateMarkers, substituteTemplateMarker } from '../lib/fnTemplate';
 import { getObjectStringContent } from '../lib/variableBinding';
 import { getEntry } from '../registry';
 
@@ -21,7 +21,7 @@ export function isLockBypass(changes: ObjectChanges): boolean {
  *  emits as a leading `^FX`. Pure metadata (lock/visible/name/includeInExport)
  *  keeps the replay valid. The `dirtyTracking` middleware reads this to stamp
  *  `dirty` centrally; mutators no longer set it themselves. */
-export const EMIT_AFFECTING_KEYS = new Set(['x', 'y', 'rotation', 'positionType', 'fieldJustify', 'variableId', 'props', 'comment', 'type']);
+export const EMIT_AFFECTING_KEYS = new Set(['x', 'y', 'rotation', 'positionType', 'fieldJustify', 'props', 'comment', 'type']);
 
 /** Label-config keys that never reach emitted ZPL (design-time editor aids
  *  only). Everything else maps to a config command, so changing it would make
@@ -73,17 +73,28 @@ export function rewriteTemplateMarkers(
   oldName: string,
   newName: string,
 ): LabelObject[] {
+  return rewriteTemplateMarkersMap(objects, new Map([[oldName, newName]]));
+}
+
+/** Like `rewriteTemplateMarkers` but renames many names in ONE pass per leaf,
+ *  looking each marker up against the original name. Order-independent and
+ *  collision-safe (swaps/chains can't cascade). Identity-preserving. */
+export function rewriteTemplateMarkersMap(
+  objects: LabelObject[],
+  renames: ReadonlyMap<string, string>,
+): LabelObject[] {
+  if (renames.size === 0) return objects;
   let changed = false;
   const next = objects.map((obj) => {
     if (isGroup(obj)) {
-      const nextChildren = rewriteTemplateMarkers(obj.children, oldName, newName);
+      const nextChildren = rewriteTemplateMarkersMap(obj.children, renames);
       if (nextChildren === obj.children) return obj;
       changed = true;
       return { ...obj, children: nextChildren };
     }
     const content = getObjectStringContent(obj);
     if (content === undefined) return obj;
-    const renamed = renameTemplateMarker(content, oldName, newName);
+    const renamed = renameTemplateMarkers(content, renames);
     if (renamed === content) return obj;
     changed = true;
     const props = (obj as { props: object }).props;

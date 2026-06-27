@@ -15,6 +15,7 @@ import {
   FN_NUMBER_MAX,
   nextFreeFnNumber,
   nextDefaultVariableName,
+  isValidVariableName,
   type Variable,
 } from '../../types/Variable';
 import { inputCls } from '../Properties/styles';
@@ -45,13 +46,16 @@ export function VariablesPanel() {
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
   const [pendingCsvDiscard, setPendingCsvDiscard] = useState(false);
 
-  // Mapping completeness for the badge's secondary line. Counts only
-  // bindings whose header still exists in the active dataset, since
-  // stale entries (header dropped) don't actually map anything.
+  // Mapping completeness for the badge's secondary line. Counts only bindings
+  // whose variable still exists AND whose header is still in the dataset; stale
+  // entries (deleted variable / dropped header) don't actually map anything.
   const mappedCount = (() => {
     if (!csvMapping || !csvDataset) return 0;
     const headerSet = new Set(csvDataset.headers);
-    return Object.values(csvMapping.bindings).filter((h) => headerSet.has(h)).length;
+    const liveIds = new Set(variables.map((v) => v.id));
+    return Object.entries(csvMapping.bindings).filter(
+      ([id, h]) => liveIds.has(id) && headerSet.has(h),
+    ).length;
   })();
 
   const [pendingDelete, setPendingDelete] = useState<Variable | null>(null);
@@ -171,7 +175,6 @@ export function VariablesPanel() {
 
       {csvDataset && (
         <div className="flex flex-col gap-1 px-2 py-1.5 rounded border border-border bg-surface-2 font-mono text-[10px] text-text">
-          {/* i18n: Phase-2 strings here get locale keys at end-of-branch sweep. */}
           <div className="flex items-center gap-1.5">
             <TableCellsIcon className="w-3 h-3 shrink-0 text-muted" />
             <span
@@ -274,7 +277,11 @@ export function VariablesPanel() {
                 showZpl={showZpl}
                 tv={tv}
                 onChangeName={(name) =>
-                  tryUpdate(entry.id, { name }, tv.nameInUse)
+                  tryUpdate(
+                    entry.id,
+                    { name },
+                    isValidVariableName(name.trim()) ? tv.nameInUse : tv.nameInvalid,
+                  )
                 }
                 onChangeFnNumber={(fnNumber) =>
                   tryUpdate(entry.id, { fnNumber }, tv.slotInUse)

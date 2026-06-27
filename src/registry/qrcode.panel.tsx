@@ -4,7 +4,7 @@ import { useLabelStore } from '../store/labelStore';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
-import { VariableContentField } from '../components/Properties/VariableContentField';
+import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
 import { FieldLabel } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { builderButtonCls } from '../components/ui/formStyles';
@@ -24,7 +24,7 @@ export const qrcodePanel: ObjectTypeUi<QrCodeProps> = {
     return (
       <>
         <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
-          <VariableContentField obj={obj} multiline placeholder={t.registry.qrcode.content} />
+          <ContentEditorButton obj={obj} />
           <button type="button" disabled={bound} onClick={() => openContentBuilder(obj.id)} className={builderButtonCls}>
             {t.contentBuilder.button}
           </button>

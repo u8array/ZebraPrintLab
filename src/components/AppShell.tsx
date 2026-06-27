@@ -45,6 +45,7 @@ import { LabelaryNoticeModal } from "./Output/LabelaryNoticeModal";
 import { PrinterSettingsModal } from "./PrinterSettings/PrinterSettingsModal";
 import { Gs1ContentModal } from "./Barcode/Gs1ContentModal";
 import { ContentBuilderModal } from "./Barcode/ContentBuilderModal";
+import { VariableBuilderModal } from "./Properties/VariableBuilderModal";
 import { localeNames } from "../locales";
 import type { LocaleCode } from "../locales";
 import { mmToUnit } from "../lib/units";
@@ -134,6 +135,11 @@ export function AppShell() {
   } = useCsvImportActions();
   const csvMappingModalOpen = useLabelStore((s) => s.csvMappingModalOpen);
   const closeCsvMappingModal = useLabelStore((s) => s.closeCsvMappingModal);
+  // Remount the mapping modal when the dataset changes (e.g. importing from its
+  // own no-CSV state) so its open-time draft re-seeds with the new CSV.
+  // importedAt is unique per import, so it also catches re-importing the same
+  // filename (which a filename key would miss).
+  const csvDatasetKey = useLabelStore((s) => s.csvDataset?.source.importedAt);
   const {
     showZplImport,
     openZplImport,
@@ -444,7 +450,11 @@ export function AppShell() {
 
       {showZplImport && <ZplImportModal onClose={closeZplImport} />}
       {csvMappingModalOpen && (
-        <VariableMappingModal onClose={closeCsvMappingModal} />
+        <VariableMappingModal
+          key={csvDatasetKey ?? "none"}
+          onClose={closeCsvMappingModal}
+          onImportCsv={() => csvInputRef.current?.click()}
+        />
       )}
       {pendingImport && (
         <CsvImportConfirmDialog
@@ -468,6 +478,7 @@ export function AppShell() {
       <PrinterSettingsModal />
       <Gs1ContentModal />
       <ContentBuilderModal />
+      <VariableBuilderModal />
     </div>
   );
 }

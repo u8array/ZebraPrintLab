@@ -296,3 +296,19 @@ describe('importZplText - ~DY font scope (setup vs design)', () => {
     expect(printerProfile.setupFonts).toEqual([{ path: 'E:RTFONT.TTF' }]);
   });
 });
+
+describe('importZplText - cross-block variable merge (content markers)', () => {
+  it('merges ^FN1 across blocks and renames the second block marker to the kept name', () => {
+    const zpl =
+      '^XA^FXField: GTIN^FO10,10^A0N,30,30^FN1^FDAlice^FS^XZ\n' +
+      '^XA^FO10,10^A0N,30,30^FN1^FDBob^FS^XZ';
+    const r = importZplText(zpl, 8);
+    expect(r.variables).toHaveLength(1);
+    const name = r.variables[0]?.name;
+    const p0 = r.pages[0]?.objects[0] as unknown as { props: { content: string } };
+    const p1 = r.pages[1]?.objects[0] as unknown as { props: { content: string } };
+    // Both pages reference the single kept variable by the same content marker.
+    expect(p0.props.content).toBe(`«${name}»`);
+    expect(p1.props.content).toBe(`«${name}»`);
+  });
+});

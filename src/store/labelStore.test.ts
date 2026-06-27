@@ -1510,6 +1510,77 @@ describe('migrateLegacy — v9→v10 reverse text backing', () => {
   });
 });
 
+describe('migrateLegacy — v11→v12 single-bind variableId to content marker', () => {
+  const persisted = (objects: unknown[]) => ({
+    variables: [{ id: 'v1', name: 'sku', fnNumber: 1, defaultValue: 'X' }],
+    pages: [{ objects }],
+  });
+
+  it('rewrites a single-bind leaf to a «name» marker and drops variableId', () => {
+    const p = persisted([
+      { id: 't', type: 'text', x: 0, y: 0, rotation: 0, variableId: 'v1', props: { content: 'X' } },
+    ]);
+    const migrated = migrateLegacy(p, 11) as typeof p;
+    const leaf = migrated.pages[0]!.objects[0] as { variableId?: unknown; props: { content: string } };
+    expect(leaf.props.content).toBe('«sku»');
+    expect('variableId' in leaf).toBe(false);
+  });
+
+  it('drops an orphan variableId, leaving the literal fallback content', () => {
+    const p = persisted([
+      { id: 't', type: 'text', x: 0, y: 0, rotation: 0, variableId: 'ghost', props: { content: 'plain' } },
+    ]);
+    const migrated = migrateLegacy(p, 11) as typeof p;
+    const leaf = migrated.pages[0]!.objects[0] as { variableId?: unknown; props: { content: string } };
+    expect(leaf.props.content).toBe('plain');
+    expect('variableId' in leaf).toBe(false);
+  });
+
+  it('descends into groups', () => {
+    const p = persisted([
+      {
+        id: 'g', type: 'group', x: 0, y: 0, rotation: 0,
+        children: [
+          { id: 't', type: 'text', x: 0, y: 0, rotation: 0, variableId: 'v1', props: { content: 'X' } },
+        ],
+      },
+    ]);
+    const migrated = migrateLegacy(p, 11) as typeof p;
+    const group = migrated.pages[0]!.objects[0] as { children: { props: { content: string } }[] };
+    expect(group.children[0]!.props.content).toBe('«sku»');
+  });
+
+  it('is a no-op for a field that already uses a marker', () => {
+    const p = persisted([
+      { id: 't', type: 'text', x: 0, y: 0, rotation: 0, props: { content: '«sku»' } },
+    ]);
+    const migrated = migrateLegacy(p, 11) as typeof p;
+    expect((migrated.pages[0]!.objects[0] as { props: { content: string } }).props.content).toBe('«sku»');
+  });
+
+  it('disambiguates duplicate legacy names per id (no cross-binding)', () => {
+    const p = {
+      variables: [
+        { id: 'v1', name: 'sku', fnNumber: 1, defaultValue: 'X' },
+        { id: 'v2', name: 'sku', fnNumber: 2, defaultValue: 'Y' },
+      ],
+      pages: [
+        {
+          objects: [
+            { id: 'a', type: 'text', x: 0, y: 0, rotation: 0, variableId: 'v1', props: { content: 'X' } },
+            { id: 'b', type: 'text', x: 0, y: 0, rotation: 0, variableId: 'v2', props: { content: 'Y' } },
+          ],
+        },
+      ],
+    };
+    const migrated = migrateLegacy(p, 11) as typeof p;
+    expect(migrated.variables.map((v) => v.name)).toEqual(['sku', 'sku_2']);
+    const objs = migrated.pages[0]!.objects as { props: { content: string } }[];
+    expect(objs[0]!.props.content).toBe('«sku»');
+    expect(objs[1]!.props.content).toBe('«sku_2»');
+  });
+});
+
 describe('migrateLegacy — v4→v5 printerProfile extraction', () => {
   it('hoists profile fields off label and clears them from the per-label config', () => {
     const persisted = {
@@ -1672,6 +1743,63 @@ describe('migrateLegacy — v4→v5 printerProfile extraction', () => {
   });
 });
 
+describe('migrateLegacy — v9→v10 serial type → text mode', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const props = (o: unknown) => (o as any).props as Record<string, unknown>;
+
+  it('rewrites a persisted serial object to a text field with serial prop', () => {
+    const persisted = {
+      label: { widthMm: 100, heightMm: 50, dpmm: 8 },
+      printerProfile: {},
+      pages: [{ objects: [
+        { id: 's', type: 'serial', x: 10, y: 20, rotation: 0,
+          props: { content: '001', increment: 5, fontHeight: 30, fontWidth: 0, rotation: 'N', zplMode: 'SF' } },
+      ] }],
+    };
+    const migrated = migrateLegacy(persisted, 9) as typeof persisted;
+    const obj = migrated.pages[0]!.objects[0]!;
+    expect((obj as { type: string }).type).toBe('text');
+    expect(props(obj).serial).toEqual({ increment: 5, zplMode: 'SF' });
+    expect(props(obj).content).toBe('001');
+    expect(props(obj).increment).toBeUndefined();
+    expect(props(obj).zplMode).toBeUndefined();
+  });
+
+  it('migrates a serial object nested in a group', () => {
+    const persisted = {
+      label: { widthMm: 100, heightMm: 50, dpmm: 8 },
+      printerProfile: {},
+      pages: [{ objects: [
+        { id: 'g', type: 'group', x: 0, y: 0, rotation: 0, children: [
+          { id: 's', type: 'serial', x: 0, y: 0, rotation: 0,
+            props: { content: '1', increment: 1, fontHeight: 30, fontWidth: 0, rotation: 'N', zplMode: 'SN' } },
+        ] },
+      ] }],
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const migrated = migrateLegacy(persisted, 9) as any;
+    const child = migrated.pages[0].objects[0].children[0];
+    expect(child.type).toBe('text');
+    expect(props(child).serial).toEqual({ increment: 1, zplMode: 'SN' });
+  });
+
+  it('remaps the legacy "serial" palette variant to "text-serial"', () => {
+    const persisted = {
+      label: { widthMm: 100, heightMm: 50, dpmm: 8 },
+      printerProfile: {},
+      pages: [{ objects: [] }],
+      paletteRows: [
+        { id: 'r1', type: 'text', variant: 'serial' },
+        { id: 'r2', type: 'text', variant: 'text' },
+      ],
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const migrated = migrateLegacy(persisted, 9) as any;
+    expect(migrated.paletteRows[0].variant).toBe('text-serial');
+    expect(migrated.paletteRows[1].variant).toBe('text');
+  });
+});
+
 describe('variables', () => {
   beforeEach(reset);
 
@@ -1732,25 +1860,25 @@ describe('variables', () => {
     expect(state().variables[0]?.defaultValue).toBe('y');
   });
 
-  it('setBoundDefault updates variable + bound object content in one undo entry', () => {
+  it('updateVariable default change is one undo entry; bound content stays the marker', () => {
     state().addObject('text');
     const objId = defined(ids()[0]);
     const varId = defined(state().addVariable({ name: 'sku', defaultValue: 'x' }));
-    state().updateObject(objId, { variableId: varId });
+    state().updateObject(objId, { props: { content: '«sku»' } });
     useLabelStore.temporal.getState().clear();
 
-    state().setBoundDefault(varId, 'NEW', objId, { props: { content: 'NEW' } });
+    state().updateVariable(varId, { defaultValue: 'NEW' });
 
     expect(state().variables.find((v) => v.id === varId)?.defaultValue).toBe('NEW');
-    expect(props(objs().find((o) => o.id === objId)).content).toBe('NEW');
+    // Content is the marker, not a mirror; preview re-resolves to the new default.
+    expect(props(objs().find((o) => o.id === objId)).content).toBe('«sku»');
     expect(useLabelStore.temporal.getState().pastStates.length).toBe(1);
   });
 
-  it('setBoundDefault is a no-op for an unknown variable id', () => {
-    state().addObject('text');
-    const objId = defined(ids()[0]);
-    state().setBoundDefault('ghost', 'NEW', objId, { props: { content: 'NEW' } });
-    expect(props(objs().find((o) => o.id === objId)).content).not.toBe('NEW');
+  it('updateVariable is a no-op for an unknown variable id', () => {
+    const before = state().variables.length;
+    state().updateVariable('ghost', { defaultValue: 'NEW' });
+    expect(state().variables.length).toBe(before);
   });
 
   it('updateVariable rejects renaming to an existing name', () => {
@@ -1767,7 +1895,7 @@ describe('variables', () => {
     expect(state().variables.find((v) => v.id === id)?.fnNumber).toBe(2);
   });
 
-  it('removeVariable strips variableId from every bound field across pages', () => {
+  it('removeVariable substitutes the lone single-bind marker across pages', () => {
     const varId = defined(state().addVariable({ name: 'sku', defaultValue: 'X' }));
     useLabelStore.setState({
       pages: [
@@ -1779,8 +1907,7 @@ describe('variables', () => {
               x: 0,
               y: 0,
               rotation: 0,
-              variableId: varId,
-              props: { content: 'X', fontHeight: 30, fontWidth: 30, rotation: 'N' },
+              props: { content: '«sku»', fontHeight: 30, fontWidth: 30, rotation: 'N' },
             } as LabelObject,
           ],
         },
@@ -1799,8 +1926,7 @@ describe('variables', () => {
                   x: 0,
                   y: 0,
                   rotation: 0,
-                  variableId: varId,
-                  props: { content: 'X', fontHeight: 30, fontWidth: 30, rotation: 'N' },
+                  props: { content: '«sku»', fontHeight: 30, fontWidth: 30, rotation: 'N' },
                 } as LabelObject,
               ],
             } as LabelObject,
@@ -1812,10 +1938,10 @@ describe('variables', () => {
     state().removeVariable(varId);
 
     expect(state().variables).toHaveLength(0);
-    expect(state().pages[0]?.objects[0]?.variableId).toBeUndefined();
+    expect(props(state().pages[0]?.objects[0]).content).toBe('X');
     const group = state().pages[1]?.objects[0];
     if (!group || !isGroup(group)) throw new Error('expected group');
-    expect(group.children[0]?.variableId).toBeUndefined();
+    expect(props(group.children[0]).content).toBe('X');
   });
 
   it('removeVariable substitutes template markers with the default in leaf + group', () => {
@@ -2060,5 +2186,74 @@ describe('printerProfile actions', () => {
   it('patchPrinterProfile accepts the TOL+tolerance pair as one atomic patch', () => {
     state().patchPrinterProfile({ clockMode: 'TOL', clockTolerance: 30 });
     expect(state().printerProfile).toEqual({ clockMode: 'TOL', clockTolerance: 30 });
+  });
+});
+
+describe('applyMappingDraft — rename ripple', () => {
+  it('rewrites «oldName» markers when a variable is renamed in the mapping modal', () => {
+    const id = defined(state().addVariable({ name: 'sku', defaultValue: 'X' }));
+    const fn = defined(state().variables[0]).fnNumber;
+    useLabelStore.setState({
+      pages: [
+        {
+          objects: [
+            {
+              id: 'o1', type: 'text', x: 0, y: 0, rotation: 0,
+              props: { content: 'Item «sku»', fontHeight: 30, fontWidth: 30, rotation: 'N' },
+            } as LabelObject,
+          ],
+        },
+      ],
+    });
+
+    state().applyMappingDraft({
+      variables: [{ id, name: 'price', fnNumber: fn, defaultValue: 'X' }],
+      dataset: {
+        headers: [],
+        rows: [],
+        source: { filename: 'f.csv', importedAt: '', encoding: 'utf-8', delimiter: ',', rowCount: 0 },
+      },
+      mapping: { bindings: {}, headerSnapshot: [] },
+      activeRowIndex: 0,
+    });
+
+    expect(state().variables[0]?.name).toBe('price');
+    expect(props(state().pages[0]?.objects[0]).content).toBe('Item «price»');
+  });
+
+  it('handles a name swap in one pass (markers do not cascade)', () => {
+    const a = defined(state().addVariable({ name: 'sku', defaultValue: 'X' }));
+    const b = defined(state().addVariable({ name: 'lot', defaultValue: 'Y' }));
+    const fnA = defined(state().variables.find((v) => v.id === a)).fnNumber;
+    const fnB = defined(state().variables.find((v) => v.id === b)).fnNumber;
+    useLabelStore.setState({
+      pages: [
+        {
+          objects: [
+            {
+              id: 'o1', type: 'text', x: 0, y: 0, rotation: 0,
+              props: { content: '«sku» «lot»', fontHeight: 30, fontWidth: 30, rotation: 'N' },
+            } as LabelObject,
+          ],
+        },
+      ],
+    });
+
+    state().applyMappingDraft({
+      variables: [
+        { id: a, name: 'lot', fnNumber: fnA, defaultValue: 'X' },
+        { id: b, name: 'sku', fnNumber: fnB, defaultValue: 'Y' },
+      ],
+      dataset: {
+        headers: [],
+        rows: [],
+        source: { filename: 'f.csv', importedAt: '', encoding: 'utf-8', delimiter: ',', rowCount: 0 },
+      },
+      mapping: { bindings: {}, headerSnapshot: [] },
+      activeRowIndex: 0,
+    });
+
+    // «sku» bound to A (now "lot") -> «lot»; «lot» bound to B (now "sku") -> «sku».
+    expect(props(state().pages[0]?.objects[0]).content).toBe('«lot» «sku»');
   });
 });

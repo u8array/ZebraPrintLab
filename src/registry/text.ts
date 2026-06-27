@@ -3,6 +3,8 @@ import { textFieldPos, fdFieldFor, resolveFontCmd } from "./zplHelpers";
 import { effectiveScale } from "./transformHelpers";
 import { encodeFbContent } from "../lib/fbContent";
 import { encodeTbContent } from "../lib/tbContent";
+import { serialFieldData, type SerialMode } from "./serialField";
+import { deriveBlockTextPatch } from "../lib/textBlock";
 import { type ZplRotation } from "../lib/zebraTextLayout";
 
 /** Text layout mode. 'normal' = plain ^A (no wrap), 'fb' = ^FB field
@@ -12,14 +14,25 @@ import { type ZplRotation } from "../lib/zebraTextLayout";
  *  and ^FB imports keep working. Read it through `resolveTextMode`. */
 export type TextMode = "normal" | "fb" | "tb";
 
-export function resolveTextMode(p: Pick<TextProps, "textMode" | "blockWidth">): TextMode {
+export function resolveTextMode(p: Pick<TextProps, "textMode" | "blockWidth" | "serial">): TextMode {
+  // Serial is a plain single-line counter (^A + ^SN/^SF); block props lie
+  // dormant while it is active, so the mode resolves to 'normal' regardless.
+  if (p.serial) return "normal";
   if (p.textMode) return p.textMode;
   return p.blockWidth ? "fb" : "normal";
 }
 
+/** Whether the field's content may contain line breaks. Only text in a block
+ *  mode (^FB/^TB) wraps to multiple lines; plain text (^A) and every barcode
+ *  field is single-line, so the content editor must reject Enter there. */
+export function fieldIsMultiline(obj: { type: string; props?: unknown }): boolean {
+  if (obj.type !== "text") return false;
+  return resolveTextMode(obj.props as Pick<TextProps, "textMode" | "blockWidth" | "serial">) !== "normal";
+}
+
 /** Primary command the text emits in its current mode: plain `^A`, field-block
  *  `^FB`, or text-block `^TB`. Drives the properties header command badge. */
-export function textZplCmd(p: Pick<TextProps, "textMode" | "blockWidth">): "^A" | "^FB" | "^TB" {
+export function textZplCmd(p: Pick<TextProps, "textMode" | "blockWidth" | "serial">): "^A" | "^FB" | "^TB" {
   const mode = resolveTextMode(p);
   return mode === "fb" ? "^FB" : mode === "tb" ? "^TB" : "^A";
 }
@@ -61,6 +74,12 @@ export interface TextProps {
   /** ^FP inter-character gap in dots, added on top of the font's
    *  natural advance. Omitted on emit when 0. */
   fpCharGap?: number;
+  /** Per-field firmware counter (^SN/^SF). When set, the field is a serial
+   *  counter: `content` is the seed value, emitted via the serial command
+   *  instead of a plain/variable ^FD. While active it suppresses block/reverse/^FP
+   *  at emit and render (`resolveTextMode` returns 'normal'); those props lie
+   *  dormant and return when serial is turned off, so the switch is reversible. */
+  serial?: SerialMode;
 }
 
 export const text: ObjectTypeCore<TextProps> = {
@@ -70,6 +89,7 @@ export const text: ObjectTypeCore<TextProps> = {
   zplCmdFor: (obj) => textZplCmd(obj.props),
   group: "text" as const,
   bindable: true,
+  serialisable: true,
   defaultProps: {
     content: "Text",
     fontHeight: 30,
@@ -91,6 +111,23 @@ export const text: ObjectTypeCore<TextProps> = {
     let patched = nextProps;
     if (patched.fpDirection === "H") patched = { ...patched, fpDirection: undefined };
     if (patched.fpCharGap === 0) patched = { ...patched, fpCharGap: undefined };
+    // Hard line breaks added to a ^FB block must grow its maxLines cap, else the
+    // extra lines clip. Central here so every content edit path (inline field,
+    // Variable-Builder modal) gets it, not just the old panel handler.
+    if (typeof patched.content === "string" && !patched.serial && !_obj.props.serial) {
+      const merged = { ..._obj.props, ...patched };
+      if (resolveTextMode(merged) === "fb") {
+        const grown = deriveBlockTextPatch(
+          patched.content,
+          { blockWidth: merged.blockWidth, blockLines: merged.blockLines },
+          merged.fontHeight,
+          merged.fontWidth,
+        );
+        if (grown.blockLines !== undefined && grown.blockLines !== merged.blockLines) {
+          patched = { ...patched, blockLines: grown.blockLines };
+        }
+      }
+    }
     return patched === nextProps ? changes : { ...changes, props: patched };
   },
 
@@ -122,6 +159,11 @@ export const text: ObjectTypeCore<TextProps> = {
 
   toZPL: (obj, ctx) => {
     const p = obj.props;
+    // Serial mode: plain ^A field whose ^FD is wrapped by ^SN/^SF. No block,
+    // reverse, ^FP or variable binding (those are cleared on switch).
+    if (p.serial) {
+      return `${textFieldPos(obj)}${resolveFontCmd(p, ctx)}${serialFieldData(p.content, p.serial)}`;
+    }
     const mode = resolveTextMode(p);
     const fontCmd = resolveFontCmd(p, ctx);
     // ^FB uses `\&` line-breaks + soft hyphens; ^TB has neither and instead
@@ -146,7 +188,7 @@ export const text: ObjectTypeCore<TextProps> = {
     const fpGap = p.fpCharGap ?? 0;
     const fpCmd = fpDir !== "H" || fpGap > 0 ? `^FP${fpDir},${fpGap}` : "";
     const anchor = textFieldPos(obj);
-    const fd = fdFieldFor(obj, content, ctx, undefined, encodeDefault);
+    const fd = fdFieldFor(content, ctx, undefined, encodeDefault);
     // ^FR is the spec-true reverse: it knocks the glyph ink out of whatever is
     // already drawn (e.g. a black ^GB placed behind the text), so we emit it as
     // a bare field flag and never synthesize a background box. The field's

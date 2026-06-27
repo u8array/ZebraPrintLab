@@ -210,16 +210,6 @@ describe("round-trip integration (real import -> store -> export)", () => {
     expect(exportZpl()).toBe(original); // overlay replays, byte-identical
   });
 
-  it("setBoundDefault drops page overlays so the new default exports", () => {
-    importInto("^XA^FO10,10^A0N,30,30^FN1^FDold^FS^XZ");
-    expect(store().pages[0]!.overlay).toBeDefined();
-    const v = store().variables[0]!;
-    const obj = store().pages[0]!.objects[0]!;
-    const props = (obj as unknown as { props: object }).props;
-    store().setBoundDefault(v.id, "new", obj.id, { props: { ...props, content: "new" } });
-    expect(store().pages[0]!.overlay).toBeUndefined();
-  });
-
   it("changing a variable default drops page overlays (stale ^FN header)", () => {
     importInto("^XA^FO10,10^A0N,30,30^FN1^FDold^FS^XZ");
     expect(store().pages[0]!.overlay).toBeDefined();

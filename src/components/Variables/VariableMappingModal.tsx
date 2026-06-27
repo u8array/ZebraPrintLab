@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { PlusIcon, XMarkIcon } from '@heroicons/react/16/solid';
+import { PlusIcon, TableCellsIcon, XMarkIcon } from '@heroicons/react/16/solid';
 import { useLabelStore } from '../../store/labelStore';
 import { useT } from '../../lib/useT';
 import {
   nextDefaultVariableName,
   nextFreeFnNumber,
   suggestCsvMapping,
+  isValidVariableName,
   type CsvMapping,
   type CsvParseOptionsPersisted,
   type Variable,
@@ -26,6 +27,8 @@ import { Tooltip } from '../ui/Tooltip';
 
 interface Props {
   onClose: () => void;
+  /** Opens the CSV file picker (the same one as the File menu's import). */
+  onImportCsv: () => void;
 }
 
 interface DraftOptions {
@@ -46,7 +49,7 @@ interface DraftOptions {
  *  commits the whole bundle atomically; Cancel discards everything.
  *  Live re-parse of the cached raw text drives the table whenever
  *  options change, so the user sees the effect immediately. */
-export function VariableMappingModal({ onClose }: Props) {
+export function VariableMappingModal({ onClose, onImportCsv }: Props) {
   const t = useT();
   const tv = t.variables;
   const variables = useLabelStore((s) => s.variables);
@@ -189,9 +192,10 @@ export function VariableMappingModal({ onClose }: Props) {
       const t = v.name.trim();
       if (t === '') errors[v.id] = tv.csvNameEmpty;
       else if ((counts.get(t) ?? 0) > 1) errors[v.id] = tv.csvNameDuplicate;
+      else if (!isValidVariableName(t)) errors[v.id] = tv.nameInvalid;
     }
     return errors;
-  }, [draftVariables, tv.csvNameEmpty, tv.csvNameDuplicate]);
+  }, [draftVariables, tv.csvNameEmpty, tv.csvNameDuplicate, tv.nameInvalid]);
   const hasNameError = Object.keys(nameErrors).length > 0;
 
   if (!rawText || !csvDataset) {
@@ -206,12 +210,21 @@ export function VariableMappingModal({ onClose }: Props) {
       >
         <div className="p-4 font-mono text-xs text-muted">
           <p className="mb-3">{tv.csvNoCsvLoaded}</p>
-          <button
-            onClick={onClose}
-            className="px-3 py-1.5 rounded text-xs font-mono bg-accent text-bg hover:opacity-90 transition-opacity"
-          >
-            {tv.csvClose}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onImportCsv}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono bg-accent text-bg hover:opacity-90 transition-opacity"
+            >
+              <TableCellsIcon className="w-3.5 h-3.5" />
+              {t.app.importCsvData}
+            </button>
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 rounded text-xs font-mono text-text border border-border hover:bg-surface-2 transition-colors"
+            >
+              {tv.csvClose}
+            </button>
+          </div>
         </div>
       </DialogShell>
     );
@@ -629,10 +642,13 @@ function buildInitialBindings(
   headers: readonly string[],
 ): Record<string, string> {
   const headerSet = new Set(headers);
+  // Only carry bindings for variables that still exist; a stale id (deleted
+  // variable) would otherwise be re-saved and block its header from auto-suggest.
+  const liveIds = new Set(variables.map((v) => v.id));
   const carried: Record<string, string> = {};
   if (csvMapping) {
     for (const [varId, header] of Object.entries(csvMapping.bindings)) {
-      if (headerSet.has(header)) carried[varId] = header;
+      if (headerSet.has(header) && liveIds.has(varId)) carried[varId] = header;
     }
   }
   const unmapped = variables.filter((v) => !(v.id in carried));

@@ -287,6 +287,67 @@ describe('parseDesignFile', () => {
     expect(p.moduleWidth).toBeUndefined();
   });
 
+  it('migrates legacy serial object type to a text field with serial prop', () => {
+    const legacyJson = JSON.stringify({
+      schemaVersion: 1,
+      label: { widthMm: 100, heightMm: 60, dpmm: 8 },
+      pages: [
+        {
+          objects: [
+            {
+              id: 's1',
+              type: 'serial',
+              x: 10,
+              y: 20,
+              rotation: 0,
+              props: { content: '001', increment: 5, fontHeight: 30, fontWidth: 0, rotation: 'N', zplMode: 'SF' },
+            },
+          ],
+        },
+      ],
+    });
+    const result = parseDesignFile(legacyJson);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const obj = result.value.pages[0]?.objects[0];
+    expect(obj?.type).toBe('text');
+    const p = (obj as unknown as { props: Record<string, unknown> }).props;
+    expect(p.serial).toEqual({ increment: 5, zplMode: 'SF' });
+    expect(p.content).toBe('001');
+    expect(p.increment).toBeUndefined();
+    expect(p.zplMode).toBeUndefined();
+  });
+
+  it('migrates a v2 single-bind variableId to a «name» content marker', () => {
+    const v2Json = JSON.stringify({
+      schemaVersion: 2,
+      label: { widthMm: 100, heightMm: 60, dpmm: 8 },
+      variables: [{ id: 'v1', name: 'sku', fnNumber: 1, defaultValue: 'X' }],
+      pages: [
+        {
+          objects: [
+            {
+              id: 't',
+              type: 'text',
+              x: 10,
+              y: 20,
+              rotation: 0,
+              variableId: 'v1',
+              props: { content: 'X', fontHeight: 30, fontWidth: 0, rotation: 'N' },
+            },
+          ],
+        },
+      ],
+    });
+    const result = parseDesignFile(v2Json);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const obj = result.value.pages[0]?.objects[0];
+    const p = (obj as unknown as { props: Record<string, unknown> }).props;
+    expect(p.content).toBe('«sku»');
+    expect((obj as unknown as { variableId?: unknown }).variableId).toBeUndefined();
+  });
+
   it('rejects an unknown schemaVersion as invalid_schema', () => {
     const futureJson = JSON.stringify({
       schemaVersion: 999,

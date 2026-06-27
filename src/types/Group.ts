@@ -107,30 +107,6 @@ export function mapObjectById(
   return changed ? next : objects;
 }
 
-/** Identity-preserving clear of matching variableId across the tree. */
-export function stripVariableIdFromObjects(
-  objects: LabelObject[],
-  variableId: string,
-): LabelObject[] {
-  let changed = false;
-  const next = objects.map((o) => {
-    if (isGroup(o)) {
-      const newChildren = stripVariableIdFromObjects(o.children, variableId);
-      if (newChildren === o.children) return o;
-      changed = true;
-      return { ...o, children: newChildren };
-    }
-    if (o.variableId !== variableId) return o;
-    changed = true;
-    // Unbinding switches ^FN→^FD output; the dirtyTracking middleware stamps
-    // dirty centrally from the variableId change.
-    const cleared: LabelObject = { ...o };
-    delete cleared.variableId;
-    return cleared;
-  });
-  return changed ? next : objects;
-}
-
 /** Returns tree with `id` removed plus the removed node (or null). */
 export function detachObjectById(
   objects: LabelObject[],

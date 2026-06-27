@@ -35,9 +35,8 @@ describe("applyDeviceFontCase", () => {
     expect(applyDeviceFontCase("H", "ab«name»cd")).toBe("«name»");
   });
 
-  it("keeps the serial '#' prefix through case folding", () => {
-    // serial fields render content as `#${value}`; the prefix must survive
-    // both case modes so the canvas preview keeps the serial marker.
+  it("passes non-letter characters through case folding", () => {
+    // Case folding maps only letters; punctuation and digits survive both modes.
     expect(applyDeviceFontCase("H", "#abc123")).toBe("#123");
     expect(applyDeviceFontCase("B", "#abc")).toBe("#ABC");
   });

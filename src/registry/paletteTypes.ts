@@ -4,7 +4,7 @@ import type { ObjectGroup } from '../types/LabelObject';
 /** A curated palette type: one symmetric, pre-filled row category. `variants`
  *  are addable-entry ids (registry types and preset ids from palettePresets);
  *  variants[0] is the default. Decoupled from ObjectGroup so image (group
- *  `shape`) is its own row and text/symbol/serial split out of the text group. */
+ *  `shape`) is its own row and text/symbol split out of the text group. */
 export interface PaletteType {
   /** Stable id; also the locale key under `t.paletteType`. */
   id: string;
@@ -23,7 +23,7 @@ function groupTypes(group: ObjectGroup): string[] {
  *  Preset ids must match palettePresets; resolveAddable returns null otherwise,
  *  which the paletteTypes test guards against. */
 export const PALETTE_TYPES: PaletteType[] = [
-  { id: 'text', variants: ['text', 'text-fb', 'text-tb', 'symbol', 'serial'] },
+  { id: 'text', variants: ['text', 'text-fb', 'text-tb', 'symbol', 'text-serial'] },
   { id: 'shape', variants: ['line', 'line-diagonal', 'box', 'box-filled', 'ellipse'] },
   { id: 'code-1d', variants: groupTypes('code-1d') },
   { id: 'code-2d', variants: groupTypes('code-2d') },

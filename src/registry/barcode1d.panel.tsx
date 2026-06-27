@@ -3,13 +3,13 @@ import type { Translations } from '../locales';
 import { useT } from '../lib/useT';
 import { useLabelStore } from '../store/labelStore';
 import { labelCls } from '../components/Properties/styles';
-import { filterContent, hasValidLength, type ContentSpec } from './contentSpec';
+import { hasValidLength, type ContentSpec } from './contentSpec';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
-import { VariableContentField } from '../components/Properties/VariableContentField';
-import { fieldMode, boundDefaultOrContent, asLabelObject } from '../lib/variableField';
-import { sanitiseAroundMarkers } from '../lib/markerTokens';
+import { ContentEditorButton } from '../components/Properties/ContentEditorButton';
+import { fieldMode, boundDefaultOrContent, fieldVariableRefs, asLabelObject } from '../lib/variableField';
+import { extractClockTokens } from '../lib/fcTemplate';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { EanInlineStatus } from '../components/Properties/EanInlineStatus';
@@ -45,31 +45,32 @@ export interface Barcode1DPanelConfig {
 
 export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi<Barcode1DProps> {
   return {
+    contentSpec: config.contentSpec,
     PropertiesPanel: ({ obj, onChange }) => {
       const t = useT();
       const loc = config.locale(t);
       const p = obj.props;
       const variables = useLabelStore((s) => s.variables);
-      // Validate the literal value AND the single-bind default. Only a template
-      // field's content is markers, not a printable length.
-      const validate = fieldMode(asLabelObject(obj), variables) !== 'template';
+      // Validate the literal value AND the single-bind default. Skip only for a
+      // REAL template (resolvable variable or clock markers), whose content has
+      // no fixed printable length. An orphan marker like «ghost» classifies as
+      // template but resolves to nothing, so it still gets validated as literal
+      // text. Serial seeds are not a fixed length either, so skip those too.
+      const lo = asLabelObject(obj);
+      const realTemplate =
+        fieldMode(lo, variables) === 'template' &&
+        (fieldVariableRefs(lo, variables).length > 0 ||
+          extractClockTokens(p.content).length > 0);
+      const validate = !p.serial && !realTemplate;
       // Single-bind prints the variable's current default, not p.content (a
       // mirror that goes stale when the default is edited in the Variables panel).
-      const validationContent = boundDefaultOrContent(asLabelObject(obj), variables);
+      const validationContent = boundDefaultOrContent(lo, variables);
       return (
         <>
           <StaticSectionCard title={t.properties.contentSection}>
             <div className="flex flex-col gap-1">
               <FieldLabel cmd="^FD">{loc.content}</FieldLabel>
-              <VariableContentField
-                obj={obj}
-                multiline={false}
-                sanitise={(raw) =>
-                  sanitiseAroundMarkers(raw, (s) => filterContent(s, config.contentSpec))
-                }
-                maxLength={config.contentSpec?.maxLength}
-                placeholder={loc.placeholder}
-              />
+              <ContentEditorButton obj={obj} />
               {validate && !config.eanValidation && !hasValidLength(validationContent, config.contentSpec) && loc.placeholder && (
                 <p className="font-mono text-[10px] text-warning">{loc.placeholder}</p>
               )}

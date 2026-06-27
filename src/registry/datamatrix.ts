@@ -44,13 +44,13 @@ export const datamatrix: ObjectTypeCore<DataMatrixProps> = {
       return [
         fieldPos(obj),
         `^BX${p.rotation},${p.dimension},${p.quality},,,,${GS1_DATAMATRIX_ESCAPE}`,
-        fdFieldFor(obj, p.content, ctx, gs1ContentToDataMatrixFd),
+        fdFieldFor(p.content, ctx, gs1ContentToDataMatrixFd),
       ].join('');
     }
     return [
       fieldPos(obj),
       `^BX${p.rotation},${p.dimension},${p.quality}`,
-      fdFieldFor(obj, p.content, ctx),
+      fdFieldFor(p.content, ctx),
     ].join('');
   },
 };

@@ -245,9 +245,9 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
         )}
 
         {/* Per-type panel first; each panel renders its own SectionCards
-            (Content and/or Settings). Binding lives inside the content field
-            (VariableContentField), so the panel sees the raw obj and plain
-            prop writes; no content re-routing here. */}
+            (Content and/or Settings). Content editing (including variable
+            binding) lives in the Variable-Builder modal opened from the
+            panel, so the panel sees the raw obj and plain prop writes. */}
         {TypePanel && !groupRow && (
           // Key by id so switching objects remounts the panel and resets its
           // transient reveal state (e.g. the Typography "Advanced" toggle).

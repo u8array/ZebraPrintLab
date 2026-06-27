@@ -5,6 +5,7 @@ import {
   uniqueVariableName,
   nextFreeFnNumber,
   isMappingCompatibleWith,
+  isValidVariableName,
   type CsvMapping,
   type Variable,
 } from './Variable';
@@ -121,5 +122,33 @@ describe('isMappingCompatibleWith', () => {
         ['Column 1', 'Column 2', 'Column 3'],
       ),
     ).toBe(false);
+  });
+});
+
+describe('isValidVariableName', () => {
+  it('accepts ordinary marker-safe names', () => {
+    for (const n of ['sku', 'order_id', 'My Var', 'price-1']) {
+      expect(isValidVariableName(n)).toBe(true);
+    }
+  });
+
+  it('rejects empty / marker-delimiter / newline names', () => {
+    for (const n of ['', '   ', 'a«b', 'a»b', 'a\nb']) {
+      expect(isValidVariableName(n)).toBe(false);
+    }
+  });
+
+  it('rejects reserved clock bodies (editor would render them as clock chips)', () => {
+    for (const n of ['clock:Y', 'clock2:m', 'clock3:S']) {
+      expect(isValidVariableName(n)).toBe(false);
+    }
+  });
+
+  it('accepts clock-like names that are not exact single-letter clock tokens', () => {
+    // Only `clock([23]?):<one letter>` is special-cased by the classifiers; these
+    // longer/different shapes never resolve as clock markers.
+    for (const n of ['clock:Year', 'clock:', 'clock2:month', 'clockX:Y', 'clock4:Y']) {
+      expect(isValidVariableName(n)).toBe(true);
+    }
   });
 });

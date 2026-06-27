@@ -7,6 +7,7 @@ export const ean13CoreConfig: Barcode1DCoreConfig = {
   icon: 'EAN',
   defaultContent: '590123412345',
   group: 'code-1d',
+  serialisable: false,
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     return `^BE${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'}`;

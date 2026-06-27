@@ -37,7 +37,7 @@ export function nextZplRotation(r: ZplRotation): ZplRotation {
 
 /**
  * Returns the object's step-rotation if it has one, else `null`. Step-rotation
- * objects (text, serial, all barcodes) declare a `rotation: 'N'|'R'|'I'|'B'`
+ * objects (text, all barcodes) declare a `rotation: 'N'|'R'|'I'|'B'`
  * prop; box/ellipse/line/image do not, and groups carry no `props`
  * at all (so the type-string check filters them out first). Lets callers
  * gate UI affordances (e.g. the canvas quick-rotate button) without

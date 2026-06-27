@@ -76,7 +76,7 @@ export const code49: ObjectTypeCore<Code49Props> = {
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^B4${p.rotation},${p.height},${interp},${p.mode}`,
-      fdFieldFor(obj, p.content, ctx),
+      fdFieldFor(p.content, ctx),
     ]
       .filter(Boolean)
       .join('');

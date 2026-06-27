@@ -3,7 +3,7 @@ import { zlibSync } from 'fflate';
 import { parseZPL, BY_CONSUMING_BARCODE_TYPES } from './zplParser';
 import { formatLabelMetaComment } from './zplLabelMeta';
 import { ObjectRegistry } from '../registry';
-import { props } from '../test/helpers';
+import { props, serialOf } from '../test/helpers';
 
 // Drift guard for the bare-^BY hazard set. Every 1D and postal barcode emits a
 // ^BY on regen, so it must be classified ^BY-consuming; a forgotten new one
@@ -652,7 +652,8 @@ describe('parseZPL — ^TB text block', () => {
       8,
     );
     expect(objects[0]?.type).toBe('code128');
-    expect(props(objects[0]).content).toBe('<<>HELLO');
+    // Field links via marker; the raw (non-tb-decoded) default lives on the var.
+    expect(props(objects[0]).content).toBe('«field_1»');
     expect(variables[0]?.defaultValue).toBe('<<>HELLO');
   });
 });
@@ -1511,18 +1512,18 @@ describe('parseZPL — example shipping label (integration)', () => {
 // ── ^SN serialization (appears AFTER ^FD) ─────────────────────────────────────
 
 describe('parseZPL — ^SN serialization', () => {
-  it('converts a text field to serial when ^SN follows ^FD', () => {
+  it('marks a text field serial when ^SN follows ^FD', () => {
     const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FD001^FS\n^SN001,1,Y^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]?.type).toBe('serial');
+    expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).content).toBe('001');
-    expect(props(objects[0]).increment).toBe(1);
-    expect(props(objects[0]).zplMode).toBe('SN');
+    expect(serialOf(objects[0])?.increment).toBe(1);
+    expect(serialOf(objects[0])?.zplMode).toBe('SN');
   });
 
   it('picks up increment from ^SN parameters', () => {
     const { objects } = parseZPL('^XA^FO0,0^A0N,25,0^FD100^FS\n^SN100,5,Y^XZ', 8);
-    expect(props(objects[0]).increment).toBe(5);
+    expect(serialOf(objects[0])?.increment).toBe(5);
     expect(props(objects[0]).fontHeight).toBe(25);
   });
 
@@ -1532,30 +1533,32 @@ describe('parseZPL — ^SN serialization', () => {
   });
 });
 
-// ── ^SF serialization (appears BEFORE ^FD) ────────────────────────────────────
+// ── ^SF serialization (^SFa,b mask + increment, after ^FD) ────────────────────
 
 describe('parseZPL — ^SF serialization', () => {
-  it('creates a serial object when ^SF precedes ^FD', () => {
-    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^SF1,3,Y^FD001^FS^XZ', 8);
+  it('marks a text field serial from ^FD + ^SF', () => {
+    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^FD001^SFddd,1^FS^XZ', 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]?.type).toBe('serial');
+    expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).content).toBe('001');
-    expect(props(objects[0]).increment).toBe(1);
-    expect(props(objects[0]).zplMode).toBe('SF');
+    expect(serialOf(objects[0])?.increment).toBe(1);
+    expect(serialOf(objects[0])?.zplMode).toBe('SF');
   });
 
-  it('picks up increment from ^SF parameters', () => {
-    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^SF3,3,Y^FD100^FS^XZ', 8);
-    expect(props(objects[0]).increment).toBe(3);
+  it('picks up the increment from the ^SF increment string (b param)', () => {
+    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^FD100^SFddd,3^FS^XZ', 8);
+    expect(serialOf(objects[0])?.increment).toBe(3);
   });
 
-  it('does not leak snPending across a non-text field', () => {
+  it('serializes a barcode field but does not leak to a sibling', () => {
     const zpl =
-      '^XA^SF%%%,1^FO10,10^BCN,100,Y,N,N^FD123^FS^FO50,50^A0N,30,0^FDtext^FS^XZ';
+      '^XA^FO10,10^BCN,100,Y,N,N^FD123^SF%%%,1^FS^FO50,50^A0N,30,0^FDtext^FS^XZ';
     const { objects } = parseZPL(zpl, 8);
     expect(objects).toHaveLength(2);
     expect(objects[0]?.type).toBe('code128');
+    expect(serialOf(objects[0])?.zplMode).toBe('SF');
     expect(objects[1]?.type).toBe('text');
+    expect(serialOf(objects[1])).toBeUndefined();
   });
 
   it('does not leak snPending across a bare ^SF^FS', () => {
@@ -1566,20 +1569,96 @@ describe('parseZPL — ^SF serialization', () => {
   });
 
   it('preserves snPending when ^SF appears before ^FO', () => {
-    const zpl = '^XA^SF3,3,Y^FO10,10^A0N,30,0^FD001^FS^XZ';
+    const zpl = '^XA^SFddd,3^FO10,10^A0N,30,0^FD001^FS^XZ';
     const { objects } = parseZPL(zpl, 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]?.type).toBe('serial');
-    expect(props(objects[0]).increment).toBe(3);
+    expect(objects[0]?.type).toBe('text');
+    expect(serialOf(objects[0])?.increment).toBe(3);
   });
 
   it('does not leak snPending to a sibling field inside the same ^FS block', () => {
     const zpl =
-      '^XA^SF3,3,Y^FO10,10^A0N,30,0^FD001^FO20,20^A0N,30,0^FD002^FS^XZ';
+      '^XA^SFddd,3^FO10,10^A0N,30,0^FD001^FO20,20^A0N,30,0^FD002^FS^XZ';
     const { objects } = parseZPL(zpl, 8);
     expect(objects).toHaveLength(2);
-    expect(objects[0]?.type).toBe('serial');
-    expect(objects[1]?.type).toBe('text');
+    expect(serialOf(objects[0])?.increment).toBe(3);
+    expect(serialOf(objects[1])).toBeUndefined();
+  });
+});
+
+// ── serial XOR variable binding (contradictory ^FN + ^SN/^SF) ─────────────────
+
+describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
+  it('in-field ^SF after ^FN resolves to serial, not bound', () => {
+    const { objects } = parseZPL('^XA^FO10,10^A0N,30,0^FN1^FD001^SFddd,1^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(serialOf(objects[0])?.zplMode).toBe('SF');
+    // Serial keeps the literal seed, not a variable marker.
+    expect(props(objects[0]).content).toBe('001');
+  });
+
+  it('does not attach serial to a 2D field whose emitter ignores ^SN/^SF', () => {
+    const { objects } = parseZPL('^XA^FO10,10^BQN,2,5^FDQA,0001^SN0001,1,Y^FS^XZ', 8);
+    expect(objects[0]?.type).toBe('qrcode');
+    expect(serialOf(objects[0])).toBeUndefined();
+  });
+
+  it('post-^FS ^SN on a single-bound 1D field replaces the marker with a literal seed', () => {
+    const { objects } = parseZPL('^XA^FO10,10^BCN,100,Y,N,N^FN1^FD123^FS\n^SN123,1,Y^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(serialOf(objects[0])?.zplMode).toBe('SN');
+    // Not «field_1»: serialFieldData would otherwise filter it to "field1".
+    expect(props(objects[0]).content).toBe('123');
+  });
+
+  it('post-^FS ^SN on a literal 1D barcode adopts the ^SN start as the seed', () => {
+    // The ^FD payload (123) differs from the ^SN start (999); ^SN governs, and
+    // the emitter re-emits the seed from content, so a stale 123 would rewrite
+    // the ZPL on export.
+    const { objects } = parseZPL('^XA^FO10,10^BCN,100,Y,N,N^FD123^FS\n^SN999,1,Y^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(serialOf(objects[0])?.zplMode).toBe('SN');
+    expect(props(objects[0]).content).toBe('999');
+  });
+
+  it('post-^FS ^SN with an empty start keeps the field ^FD as the seed', () => {
+    const { objects } = parseZPL('^XA^FO10,10^BCN,100,Y,N,N^FD123^FS\n^SN,1,Y^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(serialOf(objects[0])?.zplMode).toBe('SN');
+    expect(props(objects[0]).content).toBe('123');
+  });
+
+  it('in-field ^SN start value overrides a prior ^FD', () => {
+    // ^FD123^SN999: ^SN's explicit start (999) is the seed, not the ^FD (123).
+    const { objects } = parseZPL('^XA^FO10,10^A0N,30,0^FD123^SN999,1,Y^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(serialOf(objects[0])?.zplMode).toBe('SN');
+    expect(props(objects[0]).content).toBe('999');
+  });
+
+  it('in-field ^SN with empty start keeps the ^FD as the seed', () => {
+    const { objects } = parseZPL('^XA^FO10,10^A0N,30,0^FD123^SN,1,Y^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(serialOf(objects[0])?.zplMode).toBe('SN');
+    expect(props(objects[0]).content).toBe('123');
+  });
+
+  it('keeps the ^FN binding on a non-serialisable 2D field that also declares ^SN', () => {
+    // QR's emitter ignores ^SN; the variable link must survive instead of the
+    // field collapsing to a literal seed (silent binding loss).
+    const { objects, variables } = parseZPL('^XA^FO10,10^BQN,2,5^FN1^FDHELLO^SN001,1,Y^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('qrcode');
+    expect(props(objects[0]).content).toBe('«field_1»');
+    expect(serialOf(objects[0])).toBeUndefined();
+    expect(variables.find((v) => v.fnNumber === 1)?.defaultValue).toBe('HELLO');
+  });
+
+  it('post-^FS ^SN on a previously ^FN-bound field clears the binding', () => {
+    const { objects } = parseZPL('^XA^FO10,10^A0N,30,0^FN1^FD001^FS\n^SN001,1,Y^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(serialOf(objects[0])?.zplMode).toBe('SN');
+    expect(props(objects[0]).content).toBe('001');
   });
 });
 
@@ -1609,7 +1688,8 @@ describe('parseZPL — pending field state cleared at ^FS', () => {
       '^XA^FN1^FS^FO10,10^A0N,30,0^FDhello^FS^XZ';
     const { objects } = parseZPL(zpl, 8);
     expect(objects).toHaveLength(1);
-    expect(objects[0]?.variableId).toBeUndefined();
+    // The bare ^FN1^FS slot must not bleed onto the next field's content.
+    expect(props(objects[0]).content).toBe('hello');
   });
 
   it('does not leak frActive from a bare ^FR^FS into a fieldless next text', () => {
@@ -2070,13 +2150,20 @@ describe('^FN / template variables', () => {
     expect(variables[0]?.fnNumber).toBe(1);
     expect(variables[0]?.defaultValue).toBe('Default');
     expect(variables[0]?.name).toBe('field_1');
-    expect(objects[0]?.variableId).toBe(variables[0]?.id);
+    // New model: the field links to the variable via a single content marker.
+    expect(props(objects[0]).content).toBe('«field_1»');
   });
 
   it('derives the Variable name from a preceding ^FX comment', () => {
     const zpl = '^XA^FXField: Customer Name^FO10,20^A0N,30,30^FN1^FDJohn^FS^XZ';
     const { variables } = parseZPL(zpl);
     expect(variables[0]?.name).toBe('Customer_Name');
+  });
+
+  it('falls back to field_<fn> when the ^FX comment is a marker-unsafe name', () => {
+    // `clock:Y` would render as a clock chip; `»` breaks the «name» marker.
+    expect(parseZPL('^XA^FXField: clock:Y^FO10,20^A0N,30,30^FN1^FDx^FS^XZ').variables[0]?.name).toBe('field_1');
+    expect(parseZPL('^XA^FXField: sku»oops^FO10,20^A0N,30,30^FN2^FDx^FS^XZ').variables[0]?.name).toBe('field_2');
   });
 
   it('reuses the same Variable when multiple fields share an fnNumber', () => {
@@ -2088,15 +2175,17 @@ describe('^FN / template variables', () => {
     const { objects, variables } = parseZPL(zpl);
     expect(variables).toHaveLength(1);
     const [a, b] = objects;
-    expect(a?.variableId).toBe(variables[0]?.id);
-    expect(b?.variableId).toBe(variables[0]?.id);
+    // Both fields reference the shared variable by the same content marker.
+    expect(props(a).content).toBe('«field_1»');
+    expect(props(b).content).toBe('«field_1»');
   });
 
   it('ignores out-of-range ^FN numbers and records a partial finding', () => {
     const zpl = '^XA^FO10,20^A0N,30,30^FN0^FDIgnored^FS^XZ';
     const { variables, objects, importReport } = parseZPL(zpl);
     expect(variables).toHaveLength(0);
-    expect(objects[0]?.variableId).toBeUndefined();
+    // Out-of-range ^FN is ignored: no marker, content stays the literal ^FD.
+    expect(props(objects[0]).content).toBe('Ignored');
     expect(importReport.partial).toContain('^FN');
   });
 });

@@ -5,7 +5,7 @@ import { RotationSelect } from "../components/Properties/RotationSelect";
 import { NumberInput } from "../components/Properties/NumberInput";
 import { UnitNumberInput } from "../components/Properties/UnitNumberInput";
 import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
-import { VariableContentField } from "../components/Properties/VariableContentField";
+import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
 import { ZplCmd } from "../components/Properties/ZplCmd";
 import { fieldGridCols, fieldGridCell } from "../components/ui/formStyles";
 import type { CodablockProps } from "./codablock";
@@ -18,7 +18,7 @@ export const codablockPanel: ObjectTypeUi<CodablockProps> = {
     return (
       <>
         <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
-          <VariableContentField obj={obj} multiline={false} placeholder={loc.content} />
+          <ContentEditorButton obj={obj} />
         </StaticSectionCard>
 
         <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>

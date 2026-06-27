@@ -24,6 +24,9 @@ export const upcEanExtensionCoreConfig: Barcode1DCoreConfig = {
   icon: 'EXT',
   defaultContent: '51999',
   group: 'code-1d',
+  // Exactly 2 or 5 digits; ^SN/^SF could roll it to an invalid 3/4/6-digit
+  // supplement, so it opts out of serial like EAN/UPC.
+  serialisable: false,
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     return `^BS${p.rotation},${p.height},${interp}`;

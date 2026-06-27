@@ -2,8 +2,10 @@ import type { LabelObjectBase, ObjectGroup } from '../types/LabelObject';
 import type { ObjectTypeCore } from '../types/ObjectType';
 import type { HriBehavior } from '../types/ZplEmit';
 import { fieldPos, fdFieldFor } from './zplHelpers';
+import { serialFieldData, type SerialMode } from './serialField';
 import { commitBarcodeWidthHeightTransform } from './transformHelpers';
 import { hasTemplateMarkers } from '../lib/fnTemplate';
+import { isLoneMarker } from '../lib/variableField';
 import { type ZplRotation } from './rotation';
 
 export interface Barcode1DProps {
@@ -15,6 +17,9 @@ export interface Barcode1DProps {
   printInterpretationAbove?: boolean;
   checkDigit: boolean;
   rotation: ZplRotation;
+  /** Per-field firmware counter (^SN/^SF). When set, the ^FD payload is the
+   *  seed and serializes per label. Mutually exclusive with variable binding. */
+  serial?: SerialMode;
 }
 
 export interface Barcode1DCoreConfig {
@@ -40,6 +45,9 @@ export interface Barcode1DCoreConfig {
   /** Transform stored content into the ^FD payload (e.g. UPC-E prepends
    *  the number-system digit the spec requires). Default: identity. */
   fdContent?: (content: string) => string;
+  /** Default true. EAN/UPC set false: their fixed-length check digit (which our
+   *  content may already include) would be corrupted by ^SN/^SF incrementing. */
+  serialisable?: boolean;
 }
 
 export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore<Barcode1DProps> {
@@ -57,11 +65,11 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
   // mangle). Shared by toZPL and the batch override via the fdTransform hook.
   const fdTransformFor = config.fdContent
     ? (obj: LabelObjectBase & { props: Barcode1DProps }) =>
-        // Skip only a true template (no binding, markers in content): its
-        // payload expands to an embed the digit transform would mangle. A
-        // single-bind field (variableId set) always keeps the transform so its
+        // Skip only a true template (markers that expand to ^FE embeds the digit
+        // transform would mangle). A single-bind field (content == one lone
+        // marker) emits ^FN + default, which DOES get the transform so its
         // default and any CSV override are compacted the same way.
-        !obj.variableId && hasTemplateMarkers(obj.props.content)
+        hasTemplateMarkers(obj.props.content) && !isLoneMarker(obj.props.content)
           ? undefined
           : config.fdContent
     : undefined;
@@ -75,6 +83,8 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
     zplCmd,
     group: config.group,
     bindable: true,
+    // EAN/UPC opt out (fixed-length check digit); every other 1D serializes cleanly.
+    serialisable: config.serialisable ?? true,
     defaultProps,
     defaultSize: { width: 300, height: 120 },
     heightLocked: config.heightLocked,
@@ -108,11 +118,18 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
       const byCmd = config.byRatio !== undefined
         ? `^BY${p.moduleWidth},${config.byRatio}`
         : `^BY${p.moduleWidth}`;
+      // Serial mode: the seed is wrapped by ^SN/^SF. It still runs through the
+      // symbology's fdContent transform (e.g. UPC-E's number-system prefix) so a
+      // serialized barcode emits the same payload shape as a non-serial one.
+      const fdTransform = fdTransformFor?.(obj);
+      const fieldData = obj.props.serial
+        ? serialFieldData(fdTransform ? fdTransform(p.content) : p.content, obj.props.serial)
+        : fdFieldFor(p.content, ctx, fdTransform);
       return [
         byCmd,
         fieldPos(obj),
         config.zplCommand(p),
-        fdFieldFor(obj, p.content, ctx, fdTransformFor?.(obj)),
+        fieldData,
       ].filter(Boolean).join('');
     },
   };

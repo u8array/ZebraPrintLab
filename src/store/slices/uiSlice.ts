@@ -106,6 +106,9 @@ export interface UiSlice {
   /** Object id whose typed-content builder modal is open; null = closed.
    *  Shared by QR and DataMatrix (content is symbology-agnostic). */
   contentBuilderObjectId: string | null;
+  /** Object id whose variable-builder modal is open; null = closed. The single
+   *  content editor for bindable fields (variables/clock/serial tokens). */
+  variableBuilderObjectId: string | null;
   /** One-shot focus request scoped to a single object. The nonce
    *  increments per call so consumers can re-fire even for the same
    *  id; TemplateContentInput's effect compares its own `objectId`
@@ -136,6 +139,8 @@ export interface UiSlice {
   closeGs1Builder: () => void;
   openContentBuilder: (objectId: string) => void;
   closeContentBuilder: () => void;
+  openVariableBuilder: (objectId: string) => void;
+  closeVariableBuilder: () => void;
   /** Fire a focus request. Does NOT touch the sidebar tab; caller
    *  composes `setSidebarTab('properties')` when the request would
    *  otherwise land on an unmounted editor. */
@@ -167,6 +172,7 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
   zebraPrintSource: null,
   gs1BuilderObjectId: null,
   contentBuilderObjectId: null,
+  variableBuilderObjectId: null,
   editorFocusRequest: null,
 
   setLocale: (locale) => set({ locale }),
@@ -213,6 +219,8 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
   closeGs1Builder: () => set({ gs1BuilderObjectId: null }),
   openContentBuilder: (objectId) => set({ contentBuilderObjectId: objectId }),
   closeContentBuilder: () => set({ contentBuilderObjectId: null }),
+  openVariableBuilder: (objectId) => set({ variableBuilderObjectId: objectId }),
+  closeVariableBuilder: () => set({ variableBuilderObjectId: null }),
   requestContentEditorFocus: (id) =>
     set((state) => ({
       editorFocusRequest: {

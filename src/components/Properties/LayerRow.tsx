@@ -14,7 +14,7 @@ import { getEntry } from '../../registry';
 import { isGroup, type LabelObject } from '../../types/Group';
 import { useT } from '../../lib/useT';
 import { useLabelStore } from '../../store/labelStore';
-import { lookupBoundVariable } from '../../lib/variableBinding';
+import { lookupBoundVariable } from '../../lib/variableField';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 import { Tooltip } from '../ui/Tooltip';
 import { INDENT_STEP } from './layerLayout';

@@ -126,32 +126,31 @@ describe('buildActiveCsvRow', () => {
 });
 
 describe('applyBindingToObject', () => {
-  const obj = (variableId?: string, content = 'orig'): LabelObject =>
+  const obj = (content = 'orig'): LabelObject =>
     ({
       id: 'o1',
       type: 'text',
       x: 0,
       y: 0,
       rotation: 0,
-      ...(variableId ? { variableId } : {}),
       props: { content },
     }) as unknown as LabelObject;
 
-  it('returns identity when object has no variableId', () => {
+  it('returns identity for plain literal content (no markers)', () => {
     const o = obj();
     expect(applyBindingToObject(o, [variable()])).toBe(o);
   });
 
-  it('substitutes defaultValue when no active row', () => {
-    const o = obj('v1');
+  it('substitutes a single marker default when no active row', () => {
+    const o = obj('«sku»');
     const out = applyBindingToObject(o, [variable()]);
     expect((out as unknown as { props: { content: string } }).props.content).toBe(
       'DEFAULT',
     );
   });
 
-  it('substitutes CSV cell when bound and row is active', () => {
-    const o = obj('v1');
+  it('substitutes CSV cell when the marker variable is mapped and a row is active', () => {
+    const o = obj('«sku»');
     const out = applyBindingToObject(
       o,
       [variable()],
@@ -162,24 +161,40 @@ describe('applyBindingToObject', () => {
     );
   });
 
-  it('returns identity when resolved value already matches', () => {
-    const o = obj('v1', 'DEFAULT');
+  it('returns identity when content is plain (nothing to resolve)', () => {
+    const o = obj('DEFAULT');
     expect(applyBindingToObject(o, [variable()])).toBe(o);
   });
 
-  it('does NOT recursively resolve markers nested in a single-bind default (matches export)', () => {
-    // outer is single-bound; its default literally contains «inner». The
-    // exporter emits this verbatim, so preview must keep it literal too.
+  it('resolves one pass only: a marker whose default holds a marker stays literal (matches export)', () => {
+    // content «outer»; outer's default literally contains «inner». The exporter
+    // emits the default verbatim (no recursion), so preview must too.
     const outer = variable({ id: 'v1', name: 'outer', defaultValue: '«inner»' });
     const inner = variable({ id: 'v2', name: 'inner', defaultValue: 'X' });
-    const out = applyBindingToObject(obj('v1'), [outer, inner]);
+    const out = applyBindingToObject(obj('«outer»'), [outer, inner]);
     expect((out as unknown as { props: { content: string } }).props.content).toBe('«inner»');
   });
 
-  it('still resolves markers in a template field (no variableId)', () => {
+  it('resolves markers in a multi-token template field', () => {
     const v = variable({ id: 'v2', name: 'inner', defaultValue: 'X' });
-    const out = applyBindingToObject(obj(undefined, 'a«inner»b'), [v]);
+    const out = applyBindingToObject(obj('a«inner»b'), [v]);
     expect((out as unknown as { props: { content: string } }).props.content).toBe('aXb');
+  });
+
+  it("resolves the field's own clock marker in preview", () => {
+    const out = applyBindingToObject(obj('«clock:Y»'), []);
+    expect((out as unknown as { props: { content: string } }).props.content).toMatch(/^\d{4}$/);
+  });
+
+  it('keeps a clock marker that arrived via a variable value literal (matches export)', () => {
+    // sku's CSV cell literally contains «clock:Y»; export writes substituted data
+    // verbatim (no ^FC inside it), so preview must keep it literal, not resolve it.
+    const out = applyBindingToObject(
+      obj('«sku»'),
+      [variable()],
+      active(['sku'], ['«clock:Y»'], { v1: 'sku' }),
+    );
+    expect((out as unknown as { props: { content: string } }).props.content).toBe('«clock:Y»');
   });
 });
 
@@ -223,14 +238,13 @@ describe('getVariableSource', () => {
 });
 
 describe('applyBindingToTree', () => {
-  const leaf = (id: string, variableId?: string, content = 'orig'): LabelObject =>
+  const leaf = (id: string, content = 'orig'): LabelObject =>
     ({
       id,
       type: 'text',
       x: 0,
       y: 0,
       rotation: 0,
-      ...(variableId ? { variableId } : {}),
       props: { content },
     }) as unknown as LabelObject;
 
@@ -245,13 +259,13 @@ describe('applyBindingToTree', () => {
     }) as unknown as LabelObject;
 
   it('substitutes top-level leaves', () => {
-    const objs = [leaf('a'), leaf('b', 'v1')];
+    const objs = [leaf('a'), leaf('b', '«sku»')];
     const out = applyBindingToTree(objs, [variable()], null);
     expect((out[1] as unknown as { props: { content: string } }).props.content).toBe('DEFAULT');
   });
 
   it('recurses into group children', () => {
-    const objs = [group('g1', [leaf('a', 'v1'), leaf('b')])];
+    const objs = [group('g1', [leaf('a', '«sku»'), leaf('b')])];
     const out = applyBindingToTree(objs, [variable()], null);
     const g = out[0]! as unknown as { children: { props: { content: string } }[] };
     expect(g.children[0]!.props.content).toBe('DEFAULT');
@@ -259,7 +273,7 @@ describe('applyBindingToTree', () => {
   });
 
   it('substitutes from active CSV row', () => {
-    const objs = [leaf('a', 'v1')];
+    const objs = [leaf('a', '«sku»')];
     const out = applyBindingToTree(
       objs,
       [variable()],
@@ -269,7 +283,7 @@ describe('applyBindingToTree', () => {
   });
 
   it('schema mode replaces with «name» across tree', () => {
-    const objs = [group('g1', [leaf('a', 'v1')])];
+    const objs = [group('g1', [leaf('a', '«sku»')])];
     const out = applyBindingToTree(objs, [variable({ name: 'sku' })], null, 'schema');
     const g = out[0]! as unknown as { children: { props: { content: string } }[] };
     expect(g.children[0]!.props.content).toBe('«sku»');
@@ -291,7 +305,7 @@ describe('shouldShowFallbackTint', () => {
     expect(shouldShowFallbackTint(v, null, map({ v1: 'x' }), 'preview')).toBe(false);
   });
 
-  it('returns false when no variable resolves (orphan variableId)', () => {
+  it('returns false when no variable is given (unbound)', () => {
     expect(shouldShowFallbackTint(undefined, ds(['x']), map({}), 'preview')).toBe(false);
   });
 

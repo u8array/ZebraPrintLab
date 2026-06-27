@@ -9,7 +9,7 @@ import {
 } from "../types/Variable";
 import type { LabelObject } from "../types/Group";
 import { blockOverlaySchema, type BlockOverlay } from "./zplOverlay/overlay";
-import { visitLeavesInPages } from "./objectTree";
+import { visitLeavesInPages, foldSerialLeaf, bindSingleMarkerLeaf, sanitiseVariableNames, safeUniqueNameById } from "./objectTree";
 import { insertReverseBackingBoxes, pageNeedsReverseBacking } from "./reverseBacking";
 import { ok, err, type Result } from "./result";
 
@@ -18,7 +18,7 @@ import { ok, err, type Result } from "./result";
  *  migrator below and dispatch on `schemaVersion` in `parseDesignFile`.
  *  The persist middleware in `labelStore` has its own independent
  *  version for localStorage state; do not conflate. */
-export const CURRENT_DESIGN_SCHEMA_VERSION = 2;
+export const CURRENT_DESIGN_SCHEMA_VERSION = 3;
 
 export type DesignFileError = "parse_error" | "invalid_schema";
 export interface DesignFilePage { objects: LabelObject[]; overlay?: BlockOverlay }
@@ -62,7 +62,7 @@ const pageSchema = z.object({
 });
 
 const designFileSchema = z.object({
-  schemaVersion: z.literal(2),
+  schemaVersion: z.literal(3),
   label: labelConfigSchema,
   pages: z.array(pageSchema),
   variables: z.array(variableSchema).optional(),
@@ -79,13 +79,20 @@ export function parseDesignFile(text: string): Result<DesignFile, DesignFileErro
 
   migrateGs1databarModuleWidth(json);
   migrateReverseTextBackground(json);
+  migrateSerialToTextMode(json);
+  migrateSingleBindToMarker(json);
 
   const parsed = designFileSchema.safeParse(json);
   if (parsed.success) {
+    const pages = parsed.data.pages as unknown as DesignFilePage[];
+    const variables = parsed.data.variables ?? [];
+    // Enforce the marker-safe name invariant: an old/foreign name like `clock:Y`
+    // can't be a single-bind marker, so rename offenders + rewrite their markers.
+    sanitiseVariableNames(variables, pages);
     return ok({
       label: parsed.data.label,
-      pages: parsed.data.pages as unknown as DesignFilePage[],
-      variables: parsed.data.variables ?? [],
+      pages,
+      variables,
       csvMapping: parsed.data.csvMapping ?? null,
     });
   }
@@ -142,6 +149,33 @@ function migrateGs1databarModuleWidth(json: unknown): void {
       delete props.moduleWidth;
     }
   });
+}
+
+/** Convert the legacy standalone `serial` object type into a `text` field with
+ *  a `serial` prop (the dissolved field-mode model). Keeps content/font/rotation
+ *  and folds increment/zplMode into `props.serial`. Idempotent. */
+function migrateSerialToTextMode(json: unknown): void {
+  if (!json || typeof json !== "object") return;
+  visitLeavesInPages((json as { pages?: unknown }).pages, foldSerialLeaf);
+}
+
+/** v2→v3: single-bind `variableId` dissolved into the content model. A field
+ *  bound to a variable becomes content === «name» (classifies as single-bind on
+ *  emit, byte-identical); the variableId field is dropped. Gated on v2 so a v3
+ *  file isn't reprocessed; stamps schemaVersion to 3. Overlays are kept: the
+ *  captured bytes don't change and the overlay doesn't key on variableId. */
+function migrateSingleBindToMarker(json: unknown): void {
+  if (!json || typeof json !== "object") return;
+  const j = json as Record<string, unknown>;
+  if (j.schemaVersion !== 2) return;
+  const vars = Array.isArray(j.variables)
+    ? (j.variables as { id?: unknown; name?: unknown; fnNumber?: unknown }[])
+    : [];
+  // Resolve the unique, marker-safe name PER ID first (renames the variables),
+  // so duplicate legacy names don't collapse two ids onto one marker.
+  const nameById = safeUniqueNameById(vars);
+  visitLeavesInPages(j.pages, (leaf) => bindSingleMarkerLeaf(leaf, nameById));
+  j.schemaVersion = 3;
 }
 
 interface SerializedDesign {

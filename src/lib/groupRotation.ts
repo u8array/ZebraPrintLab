@@ -100,7 +100,7 @@ function leafChanges(
     return { x, y };
   }
 
-  // text / serial / barcodes: rotate the VISUAL centre, then re-anchor from the
+  // text / barcodes: rotate the VISUAL centre, then re-anchor from the
   // new-orientation bbox. Anchor-rotation assumes the object spins about model
   // x/y, false for barcodes (they keep top-left on reorient), so centre-based is
   // what keeps the group rigid.

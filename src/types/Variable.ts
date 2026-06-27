@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CLOCK_BODY_RE } from "./clockMarker";
 
 /** Classic ZPL ^FN bounds; newer firmware allows more but stay portable. */
 export const FN_NUMBER_MIN = 1;
@@ -31,13 +32,44 @@ export function nextFreeFnNumber(used: readonly number[]): number | null {
   return null;
 }
 
-/** True iff names+fnNumbers are non-empty, in-range, and unique. */
+// Names matching the shared clock-body grammar are reserved: `classifyMarkerBody`
+// short-circuits on that exact shape before resolving variable names. A longer
+// name like `clock:Year` is never a clock marker and stays a valid variable.
+
+/** A variable name must round-trip as a `«name»` content marker, so it can carry
+ *  no marker delimiters / newline, and must not collide with a clock body. The
+ *  name is the single-bind identity since `variableId` was removed, so this
+ *  guards the data model, not just the UI. */
+export function isValidVariableName(name: string): boolean {
+  const trimmed = name.trim();
+  if (trimmed === '') return false;
+  if (/[«»\n]/.test(trimmed)) return false;
+  if (CLOCK_BODY_RE.test(trimmed)) return false;
+  return true;
+}
+
+/** Wrap a marker body (a variable name or a clock token like `clock:Y`) in the
+ *  `«…»` content-marker delimiters. Single source for marker construction,
+ *  paired with `stripMarkerDelimiters`. */
+export function markerOf(body: string): string {
+  return `«${body}»`;
+}
+
+/** Strip variable-marker delimiters from a literal value. A default/fallback
+ *  can't carry a `«…»` marker: preview would resolve it while single-bind export
+ *  emits it verbatim (a phantom re-bind / silent drift). Single source for that
+ *  strip, shared by every variable mutator. */
+export function stripMarkerDelimiters(value: string): string {
+  return value.replace(/[«»]/g, '');
+}
+
+/** True iff names+fnNumbers are valid (marker-safe), in-range, and unique. */
 export function validateVariablesUnique(variables: readonly Variable[]): boolean {
   const names = new Set<string>();
   const fns = new Set<number>();
   for (const v of variables) {
     const trimmed = v.name.trim();
-    if (trimmed === '' || names.has(trimmed)) return false;
+    if (!isValidVariableName(trimmed) || names.has(trimmed)) return false;
     names.add(trimmed);
     if (v.fnNumber < FN_NUMBER_MIN || v.fnNumber > FN_NUMBER_MAX) return false;
     if (fns.has(v.fnNumber)) return false;
@@ -77,7 +109,7 @@ export const csvParseOptionsPersistedSchema = z.object({
 export type CsvParseOptionsPersisted = z.infer<typeof csvParseOptionsPersistedSchema>;
 
 export const csvMappingSchema = z.object({
-  /** variableId -> header name. Missing entries fall back to defaultValue. */
+  /** variable.id -> header name. Missing entries fall back to defaultValue. */
   bindings: z.record(z.string(), z.string()),
   /** Headers the mapping was made against; differing re-imports trigger warning. */
   headerSnapshot: z.array(z.string()),
@@ -105,7 +137,7 @@ export function normalizeHeaderForMatch(s: string): string {
   return s.toLowerCase().replace(/[\s_-]+/g, "");
 }
 
-/** variableId -> headerName via normalizeHeaderForMatch; each header
+/** variable.id -> headerName via normalizeHeaderForMatch; each header
  *  consumed at most once, ties go to first variable. */
 export function suggestCsvMapping(
   variables: readonly Variable[],

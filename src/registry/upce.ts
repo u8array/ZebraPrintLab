@@ -7,6 +7,7 @@ export const upceCoreConfig: Barcode1DCoreConfig = {
   icon: 'UPE',
   defaultContent: '012345',
   group: 'code-1d',
+  serialisable: false,
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     // ^B9 params: rotation, height, interpretation, interpretationAbove.

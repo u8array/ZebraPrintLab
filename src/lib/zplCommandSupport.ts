@@ -140,8 +140,8 @@ const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
   },
 
   // ── Serialisation ─────────────────────────────────────────────────────────
-  { cmd: 'SN', status: 'supported', description: 'Serialisation data (post-field counter: ^SN appears after ^FD)' },
-  { cmd: 'SF', status: 'supported', description: 'Serialize field (pre-field counter: ^SF appears before ^FD)' },
+  { cmd: 'SN', status: 'supported', description: 'Serialisation data (^SNv,n,z; the start value is the field data)' },
+  { cmd: 'SF', status: 'supported', description: 'Serialize field (^SFa,b; mask + increment on a ^FD string)' },
 
   // ── Clock & time ──────────────────────────────────────────────────────────
   { cmd: 'SO', status: 'supported', description: 'Set offset: secondary/tertiary RTC clock offsets; round-trips via labelConfig' },

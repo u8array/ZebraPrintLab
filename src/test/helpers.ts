@@ -1,4 +1,10 @@
 import { expect } from 'vitest';
+import type { SerialMode } from '../registry/serialField';
+
+/** Read the serial-mode prop off a parsed leaf for assertions. */
+export const serialOf = (
+  obj: { type?: string; props?: unknown } | undefined,
+): SerialMode | undefined => props(obj).serial as SerialMode | undefined;
 
 /** Assert that a value is defined and narrow its type. */
 export function defined<T>(val: T | undefined | null): T {

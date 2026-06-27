@@ -147,14 +147,25 @@ describe("objectBoundsDots", () => {
     expect(b.height).toBe(30);
   });
 
-  it("serial: measured cache then fallback", () => {
-    const s = leaf("serial", 3, 3, { content: "001", increment: 1, fontHeight: 30, fontWidth: 0, rotation: "N", zplMode: "SN" });
+  it("serial text: measured cache then fallback", () => {
+    const s = leaf("text", 3, 3, { content: "001", fontHeight: 30, fontWidth: 0, rotation: "N", serial: { increment: 1, zplMode: "SN" } });
     const measured = new Map([[s.id, { width: 44, height: 30 }]]);
     expect(objectBoundsDots(s, ctx(measured))).toEqual({ x: 3, y: 3, width: 44, height: 30 });
     // No measurement: 0/0/1 advance 0.48 each -> 1.44 * 30 = 43.2.
     const b = objectBoundsDots(s, ctx());
     expect(b.width).toBeCloseTo(43.2, 6);
     expect(b.height).toBe(30);
+  });
+
+  it("serial text with dormant block props uses single-line bounds, not the stale blockWidth", () => {
+    // Serial resolves to 'normal'; its leftover ^FB props must not drive bounds.
+    const s = leaf("text", 3, 3, {
+      content: "001", fontHeight: 30, fontWidth: 0, rotation: "N",
+      serial: { increment: 1, zplMode: "SN" },
+      blockWidth: 160, blockLines: 3, blockLineSpacing: 10, blockJustify: "L",
+    });
+    const measured = new Map([[s.id, { width: 44, height: 30 }]]);
+    expect(objectBoundsDots(s, ctx(measured))).toEqual({ x: 3, y: 3, width: 44, height: 30 });
   });
 
   it("barcode (FO): measured footprint at the origin", () => {

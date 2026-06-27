@@ -40,7 +40,7 @@ export const aztec: ObjectTypeCore<AztecProps> = {
     return [
       fieldPos(obj),
       `^B0${p.rotation},${p.magnification},N,${p.ecLevel}`,
-      fdFieldFor(obj, p.content, ctx),
+      fdFieldFor(p.content, ctx),
     ].join("");
   },
 };

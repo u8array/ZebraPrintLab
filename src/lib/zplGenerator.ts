@@ -12,6 +12,7 @@ import {
   isDefaultClockChars,
 } from './fcTemplate';
 import { getObjectStringContent } from './variableBinding';
+import { classifyField } from './variableField';
 import { formatLabelMetaComment } from './zplLabelMeta';
 import type { ClockOffset, CustomFontMapping, LabelConfig } from '../types/LabelConfig';
 import type { ZplEmitContext } from '../types/ZplEmit';
@@ -57,7 +58,6 @@ export function planTemplateHeader(
   variables: readonly Variable[],
 ): { headerLines: string[]; emitCtx: ZplEmitContext } {
   // O(N+V) vs O(N*V) per-marker re-scan.
-  const varsById = new Map(variables.map((v) => [v.id, v]));
   const varsByName = new Map(variables.map((v) => [v.name, v]));
   const varsByFn = new Map(variables.map((v) => [v.fnNumber, v]));
 
@@ -67,12 +67,15 @@ export function planTemplateHeader(
   const singleBindFns = new Set<number>();
   for (const leaf of flattenObjects(shifted)) {
     if (leaf.includeInExport === false) continue;
-    if (leaf.variableId) {
-      const v = varsById.get(leaf.variableId);
-      if (v) singleBindFns.add(v.fnNumber);
-    }
     const c = getObjectStringContent(leaf);
     if (c === undefined) continue;
+    // Content == exactly one known marker is single-bind: emitted inline as
+    // ^FN by fdFieldFor, so it must NOT also be declared in the header block.
+    const cls = classifyField(c, variables);
+    if (cls.kind === "single") {
+      singleBindFns.add(cls.variable.fnNumber);
+      continue;
+    }
     if (hasTemplateMarkers(c)) {
       templatePayloads.push(c);
       for (const name of extractTemplateRefs(c)) {
@@ -352,8 +355,14 @@ export function generateBatchZpl(
     if (colIdx === -1) continue;
     // Apply the bound field's ^FD transform (QR prefix, UPC-E compaction, GS1
     // escaping) to each row value, matching the single-format export so the
-    // recall doesn't overwrite ^FN with an untransformed payload.
-    const bound = leaves.find((o) => o.variableId === v.id);
+    // recall doesn't overwrite ^FN with an untransformed payload. The bound
+    // field is the one whose content is exactly this variable's marker.
+    const bound = leaves.find((o) => {
+      const c = getObjectStringContent(o);
+      if (c === undefined) return false;
+      const cls = classifyField(c, variables);
+      return cls.kind === "single" && cls.variable.id === v.id;
+    });
     const transform =
       (bound && !isGroup(bound) ? getEntry(bound.type)?.fdTransform?.(bound) : undefined) ??
       identity;

@@ -1,9 +1,11 @@
 import type { CustomFontMapping } from "../../../types/LabelConfig";
 import { FN_NUMBER_MAX, FN_NUMBER_MIN } from "../../../types/Variable";
-import type { SerialProps } from "../../../registry/serial";
+import { applySerialToLeaf } from "../../../registry/serialField";
+import { getEntry } from "../../../registry";
+import { classifyField } from "../../variableField";
 import { ZPL_BUILTIN_FONT_LETTERS } from "../../customFonts";
 import { getDefaultTextH, getDefaultTextW, type ParserState } from "../context";
-import { ciToEncoding, dotsFor, getDecoder, int, makeObj, readRotation } from "../helpers";
+import { ciToEncoding, dotsFor, getDecoder, int, readRotation } from "../helpers";
 import type { Handler, Wildcard } from "../types";
 
 /** flushField + appendComment are shared with the orchestrator. */
@@ -177,34 +179,55 @@ export function createFieldHandlers(
 
     // ── Serialization ─────────────────────────────────────────────────────
     SN(p) {
-      // ^SN{start},{increment},{leadZero}: runs after ^FD, upgrade last text to serial.
+      // ^SN{start},{increment},{leadZero} appears in two placements: inside the
+      // field (our generator's shape and the spec's ^FO..^A..^SN..^FS, where
+      // ^SN both seeds and serializes), or after ^FS (upgrades the just-flushed
+      // field). Handle both so a serial field always round-trips.
       const snStart = p[0] ?? "";
       const snInc = int(p[1], 1);
+      if (s.field.fieldType) {
+        s.field.snPending = true;
+        s.field.snIncrement = snInc;
+        s.field.snMode = "SN";
+        // ^SN's explicit start value is the seed and overrides any prior ^FD,
+        // consistent with the post-^FS path, but only for a field that will
+        // actually serialise (text/1D). On a non-serialisable type the ^SN is
+        // dropped at flush, so don't corrupt its ^FD / variable default. An empty
+        // start (^SN,1,Y) keeps the ^FD, or seeds empty when there is none so an
+        // empty-seed serial still survives (the pendingFD===null guard).
+        const serialisable = !!getEntry(s.field.fieldType)?.serialisable;
+        if (snStart && serialisable) s.field.pendingFD = snStart;
+        else if (s.field.pendingFD === null) s.field.pendingFD = snStart;
+        return;
+      }
       const lastObj = s.result.objects[s.result.objects.length - 1];
-      if (lastObj && lastObj.type === "text") {
-        const tp = lastObj.props;
-        const serialObj = makeObj(
-          "serial",
-          lastObj.x,
-          lastObj.y,
-          {
-            content: snStart || tp.content || "001",
-            increment: snInc,
-            fontHeight: tp.fontHeight ?? 30,
-            fontWidth: tp.fontWidth ?? 0,
-            rotation: tp.rotation ?? "N",
-            zplMode: "SN",
-          } satisfies SerialProps,
-          lastObj.positionType,
-          lastObj.comment,
-        );
-        s.result.objects[s.result.objects.length - 1] = serialObj;
+      // Only types whose emitter emits ^SN/^SF (text + 1D) take a serial; a
+      // 2D/stacked field would import a state the emitter drops on export.
+      if (lastObj && getEntry(lastObj.type)?.serialisable) {
+        const cur = (lastObj as { props: { content?: string } }).props.content ?? "";
+        const cls = classifyField(cur, s.result.variables);
+        if (cls.kind === "single") {
+          // Serial wins over a single-bind: replace the «name» marker with a
+          // literal seed (the ^SN start, else the bound default), so export
+          // serialises a real value instead of a charset-filtered marker.
+          (lastObj as { props: { content?: string } }).props.content = snStart || cls.variable.defaultValue;
+        } else if (snStart) {
+          // ^SN's explicit start value is the serial seed and overrides any prior
+          // ^FD payload, for text and 1D barcodes alike: the emitter re-emits the
+          // seed from `content` (no ^FD in SN mode), so keeping the stale ^FD
+          // would silently rewrite the ZPL on the next export. An empty start
+          // (`^SN,1,Y`) leaves the ^FD as the seed.
+          (lastObj as { props: { content?: string } }).props.content = snStart;
+        }
+        applySerialToLeaf(lastObj, { increment: snInc, zplMode: "SN" });
       }
     },
     SF(p) {
-      // ^SF{increment},{padDigits},{leadZero}: runs before ^FD, flushField emits serial.
+      // ^SFa,b: a=mask (derived from the seed on emit, ignored here), b=increment
+      // string. We model only the decimal increment; a complex/aligned mask is
+      // not round-tripped (regenerated from the seed). Pairs with the field's ^FD.
       s.field.snPending = true;
-      s.field.snIncrement = int(p[0], 1);
+      s.field.snIncrement = int(p[1], 1);
       s.field.snMode = "SF";
     },
 

@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { Ellipse, Group, Rect, Shape, Text } from "react-konva";
-import { lookupBoundVariable, shouldShowFallbackTint } from "../../lib/variableBinding";
+import { shouldShowFallbackTint } from "../../lib/variableBinding";
+import { lookupBoundVariable } from "../../lib/variableField";
 import { BarcodeObject } from "./BarcodeObject";
 import { LineObject } from "./LineObject";
 import { ImageObject } from "./ImageObject";
@@ -20,9 +21,9 @@ import { DEFAULT_GS_SYMBOL_META, GS_SYMBOLS } from "../../registry/symbol";
 import { GS_SYMBOL_PATHS, GS_VECTOR_CODES, type GsVectorCode } from "../../registry/gsSymbolPaths";
 import { blockBoundsDots, blockJustifyWordPositions, blockLineStartDots, blockLineStepDots, tbBoundsDots, tbLineStepDots, wrapBlockLines, zebraAlignOffsetDots, zebraHangingIndentOffsetDots, zebraJustifyGapDots, zebraLineWidthDots, type ZplRotation } from "../../lib/zebraTextLayout";
 import { resolveTextMode } from "../../registry/text";
+import { isAxisSwapped } from "../../registry/rotation";
 import type { LeafObject } from "../../registry";
 import type { TextProps } from "../../registry/text";
-import type { SerialProps } from "../../registry/serial";
 
 type Props = KonvaObjectProps;
 
@@ -115,9 +116,7 @@ interface BaseTextProps {
 /** One `<Text>` per line at Zebra alignment offset when ^FB is active.
  *  Konva's own Text.align uses canvas measureText which over-estimates
  *  A0 advances and drifts noticeably on centred blocks. */
-type TextFieldObj =
-  | (LeafObject & { type: "text"; props: TextProps })
-  | (LeafObject & { type: "serial"; props: SerialProps });
+type TextFieldObj = LeafObject & { type: "text"; props: TextProps };
 
 /** Approx width of an empty single-line placeholder, expressed as
  *  fontHeight multiples (Glyph-row aspect ratio). */
@@ -459,7 +458,9 @@ export function KonvaObject(props_: Props) {
   );
   const renderProps = obj === props_.obj ? props_ : { ...props_, obj };
 
-  const boundVariable = lookupBoundVariable(obj, variables);
+  // Classify the ORIGINAL content: `obj` has had its markers resolved to print
+  // values by applyBindingToObject, so its content no longer matches `«name»`.
+  const boundVariable = lookupBoundVariable(props_.obj, variables);
   const showFallbackTint = shouldShowFallbackTint(
     boundVariable, csvDataset, csvMapping, csvRenderMode,
   );
@@ -525,7 +526,7 @@ function KonvaObjectInner({
   // at the zplGenerator/zplParser boundary.
   const baseMetrics = getTextRenderMetrics(obj, undefined, label);
   const textMetrics =
-    baseMetrics && (obj.type === "text" || obj.type === "serial")
+    baseMetrics && obj.type === "text"
       ? {
           ...baseMetrics,
           fontSizePx: Math.max(
@@ -543,18 +544,15 @@ function KonvaObjectInner({
   const x = offsetX + dotsToPx(obj.x, scale, dpmm);
   const y = offsetY + dotsToPx(obj.y, scale, dpmm);
 
-  // Only single-line text/serial needs a measured footprint; block (^FB) text
-  // is purely computable via blockBoundsDots. A quarter turn swaps the axes.
+  // Only single-line text needs a measured footprint; block (^FB/^TB) text
+  // is purely computable. Serial resolves to single-line too (block props are
+  // dormant), so route through resolveTextMode, the single mode source.
   const isSingleLineText =
-    (obj.type === "text" || obj.type === "serial") &&
-    !!textMetrics &&
-    !(obj.type === "text" && obj.props.blockWidth);
+    obj.type === "text" && !!textMetrics && resolveTextMode(obj.props) === "normal";
   const inkWidthDots = textMetrics?.inkWidthDots ?? 0;
-  const fontHeightDots =
-    obj.type === "text" || obj.type === "serial" ? obj.props.fontHeight : 0;
-  const rotation =
-    obj.type === "text" || obj.type === "serial" ? obj.props.rotation : "N";
-  const isQuarterTurn = rotation === "R" || rotation === "B";
+  const fontHeightDots = obj.type === "text" ? obj.props.fontHeight : 0;
+  const rotation = obj.type === "text" ? obj.props.rotation : "N";
+  const isQuarterTurn = isAxisSwapped(rotation);
   useEffect(() => {
     if (!isSingleLineText) return;
     // Footprint dropped to zero (e.g. content cleared): drop the stale entry.
@@ -584,7 +582,7 @@ function KonvaObjectInner({
     requestContentEditorFocus(obj.id);
   };
 
-  if ((obj.type === "text" || obj.type === "serial") && textMetrics) {
+  if (obj.type === "text" && textMetrics) {
     const p = obj.props;
     const { content, fontFamily, fontScaleX, fontSizePx } = textMetrics;
     // Bitmap device fonts (A-H) carry their own weight via the substitute
@@ -620,7 +618,7 @@ function KonvaObjectInner({
     // ^FR reverse routes through the normal text path with a knockout paint
     // (white + difference, see base below); no self background, so the box
     // stays a separate object and the field round-trips with its own anchor.
-    const reverseText = obj.type === "text" && obj.props.reverse;
+    const reverseText = obj.type === "text" && obj.props.reverse && !obj.props.serial;
 
     // Outer Group stays axis-aligned for the Transformer; rotation is
     // applied to the inner Text. Direct rotation on the transformer's
@@ -663,7 +661,7 @@ function KonvaObjectInner({
           fontVersion={fontVersion}
           isSelected={isSelected}
         />
-        {obj.type === "text" && isSelected && obj.props.blockWidth && (
+        {obj.type === "text" && isSelected && resolveTextMode(obj.props) !== "normal" && obj.props.blockWidth && (
           <BlockWrapGuide
             blockWidthDots={obj.props.blockWidth}
             blockLines={obj.props.blockLines ?? 1}

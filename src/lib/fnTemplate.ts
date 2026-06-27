@@ -1,4 +1,4 @@
-import type { Variable } from "../types/Variable";
+import { markerOf, type Variable } from "../types/Variable";
 
 // ^FE embeds (#n#) <-> «name» markers. Body forbids » so adjacent markers
 // don't merge. Factory form avoids /g lastIndex bleed across callers.
@@ -34,7 +34,25 @@ export function renameTemplateMarker(
   const next = content.replace(markerRe(), (full, name: string) => {
     if (name !== oldName) return full;
     touched = true;
-    return `«${newName}»`;
+    return markerOf(newName);
+  });
+  return touched ? next : content;
+}
+
+/** Rename many markers in ONE pass, looking each up against the ORIGINAL name.
+ *  Order-independent and collision-safe: a swap (`a→b`, `b→a`) or chain can't
+ *  cascade the way sequential single renames would. Identity on no match. */
+export function renameTemplateMarkers(
+  content: string,
+  renames: ReadonlyMap<string, string>,
+): string {
+  if (renames.size === 0) return content;
+  let touched = false;
+  const next = content.replace(markerRe(), (full, name: string) => {
+    const to = renames.get(name);
+    if (to === undefined) return full;
+    touched = true;
+    return markerOf(to);
   });
   return touched ? next : content;
 }
@@ -97,7 +115,7 @@ export function embedsToMarkers(
   return payload.replace(re, (full, digits: string) => {
     const n = parseInt(digits, 10);
     const name = fnToName.get(n);
-    return name !== undefined ? `«${name}»` : full;
+    return name !== undefined ? markerOf(name) : full;
   });
 }
 

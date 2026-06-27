@@ -6,6 +6,7 @@ import {
   type Variable,
 } from '../../types/Variable';
 import { selectPreviewLocksEditor } from '../labelStore.selectors';
+import { rewriteTemplateMarkersMap } from '../labelStore.internals';
 import type { LabelState } from '../labelStore';
 
 /** Snapshot of an imported CSV plus the row the canvas is currently
@@ -84,15 +85,35 @@ export const createCsvSlice: StateCreator<LabelState, [], [], CsvSlice> = (set) 
 
   setCsvMapping: (mapping) => set({ csvMapping: mapping }),
 
-  applyMappingDraft: ({ variables, dataset, mapping, activeRowIndex }) =>
+  applyMappingDraft: ({ variables: rawVariables, dataset, mapping, activeRowIndex }) =>
     set((state) => {
       if (selectPreviewLocksEditor(state)) return {};
+      // Canonicalise names like the add/update paths (the name is the marker
+      // identity), so the mapping dialog can't persist " sku " while bindings
+      // use «sku».
+      const variables = rawVariables.map((v) => ({ ...v, name: v.name.trim() }));
       if (!validateVariablesUnique(variables)) return {};
       const rows = dataset.rows;
       const clampedIdx =
         rows.length === 0
           ? 0
           : Math.max(0, Math.min(activeRowIndex, rows.length - 1));
+      // Renaming an existing variable here must ripple to its `«name»` markers,
+      // else bound fields orphan and print the marker literally. Diff by id, then
+      // rewrite in ONE pass against the original names so a name swap is safe.
+      const oldNameById = new Map(state.variables.map((v) => [v.id, v.name]));
+      const renames = new Map<string, string>();
+      for (const v of variables) {
+        const oldName = oldNameById.get(v.id);
+        if (oldName !== undefined && oldName !== v.name) renames.set(oldName, v.name);
+      }
+      let pages = state.pages;
+      if (renames.size > 0) {
+        pages = state.pages.map((p) => {
+          const objects = rewriteTemplateMarkersMap(p.objects, renames);
+          return objects === p.objects ? p : { ...p, objects };
+        });
+      }
       return {
         variables,
         csvDataset: {
@@ -102,6 +123,7 @@ export const createCsvSlice: StateCreator<LabelState, [], [], CsvSlice> = (set) 
           activeRowIndex: clampedIdx,
         },
         csvMapping: mapping,
+        ...(pages !== state.pages ? { pages } : {}),
       };
     }),
 

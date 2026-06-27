@@ -1,5 +1,5 @@
 import type { LabelObject } from "../types/Group";
-import type { CsvMapping, Variable } from "../types/Variable";
+import { markerOf, type CsvMapping, type Variable } from "../types/Variable";
 import { hasTemplateMarkers, resolveTemplateMarkers } from "./fnTemplate";
 import { channelDatesFrom, hasClockMarkers, resolveClockMarkers, type ChannelDates } from "./fcTemplate";
 import type { ClockOffset, LabelConfig } from "../types/LabelConfig";
@@ -11,15 +11,6 @@ export function getObjectStringContent(obj: LabelObject): string | undefined {
   return typeof c === "string" ? c : undefined;
 }
 
-/** Bound Variable, or undefined when unbound or orphan. */
-export function lookupBoundVariable(
-  obj: LabelObject,
-  variables: readonly Variable[],
-): Variable | undefined {
-  if (!obj.variableId) return undefined;
-  return variables.find((v) => v.id === obj.variableId);
-}
-
 /** `preview` = actual print value, `schema` = `«name»` placeholder. */
 export type RenderMode = "preview" | "schema";
 
@@ -29,7 +20,7 @@ export function resolveVariableValue(
   active: ActiveCsvRow | null,
   mode: RenderMode = "preview",
 ): string {
-  if (mode === "schema") return `«${variable.name}»`;
+  if (mode === "schema") return markerOf(variable.name);
   if (!active) return variable.defaultValue;
   const header = active.mapping.bindings[variable.id];
   if (header === undefined) return variable.defaultValue;
@@ -146,23 +137,15 @@ export function applyBindingToObject<T extends LabelObject>(
   const content = getObjectStringContent(obj);
   if (content === undefined) return obj;
 
-  // Single-bind (variableId) OR template (`«name»` markers in content), never
-  // both. A single-bind value is emitted as-is by the exporter (fdFieldFor
-  // reads variable.defaultValue raw), so preview must NOT recursively resolve
-  // markers nested inside it, otherwise preview and export diverge.
+  // Content is the only source: `«name»` markers (single known marker is the
+  // derived single-bind, others are templates) resolve to the variable value,
+  // exactly as `fdFieldFor`/`classifyField` decide on export, so preview and
+  // export can never diverge.
   let next = content;
-  const variable = lookupBoundVariable(obj, variables);
-  if (variable) {
-    next = resolveVariableValue(variable, active, mode);
-  } else if (hasTemplateMarkers(next)) {
-    // O(N+V) vs O(N*V).
-    const byName = new Map(variables.map((v) => [v.name, v]));
-    next = resolveTemplateMarkers(next, (name) => {
-      const v = byName.get(name);
-      return v ? resolveVariableValue(v, active, mode) : undefined;
-    });
-  }
-  if (!variable && mode === "preview" && hasClockMarkers(next)) {
+  // Resolve the field's OWN clock markers first (preview only); a «clock:Y» that
+  // arrives via a substituted variable value (CSV/default) stays literal, matching
+  // export (^FC fires only for clock in field content, not in substituted data).
+  if (mode === "preview" && hasClockMarkers(next)) {
     const ctx = clock ?? {};
     const dates = ctx.dates ?? channelDatesFrom(
       ctx.now ?? new Date(),
@@ -170,6 +153,14 @@ export function applyBindingToObject<T extends LabelObject>(
       ctx.tertiaryOffset,
     );
     next = resolveClockMarkers(next, dates);
+  }
+  if (hasTemplateMarkers(next)) {
+    // O(N+V) vs O(N*V).
+    const byName = new Map(variables.map((v) => [v.name, v]));
+    next = resolveTemplateMarkers(next, (name) => {
+      const v = byName.get(name);
+      return v ? resolveVariableValue(v, active, mode) : undefined;
+    });
   }
   if (next === content) return obj;
   const props = (obj as { props: object }).props;

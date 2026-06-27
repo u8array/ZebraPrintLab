@@ -37,7 +37,7 @@ export const maxicode: ObjectTypeCore<MaxicodeProps> = {
     return [
       fieldPos(obj),
       `^BV${p.rotation},${p.mode},1,1`,
-      fdFieldFor(obj, p.content, ctx),
+      fdFieldFor(p.content, ctx),
     ].join("");
   },
 };

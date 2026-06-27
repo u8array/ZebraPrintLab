@@ -40,7 +40,7 @@ export const pdf417: ObjectTypeCore<Pdf417Props> = {
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^B7${p.rotation},${p.rowHeight},${p.securityLevel},${p.columns},,,`,
-      fdFieldFor(obj, p.content, ctx),
+      fdFieldFor(p.content, ctx),
     ]
       .filter(Boolean)
       .join("");

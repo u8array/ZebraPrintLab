@@ -3,7 +3,7 @@ import type { LabelConfig } from "../../types/LabelConfig";
 import type { PrinterProfile } from "../../types/PrinterProfile";
 import type { Variable } from "../../types/Variable";
 import type { TextProps } from "../../registry/text";
-import type { SerialProps } from "../../registry/serial";
+import type { SerialMode } from "../../registry/serialField";
 import type { Code49Props } from "../../registry/code49";
 import type { Gs1DatabarProps } from "../../registry/gs1databar";
 import type { DataMatrixProps } from "../../registry/datamatrix";
@@ -185,7 +185,7 @@ export interface FieldState {
   // ^SN / ^SF serialisation pending
   snPending: boolean;
   snIncrement: number;
-  snMode: SerialProps["zplMode"];
+  snMode: SerialMode["zplMode"];
 }
 
 export interface ParserState {

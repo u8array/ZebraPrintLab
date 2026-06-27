@@ -4,7 +4,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { dirtyTracking } from './dirtyTracking';
 import type { ObjectChanges } from '../types/LabelObject';
 import { PRINTER_PROFILE_FIELDS, printerProfileSchema } from '../types/PrinterProfile';
-import { visitLeavesInPages } from '../lib/objectTree';
+import { visitLeavesInPages, foldSerialLeaf, bindSingleMarkerLeaf, sanitiseVariableNames, safeUniqueNameById } from '../lib/objectTree';
 import { insertReverseBackingBoxes, pageNeedsReverseBacking } from '../lib/reverseBacking';
 import { dropLegacyFontBindings } from '../lib/customFonts';
 import type { CustomFontMapping, LabelConfig } from '../types/LabelConfig';
@@ -199,6 +199,47 @@ export function migrateLegacy(persistedState: unknown, version: number): unknown
     };
   }
 
+  // v10→v11: the standalone `serial` object type became a text field mode
+  // (props.serial). Rewrite persisted serial objects, or they rehydrate with a
+  // type that has no registry entry and silently render/emit nothing. Mirrors
+  // designFile.migrateSerialToTextMode for the live localStorage session. Also
+  // remap the palette variant id `serial` → `text-serial`, else that saved row
+  // no longer resolves (resolveAddable returns null) and vanishes from the list.
+  if (version < 11) {
+    s = { ...s, pages: migrateSerialTypeInPages(s.pages) };
+    if (Array.isArray(s.paletteRows)) {
+      s = {
+        ...s,
+        paletteRows: (s.paletteRows as unknown[]).map((r) =>
+          r && typeof r === "object" && (r as { variant?: unknown }).variant === "serial"
+            ? { ...(r as object), variant: "text-serial" }
+            : r,
+        ),
+      };
+    }
+  }
+
+  // v11→v12: single-bind `variableId` dissolved into the content model. A field
+  // bound to a variable becomes content === «name» (classifies as single-bind on
+  // emit, byte-identical), and the variableId field is dropped. Overlays are kept:
+  // the captured bytes don't change, and the overlay doesn't key on variableId.
+  if (version < 12 && Array.isArray(s.pages)) {
+    const vars = Array.isArray(s.variables)
+      ? (s.variables as { id?: unknown; name?: unknown; fnNumber?: unknown }[])
+      : [];
+    // Resolve the unique, marker-safe name PER ID first (renames the variables),
+    // so duplicate legacy names don't collapse two ids onto one marker.
+    const nameById = safeUniqueNameById(vars);
+    s = { ...s, pages: migrateSingleBindInPages(s.pages, nameById) };
+  }
+
+  // Enforce the marker-safe variable-name invariant on any rehydrated session
+  // (old data may carry names like `clock:Y` that the content-marker model
+  // can't represent). Renames offenders + rewrites their markers in place.
+  if (Array.isArray(s.variables) && Array.isArray(s.pages)) {
+    sanitiseVariableNames(s.variables as { name?: unknown; fnNumber?: unknown }[], s.pages);
+  }
+
   // Re-validate the rehydrated profile so a legacy snapshot that
   // violates the schema or a cross-field rule can't crash the slice's
   // safeParse on the next patch. Cross-field issues report a path
@@ -241,6 +282,23 @@ function migrateMaintenanceTypeCodes(pp: Record<string, unknown>): Record<string
   if (out.maintenanceAlert) out.maintenanceAlert = remap(out.maintenanceAlert);
   if (out.maintenanceMessage) out.maintenanceMessage = remap(out.maintenanceMessage);
   return out;
+}
+
+function migrateSerialTypeInPages(pages: unknown): unknown {
+  // Mutates in place via the shared leaf walker (recurses groups); pages is the
+  // persisted payload, not the live store, so mutation is safe.
+  visitLeavesInPages(pages, foldSerialLeaf);
+  return pages;
+}
+
+function migrateSingleBindInPages(
+  pages: unknown,
+  nameById: ReadonlyMap<string, string>,
+): unknown {
+  // Mutates in place via the shared leaf walker; pages is the persisted payload,
+  // not the live store, so mutation is safe.
+  visitLeavesInPages(pages, (leaf) => bindSingleMarkerLeaf(leaf, nameById));
+  return pages;
 }
 
 function migrateGs1DatabarInPages(pages: unknown): unknown {
@@ -338,7 +396,7 @@ export const useLabelStore = create<LabelState>()(
     }),
     {
       name: 'zpl-designer-session',
-      version: 10,
+      version: 12,
       migrate: (persistedState, version) => migrateLegacy(persistedState, version) as LabelState,
       storage: createJSONStorage(() => localStorage),
       partialize: persistPartialize,

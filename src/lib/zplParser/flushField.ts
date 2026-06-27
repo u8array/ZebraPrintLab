@@ -2,6 +2,8 @@ import {
   FN_NUMBER_MIN,
   FN_NUMBER_MAX,
   uniqueVariableName,
+  isValidVariableName,
+  markerOf,
   type Variable,
 } from "../../types/Variable";
 import { embedsToMarkers } from "../fnTemplate";
@@ -27,7 +29,8 @@ import {
   GS_SYMBOL_CODES,
   type SymbolProps,
 } from "../../registry/symbol";
-import type { SerialProps } from "../../registry/serial";
+import { applySerialToLeaf } from "../../registry/serialField";
+import { getEntry } from "../../registry";
 import type { AztecProps } from "../../registry/aztec";
 import type { MaxicodeProps } from "../../registry/maxicode";
 import type { MicroPdf417Props } from "../../registry/micropdf417";
@@ -65,7 +68,10 @@ export function createFlushField(
       }
       return existing;
     }
-    const base = variableNameFromComment(commentHint) ?? `field_${fnNumber}`;
+    // The ^FX hint is untrusted: reject marker-unsafe / reserved names (e.g.
+    // `clock:Y`, `sku»oops`) so the content-marker model stays consistent.
+    const hinted = variableNameFromComment(commentHint);
+    const base = hinted && isValidVariableName(hinted) ? hinted : `field_${fnNumber}`;
     const v: Variable = {
       id: crypto.randomUUID(),
       name: uniqueVariableName(base, variables),
@@ -152,7 +158,7 @@ export function createFlushField(
         // need the rendered ink width; measure it the same way the
         // renderer does so the round-trip stays exact.
         const { inkWidthDots } = computeTextRenderMetrics({
-          content: s.field.snPending ? `#${decoded}` : decoded,
+          content: decoded,
           fontHeight: s.field.textH,
           fontWidth: s.field.textW,
           printerFontName: s.field.pendingPrinterFontName,
@@ -179,34 +185,6 @@ export function createFlushField(
           blockExtentDots,
           s.defaults.fbWidth,
         );
-        // ^SF pending: emit serial (not text); flush any reverse-bg first.
-        if (s.field.snPending) {
-          commitPendingReverseBg();
-          objects.push(
-            makeObj(
-              "serial",
-              modelPos.x,
-              modelPos.y,
-              {
-                content: decoded,
-                increment: s.field.snIncrement,
-                fontHeight: s.field.textH,
-                fontWidth: s.field.textW,
-                rotation: s.field.textRot,
-                zplMode: s.field.snMode,
-              } satisfies SerialProps,
-              posType,
-              comment,
-            ),
-          );
-          // Consumed: clear pending serial state immediately so a
-          // following field inside the same ^FS block emits as text.
-          s.field.snPending = false;
-          s.field.snIncrement = 1;
-          s.field.snMode = "SN";
-          resetFB();
-          break;
-        }
         // A stashed filled-black ^GB commits as its own box just before the
         // text, so it sits behind it; ^FR then knocks the glyph ink out of that
         // box at render time. We never merge the box into the text, so a hand
@@ -583,18 +561,46 @@ export function createFlushField(
       }
     }
 
+    // The just-pushed leaf and whether its emitter honours ^SN/^SF: derived once,
+    // consumed by both the ^FN-bind and the ^SN/^SF blocks below.
+    const justPushed = objects[objects.length - 1];
+    const lastSerialisable = !!justPushed && !!getEntry(justPushed.type)?.serialisable;
+
     // Bind pending ^FN slot; existing Variable for same fnNumber is reused.
     if (s.comment.fnNumber !== null) {
-      const justPushed = objects[objects.length - 1];
       if (justPushed) {
         // ^TB encodes the bound default (`<<>`), so store the decoded plain
         // value to stay symmetric with the generator; ^FB/plain keep content.
         const varDefault = isTbField ? decoded : content;
         const variable = upsertVariable(s.comment.fnNumber, varDefault, s.comment.fnComment);
-        justPushed.variableId = variable.id;
+        // Field links to its variable via a single «name» marker (single-bind on
+        // emit), not a stored variableId. Serial wins over the binding, but only
+        // when actually applied (serialisable type); else a 2D field's ^FN binding
+        // would be silently dropped.
+        const serialApplied = s.field.snPending && lastSerialisable;
+        const leaf = justPushed as { props?: { content?: string } };
+        if (leaf.props && !serialApplied) leaf.props.content = markerOf(variable.name);
       }
       s.comment.fnNumber = null;
       s.comment.fnComment = undefined;
+    }
+
+    // ^SN/^SF: flag the just-pushed field as a serial counter, but only for
+    // types whose emitter actually emits ^SN/^SF (text + 1D). Attaching it to a
+    // 2D/stacked field would import a state the emitter drops on export. The
+    // in-field ^SN/^SF set snPending, consumed once here. Runs after the
+    // ^FN-bind block so applySerialToLeaf can clear a binding the same field
+    // also declared.
+    if (s.field.snPending) {
+      if (justPushed && lastSerialisable) {
+        applySerialToLeaf(justPushed, {
+          increment: s.field.snIncrement,
+          zplMode: s.field.snMode,
+        });
+      }
+      s.field.snPending = false;
+      s.field.snIncrement = 1;
+      s.field.snMode = "SN";
     }
 
     s.field.fieldType = null;

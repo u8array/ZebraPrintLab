@@ -1,6 +1,7 @@
 import { getTextRenderMetrics, computeTextRenderMetrics } from "./labelGeometry/textRenderMetrics";
 import { rotatedLineOffset } from "./zebraTextLayout";
-import type { TextProps } from "../registry/text";
+import { isAxisSwapped } from "../registry/rotation";
+import { resolveTextMode, type TextProps } from "../registry/text";
 import type { BoxProps } from "../registry/box";
 import type { LineProps } from "../registry/line";
 import type { LabelConfig } from "../types/LabelConfig";
@@ -51,7 +52,7 @@ export function reverseBackingBoxGeometry(
   label?: FontLabel,
 ): { x: number; y: number; props: BoxProps } {
   const p = text.props;
-  const mode = p.textMode ?? (p.blockWidth ? "fb" : "normal");
+  const mode = resolveTextMode(p);
   // Label-based metrics resolve device/custom/default fonts to match the canvas.
   // Migration runs on unvalidated json, where a malformed `label.customFonts`
   // would make font resolution throw; fall back to a label-independent measure
@@ -78,7 +79,7 @@ export function reverseBackingBoxGeometry(
   const blockHeight = finiteOrUndefined(p.blockHeight);
   const blockLines = finiteOrUndefined(p.blockLines);
   const blockSpacing = finiteOrUndefined(p.blockLineSpacing) ?? 0;
-  const vertical = p.rotation === "R" || p.rotation === "B";
+  const vertical = isAxisSwapped(p.rotation);
   let baseW: number;
   let baseH: number;
   if (mode === "tb") {

@@ -4,7 +4,7 @@ import { useLabelStore } from "../store/labelStore";
 import { validateMaxicodeBwip } from "../components/Canvas/bwipHelpers";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
-import { VariableContentField } from "../components/Properties/VariableContentField";
+import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
 import { FieldLabel } from "../components/Properties/ZplCmd";
 import { Select } from "../components/ui/Select";
 import { fieldMode, boundDefaultOrContent, asLabelObject } from "../lib/variableField";
@@ -34,7 +34,7 @@ export const maxicodePanel: ObjectTypeUi<MaxicodeProps> = {
     return (
       <>
         <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
-          <VariableContentField obj={obj} multiline={false} placeholder={loc.content} />
+          <ContentEditorButton obj={obj} />
         </StaticSectionCard>
 
         <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>

@@ -31,11 +31,6 @@ export const labelObjectBaseSchema = z.object({
    *  Leaves fall back to their registry label; the field is on the base
    *  so adding leaf naming would not need a schema change. */
   name: z.string().optional(),
-  /** When set, the field's render/export content resolves through the
-   *  referenced Variable (defaultValue today). The field's own content
-   *  prop is kept as fallback when the binding is removed. Exported
-   *  as `^FN{n}^FD{default}^FS` instead of plain `^FD{content}^FS`. */
-  variableId: z.string().optional(),
   /** Lossless round-trip provenance: set once an imported object diverges from
    *  its source bytes, so the page overlay regenerates it instead of replaying
    *  the original segment verbatim. Absent for net-new and untouched objects.
