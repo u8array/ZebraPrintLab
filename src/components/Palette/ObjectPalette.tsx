@@ -86,6 +86,31 @@ function FlatEntry({ entry, dragId, cat }: { entry: AddableEntry; dragId: string
   );
 }
 
+/** Variant buttons (icon + name) shared by the row disclosure and the add-type
+ *  expansion. `activeVariant` highlights the current pick; omit where none. */
+function VariantButtons({ variants, activeVariant, onPick }: { variants: string[]; activeVariant?: string; onPick: (v: string) => void }) {
+  const t = useT();
+  return (
+    <>
+      {variants.map((v) => {
+        const ve = resolveAddable(v, t);
+        if (!ve) return null;
+        return (
+          <button
+            key={v}
+            type="button"
+            onClick={() => onPick(v)}
+            className={`flex items-center gap-2 px-1.5 py-1 rounded text-left transition-colors ${v === activeVariant ? 'text-accent' : 'text-text hover:bg-surface-2'}`}
+          >
+            <span className="font-mono text-[11px] text-muted w-4 text-center">{ve.icon}</span>
+            <span className="text-xs truncate">{ve.label}</span>
+          </button>
+        );
+      })}
+    </>
+  );
+}
+
 /** List-mode row: a curated {type,variant} instance. In normal mode the grip
  *  drags onto the canvas to spawn and the chevron picks the variant; in edit
  *  mode the grip reorders and a remove button appears (see PaletteEditToggle). */
@@ -103,7 +128,7 @@ function ListRow({ row, index, editing }: { row: PaletteRow; index: number; edit
   });
   if (!entry) return null;
   const variants = variantsOfType(type);
-  const showChevron = !editing && variants.length > 1;
+  const showChevron = !editing && variants.length > 1 && !row.fixed;
   // Keep the active row in place (only neighbours shift); a pointer-following
   // transform would overflow the scroll container and add an x-scrollbar.
   const style = {
@@ -125,7 +150,9 @@ function ListRow({ row, index, editing }: { row: PaletteRow; index: number; edit
         <IconSlot entry={entry} />
         <span className="flex flex-col min-w-0 leading-tight">
           <span className="text-xs text-text truncate">{entry.label}</span>
-          <span className="font-mono text-[9px] text-muted truncate">{typeLabel(type, t)}</span>
+          <span className="font-mono text-[9px] text-muted truncate">
+            {typeLabel(type, t)}{row.fixed ? ` ${t.palette.fixedMarker}` : ''}
+          </span>
         </span>
         {showChevron && (
           <button
@@ -153,31 +180,21 @@ function ListRow({ row, index, editing }: { row: PaletteRow; index: number; edit
       </div>
       {open && !editing && (
         <div className="ml-8 mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-border pl-1">
-          {variants.map((v) => {
-            const ve = resolveAddable(v, t);
-            if (!ve) return null;
-            return (
-              <button
-                key={v}
-                type="button"
-                onClick={() => { setVariant(index, v); setOpen(false); }}
-                className={`flex items-center gap-2 px-1.5 py-1 rounded text-left transition-colors ${v === variant ? 'text-accent' : 'text-text hover:bg-surface-2'}`}
-              >
-                <span className="font-mono text-[11px] text-muted w-4 text-center">{ve.icon}</span>
-                <span className="text-xs truncate">{ve.label}</span>
-              </button>
-            );
-          })}
+          <VariantButtons variants={variants} activeVariant={variant} onPick={(v) => { setVariant(index, v); setOpen(false); }} />
         </div>
       )}
     </div>
   );
 }
 
+/** Two-stage add: click the type name for a switchable group row, or expand its
+ *  variants and pick one for a fixed single-element row. */
 function AddTypeMenu() {
   const t = useT();
   const addPaletteRow = useLabelStore((s) => s.addPaletteRow);
   const [open, setOpen] = useState(false);
+  const [expand, setExpand] = useState<string | null>(null);
+  const close = () => { setOpen(false); setExpand(null); };
   return (
     <div>
       <button
@@ -190,16 +207,42 @@ function AddTypeMenu() {
       </button>
       {open && (
         <div className="mt-1 flex flex-col gap-0.5 rounded border border-border bg-surface p-1">
-          {PALETTE_TYPES.map((pt) => (
-            <button
-              key={pt.id}
-              type="button"
-              onClick={() => { addPaletteRow(pt.id); setOpen(false); }}
-              className="px-2 py-1 rounded text-left text-xs text-text hover:bg-surface-2 transition-colors"
-            >
-              {typeLabel(pt.id, t)}
-            </button>
-          ))}
+          <div className="px-2 py-1 text-[10px] leading-snug text-muted">{t.palette.addTypeHint}</div>
+          {PALETTE_TYPES.map((pt) => {
+            const variants = variantsOfType(pt.id);
+            const hasChoices = variants.length > 1;
+            const isExpanded = expand === pt.id;
+            return (
+              <div key={pt.id}>
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => { addPaletteRow(pt.id); close(); }}
+                    className="flex-1 px-2 py-1 rounded text-left text-xs text-text hover:bg-surface-2 transition-colors"
+                  >
+                    {typeLabel(pt.id, t)}
+                    {hasChoices && <span className="ml-1.5 font-mono text-[9px] text-muted">{t.palette.groupLabel}</span>}
+                  </button>
+                  {hasChoices && (
+                    <button
+                      type="button"
+                      aria-label={t.palette.pickVariant}
+                      aria-expanded={isExpanded}
+                      onClick={() => setExpand((e) => (e === pt.id ? null : pt.id))}
+                      className="shrink-0 p-1 rounded text-muted hover:text-text"
+                    >
+                      <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                    </button>
+                  )}
+                </div>
+                {isExpanded && (
+                  <div className="ml-2 flex flex-col gap-0.5 border-l border-border pl-1">
+                    <VariantButtons variants={variants} onPick={(v) => { addPaletteRow(pt.id, v); close(); }} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
