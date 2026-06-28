@@ -7,7 +7,7 @@ import { addablesInGroup, resolveAddable, type AddableEntry } from '../../regist
 import { PALETTE_TYPES, variantsOfType } from '../../registry/paletteTypes';
 import { useT } from '../../lib/useT';
 import { useLabelStore } from '../../store/labelStore';
-import { mmToDots } from '../../lib/coordinates';
+import { printableRectDots } from '../../lib/objectBounds';
 import { resolveDefaultSizeDots } from '../../lib/resolveDefaultSize';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 import { CollapsibleSection } from '../ui/CollapsibleSection';
@@ -27,16 +27,18 @@ function typeLabel(typeId: string, t: Translations): string {
   }
 }
 
-/** Drop an entry centred on the label (double-click / "no drag" path). */
+/** Drop an entry centred on the visible (printable) label area, which ^LS can
+ *  shift off the physical center (double-click / "no drag" path). */
 function spawnCentered(entry: AddableEntry) {
   const addObject = useLabelStore.getState().addObject;
   const { label } = useLabelStore.getState();
   const size = resolveDefaultSizeDots(entry.defaultSize, label);
+  const r = printableRectDots(label);
   addObject(
     entry.type,
     {
-      x: Math.round(mmToDots(label.widthMm, label.dpmm) / 2 - size.width / 2),
-      y: Math.round(mmToDots(label.heightMm, label.dpmm) / 2 - size.height / 2),
+      x: Math.round(r.x + r.width / 2 - size.width / 2),
+      y: Math.round(r.y + r.height / 2 - size.height / 2),
     },
     entry.propsOverride,
   );

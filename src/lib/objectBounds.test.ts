@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { objectBoundsDots, selectionUnionDots, barcodeFtAnchorOffset, type ObjectBoundsCtx } from "./objectBounds";
+import { objectBoundsDots, selectionUnionDots, barcodeFtAnchorOffset, isOutOfBounds, type ObjectBoundsCtx } from "./objectBounds";
 import type { ZplRotation } from "../registry/rotation";
 import { QR_FT_MODULE_OFFSET } from "./bwipConstants";
 import type { LabelConfig } from "../types/LabelConfig";
@@ -355,5 +355,47 @@ describe("barcode ^FT rotation anchor", () => {
     // so x is not stuck at the field origin (would desync from the rendered box).
     expect(fp("I")).toMatchObject({ x: 100, y: 300 }); // x = 400 - 300
     expect(fp("B")).toMatchObject({ x: 300, y: 0 }); // x = 400 - 100, y = 300 - 300
+  });
+});
+
+describe("isOutOfBounds", () => {
+  // label 100x50mm @ 8dpmm = 800x400 dots.
+  const boxAt = (x: number, y: number, width: number, height: number) =>
+    leaf("box", x, y, { width, height, thickness: 3, filled: false, color: "B", rounding: 0 });
+
+  it("fully inside is not out of bounds", () => {
+    expect(isOutOfBounds(boxAt(10, 20, 200, 100), ctx())).toBe(false);
+  });
+
+  it("exact fit to the label rect is not out of bounds", () => {
+    expect(isOutOfBounds(boxAt(0, 0, 800, 400), ctx())).toBe(false);
+  });
+
+  it("crossing the right edge is out of bounds", () => {
+    expect(isOutOfBounds(boxAt(700, 0, 200, 100), ctx())).toBe(true);
+  });
+
+  it("crossing the bottom edge is out of bounds", () => {
+    expect(isOutOfBounds(boxAt(0, 350, 100, 100), ctx())).toBe(true);
+  });
+
+  it("a negative origin is out of bounds (left/top edge)", () => {
+    expect(isOutOfBounds(boxAt(-5, 10, 50, 50), ctx())).toBe(true);
+  });
+
+  it("respects the half-dot epsilon at the edge", () => {
+    expect(isOutOfBounds(boxAt(0, 0, 800.4, 400), ctx())).toBe(false); // 0.4 overhang tolerated
+    expect(isOutOfBounds(boxAt(0, 0, 800.6, 400), ctx())).toBe(true); // 0.6 overhang flagged
+  });
+
+  it("uses the ^LS printable window (^LS shifts content left, window moves right)", () => {
+    const shifted: ObjectBoundsCtx = { label: { ...label, labelShift: 80 } };
+    // ^LS80 shifts content left by 80, so the valid model window is [80, 880].
+    // A box at x=10 now clips off the left edge.
+    expect(isOutOfBounds(boxAt(10, 10, 50, 50), shifted)).toBe(true);
+    expect(isOutOfBounds(boxAt(10, 10, 50, 50), ctx())).toBe(false); // inside without the shift
+    // The right edge extends to 880: a box at 810..860 is now inside.
+    expect(isOutOfBounds(boxAt(810, 0, 50, 50), shifted)).toBe(false);
+    expect(isOutOfBounds(boxAt(810, 0, 50, 50), ctx())).toBe(true); // out without the shift
   });
 });

@@ -10,9 +10,9 @@ describe("labelSnapRectDots", () => {
     });
   });
 
-  it("accounts for the ^LS shift: starts at -shift and is that much wider", () => {
+  it("accounts for the ^LS shift: content shifts left, window starts at +shift", () => {
     expect(labelSnapRectDots({ widthMm: 10, heightMm: 5, dpmm: 8, labelShift: 12 })).toEqual({
-      id: "_lbl", x: -12, y: 0, width: 92, height: 40,
+      id: "_lbl", x: 12, y: 0, width: 80, height: 40,
     });
   });
 });

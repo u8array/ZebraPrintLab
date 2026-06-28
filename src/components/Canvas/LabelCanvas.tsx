@@ -22,12 +22,11 @@ import { Select } from "../ui/Select";
 import type { SnapGuide } from "../../lib/snapGuides";
 import { computeAlignDeltas, computeDistribute, computeTidy } from "../../lib/align";
 import type { AlignOp, AlignBox, DistributeAxis, AlignRef } from "../../lib/align";
-import { objectBoundsDots, selectionUnionDots } from "../../lib/objectBounds";
+import { objectBoundsDots, selectionUnionDots, isOutOfBounds, printableRectDots } from "../../lib/objectBounds";
 import { rotateSelectionChanges } from "../../lib/groupRotation";
 import { selectTidyTargets } from "../../lib/tidyClassify";
 import { safeAreaRectDots } from "../../lib/safeArea";
 import { measuredBoundsMap, subscribeMeasuredBounds, getMeasuredSnapshot } from "./measuredBoundsCache";
-import { mmToDots } from "../../lib/coordinates";
 import { isEditableTarget } from "../../lib/dom";
 import { KonvaObject } from "./KonvaObject";
 import { CAPTURE_CHROME } from "./konvaObjectProps";
@@ -155,6 +154,10 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // (stage space, outside the group).
   const [dragGuides, setDragGuides] = useState<SnapGuide[]>([]);
   const [ghost, setGhost] = useState<LeafObject | null>(null);
+  // While dragging, object positions live on the Konva nodes (the store only
+  // commits on drag-end), so the store-derived off-label outline would freeze at
+  // the start position. Hide it during the drag; it recomputes correctly on drop.
+  const [isDragging, setIsDragging] = useState(false);
 
   // Bypasses @dnd-kit scroll-adjusted delta; palette scroll momentum
   // would otherwise offset touch-device drops.
@@ -328,8 +331,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const usableWidth = containerSize.width - RULER_SIZE;
   const usableHeight = containerSize.height - RULER_SIZE;
 
-  // ^LS shifts all content to the right by labelShift dots. The label rect
-  // grows by that amount so the shifted content is fully visible.
+  // ^LS shifts content LEFT by labelShift (spec/Labelary): model x=0 sits at the
+  // viewport left, the physical label rect sits labelShift dots to its right. The
+  // viewport is widened by labelShift so off-label-left content stays visible.
   const labelShiftMm = (label.labelShift ?? 0) / label.dpmm;
   const effectiveWidthMm = label.widthMm + labelShiftMm;
 
@@ -368,21 +372,34 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
 
   const scale = SCREEN_PX_PER_MM * zoom;
   const labelWidthPx = effectiveWidthMm * scale;
+  const physicalWidthPx = label.widthMm * scale;
   const labelHeightPx = label.heightMm * scale;
   const labelOffsetX = RULER_SIZE + (usableWidth - labelWidthPx) / 2 + panOffset.x;
   const labelShiftPx = labelShiftMm * scale;
-  const objectsOffsetX = labelOffsetX + labelShiftPx;
+  // model x=0 at the viewport left; the physical label rect sits labelShift right.
+  const objectsOffsetX = labelOffsetX;
+  const physicalLabelX = labelOffsetX + labelShiftPx;
   const labelOffsetY = RULER_SIZE + (usableHeight - labelHeightPx) / 2 + panOffset.y;
 
   // Visual label geometry after view rotation (axes swap at 90°/270°).
   // The Konva Group rotates around the label center, so the visual size
-  // swaps width/height while the center stays put.
+  // swaps width/height while the center stays put. Uses the effective (model)
+  // width so the ruler stays aligned to model x=0 under ^LS; the white paper
+  // rect inside it is the physical label (physicalLabelX/physicalWidthPx).
   const labelCenterX = labelOffsetX + labelWidthPx / 2;
   const labelCenterY = labelOffsetY + labelHeightPx / 2;
   const visualLabelWidthPx = axisSwapped ? labelHeightPx : labelWidthPx;
   const visualLabelHeightPx = axisSwapped ? labelWidthPx : labelHeightPx;
   const visualLabelX = labelCenterX - visualLabelWidthPx / 2;
   const visualLabelY = labelCenterY - visualLabelHeightPx / 2;
+  // Resize / line-endpoint snap targets the PHYSICAL paper (model x=labelShift),
+  // matching move-snap and the out-of-bounds rect, so every "snap to label edge"
+  // agrees under ^LS. Rotation-aware like visualLabel*; identical when labelShift=0.
+  const physicalCenterX = physicalLabelX + physicalWidthPx / 2;
+  const physicalVisualWidthPx = axisSwapped ? labelHeightPx : physicalWidthPx;
+  const physicalVisualHeightPx = axisSwapped ? physicalWidthPx : labelHeightPx;
+  const physicalVisualX = physicalCenterX - physicalVisualWidthPx / 2;
+  const physicalVisualY = labelCenterY - physicalVisualHeightPx / 2;
   const rulerWidthMm = axisSwapped ? label.heightMm : effectiveWidthMm;
   const rulerHeightMm = axisSwapped ? effectiveWidthMm : label.heightMm;
   const rulerReversal = axisReversal(viewRotation);
@@ -429,12 +446,12 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const transformerSnapLabelRect = useMemo(
     () => ({
       id: "_lbl",
-      x: visualLabelX,
-      y: visualLabelY,
-      width: visualLabelWidthPx,
-      height: visualLabelHeightPx,
+      x: physicalVisualX,
+      y: physicalVisualY,
+      width: physicalVisualWidthPx,
+      height: physicalVisualHeightPx,
     }),
-    [visualLabelX, visualLabelY, visualLabelWidthPx, visualLabelHeightPx],
+    [physicalVisualX, physicalVisualY, physicalVisualWidthPx, physicalVisualHeightPx],
   );
 
   // Group frame from selectionUnionDots so it matches the snap borders.
@@ -473,6 +490,15 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const selectionFrameBase = isMultiFrame ? toFramePx(selectionUnionDots(objects, visibleSelIds, frameCtx)) : null;
   const movableFrameBase = hasSelection ? toFramePx(selectionUnionDots(objects, movableSelIds, frameCtx)) : null;
   const staticFrameBase = hasSelection ? toFramePx(selectionUnionDots(objects, staticSelIds, frameCtx)) : null;
+  // Objects whose bbox exceeds the printable label rect: the printer clips
+  // off-label content (^PW/^LL), so outline them red as a preflight warning.
+  const outOfBoundsMarks = previewLocks || isDragging
+    ? []
+    : visibleLeaves.flatMap((l) => {
+        if (!isOutOfBounds(l, frameCtx)) return [];
+        const rect = toFramePx(objectBoundsDots(l, frameCtx));
+        return rect ? [{ id: l.id, rect }] : [];
+      });
   // Sub-outlines mark group members; per group, split visible leaves
   // movable/static (mirrors the main frame).
   const movableGroupRects: { x: number; y: number; width: number; height: number }[] = [];
@@ -625,8 +651,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
           .filter((o): o is LabelObject => o !== undefined && !o.locked && o.visible !== false);
         if (movable.length === 0) return null;
 
-        const labelWDots = mmToDots(state.label.widthMm, state.label.dpmm);
-        const labelHDots = mmToDots(state.label.heightMm, state.label.dpmm);
+        const printable = printableRectDots(state.label);
         // Exclude structural primitives (full-label frame, spanning dividers) so
         // they neither inflate the reference nor get rearranged; content only,
         // consistent with tidy. Falls back to all when fewer than 2 content.
@@ -635,7 +660,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
           type: isGroup(o) ? "group" : o.type,
           box: objectBoundsDots(o, ctx),
         }));
-        const contentIds = new Set(selectTidyTargets(items, labelWDots, labelHDots));
+        const contentIds = new Set(selectTidyTargets(items, printable.width, printable.height));
         const content = movable.filter((o) => contentIds.has(o.id));
         const contentIdList = content.map((o) => o.id);
         const boxes: AlignBox[] = items
@@ -643,13 +668,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
           .map((it) => ({ id: it.id, ...it.box }));
 
         // Align-to-label pins to the safe-area inset when configured, so the
-        // 6-edge buttons keep a uniform margin; otherwise the full label rect.
-        const labelBox = safeAreaRectDots(state.label) ?? {
-          x: 0,
-          y: 0,
-          width: labelWDots,
-          height: labelHDots,
-        };
+        // 6-edge buttons keep a uniform margin; otherwise the printable rect.
+        const labelBox = safeAreaRectDots(state.label) ?? printable;
         let refBox: ReturnType<typeof selectionUnionDots>;
         // A single unit (one object or one group) has no meaningful "selection"
         // or "key" frame of its own, so it aligns to the label (Figma: a single
@@ -1245,9 +1265,11 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
             // size so onDelta re-measures fresh for this selection.
             dragActiveRef.current = !!id && !!findObjectById(getCurrentObjects(), id);
             barHalfRef.current = { w: 0, h: 0 };
+            setIsDragging(true);
           }}
           onDragEnd={() => {
             dragActiveRef.current = false;
+            setIsDragging(false);
           }}
         >
           {/* Object layer */}
@@ -1263,9 +1285,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
             >
               <Rect
                 ref={labelPaperRef}
-                x={labelOffsetX}
+                x={physicalLabelX}
                 y={labelOffsetY}
-                width={labelWidthPx}
+                width={physicalWidthPx}
                 height={labelHeightPx}
                 fill="white"
                 // Preview: amber glow matches the Labelary-warning palette.
@@ -1309,9 +1331,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 previewImg && (
                   <KImage
                     image={previewImg}
-                    x={labelOffsetX}
+                    x={physicalLabelX}
                     y={labelOffsetY}
-                    width={labelWidthPx}
+                    width={physicalWidthPx}
                     height={labelHeightPx}
                     listening={false}
                   />
@@ -1344,6 +1366,22 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                   />
                 ))
               )}
+
+              {/* Off-label preflight: red outline where an object exceeds the
+                  printable rect (printer clips it). Non-interactive chrome. */}
+              {outOfBoundsMarks.map((m) => (
+                <Rect
+                  key={`oob-${m.id}`}
+                  name={CAPTURE_CHROME}
+                  x={m.rect.x}
+                  y={m.rect.y}
+                  width={m.rect.width}
+                  height={m.rect.height}
+                  stroke={colors.error}
+                  strokeWidth={1.5}
+                  listening={false}
+                />
+              ))}
 
               {!previewLocks && ghost && (
                 <Group opacity={0.5} listening={false}>
