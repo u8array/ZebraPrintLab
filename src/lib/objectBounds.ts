@@ -19,6 +19,7 @@ import { isAxisSwapped, objectRotation, type ZplRotation } from "../registry/rot
 import { resolveTextMode } from "../registry/text";
 import { blockBoundsDots, rotatedLineOffset, tbBoundsDots, zebraLineWidthDots } from "./zebraTextLayout";
 import { resolveDefaultSizeDots } from "./resolveDefaultSize";
+import { mmToDots } from "./coordinates";
 import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET } from "./bwipConstants";
 
 export interface BoundingBoxDots {
@@ -297,4 +298,47 @@ export function selectionUnionDots(
     if (node) boxes.push(objectBoundsDots(node, ctx));
   }
   return unionOf(boxes);
+}
+
+/** Printable-area rect (dots) in object space. ^LS shifts content LEFT by
+ *  labelShift (ZPL spec + Labelary-verified): a field at model x prints at
+ *  x-labelShift, so the visible model window is [labelShift, labelShift+width].
+ *  Single source for the drag-snap boundary and the out-of-bounds check. */
+export function printableRectDots(label: {
+  widthMm: number;
+  heightMm: number;
+  dpmm: number;
+  labelShift?: number;
+}): BoundingBoxDots {
+  const shift = label.labelShift ?? 0;
+  return {
+    x: shift,
+    y: 0,
+    width: mmToDots(label.widthMm, label.dpmm),
+    height: mmToDots(label.heightMm, label.dpmm),
+  };
+}
+
+/** True when any edge of `box` falls outside the printable rect. The predicate
+ *  on a precomputed bbox, so a caller that already has the bounds (e.g. to also
+ *  draw the outline) doesn't recompute them. A half-dot epsilon avoids flagging
+ *  an object resting exactly on the edge. */
+export function isBoxOutOfBounds(
+  box: BoundingBoxDots,
+  label: Parameters<typeof printableRectDots>[0],
+): boolean {
+  const r = printableRectDots(label);
+  const eps = 0.5;
+  return (
+    box.x < r.x - eps ||
+    box.y < r.y - eps ||
+    box.x + box.width > r.x + r.width + eps ||
+    box.y + box.height > r.y + r.height + eps
+  );
+}
+
+/** True when the object's bbox falls outside the printable rect. Off-label
+ *  content is clipped by the printer (^PW/^LL), so this flags a likely-cut print. */
+export function isOutOfBounds(obj: LabelObject, ctx: ObjectBoundsCtx): boolean {
+  return isBoxOutOfBounds(objectBoundsDots(obj, ctx), ctx.label);
 }

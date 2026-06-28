@@ -3,25 +3,17 @@
 // stage and the controller stays a thin imperative layer.
 
 import { computeSnap, type SnapGuide, type SnapRect } from "../../lib/snapGuides";
-import type { BoundingBoxDots } from "../../lib/objectBounds";
-import { mmToDots } from "../../lib/coordinates";
+import { printableRectDots, type BoundingBoxDots } from "../../lib/objectBounds";
 
-/** Printable-area snap rect (dots). ^LS shifts content right by labelShift, so
- *  the area starts at -labelShift in object space and is that much wider. */
+/** Printable-area snap rect (dots), the {@link printableRectDots} rect tagged
+ *  with the snap id so it shares one source with the out-of-bounds check. */
 export function labelSnapRectDots(label: {
   widthMm: number;
   heightMm: number;
   dpmm: number;
   labelShift?: number;
 }): SnapRect {
-  const shift = label.labelShift ?? 0;
-  return {
-    id: "_lbl",
-    x: shift ? -shift : 0,
-    y: 0,
-    width: mmToDots(label.widthMm, label.dpmm) + shift,
-    height: mmToDots(label.heightMm, label.dpmm),
-  };
+  return { id: "_lbl", ...printableRectDots(label) };
 }
 
 /** Round to the nearest grid multiple; identity when the grid is off. */

@@ -27,4 +27,14 @@ describe("safeAreaRectDots", () => {
     // 30mm inset on a 50mm-tall label leaves negative height.
     expect(safeAreaRectDots({ ...base, safeAreaMm: 30 })).toBeNull();
   });
+
+  it("insets the ^LS printable rect (^LS shifts content left, window at +shift)", () => {
+    // labelShift 80: printable rect x=80, width=800; inset 16 each side.
+    expect(safeAreaRectDots({ ...base, safeAreaMm: 2, labelShift: 80 })).toEqual({
+      x: 80 + 16,
+      y: 16,
+      width: 800 - 32,
+      height: 400 - 32,
+    });
+  });
 });
