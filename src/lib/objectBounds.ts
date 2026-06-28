@@ -319,18 +319,26 @@ export function printableRectDots(label: {
   };
 }
 
-/** True when any edge of the object's bbox falls outside the printable rect.
- *  Off-label content is clipped by the printer (^PW/^LL), so this flags a
- *  likely-cut print. A half-dot epsilon avoids flagging an object resting
- *  exactly on the edge. */
-export function isOutOfBounds(obj: LabelObject, ctx: ObjectBoundsCtx): boolean {
-  const b = objectBoundsDots(obj, ctx);
-  const r = printableRectDots(ctx.label);
+/** True when any edge of `box` falls outside the printable rect. The predicate
+ *  on a precomputed bbox, so a caller that already has the bounds (e.g. to also
+ *  draw the outline) doesn't recompute them. A half-dot epsilon avoids flagging
+ *  an object resting exactly on the edge. */
+export function isBoxOutOfBounds(
+  box: BoundingBoxDots,
+  label: Parameters<typeof printableRectDots>[0],
+): boolean {
+  const r = printableRectDots(label);
   const eps = 0.5;
   return (
-    b.x < r.x - eps ||
-    b.y < r.y - eps ||
-    b.x + b.width > r.x + r.width + eps ||
-    b.y + b.height > r.y + r.height + eps
+    box.x < r.x - eps ||
+    box.y < r.y - eps ||
+    box.x + box.width > r.x + r.width + eps ||
+    box.y + box.height > r.y + r.height + eps
   );
+}
+
+/** True when the object's bbox falls outside the printable rect. Off-label
+ *  content is clipped by the printer (^PW/^LL), so this flags a likely-cut print. */
+export function isOutOfBounds(obj: LabelObject, ctx: ObjectBoundsCtx): boolean {
+  return isBoxOutOfBounds(objectBoundsDots(obj, ctx), ctx.label);
 }

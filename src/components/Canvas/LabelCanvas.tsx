@@ -22,7 +22,7 @@ import { Select } from "../ui/Select";
 import type { SnapGuide } from "../../lib/snapGuides";
 import { computeAlignDeltas, computeDistribute, computeTidy } from "../../lib/align";
 import type { AlignOp, AlignBox, DistributeAxis, AlignRef } from "../../lib/align";
-import { objectBoundsDots, selectionUnionDots, isOutOfBounds, printableRectDots } from "../../lib/objectBounds";
+import { objectBoundsDots, selectionUnionDots, isBoxOutOfBounds, printableRectDots } from "../../lib/objectBounds";
 import { rotateSelectionChanges } from "../../lib/groupRotation";
 import { selectTidyTargets } from "../../lib/tidyClassify";
 import { safeAreaRectDots } from "../../lib/safeArea";
@@ -495,8 +495,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const outOfBoundsMarks = previewLocks || isDragging
     ? []
     : visibleLeaves.flatMap((l) => {
-        if (!isOutOfBounds(l, frameCtx)) return [];
-        const rect = toFramePx(objectBoundsDots(l, frameCtx));
+        const box = objectBoundsDots(l, frameCtx);
+        if (!isBoxOutOfBounds(box, frameCtx.label)) return [];
+        const rect = toFramePx(box);
         return rect ? [{ id: l.id, rect }] : [];
       });
   // Sub-outlines mark group members; per group, split visible leaves
