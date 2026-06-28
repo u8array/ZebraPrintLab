@@ -261,6 +261,17 @@ const ja = {
     customFontsAdd: 'マッピングを追加',
     customFontsRemove: '削除',
   },
+  densityRescale: {
+    title: '印刷濃度を変更',
+    fromToFmt: '{from} → {to} dpmm',
+    question: '既存のオブジェクトをどう扱いますか？',
+    scale: 'サイズを保つように拡大縮小',
+    scaleHint: 'すべてのドット値を調整し、物理的なレイアウトを同じに保ちます。',
+    keep: 'ドット値を保持',
+    keepHint: 'オブジェクトはドット値を保持するため、物理的なサイズが変わります。',
+    cancel: 'キャンセル',
+    adjustedFmt: '{n} 個のフィールドはクランプまたはスナップされ、正確に拡大縮小されない場合があります。',
+  },
 
   printerSettings: {
     title: 'プリンター設定',

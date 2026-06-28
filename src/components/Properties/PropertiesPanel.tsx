@@ -1,6 +1,6 @@
-import { useId, type RefObject } from "react";
+import { useId, useState, type RefObject } from "react";
 import { InformationCircleIcon, FolderPlusIcon } from "@heroicons/react/16/solid";
-import { useLabelStore, useCurrentObjects } from "../../store/labelStore";
+import { useLabelStore, useCurrentObjects, selectPreviewLocksEditor } from "../../store/labelStore";
 import type { LabelCanvasHandle } from "../Canvas/LabelCanvas";
 import type { AlignOp, DistributeAxis, AlignRef } from "../../lib/align";
 import type { AlignSelectionRef } from "../../store/slices/uiSlice";
@@ -27,6 +27,7 @@ import { Tooltip } from "../ui/Tooltip";
 import { Select } from "../ui/Select";
 import { fontSelectGroups } from "./fontSelectGroups";
 import { AlignToolbar } from "./AlignToolbar";
+import { DensityRescaleModal } from "./DensityRescaleModal";
 import { inputCls, labelCls } from "./styles";
 import { fieldGridCols, fieldGridCell } from "../ui/formStyles";
 import type { LabelConfig } from "../../types/LabelConfig";
@@ -435,6 +436,12 @@ function LabelConfigPanel({
   onUnitChange,
 }: LabelConfigPanelProps) {
   const t = useT();
+  const [pendingDpmm, setPendingDpmm] = useState<number | null>(null);
+  // Rescale is only meaningful when there is geometry to scale; an empty design
+  // just adopts the new density. Under the preview lock every label edit no-ops,
+  // so skip the prompt rather than open a modal that would do nothing.
+  const hasObjects = useLabelStore((s) => s.pages.some((p) => p.objects.length > 0));
+  const locked = useLabelStore(selectPreviewLocksEditor);
   const matchedPreset = PRESETS.find(
     (p) =>
       p.widthMm === label.widthMm &&
@@ -534,7 +541,10 @@ function LabelConfigPanel({
           <label className={labelCls}>{t.label.dpmm}</label>
           <Select<number>
             value={label.dpmm}
-            onChange={(value) => onUpdate({ dpmm: value })}
+            onChange={(value) => {
+              if (value !== label.dpmm && hasObjects && !locked) setPendingDpmm(value);
+              else onUpdate({ dpmm: value });
+            }}
             groups={[
               {
                 options: [
@@ -547,6 +557,9 @@ function LabelConfigPanel({
             ]}
           />
         </div>
+        {pendingDpmm !== null && (
+          <DensityRescaleModal toDpmm={pendingDpmm} onClose={() => setPendingDpmm(null)} />
+        )}
 
         <div className="flex flex-col gap-1">
           <label className={labelCls}>

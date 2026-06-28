@@ -261,6 +261,17 @@ const pl = {
     customFontsAdd: 'Dodaj mapowanie',
     customFontsRemove: 'Usuń',
   },
+  densityRescale: {
+    title: 'Zmień gęstość druku',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Jak potraktować istniejące obiekty?',
+    scale: 'Skaluj, aby zachować rozmiar',
+    scaleHint: 'Dostosowuje każdą wartość punktów, aby fizyczny układ pozostał taki sam.',
+    keep: 'Zachowaj wartości punktów',
+    keepHint: 'Obiekty zachowują swoje punkty, więc fizyczny rozmiar się zmienia.',
+    cancel: 'Anuluj',
+    adjustedFmt: '{n} pole zostanie ograniczone lub przyciągnięte i może nie skalować się dokładnie.',
+  },
 
   printerSettings: {
     title: 'Ustawienia drukarki',

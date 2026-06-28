@@ -261,6 +261,17 @@ const lt = {
     customFontsAdd: 'Pridėti susiejimą',
     customFontsRemove: 'Pašalinti',
   },
+  densityRescale: {
+    title: 'Keisti spausdinimo tankį',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Kaip tvarkyti esamus objektus?',
+    scale: 'Keisti mastelį siekiant išlaikyti dydį',
+    scaleHint: 'Pakoreguoja kiekvieną taško reikšmę, kad fizinis išdėstymas liktų toks pat.',
+    keep: 'Išlaikyti taškų reikšmes',
+    keepHint: 'Objektai išlaiko savo taškus, todėl fizinis dydis pasikeičia.',
+    cancel: 'Atšaukti',
+    adjustedFmt: '{n} laukas (-ai) bus apriboti arba pritraukti ir gali būti netiksliai keičiamas mastelis.',
+  },
 
   printerSettings: {
     title: 'Spausdintuvo nustatymai',

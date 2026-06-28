@@ -261,6 +261,17 @@ const hu = {
     customFontsAdd: 'Hozzárendelés hozzáadása',
     customFontsRemove: 'Eltávolítás',
   },
+  densityRescale: {
+    title: 'Nyomtatási sűrűség módosítása',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Hogyan kezeljük a meglévő objektumokat?',
+    scale: 'Méretezés a méret megtartásához',
+    scaleHint: 'Minden pontértéket úgy állít be, hogy a fizikai elrendezés változatlan maradjon.',
+    keep: 'Pontértékek megtartása',
+    keepHint: 'Az objektumok megtartják a pontjaikat, így a fizikai méret megváltozik.',
+    cancel: 'Mégse',
+    adjustedFmt: '{n} mező korlátozásra vagy illesztésre kerül, és előfordulhat, hogy nem pontosan méreteződik.',
+  },
 
   printerSettings: {
     title: 'Nyomtatóbeállítások',

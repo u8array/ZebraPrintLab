@@ -261,6 +261,17 @@ const lv = {
     customFontsAdd: 'Pievienot piesaisti',
     customFontsRemove: 'Noņemt',
   },
+  densityRescale: {
+    title: 'Mainīt drukas blīvumu',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Kā rīkoties ar esošajiem objektiem?',
+    scale: 'Mērogot, lai saglabātu izmēru',
+    scaleHint: 'Pielāgo katru punktu vērtību, lai fiziskais izkārtojums paliktu nemainīgs.',
+    keep: 'Saglabāt punktu vērtības',
+    keepHint: 'Objekti saglabā savus punktus, tāpēc fiziskais izmērs mainās.',
+    cancel: 'Atcelt',
+    adjustedFmt: '{n} lauks tiks ierobežots vai pievienots, un tas var netikt precīzi mērogots.',
+  },
 
   printerSettings: {
     title: 'Printera iestatījumi',

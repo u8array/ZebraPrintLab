@@ -261,6 +261,17 @@ const ko = {
     customFontsAdd: '매핑 추가',
     customFontsRemove: '제거',
   },
+  densityRescale: {
+    title: '인쇄 농도 변경',
+    fromToFmt: '{from} → {to} dpmm',
+    question: '기존 객체를 어떻게 처리할까요?',
+    scale: '크기 유지를 위해 배율 조정',
+    scaleHint: '모든 도트 값을 조정하여 물리적 레이아웃이 동일하게 유지됩니다.',
+    keep: '도트 값 유지',
+    keepHint: '객체가 도트 값을 유지하므로 물리적 크기가 변경됩니다.',
+    cancel: '취소',
+    adjustedFmt: '{n}개 필드가 제한되거나 스냅되어 정확하게 배율 조정되지 않을 수 있습니다.',
+  },
 
   printerSettings: {
     title: '프린터 설정',

@@ -261,6 +261,17 @@ const zhHans = {
     customFontsAdd: '添加映射',
     customFontsRemove: '移除',
   },
+  densityRescale: {
+    title: '更改打印密度',
+    fromToFmt: '{from} → {to} dpmm',
+    question: '应如何处理现有对象？',
+    scale: '缩放以保持尺寸',
+    scaleHint: '调整每个点值，使物理布局保持不变。',
+    keep: '保留点值',
+    keepHint: '对象保留其点值，因此物理尺寸会改变。',
+    cancel: '取消',
+    adjustedFmt: '{n} 个字段将被限制或对齐，可能无法精确缩放。',
+  },
 
   printerSettings: {
     title: '打印机设置',

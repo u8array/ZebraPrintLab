@@ -261,6 +261,17 @@ const hr = {
     customFontsAdd: 'Dodaj mapiranje',
     customFontsRemove: 'Ukloni',
   },
+  densityRescale: {
+    title: 'Promijeni gustoću ispisa',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Kako postupiti s postojećim objektima?',
+    scale: 'Skaliraj za zadržavanje veličine',
+    scaleHint: 'Prilagođava svaku vrijednost u točkama tako da fizički raspored ostane isti.',
+    keep: 'Zadrži vrijednosti u točkama',
+    keepHint: 'Objekti zadržavaju svoje točke, pa se fizička veličina mijenja.',
+    cancel: 'Odustani',
+    adjustedFmt: '{n} polje bit će ograničeno ili poravnato i možda se neće skalirati točno.',
+  },
 
   printerSettings: {
     title: 'Postavke pisača',

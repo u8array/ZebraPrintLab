@@ -261,6 +261,17 @@ const sk = {
     customFontsAdd: 'Pridať mapovanie',
     customFontsRemove: 'Odstrániť',
   },
+  densityRescale: {
+    title: 'Zmeniť hustotu tlače',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Ako sa majú spracovať existujúce objekty?',
+    scale: 'Škálovať na zachovanie veľkosti',
+    scaleHint: 'Upraví každú hodnotu v bodoch tak, aby fyzické rozloženie zostalo rovnaké.',
+    keep: 'Zachovať hodnoty v bodoch',
+    keepHint: 'Objekty si zachovajú svoje body, takže sa zmení fyzická veľkosť.',
+    cancel: 'Zrušiť',
+    adjustedFmt: '{n} pole bude obmedzené alebo prichytené a nemusí sa škálovať presne.',
+  },
 
   printerSettings: {
     title: 'Nastavenia tlačiarne',

@@ -261,6 +261,17 @@ const sv = {
     customFontsAdd: 'Lägg till mappning',
     customFontsRemove: 'Ta bort',
   },
+  densityRescale: {
+    title: 'Ändra utskriftstäthet',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Hur ska befintliga objekt hanteras?',
+    scale: 'Skala för att behålla storleken',
+    scaleHint: 'Justerar varje punktvärde så att den fysiska layouten förblir densamma.',
+    keep: 'Behåll punktvärden',
+    keepHint: 'Objekt behåller sina punkter, så den fysiska storleken ändras.',
+    cancel: 'Avbryt',
+    adjustedFmt: '{n} fält begränsas eller fästs och skalas kanske inte exakt.',
+  },
 
   printerSettings: {
     title: 'Skrivarinställningar',

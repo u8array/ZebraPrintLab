@@ -261,6 +261,17 @@ const sl = {
     customFontsAdd: 'Dodaj preslikavo',
     customFontsRemove: 'Odstrani',
   },
+  densityRescale: {
+    title: 'Spremeni gostoto tiska',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Kako naj se obravnavajo obstoječi predmeti?',
+    scale: 'Spremeni merilo za ohranitev velikosti',
+    scaleHint: 'Prilagodi vsako vrednost pik, da fizična postavitev ostane enaka.',
+    keep: 'Ohrani vrednosti pik',
+    keepHint: 'Predmeti ohranijo svoje pike, zato se fizična velikost spremeni.',
+    cancel: 'Prekliči',
+    adjustedFmt: '{n} polj bo omejenih ali pripetih in se morda ne bodo natančno spremenila v merilu.',
+  },
 
   printerSettings: {
     title: 'Nastavitve tiskalnika',

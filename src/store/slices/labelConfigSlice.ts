@@ -6,6 +6,7 @@ import { forgetImport } from '../../lib/csvImport';
 import { dropLegacyFontBindings } from '../../lib/customFonts';
 import { selectPreviewLocksEditor } from '../labelStore.selectors';
 import { configPatchAffectsEmit, dropPageOverlays } from '../labelStore.internals';
+import { rescaleDesign } from '../../lib/densityRescale';
 import type { LabelState } from '../labelStore';
 
 export interface LabelConfigSlice {
@@ -26,6 +27,9 @@ export interface LabelConfigSlice {
   /** Append pages to the current design without touching label config.
    *  Switches focus to the first appended page. */
   appendPages: (pages: Page[]) => void;
+  /** Change print density and proportionally rescale every dot-valued field so
+   *  the physical size is preserved (one undo step). */
+  rescaleDensity: (toDpmm: number) => void;
 }
 
 export const createLabelConfigSlice: StateCreator<LabelState, [], [], LabelConfigSlice> = (set, get, api) => ({
@@ -77,5 +81,15 @@ export const createLabelConfigSlice: StateCreator<LabelState, [], [], LabelConfi
         currentPageIndex: state.pages.length,
         selectedIds: [],
       };
+    }),
+
+  rescaleDensity: (toDpmm) =>
+    set((state) => {
+      if (selectPreviewLocksEditor(state)) return {};
+      if (toDpmm === state.label.dpmm) return {};
+      // Geometry changes, so the captured overlay bytes no longer match; drop
+      // them so the rescaled pages regenerate from the model.
+      const { pages, label } = rescaleDesign(state.pages, state.label, state.label.dpmm, toDpmm);
+      return { label, pages: dropPageOverlays(pages) };
     }),
 });
