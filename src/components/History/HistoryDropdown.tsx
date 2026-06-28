@@ -40,10 +40,10 @@ const KIND_ICON: Record<HistoryStepKind, ComponentType<{ className?: string }>> 
   mixed: EllipsisHorizontalIcon,
 };
 
-// Function replacement so a `$` in a user-supplied name is inserted verbatim
-// instead of being treated as a String.replace special pattern ($&, $$, ...).
+// split/join replaces every token occurrence and inserts a user-supplied name
+// verbatim, with no String.replace special-pattern handling ($&, $$, ...).
 const fill = (template: string, token: string, value: string) =>
-  template.replace(token, () => value);
+  template.split(token).join(value);
 
 // A descriptor `name` for add/remove/edit is either a custom object name or a
 // registry type id; resolve the type id to its registry label, leaving custom
