@@ -7,6 +7,7 @@ import { PaletteEditToggle } from "./Palette/PaletteEditToggle";
 import { LabelCanvas } from "./Canvas/LabelCanvas";
 import type { LabelCanvasHandle } from "./Canvas/LabelCanvas";
 import { RightSidebar } from "./RightSidebar/RightSidebar";
+import { HistoryDropdown } from "./History/HistoryDropdown";
 import { ZPLOutput } from "./Output/ZPLOutput";
 import { ZplImportModal } from "./Output/ZplImportModal";
 import { VariableMappingModal } from "./Variables/VariableMappingModal";
@@ -40,7 +41,7 @@ import {
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
 } from "@heroicons/react/16/solid";
-import { useLabelStore, useHistory, selectLabelaryNoticeRequired } from "../store/labelStore";
+import { useLabelStore, useHistory, selectLabelaryNoticeRequired, selectPreviewLocksEditor } from "../store/labelStore";
 import { LabelaryNoticeModal } from "./Output/LabelaryNoticeModal";
 import { PrinterSettingsModal } from "./PrinterSettings/PrinterSettingsModal";
 import { Gs1ContentModal } from "./Barcode/Gs1ContentModal";
@@ -112,8 +113,11 @@ export function AppShell() {
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
   const { showGrid, snapEnabled, snapSizeMm, unit } = canvasSettings;
 
-  const canUndo = pastStates.length > 0;
-  const canRedo = futureStates.length > 0;
+  // Preview lock no-ops undo/redo (see useHistory); reflect that on the buttons
+  // so they aren't enabled-but-dead, matching the gated history dropdown.
+  const historyLocked = useLabelStore(selectPreviewLocksEditor);
+  const canUndo = pastStates.length > 0 && !historyLocked;
+  const canRedo = futureStates.length > 0 && !historyLocked;
   const hasObjects = pages.some((p) => p.objects.length > 0);
 
   const sensors = useSensors(
@@ -203,6 +207,7 @@ export function AppShell() {
               <ArrowUturnRightIcon className="w-3.5 h-3.5" />
             </button>
           </Tooltip>
+          <HistoryDropdown />
 
           <div className="w-px h-4 bg-border mx-1" />
 

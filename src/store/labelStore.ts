@@ -369,8 +369,10 @@ export const persistPartialize = (state: LabelState) => ({
   csvMapping: state.csvMapping,
 });
 
-/** zundo undo-timeline subset; narrower than persist, only the
- *  document state (label/profile/pages/variables/csvMapping) is undoable. */
+/** zundo undo-timeline subset; narrower than persist. currentPageIndex rides
+ *  the snapshot so undo/redo keep it in range when the page count changes, but
+ *  it is excluded from change-detection (see TEMPORAL_VIEW_KEYS) so plain page
+ *  navigation is not itself an undoable step. */
 export const temporalPartialize = (state: LabelState) => ({
   label: state.label,
   printerProfile: state.printerProfile,
@@ -379,6 +381,24 @@ export const temporalPartialize = (state: LabelState) => ({
   variables: state.variables,
   csvMapping: state.csvMapping,
 });
+
+type TemporalSlice = ReturnType<typeof temporalPartialize>;
+
+/** Partialized fields that are restored with a snapshot but do not, on their
+ *  own, constitute a new undoable step. Switching the active page is view
+ *  state, not a document edit. */
+const TEMPORAL_VIEW_KEYS = new Set<keyof TemporalSlice>(["currentPageIndex"]);
+
+/** zundo records on every set() unless equality reports the tracked slice
+ *  unchanged. The store is identity-preserving, so a shallow ref-compare
+ *  suppresses phantom history entries from selection-only (or other
+ *  non-document) sets that leave the partialized fields untouched. Keys are
+ *  read from `partialize` itself (minus the view-only ones) so a new tracked
+ *  field is change-triggering by default and can never be silently dropped. */
+const temporalEquality = (a: TemporalSlice, b: TemporalSlice) =>
+  (Object.keys(a) as (keyof TemporalSlice)[]).every(
+    (k) => TEMPORAL_VIEW_KEYS.has(k) || a[k] === b[k],
+  );
 
 export const useLabelStore = create<LabelState>()(
   temporal(
@@ -404,7 +424,9 @@ export const useLabelStore = create<LabelState>()(
     )
     ),
     {
+      limit: 100,
       partialize: temporalPartialize,
+      equality: temporalEquality,
     }
   )
 );
