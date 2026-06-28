@@ -11,11 +11,12 @@ import { FontManager } from '../Fonts/FontManager';
 import { VariablesPanel } from '../Variables/VariablesPanel';
 import { useT } from '../../lib/useT';
 import { useLabelStore } from '../../store/labelStore';
+import type { SidebarTab } from '../../store/slices/uiSlice';
 import type { LabelCanvasHandle } from '../Canvas/LabelCanvas';
 import { AaIcon } from './AaIcon';
 import { Tooltip } from '../ui/Tooltip';
 
-type TabId = 'properties' | 'layers' | 'variables' | 'fonts';
+type TabId = SidebarTab;
 
 interface Props {
   canvasRef: RefObject<LabelCanvasHandle | null>;
