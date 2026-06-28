@@ -200,6 +200,11 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const previewMode = useLabelStore((s) => s.previewMode);
   const previewLocks = useLabelStore(selectPreviewLocksEditor);
   const exitPreviewMode = useLabelStore((s) => s.exitPreviewMode);
+  // Entering preview unmounts the dragged node, so a mid-drag dragend may never
+  // fire; clear the flag so off-label marks aren't stranded hidden afterwards.
+  useEffect(() => {
+    if (previewLocks) setIsDragging(false);
+  }, [previewLocks]);
 
   // Pre-decode so toggling preview on doesn't flash a frame of empty space.
   const [previewImg, setPreviewImg] = useState<HTMLImageElement | null>(null);

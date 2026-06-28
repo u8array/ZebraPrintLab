@@ -642,6 +642,10 @@ function LabelConfigPanel({
           label={t.label.labelShift}
           valueDots={label.labelShift}
           allowUnset
+          // ^LS shifts content left; the canvas viewport frames a non-negative
+          // shift. Negatives round-trip from import but aren't authored here
+          // (spec: "if print position is less than 0, set ^LS to 0").
+          minDots={0}
           onChangeDots={(labelShift) => onUpdate({ labelShift })}
           zplCmd="^LS"
         />

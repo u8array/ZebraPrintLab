@@ -2,6 +2,7 @@
 // compute against fixed advance to match Labelary.
 
 import { dotsToPx, pxToDots } from "./coordinates";
+import { isAxisSwapped, type ZplRotation } from "../registry/rotation";
 
 export type BlockJustify = "L" | "C" | "R" | "J";
 
@@ -96,9 +97,9 @@ export function blockInterLineExtentDots(args: {
   return Math.max(0, (args.blockLines - 1) * blockLineStepDots(args.fontHeight, args.blockLineSpacing));
 }
 
-/** Canonical Zebra rotation flag. Re-used by registry/text.ts so
- *  consumers don't redeclare the literal union. */
-export type ZplRotation = "N" | "R" | "I" | "B";
+// ZplRotation's single source is registry/rotation; re-exported here for the
+// consumers that import it alongside this module's layout helpers.
+export type { ZplRotation };
 
 /** Anchor to visual-top-left shift for a rotated single line: the renderer
  *  rotates the node about obj.x/obj.y, so R/I/B move the AABB off the anchor.
@@ -336,7 +337,7 @@ export function blockReflowGeometry(args: {
 } {
   // R/B read rotated 90deg, so screen X drives blockLines and Y drives
   // blockWidth; swap the scales to the block's own axes.
-  const swap = args.rotation === "R" || args.rotation === "B";
+  const swap = isAxisSwapped(args.rotation);
   const esx = swap ? args.scaleY : args.scaleX;
   const esy = swap ? args.scaleX : args.scaleY;
   const blockWidthDots = Math.max(1, Math.round(args.blockWidthDots * esx));
@@ -391,7 +392,7 @@ export function tbReflowGeometry(args: {
   modelXDots: number;
   modelYDots: number;
 } {
-  const swap = args.rotation === "R" || args.rotation === "B";
+  const swap = isAxisSwapped(args.rotation);
   const esx = swap ? args.scaleY : args.scaleX;
   const esy = swap ? args.scaleX : args.scaleY;
   const blockWidthDots = Math.max(1, Math.round(args.blockWidthDots * esx));
@@ -426,7 +427,7 @@ export function blockGlyphAnchorPoint(args: {
   centeredStacking: boolean;
 }): { x: number; y: number } {
   const { rect, rotation, justify, edges, centeredStacking } = args;
-  const advanceVertical = rotation === "R" || rotation === "B";
+  const advanceVertical = isAxisSwapped(rotation);
   const advancePositive = rotation === "N" || rotation === "R";
   // J fills the body but left-aligns its last line, so it anchors like L (start).
   const justifyFrac = justify === "C" ? 0.5 : justify === "R" ? 1 : 0;
