@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react';
+import { useDismiss } from '../../hooks/useDismiss';
 import {
   ChevronDownIcon,
   PlusIcon,
@@ -162,21 +163,7 @@ export function HistoryDropdown() {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const onPointer = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('pointerdown', onPointer);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('pointerdown', onPointer);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+  useDismiss(rootRef, () => setOpen(false), { active: open });
 
   return (
     <div ref={rootRef} className="relative">

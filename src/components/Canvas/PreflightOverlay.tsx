@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ExclamationTriangleIcon, ExclamationCircleIcon } from "@heroicons/react/16/solid";
 import { getEntry } from "../../registry";
 import type { LeafObject } from "../../registry";
 import { useT } from "../../lib/useT";
+import { useDismiss } from "../../hooks/useDismiss";
 import type { PreflightFinding, PreflightKind } from "../../lib/preflight";
 
 interface Props {
@@ -22,24 +23,9 @@ export function PreflightOverlay({ findings, objects, onSelect }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Treat the popover as open only while there is something to show, so the
-  // dismiss listeners tear down (no leak) the moment findings drain, without a
-  // setState-in-effect.
+  // dismiss listeners tear down the moment findings drain.
   const showList = open && findings.length > 0;
-  useEffect(() => {
-    if (!showList) return;
-    const onPointer = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("pointerdown", onPointer);
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("pointerdown", onPointer);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [showList]);
+  useDismiss(rootRef, () => setOpen(false), { active: showList });
 
   if (findings.length === 0) return null;
 
