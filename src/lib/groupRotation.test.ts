@@ -223,4 +223,16 @@ describe("rotateSelectionChanges", () => {
     expect(m.has(hidden.id)).toBe(false); // off screen, must not rotate or skew pivot
     expect(m.get(vis.id)).toEqual({ x: 0, y: 0, props: { width: 20, height: 20 } });
   });
+
+  it("ellipse 90deg about its own centre swaps w/h (same path as box)", () => {
+    const e = leaf("ellipse", 10, 10, { width: 40, height: 20, thickness: 2, color: "B" }); // centre (30,20)
+    const c = rotateSelectionChanges([e], [e.id], ctx(), 1).get(e.id);
+    expect(c).toEqual({ x: 20, y: 0, props: { width: 20, height: 40 } });
+  });
+
+  it("diagonal line steps its angle by 90deg and re-anchors about its own centre", () => {
+    const ln = leaf("line", 60, 40, { angle: 45, length: 50, thickness: 2, color: "B" });
+    const c = rotateSelectionChanges([ln], [ln.id], ctx(), 1).get(ln.id);
+    expect(c).toEqual({ x: 97, y: 39, props: { angle: 135 } });
+  });
 });

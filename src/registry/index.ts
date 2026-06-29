@@ -46,6 +46,15 @@ export const BARCODE_1D_TYPES = new Set([
 
 export const STACKED_2D_TYPES = new Set(['pdf417', 'micropdf417', 'codablock']);
 
+// Graphic shape primitives (no `props.rotation`): box/ellipse/line. They
+// quarter-turn via geometry (w/h swap, or a line's angle), unlike image which
+// shares `group: 'shape'` but cannot turn. Shared by single-object rotation and
+// tidy classification. `satisfies` catches a typo/rename; the Set stays string-
+// keyed so `.has(obj.type)` (a string) type-checks.
+export const SHAPE_PRIMITIVE_TYPES: ReadonlySet<string> = new Set(
+  ['box', 'ellipse', 'line'] as const satisfies readonly LeafType[],
+);
+
 // satisfies = exhaustiveness check; export type stays permissive.
 const _ObjectRegistry = {
   // text

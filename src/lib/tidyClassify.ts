@@ -5,11 +5,9 @@
 // dot bboxes (see objectBounds.ts).
 
 import type { BoundingBoxDots } from "./objectBounds";
+import { SHAPE_PRIMITIVE_TYPES } from "../registry";
 
 export type TidyClass = "frame" | "divider" | "content";
-
-/** Only shape primitives can be structural. */
-const SHAPE_TYPES = new Set(["box", "ellipse", "line"]);
 
 const FRAME_COVERAGE = 0.8;
 const DIVIDER_THIN_DOTS = 8;
@@ -23,7 +21,7 @@ export function classifyForTidy(
   labelWidthDots: number,
   labelHeightDots: number,
 ): TidyClass {
-  if (!SHAPE_TYPES.has(type)) return "content";
+  if (!SHAPE_PRIMITIVE_TYPES.has(type)) return "content";
 
   if (
     (type === "box" || type === "ellipse") &&
