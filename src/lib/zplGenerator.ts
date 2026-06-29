@@ -1,6 +1,6 @@
 import { mmToDots } from './coordinates';
 import { getEntry } from '../registry';
-import { fdField, stripZplCommandChars } from '../registry/zplHelpers';
+import { fdField, stripZplCommandChars, GRAPHIC_ANCHOR_TYPES } from '../registry/zplHelpers';
 import {
   extractTemplateRefs,
   hasTemplateMarkers,
@@ -384,13 +384,10 @@ export function generateBatchZpl(
   return [templateStored, ...recallBlocks].join('\n');
 }
 
-/** Graphic types whose ^FT anchor is a bottom corner (spec p.205), not the
- *  model top-left. Their emitted ^FT can stay valid even when the shifted
- *  top-left dips negative, so the drop test below uses the anchor for these.
- *  Barcodes emit ^FT at the model coord (the plain check holds); rotated text
- *  ^FT uses a baseline anchor, where the top-left check is only approximate (a
- *  pre-existing edge, untouched here). */
-const FT_BOTTOM_ANCHOR_TYPES = new Set(['box', 'ellipse', 'image', 'line']);
+// ^FT graphics anchor at a bottom corner (spec p.205), so the drop test uses
+// that anchor for GRAPHIC_ANCHOR_TYPES. Barcodes emit ^FT at the model coord
+// (the plain check holds); rotated text ^FT uses a baseline anchor, where the
+// top-left check is only approximate (a pre-existing edge, untouched here).
 
 /** Subtract label home/top from each object so emit matches the editor, the
  *  inverse of the parser folding ^LH/^LT into absolute coords. Leaves whose
@@ -413,7 +410,7 @@ function shiftObjectsByHome(
     const y = obj.y - homeY - top;
     // ^FT graphics anchor at a bottom corner, so test the emitted anchor
     // (footprint bottom, right edge when justify R) rather than the top-left.
-    if (obj.positionType === 'FT' && FT_BOTTOM_ANCHOR_TYPES.has(obj.type)) {
+    if (obj.positionType === 'FT' && GRAPHIC_ANCHOR_TYPES.has(obj.type)) {
       const b = objectBoundsDots(obj, ctx);
       let w = b.width;
       let h = b.height;

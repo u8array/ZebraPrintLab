@@ -14,6 +14,19 @@ export function fieldPos(obj: LabelObjectBase): string {
   return `^${cmd}${obj.x},${obj.y}`;
 }
 
+/** Graphic leaf types whose ^FO/^FT origin comes from {@link graphicAnchor}
+ *  (the footprint top-left under ^FO, a bottom corner under ^FT). For box /
+ *  ellipse / image the model x/y already is that top-left; a line's x/y is an
+ *  endpoint, so its emitted origin is the bbox top-left instead. Single source
+ *  shared by the generator's home-shift drop test and the preflight off-label
+ *  check, so the two can't disagree on which types anchor this way. */
+export const GRAPHIC_ANCHOR_TYPES: ReadonlySet<string> = new Set([
+  "box",
+  "ellipse",
+  "image",
+  "line",
+]);
+
 /** Emitted ^FO/^FT origin coords for a graphic of footprint w x h at top-left
  *  (x, y). `^FO` emits the top-left verbatim; `^FT` anchors a bottom corner
  *  (spec p.205): bottom-left, or bottom-right when right-justified. The numeric

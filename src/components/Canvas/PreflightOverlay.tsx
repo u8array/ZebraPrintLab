@@ -38,8 +38,10 @@ export function PreflightOverlay({ findings, objects, onSelect }: Props) {
   };
   const nameOf = (id: string) => {
     const o = byId.get(id);
-    // `||` not `??`: an empty-string name must fall through to the type label.
-    return o ? o.name || getEntry(o.type)?.label || o.type : id;
+    if (!o) return id;
+    // `||` (not `??`) so an empty name falls through; prefer the localized type
+    // name like PropertiesPanel/Palette, English registry label as last resort.
+    return o.name || (t.types as Record<string, string>)[o.type] || getEntry(o.type)?.label || o.type;
   };
 
   return (

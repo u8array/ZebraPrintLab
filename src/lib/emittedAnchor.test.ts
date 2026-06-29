@@ -49,6 +49,12 @@ describe("emittedAnchorDots", () => {
     expect(emittedAnchorDots(box, ctx)).toEqual({ x: 110, y: 70 });
   });
 
+  it("an ^FO line emits at its bbox top-left, not the endpoint", () => {
+    // angle 180 runs left from the endpoint: emitted ^FO x = obj.x - length, not obj.x.
+    const line = leaf("line", 50, 100, { angle: 180, length: 200, thickness: 4, color: "B" });
+    expect(emittedAnchorDots(line, ctx)).toEqual({ x: -150, y: 100 });
+  });
+
   it("an ^FO N text emits at the model x (cap-top transform leaves x unchanged)", () => {
     const txt = leaf("text", -118, 216, { content: "Text", fontHeight: 188, fontWidth: 188, rotation: "N" }, {
       positionType: "FO",

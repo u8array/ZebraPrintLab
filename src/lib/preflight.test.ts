@@ -73,6 +73,22 @@ describe("computePreflight (off-label producer)", () => {
     ]);
   });
 
+  it("flags an ^FO line that runs off the left edge as outside", () => {
+    // angle 180 line from x=50, length 200 emits ^FO at x=-150 (the bbox top-left),
+    // a negative origin. Keyed on obj.x (50) it would be missed.
+    const line = {
+      id: "ln",
+      type: "line",
+      x: 50,
+      y: 100,
+      rotation: 0,
+      props: { angle: 180, length: 200, thickness: 4, color: "B" },
+    } as LabelObject as LeafObject;
+    expect(computePreflight([line], ctx)).toEqual([
+      { objectId: "ln", kind: "offLabelOutside", severity: "error" },
+    ]);
+  });
+
   it("flags an ^FO N text with a negative emitted origin as outside", () => {
     // The user's case: ^FO-118,245 ^A0N text. The N transform leaves x at the
     // model coord, so the emitted ^FO x is -118 -> offLabelOutside.
