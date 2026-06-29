@@ -254,42 +254,30 @@ describe('convertObjectType', () => {
 // ── palette rows ──────────────────────────────────────────────────────────────
 
 describe('palette rows', () => {
-  const tv = (rows: { type: string; variant: string }[]) => rows.map((r) => ({ type: r.type, variant: r.variant }));
+  const ids = (rows: { entryId: string }[]) => rows.map((r) => r.entryId);
   beforeEach(() => {
-    useLabelStore.setState({ paletteRows: [{ id: 'text', type: 'text', variant: 'text' }] });
-    state().setPaletteView('list');
+    useLabelStore.setState({ paletteRows: [{ id: 'text-fb', entryId: 'text-fb' }] });
+    state().setPaletteView('favorites');
   });
 
-  it('addPaletteRow appends at the type default variant (duplicates allowed)', () => {
-    state().addPaletteRow('shape');
-    expect(tv(state().paletteRows)).toEqual([
-      { type: 'text', variant: 'text' },
-      { type: 'shape', variant: 'line' },
-    ]);
-    // Generated, distinct id for the stable drag key.
+  it('togglePaletteRow appends an absent entry with a distinct id', () => {
+    state().togglePaletteRow('box-filled');
+    expect(ids(state().paletteRows)).toEqual(['text-fb', 'box-filled']);
+    // Generated id (entryId + suffix), distinct from the entryId and other rows.
+    expect(state().paletteRows[1]?.id).toMatch(/^box-filled-/);
     expect(state().paletteRows[1]?.id).not.toBe(state().paletteRows[0]?.id);
   });
 
-  it('addPaletteRow makes a switchable group row (not fixed)', () => {
-    state().addPaletteRow('shape');
-    expect(state().paletteRows[1]?.fixed).toBeFalsy();
-  });
-
-  it('addPaletteRow with a variant pins a fixed single-element row', () => {
-    state().addPaletteRow('shape', 'box-filled');
-    expect(state().paletteRows[1]).toMatchObject({ type: 'shape', variant: 'box-filled', fixed: true });
-    expect(state().paletteRows[1]?.id).not.toBe(state().paletteRows[0]?.id);
+  it('togglePaletteRow removes an already-pinned entry', () => {
+    state().togglePaletteRow('box-filled');
+    state().togglePaletteRow('box-filled');
+    expect(ids(state().paletteRows)).toEqual(['text-fb']);
   });
 
   it('removePaletteRow drops by index', () => {
-    state().addPaletteRow('shape');
+    state().togglePaletteRow('box-filled');
     state().removePaletteRow(0);
-    expect(tv(state().paletteRows)).toEqual([{ type: 'shape', variant: 'line' }]);
-  });
-
-  it('setPaletteRowVariant updates one row', () => {
-    state().setPaletteRowVariant(0, 'text-fb');
-    expect(state().paletteRows[0]).toMatchObject({ type: 'text', variant: 'text-fb' });
+    expect(ids(state().paletteRows)).toEqual(['box-filled']);
   });
 
   it('setPaletteView toggles the view', () => {
@@ -300,9 +288,9 @@ describe('palette rows', () => {
   it('reorderPaletteRows moves a row by id; no-ops on unknown or equal id', () => {
     useLabelStore.setState({
       paletteRows: [
-        { id: 'a', type: 'text', variant: 'text' },
-        { id: 'b', type: 'shape', variant: 'line' },
-        { id: 'c', type: 'image', variant: 'image' },
+        { id: 'a', entryId: 'text-fb' },
+        { id: 'b', entryId: 'box-filled' },
+        { id: 'c', entryId: 'image' },
       ],
     });
     state().reorderPaletteRows('c', 'a');
@@ -1806,8 +1794,30 @@ describe('migrateLegacy — v9→v10 serial type → text mode', () => {
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const migrated = migrateLegacy(persisted, 9) as any;
-    expect(migrated.paletteRows[0].variant).toBe('text-serial');
-    expect(migrated.paletteRows[1].variant).toBe('text');
+    // v11 remaps the variant serial->text-serial, then v13 folds variant->entryId.
+    expect(migrated.paletteRows[0]).toEqual({ id: 'r1', entryId: 'text-serial' });
+    expect(migrated.paletteRows[1]).toEqual({ id: 'r2', entryId: 'text' });
+  });
+
+  it('v13 folds variant->entryId, dedupes shared entryIds, and renames the view', () => {
+    const persisted = {
+      label: { widthMm: 100, heightMm: 50, dpmm: 8 },
+      printerProfile: {},
+      pages: [{ objects: [] }],
+      paletteRows: [
+        { id: 'a', type: 'shape', variant: 'line' },
+        { id: 'b', type: 'shape', variant: 'line' }, // legacy duplicate of 'a'
+        { id: 'c', type: 'text', variant: 'text' },
+      ],
+      paletteView: 'list',
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const migrated = migrateLegacy(persisted, 12) as any;
+    expect(migrated.paletteRows).toEqual([
+      { id: 'a', entryId: 'line' },
+      { id: 'c', entryId: 'text' },
+    ]);
+    expect(migrated.paletteView).toBe('favorites');
   });
 });
 

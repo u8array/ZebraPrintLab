@@ -9,7 +9,7 @@ export function PaletteEditToggle() {
   const view = useLabelStore((s) => s.paletteView);
   const editing = useLabelStore((s) => s.paletteEditing);
   const toggle = useLabelStore((s) => s.togglePaletteEditing);
-  if (view !== 'list') return null;
+  if (view !== 'favorites') return null;
   return (
     <button
       type="button"
