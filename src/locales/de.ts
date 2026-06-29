@@ -261,6 +261,17 @@ const de = {
     customFontsAdd: 'Mapping hinzufügen',
     customFontsRemove: 'Entfernen',
   },
+  densityRescale: {
+    title: 'Druckdichte ändern',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Wie sollen vorhandene Objekte behandelt werden?',
+    scale: 'Skalieren, um Größe beizubehalten',
+    scaleHint: 'Passt jeden Dot-Wert an, damit das physische Layout gleich bleibt.',
+    keep: 'Dot-Werte beibehalten',
+    keepHint: 'Objekte behalten ihre Dots, dadurch ändert sich die physische Größe.',
+    cancel: 'Abbrechen',
+    adjustedFmt: '{n} Feld(er) werden begrenzt oder gerastert und skalieren möglicherweise nicht exakt.',
+  },
 
   printerSettings: {
     title: 'Drucker-Einstellungen',

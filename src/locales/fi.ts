@@ -261,6 +261,17 @@ const fi = {
     customFontsAdd: 'Lisää määritys',
     customFontsRemove: 'Poista',
   },
+  densityRescale: {
+    title: 'Muuta tulostustiheyttä',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Miten olemassa olevia objekteja käsitellään?',
+    scale: 'Skaalaa koon säilyttämiseksi',
+    scaleHint: 'Säätää jokaista pistearvoa, jotta fyysinen asettelu pysyy samana.',
+    keep: 'Säilytä pistearvot',
+    keepHint: 'Objektit säilyttävät pisteensä, joten fyysinen koko muuttuu.',
+    cancel: 'Peruuta',
+    adjustedFmt: '{n} kenttää rajataan tai kiinnitetään, eikä se ehkä skaalaudu tarkasti.',
+  },
 
   printerSettings: {
     title: 'Tulostimen asetukset',

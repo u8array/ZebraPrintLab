@@ -261,6 +261,17 @@ const nl = {
     customFontsAdd: 'Mapping toevoegen',
     customFontsRemove: 'Verwijderen',
   },
+  densityRescale: {
+    title: 'Afdrukdichtheid wijzigen',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Hoe moeten bestaande objecten worden behandeld?',
+    scale: 'Schalen om grootte te behouden',
+    scaleHint: 'Past elke dotwaarde aan zodat de fysieke lay-out hetzelfde blijft.',
+    keep: 'Dotwaarden behouden',
+    keepHint: 'Objecten behouden hun dots, waardoor de fysieke grootte verandert.',
+    cancel: 'Annuleren',
+    adjustedFmt: '{n} veld(en) worden begrensd of vastgeklikt en schalen mogelijk niet exact.',
+  },
 
   printerSettings: {
     title: 'Printerinstellingen',

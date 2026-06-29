@@ -261,6 +261,17 @@ const es = {
     customFontsAdd: 'Añadir mapeo',
     customFontsRemove: 'Eliminar',
   },
+  densityRescale: {
+    title: 'Cambiar densidad de impresión',
+    fromToFmt: '{from} → {to} dpmm',
+    question: '¿Cómo se deben tratar los objetos existentes?',
+    scale: 'Escalar para mantener el tamaño',
+    scaleHint: 'Ajusta cada valor de punto para que el diseño físico se mantenga igual.',
+    keep: 'Mantener valores de puntos',
+    keepHint: 'Los objetos conservan sus puntos, por lo que cambia el tamaño físico.',
+    cancel: 'Cancelar',
+    adjustedFmt: '{n} campo(s) se limitarán o ajustarán y podrían no escalar con exactitud.',
+  },
 
   printerSettings: {
     title: 'Configuración de impresora',

@@ -261,6 +261,17 @@ const et = {
     customFontsAdd: 'Lisa vastendus',
     customFontsRemove: 'Eemalda',
   },
+  densityRescale: {
+    title: 'Muuda prindi tihedust',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Kuidas tuleks olemasolevaid objekte käsitleda?',
+    scale: 'Skaleeri suuruse säilitamiseks',
+    scaleHint: 'Kohandab iga punktiväärtust, et füüsiline paigutus jääks samaks.',
+    keep: 'Säilita punktiväärtused',
+    keepHint: 'Objektid säilitavad oma punktid, seega füüsiline suurus muutub.',
+    cancel: 'Tühista',
+    adjustedFmt: '{n} välja piiratakse või joondatakse ja need ei pruugi täpselt skaleeruda.',
+  },
 
   printerSettings: {
     title: 'Printeri seaded',

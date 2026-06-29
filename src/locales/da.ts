@@ -261,6 +261,17 @@ const da = {
     customFontsAdd: 'Tilføj mapping',
     customFontsRemove: 'Fjern',
   },
+  densityRescale: {
+    title: 'Skift printtæthed',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Hvordan skal eksisterende objekter håndteres?',
+    scale: 'Skalér for at bevare størrelsen',
+    scaleHint: 'Justerer hver dot-værdi, så det fysiske layout forbliver det samme.',
+    keep: 'Behold dot-værdier',
+    keepHint: 'Objekter beholder deres dots, så den fysiske størrelse ændres.',
+    cancel: 'Annuller',
+    adjustedFmt: '{n} felt(er) bliver begrænset eller fastgjort og skaleres muligvis ikke nøjagtigt.',
+  },
 
   printerSettings: {
     title: 'Printerindstillinger',

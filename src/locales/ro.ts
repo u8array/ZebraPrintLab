@@ -261,6 +261,17 @@ const ro = {
     customFontsAdd: 'Adaugă mapare',
     customFontsRemove: 'Elimină',
   },
+  densityRescale: {
+    title: 'Modifică densitatea de imprimare',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Cum trebuie tratate obiectele existente?',
+    scale: 'Scalează pentru a păstra dimensiunea',
+    scaleHint: 'Ajustează fiecare valoare în puncte astfel încât aranjamentul fizic să rămână același.',
+    keep: 'Păstrează valorile în puncte',
+    keepHint: 'Obiectele își păstrează punctele, așa că dimensiunea fizică se modifică.',
+    cancel: 'Anulează',
+    adjustedFmt: '{n} câmp(uri) vor fi limitate sau aliniate și este posibil să nu se scaleze exact.',
+  },
 
   printerSettings: {
     title: 'Setări imprimantă',

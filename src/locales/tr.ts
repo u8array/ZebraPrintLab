@@ -261,6 +261,17 @@ const tr = {
     customFontsAdd: 'Eşleme ekle',
     customFontsRemove: 'Kaldır',
   },
+  densityRescale: {
+    title: 'Baskı yoğunluğunu değiştir',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Mevcut nesneler nasıl ele alınsın?',
+    scale: 'Boyutu korumak için ölçekle',
+    scaleHint: 'Fiziksel düzenin aynı kalması için her nokta değerini ayarlar.',
+    keep: 'Nokta değerlerini koru',
+    keepHint: 'Nesneler noktalarını korur, bu nedenle fiziksel boyut değişir.',
+    cancel: 'İptal',
+    adjustedFmt: '{n} alan sınırlanacak veya hizalanacak ve tam olarak ölçeklenmeyebilir.',
+  },
 
   printerSettings: {
     title: 'Yazıcı ayarları',

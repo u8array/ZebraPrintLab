@@ -261,6 +261,17 @@ const en = {
     customFontsAdd: 'Add mapping',
     customFontsRemove: 'Remove',
   },
+  densityRescale: {
+    title: 'Change print density',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'How should existing objects be handled?',
+    scale: 'Scale to keep size',
+    scaleHint: 'Adjusts every dot value so the physical layout stays the same.',
+    keep: 'Keep dot values',
+    keepHint: 'Objects keep their dots, so the physical size changes.',
+    cancel: 'Cancel',
+    adjustedFmt: '{n} field(s) will be clamped or snapped and may not scale exactly.',
+  },
 
   printerSettings: {
     title: 'Printer Settings',

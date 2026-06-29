@@ -261,6 +261,17 @@ const zhHant = {
     customFontsAdd: '新增對應',
     customFontsRemove: '移除',
   },
+  densityRescale: {
+    title: '變更列印密度',
+    fromToFmt: '{from} → {to} dpmm',
+    question: '應如何處理現有物件？',
+    scale: '縮放以保持尺寸',
+    scaleHint: '調整每個點值，使實體版面保持不變。',
+    keep: '保留點值',
+    keepHint: '物件保留其點值，因此實體尺寸會改變。',
+    cancel: '取消',
+    adjustedFmt: '{n} 個欄位將被限制或貼齊，可能無法精確縮放。',
+  },
 
   printerSettings: {
     title: '印表機設定',

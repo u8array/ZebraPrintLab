@@ -261,6 +261,17 @@ const no = {
     customFontsAdd: 'Legg til mapping',
     customFontsRemove: 'Fjern',
   },
+  densityRescale: {
+    title: 'Endre utskriftstetthet',
+    fromToFmt: '{from} → {to} dpmm',
+    question: 'Hvordan skal eksisterende objekter håndteres?',
+    scale: 'Skaler for å beholde størrelsen',
+    scaleHint: 'Justerer hver punktverdi slik at det fysiske oppsettet forblir det samme.',
+    keep: 'Behold punktverdier',
+    keepHint: 'Objekter beholder punktene sine, så den fysiske størrelsen endres.',
+    cancel: 'Avbryt',
+    adjustedFmt: '{n} felt blir begrenset eller festet og skaleres kanskje ikke nøyaktig.',
+  },
 
   printerSettings: {
     title: 'Skriverinnstillinger',
