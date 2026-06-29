@@ -33,7 +33,7 @@ import { CAPTURE_CHROME } from "./konvaObjectProps";
 import { Grid } from "./Grid";
 import { GuideLines } from "./GuideLines";
 import { Ruler, RULER_SIZE } from "./Ruler";
-import { getEntry } from "../../registry";
+import { getEntry, SHAPE_PRIMITIVE_TYPES } from "../../registry";
 import type { LeafObject } from "../../registry";
 import { PALETTE_GROUPS } from "../Palette/paletteGroups";
 import { addablesInGroup, resolveAddable, type AddableEntry } from "../../registry/palettePresets";
@@ -771,6 +771,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     ? objects.find((o) => o.id === selectedIds[0]) ?? null
     : null;
   const stepRotation = singleSelected ? getStepRotation(singleSelected) : null;
+  // Shape primitives get the single-rotate button too, not only via a group.
+  const singleShapeRotatable =
+    !!singleSelected && !isGroup(singleSelected) && SHAPE_PRIMITIVE_TYPES.has(singleSelected.type);
   const allSelectedLocked = isSelectionLocked(objects, selectedIds);
 
   // Selected leaves whose effective (cascaded) lock is on; each gets an amber
@@ -794,10 +797,18 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   });
 
   const handleRotateStep = () => {
-    if (!singleSelected || !stepRotation) return;
-    updateObject(singleSelected.id, {
-      props: { rotation: nextZplRotation(stepRotation) },
-    });
+    if (!singleSelected || singleSelected.locked) return;
+    if (stepRotation) {
+      // Types with a rotation prop (text/barcode/symbol): step it in place.
+      updateObject(singleSelected.id, {
+        props: { rotation: nextZplRotation(stepRotation) },
+      });
+      return;
+    }
+    // Shapes without a rotation prop (box/ellipse/line): quarter-turn about the
+    // object's own centre via the shared geometry (w/h swap or angle step).
+    const changes = rotateSelectionChanges(objects, [singleSelected.id], frameCtx, 1);
+    if (changes.size > 0) updateObjects([...changes].map(([id, c]) => ({ id, changes: c })));
   };
 
   // Group / multi-select rotate: one clockwise quarter turn about the union
@@ -843,7 +854,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       onClick: () => convertObjectType(singleSelected.id, toggleShapeMode),
     });
   }
-  if (singleSelected && stepRotation && !singleSelected.locked) {
+  if (singleSelected && (stepRotation || singleShapeRotatable) && !singleSelected.locked) {
     actionButtons.push({
       key: "rotate",
       iconPath: ROTATE_ICON,
