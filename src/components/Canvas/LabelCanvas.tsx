@@ -501,8 +501,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // ones, so a hidden-but-exported object is still warned and a visible-but-not-
   // exported one isn't falsely flagged: the warnings track what prints. Suppressed
   // during drag/preview-lock like the rest of the chrome.
-  const preflightLeaves = exportableLeaves(objects);
-  const preflightFindings = previewLocks || isDragging ? [] : computePreflight(preflightLeaves, frameCtx);
+  const preflightSuppressed = previewLocks || isDragging;
+  const preflightLeaves = preflightSuppressed ? [] : exportableLeaves(objects);
+  const preflightFindings = preflightSuppressed ? [] : computePreflight(preflightLeaves, frameCtx);
   // Off-label marks pair each off-label finding with its on-screen bbox: a
   // clipped object gets a solid amber outline, a fully-outside one a dashed red
   // outline with a faint fill. Keyed on the off-label kind (not severity) so a
