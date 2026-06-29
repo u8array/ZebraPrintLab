@@ -272,6 +272,11 @@ const en = {
     cancel: 'Cancel',
     adjustedFmt: '{n} field(s) will be clamped or snapped and may not scale exactly.',
   },
+  preflight: {
+    heading: 'Warnings',
+    offLabelOutside: 'Outside label',
+    offLabelClipped: 'Clipped at edge',
+  },
 
   printerSettings: {
     title: 'Printer Settings',

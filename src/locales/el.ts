@@ -272,6 +272,11 @@ const el = {
     cancel: 'Άκυρο',
     adjustedFmt: '{n} πεδίο(α) θα περιοριστούν ή θα προσκολληθούν και ενδέχεται να μην κλιμακωθούν με ακρίβεια.',
   },
+  preflight: {
+    heading: 'Προειδοποιήσεις',
+    offLabelOutside: 'Εκτός ετικέτας',
+    offLabelClipped: 'Περικομμένο στην άκρη',
+  },
 
   printerSettings: {
     title: 'Ρυθμίσεις εκτυπωτή',

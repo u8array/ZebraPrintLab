@@ -272,6 +272,11 @@ const pl = {
     cancel: 'Anuluj',
     adjustedFmt: '{n} pole zostanie ograniczone lub przyciągnięte i może nie skalować się dokładnie.',
   },
+  preflight: {
+    heading: 'Ostrzeżenia',
+    offLabelOutside: 'Poza etykietą',
+    offLabelClipped: 'Przycięte przy krawędzi',
+  },
 
   printerSettings: {
     title: 'Ustawienia drukarki',

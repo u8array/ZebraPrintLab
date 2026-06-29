@@ -272,6 +272,11 @@ const ko = {
     cancel: '취소',
     adjustedFmt: '{n}개 필드가 제한되거나 스냅되어 정확하게 배율 조정되지 않을 수 있습니다.',
   },
+  preflight: {
+    heading: '경고',
+    offLabelOutside: '라벨 바깥',
+    offLabelClipped: '가장자리에서 잘림',
+  },
 
   printerSettings: {
     title: '프린터 설정',

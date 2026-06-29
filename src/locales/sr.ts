@@ -272,6 +272,11 @@ const sr = {
     cancel: 'Откажи',
     adjustedFmt: '{n} поље ће бити ограничено или приљубљено и можда се неће скалирати тачно.',
   },
+  preflight: {
+    heading: 'Упозорења',
+    offLabelOutside: 'Изван налепнице',
+    offLabelClipped: 'Одсечено на ивици',
+  },
 
   printerSettings: {
     title: 'Подешавања штампача',

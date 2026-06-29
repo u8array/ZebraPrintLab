@@ -272,6 +272,11 @@ const sk = {
     cancel: 'Zrušiť',
     adjustedFmt: '{n} pole bude obmedzené alebo prichytené a nemusí sa škálovať presne.',
   },
+  preflight: {
+    heading: 'Upozornenia',
+    offLabelOutside: 'Mimo štítka',
+    offLabelClipped: 'Orezané pri okraji',
+  },
 
   printerSettings: {
     title: 'Nastavenia tlačiarne',

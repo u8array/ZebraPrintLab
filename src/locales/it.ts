@@ -272,6 +272,11 @@ const it = {
     cancel: 'Annulla',
     adjustedFmt: '{n} campo/i verranno limitati o agganciati e potrebbero non ridimensionarsi esattamente.',
   },
+  preflight: {
+    heading: 'Avvisi',
+    offLabelOutside: "Fuori dall'etichetta",
+    offLabelClipped: 'Tagliato al bordo',
+  },
 
   printerSettings: {
     title: 'Impostazioni stampante',

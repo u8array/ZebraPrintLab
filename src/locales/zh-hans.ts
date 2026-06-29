@@ -272,6 +272,11 @@ const zhHans = {
     cancel: '取消',
     adjustedFmt: '{n} 个字段将被限制或对齐，可能无法精确缩放。',
   },
+  preflight: {
+    heading: '警告',
+    offLabelOutside: '标签外',
+    offLabelClipped: '边缘被裁切',
+  },
 
   printerSettings: {
     title: '打印机设置',

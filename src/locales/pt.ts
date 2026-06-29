@@ -272,6 +272,11 @@ const pt = {
     cancel: 'Cancelar',
     adjustedFmt: '{n} campo(s) serão limitados ou ajustados e podem não ser dimensionados com exatidão.',
   },
+  preflight: {
+    heading: 'Avisos',
+    offLabelOutside: 'Fora da etiqueta',
+    offLabelClipped: 'Cortado na borda',
+  },
 
   printerSettings: {
     title: 'Configurações da impressora',

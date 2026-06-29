@@ -272,6 +272,11 @@ const hu = {
     cancel: 'Mégse',
     adjustedFmt: '{n} mező korlátozásra vagy illesztésre kerül, és előfordulhat, hogy nem pontosan méreteződik.',
   },
+  preflight: {
+    heading: 'Figyelmeztetések',
+    offLabelOutside: 'Címkén kívül',
+    offLabelClipped: 'Szélén levágva',
+  },
 
   printerSettings: {
     title: 'Nyomtatóbeállítások',

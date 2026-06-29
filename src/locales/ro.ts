@@ -272,6 +272,11 @@ const ro = {
     cancel: 'Anulează',
     adjustedFmt: '{n} câmp(uri) vor fi limitate sau aliniate și este posibil să nu se scaleze exact.',
   },
+  preflight: {
+    heading: 'Avertismente',
+    offLabelOutside: 'În afara etichetei',
+    offLabelClipped: 'Tăiat la margine',
+  },
 
   printerSettings: {
     title: 'Setări imprimantă',

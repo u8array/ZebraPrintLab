@@ -22,13 +22,15 @@ import { Select } from "../ui/Select";
 import type { SnapGuide } from "../../lib/snapGuides";
 import { computeAlignDeltas, computeDistribute, computeTidy } from "../../lib/align";
 import type { AlignOp, AlignBox, DistributeAxis, AlignRef } from "../../lib/align";
-import { objectBoundsDots, selectionUnionDots, isBoxOutOfBounds, printableRectDots } from "../../lib/objectBounds";
+import { objectBoundsDots, selectionUnionDots, printableRectDots } from "../../lib/objectBounds";
+import { computePreflight } from "../../lib/preflight";
 import { rotateSelectionChanges } from "../../lib/groupRotation";
 import { selectTidyTargets } from "../../lib/tidyClassify";
 import { safeAreaRectDots } from "../../lib/safeArea";
 import { measuredBoundsMap, subscribeMeasuredBounds, getMeasuredSnapshot } from "./measuredBoundsCache";
 import { isEditableTarget } from "../../lib/dom";
 import { KonvaObject } from "./KonvaObject";
+import { PreflightOverlay } from "./PreflightOverlay";
 import { CAPTURE_CHROME } from "./konvaObjectProps";
 import { Grid } from "./Grid";
 import { GuideLines } from "./GuideLines";
@@ -64,7 +66,7 @@ import {
 import { CanvasContextMenu } from "./CanvasContextMenu";
 import { buildContextMenu, type MenuSection } from "./canvasActions";
 import { zplForSelection } from "../../lib/zplForSelection";
-import { generateMultiPageZPL } from "../../lib/zplGenerator";
+import { generateMultiPageZPL, exportableLeaves } from "../../lib/zplGenerator";
 import { nodeToPngBlob, downloadBlob, copyPngToClipboard } from "../../lib/canvasImage";
 
 /** Object types offered by the context menu's "Add object here". */
@@ -495,16 +497,25 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const selectionFrameBase = isMultiFrame ? toFramePx(selectionUnionDots(objects, visibleSelIds, frameCtx)) : null;
   const movableFrameBase = hasSelection ? toFramePx(selectionUnionDots(objects, movableSelIds, frameCtx)) : null;
   const staticFrameBase = hasSelection ? toFramePx(selectionUnionDots(objects, staticSelIds, frameCtx)) : null;
-  // Objects whose bbox exceeds the printable label rect: the printer clips
-  // off-label content (^PW/^LL), so outline them red as a preflight warning.
-  const outOfBoundsMarks = previewLocks || isDragging
-    ? []
-    : visibleLeaves.flatMap((l) => {
-        const box = objectBoundsDots(l, frameCtx);
-        if (!isBoxOutOfBounds(box, frameCtx.label)) return [];
-        const rect = toFramePx(box);
-        return rect ? [{ id: l.id, rect }] : [];
-      });
+  // Preflight runs over the EXPORTABLE leaves (includeInExport), not the visible
+  // ones, so a hidden-but-exported object is still warned and a visible-but-not-
+  // exported one isn't falsely flagged: the warnings track what prints. Suppressed
+  // during drag/preview-lock like the rest of the chrome.
+  const preflightLeaves = exportableLeaves(objects);
+  const preflightFindings = previewLocks || isDragging ? [] : computePreflight(preflightLeaves, frameCtx);
+  // Off-label marks pair each off-label finding with its on-screen bbox: a
+  // clipped object gets a solid amber outline, a fully-outside one a dashed red
+  // outline with a faint fill. Keyed on the off-label kind (not severity) so a
+  // future non-off-label finding won't borrow the off-label treatment. A hidden
+  // exported object has no on-canvas node (absent from visibleLeafById), so it
+  // gets a badge entry but no outline.
+  const outOfBoundsMarks = preflightFindings.flatMap((f) => {
+    if (f.kind !== "offLabelOutside" && f.kind !== "offLabelClipped") return [];
+    const leaf = visibleLeafById.get(f.objectId);
+    if (!leaf) return [];
+    const rect = toFramePx(objectBoundsDots(leaf, frameCtx));
+    return rect ? [{ id: f.objectId, kind: f.kind, rect }] : [];
+  });
   // Sub-outlines mark group members; per group, split visible leaves
   // movable/static (mirrors the main frame).
   const movableGroupRects: { x: number; y: number; width: number; height: number }[] = [];
@@ -1183,11 +1194,22 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
 
       <PaginationControl />
 
-      {label.printOrientation === "I" && (
-        <div className="absolute top-3 right-3 z-10 bg-surface border border-border rounded px-2 py-0.5 text-[10px] font-mono text-muted">
-          {t.label.printOrientationIndicator}
-        </div>
-      )}
+      <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
+        {label.printOrientation === "I" && (
+          <div className="bg-surface border border-border rounded px-2 py-0.5 text-[10px] font-mono text-muted">
+            {t.label.printOrientationIndicator}
+          </div>
+        )}
+        {/* Remount on the empty<->active transition so the popover's open state
+            resets and can't auto-reopen after findings briefly drain (e.g. a
+            keyboard nudge fixes then re-breaks an object). */}
+        <PreflightOverlay
+          key={preflightFindings.length > 0 ? "active" : "empty"}
+          findings={preflightFindings}
+          objects={preflightLeaves}
+          onSelect={(id) => selectObject(selectionTargetId(objects, id))}
+        />
+      </div>
 
       {/* Bottom-right controls: view options + zoom */}
       <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 bg-surface border border-border rounded px-1 py-0.5">
@@ -1384,21 +1406,38 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 ))
               )}
 
-              {/* Off-label preflight: red outline where an object exceeds the
-                  printable rect (printer clips it). Non-interactive chrome. */}
-              {outOfBoundsMarks.map((m) => (
-                <Rect
-                  key={`oob-${m.id}`}
-                  name={CAPTURE_CHROME}
-                  x={m.rect.x}
-                  y={m.rect.y}
-                  width={m.rect.width}
-                  height={m.rect.height}
-                  stroke={colors.error}
-                  strokeWidth={1.5}
-                  listening={false}
-                />
-              ))}
+              {/* Off-label preflight, two severities: clipped = solid amber
+                  outline; fully outside = dashed red outline + faint red fill.
+                  Non-interactive chrome. */}
+              {outOfBoundsMarks.map((m) => {
+                const outside = m.kind === "offLabelOutside";
+                const color = outside ? colors.error : colors.accent;
+                return (
+                  <Group key={`oob-${m.id}`} listening={false}>
+                    {outside && (
+                      <Rect
+                        name={CAPTURE_CHROME}
+                        x={m.rect.x}
+                        y={m.rect.y}
+                        width={m.rect.width}
+                        height={m.rect.height}
+                        fill={color}
+                        opacity={0.1}
+                      />
+                    )}
+                    <Rect
+                      name={CAPTURE_CHROME}
+                      x={m.rect.x}
+                      y={m.rect.y}
+                      width={m.rect.width}
+                      height={m.rect.height}
+                      stroke={color}
+                      strokeWidth={1.5}
+                      dash={outside ? [6, 4] : undefined}
+                    />
+                  </Group>
+                );
+              })}
 
               {!previewLocks && ghost && (
                 <Group opacity={0.5} listening={false}>

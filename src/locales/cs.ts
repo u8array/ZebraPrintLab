@@ -272,6 +272,11 @@ const cs = {
     cancel: 'Zrušit',
     adjustedFmt: '{n} pole bude omezeno nebo přichyceno a nemusí se škálovat přesně.',
   },
+  preflight: {
+    heading: 'Upozornění',
+    offLabelOutside: 'Mimo štítek',
+    offLabelClipped: 'Oříznuto u okraje',
+  },
 
   printerSettings: {
     title: 'Nastavení tiskárny',

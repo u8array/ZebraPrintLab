@@ -272,6 +272,11 @@ const fr = {
     cancel: 'Annuler',
     adjustedFmt: "{n} champ(s) seront limités ou alignés et risquent de ne pas être mis à l'échelle exactement.",
   },
+  preflight: {
+    heading: 'Avertissements',
+    offLabelOutside: "Hors de l'étiquette",
+    offLabelClipped: 'Coupé au bord',
+  },
 
   printerSettings: {
     title: 'Paramètres de l’imprimante',

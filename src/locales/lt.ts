@@ -272,6 +272,11 @@ const lt = {
     cancel: 'Atšaukti',
     adjustedFmt: '{n} laukas (-ai) bus apriboti arba pritraukti ir gali būti netiksliai keičiamas mastelis.',
   },
+  preflight: {
+    heading: 'Įspėjimai',
+    offLabelOutside: 'Už etiketės ribų',
+    offLabelClipped: 'Nukirpta ties kraštu',
+  },
 
   printerSettings: {
     title: 'Spausdintuvo nustatymai',

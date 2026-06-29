@@ -272,6 +272,11 @@ const fa = {
     cancel: 'لغو',
     adjustedFmt: '{n} فیلد محدود یا تراز می‌شود و ممکن است دقیقاً مقیاس نشود.',
   },
+  preflight: {
+    heading: 'هشدارها',
+    offLabelOutside: 'خارج از برچسب',
+    offLabelClipped: 'بریده‌شده در لبه',
+  },
 
   printerSettings: {
     title: 'تنظیمات چاپگر',

@@ -189,8 +189,9 @@ export function generateMultiPageZPL(
 }
 
 /** Leaves that would actually export, honouring the `includeInExport=false`
- *  cascade through groups (mirrors `emitLeaf`). */
-function exportableLeaves(objects: LabelObject[]): LeafObject[] {
+ *  cascade through groups (mirrors `emitLeaf`). Also the leaf set preflight
+ *  warns over, so its off-label checks track what prints, not editor visibility. */
+export function exportableLeaves(objects: LabelObject[]): LeafObject[] {
   const out: LeafObject[] = [];
   const walk = (list: LabelObject[]): void => {
     for (const o of list) {

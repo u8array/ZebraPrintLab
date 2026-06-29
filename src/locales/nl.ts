@@ -272,6 +272,11 @@ const nl = {
     cancel: 'Annuleren',
     adjustedFmt: '{n} veld(en) worden begrensd of vastgeklikt en schalen mogelijk niet exact.',
   },
+  preflight: {
+    heading: 'Waarschuwingen',
+    offLabelOutside: 'Buiten het etiket',
+    offLabelClipped: 'Afgesneden aan de rand',
+  },
 
   printerSettings: {
     title: 'Printerinstellingen',

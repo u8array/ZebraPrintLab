@@ -272,6 +272,11 @@ const bg = {
     cancel: 'Отказ',
     adjustedFmt: '{n} поле(та) ще бъдат ограничени или подравнени и може да не се мащабират точно.',
   },
+  preflight: {
+    heading: 'Предупреждения',
+    offLabelOutside: 'Извън етикета',
+    offLabelClipped: 'Отрязано в края',
+  },
 
   printerSettings: {
     title: 'Настройки на принтера',

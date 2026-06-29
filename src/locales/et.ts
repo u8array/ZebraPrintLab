@@ -272,6 +272,11 @@ const et = {
     cancel: 'Tühista',
     adjustedFmt: '{n} välja piiratakse või joondatakse ja need ei pruugi täpselt skaleeruda.',
   },
+  preflight: {
+    heading: 'Hoiatused',
+    offLabelOutside: 'Sildist väljas',
+    offLabelClipped: 'Servast lõigatud',
+  },
 
   printerSettings: {
     title: 'Printeri seaded',

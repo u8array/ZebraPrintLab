@@ -272,6 +272,11 @@ const de = {
     cancel: 'Abbrechen',
     adjustedFmt: '{n} Feld(er) werden begrenzt oder gerastert und skalieren möglicherweise nicht exakt.',
   },
+  preflight: {
+    heading: 'Warnungen',
+    offLabelOutside: 'Außerhalb des Etiketts',
+    offLabelClipped: 'Am Rand abgeschnitten',
+  },
 
   printerSettings: {
     title: 'Drucker-Einstellungen',
