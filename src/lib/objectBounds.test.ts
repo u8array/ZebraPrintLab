@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { objectBoundsDots, selectionUnionDots, barcodeFtAnchorOffset, isOutOfBounds, type ObjectBoundsCtx } from "./objectBounds";
+import { objectBoundsDots, selectionUnionDots, barcodeFtAnchorOffset, offLabelPlacement, type ObjectBoundsCtx } from "./objectBounds";
 import type { ZplRotation } from "../registry/rotation";
 import { QR_FT_MODULE_OFFSET } from "./bwipConstants";
 import type { LabelConfig } from "../types/LabelConfig";
@@ -358,44 +358,66 @@ describe("barcode ^FT rotation anchor", () => {
   });
 });
 
-describe("isOutOfBounds", () => {
-  // label 100x50mm @ 8dpmm = 800x400 dots.
-  const boxAt = (x: number, y: number, width: number, height: number) =>
-    leaf("box", x, y, { width, height, thickness: 3, filled: false, color: "B", rounding: 0 });
+describe("offLabelPlacement", () => {
+  // printable rect for this label = 800 x 400 dots at origin. Signature is
+  // (emittedAnchor, visualBox, label): near edges read the anchor, far the box.
+  const at = (x: number, y: number, width: number, height: number) => ({ x, y, width, height });
 
-  it("fully inside is not out of bounds", () => {
-    expect(isOutOfBounds(boxAt(10, 20, 200, 100), ctx())).toBe(false);
+  it("null when the box is fully within the printable rect", () => {
+    expect(offLabelPlacement({ x: 10, y: 10 }, at(10, 10, 100, 50), label)).toBeNull();
+  });
+  it("null on an exact fit to the label rect", () => {
+    expect(offLabelPlacement({ x: 0, y: 0 }, at(0, 0, 800, 400), label)).toBeNull();
+  });
+  it("clipped when crossing the right edge with part inside", () => {
+    expect(offLabelPlacement({ x: 750, y: 10 }, at(750, 10, 100, 50), label)).toBe("clipped");
+  });
+  it("clipped when crossing the bottom edge with part inside", () => {
+    expect(offLabelPlacement({ x: 0, y: 350 }, at(0, 350, 100, 100), label)).toBe("clipped");
+  });
+  it("outside when entirely past the right edge", () => {
+    expect(offLabelPlacement({ x: 900, y: 10 }, at(900, 10, 50, 50), label)).toBe("outside");
+  });
+  it("outside when flush against the right edge with no overlap", () => {
+    // Right edge is 800; a box starting exactly at 800 touches but never overlaps.
+    expect(offLabelPlacement({ x: 800, y: 10 }, at(800, 10, 50, 50), label)).toBe("outside");
   });
 
-  it("exact fit to the label rect is not out of bounds", () => {
-    expect(isOutOfBounds(boxAt(0, 0, 800, 400), ctx())).toBe(false);
+  // Near edges (left/top) read the ANCHOR: a negative emitted origin is off the
+  // printable area / out of ZPL range -> hard `outside`, never the softer clipped.
+  it("outside when the anchor sits in negative space", () => {
+    expect(offLabelPlacement({ x: -100, y: -100 }, at(-100, -100, 50, 50), label)).toBe("outside");
+  });
+  it("outside when the anchor is left of the origin", () => {
+    expect(offLabelPlacement({ x: -50, y: 10 }, at(-50, 10, 100, 50), label)).toBe("outside");
+  });
+  it("outside when the anchor is above the origin", () => {
+    expect(offLabelPlacement({ x: 10, y: -20 }, at(10, -20, 50, 50), label)).toBe("outside");
   });
 
-  it("crossing the right edge is out of bounds", () => {
-    expect(isOutOfBounds(boxAt(700, 0, 200, 100), ctx())).toBe(true);
+  // The founding case: a VALID positive anchor whose body extends back over the
+  // near edge (rotated/sized field) is NOT flagged -> matches what the printer
+  // renders. The box top is negative but the anchor is on-label.
+  it("null when a positive anchor's body extends past the top edge", () => {
+    expect(offLabelPlacement({ x: 60, y: 80 }, at(60, -120, 300, 120), label)).toBeNull();
+  });
+  it("null when a positive anchor's body extends past the left edge", () => {
+    expect(offLabelPlacement({ x: 200, y: 50 }, at(-40, 50, 300, 60), label)).toBeNull();
   });
 
-  it("crossing the bottom edge is out of bounds", () => {
-    expect(isOutOfBounds(boxAt(0, 350, 100, 100), ctx())).toBe(true);
-  });
-
-  it("a negative origin is out of bounds (left/top edge)", () => {
-    expect(isOutOfBounds(boxAt(-5, 10, 50, 50), ctx())).toBe(true);
-  });
-
-  it("respects the half-dot epsilon at the edge", () => {
-    expect(isOutOfBounds(boxAt(0, 0, 800.4, 400), ctx())).toBe(false); // 0.4 overhang tolerated
-    expect(isOutOfBounds(boxAt(0, 0, 800.6, 400), ctx())).toBe(true); // 0.6 overhang flagged
+  it("respects the half-dot epsilon at the far edge", () => {
+    expect(offLabelPlacement({ x: 0, y: 0 }, at(0, 0, 800.4, 400), label)).toBeNull(); // 0.4 tolerated
+    expect(offLabelPlacement({ x: 0, y: 0 }, at(0, 0, 800.6, 400), label)).toBe("clipped"); // 0.6 flagged
   });
 
   it("uses the ^LS printable window (^LS shifts content left, window moves right)", () => {
-    const shifted: ObjectBoundsCtx = { label: { ...label, labelShift: 80 } };
+    const shifted = { ...label, labelShift: 80 };
     // ^LS80 shifts content left by 80, so the valid model window is [80, 880].
-    // A box at x=10 now clips off the left edge.
-    expect(isOutOfBounds(boxAt(10, 10, 50, 50), shifted)).toBe(true);
-    expect(isOutOfBounds(boxAt(10, 10, 50, 50), ctx())).toBe(false); // inside without the shift
+    // An anchor at x=10 now sits left of the window origin -> outside.
+    expect(offLabelPlacement({ x: 10, y: 10 }, at(10, 10, 50, 50), shifted)).toBe("outside");
+    expect(offLabelPlacement({ x: 10, y: 10 }, at(10, 10, 50, 50), label)).toBeNull();
     // The right edge extends to 880: a box at 810..860 is now inside.
-    expect(isOutOfBounds(boxAt(810, 0, 50, 50), shifted)).toBe(false);
-    expect(isOutOfBounds(boxAt(810, 0, 50, 50), ctx())).toBe(true); // out without the shift
+    expect(offLabelPlacement({ x: 810, y: 0 }, at(810, 0, 50, 50), shifted)).toBeNull();
+    expect(offLabelPlacement({ x: 810, y: 0 }, at(810, 0, 50, 50), label)).toBe("outside");
   });
 });

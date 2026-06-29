@@ -272,6 +272,11 @@ const hr = {
     cancel: 'Odustani',
     adjustedFmt: '{n} polje bit će ograničeno ili poravnato i možda se neće skalirati točno.',
   },
+  preflight: {
+    heading: 'Upozorenja',
+    offLabelOutside: 'Izvan naljepnice',
+    offLabelClipped: 'Odrezano na rubu',
+  },
 
   printerSettings: {
     title: 'Postavke pisača',

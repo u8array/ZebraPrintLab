@@ -272,6 +272,11 @@ const es = {
     cancel: 'Cancelar',
     adjustedFmt: '{n} campo(s) se limitarán o ajustarán y podrían no escalar con exactitud.',
   },
+  preflight: {
+    heading: 'Avisos',
+    offLabelOutside: 'Fuera de la etiqueta',
+    offLabelClipped: 'Recortado en el borde',
+  },
 
   printerSettings: {
     title: 'Configuración de impresora',

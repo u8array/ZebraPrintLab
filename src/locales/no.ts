@@ -272,6 +272,11 @@ const no = {
     cancel: 'Avbryt',
     adjustedFmt: '{n} felt blir begrenset eller festet og skaleres kanskje ikke nøyaktig.',
   },
+  preflight: {
+    heading: 'Advarsler',
+    offLabelOutside: 'Utenfor etiketten',
+    offLabelClipped: 'Beskåret ved kanten',
+  },
 
   printerSettings: {
     title: 'Skriverinnstillinger',

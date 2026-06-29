@@ -272,6 +272,11 @@ const ja = {
     cancel: 'キャンセル',
     adjustedFmt: '{n} 個のフィールドはクランプまたはスナップされ、正確に拡大縮小されない場合があります。',
   },
+  preflight: {
+    heading: '警告',
+    offLabelOutside: 'ラベルの外',
+    offLabelClipped: '端で切れています',
+  },
 
   printerSettings: {
     title: 'プリンター設定',

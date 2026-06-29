@@ -272,6 +272,11 @@ const zhHant = {
     cancel: '取消',
     adjustedFmt: '{n} 個欄位將被限制或貼齊，可能無法精確縮放。',
   },
+  preflight: {
+    heading: '警告',
+    offLabelOutside: '標籤外',
+    offLabelClipped: '邊緣被裁切',
+  },
 
   printerSettings: {
     title: '印表機設定',

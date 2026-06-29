@@ -272,6 +272,11 @@ const he = {
     cancel: 'ביטול',
     adjustedFmt: '{n} שדות יוגבלו או ייצמדו ועשויים שלא לשנות קנה מידה במדויק.',
   },
+  preflight: {
+    heading: 'אזהרות',
+    offLabelOutside: 'מחוץ לתווית',
+    offLabelClipped: 'נחתך בקצה',
+  },
 
   printerSettings: {
     title: 'הגדרות מדפסת',

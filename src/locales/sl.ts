@@ -272,6 +272,11 @@ const sl = {
     cancel: 'Prekliči',
     adjustedFmt: '{n} polj bo omejenih ali pripetih in se morda ne bodo natančno spremenila v merilu.',
   },
+  preflight: {
+    heading: 'Opozorila',
+    offLabelOutside: 'Zunaj etikete',
+    offLabelClipped: 'Obrezano na robu',
+  },
 
   printerSettings: {
     title: 'Nastavitve tiskalnika',

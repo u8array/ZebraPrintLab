@@ -272,6 +272,11 @@ const sv = {
     cancel: 'Avbryt',
     adjustedFmt: '{n} fält begränsas eller fästs och skalas kanske inte exakt.',
   },
+  preflight: {
+    heading: 'Varningar',
+    offLabelOutside: 'Utanför etiketten',
+    offLabelClipped: 'Beskuren vid kanten',
+  },
 
   printerSettings: {
     title: 'Skrivarinställningar',

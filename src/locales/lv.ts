@@ -272,6 +272,11 @@ const lv = {
     cancel: 'Atcelt',
     adjustedFmt: '{n} lauks tiks ierobežots vai pievienots, un tas var netikt precīzi mērogots.',
   },
+  preflight: {
+    heading: 'Brīdinājumi',
+    offLabelOutside: 'Ārpus etiķetes',
+    offLabelClipped: 'Apgriezts pie malas',
+  },
 
   printerSettings: {
     title: 'Printera iestatījumi',

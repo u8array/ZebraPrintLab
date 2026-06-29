@@ -14,10 +14,38 @@ export function fieldPos(obj: LabelObjectBase): string {
   return `^${cmd}${obj.x},${obj.y}`;
 }
 
-/** Anchor for a graphic of footprint w x h at top-left (x, y). `^FO` emits the
- *  top-left verbatim; `^FT` anchors a bottom corner (spec p.205): bottom-left,
- *  or bottom-right (z=1) when right-justified. Shared by every graphic emitter
- *  (box/ellipse/image, and the diagonal-line bounding box). */
+/** Graphic leaf types whose ^FO/^FT origin comes from {@link graphicAnchor}
+ *  (the footprint top-left under ^FO, a bottom corner under ^FT). For box /
+ *  ellipse / image the model x/y already is that top-left; a line's x/y is an
+ *  endpoint, so its emitted origin is the bbox top-left instead. Single source
+ *  shared by the generator's home-shift drop test and the preflight off-label
+ *  check, so the two can't disagree on which types anchor this way. */
+export const GRAPHIC_ANCHOR_TYPES: ReadonlySet<string> = new Set([
+  "box",
+  "ellipse",
+  "image",
+  "line",
+]);
+
+/** Emitted ^FO/^FT origin coords for a graphic of footprint w x h at top-left
+ *  (x, y). `^FO` emits the top-left verbatim; `^FT` anchors a bottom corner
+ *  (spec p.205): bottom-left, or bottom-right when right-justified. The numeric
+ *  half of {@link graphicAnchor}, also reused by the preflight off-label check
+ *  so what it tests can't drift from what the generator emits. */
+export function graphicAnchorCoords(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  positionType: LabelObjectBase["positionType"],
+  justify: "L" | "R" | undefined,
+): { x: number; y: number } {
+  if (positionType !== "FT") return { x, y };
+  return justify === "R" ? { x: x + w, y: y + h } : { x, y: y + h };
+}
+
+/** Anchor command for a graphic of footprint w x h at top-left (x, y). Shared by
+ *  every graphic emitter (box/ellipse/image, and the diagonal-line bounding box). */
 export function graphicAnchor(
   x: number,
   y: number,
@@ -26,8 +54,9 @@ export function graphicAnchor(
   positionType: LabelObjectBase["positionType"],
   justify: "L" | "R" | undefined,
 ): string {
-  if (positionType !== "FT") return `^FO${x},${y}`;
-  return justify === "R" ? `^FT${x + w},${y + h},1` : `^FT${x},${y + h}`;
+  const a = graphicAnchorCoords(x, y, w, h, positionType, justify);
+  if (positionType !== "FT") return `^FO${a.x},${a.y}`;
+  return justify === "R" ? `^FT${a.x},${a.y},1` : `^FT${a.x},${a.y}`;
 }
 
 /** {@link graphicAnchor} for an object whose `x`/`y` is the footprint top-left. */

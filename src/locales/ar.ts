@@ -272,6 +272,11 @@ const ar = {
     cancel: 'إلغاء',
     adjustedFmt: 'سيتم تقييد أو محاذاة {n} حقل/حقول وقد لا يتم تحجيمها بدقة.',
   },
+  preflight: {
+    heading: 'تحذيرات',
+    offLabelOutside: 'خارج الملصق',
+    offLabelClipped: 'مقصوص عند الحافة',
+  },
 
   printerSettings: {
     title: 'إعدادات الطابعة',

@@ -272,6 +272,11 @@ const da = {
     cancel: 'Annuller',
     adjustedFmt: '{n} felt(er) bliver begrænset eller fastgjort og skaleres muligvis ikke nøjagtigt.',
   },
+  preflight: {
+    heading: 'Advarsler',
+    offLabelOutside: 'Uden for etiketten',
+    offLabelClipped: 'Beskåret ved kanten',
+  },
 
   printerSettings: {
     title: 'Printerindstillinger',

@@ -272,6 +272,11 @@ const tr = {
     cancel: 'İptal',
     adjustedFmt: '{n} alan sınırlanacak veya hizalanacak ve tam olarak ölçeklenmeyebilir.',
   },
+  preflight: {
+    heading: 'Uyarılar',
+    offLabelOutside: 'Etiketin dışında',
+    offLabelClipped: 'Kenarda kırpılmış',
+  },
 
   printerSettings: {
     title: 'Yazıcı ayarları',

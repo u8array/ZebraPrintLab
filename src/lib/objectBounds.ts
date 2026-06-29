@@ -319,26 +319,32 @@ export function printableRectDots(label: {
   };
 }
 
-/** True when any edge of `box` falls outside the printable rect. The predicate
- *  on a precomputed bbox, so a caller that already has the bounds (e.g. to also
- *  draw the outline) doesn't recompute them. A half-dot epsilon avoids flagging
- *  an object resting exactly on the edge. */
-export function isBoxOutOfBounds(
+/** Half-dot tolerance for the off-label edge checks so an object resting exactly
+ *  on an edge isn't flagged. */
+const EDGE_EPS = 0.5;
+
+export type OffLabel = "clipped" | "outside";
+
+/** Off-label placement of a field vs the printable rect, or null when inside.
+ *  Asymmetric on purpose, and the two edges read DIFFERENT inputs:
+ *  - near edges (left/top) test the emitted ^FO/^FT `anchor` (see
+ *    emittedAnchorDots). A negative origin is off the printable area on the home
+ *    side / out of ZPL's coordinate range, so nothing prints -> `outside`. Using
+ *    the anchor (not the bbox) is what lets a field with a valid positive origin
+ *    whose rotated/sized body extends back over the near edge stay un-flagged,
+ *    matching what the printer renders.
+ *  - far edges (right/bottom) test the visual `box`: content past ^PW/^LL is
+ *    clipped (part still prints), or fully past = nothing prints -> `outside`. */
+export function offLabelPlacement(
+  anchor: { x: number; y: number },
   box: BoundingBoxDots,
   label: Parameters<typeof printableRectDots>[0],
-): boolean {
+): OffLabel | null {
   const r = printableRectDots(label);
-  const eps = 0.5;
-  return (
-    box.x < r.x - eps ||
-    box.y < r.y - eps ||
-    box.x + box.width > r.x + r.width + eps ||
-    box.y + box.height > r.y + r.height + eps
-  );
-}
-
-/** True when the object's bbox falls outside the printable rect. Off-label
- *  content is clipped by the printer (^PW/^LL), so this flags a likely-cut print. */
-export function isOutOfBounds(obj: LabelObject, ctx: ObjectBoundsCtx): boolean {
-  return isBoxOutOfBounds(objectBoundsDots(obj, ctx), ctx.label);
+  if (anchor.x < r.x - EDGE_EPS || anchor.y < r.y - EDGE_EPS) return "outside";
+  const overRight = box.x + box.width > r.x + r.width + EDGE_EPS;
+  const overBottom = box.y + box.height > r.y + r.height + EDGE_EPS;
+  if (!overRight && !overBottom) return null;
+  const onLabel = box.x < r.x + r.width - EDGE_EPS && box.y < r.y + r.height - EDGE_EPS;
+  return onLabel ? "clipped" : "outside";
 }

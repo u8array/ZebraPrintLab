@@ -272,6 +272,11 @@ const fi = {
     cancel: 'Peruuta',
     adjustedFmt: '{n} kenttää rajataan tai kiinnitetään, eikä se ehkä skaalaudu tarkasti.',
   },
+  preflight: {
+    heading: 'Varoitukset',
+    offLabelOutside: 'Etiketin ulkopuolella',
+    offLabelClipped: 'Leikkautuu reunasta',
+  },
 
   printerSettings: {
     title: 'Tulostimen asetukset',

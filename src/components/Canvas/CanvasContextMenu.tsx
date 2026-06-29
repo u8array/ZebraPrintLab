@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useDismiss } from "../../hooks/useDismiss";
 import {
   ChevronRightIcon,
   ChevronUpIcon,
@@ -170,24 +171,8 @@ export function CanvasContextMenu({ sections, x, y, labels, onClose }: Props) {
     });
   }, [x, y]);
 
-  useEffect(() => {
-    const onPointer = (e: PointerEvent) => {
-      if (!ref.current?.contains(e.target as Node)) onClose();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    // Defer so the opening right-click's own pointer events don't self-close.
-    const id = window.setTimeout(() => {
-      window.addEventListener("pointerdown", onPointer);
-      window.addEventListener("keydown", onKey);
-    }, 0);
-    return () => {
-      window.clearTimeout(id);
-      window.removeEventListener("pointerdown", onPointer);
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [onClose]);
+  // Defer so the opening right-click's own pointer events don't self-close.
+  useDismiss(ref, onClose, { defer: true });
 
   return createPortal(
     <div ref={ref} className={`fixed ${MENU_BOX}`} style={{ left: pos.x, top: pos.y }} role="menu">

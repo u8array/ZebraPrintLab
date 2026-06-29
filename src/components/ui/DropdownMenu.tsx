@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/16/solid';
 import type { ComponentType, SVGProps } from 'react';
+import { useDismiss } from '../../hooks/useDismiss';
 
 type HeroIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -46,21 +47,7 @@ export function DropdownMenu({ label, children, maxHeight, ariaLabel }: MenuProp
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const onPointer = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    window.addEventListener('pointerdown', onPointer);
-    return () => window.removeEventListener('pointerdown', onPointer);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open]);
+  useDismiss(rootRef, () => setOpen(false), { active: open });
 
   return (
     <div ref={rootRef} className="relative">
