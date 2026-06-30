@@ -11,6 +11,7 @@ import { useLabelStore } from '../../store/labelStore';
 import { printableRectDots } from '../../lib/objectBounds';
 import { resolveDefaultSizeDots } from '../../lib/resolveDefaultSize';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
+import { DragChip } from '../ui/DragChip';
 import { CollapsibleSection } from '../ui/CollapsibleSection';
 import { inputCls } from '../ui/formStyles';
 import { rowDragId, isRowDragId, ROW_PREFIX, CANVAS_DROPPABLE_ID, type PaletteDragData } from '../../dnd/types';
@@ -177,17 +178,6 @@ function FavoriteRow({ row, index, editing }: { row: PaletteRow; index: number; 
   );
 }
 
-/** Compact drag preview chip (icon + label) shown under the cursor while
- *  dragging a palette entry. */
-function DragChip({ entry }: { entry: AddableEntry }) {
-  return (
-    <div className="flex items-center gap-2 rounded-[7px] bg-bg border border-accent px-3 py-2 shadow-[0_12px_26px_rgba(0,0,0,.4)]">
-      <span className="font-mono text-[11px] text-accent">{entry.icon}</span>
-      <span className="text-xs text-text">{entry.label}</span>
-    </div>
-  );
-}
-
 /** Entry-count badge shown beside a group title. */
 function GroupTitle({ label, count }: { label: string; count: number }) {
   return (
@@ -208,29 +198,26 @@ export function ObjectPalette() {
   const reorderRows = useLabelStore((s) => s.reorderPaletteRows);
   const [activeEntry, setActiveEntry] = useState<AddableEntry | null>(null);
   const [overCanvas, setOverCanvas] = useState(false);
-  const [isReorder, setIsReorder] = useState(false);
   const q = query.trim().toLowerCase();
 
   // Track the dragged entry for the overlay chip, and reorder favorites on drop.
   // Over the canvas the chip is hidden so the canvas's own ghost (the real
-  // element at drop size) is the only preview. A reorder (edit-mode favorites row
-  // drag) suppresses the chip too, since the sortable shifts neighbours itself.
+  // element at drop size) is the only preview. A favorites reorder still shows
+  // the chip (like the layers tree) for tactile feedback while neighbours shift.
   // Normal-mode row drags spawn on canvas (LabelCanvas's monitor).
   useDndMonitor({
     onDragStart({ active }) {
       const data = active.data.current as PaletteDragData | undefined;
       setActiveEntry(data?.entryId ? resolveAddable(data.entryId, t) : null);
       setOverCanvas(false);
-      setIsReorder(editing && isRowDragId(String(active.id)));
     },
     onDragOver({ over }) {
       setOverCanvas(over?.id === CANVAS_DROPPABLE_ID);
     },
-    onDragCancel() { setActiveEntry(null); setOverCanvas(false); setIsReorder(false); },
+    onDragCancel() { setActiveEntry(null); setOverCanvas(false); },
     onDragEnd({ active, over }) {
       setActiveEntry(null);
       setOverCanvas(false);
-      setIsReorder(false);
       if (!editing) return;
       const a = String(active.id);
       const o = over ? String(over.id) : '';
@@ -314,10 +301,9 @@ export function ObjectPalette() {
         )}
       </div>
 
-      {/* Chip only for drag-to-canvas preview: hidden over the canvas (the canvas
-          renders its own ghost) and during a reorder (the sortable shifts
-          neighbours itself). */}
-      <DragOverlay>{activeEntry && !overCanvas && !isReorder ? <DragChip entry={activeEntry} /> : null}</DragOverlay>
+      {/* Drag chip under the cursor, hidden only over the canvas (where the
+          canvas renders its own full-size ghost). Shown for favorites reorder. */}
+      <DragOverlay>{activeEntry && !overCanvas ? <DragChip icon={activeEntry.icon} label={activeEntry.label} /> : null}</DragOverlay>
     </div>
   );
 }

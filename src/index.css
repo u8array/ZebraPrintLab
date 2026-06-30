@@ -93,6 +93,9 @@
      content. Green reads as "literal/string" and stays clear of the
      amber commands and cyan numeric params. */
   --color-string:    #6a9955;
+  /* Layers-tree connector lines: very faint so the tree structure reads
+     without competing with content. */
+  --color-guide:     rgba(255, 255, 255, 0.16);
 
   --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
@@ -119,6 +122,7 @@
   --color-error:     #b91c1c;
   --color-ok:        #2e7d32;
   --color-string:    #4a7a35;
+  --color-guide:     rgba(0, 0, 0, 0.20);
 }
 
 *, *::before, *::after {

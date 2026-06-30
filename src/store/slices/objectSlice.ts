@@ -5,10 +5,9 @@ import {
   getAllLeaves,
   isSelectionLocked,
   mapObjectById,
-  detachObjectById,
   findObjectById,
   findAncestors,
-  isSelfOrDescendant,
+  reparentNodes,
   type GroupObject,
   type LabelObject,
   type Page,
@@ -18,7 +17,6 @@ import { reorderForZ, type ZOrderDir } from '../../lib/zorder';
 import { makeReverseBackingBox, precedingBackingExists, isOwnReverseBacking } from '../../lib/reverseBacking';
 import {
   applyObjectChanges,
-  insertAt,
   DUPLICATE_OFFSET_DOTS,
   buildOffsetCopies,
   cloneChildrenFresh,
@@ -70,6 +68,9 @@ export interface ObjectSlice {
   /** Move `id` to a new tree position. `parentId: null` targets top
    *  level; otherwise a group. Silently refuses cycles. */
   reparentObject: (id: string, target: { parentId: string | null; index: number }) => void;
+  /** Move several nodes as one block (multi-select layer drag). Only roots of
+   *  the set move; invalid drops (non-group target, cycle) are no-ops. */
+  reparentObjects: (ids: readonly string[], target: { parentId: string | null; index: number }) => void;
   /** Append an empty group at the top level and select it. */
   addGroup: () => void;
 
@@ -357,30 +358,16 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
       };
     }),
 
-  reparentObject: (id, target) =>
+  // Single reparent is just a one-element block; reparentNodes owns the
+  // detach/insert/cycle/non-group logic so the two paths can't diverge.
+  reparentObject: (id, target) => get().reparentObjects([id], target),
+
+  reparentObjects: (ids, target) =>
     set((state) => {
       if (selectPreviewLocksEditor(state)) return {};
       const objs = currentObjects(state);
-      // Forbid cycles: moving a group into itself or one of its descendants.
-      if (target.parentId && isSelfOrDescendant(objs, id, target.parentId)) {
-        return {};
-      }
-      // Refuse drops into non-groups (defensive; layers panel never produces this).
-      if (target.parentId !== null) {
-        const parent = findObjectById(objs, target.parentId);
-        if (!parent || !isGroup(parent)) return {};
-      }
-      const { removed, rest } = detachObjectById(objs, id);
-      if (!removed) return {};
-      const node = removed;
-      if (target.parentId === null) {
-        return updateCurrentObjects(state, () => insertAt(rest, target.index, node));
-      }
-      const next = mapObjectById(rest, target.parentId, (p) =>
-        isGroup(p)
-          ? { ...p, children: insertAt(p.children, target.index, node) }
-          : p,
-      );
+      const next = reparentNodes(objs, ids, target);
+      if (next === objs) return {};
       return updateCurrentObjects(state, () => next);
     }),
 

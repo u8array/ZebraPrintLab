@@ -161,15 +161,6 @@ export function applyObjectChanges(
   return next;
 }
 
-/** Immutable insert-at-index that clamps `idx` into the array's bounds.
- *  Used by reparent flows to splice a node into a children list or the
- *  top-level list without crashing on out-of-range indices coming from
- *  ephemeral drag state. */
-export function insertAt<T>(arr: readonly T[], idx: number, item: T): T[] {
-  const clamped = Math.max(0, Math.min(idx, arr.length));
-  return [...arr.slice(0, clamped), item, ...arr.slice(clamped)];
-}
-
 export function detectLocale(): LocaleCode {
   const lang = navigator.language.slice(0, 2).toLowerCase();
   return (lang in locales ? lang : 'en') as LocaleCode;
