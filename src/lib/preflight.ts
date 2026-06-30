@@ -1,32 +1,21 @@
-import type { LeafObject } from "../registry";
+import { getEntry, type LeafObject } from "../registry";
 import { objectBoundsDots, offLabelPlacement, type ObjectBoundsCtx } from "./objectBounds";
 import { emittedAnchorDots } from "./emittedAnchor";
+import {
+  PREFLIGHT_SEVERITY,
+  type PreflightFinding,
+  type PreflightKind,
+  type PreflightSeverity,
+} from "../types/preflight";
 
-export type PreflightSeverity = "error" | "warning";
-
-/** Distinct preflight problem kinds. Off-label is the first producer; further
- *  producers (approx render, ...) add their own kinds here. */
-export type PreflightKind = "offLabelOutside" | "offLabelClipped";
-
-export interface PreflightFinding {
-  objectId: string;
-  kind: PreflightKind;
-  severity: PreflightSeverity;
-}
-
-/** Single source for kind -> severity so canvas styling and the badge tiering
- *  can't drift apart. */
-export const PREFLIGHT_SEVERITY: Record<PreflightKind, PreflightSeverity> = {
-  offLabelOutside: "error",
-  offLabelClipped: "warning",
-};
+export { PREFLIGHT_SEVERITY };
+export type { PreflightFinding, PreflightKind, PreflightSeverity };
 
 /** Current preflight findings for a page's leaves. Pass the EXPORTABLE leaves
  *  (includeInExport, not editor visibility) so the warnings track what actually
  *  prints. Pure projection of the document, recomputed as geometry and measured
- *  footprints settle. A negative emitted origin maps to the hard
- *  `offLabelOutside`; a right/bottom overflow stays the softer `offLabelClipped`
- *  (see {@link offLabelPlacement}). */
+ *  footprints settle. Runs the geometry (off-label) producer plus each type's
+ *  own `preflight` producer (block-too-narrow, barcode module too small). */
 export function computePreflight(
   leaves: readonly LeafObject[],
   ctx: ObjectBoundsCtx,
@@ -38,6 +27,13 @@ export function computePreflight(
     const kind =
       placement === "outside" ? "offLabelOutside" : placement === "clipped" ? "offLabelClipped" : null;
     if (kind) findings.push({ objectId: leaf.id, kind, severity: PREFLIGHT_SEVERITY[kind] });
+
+    const produce = getEntry(leaf.type)?.preflight;
+    if (produce) {
+      for (const r of produce(leaf, { label: ctx.label })) {
+        findings.push({ objectId: leaf.id, kind: r.kind, severity: PREFLIGHT_SEVERITY[r.kind], detail: r.detail });
+      }
+    }
   }
   return findings;
 }

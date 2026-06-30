@@ -274,6 +274,11 @@ const pt = {
     heading: 'Avisos',
     offLabelOutside: 'Fora da etiqueta',
     offLabelClipped: 'Cortado na borda',
+    renderFailed: 'Não codificável',
+    blockTooNarrow: 'Bloco muito estreito',
+    barcodeTooSmall: 'Módulo muito pequeno',
+    textOverset: 'Texto cortado',
+    imageMissing: 'Imagem ausente',
   },
 
   printerSettings: {

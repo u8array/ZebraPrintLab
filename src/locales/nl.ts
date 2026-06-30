@@ -274,6 +274,11 @@ const nl = {
     heading: 'Waarschuwingen',
     offLabelOutside: 'Buiten het etiket',
     offLabelClipped: 'Afgesneden aan de rand',
+    renderFailed: 'Niet codeerbaar',
+    blockTooNarrow: 'Blok te smal',
+    barcodeTooSmall: 'Module te klein',
+    textOverset: 'Tekst afgesneden',
+    imageMissing: 'Afbeelding ontbreekt',
   },
 
   printerSettings: {

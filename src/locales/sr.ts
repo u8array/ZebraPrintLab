@@ -274,6 +274,11 @@ const sr = {
     heading: 'Упозорења',
     offLabelOutside: 'Изван налепнице',
     offLabelClipped: 'Одсечено на ивици',
+    renderFailed: 'Nije kodirljivo',
+    blockTooNarrow: 'Блок превише узак',
+    barcodeTooSmall: 'Модул превише мали',
+    textOverset: 'Tekst odsečen',
+    imageMissing: 'Slika nedostaje',
   },
 
   printerSettings: {

@@ -112,6 +112,15 @@ export const image: ObjectTypeCore<ImageProps> = {
   },
   defaultSize: { width: 200, height: 200 },
 
+  // No resolvable bytes (no opaque ^GF, no recall path, nothing cached) emits a
+  // blank ^FD^FS, so flag the silent empty graphic. Pure (mirrors toZPL), so it
+  // also covers exportable-but-hidden images the canvas never renders.
+  preflight: (obj) => {
+    const p = obj.props;
+    const resolvable = !!p.rawGf || !!p.storedAs || !!getImage(p.imageId);
+    return resolvable ? [] : [{ kind: 'imageMissing' }];
+  },
+
   // Resize via canvas-handle:
   //  - With cached PNG → aspect locked, height re-derives from widthDots.
   //    Pick the dominant scale (largest deviation from 1) so all eight

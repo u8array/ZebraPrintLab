@@ -274,6 +274,11 @@ const it = {
     heading: 'Avvisi',
     offLabelOutside: "Fuori dall'etichetta",
     offLabelClipped: 'Tagliato al bordo',
+    renderFailed: 'Non codificabile',
+    blockTooNarrow: 'Blocco troppo stretto',
+    barcodeTooSmall: 'Modulo troppo piccolo',
+    textOverset: 'Testo tagliato',
+    imageMissing: 'Immagine assente',
   },
 
   printerSettings: {

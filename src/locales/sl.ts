@@ -274,6 +274,11 @@ const sl = {
     heading: 'Opozorila',
     offLabelOutside: 'Zunaj etikete',
     offLabelClipped: 'Obrezano na robu',
+    renderFailed: 'Ni kodirljivo',
+    blockTooNarrow: 'Blok preozek',
+    barcodeTooSmall: 'Modul premajhen',
+    textOverset: 'Besedilo odrezano',
+    imageMissing: 'Slika manjka',
   },
 
   printerSettings: {

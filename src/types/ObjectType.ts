@@ -2,6 +2,7 @@ import type React from 'react';
 import type { LabelObjectBase, ObjectChanges, ObjectGroup } from './LabelObject';
 import type { HriBehavior, TransformContext, ZplEmitContext } from './ZplEmit';
 import type { ContentSpec } from './contentSpec';
+import type { PreflightCtx, PreflightProducerResult } from './preflight';
 
 /** Domain half of a registry entry: emits ZPL, no React deps. */
 export interface ObjectTypeCore<P extends object = object> {
@@ -60,6 +61,13 @@ export interface ObjectTypeCore<P extends object = object> {
   ) => Partial<P>;
   /** Only for 1D barcodes with an HRI overlay; see {@link HriBehavior}. */
   hri?: HriBehavior;
+  /** Pure per-type preflight checks the geometry pass can't see (e.g. block
+   *  text too narrow to print, barcode module too small to scan). Returns
+   *  findings without objectId/severity; computePreflight stamps both. */
+  preflight?: (
+    obj: LabelObjectBase & { props: P },
+    ctx: PreflightCtx,
+  ) => PreflightProducerResult[];
 }
 
 /** Lives in `<type>.panel.tsx` so the domain `.ts` stays React-free. */

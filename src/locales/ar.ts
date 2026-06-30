@@ -274,6 +274,11 @@ const ar = {
     heading: 'تحذيرات',
     offLabelOutside: 'خارج الملصق',
     offLabelClipped: 'مقصوص عند الحافة',
+    renderFailed: 'تعذّر الترميز',
+    blockTooNarrow: 'الكتلة ضيقة جداً',
+    barcodeTooSmall: 'الوحدة صغيرة جداً',
+    textOverset: 'نص مقتطع',
+    imageMissing: 'الصورة مفقودة',
   },
 
   printerSettings: {

@@ -1,6 +1,7 @@
 import type { ObjectTypeCore } from "../types/ObjectType";
 import { fieldPos, fdFieldFor } from "./zplHelpers";
 import { commitStacked2DTransform } from "./transformHelpers";
+import { moduleTooSmallPreflight } from "../lib/barcodeScannability";
 import { type ZplRotation } from "./rotation";
 
 export interface MicroPdf417Props {
@@ -25,6 +26,8 @@ export const micropdf417: ObjectTypeCore<MicroPdf417Props> = {
     rotation: 'N',
   },
   defaultSize: { width: 200, height: 100 },
+
+  preflight: moduleTooSmallPreflight<MicroPdf417Props>('moduleWidth'),
 
   commitTransform: commitStacked2DTransform,
 

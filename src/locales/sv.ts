@@ -274,6 +274,11 @@ const sv = {
     heading: 'Varningar',
     offLabelOutside: 'Utanför etiketten',
     offLabelClipped: 'Beskuren vid kanten',
+    renderFailed: 'Kan inte kodas',
+    blockTooNarrow: 'Block för smalt',
+    barcodeTooSmall: 'Modul för liten',
+    textOverset: 'Text avklippt',
+    imageMissing: 'Bild saknas',
   },
 
   printerSettings: {

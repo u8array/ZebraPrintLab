@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computePreflight } from "./preflight";
+import { getEntry } from "../registry";
 import type { ObjectBoundsCtx } from "./objectBounds";
 import type { LabelObject } from "../types/Group";
 import type { LeafObject } from "../registry";
@@ -115,5 +116,79 @@ describe("computePreflight (off-label producer)", () => {
       ["clip", "offLabelClipped"],
       ["out", "offLabelOutside"],
     ]);
+  });
+});
+
+describe("per-type producers (registry preflight capability)", () => {
+  const textLeaf = (props: object): LeafObject =>
+    ({ id: "t", type: "text", x: 0, y: 0, rotation: 0, props } as LabelObject as LeafObject);
+  const bar = (moduleWidth: number): LeafObject =>
+    ({
+      id: "bc", type: "code128", x: 100, y: 100, rotation: 0,
+      props: { content: "X", height: 50, moduleWidth, printInterpretation: false, checkDigit: false, rotation: "N" },
+    } as LabelObject as LeafObject);
+
+  it("text: a block narrower than one glyph cell flags blockTooNarrow", () => {
+    const narrow = getEntry("text")!.preflight!(textLeaf({ content: "X", fontHeight: 30, fontWidth: 0, blockWidth: 2 }), { label });
+    expect(narrow).toEqual([{ kind: "blockTooNarrow" }]);
+  });
+
+  it("text: a wide block and a plain (normal) field flag nothing", () => {
+    const wide = getEntry("text")!.preflight!(textLeaf({ content: "X", fontHeight: 30, fontWidth: 0, blockWidth: 200 }), { label });
+    const normal = getEntry("text")!.preflight!(textLeaf({ content: "X", fontHeight: 30, fontWidth: 0 }), { label });
+    expect(wide).toEqual([]);
+    expect(normal).toEqual([]);
+  });
+
+  it("barcode: a module below the min X-dimension flags barcodeTooSmall", () => {
+    // moduleWidth 1 @ 8 dpmm = 0.125 mm < 0.25 mm.
+    const small = getEntry("code128")!.preflight!(bar(1), { label });
+    expect(small).toEqual([{ kind: "barcodeTooSmall", detail: "0.13 mm (min 0.25 mm)" }]);
+  });
+
+  it("barcode: a module at/above the min X-dimension flags nothing", () => {
+    // moduleWidth 2 @ 8 dpmm = 0.25 mm.
+    expect(getEntry("code128")!.preflight!(bar(2), { label })).toEqual([]);
+  });
+
+  it("computePreflight stamps objectId + severity from a producer finding", () => {
+    expect(computePreflight([bar(1)], ctx)).toContainEqual({
+      objectId: "bc", kind: "barcodeTooSmall", severity: "warning", detail: "0.13 mm (min 0.25 mm)",
+    });
+  });
+
+  it("2D: a QR magnification below the min cell size flags barcodeTooSmall", () => {
+    const qr = (magnification: number): LeafObject =>
+      ({ id: "q", type: "qrcode", x: 0, y: 0, rotation: 0,
+         props: { content: "x", magnification, errorCorrection: "Q", model: 2, rotation: "N" } } as LabelObject as LeafObject);
+    // magnification 1 @ 8 dpmm = 0.125 mm < 0.25; magnification 2 = 0.25 mm (ok).
+    expect(getEntry("qrcode")!.preflight!(qr(1), { label })).toEqual([
+      { kind: "barcodeTooSmall", detail: "0.13 mm (min 0.25 mm)" },
+    ]);
+    expect(getEntry("qrcode")!.preflight!(qr(2), { label })).toEqual([]);
+  });
+
+  it("text: ^FB content wrapping past the line cap flags textOverset", () => {
+    const fb = textLeaf({ content: "AAA BBB CCC", fontHeight: 30, fontWidth: 0, blockWidth: 40, blockLines: 1 });
+    expect(getEntry("text")!.preflight!(fb, { label })).toEqual([{ kind: "textOverset" }]);
+  });
+
+  it("text: ^TB content taller than the block height flags textOverset", () => {
+    const tb = textLeaf({ content: "AAA", fontHeight: 30, fontWidth: 0, blockWidth: 200, blockHeight: 10, textMode: "tb" });
+    expect(getEntry("text")!.preflight!(tb, { label })).toEqual([{ kind: "textOverset" }]);
+  });
+
+  it("text: a block with room to spare flags nothing", () => {
+    const ok = textLeaf({ content: "AAA", fontHeight: 30, fontWidth: 0, blockWidth: 400, blockLines: 5 });
+    expect(getEntry("text")!.preflight!(ok, { label })).toEqual([]);
+  });
+
+  it("image: no resolvable bytes flags imageMissing; rawGf resolves", () => {
+    const img = (props: object): LeafObject =>
+      ({ id: "i", type: "image", x: 0, y: 0, rotation: 0, props } as LabelObject as LeafObject);
+    expect(getEntry("image")!.preflight!(img({ imageId: "nope", widthDots: 200, threshold: 128 }), { label })).toEqual([
+      { kind: "imageMissing" },
+    ]);
+    expect(getEntry("image")!.preflight!(img({ imageId: "nope", widthDots: 200, threshold: 128, rawGf: "^GFA,1,1,1,00" }), { label })).toEqual([]);
   });
 });

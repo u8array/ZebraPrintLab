@@ -274,6 +274,11 @@ const cs = {
     heading: 'Upozornění',
     offLabelOutside: 'Mimo štítek',
     offLabelClipped: 'Oříznuto u okraje',
+    renderFailed: 'Nelze zakódovat',
+    blockTooNarrow: 'Blok příliš úzký',
+    barcodeTooSmall: 'Modul příliš malý',
+    textOverset: 'Text oříznut',
+    imageMissing: 'Chybí obrázek',
   },
 
   printerSettings: {

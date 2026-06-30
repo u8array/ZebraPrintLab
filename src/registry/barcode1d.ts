@@ -5,6 +5,7 @@ import { fieldPos, fdFieldFor } from './zplHelpers';
 import { serialFieldData, type SerialMode } from './serialField';
 import { commitBarcodeWidthHeightTransform } from './transformHelpers';
 import { hasTemplateMarkers } from '../lib/fnTemplate';
+import { moduleTooSmallPreflight } from '../lib/barcodeScannability';
 import { isLoneMarker } from '../lib/variableField';
 import { type ZplRotation } from './rotation';
 
@@ -90,6 +91,8 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
     heightLocked: config.heightLocked,
     interpretationLocked: config.interpretationLocked,
     hri: config.hri,
+
+    preflight: moduleTooSmallPreflight<Barcode1DProps>('moduleWidth'),
 
     // heightLocked symbologies disable the transformer entirely; others scale
     // bar height with sy and module width with sx (clamped in the helper).

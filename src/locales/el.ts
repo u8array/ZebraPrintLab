@@ -274,6 +274,11 @@ const el = {
     heading: 'Προειδοποιήσεις',
     offLabelOutside: 'Εκτός ετικέτας',
     offLabelClipped: 'Περικομμένο στην άκρη',
+    renderFailed: 'Δεν κωδικοποιείται',
+    blockTooNarrow: 'Πλαίσιο πολύ στενό',
+    barcodeTooSmall: 'Μονάδα πολύ μικρή',
+    textOverset: 'Κείμενο αποκόπηκε',
+    imageMissing: 'Λείπει εικόνα',
   },
 
   printerSettings: {

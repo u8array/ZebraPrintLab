@@ -274,6 +274,11 @@ const fr = {
     heading: 'Avertissements',
     offLabelOutside: "Hors de l'étiquette",
     offLabelClipped: 'Coupé au bord',
+    renderFailed: 'Encodage impossible',
+    blockTooNarrow: 'Bloc trop étroit',
+    barcodeTooSmall: 'Module trop petit',
+    textOverset: 'Texte coupé',
+    imageMissing: 'Image absente',
   },
 
   printerSettings: {

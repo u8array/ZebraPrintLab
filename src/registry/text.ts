@@ -5,7 +5,13 @@ import { encodeFbContent } from "../lib/fbContent";
 import { encodeTbContent } from "../lib/tbContent";
 import { serialFieldData, type SerialMode } from "./serialField";
 import { deriveBlockTextPatch } from "../lib/textBlock";
-import { type ZplRotation } from "../lib/zebraTextLayout";
+import {
+  isBlockTooNarrow,
+  wrapBlockLines,
+  zebraLineWidthDots,
+  tbLineStepDots,
+  type ZplRotation,
+} from "../lib/zebraTextLayout";
 
 /** Text layout mode. 'normal' = plain ^A (no wrap), 'fb' = ^FB field
  *  block (max-lines cap, justify, hanging indent), 'tb' = ^TB text block
@@ -97,6 +103,34 @@ export const text: ObjectTypeCore<TextProps> = {
     rotation: "N",
   },
   defaultSize: { width: 200, height: 40 },
+  // Block modes (^FB/^TB) silently lose data two ways: a block narrower than one
+  // glyph cell prints nothing (error), and content that wraps past the line cap
+  // (^FB) or block height (^TB) is clipped (overset warning). Mirrors the wrap
+  // the panel/canvas already use (Font-0 metrics), so the badge matches them.
+  preflight: (obj) => {
+    const p = obj.props;
+    const mode = resolveTextMode(p);
+    if (mode === "normal") return [];
+    if (isBlockTooNarrow(p.blockWidth ?? 0, p.fontHeight, p.fontWidth ?? 0)) {
+      return [{ kind: "blockTooNarrow" }];
+    }
+    // ^FB honours newlines as hard breaks; ^TB collapses them to spaces (mirrors
+    // encodeTbContent), so wrap the collapsed form there to avoid false overset.
+    const content = mode === "tb" ? (p.content ?? "").replace(/\n/g, " ") : (p.content ?? "");
+    const lines = wrapBlockLines(content, p.blockWidth ?? 0, (line) =>
+      zebraLineWidthDots(line, p.fontHeight, p.fontWidth ?? 0),
+    );
+    // ^TB clips at blockHeight; N lines occupy (N-1) steps plus the last line's
+    // own height, not N steps (the trailing 0.25 line-gap doesn't render).
+    const tbHeight = (p.blockHeight ?? 0) > 0
+      ? (lines.length - 1) * tbLineStepDots(p.fontHeight) + p.fontHeight
+      : 0;
+    const overset =
+      mode === "fb"
+        ? lines.length > (p.blockLines ?? 1)
+        : (p.blockHeight ?? 0) > 0 && tbHeight > (p.blockHeight ?? 0);
+    return overset ? [{ kind: "textOverset" }] : [];
+  },
   // Rectangle resize: corner drag updates fontHeight from sy and
   // fontWidth from sx independently. fontWidth=0 in storage is the
   // Zebra default meaning "match height"; in that case the effective

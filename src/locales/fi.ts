@@ -274,6 +274,11 @@ const fi = {
     heading: 'Varoitukset',
     offLabelOutside: 'Etiketin ulkopuolella',
     offLabelClipped: 'Leikkautuu reunasta',
+    renderFailed: 'Ei koodattavissa',
+    blockTooNarrow: 'Lohko liian kapea',
+    barcodeTooSmall: 'Moduuli liian pieni',
+    textOverset: 'Teksti katkaistu',
+    imageMissing: 'Kuva puuttuu',
   },
 
   printerSettings: {
