@@ -3,6 +3,8 @@
 <img src="public/favicon.png" alt="Zebra Print Lab logo" width="64" align="right" />
 
 [![Deploy](https://github.com/u8array/ZebraPrintLab/actions/workflows/deploy.yml/badge.svg?branch=prod)](https://github.com/u8array/ZebraPrintLab/actions/workflows/deploy.yml?query=branch%3Aprod)
+[![CI](https://github.com/u8array/ZebraPrintLab/actions/workflows/pr.yml/badge.svg)](https://github.com/u8array/ZebraPrintLab/actions/workflows/pr.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A browser-based visual editor that generates ZPL for Zebra printers.
 
