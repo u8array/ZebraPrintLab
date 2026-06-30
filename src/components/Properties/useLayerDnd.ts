@@ -282,13 +282,22 @@ export function useLayerDnd({
 
   useEffect(() => {
     if (!dragActive) return;
+    // Coalesce raw pointermove (up to ~1000Hz) to one state update per frame;
+    // the preview only changes at frame granularity anyway.
+    let frame = 0;
     const onMove = (e: PointerEvent) => {
-      const rect = panelRectRef.current;
-      if (rect) setDragCursorX(e.clientX - rect.left);
-      setDragCursorY(e.clientY);
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const rect = panelRectRef.current;
+        if (rect) setDragCursorX(e.clientX - rect.left);
+        setDragCursorY(e.clientY);
+      });
     };
     document.addEventListener('pointermove', onMove);
-    return () => document.removeEventListener('pointermove', onMove);
+    return () => {
+      document.removeEventListener('pointermove', onMove);
+      cancelAnimationFrame(frame);
+    };
   }, [dragActive]);
 
   const clearDragState = () => {
