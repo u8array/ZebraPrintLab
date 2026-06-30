@@ -274,6 +274,11 @@ const ro = {
     heading: 'Avertismente',
     offLabelOutside: 'În afara etichetei',
     offLabelClipped: 'Tăiat la margine',
+    renderFailed: 'Necodificabil',
+    blockTooNarrow: 'Bloc prea îngust',
+    barcodeTooSmall: 'Modul prea mic',
+    textOverset: 'Text trunchiat',
+    imageMissing: 'Imagine lipsă',
   },
 
   printerSettings: {

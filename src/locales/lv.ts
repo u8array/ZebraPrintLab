@@ -274,6 +274,11 @@ const lv = {
     heading: 'Brīdinājumi',
     offLabelOutside: 'Ārpus etiķetes',
     offLabelClipped: 'Apgriezts pie malas',
+    renderFailed: 'Nevar kodēt',
+    blockTooNarrow: 'Bloks pārāk šaurs',
+    barcodeTooSmall: 'Modulis pārāk mazs',
+    textOverset: 'Teksts apgriezts',
+    imageMissing: 'Attēls trūkst',
   },
 
   printerSettings: {

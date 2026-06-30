@@ -274,6 +274,11 @@ const tr = {
     heading: 'Uyarılar',
     offLabelOutside: 'Etiketin dışında',
     offLabelClipped: 'Kenarda kırpılmış',
+    renderFailed: 'Kodlanamıyor',
+    blockTooNarrow: 'Blok çok dar',
+    barcodeTooSmall: 'Modül çok küçük',
+    textOverset: 'Metin kesildi',
+    imageMissing: 'Resim eksik',
   },
 
   printerSettings: {

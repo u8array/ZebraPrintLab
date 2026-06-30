@@ -274,6 +274,11 @@ const bg = {
     heading: 'Предупреждения',
     offLabelOutside: 'Извън етикета',
     offLabelClipped: 'Отрязано в края',
+    renderFailed: 'Неуспешно кодиране',
+    blockTooNarrow: 'Блокът е твърде тесен',
+    barcodeTooSmall: 'Модулът е твърде малък',
+    textOverset: 'Текст отрязан',
+    imageMissing: 'Липсва изображение',
   },
 
   printerSettings: {

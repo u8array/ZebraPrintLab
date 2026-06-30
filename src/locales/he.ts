@@ -274,6 +274,11 @@ const he = {
     heading: 'אזהרות',
     offLabelOutside: 'מחוץ לתווית',
     offLabelClipped: 'נחתך בקצה',
+    renderFailed: 'לא ניתן לקודד',
+    blockTooNarrow: 'בלוק צר מדי',
+    barcodeTooSmall: 'מודול קטן מדי',
+    textOverset: 'טקסט חתוך',
+    imageMissing: 'תמונה חסרה',
   },
 
   printerSettings: {

@@ -2,7 +2,7 @@
 // canvas. Per-symbology rationale lives at each case in getUprightDisplaySize.
 
 import bwipjs from "bwip-js/browser";
-import { type LeafObject } from "../../registry";
+import { getEntry, type LeafObject } from "../../registry";
 import { barcodeTextZoneDots, barcodeZoneAbove } from "../../lib/barcodeHri";
 import { upceData6FromFd } from "../../registry/hriFormatters";
 import type { LabelObject } from "../../types/Group";
@@ -20,6 +20,7 @@ import {
   CODE11_QUIET_ZONE_DELTA_MODULES,
   CODE93_QUIET_ZONE_DELTA_MODULES,
   EAN_TEXT_ZONE_DOTS,
+  EAN_UPC_TYPES,
   GS1_DATABAR_PADDING_ROWS,
   GS1_DATABAR_SPEC_HEIGHT_MODULES,
   LOGMARS_TEXT_ZONE_DOTS,
@@ -958,4 +959,43 @@ export function renderTlc39Canvas(
   ctx.drawImage(mpdfSrc, 0, 0, w, mpdfPxH);
   ctx.drawImage(code39Src, 0, mpdfPxH, w, code39PxH);
   return composite;
+}
+
+/** Single source for encoding an object as a barcode at `scale`: used by the
+ *  canvas display AND the preflight encode check. Returns the rendered canvas
+ *  (null on failure) and a cleaned error message (null on success). A
+ *  non-barcode type yields {canvas:null, error:null}. */
+export function renderBarcodeCanvas(
+  obj: LeafObject,
+  scale: number,
+  dpmm: number,
+): { canvas: HTMLCanvasElement | null; error: string | null } {
+  if (obj.type === "tlc39") {
+    const canvas = renderTlc39Canvas(obj.props as Parameters<typeof renderTlc39Canvas>[0], scale, dpmm);
+    return { canvas, error: canvas ? null : "TLC39 render failed" };
+  }
+  if (EAN_UPC_TYPES.has(obj.type)) {
+    const moduleWidth = (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
+    const printInterpEnabled =
+      !getEntry(obj.type)?.interpretationLocked &&
+      !!(obj.props as { printInterpretation?: boolean }).printInterpretation;
+    const canvas = renderEanUpcRawCanvas({
+      type: obj.type as EanUpcType,
+      text: (obj.props as { content?: string }).content ?? "",
+      modulePxInt: get1DBwipScale(moduleWidth, scale, dpmm),
+      barHeightPx: dotsToPx((obj.props as { height: number }).height, scale, dpmm),
+      tailHeightPx: dotsToPx(EAN_TEXT_ZONE_DOTS, scale, dpmm),
+      extendGuards: printInterpEnabled,
+    });
+    return { canvas, error: canvas ? null : "EAN/UPC encode failed" };
+  }
+  const opts = buildBwipOptions(obj, scale, dpmm);
+  if (!opts) return { canvas: null, error: null };
+  const canvas = document.createElement("canvas");
+  try {
+    bwipjs.toCanvas(canvas, opts as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
+    return { canvas, error: null };
+  } catch (e) {
+    return { canvas: null, error: cleanBwipError(e) };
+  }
 }

@@ -274,6 +274,11 @@ const hr = {
     heading: 'Upozorenja',
     offLabelOutside: 'Izvan naljepnice',
     offLabelClipped: 'Odrezano na rubu',
+    renderFailed: 'Nije kodirivo',
+    blockTooNarrow: 'Blok preuzak',
+    barcodeTooSmall: 'Modul premali',
+    textOverset: 'Tekst odrezan',
+    imageMissing: 'Slika nedostaje',
   },
 
   printerSettings: {

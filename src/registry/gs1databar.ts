@@ -1,6 +1,7 @@
 import type { LabelObjectBase } from '../types/LabelObject';
 import type { ObjectTypeCore } from '../types/ObjectType';
 import { fieldPos, fdFieldFor } from './zplHelpers';
+import { moduleTooSmallPreflight } from '../lib/barcodeScannability';
 import { type ZplRotation } from './rotation';
 import { GS1_DATABAR_DEFAULT_SEGMENTS } from '../lib/gs1';
 
@@ -38,6 +39,7 @@ export const gs1databar: ObjectTypeCore<Gs1DatabarProps> = {
   zplCmd: '^BR',
   group: 'code-1d',
   bindable: true,
+  preflight: moduleTooSmallPreflight<Gs1DatabarProps>('magnification'),
   defaultProps: {
     content: '0112345678901',
     magnification: 2,

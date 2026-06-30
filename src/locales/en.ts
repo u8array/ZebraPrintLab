@@ -274,6 +274,11 @@ const en = {
     heading: 'Warnings',
     offLabelOutside: 'Outside label',
     offLabelClipped: 'Clipped at edge',
+    renderFailed: 'Cannot encode',
+    blockTooNarrow: 'Block too narrow',
+    barcodeTooSmall: 'Module too small',
+    textOverset: 'Text clipped',
+    imageMissing: 'Image missing',
   },
 
   printerSettings: {

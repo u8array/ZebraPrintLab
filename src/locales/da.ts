@@ -274,6 +274,11 @@ const da = {
     heading: 'Advarsler',
     offLabelOutside: 'Uden for etiketten',
     offLabelClipped: 'Beskåret ved kanten',
+    renderFailed: 'Kan ikke kodes',
+    blockTooNarrow: 'Blok for smal',
+    barcodeTooSmall: 'Modul for lille',
+    textOverset: 'Tekst afskåret',
+    imageMissing: 'Billede mangler',
   },
 
   printerSettings: {

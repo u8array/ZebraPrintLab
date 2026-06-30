@@ -274,6 +274,11 @@ const lt = {
     heading: 'Įspėjimai',
     offLabelOutside: 'Už etiketės ribų',
     offLabelClipped: 'Nukirpta ties kraštu',
+    renderFailed: 'Negalima koduoti',
+    blockTooNarrow: 'Blokas per siauras',
+    barcodeTooSmall: 'Modulis per mažas',
+    textOverset: 'Tekstas apkarpytas',
+    imageMissing: 'Trūksta vaizdo',
   },
 
   printerSettings: {

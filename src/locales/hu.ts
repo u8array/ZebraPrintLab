@@ -274,6 +274,11 @@ const hu = {
     heading: 'Figyelmeztetések',
     offLabelOutside: 'Címkén kívül',
     offLabelClipped: 'Szélén levágva',
+    renderFailed: 'Nem kódolható',
+    blockTooNarrow: 'Blokk túl keskeny',
+    barcodeTooSmall: 'Modul túl kicsi',
+    textOverset: 'Szöveg vágva',
+    imageMissing: 'Kép hiányzik',
   },
 
   printerSettings: {

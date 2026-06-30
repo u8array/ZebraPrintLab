@@ -274,6 +274,11 @@ const zhHans = {
     heading: '警告',
     offLabelOutside: '标签外',
     offLabelClipped: '边缘被裁切',
+    renderFailed: '无法编码',
+    blockTooNarrow: '块太窄',
+    barcodeTooSmall: '模块太小',
+    textOverset: '文本截断',
+    imageMissing: '图像缺失',
   },
 
   printerSettings: {

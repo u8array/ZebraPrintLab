@@ -274,6 +274,11 @@ const et = {
     heading: 'Hoiatused',
     offLabelOutside: 'Sildist väljas',
     offLabelClipped: 'Servast lõigatud',
+    renderFailed: 'Ei kodeeritav',
+    blockTooNarrow: 'Plokk liiga kitsas',
+    barcodeTooSmall: 'Moodul liiga väike',
+    textOverset: 'Tekst lõigatud',
+    imageMissing: 'Pilt puudub',
   },
 
   printerSettings: {

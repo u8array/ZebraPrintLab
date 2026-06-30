@@ -274,6 +274,11 @@ const de = {
     heading: 'Warnungen',
     offLabelOutside: 'Außerhalb des Etiketts',
     offLabelClipped: 'Am Rand abgeschnitten',
+    renderFailed: 'Nicht kodierbar',
+    blockTooNarrow: 'Block zu schmal',
+    barcodeTooSmall: 'Modul zu klein',
+    textOverset: 'Text beschnitten',
+    imageMissing: 'Bild fehlt',
   },
 
   printerSettings: {

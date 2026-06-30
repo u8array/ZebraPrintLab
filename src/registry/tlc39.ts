@@ -1,6 +1,7 @@
 import type { ObjectTypeCore } from "../types/ObjectType";
 import { fieldPos, fdFieldFor } from "./zplHelpers";
 import { commitBarcodeWidthHeightTransform } from "./transformHelpers";
+import { moduleTooSmallPreflight } from "../lib/barcodeScannability";
 import { type ZplRotation } from "./rotation";
 
 export interface Tlc39Props {
@@ -28,6 +29,7 @@ export const tlc39: ObjectTypeCore<Tlc39Props> = {
   zplCmd: "^BT",
   group: "code-2d",
   bindable: true,
+  preflight: moduleTooSmallPreflight<Tlc39Props>('moduleWidth'),
   defaultProps: {
     content: "123456,SERIAL",
     moduleWidth: 2,

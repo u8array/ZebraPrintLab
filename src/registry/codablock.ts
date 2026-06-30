@@ -1,6 +1,7 @@
 import type { ObjectTypeCore } from "../types/ObjectType";
 import { fieldPos, fdFieldFor } from "./zplHelpers";
 import { commitStacked2DTransform } from "./transformHelpers";
+import { moduleTooSmallPreflight } from "../lib/barcodeScannability";
 import { type ZplRotation } from "./rotation";
 
 /** CODABLOCK A requires ^BY module width >= 2 (spec). */
@@ -20,6 +21,7 @@ export const codablock: ObjectTypeCore<CodablockProps> = {
   zplCmd: "^BB",
   group: "code-2d",
   bindable: true,
+  preflight: moduleTooSmallPreflight<CodablockProps>('moduleWidth'),
   defaultProps: {
     content: "1234567890",
     moduleWidth: 2,

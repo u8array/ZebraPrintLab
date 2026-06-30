@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import bwipjs from "bwip-js/browser";
 import { Image as KImage, Group, Rect, Text } from "react-konva";
 import type Konva from "konva";
 import { BARCODE_1D_TYPES, ObjectRegistry } from "../../registry";
@@ -10,13 +9,10 @@ import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 import {
-  buildBwipOptions,
-  cleanBwipError,
   getDisplaySize,
   get1DBwipScale,
   getEanUpcHriFragments,
-  renderEanUpcRawCanvas,
-  renderTlc39Canvas,
+  renderBarcodeCanvas,
   type BarcodeDisplaySize,
   type EanUpcType,
 } from "./bwipHelpers";
@@ -91,48 +87,9 @@ export function BarcodeObject({
     !ObjectRegistry[obj.type]?.interpretationLocked &&
     !!(obj.props as { printInterpretation?: boolean }).printInterpretation;
 
-  let barcodeCanvas: HTMLCanvasElement | null = null;
-  let errorMsg: string | null = null;
-  if (obj.type === "tlc39") {
-    // bwip-js has no native tlc39 encoder, render the Code 39 + MicroPDF417
-    // composite ourselves. Goes straight to canvas, bypassing buildBwipOptions.
-    barcodeCanvas = renderTlc39Canvas(obj.props, scale, dpmm);
-    if (!barcodeCanvas) errorMsg = "TLC39 render failed";
-  } else if (EAN_UPC_TYPES.has(obj.type)) {
-    // EAN/UPC use bwip.raw + own fillRect pass so guard tails extend in
-    // the same canvas as the bars (no overlay seam). The 13-dot text
-    // zone is always reserved on the canvas so the KImage dimensions
-    // stay constant; the tails only get drawn when HRI is on.
-    const eanHeight = (obj.props as { height: number }).height;
-    const modulePxInt = get1DBwipScale(moduleWidth, scale, dpmm);
-    const barHeightPx = dotsToPx(eanHeight, scale, dpmm);
-    const tailHeightPx = dotsToPx(EAN_TEXT_ZONE_DOTS, scale, dpmm);
-    barcodeCanvas = renderEanUpcRawCanvas({
-      type: obj.type as EanUpcType,
-      text: rawContent,
-      modulePxInt,
-      barHeightPx,
-      tailHeightPx,
-      extendGuards: printInterpEnabled,
-    });
-    if (!barcodeCanvas) errorMsg = "EAN/UPC encode failed";
-  } else {
-    const opts = buildBwipOptions(obj, scale, dpmm);
-    if (opts) {
-      const canvas = document.createElement("canvas");
-      try {
-        // buildBwipOptions returns Record<string, unknown> on purpose: the
-        // option fields differ across barcode types (ean13 vs code128 vs …)
-        // and per-type narrowing would duplicate the switch already in
-        // buildBwipOptions. bwip-js' toCanvas signature uses a strict
-        // literal-string union, so the structural cast bridges the two.
-        bwipjs.toCanvas(canvas, opts as unknown as Parameters<typeof bwipjs.toCanvas>[1]);
-        barcodeCanvas = canvas;
-      } catch (e) {
-        errorMsg = cleanBwipError(e);
-      }
-    }
-  }
+  // Shared with the preflight encode check (barcodeEncodeFindings) so the
+  // displayed placeholder and the badge can't disagree on what's codable.
+  const { canvas: barcodeCanvas, error: errorMsg } = renderBarcodeCanvas(obj, scale, dpmm);
 
   // Single object holding the full ZPL footprint (w/h) and the bar
   // sub-rectangle (barW/barH/barLeftPx/barTopPx). Defaults zero out

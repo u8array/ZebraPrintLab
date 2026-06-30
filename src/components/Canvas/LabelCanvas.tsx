@@ -24,6 +24,7 @@ import { computeAlignDeltas, computeDistribute, computeTidy } from "../../lib/al
 import type { AlignOp, AlignBox, DistributeAxis, AlignRef } from "../../lib/align";
 import { objectBoundsDots, selectionUnionDots, printableRectDots } from "../../lib/objectBounds";
 import { computePreflight } from "../../lib/preflight";
+import { barcodeEncodeFindings } from "./barcodePreflight";
 import { rotateSelectionChanges } from "../../lib/groupRotation";
 import { selectTidyTargets } from "../../lib/tidyClassify";
 import { safeAreaRectDots } from "../../lib/safeArea";
@@ -503,7 +504,12 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // during drag/preview-lock like the rest of the chrome.
   const preflightSuppressed = previewLocks || isDragging;
   const preflightLeaves = preflightSuppressed ? [] : exportableLeaves(objects);
-  const preflightFindings = preflightSuppressed ? [] : computePreflight(preflightLeaves, frameCtx);
+  const preflightFindings = preflightSuppressed
+    ? []
+    : [
+        ...computePreflight(preflightLeaves, frameCtx),
+        ...barcodeEncodeFindings(preflightLeaves, scale, label.dpmm),
+      ];
   // Off-label marks pair each off-label finding with its on-screen bbox: a
   // clipped object gets a solid amber outline, a fully-outside one a dashed red
   // outline with a faint fill. Keyed on the off-label kind (not severity) so a

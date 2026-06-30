@@ -274,6 +274,11 @@ const fa = {
     heading: 'هشدارها',
     offLabelOutside: 'خارج از برچسب',
     offLabelClipped: 'بریده‌شده در لبه',
+    renderFailed: 'رمزگذاری ناموفق',
+    blockTooNarrow: 'بلوک خیلی باریک',
+    barcodeTooSmall: 'ماژول خیلی کوچک',
+    textOverset: 'متن برش‌خورده',
+    imageMissing: 'تصویر ناموجود',
   },
 
   printerSettings: {

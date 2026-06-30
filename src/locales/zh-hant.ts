@@ -274,6 +274,11 @@ const zhHant = {
     heading: '警告',
     offLabelOutside: '標籤外',
     offLabelClipped: '邊緣被裁切',
+    renderFailed: '無法編碼',
+    blockTooNarrow: '區塊太窄',
+    barcodeTooSmall: '模組太小',
+    textOverset: '文字截斷',
+    imageMissing: '圖像缺失',
   },
 
   printerSettings: {

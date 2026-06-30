@@ -274,6 +274,11 @@ const sk = {
     heading: 'Upozornenia',
     offLabelOutside: 'Mimo štítka',
     offLabelClipped: 'Orezané pri okraji',
+    renderFailed: 'Nekódovateľné',
+    blockTooNarrow: 'Blok príliš úzky',
+    barcodeTooSmall: 'Modul príliš malý',
+    textOverset: 'Text orezaný',
+    imageMissing: 'Chýba obrázok',
   },
 
   printerSettings: {

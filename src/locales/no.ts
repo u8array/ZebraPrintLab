@@ -274,6 +274,11 @@ const no = {
     heading: 'Advarsler',
     offLabelOutside: 'Utenfor etiketten',
     offLabelClipped: 'Beskåret ved kanten',
+    renderFailed: 'Kan ikke kodes',
+    blockTooNarrow: 'Blokk for smal',
+    barcodeTooSmall: 'Modul for liten',
+    textOverset: 'Tekst avkortet',
+    imageMissing: 'Bilde mangler',
   },
 
   printerSettings: {

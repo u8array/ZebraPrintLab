@@ -35,6 +35,11 @@ export function PreflightOverlay({ findings, objects, onSelect }: Props) {
   const kindText: Record<PreflightKind, string> = {
     offLabelOutside: t.preflight.offLabelOutside,
     offLabelClipped: t.preflight.offLabelClipped,
+    renderFailed: t.preflight.renderFailed,
+    blockTooNarrow: t.preflight.blockTooNarrow,
+    barcodeTooSmall: t.preflight.barcodeTooSmall,
+    textOverset: t.preflight.textOverset,
+    imageMissing: t.preflight.imageMissing,
   };
   const nameOf = (id: string) => {
     const o = byId.get(id);
@@ -73,6 +78,7 @@ export function PreflightOverlay({ findings, objects, onSelect }: Props) {
                   key={`${f.objectId}-${i}`}
                   type="button"
                   role="menuitem"
+                  title={f.detail || undefined}
                   onClick={() => {
                     onSelect(f.objectId);
                     setOpen(false);
@@ -80,7 +86,10 @@ export function PreflightOverlay({ findings, objects, onSelect }: Props) {
                   className="flex items-center gap-2 px-3 py-1.5 text-xs text-left hover:bg-surface-2 transition-colors"
                 >
                   <Icon className={`w-3.5 h-3.5 shrink-0 ${tone}`} />
-                  <span className="truncate text-text">{nameOf(f.objectId)}</span>
+                  <span className="flex flex-col min-w-0">
+                    <span className="truncate text-text">{nameOf(f.objectId)}</span>
+                    {f.detail && <span className="truncate text-[10px] text-muted">{f.detail}</span>}
+                  </span>
                   <span className="ml-auto shrink-0 text-muted">{kindText[f.kind]}</span>
                 </button>
               );

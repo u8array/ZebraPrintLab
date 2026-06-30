@@ -274,6 +274,11 @@ const ja = {
     heading: '警告',
     offLabelOutside: 'ラベルの外',
     offLabelClipped: '端で切れています',
+    renderFailed: 'エンコード不可',
+    blockTooNarrow: 'ブロックが狭すぎる',
+    barcodeTooSmall: 'モジュールが小さすぎる',
+    textOverset: 'テキスト切れ',
+    imageMissing: '画像なし',
   },
 
   printerSettings: {

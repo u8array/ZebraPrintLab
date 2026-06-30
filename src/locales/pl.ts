@@ -274,6 +274,11 @@ const pl = {
     heading: 'Ostrzeżenia',
     offLabelOutside: 'Poza etykietą',
     offLabelClipped: 'Przycięte przy krawędzi',
+    renderFailed: 'Błąd kodowania',
+    blockTooNarrow: 'Blok zbyt wąski',
+    barcodeTooSmall: 'Moduł zbyt mały',
+    textOverset: 'Tekst przycięty',
+    imageMissing: 'Brak obrazu',
   },
 
   printerSettings: {

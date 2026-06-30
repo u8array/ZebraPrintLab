@@ -1,6 +1,7 @@
 import type { ObjectTypeCore } from '../types/ObjectType';
 import type { LabelObjectBase } from '../types/LabelObject';
 import { fieldPos, fdFieldFor } from './zplHelpers';
+import { moduleTooSmallPreflight } from '../lib/barcodeScannability';
 import { type ZplRotation } from './rotation';
 
 /** ZPL prefixes the QR payload with `{ec}A,` inside ^FD. Shared by toZPL and
@@ -38,6 +39,8 @@ export const qrcode: ObjectTypeCore<QrCodeProps> = {
   defaultSize: { width: 200, height: 200 },
 
   uniformScaleProp: { name: 'magnification', min: MAGNIFICATION_MIN, max: MAGNIFICATION_MAX },
+
+  preflight: moduleTooSmallPreflight<QrCodeProps>('magnification'),
 
   fdTransform: qrFdTransform,
 
