@@ -24,6 +24,10 @@ export function readProdLicenses() {
     console.error('`pnpm licenses list --prod --json` did not return valid JSON:', e.message);
     process.exit(2);
   }
+  if (!byLicense || typeof byLicense !== 'object' || Array.isArray(byLicense)) {
+    console.error('`pnpm licenses list --prod --json` did not return a JSON object.');
+    process.exit(2);
+  }
   const total = Object.values(byLicense).reduce((n, list) => n + (Array.isArray(list) ? list.length : 0), 0);
   if (total === 0) {
     console.error('`pnpm licenses list --prod --json` returned no packages; refusing to pass a check that inspected nothing.');

@@ -65,6 +65,7 @@ function fenced(text) {
 // so the choice is deterministic when several match (readdirSync order is
 // OS-dependent). Apache requires the NOTICE file too, so it's appended.
 function licenseTextFor(dir) {
+  if (!dir) return null;
   let names;
   try { names = readdirSync(dir).sort(); } catch { return null; }
   const license = names.find((n) => /^(licen[sc]e|copying)/i.test(n));
