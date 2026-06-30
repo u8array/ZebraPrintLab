@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@10.30.3",
   "engines": {
     "node": ">=24"
   },
@@ -14,6 +15,9 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
+    "licenses:check": "node scripts/check-licenses.mjs",
+    "attribution:gen": "node scripts/gen-attribution.mjs",
+    "attribution:check": "node scripts/gen-attribution.mjs --check",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -60,7 +64,7 @@
     "jsdom": "^29.1.1",
     "pixelmatch": "^7.2.0",
     "pngjs": "^7.0.0",
-    "potrace": "^2.1.8",
+    "spdx-expression-parse": "^4.0.0",
     "tailwindcss": "^4.3.1",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.61.1",
