@@ -2522,7 +2522,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### papaparse 5.5.3
+### papaparse 5.5.4
 
 - License: MIT
 - Author: Matthew Holt
