@@ -1083,7 +1083,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     // registry groups in palette order, presets included. Empty groups drop out.
     const toAddable = (e: AddableEntry) => ({ id: e.id, type: e.type, label: e.label, propsOverride: e.propsOverride });
     const quickTypes = paletteRows
-      .map((r) => resolveAddable(r.variant, t))
+      .map((r) => resolveAddable(r.entryId, t))
       .filter((e): e is AddableEntry => e !== null)
       .map(toAddable);
     const addableGroups = [

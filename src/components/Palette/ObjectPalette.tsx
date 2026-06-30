@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { useDraggable, useDndMonitor } from '@dnd-kit/core';
+import { useRef, useState } from 'react';
+import { useDraggable, useDndMonitor, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { ChevronDownIcon, MinusIcon, PlusIcon } from '@heroicons/react/16/solid';
+import { MagnifyingGlassIcon, MinusIcon } from '@heroicons/react/16/solid';
 import { PALETTE_GROUPS } from './paletteGroups';
+import { StarGlyph } from './StarGlyph';
 import { addablesInGroup, resolveAddable, type AddableEntry } from '../../registry/palettePresets';
-import { PALETTE_TYPES, variantsOfType } from '../../registry/paletteTypes';
+import { getEntry } from '../../registry';
 import { useT } from '../../lib/useT';
 import { useLabelStore } from '../../store/labelStore';
 import { printableRectDots } from '../../lib/objectBounds';
@@ -12,11 +13,12 @@ import { resolveDefaultSizeDots } from '../../lib/resolveDefaultSize';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 import { CollapsibleSection } from '../ui/CollapsibleSection';
 import { inputCls } from '../ui/formStyles';
-import { rowDragId, isRowDragId, ROW_PREFIX, type PaletteDragData } from '../../dnd/types';
+import { rowDragId, isRowDragId, ROW_PREFIX, CANVAS_DROPPABLE_ID, type PaletteDragData } from '../../dnd/types';
 import type { Translations } from '../../locales';
 import type { PaletteRow } from '../../store/slices/uiSlice';
 
-/** Curated-type name: reuses the registry/group labels; only "Form" is new. */
+/** Curated category label for an entry's subtitle: reuses the registry/group
+ *  labels; image reads as its own "Bild" though it shares the `shape` group. */
 function typeLabel(typeId: string, t: Translations): string {
   switch (typeId) {
     case 'shape': return t.palette.typeForm;
@@ -25,6 +27,11 @@ function typeLabel(typeId: string, t: Translations): string {
     case 'code-postal': return t.palette.groupCodePostal;
     default: return (t.types as Record<string, string>)[typeId] ?? typeId;
   }
+}
+
+function entryCategory(entry: AddableEntry, t: Translations): string {
+  if (entry.type === 'image') return typeLabel('image', t);
+  return typeLabel(getEntry(entry.type)?.group ?? entry.type, t);
 }
 
 /** Drop an entry centred on the visible (printable) label area, which ^LS can
@@ -45,9 +52,7 @@ function spawnCentered(entry: AddableEntry) {
 }
 
 const rowBodyCls =
-  'group flex items-center gap-2 px-1.5 py-1.5 rounded border border-transparent hover:border-border-2 hover:bg-surface-2 cursor-grab active:cursor-grabbing select-none transition-colors';
-const gripCls =
-  '-mr-1 shrink-0 p-0.5 rounded cursor-grab active:cursor-grabbing text-muted opacity-40 group-hover:opacity-70 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent transition-opacity';
+  'group flex items-center gap-2 px-1.5 py-1.5 rounded border border-transparent hover:border-border-2 hover:bg-surface-2 hover:-translate-y-px cursor-grab active:cursor-grabbing select-none transition';
 
 function IconSlot({ entry }: { entry: AddableEntry }) {
   const showZpl = useLabelStore((s) => s.showZplCommands);
@@ -63,12 +68,40 @@ function IconSlot({ entry }: { entry: AddableEntry }) {
   );
 }
 
-/** Flat / search entry: plain draggable that spawns on canvas drop (handled by
- *  LabelCanvas's drag monitor reading the drag data). */
-function FlatEntry({ entry, dragId, cat }: { entry: AddableEntry; dragId: string; cat?: string }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({
+/** Favorites pin toggle, only on search results (kept out of flat browse so the
+ *  list stays calm). Subscribes per-row, so it lives behind the `pinnable` gate. */
+function PinButton({ entryId }: { entryId: string }) {
+  const t = useT();
+  const pinned = useLabelStore((s) => s.paletteRows.some((r) => r.entryId === entryId));
+  const toggleRow = useLabelStore((s) => s.togglePaletteRow);
+  const label = pinned ? t.palette.unpinFromFavorites : t.palette.pinToFavorites;
+  return (
+    <button
+      type="button"
+      aria-pressed={pinned}
+      aria-label={label}
+      title={label}
+      onPointerDown={(e) => e.stopPropagation()}
+      // Stop the dblclick too, else a quick double-tap on the star bubbles to the
+      // row's onDoubleClick and spawns a stray object on the canvas.
+      onDoubleClick={(e) => e.stopPropagation()}
+      onClick={(e) => { e.stopPropagation(); toggleRow(entryId); }}
+      className={`ml-auto shrink-0 p-0.5 rounded ${pinned ? 'text-accent' : 'text-muted hover:text-text'}`}
+    >
+      <StarGlyph filled={pinned} className="w-3.5 h-3.5" />
+    </button>
+  );
+}
+
+/** Browse/search row: whole row drags onto the canvas (no grip). Search results
+ *  show a pin star (`pinnable`); flat browse stays bare. */
+function BrowseRow({ entry, dragId, cat, pinnable }: { entry: AddableEntry; dragId: string; cat?: string; pinnable?: boolean }) {
+  // Only the pointer `listeners` go on the row, not dnd-kit `attributes`: those
+  // set role="button"/tabIndex on the row, which would wrap the nested pin button
+  // in a button (invalid) and promise keyboard drag we don't wire (PointerSensor).
+  const { listeners, setNodeRef, isDragging } = useDraggable({
     id: `pal-${dragId}`,
-    data: { type: entry.type, propsOverride: entry.propsOverride } satisfies PaletteDragData,
+    data: { type: entry.type, propsOverride: entry.propsOverride, entryId: entry.id } satisfies PaletteDragData,
   });
   return (
     <div
@@ -78,59 +111,27 @@ function FlatEntry({ entry, dragId, cat }: { entry: AddableEntry; dragId: string
       style={{ touchAction: 'pan-y' }}
       className={`${rowBodyCls} ${isDragging ? 'opacity-40' : ''}`}
     >
-      <button ref={setActivatorNodeRef} type="button" aria-label={entry.label} {...attributes} className={gripCls}>
-        <DragHandleIcon className="w-2 h-3.5" />
-      </button>
       <IconSlot entry={entry} />
-      <span className="text-xs text-text truncate">{entry.label}</span>
-      {cat && <span className="ml-auto shrink-0 font-mono text-[9px] text-muted">{cat}</span>}
+      <span className="flex flex-col min-w-0 leading-tight">
+        <span className="text-xs text-text truncate">{entry.label}</span>
+        {cat && <span className="font-mono text-[9px] text-muted truncate">{cat}</span>}
+      </span>
+      {pinnable && <PinButton entryId={entry.id} />}
     </div>
   );
 }
 
-/** Variant buttons (icon + name) shared by the row disclosure and the add-type
- *  expansion. `activeVariant` highlights the current pick; omit where none. */
-function VariantButtons({ variants, activeVariant, onPick }: { variants: string[]; activeVariant?: string; onPick: (v: string) => void }) {
+/** Favorites row: one concrete object. Normal mode the whole row drags onto the
+ *  canvas; edit mode shows a left grip (reorder handle) and a right remove button. */
+function FavoriteRow({ row, index, editing }: { row: PaletteRow; index: number; editing: boolean }) {
   const t = useT();
-  return (
-    <>
-      {variants.map((v) => {
-        const ve = resolveAddable(v, t);
-        if (!ve) return null;
-        return (
-          <button
-            key={v}
-            type="button"
-            onClick={() => onPick(v)}
-            className={`flex items-center gap-2 px-1.5 py-1 rounded text-left transition-colors ${v === activeVariant ? 'text-accent' : 'text-text hover:bg-surface-2'}`}
-          >
-            <span className="font-mono text-[11px] text-muted w-4 text-center">{ve.icon}</span>
-            <span className="text-xs truncate">{ve.label}</span>
-          </button>
-        );
-      })}
-    </>
-  );
-}
-
-/** List-mode row: a curated {type,variant} instance. In normal mode the grip
- *  drags onto the canvas to spawn and the chevron picks the variant; in edit
- *  mode the grip reorders and a remove button appears (see PaletteEditToggle). */
-function ListRow({ row, index, editing }: { row: PaletteRow; index: number; editing: boolean }) {
-  const { type, variant } = row;
-  const t = useT();
-  const setVariant = useLabelStore((s) => s.setPaletteRowVariant);
   const removeRow = useLabelStore((s) => s.removePaletteRow);
-  const [open, setOpen] = useState(false);
-  const entry = resolveAddable(variant, t);
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+  const entry = resolveAddable(row.entryId, t);
+  const { listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: rowDragId(row.id),
-    // Spawn the chosen variant's registry type, not the curated palette type.
-    data: { type: entry?.type ?? type, propsOverride: entry?.propsOverride } satisfies PaletteDragData,
+    data: { type: entry?.type ?? row.entryId, propsOverride: entry?.propsOverride, entryId: row.entryId } satisfies PaletteDragData,
   });
   if (!entry) return null;
-  const variants = variantsOfType(type);
-  const showChevron = !editing && variants.length > 1 && !row.fixed;
   // Keep the active row in place (only neighbours shift); a pointer-following
   // transform would overflow the scroll container and add an x-scrollbar.
   const style = {
@@ -140,34 +141,26 @@ function ListRow({ row, index, editing }: { row: PaletteRow; index: number; edit
 
   return (
     <div ref={setNodeRef} style={style} className={isDragging ? 'opacity-40' : ''}>
+      {/* The whole row is the drag handle in both modes: normal spawns on the
+          canvas, edit reorders. The edit-mode grip is just a visual affordance,
+          so grabbing the text reorders too. */}
       <div
+        ref={setActivatorNodeRef}
         {...listeners}
         onDoubleClick={editing ? undefined : () => spawnCentered(entry)}
         style={{ touchAction: 'pan-y' }}
-        className={`${rowBodyCls} ${editing ? 'border-border-2' : ''}`}
+        className={`${rowBodyCls} ${editing ? 'bg-surface-2 border-border-2 hover:-translate-y-0' : ''}`}
       >
-        <button ref={setActivatorNodeRef} type="button" aria-label={entry.label} {...attributes} className={gripCls}>
-          <DragHandleIcon className="w-2 h-3.5" />
-        </button>
+        {editing && (
+          <span aria-hidden className="-mr-1 shrink-0 text-muted">
+            <DragHandleIcon className="w-2 h-3.5" />
+          </span>
+        )}
         <IconSlot entry={entry} />
         <span className="flex flex-col min-w-0 leading-tight">
           <span className="text-xs text-text truncate">{entry.label}</span>
-          <span className="font-mono text-[9px] text-muted truncate">
-            {typeLabel(type, t)}{row.fixed ? ` ${t.palette.fixedMarker}` : ''}
-          </span>
+          <span className="font-mono text-[9px] text-muted truncate">{entryCategory(entry, t)}</span>
         </span>
-        {showChevron && (
-          <button
-            type="button"
-            aria-label={t.palette.pickVariant}
-            aria-expanded={open}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
-            className="ml-auto shrink-0 p-0.5 rounded text-muted hover:text-text"
-          >
-            <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform ${open ? '' : '-rotate-90'}`} />
-          </button>
-        )}
         {editing && (
           <button
             type="button"
@@ -180,73 +173,17 @@ function ListRow({ row, index, editing }: { row: PaletteRow; index: number; edit
           </button>
         )}
       </div>
-      {open && !editing && (
-        <div className="ml-8 mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-border pl-1">
-          <VariantButtons variants={variants} activeVariant={variant} onPick={(v) => { setVariant(index, v); setOpen(false); }} />
-        </div>
-      )}
     </div>
   );
 }
 
-/** Two-stage add: click the type name for a switchable group row, or expand its
- *  variants and pick one for a fixed single-element row. */
-function AddTypeMenu() {
-  const t = useT();
-  const addPaletteRow = useLabelStore((s) => s.addPaletteRow);
-  const [open, setOpen] = useState(false);
-  const [expand, setExpand] = useState<string | null>(null);
-  const close = () => { setOpen(false); setExpand(null); };
+/** Compact drag preview chip (icon + label) shown under the cursor while
+ *  dragging a palette entry. */
+function DragChip({ entry }: { entry: AddableEntry }) {
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 px-2 py-1.5 w-full rounded text-xs font-mono border border-dashed border-border text-muted hover:text-text hover:border-border-2 transition-colors"
-      >
-        <PlusIcon className="w-3 h-3 text-accent" />
-        {t.palette.addType}
-      </button>
-      {open && (
-        <div className="mt-1 flex flex-col gap-0.5 rounded border border-border bg-surface p-1">
-          <div className="px-2 py-1 text-[10px] leading-snug text-muted">{t.palette.addTypeHint}</div>
-          {PALETTE_TYPES.map((pt) => {
-            const variants = variantsOfType(pt.id);
-            const hasChoices = variants.length > 1;
-            const isExpanded = expand === pt.id;
-            return (
-              <div key={pt.id}>
-                <div className="flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => { addPaletteRow(pt.id); close(); }}
-                    className="flex-1 px-2 py-1 rounded text-left text-xs text-text hover:bg-surface-2 transition-colors"
-                  >
-                    {typeLabel(pt.id, t)}
-                    {hasChoices && <span className="ml-1.5 font-mono text-[9px] text-muted">{t.palette.groupLabel}</span>}
-                  </button>
-                  {hasChoices && (
-                    <button
-                      type="button"
-                      aria-label={t.palette.pickVariant}
-                      aria-expanded={isExpanded}
-                      onClick={() => setExpand((e) => (e === pt.id ? null : pt.id))}
-                      className="shrink-0 p-1 rounded text-muted hover:text-text"
-                    >
-                      <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
-                    </button>
-                  )}
-                </div>
-                {isExpanded && (
-                  <div className="ml-2 flex flex-col gap-0.5 border-l border-border pl-1">
-                    <VariantButtons variants={variants} onPick={(v) => { addPaletteRow(pt.id, v); close(); }} />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+    <div className="flex items-center gap-2 rounded-[7px] bg-bg border border-accent px-3 py-2 shadow-[0_12px_26px_rgba(0,0,0,.4)]">
+      <span className="font-mono text-[11px] text-accent">{entry.icon}</span>
+      <span className="text-xs text-text">{entry.label}</span>
     </div>
   );
 }
@@ -264,16 +201,36 @@ function GroupTitle({ label, count }: { label: string; count: number }) {
 export function ObjectPalette() {
   const t = useT();
   const [query, setQuery] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
   const rows = useLabelStore((s) => s.paletteRows);
   const view = useLabelStore((s) => s.paletteView);
   const editing = useLabelStore((s) => s.paletteEditing);
   const reorderRows = useLabelStore((s) => s.reorderPaletteRows);
+  const [activeEntry, setActiveEntry] = useState<AddableEntry | null>(null);
+  const [overCanvas, setOverCanvas] = useState(false);
+  const [isReorder, setIsReorder] = useState(false);
   const q = query.trim().toLowerCase();
 
-  // Reorder list rows. Only active in edit mode; normal-mode row drags spawn on
-  // canvas (handled by LabelCanvas's monitor) and never reach a sibling row.
+  // Track the dragged entry for the overlay chip, and reorder favorites on drop.
+  // Over the canvas the chip is hidden so the canvas's own ghost (the real
+  // element at drop size) is the only preview. A reorder (edit-mode favorites row
+  // drag) suppresses the chip too, since the sortable shifts neighbours itself.
+  // Normal-mode row drags spawn on canvas (LabelCanvas's monitor).
   useDndMonitor({
+    onDragStart({ active }) {
+      const data = active.data.current as PaletteDragData | undefined;
+      setActiveEntry(data?.entryId ? resolveAddable(data.entryId, t) : null);
+      setOverCanvas(false);
+      setIsReorder(editing && isRowDragId(String(active.id)));
+    },
+    onDragOver({ over }) {
+      setOverCanvas(over?.id === CANVAS_DROPPABLE_ID);
+    },
+    onDragCancel() { setActiveEntry(null); setOverCanvas(false); setIsReorder(false); },
     onDragEnd({ active, over }) {
+      setActiveEntry(null);
+      setOverCanvas(false);
+      setIsReorder(false);
       if (!editing) return;
       const a = String(active.id);
       const o = over ? String(over.id) : '';
@@ -288,43 +245,59 @@ export function ObjectPalette() {
     group,
     entries: addablesInGroup(group.key, t).filter((e) => !q || e.label.toLowerCase().includes(q)),
   })).filter((g) => g.entries.length > 0);
+  const resultCount = flatGroups.reduce((n, g) => n + g.entries.length, 0);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="shrink-0 bg-surface border-b border-border px-2 pt-3 pb-2 flex flex-col gap-2">
-        <input
-          type="search"
-          className={inputCls}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t.palette.searchPlaceholder}
-          aria-label={t.palette.searchPlaceholder}
-        />
+        <div className="relative">
+          <MagnifyingGlassIcon className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" />
+          <input
+            ref={searchRef}
+            type="search"
+            className={`${inputCls} pl-7`}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t.palette.searchPlaceholder}
+            aria-label={t.palette.searchPlaceholder}
+          />
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-3 pt-2 flex flex-col gap-3">
         {q ? (
-          flatGroups.length === 0 ? (
+          resultCount === 0 ? (
             <p className="text-xs text-muted px-1">{t.palette.noResults.replace('{q}', () => query.trim())}</p>
           ) : (
             <div className="flex flex-col gap-0.5">
+              <p className="px-1 pb-0.5 font-mono text-[9px] text-muted">{t.palette.resultsFmt.replace('{n}', String(resultCount))}</p>
               {flatGroups.flatMap(({ group, entries }) =>
                 entries.map((e) => (
-                  <FlatEntry key={`${group.key}-${e.id}`} entry={e} dragId={`search-${group.key}-${e.id}`} cat={t.palette[group.labelKey]} />
+                  <BrowseRow key={`${group.key}-${e.id}`} entry={e} dragId={`search-${group.key}-${e.id}`} cat={entryCategory(e, t)} pinnable />
                 )),
               )}
             </div>
           )
-        ) : view === 'list' ? (
+        ) : view === 'favorites' ? (
           <>
             <SortableContext items={rows.map((r) => rowDragId(r.id))} strategy={verticalListSortingStrategy}>
               <div className="flex flex-col gap-0.5">
                 {rows.map((r, i) => (
-                  <ListRow key={r.id} row={r} index={i} editing={editing} />
+                  <FavoriteRow key={r.id} row={r} index={i} editing={editing} />
                 ))}
               </div>
             </SortableContext>
-            {editing && <AddTypeMenu />}
+            {/* Shown in edit mode, and when there are no favorites at all so an
+                empty list still tells the user how to add one. */}
+            {(editing || rows.length === 0) && (
+              <button
+                type="button"
+                onClick={() => searchRef.current?.focus()}
+                className="flex items-center justify-center gap-1.5 px-2 py-1.5 w-full rounded text-xs font-mono border border-dashed border-border text-muted hover:text-text hover:border-border-2 transition-colors"
+              >
+                {t.palette.addViaSearchHint}
+              </button>
+            )}
           </>
         ) : (
           flatGroups.map(({ group, entries }) => (
@@ -334,12 +307,17 @@ export function ObjectPalette() {
               title={<GroupTitle label={t.palette[group.labelKey]} count={entries.length} />}
             >
               {entries.map((e) => (
-                <FlatEntry key={`${group.key}-${e.id}`} entry={e} dragId={`flat-${group.key}-${e.id}`} />
+                <BrowseRow key={`${group.key}-${e.id}`} entry={e} dragId={`flat-${group.key}-${e.id}`} />
               ))}
             </CollapsibleSection>
           ))
         )}
       </div>
+
+      {/* Chip only for drag-to-canvas preview: hidden over the canvas (the canvas
+          renders its own ghost) and during a reorder (the sortable shifts
+          neighbours itself). */}
+      <DragOverlay>{activeEntry && !overCanvas && !isReorder ? <DragChip entry={activeEntry} /> : null}</DragOverlay>
     </div>
   );
 }

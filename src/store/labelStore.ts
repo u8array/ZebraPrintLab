@@ -233,6 +233,36 @@ export function migrateLegacy(persistedState: unknown, version: number): unknown
     s = { ...s, pages: migrateSingleBindInPages(s.pages, nameById) };
   }
 
+  // v12→v13: the favorites palette dropped the curated-type/variant/fixed row
+  // model for a flat one-object-per-row list. A row's `variant` already was an
+  // AddableEntry id, so it becomes `entryId`; `type`/`fixed` are dropped. The
+  // view key `'list'` (which was the favorites tab) is renamed to `'favorites'`.
+  if (version < 13) {
+    if (Array.isArray(s.paletteRows)) {
+      // entryId is unique per favorites list now (a row is pinned or not), so
+      // collapse legacy duplicates: the old model allowed two rows of one
+      // variant, which would otherwise both vanish on a single star-unpin.
+      const seen = new Set<string>();
+      s = {
+        ...s,
+        paletteRows: (s.paletteRows as unknown[]).flatMap((r) => {
+          const row = r && typeof r === 'object' ? (r as Record<string, unknown>) : {};
+          const id = typeof row.id === 'string' ? row.id : '';
+          const entryId =
+            typeof row.entryId === 'string'
+              ? row.entryId
+              : typeof row.variant === 'string'
+                ? row.variant
+                : '';
+          if (!id || !entryId || seen.has(entryId)) return [];
+          seen.add(entryId);
+          return [{ id, entryId }];
+        }),
+      };
+    }
+    if (s.paletteView === 'list') s = { ...s, paletteView: 'favorites' };
+  }
+
   // Enforce the marker-safe variable-name invariant on any rehydrated session
   // (old data may carry names like `clock:Y` that the content-marker model
   // can't represent). Renames offenders + rewrites their markers in place.
@@ -416,7 +446,7 @@ export const useLabelStore = create<LabelState>()(
     }),
     {
       name: 'zpl-designer-session',
-      version: 12,
+      version: 13,
       migrate: (persistedState, version) => migrateLegacy(persistedState, version) as LabelState,
       storage: createJSONStorage(() => localStorage),
       partialize: persistPartialize,

@@ -70,8 +70,8 @@ export function resolveAddable(id: string, t: Translations): AddableEntry | null
 }
 
 /** `baseIds` with each preset spliced in after its base type. One interleave
- *  rule for flat browse and the curated rows, so presets can't drift between. */
-export function withPresetVariants(baseIds: readonly string[]): string[] {
+ *  rule so a base type and its presets always browse together. */
+function withPresetVariants(baseIds: readonly string[]): string[] {
   const out: string[] = [];
   for (const id of baseIds) {
     out.push(id);
@@ -81,7 +81,7 @@ export function withPresetVariants(baseIds: readonly string[]): string[] {
 }
 
 /** Addable ids for a group: registry types in registry order, presets interleaved. */
-export function addableIdsInGroup(group: ObjectGroup): string[] {
+function addableIdsInGroup(group: ObjectGroup): string[] {
   const types = Object.entries(ObjectRegistry)
     .filter(([, def]) => def.group === group)
     .map(([type]) => type);

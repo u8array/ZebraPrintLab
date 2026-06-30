@@ -1,6 +1,9 @@
 export interface PaletteDragData {
   type: string;
   propsOverride?: object;
+  /** Addable-entry id of the dragged item, for the drag-overlay chip to resolve
+   *  its icon/label. Ignored by the canvas drop monitor (it reads type only). */
+  entryId?: string;
 }
 
 /** Droppable id of the label canvas. Shared by the canvas droppable and the

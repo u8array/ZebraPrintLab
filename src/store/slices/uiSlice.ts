@@ -8,7 +8,7 @@ import {
   thirdPartyDefaults,
 } from '../labelStore.internals';
 import type { LabelState } from '../labelStore';
-import { defaultPaletteRows, variantsOfType } from '../../registry/paletteTypes';
+import { defaultPaletteRows } from '../../registry/paletteTypes';
 
 export interface CanvasSettings {
   showGrid: boolean;
@@ -42,19 +42,14 @@ export type PrinterSettingsTab =
 
 export type SidebarTab = 'properties' | 'layers' | 'variables' | 'fonts';
 
-/** One curated palette entry instance: a registry/preset variant under a
- *  curated type. Duplicates allowed (two `shape` rows: line + box); `id` is the
- *  stable per-row key drag-reorder needs (content isn't unique). */
+/** One favorites row: a single concrete object, identified by its
+ *  {@link AddableEntry} id (a registry type or a preset id). `id` is the stable
+ *  per-row key drag-reorder needs; `entryId` is the object it spawns/pins. */
 export interface PaletteRow {
   id: string;
-  type: string;
-  variant: string;
-  /** Single element pinned to one variant: no chevron, marked "· fest". Absent
-   *  (or false) is a switchable group row. Optional so older persisted rows load
-   *  as group rows. */
-  fixed?: boolean;
+  entryId: string;
 }
-export type PaletteView = 'list' | 'flat';
+export type PaletteView = 'favorites' | 'flat';
 
 /** What a ^FB block's resize handles edit: the wrap frame (blockWidth /
  *  line cap) or the glyphs (font width = stretch / height). Alt+drag flips
@@ -124,14 +119,12 @@ export interface UiSlice {
   setThirdPartyEnabled: (service: 'labelary', enabled: boolean) => void;
   acknowledgeLabelaryNotice: () => void;
   setCanvasSettings: (settings: Partial<CanvasSettings>) => void;
-  /** Append a palette row for `type`. With `variant` it is a single-element row
-   *  pinned to that variant (fixed, no chevron); without, a switchable group row
-   *  at the type's default variant. */
-  addPaletteRow: (type: string, variant?: string) => void;
+  /** Pin/unpin a favorites row by entry id (the search star toggle): adds a row
+   *  when absent, removes the matching row(s) when present. */
+  togglePaletteRow: (entryId: string) => void;
   removePaletteRow: (index: number) => void;
   /** Move the row with `activeId` to where `overId` sits (drag-reorder). */
   reorderPaletteRows: (activeId: string, overId: string) => void;
-  setPaletteRowVariant: (index: number, variant: string) => void;
   setPaletteView: (view: PaletteView) => void;
   togglePaletteEditing: () => void;
   setShowZplCommands: (show: boolean) => void;
@@ -168,7 +161,7 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
     csvRenderMode: 'preview',
   },
   paletteRows: defaultPaletteRows(),
-  paletteView: 'list',
+  paletteView: 'flat',
   paletteEditing: false,
   showZplCommands: false,
   sidebarTab: 'properties',
@@ -188,18 +181,13 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
   acknowledgeLabelaryNotice: () => set({ labelaryNoticeAcknowledged: true }),
   setCanvasSettings: (settings) =>
     set((state) => ({ canvasSettings: { ...state.canvasSettings, ...settings } })),
-  addPaletteRow: (type, variant) =>
+  togglePaletteRow: (entryId) =>
     set((state) => {
-      // An explicit variant pins a fixed single-element row; otherwise a
-      // switchable group row at the type's default variant.
-      const resolved = variant ?? variantsOfType(type)[0];
-      if (!resolved) return {};
-      const id = `${type}-${crypto.randomUUID().slice(0, 8)}`;
-      const row =
-        variant !== undefined
-          ? { id, type, variant: resolved, fixed: true }
-          : { id, type, variant: resolved };
-      return { paletteRows: [...state.paletteRows, row] };
+      if (state.paletteRows.some((r) => r.entryId === entryId)) {
+        return { paletteRows: state.paletteRows.filter((r) => r.entryId !== entryId) };
+      }
+      const id = `${entryId}-${crypto.randomUUID().slice(0, 8)}`;
+      return { paletteRows: [...state.paletteRows, { id, entryId }] };
     }),
   removePaletteRow: (index) =>
     set((state) => ({ paletteRows: state.paletteRows.filter((_, i) => i !== index) })),
@@ -214,10 +202,6 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
       rows.splice(to, 0, moved);
       return { paletteRows: rows };
     }),
-  setPaletteRowVariant: (index, variant) =>
-    set((state) => ({
-      paletteRows: state.paletteRows.map((r, i) => (i === index ? { ...r, variant } : r)),
-    })),
   setPaletteView: (view) => set({ paletteView: view }),
   togglePaletteEditing: () => set((state) => ({ paletteEditing: !state.paletteEditing })),
   setShowZplCommands: (show) => set({ showZplCommands: show }),
