@@ -9,6 +9,10 @@ import {
   expandSelection,
   detachObjectById,
   isSelfOrDescendant,
+  reparentNodes,
+  effectiveSelection,
+  dragBlockIds,
+  selectionRoots,
   canGroupSelection,
   canUngroupSelection,
   canDeleteSelection,
@@ -330,5 +334,124 @@ describe('Group helpers', () => {
     it('silently drops unknown ids', () => {
       expect(expandSelection([leaf('a')], ['missing'])).toEqual([]);
     });
+  });
+
+  describe('reparentNodes', () => {
+    const ids = (nodes: LabelObject[]) => nodes.map((n) => n.id);
+
+    it('moves a block into a group, preserving order', () => {
+      const tree = [group('g', [leaf('x')]), leaf('a'), leaf('b')];
+      const next = reparentNodes(tree, ['a', 'b'], { parentId: 'g', index: 1 });
+      expect(ids(next)).toEqual(['g']);
+      const g = findObjectById(next, 'g') as GroupObject;
+      expect(ids(g.children)).toEqual(['x', 'a', 'b']);
+    });
+
+    it('inserts the block contiguously at a top-level index, order kept', () => {
+      const tree = [leaf('a'), leaf('b'), leaf('c')];
+      const next = reparentNodes(tree, ['c', 'a'], { parentId: null, index: 0 });
+      expect(ids(next)).toEqual(['c', 'a', 'b']);
+    });
+
+    it('moves only roots: a child also in the set rides with its group', () => {
+      const tree = [leaf('a'), group('g', [leaf('c')])];
+      const next = reparentNodes(tree, ['g', 'c'], { parentId: null, index: 0 });
+      expect(ids(next)).toEqual(['g', 'a']);
+      expect(ids((findObjectById(next, 'g') as GroupObject).children)).toEqual(['c']);
+    });
+
+    it('is a no-op (same ref) dropping a group into its own descendant', () => {
+      const tree = [group('g', [group('h', [leaf('x')])])];
+      expect(reparentNodes(tree, ['g'], { parentId: 'h', index: 0 })).toBe(tree);
+    });
+
+    it('is a no-op when the target is not a group', () => {
+      const tree = [leaf('a'), leaf('b')];
+      expect(reparentNodes(tree, ['a'], { parentId: 'b', index: 0 })).toBe(tree);
+    });
+
+    it('is a no-op when no ids resolve', () => {
+      const tree = [leaf('a')];
+      expect(reparentNodes(tree, ['missing'], { parentId: null, index: 0 })).toBe(tree);
+    });
+  });
+
+  describe('selectionRoots', () => {
+    const ids = (nodes: LabelObject[]) => nodes.map((n) => n.id);
+    // a, g[c, h[x]], b
+    const tree = () => [leaf('a'), group('g', [leaf('c'), group('h', [leaf('x')])]), leaf('b')];
+
+    it('returns roots in tree (data) order, skipping descendants of a selected node', () => {
+      expect(ids(selectionRoots(tree(), new Set(['a', 'g'])))).toEqual(['a', 'g']);
+      // c and x are independent (neither is the other's ancestor) -> both roots.
+      expect(ids(selectionRoots(tree(), new Set(['c', 'x'])))).toEqual(['c', 'x']);
+    });
+
+    it('drops a child when its group is also selected (only the group moves)', () => {
+      expect(ids(selectionRoots(tree(), new Set(['g', 'c', 'x'])))).toEqual(['g']);
+    });
+
+    it('finds selected nodes inside collapsed groups (walks the full tree)', () => {
+      expect(ids(selectionRoots(tree(), new Set(['x'])))).toEqual(['x']);
+    });
+
+    it('empty selection -> no roots', () => {
+      expect(selectionRoots(tree(), new Set())).toEqual([]);
+    });
+  });
+});
+
+describe('effectiveSelection', () => {
+  it('promotes a group when all its children are selected', () => {
+    const objs = [group('g', [leaf('x'), leaf('y')])];
+    expect([...effectiveSelection(objs, ['x', 'y'])].sort()).toEqual(['g', 'x', 'y']);
+  });
+
+  it('does not promote on a partial child selection', () => {
+    const objs = [group('g', [leaf('x'), leaf('y')])];
+    expect([...effectiveSelection(objs, ['x'])].sort()).toEqual(['x']);
+  });
+
+  it('promotes the whole single-child chain (why drag must use the explicit set)', () => {
+    const objs = [group('g', [group('h', [leaf('x')])])];
+    expect([...effectiveSelection(objs, ['x'])].sort()).toEqual(['g', 'h', 'x']);
+  });
+});
+
+describe('reparentNodes no-op', () => {
+  it('returns the same reference when a block lands back in its own slot', () => {
+    const objs = [leaf('a'), leaf('b'), leaf('c')];
+    // 'b' already sits at index 1; re-inserting it there changes nothing.
+    expect(reparentNodes(objs, ['b'], { parentId: null, index: 1 })).toBe(objs);
+  });
+
+  it('still returns a new tree for a real move', () => {
+    const objs = [leaf('a'), leaf('b'), leaf('c')];
+    expect(reparentNodes(objs, ['b'], { parentId: null, index: 0 })).not.toBe(objs);
+  });
+});
+
+describe('dragBlockIds', () => {
+  it('an unselected row drags just itself', () => {
+    expect(dragBlockIds([leaf('a'), leaf('b')], ['b'], 'a')).toEqual(['a']);
+  });
+
+  it('a single explicit selection drags just itself', () => {
+    expect(dragBlockIds([leaf('a'), leaf('b')], ['a'], 'a')).toEqual(['a']);
+  });
+
+  it('a leaf in a single-child chain drags only the leaf (explicit set, no auto-promote)', () => {
+    const objs = [group('g', [group('h', [leaf('x')])])];
+    expect(dragBlockIds(objs, ['x'], 'x')).toEqual(['x']);
+  });
+
+  it('a multi-selection drags the selection roots as a block', () => {
+    const objs = [leaf('a'), leaf('b'), leaf('c')];
+    expect(dragBlockIds(objs, ['a', 'c'], 'a').sort()).toEqual(['a', 'c']);
+  });
+
+  it('falls back to the grabbed row when its selected root is locked', () => {
+    const g = { ...group('g', [leaf('x')]), locked: true } as GroupObject;
+    expect(dragBlockIds([g, leaf('a')], ['g', 'x'], 'x')).toEqual(['x']);
   });
 });

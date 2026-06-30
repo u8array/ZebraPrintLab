@@ -143,6 +143,127 @@ export function isSelfOrDescendant(
   return false;
 }
 
+/** The roots of a selection in tree (data) order: every selected node that has
+ *  no selected ancestor (descendants ride along, so they're skipped). Walks the
+ *  full tree, so it also catches selected nodes inside collapsed groups. Used to
+ *  resolve a multi-select layer drag into the block that actually moves. */
+export function selectionRoots(
+  objects: LabelObject[],
+  selected: ReadonlySet<string>,
+): LabelObject[] {
+  const out: LabelObject[] = [];
+  const visit = (nodes: LabelObject[]) => {
+    for (const n of nodes) {
+      if (selected.has(n.id)) {
+        out.push(n); // a root: don't descend, its subtree moves with it
+        continue;
+      }
+      if (isGroup(n)) visit(n.children);
+    }
+  };
+  visit(objects);
+  return out;
+}
+
+/** Explicit selection plus any group whose every child is (effectively)
+ *  selected, post-order so it propagates up the tree. Drives the layer-row
+ *  highlight: selecting all of a group's members reads as the group selected
+ *  too. NOT for deciding what a drag moves (that uses the explicit set). */
+export function effectiveSelection(
+  objects: LabelObject[],
+  selectedIds: readonly string[],
+): Set<string> {
+  const sel = new Set(selectedIds);
+  const visit = (node: LabelObject) => {
+    if (!isGroup(node)) return;
+    node.children.forEach(visit);
+    if (node.children.length > 0 && node.children.every((c) => sel.has(c.id))) sel.add(node.id);
+  };
+  objects.forEach(visit);
+  return sel;
+}
+
+/** Ids that move when the row `id` is dragged: just `[id]` unless it's part of
+ *  the EXPLICIT multi-selection, in which case the selection's unlocked roots
+ *  move as a block. Falls back to `[id]` when the grabbed row's root was a
+ *  locked group that dropped out, so a locked parent can't redirect the drag or
+ *  swallow it. Uses the explicit set, not the highlight's auto-promoted groups,
+ *  so dragging one leaf in a single-child chain doesn't move its ancestor. */
+export function dragBlockIds(
+  objects: LabelObject[],
+  selectedIds: readonly string[],
+  id: string,
+): string[] {
+  const sel = new Set(selectedIds);
+  if (!sel.has(id)) return [id];
+  const roots = selectionRoots(objects, sel).filter((n) => !n.locked);
+  const covered = roots.some((r) => isSelfOrDescendant(objects, r.id, id));
+  return covered ? roots.map((n) => n.id) : [id];
+}
+
+/** Move several nodes as one block to `target`, preserving the given order.
+ *  Pure: returns the new tree, or the SAME reference (no-op) when the move is
+ *  invalid. Single source for multi-select layer drag, mirroring the single
+ *  reparent: ids nested under another moved id are dropped (only roots move);
+ *  the move aborts (unchanged) if the target isn't a group, or sits inside one
+ *  of the moved subtrees (cycle). The block lands contiguously at `target.index`. */
+export function reparentNodes(
+  objects: LabelObject[],
+  ids: readonly string[],
+  target: { parentId: string | null; index: number },
+): LabelObject[] {
+  const idSet = new Set(ids);
+  // Keep only roots: drop any id that lives under another moved id.
+  const roots = ids.filter(
+    (id) => !findAncestors(objects, id).some((a) => idSet.has(a.id)),
+  );
+  if (roots.length === 0) return objects;
+  const parentId = target.parentId;
+  if (parentId !== null) {
+    const parent = findObjectById(objects, parentId);
+    if (!parent || !isGroup(parent)) return objects;
+    if (roots.some((id) => isSelfOrDescendant(objects, id, parentId))) return objects;
+  }
+  // Detach every root, collecting the nodes in `roots` order.
+  let rest = objects;
+  const moved: LabelObject[] = [];
+  for (const id of roots) {
+    const { removed, rest: next } = detachObjectById(rest, id);
+    if (!removed) return objects; // unknown id: abort rather than move a partial block
+    moved.push(removed);
+    rest = next;
+  }
+  const insertBlock = (arr: LabelObject[]): LabelObject[] => {
+    const at = Math.max(0, Math.min(target.index, arr.length));
+    return [...arr.slice(0, at), ...moved, ...arr.slice(at)];
+  };
+  const result =
+    target.parentId === null
+      ? insertBlock(rest)
+      : mapObjectById(rest, target.parentId, (p) =>
+          isGroup(p) ? { ...p, children: insertBlock(p.children) } : p,
+        );
+  // Dropping a block back into its own slot rebuilds an identical tree; return
+  // the original ref so callers can skip a no-op commit (no phantom undo step).
+  return sameStructure(objects, result) ? objects : result;
+}
+
+/** Structural equality by id, order, and nesting (ignores props). Cheap enough
+ *  for a one-off drop; used to detect a no-op reparent. */
+function sameStructure(a: LabelObject[], b: LabelObject[]): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i];
+    const y = b[i];
+    if (!x || !y || x.id !== y.id) return false;
+    const xg = isGroup(x);
+    if (xg !== isGroup(y)) return false;
+    if (xg && isGroup(y) && !sameStructure(x.children, y.children)) return false;
+  }
+  return true;
+}
+
 /** True when groupSelection() would act (>=1 top-level unlocked). */
 export function canGroupSelection(
   objects: LabelObject[],

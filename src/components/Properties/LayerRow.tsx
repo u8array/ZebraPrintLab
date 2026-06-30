@@ -18,11 +18,13 @@ import { lookupBoundVariable } from '../../lib/variableField';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 import { Tooltip } from '../ui/Tooltip';
 import { INDENT_STEP } from './layerLayout';
+import type { GuideKind } from './useLayerDnd';
 
 export interface LayerRowProps {
   obj: LabelObject;
-  depth: number;
   containerId: string;
+  /** Connector-guide columns, outermost-first (length === depth). */
+  guides: GuideKind[];
   isSelected: boolean;
   /** True for any leaf or sub-group that lives under a currently-selected
    *  group. Drives the soft tint that signals "I move with the group". */
@@ -30,18 +32,13 @@ export interface LayerRowProps {
   isExpanded: boolean;
   /** Highlight the row body; used for "drop into this group". */
   isDropTarget: boolean;
-  /** Show an accent line above this row; used for sibling drops so the
-   *  user sees the exact landing slot before releasing. */
-  showInsertionLine: boolean;
+  /** Dim the row because it (or its ancestor) is part of the dragged block. */
+  isDimmed: boolean;
   /** Add a small bottom gap because the next row in display order leaves
    *  this row's container (depth drops). Visually closes the group. */
   isContainerEnd: boolean;
-  /** Visual depth at which to render the insertion line. Diverges from
-   *  the row's own depth while the user drags horizontally to climb out
-   *  of a deeply nested container. */
-  insertionLineDepth: number | null;
-  onSelect: () => void;
-  onToggle: () => void;
+  /** Row click; the panel reads modifier keys for range/toggle/replace select. */
+  onClick: (e: React.MouseEvent) => void;
   onToggleLock: () => void;
   onToggleVisible: () => void;
   onToggleExpand: () => void;
@@ -52,17 +49,15 @@ export interface LayerRowProps {
 
 export function LayerRow({
   obj,
-  depth,
+  guides,
   containerId,
   isSelected,
   isInSelectedGroup,
   isExpanded,
   isDropTarget,
-  showInsertionLine,
-  insertionLineDepth,
+  isDimmed,
   isContainerEnd,
-  onSelect,
-  onToggle,
+  onClick,
   onToggleLock,
   onToggleVisible,
   onToggleExpand,
@@ -127,54 +122,28 @@ export function LayerRow({
     disabled: isLocked,
   });
   const stopRowClick = (e: React.MouseEvent) => e.stopPropagation();
-  // The line indent follows the *target* depth, not the row's own depth,
-  // so as the user drags left the line slides left in real time.
-  const lineDepth = insertionLineDepth ?? depth;
-  const linePadLeft = lineDepth > 0 ? lineDepth * INDENT_STEP + 16 : 8;
 
   return (
-    <>
-      <div
-        className={`h-0.5 mr-2 rounded transition-colors ${
-          showInsertionLine ? 'bg-accent' : 'bg-transparent'
-        }`}
-        style={{ marginLeft: linePadLeft }}
-      />
     <div
       ref={setNodeRef}
       style={{ touchAction: 'none' }}
       {...attributes}
       {...(isLocked ? {} : listeners)}
-      onClick={(e) => {
-        if (e.shiftKey || e.ctrlKey || e.metaKey) onToggle();
-        else onSelect();
-      }}
+      onClick={onClick}
       className={`
-        flex items-center gap-2 pr-2 py-1.5
+        relative flex items-center gap-2 pr-2 py-1.5
         ${isLocked ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'}
-        border-b border-border group transition-colors hover:bg-surface-2
+        group transition hover:bg-surface-2 hover:shadow-[inset_0_0_0_1px_var(--color-border-2)]
         ${isSelected ? 'bg-surface-2 border-l-2 border-l-accent' : 'border-l-2 border-l-transparent'}
         ${isInSelectedGroup && !isSelected ? 'bg-accent/5' : ''}
-        ${isDragging ? 'opacity-40' : ''}
+        ${isDragging || isDimmed ? 'opacity-40' : ''}
         ${isHidden ? 'opacity-50' : ''}
         ${isDropTarget ? 'bg-accent/15 outline outline-1 outline-accent/60' : ''}
         ${isContainerEnd ? 'mb-1' : ''}
       `}
     >
-      {/* Indent column: a leading 8px gutter plus one fixed-width spacer
-          per ancestor level, each carrying a left border so consecutive
-          rows at the same depth visually form a continuous vertical
-          guide from the parent group's row down through its children.
-          Always rendered (even at depth 0) so the wrapper handles the
-          row's base left padding uniformly. */}
-      <div className="flex self-stretch shrink-0" aria-hidden>
-        <span className="w-2" />
-        {Array.from({ length: depth }, (_, i) => (
-          <span key={i} className="w-4 border-l border-border/60" />
-        ))}
-      </div>
       <DragHandleIcon
-        className={`w-2 h-3.5 shrink-0 text-muted transition-opacity ${isLocked ? 'opacity-0' : 'opacity-0 group-hover:opacity-60'}`}
+        className={`ml-0.5 w-2 h-3.5 shrink-0 text-muted transition-opacity ${isLocked ? 'opacity-0' : 'opacity-0 group-hover:opacity-60'}`}
       />
       {groupRow ? (
         <Tooltip content={isExpanded ? t.app.collapse : t.app.expand}>
@@ -193,6 +162,26 @@ export function LayerRow({
         </Tooltip>
       ) : (
         <span className="w-4 h-4 shrink-0" />
+      )}
+      {/* Drawn after the grip+disclosure gutter so a child's elbow points at its
+          parent's object icon, not the chevron. One 16px column per ancestor
+          level; the kinds (line/tee/last/empty) are documented on GuideKind. */}
+      {guides.length > 0 && (
+        <div className="flex self-stretch shrink-0" aria-hidden>
+          {guides.map((g, i) => (
+            <span key={i} className="relative self-stretch shrink-0" style={{ width: INDENT_STEP }}>
+              {(g === 'line' || g === 'tee') && (
+                <span className="absolute top-0 bottom-0 border-l" style={{ left: 7, borderColor: 'var(--color-guide)' }} />
+              )}
+              {g === 'last' && (
+                <span className="absolute top-0 border-l" style={{ left: 7, height: '51%', borderColor: 'var(--color-guide)' }} />
+              )}
+              {(g === 'tee' || g === 'last') && (
+                <span className="absolute border-t" style={{ left: 7, right: 1, top: '50%', borderColor: 'var(--color-guide)' }} />
+              )}
+            </span>
+          ))}
+        </div>
       )}
       <span className="font-mono text-xs text-accent shrink-0 w-4 text-center whitespace-nowrap">
         {groupRow ? '⊞' : def?.icon}
@@ -264,6 +253,5 @@ export function LayerRow({
         </button>
       </Tooltip>
     </div>
-    </>
   );
 }
