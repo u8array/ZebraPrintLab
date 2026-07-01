@@ -2,6 +2,7 @@ import { getEntry, type LeafObject } from "../registry";
 import { objectBoundsDots, offLabelPlacement, type ObjectBoundsCtx } from "./objectBounds";
 import { emittedAnchorDots } from "./emittedAnchor";
 import { suspiciousCharDetail } from "./suspiciousChars";
+import { GS1_GS } from "./gs1";
 import {
   PREFLIGHT_SEVERITY,
   type PreflightFinding,
@@ -41,7 +42,12 @@ export function computePreflight(
     // check here once instead of duplicating the producer across every type.
     const content = (leaf.props as { content?: unknown }).content;
     if (typeof content === "string") {
-      const detail = suspiciousCharDetail(content);
+      // GS1 fields carry a structural GS separator (0x1D) between chained AIs;
+      // it's intentional, not smuggled, so drop it before the scan.
+      const scanned = (leaf.props as { gs1?: boolean }).gs1
+        ? content.split(GS1_GS).join("")
+        : content;
+      const detail = suspiciousCharDetail(scanned);
       if (detail) {
         findings.push({
           objectId: leaf.id,

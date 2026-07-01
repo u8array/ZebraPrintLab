@@ -237,4 +237,27 @@ describe("computePreflight (suspicious-chars producer)", () => {
       detail: "NBSP x1",
     });
   });
+
+  // GS1 content chains AIs with a structural GS separator (0x1D); it's valid
+  // data, not smuggled, so it must not trip the suspicious-chars badge.
+  const GS = String.fromCharCode(0x1d);
+  const gs1Dm = (content: string): LeafObject =>
+    ({
+      id: "g",
+      type: "datamatrix",
+      x: 10,
+      y: 10,
+      rotation: 0,
+      props: { content, dimension: 5, quality: 200, rotation: "N", gs1: true },
+    }) as LabelObject as LeafObject;
+
+  it("does not flag the GS separator in GS1 content", () => {
+    const findings = computePreflight([gs1Dm("10ABC" + GS + "21XYZ")], ctx);
+    expect(findings.some((f) => f.kind === "suspiciousChars")).toBe(false);
+  });
+
+  it("still flags a control char in a non-GS1 field", () => {
+    const findings = computePreflight([dm("a", "10ABC" + GS + "21XYZ")], ctx);
+    expect(findings.some((f) => f.kind === "suspiciousChars")).toBe(true);
+  });
 });
