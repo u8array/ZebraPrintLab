@@ -1,32 +1,27 @@
 import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { useLabelStore } from '../store/labelStore';
-import { labelCls, builderButtonCls } from '../components/ui/formStyles';
+import { builderButtonCls } from '../components/ui/formStyles';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
-import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
+import { FieldLabel } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { fieldHasVariable, asLabelObject } from '../lib/variableField';
-import { GS1_SAMPLE_CONTENT, GS1_EXPANDED_CHARSET, elementStringToContent, parseGs1ToSegments } from '../lib/gs1';
-import type { ContentSpec } from './contentSpec';
+import { GS1_CONTENT_SPEC, gs1EnablePatch } from './gs1FieldSpec';
+import { Gs1BuilderButton, Gs1ModeToggle } from './gs1PanelControls';
 import { type DataMatrixProps, DIMENSION_MIN, DIMENSION_MAX } from './datamatrix';
-
-// Stable spec so the sanitiser/regex WeakMap caches hit across keystrokes.
-// `normalize` keeps the "(01)…(10)…" element-string paste shortcut.
-const GS1_SPEC: ContentSpec = { charset: GS1_EXPANDED_CHARSET, normalize: elementStringToContent };
 
 export const datamatrixPanel: ObjectTypeUi<DataMatrixProps> = {
   // GS1 mode restricts the editor to the GS1 charset (and enables the element-
   // string paste shortcut); plain ECC200 accepts a wide byte range, unfiltered.
-  contentSpec: (props) => ((props as DataMatrixProps).gs1 ? GS1_SPEC : undefined),
+  contentSpec: (props) => ((props as DataMatrixProps).gs1 ? GS1_CONTENT_SPEC : undefined),
   PropertiesPanel: ({ obj, onChange }) => {
     const t = useT();
     const p = obj.props;
     const loc = t.registry.datamatrix;
     const openContentBuilder = useLabelStore((s) => s.openContentBuilder);
-    const openGs1Builder = useLabelStore((s) => s.openGs1Builder);
     const showZpl = useLabelStore((s) => s.showZplCommands);
     const variables = useLabelStore((s) => s.variables);
     // Builders write a literal string; disabled once the field carries a chip.
@@ -36,9 +31,7 @@ export const datamatrixPanel: ObjectTypeUi<DataMatrixProps> = {
         <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <ContentEditorButton obj={obj} />
           {p.gs1 ? (
-            <button type="button" disabled={bound} onClick={() => openGs1Builder(obj.id)} className={builderButtonCls}>
-              {t.gs1builder.button}
-            </button>
+            <Gs1BuilderButton objId={obj.id} bound={bound} />
           ) : (
             <button type="button" disabled={bound} onClick={() => openContentBuilder(obj.id)} className={builderButtonCls}>
               {t.contentBuilder.button}
@@ -47,33 +40,13 @@ export const datamatrixPanel: ObjectTypeUi<DataMatrixProps> = {
         </StaticSectionCard>
 
         <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
-          <div className="flex items-center justify-between gap-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="accent-accent"
-                checked={p.gs1}
-                // GS1 requires ECC 200; seed a valid sample so the encoder never throws.
-                onChange={(e) =>
-                  onChange(
-                    e.target.checked
-                      ? {
-                          gs1: true,
-                          quality: 200,
-                          // A bound field's content comes from the variable; only
-                          // seed a literal sample for an unbound, non-GS1 field.
-                          ...(!bound && parseGs1ToSegments(p.content) === null
-                            ? { content: GS1_SAMPLE_CONTENT }
-                            : {}),
-                        }
-                      : { gs1: false },
-                  )
-                }
-              />
-              <span className={labelCls}>{loc.gs1Mode}</span>
-            </label>
-            <ZplCmd cmd="^BX" />
-          </div>
+          <Gs1ModeToggle
+            checked={p.gs1}
+            // GS1 requires ECC 200, so force it on alongside the enable patch.
+            onChange={(c) => onChange(c ? { ...gs1EnablePatch(p.content, bound), quality: 200 } : { gs1: false })}
+            label={loc.gs1Mode}
+            cmd="^BX"
+          />
 
           <NumberInput
             label={loc.dimension}

@@ -45,6 +45,9 @@ const PALETTE_PRESETS: PalettePreset[] = [
   { id: 'datamatrix-gs1', type: 'datamatrix', icon: '▩', zplCmd: '^BX',
     label: (t) => t.types.datamatrixGs1, propsOverride: { gs1: true, content: GS1_SAMPLE_CONTENT },
     defaultSize: { width: 150, height: 150 } },
+  { id: 'code128-gs1', type: 'code128', icon: '|||', zplCmd: '^BC',
+    label: (t) => t.types.code128Gs1, propsOverride: { gs1: true, content: GS1_SAMPLE_CONTENT },
+    defaultSize: { width: 300, height: 120 } },
 ];
 
 const PRESET_BY_ID = new Map(PALETTE_PRESETS.map((p) => [p.id, p]));

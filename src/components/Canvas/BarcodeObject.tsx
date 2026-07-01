@@ -16,7 +16,8 @@ import {
   type BarcodeDisplaySize,
   type EanUpcType,
 } from "./bwipHelpers";
-import { resolveHriAbove } from "../../lib/barcodeHri";
+import { resolveHriAbove, gs1HriFontDots } from "../../lib/barcodeHri";
+import { gs1ContentToElementString } from "../../lib/gs1";
 import { objectRotation } from "../../registry/rotation";
 import { rotatedGroupTransform } from "./rotatedGroupTransform";
 import { buildEanUpcDigitOverlay } from "./eanUpcDigitNodes";
@@ -25,6 +26,7 @@ import {
   VERA_MONO_HRI_EM_PER_MODULE,
   VERA_MONO_HRI_CAP_TOP_PAD,
   HRI_FONT_A,
+  HRI_FONT_0,
   aboveHriGapDots,
   eanUpcHriFontFamily,
   ocrbEanHriFontDots,
@@ -82,7 +84,11 @@ export function BarcodeObject({
   // render HRI text anyway).
   const moduleWidth =
     (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
-  const rawContent = (obj.props as { content?: string }).content ?? "";
+  // GS1-128 shows the parenthesized element string as HRI (firmware prints the
+  // parens it strips for encoding).
+  const gs1Hri = !!(obj.props as { gs1?: boolean }).gs1;
+  const contentRaw = (obj.props as { content?: string }).content ?? "";
+  const rawContent = gs1Hri ? gs1ContentToElementString(contentRaw) : contentRaw;
   const printInterpEnabled =
     !ObjectRegistry[obj.type]?.interpretationLocked &&
     !!(obj.props as { printInterpretation?: boolean }).printInterpretation;
@@ -186,9 +192,13 @@ export function BarcodeObject({
     const hri = ObjectRegistry[obj.type]?.hri;
     // fontDots returns em font dots directly (^BS: OCR-B step table);
     // the per-module fallback is em-calibrated for Vera Font A.
-    const fontDots = hri?.fontDots
+    const baseFontDots = hri?.fontDots
       ? hri.fontDots(moduleWidth)
       : moduleWidth * VERA_MONO_HRI_EM_PER_MODULE;
+    const fontDots =
+      gs1Hri && printInterpEnabled
+        ? gs1HriFontDots(rawContent, baseFontDots, uprightBarWDots)
+        : baseFontDots;
     const textFontSize = Math.max(dotsToPx(fontDots, scale, dpmm), 6);
     // Generic 1D subtracts this below the bars so the visible bar-to-cap gap
     // equals textGap and stays module-width-independent (see the constant).
@@ -269,8 +279,10 @@ export function BarcodeObject({
         // Counter-scaled as a group when upright (handleTransform); rotated
         // paths can't (upright-Y is screen-X after R/B) and scale with the
         // bars, a minor visual nit with no broken print output.
-        const fontFamily =
-          resolveMwValue(hri?.fontFamily, moduleWidth) ?? HRI_FONT_A;
+        // GS1-128 HRI prints in Font 0, not the generic HRI face.
+        const fontFamily = gs1Hri
+          ? HRI_FONT_0
+          : resolveMwValue(hri?.fontFamily, moduleWidth) ?? HRI_FONT_A;
         const textY = isTextAbove
           ? ub.barTopPx - textFontSize - aboveGapPx + aboveBottomPad
           : ub.barTopPx + ub.barH + textGap - glyphTopPad;

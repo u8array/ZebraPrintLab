@@ -145,6 +145,7 @@ const ja = {
     qrcode: 'QRコード',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: '矩形',
     boxFilled: '塗りつぶしボックス',
     ellipse: '楕円',
@@ -646,6 +647,7 @@ const ja = {
       height: '高さ',
       printInterpretation: '人間可読',
       checkDigit: 'チェックデジット',
+      gs1Mode: 'GS1モード',
       moduleWidth: 'モジュール幅',
     },
     box: {

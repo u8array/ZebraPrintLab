@@ -6,10 +6,14 @@ export const code128CoreConfig: Barcode1DCoreConfig = {
   icon: '|||',
   defaultContent: '12345678',
   group: 'code-1d',
+  gs1Capable: true,
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';
-    return `^BC${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'},${check}`;
+    // m=D (UCC/EAN) turns a plain Code 128 into GS1-128; omit it otherwise so a
+    // non-GS1 field round-trips as the bare command.
+    const mode = p.gs1 ? ',D' : '';
+    return `^BC${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'},${check}${mode}`;
   },
 };
 

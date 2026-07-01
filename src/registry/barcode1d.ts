@@ -7,6 +7,7 @@ import { commitBarcodeWidthHeightTransform } from './transformHelpers';
 import { hasTemplateMarkers } from '../lib/fnTemplate';
 import { moduleTooSmallPreflight } from '../lib/barcodeScannability';
 import { isLoneMarker } from '../lib/variableField';
+import { gs1ContentToElementString } from '../lib/gs1';
 import { type ZplRotation } from './rotation';
 
 export interface Barcode1DProps {
@@ -21,6 +22,8 @@ export interface Barcode1DProps {
   /** Per-field firmware counter (^SN/^SF). When set, the ^FD payload is the
    *  seed and serializes per label. Mutually exclusive with variable binding. */
   serial?: SerialMode;
+  /** GS1-128 mode (`^BC…,D`). Only honoured by a `gs1Capable` symbology. */
+  gs1?: boolean;
 }
 
 export interface Barcode1DCoreConfig {
@@ -49,6 +52,9 @@ export interface Barcode1DCoreConfig {
   /** Default true. EAN/UPC set false: their fixed-length check digit (which our
    *  content may already include) would be corrupted by ^SN/^SF incrementing. */
   serialisable?: boolean;
+  /** Symbology offers a GS1 mode (Code 128 → GS1-128); `zplCommand` must emit
+   *  the mode flag when `props.gs1` is set. */
+  gs1Capable?: boolean;
 }
 
 export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore<Barcode1DProps> {
@@ -61,19 +67,21 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
     checkDigit: false,
     rotation: 'N',
   };
-  // Obj-aware ^FD transform: apply fdContent to a literal/single-bind payload,
-  // but never to a template (its payload is an embed reference fdContent would
-  // mangle). Shared by toZPL and the batch override via the fdTransform hook.
-  const fdTransformFor = config.fdContent
-    ? (obj: LabelObjectBase & { props: Barcode1DProps }) =>
-        // Skip only a true template (markers that expand to ^FE embeds the digit
-        // transform would mangle). A single-bind field (content == one lone
-        // marker) emits ^FN + default, which DOES get the transform so its
-        // default and any CSV override are compacted the same way.
-        hasTemplateMarkers(obj.props.content) && !isLoneMarker(obj.props.content)
-          ? undefined
-          : config.fdContent
-    : undefined;
+  // Obj-aware ^FD transform (fdContent, or the GS1 element-string form in GS1
+  // mode), applied to literal/single-bind payloads but never a template (whose
+  // ^FE embed reference it would mangle). Shared by toZPL and the batch override.
+  const fdTransformFor =
+    config.fdContent || config.gs1Capable
+      ? (obj: LabelObjectBase & { props: Barcode1DProps }) => {
+          // A lone marker (single-bind) still transforms its default/CSV value;
+          // only a real template is skipped.
+          if (hasTemplateMarkers(obj.props.content) && !isLoneMarker(obj.props.content)) {
+            return undefined;
+          }
+          if (config.gs1Capable && obj.props.gs1) return gs1ContentToElementString;
+          return config.fdContent;
+        }
+      : undefined;
 
   // Single source for the palette command icon: derive the `^Bx` prefix from
   // the same zplCommand the generator uses, so there's no second literal.

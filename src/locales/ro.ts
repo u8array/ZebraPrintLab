@@ -145,6 +145,7 @@ const ro = {
     qrcode: 'Cod QR',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Dreptunghi',
     boxFilled: 'Casetă umplută',
     ellipse: 'Elipsă',
@@ -646,6 +647,7 @@ const ro = {
       height: 'Înălțime',
       printInterpretation: 'Lizibil de om',
       checkDigit: 'Cifră de control',
+      gs1Mode: 'Mod GS1',
       moduleWidth: 'Lățime modul',
     },
     box: {

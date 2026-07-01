@@ -145,6 +145,7 @@ const ko = {
     qrcode: 'QR 코드',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: '사각형',
     boxFilled: '채워진 상자',
     ellipse: '타원',
@@ -646,6 +647,7 @@ const ko = {
       height: '높이',
       printInterpretation: '사람이 읽을 수 있는',
       checkDigit: '체크 숫자',
+      gs1Mode: 'GS1 모드',
       moduleWidth: '모듈 너비',
     },
     box: {

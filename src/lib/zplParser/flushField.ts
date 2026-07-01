@@ -10,7 +10,7 @@ import { embedsToMarkers } from "../fnTemplate";
 import { tokensToMarkers } from "../fcTemplate";
 import { decodeFbContent } from "../fbContent";
 import { decodeTbContent } from "../tbContent";
-import { dataMatrixFdToGs1Content } from "../gs1";
+import { dataMatrixFdToGs1Content, elementStringToContent } from "../gs1";
 import { zplAnchorToModel } from "../labelGeometry/textPositionTransforms";
 import { blockInterLineExtentDots } from "../zebraTextLayout";
 import { computeTextRenderMetrics } from "../labelGeometry/textRenderMetrics";
@@ -227,26 +227,30 @@ export function createFlushField(
         resetFB();
         break;
       }
-      case "code128":
+      case "code128": {
+        // GS1-128 (^BC…,D): store the canonical compact form, not the parens.
+        const gs1 = s.field.bcGs1;
         objects.push(
           makeObj(
             "code128",
             s.field.x,
             s.field.y,
             {
-              content,
+              content: gs1 ? (elementStringToContent(content) ?? content) : content,
               height: s.field.bcHeight,
               moduleWidth: s.defaults.byModuleWidth,
               printInterpretation: s.field.bcInterp,
               printInterpretationAbove: s.field.bcInterpAbove,
               checkDigit: s.field.bcCheck,
               rotation: s.field.bcRotation,
+              ...(gs1 ? { gs1: true } : {}),
             } satisfies Code128Props,
             posType,
             comment,
           ),
         );
         break;
+      }
       case "code39":
         objects.push(
           makeObj(

@@ -145,6 +145,7 @@ const sl = {
     qrcode: 'QR koda',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Pravokotnik',
     boxFilled: 'Zapolnjeno polje',
     ellipse: 'Elipsa',
@@ -646,6 +647,7 @@ const sl = {
       height: 'Višina',
       printInterpretation: 'Berljivo za človeka',
       checkDigit: 'Kontrolna številka',
+      gs1Mode: 'Način GS1',
       moduleWidth: 'Širina modula',
     },
     box: {

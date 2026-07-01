@@ -46,7 +46,12 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
     },
 
     // ── 1D barcodes via mkBarcode(type, hIdx, iIdx, iDefault?, cIdx?) ─────
-    BC: mkBarcode("code128", 1, 2, "Y", 4), // ^BCN,h,i,N,c
+    // ^BCo,h,f,g,e,m; m=D (UCC/EAN) is GS1-128. Assigned every time so a later
+    // plain ^BC clears it.
+    BC: (p, rest, cmd) => {
+      mkBarcode("code128", 1, 2, "Y", 4)(p, rest, cmd);
+      field.bcGs1 = (p[5] ?? "").toUpperCase() === "D";
+    },
     B3: mkBarcode("code39", 2, 3, "Y", 1), // ^B3N,c,h,i,N
     BE: mkBarcode("ean13", 1, 2), // ^BEN,h,i,N
     BU: mkBarcode("upca", 1, 2), // ^BUN,h,i,N,N

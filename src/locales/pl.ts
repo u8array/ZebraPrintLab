@@ -145,6 +145,7 @@ const pl = {
     qrcode: 'Kod QR',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Prostokąt',
     boxFilled: 'Wypełnione pole',
     ellipse: 'Elipsa',
@@ -646,6 +647,7 @@ const pl = {
       height: 'Wysokość',
       printInterpretation: 'Czytelny dla człowieka',
       checkDigit: 'Cyfra kontrolna',
+      gs1Mode: 'Tryb GS1',
       moduleWidth: 'Szerokość modułu',
     },
     box: {

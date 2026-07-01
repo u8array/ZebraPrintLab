@@ -145,6 +145,7 @@ const hu = {
     qrcode: 'QR-kód',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Téglalap',
     boxFilled: 'Kitöltött doboz',
     ellipse: 'Ellipszis',
@@ -646,6 +647,7 @@ const hu = {
       height: 'Magasság',
       printInterpretation: 'Ember által olvasható',
       checkDigit: 'Ellenőrzőjegy',
+      gs1Mode: 'GS1 mód',
       moduleWidth: 'Modulszélesség',
     },
     box: {

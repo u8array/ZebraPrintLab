@@ -145,6 +145,7 @@ const fa = {
     qrcode: 'کد QR',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'مستطیل',
     boxFilled: 'کادر پرشده',
     ellipse: 'بیضی',
@@ -646,6 +647,7 @@ const fa = {
       height: 'ارتفاع',
       printInterpretation: 'قابل خواندن توسط انسان',
       checkDigit: 'رقم کنترل',
+      gs1Mode: 'حالت GS1',
       moduleWidth: 'عرض ماژول',
     },
     box: {

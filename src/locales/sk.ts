@@ -145,6 +145,7 @@ const sk = {
     qrcode: 'QR kód',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Obdĺžnik',
     boxFilled: 'Vyplnený rámček',
     ellipse: 'Elipsa',
@@ -646,6 +647,7 @@ const sk = {
       height: 'Výška',
       printInterpretation: 'Čitateľný pre človeka',
       checkDigit: 'Kontrolná číslica',
+      gs1Mode: 'Režim GS1',
       moduleWidth: 'Šírka modulu',
     },
     box: {

@@ -145,6 +145,7 @@ const lt = {
     qrcode: 'QR kodas',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Stačiakampis',
     boxFilled: 'Užpildytas langelis',
     ellipse: 'Elipsė',
@@ -646,6 +647,7 @@ const lt = {
       height: 'Aukštis',
       printInterpretation: 'Žmogui skaitomas',
       checkDigit: 'Tikrinimo skaitmuo',
+      gs1Mode: 'GS1 režimas',
       moduleWidth: 'Modulio plotis',
     },
     box: {

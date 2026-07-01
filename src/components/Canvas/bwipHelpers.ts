@@ -381,6 +381,12 @@ export function buildBwipOptions(
     case "code128": {
       const p = obj.props;
       const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
+      // GS1-128: feed the (AI)data element string; not gs1BwipText, whose (99)
+      // shortcut is a DataBar convention that would desync bars from HRI/^FD.
+      if (p.gs1) {
+        opts = { bcid: "gs1-128", text: gs1ContentToElementString(p.content) || "(01)00000000000000", scale, height: 10 };
+        break;
+      }
       const text = p.content || "0";
       // ^BC e=Y only prints MOD-10 in HRI, not in encoded data. ZPL escapes
       // need parsefnc auto-mode to match firmware's symbol count; plain ASCII

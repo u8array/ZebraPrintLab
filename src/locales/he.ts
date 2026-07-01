@@ -145,6 +145,7 @@ const he = {
     qrcode: 'קוד QR',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'מלבן',
     boxFilled: 'תיבה מלאה',
     ellipse: 'אליפסה',
@@ -646,6 +647,7 @@ const he = {
       height: 'גובה',
       printInterpretation: 'קריא לאדם',
       checkDigit: 'ספרת ביקורת',
+      gs1Mode: 'מצב GS1',
       moduleWidth: 'רוחב מודול',
     },
     box: {
