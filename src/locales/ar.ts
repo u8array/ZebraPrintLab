@@ -279,6 +279,7 @@ const ar = {
     barcodeTooSmall: 'الوحدة صغيرة جداً',
     textOverset: 'نص مقتطع',
     imageMissing: 'الصورة مفقودة',
+    suspiciousChars: 'أحرف مريبة',
   },
 
   printerSettings: {

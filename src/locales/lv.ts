@@ -279,6 +279,7 @@ const lv = {
     barcodeTooSmall: 'Modulis pārāk mazs',
     textOverset: 'Teksts apgriezts',
     imageMissing: 'Attēls trūkst',
+    suspiciousChars: 'Aizdomīgas rakstzīmes',
   },
 
   printerSettings: {

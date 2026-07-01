@@ -1,6 +1,7 @@
 import { getEntry, type LeafObject } from "../registry";
 import { objectBoundsDots, offLabelPlacement, type ObjectBoundsCtx } from "./objectBounds";
 import { emittedAnchorDots } from "./emittedAnchor";
+import { suspiciousCharDetail } from "./suspiciousChars";
 import {
   PREFLIGHT_SEVERITY,
   type PreflightFinding,
@@ -32,6 +33,22 @@ export function computePreflight(
     if (produce) {
       for (const r of produce(leaf, { label: ctx.label })) {
         findings.push({ objectId: leaf.id, kind: r.kind, severity: PREFLIGHT_SEVERITY[r.kind], detail: r.detail });
+      }
+    }
+
+    // Cross-cutting: any content-bearing field (text, every barcode) can carry
+    // invisible/ambiguous chars smuggled in via scan or foreign-tool import, so
+    // check here once instead of duplicating the producer across every type.
+    const content = (leaf.props as { content?: unknown }).content;
+    if (typeof content === "string") {
+      const detail = suspiciousCharDetail(content);
+      if (detail) {
+        findings.push({
+          objectId: leaf.id,
+          kind: "suspiciousChars",
+          severity: PREFLIGHT_SEVERITY.suspiciousChars,
+          detail,
+        });
       }
     }
   }

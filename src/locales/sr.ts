@@ -279,6 +279,7 @@ const sr = {
     barcodeTooSmall: 'Модул превише мали',
     textOverset: 'Tekst odsečen',
     imageMissing: 'Slika nedostaje',
+    suspiciousChars: 'Сумњиви знакови',
   },
 
   printerSettings: {

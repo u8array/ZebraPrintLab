@@ -279,6 +279,7 @@ const lt = {
     barcodeTooSmall: 'Modulis per mažas',
     textOverset: 'Tekstas apkarpytas',
     imageMissing: 'Trūksta vaizdo',
+    suspiciousChars: 'Įtartini simboliai',
   },
 
   printerSettings: {

@@ -279,6 +279,7 @@ const pt = {
     barcodeTooSmall: 'Módulo muito pequeno',
     textOverset: 'Texto cortado',
     imageMissing: 'Imagem ausente',
+    suspiciousChars: 'Caracteres estranhos',
   },
 
   printerSettings: {

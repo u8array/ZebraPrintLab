@@ -279,6 +279,7 @@ const sv = {
     barcodeTooSmall: 'Modul för liten',
     textOverset: 'Text avklippt',
     imageMissing: 'Bild saknas',
+    suspiciousChars: 'Konstiga tecken',
   },
 
   printerSettings: {

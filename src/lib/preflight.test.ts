@@ -192,3 +192,49 @@ describe("per-type producers (registry preflight capability)", () => {
     expect(getEntry("image")!.preflight!(img({ imageId: "nope", widthDots: 200, threshold: 128, rawGf: "^GFA,1,1,1,00" }), { label })).toEqual([]);
   });
 });
+
+describe("computePreflight (suspicious-chars producer)", () => {
+  const NBSP = String.fromCharCode(0xa0);
+  const dm = (id: string, content: string): LeafObject =>
+    ({
+      id,
+      type: "datamatrix",
+      x: 10,
+      y: 10,
+      rotation: 0,
+      props: { content, dimension: 5, quality: 200, rotation: "N", gs1: false },
+    }) as LabelObject as LeafObject;
+
+  it("flags NBSP padding smuggled into barcode content", () => {
+    const findings = computePreflight([dm("a", "0104" + NBSP + NBSP)], ctx);
+    expect(findings).toContainEqual({
+      objectId: "a",
+      kind: "suspiciousChars",
+      severity: "warning",
+      detail: "NBSP x2",
+    });
+  });
+
+  it("does not flag clean content", () => {
+    const findings = computePreflight([dm("a", "01042601194549961726013110")], ctx);
+    expect(findings.some((f) => f.kind === "suspiciousChars")).toBe(false);
+  });
+
+  it("is cross-cutting: also flags a plain text leaf, not just barcodes", () => {
+    const txt = {
+      id: "t",
+      type: "text",
+      x: 10,
+      y: 10,
+      rotation: 0,
+      props: { content: "Hi" + NBSP, fontHeight: 30, fontWidth: 0, rotation: "N" },
+    } as LabelObject as LeafObject;
+    const findings = computePreflight([txt], ctx);
+    expect(findings).toContainEqual({
+      objectId: "t",
+      kind: "suspiciousChars",
+      severity: "warning",
+      detail: "NBSP x1",
+    });
+  });
+});

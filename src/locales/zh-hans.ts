@@ -279,6 +279,7 @@ const zhHans = {
     barcodeTooSmall: '模块太小',
     textOverset: '文本截断',
     imageMissing: '图像缺失',
+    suspiciousChars: '异常字符',
   },
 
   printerSettings: {

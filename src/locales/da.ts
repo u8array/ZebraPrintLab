@@ -279,6 +279,7 @@ const da = {
     barcodeTooSmall: 'Modul for lille',
     textOverset: 'Tekst afskåret',
     imageMissing: 'Billede mangler',
+    suspiciousChars: 'Mærkelige tegn',
   },
 
   printerSettings: {

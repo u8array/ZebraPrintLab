@@ -279,6 +279,7 @@ const ja = {
     barcodeTooSmall: 'モジュールが小さすぎる',
     textOverset: 'テキスト切れ',
     imageMissing: '画像なし',
+    suspiciousChars: '不審な文字',
   },
 
   printerSettings: {

@@ -12,7 +12,8 @@ export type PreflightKind =
   | 'blockTooNarrow'
   | 'barcodeTooSmall'
   | 'textOverset'
-  | 'imageMissing';
+  | 'imageMissing'
+  | 'suspiciousChars';
 
 export interface PreflightFinding {
   objectId: string;
@@ -35,6 +36,9 @@ export const PREFLIGHT_SEVERITY: Record<PreflightKind, PreflightSeverity> = {
   // Warning, not error like blockTooNarrow, although both print blank: image
   // bytes may still be hydrating from storage, so the state can self-resolve.
   imageMissing: 'warning',
+  // Invisible/ambiguous chars still encode fine; they just rarely belong, so
+  // warn (the payload may scan into unexpected data) rather than block.
+  suspiciousChars: 'warning',
 };
 
 /** What a per-type `preflight` producer receives. Minimal on purpose (just the

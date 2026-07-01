@@ -279,6 +279,7 @@ const he = {
     barcodeTooSmall: 'מודול קטן מדי',
     textOverset: 'טקסט חתוך',
     imageMissing: 'תמונה חסרה',
+    suspiciousChars: 'תווים חשודים',
   },
 
   printerSettings: {
