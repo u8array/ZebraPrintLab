@@ -279,6 +279,7 @@ const fa = {
     barcodeTooSmall: 'ماژول خیلی کوچک',
     textOverset: 'متن برش‌خورده',
     imageMissing: 'تصویر ناموجود',
+    suspiciousChars: 'نویسه‌های مشکوک',
   },
 
   printerSettings: {

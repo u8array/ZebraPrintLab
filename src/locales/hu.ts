@@ -279,6 +279,7 @@ const hu = {
     barcodeTooSmall: 'Modul túl kicsi',
     textOverset: 'Szöveg vágva',
     imageMissing: 'Kép hiányzik',
+    suspiciousChars: 'Gyanús karakterek',
   },
 
   printerSettings: {

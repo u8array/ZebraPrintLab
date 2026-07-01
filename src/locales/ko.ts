@@ -279,6 +279,7 @@ const ko = {
     barcodeTooSmall: '모듈이 너무 작음',
     textOverset: '텍스트 잘림',
     imageMissing: '이미지 없음',
+    suspiciousChars: '의심스러운 문자',
   },
 
   printerSettings: {

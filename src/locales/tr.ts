@@ -279,6 +279,7 @@ const tr = {
     barcodeTooSmall: 'Modül çok küçük',
     textOverset: 'Metin kesildi',
     imageMissing: 'Resim eksik',
+    suspiciousChars: 'Şüpheli karakterler',
   },
 
   printerSettings: {

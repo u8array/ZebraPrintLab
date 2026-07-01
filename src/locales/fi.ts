@@ -279,6 +279,7 @@ const fi = {
     barcodeTooSmall: 'Moduuli liian pieni',
     textOverset: 'Teksti katkaistu',
     imageMissing: 'Kuva puuttuu',
+    suspiciousChars: 'Oudot merkit',
   },
 
   printerSettings: {

@@ -279,6 +279,7 @@ const el = {
     barcodeTooSmall: 'Μονάδα πολύ μικρή',
     textOverset: 'Κείμενο αποκόπηκε',
     imageMissing: 'Λείπει εικόνα',
+    suspiciousChars: 'Ύποπτοι χαρακτήρες',
   },
 
   printerSettings: {

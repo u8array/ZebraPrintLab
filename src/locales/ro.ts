@@ -279,6 +279,7 @@ const ro = {
     barcodeTooSmall: 'Modul prea mic',
     textOverset: 'Text trunchiat',
     imageMissing: 'Imagine lipsă',
+    suspiciousChars: 'Caractere suspecte',
   },
 
   printerSettings: {

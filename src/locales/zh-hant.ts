@@ -279,6 +279,7 @@ const zhHant = {
     barcodeTooSmall: '模組太小',
     textOverset: '文字截斷',
     imageMissing: '圖像缺失',
+    suspiciousChars: '異常字元',
   },
 
   printerSettings: {

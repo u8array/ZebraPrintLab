@@ -40,6 +40,7 @@ export function PreflightOverlay({ findings, objects, onSelect }: Props) {
     barcodeTooSmall: t.preflight.barcodeTooSmall,
     textOverset: t.preflight.textOverset,
     imageMissing: t.preflight.imageMissing,
+    suspiciousChars: t.preflight.suspiciousChars,
   };
   const nameOf = (id: string) => {
     const o = byId.get(id);

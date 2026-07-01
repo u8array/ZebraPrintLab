@@ -279,6 +279,7 @@ const et = {
     barcodeTooSmall: 'Moodul liiga väike',
     textOverset: 'Tekst lõigatud',
     imageMissing: 'Pilt puudub',
+    suspiciousChars: 'Kahtlased märgid',
   },
 
   printerSettings: {

@@ -279,6 +279,7 @@ const hr = {
     barcodeTooSmall: 'Modul premali',
     textOverset: 'Tekst odrezan',
     imageMissing: 'Slika nedostaje',
+    suspiciousChars: 'Sumnjivi znakovi',
   },
 
   printerSettings: {

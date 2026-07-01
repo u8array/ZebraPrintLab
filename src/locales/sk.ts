@@ -279,6 +279,7 @@ const sk = {
     barcodeTooSmall: 'Modul príliš malý',
     textOverset: 'Text orezaný',
     imageMissing: 'Chýba obrázok',
+    suspiciousChars: 'Podozrivé znaky',
   },
 
   printerSettings: {

@@ -279,6 +279,7 @@ const sl = {
     barcodeTooSmall: 'Modul premajhen',
     textOverset: 'Besedilo odrezano',
     imageMissing: 'Slika manjka',
+    suspiciousChars: 'Sumljivi znaki',
   },
 
   printerSettings: {

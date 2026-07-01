@@ -55,15 +55,4 @@ export const qrcode: ObjectTypeCore<QrCodeProps> = {
       fdFieldFor(p.content, ctx, qrFdTransform(obj)),
     ].join('');
   },
-
-  // Zebra firmware adds a hardcoded +10 dot Y-offset to ^FO QR codes; Labelary
-  // does not handle negative y values cleanly (^FO0,-10 renders at image y=20,
-  // not y=0). Clamping y >= 0 here keeps the designer's visual position in sync
-  // with Labelary preview. Only applies when y is being explicitly changed;
-  // existing negative values from ZPL import are preserved until edited.
-  normalizeChanges: (obj, changes) => {
-    if (changes.y === undefined || changes.y >= 0) return changes;
-    const positionType = changes.positionType ?? obj.positionType;
-    return positionType === 'FT' ? changes : { ...changes, y: 0 };
-  },
 };
