@@ -145,6 +145,7 @@ const zhHant = {
     qrcode: '二維碼',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: '矩形',
     boxFilled: '填滿方塊',
     ellipse: '橢圓',
@@ -646,6 +647,7 @@ const zhHant = {
       height: '高度',
       printInterpretation: '人工可讀',
       checkDigit: '校驗碼',
+      gs1Mode: 'GS1 模式',
       moduleWidth: '模組寬度',
     },
     box: {

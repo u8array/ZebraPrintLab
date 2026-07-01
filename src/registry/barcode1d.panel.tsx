@@ -8,7 +8,9 @@ import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { ContentEditorButton } from '../components/Properties/ContentEditorButton';
-import { fieldMode, boundDefaultOrContent, fieldVariableRefs, asLabelObject } from '../lib/variableField';
+import { fieldMode, boundDefaultOrContent, fieldVariableRefs, fieldHasVariable, asLabelObject } from '../lib/variableField';
+import { GS1_CONTENT_SPEC, gs1EnablePatch } from './gs1FieldSpec';
+import { Gs1BuilderButton, Gs1ModeToggle } from './gs1PanelControls';
 import { extractClockTokens } from '../lib/fcTemplate';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
@@ -24,6 +26,8 @@ export interface BarcodeLocale {
   printInterpretation: string;
   checkDigit?: string;
   placeholder?: string;
+  /** GS1 mode toggle label; only needed by a `gs1Capable` symbology. */
+  gs1Mode?: string;
 }
 
 export interface Barcode1DPanelConfig {
@@ -41,11 +45,17 @@ export interface Barcode1DPanelConfig {
   /** Opt-in: show the inline EAN/UPC length + check-digit helper under the
    *  content field (fixed-digit symbologies only). */
   eanValidation?: EanUpcType;
+  /** Symbology offers a GS1 mode: renders the toggle + builder and swaps in the
+   *  GS1 charset while on. */
+  gs1Capable?: boolean;
 }
 
 export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi<Barcode1DProps> {
   return {
-    contentSpec: config.contentSpec,
+    // GS1 mode swaps in the GS1 charset; otherwise the symbology's own spec.
+    contentSpec: config.gs1Capable
+      ? (props) => ((props as Barcode1DProps).gs1 ? GS1_CONTENT_SPEC : config.contentSpec)
+      : config.contentSpec,
     PropertiesPanel: ({ obj, onChange }) => {
       const t = useT();
       const loc = config.locale(t);
@@ -57,6 +67,8 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
       // template but resolves to nothing, so it still gets validated as literal
       // text. Serial seeds are not a fixed length either, so skip those too.
       const lo = asLabelObject(obj);
+      // Builders write a literal string; disabled once the field carries a chip.
+      const bound = fieldHasVariable(lo, variables);
       const realTemplate =
         fieldMode(lo, variables) === 'template' &&
         (fieldVariableRefs(lo, variables).length > 0 ||
@@ -71,6 +83,7 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
             <div className="flex flex-col gap-1">
               <FieldLabel cmd="^FD">{loc.content}</FieldLabel>
               <ContentEditorButton obj={obj} />
+              {config.gs1Capable && p.gs1 && <Gs1BuilderButton objId={obj.id} bound={bound} />}
               {validate && !config.eanValidation && !hasValidLength(validationContent, config.contentSpec) && loc.placeholder && (
                 <p className="font-mono text-[10px] text-warning">{loc.placeholder}</p>
               )}
@@ -81,6 +94,15 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
           </StaticSectionCard>
 
           <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
+            {config.gs1Capable && (
+              <Gs1ModeToggle
+                checked={p.gs1 ?? false}
+                onChange={(c) => onChange(c ? gs1EnablePatch(p.content, bound) : { gs1: false })}
+                label={loc.gs1Mode ?? ''}
+                cmd={config.zplCommand}
+              />
+            )}
+
             <UnitNumberInput
               label={loc.height}
               valueDots={p.height}

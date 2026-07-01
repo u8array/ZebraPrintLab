@@ -145,6 +145,7 @@ const el = {
     qrcode: 'Κωδικός QR',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Ορθογώνιο',
     boxFilled: 'Γεμάτο πλαίσιο',
     ellipse: 'Έλλειψη',
@@ -646,6 +647,7 @@ const el = {
       height: 'Ύψος',
       printInterpretation: 'Αναγνώσιμο από άνθρωπο',
       checkDigit: 'Ψηφίο ελέγχου',
+      gs1Mode: 'Λειτουργία GS1',
       moduleWidth: 'Πλάτος module',
     },
     box: {

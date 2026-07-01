@@ -146,6 +146,8 @@ export interface FieldState {
   bcInterpAbove: boolean;
   bcCheck: boolean;
   bcRotation: ZplRotation;
+  /** ^BC m=D (UCC/EAN) → GS1-128; consumed by the code128 case in flushField. */
+  bcGs1: boolean;
   bcCode49Mode: Code49Props["mode"];
   // ^GS symbol pending
   symRot: ZplRotation;
@@ -294,6 +296,7 @@ export function createParserState(): ParserState {
       bcInterpAbove: false,
       bcCheck: false,
       bcRotation: "N",
+      bcGs1: false,
       bcCode49Mode: "A",
       symRot: "N",
       symH: 30,

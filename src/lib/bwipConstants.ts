@@ -23,12 +23,15 @@ export function ocrbEanHriGapDots(mw: number): number {
 
 // Default HRI font (Labelary's Font A); also the generic 1D fallback.
 export const HRI_FONT_A = "'Vera Mono', 'Courier New', monospace";
-const EAN_HRI_OCRB = "'OCRB', 'Vera Mono', monospace";
+// OCR-B HRI face, used by EAN/UPC at wider modules.
+export const HRI_FONT_OCRB = "'OCRB', 'Vera Mono', monospace";
+// Zebra Font 0 (CG Triumvirate): the GS1-128 HRI face, not OCR-B.
+export const HRI_FONT_0 = "'PrintLab ZPL', sans-serif";
 
 // Labelary renders small EAN/UPC HRI (mw 1-2) in Font A (Vera) and
 // switches to OCR-B at mw 3+. Applies to the main HRI and ^BS alike.
 export function eanUpcHriFontFamily(mw: number): string {
-  return clampMw10(mw) <= 2 ? HRI_FONT_A : EAN_HRI_OCRB;
+  return clampMw10(mw) <= 2 ? HRI_FONT_A : HRI_FONT_OCRB;
 }
 
 // LOGMARS HRI above bars; ~10 dots gap, wider than the standard 1D textGap.
@@ -70,6 +73,13 @@ export function upcSuppTextZoneDots(moduleWidth: number): number {
 
 // HRI em per ^BY module: Labelary ink is ~7 dots/module, Vera cap ~0.72 em.
 export const VERA_MONO_HRI_EM_PER_MODULE = 9.7;
+
+// GS1-128 HRI base em: Font 0 `^A0N,34` at ^BY2, i.e. 1.75x the plain ~9.7.
+export const GS1_HRI_FONT_SCALE = 1.75;
+
+// Labelary caps the GS1-128 HRI at ~0.94x the barcode width (measured hriW/barW
+// = 0.944/0.953/0.938 across 18/28/38-char payloads).
+export const GS1_HRI_WIDTH_RATIO = 0.94;
 
 // Konva centers a single line in its em box, so the glyph cap-top sits this
 // fraction of fontSize below the text y. Subtracted to keep the gap em-independent.

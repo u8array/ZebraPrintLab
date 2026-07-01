@@ -145,6 +145,7 @@ const et = {
     qrcode: 'QR-kood',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Ristkülik',
     boxFilled: 'Täidetud kast',
     ellipse: 'Ellips',
@@ -646,6 +647,7 @@ const et = {
       height: 'Kõrgus',
       printInterpretation: 'Inimesele loetav',
       checkDigit: 'Kontrollnumber',
+      gs1Mode: 'GS1-režiim',
       moduleWidth: 'Mooduli laius',
     },
     box: {

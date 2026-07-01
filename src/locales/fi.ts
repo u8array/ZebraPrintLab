@@ -145,6 +145,7 @@ const fi = {
     qrcode: 'QR-koodi',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Suorakulmio',
     boxFilled: 'Täytetty laatikko',
     ellipse: 'Ellipsi',
@@ -646,6 +647,7 @@ const fi = {
       height: 'Korkeus',
       printInterpretation: 'Ihmisluettava',
       checkDigit: 'Tarkistusnumero',
+      gs1Mode: 'GS1-tila',
       moduleWidth: 'Moduulin leveys',
     },
     box: {

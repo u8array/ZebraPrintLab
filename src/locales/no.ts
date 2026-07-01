@@ -145,6 +145,7 @@ const no = {
     qrcode: 'QR-kode',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Rektangel',
     boxFilled: 'Fylt boks',
     ellipse: 'Ellipse',
@@ -646,6 +647,7 @@ const no = {
       height: 'Høyde',
       printInterpretation: 'Lesbar for mennesker',
       checkDigit: 'Kontrollsiffer',
+      gs1Mode: 'GS1-modus',
       moduleWidth: 'Modulbredde',
     },
     box: {

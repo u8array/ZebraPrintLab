@@ -145,6 +145,7 @@ const lv = {
     qrcode: 'QR kods',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Taisnstūris',
     boxFilled: 'Aizpildīts lodziņš',
     ellipse: 'Elipse',
@@ -646,6 +647,7 @@ const lv = {
       height: 'Augstums',
       printInterpretation: 'Cilvēkam lasāms',
       checkDigit: 'Pārbaudes cipars',
+      gs1Mode: 'GS1 režīms',
       moduleWidth: 'Moduļa platums',
     },
     box: {

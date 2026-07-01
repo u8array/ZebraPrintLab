@@ -145,6 +145,7 @@ const ar = {
     qrcode: 'رمز QR',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'مستطيل',
     boxFilled: 'مربع مملوء',
     ellipse: 'قطع ناقص',
@@ -646,6 +647,7 @@ const ar = {
       height: 'الارتفاع',
       printInterpretation: 'قابل للقراءة البشرية',
       checkDigit: 'رقم التحقق',
+      gs1Mode: 'وضع GS1',
       moduleWidth: 'عرض الوحدة',
     },
     box: {

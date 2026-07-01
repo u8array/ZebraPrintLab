@@ -145,6 +145,7 @@ const zhHans = {
     qrcode: '二维码',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: '矩形',
     boxFilled: '填充框',
     ellipse: '椭圆',
@@ -646,6 +647,7 @@ const zhHans = {
       height: '高度',
       printInterpretation: '人工可读',
       checkDigit: '校验位',
+      gs1Mode: 'GS1 模式',
       moduleWidth: '模块宽度',
     },
     box: {

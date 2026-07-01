@@ -145,6 +145,7 @@ const tr = {
     qrcode: 'QR Kodu',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Dikdörtgen',
     boxFilled: 'Dolu kutu',
     ellipse: 'Elips',
@@ -646,6 +647,7 @@ const tr = {
       height: 'Yükseklik',
       printInterpretation: 'İnsan tarafından okunabilir',
       checkDigit: 'Kontrol hanesi',
+      gs1Mode: 'GS1 modu',
       moduleWidth: 'Modül genişliği',
     },
     box: {

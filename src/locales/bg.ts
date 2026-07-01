@@ -145,6 +145,7 @@ const bg = {
     qrcode: 'QR код',
     datamatrix: 'DataMatrix',
     datamatrixGs1: 'GS1 DataMatrix',
+    code128Gs1: 'GS1-128',
     box: 'Правоъгълник',
     boxFilled: 'Запълнено поле',
     ellipse: 'Елипса',
@@ -646,6 +647,7 @@ const bg = {
       height: 'Височина',
       printInterpretation: 'Четливо от хора',
       checkDigit: 'Контролна цифра',
+      gs1Mode: 'Режим GS1',
       moduleWidth: 'Ширина на модула',
     },
     box: {
