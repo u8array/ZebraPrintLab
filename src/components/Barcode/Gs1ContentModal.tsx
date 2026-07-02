@@ -2,12 +2,12 @@ import { useState } from "react";
 import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { BarcodeContentModalShell } from "./BarcodeContentModalShell";
 import { useT } from "../../lib/useT";
+import type { Translations } from "../../locales";
 import { inputCls } from "../ui/formStyles";
 import { Tooltip } from "../ui/Tooltip";
 import { useLabelStore, getCurrentObjects } from "../../store/labelStore";
 import { findObjectById } from "../../types/Group";
 import {
-  AI_BY_GROUP,
   aiSpec,
   isVariableKind,
   validateGs1Segment,
@@ -15,20 +15,64 @@ import {
   segmentsToElementString,
   segmentsToContent,
   parseGs1ToSegments,
+  decimalValuePreview,
   GS1_GS,
   type Gs1AiSpec,
-  type Gs1Group,
   type Gs1Segment,
+  type Gs1SetError,
 } from "../../lib/gs1";
+import {
+  AI_BY_GROUP,
+  GS1_GROUP_ORDER,
+  GS1_COMMON_AIS,
+  GS1_REQ_ENFORCED_TYPES,
+  reqSatisfiableInBuilder,
+} from "../../lib/gs1BuilderPalette";
 
-const GROUP_ORDER: Gs1Group[] = ["identification", "date", "batchQty", "measures"];
+/** Long-tail count for the palette hint: offerable catalog minus the curated
+ *  set (all common AIs are satisfiable, guarded by test). */
+function hiddenAiCount(enforceReq: boolean): number {
+  const total = Object.values(AI_BY_GROUP)
+    .flat()
+    .filter((s) => !enforceReq || reqSatisfiableInBuilder(s)).length;
+  return total - GS1_COMMON_AIS.size;
+}
+
+type Gs1BuilderStrings = Translations["gs1builder"];
+
+/** Localized AI display name: per-AI key, else the decimal family's shared
+ *  key, else the catalog EN title, else the AI number. */
+function aiName(tg: Gs1BuilderStrings, ai: string): string {
+  const loc = tg as Record<string, string>;
+  const spec = aiSpec(ai);
+  const family = spec?.kind === "decimal" ? loc[`aiNameFamily${ai.slice(0, 3)}`] : undefined;
+  // `||` on the title so an empty catalog title (8110/8112) still falls to the AI number.
+  return loc[`aiName${ai}`] ?? family ?? (spec?.title || ai);
+}
+
+function fieldErrMsg(tg: Gs1BuilderStrings, code: string): string {
+  return (tg as Record<string, string>)[`err${code.charAt(0).toUpperCase()}${code.slice(1)}`] ?? code;
+}
+
+function setErrMsg(tg: Gs1BuilderStrings, e: Gs1SetError): string {
+  if (e.key === "exclusiveAis")
+    return tg.errExclusiveFmt.replace("{a}", e.ai).replace("{b}", e.other);
+  if (e.key === "missingRequired")
+    return tg.errRequiresFmt
+      .replace("{ai}", e.ai)
+      .replace("{list}", e.alternatives.map((alt) => alt.map((m) => `(${m})`).join("+")).join(" / "));
+  return fieldErrMsg(tg, e.key);
+}
 
 /** Compact GS1 format token for a field (not localized; GS1 notation). */
 function formatHint(spec: Gs1AiSpec): string {
   switch (spec.kind) {
     case "gtin": return "n14";
-    case "date": return "YYMMDD";
+    case "date": return spec.len === 8 ? "YYYYMMDD" : "YYMMDD";
     case "fixedNum": return `n${spec.len}`;
+    // Implied point lives in the AI, so show the integer+fraction split.
+    case "decimal": return spec.decimalPlaces ? `n${spec.len - spec.decimalPlaces}+${spec.decimalPlaces}` : `n${spec.len}`;
+    case "fixedAlnum": return `an${spec.len}`;
     case "varNum": return `n..${spec.len}`;
     case "varAlnum": return `an..${spec.len}`;
   }
@@ -46,21 +90,19 @@ function Gs1Builder({ objectId }: { objectId: string }) {
   const closeGs1Builder = useLabelStore((s) => s.closeGs1Builder);
   const updateObject = useLabelStore((s) => s.updateObject);
 
+  const obj = findObjectById(getCurrentObjects(), objectId);
   const [segments, setSegments] = useState<Gs1Segment[]>(() => {
-    const obj = findObjectById(getCurrentObjects(), objectId);
     const content = (obj && "props" in obj ? (obj.props as { content?: string }).content : "") ?? "";
     return parseGs1ToSegments(content) ?? [];
   });
+  const enforceReq = GS1_REQ_ENFORCED_TYPES.has(obj?.type ?? "");
 
   const tg = t.gs1builder;
-  const aiName = (ai: string): string =>
-    (tg as Record<string, string>)[`aiName${ai}`] ?? ai;
-  const errMsg = (code: string): string =>
-    (tg as Record<string, string>)[`err${code.charAt(0).toUpperCase()}${code.slice(1)}`] ?? code;
+  const [query, setQuery] = useState("");
 
   const errors = segments.map((s) => validateGs1Segment(s.ai, s.value));
   const fieldsOk = segments.length > 0 && errors.every((e) => e === null);
-  const setError = validateGs1Segments(segments);
+  const setError = validateGs1Segments(segments, enforceReq);
   const valid = fieldsOk && setError === null;
 
   const addSegment = (ai: string) => setSegments((prev) => [...prev, { ai, value: "" }]);
@@ -94,14 +136,38 @@ function Gs1Builder({ objectId }: { objectId: string }) {
       closeLabel={tg.close}
     >
       <section className="flex flex-col gap-2">
-        <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{tg.paletteHeading}</h3>
-        {GROUP_ORDER.map((group) => (
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{tg.paletteHeading}</h3>
+          <input
+            className={`${inputCls} w-40 py-0.5 text-xs`}
+            placeholder={tg.searchPlaceholder}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label={tg.searchPlaceholder}
+          />
+        </div>
+        {GS1_GROUP_ORDER.map((group) => {
+          const q = query.trim().toLowerCase();
+          // No query shows only the curated set; search spans the catalog.
+          // Req-enforced carriers hide AIs whose requisites aren't modeled
+          // (adding one would be an unappliable dead end).
+          const matches = AI_BY_GROUP[group].filter(
+            (spec) =>
+              (!enforceReq || reqSatisfiableInBuilder(spec)) &&
+              (q
+                ? spec.ai.includes(q) ||
+                  aiName(tg, spec.ai).toLowerCase().includes(q) ||
+                  spec.title.toLowerCase().includes(q)
+                : GS1_COMMON_AIS.has(spec.ai)),
+          );
+          if (matches.length === 0) return null;
+          return (
           <div key={group} className="flex flex-col gap-1">
             <span className="text-[10px] text-muted/70">
               {(tg as Record<string, string>)[`group${group.charAt(0).toUpperCase()}${group.slice(1)}`]}
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {AI_BY_GROUP[group].map((spec) => (
+              {matches.map((spec) => (
                 <button
                   key={spec.ai}
                   type="button"
@@ -110,12 +176,18 @@ function Gs1Builder({ objectId }: { objectId: string }) {
                 >
                   <PlusIcon className="w-3 h-3 text-muted" />
                   <span className="font-mono text-[10px] text-accent">({spec.ai})</span>
-                  <span className="text-text">{aiName(spec.ai)}</span>
+                  <span className="text-text">{aiName(tg, spec.ai)}</span>
                 </button>
               ))}
             </div>
           </div>
-        ))}
+          );
+        })}
+        {query.trim() === "" && (
+          <span className="text-[10px] text-muted/70">
+            {tg.moreViaSearchFmt.replace("{n}", String(hiddenAiCount(enforceReq)))}
+          </span>
+        )}
       </section>
 
       <section className="flex flex-col gap-2">
@@ -127,17 +199,18 @@ function Gs1Builder({ objectId }: { objectId: string }) {
             {segments.map((seg, i) => {
               const spec = aiSpec(seg.ai);
               const err = errors[i];
+              const decPreview = spec?.kind === "decimal" ? decimalValuePreview(seg.ai, seg.value) : null;
               return (
                 <li key={i} className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-[10px] bg-accent-dim text-accent rounded px-1 py-0.5 shrink-0">({seg.ai})</span>
-                    <span className="text-xs text-text shrink-0 w-28 truncate">{aiName(seg.ai)}</span>
+                    <span className="text-xs text-text shrink-0 w-28 truncate">{aiName(tg, seg.ai)}</span>
                     <span className="font-mono text-[10px] text-muted shrink-0">{spec ? formatHint(spec) : ""}</span>
                     <input
                       className={`${inputCls} flex-1 ${err ? "border-error" : ""}`}
                       value={seg.value}
                       onChange={(e) => setValue(i, e.target.value)}
-                      aria-label={aiName(seg.ai)}
+                      aria-label={aiName(tg, seg.ai)}
                     />
                     {fnc1After(i) && (
                       <Tooltip content={tg.fnc1} className="shrink-0">
@@ -149,9 +222,11 @@ function Gs1Builder({ objectId }: { objectId: string }) {
                     </button>
                   </div>
                   {err ? (
-                    <span className="text-[10px] text-error pl-1">{errMsg(err)}</span>
+                    <span className="text-[10px] text-error pl-1">{fieldErrMsg(tg, err)}</span>
                   ) : spec?.kind === "gtin" && seg.value.length > 0 && seg.value.length < 14 ? (
                     <span className="text-[10px] text-muted pl-1">{tg.gtinAutocomplete}</span>
+                  ) : decPreview ? (
+                    <span className="text-[10px] text-muted pl-1">= {decPreview}</span>
                   ) : null}
                 </li>
               );
@@ -160,8 +235,8 @@ function Gs1Builder({ objectId }: { objectId: string }) {
         )}
       </section>
 
-      {fieldsOk && setError && setError !== "empty" && (
-        <p className="text-[10px] text-error px-1">{errMsg(setError)}</p>
+      {fieldsOk && setError && setError.key !== "empty" && (
+        <p className="text-[10px] text-error px-1">{setErrMsg(tg, setError)}</p>
       )}
 
       {valid && (

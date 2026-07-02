@@ -96,7 +96,7 @@ describe("validateGs1Segment", () => {
     expect(validateGs1Segment("30", "12345")).toBeNull();
     expect(validateGs1Segment("30", "12a")).toBe("digitsOnly");
     expect(validateGs1Segment("30", "123456789")).toBe("tooLong"); // max 8
-    expect(validateGs1Segment("99", "x")).toBe("unknownAi");
+    expect(validateGs1Segment("05", "x")).toBe("unknownAi"); // 05 is not a GS1 AI
   });
 
   it("verifies the check digit of a full GTIN and SSCC", () => {
@@ -118,18 +118,60 @@ describe("validateGs1Segment", () => {
 });
 
 describe("validateGs1Segments (combination rules)", () => {
-  it("requires a GTIN (01) for attribute AIs, matching bwip", () => {
-    expect(validateGs1Segments([])).toBe("empty");
-    expect(validateGs1Segments([{ ai: "10", value: "ABC123" }])).toBe("missingGtin");
+  it("enforces dictionary req associations only with enforceReq (DataBar)", () => {
+    expect(validateGs1Segments([], true)).toEqual({ key: "empty" });
+    // 10 (LOT) req=01,02,…: standalone invalid on DataBar, fine elsewhere.
+    expect(validateGs1Segments([{ ai: "10", value: "ABC123" }], true)).toMatchObject({
+      key: "missingRequired", ai: "10",
+    });
     expect(validateGs1Segments([
       { ai: "01", value: "09501101530003" },
       { ai: "10", value: "ABC123" },
-    ])).toBeNull();
+    ], true)).toBeNull();
+    expect(validateGs1Segments([{ ai: "10", value: "ABC123" }])).toBeNull();
+    expect(validateGs1Segments([{ ai: "3103", value: "001500" }])).toBeNull();
   });
 
-  it("treats SSCC (00) and GTIN (01) as standalone", () => {
-    expect(validateGs1Segments([{ ai: "00", value: "000000000000000000" }])).toBeNull();
-    expect(validateGs1Segments([{ ai: "01", value: "09501101530003" }])).toBeNull();
+  it("permits req-free AIs standalone on DataBar (bwip parity: 400, 90)", () => {
+    expect(validateGs1Segments([{ ai: "400", value: "ORDER1" }], true)).toBeNull();
+    expect(validateGs1Segments([{ ai: "90", value: "XYZ" }], true)).toBeNull();
+    expect(validateGs1Segments([{ ai: "00", value: "000000000000000000" }], true)).toBeNull();
+    expect(validateGs1Segments([{ ai: "01", value: "09501101530003" }], true)).toBeNull();
+  });
+
+  it("rejects ex pairings on every symbology (bwip parity: 02+01)", () => {
+    const err = validateGs1Segments([
+      { ai: "02", value: "09501101530003" },
+      { ai: "01", value: "09501101530003" },
+    ]);
+    expect(err).toEqual({ key: "exclusiveAis", ai: "02", other: "01" });
+  });
+
+  it("catches (01)+(37) globally via 01's ex=255,37 (bwip parity on gs1-128)", () => {
+    const err = validateGs1Segments([
+      { ai: "01", value: "09501101530003" },
+      { ai: "37", value: "12" },
+    ]);
+    expect(err).toEqual({ key: "exclusiveAis", ai: "01", other: "37" });
+  });
+
+  it("matches 'n' digit wildcards in ex patterns (392n family conflict)", () => {
+    // 3920-3929 carries ex=392n: two members of the family conflict.
+    const err = validateGs1Segments([
+      { ai: "3921", value: "1500" },
+      { ai: "3922", value: "1500" },
+    ]);
+    expect(err?.key).toBe("exclusiveAis");
+  });
+
+  it("blocks a req resting on an omitted AI (8111 req=255) when enforced", () => {
+    // bwip rejects (8111) without (255) on DataBar and DataMatrix, so the
+    // builder must too, even though 255 (multiComponent) is not addable here.
+    expect(validateGs1Segments([{ ai: "8111", value: "1234" }], true)).toEqual({
+      key: "missingRequired", ai: "8111", alternatives: [["255"]],
+    });
+    // GS1-128 stays lax (bwip renders it there).
+    expect(validateGs1Segments([{ ai: "8111", value: "1234" }])).toBeNull();
   });
 
   it("rejects duplicate AI codes", () => {
@@ -137,7 +179,7 @@ describe("validateGs1Segments (combination rules)", () => {
       { ai: "01", value: "09501101530003" },
       { ai: "10", value: "ABC" },
       { ai: "10", value: "DEF" },
-    ])).toBe("duplicateAi");
+    ])).toEqual({ key: "duplicateAi" });
   });
 });
 
@@ -149,7 +191,7 @@ describe("elementStringToContent", () => {
   });
   it("returns null for non-element-string input", () => {
     expect(elementStringToContent("010950110153000310ABC")).toBeNull();
-    expect(elementStringToContent("(01)0950(99)X")).toBeNull(); // unknown AI
+    expect(elementStringToContent("(01)0950(05)X")).toBeNull(); // 05 is not a GS1 AI
   });
 });
 

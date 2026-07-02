@@ -9,6 +9,14 @@
  * (0x1d). Fixed-length AIs need no separator. The last AI never gets one.
  */
 
+import { GS1_AI_FULL_CATALOG } from "./gs1AiCatalog";
+import type {
+  Gs1AiCatalogEntry,
+  Gs1AiKind,
+  Gs1AiGroup,
+  Gs1AiLinter,
+} from "./gs1AiCatalog.types";
+
 /** Group-separator: the FNC1 separator after a non-last variable-length AI. */
 export const GS1_GS = "\x1d";
 
@@ -18,14 +26,11 @@ export const GS1_DATABAR_EXPANDED_SYMBOLOGIES: ReadonlySet<number> = new Set([6,
 /** Spec-maximum segments-per-row for ^BR Expanded Stacked (must be even, 2–22). */
 export const GS1_DATABAR_DEFAULT_SEGMENTS = 22;
 
-/** Fixed-length GS1 Application Identifiers; used to wrap raw input in parens. */
-const FIXED_AI_LEN: Record<string, number> = {
-  "00": 18, "01": 14, "02": 14, "11": 6, "13": 6, "15": 6, "17": 6, "20": 2,
-};
+export type Gs1Kind = Gs1AiKind;
+export type Gs1Group = Gs1AiGroup;
 
-export type Gs1Kind = "gtin" | "fixedNum" | "date" | "varNum" | "varAlnum";
-export type Gs1Group = "identification" | "date" | "batchQty" | "measures";
-
+/** Resolved AI spec (a concrete AI, decimal ranges already expanded). Derived
+ *  from the generated catalog; `decimalPlaces` is set only for `decimal` AIs. */
 export interface Gs1AiSpec {
   ai: string;
   kind: Gs1Kind;
@@ -34,6 +39,18 @@ export interface Gs1AiSpec {
   /** Mod-10 check digit is part of the (numeric) data. */
   checkDigit?: boolean;
   group: Gs1Group;
+  /** Short EN title from the catalog; the builder localizes common AIs on top. */
+  title: string;
+  /** Implied decimal position (the AI's 4th digit) for `decimal` measure AIs. */
+  decimalPlaces?: number;
+  /** Value-shape linters from the dictionary; see {@link Gs1AiLinter}. */
+  linters?: readonly Gs1AiLinter[];
+  /** Date AIs: DD=00 ("whole month") permitted (dict flavor yymmd0). */
+  day00?: boolean;
+  /** Mandatory associations (alternatives of AI conjunctions, 'n' wildcards). */
+  req?: readonly (readonly string[])[];
+  /** AIs / 'n'-wildcard patterns invalid alongside this AI in one symbol. */
+  ex?: readonly string[];
 }
 
 /** A built GS1 element: an AI plus its (unwrapped) data value. */
@@ -42,46 +59,76 @@ export interface Gs1Segment {
   value: string;
 }
 
-/**
- * Curated AI catalog for the builder (the common AIs, not the full GS1 set).
- * `kind` drives validation; `len` is exact for fixed kinds, max for variable.
- * Longer AI strings come first so raw parsing matches them before 2-digit AIs.
- */
-export const AI_CATALOG: readonly Gs1AiSpec[] = [
-  { ai: "3103", kind: "fixedNum", len: 6, group: "measures" },
-  { ai: "240", kind: "varAlnum", len: 30, group: "identification" },
-  { ai: "00", kind: "fixedNum", len: 18, checkDigit: true, group: "identification" },
-  { ai: "01", kind: "gtin", len: 14, checkDigit: true, group: "identification" },
-  { ai: "10", kind: "varAlnum", len: 20, group: "batchQty" },
-  { ai: "11", kind: "date", len: 6, group: "date" },
-  { ai: "15", kind: "date", len: 6, group: "date" },
-  { ai: "17", kind: "date", len: 6, group: "date" },
-  { ai: "20", kind: "fixedNum", len: 2, group: "batchQty" },
-  { ai: "21", kind: "varAlnum", len: 20, group: "identification" },
-  { ai: "30", kind: "varNum", len: 8, group: "batchQty" },
-];
+export function isVariableKind(kind: Gs1Kind): boolean {
+  return kind === "varNum" || kind === "varAlnum";
+}
 
-const AI_BY_CODE: ReadonlyMap<string, Gs1AiSpec> = new Map(AI_CATALOG.map((s) => [s.ai, s]));
+/** Runtime index over the full catalog. Range AIs (`3100-3105`, `91-99`) expand
+ *  to concrete AIs, a decimal family's 4th digit being its implied decimal
+ *  position; multi-component AIs are omitted (only their primary field is
+ *  modeled, so they must not be builder-entered or matched during raw parsing). */
+const AI_BY_CODE: ReadonlyMap<string, Gs1AiSpec> = (() => {
+  const map = new Map<string, Gs1AiSpec>();
+  const add = (e: Gs1AiCatalogEntry, ai: string, decimalPlaces?: number) => {
+    map.set(ai, {
+      ai, kind: e.kind, len: e.len, group: e.group, title: e.title,
+      ...(e.checkDigit ? { checkDigit: true } : {}),
+      ...(e.linters ? { linters: e.linters } : {}),
+      ...(e.day00 ? { day00: true } : {}),
+      ...(e.req ? { req: e.req } : {}),
+      ...(e.ex ? { ex: e.ex } : {}),
+      ...(decimalPlaces !== undefined ? { decimalPlaces } : {}),
+    });
+  };
+  for (const e of GS1_AI_FULL_CATALOG) {
+    if (e.multiComponent) continue;
+    const range = /^(\d+)-(\d+)$/.exec(e.ai);
+    const lo = range?.[1];
+    const hi = range?.[2];
+    if (lo && hi) {
+      const hiN = Number(hi);
+      for (let n = Number(lo); n <= hiN; n++) {
+        add(e, String(n).padStart(lo.length, "0"), e.kind === "decimal" ? n % 10 : undefined);
+      }
+    } else {
+      add(e, e.ai);
+    }
+  }
+  return map;
+})();
+
 /** AI codes longest-first, so raw parsing matches 4/3-digit AIs before 2-digit. */
-const AI_CODES_BY_LEN: readonly string[] = [...AI_CATALOG].map((s) => s.ai).sort((a, b) => b.length - a.length);
+const AI_CODES_BY_LEN: readonly string[] = [...AI_BY_CODE.keys()].sort((a, b) => b.length - a.length);
 
-/** Catalog grouped for the builder palette; precomputed so the modal does not
- *  re-filter per render. Every group key is initialized so a group with no AI
- *  is an empty array, never undefined. */
-export const AI_BY_GROUP: Record<Gs1Group, Gs1AiSpec[]> = {
-  identification: [],
-  date: [],
-  batchQty: [],
-  measures: [],
-};
-for (const s of AI_CATALOG) AI_BY_GROUP[s.group].push(s);
+/** Fixed-length AIs (single source: derived from the catalog), for the legacy
+ *  raw-wrap fallback which only consumes 2-digit AIs. */
+const FIXED_AI_LEN: Record<string, number> = Object.fromEntries(
+  [...AI_BY_CODE.values()]
+    .filter((s) => s.ai.length === 2 && !isVariableKind(s.kind))
+    .map((s) => [s.ai, s.len]),
+);
+
+/** All resolved specs (ranges expanded, multiComponent omitted); the palette
+ *  module builds its group index from this. */
+export const GS1_AI_SPECS: readonly Gs1AiSpec[] = [...AI_BY_CODE.values()];
 
 export function aiSpec(ai: string): Gs1AiSpec | undefined {
   return AI_BY_CODE.get(ai);
 }
 
-export function isVariableKind(kind: Gs1Kind): boolean {
-  return kind === "varNum" || kind === "varAlnum";
+/** Human-readable value of a `decimal` measure AI: the raw digits with the
+ *  implied decimal point inserted `decimalPlaces` from the right (the point is
+ *  encoded in the AI, not the data). `001500` @3 → `1.500`. Null when not a
+ *  decimal AI or the value is not all digits. */
+export function decimalValuePreview(ai: string, value: string): string | null {
+  const spec = AI_BY_CODE.get(ai);
+  if (spec?.kind !== "decimal" || spec.decimalPlaces === undefined) return null;
+  if (!/^\d+$/.test(value)) return null;
+  const d = spec.decimalPlaces;
+  if (d === 0) return String(Number(value));
+  const padded = value.padStart(d + 1, "0");
+  const intPart = String(Number(padded.slice(0, -d)));
+  return `${intPart}.${padded.slice(-d)}`;
 }
 
 /** GS1 mod-10 check digit (weights 3-1 from the right) for a numeric body. */
@@ -111,6 +158,17 @@ export function gtin14WithCheck(content: string): string {
 // element string ambiguous (no escaping strategy yet), so the builder forbids
 // them. Re-add once raw-GS1 / escaped input is wired.
 const CSET82 = /^[0-9A-Za-z!"%&'*+,\-./:;<=>?_]*$/;
+// CSET 39 (type-Y components, e.g. 8010 CPID): digits, uppercase, #, -, /.
+const CSET39 = /^[0-9A-Z#\-/]*$/;
+// base64url "filesafe" alphabet (type-Z components, 8030 DIGSIG).
+const CSET64 = /^[A-Za-z0-9_-]*$/;
+
+/** Charset check for an alnum value, honoring a cset39/cset64 override. */
+function charsetOk(spec: Gs1AiSpec, value: string): boolean {
+  if (spec.linters?.includes("cset39")) return CSET39.test(value);
+  if (spec.linters?.includes("cset64")) return CSET64.test(value);
+  return CSET82.test(value);
+}
 
 /** Char-class body (for a non-destructive input filter) of valid raw GS1
  *  Expanded content: CSET 82 (no parens) plus the GS separator. Hyphen last. */
@@ -159,23 +217,59 @@ export function dataMatrixFdToGs1Content(fd: string, escape: string): string | n
   return out;
 }
 
-/** AIs that may stand alone; every other AI is a trade-item attribute that
- *  requires a GTIN (01) in the same DataBar Expanded symbol (bwip enforces). */
-const GS1_STANDALONE_AIS = new Set(["00", "01"]);
+/** 'n' is a digit wildcard in dictionary req/ex members (e.g. '31nn'). */
+export function aiMatchesPattern(ai: string, pattern: string): boolean {
+  if (ai.length !== pattern.length) return false;
+  for (let i = 0; i < ai.length; i++) {
+    const p = pattern[i];
+    if (p === "n" ? !/\d/.test(ai[i] ?? "") : p !== ai[i]) return false;
+  }
+  return true;
+}
 
-/** Set-level GS1 rule check: an attribute AI needs a (01) GTIN segment. Returns
- *  a stable error key or null. Per-field errors are checked separately. */
-export function validateGs1Segments(segments: readonly Gs1Segment[]): string | null {
-  if (segments.length === 0) return "empty";
+/** Set-level rule violation; `alternatives`/`other` feed the localized
+ *  message's placeholders. */
+export type Gs1SetError =
+  | { key: "empty" | "duplicateAi" }
+  | { key: "exclusiveAis"; ai: string; other: string }
+  | { key: "missingRequired"; ai: string; alternatives: readonly (readonly string[])[] };
+
+/** Set-level GS1 rule check; per-field errors are checked separately.
+ *  `ex` pairings are always invalid inside one symbol, so they are enforced
+ *  unconditionally (bwip rejects them on every symbology). `req` associations
+ *  are defined across ALL carriers on the item (dictionary header), and bwip
+ *  enforces them only on DataBar Expanded and GS1 DataMatrix (not GS1-128);
+ *  `enforceReq` mirrors that, driven by GS1_REQ_ENFORCED_TYPES in
+ *  gs1BuilderPalette.ts. */
+export function validateGs1Segments(
+  segments: readonly Gs1Segment[],
+  enforceReq = false,
+): Gs1SetError | null {
+  if (segments.length === 0) return { key: "empty" };
   // bwip rejects a repeated AI with a differing value; the builder forbids any
   // duplicate AI (a same-value repeat is pointless here).
   const seen = new Set<string>();
   for (const s of segments) {
-    if (seen.has(s.ai)) return "duplicateAi";
+    if (seen.has(s.ai)) return { key: "duplicateAi" };
     seen.add(s.ai);
   }
-  const needsGtin = segments.some((s) => !GS1_STANDALONE_AIS.has(s.ai));
-  if (needsGtin && !segments.some((s) => s.ai === "01")) return "missingGtin";
+  const ais = segments.map((s) => s.ai);
+  for (const s of segments) {
+    const spec = AI_BY_CODE.get(s.ai);
+    for (const pattern of spec?.ex ?? []) {
+      const other = ais.find((a) => a !== s.ai && aiMatchesPattern(a, pattern));
+      if (other) return { key: "exclusiveAis", ai: s.ai, other };
+    }
+    if (enforceReq && spec?.req) {
+      // Also enforced for requisites the builder can't add (8111 req=255):
+      // the encoder rejects the pair anyway, so block here with the AI named
+      // rather than failing later on the canvas.
+      const satisfied = spec.req.some((alt) =>
+        alt.every((member) => ais.some((a) => a !== s.ai && aiMatchesPattern(a, member))),
+      );
+      if (!satisfied) return { key: "missingRequired", ai: s.ai, alternatives: spec.req };
+    }
+  }
   return null;
 }
 
@@ -211,21 +305,41 @@ export function validateGs1Segment(ai: string, value: string): string | null {
       if (value.length === 14 && mod10CheckDigit(value.slice(0, 13)) !== value[13]) return "checkDigit";
       return null;
     }
-    case "fixedNum": {
+    case "fixedNum":
+    case "decimal": {
+      // Decimal measure AIs are a fixed 6-digit numeric field; the implied
+      // decimal position lives in the AI, not the data, so it validates as fixed.
       if (!/^\d+$/.test(value)) return "digitsOnly";
       if (value.length !== spec.len) return "exactLength";
       if (spec.checkDigit && mod10CheckDigit(value.slice(0, -1)) !== value.slice(-1)) return "checkDigit";
+      if (spec.linters?.includes("yesno") && value !== "0" && value !== "1") return "yesno";
+      return null;
+    }
+    case "fixedAlnum": {
+      if (!charsetOk(spec, value)) return "charset";
+      if (value.length !== spec.len) return "exactLength";
+      // Shape only; the real ISO 3166 list is left to the encoder.
+      if (spec.linters?.includes("iso3166alpha2") && !/^[A-Z]{2}$/.test(value)) return "countryCode";
       return null;
     }
     case "date": {
-      if (!/^\d{6}$/.test(value)) return "dateFormat";
-      const mm = Number(value.slice(2, 4));
-      const dd = Number(value.slice(4, 6));
+      // Most date AIs are YYMMDD (len 6); a few (e.g. 7250 DOB) are YYYYMMDD
+      // (len 8). The month/day live in the last 4 digits regardless of the year
+      // width, so index from the end.
+      if (value.length !== spec.len || !/^\d+$/.test(value)) return "dateFormat";
+      const mm = Number(value.slice(-4, -2));
+      const dd = Number(value.slice(-2));
       if (mm < 1 || mm > 12) return "dateMonth";
-      // 00 = whole month (allowed); otherwise a real calendar day for the month
-      // (Feb capped at 29 since the YY century is ambiguous).
-      const maxDay = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mm - 1] ?? 31;
-      if (dd !== 0 && dd > maxDay) return "dateDay";
+      // DD=00 ("whole month") only for yymmd0-flavored AIs; others need a real
+      // day. Feb: exact leap check when the year is 4-digit, cap 29 for the
+      // ambiguous-century YY form.
+      if (dd === 0) return spec.day00 ? null : "dateDay";
+      let maxDay = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mm - 1] ?? 31;
+      if (mm === 2 && spec.len === 8) {
+        const y = Number(value.slice(0, 4));
+        if (!(y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0))) maxDay = 28;
+      }
+      if (dd > maxDay) return "dateDay";
       return null;
     }
     case "varNum": {
@@ -234,7 +348,7 @@ export function validateGs1Segment(ai: string, value: string): string | null {
       return null;
     }
     case "varAlnum": {
-      if (!CSET82.test(value)) return "charset";
+      if (!charsetOk(spec, value)) return "charset";
       if (value.length > spec.len) return "tooLong";
       return null;
     }
