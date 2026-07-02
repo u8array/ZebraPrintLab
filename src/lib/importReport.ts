@@ -53,6 +53,18 @@ export function describeFinding(f: ImportFinding): { title: string; detail: stri
       detail: f.command,
     };
   }
+  if (f.kind === 'fnRenumbered') {
+    return {
+      title: 'Shared ^FN slot with a different default: field moved to a free slot',
+      detail: f.command,
+    };
+  }
+  if (f.kind === 'fnDefaultDropped') {
+    return {
+      title: "All ^FN slots taken: this field keeps the first page's default",
+      detail: f.command,
+    };
+  }
   return {
     title: 'Skipped: command not recognised',
     detail: f.command,

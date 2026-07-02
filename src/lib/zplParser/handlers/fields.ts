@@ -333,6 +333,7 @@ export function createFieldHandlers(
         s.result.partialCmds.add("^FN");
         return;
       }
+      s.result.sourceFnNumbers.add(n);
       s.comment.fnNumber = n;
       s.comment.fnComment = s.comment.pending;
     },

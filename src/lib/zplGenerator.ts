@@ -59,11 +59,12 @@ export function planTemplateHeader(
 ): { headerLines: string[]; emitCtx: ZplEmitContext } {
   // O(N+V) vs O(N*V) per-marker re-scan.
   const varsByName = new Map(variables.map((v) => [v.name, v]));
-  const varsByFn = new Map(variables.map((v) => [v.fnNumber, v]));
 
   const templatePayloads: string[] = [];
   const clockPayloads: string[] = [];
-  const templateFns = new Set<number>();
+  // Referenced Variable per fn, so the header declares exactly what this
+  // page's templates use.
+  const templateVarsByFn = new Map<number, Variable>();
   const singleBindFns = new Set<number>();
   for (const leaf of flattenObjects(shifted)) {
     if (leaf.includeInExport === false) continue;
@@ -80,7 +81,7 @@ export function planTemplateHeader(
       templatePayloads.push(c);
       for (const name of extractTemplateRefs(c)) {
         const v = varsByName.get(name);
-        if (v) templateFns.add(v.fnNumber);
+        if (v) templateVarsByFn.set(v.fnNumber, v);
       }
     }
     if (hasClockMarkers(c)) clockPayloads.push(c);
@@ -92,10 +93,8 @@ export function planTemplateHeader(
 
   if (pickedEmbedChar !== null) {
     if (pickedEmbedChar !== '#') headerLines.push(`^FE${pickedEmbedChar}`);
-    for (const fn of [...templateFns].sort((a, b) => a - b)) {
+    for (const [fn, v] of [...templateVarsByFn].sort(([a], [b]) => a - b)) {
       if (singleBindFns.has(fn)) continue;
-      const v = varsByFn.get(fn);
-      if (!v) continue;
       headerLines.push(`^FN${fn}${fdField(v.defaultValue)}`);
     }
     emitCtx.embedChar = pickedEmbedChar;

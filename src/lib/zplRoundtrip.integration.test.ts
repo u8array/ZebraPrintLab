@@ -184,9 +184,65 @@ describe("round-trip integration (real import -> store -> export)", () => {
     const src =
       "^XA^FO10,10^A0N,30,30^FN1^FDpageA^FS^XZ\n^XA^FO10,10^A0N,30,30^FN1^FDpageB^FS^XZ";
     importInto(src);
-    // The cross-block merge must not dirty page 2; its original ^FD default
-    // replays verbatim instead of regenerating with the merged variable's value.
+    // The import must not dirty page 2; its original ^FN1^FD bytes replay
+    // verbatim even though its Variable was renumbered to a free slot.
     expect(exportZpl()).toBe(src);
+  });
+
+  it("a shared ^FN slot with divergent defaults keeps each page's default after an edit", () => {
+    importInto(
+      "^XA^FO10,10^A0N,30,30^FN1^FDpageA^FS^XZ\n^XA^FO10,10^A0N,30,30^FN1^FDpageB^FS^XZ",
+    );
+    // Divergent defaults must not merge: page 2 gets its own Variable on the
+    // next free slot (fn stays document-unique for mapping/batch).
+    expect(store().variables).toHaveLength(2);
+    expect(store().variables.map((v) => v.fnNumber)).toEqual([1, 2]);
+
+    // Edit page 2 so its block regenerates instead of replaying the overlay.
+    const p2obj = store().pages[1]!.objects[0]!;
+    useLabelStore.setState({ currentPageIndex: 1 });
+    store().updateObject(p2obj.id, { x: p2obj.x + 1 });
+
+    const out = exportZpl();
+    const page2Block = out.slice(out.lastIndexOf("^XA"));
+    expect(page2Block).toContain("^FN2");
+    expect(page2Block).toContain("pageB");
+    expect(page2Block).not.toContain("pageA");
+  });
+
+  it("renumbering avoids a sibling source ^FN in the same block (partial regen stays collision-free)", () => {
+    importInto(
+      "^XA^FO10,10^A0N,30,30^FN1^FDAlice^FS^XZ\n" +
+        "^XA^FO10,10^A0N,30,30^FN1^FDBob^FS^FO10,60^A0N,30,30^FN2^FDCharlie^FS^XZ",
+    );
+    expect(store().variables.map((v) => v.fnNumber)).toEqual([1, 3, 2]);
+
+    // Edit only Bob's field: its regenerated ^FN3 must not collide with
+    // Charlie's verbatim ^FN2 bytes in the same format.
+    const bob = store().pages[1]!.objects[0]!;
+    useLabelStore.setState({ currentPageIndex: 1 });
+    store().updateObject(bob.id, { x: bob.x + 1 });
+
+    const out = exportZpl();
+    const page2Block = out.slice(out.lastIndexOf("^XA"));
+    expect(page2Block).toContain("^FN3");
+    expect(page2Block).toContain("Bob");
+    expect(page2Block).toContain("^FN2^FDCharlie");
+    // Exactly one ^FN2 in the format (Charlie's verbatim bytes).
+    expect(page2Block.match(/\^FN2/g)).toHaveLength(1);
+  });
+
+  it("a shared ^FN slot with matching defaults still merges to one Variable", () => {
+    importInto(
+      "^XA^FO10,10^A0N,30,30^FN1^FDsame^FS^XZ\n^XA^FO10,10^A0N,30,30^FN1^FDsame^FS^XZ",
+    );
+    expect(store().variables).toHaveLength(1);
+    // A later page repeating an earlier default merges onto that Variable.
+    importInto(
+      "^XA^FO10,10^A0N,30,30^FN1^FDa^FS^XZ\n^XA^FO10,10^A0N,30,30^FN1^FDb^FS^XZ\n^XA^FO10,10^A0N,30,30^FN1^FDa^FS^XZ",
+    );
+    expect(store().variables).toHaveLength(2);
+    expect(store().variables.map((v) => v.fnNumber)).toEqual([1, 2]);
   });
 
   it("save → edit → reload restores a clean, byte-lossless document", () => {

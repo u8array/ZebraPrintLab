@@ -331,6 +331,7 @@ export function parseZPL(
     variables,
     uploadedFontPaths: [...s.fonts.downloadedFontPaths],
     referencedFontPaths: [...s.fonts.referencedFontPaths],
+    sourceFnNumbers: s.result.sourceFnNumbers,
     skipped,
     importReport: {
       findings,

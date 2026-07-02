@@ -14,6 +14,10 @@ const TONE: Record<ImportFindingKind, string> = {
   replayRisk: 'text-red-400',
   // Round-trip caveat: byte-exact replay ends at the first edit.
   lossyEdit: 'text-amber-400',
+  // Informational: the field kept its data, only the slot number moved.
+  fnRenumbered: 'text-muted',
+  // Higher severity: a page's divergent default was discarded (99 slots full).
+  fnDefaultDropped: 'text-red-400',
 };
 
 function FindingRow({ finding, showPage }: { finding: ImportFinding; showPage: boolean }) {
