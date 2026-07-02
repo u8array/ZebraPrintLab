@@ -1,7 +1,11 @@
 // Deterministic generator: GS1 Barcode Syntax Dictionary -> internal AI catalog.
 // Source authoritative (GS1 AISBL, from BWIPP+Zint), matches bwip-js renderer.
 import { readFileSync, writeFileSync } from 'node:fs';
-const src = readFileSync('scripts/data/gs1-syntax-dictionary.txt', 'utf8');
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const src = readFileSync(join(ROOT, 'scripts', 'data', 'gs1-syntax-dictionary.txt'), 'utf8');
 
 function groupFor(ai) {
   const p3 = ai.slice(0, 3);
@@ -108,5 +112,5 @@ const header = `// GENERATED from the GS1 Barcode Syntax Dictionary (GS1 AISBL, 
 import type { Gs1AiCatalogEntry } from './gs1AiCatalog.types';
 
 export const GS1_AI_FULL_CATALOG: readonly Gs1AiCatalogEntry[] = [`;
-writeFileSync('src/lib/gs1AiCatalog.ts', header + '\n' + out.map(toLine).join('\n') + '\n];\n');
+writeFileSync(join(ROOT, 'src', 'lib', 'gs1AiCatalog.ts'), header + '\n' + out.map(toLine).join('\n') + '\n];\n');
 console.log('wrote src/lib/gs1AiCatalog.ts with', out.length, 'entries');
