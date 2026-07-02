@@ -17,10 +17,11 @@ const bg = {
     typeForm: 'Форма',
     noResults: 'Няма съвпадения за „{q}“',
     favorites: 'Любими',
-    addViaSearchHint: 'Добавяне чрез търсене + ☆',
     resultsFmt: '{n} резултата',
     unpinFromFavorites: 'Премахване от любими',
     pinToFavorites: 'Добавяне към любими',
+    addToLabel: 'Добавяне към етикета',
+    addObjectButton: 'Добавяне на обект…',
   },
   gs1builder: {
     button: 'Създаване на GS1 съдържание…',

@@ -17,10 +17,11 @@ const he = {
     typeForm: 'צורה',
     noResults: 'אין תוצאות עבור "{q}"',
     favorites: 'מועדפים',
-    addViaSearchHint: 'הוסף דרך חיפוש + ☆',
     resultsFmt: '{n} תוצאות',
     unpinFromFavorites: 'הסר מהמועדפים',
     pinToFavorites: 'הוסף למועדפים',
+    addToLabel: 'הוסף לתווית',
+    addObjectButton: 'הוסף אובייקט…',
   },
   gs1builder: {
     button: 'בניית תוכן GS1…',

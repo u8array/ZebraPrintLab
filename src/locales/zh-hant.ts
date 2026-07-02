@@ -17,10 +17,11 @@ const zhHant = {
     typeForm: '形狀',
     noResults: '沒有符合「{q}」的結果',
     favorites: '收藏',
-    addViaSearchHint: '透過搜尋新增 + ☆',
     resultsFmt: '{n} 個符合項目',
     unpinFromFavorites: '從我的最愛中移除',
     pinToFavorites: '新增至我的最愛',
+    addToLabel: '新增至標籤',
+    addObjectButton: '新增物件…',
   },
   gs1builder: {
     button: '建立 GS1 內容…',

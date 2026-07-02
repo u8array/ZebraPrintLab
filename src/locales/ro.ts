@@ -17,10 +17,11 @@ const ro = {
     typeForm: 'Formă',
     noResults: 'Niciun rezultat pentru „{q}”',
     favorites: 'Favorite',
-    addViaSearchHint: 'Adaugă prin căutare + ☆',
     resultsFmt: '{n} rezultate',
     unpinFromFavorites: 'Elimină din favorite',
     pinToFavorites: 'Adaugă la favorite',
+    addToLabel: 'Adaugă la etichetă',
+    addObjectButton: 'Adaugă obiect…',
   },
   gs1builder: {
     button: 'Creează conținut GS1…',

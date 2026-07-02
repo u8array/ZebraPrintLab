@@ -17,10 +17,11 @@ const nl = {
     typeForm: 'Vorm',
     noResults: 'Geen resultaten voor "{q}"',
     favorites: 'Favorieten',
-    addViaSearchHint: 'Toevoegen via zoeken + ☆',
     resultsFmt: '{n} resultaten',
     unpinFromFavorites: 'Verwijderen uit favorieten',
     pinToFavorites: 'Toevoegen aan favorieten',
+    addToLabel: 'Aan label toevoegen',
+    addObjectButton: 'Object toevoegen…',
   },
   gs1builder: {
     button: 'GS1-inhoud opbouwen…',

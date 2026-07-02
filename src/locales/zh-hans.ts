@@ -17,10 +17,11 @@ const zhHans = {
     typeForm: '形状',
     noResults: '没有匹配“{q}”的结果',
     favorites: '收藏',
-    addViaSearchHint: '通过搜索添加 + ☆',
     resultsFmt: '{n} 个匹配',
     unpinFromFavorites: '从收藏中移除',
     pinToFavorites: '添加到收藏',
+    addToLabel: '添加到标签',
+    addObjectButton: '添加对象…',
   },
   gs1builder: {
     button: '构建 GS1 内容…',

@@ -17,10 +17,11 @@ const hu = {
     typeForm: 'Alakzat',
     noResults: 'Nincs találat erre: „{q}”',
     favorites: 'Kedvencek',
-    addViaSearchHint: 'Hozzáadás kereséssel + ☆',
     resultsFmt: '{n} találat',
     unpinFromFavorites: 'Eltávolítás a kedvencekből',
     pinToFavorites: 'Hozzáadás a kedvencekhez',
+    addToLabel: 'Hozzáadás a címkéhez',
+    addObjectButton: 'Objektum hozzáadása…',
   },
   gs1builder: {
     button: 'GS1-tartalom létrehozása…',

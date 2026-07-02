@@ -17,10 +17,11 @@ const da = {
     typeForm: 'Form',
     noResults: 'Ingen resultater for "{q}"',
     favorites: 'Favoritter',
-    addViaSearchHint: 'Tilføj via søgning + ☆',
     resultsFmt: '{n} resultater',
     unpinFromFavorites: 'Fjern fra favoritter',
     pinToFavorites: 'Føj til favoritter',
+    addToLabel: 'Tilføj til etiketten',
+    addObjectButton: 'Tilføj objekt…',
   },
   gs1builder: {
     button: 'Byg GS1-indhold…',

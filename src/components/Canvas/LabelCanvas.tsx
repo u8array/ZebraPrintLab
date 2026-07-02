@@ -38,8 +38,8 @@ import { GuideLines } from "./GuideLines";
 import { Ruler, RULER_SIZE } from "./Ruler";
 import { getEntry, SHAPE_PRIMITIVE_TYPES } from "../../registry";
 import type { LeafObject } from "../../registry";
-import { PALETTE_GROUPS } from "../Palette/paletteGroups";
-import { addablesInGroup, resolveAddable, type AddableEntry } from "../../registry/palettePresets";
+import { addableGroupsFor } from "../Palette/paletteGroups";
+import { resolveAddable, type AddableEntry } from "../../registry/palettePresets";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { useT } from "../../lib/useT";
 import { useCanvasPanZoom } from "./hooks/useCanvasPanZoom";
@@ -1105,7 +1105,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       .map(toAddable);
     const addableGroups = [
       ...(quickTypes.length ? [{ id: "favorites", label: t.palette.favorites, types: quickTypes }] : []),
-      ...PALETTE_GROUPS.map((g) => ({ id: g.key, label: t.palette[g.labelKey], types: addablesInGroup(g.key, t).map(toAddable) })),
+      ...addableGroupsFor(t).map((g) => ({ id: g.key, label: g.label, types: g.entries.map(toAddable) })),
     ].filter((g) => g.types.length > 0);
     const sections = buildContextMenu({
       onObject,

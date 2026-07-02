@@ -17,10 +17,11 @@ const lt = {
     typeForm: 'Forma',
     noResults: 'Nėra atitikmenų „{q}“',
     favorites: 'Mėgstami',
-    addViaSearchHint: 'Pridėti per paiešką + ☆',
     resultsFmt: '{n} atitikmenų',
     unpinFromFavorites: 'Pašalinti iš mėgstamiausių',
     pinToFavorites: 'Pridėti prie mėgstamiausių',
+    addToLabel: 'Pridėti prie etičetės',
+    addObjectButton: 'Pridėti objektą…',
   },
   gs1builder: {
     button: 'Kurti GS1 turinį…',

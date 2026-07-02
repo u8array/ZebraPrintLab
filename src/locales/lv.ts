@@ -17,10 +17,11 @@ const lv = {
     typeForm: 'Forma',
     noResults: 'Nav rezultātu vaicājumam “{q}”',
     favorites: 'Izlase',
-    addViaSearchHint: 'Pievienot meklēšanas ceļā + ☆',
     resultsFmt: '{n} atbilstības',
     unpinFromFavorites: 'Noņemt no izlases',
     pinToFavorites: 'Pievienot izlasē',
+    addToLabel: 'Pievienot etiķetei',
+    addObjectButton: 'Pievienot objektu…',
   },
   gs1builder: {
     button: 'Izveidot GS1 saturu…',

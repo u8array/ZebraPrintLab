@@ -1,23 +1,7 @@
 import type { ZOrderDir } from "../../lib/zorder";
+import type { MenuAction, MenuSection } from "../ui/ContextMenu";
 
-/** One context-menu entry. `labelKey` resolves against `t.contextMenu`; a raw
- *  `label` overrides it (dynamic entries like the add-object types). A
- *  `submenu` makes it a parent row. */
-export interface MenuAction {
-  id: string;
-  labelKey?: string;
-  label?: string;
-  run?: () => void;
-  disabled?: boolean;
-  danger?: boolean;
-  submenu?: MenuAction[];
-}
-
-/** Actions are grouped into divider-separated sections. */
-export interface MenuSection {
-  id: string;
-  items: MenuAction[];
-}
+export type { MenuAction, MenuSection };
 
 /** What the right-click targeted plus the capabilities + dispatchers needed to
  *  build the menu. Kept data-only (no Konva/React) so the builder is pure and

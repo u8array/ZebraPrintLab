@@ -17,10 +17,11 @@ const fa = {
     typeForm: 'شکل',
     noResults: 'نتیجه‌ای برای «{q}» یافت نشد',
     favorites: 'علاقه‌مندی‌ها',
-    addViaSearchHint: 'افزودن از طریق جستجو + ☆',
     resultsFmt: '{n} نتیجه',
     unpinFromFavorites: 'حذف از علاقه‌مندی‌ها',
     pinToFavorites: 'افزودن به علاقه‌مندی‌ها',
+    addToLabel: 'افزودن به برچسب',
+    addObjectButton: 'افزودن شیء…',
   },
   gs1builder: {
     button: 'ساخت محتوای GS1…',

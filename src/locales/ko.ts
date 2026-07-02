@@ -17,10 +17,11 @@ const ko = {
     typeForm: '도형',
     noResults: '"{q}"에 대한 결과 없음',
     favorites: '즐겨찾기',
-    addViaSearchHint: '검색으로 추가 + ☆',
     resultsFmt: '{n}개 결과',
     unpinFromFavorites: '즐겨찾기에서 제거',
     pinToFavorites: '즐겨찾기에 추가',
+    addToLabel: '레이블에 추가',
+    addObjectButton: '개체 추가…',
   },
   gs1builder: {
     button: 'GS1 콘텐츠 만들기…',
