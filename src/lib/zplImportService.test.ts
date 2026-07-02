@@ -298,10 +298,10 @@ describe('importZplText - ~DY font scope (setup vs design)', () => {
 });
 
 describe('importZplText - cross-block variable merge (content markers)', () => {
-  it('merges ^FN1 across blocks and renames the second block marker to the kept name', () => {
+  it('merges ^FN1 across blocks when the defaults agree', () => {
     const zpl =
       '^XA^FXField: GTIN^FO10,10^A0N,30,30^FN1^FDAlice^FS^XZ\n' +
-      '^XA^FO10,10^A0N,30,30^FN1^FDBob^FS^XZ';
+      '^XA^FO10,10^A0N,30,30^FN1^FDAlice^FS^XZ';
     const r = importZplText(zpl, 8);
     expect(r.variables).toHaveLength(1);
     const name = r.variables[0]?.name;
@@ -310,5 +310,91 @@ describe('importZplText - cross-block variable merge (content markers)', () => {
     // Both pages reference the single kept variable by the same content marker.
     expect(p0.props.content).toBe(`«${name}»`);
     expect(p1.props.content).toBe(`«${name}»`);
+  });
+
+  it('keeps separate variables for a shared ^FN slot with divergent defaults', () => {
+    // ^FN is scoped per ^XA format; merging Bob onto Alice would lose page 2's
+    // default (regeneration would then emit page 1's). The second Variable
+    // moves to the next free slot so fnNumber stays document-unique.
+    const zpl =
+      '^XA^FXField: GTIN^FO10,10^A0N,30,30^FN1^FDAlice^FS^XZ\n' +
+      '^XA^FO10,10^A0N,30,30^FN1^FDBob^FS^XZ';
+    const r = importZplText(zpl, 8);
+    expect(r.variables).toHaveLength(2);
+    expect(r.variables.map((v) => v.fnNumber)).toEqual([1, 2]);
+    expect(r.variables.map((v) => v.defaultValue)).toEqual(['Alice', 'Bob']);
+    const [v0, v1] = r.variables;
+    expect(v0!.name).not.toBe(v1!.name);
+    const p0 = r.pages[0]?.objects[0] as unknown as { props: { content: string } };
+    const p1 = r.pages[1]?.objects[0] as unknown as { props: { content: string } };
+    expect(p0.props.content).toBe(`«${v0!.name}»`);
+    expect(p1.props.content).toBe(`«${v1!.name}»`);
+  });
+
+  it('renumbers around every source ^FN in the document (overlay bytes keep them)', () => {
+    // Page 2's divergent ^FN1 must not land on fn 2: page 3's genuine ^FN2
+    // stays in overlays/replay, so the renumbering skips to fn 3.
+    const zpl =
+      '^XA^FO10,10^A0N,30,30^FN1^FDa^FS^XZ\n' +
+      '^XA^FO10,10^A0N,30,30^FN1^FDb^FS^XZ\n' +
+      '^XA^FO10,10^A0N,30,30^FN2^FDz^FS^XZ';
+    const r = importZplText(zpl, 8);
+    expect(r.variables.map((v) => v.fnNumber)).toEqual([1, 3, 2]);
+    expect(r.variables.map((v) => v.defaultValue)).toEqual(['a', 'b', 'z']);
+    expect(r.report.findings.some((f) => f.kind === 'fnRenumbered')).toBe(true);
+  });
+
+  it('reserves lowercase source ^fn slots too (parser is case-insensitive)', () => {
+    // A raw case-sensitive scan would miss ^fn2 and renumber page 2 onto it.
+    const zpl =
+      '^XA^FO10,10^A0N,30,30^FN1^FDa^FS^XZ\n' +
+      '^XA^FO10,10^A0N,30,30^FN1^FDb^FS^XZ\n' +
+      '^XA^FO10,10^A0N,30,30^fn2^FDz^FS^XZ';
+    const r = importZplText(zpl, 8);
+    expect(r.variables.map((v) => v.fnNumber)).toEqual([1, 3, 2]);
+    expect(r.variables.map((v) => v.defaultValue)).toEqual(['a', 'b', 'z']);
+  });
+
+  it('treats an empty ^FD default as a bare declaration, not a divergent value', () => {
+    // Declaration-first: the valued page backfills the shared Variable.
+    const first = importZplText(
+      '^XA^FO10,10^A0N,30,30^FN1^FD^FS^XZ\n^XA^FO10,10^A0N,30,30^FN1^FDAlice^FS^XZ',
+      8,
+    );
+    expect(first.variables).toHaveLength(1);
+    expect(first.variables[0]?.defaultValue).toBe('Alice');
+    // Value-first: the bare declaration merges onto the valued Variable.
+    const second = importZplText(
+      '^XA^FO10,10^A0N,30,30^FN1^FDAlice^FS^XZ\n^XA^FO10,10^A0N,30,30^FN1^FD^FS^XZ',
+      8,
+    );
+    expect(second.variables).toHaveLength(1);
+    expect(second.variables[0]?.defaultValue).toBe('Alice');
+  });
+
+  it('renames the ^FX-hinted marker when a divergent slot renumbers (GTIN -> GTIN_2)', () => {
+    const zpl =
+      '^XA^FXField: GTIN^FO10,10^A0N,30,30^FN1^FDAlice^FS^XZ\n' +
+      '^XA^FXField: GTIN^FO10,10^A0N,30,30^FN1^FDBob^FS^XZ';
+    const r = importZplText(zpl, 8);
+    expect(r.variables.map((v) => v.name)).toEqual(['GTIN', 'GTIN_2']);
+    const p1 = r.pages[1]?.objects[0] as unknown as { props: { content: string } };
+    expect(p1.props.content).toBe('«GTIN_2»');
+  });
+
+  it('falls back to the lossy merge with a finding when all 99 slots are taken', () => {
+    // One block occupying every fn slot, then a divergent reuse of ^FN1.
+    const fields = Array.from({ length: 99 }, (_, k) =>
+      `^FO10,${10 + k}^A0N,10,10^FN${k + 1}^FDv${k + 1}^FS`,
+    ).join('');
+    const zpl = `^XA${fields}^XZ\n^XA^FO10,10^A0N,30,30^FN1^FDdivergent^FS^XZ`;
+    const r = importZplText(zpl, 8);
+    expect(r.variables).toHaveLength(99);
+    // fn-unique invariant holds even in the exhaustion fallback.
+    expect(new Set(r.variables.map((v) => v.fnNumber)).size).toBe(99);
+    expect(r.report.findings.some((f) => f.kind === 'fnDefaultDropped')).toBe(true);
+    // Page 2's marker is rewired onto the first page's Variable (lossy).
+    const p1 = r.pages[1]?.objects[0] as unknown as { props: { content: string } };
+    expect(p1.props.content).toBe(`«${r.variables[0]?.name}»`);
   });
 });

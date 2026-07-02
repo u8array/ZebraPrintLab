@@ -49,6 +49,10 @@ export interface ParserResult {
   /** Setup-Script / printer-config commands seen (persist/change device state
    *  on print/export); surfaced as a replay-risk import finding. */
   replayRisk: string[];
+  /** Every in-range ^FN slot the tokenizer saw, including on fields that end
+   *  up passthrough-only (no Variable). Import renumbering must avoid these:
+   *  overlays replay the original bytes. */
+  sourceFnNumbers: Set<number>;
 }
 
 /** Label-frame state from ^LH / ^LT / ^LR; per spec these are persistent
@@ -234,6 +238,7 @@ export function createParserState(): ParserState {
       browserLimit: [],
       unknown: [],
       replayRisk: [],
+      sourceFnNumbers: new Set<number>(),
     },
     label: {
       lhX: 0,

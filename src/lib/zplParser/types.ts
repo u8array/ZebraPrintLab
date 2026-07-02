@@ -4,7 +4,14 @@ import type { Variable } from "../../types/Variable";
 import type { PrinterProfile } from "../../types/PrinterProfile";
 import type { BlockOverlay } from "../zplOverlay/overlay";
 
-export type ImportFindingKind = "partial" | "browserLimit" | "unknown" | "replayRisk" | "lossyEdit";
+export type ImportFindingKind =
+  | "partial"
+  | "browserLimit"
+  | "unknown"
+  | "replayRisk"
+  | "lossyEdit"
+  | "fnRenumbered"
+  | "fnDefaultDropped";
 
 /**
  * One import finding. Created per-occurrence so each entry can be navigated
@@ -25,9 +32,9 @@ export interface ImportFinding {
 
 export interface ImportReport {
   findings: ImportFinding[];
-  // The buckets below are command-code dedup views for the command-based kinds
-  // only. Block-level kinds without a command (e.g. 'lossyEdit') live solely in
-  // `findings`; iterate `findings` (not the buckets) for a kind-complete view.
+  // The buckets below are command-code dedup views for these four kinds only.
+  // Every other kind (lossyEdit, fnRenumbered, fnDefaultDropped) lives solely
+  // in `findings`; iterate `findings` for a kind-complete view.
   /** Commands imported with known loss. Deduplicated by command code. */
   partial: string[];
   /** Commands skipped because they require printer hardware or file storage. */
@@ -59,6 +66,9 @@ export interface ParsedZPL {
    *  service treats these as design fonts so an uploaded font used
    *  without a `^CW` alias is not misclassified as a Setup-Script font. */
   referencedFontPaths: string[];
+  /** Every in-range ^FN slot the tokenizer saw, including on passthrough-only
+   *  fields; import renumbering must avoid these (overlays replay the bytes). */
+  sourceFnNumbers: ReadonlySet<number>;
   /** Commands not fully imported (browserLimit + unknown). Prefer
    *  importReport for categorised access. */
   skipped: string[];

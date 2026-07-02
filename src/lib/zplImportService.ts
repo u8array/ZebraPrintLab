@@ -5,7 +5,7 @@ import { renameTemplateMarkers } from "./fnTemplate";
 import type { CustomFontMapping, LabelConfig } from "../types/LabelConfig";
 import type { PrinterProfile } from "../types/PrinterProfile";
 import type { LabelObject, Page } from "../types/Group";
-import { uniqueVariableName, type Variable } from "../types/Variable";
+import { nextFreeFnNumber, uniqueVariableName, type Variable } from "../types/Variable";
 
 export interface ZplImportResult {
   labelConfig: Partial<LabelConfig>;
@@ -84,20 +84,26 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
   const printerProfile: Partial<PrinterProfile> = {};
   const pages: Page[] = [];
   const findings: ImportFinding[] = [];
-  // Variables are document-level, but the parser reconstructs them per
-  // block. Merge across blocks by fnNumber (same slot used on multiple
-  // pages → one Variable) and rewire later blocks' object references
-  // onto the first block's Variable so the binding survives the merge.
+  // Variables are document-level; blocks merge by source fnNumber only when
+  // the ^FD defaults agree (^FN is scoped per ^XA format, so a shared slot
+  // with a different default is a distinct field). A divergent default
+  // becomes a separate Variable on a free fnNumber, keeping fn
+  // document-unique for mapping/batch/header.
   const variables: Variable[] = [];
-  const variablesByFn = new Map<number, Variable>();
+  const variablesBySourceFn = new Map<number, Variable[]>();
+  // Parse all blocks up front: renumbering must avoid every source ^FN in
+  // the document (overlays replay original bytes, so a partial regeneration
+  // would otherwise collide with a verbatim same-numbered field).
+  const parsedBlocks = parseUnits.map((block) => parseZPL(block, dpmm, { captureOverlay: true }));
+  const usedFns = new Set<number>();
+  for (const r of parsedBlocks) for (const fn of r.sourceFnNumbers) usedFns.add(fn);
 
   // Cross-block customFonts merge by alias. Foreign ZPL can split a font
   // upload from its ^CW alias (~DY in preamble, ^CW in a later block),
   // and the per-block parser would otherwise lose the entry when block 0's
   // labelConfig replaces all later labelConfigs.
   const aggregatedCustomFonts = new Map<string, CustomFontMapping>();
-  parseUnits.forEach((block, i) => {
-    const result = parseZPL(block, dpmm, { captureOverlay: true });
+  parsedBlocks.forEach((result, i) => {
     uploadedFontPaths.push(...result.uploadedFontPaths);
     for (const m of result.labelConfig.customFonts ?? []) {
       if (m.path) designFontPaths.add(normPath(m.path));
@@ -110,18 +116,39 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     // markers must be renamed to the kept variable's name.
     const nameRemap = new Map<string, string>();
     for (const v of result.variables) {
-      const existing = variablesByFn.get(v.fnNumber);
-      if (existing) {
-        if (v.name !== existing.name) nameRemap.set(v.name, existing.name);
-      } else {
-        // New fnNumber: keep the entry but disambiguate the name if a prior
-        // block has the same (e.g. two `field_1` from different blocks).
-        const uniqueName = uniqueVariableName(v.name, variables);
-        if (uniqueName !== v.name) nameRemap.set(v.name, uniqueName);
-        const kept: Variable = { ...v, name: uniqueName };
-        variables.push(kept);
-        variablesByFn.set(kept.fnNumber, kept);
+      const slotMates = variablesBySourceFn.get(v.fnNumber) ?? [];
+      // An empty default is a bare slot declaration, not a divergent value
+      // (mirrors the parser's in-block backfill semantics).
+      const mate = slotMates.find(
+        (m) => m.defaultValue === v.defaultValue || m.defaultValue === "" || v.defaultValue === "",
+      );
+      if (mate) {
+        if (mate.defaultValue === "" && v.defaultValue !== "") mate.defaultValue = v.defaultValue;
+        if (v.name !== mate.name) nameRemap.set(v.name, mate.name);
+        continue;
       }
+      let fnNumber = v.fnNumber;
+      if (slotMates.length > 0) {
+        const free = nextFreeFnNumber([...usedFns]);
+        if (free === null) {
+          // All 99 slots taken: fall back to the lossy merge rather than drop
+          // the field's binding entirely.
+          const first = slotMates[0];
+          if (first && v.name !== first.name) nameRemap.set(v.name, first.name);
+          findings.push({ kind: "fnDefaultDropped", command: `^FN${v.fnNumber}`, pageIndex: i });
+          continue;
+        }
+        fnNumber = free;
+        findings.push({ kind: "fnRenumbered", command: `^FN${v.fnNumber} → ^FN${free}`, pageIndex: i });
+      }
+      // Disambiguate the name if a prior block took it (e.g. two `field_1`
+      // from different blocks).
+      const uniqueName = uniqueVariableName(v.name, variables);
+      if (uniqueName !== v.name) nameRemap.set(v.name, uniqueName);
+      const kept: Variable = { ...v, name: uniqueName, fnNumber };
+      variables.push(kept);
+      usedFns.add(fnNumber);
+      variablesBySourceFn.set(v.fnNumber, [...slotMates, kept]);
     }
     // Rename this block's content markers onto the kept variable names.
     // Defensive walk into groups; the parser does not produce groups, but the
@@ -207,10 +234,9 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
 
 /** In-place rewrite of cross-block variable references on freshly-parsed objects
  *  (not yet in the store, so mutation is safe). Renames `«name»` content markers
- *  to the merged variable's name. The merge is by ^FN number, so the kept
- *  variable keeps the same number: captured bytes stay valid and must NOT be
- *  marked dirty (an unedited later page would lose its original ^FD default on
- *  export otherwise). */
+ *  to the kept (merged or renumbered) variable's name. The pages must NOT be
+ *  marked dirty: their captured bytes stay valid as-is, and an unedited later
+ *  page would otherwise lose its original ^FD default on export. */
 function rewireBindings(
   objects: LabelObject[],
   nameRemap: ReadonlyMap<string, string>,
