@@ -17,10 +17,11 @@ const pt = {
     typeForm: 'Forma',
     noResults: 'Nenhum resultado para "{q}"',
     favorites: 'Favoritos',
-    addViaSearchHint: 'Adicionar via pesquisa + ☆',
     resultsFmt: '{n} correspondências',
     unpinFromFavorites: 'Remover dos favoritos',
     pinToFavorites: 'Adicionar aos favoritos',
+    addToLabel: 'Adicionar à etiqueta',
+    addObjectButton: 'Adicionar objeto…',
   },
   gs1builder: {
     button: 'Criar conteúdo GS1…',

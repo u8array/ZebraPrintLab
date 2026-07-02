@@ -17,10 +17,11 @@ const ar = {
     typeForm: 'شكل',
     noResults: 'لا نتائج لـ "{q}"',
     favorites: 'المفضلة',
-    addViaSearchHint: 'إضافة عبر البحث + ☆',
     resultsFmt: '{n} نتائج',
     unpinFromFavorites: 'إزالة من المفضلة',
     pinToFavorites: 'إضافة إلى المفضلة',
+    addToLabel: 'إضافة إلى التسمية',
+    addObjectButton: 'إضافة عنصر…',
   },
   gs1builder: {
     button: 'إنشاء محتوى GS1…',

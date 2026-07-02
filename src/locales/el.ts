@@ -17,10 +17,11 @@ const el = {
     typeForm: 'Σχήμα',
     noResults: 'Καμία αντιστοιχία για «{q}»',
     favorites: 'Αγαπημένα',
-    addViaSearchHint: 'Προσθήκη μέσω αναζήτησης + ☆',
     resultsFmt: '{n} αποτελέσματα',
     unpinFromFavorites: 'Αφαίρεση από τα αγαπημένα',
     pinToFavorites: 'Προσθήκη στα αγαπημένα',
+    addToLabel: 'Προσθήκη στην ετικέτα',
+    addObjectButton: 'Προσθήκη αντικειμένου…',
   },
   gs1builder: {
     button: 'Δημιουργία περιεχομένου GS1…',

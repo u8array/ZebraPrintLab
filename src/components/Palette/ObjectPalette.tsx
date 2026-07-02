@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react';
 import { useDraggable, useDndMonitor, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { MagnifyingGlassIcon, MinusIcon } from '@heroicons/react/16/solid';
-import { PALETTE_GROUPS } from './paletteGroups';
+import { MagnifyingGlassIcon, MinusIcon, PlusIcon } from '@heroicons/react/16/solid';
+import { addableGroupsFor } from './paletteGroups';
 import { StarGlyph } from './StarGlyph';
-import { addablesInGroup, resolveAddable, type AddableEntry } from '../../registry/palettePresets';
+import { buildFavoritesAddMenu, buildPaletteRowMenu } from './paletteActions';
+import { ContextMenu, type MenuSection } from '../ui/ContextMenu';
+import { resolveAddable, type AddableEntry } from '../../registry/palettePresets';
 import { getEntry } from '../../registry';
 import { useT } from '../../lib/useT';
 import { useLabelStore } from '../../store/labelStore';
@@ -96,7 +98,13 @@ function PinButton({ entryId }: { entryId: string }) {
 
 /** Browse/search row: whole row drags onto the canvas (no grip). Search results
  *  show a pin star (`pinnable`); flat browse stays bare. */
-function BrowseRow({ entry, dragId, cat, pinnable }: { entry: AddableEntry; dragId: string; cat?: string; pinnable?: boolean }) {
+function BrowseRow({ entry, dragId, cat, pinnable, onOpenMenu }: {
+  entry: AddableEntry;
+  dragId: string;
+  cat?: string;
+  pinnable?: boolean;
+  onOpenMenu: (e: React.MouseEvent, entry: AddableEntry) => void;
+}) {
   // Only the pointer `listeners` go on the row, not dnd-kit `attributes`: those
   // set role="button"/tabIndex on the row, which would wrap the nested pin button
   // in a button (invalid) and promise keyboard drag we don't wire (PointerSensor).
@@ -109,6 +117,7 @@ function BrowseRow({ entry, dragId, cat, pinnable }: { entry: AddableEntry; drag
       ref={setNodeRef}
       {...listeners}
       onDoubleClick={() => spawnCentered(entry)}
+      onContextMenu={(e) => onOpenMenu(e, entry)}
       style={{ touchAction: 'pan-y' }}
       className={`${rowBodyCls} ${isDragging ? 'opacity-40' : ''}`}
     >
@@ -124,7 +133,12 @@ function BrowseRow({ entry, dragId, cat, pinnable }: { entry: AddableEntry; drag
 
 /** Favorites row: one concrete object. Normal mode the whole row drags onto the
  *  canvas; edit mode shows a left grip (reorder handle) and a right remove button. */
-function FavoriteRow({ row, index, editing }: { row: PaletteRow; index: number; editing: boolean }) {
+function FavoriteRow({ row, index, editing, onOpenMenu }: {
+  row: PaletteRow;
+  index: number;
+  editing: boolean;
+  onOpenMenu: (e: React.MouseEvent, entry: AddableEntry) => void;
+}) {
   const t = useT();
   const removeRow = useLabelStore((s) => s.removePaletteRow);
   const entry = resolveAddable(row.entryId, t);
@@ -149,6 +163,7 @@ function FavoriteRow({ row, index, editing }: { row: PaletteRow; index: number; 
         ref={setActivatorNodeRef}
         {...listeners}
         onDoubleClick={editing ? undefined : () => spawnCentered(entry)}
+        onContextMenu={editing ? undefined : (e) => onOpenMenu(e, entry)}
         style={{ touchAction: 'pan-y' }}
         className={`${rowBodyCls} ${editing ? 'bg-surface-2 border-border-2 hover:-translate-y-0' : ''}`}
       >
@@ -195,10 +210,45 @@ export function ObjectPalette() {
   const rows = useLabelStore((s) => s.paletteRows);
   const view = useLabelStore((s) => s.paletteView);
   const editing = useLabelStore((s) => s.paletteEditing);
+  const toggleRow = useLabelStore((s) => s.togglePaletteRow);
   const reorderRows = useLabelStore((s) => s.reorderPaletteRows);
   const [activeEntry, setActiveEntry] = useState<AddableEntry | null>(null);
   const [overCanvas, setOverCanvas] = useState(false);
+  const [menu, setMenu] = useState<{ x: number; y: number; sections: MenuSection[] } | null>(null);
   const q = query.trim().toLowerCase();
+
+  const openRowMenu = (e: React.MouseEvent, entry: AddableEntry) => {
+    e.preventDefault();
+    const sections = buildPaletteRowMenu({
+      pinned: rows.some((r) => r.entryId === entry.id),
+      labels: {
+        addToLabel: t.palette.addToLabel,
+        pinToFavorites: t.palette.pinToFavorites,
+        unpinFromFavorites: t.palette.unpinFromFavorites,
+      },
+      dispatch: {
+        addToLabel: () => spawnCentered(entry),
+        togglePin: () => toggleRow(entry.id),
+      },
+    });
+    setMenu({ x: e.clientX, y: e.clientY, sections });
+  };
+
+  const openAddMenu = (e: React.MouseEvent) => {
+    const groups = addableGroupsFor(t).map((g) => ({
+      id: g.key,
+      label: g.label,
+      entries: g.entries.map((entry) => ({
+        id: entry.id,
+        label: entry.label,
+        pinned: rows.some((r) => r.entryId === entry.id),
+      })),
+    }));
+    const sections = buildFavoritesAddMenu(groups, toggleRow);
+    if (!sections.some((s) => s.items.length > 0)) return; // everything already pinned
+    const r = e.currentTarget.getBoundingClientRect();
+    setMenu({ x: r.left, y: r.bottom + 4, sections });
+  };
 
   // Track the dragged entry for the overlay chip, and reorder favorites on drop.
   // Over the canvas the chip is hidden so the canvas's own ghost (the real
@@ -228,10 +278,9 @@ export function ObjectPalette() {
 
   // Flat list across every group (registry types + presets); the basis for both
   // flat mode and search.
-  const flatGroups = PALETTE_GROUPS.map((group) => ({
-    group,
-    entries: addablesInGroup(group.key, t).filter((e) => !q || e.label.toLowerCase().includes(q)),
-  })).filter((g) => g.entries.length > 0);
+  const flatGroups = addableGroupsFor(t)
+    .map((g) => ({ ...g, entries: g.entries.filter((e) => !q || e.label.toLowerCase().includes(q)) }))
+    .filter((g) => g.entries.length > 0);
   const resultCount = flatGroups.reduce((n, g) => n + g.entries.length, 0);
 
   return (
@@ -258,9 +307,9 @@ export function ObjectPalette() {
           ) : (
             <div className="flex flex-col gap-0.5">
               <p className="px-1 pb-0.5 font-mono text-[9px] text-muted">{t.palette.resultsFmt.replace('{n}', String(resultCount))}</p>
-              {flatGroups.flatMap(({ group, entries }) =>
+              {flatGroups.flatMap(({ key, entries }) =>
                 entries.map((e) => (
-                  <BrowseRow key={`${group.key}-${e.id}`} entry={e} dragId={`search-${group.key}-${e.id}`} cat={entryCategory(e, t)} pinnable />
+                  <BrowseRow key={`${key}-${e.id}`} entry={e} dragId={`search-${key}-${e.id}`} cat={entryCategory(e, t)} pinnable onOpenMenu={openRowMenu} />
                 )),
               )}
             </div>
@@ -270,31 +319,32 @@ export function ObjectPalette() {
             <SortableContext items={rows.map((r) => rowDragId(r.id))} strategy={verticalListSortingStrategy}>
               <div className="flex flex-col gap-0.5">
                 {rows.map((r, i) => (
-                  <FavoriteRow key={r.id} row={r} index={i} editing={editing} />
+                  <FavoriteRow key={r.id} row={r} index={i} editing={editing} onOpenMenu={openRowMenu} />
                 ))}
               </div>
             </SortableContext>
-            {/* Shown in edit mode, and when there are no favorites at all so an
-                empty list still tells the user how to add one. */}
+            {/* Edit mode only (plus the empty state, which otherwise has no
+                entry point at all). */}
             {(editing || rows.length === 0) && (
               <button
                 type="button"
-                onClick={() => searchRef.current?.focus()}
+                onClick={openAddMenu}
                 className="flex items-center justify-center gap-1.5 px-2 py-1.5 w-full rounded text-xs font-mono border border-dashed border-border text-muted hover:text-text hover:border-border-2 transition-colors"
               >
-                {t.palette.addViaSearchHint}
+                <PlusIcon className="w-3.5 h-3.5" />
+                {t.palette.addObjectButton}
               </button>
             )}
           </>
         ) : (
-          flatGroups.map(({ group, entries }) => (
+          flatGroups.map(({ key, label, entries }) => (
             <CollapsibleSection
-              key={group.key}
-              id={`palette-${group.key}`}
-              title={<GroupTitle label={t.palette[group.labelKey]} count={entries.length} />}
+              key={key}
+              id={`palette-${key}`}
+              title={<GroupTitle label={label} count={entries.length} />}
             >
               {entries.map((e) => (
-                <BrowseRow key={`${group.key}-${e.id}`} entry={e} dragId={`flat-${group.key}-${e.id}`} />
+                <BrowseRow key={`${key}-${e.id}`} entry={e} dragId={`flat-${key}-${e.id}`} onOpenMenu={openRowMenu} />
               ))}
             </CollapsibleSection>
           ))
@@ -304,6 +354,8 @@ export function ObjectPalette() {
       {/* Drag chip under the cursor, hidden only over the canvas (where the
           canvas renders its own full-size ghost). Shown for favorites reorder. */}
       <DragOverlay>{activeEntry && !overCanvas ? <DragChip icon={activeEntry.icon} label={activeEntry.label} /> : null}</DragOverlay>
+
+      {menu && <ContextMenu sections={menu.sections} x={menu.x} y={menu.y} onClose={() => setMenu(null)} />}
     </div>
   );
 }

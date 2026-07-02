@@ -17,10 +17,11 @@ const et = {
     typeForm: 'Kuju',
     noResults: 'Tulemusi pole päringule „{q}“',
     favorites: 'Lemmikud',
-    addViaSearchHint: 'Lisa otsingu kaudu + ☆',
     resultsFmt: '{n} vastet',
     unpinFromFavorites: 'Eemalda lemmikutest',
     pinToFavorites: 'Lisa lemmikutesse',
+    addToLabel: 'Lisa etiketile',
+    addObjectButton: 'Lisa objekt…',
   },
   gs1builder: {
     button: 'Loo GS1 sisu…',

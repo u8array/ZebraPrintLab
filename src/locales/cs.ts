@@ -17,10 +17,11 @@ const cs = {
     typeForm: 'Tvar',
     noResults: 'Žádné výsledky pro „{q}“',
     favorites: 'Oblíbené',
-    addViaSearchHint: 'Přidat vyhledáváním + ☆',
     resultsFmt: '{n} shod',
     unpinFromFavorites: 'Odebrat z oblíbených',
     pinToFavorites: 'Přidat do oblíbených',
+    addToLabel: 'Přidat na štítek',
+    addObjectButton: 'Přidat objekt…',
   },
   gs1builder: {
     button: 'Vytvořit obsah GS1…',

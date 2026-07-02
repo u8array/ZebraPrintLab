@@ -17,10 +17,11 @@ const fi = {
     typeForm: 'Muoto',
     noResults: 'Ei osumia haulle "{q}"',
     favorites: 'Suosikit',
-    addViaSearchHint: 'Lisää haun kautta + ☆',
     resultsFmt: '{n} osumaa',
     unpinFromFavorites: 'Poista suosikeista',
     pinToFavorites: 'Lisää suosikkeihin',
+    addToLabel: 'Lisää etiketille',
+    addObjectButton: 'Lisää objekti…',
   },
   gs1builder: {
     button: 'Luo GS1-sisältö…',

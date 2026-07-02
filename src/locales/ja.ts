@@ -17,10 +17,11 @@ const ja = {
     typeForm: '図形',
     noResults: '「{q}」に一致する項目がありません',
     favorites: 'お気に入り',
-    addViaSearchHint: '検索から追加 + ☆',
     resultsFmt: '{n} 件',
     unpinFromFavorites: 'お気に入りから削除',
     pinToFavorites: 'お気に入りに追加',
+    addToLabel: 'ラベルに追加',
+    addObjectButton: 'オブジェクトを追加…',
   },
   gs1builder: {
     button: 'GS1コンテンツを作成…',

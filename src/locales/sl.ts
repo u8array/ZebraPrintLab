@@ -17,10 +17,11 @@ const sl = {
     typeForm: 'Oblika',
     noResults: 'Ni zadetkov za „{q}“',
     favorites: 'Priljubljene',
-    addViaSearchHint: 'Dodaj prek iskanja + ☆',
     resultsFmt: '{n} zadetkov',
     unpinFromFavorites: 'Odstrani iz priljubljenih',
     pinToFavorites: 'Dodaj med priljubljene',
+    addToLabel: 'Dodaj na nalepko',
+    addObjectButton: 'Dodaj objekt…',
   },
   gs1builder: {
     button: 'Ustvari vsebino GS1…',

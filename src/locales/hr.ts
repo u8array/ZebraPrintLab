@@ -17,10 +17,11 @@ const hr = {
     typeForm: 'Oblik',
     noResults: 'Nema rezultata za „{q}“',
     favorites: 'Favoriti',
-    addViaSearchHint: 'Dodaj pretraživanjem + ☆',
     resultsFmt: '{n} rezultata',
     unpinFromFavorites: 'Ukloni iz favorita',
     pinToFavorites: 'Dodaj u favorite',
+    addToLabel: 'Dodaj na naljepnicu',
+    addObjectButton: 'Dodaj objekt…',
   },
   gs1builder: {
     button: 'Izradi GS1 sadržaj…',

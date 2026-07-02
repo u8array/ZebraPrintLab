@@ -17,10 +17,11 @@ const it = {
     typeForm: 'Forma',
     noResults: 'Nessun risultato per "{q}"',
     favorites: 'Preferiti',
-    addViaSearchHint: 'Aggiungi tramite ricerca + ☆',
     resultsFmt: '{n} corrispondenze',
     unpinFromFavorites: 'Rimuovi dai preferiti',
     pinToFavorites: 'Aggiungi ai preferiti',
+    addToLabel: 'Aggiungi all’etichetta',
+    addObjectButton: 'Aggiungi oggetto…',
   },
   gs1builder: {
     button: 'Crea contenuto GS1…',

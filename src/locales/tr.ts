@@ -17,10 +17,11 @@ const tr = {
     typeForm: 'Şekil',
     noResults: '"{q}" için sonuç yok',
     favorites: 'Favoriler',
-    addViaSearchHint: 'Arama ile ekle + ☆',
     resultsFmt: '{n} sonuç',
     unpinFromFavorites: 'Favorilerden kaldır',
     pinToFavorites: 'Favorilere ekle',
+    addToLabel: 'Etikete ekle',
+    addObjectButton: 'Nesne ekle…',
   },
   gs1builder: {
     button: 'GS1 içeriği oluştur…',
