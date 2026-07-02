@@ -19,6 +19,7 @@ import { readProdLicenses } from './lib/pnpm-licenses.mjs';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const OUT = join(ROOT, 'THIRD-PARTY-LICENSES.md');
 const FONTS_DIR = join(ROOT, 'src', 'assets', 'fonts');
+const DATA_DIR = join(ROOT, 'scripts', 'data');
 
 const PREAMBLE = `# Third-party licenses
 
@@ -89,6 +90,22 @@ function fontsSection() {
   return blocks.join('\n\n');
 }
 
+// Vendored data files (not npm packages) whose derived output ships in the
+// bundle, e.g. the GS1 Syntax Dictionary behind the generated AI catalog.
+function dataSection() {
+  let files;
+  try { files = readdirSync(DATA_DIR).filter((n) => /NOTICE\.md$/.test(n)).sort(); } catch { files = []; }
+  if (files.length === 0) return null;
+  const blocks = [
+    `## Vendored data (\`scripts/data/\`)\n\nData files vendored directly (not npm packages) whose derived artifacts ship\nin \`dist/\`. Each notice is reproduced verbatim from its \`*-NOTICE.md\` source.`,
+  ];
+  for (const f of files) {
+    const text = readFileSync(join(DATA_DIR, f), 'utf8').trimEnd();
+    blocks.push(`#### ${f}\n\n${fenced(text)}`);
+  }
+  return blocks.join('\n\n');
+}
+
 function npmSection() {
   const byLicense = readProdLicenses();
   const pkgs = [];
@@ -110,7 +127,9 @@ function npmSection() {
 }
 
 function render() {
-  const body = [PREAMBLE, fontsSection(), npmSection()].join('\n');
+  const body = [PREAMBLE, fontsSection(), dataSection(), npmSection()]
+    .filter(Boolean)
+    .join('\n');
   // Single LF normalisation so the committed file is byte-stable regardless of
   // the checkout's line endings (core.autocrlf) or a vendored file's endings.
   return body.replace(/\r\n?/g, '\n').trimEnd() + '\n';
