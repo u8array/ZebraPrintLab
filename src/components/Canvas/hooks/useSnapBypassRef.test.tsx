@@ -29,6 +29,12 @@ describe("useSnapBypassRef", () => {
     expect(result.current.current).toBe(false);
   });
 
+  it("ignores Cmd+Alt (Option) on macOS so Alt-gestures keep their meaning", () => {
+    const { result } = renderHook(() => useSnapBypassRef());
+    key("keydown", { key: "Alt", metaKey: true, altKey: true });
+    expect(result.current.current).toBe(false);
+  });
+
   it("stays true across other keystrokes while the modifier is held", () => {
     const { result } = renderHook(() => useSnapBypassRef());
     key("keydown", { key: "Control", ctrlKey: true });

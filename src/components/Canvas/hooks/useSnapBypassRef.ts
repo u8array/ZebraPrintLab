@@ -11,7 +11,7 @@ export function useSnapBypassRef(): RefObject<boolean> {
     // Exclude AltGr (Ctrl+Alt on Windows/EU layouts) and any Alt-held gesture,
     // which has its own canvas meaning; only plain Ctrl or Cmd bypasses.
     const update = (e: KeyboardEvent) => {
-      bypassRef.current = (e.ctrlKey && !e.altKey) || e.metaKey;
+      bypassRef.current = !e.altKey && (e.ctrlKey || e.metaKey);
     };
     const clear = () => {
       bypassRef.current = false;
