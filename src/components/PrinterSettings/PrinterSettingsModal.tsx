@@ -9,6 +9,7 @@ import type { PrinterProfile } from "../../types/PrinterProfile";
 import { DialogShell } from "../ui/DialogShell";
 import { Tooltip } from "../ui/Tooltip";
 import { ZplLine } from "../Output/ZplLine";
+import { AppSettingsTab } from "./AppSettingsTab";
 import { ClockAndTimeTab } from "./ClockAndTimeTab";
 import { EncodingAndLanguageTab } from "./EncodingAndLanguageTab";
 import { FontsTab } from "./FontsTab";
@@ -17,11 +18,12 @@ import { MaintenanceTab } from "./MaintenanceTab";
 import { MediaFeedTab } from "./MediaFeedTab";
 import { PrintQualityTab } from "./PrintQualityTab";
 
-type TopTabId = 'perLabel' | 'setupScript';
+type TopTabId = 'app' | 'perLabel' | 'setupScript';
 
 /** Sub-tab → top-tab. `satisfies` flags any PrinterSettingsTab union
  *  literal that gets added but forgotten here at compile time. */
 const TOP_TAB_OF = {
+  appSettings: 'app',
   mediaFeed: 'perLabel',
   printQuality: 'perLabel',
   clockTime: 'setupScript',
@@ -31,12 +33,13 @@ const TOP_TAB_OF = {
   maintenance: 'setupScript',
 } as const satisfies Record<PrinterSettingsTab, TopTabId>;
 
-const TOP_TAB_ORDER: readonly TopTabId[] = ['perLabel', 'setupScript'];
+const TOP_TAB_ORDER: readonly TopTabId[] = ['app', 'perLabel', 'setupScript'];
 
 const TOP_TAB_LABEL_KEY = {
+  app: 'railGroupApp',
   perLabel: 'railGroupPerLabel',
   setupScript: 'railGroupSetupScript',
-} as const satisfies Record<TopTabId, 'railGroupPerLabel' | 'railGroupSetupScript'>;
+} as const satisfies Record<TopTabId, 'railGroupApp' | 'railGroupPerLabel' | 'railGroupSetupScript'>;
 
 const TABS_BY_TOP_TAB: Record<TopTabId, readonly PrinterSettingsTab[]> = (() => {
   const acc = Object.fromEntries(
@@ -50,6 +53,7 @@ const TABS_BY_TOP_TAB: Record<TopTabId, readonly PrinterSettingsTab[]> = (() => 
 
 /** Tabs absent here render as disabled WIP rail entries. */
 const TAB_COMPONENTS: Partial<Record<PrinterSettingsTab, FC>> = {
+  appSettings: AppSettingsTab,
   mediaFeed: MediaFeedTab,
   printQuality: PrintQualityTab,
   clockTime: ClockAndTimeTab,
@@ -98,7 +102,7 @@ export function PrinterSettingsModal() {
             {t.printerSettings.title}
           </h2>
           <p id={subtitleId} className="text-[11px] text-muted">
-            {t.printerSettings.subtitle}
+            {activeTopTab === 'app' ? t.printerSettings.subtitleApp : t.printerSettings.subtitle}
           </p>
         </div>
         <button

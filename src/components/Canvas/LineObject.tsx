@@ -72,6 +72,7 @@ export function LineObject({
   getOthersSnapshot,
   labelRect,
   setGuides,
+  snapBypassRef,
 }: Props) {
   const p = obj.props;
   const colors = useColorScheme();
@@ -147,13 +148,14 @@ export function LineObject({
   const othersSnapshotRef = useRef<SnapRect[] | null>(null);
 
   /** Object-snap for an endpoint; uses parent transform so it stays
-   *  correct in rotated views. Skipped when shift is held. */
+   *  correct in rotated views. Skipped while Shift constrains the angle
+   *  (snap would fight the 45-degree lock) or Ctrl/Cmd bypasses snapping. */
   function snapEndpoint(
     localPx: { x: number; y: number },
     shift: boolean,
     parent: Konva.Node | null,
   ): { x: number; y: number } {
-    if (shift || !getOthersSnapshot || !labelRect || !setGuides || !parent) {
+    if (shift || snapBypassRef?.current || !getOthersSnapshot || !labelRect || !setGuides || !parent) {
       setGuides?.([]);
       return localPx;
     }
@@ -179,7 +181,7 @@ export function LineObject({
   }
 
   /** Resize-snap for thickness side-handle; no-op on diagonals, rotated
-   *  views, or shift-bypass. */
+   *  views, Shift, or the Ctrl/Cmd bypass. */
   function snapThickness(
     rawT: number,
     shift: boolean,
@@ -190,6 +192,7 @@ export function LineObject({
     if (
       !isAxisAligned ||
       shift ||
+      snapBypassRef?.current ||
       rotated ||
       !getOthersSnapshot ||
       !labelRect ||

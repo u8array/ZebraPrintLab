@@ -1,4 +1,5 @@
 import type Konva from "konva";
+import type { RefObject } from "react";
 import type { LeafObject } from "../../registry";
 import type { ObjectChanges } from "../../store/labelStore";
 import type { SnapGuide, SnapRect } from "../../lib/snapGuides";
@@ -63,4 +64,7 @@ export interface KonvaObjectProps {
   getOthersSnapshot?: (excludeId: string) => SnapRect[];
   labelRect?: SnapRect;
   setGuides?: (guides: SnapGuide[]) => void;
+  /** Shared Ctrl/Cmd smart-snap bypass (useSnapBypassRef), same source the
+   *  drag controller and Transformer read so the gesture works everywhere. */
+  snapBypassRef?: RefObject<boolean>;
 }

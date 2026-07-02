@@ -8,12 +8,14 @@ import type { PageState } from './labelStore.internals';
 export const currentObjects = (state: PageState): LabelObject[] =>
   state.pages[state.currentPageIndex]?.objects ?? [];
 
-/** True when a Labelary network call is permitted: the gate is on AND
- *  the user has seen the privacy notice. UI buttons read
+/** True when a Labelary network call is permitted: the integration is on
+ *  AND, on the public host, the user has acknowledged the privacy notice.
+ *  A custom host needs no acknowledgement (the operator owns the endpoint),
+ *  mirroring {@link selectLabelaryNoticeRequired}. UI buttons read
  *  `thirdParty.labelary` and `labelaryNoticeAcknowledged` separately
  *  to distinguish "hide" (gate off) from "show notice first". */
 export const canCallLabelary = (s: LabelState): boolean =>
-  s.thirdParty.labelary && s.labelaryNoticeAcknowledged;
+  s.thirdParty.labelary && (!isDefaultLabelaryHost() || s.labelaryNoticeAcknowledged);
 
 /** True when clicking a Labelary-backed action must first surface the
  *  privacy notice modal. A custom-host build implies the operator

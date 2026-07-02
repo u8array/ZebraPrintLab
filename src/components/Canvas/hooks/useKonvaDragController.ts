@@ -26,6 +26,12 @@ interface DragControllerArgs {
   snapEnabled: boolean;
   /** Grid step in dots; only consulted when snapEnabled. */
   snapUnitDots: number;
+  /** Object-to-object (smart) snapping, active when grid snap is off. Disabled
+   *  entirely when false; also bypassed per-gesture while Ctrl/Cmd is held. */
+  smartSnapEnabled: boolean;
+  /** Shared Ctrl/Cmd bypass state (useSnapBypassRef); all snap consumers read
+   *  the same source so move, resize and line reshape bypass consistently. */
+  snapBypassRef: React.RefObject<boolean>;
   /** Guides in group-local px (rendered inside the rotation group). */
   setGuides: (guides: SnapGuide[]) => void;
   /** Live group-local drag delta (px) each tick, (0,0) on end. Lets the
@@ -187,6 +193,10 @@ export function useKonvaDragController(args: DragControllerArgs): DragHandlers {
     const rawDx = pxToDots(primary.x() - primaryStart.x, args.scale, args.dpmm);
     const rawDy = pxToDots(primary.y() - primaryStart.y, args.scale, args.dpmm);
 
+    // Hold Ctrl/Cmd to bypass smart snapping for this move (Figma/Sketch idiom;
+    // Alt and Shift are already taken by resize-mode and axis-constrain).
+    const bypassSmart = args.snapBypassRef.current;
+
     let deltaDots: { x: number; y: number };
     if (args.snapEnabled) {
       // Grid: snap the grabbed object's stored position to the grid, then move
@@ -196,6 +206,9 @@ export function useKonvaDragController(args: DragControllerArgs): DragHandlers {
         args.snapUnitDots,
       );
       deltaDots = { x: rawDx + snap.dx, y: rawDy + snap.dy };
+      setGuides([]);
+    } else if (!args.smartSnapEnabled || bypassSmart) {
+      deltaDots = { x: rawDx, y: rawDy };
       setGuides([]);
     } else {
       // Smart: snap the dragged union (model bounds) against the other objects

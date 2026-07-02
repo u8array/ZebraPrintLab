@@ -46,6 +46,7 @@ import { useCanvasPanZoom } from "./hooks/useCanvasPanZoom";
 import { useCanvasLasso } from "./hooks/useCanvasLasso";
 import { useKonvaTransformer } from "./hooks/useKonvaTransformer";
 import { useKonvaDragController } from "./hooks/useKonvaDragController";
+import { useSnapBypassRef } from "./hooks/useSnapBypassRef";
 import { PaginationControl } from "./PaginationControl";
 import { Tooltip } from "../ui/Tooltip";
 import {
@@ -99,6 +100,7 @@ interface Props {
   onGridToggle: () => void;
   snapEnabled: boolean;
   onSnapToggle: () => void;
+  smartSnapEnabled: boolean;
   snapSizeMm: number;
   onSnapSizeChange: (mm: number) => void;
   zoom: number;
@@ -119,6 +121,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   onGridToggle,
   snapEnabled,
   onSnapToggle,
+  smartSnapEnabled,
   snapSizeMm,
   onSnapSizeChange,
   zoom,
@@ -425,6 +428,11 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const snap = (dots: number) =>
     snapEnabled ? Math.round(dots / snapUnit) * snapUnit : dots;
 
+  // Shared gate: resize transformer and line-endpoint snap read this too.
+  const smartSnapActive = !snapEnabled && smartSnapEnabled;
+  // Held Ctrl/Cmd suspends smart snap per-gesture, one source for all paths.
+  const snapBypassRef = useSnapBypassRef();
+
   // One stable closure to avoid 60Hz churning N per-object closures.
   const getOthersSnapshot = useCallback((excludeId: string) => {
     const stage = stageRef.current;
@@ -607,6 +615,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     labelOffsetY,
     snapEnabled,
     snapUnitDots: snapUnit,
+    smartSnapEnabled,
+    snapBypassRef,
     setGuides: setDragGuides,
     onDelta: (dx, dy) => {
       // Live union: movable part shifted by the drag, locked part where it sits.
@@ -778,7 +788,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     snap,
     updateObject,
     labelRect: transformerSnapLabelRect,
-    objectSnapEnabled: !snapEnabled,
+    objectSnapEnabled: smartSnapActive,
+    snapBypassRef,
     setGuides,
     viewRotation,
     previewLocks,
@@ -1406,9 +1417,10 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                     snap={snap}
                     dragHandlers={dragController.nodeDragHandlers}
                     registerMover={dragController.registerMover}
-                    getOthersSnapshot={snapEnabled ? undefined : getOthersSnapshot}
+                    getOthersSnapshot={smartSnapActive ? getOthersSnapshot : undefined}
                     labelRect={transformerSnapLabelRect}
                     setGuides={setGuides}
+                    snapBypassRef={snapBypassRef}
                   />
                 ))
               )}

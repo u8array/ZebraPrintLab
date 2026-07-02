@@ -197,6 +197,9 @@ interface Options {
   labelRect: SnapRect;
   /** True when grid-snap is OFF; object-snap during resize mirrors drag. */
   objectSnapEnabled: boolean;
+  /** Shared Ctrl/Cmd bypass state (useSnapBypassRef). boundBoxFunc receives no
+   *  native event, so the held modifier arrives via this ref. */
+  snapBypassRef: React.RefObject<boolean>;
   /** Pushes resize-time snap guides into the canvas's shared guide state. */
   setGuides: (guides: SnapGuide[]) => void;
   /** Canvas view rotation. When non-zero, the parent group is rotated and
@@ -235,6 +238,7 @@ export function useKonvaTransformer({
   updateObject,
   labelRect,
   objectSnapEnabled,
+  snapBypassRef,
   setGuides,
   viewRotation,
   previewLocks,
@@ -784,14 +788,19 @@ export function useKonvaTransformer({
     // bitmap drifts off the anchor.
     const hasQuantisedAnchor = transformAnchorRef.current !== null;
     if (objectSnapEnabled && isFreeResize && startBbox && !hasQuantisedAnchor) {
-      const snapped = applyResizeObjectSnap(
-        bbox,
-        startBbox,
-        othersSnapshotRef.current,
-        labelRect,
-      );
-      setGuides(snapped.guides);
-      bbox = snapped.bbox;
+      if (snapBypassRef.current) {
+        // Ctrl/Cmd held: resize freely; drop guides left by earlier ticks.
+        setGuides([]);
+      } else {
+        const snapped = applyResizeObjectSnap(
+          bbox,
+          startBbox,
+          othersSnapshotRef.current,
+          labelRect,
+        );
+        setGuides(snapped.guides);
+        bbox = snapped.bbox;
+      }
     }
     if (startBbox) {
       const startBox: BoundingBox = {
