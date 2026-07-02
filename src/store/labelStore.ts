@@ -263,6 +263,17 @@ export function migrateLegacy(persistedState: unknown, version: number): unknown
     if (s.paletteView === 'list') s = { ...s, paletteView: 'favorites' };
   }
 
+  // v13→v14: canvasSettings.smartSnapEnabled added; default true so existing
+  // sessions keep object snapping on (it was implicitly on whenever grid snap
+  // was off). Without this patch the persisted canvasSettings (which replaces
+  // the default wholesale) would rehydrate the flag as undefined → snap off.
+  if (version < 14) {
+    const cs = s.canvasSettings;
+    if (cs && typeof cs === 'object' && !('smartSnapEnabled' in cs)) {
+      s = { ...s, canvasSettings: { ...(cs as Record<string, unknown>), smartSnapEnabled: true } };
+    }
+  }
+
   // Enforce the marker-safe variable-name invariant on any rehydrated session
   // (old data may carry names like `clock:Y` that the content-marker model
   // can't represent). Renames offenders + rewrites their markers in place.
@@ -446,7 +457,7 @@ export const useLabelStore = create<LabelState>()(
     }),
     {
       name: 'zpl-designer-session',
-      version: 13,
+      version: 14,
       migrate: (persistedState, version) => migrateLegacy(persistedState, version) as LabelState,
       storage: createJSONStorage(() => localStorage),
       partialize: persistPartialize,

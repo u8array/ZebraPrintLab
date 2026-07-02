@@ -14,6 +14,10 @@ export interface CanvasSettings {
   showGrid: boolean;
   snapEnabled: boolean;
   snapSizeMm: number;
+  /** Object-to-object alignment snapping (guides). On by default; a held
+   *  Ctrl/Cmd bypasses it per-gesture (move, resize, line reshape via the
+   *  shared useSnapBypassRef), this switch disables it entirely. */
+  smartSnapEnabled: boolean;
   zoom: number;
   unit: Unit;
   viewRotation: ViewRotation;
@@ -32,6 +36,7 @@ export type ThemePreference = 'light' | 'dark';
 /** Tab IDs for the Printer Settings modal. Adding a tab is a one-line
  *  union extension plus the matching locale-key + content component. */
 export type PrinterSettingsTab =
+  | 'appSettings'
   | 'mediaFeed'
   | 'printQuality'
   | 'clockTime'
@@ -118,6 +123,10 @@ export interface UiSlice {
   setTheme: (theme: ThemePreference) => void;
   setThirdPartyEnabled: (service: 'labelary', enabled: boolean) => void;
   acknowledgeLabelaryNotice: () => void;
+  revokeLabelaryNotice: () => void;
+  /** Reset app preferences (theme, canvas, palette, power-user, Labelary
+   *  consent) to defaults. Keeps the current design and the chosen language. */
+  resetSettings: () => void;
   setCanvasSettings: (settings: Partial<CanvasSettings>) => void;
   /** Pin/unpin a favorites row by entry id (the search star toggle): adds a row
    *  when absent, removes the matching row(s) when present. */
@@ -146,24 +155,51 @@ export interface UiSlice {
   requestContentEditorFocus: (id: string) => void;
 }
 
-export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) => ({
+/** Canvas defaults; shared by initial state and `resetSettings` so the two
+ *  never drift. Note `resetSettings` deliberately preserves the live
+ *  `zoom`/`viewRotation` from these defaults (see there). */
+export const DEFAULT_CANVAS_SETTINGS: CanvasSettings = {
+  showGrid: false,
+  snapEnabled: false,
+  snapSizeMm: 1,
+  smartSnapEnabled: true,
+  zoom: 1,
+  unit: 'mm',
+  viewRotation: 0,
+  csvRenderMode: 'preview',
+};
+
+type UiPrefs = Pick<
+  UiSlice,
+  | 'theme'
+  | 'thirdParty'
+  | 'labelaryNoticeAcknowledged'
+  | 'canvasSettings'
+  | 'paletteRows'
+  | 'paletteView'
+  | 'paletteEditing'
+  | 'showZplCommands'
+>;
+
+/** Defaults `resetSettings` restores. Shared with initial state so the `Pick`
+ *  turns a forgotten entry into a compile error. Excludes `locale` (reset keeps
+ *  the language). */
+function defaultUiPrefs(): UiPrefs {
+  return {
+    theme: detectInitialTheme(),
+    thirdParty: thirdPartyDefaults(),
+    labelaryNoticeAcknowledged: false,
+    canvasSettings: { ...DEFAULT_CANVAS_SETTINGS },
+    paletteRows: defaultPaletteRows(),
+    paletteView: 'flat',
+    paletteEditing: false,
+    showZplCommands: false,
+  };
+}
+
+export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set, get) => ({
   locale: detectLocale(),
-  theme: detectInitialTheme(),
-  thirdParty: thirdPartyDefaults(),
-  labelaryNoticeAcknowledged: false,
-  canvasSettings: {
-    showGrid: false,
-    snapEnabled: false,
-    snapSizeMm: 1,
-    zoom: 1,
-    unit: 'mm',
-    viewRotation: 0,
-    csvRenderMode: 'preview',
-  },
-  paletteRows: defaultPaletteRows(),
-  paletteView: 'flat',
-  paletteEditing: false,
-  showZplCommands: false,
+  ...defaultUiPrefs(),
   sidebarTab: 'properties',
   blockDragMode: 'frame',
   alignRef: 'selection',
@@ -179,6 +215,32 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set) =>
   setThirdPartyEnabled: (service, enabled) =>
     set((state) => ({ thirdParty: { ...state.thirdParty, [service]: enabled } })),
   acknowledgeLabelaryNotice: () => set({ labelaryNoticeAcknowledged: true }),
+  // Revoke consent so the Labelary gate closes again; re-enabling re-shows the
+  // disclosure, keeping consent explicit and reversible. Tear down any live
+  // preview so a Labelary-rendered overlay can't linger after consent is gone.
+  revokeLabelaryNotice: () => {
+    set({ labelaryNoticeAcknowledged: false });
+    get().exitPreviewMode();
+  },
+  // Scoped reset: prefs to defaults, design and language untouched. Not a
+  // localStorage nuke, so it works the same in the browser and a Tauri build.
+  // Keeps live view state (zoom/rotation): the fit-to-view is a one-shot at
+  // mount, so resetting zoom would strand the canvas at 100% with no re-fit.
+  resetSettings: () => {
+    set((state) => {
+      const prefs = defaultUiPrefs();
+      return {
+        ...prefs,
+        canvasSettings: {
+          ...prefs.canvasSettings,
+          zoom: state.canvasSettings.zoom,
+          viewRotation: state.canvasSettings.viewRotation,
+        },
+      };
+    });
+    // Reset drops Labelary consent; end any live preview so it doesn't linger.
+    get().exitPreviewMode();
+  },
   setCanvasSettings: (settings) =>
     set((state) => ({ canvasSettings: { ...state.canvasSettings, ...settings } })),
   togglePaletteRow: (entryId) =>

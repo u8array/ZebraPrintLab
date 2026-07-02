@@ -7,6 +7,7 @@ import {
   migrateLegacy,
 } from './labelStore';
 import { isGroup, getAllLeaves, type LabelObject } from '../types/Group';
+import { DEFAULT_CANVAS_SETTINGS } from './slices/uiSlice';
 import { toggleShapeMode } from '../lib/lineBoxConvert';
 import { defined, props } from '../test/helpers';
 
@@ -46,15 +47,7 @@ function reset() {
     csvMapping: null,
     csvMappingModalOpen: false,
     previewMode: { status: 'idle' },
-    canvasSettings: {
-      showGrid: false,
-      snapEnabled: false,
-      snapSizeMm: 1,
-      zoom: 1,
-      unit: 'mm',
-      viewRotation: 0,
-      csvRenderMode: 'preview',
-    },
+    canvasSettings: { ...DEFAULT_CANVAS_SETTINGS },
   });
 }
 
@@ -1459,6 +1452,24 @@ describe('migrateLegacy — v2→v3 circle→ellipse', () => {
     };
     const migrated = migrateLegacy(persisted, 2) as typeof persisted;
     expect(migrated.pages[0]?.objects[0]).toEqual(persisted.pages[0]?.objects[0]);
+  });
+});
+
+describe('migrateLegacy — v13→v14 smartSnapEnabled', () => {
+  it('backfills smartSnapEnabled=true so old sessions keep object snapping', () => {
+    const persisted = {
+      canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, zoom: 1, unit: 'mm', viewRotation: 0, csvRenderMode: 'preview' },
+    };
+    const migrated = migrateLegacy(persisted, 13) as { canvasSettings: Record<string, unknown> };
+    expect(migrated.canvasSettings.smartSnapEnabled).toBe(true);
+  });
+
+  it('preserves an explicit smartSnapEnabled=false from a newer snapshot', () => {
+    const persisted = {
+      canvasSettings: { showGrid: false, snapEnabled: false, snapSizeMm: 1, smartSnapEnabled: false, zoom: 1, unit: 'mm', viewRotation: 0, csvRenderMode: 'preview' },
+    };
+    const migrated = migrateLegacy(persisted, 13) as { canvasSettings: Record<string, unknown> };
+    expect(migrated.canvasSettings.smartSnapEnabled).toBe(false);
   });
 });
 

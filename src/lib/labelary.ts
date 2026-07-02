@@ -29,7 +29,7 @@ function apiKey(): string | undefined {
 /** True when the build targets the public api.labelary.com service. UI uses
  *  this to decide whether to surface the third-party-data-leaves-this-app
  *  privacy notice; a custom host implies the operator already controls the
- *  endpoint. */
+ *  endpoint. Reads env per call so tests can stub the host. */
 export function isDefaultLabelaryHost(): boolean {
   return host() === DEFAULT_HOST;
 }

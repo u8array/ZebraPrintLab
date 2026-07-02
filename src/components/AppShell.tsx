@@ -37,7 +37,6 @@ import {
   XMarkIcon,
   SunIcon,
   MoonIcon,
-  CommandLineIcon,
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
 } from "@heroicons/react/16/solid";
@@ -97,8 +96,6 @@ export function AppShell() {
   const setLocale = useLabelStore((s) => s.setLocale);
   const theme = useLabelStore((s) => s.theme);
   const setTheme = useLabelStore((s) => s.setTheme);
-  const showZplCommands = useLabelStore((s) => s.showZplCommands);
-  const setShowZplCommands = useLabelStore((s) => s.setShowZplCommands);
   const labelaryEnabled = useLabelStore((s) => s.thirdParty.labelary);
   const noticeRequired = useLabelStore(selectLabelaryNoticeRequired);
   const [showPrintNotice, setShowPrintNotice] = useState(false);
@@ -111,7 +108,7 @@ export function AppShell() {
   const { undo, redo, pastStates, futureStates } = useHistory();
   const canvasSettings = useLabelStore((s) => s.canvasSettings);
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
-  const { showGrid, snapEnabled, snapSizeMm, unit } = canvasSettings;
+  const { showGrid, snapEnabled, snapSizeMm, smartSnapEnabled, unit } = canvasSettings;
 
   // Preview lock no-ops undo/redo (see useHistory); reflect that on the buttons
   // so they aren't enabled-but-dead, matching the gated history dropdown.
@@ -242,18 +239,6 @@ export function AppShell() {
             )}
           </DropdownMenu>
 
-          <DropdownMenu
-            label={<CommandLineIcon className="w-3.5 h-3.5" />}
-            ariaLabel={t.app.showZplCommands}
-          >
-            <DropdownItem
-              onClick={() => setShowZplCommands(!showZplCommands)}
-              shortcut={showZplCommands ? "✓" : undefined}
-            >
-              {t.app.showZplCommands}
-            </DropdownItem>
-          </DropdownMenu>
-
           <Tooltip content="GitHub">
             <a
               href="https://github.com/u8array/ZebraPrintLab"
@@ -282,7 +267,7 @@ export function AppShell() {
             <DropdownSeparator />
             <DropdownItem
               icon={Cog6ToothIcon}
-              onClick={() => setPrinterSettingsTab("mediaFeed")}
+              onClick={() => setPrinterSettingsTab("appSettings")}
             >
               {t.printerSettings.open}
             </DropdownItem>
@@ -418,6 +403,7 @@ export function AppShell() {
             onGridToggle={() => setCanvasSettings({ showGrid: !showGrid })}
             snapEnabled={snapEnabled}
             onSnapToggle={() => setCanvasSettings({ snapEnabled: !snapEnabled })}
+            smartSnapEnabled={smartSnapEnabled}
             snapSizeMm={snapSizeMm}
             onSnapSizeChange={(v) => setCanvasSettings({ snapSizeMm: v })}
             zoom={canvasSettings.zoom}
