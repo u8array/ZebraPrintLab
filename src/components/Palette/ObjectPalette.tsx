@@ -244,10 +244,9 @@ export function ObjectPalette() {
         pinned: rows.some((r) => r.entryId === entry.id),
       })),
     }));
-    const sections = buildFavoritesAddMenu(groups, toggleRow);
-    if (!sections.some((s) => s.items.length > 0)) return; // everything already pinned
+    if (!groups.some((g) => g.entries.some((e) => !e.pinned))) return; // everything already pinned
     const r = e.currentTarget.getBoundingClientRect();
-    setMenu({ x: r.left, y: r.bottom + 4, sections });
+    setMenu({ x: r.left, y: r.bottom + 4, sections: buildFavoritesAddMenu(groups, toggleRow) });
   };
 
   // Track the dragged entry for the overlay chip, and reorder favorites on drop.

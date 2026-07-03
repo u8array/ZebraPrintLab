@@ -153,9 +153,14 @@ export function ContextMenu({ sections, x, y, labels, iconFor, onClose }: Props)
   // Also dismiss on scroll (the fixed menu would detach from its anchor) and on
   // a context menu elsewhere (keyboard Menu key fires no pointerdown, so two
   // could otherwise stack). Mounted after the opening event, so it isn't caught.
+  // onClose via ref so an inline callback doesn't re-bind the listeners.
+  const onCloseRef = useRef(onClose);
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  });
   useEffect(() => {
     const close = (e: Event) => {
-      if (!ref.current?.contains(e.target as Node)) onClose();
+      if (!ref.current?.contains(e.target as Node)) onCloseRef.current();
     };
     window.addEventListener("scroll", close, true);
     window.addEventListener("contextmenu", close, true);
@@ -163,7 +168,7 @@ export function ContextMenu({ sections, x, y, labels, iconFor, onClose }: Props)
       window.removeEventListener("scroll", close, true);
       window.removeEventListener("contextmenu", close, true);
     };
-  }, [onClose]);
+  }, []);
 
   return createPortal(
     <div ref={ref} className={`fixed ${MENU_BOX}`} style={{ left: pos.x, top: pos.y }} role="menu">

@@ -20,7 +20,7 @@ const lt = {
     resultsFmt: '{n} atitikmenų',
     unpinFromFavorites: 'Pašalinti iš mėgstamiausių',
     pinToFavorites: 'Pridėti prie mėgstamiausių',
-    addToLabel: 'Pridėti prie etičetės',
+    addToLabel: 'Pridėti prie etiketės',
     addObjectButton: 'Pridėti objektą…',
   },
   gs1builder: {
