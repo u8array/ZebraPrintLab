@@ -5,7 +5,7 @@ export const industrial2of5CoreConfig: Barcode1DCoreConfig = {
   label: "Industrial 2 of 5",
   icon: "I25",
   defaultContent: "12345678",
-  group: 'code-1d',
+  group: 'code-postal',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     return `^BI${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
