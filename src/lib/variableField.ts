@@ -1,6 +1,6 @@
 import { walkObjects, type LabelObject } from "../types/Group";
 import type { LabelObjectBase } from "../types/LabelObject";
-import type { Variable } from "../types/Variable";
+import { SINGLE_MARKER_RE, type Variable } from "../types/Variable";
 import { getObjectStringContent } from "./variableBinding";
 import { extractTemplateRefs } from "./fnTemplate";
 import { extractClockTokens } from "./fcTemplate";
@@ -19,9 +19,6 @@ export const asLabelObject = (obj: BindableLeaf): LabelObject => obj as unknown 
  * (`applyBindingToObject`) and export (`fdFieldFor`) consume the same
  * `classifyField` decision, so they can never diverge.
  */
-
-/** Matches a token string that is exactly one marker, no surrounding text. */
-const SINGLE_MARKER_RE = /^«([^»]+)»$/;
 
 /** True when content is exactly one `«marker»` and nothing else: the shape that
  *  emits inline (single-bind) rather than expanding to `^FE` embeds. */
@@ -117,23 +114,15 @@ export function fieldHasVariable(
 
 /** The field's ^FN variables (single-bind marker ∪ template marker refs),
  *  deduped; excludes clock tokens and orphan markers. Feeds the "used in this
- *  field" inspector. */
+ *  field" inspector and the layer badge. Thin view over classifyField so the
+ *  ref extraction has one implementation. */
 export function fieldVariableRefs(
   obj: LabelObject,
   variables: readonly Variable[],
 ): Variable[] {
-  const byName = new Map(variables.map((v) => [v.name, v]));
-  const out: Variable[] = [];
-  const seen = new Set<string>();
   const content = getObjectStringContent(obj) ?? "";
-  for (const name of extractTemplateRefs(content)) {
-    const v = byName.get(name);
-    if (v && !seen.has(v.id)) {
-      seen.add(v.id);
-      out.push(v);
-    }
-  }
-  return out;
+  const cls = classifyField(content, variables);
+  return cls.kind === "single" ? [cls.variable] : cls.kind === "template" ? cls.refs : [];
 }
 
 /** Walk every page (groups too) and tally how many fields reference each

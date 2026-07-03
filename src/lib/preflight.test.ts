@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computePreflight } from "./preflight";
+import { computePreflight, markerValueFindings } from "./preflight";
 import { getEntry } from "../registry";
 import type { ObjectBoundsCtx } from "./objectBounds";
 import type { LabelObject } from "../types/Group";
@@ -259,5 +259,144 @@ describe("computePreflight (suspicious-chars producer)", () => {
   it("still flags a control char in a non-GS1 field", () => {
     const findings = computePreflight([dm("a", "10ABC" + GS + "21XYZ")], ctx);
     expect(findings.some((f) => f.kind === "suspiciousChars")).toBe(true);
+  });
+});
+
+describe("markerValueFindings (typed-content marker values)", () => {
+  const qr = (id: string, content: string, extra: object = {}): LeafObject =>
+    ({ id, type: "qrcode", x: 0, y: 0, rotation: 0,
+       props: { content, magnification: 3, errorCorrection: "M", model: 2, rotation: "N", ...extra } } as LabelObject as LeafObject);
+  const vars = [{ id: "s", name: "ssid", fnNumber: 1, defaultValue: "A;B" }];
+  const deps = { variables: vars, csvDataset: null, csvMapping: null };
+
+  it("flags a WiFi payload whose marker default carries a structural char", () => {
+    const out = markerValueFindings([qr("a", "WIFI:T:WPA;S:«ssid»;;")], deps);
+    expect(out).toEqual([
+      { objectId: "a", kind: "markerValueUnsafe", severity: "warning", detail: "ssid: ;" },
+    ]);
+  });
+
+  it("flags a dirty CSV cell after a re-import even when the default is clean", () => {
+    const clean = [{ id: "s", name: "ssid", fnNumber: 1, defaultValue: "SafeNet" }];
+    const csvDataset = { headers: ["net"], rows: [["A;B"]] };
+    const csvMapping = { bindings: { s: "net" }, headerSnapshot: ["net"] };
+    const out = markerValueFindings([qr("a", "WIFI:T:WPA;S:«ssid»;;")], { variables: clean, csvDataset, csvMapping });
+    expect(out).toHaveLength(1);
+  });
+
+  it("stays quiet for text payloads and marker-free content", () => {
+    expect(markerValueFindings([qr("a", "hello «ssid»")], deps)).toEqual([]);
+    expect(markerValueFindings([qr("b", "WIFI:T:WPA;S:literal;;")], deps)).toEqual([]);
+  });
+
+  it("flags a row whose empty cell blanks a required field (incomplete payload)", () => {
+    const clean = [{ id: "s", name: "ssid", fnNumber: 1, defaultValue: "SafeNet" }];
+    const csvDataset = { headers: ["net"], rows: [["ok"], [""]] };
+    const csvMapping = { bindings: { s: "net" }, headerSnapshot: ["net"] };
+    const out = markerValueFindings([qr("a", "WIFI:T:WPA;S:«ssid»;;")], { variables: clean, csvDataset, csvMapping });
+    expect(out).toEqual([
+      { objectId: "a", kind: "markerValueUnsafe", severity: "warning", detail: "incomplete rows: 2" },
+    ]);
+  });
+
+  it("flags an empty default when no CSV is bound (defaults print)", () => {
+    const empty = [{ id: "s", name: "ssid", fnNumber: 1, defaultValue: "" }];
+    const out = markerValueFindings([qr("a", "WIFI:T:WPA;S:«ssid»;;")], { variables: empty, csvDataset: null, csvMapping: null });
+    expect(out).toEqual([
+      { objectId: "a", kind: "markerValueUnsafe", severity: "warning", detail: "incomplete with defaults" },
+    ]);
+  });
+
+  const bc = (id: string, content: string): LeafObject =>
+    ({ id, type: "code128", x: 0, y: 0, rotation: 0,
+       props: { content, gs1: true, height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" } } as LabelObject as LeafObject);
+  const gtin14 = "09501101530003";
+
+  it("flags a GS1 template whose variable widths no longer parse (raw-fallback emit)", () => {
+    const fits = [{ id: "g", name: "gtin", fnNumber: 1, defaultValue: gtin14 }];
+    const short = [{ id: "g", name: "gtin", fnNumber: 1, defaultValue: "123" }];
+    expect(markerValueFindings([bc("a", "01«gtin»")], { variables: fits, csvDataset: null, csvMapping: null })).toEqual([]);
+    expect(markerValueFindings([bc("b", "01«gtin»")], { variables: short, csvDataset: null, csvMapping: null })).toEqual([
+      { objectId: "b", kind: "gs1ValueInvalid", severity: "warning", detail: "variable widths no longer fit the AI structure" },
+    ]);
+    // Single-bind lone marker is the encode badge's job, not this check's.
+    expect(markerValueFindings([bc("c", "«gtin»")], { variables: short, csvDataset: null, csvMapping: null })).toEqual([]);
+  });
+
+  it("flags CSV rows whose substitution breaks an AI (length or charset), by row number", () => {
+    const gvars = [{ id: "g", name: "gtin", fnNumber: 1, defaultValue: gtin14 }];
+    // Variable-length AI (10): row 2 empty (real error per-row), row 3 fine.
+    const lvars = [{ id: "l", name: "lot", fnNumber: 1, defaultValue: "AB12" }];
+    const csvDataset = { headers: ["lot"], rows: [["OK1"], [""], ["OK2"]] };
+    const csvMapping = { bindings: { l: "lot" }, headerSnapshot: ["lot"] };
+    const out = markerValueFindings([bc("a", "10«lot»")], { variables: lvars, csvDataset, csvMapping });
+    expect(out).toEqual([
+      { objectId: "a", kind: "gs1ValueInvalid", severity: "warning", detail: "row 2: (10) empty" },
+    ]);
+    // Fixed AI: a row with wrong width flags exactLength for that row.
+    const gDataset = { headers: ["ean"], rows: [[gtin14], ["1234"]] };
+    const gMapping = { bindings: { g: "ean" }, headerSnapshot: ["ean"] };
+    const out2 = markerValueFindings([bc("b", "01«gtin»")], { variables: gvars, csvDataset: gDataset, csvMapping: gMapping });
+    expect(out2).toEqual([
+      { objectId: "b", kind: "gs1ValueInvalid", severity: "warning", detail: "row 2: (01) exactLength" },
+    ]);
+  });
+
+  it("validates every row of a SINGLE-BIND GS1 field (encode badge covers only the active row)", () => {
+    const gvars = [{ id: "g", name: "gtin", fnNumber: 1, defaultValue: "0109501101530003" }];
+    const csvDataset = { headers: ["pay"], rows: [["0109501101530003"], ["01123"]] };
+    const csvMapping = { bindings: { g: "pay" }, headerSnapshot: ["pay"] };
+    const out = markerValueFindings([bc("a", "«gtin»")], { variables: gvars, csvDataset, csvMapping });
+    expect(out).toEqual([
+      { objectId: "a", kind: "gs1ValueInvalid", severity: "warning", detail: "row 2: does not parse as GS1" },
+    ]);
+    const clean = markerValueFindings([bc("b", "«gtin»")], { variables: gvars, csvDataset: null, csvMapping: null });
+    expect(clean).toEqual([]);
+  });
+
+  it("flags block-control chars in template values of ^TB/^FB text fields", () => {
+    const txt = (id: string, content: string, extra: object): LeafObject =>
+      ({ id, type: "text", x: 0, y: 0, rotation: 0,
+         props: { content, fontHeight: 30, fontWidth: 0, rotation: "N", ...extra } } as LabelObject as LeafObject);
+    const tbDirty = [{ id: "v", name: "note", fnNumber: 1, defaultValue: "a<b" }];
+    const fbDirty = [{ id: "v", name: "note", fnNumber: 1, defaultValue: "a\\b" }];
+    const deps0 = (variables: typeof tbDirty) => ({ variables, csvDataset: null, csvMapping: null });
+    expect(markerValueFindings([txt("a", "x«note»y", { textMode: "tb", blockWidth: 200 })], deps0(tbDirty))).toEqual([
+      { objectId: "a", kind: "markerValueUnsafe", severity: "warning", detail: '"<" in note breaks the ^TB block' },
+    ]);
+    expect(markerValueFindings([txt("b", "x«note»y", { textMode: "fb", blockWidth: 200 })], deps0(fbDirty))).toEqual([
+      { objectId: "b", kind: "markerValueUnsafe", severity: "warning", detail: '"\\" in note breaks the ^FB block' },
+    ]);
+    // Plain (non-block) text and single-bind block fields stay quiet: single-
+    // bind values are escaped at emit (encodeDefault / fdTransform).
+    expect(markerValueFindings([txt("c", "x«note»y", {})], deps0(tbDirty))).toEqual([]);
+    expect(markerValueFindings([txt("d", "«note»", { textMode: "tb", blockWidth: 200 })], deps0(tbDirty))).toEqual([]);
+  });
+
+  it("flags the ^BX escape char in substituted values for GS1 DataMatrix only", () => {
+    const dm = (id: string, content: string): LeafObject =>
+      ({ id, type: "datamatrix", x: 0, y: 0, rotation: 0,
+         props: { content, gs1: true, dimension: 20, quality: 200, rotation: "N" } } as LabelObject as LeafObject);
+    const dirty = [{ id: "l", name: "lot", fnNumber: 1, defaultValue: "LOT_1" }];
+    expect(markerValueFindings([dm("a", "10«lot»")], { variables: dirty, csvDataset: null, csvMapping: null })).toEqual([
+      { objectId: "a", kind: "gs1ValueInvalid", severity: "warning", detail: 'defaults: (10) "_" collides with the ^BX escape character' },
+    ]);
+    const clean = [{ id: "l", name: "lot", fnNumber: 1, defaultValue: "LOT1" }];
+    expect(markerValueFindings([dm("b", "10«lot»")], { variables: clean, csvDataset: null, csvMapping: null })).toEqual([]);
+    // GS1-128 has no ^BX escape char; underscore values are fine there.
+    expect(markerValueFindings([bc("c", "10«lot»")], { variables: dirty, csvDataset: null, csvMapping: null })).toEqual([]);
+    // Single-bind runs through the carrier transform (doubling), so no finding.
+    expect(markerValueFindings([dm("d", "«lot»")], { variables: dirty, csvDataset: null, csvMapping: null })).toEqual([]);
+  });
+
+  it("validates the defaults' charset when no CSV is bound", () => {
+    // Same length as a valid lot but with a char outside CSET 82 would be a
+    // charset error; here an empty default in a variable AI is runtime-legal
+    // at authoring but prints empty, so the defaults row flags it.
+    const empty = [{ id: "l", name: "lot", fnNumber: 1, defaultValue: "" }];
+    const out = markerValueFindings([bc("a", "10«lot»")], { variables: empty, csvDataset: null, csvMapping: null });
+    expect(out).toEqual([
+      { objectId: "a", kind: "gs1ValueInvalid", severity: "warning", detail: "defaults: (10) empty" },
+    ]);
   });
 });

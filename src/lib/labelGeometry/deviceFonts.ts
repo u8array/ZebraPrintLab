@@ -15,6 +15,7 @@
  *
  * Font 0 is scalable and handled by the default proportional path, not here.
  */
+import { mapLiteralSpans } from "../fnTemplate";
 
 interface DeviceFontSpec {
   magStep: number; // cell height per magnification (dots)
@@ -68,16 +69,9 @@ export function applyDeviceFontCase(
 ): string {
   const mode = fontId ? DEVICE_FONT_CASE[fontId] : undefined;
   if (!mode) return text;
-  return text
-    .split(/(«[^»]+»)/)
-    .map((seg, i) =>
-      i % 2 === 1
-        ? seg
-        : mode === "upper"
-          ? seg.toUpperCase()
-          : seg.replace(/[a-z]/g, ""),
-    )
-    .join("");
+  return mapLiteralSpans(text, (seg) =>
+    mode === "upper" ? seg.toUpperCase() : seg.replace(/[a-z]/g, ""),
+  );
 }
 
 export interface DeviceFontMetrics {

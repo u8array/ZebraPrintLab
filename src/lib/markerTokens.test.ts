@@ -3,7 +3,6 @@ import {
   findAtomicMarker,
   findMarkerContaining,
   tokeniseMarkers,
-  sanitiseAroundMarkers,
   removeMarkerAt,
 } from "./markerTokens";
 
@@ -38,24 +37,6 @@ describe("tokeniseMarkers", () => {
     // typing those glyphs literally don't get them coloured/treated
     // as a broken variable.
     expect(tokeniseMarkers("«»", vars)).toEqual([{ kind: "text", text: "«»" }]);
-  });
-});
-
-describe("sanitiseAroundMarkers", () => {
-  it("applies fn to literal slices and leaves markers untouched", () => {
-    expect(sanitiseAroundMarkers("ab«sku»cd«clock:Y»ef", (s) => s.toUpperCase())).toBe(
-      "AB«sku»CD«clock:Y»EF",
-    );
-  });
-
-  it("filters a charset on literals without eating the chip (GS1 case)", () => {
-    const digits = (s: string) => s.replace(/\D/g, "");
-    // "(01)" -> "01", marker kept, "99x" -> "99"
-    expect(sanitiseAroundMarkers("(01)«gtin»99x", digits)).toBe("01«gtin»99");
-  });
-
-  it("applies fn to the whole string when no markers are present", () => {
-    expect(sanitiseAroundMarkers("a1b2", (s) => s.replace(/\d/g, ""))).toBe("ab");
   });
 });
 

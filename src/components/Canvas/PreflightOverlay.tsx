@@ -32,16 +32,10 @@ export function PreflightOverlay({ findings, objects, onSelect }: Props) {
   const byId = new Map(objects.map((o) => [o.id, o]));
   const hasError = findings.some((f) => f.severity === "error");
   const BadgeIcon = hasError ? ExclamationCircleIcon : ExclamationTriangleIcon;
-  const kindText: Record<PreflightKind, string> = {
-    offLabelOutside: t.preflight.offLabelOutside,
-    offLabelClipped: t.preflight.offLabelClipped,
-    renderFailed: t.preflight.renderFailed,
-    blockTooNarrow: t.preflight.blockTooNarrow,
-    barcodeTooSmall: t.preflight.barcodeTooSmall,
-    textOverset: t.preflight.textOverset,
-    imageMissing: t.preflight.imageMissing,
-    suspiciousChars: t.preflight.suspiciousChars,
-  };
+  // Locale keys are named exactly after PreflightKind, so the lookup is direct
+  // and compile-checked (the kind union must be a subset of t.preflight's
+  // keys); a new kind needs no edit here.
+  const kindText = (kind: PreflightKind): string => t.preflight[kind];
   const nameOf = (id: string) => {
     const o = byId.get(id);
     if (!o) return id;
@@ -91,7 +85,7 @@ export function PreflightOverlay({ findings, objects, onSelect }: Props) {
                     <span className="truncate text-text">{nameOf(f.objectId)}</span>
                     {f.detail && <span className="truncate text-[10px] text-muted">{f.detail}</span>}
                   </span>
-                  <span className="ml-auto shrink-0 text-muted">{kindText[f.kind]}</span>
+                  <span className="ml-auto shrink-0 text-muted">{kindText(f.kind)}</span>
                 </button>
               );
             })}

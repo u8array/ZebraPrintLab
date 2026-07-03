@@ -45,7 +45,7 @@ export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
         <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
           <ContentEditorButton obj={obj} />
           {isExpanded ? (
-            <button type="button" disabled={bound} onClick={() => openGs1Builder(obj.id)} className={builderButtonCls}>
+            <button type="button" onClick={() => openGs1Builder(obj.id)} className={builderButtonCls}>
               {t.gs1builder.button}
             </button>
           ) : (

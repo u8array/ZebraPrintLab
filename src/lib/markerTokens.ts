@@ -1,5 +1,6 @@
 import { CLOCK_TOKEN_LABELS } from "./fcTemplate";
 import { CLOCK_BODY_RE } from "../types/clockMarker";
+import { markerRe } from "../types/Variable";
 
 /** Segment kinds the content editor's colour-mirror layer renders. */
 export type MarkerSegment =
@@ -7,7 +8,6 @@ export type MarkerSegment =
   | { kind: "var" | "clock"; text: string }
   | { kind: "orphan"; text: string };
 
-const MARKER_RE = /«([^»]+)»/g;
 const KNOWN_CLOCK_TOKENS = new Set<string>(CLOCK_TOKEN_LABELS.map((x) => x.token));
 
 /** Classifies a marker body (the text between `«»`) as a known variable, a
@@ -32,7 +32,7 @@ export function tokeniseMarkers(
 ): MarkerSegment[] {
   const out: MarkerSegment[] = [];
   let last = 0;
-  for (const m of content.matchAll(MARKER_RE)) {
+  for (const m of content.matchAll(markerRe())) {
     const idx = m.index ?? 0;
     if (idx > last) out.push({ kind: "text", text: content.slice(last, idx) });
     out.push({ kind: classifyMarkerBody(m[1] ?? "", variableNames), text: m[0] });
@@ -63,22 +63,13 @@ export function removeMarkerAt(
   return out;
 }
 
-/** Apply `fn` to the literal slices between `«…»` markers, leaving the markers
- *  untouched. Lets a charset filter run on a field without eating its chips. */
-export function sanitiseAroundMarkers(raw: string, fn: (slice: string) => string): string {
-  return raw
-    .split(/(«[^»]+»)/)
-    .map((s, i) => (i % 2 === 0 ? fn(s) : s))
-    .join("");
-}
-
 /** backspace: pos after `»` or inside; delete: pos before `«` or inside. */
 export function findAtomicMarker(
   content: string,
   pos: number,
   direction: "backspace" | "delete",
 ): { start: number; end: number } | null {
-  for (const m of content.matchAll(MARKER_RE)) {
+  for (const m of content.matchAll(markerRe())) {
     const start = m.index ?? 0;
     const end = start + m[0].length;
     if (direction === "backspace") {
@@ -95,7 +86,7 @@ export function findMarkerContaining(
   content: string,
   pos: number,
 ): { start: number; end: number } | null {
-  for (const m of content.matchAll(MARKER_RE)) {
+  for (const m of content.matchAll(markerRe())) {
     const start = m.index ?? 0;
     const end = start + m[0].length;
     if (pos >= start && pos <= end) return { start, end };

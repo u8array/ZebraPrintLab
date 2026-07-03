@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { encodeContent, parseContent, recommendedEc, isContentComplete, type ContentType, type ContentFields } from "./typedContent";
+import { encodeContent, markerUnsafeChars, parseContent, recommendedEc, isContentComplete, typedContentIncompleteRows, typedContentMarkerFindings, type ContentType, type ContentFields } from "./typedContent";
 
 function roundtrip(type: ContentType, fields: ContentFields) {
   const parsed = parseContent(encodeContent(type, fields));
@@ -45,6 +45,117 @@ describe("encodeContent", () => {
     expect(encodeContent("vcard", { firstName: "Sean", lastName: "Owen", email: "s@x.io" })).toBe(
       "BEGIN:VCARD\nVERSION:3.0\nN:Owen;Sean;;;\nFN:Sean Owen\nEMAIL:s@x.io\nEND:VCARD",
     );
+  });
+});
+
+describe("marker-aware encoding (tokens stay atomic)", () => {
+  it("WiFi: escapes only literal spans, never a marker body; skips hex-quoting", () => {
+    expect(encodeContent("wifi", { ssid: "a;«ssid»", password: "«pw»", auth: "WPA" })).toBe(
+      "WIFI:T:WPA;S:a\\;«ssid»;P:«pw»;;",
+    );
+    // All-hex literal around a marker must NOT be quoted (resolved value unknown).
+    expect(encodeContent("wifi", { ssid: "AB«x»", auth: "nopass" })).toContain("S:AB«x»;");
+  });
+
+  it("vCard: escapes literal specials, marker atomic", () => {
+    expect(encodeContent("vcard", { firstName: "«first»", lastName: "a,b" })).toContain(
+      "N:a\\,b;«first»;;;",
+    );
+  });
+
+  it("tel/sms: strips literal non-digits, keeps marker letters", () => {
+    expect(encodeContent("tel", { number: "+49 «num»" })).toBe("tel:+49«num»");
+    expect(encodeContent("sms", { number: "«num»", message: "hi «who»" })).toBe("SMSTO:«num»:hi «who»");
+  });
+
+  it("email: percent-encodes literals only", () => {
+    expect(encodeContent("email", { to: "a@b.c", subject: "Order «id» ready" })).toBe(
+      "mailto:a@b.c?subject=Order%20«id»%20ready",
+    );
+  });
+
+  it("url: leading marker suppresses the https:// prefix", () => {
+    expect(encodeContent("url", { url: "«link»" })).toBe("«link»");
+    expect(encodeContent("url", { url: "x.io/«path»" })).toBe("https://x.io/«path»");
+  });
+
+  it("round-trips marker payloads through parseContent", () => {
+    expect(roundtrip("wifi", { ssid: "a;«ssid»", password: "«pw»", auth: "WPA" })).toMatchObject({
+      ssid: "a;«ssid»",
+      password: "«pw»",
+    });
+    expect(roundtrip("tel", { number: "«num»" })).toEqual({ number: "«num»" });
+    expect(roundtrip("geo", { lat: "«lat»", lng: "«lng»" })).toEqual({ lat: "«lat»", lng: "«lng»" });
+    expect(roundtrip("sms", { number: "«num»", message: "hi «who»" })).toEqual({
+      number: "«num»",
+      message: "hi «who»",
+    });
+  });
+});
+
+describe("markerUnsafeChars (print-time substituted values bypass literal escaping)", () => {
+  it("flags WiFi structural chars in a substituted value, deduped", () => {
+    expect(markerUnsafeChars("wifi", "ssid", 'A;B;C"')).toBe('; "');
+    expect(markerUnsafeChars("wifi", "password", "p\\w")).toBe("\\");
+  });
+
+  it("flags vCard and mailto structural chars (incl. percent and whitespace)", () => {
+    expect(markerUnsafeChars("vcard", "lastName", "a,b;c")).toBe(", ;");
+    expect(markerUnsafeChars("email", "subject", "a&b#c")).toBe("& #");
+    expect(markerUnsafeChars("email", "subject", "a b%c")).toBe("␣ %");
+  });
+
+  it("returns null for safe values and for fields whose literals are raw anyway", () => {
+    expect(markerUnsafeChars("wifi", "ssid", "plainnet")).toBeNull();
+    expect(markerUnsafeChars("url", "url", "a;b&c")).toBeNull();
+    expect(markerUnsafeChars("sms", "message", "hi; there")).toBeNull();
+  });
+});
+
+describe("typedContentMarkerFindings", () => {
+  const vars = [{ id: "s", name: "ssid", fnNumber: 1, defaultValue: "SafeNet" }];
+
+  it("does NOT flag structural chars in the field's LITERAL text (the encoder escapes those)", () => {
+    expect(typedContentMarkerFindings("wifi", { ssid: "a;b«ssid»" }, vars, null, null)).toEqual({});
+  });
+
+  it("flags an unsafe variable default", () => {
+    const dirty = [{ id: "s", name: "ssid", fnNumber: 1, defaultValue: "A;B" }];
+    expect(typedContentMarkerFindings("wifi", { ssid: "«ssid»" }, dirty, null, null)).toEqual({ ssid: ";" });
+  });
+
+  it("flags an unsafe bound CSV cell even when the default is clean", () => {
+    const csvDataset = { headers: ["net"], rows: [["ok"], ["A;B"]] };
+    const csvMapping = { bindings: { s: "net" }, headerSnapshot: ["net"] };
+    expect(typedContentMarkerFindings("wifi", { ssid: "«ssid»" }, vars, csvDataset, csvMapping)).toEqual({ ssid: ";" });
+  });
+
+  it("ignores marker-free fields and unbound datasets", () => {
+    const csvDataset = { headers: ["net"], rows: [["A;B"]] };
+    expect(typedContentMarkerFindings("wifi", { ssid: "literal;net" }, vars, csvDataset, null)).toEqual({});
+  });
+});
+
+describe("typedContentIncompleteRows", () => {
+  const vars = [{ id: "s", name: "ssid", fnNumber: 1, defaultValue: "SafeNet" }];
+
+  it("reports 1-based rows whose substitution blanks a required field", () => {
+    const csvDataset = { headers: ["net"], rows: [[""], ["ok"], [""]] };
+    const csvMapping = { bindings: { s: "net" }, headerSnapshot: ["net"] };
+    expect(typedContentIncompleteRows("wifi", { ssid: "«ssid»" }, vars, csvDataset, csvMapping)).toEqual([1, 3]);
+  });
+
+  it("checks only the defaults without a bound dataset ([0] when they fail)", () => {
+    const empty = [{ id: "s", name: "ssid", fnNumber: 1, defaultValue: "" }];
+    expect(typedContentIncompleteRows("wifi", { ssid: "«ssid»" }, empty, null, null)).toEqual([0]);
+    expect(typedContentIncompleteRows("wifi", { ssid: "«ssid»" }, vars, null, null)).toEqual([]);
+  });
+
+  it("treats clock markers as fixed-width digits (never empty), unbound vars as their default", () => {
+    const csvDataset = { headers: ["x"], rows: [["cell"]] };
+    const csvMapping = { bindings: {}, headerSnapshot: ["x"] };
+    expect(typedContentIncompleteRows("tel", { number: "«clock:H»" }, vars, null, null)).toEqual([]);
+    expect(typedContentIncompleteRows("wifi", { ssid: "«ssid»" }, vars, csvDataset, csvMapping)).toEqual([]);
   });
 });
 

@@ -96,6 +96,14 @@ export const text: ObjectTypeCore<TextProps> = {
   group: "text" as const,
   bindable: true,
   serialisable: true,
+  // Per-row seam the CSV batch override reads: a single-bound block field's
+  // row values need the block escaping re-applied (^TB `<`, ^FB `\`), exactly
+  // like a barcode's fdContent. toZPL does NOT route this through fdFieldFor's
+  // transform param: its template payload is pre-encoded and would double-encode.
+  fdTransform: (obj) => {
+    const mode = resolveTextMode(obj.props);
+    return mode === "fb" ? encodeFbContent : mode === "tb" ? encodeTbContent : undefined;
+  },
   defaultProps: {
     content: "Text",
     fontHeight: 30,
@@ -212,6 +220,7 @@ export const text: ObjectTypeCore<TextProps> = {
     if (mode === "fb") {
       blockCmd = `^FB${p.blockWidth ?? 0},${p.blockLines ?? 1},${p.blockLineSpacing ?? 0},${p.blockJustify ?? "L"},${p.blockHangingIndent ?? 0}`;
       content = encodeFbContent(p.content);
+      encodeDefault = encodeFbContent;
     } else if (mode === "tb") {
       blockCmd = `^TB${p.rotation},${p.blockWidth ?? 0},${p.blockHeight ?? 0}`;
       content = encodeTbContent(p.content);

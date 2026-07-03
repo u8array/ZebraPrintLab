@@ -1,4 +1,4 @@
-import { sanitiseAroundMarkers } from "../lib/markerTokens";
+import { mapLiteralSpans } from "../lib/fnTemplate";
 import type { ContentSpec } from "../types/contentSpec";
 
 export type { ContentSpec } from "../types/contentSpec";
@@ -46,7 +46,7 @@ export function contentSanitiser(spec: ContentSpec): (raw: string) => string {
         const normalized = spec.normalize(raw);
         if (normalized !== null) return normalized;
       }
-      return sanitiseAroundMarkers(raw, (slice) => filterContent(slice, charsetOnly));
+      return mapLiteralSpans(raw, (slice) => filterContent(slice, charsetOnly));
     };
     sanitiserCache.set(spec, fn);
   }

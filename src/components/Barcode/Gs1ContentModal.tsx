@@ -6,11 +6,15 @@ import type { Translations } from "../../locales";
 import { inputCls } from "../ui/formStyles";
 import { Tooltip } from "../ui/Tooltip";
 import { useLabelStore, getCurrentObjects } from "../../store/labelStore";
+import { usePreviewBinding } from "../../store/usePreviewBinding";
+import { getObjectStringContent } from "../../lib/variableBinding";
+import { extractTemplateRefs, hasTemplateMarkers } from "../../lib/fnTemplate";
+import { MarkerTextField } from "../Properties/MarkerTextField";
 import { findObjectById } from "../../types/Group";
 import {
   aiSpec,
   isVariableKind,
-  validateGs1Segment,
+  validateGs1SegmentResolved,
   validateGs1Segments,
   segmentsToElementString,
   segmentsToContent,
@@ -91,19 +95,32 @@ function Gs1Builder({ objectId }: { objectId: string }) {
   const updateObject = useLabelStore((s) => s.updateObject);
 
   const obj = findObjectById(getCurrentObjects(), objectId);
-  const [segments, setSegments] = useState<Gs1Segment[]>(() => {
-    const content = (obj && "props" in obj ? (obj.props as { content?: string }).content : "") ?? "";
-    return parseGs1ToSegments(content) ?? [];
+  const { variables, resolveDefaults } = usePreviewBinding();
+  // Seed once (lazy): existing content the parser can't load (free text, a
+  // lone single-bind marker, or a marker whose default no longer fills its
+  // fixed AI) starts the editor empty WITH a warning instead of blocking the
+  // builder; only an explicit Apply replaces it, Cancel keeps it.
+  const [seed] = useState(() => {
+    const content = (obj && getObjectStringContent(obj)) || "";
+    const parsed = parseGs1ToSegments(content, variables);
+    return { segments: parsed ?? [], lost: content !== "" && parsed === null };
   });
+  const [segments, setSegments] = useState<Gs1Segment[]>(seed.segments);
   const enforceReq = GS1_REQ_ENFORCED_TYPES.has(obj?.type ?? "");
 
   const tg = t.gs1builder;
   const [query, setQuery] = useState("");
 
-  const errors = segments.map((s) => validateGs1Segment(s.ai, s.value));
+  // Validate each segment as its preview substitution (variable defaults,
+  // current clock), so a marker is checked as the text it prints.
+  const errors = segments.map((s) => validateGs1SegmentResolved(s.ai, s.value, resolveDefaults(s.value)));
   const fieldsOk = segments.length > 0 && errors.every((e) => e === null);
   const setError = validateGs1Segments(segments, enforceReq);
-  const valid = fieldsOk && setError === null;
+  // Round-trip gate: only allow Apply for content the builder can re-open, so
+  // a marker that validates but can't be re-parsed (e.g. a fixed field whose
+  // markers don't resolve to its exact width) can't produce un-editable state.
+  const roundTrips = parseGs1ToSegments(segmentsToContent(segments), variables) !== null;
+  const valid = fieldsOk && setError === null && roundTrips;
 
   const addSegment = (ai: string) => setSegments((prev) => [...prev, { ai, value: "" }]);
   const setValue = (i: number, value: string) =>
@@ -111,8 +128,6 @@ function Gs1Builder({ objectId }: { objectId: string }) {
   const removeAt = (i: number) => setSegments((prev) => prev.filter((_, j) => j !== i));
 
   const apply = () => {
-    // Builder writes a literal GS1 string, overwriting any prior `«name»` marker
-    // so the field is no longer single-bound.
     updateObject(objectId, { props: { content: segmentsToContent(segments) } });
     closeGs1Builder();
   };
@@ -192,6 +207,9 @@ function Gs1Builder({ objectId }: { objectId: string }) {
 
       <section className="flex flex-col gap-2">
         <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{tg.segmentsHeading}</h3>
+        {seed.lost && (
+          <p className="text-[10px] text-warning px-1">{tg.seedNotParsedHint}</p>
+        )}
         {segments.length === 0 ? (
           <p className="text-xs text-muted px-1">{tg.emptyHint}</p>
         ) : (
@@ -199,18 +217,20 @@ function Gs1Builder({ objectId }: { objectId: string }) {
             {segments.map((seg, i) => {
               const spec = aiSpec(seg.ai);
               const err = errors[i];
-              const decPreview = spec?.kind === "decimal" ? decimalValuePreview(seg.ai, seg.value) : null;
+              const shown = resolveDefaults(seg.value);
+              const isMarker = hasTemplateMarkers(seg.value);
+              const decPreview = spec?.kind === "decimal" ? decimalValuePreview(seg.ai, shown) : null;
               return (
                 <li key={i} className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-[10px] bg-accent-dim text-accent rounded px-1 py-0.5 shrink-0">({seg.ai})</span>
                     <span className="text-xs text-text shrink-0 w-28 truncate">{aiName(tg, seg.ai)}</span>
                     <span className="font-mono text-[10px] text-muted shrink-0">{spec ? formatHint(spec) : ""}</span>
-                    <input
-                      className={`${inputCls} flex-1 ${err ? "border-error" : ""}`}
+                    <MarkerTextField
                       value={seg.value}
-                      onChange={(e) => setValue(i, e.target.value)}
-                      aria-label={aiName(tg, seg.ai)}
+                      onChange={(next) => setValue(i, next)}
+                      ariaLabel={aiName(tg, seg.ai)}
+                      hasError={err !== null}
                     />
                     {fnc1After(i) && (
                       <Tooltip content={tg.fnc1} className="shrink-0">
@@ -222,11 +242,27 @@ function Gs1Builder({ objectId }: { objectId: string }) {
                     </button>
                   </div>
                   {err ? (
-                    <span className="text-[10px] text-error pl-1">{fieldErrMsg(tg, err)}</span>
-                  ) : spec?.kind === "gtin" && seg.value.length > 0 && seg.value.length < 14 ? (
+                    <span className="text-[10px] text-error pl-1">
+                      {/* Marker width mismatch gets the actionable message ONLY
+                          when a variable is involved (its default drives the
+                          inherited width). A clock-only mismatch keeps the
+                          generic message: clock widths are fixed, the fix is
+                          different tokens, not a default value. */}
+                      {err === "exactLength" && isMarker && spec &&
+                      extractTemplateRefs(seg.value).some((n) => variables.some((v) => v.name === n))
+                        ? tg.errMarkerLengthFmt
+                            .replace("{have}", String(shown.length))
+                            .replace("{need}", String(spec.len))
+                        : fieldErrMsg(tg, err)}
+                    </span>
+                  ) : spec?.kind === "gtin" && !isMarker && shown.length > 0 && shown.length < 14 ? (
                     <span className="text-[10px] text-muted pl-1">{tg.gtinAutocomplete}</span>
                   ) : decPreview ? (
                     <span className="text-[10px] text-muted pl-1">= {decPreview}</span>
+                  ) : isMarker && shown !== "" && !hasTemplateMarkers(shown) ? (
+                    // Resolved substitution + width, so the user sees what the
+                    // marker reserves against the AI's format (e.g. n14).
+                    <span className="text-[10px] text-muted pl-1 font-mono">= {shown} · {shown.length}</span>
                   ) : null}
                 </li>
               );
@@ -243,8 +279,10 @@ function Gs1Builder({ objectId }: { objectId: string }) {
         <section className="flex flex-col gap-2">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] text-muted">{tg.elementLabel}</span>
+            {/* Print preview: markers resolved in the ASSEMBLED string (raw
+                substitution, mirroring print-time ^FN insertion). */}
             <code className="text-xs font-mono text-text break-all bg-surface-2 rounded px-2 py-1">
-              {segmentsToElementString(segments)}
+              {resolveDefaults(segmentsToElementString(segments))}
             </code>
           </div>
           <div className="flex flex-col gap-1">

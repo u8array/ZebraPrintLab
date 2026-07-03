@@ -23,8 +23,9 @@ import type { SnapGuide } from "../../lib/snapGuides";
 import { computeAlignDeltas, computeDistribute, computeTidy } from "../../lib/align";
 import type { AlignOp, AlignBox, DistributeAxis, AlignRef } from "../../lib/align";
 import { objectBoundsDots, selectionUnionDots, printableRectDots } from "../../lib/objectBounds";
-import { computePreflight } from "../../lib/preflight";
+import { computePreflight, markerValueFindings } from "../../lib/preflight";
 import { barcodeEncodeFindings } from "./barcodePreflight";
+import { usePreviewBinding } from "../../store/usePreviewBinding";
 import { rotateSelectionChanges } from "../../lib/groupRotation";
 import { selectTidyTargets } from "../../lib/tidyClassify";
 import { safeAreaRectDots } from "../../lib/safeArea";
@@ -202,6 +203,11 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     pages,
   } = useLabelStore();
   const objects = useCurrentObjects();
+  const previewBinding = usePreviewBinding();
+  // Raw dataset/mapping (not just the active row): markerValueFindings
+  // validates marker values across ALL CSV rows, since any row prints.
+  const csvDataset = useLabelStore((s) => s.csvDataset);
+  const csvMapping = useLabelStore((s) => s.csvMapping);
   const paletteRows = useLabelStore((s) => s.paletteRows);
   const previewMode = useLabelStore((s) => s.previewMode);
   const previewLocks = useLabelStore(selectPreviewLocksEditor);
@@ -516,7 +522,12 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     ? []
     : [
         ...computePreflight(preflightLeaves, frameCtx),
-        ...barcodeEncodeFindings(preflightLeaves, scale, label.dpmm),
+        ...barcodeEncodeFindings(preflightLeaves, scale, label.dpmm, previewBinding),
+        ...markerValueFindings(preflightLeaves, {
+          variables: previewBinding.variables,
+          csvDataset,
+          csvMapping,
+        }),
       ];
   // Off-label marks pair each off-label finding with its on-screen bbox: a
   // clipped object gets a solid amber outline, a fully-outside one a dashed red

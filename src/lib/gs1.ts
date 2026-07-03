@@ -10,6 +10,9 @@
  */
 
 import { GS1_AI_FULL_CATALOG } from "./gs1AiCatalog";
+import { hasTemplateMarkers } from "./fnTemplate";
+import { clockBodyLength } from "./fcTemplate";
+import type { Variable } from "../types/Variable";
 import type {
   Gs1AiCatalogEntry,
   Gs1AiKind,
@@ -147,6 +150,9 @@ export function mod10CheckDigit(body: string): string {
  * 14-digit number, while Labelary completes it server-side.
  */
 export function gtin14WithCheck(content: string): string {
+  // A marker-bearing value must pass through verbatim: the digit strip and
+  // check-digit math would destroy the «...» token.
+  if (hasTemplateMarkers(content)) return content;
   let digits = content.replace(/\D/g, "");
   if (digits.startsWith("01") && digits.length > 14) digits = digits.slice(2);
   if (digits.length >= 14) return digits.slice(0, 14);
@@ -293,6 +299,31 @@ export function gtinBodyFromContent(content: string): string {
  * (the check digit is auto-completed downstream), so it returns null.
  */
 export function validateGs1Segment(ai: string, value: string): string | null {
+  return validateGs1SegmentImpl(ai, value);
+}
+
+/** Marker-aware verdict on the resolved value: a fixed-width AI must match
+ *  the spec width exactly (no GTIN auto-completion for markers).
+ *  emptyIsRuntimeValued: "" in a variable AI passes when true (authoring
+ *  preview) but fails when false (per-row, where the resolved value IS the
+ *  print value). Otherwise defers to validateGs1Segment. */
+export function validateGs1SegmentResolved(
+  ai: string,
+  rawValue: string,
+  resolved: string,
+  emptyIsRuntimeValued = true,
+): string | null {
+  const spec = AI_BY_CODE.get(ai);
+  if (!spec) return "unknownAi";
+  const isMarker = hasTemplateMarkers(rawValue);
+  if (isMarker && !hasTemplateMarkers(resolved)) {
+    if (!isVariableKind(spec.kind) && resolved.length !== spec.len) return "exactLength";
+  }
+  if (emptyIsRuntimeValued && resolved === "" && isVariableKind(spec.kind) && isMarker) return null;
+  return validateGs1SegmentImpl(ai, resolved);
+}
+
+function validateGs1SegmentImpl(ai: string, value: string): string | null {
   const spec = AI_BY_CODE.get(ai);
   if (!spec) return "unknownAi";
   if (value === "") return "empty";
@@ -395,7 +426,41 @@ function matchAiAt(content: string, pos: number): string | null {
  * never corrupting the content). Variable AIs end at a GS char or the next AI's
  * boundary cannot be assumed, so unseparated variable runs return null.
  */
-export function parseGs1ToSegments(content: string): Gs1Segment[] | null {
+/** End index of a fixed-length AI value that may contain markers, or null when
+ *  the resolved width can't hit `targetLen` exactly. Clock markers count at
+ *  their fixed token width, variable markers at their default value's length,
+ *  literals at one. Markers are atomic (never split across the boundary). */
+function fixedFieldEnd(
+  content: string,
+  start: number,
+  targetLen: number,
+  varLen: Map<string, number>,
+): number | null {
+  const marker = /«([^»]+)»/y;
+  let pos = start;
+  let len = 0;
+  while (len < targetLen) {
+    if (pos >= content.length) return null;
+    marker.lastIndex = pos;
+    const m = marker.exec(content);
+    if (m) {
+      const body = m[1] ?? "";
+      len += clockBodyLength(body) ?? varLen.get(body) ?? m[0].length;
+      pos = marker.lastIndex;
+    } else {
+      len += 1;
+      pos += 1;
+    }
+  }
+  return len === targetLen ? pos : null;
+}
+
+export function parseGs1ToSegments(
+  content: string,
+  /** When given, fixed-length values may carry «marker»s counted at their
+   *  resolved width (builder round-trip); imports parse without. */
+  variables?: readonly Variable[],
+): Gs1Segment[] | null {
   if (content === "") return [];
   // Element-string form only when it starts with "("; a "(" inside a varAlnum
   // value (valid CSET 82) must not flip raw content into parens parsing.
@@ -414,6 +479,8 @@ export function parseGs1ToSegments(content: string): Gs1Segment[] | null {
     return consumed === content.length && segs.length > 0 ? segs : null;
   }
   const segs: Gs1Segment[] = [];
+  // Default lengths for marker-width slicing in fixed fields (builder mode).
+  const varLen = new Map((variables ?? []).map((v) => [v.name, v.defaultValue.length]));
   let pos = 0;
   while (pos < content.length) {
     const ai = matchAiAt(content, pos);
@@ -426,9 +493,17 @@ export function parseGs1ToSegments(content: string): Gs1Segment[] | null {
       const end = gs === -1 ? content.length : gs;
       segs.push({ ai, value: content.slice(pos, end) });
       pos = gs === -1 ? end : gs + 1;
+    } else if (variables !== undefined && hasTemplateMarkers(content.slice(pos))) {
+      // Builder mode: a fixed field may carry markers (clock composed to the
+      // field width, or a variable whose default fills it). Slice by resolved
+      // width so it round-trips exactly, or bail to free-text fallback.
+      const end = fixedFieldEnd(content, pos, spec.len, varLen);
+      if (end === null) return null;
+      segs.push({ ai, value: content.slice(pos, end) });
+      pos = end;
     } else {
       const value = content.slice(pos, pos + spec.len);
-      if (value.length !== spec.len) return null;
+      if (value.length !== spec.len || value.includes("«")) return null;
       segs.push({ ai, value });
       pos += spec.len;
     }
@@ -459,7 +534,6 @@ export function elementStringToContent(raw: string): string | null {
   const segs = parseGs1ToSegments(trimmed);
   return segs ? segmentsToContent(segs) : null;
 }
-
 /**
  * Legacy: wrap a raw fixed-AI sequence in parens for bwip-js. Kept for content
  * that predates the catalog parser. Unknown/variable AIs short-circuit and are

@@ -13,7 +13,9 @@ export type PreflightKind =
   | 'barcodeTooSmall'
   | 'textOverset'
   | 'imageMissing'
-  | 'suspiciousChars';
+  | 'suspiciousChars'
+  | 'markerValueUnsafe'
+  | 'gs1ValueInvalid';
 
 export interface PreflightFinding {
   objectId: string;
@@ -39,6 +41,13 @@ export const PREFLIGHT_SEVERITY: Record<PreflightKind, PreflightSeverity> = {
   // Invisible/ambiguous chars still encode fine; they just rarely belong, so
   // warn (the payload may scan into unexpected data) rather than block.
   suspiciousChars: 'warning',
+  // Same tier: the barcode encodes, but the marker's print-time value carries
+  // structural chars its typed encoding can't take, so it scans corrupted.
+  markerValueUnsafe: 'warning',
+  // Split from markerValueUnsafe: not a scan-corruption but GS1-INVALID data
+  // (wrong fixed-AI width, charset, date) from a substitution; it still
+  // prints, so warn rather than block.
+  gs1ValueInvalid: 'warning',
 };
 
 /** What a per-type `preflight` producer receives. Minimal on purpose (just the

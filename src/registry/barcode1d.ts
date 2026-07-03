@@ -7,7 +7,7 @@ import { commitBarcodeWidthHeightTransform } from './transformHelpers';
 import { hasTemplateMarkers } from '../lib/fnTemplate';
 import { moduleTooSmallPreflight } from '../lib/barcodeScannability';
 import { isLoneMarker } from '../lib/variableField';
-import { gs1ContentToElementString } from '../lib/gs1';
+import { gs1ContentToElementString, parseGs1ToSegments, segmentsToElementString } from '../lib/gs1';
 import { type ZplRotation } from './rotation';
 
 export interface Barcode1DProps {
@@ -68,8 +68,10 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
     rotation: 'N',
   };
   // Obj-aware ^FD transform (fdContent, or the GS1 element-string form in GS1
-  // mode), applied to literal/single-bind payloads but never a template (whose
-  // ^FE embed reference it would mangle). Shared by toZPL and the batch override.
+  // mode), applied to literal/single-bind payloads. A template gets none: the
+  // post-embed transform would mangle its #n# references; GS1 templates are
+  // instead pre-mapped to element-string form at segment level in toZPL.
+  // Shared by toZPL and the batch override.
   const fdTransformFor =
     config.fdContent || config.gs1Capable
       ? (obj: LabelObjectBase & { props: Barcode1DProps }) => {
@@ -109,9 +111,9 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
       : commitBarcodeWidthHeightTransform,
 
     // e.g. UPC-E compaction; shared with the CSV batch override so a per-row
-    // value is compacted the same way as the single-format default. Skipped on
-    // a template field: fdContent reformats a literal value and would corrupt
-    // the embed reference (#n#) that a template payload expands to.
+    // value is compacted the same way as the single-format default. Undefined
+    // on a template field (see fdTransformFor; GS1 templates are handled by
+    // toZPL's segment-level element-string pre-map instead).
     fdTransform: fdTransformFor,
 
     toZPL: (obj, ctx) => {
@@ -133,9 +135,19 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
       // symbology's fdContent transform (e.g. UPC-E's number-system prefix) so a
       // serialized barcode emits the same payload shape as a non-serial one.
       const fdTransform = fdTransformFor?.(obj);
+      // GS1 TEMPLATE payload: convert to the element-string form at SEGMENT
+      // level (markers intact) BEFORE ^FE embed expansion. The post-embed
+      // transform would mangle the #n# references, and skipping it entirely
+      // would emit the raw GS-separated form literal payloads never use.
+      // Unparseable template content falls back to raw emit unchanged.
+      let content = p.content;
+      if (config.gs1Capable && p.gs1 && hasTemplateMarkers(content) && !isLoneMarker(content)) {
+        const segs = ctx?.variables ? parseGs1ToSegments(content, ctx.variables) : null;
+        if (segs && segs.length > 0) content = segmentsToElementString(segs);
+      }
       const fieldData = obj.props.serial
         ? serialFieldData(fdTransform ? fdTransform(p.content) : p.content, obj.props.serial)
-        : fdFieldFor(p.content, ctx, fdTransform);
+        : fdFieldFor(content, ctx, fdTransform);
       return [
         byCmd,
         fieldPos(obj),

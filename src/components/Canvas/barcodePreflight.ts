@@ -1,18 +1,53 @@
 import type { LeafObject } from "../../registry";
 import { PREFLIGHT_SEVERITY, type PreflightFinding } from "../../lib/preflight";
+import type { Variable } from "../../types/Variable";
+import {
+  applyBindingToObject,
+  getObjectStringContent,
+  type ActiveCsvRow,
+  type ClockResolveCtx,
+} from "../../lib/variableBinding";
 import { renderBarcodeCanvas } from "./bwipHelpers";
 
-// Cache the encode verdict per object identity. The store is identity-preserving,
-// so an unedited barcode keeps its reference and is not re-encoded when a
-// sibling changes (editing one object would otherwise re-encode the whole page).
-const encodeCache = new WeakMap<LeafObject, { scale: number; dpmm: number; error: string | null }>();
+/** Binding context so the check encodes what PRINTS: `«marker»` content is
+ *  resolved exactly like the canvas preview. Encoding the raw marker text
+ *  would flag valid payloads (e.g. a GS1 fixed AI filled by a variable) as
+ *  too long. */
+export interface EncodeEnv {
+  variables: readonly Variable[];
+  active: ActiveCsvRow | null;
+  clock?: ClockResolveCtx;
+}
 
-function cachedEncodeError(leaf: LeafObject, scale: number, dpmm: number): string | null {
+// Cache encode verdicts per object identity (the store is identity-
+// preserving). The RESOLVED content string is the binding-sensitive key: a
+// marker-free barcode stays stable across unrelated variable/CSV/clock edits,
+// a marker barcode re-encodes exactly when its substituted payload changes.
+const encodeCache = new WeakMap<
+  LeafObject,
+  { scale: number; dpmm: number; content: string; error: string | null }
+>();
+
+function cachedEncodeError(
+  leaf: LeafObject,
+  scale: number,
+  dpmm: number,
+  env: EncodeEnv,
+): string | null {
+  const resolved = resolveForEncode(leaf, env);
+  const content = getObjectStringContent(resolved) ?? "";
   const hit = encodeCache.get(leaf);
-  if (hit && hit.scale === scale && hit.dpmm === dpmm) return hit.error;
-  const error = renderBarcodeCanvas(leaf, scale, dpmm).error;
-  encodeCache.set(leaf, { scale, dpmm, error });
+  if (hit && hit.scale === scale && hit.dpmm === dpmm && hit.content === content) {
+    return hit.error;
+  }
+  const error = renderBarcodeCanvas(resolved, scale, dpmm).error;
+  encodeCache.set(leaf, { scale, dpmm, content, error });
   return error;
+}
+
+/** Preview-resolved leaf for the encoder (identity-preserving when unbound). */
+export function resolveForEncode(leaf: LeafObject, env: EncodeEnv): LeafObject {
+  return applyBindingToObject(leaf, env.variables, env.active, "preview", env.clock);
 }
 
 /** Encode check over ALL exportable leaves, not just rendered ones, so a
@@ -23,7 +58,9 @@ export function barcodeEncodeFindings(
   leaves: readonly LeafObject[],
   scale: number,
   dpmm: number,
-  encodeError: (leaf: LeafObject) => string | null = (leaf) => cachedEncodeError(leaf, scale, dpmm),
+  env: EncodeEnv,
+  encodeError: (leaf: LeafObject) => string | null = (leaf) =>
+    cachedEncodeError(leaf, scale, dpmm, env),
 ): PreflightFinding[] {
   const findings: PreflightFinding[] = [];
   for (const leaf of leaves) {

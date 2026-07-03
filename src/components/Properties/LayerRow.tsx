@@ -14,7 +14,7 @@ import { getEntry } from '../../registry';
 import { isGroup, type LabelObject } from '../../types/Group';
 import { useT } from '../../lib/useT';
 import { useLabelStore } from '../../store/labelStore';
-import { lookupBoundVariable } from '../../lib/variableField';
+import { fieldVariableRefs } from '../../lib/variableField';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 import { Tooltip } from '../ui/Tooltip';
 import { INDENT_STEP } from './layerLayout';
@@ -68,12 +68,12 @@ export function LayerRow({
   const def = getEntry(obj.type);
   const groupRow = isGroup(obj);
   // Variable badge: small {x} glyph next to the type icon when the leaf
-  // is bound, with the variable name as a tooltip. Lets the user scan
-  // the layers list for slot usage without selecting each row. The
-  // selector subscribes the row to variable changes; cheap because
-  // each row already re-renders on selection / visibility flips.
-  const boundVariable = useLabelStore((s) =>
-    lookupBoundVariable(obj, s.variables),
+  // references a variable, single-bind or embedded in template content, with
+  // the names as a tooltip. Lets the user scan the layers list for slot usage
+  // without selecting each row. A joined-string selector keeps the subscription
+  // stable (a fresh array every render would defeat the store's equality gate).
+  const boundNames = useLabelStore((s) =>
+    fieldVariableRefs(obj, s.variables).map((v) => v.name).join(', '),
   );
   // Inline-rename is exposed only for groups; leaves render their
   // registry label as a non-editable span. The single groupRow check at
@@ -186,8 +186,8 @@ export function LayerRow({
       <span className="font-mono text-xs text-accent shrink-0 w-4 text-center whitespace-nowrap">
         {groupRow ? '⊞' : def?.icon}
       </span>
-      {boundVariable && (
-        <Tooltip content={t.variables.badgeBoundFmt.replace('{name}', boundVariable.name)}>
+      {boundNames && (
+        <Tooltip content={t.variables.badgeBoundFmt.replace('{name}', boundNames)}>
           <VariableIcon className="w-3 h-3 shrink-0 text-accent/70" />
         </Tooltip>
       )}

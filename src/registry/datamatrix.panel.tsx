@@ -1,16 +1,15 @@
 import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
 import { useLabelStore } from '../store/labelStore';
-import { builderButtonCls } from '../components/ui/formStyles';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
-import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
-import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
+import { SectionCard } from '../components/Properties/SectionCard';
+import { TypedContentSection } from './typedContentSection';
 import { FieldLabel } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { fieldHasVariable, asLabelObject } from '../lib/variableField';
 import { GS1_CONTENT_SPEC, gs1EnablePatch } from './gs1FieldSpec';
-import { Gs1BuilderButton, Gs1ModeToggle } from './gs1PanelControls';
+import { Gs1ModeToggle } from './gs1PanelControls';
 import { type DataMatrixProps, DIMENSION_MIN, DIMENSION_MAX } from './datamatrix';
 
 export const datamatrixPanel: ObjectTypeUi<DataMatrixProps> = {
@@ -21,23 +20,14 @@ export const datamatrixPanel: ObjectTypeUi<DataMatrixProps> = {
     const t = useT();
     const p = obj.props;
     const loc = t.registry.datamatrix;
-    const openContentBuilder = useLabelStore((s) => s.openContentBuilder);
     const showZpl = useLabelStore((s) => s.showZplCommands);
     const variables = useLabelStore((s) => s.variables);
-    // Builders write a literal string; disabled once the field carries a chip.
+    // Only the GS1 enable-patch cares about a bound field (it must not clobber
+    // the variable's content with the GS1 seed); the builders take markers.
     const bound = fieldHasVariable(asLabelObject(obj), variables);
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
-          <ContentEditorButton obj={obj} />
-          {p.gs1 ? (
-            <Gs1BuilderButton objId={obj.id} bound={bound} />
-          ) : (
-            <button type="button" disabled={bound} onClick={() => openContentBuilder(obj.id)} className={builderButtonCls}>
-              {t.contentBuilder.button}
-            </button>
-          )}
-        </StaticSectionCard>
+        <TypedContentSection obj={obj} />
 
         <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
           <Gs1ModeToggle
