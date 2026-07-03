@@ -23,7 +23,7 @@ import {
   findCaretPosition,
   getCaretOffset,
 } from "../../lib/contentEditableCaret";
-import { capLiteralLength, literalInsertRoom } from "../../lib/fnTemplate";
+import { capLiteralLength, hasTemplateMarkers, literalInsertRoom, resolvedContentLength } from "../../lib/fnTemplate";
 import { markerOf, type Variable } from "../../types/Variable";
 
 /** A selected token in the editor: its kind, the key the inspector needs
@@ -60,6 +60,8 @@ interface Props {
   /** User input only; marker insertions skip sanitise. */
   sanitise?: (raw: string) => string;
   placeholder?: string;
+  /** Accessible name when it should differ from the placeholder. */
+  ariaLabel?: string;
   maxLength?: number;
   /** Scopes editorFocusRequest so only the matching editor focuses. */
   objectId?: string;
@@ -176,7 +178,7 @@ function escapeAttr(s: string): string {
  *  the caret. The insert palette lives outside and drives it via the ref. */
 export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
   function TemplateContentInput(
-    { value, onChange, sanitise, placeholder, maxLength, objectId, multiline = true, selectedIndex, onSelectMarker, boxClassName },
+    { value, onChange, sanitise, placeholder, ariaLabel, maxLength, objectId, multiline = true, selectedIndex, onSelectMarker, boxClassName },
     ref,
   ) {
     const t = useT();
@@ -214,6 +216,9 @@ export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
       const sel = editor ? caretOffsetIn(editor, window.getSelection()) : null;
       const at = sel ?? lastCaretRef.current ?? value.length;
       const next = value.slice(0, at) + marker + value.slice(at);
+      // Length-inheritance gate (same rule as paste): a token counts at its
+      // resolved width and fits whole or not at all.
+      if (maxLength !== undefined && resolvedContentLength(next, variables) > maxLength) return;
       onChange(next);
       const caret = at + marker.length;
       lastCaretRef.current = caret;
@@ -277,9 +282,9 @@ export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
 
     // React 19 onBeforeInput is unreliable on contenteditable; native listener
     // with latest-state ref so closure stays stable.
-    const stateRef = useRef({ value, onChange, sanitise, maxLength, multiline });
+    const stateRef = useRef({ value, onChange, sanitise, maxLength, multiline, variables });
     useLayoutEffect(() => {
-      stateRef.current = { value, onChange, sanitise, maxLength, multiline };
+      stateRef.current = { value, onChange, sanitise, maxLength, multiline, variables };
     });
 
     useEffect(() => {
@@ -318,14 +323,24 @@ export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
        *  dataTransfer on beforeinput insertFromPaste. */
       const handlePaste = (e: ClipboardEvent) => {
         e.preventDefault();
-        const { value, sanitise, maxLength, multiline } = stateRef.current;
+        const { value, sanitise, maxLength, multiline, variables } = stateRef.current;
         const data = e.clipboardData?.getData("text/plain") ?? "";
         if (!data) return;
         let clean = sanitise ? sanitise(data) : data;
         // Single-line fields never hold line breaks; collapse pasted ones to spaces.
         if (!multiline) clean = clean.replace(/[\r\n]+/g, " ");
         const { lo, hi } = selectionRange(value.length);
-        const room = literalInsertRoom(value, hi - lo, clean, maxLength);
+        // Marker-bearing paste is atomic (a token counts at its resolved
+        // width and can't be sliced): the whole paste fits or is rejected.
+        // literalInsertRoom would count the pasted `«…»` as literal chars
+        // and let a wide-resolving marker slip past the cap.
+        if (hasTemplateMarkers(clean)) {
+          const next = value.slice(0, lo) + clean + value.slice(hi);
+          if (maxLength !== undefined && resolvedContentLength(next, variables) > maxLength) return;
+          commitInline(next, lo + clean.length);
+          return;
+        }
+        const room = literalInsertRoom(value, value.slice(lo, hi), maxLength, variables);
         const toInsert = room === Infinity ? clean : clean.slice(0, room);
         commitInline(value.slice(0, lo) + toInsert + value.slice(hi), lo + toInsert.length);
       };
@@ -382,6 +397,16 @@ export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
       let next = raw;
       if (sanitise) next = sanitise(next);
       next = capLiteralLength(next, maxLength);
+      // Marker content escapes capLiteralLength (an atomic token can't be
+      // sliced), so typed growth past the resolved-width cap is rejected
+      // instead. Shrinking edits pass so an over-cap field can be edited down.
+      if (maxLength !== undefined && hasTemplateMarkers(next)) {
+        const len = resolvedContentLength(next, variables);
+        if (len > maxLength && len > resolvedContentLength(value, variables)) {
+          setResyncNonce((n) => n + 1);
+          return;
+        }
+      }
       if (next === value) {
         // Sanitiser/cap rejected the edit back to the current value: the DOM
         // still shows the rejected chars, so force a rebuild to the canonical.
@@ -417,11 +442,51 @@ export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
       selectChip(chip);
     };
 
+    /** Widget-chip span at a caret boundary (or stuck inside one); orphans are
+     *  editable text and keep native char-wise caret motion. */
+    const chipSpanFor = (caret: number, dir: "left" | "right") => {
+      let off = 0;
+      for (const s of segments) {
+        const end = off + s.text.length;
+        if (s.kind === "var" || s.kind === "clock") {
+          if (dir === "left" ? caret === end : caret === off) return { start: off, end };
+          if (caret > off && caret < end) return { start: off, end };
+        }
+        off = end;
+      }
+      return null;
+    };
+
     /** Keyboard on a focused badge: select, remove, or move to a sibling. */
     const onKeyDown = (e: React.KeyboardEvent) => {
       const editor = editorRef.current;
+      if (!editor) return;
       const chip = (e.target as HTMLElement).closest?.("[data-mi]");
-      if (!chip || !editor?.contains(chip)) return;
+      if (!chip) {
+        // Own the whole horizontal caret step: Chrome's native motion around
+        // non-editable select-none chips skips or sticks in the ADJACENT text
+        // too, so every plain-text step is computed on the canonical string
+        // (chip = one atomic step to its far side) and set explicitly.
+        if (
+          (e.key === "ArrowLeft" || e.key === "ArrowRight") &&
+          !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey
+        ) {
+          const sel = window.getSelection();
+          if (!sel?.isCollapsed) return;
+          const caret = caretOffsetIn(editor, sel);
+          if (caret === null) return;
+          e.preventDefault();
+          const dir = e.key === "ArrowLeft" ? "left" : "right";
+          const span = chipSpanFor(caret, dir);
+          const target = span
+            ? dir === "left" ? span.start : span.end
+            : Math.max(0, Math.min(value.length, caret + (dir === "left" ? -1 : 1)));
+          restoreCaret(target);
+          lastCaretRef.current = target;
+        }
+        return;
+      }
+      if (!editor.contains(chip)) return;
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         selectChip(chip);
@@ -474,7 +539,7 @@ export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
         suppressContentEditableWarning
         role="textbox"
         aria-multiline={multiline}
-        aria-label={placeholder ?? t.app.insertVariable}
+        aria-label={ariaLabel ?? placeholder ?? t.app.insertVariable}
         data-placeholder={isEmpty ? placeholder : undefined}
         spellCheck={false}
         className={`${boxClassName ?? `${editorBoxCls} min-h-[172px]`} relative block empty:before:content-[attr(data-placeholder)] empty:before:text-muted empty:before:pointer-events-none`}

@@ -6,6 +6,7 @@ import {
   applyBindingToTree,
   getVariableSource,
   shouldShowFallbackTint,
+  resolveContentPreview,
   type ActiveCsvRow,
 } from './variableBinding';
 import type { CsvMapping, Variable } from '../types/Variable';
@@ -319,5 +320,28 @@ describe('shouldShowFallbackTint', () => {
 
   it('returns true when unbound + CSV loaded (default source)', () => {
     expect(shouldShowFallbackTint(v, ds(['sku']), map({}), 'preview')).toBe(true);
+  });
+});
+
+describe('resolveContentPreview', () => {
+  const vars: Variable[] = [
+    { id: 'a', name: 'sku', fnNumber: 1, defaultValue: '12345' },
+  ];
+  it('substitutes variable defaults and leaves unknown markers literal', () => {
+    expect(resolveContentPreview('x«sku»y', vars)).toBe('x12345y');
+    expect(resolveContentPreview('«ghost»', vars)).toBe('«ghost»');
+    expect(resolveContentPreview('plain', vars)).toBe('plain');
+  });
+  it('resolves clock markers to fixed-width fields', () => {
+    const out = resolveContentPreview('«clock:Y»«clock:m»«clock:d»', []);
+    expect(out).toMatch(/^\d{8}$/);
+  });
+  it('honors a channel offset ctx (clock2/clock3 shift vs unshifted)', () => {
+    const shifted = resolveContentPreview('«clock2:Y»', [], {
+      secondaryOffset: { years: 1, months: 0, days: 0, hours: 0, minutes: 0 },
+      tertiaryOffset: undefined,
+    });
+    const plain = resolveContentPreview('«clock:Y»', []);
+    expect(Number(shifted)).toBe(Number(plain) + 1);
   });
 });

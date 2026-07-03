@@ -12,7 +12,8 @@ import { outlineInset } from "../../lib/shapeGeometry";
 import { reverseShapeStyle } from "./reverseShapeStyle";
 import { useColorScheme } from "../../lib/useColorScheme";
 import { useLabelStore } from "../../store/labelStore";
-import { applyBindingToObject, buildActiveCsvRow, clockCtxFromLabel } from "../../lib/variableBinding";
+import { applyBindingToObject } from "../../lib/variableBinding";
+import { usePreviewBinding } from "../../store/usePreviewBinding";
 import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "../../lib/labelGeometry/textPositionTransforms";
 import { getTextRenderMetrics } from "../../lib/labelGeometry/textRenderMetrics";
 import { selectionHandlers, CAPTURE_CHROME, type KonvaObjectProps } from "./konvaObjectProps";
@@ -447,15 +448,11 @@ const BARCODE_TYPES = new Set([
 ]);
 
 export function KonvaObject(props_: Props) {
-  const variables = useLabelStore((s) => s.variables);
+  const { variables, active, clock } = usePreviewBinding();
   const csvDataset = useLabelStore((s) => s.csvDataset);
   const csvMapping = useLabelStore((s) => s.csvMapping);
   const csvRenderMode = useLabelStore((s) => s.canvasSettings.csvRenderMode);
-  const label = useLabelStore((s) => s.label);
-  const active = buildActiveCsvRow(csvDataset, csvMapping);
-  const obj = applyBindingToObject(
-    props_.obj, variables, active, csvRenderMode, clockCtxFromLabel(label),
-  );
+  const obj = applyBindingToObject(props_.obj, variables, active, csvRenderMode, clock);
   const renderProps = obj === props_.obj ? props_ : { ...props_, obj };
 
   // Classify the ORIGINAL content: `obj` has had its markers resolved to print

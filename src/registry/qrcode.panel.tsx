@@ -3,32 +3,20 @@ import { useT } from '../lib/useT';
 import { useLabelStore } from '../store/labelStore';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
-import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
-import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
+import { SectionCard } from '../components/Properties/SectionCard';
+import { TypedContentSection } from './typedContentSection';
 import { FieldLabel } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
-import { builderButtonCls } from '../components/ui/formStyles';
-import { fieldHasVariable, asLabelObject } from '../lib/variableField';
 import { type QrCodeProps, MAGNIFICATION_MIN, MAGNIFICATION_MAX } from './qrcode';
 
 export const qrcodePanel: ObjectTypeUi<QrCodeProps> = {
   PropertiesPanel: ({ obj, onChange }) => {
     const t = useT();
     const p = obj.props;
-    const openContentBuilder = useLabelStore((s) => s.openContentBuilder);
     const showZpl = useLabelStore((s) => s.showZplCommands);
-    const variables = useLabelStore((s) => s.variables);
-    // The typed-content builder writes a literal string; it can't coexist with
-    // variable chips, so it's disabled once the field carries a variable.
-    const bound = fieldHasVariable(asLabelObject(obj), variables);
     return (
       <>
-        <StaticSectionCard title={t.properties.contentSection} cmd="^FD">
-          <ContentEditorButton obj={obj} />
-          <button type="button" disabled={bound} onClick={() => openContentBuilder(obj.id)} className={builderButtonCls}>
-            {t.contentBuilder.button}
-          </button>
-        </StaticSectionCard>
+        <TypedContentSection obj={obj} />
 
         <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
           <NumberInput

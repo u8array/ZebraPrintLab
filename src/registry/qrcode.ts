@@ -29,6 +29,7 @@ export const qrcode: ObjectTypeCore<QrCodeProps> = {
   zplCmd: '^BQ',
   group: 'code-2d',
   bindable: true,
+  typedContent: true,
   defaultProps: {
     content: 'https://example.com',
     magnification: 4,

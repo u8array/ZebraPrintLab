@@ -65,6 +65,22 @@ function channelOf(suffix: string | undefined): ClockChannel {
   return suffix === "2" ? 2 : suffix === "3" ? 3 : 1;
 }
 
+// Printed width per token, derived from the formatters so the two can't drift.
+// Every formatter pads to a fixed width and offsets never change it, so any
+// reference instant yields the canonical widths (day-of-year forced to 3).
+const REF_INSTANT = new Date(2024, 11, 31, 23, 59, 59);
+const TOKEN_LENGTHS: Record<string, number> = Object.fromEntries(
+  Object.entries(TOKEN_FORMATTERS).map(([token, fmt]) => [token, fmt(REF_INSTANT).length]),
+);
+
+/** Printed length of a clock marker body (`clock:Y` -> 4), or null when the
+ *  body is not a known clock token. */
+export function clockBodyLength(body: string): number | null {
+  const m = body.match(CLOCK_BODY_RE);
+  const token = m?.[2];
+  return token !== undefined ? TOKEN_LENGTHS[token] ?? null : null;
+}
+
 /** Marker body for a clock token on a channel: `clock:T` / `clock2:T` / `clock3:T`.
  *  Single source for the `«clock…»` body grammar shared by the UI. */
 export function clockMarkerBody(channel: ClockChannel, token: string): string {

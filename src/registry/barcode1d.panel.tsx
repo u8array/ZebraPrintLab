@@ -83,7 +83,7 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
             <div className="flex flex-col gap-1">
               <FieldLabel cmd="^FD">{loc.content}</FieldLabel>
               <ContentEditorButton obj={obj} />
-              {config.gs1Capable && p.gs1 && <Gs1BuilderButton objId={obj.id} bound={bound} />}
+              {config.gs1Capable && p.gs1 && <Gs1BuilderButton objId={obj.id} />}
               {validate && !config.eanValidation && !hasValidLength(validationContent, config.contentSpec) && loc.placeholder && (
                 <p className="font-mono text-[10px] text-warning">{loc.placeholder}</p>
               )}

@@ -4,13 +4,14 @@ import { labelCls } from '../components/Properties/styles';
 import { builderButtonCls } from '../components/ui/formStyles';
 import { ZplCmd } from '../components/Properties/ZplCmd';
 
-/** Opens the GS1 element-string builder for a field; disabled once the field is
- *  bound to a variable (the builder writes a literal). */
-export function Gs1BuilderButton({ objId, bound }: { objId: string; bound: boolean }) {
+/** Opens the GS1 element-string builder. Always enabled: the builder
+ *  round-trips «marker» content, and content it can't load as segments gets
+ *  an in-modal warning rather than a blocked entry point. */
+export function Gs1BuilderButton({ objId }: { objId: string }) {
   const t = useT();
   const openGs1Builder = useLabelStore((s) => s.openGs1Builder);
   return (
-    <button type="button" disabled={bound} onClick={() => openGs1Builder(objId)} className={builderButtonCls}>
+    <button type="button" onClick={() => openGs1Builder(objId)} className={builderButtonCls}>
       {t.gs1builder.button}
     </button>
   );

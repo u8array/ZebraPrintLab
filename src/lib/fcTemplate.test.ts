@@ -14,6 +14,7 @@ import {
   formatClockLabel,
   CLOCK_TOKEN_LABELS,
   type ClockChannel,
+  clockBodyLength,
 } from "./fcTemplate";
 
 describe("clockMarkerBody / parseClockBody", () => {
@@ -231,5 +232,24 @@ describe("channelDatesFrom", () => {
     const c = channelDatesFrom(NOW, { days: 7 }, undefined);
     expect(c.secondary.getDate()).toBe(21);
     expect(c.tertiary.getDate()).toBe(14);
+  });
+});
+
+describe("clockBodyLength (derived widths)", () => {
+  it("matches the printed token width across instants", () => {
+    // Sample instants covering short/long day-of-year and single-digit fields.
+    const dates = [new Date(2024, 0, 5, 3, 4, 5), new Date(2023, 11, 31, 23, 59, 59)];
+    const tokens = ["Y", "y", "m", "d", "H", "M", "S", "j"];
+    for (const tok of tokens) {
+      const len = clockBodyLength(`clock:${tok}`);
+      expect(len).not.toBeNull();
+      for (const d of dates) {
+        const printed = resolveClockMarkers(`«clock:${tok}»`, channelDatesFrom(d, undefined, undefined));
+        expect(printed.length).toBe(len);
+      }
+    }
+  });
+  it("returns null for a non-clock body", () => {
+    expect(clockBodyLength("sku")).toBeNull();
   });
 });

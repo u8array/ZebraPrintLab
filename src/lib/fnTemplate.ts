@@ -1,10 +1,8 @@
-import { markerOf, type Variable } from "../types/Variable";
+import { markerOf, markerRe, type Variable } from "../types/Variable";
+import { clockBodyLength } from "./fcTemplate";
 
-// ^FE embeds (#n#) <-> «name» markers. Body forbids » so adjacent markers
-// don't merge. Factory form avoids /g lastIndex bleed across callers.
-
-const MARKER_BODY = /«([^»]+)»/;
-const markerRe = () => /«([^»]+)»/g;
+// ^FE embeds (#n#) <-> «name» markers. Recognition grammar lives in
+// types/Variable next to markerOf so the two can't drift.
 
 /** Replace every `«name»` marker with a literal `replacement` (identity-
  *  preserving on no match). Used when a variable is deleted so its template
@@ -59,31 +57,64 @@ export function renameTemplateMarkers(
 
 /** True when `content` carries at least one `«…»` marker. */
 export function hasTemplateMarkers(content: string): boolean {
-  return MARKER_BODY.test(content);
+  return markerRe().test(content);
 }
 
-/** A length cap bounds only a purely-literal payload: once a template marker is
- *  present the printed length is the variable's value (unknown here), so the cap
- *  is skipped to avoid truncating the canonical `«…»` token. Returns `value`
- *  unchanged when no cap applies. */
+
+/** Printed length of `content` with markers resolved: a variable marker
+ *  inherits its defaultValue's length, a clock marker its fixed token width,
+ *  and an unknown marker counts as its literal characters (matching emit,
+ *  where unresolved markers stay literal). */
+export function resolvedContentLength(content: string, variables: readonly Variable[]): number {
+  const byName = new Map(variables.map((v) => [v.name, v.defaultValue.length]));
+  let len = 0;
+  let last = 0;
+  for (const m of content.matchAll(markerRe())) {
+    len += (m.index ?? 0) - last;
+    const body = m[1] ?? "";
+    len += clockBodyLength(body) ?? byName.get(body) ?? m[0].length;
+    last = (m.index ?? 0) + m[0].length;
+  }
+  return len + (content.length - last);
+}
+
+/** A length cap truncates only a purely-literal payload: cutting around a
+ *  marker would split the atomic `«…»` token. Marker-aware enforcement is
+ *  the insert gate's job (literalInsertRoom). */
 export function capLiteralLength(value: string, maxLength: number | undefined): string {
   if (maxLength === undefined || hasTemplateMarkers(value)) return value;
   return value.length > maxLength ? value.slice(0, maxLength) : value;
 }
 
-/** Characters of `insertion` that may be inserted into `value` (replacing a
- *  selection of `selectionLen` chars) under a literal length cap. `Infinity`
- *  when no cap applies (cap undefined, or a marker is present in either side). */
+/** Characters of `insertion` that may replace `selection` inside `value`
+ *  under a length cap, with markers counted at their resolved width. An
+ *  insertion carrying a marker is atomic: it fits whole (`Infinity`) or not
+ *  at all (0). */
 export function literalInsertRoom(
   value: string,
-  selectionLen: number,
-  insertion: string,
+  selection: string,
   maxLength: number | undefined,
+  variables: readonly Variable[],
 ): number {
-  if (maxLength === undefined || hasTemplateMarkers(value) || hasTemplateMarkers(insertion)) {
-    return Infinity;
+  if (maxLength === undefined) return Infinity;
+  // The value's existing markers count at their resolved width; the pasted
+  // insertion is plain text (a marker in it is literal, not an atomic token).
+  const base = resolvedContentLength(value, variables) - resolvedContentLength(selection, variables);
+  return Math.max(0, maxLength - base);
+}
+
+/** Apply `fn` to literal spans only, passing `«…»` markers through verbatim:
+ *  an atomic token must survive to print-time substitution unchanged. Marker
+ *  bodies are opaque; a variable name containing an encoding delimiter is not
+ *  defended against. */
+export function mapLiteralSpans(content: string, fn: (literal: string) => string): string {
+  let out = "";
+  let last = 0;
+  for (const m of content.matchAll(markerRe())) {
+    out += fn(content.slice(last, m.index ?? 0)) + m[0];
+    last = (m.index ?? 0) + m[0].length;
   }
-  return Math.max(0, maxLength - (value.length - selectionLen));
+  return out + fn(content.slice(last));
 }
 
 /** Source order with duplicates (caller dedupes). */

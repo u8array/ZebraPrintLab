@@ -4,6 +4,7 @@ import {
   wrapGs1AIs,
   mod10CheckDigit,
   validateGs1Segment,
+  validateGs1SegmentResolved,
   validateGs1Segments,
   elementStringToContent,
   gtinBodyFromContent,
@@ -180,6 +181,66 @@ describe("validateGs1Segments (combination rules)", () => {
       { ai: "10", value: "ABC" },
       { ai: "10", value: "DEF" },
     ])).toEqual({ key: "duplicateAi" });
+  });
+});
+
+describe("marker-bearing segment values (builder round-trip)", () => {
+  const VARS = [
+    { id: "g", name: "gtin", fnNumber: 1, defaultValue: "09501101530003" },
+    { id: "l", name: "lot", fnNumber: 2, defaultValue: "AB12" },
+  ];
+
+  it("gtin14WithCheck passes a marker value through verbatim", () => {
+    expect(gtin14WithCheck("«gtin»")).toBe("«gtin»");
+    expect(segmentsToContent([{ ai: "01", value: "«gtin»" }])).toBe("01«gtin»");
+  });
+
+  it("parses fixed-AI markers by resolved width (round-trips exactly)", () => {
+    // «gtin» default is 14 digits -> fills AI 01 exactly.
+    expect(parseGs1ToSegments("01«gtin»10«lot»", VARS)).toEqual([
+      { ai: "01", value: "«gtin»" },
+      { ai: "10", value: "«lot»" },
+    ]);
+    // A default that doesn't fill the fixed width fails (blocked upstream by
+    // the modal's round-trip gate before it can be stored).
+    const short = [{ id: "g", name: "gtin", fnNumber: 1, defaultValue: "12345" }];
+    expect(parseGs1ToSegments("01«gtin»", short)).toBeNull();
+  });
+
+  it("rejects a fixed field the marker can't fill exactly (validation backstop)", () => {
+    // Mixed literal + marker and multi-marker mismatches must not round-trip,
+    // so the modal's round-trip gate blocks Apply on them.
+    expect(parseGs1ToSegments("01AB«gtin»", VARS)).toBeNull();
+    expect(parseGs1ToSegments("11«clock:y»«clock:m»", VARS)).toBeNull(); // 4 != 6
+  });
+
+  it("round-trips clock markers composed to a fixed date AI's width", () => {
+    // (11) PROD DATE is YYMMDD (6): y+m+d clock tokens = 2+2+2 = 6.
+    expect(parseGs1ToSegments("11«clock:y»«clock:m»«clock:d»", VARS)).toEqual([
+      { ai: "11", value: "«clock:y»«clock:m»«clock:d»" },
+    ]);
+  });
+
+  it("keeps import parsing (no variables) strict about raw lengths", () => {
+    expect(parseGs1ToSegments("01«gtin»")).toBeNull();
+  });
+
+  describe("validateGs1SegmentResolved (marker-aware segment verdict)", () => {
+    it("requires a marker in a fixed AI to resolve to the exact width", () => {
+      expect(validateGs1SegmentResolved("01", "«gtin»", "09501101530003")).toBeNull();
+      expect(validateGs1SegmentResolved("01", "«gtin»", "12345")).toBe("exactLength");
+    });
+
+    it("treats an empty-resolving marker in a variable AI as runtime-valued", () => {
+      expect(validateGs1SegmentResolved("10", "«lot»", "")).toBeNull();
+      // A literally empty value is still an error.
+      expect(validateGs1SegmentResolved("10", "", "")).toBe("empty");
+    });
+
+    it("defers non-marker values to the plain validator", () => {
+      expect(validateGs1SegmentResolved("01", "0950110153000", "0950110153000")).toBeNull(); // 13 digits, autocompleted
+      expect(validateGs1SegmentResolved("01", "ABC", "ABC")).toBe("digitsOnly");
+    });
   });
 });
 

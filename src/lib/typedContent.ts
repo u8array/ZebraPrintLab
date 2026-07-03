@@ -9,34 +9,137 @@
  * corrupt unrecognized content.
  */
 
-export type ContentType = "url" | "text" | "wifi" | "vcard" | "email" | "tel" | "sms" | "geo";
+import { extractTemplateRefs, hasTemplateMarkers, mapLiteralSpans } from "./fnTemplate";
+import { resolveForRow, variableSubstitutions } from "./variableBinding";
+import type { CsvMapping, Variable } from "../types/Variable";
 
-export const CONTENT_TYPES: readonly ContentType[] = [
+// The array is the single source; the union derives from it so the two can't
+// drift (the encode/complete switches and the modal's field Record stay
+// compiler-exhaustive against it).
+export const CONTENT_TYPES = [
   "url", "text", "wifi", "vcard", "email", "tel", "sms", "geo",
-];
+] as const;
+
+export type ContentType = (typeof CONTENT_TYPES)[number];
 
 export type ContentFields = Record<string, string>;
 
-/** WiFi/MECARD value escaping: backslash FIRST, then ; , " : . An all-hex value
- *  is wrapped in quotes so a scanner doesn't read it as hex. */
+// One structural-char class per format, shared by the literal ESCAPER and the
+// marker-value VALIDATION (MARKER_UNSAFE below) so the two can't drift: a char
+// the escaper protects is exactly a char a raw print-time value corrupts.
+// mailto has no shared class: its literals go through encodeURIComponent, so
+// its validation set below is a deliberate structural subset.
+const WIFI_STRUCTURAL = /[\\;,":]/g;
+const VCARD_STRUCTURAL = /[\\,;\n]/g;
+
+/** WiFi/MECARD value escaping (single pass, so ordering can't double-escape).
+ *  An all-hex value is wrapped in quotes so a scanner doesn't read it as hex
+ *  (undecidable with markers, so skipped: the resolved value isn't known at
+ *  build time). */
 function escWifi(s: string): string {
-  const e = s.replace(/\\/g, "\\\\").replace(/([;,":])/g, "\\$1");
-  return s.length > 0 && /^[0-9A-Fa-f]+$/.test(s) ? `"${e}"` : e;
+  const e = mapLiteralSpans(s, (lit) => lit.replace(WIFI_STRUCTURAL, (c) => `\\${c}`));
+  return s.length > 0 && !hasTemplateMarkers(s) && /^[0-9A-Fa-f]+$/.test(s) ? `"${e}"` : e;
 }
 
-/** vCard 3.0 text-value escaping: backslash, then comma, semicolon, newline. */
+/** vCard 3.0 text-value escaping; newline becomes the \n sequence. */
 function escVcard(s: string): string {
-  return s
-    .replace(/\\/g, "\\\\")
-    .replace(/\n/g, "\\n")
-    .replace(/,/g, "\\,")
-    .replace(/;/g, "\\;");
+  return mapLiteralSpans(s, (lit) =>
+    lit.replace(VCARD_STRUCTURAL, (c) => (c === "\n" ? "\\n" : `\\${c}`)),
+  );
 }
 
 /** Phone normalization for tel:/SMSTO: keep a single leading +, digits only. */
 function normalizeTel(s: string): string {
   const plus = s.trim().startsWith("+") ? "+" : "";
-  return plus + s.replace(/\D/g, "");
+  return plus + mapLiteralSpans(s, (lit) => lit.replace(/\D/g, ""));
+}
+
+// Fields whose literals the encoder escapes but whose print-time substitution
+// bypasses it (^FN data is inserted raw; a shared FN slot can't be escaped
+// per use). Fields whose literals are emitted raw anyway have no rule, and
+// tel numbers tolerate separators per RFC 3966. mailto: `%` corrupts via
+// percent-decoding, whitespace terminates the URI; non-ASCII is tolerated
+// (scanners handle raw UTF-8).
+const MAILTO_UNSAFE = /[&#%\s]/g;
+const MARKER_UNSAFE: Partial<Record<ContentType, Record<string, RegExp>>> = {
+  wifi: { ssid: WIFI_STRUCTURAL, password: WIFI_STRUCTURAL },
+  vcard: {
+    firstName: VCARD_STRUCTURAL, lastName: VCARD_STRUCTURAL, org: VCARD_STRUCTURAL,
+    title: VCARD_STRUCTURAL, tel: VCARD_STRUCTURAL, email: VCARD_STRUCTURAL, url: VCARD_STRUCTURAL,
+  },
+  email: { subject: MAILTO_UNSAFE, body: MAILTO_UNSAFE },
+};
+
+/** The structural characters in a print-time SUBSTITUTED value (a variable's
+ *  default or a CSV cell, never the field's literal text, which the encoder
+ *  escapes) that would corrupt this field's encoding. Deduped, whitespace
+ *  shown as ␣; null when safe / no rule applies. Feeds the builder's
+ *  per-field marker validation. */
+export function markerUnsafeChars(
+  type: ContentType,
+  fieldKey: string,
+  substituted: string,
+): string | null {
+  const re = MARKER_UNSAFE[type]?.[fieldKey];
+  if (!re) return null;
+  // Dedup AFTER mapping: distinct whitespace chars collapse into one ␣.
+  const hits = [...new Set((substituted.match(re) ?? []).map((c) => (/\s/.test(c) ? "␣" : c)))];
+  return hits.length > 0 ? hits.join(" ") : null;
+}
+
+/** Per-field offending chars for every marker-bearing field, checked over ALL
+ *  print-time substitutions of each referenced variable (default + every bound
+ *  CSV cell). The field's literal text is exempt: the encoder escapes it.
+ *  Fields absent from the result are safe. Drives the builder's Apply gate. */
+export function typedContentMarkerFindings(
+  type: ContentType,
+  fields: ContentFields,
+  variables: readonly Variable[],
+  csvDataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null,
+  csvMapping: CsvMapping | null,
+): Record<string, string> {
+  const byName = new Map(variables.map((v) => [v.name, v]));
+  const out: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(fields)) {
+    if (!hasTemplateMarkers(raw)) continue;
+    const hits = new Set<string>();
+    for (const name of new Set(extractTemplateRefs(raw))) {
+      const variable = byName.get(name);
+      if (!variable) continue;
+      for (const value of variableSubstitutions(variable, csvDataset, csvMapping)) {
+        const chars = markerUnsafeChars(type, key, value);
+        if (chars) for (const c of chars.split(" ")) hits.add(c);
+      }
+    }
+    if (hits.size > 0) out[key] = [...hits].join(" ");
+  }
+  return out;
+}
+
+/** Rows whose print-time substitution yields an incomplete payload (e.g. an
+ *  empty CSV cell blanking a required WiFi SSID). With a dataset every row is
+ *  checked; without one only the defaults ([0] returned on failure). Clock
+ *  markers are never empty. */
+export function typedContentIncompleteRows(
+  type: ContentType,
+  fields: ContentFields,
+  variables: readonly Variable[],
+  csvDataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null,
+  csvMapping: CsvMapping | null,
+): number[] {
+  if (!Object.values(fields).some(hasTemplateMarkers)) return [];
+  const rows = csvDataset && csvMapping ? csvDataset.rows.map((_, i) => i) : [-1];
+  const bad: number[] = [];
+  for (const rowIdx of rows) {
+    const resolved = Object.fromEntries(
+      Object.entries(fields).map(([k, v]) => [
+        k,
+        hasTemplateMarkers(v) ? resolveForRow(v, rowIdx, variables, csvDataset, csvMapping) : v,
+      ]),
+    );
+    if (!isContentComplete(type, resolved)) bad.push(rowIdx + 1);
+  }
+  return bad;
 }
 
 /** Whether `f` has enough valid input for `type` to produce a sound payload.
@@ -65,6 +168,9 @@ export function encodeContent(type: ContentType, f: ContentFields): string {
     case "url": {
       const url = (f.url ?? "").trim();
       if (!url) return "";
+      // A leading marker may resolve to a full URL (scheme included), so no
+      // https:// is forced onto it.
+      if (url.startsWith("«")) return url;
       return /^[a-z][a-z0-9+.-]*:\/\//i.test(url) ? url : `https://${url}`;
     }
     case "text":
@@ -92,8 +198,9 @@ export function encodeContent(type: ContentType, f: ContentFields): string {
     case "email": {
       const to = (f.to ?? "").trim();
       const params: string[] = [];
-      if (f.subject) params.push(`subject=${encodeURIComponent(f.subject)}`);
-      if (f.body) params.push(`body=${encodeURIComponent(f.body.replace(/\r?\n/g, "\r\n"))}`);
+      const enc = (s: string) => mapLiteralSpans(s, encodeURIComponent);
+      if (f.subject) params.push(`subject=${enc(f.subject)}`);
+      if (f.body) params.push(`body=${enc(f.body.replace(/\r?\n/g, "\r\n"))}`);
       return `mailto:${to}${params.length ? `?${params.join("&")}` : ""}`;
     }
     case "tel":

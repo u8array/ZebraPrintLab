@@ -2,12 +2,14 @@ import { describe, it, expect } from "vitest";
 import {
   hasTemplateMarkers,
   extractTemplateRefs,
+  mapLiteralSpans,
   resolveTemplateMarkers,
   embedsToMarkers,
   markersToEmbeds,
   pickEmbedChar,
   capLiteralLength,
   literalInsertRoom,
+  resolvedContentLength,
   substituteTemplateMarker,
   renameTemplateMarkers,
 } from "./fnTemplate";
@@ -37,6 +39,27 @@ describe("hasTemplateMarkers", () => {
 describe("extractTemplateRefs", () => {
   it("preserves source order and duplicates", () => {
     expect(extractTemplateRefs("«a» and «b» again «a»")).toEqual(["a", "b", "a"]);
+  });
+});
+
+describe("mapLiteralSpans", () => {
+  const upper = (s: string) => s.toUpperCase();
+  it("transforms literals, keeps markers verbatim", () => {
+    expect(mapLiteralSpans("ab«x»cd«clock:Y»ef", upper)).toBe("AB«x»CD«clock:Y»EF");
+  });
+  it("is identity-shaped on marker-free content", () => {
+    expect(mapLiteralSpans("plain", upper)).toBe("PLAIN");
+  });
+  it("handles leading/trailing/adjacent markers (empty literal spans)", () => {
+    expect(mapLiteralSpans("«a»«b»", upper)).toBe("«a»«b»");
+    expect(mapLiteralSpans("«a»x", upper)).toBe("«a»X");
+  });
+  it("keeps escapable chars inside a marker body untouched", () => {
+    expect(mapLiteralSpans(";«x;y»;", (s) => s.replace(/;/g, "\\;"))).toBe("\\;«x;y»\\;");
+  });
+  it("filters a charset on literals without eating the chip (GS1 sanitise case)", () => {
+    const digits = (s: string) => s.replace(/\D/g, "");
+    expect(mapLiteralSpans("(01)«gtin»99x", digits)).toBe("01«gtin»99");
   });
 });
 
@@ -121,20 +144,47 @@ describe("capLiteralLength", () => {
   });
 });
 
+const VARS = [
+  { id: "v1", name: "sku", fnNumber: 1, defaultValue: "12345" },
+  { id: "v2", name: "lot", fnNumber: 2, defaultValue: "AB" },
+];
+
+describe("resolvedContentLength", () => {
+  it("inherits a variable's defaultValue length", () => {
+    // x="12345" -> 5; "12345«x»" -> 5 literal + 5 inherited = 10.
+    expect(resolvedContentLength("12345«sku»", VARS)).toBe(10);
+    expect(resolvedContentLength("«sku»-«lot»", VARS)).toBe(8);
+  });
+  it("counts clock markers at their fixed token width", () => {
+    expect(resolvedContentLength("«clock:y»«clock:m»«clock:d»", [])).toBe(6);
+    expect(resolvedContentLength("«clock:Y»", [])).toBe(4);
+    expect(resolvedContentLength("«clock2:j»", [])).toBe(3);
+  });
+  it("counts an unknown marker literally (it stays literal on emit)", () => {
+    expect(resolvedContentLength("«ghost»", [])).toBe("«ghost»".length);
+  });
+  it("handles empty defaults and plain literals", () => {
+    expect(resolvedContentLength("abc", VARS)).toBe(3);
+    expect(resolvedContentLength("«e»", [{ id: "v", name: "e", fnNumber: 3, defaultValue: "" }])).toBe(0);
+  });
+});
+
 describe("literalInsertRoom", () => {
   it("returns remaining room accounting for the replaced selection", () => {
-    expect(literalInsertRoom("123", 0, "ABC", 5)).toBe(2);
-    expect(literalInsertRoom("123", 2, "ABC", 5)).toBe(4);
+    expect(literalInsertRoom("123", "", 5, [])).toBe(2);
+    expect(literalInsertRoom("123", "23", 5, [])).toBe(4);
   });
   it("clamps to zero when the field is already full", () => {
-    expect(literalInsertRoom("12345", 0, "X", 5)).toBe(0);
+    expect(literalInsertRoom("12345", "", 5, [])).toBe(0);
   });
   it("returns Infinity when no cap is set", () => {
-    expect(literalInsertRoom("123", 0, "X", undefined)).toBe(Infinity);
+    expect(literalInsertRoom("123", "", undefined, [])).toBe(Infinity);
   });
-  it("returns Infinity when a marker is present in the value or the insertion", () => {
-    expect(literalInsertRoom("«sku»", 0, "X", 5)).toBe(Infinity);
-    expect(literalInsertRoom("12", 0, "«sku»", 5)).toBe(Infinity);
+  it("counts the value's markers at their resolved width", () => {
+    // «sku» resolves to 5 chars, so cap 8 leaves room for 3 literals.
+    expect(literalInsertRoom("«sku»", "", 8, VARS)).toBe(3);
+    // Replacing the marker itself frees its 5 resolved chars.
+    expect(literalInsertRoom("«sku»", "«sku»", 8, VARS)).toBe(8);
   });
 });
 

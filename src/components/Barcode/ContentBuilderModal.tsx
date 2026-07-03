@@ -1,13 +1,18 @@
 import { useState } from "react";
 import { BarcodeContentModalShell } from "./BarcodeContentModalShell";
 import { useT } from "../../lib/useT";
-import { inputCls } from "../ui/formStyles";
 import { Select } from "../ui/Select";
 import { useLabelStore, useCurrentObjects, getCurrentObjects } from "../../store/labelStore";
+import { hasTemplateMarkers, resolvedContentLength } from "../../lib/fnTemplate";
+import { usePreviewBinding } from "../../store/usePreviewBinding";
+import { getObjectStringContent } from "../../lib/variableBinding";
+import { MarkerTextField } from "../Properties/MarkerTextField";
 import { findObjectById } from "../../types/Group";
-import { encodeContent, parseContent, recommendedEc, isContentComplete, CONTENT_TYPES, type ContentType, type ContentFields } from "../../lib/typedContent";
+import { encodeContent, parseContent, recommendedEc, isContentComplete, typedContentMarkerFindings, CONTENT_TYPES, type ContentType, type ContentFields } from "../../lib/typedContent";
 
 type FieldKind = "text" | "password" | "textarea" | "checkbox" | "auth";
+
+
 interface FieldDef {
   key: string;
   labelKey: string;
@@ -15,7 +20,8 @@ interface FieldDef {
 }
 
 // Per-type form fields; `key` matches typedContent field keys, `labelKey` a
-// t.contentBuilder.* string. Order = display order.
+// t.contentBuilder.* string. Order = display order. Every value field accepts
+// «marker»s: the encoders escape only literal spans, so tokens stay atomic.
 const FORM_FIELDS: Record<ContentType, FieldDef[]> = {
   url: [{ key: "url", labelKey: "fUrl", kind: "text" }],
   text: [{ key: "text", labelKey: "fText", kind: "textarea" }],
@@ -64,13 +70,13 @@ function ContentBuilder({ objectId }: { objectId: string }) {
   const tc = t.contentBuilder;
   const L = (k: string): string => (t.contentBuilder as Record<string, string>)[k] ?? k;
   const closeContentBuilder = useLabelStore((s) => s.closeContentBuilder);
+  const { variables, resolveDefaults } = usePreviewBinding();
   const updateObject = useLabelStore((s) => s.updateObject);
 
   // Parse the object's current content once (lazy) to seed the draft.
   const [seed] = useState(() => {
     const obj = findObjectById(getCurrentObjects(), objectId);
-    const content = (obj && "props" in obj ? (obj.props as { content?: string }).content : "") ?? "";
-    return parseContent(content);
+    return parseContent((obj && getObjectStringContent(obj)) || "");
   });
   const [type, setType] = useState<ContentType>(seed.type);
   const [byType, setByType] = useState<Record<string, ContentFields>>({ [seed.type]: seed.fields });
@@ -80,8 +86,26 @@ function ContentBuilder({ objectId }: { objectId: string }) {
     setByType((prev) => ({ ...prev, [type]: { ...(prev[type] ?? {}), [key]: value } }));
 
   const content = encodeContent(type, fields);
-  const valid = isContentComplete(type, fields);
-  const ec = recommendedEc(content);
+  // Validate fields as their preview substitution (GS1-builder precedent): a
+  // marker is checked as the text it prints. A marker resolving to "" is
+  // runtime-valued (CSV/prompt fills it later), so it stands in as "0", a
+  // value passing every per-type check, instead of blocking Apply on an
+  // empty default.
+  const validationFields = Object.fromEntries(
+    Object.entries(fields).map(([k, v]) => {
+      const resolved = resolveDefaults(v);
+      return [k, resolved === "" && hasTemplateMarkers(v) ? "0" : resolved];
+    }),
+  );
+  // A marker's print-time value is inserted as-is (no escaping); block Apply
+  // when any substituted value (variable default or a bound CSV cell, all
+  // rows) carries chars this field's encoding can't take. Authoring-time gate
+  // only: later CSV re-imports aren't re-checked here.
+  const csvDataset = useLabelStore((s) => s.csvDataset);
+  const csvMapping = useLabelStore((s) => s.csvMapping);
+  const markerErrors = typedContentMarkerFindings(type, fields, variables, csvDataset, csvMapping);
+  const valid = isContentComplete(type, validationFields) && Object.keys(markerErrors).length === 0;
+  const ec = recommendedEc(resolveDefaults(content));
   // EC recommendation is QR-only; DataMatrix uses fixed ECC200.
   const objects = useCurrentObjects();
   const target = findObjectById(objects, objectId);
@@ -90,8 +114,6 @@ function ContentBuilder({ objectId }: { objectId: string }) {
     target && "props" in target ? (target.props as { errorCorrection?: string }).errorCorrection : undefined;
 
   const apply = () => {
-    // Builder writes a literal typed string, overwriting any prior `«name»`
-    // marker so the field is no longer single-bound.
     updateObject(objectId, { props: { content } });
     closeContentBuilder();
   };
@@ -139,15 +161,15 @@ function ContentBuilder({ objectId }: { objectId: string }) {
               </label>
             ) : (
               <>
-                <label className="text-[10px] text-muted" htmlFor={`content-${f.key}`}>{L(f.labelKey)}</label>
-                {f.kind === "textarea" ? (
-                  <textarea
-                    id={`content-${f.key}`}
-                    className={`${inputCls} resize-y min-h-16`}
-                    value={fields[f.key] ?? ""}
-                    onChange={(e) => setField(f.key, e.target.value)}
-                  />
-                ) : f.kind === "auth" ? (
+                {/* The chip editor is a contenteditable div (not labelable), so
+                    it gets an aria-label; htmlFor only works for the real
+                    controls (auth select, masked password input). */}
+                {f.kind === "auth" || f.kind === "password" ? (
+                  <label className="text-[10px] text-muted" htmlFor={`content-${f.key}`}>{L(f.labelKey)}</label>
+                ) : (
+                  <span className="text-[10px] text-muted">{L(f.labelKey)}</span>
+                )}
+                {f.kind === "auth" ? (
                   <Select<string>
                     id={`content-${f.key}`}
                     value={fields[f.key] || "WPA"}
@@ -163,13 +185,20 @@ function ContentBuilder({ objectId }: { objectId: string }) {
                     ]}
                   />
                 ) : (
-                  <input
+                  <MarkerTextField
                     id={`content-${f.key}`}
-                    type={f.kind === "password" ? "password" : "text"}
-                    className={inputCls}
                     value={fields[f.key] ?? ""}
-                    onChange={(e) => setField(f.key, e.target.value)}
+                    onChange={(next) => setField(f.key, next)}
+                    multiline={f.kind === "textarea"}
+                    password={f.kind === "password"}
+                    ariaLabel={L(f.labelKey)}
+                    hasError={markerErrors[f.key] !== undefined}
                   />
+                )}
+                {markerErrors[f.key] !== undefined && (
+                  <span className="text-[10px] text-error">
+                    {tc.errMarkerUnsafeChars.replace("{chars}", markerErrors[f.key] ?? "")}
+                  </span>
                 )}
               </>
             )}
@@ -181,10 +210,12 @@ function ContentBuilder({ objectId }: { objectId: string }) {
         <section className="flex flex-col gap-1">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[10px] text-muted">{tc.preview}</span>
-            <span className="text-[10px] text-muted">{tc.charsFmt.replace("{n}", String(content.length))}</span>
+            <span className="text-[10px] text-muted">{tc.charsFmt.replace("{n}", String(resolvedContentLength(content, variables)))}</span>
           </div>
+          {/* Print preview: markers resolved in the assembled payload,
+              matching the GS1 modal's semantics. */}
           <code className="text-xs font-mono text-text break-all whitespace-pre-wrap bg-surface-2 rounded px-2 py-1">
-            {content}
+            {resolveDefaults(content)}
           </code>
           {isQr && (
             <div className="flex items-center gap-2">

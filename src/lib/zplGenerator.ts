@@ -11,7 +11,7 @@ import {
   pickClockChars,
   isDefaultClockChars,
 } from './fcTemplate';
-import { getObjectStringContent } from './variableBinding';
+import { boundColumnIndex, getObjectStringContent } from './variableBinding';
 import { classifyField } from './variableField';
 import { formatLabelMetaComment } from './zplLabelMeta';
 import type { ClockOffset, CustomFontMapping, LabelConfig } from '../types/LabelConfig';
@@ -86,8 +86,16 @@ export function planTemplateHeader(
     }
     if (hasClockMarkers(c)) clockPayloads.push(c);
   }
+  // FN-definition lines are parsed while ^FE is active, so keep the delimiter
+  // out of the referenced DEFAULTS too: firmware that expands embeds inside a
+  // FN-definition ^FD could otherwise mis-reference. Batch recall values run
+  // in their own ^XA block without ^FE and need no scan.
+  const embedScan = [
+    ...templatePayloads,
+    ...[...templateVarsByFn.values()].map((v) => v.defaultValue),
+  ];
   const pickedEmbedChar =
-    templatePayloads.length > 0 ? pickEmbedChar(templatePayloads) : '#';
+    templatePayloads.length > 0 ? pickEmbedChar(embedScan) : '#';
   const headerLines: string[] = [];
   const emitCtx: ZplEmitContext = { label, variables };
 
@@ -349,9 +357,7 @@ export function generateBatchZpl(
   const leaves = [...walkObjects(objects)].filter((o) => o.includeInExport !== false);
   const overrides: { fn: number; colIdx: number; transform: (s: string) => string }[] = [];
   for (const v of variables) {
-    const header = csvMapping.bindings[v.id];
-    if (header === undefined) continue;
-    const colIdx = csvDataset.headers.indexOf(header);
+    const colIdx = boundColumnIndex(v, csvDataset, csvMapping);
     if (colIdx === -1) continue;
     // Apply the bound field's ^FD transform (QR prefix, UPC-E compaction, GS1
     // escaping) to each row value, matching the single-format export so the

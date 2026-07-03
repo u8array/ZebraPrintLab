@@ -55,6 +55,16 @@ export function markerOf(body: string): string {
   return `«${body}»`;
 }
 
+// Marker RECOGNITION grammar, single source next to markerOf (construction):
+// the body forbids `»` so adjacent markers can't merge. Consumers must not
+// re-declare it; independent copies invite grammar drift.
+
+/** Fresh global scan regex per call (stateful `lastIndex`, never share one). */
+export const markerRe = (): RegExp => /«([^»]+)»/g;
+
+/** Whole string is exactly one marker: the single-bind shape. */
+export const SINGLE_MARKER_RE = /^«([^»]+)»$/;
+
 /** Strip variable-marker delimiters from a literal value. A default/fallback
  *  can't carry a `«…»` marker: preview would resolve it while single-bind export
  *  emits it verbatim (a phantom re-bind / silent drift). Single source for that

@@ -489,14 +489,23 @@ function VariableRow({
               ? tv.bindingsSingular
               : tv.bindingsPluralFmt.replace('{n}', String(bindings))}
         </span>
-        {/* Source badge only carries meaning under CSV; getVariableSource
-            returns 'default' when there is no dataset, so this also hides it
-            in the common no-CSV state (no more "— default" on every row). */}
-        {error ? (
-          <span className="text-amber-400">{error}</span>
-        ) : source !== 'default' ? (
-          <VariableSourceBadge source={source} boundHeader={boundHeader} size="xs" showLabel />
-        ) : null}
+        <span className="flex items-center gap-2 shrink-0">
+          {/* Length a «marker» of this variable reserves in builders/char
+              counts (inherited from the default; live while typing). */}
+          <Tooltip content={tv.inheritsLengthHint}>
+            <span className={def.length === 0 ? 'opacity-60' : undefined}>
+              {tv.inheritsLengthFmt.replace('{n}', String(def.length))}
+            </span>
+          </Tooltip>
+          {/* Source badge only carries meaning under CSV; getVariableSource
+              returns 'default' when there is no dataset, so this also hides
+              the redundant default badge in the common no-CSV state. */}
+          {error ? (
+            <span className="text-amber-400">{error}</span>
+          ) : source !== 'default' ? (
+            <VariableSourceBadge source={source} boundHeader={boundHeader} size="xs" showLabel />
+          ) : null}
+        </span>
       </div>
     </li>
   );

@@ -67,6 +67,23 @@ describe('GS1-128 (code128 gs1 mode)', () => {
     expect(propsOf(objects[0]).content).toBe(canonical);
   });
 
+  it('emits a TEMPLATE payload in element-string form with intact ^FE embeds', () => {
+    // Raw model content `01«gtin»10«lot»` must export as `(01)#n#(10)#n#`, not
+    // the raw GS-separated form (which literal payloads never use) and not a
+    // post-embed transform (which would mangle the #n# references).
+    const vars = [
+      { id: 'g', name: 'gtin', fnNumber: 1, defaultValue: '09501101530003' },
+      { id: 'l', name: 'lot', fnNumber: 2, defaultValue: 'AB12' },
+    ];
+    const zpl = generateZPL(LABEL, [mk({ ...baseProps, gs1: true, content: '01«gtin»10«lot»' })], vars);
+    expect(zpl).toContain('^FD(01)#1#(10)#2#^FS');
+    // And it round-trips back to marker content (the parser mints its own
+    // variable names for the ^FN slots).
+    const { objects } = parseZPL(zpl, LABEL.dpmm);
+    expect(propsOf(objects[0]).gs1).toBe(true);
+    expect(propsOf(objects[0]).content).toBe('01«field_1»10«field_2»');
+  });
+
   it('fdTransform emits the element-string form (CSV / single-bind path)', () => {
     const transform = code128.fdTransform?.(mk({ ...baseProps, gs1: true }) as never);
     expect(transform).toBeTypeOf('function');

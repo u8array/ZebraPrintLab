@@ -28,6 +28,11 @@ export interface ObjectTypeCore<P extends object = object> {
   interpretationLocked?: boolean;
   /** Emits ^FD via fdFieldFor; enables bind-to-variable control. */
   bindable?: boolean;
+  /** Carrier offers the typed-content builder (URL/WiFi/vCard/...). Single
+   *  source for cross-cutting consumers (marker-value preflight); the panels
+   *  keep their own builder buttons. DataMatrix in GS1 mode carries GS1 data
+   *  instead, which consumers exclude via `props.gs1`. */
+  typedContent?: boolean;
   /** Emitter honours `props.serial` (^SN/^SF). Only text and the free-data 1D
    *  family do; 2D/stacked emitters and fixed-check EAN/UPC do not, so the
    *  Variable-Builder hides the serial option there. */

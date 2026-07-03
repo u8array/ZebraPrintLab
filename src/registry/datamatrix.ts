@@ -23,6 +23,7 @@ export const datamatrix: ObjectTypeCore<DataMatrixProps> = {
   zplCmd: '^BX',
   group: 'code-2d',
   bindable: true,
+  typedContent: true,
   defaultProps: {
     content: '1234567890',
     dimension: 5,
