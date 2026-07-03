@@ -6,7 +6,7 @@ export const code11CoreConfig: Barcode1DCoreConfig = {
   label: "Code 11",
   icon: "C11",
   defaultContent: "12345",
-  group: 'code-1d',
+  group: 'code-postal',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     const check = p.checkDigit ? "Y" : "N";

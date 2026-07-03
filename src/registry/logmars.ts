@@ -7,7 +7,7 @@ export const logmarsCoreConfig: Barcode1DCoreConfig = {
   label: "LOGMARS",
   icon: "LOG",
   defaultContent: "LOGMARS1",
-  group: 'code-1d',
+  group: 'code-postal',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     return `^BL${p.rotation},${p.height},${interp}`;

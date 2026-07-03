@@ -60,7 +60,7 @@ const _ObjectRegistry = {
   // text
   text,
   symbol,
-  // code-1d (frequency order)
+  // code-1d (modern, frequency order)
   code128,
   ean13,
   upca,
@@ -70,15 +70,7 @@ const _ObjectRegistry = {
   ean8,
   upce,
   upcEanExtension,
-  code49,
-  logmars,
   code93,
-  codabar,
-  code11,
-  industrial2of5,
-  standard2of5,
-  msi,
-  plessey,
   // code-2d (frequency order)
   qrcode,
   datamatrix,
@@ -87,10 +79,18 @@ const _ObjectRegistry = {
   maxicode,
   micropdf417,
   codablock,
+  code49,
   tlc39,
-  // code-postal
-  planet,
+  // code-postal ("Postal & Legacy"): postal codes first, then legacy linear
   postal,
+  planet,
+  code11,
+  codabar,
+  logmars,
+  msi,
+  plessey,
+  standard2of5,
+  industrial2of5,
   // shape
   box,
   ellipse,
