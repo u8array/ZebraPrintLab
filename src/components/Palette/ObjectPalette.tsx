@@ -6,6 +6,7 @@ import { addableGroupsFor } from './paletteGroups';
 import { StarGlyph } from './StarGlyph';
 import { buildFavoritesAddMenu, buildPaletteRowMenu } from './paletteActions';
 import { ContextMenu, type MenuSection } from '../ui/ContextMenu';
+import { useContextMenu } from '../../hooks/useContextMenu';
 import { resolveAddable, type AddableEntry } from '../../registry/palettePresets';
 import { getEntry } from '../../registry';
 import { useT } from '../../lib/useT';
@@ -214,7 +215,7 @@ export function ObjectPalette() {
   const reorderRows = useLabelStore((s) => s.reorderPaletteRows);
   const [activeEntry, setActiveEntry] = useState<AddableEntry | null>(null);
   const [overCanvas, setOverCanvas] = useState(false);
-  const [menu, setMenu] = useState<{ x: number; y: number; sections: MenuSection[] } | null>(null);
+  const { menu, openAtPointer, openBelowAnchor, close } = useContextMenu<MenuSection[]>();
   const q = query.trim().toLowerCase();
 
   const openRowMenu = (e: React.MouseEvent, entry: AddableEntry) => {
@@ -231,7 +232,7 @@ export function ObjectPalette() {
         togglePin: () => toggleRow(entry.id),
       },
     });
-    setMenu({ x: e.clientX, y: e.clientY, sections });
+    openAtPointer(e, sections);
   };
 
   const openAddMenu = (e: React.MouseEvent) => {
@@ -245,8 +246,7 @@ export function ObjectPalette() {
       })),
     }));
     if (!groups.some((g) => g.entries.some((e) => !e.pinned))) return; // everything already pinned
-    const r = e.currentTarget.getBoundingClientRect();
-    setMenu({ x: r.left, y: r.bottom + 4, sections: buildFavoritesAddMenu(groups, toggleRow) });
+    openBelowAnchor(e.currentTarget, buildFavoritesAddMenu(groups, toggleRow));
   };
 
   // Track the dragged entry for the overlay chip, and reorder favorites on drop.
@@ -354,7 +354,7 @@ export function ObjectPalette() {
           canvas renders its own full-size ghost). Shown for favorites reorder. */}
       <DragOverlay>{activeEntry && !overCanvas ? <DragChip icon={activeEntry.icon} label={activeEntry.label} /> : null}</DragOverlay>
 
-      {menu && <ContextMenu sections={menu.sections} x={menu.x} y={menu.y} onClose={() => setMenu(null)} />}
+      {menu && <ContextMenu sections={menu.data} x={menu.x} y={menu.y} onClose={close} />}
     </div>
   );
 }
