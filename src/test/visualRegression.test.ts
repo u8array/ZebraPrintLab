@@ -226,21 +226,28 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
 
       // Dots at 8dpmm; placement and footprint must match even when the
       // inner cell pattern legitimately differs. Known divergences enter as
-      // pinned signed deltas, not widened tolerances.
+      // pinned signed deltas, not widened tolerances: the asserted value is
+      // the residual after the expected shift, so failures show exactly the
+      // unexplained dots per axis.
       const expected = EXPECTED_BOUNDS_DELTA[tc.id] ?? {};
       const TOL = 3;
-      const off =
-        Math.abs(local.x - ref.x) > TOL ||
-        Math.abs(local.y - ref.y) > TOL ||
-        Math.abs(local.w - ref.w - (expected.w ?? 0)) > TOL ||
-        Math.abs(local.h - ref.h - (expected.h ?? 0)) > TOL;
-      if (off) {
+      const residual = {
+        x: local.x - ref.x,
+        y: local.y - ref.y,
+        w: local.w - ref.w - (expected.w ?? 0),
+        h: local.h - ref.h - (expected.h ?? 0),
+      };
+      try {
+        expect(Math.abs(residual.x)).toBeLessThanOrEqual(TOL);
+        expect(Math.abs(residual.y)).toBeLessThanOrEqual(TOL);
+        expect(Math.abs(residual.w)).toBeLessThanOrEqual(TOL);
+        expect(Math.abs(residual.h)).toBeLessThanOrEqual(TOL);
+      } catch (err) {
         fs.writeFileSync(
           path.join(DIFF_DIR, `${tc.id}_local.png`),
           canvas.toBuffer("image/png"),
         );
-        // Fails with both boxes visible for diagnosis.
-        expect(local).toEqual(ref);
+        throw err;
       }
     });
   });
