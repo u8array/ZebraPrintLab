@@ -4,14 +4,25 @@ import * as path from "path";
 import bwipjs from "bwip-js";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
-import { createCanvas, loadImage } from "@napi-rs/canvas";
+import { createCanvas, loadImage, type Canvas, type Image } from "@napi-rs/canvas";
 import { testCases } from "../../tests/fixtures/testCases";
 import { testModels } from "./testModels";
 import { defined } from "./helpers";
 import {
   buildBwipOptions,
+  get1DBwipScale,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
+import {
+  drawBarRects,
+  firstRawEntry,
+  ZEBRA_WIDTH_BAR_TYPES,
+  ZEBRA_WIDTH_BCID,
+  zebraWidthBarGeometry,
+  zebraWidthBarText,
+  type ZebraWidthBarType,
+} from "../lib/barcodeRawGeometry";
+import { dotsToPx } from "../lib/coordinates";
 import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET, upcSuppTextZoneDots } from "../lib/bwipConstants";
 import { barcodeFtAnchorOffset, isBarcode } from "../lib/objectBounds";
 
@@ -43,20 +54,6 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
       "barcode_micropdf417_standard",
       // bwip-js encodes codablock with different parameters than Zebra firmware.
       "barcode_codablock_standard",
-      // bwip-js rationalizedCodabar stop-character pattern differs from Zebra ^BK codabar.
-      "barcode_codabar_standard",
-      // bwip-js plessey does not support Zebra's ^BY wide-bar ratio; it ignores the
-      // ratio option and renders ~81% more modules than Labelary.
-      "barcode_plessey_standard",
-      // bwip-js planet bar structure (bar heights/widths) differs from Zebra firmware.
-      "barcode_planet_standard",
-      // bwip-js postnet bar structure differs from Zebra firmware for ^BZ postal codes.
-      "barcode_postal_standard",
-      // bwip-js code93 quiet zone is narrower than Zebra's; drawing at Labelary size
-      // would stretch bars. Skipped pending a padding-based rendering fix.
-      "barcode_code93_standard",
-      // bwip-js code11 quiet zone is narrower than Zebra's; same issue as code93.
-      "barcode_code11_standard",
       // bwip-js GS1 DataBar stacking/finder-pattern differs from Zebra firmware
       // for the multi-row variants. Sym 1 (Omnidirectional) matches.
       "barcode_gs1databar_standard",
@@ -84,19 +81,39 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
         throw new Error(`Fixture not found: ${fixturePath}`);
       }
 
-      // 1. Generate bwip-js buffer (scale=8, dpmm=8 matches Labelary 8dpmm render)
-      const opts = buildBwipOptions(obj, 8, 8);
-      expect(opts).not.toBeNull();
-
-      const localBwipBuffer = await new Promise<Buffer>((resolve, reject) => {
-        bwipjs.toBuffer(
-          opts as unknown as Parameters<typeof bwipjs.toBuffer>[0],
-          (err: string | Error, png: Buffer) => {
-            if (err) reject(err);
-            else resolve(png);
-          },
-        );
-      });
+      // 1. Render the barcode (scale=8, dpmm=8 matches Labelary 8dpmm; px == dots).
+      // plessey/planet/postal draw from bwip raw geometry at ^BY widths, mirroring
+      // renderZebraWidthBars; everything else goes through the bwip PNG.
+      let bwipImage: Image | Canvas;
+      if (ZEBRA_WIDTH_BAR_TYPES.has(obj.type)) {
+        const type = obj.type as ZebraWidthBarType;
+        const p = obj.props as { content?: string; moduleWidth: number; height: number };
+        const modulePx = get1DBwipScale(p.moduleWidth, 8, 8);
+        const heightPx = Math.max(1, Math.round(dotsToPx(p.height, 8, 8)));
+        const text = zebraWidthBarText(type, p.content ?? "");
+        const entry = firstRawEntry(bwipjs.raw({ bcid: ZEBRA_WIDTH_BCID[type], text } as never));
+        const geo = zebraWidthBarGeometry(type, entry, modulePx, heightPx);
+        expect(geo).not.toBeNull();
+        if (!geo) throw new Error("unreachable");
+        const rawCanvas = createCanvas(Math.max(1, Math.round(geo.width)), heightPx);
+        const rawCtx = rawCanvas.getContext("2d");
+        rawCtx.fillStyle = "#000000";
+        drawBarRects(rawCtx, geo.rects);
+        bwipImage = rawCanvas;
+      } else {
+        const opts = buildBwipOptions(obj, 8, 8);
+        expect(opts).not.toBeNull();
+        const localBwipBuffer = await new Promise<Buffer>((resolve, reject) => {
+          bwipjs.toBuffer(
+            opts as unknown as Parameters<typeof bwipjs.toBuffer>[0],
+            (err: string | Error, png: Buffer) => {
+              if (err) reject(err);
+              else resolve(png);
+            },
+          );
+        });
+        bwipImage = await loadImage(localBwipBuffer);
+      }
 
       // 2. Create blank 812x812 canvas
       const canvasWidth = 812;
@@ -107,9 +124,6 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
       // Fill with white
       ctx.fillStyle = "white";
       ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-      // 3. Draw bwip-js output onto canvas
-      const bwipImage = await loadImage(localBwipBuffer);
 
       // Calculate display size
       // We pass the bwipImage as a mock canvas to get its internal dimensions

@@ -4,8 +4,18 @@ import * as path from "path";
 import bwipjs from "bwip-js";
 import {
   buildBwipOptions,
+  get1DBwipScale,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
+import {
+  firstRawEntry,
+  ZEBRA_WIDTH_BAR_TYPES,
+  ZEBRA_WIDTH_BCID,
+  zebraWidthBarGeometry,
+  zebraWidthBarText,
+  type ZebraWidthBarType,
+} from "../lib/barcodeRawGeometry";
+import { dotsToPx } from "../lib/coordinates";
 import { getObjectStringContent } from "../lib/variableBinding";
 import { upcSuppTextZoneDots, QR_FT_MODULE_OFFSET } from "../lib/bwipConstants";
 import { barcodeFtAnchorOffset } from "../lib/objectBounds";
@@ -63,21 +73,39 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
     it("should compute display bounds logically consistent with bwip-js engine", async () => {
       const obj = defined(testModels[tc.id]);
 
-      const opts = buildBwipOptions(obj, 1, 8);
-      expect(opts).not.toBeNull();
+      // plessey/planet/postal canvases come from renderZebraWidthBars (bwip raw
+      // geometry at ^BY widths); mirror its canvas dimensions here.
+      let mockCanvas: HTMLCanvasElement;
+      if (ZEBRA_WIDTH_BAR_TYPES.has(obj.type)) {
+        const type = obj.type as ZebraWidthBarType;
+        const p = obj.props as { content?: string; moduleWidth: number; height: number };
+        const modulePx = get1DBwipScale(p.moduleWidth, 1, 8);
+        const heightPx = Math.max(1, Math.round(dotsToPx(p.height, 1, 8)));
+        const text = zebraWidthBarText(type, p.content ?? "");
+        const entry = firstRawEntry(bwipjs.raw({ bcid: ZEBRA_WIDTH_BCID[type], text } as never));
+        const geo = zebraWidthBarGeometry(type, entry, modulePx, heightPx);
+        expect(geo).not.toBeNull();
+        mockCanvas = {
+          width: Math.max(1, Math.round(geo?.width ?? 1)),
+          height: heightPx,
+        } as HTMLCanvasElement;
+      } else {
+        const opts = buildBwipOptions(obj, 1, 8);
+        expect(opts).not.toBeNull();
 
-      const buffer = await new Promise<Buffer>((resolve, reject) => {
-        bwipjs.toBuffer(
-          opts as unknown as Parameters<typeof bwipjs.toBuffer>[0],
-          (err: string | Error, png: Buffer) => {
-            if (err) reject(err);
-            else resolve(png);
-          },
-        );
-      });
+        const buffer = await new Promise<Buffer>((resolve, reject) => {
+          bwipjs.toBuffer(
+            opts as unknown as Parameters<typeof bwipjs.toBuffer>[0],
+            (err: string | Error, png: Buffer) => {
+              if (err) reject(err);
+              else resolve(png);
+            },
+          );
+        });
 
-      const { width, height } = getPngDimensions(buffer);
-      const mockCanvas = { width, height } as HTMLCanvasElement;
+        const { width, height } = getPngDimensions(buffer);
+        mockCanvas = { width, height } as HTMLCanvasElement;
+      }
       const displaySize = getDisplaySize(obj, mockCanvas, 1, 8);
 
       if (process.env.DEBUG_TESTS) {
@@ -163,10 +191,9 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       // LOGMARS and EAN/UPC have firmware-reserved text zones now included
       // in getDisplaySize's bbox, so they pass the strict height check below.
       // No remaining bwip-vs-Zebra width mismatches at the bbox level:
-      // code93/code11 add a fixed quiet-zone delta in getDisplaySize, and
-      // plessey applies an empirical width ratio. The bitmap inside still
-      // looks visually distorted (kept as a known limitation in
-      // visualRegression.test.ts), but the bbox dimensions now match.
+      // code93/code11 bars carry their check chars, and plessey/planet/postal
+      // draw from bwip raw geometry at ^BY widths (all Labelary-pixel-exact
+      // in visualRegression.test.ts).
       // bwip-js renders the 2-digit ^BS supplement (ean2) at 19 modules,
       // while Zebra firmware reserves 20 modules. The 2-dot delta is a
       // fixed encoder difference; per-module post-stretching would distort

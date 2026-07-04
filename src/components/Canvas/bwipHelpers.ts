@@ -18,8 +18,6 @@ import {
 import { getObjectStringContent } from "../../lib/variableBinding";
 import {
   barSubRect,
-  CODE11_QUIET_ZONE_DELTA_MODULES,
-  CODE93_QUIET_ZONE_DELTA_MODULES,
   EAN_TEXT_ZONE_DOTS,
   EAN_UPC_TYPES,
   GS1_DATABAR_PADDING_ROWS,
@@ -27,9 +25,21 @@ import {
   LOGMARS_TEXT_ZONE_DOTS,
   MICROPDF417_PX_PER_ROW,
   MICROPDF417_QUIET_ZONE_ROWS,
-  PLESSEY_BWIP_TO_ZEBRA_WIDTH_RATIO,
   upcSuppTextZoneDots,
 } from "../../lib/bwipConstants";
+import {
+  drawBarRects,
+  firstRawEntry,
+  POSTAL_PITCH_MODULES,
+  ZEBRA_WIDTH_BAR_TYPES,
+  ZEBRA_WIDTH_BCID,
+  zebraWidthBarGeometry,
+  zebraWidthBarText,
+  type ZebraWidthBarType,
+} from "../../lib/barcodeRawGeometry";
+import { code11CheckDigits } from "../../lib/barcodeCheckDigits";
+
+export { ZEBRA_WIDTH_BAR_TYPES };
 
 // AI 01 + 11 digits is not a valid GTIN-14. Zebra falls back to General
 // Compaction (~149 modules at 8dpmm); routing through (99) matches that
@@ -84,11 +94,10 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
   codabar: "rationalizedCodabar",
   logmars: "code39",
   msi: "msi",
-  plessey: "plessey",
+  // plessey/planet/postal are absent: they render via renderZebraWidthBars
+  // (bwip raw geometry at ^BY widths, bcid from ZEBRA_WIDTH_BCID).
   // Placeholder; real bcid resolved per-symbology via GS1_DATABAR_BCID.
   gs1databar: "databaromni",
-  planet: "planet",
-  postal: "postnet",
   pdf417: "pdf417",
   qrcode: "qrcode",
   datamatrix: "datamatrix",
@@ -147,14 +156,6 @@ function estimatePdf417Columns(content: string, securityLevel: number): number {
 const BWIP_PDF417_MIN_ROWHEIGHT = 3;
 
 export type EanUpcType = "ean13" | "ean8" | "upca" | "upce";
-
-// bwip-js renders postnet/planet bars at 4/3 the per-element width that Zebra
-// firmware uses; this factor compresses the displayed canvas horizontally so
-// the bounding box matches Labelary. Bars appear visually distorted as a result.
-// The 0.0025 deviation from 0.75 (3/4) accounts for a small quiet-zone offset.
-// Empirically derived from Labelary fixtures barcode_planet_standard (12 digits)
-// and barcode_postal_standard (6 digits) at 8dpmm, moduleWidth=2.
-const POSTNET_PLANET_WIDTH_RATIO = 0.7525;
 
 /** Integer-aligned per-module render scale; avoids non-integer upscaling. */
 export function get1DBwipScale(
@@ -407,18 +408,34 @@ export function buildBwipOptions(
     }
     case "code39":
     case "interleaved2of5":
-    case "code93":
-    case "code11":
     case "industrial2of5":
     case "standard2of5":
-    case "codabar":
-    case "plessey": {
+    case "codabar": {
       const p = obj.props;
       const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
       // Zebra silently uppercases for these symbologies; bwip-js throws.
-      const needsUpper = obj.type === "code39" || obj.type === "codabar" || obj.type === "plessey";
+      const needsUpper = obj.type === "code39" || obj.type === "codabar";
       const raw = p.content || "0";
       const text = needsUpper ? raw.toUpperCase() : raw;
+      opts = { bcid, text, scale, height: 10 };
+      break;
+    }
+    case "code93": {
+      const p = obj.props;
+      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
+      // Zebra ^BA always encodes the C+K check chars; the ZPL e param only
+      // gates the HRI. Without includecheck bwip's symbol is 18 modules short.
+      opts = { bcid, text: p.content || "0", scale, height: 10, includecheck: true };
+      break;
+    }
+    case "code11": {
+      const p = obj.props;
+      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
+      // Zebra ^B1 always encodes check digit(s); e picks one (Y) or two (N).
+      // bwip's includecheck flips the count by data length instead, so the
+      // digits are computed app-side and appended to the bar data.
+      const raw = p.content || "0";
+      const text = raw + code11CheckDigits(raw, !p.checkDigit);
       opts = { bcid, text, scale, height: 10 };
       break;
     }
@@ -427,12 +444,6 @@ export function buildBwipOptions(
       const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
       // Zebra always encodes Mod10 in MSI; ^BM e=N only suppresses the HRI digit.
       opts = { bcid, text: p.content || "0", scale, height: 10, includecheck: true };
-      break;
-    }
-    case "postal": {
-      const p = obj.props;
-      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
-      opts = { bcid, text: p.content || "0", scale, height: 10 };
       break;
     }
     case "logmars": {
@@ -465,21 +476,6 @@ export function buildBwipOptions(
         height: 10,
         paddingheight: GS1_DATABAR_PADDING_ROWS,
         ...(sym === 7 ? { segments: p.segments ?? GS1_DATABAR_DEFAULT_SEGMENTS } : {}),
-      };
-      break;
-    }
-    case "planet": {
-      const p = obj.props;
-      const scale = bwipScale1D(p.moduleWidth, renderScale, renderDpmm);
-      let raw = (p.content || "0").replace(/\D/g, "");
-      if (raw.length < 11) raw = raw.padStart(11, "0");
-      else if (raw.length === 12) raw = raw.padStart(13, "0");
-      opts = {
-        bcid,
-        text: raw,
-        scale,
-        height: 10,
-        includecheck: true,
       };
       break;
     }
@@ -661,37 +657,23 @@ function getUprightDisplaySize(
 ): { w: number; h: number } {
   // bwip at bwipSc=1 renders 1 extra px; bwipSc>=2 is exact. extraPx corrects.
   switch (obj.type) {
-    case "code93":
-    case "code11": {
-      // bwip's quiet zone is narrower than Zebra; add the fixed shortfall.
-      const delta = obj.type === "code93"
-        ? CODE93_QUIET_ZONE_DELTA_MODULES
-        : CODE11_QUIET_ZONE_DELTA_MODULES;
-      const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
-      const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const w = ((cw / bwipSc) + delta) * modulePx;
-      const h = dotsToPx(obj.props.height, scale, dpmm);
-      return { w, h };
-    }
     case "plessey": {
-      // bwip uses a different bar encoding from ^BP (~67% wider). Constant
-      // ratio compresses to match the firmware footprint.
+      // Canvas from renderZebraWidthBars at integer module scale; whole-module
+      // widths, so the generic module mapping is exact (no bwip extra-px).
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const w =
-        (cw / bwipSc) * modulePx * PLESSEY_BWIP_TO_ZEBRA_WIDTH_RATIO;
+      const w = (cw / bwipSc) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
     case "planet":
     case "postal": {
-      // See POSTNET_PLANET_WIDTH_RATIO comment. Rounding to dots ensures exact
-      // match with Labelary fixtures regardless of bwip canvas pixel rounding.
+      // The 2.5-module pitch rounds into the canvas width at odd module
+      // scales; recover the bar count and rebuild the exact module width.
       const modulePx = dotsToPx(obj.props.moduleWidth, scale, dpmm);
       const bwipSc = get1DBwipScale(obj.props.moduleWidth, scale, dpmm);
-      const rawPx = (cw / bwipSc) * modulePx * POSTNET_PLANET_WIDTH_RATIO;
-      const wDots = Math.round((rawPx / scale) * dpmm);
-      const w = dotsToPx(wDots, scale, dpmm);
+      const bars = Math.round((cw - bwipSc) / (POSTAL_PITCH_MODULES * bwipSc)) + 1;
+      const w = ((bars - 1) * POSTAL_PITCH_MODULES + 1) * modulePx;
       const h = dotsToPx(obj.props.height, scale, dpmm);
       return { w, h };
     }
@@ -763,6 +745,8 @@ function getUprightDisplaySize(
     }
     case "code39":
     case "interleaved2of5":
+    case "code93":
+    case "code11":
     case "industrial2of5":
     case "standard2of5":
     case "codabar":
@@ -968,6 +952,33 @@ export function renderTlc39Canvas(
   return composite;
 }
 
+function renderZebraWidthBars(
+  obj: LeafObject,
+  scale: number,
+  dpmm: number,
+): { canvas: HTMLCanvasElement | null; error: string | null } {
+  const type = obj.type as ZebraWidthBarType;
+  const p = obj.props as { content?: string; moduleWidth: number; height: number };
+  const modulePx = get1DBwipScale(p.moduleWidth, scale, dpmm);
+  const heightPx = Math.max(1, Math.round(dotsToPx(p.height, scale, dpmm)));
+  try {
+    const text = zebraWidthBarText(type, p.content ?? "");
+    const entry = firstRawEntry(bwipjs.raw({ bcid: ZEBRA_WIDTH_BCID[type], text } as never));
+    const geo = zebraWidthBarGeometry(type, entry, modulePx, heightPx);
+    if (!geo) return { canvas: null, error: "encode produced no bar geometry" };
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(geo.width));
+    canvas.height = heightPx;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return { canvas: null, error: "canvas context unavailable" };
+    ctx.fillStyle = "#000000";
+    drawBarRects(ctx, geo.rects);
+    return { canvas, error: null };
+  } catch (e) {
+    return { canvas: null, error: cleanBwipError(e) };
+  }
+}
+
 /** Single source for encoding an object as a barcode at `scale`: used by the
  *  canvas display AND the preflight encode check. Returns the rendered canvas
  *  (null on failure) and a cleaned error message (null on success). A
@@ -980,6 +991,9 @@ export function renderBarcodeCanvas(
   if (obj.type === "tlc39") {
     const canvas = renderTlc39Canvas(obj.props as Parameters<typeof renderTlc39Canvas>[0], scale, dpmm);
     return { canvas, error: canvas ? null : "TLC39 render failed" };
+  }
+  if (ZEBRA_WIDTH_BAR_TYPES.has(obj.type)) {
+    return renderZebraWidthBars(obj, scale, dpmm);
   }
   if (EAN_UPC_TYPES.has(obj.type)) {
     const moduleWidth = (obj.props as { moduleWidth?: number }).moduleWidth ?? 2;
