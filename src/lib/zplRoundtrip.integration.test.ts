@@ -70,7 +70,7 @@ describe("round-trip integration (real import -> store -> export)", () => {
   it("a realistic foreign label: edit one field, the rest stays byte-identical", () => {
     importInto(REAL_LABEL);
     const addr = store().pages[0]!.objects.find(
-      (o) => "props" in o && getObjectStringContent(o) === "123 Main Street",
+      (o) => getObjectStringContent(o) === "123 Main Street",
     )!;
     store().updateObject(addr.id, { x: 60 });
     const out = exportZpl();
