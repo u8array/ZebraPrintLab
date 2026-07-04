@@ -55,7 +55,7 @@ const ZPL_COMMANDS: readonly ZplCommandInfo[] = [
   { cmd: 'FM', status: 'unsupported', description: 'Multiple field origin locations' },
   { cmd: 'FN', status: 'supported', description: 'Field number: variable field placeholder, lands in the Variables tab on import and emits as ^FN{slot} on export' },
   { cmd: 'FP', status: 'supported', description: 'Field parameter; sets character-by-character text direction (vertical CJK / reverse RTL layout)' },
-  { cmd: 'FV', status: 'unsupported', description: 'Field variable: supplies data for a ^FN field at print time; dropped on import (variable defaults come from ^FN)' },
+  { cmd: 'FV', status: 'supported', description: 'Field variable: data-equivalent of ^FD for variable fields; imports like ^FD and re-emits as ^FD (print-time clearing under ^MC reuse is not modeled)' },
 
   // ── Fonts & text ──────────────────────────────────────────────────────────
   { cmd: 'A0', status: 'supported', description: 'Scalable/bitmap font 0: primary designer font' },

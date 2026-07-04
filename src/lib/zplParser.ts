@@ -1,4 +1,6 @@
 import { DEFAULT_CLOCK_CHARS, isDefaultClockChars } from "./fcTemplate";
+import { markerOf } from "../types/Variable";
+import { getObjectStringContent } from "./variableBinding";
 import { parseLabelMetaComment, type LabelMeta } from "./zplLabelMeta";
 import { tokenize } from "./zplParser/helpers";
 import { createParserState } from "./zplParser/context";
@@ -105,7 +107,7 @@ export function parseZPL(
   // commands (calibration/reset/diagnostics/ZBI/pause) that change device or
   // queue state when the lossless overlay re-emits them on export. Setup keys
   // derive from the handler set; device actions are listed explicitly because
-  // their noop handlers are mixed with design noops (^FV/^FM) that are NOT
+  // their noop handlers are mixed with design noops (^FM) that are NOT
   // replay-risk. Visible label settings (labelConfig: ^MD/^PR/^MM...) and ^DY
   // font uploads are intentionally excluded (the former are shown in the label
   // panel; a non-font ^DY surfaces as a browserLimit finding).
@@ -255,6 +257,20 @@ export function parseZPL(
       skipped.push(token);
       unknown.push(token);
     }
+  }
+
+  // A post-^FS ^SN stripped a single-bind marker somewhere; only now, with
+  // every field and embed parsed, is it known whether the shared slot is
+  // still referenced. Drop variables no marker points at, keeping bare
+  // ^FN declarations (marker-less by design). In-place: `variables` is the
+  // returned array.
+  for (let i = variables.length - 1; i >= 0; i--) {
+    const v = variables[i];
+    if (!v || !s.serialStrippedFns.has(v.fnNumber)) continue;
+    if (s.bareDeclaredFns.has(v.fnNumber)) continue;
+    const marker = markerOf(v.name);
+    const used = objects.some((o) => getObjectStringContent(o)?.includes(marker));
+    if (!used) variables.splice(i, 1);
   }
 
   // Build the overlay only when every parsed object linked to a source span;

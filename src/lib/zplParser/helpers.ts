@@ -26,6 +26,12 @@ export interface TokenizerChars {
   tildeChar: string;
 }
 
+/** Command-name alphabet: a prefix char outside it can never be part of a
+ *  name, so hitting one inside the name slots means the command is broken.
+ *  An alphanumeric prefix remapped via ^CC stays ambiguous and is left to
+ *  the plain two-char read (`AA0` = prefix A + name A0). */
+const NAME_CHAR_RE = /[0-9A-Za-z@]/;
+
 /** Stream tokens incrementally so ^CC/^CT changes mid-parse apply to
  *  subsequent commands. The caller passes a live ref (typically
  *  `s.format`) whose `caretChar`/`tildeChar` may be mutated between
@@ -45,6 +51,22 @@ export function* tokenize(
       }
     }
     if (cmdStart === -1 || cmdStart + 3 > zpl.length) return;
+    // A non-name prefix char inside the two-char command name means the
+    // command is incomplete: discard the fragment and resync at that prefix.
+    // The +1 shape is what ZebraDesigner's `CT~~CD,` preamble relies on;
+    // +2 keeps a stray `~` from eating the next command.
+    const isResyncPoint = (c: string | undefined): c is string =>
+      c !== undefined &&
+      (c === chars.caretChar || c === chars.tildeChar) &&
+      !NAME_CHAR_RE.test(c);
+    if (isResyncPoint(zpl[cmdStart + 1])) {
+      pos = cmdStart + 1;
+      continue;
+    }
+    if (isResyncPoint(zpl[cmdStart + 2])) {
+      pos = cmdStart + 2;
+      continue;
+    }
     const cmd = zpl.slice(cmdStart + 1, cmdStart + 3).toUpperCase();
     // ^CC/^CT/^CD take exactly one argument character; everything after
     // it belongs to the next command (using the new prefix if the handler

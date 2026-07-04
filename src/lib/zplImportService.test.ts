@@ -30,8 +30,8 @@ describe('importZplText - replay-risk findings', () => {
     expect(r.report.replayRisk).toContain('^JR');
   });
 
-  it('does not flag design noops (^FV/^FM) or visible label settings (^MD/^PR)', () => {
-    const r = importZplText('^XA^MD8^PR4^FV5^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
+  it('does not flag design noops (^FM) or visible label settings (^MD/^PR)', () => {
+    const r = importZplText('^XA^MD8^PR4^FM^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
     expect(r.report.replayRisk).toEqual([]);
   });
 });

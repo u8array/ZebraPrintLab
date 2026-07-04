@@ -55,6 +55,18 @@ export function createFieldHandlers(
   const { labelConfig } = s.result;
   const { dots, dotsOrUndef } = dotsFor(s);
 
+  // Shared by ^FD and ^FV (data-equivalent per spec).
+  const setFieldData = (rest: string) => {
+    // Implicit text field unless we're inside a bare `^FN^FD^FS` declaration.
+    if (!s.field.fieldType && s.comment.fnNumber === null) {
+      s.field.fieldType = "text";
+      s.field.textH = getDefaultTextH(s.defaults);
+      s.field.textW = getDefaultTextW(s.defaults);
+      s.field.textRot = s.defaults.fwRotation;
+    }
+    s.field.pendingFD = rest;
+  };
+
   return {
     // ── Field origin ──────────────────────────────────────────────────────
     FO(p) {
@@ -141,14 +153,13 @@ export function createFieldHandlers(
 
     // ── Field data / separator ────────────────────────────────────────────
     FD(_, rest) {
-      // Implicit text field unless we're inside a bare `^FN^FD^FS` declaration.
-      if (!s.field.fieldType && s.comment.fnNumber === null) {
-        s.field.fieldType = "text";
-        s.field.textH = getDefaultTextH(s.defaults);
-        s.field.textW = getDefaultTextW(s.defaults);
-        s.field.textRot = s.defaults.fwRotation;
-      }
-      s.field.pendingFD = rest;
+      setFieldData(rest);
+    },
+    // ^FV: data-equivalent of ^FD for variable fields (spec p.207; the only
+    // delta is print-time clearing under ^MC reuse, which we don't model).
+    // Re-emits as ^FD. An empty ^FV is ignored per spec.
+    FV(_, rest) {
+      if (rest) setFieldData(rest);
     },
     FS() {
       flushField();
@@ -211,6 +222,10 @@ export function createFieldHandlers(
           // literal seed (the ^SN start, else the bound default), so export
           // serialises a real value instead of a charset-filtered marker.
           (lastObj as { props: { content?: string } }).props.content = snStart || cls.variable.defaultValue;
+          // That may have been the variable's only reference, but a later
+          // field or embed can still re-reference the shared slot, so the
+          // orphan decision is deferred to end of parse.
+          s.serialStrippedFns.add(cls.variable.fnNumber);
         } else if (snStart) {
           // ^SN's explicit start value is the serial seed and overrides any prior
           // ^FD payload, for text and 1D barcodes alike: the emitter re-emits the

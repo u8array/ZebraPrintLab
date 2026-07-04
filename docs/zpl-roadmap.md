@@ -55,7 +55,7 @@ The Printer Settings Modal (Media & Feed / Print Quality / Clock & Time / Encodi
 | `[x]` | `^FB` | multi line text block | |
 | `[x]` | `^TB` | text block | |
 | `[x]` | `^FN` | variable placeholder | |
-| `[ ]` | `^FV` | variable data | `Coming soon` |
+| `[x]` | `^FV` | variable data | |
 | `[x]` | `^FE` | field number embed character | |
 | `[x]` | `^FC` | field clock (date / time) | |
 | `[x]` | `^BY` | barcode field default | |
