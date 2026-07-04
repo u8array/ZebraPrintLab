@@ -60,7 +60,7 @@ const fi = {
     gateFieldErrorsFmt: '{n} kenttä/kenttää virheillä',
     gateRoundTrip: 'Sisältöä ei voi avata uudelleen muokkaamista varten',
     elementSublabel: 'mitä skanneri lukee',
-    rawSublabel: 'mitä on tallennettu, merkit näkyvissä',
+    rawSublabel: 'mitä kirjoitetaan ZPL:ään',
     errYesno: 'On oltava 0 (ei) tai 1 (kyllä)',
     errCountryCode: 'On oltava 2-kirjaiminen ISO-maakoodi',
     aiName00: 'SSCC',

@@ -60,7 +60,7 @@ const it = {
     gateFieldErrorsFmt: '{n} campo/i con errori',
     gateRoundTrip: 'Il contenuto non può essere riaperto per la modifica',
     elementSublabel: 'cosa legge lo scanner',
-    rawSublabel: 'cosa è memorizzato, marcatori visibili',
+    rawSublabel: 'ciò che viene scritto nel ZPL',
     errYesno: 'Deve essere 0 (no) o 1 (sì)',
     errCountryCode: 'Deve essere un codice paese ISO a 2 lettere',
     aiName00: 'SSCC',

@@ -60,7 +60,7 @@ const pl = {
     gateFieldErrorsFmt: '{n} pole/pola z błędami',
     gateRoundTrip: 'Treści nie można ponownie otworzyć do edycji',
     elementSublabel: 'co czyta skaner',
-    rawSublabel: 'co jest przechowywane, znaczniki widoczne',
+    rawSublabel: 'co jest zapisywane do ZPL',
     errYesno: 'Musi być 0 (nie) lub 1 (tak)',
     errCountryCode: 'Musi być 2-literowym kodem kraju ISO',
     aiName00: 'SSCC',

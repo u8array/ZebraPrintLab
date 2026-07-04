@@ -60,7 +60,7 @@ const hr = {
     gateFieldErrorsFmt: '{n} polje/polja s pogreškama',
     gateRoundTrip: 'Sadržaj se ne može ponovo otvoriti za uređivanje',
     elementSublabel: 'što skener čita',
-    rawSublabel: 'što je pohranjeno, oznake vidljive',
+    rawSublabel: 'što se piše u ZPL',
     errYesno: 'Mora biti 0 (ne) ili 1 (da)',
     errCountryCode: 'Mora biti 2-slovni ISO kod države',
     aiName00: 'SSCC',

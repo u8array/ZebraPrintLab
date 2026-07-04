@@ -60,7 +60,7 @@ const bg = {
     gateFieldErrorsFmt: '{n} поле(та) с грешки',
     gateRoundTrip: 'Съдържанието не може да се отвори отново за редактиране',
     elementSublabel: 'какво чете скенерът',
-    rawSublabel: 'какво се съхранява, маркерите видими',
+    rawSublabel: 'което се записва в ZPL',
     errYesno: 'Трябва да е 0 (не) или 1 (да)',
     errCountryCode: 'Трябва да е 2-буквен ISO код на страна',
     aiName00: 'SSCC',

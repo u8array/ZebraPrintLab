@@ -60,7 +60,7 @@ const lv = {
     gateFieldErrorsFmt: '{n} lauks(-i) ar kļūdām',
     gateRoundTrip: 'Saturu nevar atkārtoti atvērt rediģēšanai',
     elementSublabel: 'ko skeneris nolasa',
-    rawSublabel: 'kas tiek saglabāts, marķieri redzami',
+    rawSublabel: 'kas tiek rakstīts ZPL',
     errYesno: 'Jābūt 0 (nē) vai 1 (jā)',
     errCountryCode: 'Jābūt 2 burtu ISO valsts kodam',
     aiName00: 'SSCC',

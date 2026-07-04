@@ -60,7 +60,7 @@ const ja = {
     gateFieldErrorsFmt: '{n}件のフィールドにエラー',
     gateRoundTrip: 'コンテンツを再編集用に再度開くことはできません',
     elementSublabel: 'スキャナーが読み取る内容',
-    rawSublabel: '保存される内容、マーカー表示',
+    rawSublabel: 'ZPLに書き込まれる内容',
     errYesno: '0（いいえ）または1（はい）である必要があります',
     errCountryCode: '2文字のISO国コードである必要があります',
     aiName00: 'SSCC',

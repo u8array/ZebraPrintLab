@@ -60,7 +60,7 @@ const et = {
     gateFieldErrorsFmt: '{n} väli(d) vigadega',
     gateRoundTrip: 'Sisu ei saa uuesti avada redigeerimiseks',
     elementSublabel: 'mida skanner loeb',
-    rawSublabel: 'mis on salvestatud, markerid nähtavad',
+    rawSublabel: 'mis kirjutatakse ZPL-i',
     errYesno: 'Peab olema 0 (ei) või 1 (jah)',
     errCountryCode: 'Peab olema 2-tähteline ISO riigikood',
     aiName00: 'SSCC',

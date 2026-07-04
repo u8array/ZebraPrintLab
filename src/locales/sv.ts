@@ -60,7 +60,7 @@ const sv = {
     gateFieldErrorsFmt: '{n} fält med fel',
     gateRoundTrip: 'Innehållet kan inte öppnas igen för redigering',
     elementSublabel: 'vad skannern läser',
-    rawSublabel: 'vad som lagras, markörer synliga',
+    rawSublabel: 'vad som skrivs till ZPL',
     errYesno: 'Måste vara 0 (nej) eller 1 (ja)',
     errCountryCode: 'Måste vara en 2-bokstavs ISO-landskod',
     aiName00: 'SSCC',

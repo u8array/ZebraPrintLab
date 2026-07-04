@@ -60,7 +60,7 @@ const hu = {
     gateFieldErrorsFmt: '{n} hibás mező',
     gateRoundTrip: 'A tartalom nem nyitható meg újra szerkesztésre',
     elementSublabel: 'amit a leolvasó olvas',
-    rawSublabel: 'ami tárolva van, jelölők láthatók',
+    rawSublabel: 'ami a ZPL-be kerül',
     errYesno: '0 (nem) vagy 1 (igen) kell legyen',
     errCountryCode: '2 betűs ISO országkódnak kell lennie',
     aiName00: 'SSCC',

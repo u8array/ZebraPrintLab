@@ -60,7 +60,7 @@ const cs = {
     gateFieldErrorsFmt: '{n} pole/polí s chybami',
     gateRoundTrip: 'Obsah nelze znovu otevřít k úpravám',
     elementSublabel: 'co čte skener',
-    rawSublabel: 'co je uloženo, značky viditelné',
+    rawSublabel: 'co se zapíše do ZPL',
     errYesno: 'Musí být 0 (ne) nebo 1 (ano)',
     errCountryCode: 'Musí být 2písmenný kód země ISO',
     aiName00: 'SSCC',
