@@ -60,7 +60,7 @@ const zhHant = {
     gateFieldErrorsFmt: '{n} 個欄位有錯誤',
     gateRoundTrip: '內容無法重新開啟以進行編輯',
     elementSublabel: '掃描器讀取的內容',
-    rawSublabel: '儲存的內容，標記可見',
+    rawSublabel: '寫入ZPL的內容',
     errYesno: '必須為 0（否）或 1（是）',
     errCountryCode: '必須是 2 位 ISO 國家代碼',
     aiName00: 'SSCC',

@@ -60,7 +60,7 @@ const de = {
     gateFieldErrorsFmt: '{n} Feld(er) mit Fehlern',
     gateRoundTrip: 'Inhalt ist nicht wieder editierbar',
     elementSublabel: 'was der Scanner liest',
-    rawSublabel: 'was gespeichert wird, Marker sichtbar',
+    rawSublabel: 'was ins ZPL geschrieben wird',
     errYesno: 'Muss 0 (nein) oder 1 (ja) sein',
     errCountryCode: 'Muss ein 2-stelliger ISO-Ländercode sein',
     aiName00: 'SSCC',

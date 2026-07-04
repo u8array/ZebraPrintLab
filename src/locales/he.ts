@@ -60,7 +60,7 @@ const he = {
     gateFieldErrorsFmt: '{n} שדה/שדות עם שגיאות',
     gateRoundTrip: 'לא ניתן לפתוח מחדש את התוכן לעריכה',
     elementSublabel: 'מה שהסורק קורא',
-    rawSublabel: 'מה מאוחסן, סמנים גלויים',
+    rawSublabel: 'מה שנכתב ב-ZPL',
     errYesno: 'חייב להיות 0 (לא) או 1 (כן)',
     errCountryCode: 'חייב להיות קוד מדינה ISO בן 2 אותיות',
     aiName00: 'SSCC',

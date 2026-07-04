@@ -60,7 +60,7 @@ const ro = {
     gateFieldErrorsFmt: '{n} câmp(uri) cu erori',
     gateRoundTrip: 'Conținutul nu poate fi redeschis pentru editare',
     elementSublabel: 'ce citește scanerul',
-    rawSublabel: 'ce este stocat, markeri vizibili',
+    rawSublabel: 'ce se scrie în ZPL',
     errYesno: 'Trebuie să fie 0 (nu) sau 1 (da)',
     errCountryCode: 'Trebuie să fie un cod de țară ISO de 2 litere',
     aiName00: 'SSCC',

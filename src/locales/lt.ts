@@ -60,7 +60,7 @@ const lt = {
     gateFieldErrorsFmt: '{n} laukas(-ai) su klaidomis',
     gateRoundTrip: 'Turinio negalima iš naujo atidaryti redagavimui',
     elementSublabel: 'ką skaitytuvas skaito',
-    rawSublabel: 'kas saugoma, žymekliai matomi',
+    rawSublabel: 'kas įrašoma į ZPL',
     errYesno: 'Turi būti 0 (ne) arba 1 (taip)',
     errCountryCode: 'Turi būti 2 raidžių ISO šalies kodas',
     aiName00: 'SSCC',

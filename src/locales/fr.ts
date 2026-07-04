@@ -60,7 +60,7 @@ const fr = {
     gateFieldErrorsFmt: '{n} champ(s) avec des erreurs',
     gateRoundTrip: 'Le contenu ne peut pas être rouvert pour modification',
     elementSublabel: 'ce que le lecteur lit',
-    rawSublabel: 'ce qui est stocké, marqueurs visibles',
+    rawSublabel: 'ce qui est écrit dans le ZPL',
     errYesno: 'Doit être 0 (non) ou 1 (oui)',
     errCountryCode: 'Doit être un code pays ISO à 2 lettres',
     aiName00: 'SSCC',

@@ -60,7 +60,7 @@ const pt = {
     gateFieldErrorsFmt: '{n} campo(s) com erros',
     gateRoundTrip: 'O conteúdo não pode ser reaberto para edição',
     elementSublabel: 'o que o leitor lê',
-    rawSublabel: 'o que está armazenado, marcadores visíveis',
+    rawSublabel: 'o que é escrito no ZPL',
     errYesno: 'Deve ser 0 (não) ou 1 (sim)',
     errCountryCode: 'Deve ser um código de país ISO de 2 letras',
     aiName00: 'SSCC',

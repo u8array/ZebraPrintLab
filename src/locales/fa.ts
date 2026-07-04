@@ -60,7 +60,7 @@ const fa = {
     gateFieldErrorsFmt: '{n} فیلد(ها) با خطا',
     gateRoundTrip: 'محتوا نمی‌تواند برای ویرایش دوباره باز شود',
     elementSublabel: 'آنچه اسکنر می‌خواند',
-    rawSublabel: 'آنچه ذخیره می‌شود، نشانگرها قابل مشاهده',
+    rawSublabel: 'آنچه در ZPL نوشته می‌شود',
     errYesno: 'باید 0 (خیر) یا 1 (بله) باشد',
     errCountryCode: 'باید یک کد کشور دو حرفی ISO باشد',
     aiName00: 'SSCC',

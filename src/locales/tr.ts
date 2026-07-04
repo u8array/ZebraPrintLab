@@ -60,7 +60,7 @@ const tr = {
     gateFieldErrorsFmt: '{n} hatalı alan',
     gateRoundTrip: 'İçerik düzenleme için yeniden açılamaz',
     elementSublabel: 'tarayıcının okuduğu',
-    rawSublabel: 'ne depolandığı, işaretçiler görünür',
+    rawSublabel: "ZPL'ye yazılan",
     errYesno: '0 (hayır) veya 1 (evet) olmalıdır',
     errCountryCode: '2 harfli ISO ülke kodu olmalıdır',
     aiName00: 'SSCC',

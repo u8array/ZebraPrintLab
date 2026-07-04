@@ -10,7 +10,8 @@ import { Tooltip } from "../ui/Tooltip";
 import { useLabelStore, getCurrentObjects } from "../../store/labelStore";
 import { usePreviewBinding } from "../../store/usePreviewBinding";
 import { getObjectStringContent } from "../../lib/variableBinding";
-import { extractTemplateRefs, hasTemplateMarkers } from "../../lib/fnTemplate";
+import { extractTemplateRefs, hasTemplateMarkers, markersToEmbeds } from "../../lib/fnTemplate";
+import { DEFAULT_CLOCK_CHARS, markersToTokens } from "../../lib/fcTemplate";
 import { MarkerTextField } from "../Properties/MarkerTextField";
 import { findObjectById } from "../../types/Group";
 import {
@@ -22,7 +23,6 @@ import {
   segmentsToContent,
   parseGs1ToSegments,
   decimalValuePreview,
-  GS1_GS,
   type Gs1AiSpec,
   type Gs1Segment,
   type Gs1SetError,
@@ -286,8 +286,15 @@ function Gs1Builder({ objectId }: { objectId: string }) {
                   <span className="text-[10px] uppercase tracking-wider text-muted">{tg.rawLabel}</span>
                   <span className="text-[10px] text-muted/70">{tg.rawSublabel}</span>
                 </span>
+                {/* ZPL field data as the generator emits it: markers become
+                    ^FE embeds (#n#) and ^FC clock tokens, shown with the
+                    DEFAULT delimiter chars; export picks alternates only on a
+                    payload collision, where the output panel is authoritative. */}
                 <code className="text-[11px] font-mono text-muted break-all bg-surface-2/60 rounded px-2 py-1">
-                  {segmentsToContent(segments).replaceAll(GS1_GS, "⟨GS⟩")}
+                  {markersToTokens(
+                    markersToEmbeds(segmentsToElementString(segments), variables, "#").payload,
+                    DEFAULT_CLOCK_CHARS,
+                  )}
                 </code>
               </div>
             </section>

@@ -60,7 +60,7 @@ const nl = {
     gateFieldErrorsFmt: '{n} veld(en) met fouten',
     gateRoundTrip: 'Inhoud kan niet opnieuw worden geopend voor bewerking',
     elementSublabel: 'wat de scanner leest',
-    rawSublabel: 'wat is opgeslagen, markeringen zichtbaar',
+    rawSublabel: 'wat naar ZPL wordt geschreven',
     errYesno: 'Moet 0 (nee) of 1 (ja) zijn',
     errCountryCode: 'Moet een 2-letterige ISO-landcode zijn',
     aiName00: 'SSCC',

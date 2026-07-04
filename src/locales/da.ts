@@ -60,7 +60,7 @@ const da = {
     gateFieldErrorsFmt: '{n} felt(er) med fejl',
     gateRoundTrip: 'Indhold kan ikke genåbnes til redigering',
     elementSublabel: 'hvad scanneren læser',
-    rawSublabel: 'hvad der er gemt, markører synlige',
+    rawSublabel: 'hvad der skrives til ZPL',
     errYesno: 'Skal være 0 (nej) eller 1 (ja)',
     errCountryCode: 'Skal være en 2-bogstavers ISO-landekode',
     aiName00: 'SSCC',

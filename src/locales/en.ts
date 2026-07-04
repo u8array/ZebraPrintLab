@@ -60,7 +60,7 @@ const en = {
     gateFieldErrorsFmt: '{n} field(s) with errors',
     gateRoundTrip: "Content can't be reopened for editing",
     elementSublabel: 'what the scanner reads',
-    rawSublabel: 'what is stored, markers visible',
+    rawSublabel: 'what is written to the ZPL',
     errYesno: 'Must be 0 (no) or 1 (yes)',
     errCountryCode: 'Must be a 2-letter ISO country code',
     aiName00: 'SSCC',

@@ -60,7 +60,7 @@ const ar = {
     gateFieldErrorsFmt: '{n} حقل/حقول تحتوي على أخطاء',
     gateRoundTrip: 'لا يمكن إعادة فتح المحتوى للتعديل',
     elementSublabel: 'ما يقرأه الماسح الضوئي',
-    rawSublabel: 'ما يتم تخزينه، العلامات مرئية',
+    rawSublabel: 'ما يُكتب في ZPL',
     errYesno: 'يجب أن يكون 0 (لا) أو 1 (نعم)',
     errCountryCode: 'يجب أن يكون رمز دولة ISO من حرفين',
     aiName00: 'SSCC',

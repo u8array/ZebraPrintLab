@@ -60,7 +60,7 @@ const el = {
     gateFieldErrorsFmt: '{n} πεδίο/α με σφάλματα',
     gateRoundTrip: 'Το περιεχόμενο δεν μπορεί να ανοιχτεί ξανά για επεξεργασία',
     elementSublabel: 'τι διαβάζει ο σαρωτής',
-    rawSublabel: 'τι αποθηκεύεται, δείκτες ορατοί',
+    rawSublabel: 'τι γράφεται στο ZPL',
     errYesno: 'Πρέπει να είναι 0 (όχι) ή 1 (ναι)',
     errCountryCode: 'Πρέπει να είναι 2-γράμμος κωδικός χώρας ISO',
     aiName00: 'SSCC',

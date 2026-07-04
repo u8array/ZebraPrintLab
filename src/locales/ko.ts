@@ -60,7 +60,7 @@ const ko = {
     gateFieldErrorsFmt: '{n}개 필드에 오류',
     gateRoundTrip: '콘텐츠를 편집을 위해 다시 열 수 없습니다',
     elementSublabel: '스캐너가 읽는 내용',
-    rawSublabel: '저장되는 내용, 마커 표시',
+    rawSublabel: 'ZPL에 쓰이는 내용',
     errYesno: '0 (아니오) 또는 1 (예)이어야 합니다',
     errCountryCode: '2자리 ISO 국가 코드여야 합니다',
     aiName00: 'SSCC',

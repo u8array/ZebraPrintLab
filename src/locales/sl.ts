@@ -60,7 +60,7 @@ const sl = {
     gateFieldErrorsFmt: '{n} polje/polj z napakami',
     gateRoundTrip: 'Vsebine ni mogoče znova odpreti za urejanje',
     elementSublabel: 'kaj bralnik bere',
-    rawSublabel: 'kaj je shranjeno, markerji vidni',
+    rawSublabel: 'kar se zapiše v ZPL',
     errYesno: 'Mora biti 0 (ne) ali 1 (da)',
     errCountryCode: 'Mora biti 2-črkovna koda države ISO',
     aiName00: 'SSCC',

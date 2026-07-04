@@ -60,7 +60,7 @@ const zhHans = {
     gateFieldErrorsFmt: '{n} 个字段有错误',
     gateRoundTrip: '内容无法重新打开以进行编辑',
     elementSublabel: '扫描仪读取的内容',
-    rawSublabel: '存储的内容，标记可见',
+    rawSublabel: '写入ZPL的内容',
     errYesno: '必须为 0（否）或 1（是）',
     errCountryCode: '必须是 2 位 ISO 国家代码',
     aiName00: 'SSCC',
