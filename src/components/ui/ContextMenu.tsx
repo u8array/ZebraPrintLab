@@ -36,6 +36,10 @@ interface Props {
   onClose: () => void;
 }
 
+// Close-grace for submenu hover: long enough to survive a diagonal pointer
+// path across the rows below, short enough not to feel sticky.
+const SUBMENU_CLOSE_GRACE_MS = 220;
+
 const MENU_BOX =
   "z-[60] min-w-44 bg-surface border border-border rounded-lg shadow-2xl p-1";
 
@@ -52,15 +56,49 @@ function Row({
   labels,
   iconFor,
   onClose,
+  openId,
+  setOpenId,
 }: {
   item: MenuAction;
   labels?: Record<string, string>;
   iconFor?: (item: MenuAction) => IconType | undefined;
   onClose: () => void;
+  /** Which sibling's submenu is open; owned by the level above so at most one
+   *  submenu per level exists (opening a sibling closes the lingering one and
+   *  an overshoot onto a closing box can't revive it over the new one). */
+  openId: string | null;
+  setOpenId: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
-  const [subOpen, setSubOpen] = useState(false);
+  const subOpen = openId === item.id;
   const wrapRef = useRef<HTMLDivElement>(null);
   const subRef = useRef<HTMLDivElement>(null);
+  // Grace timer: an immediate close on mouseleave kills the submenu while the
+  // pointer travels diagonally across the rows below toward it; a short delay
+  // lets it arrive, and re-entering cancels the close.
+  const closeTimer = useRef<number | null>(null);
+  const cancelClose = () => {
+    if (closeTimer.current !== null) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  };
+  const openSub = () => {
+    cancelClose();
+    if (!item.disabled) setOpenId(item.id);
+  };
+  const scheduleClose = () => {
+    cancelClose();
+    // Functional guard: if a sibling opened during the grace, leave it alone.
+    closeTimer.current = window.setTimeout(
+      () => setOpenId((cur) => (cur === item.id ? null : cur)),
+      SUBMENU_CLOSE_GRACE_MS,
+    );
+  };
+  useEffect(() => () => {
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+  }, []);
+  // Children coordinate their own level.
+  const [childOpenId, setChildOpenId] = useState<string | null>(null);
   // Submenus open to the right by default; flip left and/or shift up once the
   // real size is known so a nested level can't run off the viewport.
   const [flip, setFlip] = useState<{ left: boolean; up: number }>({ left: false, up: 0 });
@@ -92,8 +130,8 @@ function Row({
       <div
         ref={wrapRef}
         className="relative"
-        onMouseEnter={() => !item.disabled && setSubOpen(true)}
-        onMouseLeave={() => setSubOpen(false)}
+        onMouseEnter={openSub}
+        onMouseLeave={scheduleClose}
       >
         <button disabled={item.disabled} className={cls}>
           <RowIcon icon={iconFor?.(item)} />
@@ -101,14 +139,25 @@ function Row({
           <ChevronRightIcon className="w-3.5 h-3.5 text-muted shrink-0" />
         </button>
         {subOpen && (
+          // Padding (not margin) forms the visual gap, so the bridge between
+          // row and submenu stays hoverable and crossing it can't mouseleave.
           <div
-            ref={subRef}
-            className={`absolute top-0 ${flip.left ? "right-full mr-0.5" : "left-full ml-0.5"} ${MENU_BOX}`}
+            className={`absolute top-0 ${flip.left ? "right-full pr-0.5" : "left-full pl-0.5"}`}
             style={flip.up ? { transform: `translateY(-${flip.up}px)` } : undefined}
           >
-            {submenu.map((s) => (
-              <Row key={s.id} item={s} labels={labels} iconFor={iconFor} onClose={onClose} />
-            ))}
+            <div ref={subRef} className={MENU_BOX}>
+              {submenu.map((s) => (
+                <Row
+                  key={s.id}
+                  item={s}
+                  labels={labels}
+                  iconFor={iconFor}
+                  onClose={onClose}
+                  openId={childOpenId}
+                  setOpenId={setChildOpenId}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -135,6 +184,8 @@ function Row({
 export function ContextMenu({ sections, x, y, labels, iconFor, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ x, y });
+  // One open submenu across the whole root level (sections included).
+  const [openId, setOpenId] = useState<string | null>(null);
 
   // Clamp into the viewport once the real size is known.
   useLayoutEffect(() => {
@@ -176,7 +227,15 @@ export function ContextMenu({ sections, x, y, labels, iconFor, onClose }: Props)
         <div key={section.id}>
           {i > 0 && <div className="my-1 border-t border-border" />}
           {section.items.map((item) => (
-            <Row key={item.id} item={item} labels={labels} iconFor={iconFor} onClose={onClose} />
+            <Row
+              key={item.id}
+              item={item}
+              labels={labels}
+              iconFor={iconFor}
+              onClose={onClose}
+              openId={openId}
+              setOpenId={setOpenId}
+            />
           ))}
         </div>
       ))}
