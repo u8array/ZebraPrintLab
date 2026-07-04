@@ -10,7 +10,8 @@ import {
   useCallback,
 } from "react";
 import { useDroppable, useDndMonitor } from "@dnd-kit/core";
-import { CANVAS_DROPPABLE_ID, type PaletteDragData } from "../../dnd/types";
+import { CANVAS_DROPPABLE_ID } from "../../dnd/types";
+import { paletteGhostHandlers } from "./paletteGhostMonitor";
 import { Stage, Layer, Group, Image as KImage, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects, selectPreviewLocksEditor } from "../../store/labelStore";
@@ -38,7 +39,7 @@ import { CAPTURE_CHROME } from "./konvaObjectProps";
 import { Grid } from "./Grid";
 import { GuideLines } from "./GuideLines";
 import { Ruler, RULER_SIZE } from "./Ruler";
-import { getEntry, SHAPE_PRIMITIVE_TYPES } from "../../registry";
+import { SHAPE_PRIMITIVE_TYPES } from "../../registry";
 import type { LeafObject } from "../../registry";
 import { addableGroupsFor } from "../Palette/paletteGroups";
 import { resolveAddable, type AddableEntry } from "../../registry/palettePresets";
@@ -1135,42 +1136,16 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     ctxMenu.openAtPointer(e.evt, sections);
   };
 
-  useDndMonitor({
-    onDragMove(event) {
-      if (previewLocks || event.over?.id !== CANVAS_DROPPABLE_ID) {
-        setGhost(null);
-        return;
-      }
-      const pos = pointerToLabelDots(lastPointerRef.current.x, lastPointerRef.current.y);
-      if (!pos) return;
-      const dragData = event.active.data.current as PaletteDragData | undefined;
-      const type = dragData?.type;
-      if (!type) return;
-      const def = getEntry(type);
-      if (!def) return;
-      setGhost({
-        id: "__ghost__",
-        type,
-        ...pos,
-        rotation: 0,
-        props: { ...def.defaultProps, ...dragData?.propsOverride },
-      } as LeafObject);
-    },
-    onDragEnd(event) {
-      setGhost(null);
-      if (previewLocks) return;
-      if (event.over?.id !== CANVAS_DROPPABLE_ID) return;
-      const pos = pointerToLabelDots(lastPointerRef.current.x, lastPointerRef.current.y);
-      if (!pos) return;
-      const dragData = event.active.data.current as PaletteDragData | undefined;
-      const type = dragData?.type;
-      if (!type) return;
-      addObject(type, pos, dragData.propsOverride);
-    },
-    onDragCancel() {
-      setGhost(null);
-    },
-  });
+  const ghostLiveRef = useRef(false);
+  useDndMonitor(
+    paletteGhostHandlers({
+      live: ghostLiveRef,
+      locked: previewLocks,
+      pointerPos: () => pointerToLabelDots(lastPointerRef.current.x, lastPointerRef.current.y),
+      setGhost,
+      addObject,
+    }),
+  );
 
   const { setNodeRef: setDropRef } = useDroppable({ id: CANVAS_DROPPABLE_ID });
 
