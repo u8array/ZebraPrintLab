@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { aiSpec } from "./gs1";
+import { aiSpec, validateGs1Segments } from "./gs1";
 import {
   AI_BY_GROUP,
   GS1_COMMON_AIS,
+  GS1_BUILDER_PRESETS,
   GS1_REQ_ENFORCED_TYPES,
   reqSatisfiableInBuilder,
 } from "./gs1BuilderPalette";
@@ -37,5 +38,27 @@ describe("palette catalog hygiene", () => {
 
   it("req policy covers exactly the bwip req-enforcing carriers", () => {
     expect([...GS1_REQ_ENFORCED_TYPES].sort()).toEqual(["datamatrix", "gs1databar"]);
+  });
+});
+
+describe("GS1_BUILDER_PRESETS (onboarding sets stay appliable)", () => {
+  it("every preset AI is modeled and req-satisfiable in the builder", () => {
+    for (const preset of GS1_BUILDER_PRESETS) {
+      for (const ai of preset.ais) {
+        const spec = aiSpec(ai);
+        expect(spec, `preset AI ${ai} is modeled`).toBeDefined();
+        expect(reqSatisfiableInBuilder(spec!), `preset AI ${ai} req-satisfiable`).toBe(true);
+      }
+    }
+  });
+
+  it("every preset seeds a set with no set-level rule violation on req-enforced carriers", () => {
+    // A preset opens the builder pre-filled; a set-level error (exclusive AI,
+    // unmet requisite) at load would be an unappliable onboarding dead end.
+    for (const preset of GS1_BUILDER_PRESETS) {
+      const segs = preset.ais.map((ai) => ({ ai, value: "" }));
+      // enforceReq = true is the strictest carrier (datamatrix/gs1databar).
+      expect(validateGs1Segments(segs, true), `preset ${preset.nameKey}`).toBeNull();
+    }
   });
 });

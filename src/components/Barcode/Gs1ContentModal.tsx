@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
-import { BarcodeContentModalShell } from "./BarcodeContentModalShell";
+import { DialogShell } from "../ui/DialogShell";
+import { DialogHeader } from "../ui/DialogHeader";
+import { DialogActions } from "../ui/DialogActions";
 import { useT } from "../../lib/useT";
 import type { Translations } from "../../locales";
 import { inputCls } from "../ui/formStyles";
@@ -29,9 +31,12 @@ import {
   AI_BY_GROUP,
   GS1_GROUP_ORDER,
   GS1_COMMON_AIS,
+  GS1_BUILDER_PRESETS,
   GS1_REQ_ENFORCED_TYPES,
   reqSatisfiableInBuilder,
 } from "../../lib/gs1BuilderPalette";
+
+type Gs1BuilderStrings = Translations["gs1builder"];
 
 /** Long-tail count for the palette hint: offerable catalog minus the curated
  *  set (all common AIs are satisfiable, guarded by test). */
@@ -41,8 +46,6 @@ function hiddenAiCount(enforceReq: boolean): number {
     .filter((s) => !enforceReq || reqSatisfiableInBuilder(s)).length;
   return total - GS1_COMMON_AIS.size;
 }
-
-type Gs1BuilderStrings = Translations["gs1builder"];
 
 /** Localized AI display name: per-AI key, else the decimal family's shared
  *  key, else the catalog EN title, else the AI number. */
@@ -82,6 +85,18 @@ function formatHint(spec: Gs1AiSpec): string {
   }
 }
 
+/** State chip combining the format requirement, the resolved width and a
+ *  met/unmet glyph into one element (e.g. `✓ n14`, `6/20`, `✗ 7/6`). */
+function segmentBadge(spec: Gs1AiSpec | undefined, resolved: string, err: string | null): { label: string; tone: string } | null {
+  if (!spec) return null;
+  if (err) {
+    if (err === "exactLength" && !hasTemplateMarkers(resolved)) return { label: `✗ ${resolved.length}/${spec.len}`, tone: "text-error" };
+    return { label: `✗ ${formatHint(spec)}`, tone: "text-error" };
+  }
+  if (isVariableKind(spec.kind)) return { label: `${resolved.length}/${spec.len}`, tone: "text-muted" };
+  return { label: `✓ ${formatHint(spec)}`, tone: "text-muted" };
+}
+
 export function Gs1ContentModal() {
   const objectId = useLabelStore((s) => s.gs1BuilderObjectId);
   if (!objectId) return null;
@@ -91,6 +106,9 @@ export function Gs1ContentModal() {
 
 function Gs1Builder({ objectId }: { objectId: string }) {
   const t = useT();
+  const tg = t.gs1builder;
+  const titleId = useId();
+  const subtitleId = useId();
   const closeGs1Builder = useLabelStore((s) => s.closeGs1Builder);
   const updateObject = useLabelStore((s) => s.updateObject);
 
@@ -107,14 +125,14 @@ function Gs1Builder({ objectId }: { objectId: string }) {
   });
   const [segments, setSegments] = useState<Gs1Segment[]>(seed.segments);
   const enforceReq = GS1_REQ_ENFORCED_TYPES.has(obj?.type ?? "");
-
-  const tg = t.gs1builder;
   const [query, setQuery] = useState("");
 
   // Validate each segment as its preview substitution (variable defaults,
   // current clock), so a marker is checked as the text it prints.
-  const errors = segments.map((s) => validateGs1SegmentResolved(s.ai, s.value, resolveDefaults(s.value)));
-  const fieldsOk = segments.length > 0 && errors.every((e) => e === null);
+  const resolvedValues = segments.map((s) => resolveDefaults(s.value));
+  const errors = segments.map((s, i) => validateGs1SegmentResolved(s.ai, s.value, resolvedValues[i] ?? ""));
+  const fieldErrorCount = errors.filter((e) => e !== null).length;
+  const fieldsOk = segments.length > 0 && fieldErrorCount === 0;
   const setError = validateGs1Segments(segments, enforceReq);
   // Round-trip gate: only allow Apply for content the builder can re-open, so
   // a marker that validates but can't be re-parsed (e.g. a fixed field whose
@@ -122,10 +140,21 @@ function Gs1Builder({ objectId }: { objectId: string }) {
   const roundTrips = parseGs1ToSegments(segmentsToContent(segments), variables) !== null;
   const valid = fieldsOk && setError === null && roundTrips;
 
+  // Set-rule violations other than "empty" ("empty" is the gateEmpty case).
+  const setRuleError = setError && setError.key !== "empty" ? setError : null;
+  // Never leave Apply silently disabled: the footer names the first blocker.
+  const blocker =
+    segments.length === 0 ? tg.gateEmpty
+    : fieldErrorCount > 0 ? tg.gateFieldErrorsFmt.replace("{n}", String(fieldErrorCount))
+    : setRuleError ? setErrMsg(tg, setRuleError)
+    : !roundTrips ? tg.gateRoundTrip
+    : null;
+
   const addSegment = (ai: string) => setSegments((prev) => [...prev, { ai, value: "" }]);
   const setValue = (i: number, value: string) =>
     setSegments((prev) => prev.map((s, j) => (j === i ? { ...s, value } : s)));
   const removeAt = (i: number) => setSegments((prev) => prev.filter((_, j) => j !== i));
+  const applyPreset = (ais: readonly string[]) => setSegments(ais.map((ai) => ({ ai, value: "" })));
 
   const apply = () => {
     updateObject(objectId, { props: { content: segmentsToContent(segments) } });
@@ -139,160 +168,240 @@ function Gs1Builder({ objectId }: { objectId: string }) {
     return !!spec && isVariableKind(spec.kind) && i < segments.length - 1;
   };
 
-  return (
-    <BarcodeContentModalShell
-      title={tg.title}
-      subtitle={tg.subtitle}
-      onClose={closeGs1Builder}
-      onApply={apply}
-      applyDisabled={!valid}
-      applyLabel={tg.apply}
-      cancelLabel={tg.cancel}
-      closeLabel={tg.close}
-    >
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{tg.paletteHeading}</h3>
-          <input
-            className={`${inputCls} w-40 py-0.5 text-xs`}
-            placeholder={tg.searchPlaceholder}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label={tg.searchPlaceholder}
-          />
-        </div>
-        {GS1_GROUP_ORDER.map((group) => {
-          const q = query.trim().toLowerCase();
-          // No query shows only the curated set; search spans the catalog.
-          // Req-enforced carriers hide AIs whose requisites aren't modeled
-          // (adding one would be an unappliable dead end).
-          const matches = AI_BY_GROUP[group].filter(
-            (spec) =>
-              (!enforceReq || reqSatisfiableInBuilder(spec)) &&
-              (q
-                ? spec.ai.includes(q) ||
-                  aiName(tg, spec.ai).toLowerCase().includes(q) ||
-                  spec.title.toLowerCase().includes(q)
-                : GS1_COMMON_AIS.has(spec.ai)),
-          );
-          if (matches.length === 0) return null;
-          return (
-          <div key={group} className="flex flex-col gap-1">
-            <span className="text-[10px] text-muted/70">
-              {(tg as Record<string, string>)[`group${group.charAt(0).toUpperCase()}${group.slice(1)}`]}
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {matches.map((spec) => (
-                <button
-                  key={spec.ai}
-                  type="button"
-                  onClick={() => addSegment(spec.ai)}
-                  className="flex items-center gap-1 px-2 py-1 rounded border border-border bg-surface-2 hover:bg-border text-xs transition-colors"
-                >
-                  <PlusIcon className="w-3 h-3 text-muted" />
-                  <span className="font-mono text-[10px] text-accent">({spec.ai})</span>
-                  <span className="text-text">{aiName(tg, spec.ai)}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          );
-        })}
-        {query.trim() === "" && (
-          <span className="text-[10px] text-muted/70">
-            {tg.moreViaSearchFmt.replace("{n}", String(hiddenAiCount(enforceReq)))}
-          </span>
-        )}
-      </section>
+  const q = query.trim().toLowerCase();
 
-      <section className="flex flex-col gap-2">
-        <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{tg.segmentsHeading}</h3>
-        {seed.lost && (
-          <p className="text-[10px] text-warning px-1">{tg.seedNotParsedHint}</p>
-        )}
-        {segments.length === 0 ? (
-          <p className="text-xs text-muted px-1">{tg.emptyHint}</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {segments.map((seg, i) => {
-              const spec = aiSpec(seg.ai);
-              const err = errors[i];
-              const shown = resolveDefaults(seg.value);
-              const isMarker = hasTemplateMarkers(seg.value);
-              const decPreview = spec?.kind === "decimal" ? decimalValuePreview(seg.ai, shown) : null;
+  return (
+    <DialogShell
+      portal
+      labelledBy={titleId}
+      describedBy={subtitleId}
+      onClose={closeGs1Builder}
+      boxClassName="bg-surface border border-border rounded-lg shadow-2xl w-[900px] max-w-[95vw] max-h-[85vh] flex flex-col overflow-hidden"
+    >
+      <DialogHeader
+        titleId={titleId}
+        subtitleId={subtitleId}
+        title={tg.title}
+        subtitle={tg.subtitle}
+        onClose={closeGs1Builder}
+        closeLabel={tg.close}
+      />
+
+      <div className="flex-1 min-h-0 flex">
+        {/* Palette (tool/source): own scroll so it stays visible past ~10 segments. */}
+        <aside className="w-[280px] shrink-0 border-r border-border flex flex-col min-h-0">
+          <div className="px-4 py-3 border-b border-border flex flex-col gap-2">
+            <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{tg.paletteHeading}</h3>
+            <input
+              className={`${inputCls} py-0.5 text-xs`}
+              placeholder={tg.searchPlaceholder}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label={tg.searchPlaceholder}
+            />
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 flex flex-col gap-3">
+            {GS1_GROUP_ORDER.map((group) => {
+              // No query shows only the curated set; search spans the catalog.
+              // Req-enforced carriers hide AIs whose requisites aren't modeled.
+              const matches = AI_BY_GROUP[group].filter(
+                (spec) =>
+                  (!enforceReq || reqSatisfiableInBuilder(spec)) &&
+                  (q
+                    ? spec.ai.includes(q) || aiName(tg, spec.ai).toLowerCase().includes(q) || spec.title.toLowerCase().includes(q)
+                    : GS1_COMMON_AIS.has(spec.ai)),
+              );
+              if (matches.length === 0) return null;
               return (
-                <li key={i} className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[10px] bg-accent-dim text-accent rounded px-1 py-0.5 shrink-0">({seg.ai})</span>
-                    <span className="text-xs text-text shrink-0 w-28 truncate">{aiName(tg, seg.ai)}</span>
-                    <span className="font-mono text-[10px] text-muted shrink-0">{spec ? formatHint(spec) : ""}</span>
-                    <MarkerTextField
-                      value={seg.value}
-                      onChange={(next) => setValue(i, next)}
-                      ariaLabel={aiName(tg, seg.ai)}
-                      hasError={err !== null}
-                    />
-                    {fnc1After(i) && (
-                      <Tooltip content={tg.fnc1} className="shrink-0">
-                        <span className="font-mono text-[9px] text-muted">FNC1</span>
-                      </Tooltip>
-                    )}
-                    <button type="button" aria-label={tg.remove} onClick={() => removeAt(i)} className="text-muted hover:text-error shrink-0">
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
+                <div key={group} className="flex flex-col gap-1">
+                  <span className="text-[10px] text-muted/70">
+                    {(tg as Record<string, string>)[`group${group.charAt(0).toUpperCase()}${group.slice(1)}`]}
+                  </span>
+                  <div className="flex flex-col gap-1">
+                    {matches.map((spec) => (
+                      <button
+                        key={spec.ai}
+                        type="button"
+                        onClick={() => addSegment(spec.ai)}
+                        className="group flex items-center gap-2 px-2 py-1 rounded border border-transparent hover:border-border hover:bg-surface-2 text-xs text-left transition-colors"
+                      >
+                        <PlusIcon className="w-3 h-3 text-muted opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 shrink-0" />
+                        <span className="font-mono text-[10px] text-accent shrink-0">({spec.ai})</span>
+                        <span className="text-text truncate min-w-0">{aiName(tg, spec.ai)}</span>
+                      </button>
+                    ))}
                   </div>
-                  {err ? (
-                    <span className="text-[10px] text-error pl-1">
-                      {/* Marker width mismatch gets the actionable message ONLY
-                          when a variable is involved (its default drives the
-                          inherited width). A clock-only mismatch keeps the
-                          generic message: clock widths are fixed, the fix is
-                          different tokens, not a default value. */}
-                      {err === "exactLength" && isMarker && spec &&
-                      extractTemplateRefs(seg.value).some((n) => variables.some((v) => v.name === n))
-                        ? tg.errMarkerLengthFmt
-                            .replace("{have}", String(shown.length))
-                            .replace("{need}", String(spec.len))
-                        : fieldErrMsg(tg, err)}
-                    </span>
-                  ) : spec?.kind === "gtin" && !isMarker && shown.length > 0 && shown.length < 14 ? (
-                    <span className="text-[10px] text-muted pl-1">{tg.gtinAutocomplete}</span>
-                  ) : decPreview ? (
-                    <span className="text-[10px] text-muted pl-1">= {decPreview}</span>
-                  ) : isMarker && shown !== "" && !hasTemplateMarkers(shown) ? (
-                    // Resolved substitution + width, so the user sees what the
-                    // marker reserves against the AI's format (e.g. n14).
-                    <span className="text-[10px] text-muted pl-1 font-mono">= {shown} · {shown.length}</span>
-                  ) : null}
-                </li>
+                </div>
               );
             })}
-          </ul>
-        )}
-      </section>
-
-      {fieldsOk && setError && setError.key !== "empty" && (
-        <p className="text-[10px] text-error px-1">{setErrMsg(tg, setError)}</p>
-      )}
-
-      {valid && (
-        <section className="flex flex-col gap-2">
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] text-muted">{tg.elementLabel}</span>
-            {/* Print preview: markers resolved in the ASSEMBLED string (raw
-                substitution, mirroring print-time ^FN insertion). */}
-            <code className="text-xs font-mono text-text break-all bg-surface-2 rounded px-2 py-1">
-              {resolveDefaults(segmentsToElementString(segments))}
-            </code>
+            {q === "" && (
+              <span className="text-[10px] text-muted/70">{tg.moreViaSearchFmt.replace("{n}", String(hiddenAiCount(enforceReq)))}</span>
+            )}
           </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] text-muted">{tg.rawLabel}</span>
-            <code className="text-xs font-mono text-text break-all bg-surface-2 rounded px-2 py-1">
-              {segmentsToContent(segments).replaceAll(GS1_GS, "⟨GS⟩")}
-            </code>
-          </div>
-        </section>
+        </aside>
+
+        {/* Document + feedback: the segment list being built, then the preview. */}
+        <div className="flex-1 min-w-0 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+          {seed.lost && <p className="text-[11px] text-warning">{tg.seedNotParsedHint}</p>}
+
+          {segments.length === 0 ? (
+            <PresetEmptyState tg={tg} onPick={applyPreset} />
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {segments.map((seg, i) => (
+                <SegmentRow
+                  key={i}
+                  tg={tg}
+                  seg={seg}
+                  err={errors[i] ?? null}
+                  resolved={resolvedValues[i] ?? ""}
+                  variables={variables}
+                  fnc1After={fnc1After(i)}
+                  onChange={(v) => setValue(i, v)}
+                  onRemove={() => removeAt(i)}
+                />
+              ))}
+            </ul>
+          )}
+
+          {/* Set-level rule (exclusive/missing-required): rendered in full so
+              a long alternatives list is never truncated. */}
+          {fieldsOk && setRuleError && (
+            <p className="text-[11px] text-error">{setErrMsg(tg, setRuleError)}</p>
+          )}
+
+          {valid && (
+            <section className="flex flex-col gap-2 border-t border-border pt-3">
+              <div className="flex flex-col gap-1">
+                <span className="flex items-baseline gap-2">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-text">{tg.elementLabel}</span>
+                  <span className="text-[10px] text-muted">{tg.elementSublabel}</span>
+                </span>
+                <code className="text-xs font-mono text-text break-all bg-surface-2 rounded px-2 py-1.5">
+                  {resolveDefaults(segmentsToElementString(segments))}
+                </code>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="flex items-baseline gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-muted">{tg.rawLabel}</span>
+                  <span className="text-[10px] text-muted/70">{tg.rawSublabel}</span>
+                </span>
+                <code className="text-[11px] font-mono text-muted break-all bg-surface-2/60 rounded px-2 py-1">
+                  {segmentsToContent(segments).replaceAll(GS1_GS, "⟨GS⟩")}
+                </code>
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
+
+      <footer className="px-5 py-3 border-t border-border flex items-center gap-3">
+        <span
+          role="status"
+          aria-live="polite"
+          className={`flex-1 min-w-0 text-[11px] truncate ${blocker ? "text-warning" : "text-transparent"}`}
+        >
+          {blocker ?? ""}
+        </span>
+        <DialogActions
+          onCancel={closeGs1Builder}
+          onApply={apply}
+          applyDisabled={!valid}
+          applyLabel={tg.apply}
+          cancelLabel={tg.cancel}
+        />
+      </footer>
+    </DialogShell>
+  );
+}
+
+/** Empty-state onboarding: use-case presets that only prefill the list. */
+function PresetEmptyState({ tg, onPick }: { tg: Gs1BuilderStrings; onPick: (ais: readonly string[]) => void }) {
+  return (
+    <div className="flex flex-col gap-3 py-2">
+      <div className="flex flex-col gap-0.5">
+        <span className="text-xs font-medium text-text">{tg.presetsHeading}</span>
+        <span className="text-[11px] text-muted">{tg.presetsHint}</span>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {GS1_BUILDER_PRESETS.map((p) => (
+          <button
+            key={p.nameKey}
+            type="button"
+            onClick={() => onPick(p.ais)}
+            className="flex items-center justify-between gap-2 px-3 py-2 rounded border border-border bg-surface-2 hover:border-accent hover:bg-surface transition-colors text-left"
+          >
+            <span className="text-xs text-text">{tg[p.nameKey]}</span>
+            <span className="font-mono text-[10px] text-muted">{p.ais.map((a) => `(${a})`).join(" ")}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SegmentRow({
+  tg,
+  seg,
+  err,
+  resolved,
+  variables,
+  fnc1After,
+  onChange,
+  onRemove,
+}: {
+  tg: Gs1BuilderStrings;
+  seg: Gs1Segment;
+  err: string | null;
+  resolved: string;
+  variables: ReturnType<typeof usePreviewBinding>["variables"];
+  fnc1After: boolean;
+  onChange: (value: string) => void;
+  onRemove: () => void;
+}) {
+  const spec = aiSpec(seg.ai);
+  const isMarker = hasTemplateMarkers(seg.value);
+  const badge = segmentBadge(spec, resolved, err);
+  const decPreview = spec?.kind === "decimal" ? decimalValuePreview(seg.ai, resolved) : null;
+  // Actionable message: marker width mismatch names the variable's default as
+  // the fix; a clock-only mismatch keeps the generic message (clock widths are
+  // fixed, the fix is a different token, not a default value).
+  const actionable =
+    err === "exactLength" && isMarker && spec && extractTemplateRefs(seg.value).some((n) => variables.some((v) => v.name === n));
+  const hint = err
+    ? actionable && spec
+      ? tg.errMarkerLengthFmt.replace("{have}", String(resolved.length)).replace("{need}", String(spec.len))
+      : fieldErrMsg(tg, err)
+    : spec?.kind === "gtin" && !isMarker && resolved.length > 0 && resolved.length < 14
+      ? tg.gtinAutocomplete
+      : decPreview
+        ? `= ${decPreview}`
+        : isMarker && resolved !== "" && !hasTemplateMarkers(resolved)
+          ? `= ${resolved}`
+          : null;
+
+  return (
+    <li className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-[10px] bg-accent-dim text-accent rounded px-1 py-0.5 shrink-0">({seg.ai})</span>
+        <span className="text-xs text-text shrink-0 w-28 truncate">{aiName(tg, seg.ai)}</span>
+        <MarkerTextField value={seg.value} onChange={onChange} ariaLabel={aiName(tg, seg.ai)} hasError={err !== null} />
+        {badge && <span className={`font-mono text-[10px] shrink-0 ${badge.tone}`}>{badge.label}</span>}
+        <button type="button" aria-label={tg.remove} onClick={onRemove} className="text-muted hover:text-error shrink-0">
+          <TrashIcon className="w-4 h-4" />
+        </button>
+      </div>
+      {hint && (
+        <span className={`text-[10px] pl-1 ${err ? "text-error" : "text-muted"} ${!err ? "font-mono" : ""}`}>{hint}</span>
       )}
-    </BarcodeContentModalShell>
+      {fnc1After && (
+        <Tooltip content={tg.fnc1} className="self-start">
+          <span className="flex items-center gap-1 text-[9px] font-mono text-muted/70 pl-1">
+            <span className="w-4 border-t border-dashed border-border" />
+            FNC1
+          </span>
+        </Tooltip>
+      )}
+    </li>
   );
 }
