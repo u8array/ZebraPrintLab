@@ -87,7 +87,7 @@ describe("describeHistoryStep", () => {
     it("classifies an x/y change as move", () => {
       const prev = snap({ pages: pageWith(textLeaf("a")) });
       const next = snap({ pages: pageWith(textLeaf("a", { x: 50 })) });
-      expect(describeHistoryStep(prev, next)).toEqual({ kind: "move", count: 1 });
+      expect(describeHistoryStep(prev, next)).toEqual({ kind: "move", count: 1, name: "text" });
     });
 
     it("classifies a dimension-prop change as resize", () => {
@@ -95,7 +95,7 @@ describe("describeHistoryStep", () => {
       const moved = boxLeaf("a");
       (moved as { props: { width: number } }).props.width = 200;
       const next = snap({ pages: pageWith(moved) });
-      expect(describeHistoryStep(prev, next)).toEqual({ kind: "resize", count: 1 });
+      expect(describeHistoryStep(prev, next)).toEqual({ kind: "resize", count: 1, name: "box" });
     });
 
     it("classifies a non-dimension prop change as edit", () => {
@@ -109,7 +109,7 @@ describe("describeHistoryStep", () => {
       const changed = boxLeaf("a", { x: 99 });
       (changed as { props: { width: number } }).props.width = 300;
       const next = snap({ pages: pageWith(changed) });
-      expect(describeHistoryStep(prev, next)).toEqual({ kind: "resize", count: 1 });
+      expect(describeHistoryStep(prev, next)).toEqual({ kind: "resize", count: 1, name: "box" });
     });
   });
 
