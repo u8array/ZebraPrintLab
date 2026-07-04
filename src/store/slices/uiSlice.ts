@@ -1,7 +1,7 @@
 import type { StateCreator } from 'zustand';
 import type { Unit } from '../../lib/units';
 import type { ViewRotation } from '../../components/Canvas/rotationGeometry';
-import type { LocaleCode } from '../../locales';
+import { fallbackTranslations, loadLocale, type LocaleCode, type Translations } from '../../locales';
 import {
   detectLocale,
   detectInitialTheme,
@@ -69,7 +69,16 @@ export type BlockDragMode = 'frame' | 'glyph';
 export type AlignSelectionRef = 'selection' | 'key';
 
 export interface UiSlice {
+  /** The user's language PREFERENCE (persisted). Can briefly differ from
+   *  `loadedLocale` while a chunk loads, or longer when loading failed. */
   locale: LocaleCode;
+  /** The locale whose dictionary is actually applied; set atomically with
+   *  `translations`. Behavior keyed on language (dir/Intl) belongs here,
+   *  not on the preference. */
+  loadedLocale: LocaleCode;
+  /** Loaded dictionary for `loadedLocale`; seeded with the bundled en
+   *  fallback and swapped asynchronously by applyLocale. */
+  translations: Translations;
   /** UI theme. Initial value seeded from prefers-color-scheme; once
    *  toggled the explicit choice persists. */
   theme: ThemePreference;
@@ -120,6 +129,10 @@ export interface UiSlice {
   editorFocusRequest: { id: string; nonce: number } | null;
 
   setLocale: (locale: LocaleCode) => void;
+  /** Single orchestration point for locale loading: fetch (cached) chunk,
+   *  latest-wins guard, atomic translations+loadedLocale swap, failure log.
+   *  Never rejects; consumed by setLocale and the main.tsx bootstrap. */
+  applyLocale: (locale: LocaleCode) => Promise<void>;
   setTheme: (theme: ThemePreference) => void;
   setThirdPartyEnabled: (service: 'labelary', enabled: boolean) => void;
   acknowledgeLabelaryNotice: () => void;
@@ -199,6 +212,8 @@ function defaultUiPrefs(): UiPrefs {
 
 export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set, get) => ({
   locale: detectLocale(),
+  loadedLocale: 'en',
+  translations: fallbackTranslations,
   ...defaultUiPrefs(),
   sidebarTab: 'properties',
   blockDragMode: 'frame',
@@ -210,7 +225,23 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set, ge
   variableBuilderObjectId: null,
   editorFocusRequest: null,
 
-  setLocale: (locale) => set({ locale }),
+  setLocale: (locale) => {
+    // Async swap: the previous language stays visible for the chunk's load
+    // time; `locale` records the preference immediately.
+    set({ locale });
+    void get().applyLocale(locale);
+  },
+  applyLocale: async (locale) => {
+    try {
+      const translations = await loadLocale(locale);
+      // Locale may have changed again meanwhile; only the latest wins.
+      if (get().locale === locale) set({ translations, loadedLocale: locale });
+    } catch (err) {
+      // Failed fetch (e.g. offline switch, broken deploy): the previous
+      // dictionary stays active and loadedLocale keeps showing that.
+      console.warn(`locale chunk for "${locale}" failed to load`, err);
+    }
+  },
   setTheme: (theme) => set({ theme }),
   setThirdPartyEnabled: (service, enabled) =>
     set((state) => ({ thirdParty: { ...state.thirdParty, [service]: enabled } })),

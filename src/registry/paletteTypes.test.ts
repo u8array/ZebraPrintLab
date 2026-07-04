@@ -2,9 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { defaultPaletteRows } from './paletteTypes';
 import { resolveAddable, addablesInGroup, PALETTE_PRESET_IDS } from './palettePresets';
 import { PALETTE_GROUPS } from '../components/Palette/paletteGroups';
-import { locales } from '../locales';
-
-const en = locales.en;
+import en from '../locales/en';
 
 describe('paletteTypes', () => {
   it('defaultPaletteRows are the curated favorites, each resolvable', () => {

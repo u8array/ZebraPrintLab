@@ -1,87 +1,85 @@
 /**
- * All available locales.
- *
- * Migration path to i18next:
- *   1. pnpm add i18next react-i18next
- *   2. import i18n from 'i18next'; import { initReactI18next } from 'react-i18next';
- *   3. i18n.use(initReactI18next).init({ resources: locales, lng: 'en', fallbackLng: 'en' })
- *   4. Replace `import t from '../../locales/en'` → `const { t } = useTranslation()`
- *   5. Replace `t.some.key` → `t('some.key')`
+ * Locale registry with lazy loading: only `en` (type anchor + fallback) is
+ * bundled into the main chunk; every other language becomes its own Vite
+ * chunk fetched on demand. The loader map's return type checks each locale
+ * module against the `en` shape at compile time.
  */
 import en from './en';
-import de from './de';
-import fr from './fr';
-import es from './es';
-import pt from './pt';
-import it from './it';
-import nl from './nl';
-import pl from './pl';
-import cs from './cs';
-import sk from './sk';
-import hu from './hu';
-import ro from './ro';
-import sv from './sv';
-import no from './no';
-import da from './da';
-import fi from './fi';
-import el from './el';
-import bg from './bg';
-import hr from './hr';
-import sr from './sr';
-import sl from './sl';
-import et from './et';
-import lv from './lv';
-import lt from './lt';
-import ar from './ar';
-import he from './he';
-import fa from './fa';
-import tr from './tr';
-import zhHans from './zh-hans';
-import zhHant from './zh-hant';
-import ja from './ja';
-import ko from './ko';
 
-export const locales = {
-  en,
-  de,
-  fr,
-  es,
-  pt,
-  it,
-  nl,
-  pl,
-  cs,
-  sk,
-  hu,
-  ro,
-  sv,
-  no,
-  da,
-  fi,
-  el,
-  bg,
-  hr,
-  sr,
-  sl,
-  et,
-  lv,
-  lt,
-  ar,
-  he,
-  fa,
-  tr,
-  'zh-hans': zhHans,
-  'zh-hant': zhHant,
-  ja,
-  ko,
-} as const;
+/** Widen the `as const` literal strings of a locale to plain `string`,
+ *  keeping the key structure: the shape check must accept translated
+ *  values, not demand en's exact literals. */
+type DeepWiden<T> = T extends string
+  ? string
+  : T extends number | boolean | null | undefined
+    ? T
+    : T extends readonly (infer U)[]
+      ? readonly DeepWiden<U>[]
+      : { readonly [K in keyof T]: DeepWiden<T[K]> };
 
-export type LocaleCode = keyof typeof locales;
+/** Shape of a single locale dictionary, anchored on `en`. */
+export type Translations = DeepWiden<typeof en>;
 
-/** Shape of a single locale dictionary, derived from the registered locales.
- *  Use this when a non-React module needs the translation type without
- *  pulling in the useT hook. */
-export type Translations = (typeof locales)[LocaleCode];
+/** Bundled fallback; also the pre-seeded store default before bootstrap. */
+export const fallbackTranslations: Translations = en;
+
+// The `satisfies` clause checks every loader's module shape against the en
+// anchor, so a locale missing keys fails to compile.
+const loaders = {
+  en: async () => ({ default: en }),
+  de: () => import('./de'),
+  fr: () => import('./fr'),
+  es: () => import('./es'),
+  pt: () => import('./pt'),
+  it: () => import('./it'),
+  nl: () => import('./nl'),
+  pl: () => import('./pl'),
+  cs: () => import('./cs'),
+  sk: () => import('./sk'),
+  hu: () => import('./hu'),
+  ro: () => import('./ro'),
+  sv: () => import('./sv'),
+  no: () => import('./no'),
+  da: () => import('./da'),
+  fi: () => import('./fi'),
+  el: () => import('./el'),
+  bg: () => import('./bg'),
+  hr: () => import('./hr'),
+  sr: () => import('./sr'),
+  sl: () => import('./sl'),
+  et: () => import('./et'),
+  lv: () => import('./lv'),
+  lt: () => import('./lt'),
+  ar: () => import('./ar'),
+  he: () => import('./he'),
+  fa: () => import('./fa'),
+  tr: () => import('./tr'),
+  'zh-hans': () => import('./zh-hans'),
+  'zh-hant': () => import('./zh-hant'),
+  ja: () => import('./ja'),
+  ko: () => import('./ko'),
+} satisfies Record<string, () => Promise<{ default: Translations }>>;
+
+export type LocaleCode = keyof typeof loaders;
+
+export const LOCALE_CODES = Object.keys(loaders) as readonly LocaleCode[];
+
+export function isLocaleCode(value: string): value is LocaleCode {
+  // hasOwn, not `in`: a guard must stay false for prototype keys
+  // ("constructor") no matter what callers pass.
+  return Object.hasOwn(loaders, value);
+}
+
+const cache = new Map<LocaleCode, Translations>([['en', en]]);
+
+/** Load (and cache) a locale's translations. */
+export async function loadLocale(code: LocaleCode): Promise<Translations> {
+  const hit = cache.get(code);
+  if (hit) return hit;
+  const mod = await loaders[code]();
+  cache.set(code, mod.default);
+  return mod.default;
+}
 
 export const localeNames: Record<LocaleCode, string> = {
   en: 'English',
@@ -117,5 +115,3 @@ export const localeNames: Record<LocaleCode, string> = {
   ja: '日本語',
   ko: '한국어',
 };
-
-export default locales;

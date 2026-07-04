@@ -1,7 +1,6 @@
 import { isGroup, type LabelObject, type Page } from '../types/Group';
 import type { ObjectChanges } from '../types/LabelObject';
-import type { LocaleCode } from '../locales';
-import { locales } from '../locales';
+import { isLocaleCode, type LocaleCode } from '../locales';
 import { renameTemplateMarkers, substituteTemplateMarker } from '../lib/fnTemplate';
 import { getObjectStringContent } from '../lib/variableBinding';
 import { getEntry } from '../registry';
@@ -162,8 +161,19 @@ export function applyObjectChanges(
 }
 
 export function detectLocale(): LocaleCode {
-  const lang = navigator.language.slice(0, 2).toLowerCase();
-  return (lang in locales ? lang : 'en') as LocaleCode;
+  const tag = navigator.language.toLowerCase();
+  // Chinese needs the script subtag: the generic 2-char slice ('zh') matches
+  // no locale and silently fell through to English for every Chinese browser.
+  if (tag.startsWith('zh')) {
+    const traditional = tag.includes('hant')
+      || tag.startsWith('zh-tw') || tag.startsWith('zh-hk') || tag.startsWith('zh-mo');
+    return traditional ? 'zh-hant' : 'zh-hans';
+  }
+  const lang = tag.slice(0, 2);
+  // Norwegian browsers report the written standard (nb/nn), not the
+  // macrolanguage code our locale uses.
+  if (lang === 'nb' || lang === 'nn') return 'no';
+  return isLocaleCode(lang) ? lang : 'en';
 }
 
 export function detectInitialTheme(): 'light' | 'dark' {
