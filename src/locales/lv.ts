@@ -48,6 +48,8 @@ const lv = {
     groupUrl: 'URL',
     groupOther: 'Cits',
     searchPlaceholder: 'Meklēt identifikatorus…',
+    aiAlreadyAdded: 'Jau sarakstā',
+    aiExcludedByFmt: 'Nevar kombinēt ar ({ai})',
     errExclusiveFmt: '({a}) nevar kombinēt ar ({b})',
     errRequiresFmt: '({ai}) prasa {list} tajā pašā svītrukodā',
     moreViaSearchFmt: '{n} vairāk identifikatoru, meklējot',

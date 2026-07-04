@@ -48,6 +48,8 @@ const it = {
     groupUrl: 'URL',
     groupOther: 'Altro',
     searchPlaceholder: 'Cerca identificatori…',
+    aiAlreadyAdded: 'Già nella lista',
+    aiExcludedByFmt: 'Non combinabile con ({ai})',
     errExclusiveFmt: '({a}) non può essere combinato con ({b})',
     errRequiresFmt: '({ai}) richiede {list} nello stesso codice a barre',
     moreViaSearchFmt: '{n} altri identificatori tramite ricerca',

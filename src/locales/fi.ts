@@ -48,6 +48,8 @@ const fi = {
     groupUrl: 'URL',
     groupOther: 'Muut',
     searchPlaceholder: 'Hae tunnisteita…',
+    aiAlreadyAdded: 'Jo listalla',
+    aiExcludedByFmt: 'Ei voi yhdistää ({ai}):n kanssa',
     errExclusiveFmt: '({a}) ei voi yhdistää ({b}):n kanssa',
     errRequiresFmt: '({ai}) vaatii {list} samaan viivakoodiin',
     moreViaSearchFmt: '{n} lisää tunnisteita haun kautta',

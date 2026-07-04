@@ -48,6 +48,8 @@ const ar = {
     groupUrl: 'URL',
     groupOther: 'أخرى',
     searchPlaceholder: 'البحث عن معرّفات…',
+    aiAlreadyAdded: 'موجود بالفعل في القائمة',
+    aiExcludedByFmt: 'لا يمكن دمجه مع ({ai})',
     errExclusiveFmt: 'لا يمكن دمج ({a}) مع ({b})',
     errRequiresFmt: '({ai}) يستلزم وجود {list} في نفس الرمز الشريطي',
     moreViaSearchFmt: '{n} معرّفات إضافية عبر البحث',

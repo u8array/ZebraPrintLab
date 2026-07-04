@@ -48,6 +48,8 @@ const pl = {
     groupUrl: 'URL',
     groupOther: 'Inne',
     searchPlaceholder: 'Szukaj identyfikatorów…',
+    aiAlreadyAdded: 'Już na liście',
+    aiExcludedByFmt: 'Nie można łączyć z ({ai})',
     errExclusiveFmt: '({a}) nie może być łączone z ({b})',
     errRequiresFmt: '({ai}) wymaga {list} w tym samym kodzie kreskowym',
     moreViaSearchFmt: '{n} więcej identyfikatorów przez wyszukiwanie',

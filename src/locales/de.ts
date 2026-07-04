@@ -48,6 +48,8 @@ const de = {
     groupUrl: 'URL',
     groupOther: 'Sonstige',
     searchPlaceholder: 'Kennungen suchen…',
+    aiAlreadyAdded: 'Bereits in der Liste',
+    aiExcludedByFmt: 'Nicht kombinierbar mit ({ai})',
     errExclusiveFmt: '({a}) kann nicht mit ({b}) kombiniert werden',
     errRequiresFmt: '({ai}) erfordert {list} im selben Barcode',
     moreViaSearchFmt: '{n} weitere Bezeichner über Suche',

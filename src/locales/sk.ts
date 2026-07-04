@@ -48,6 +48,8 @@ const sk = {
     groupUrl: 'URL',
     groupOther: 'Ostatné',
     searchPlaceholder: 'Hľadať identifikátory…',
+    aiAlreadyAdded: 'Už v zozname',
+    aiExcludedByFmt: 'Nedá sa kombinovať s ({ai})',
     errExclusiveFmt: '({a}) nemožno kombinovať s ({b})',
     errRequiresFmt: '({ai}) vyžaduje {list} v rovnakom čiarovom kóde',
     moreViaSearchFmt: '{n} ďalších identifikátorov cez vyhľadávanie',

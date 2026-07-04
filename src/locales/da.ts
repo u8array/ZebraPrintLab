@@ -48,6 +48,8 @@ const da = {
     groupUrl: 'URL',
     groupOther: 'Andet',
     searchPlaceholder: 'Søg identifikatorer…',
+    aiAlreadyAdded: 'Allerede på listen',
+    aiExcludedByFmt: 'Kan ikke kombineres med ({ai})',
     errExclusiveFmt: '({a}) kan ikke kombineres med ({b})',
     errRequiresFmt: '({ai}) kræver {list} i samme stregkode',
     moreViaSearchFmt: '{n} flere identifikatorer via søgning',

@@ -48,6 +48,8 @@ const sl = {
     groupUrl: 'URL',
     groupOther: 'Drugo',
     searchPlaceholder: 'Iskanje identifikatorjev…',
+    aiAlreadyAdded: 'Že na seznamu',
+    aiExcludedByFmt: 'Ni mogoče kombinirati z ({ai})',
     errExclusiveFmt: '({a}) ni mogoče kombinirati z ({b})',
     errRequiresFmt: '({ai}) zahteva {list} v istem črtnem kodu',
     moreViaSearchFmt: '{n} več identifikatorjev prek iskanja',

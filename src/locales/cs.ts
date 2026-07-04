@@ -48,6 +48,8 @@ const cs = {
     groupUrl: 'URL',
     groupOther: 'Ostatní',
     searchPlaceholder: 'Hledat identifikátory…',
+    aiAlreadyAdded: 'Již v seznamu',
+    aiExcludedByFmt: 'Nelze kombinovat s ({ai})',
     errExclusiveFmt: '({a}) nelze kombinovat s ({b})',
     errRequiresFmt: '({ai}) vyžaduje {list} ve stejném čárovém kódu',
     moreViaSearchFmt: '{n} dalších identifikátorů přes vyhledávání',

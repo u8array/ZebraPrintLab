@@ -48,6 +48,8 @@ const ko = {
     groupUrl: 'URL',
     groupOther: '기타',
     searchPlaceholder: '식별자 검색…',
+    aiAlreadyAdded: '이미 목록에 있음',
+    aiExcludedByFmt: '({ai})와(과) 결합할 수 없음',
     errExclusiveFmt: '({a})은(는) ({b})와(과) 함께 사용할 수 없습니다',
     errRequiresFmt: '({ai})은(는) 같은 바코드 내에 {list}가 필요합니다',
     moreViaSearchFmt: '검색으로 {n}개 더 많은 식별자',

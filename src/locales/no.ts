@@ -48,6 +48,8 @@ const no = {
     groupUrl: 'URL',
     groupOther: 'Annet',
     searchPlaceholder: 'Søk identifikatorer…',
+    aiAlreadyAdded: 'Allerede i listen',
+    aiExcludedByFmt: 'Kan ikke kombineres med ({ai})',
     errExclusiveFmt: '({a}) kan ikke kombineres med ({b})',
     errRequiresFmt: '({ai}) krever {list} i samme strekkode',
     moreViaSearchFmt: '{n} flere identifikatorer via søk',

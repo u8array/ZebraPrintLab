@@ -48,6 +48,8 @@ const el = {
     groupUrl: 'URL',
     groupOther: 'Άλλα',
     searchPlaceholder: 'Αναζήτηση αναγνωριστικών…',
+    aiAlreadyAdded: 'Ήδη στη λίστα',
+    aiExcludedByFmt: 'Δεν μπορεί να συνδυαστεί με ({ai})',
     errExclusiveFmt: '({a}) δεν μπορεί να συνδυαστεί με ({b})',
     errRequiresFmt: '({ai}) απαιτεί {list} στον ίδιο γραμμωτό κώδικα',
     moreViaSearchFmt: '{n} περισσότεροι αναγνωριστές μέσω αναζήτησης',

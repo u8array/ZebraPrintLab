@@ -18,6 +18,8 @@ import {
   GS1_GS,
   GS1_DATABAR_EXPANDED_SYMBOLOGIES,
   GS1_DATABAR_DEFAULT_SEGMENTS,
+  GS1_AI_SPECS,
+  gs1AddBlockReason,
 } from "./gs1";
 
 describe("gtin14WithCheck", () => {
@@ -138,6 +140,34 @@ describe("validateGs1Segments (combination rules)", () => {
     expect(validateGs1Segments([{ ai: "90", value: "XYZ" }], true)).toBeNull();
     expect(validateGs1Segments([{ ai: "00", value: "000000000000000000" }], true)).toBeNull();
     expect(validateGs1Segments([{ ai: "01", value: "09501101530003" }], true)).toBeNull();
+  });
+
+  it("gs1AddBlockReason mirrors the duplicate/ex verdicts for palette gating", () => {
+    expect(gs1AddBlockReason("10", ["01", "10"])).toEqual({ kind: "duplicate" });
+    // ex pairings block in both declaration directions.
+    expect(gs1AddBlockReason("02", ["01"])).toEqual({ kind: "excludedBy", other: "01" });
+    expect(gs1AddBlockReason("01", ["02"])).toEqual({ kind: "excludedBy", other: "02" });
+    // 'n' wildcard family conflict (392n).
+    expect(gs1AddBlockReason("3922", ["3921"])).toEqual({ kind: "excludedBy", other: "3921" });
+    expect(gs1AddBlockReason("10", ["01"])).toBeNull();
+  });
+
+  it("gs1AddBlockReason never disagrees with the validator (anti-drift)", () => {
+    // For conflict-free present sets, addable per the palette gate must mean
+    // the superset carries no duplicate/exclusive error, and vice versa. The
+    // gate is pairwise by design: violations already inside the set stay with
+    // the validator, hence each seed is asserted clean first.
+    const sets = [["01"], ["02"], ["01", "10"], ["3921"], ["00", "401"]];
+    for (const present of sets) {
+      const segs = present.map((ai) => ({ ai, value: "" }));
+      expect(validateGs1Segments(segs), `seed [${present.join()}]`).toBeNull();
+      for (const { ai } of GS1_AI_SPECS) {
+        const block = gs1AddBlockReason(ai, present);
+        const err = validateGs1Segments([...segs, { ai, value: "" }]);
+        const setRejects = err?.key === "duplicateAi" || err?.key === "exclusiveAis";
+        expect(!!block, `ai ${ai} into [${present.join()}]`).toBe(setRejects);
+      }
+    }
   });
 
   it("rejects ex pairings on every symbology (bwip parity: 02+01)", () => {

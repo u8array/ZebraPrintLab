@@ -48,6 +48,8 @@ const zhHant = {
     groupUrl: 'URL',
     groupOther: '其他',
     searchPlaceholder: '搜尋識別碼…',
+    aiAlreadyAdded: '已在清單中',
+    aiExcludedByFmt: '不能與 ({ai}) 組合',
     errExclusiveFmt: '({a}) 不能與 ({b}) 同時使用',
     errRequiresFmt: '({ai}) 需要在同一條形碼中包含 {list}',
     moreViaSearchFmt: '透過搜尋還有{n}個識別碼',

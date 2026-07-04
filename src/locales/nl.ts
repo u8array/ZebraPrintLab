@@ -48,6 +48,8 @@ const nl = {
     groupUrl: 'URL',
     groupOther: 'Overige',
     searchPlaceholder: 'Zoek identificatoren…',
+    aiAlreadyAdded: 'Al in de lijst',
+    aiExcludedByFmt: 'Kan niet worden gecombineerd met ({ai})',
     errExclusiveFmt: '({a}) kan niet worden gecombineerd met ({b})',
     errRequiresFmt: '({ai}) vereist {list} in dezelfde barcode',
     moreViaSearchFmt: '{n} meer identificatoren via zoeken',

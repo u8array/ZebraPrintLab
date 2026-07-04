@@ -48,6 +48,8 @@ const ja = {
     groupUrl: 'URL',
     groupOther: 'その他',
     searchPlaceholder: '識別子を検索…',
+    aiAlreadyAdded: 'すでにリストにあります',
+    aiExcludedByFmt: '({ai}) とは組み合わせできません',
     errExclusiveFmt: '({a}) と ({b}) は同一バーコード内で併用できません',
     errRequiresFmt: '({ai}) には同一バーコード内に {list} が必要です',
     moreViaSearchFmt: '検索でさらに{n}件の識別子',

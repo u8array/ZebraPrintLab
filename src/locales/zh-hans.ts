@@ -48,6 +48,8 @@ const zhHans = {
     groupUrl: 'URL',
     groupOther: '其他',
     searchPlaceholder: '搜索标识符…',
+    aiAlreadyAdded: '已在列表中',
+    aiExcludedByFmt: '不能与 ({ai}) 组合',
     errExclusiveFmt: '({a}) 不能与 ({b}) 同时使用',
     errRequiresFmt: '({ai}) 需要在同一条形码中包含 {list}',
     moreViaSearchFmt: '通过搜索还有{n}个标识符',

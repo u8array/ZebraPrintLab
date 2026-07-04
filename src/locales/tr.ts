@@ -48,6 +48,8 @@ const tr = {
     groupUrl: 'URL',
     groupOther: 'Diğer',
     searchPlaceholder: 'Tanımlayıcı ara…',
+    aiAlreadyAdded: 'Zaten listede',
+    aiExcludedByFmt: '({ai}) ile birleştirilemez',
     errExclusiveFmt: '({a}), ({b}) ile birleştirilemez',
     errRequiresFmt: '({ai}), aynı barkodda {list} gerektirir',
     moreViaSearchFmt: '{n} daha fazla tanımlayıcı arama yoluyla',

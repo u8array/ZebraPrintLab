@@ -48,6 +48,8 @@ const hu = {
     groupUrl: 'URL',
     groupOther: 'Egyéb',
     searchPlaceholder: 'Azonosítók keresése…',
+    aiAlreadyAdded: 'Már a listában',
+    aiExcludedByFmt: 'Nem kombinálható ezzel: ({ai})',
     errExclusiveFmt: '({a}) nem kombinálható ({b}) azonosítóval',
     errRequiresFmt: '({ai}) megköveteli a {list} azonosítót ugyanabban a vonalkódban',
     moreViaSearchFmt: '{n} további azonosító a keresésben',
