@@ -29,6 +29,21 @@ export const GS1_COMMON_AIS: ReadonlySet<string> = new Set([
   "8200",
 ]);
 
+/** Empty-state onboarding: a use case prefills the segment list with a common
+ *  AI set, everything stays editable (no wizard flow). `nameKey` resolves
+ *  against the gs1builder locale block. AIs are curated to be modelable and
+ *  req-satisfiable so a preset never seeds an unappliable segment. */
+export interface Gs1BuilderPreset {
+  nameKey: "presetShipping" | "presetBatch" | "presetSerial";
+  ais: readonly string[];
+}
+
+export const GS1_BUILDER_PRESETS: readonly Gs1BuilderPreset[] = [
+  { nameKey: "presetShipping", ais: ["00", "401", "403"] },
+  { nameKey: "presetBatch", ais: ["01", "10", "17"] },
+  { nameKey: "presetSerial", ais: ["01", "21"] },
+];
+
 /** Carriers whose encoder enforces the dictionary's req associations
  *  (bwip-verified; gs1-128 is lax since the requisite may live in another
  *  symbol on the label). The builder only opens for these types in GS1 mode,
