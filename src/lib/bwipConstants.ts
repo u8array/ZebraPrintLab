@@ -94,21 +94,11 @@ export const MICROPDF417_QUIET_ZONE_ROWS = 3;
 // bwip-js renders MicroPDF417 at 2 internal px per data row, independent of `rowheight`.
 export const MICROPDF417_PX_PER_ROW = 2;
 
-// bwip vs Zebra width corrections: code93/code11 quiet-zone shortfall
-// (per-side modules); plessey ratio derived from "12345678" fixture.
-export const CODE93_QUIET_ZONE_DELTA_MODULES = 17;
-export const CODE11_QUIET_ZONE_DELTA_MODULES = 19;
-// Fraction so 492 -> 294 dots matches exactly (~0.5976).
-export const PLESSEY_BWIP_TO_ZEBRA_WIDTH_RATIO = 49 / 82;
-
 /** approx = bitmap visual diverges but bbox is spec-correct.
  *  unverified = bitmap diverges AND bbox not Labelary-cross-checkable. */
 export type BwipApproxSeverity = "approx" | "unverified";
 
 export const BWIP_APPROX_SEVERITY: ReadonlyMap<string, BwipApproxSeverity> = new Map([
-  ["code93", "approx"],
-  ["code11", "approx"],
-  ["plessey", "approx"],
   ["gs1databar", "approx"],
   ["code49", "unverified"],
   ["codablock", "unverified"],
