@@ -38,6 +38,15 @@ import {
 
 type Gs1BuilderStrings = Translations["gs1builder"];
 
+/** Draft-list entry: a stable key keeps React from recycling a row instance
+ *  onto a DIFFERENT segment when one above is removed (index keys would move
+ *  focus and caret into the wrong field mid-edit). */
+interface DraftSegment extends Gs1Segment {
+  key: string;
+}
+
+const draftSegment = (s: Gs1Segment): DraftSegment => ({ ...s, key: crypto.randomUUID() });
+
 /** Long-tail count for the palette hint: offerable catalog minus the curated
  *  set (all common AIs are satisfiable, guarded by test). */
 function hiddenAiCount(enforceReq: boolean): number {
@@ -121,9 +130,9 @@ function Gs1Builder({ objectId }: { objectId: string }) {
   const [seed] = useState(() => {
     const content = (obj && getObjectStringContent(obj)) || "";
     const parsed = parseGs1ToSegments(content, variables);
-    return { segments: parsed ?? [], lost: content !== "" && parsed === null };
+    return { segments: (parsed ?? []).map(draftSegment), lost: content !== "" && parsed === null };
   });
-  const [segments, setSegments] = useState<Gs1Segment[]>(seed.segments);
+  const [segments, setSegments] = useState<DraftSegment[]>(seed.segments);
   const enforceReq = GS1_REQ_ENFORCED_TYPES.has(obj?.type ?? "");
   const [query, setQuery] = useState("");
 
@@ -150,11 +159,11 @@ function Gs1Builder({ objectId }: { objectId: string }) {
     : !roundTrips ? tg.gateRoundTrip
     : null;
 
-  const addSegment = (ai: string) => setSegments((prev) => [...prev, { ai, value: "" }]);
+  const addSegment = (ai: string) => setSegments((prev) => [...prev, draftSegment({ ai, value: "" })]);
   const setValue = (i: number, value: string) =>
     setSegments((prev) => prev.map((s, j) => (j === i ? { ...s, value } : s)));
   const removeAt = (i: number) => setSegments((prev) => prev.filter((_, j) => j !== i));
-  const applyPreset = (ais: readonly string[]) => setSegments(ais.map((ai) => ({ ai, value: "" })));
+  const applyPreset = (ais: readonly string[]) => setSegments(ais.map((ai) => draftSegment({ ai, value: "" })));
 
   const apply = () => {
     updateObject(objectId, { props: { content: segmentsToContent(segments) } });
@@ -250,7 +259,7 @@ function Gs1Builder({ objectId }: { objectId: string }) {
             <ul className="flex flex-col gap-2">
               {segments.map((seg, i) => (
                 <SegmentRow
-                  key={i}
+                  key={seg.key}
                   tg={tg}
                   seg={seg}
                   err={errors[i] ?? null}
