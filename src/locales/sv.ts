@@ -48,6 +48,8 @@ const sv = {
     groupUrl: 'URL',
     groupOther: 'Övrigt',
     searchPlaceholder: 'Sök identifierare…',
+    aiAlreadyAdded: 'Redan i listan',
+    aiExcludedByFmt: 'Kan inte kombineras med ({ai})',
     errExclusiveFmt: '({a}) kan inte kombineras med ({b})',
     errRequiresFmt: '({ai}) kräver {list} i samma streckkod',
     moreViaSearchFmt: '{n} fler identifierare via sökning',

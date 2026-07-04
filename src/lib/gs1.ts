@@ -233,6 +233,33 @@ export function aiMatchesPattern(ai: string, pattern: string): boolean {
   return true;
 }
 
+/** Why adding `ai` would introduce a duplicate/ex conflict, or null when the
+ *  addition is clean. Shares validateGs1Segments' tables; whole-set concerns
+ *  stay with the validator: req rules and violations already inside
+ *  `presentAis`, which the modal surfaces as its set error. */
+export type Gs1AddBlock =
+  | { kind: "duplicate" }
+  | { kind: "excludedBy"; other: string };
+
+export function gs1AddBlockReason(
+  ai: string,
+  presentAis: readonly string[],
+): Gs1AddBlock | null {
+  if (presentAis.includes(ai)) return { kind: "duplicate" };
+  const spec = AI_BY_CODE.get(ai);
+  for (const pattern of spec?.ex ?? []) {
+    const other = presentAis.find((a) => aiMatchesPattern(a, pattern));
+    if (other) return { kind: "excludedBy", other };
+  }
+  // ex pairings hit the validator regardless of which side declares them.
+  for (const a of presentAis) {
+    if (AI_BY_CODE.get(a)?.ex?.some((p) => aiMatchesPattern(ai, p))) {
+      return { kind: "excludedBy", other: a };
+    }
+  }
+  return null;
+}
+
 /** Set-level rule violation; `alternatives`/`other` feed the localized
  *  message's placeholders. */
 export type Gs1SetError =

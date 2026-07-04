@@ -48,6 +48,8 @@ const ro = {
     groupUrl: 'URL',
     groupOther: 'Altele',
     searchPlaceholder: 'Caută identificatori…',
+    aiAlreadyAdded: 'Deja în listă',
+    aiExcludedByFmt: 'Nu poate fi combinat cu ({ai})',
     errExclusiveFmt: '({a}) nu poate fi combinat cu ({b})',
     errRequiresFmt: '({ai}) necesită {list} în același cod de bare',
     moreViaSearchFmt: '{n} mai mulți identificatori prin căutare',

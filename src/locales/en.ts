@@ -48,6 +48,8 @@ const en = {
     groupUrl: 'URL',
     groupOther: 'Other',
     searchPlaceholder: 'Search identifiers…',
+    aiAlreadyAdded: 'Already in the list',
+    aiExcludedByFmt: 'Cannot be combined with ({ai})',
     errExclusiveFmt: '({a}) cannot be combined with ({b})',
     errRequiresFmt: '({ai}) requires {list} in the same barcode',
     moreViaSearchFmt: '{n} more identifiers via search',

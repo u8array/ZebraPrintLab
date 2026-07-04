@@ -48,6 +48,8 @@ const bg = {
     groupUrl: 'URL',
     groupOther: 'Други',
     searchPlaceholder: 'Търсене на идентификатори…',
+    aiAlreadyAdded: 'Вече в списъка',
+    aiExcludedByFmt: 'Не може да се комбинира с ({ai})',
     errExclusiveFmt: '({a}) не може да се комбинира с ({b})',
     errRequiresFmt: '({ai}) изисква {list} в същия баркод',
     moreViaSearchFmt: '{n} още идентификатора чрез търсене',

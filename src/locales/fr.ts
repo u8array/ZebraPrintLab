@@ -48,6 +48,8 @@ const fr = {
     groupUrl: 'URL',
     groupOther: 'Autre',
     searchPlaceholder: 'Rechercher des identifiants…',
+    aiAlreadyAdded: 'Déjà dans la liste',
+    aiExcludedByFmt: 'Ne peut pas être combiné avec ({ai})',
     errExclusiveFmt: '({a}) ne peut pas être combiné avec ({b})',
     errRequiresFmt: '({ai}) nécessite {list} dans le même code-barres',
     moreViaSearchFmt: '{n} identifiants supplémentaires via la recherche',

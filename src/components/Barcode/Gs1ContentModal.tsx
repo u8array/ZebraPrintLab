@@ -16,6 +16,7 @@ import { MarkerTextField } from "../Properties/MarkerTextField";
 import { findObjectById } from "../../types/Group";
 import {
   aiSpec,
+  gs1AddBlockReason,
   isVariableKind,
   validateGs1SegmentResolved,
   validateGs1Segments,
@@ -159,11 +160,24 @@ function Gs1Builder({ objectId }: { objectId: string }) {
     : !roundTrips ? tg.gateRoundTrip
     : null;
 
-  const addSegment = (ai: string) => setSegments((prev) => [...prev, draftSegment({ ai, value: "" })]);
+  // Focus the new row's value field after add: the source button remounts
+  // (palette row turns blocked, presets unmount entirely), which would drop
+  // focus to body and mute the dialog's container-attached key trap.
+  const [focusKey, setFocusKey] = useState<string | null>(null);
+  const addSegment = (ai: string) => {
+    const draft = draftSegment({ ai, value: "" });
+    setSegments((prev) => [...prev, draft]);
+    setFocusKey(draft.key);
+  };
+  const presentAis = segments.map((s) => s.ai);
   const setValue = (i: number, value: string) =>
     setSegments((prev) => prev.map((s, j) => (j === i ? { ...s, value } : s)));
   const removeAt = (i: number) => setSegments((prev) => prev.filter((_, j) => j !== i));
-  const applyPreset = (ais: readonly string[]) => setSegments(ais.map((ai) => draftSegment({ ai, value: "" })));
+  const applyPreset = (ais: readonly string[]) => {
+    const drafts = ais.map((ai) => draftSegment({ ai, value: "" }));
+    setSegments(drafts);
+    setFocusKey(drafts[0]?.key ?? null);
+  };
 
   const apply = () => {
     updateObject(objectId, { props: { content: segmentsToContent(segments) } });
@@ -227,18 +241,35 @@ function Gs1Builder({ objectId }: { objectId: string }) {
                     {(tg as Record<string, string>)[`group${group.charAt(0).toUpperCase()}${group.slice(1)}`]}
                   </span>
                   <div className="flex flex-col gap-1">
-                    {matches.map((spec) => (
-                      <button
-                        key={spec.ai}
-                        type="button"
-                        onClick={() => addSegment(spec.ai)}
-                        className="group flex items-center gap-2 px-2 py-1 rounded border border-transparent hover:border-border hover:bg-surface-2 text-xs text-left transition-colors"
-                      >
-                        <PlusIcon className="w-3 h-3 text-muted opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 shrink-0" />
-                        <span className="font-mono text-[10px] text-accent shrink-0">({spec.ai})</span>
-                        <span className="text-text truncate min-w-0">{aiName(tg, spec.ai)}</span>
-                      </button>
-                    ))}
+                    {matches.map((spec) => {
+                      // Preventive gate over the same rules the validator
+                      // enforces: an AI already in the set or excluded by one
+                      // is not addable, the tooltip names why.
+                      const block = gs1AddBlockReason(spec.ai, presentAis);
+                      return (
+                        <Tooltip
+                          key={spec.ai}
+                          content={
+                            block
+                              ? block.kind === "duplicate"
+                                ? tg.aiAlreadyAdded
+                                : tg.aiExcludedByFmt.replace("{ai}", block.other)
+                              : undefined
+                          }
+                        >
+                          <button
+                            type="button"
+                            onClick={() => addSegment(spec.ai)}
+                            disabled={!!block}
+                            className="group w-full flex items-center gap-2 px-2 py-1 rounded border border-transparent enabled:hover:border-border enabled:hover:bg-surface-2 disabled:opacity-40 disabled:cursor-not-allowed text-xs text-left transition-colors"
+                          >
+                            <PlusIcon className={`w-3 h-3 text-muted shrink-0 opacity-0 ${block ? "" : "group-hover:opacity-100 group-focus-visible:opacity-100"}`} />
+                            <span className="font-mono text-[10px] text-accent shrink-0">({spec.ai})</span>
+                            <span className="text-text truncate min-w-0">{aiName(tg, spec.ai)}</span>
+                          </button>
+                        </Tooltip>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -266,6 +297,7 @@ function Gs1Builder({ objectId }: { objectId: string }) {
                   resolved={resolvedValues[i] ?? ""}
                   variables={variables}
                   fnc1After={fnc1After(i)}
+                  autoFocusValue={seg.key === focusKey}
                   onChange={(v) => setValue(i, v)}
                   onRemove={() => removeAt(i)}
                 />
@@ -363,6 +395,7 @@ function SegmentRow({
   resolved,
   variables,
   fnc1After,
+  autoFocusValue,
   onChange,
   onRemove,
 }: {
@@ -372,6 +405,7 @@ function SegmentRow({
   resolved: string;
   variables: ReturnType<typeof usePreviewBinding>["variables"];
   fnc1After: boolean;
+  autoFocusValue: boolean;
   onChange: (value: string) => void;
   onRemove: () => void;
 }) {
@@ -401,7 +435,7 @@ function SegmentRow({
       <div className="flex items-center gap-2">
         <span className="font-mono text-[10px] bg-accent-dim text-accent rounded px-1 py-0.5 shrink-0">({seg.ai})</span>
         <span className="text-xs text-text shrink-0 w-28 truncate">{aiName(tg, seg.ai)}</span>
-        <MarkerTextField value={seg.value} onChange={onChange} ariaLabel={aiName(tg, seg.ai)} hasError={err !== null} />
+        <MarkerTextField value={seg.value} onChange={onChange} ariaLabel={aiName(tg, seg.ai)} hasError={err !== null} autoFocus={autoFocusValue} />
         {badge && <span className={`font-mono text-[10px] shrink-0 ${badge.tone}`}>{badge.label}</span>}
         <button type="button" aria-label={tg.remove} onClick={onRemove} className="text-muted hover:text-error shrink-0">
           <TrashIcon className="w-4 h-4" />

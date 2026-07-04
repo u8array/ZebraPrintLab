@@ -48,6 +48,8 @@ const fa = {
     groupUrl: 'URL',
     groupOther: 'سایر',
     searchPlaceholder: 'جستجوی شناسه‌ها…',
+    aiAlreadyAdded: 'قبلاً در فهرست',
+    aiExcludedByFmt: 'قابل ترکیب با ({ai}) نیست',
     errExclusiveFmt: '({a}) نمی‌تواند با ({b}) ترکیب شود',
     errRequiresFmt: '({ai}) نیاز به {list} در همان بارکد دارد',
     moreViaSearchFmt: '{n} شناسه بیشتر از طریق جستجو',

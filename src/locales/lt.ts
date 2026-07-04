@@ -48,6 +48,8 @@ const lt = {
     groupUrl: 'URL',
     groupOther: 'Kita',
     searchPlaceholder: 'Ieškoti identifikatorių…',
+    aiAlreadyAdded: 'Jau sąraše',
+    aiExcludedByFmt: 'Negalima derinti su ({ai})',
     errExclusiveFmt: '({a}) negalima derinti su ({b})',
     errRequiresFmt: '({ai}) reikalauja {list} tame pačiame brūkšniniame kode',
     moreViaSearchFmt: '{n} daugiau identifikatorių per paiešką',

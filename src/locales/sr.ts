@@ -48,6 +48,8 @@ const sr = {
     groupUrl: 'URL',
     groupOther: 'Остало',
     searchPlaceholder: 'Претражи идентификаторе…',
+    aiAlreadyAdded: 'Već na listi',
+    aiExcludedByFmt: 'Ne može se kombinovati sa ({ai})',
     errExclusiveFmt: '({a}) ne može se kombinovati sa ({b})',
     errRequiresFmt: '({ai}) zahteva {list} u istom barkodu',
     moreViaSearchFmt: '{n} više identifikatora putem pretrage',

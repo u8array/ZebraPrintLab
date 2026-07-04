@@ -48,6 +48,8 @@ const es = {
     groupUrl: 'URL',
     groupOther: 'Otros',
     searchPlaceholder: 'Buscar identificadores…',
+    aiAlreadyAdded: 'Ya en la lista',
+    aiExcludedByFmt: 'No se puede combinar con ({ai})',
     errExclusiveFmt: '({a}) no puede combinarse con ({b})',
     errRequiresFmt: '({ai}) requiere {list} en el mismo código de barras',
     moreViaSearchFmt: '{n} identificadores más mediante búsqueda',

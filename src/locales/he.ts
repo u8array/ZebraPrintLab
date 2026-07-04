@@ -48,6 +48,8 @@ const he = {
     groupUrl: 'URL',
     groupOther: 'אחר',
     searchPlaceholder: 'חיפוש מזהים…',
+    aiAlreadyAdded: 'כבר ברשימה',
+    aiExcludedByFmt: 'לא ניתן לשלב עם ({ai})',
     errExclusiveFmt: '({a}) אינו יכול להיות משולב עם ({b})',
     errRequiresFmt: '({ai}) מחייב {list} באותו ברקוד',
     moreViaSearchFmt: '{n} מזהים נוספים דרך חיפוש',

@@ -48,6 +48,8 @@ const et = {
     groupUrl: 'URL',
     groupOther: 'Muu',
     searchPlaceholder: 'Otsi identifikaatoreid…',
+    aiAlreadyAdded: 'Juba nimekirjas',
+    aiExcludedByFmt: 'Ei saa kombineerida ({ai})-ga',
     errExclusiveFmt: '({a}) ei saa kombineerida ({b})-ga',
     errRequiresFmt: '({ai}) nõuab {list} samas vöötkoodi',
     moreViaSearchFmt: '{n} täiendavat identifikaatorit otsingu kaudu',

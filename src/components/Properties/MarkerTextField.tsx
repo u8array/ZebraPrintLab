@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { markerOf } from "../../types/Variable";
 import { inputCls } from "../ui/formStyles";
 import { MarkerInsertMenu } from "./MarkerInsertMenu";
@@ -16,6 +16,7 @@ export function MarkerTextField({
   id,
   ariaLabel,
   hasError,
+  autoFocus = false,
 }: {
   value: string;
   onChange: (next: string) => void;
@@ -25,8 +26,14 @@ export function MarkerTextField({
   id?: string;
   ariaLabel?: string;
   hasError?: boolean;
+  /** Focus the editor on mount, for rows created by a user action. */
+  autoFocus?: boolean;
 }) {
   const editorRef = useRef<TemplateEditorHandle>(null);
+
+  useEffect(() => {
+    if (autoFocus) editorRef.current?.focus();
+  }, [autoFocus]);
 
   if (password) {
     return (
@@ -36,6 +43,7 @@ export function MarkerTextField({
         id={id}
         ariaLabel={ariaLabel}
         hasError={hasError}
+        autoFocus={autoFocus}
       />
     );
   }
@@ -71,12 +79,14 @@ function PasswordMarkerField({
   id,
   ariaLabel,
   hasError,
+  autoFocus,
 }: {
   value: string;
   onChange: (next: string) => void;
   id?: string;
   ariaLabel?: string;
   hasError?: boolean;
+  autoFocus?: boolean;
 }) {
   const ref = useRef<HTMLInputElement>(null);
   // Caret to reapply once the controlled value has updated.
@@ -114,6 +124,7 @@ function PasswordMarkerField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={ariaLabel}
+        autoFocus={autoFocus}
       />
       <MarkerInsertMenu onInsert={insert} />
     </div>
