@@ -21,6 +21,7 @@ export const pdf417: ObjectTypeCore<Pdf417Props> = {
   icon: "▥",
   zplCmd: "^B7",
   group: "code-2d",
+  barcodeClass: 'stacked2d',
   bindable: true,
   defaultProps: {
     content: "1234567890",

@@ -20,6 +20,7 @@ export const codablock: ObjectTypeCore<CodablockProps> = {
   icon: "▥B",
   zplCmd: "^BB",
   group: "code-2d",
+  barcodeClass: 'stacked2d',
   bindable: true,
   preflight: moduleTooSmallPreflight<CodablockProps>('moduleWidth'),
   defaultProps: {

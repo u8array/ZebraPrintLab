@@ -197,8 +197,8 @@ export function computePreflight(
     // Cross-cutting: any content-bearing field (text, every barcode) can carry
     // invisible/ambiguous chars smuggled in via scan or foreign-tool import, so
     // check here once instead of duplicating the producer across every type.
-    const content = (leaf.props as { content?: unknown }).content;
-    if (typeof content === "string") {
+    const content = getObjectStringContent(leaf);
+    if (content !== undefined) {
       // GS1 fields carry a structural GS separator (0x1D) between chained AIs;
       // it's intentional, not smuggled, so drop it before the scan.
       const scanned = (leaf.props as { gs1?: boolean }).gs1

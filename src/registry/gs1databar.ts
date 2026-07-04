@@ -38,6 +38,7 @@ export const gs1databar: ObjectTypeCore<Gs1DatabarProps> = {
   icon: 'GS1',
   zplCmd: '^BR',
   group: 'code-1d',
+  barcodeClass: '1d',
   bindable: true,
   preflight: moduleTooSmallPreflight<Gs1DatabarProps>('magnification'),
   defaultProps: {

@@ -18,6 +18,7 @@ import {
 } from "./bwipHelpers";
 import { resolveHriAbove, gs1HriFontDots } from "../../lib/barcodeHri";
 import { gs1ContentToElementString } from "../../lib/gs1";
+import { getObjectStringContent } from "../../lib/variableBinding";
 import { objectRotation } from "../../registry/rotation";
 import { rotatedGroupTransform } from "./rotatedGroupTransform";
 import { buildEanUpcDigitOverlay } from "./eanUpcDigitNodes";
@@ -87,7 +88,7 @@ export function BarcodeObject({
   // GS1-128 shows the parenthesized element string as HRI (firmware prints the
   // parens it strips for encoding).
   const gs1Hri = !!(obj.props as { gs1?: boolean }).gs1;
-  const contentRaw = (obj.props as { content?: string }).content ?? "";
+  const contentRaw = getObjectStringContent(obj) ?? "";
   const rawContent = gs1Hri ? gs1ContentToElementString(contentRaw) : contentRaw;
   const printInterpEnabled =
     !ObjectRegistry[obj.type]?.interpretationLocked &&

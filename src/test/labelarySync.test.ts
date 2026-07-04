@@ -6,6 +6,7 @@ import {
   buildBwipOptions,
   getDisplaySize,
 } from "../components/Canvas/bwipHelpers";
+import { getObjectStringContent } from "../lib/variableBinding";
 import { upcSuppTextZoneDots, QR_FT_MODULE_OFFSET } from "../lib/bwipConstants";
 import { barcodeFtAnchorOffset } from "../lib/objectBounds";
 import { ObjectRegistry } from "../registry";
@@ -174,7 +175,7 @@ describe("Labelary Sync - Canvas Dimension Logic", () => {
       // single fixture.
       const hasBwipSizeMismatch =
         obj.type === "upcEanExtension" &&
-        ((obj.props as { content?: string }).content ?? "").length === 2;
+        (getObjectStringContent(obj) ?? "").length === 2;
       // GS1 Databar variant 7 (Expanded Stacked) is segments-dependent; bwip-natural
       // height differs from spec and we don't yet have a per-segment formula.
       const isGs1Sym7 = obj.type === "gs1databar" && obj.props.symbology === 7;

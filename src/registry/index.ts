@@ -38,14 +38,6 @@ import { maxicode } from './maxicode';
 import { tlc39 } from './tlc39';
 import { symbol } from './symbol';
 
-export const BARCODE_1D_TYPES = new Set([
-  'code128', 'code39', 'ean13', 'ean8', 'upca', 'upce', 'interleaved2of5', 'code93',
-  'code11', 'industrial2of5', 'standard2of5', 'codabar', 'logmars', 'msi', 'plessey',
-  'gs1databar', 'planet', 'postal', 'upcEanExtension', 'code49',
-]);
-
-export const STACKED_2D_TYPES = new Set(['pdf417', 'micropdf417', 'codablock']);
-
 // Graphic shape primitives (no `props.rotation`): box/ellipse/line. They
 // quarter-turn via geometry (w/h swap, or a line's angle), unlike image which
 // shares `group: 'shape'` but cannot turn. Shared by single-object rotation and
@@ -102,6 +94,18 @@ const _ObjectRegistry = {
  *  {@link getEntry} for dynamic `LabelObject['type']` lookups. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ObjectRegistry: Record<LeafType, ObjectTypeCore<any>> = _ObjectRegistry;
+
+/** Dimensional truth for emit/rotation/bounds consumers, derived from each
+ *  entry's `barcodeClass`: a symbology missing here would silently lose
+ *  HRI/transformer/bounds behaviour, so membership is never hand-maintained
+ *  and is pinned by registry-isolation.test. */
+export const BARCODE_1D_TYPES: ReadonlySet<string> = new Set(
+  (Object.keys(ObjectRegistry) as LeafType[]).filter((t) => ObjectRegistry[t].barcodeClass === '1d'),
+);
+
+export const STACKED_2D_TYPES: ReadonlySet<string> = new Set(
+  (Object.keys(ObjectRegistry) as LeafType[]).filter((t) => ObjectRegistry[t].barcodeClass === 'stacked2d'),
+);
 
 /** Dynamic lookup for `LabelObject['type']`; undefined for non-leaf (e.g. `'group'`). */
 export function getEntry(type: string): (typeof ObjectRegistry)[LeafType] | undefined {
