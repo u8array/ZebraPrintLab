@@ -58,19 +58,19 @@ function formatStep(t: Translations, d: HistoryStepDescriptor): string {
     case 'load':
       return h.load;
     case 'add':
-      return d.count === 1 && d.name
+      return d.name
         ? fill(h.addOneFmt, '{name}', typeName(d.name))
         : fill(h.addManyFmt, '{count}', String(d.count ?? 0));
     case 'remove':
-      return d.count === 1 && d.name
+      return d.name
         ? fill(h.removeOneFmt, '{name}', typeName(d.name))
         : fill(h.removeManyFmt, '{count}', String(d.count ?? 0));
     case 'move':
-      return d.count === 1 && d.name
+      return d.name
         ? fill(h.moveOneFmt, '{name}', typeName(d.name))
         : fill(h.moveManyFmt, '{count}', String(d.count ?? 0));
     case 'resize':
-      return d.count === 1 && d.name
+      return d.name
         ? fill(h.resizeOneFmt, '{name}', typeName(d.name))
         : fill(h.resizeManyFmt, '{count}', String(d.count ?? 0));
     case 'edit':

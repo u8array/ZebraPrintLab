@@ -136,13 +136,14 @@ export function describeHistoryStep(
         .filter(({ l, p }) => p !== l && p !== undefined);
       const [firstChanged] = changed;
       if (firstChanged) {
+        const name = changed.length === 1 ? labelOf(firstChanged.l) : undefined;
         const resized = changed.some(
           ({ l, p }) => p && "props" in l && "props" in p && dimsDiffer(p.props, l.props),
         );
-        if (resized) return { kind: "resize", count: changed.length, name: changed.length === 1 ? labelOf(firstChanged.l) : undefined };
+        if (resized) return { kind: "resize", count: changed.length, name };
         const moved = changed.some(({ l, p }) => p && (p.x !== l.x || p.y !== l.y));
-        if (moved) return { kind: "move", count: changed.length, name: changed.length === 1 ? labelOf(firstChanged.l) : undefined };
-        return { kind: "edit", count: changed.length, name: changed.length === 1 ? labelOf(firstChanged.l) : undefined };
+        if (moved) return { kind: "move", count: changed.length, name };
+        return { kind: "edit", count: changed.length, name };
       }
 
       // Same leaves, same refs: a z-order change (bring-to-front etc.) only
