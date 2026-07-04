@@ -46,6 +46,30 @@ describe("Labelary consent (revocable)", () => {
   });
 });
 
+describe("applyLocale", () => {
+  it("swaps translations and loadedLocale atomically once the chunk loads", async () => {
+    const s = useLabelStore.getState();
+    s.setLocale("de");
+    // setLocale kicked applyLocale off already; await an explicit call to
+    // observe the settled state deterministically (loader is cached).
+    await useLabelStore.getState().applyLocale("de");
+    const after = useLabelStore.getState();
+    expect(after.locale).toBe("de");
+    expect(after.loadedLocale).toBe("de");
+    expect(after.translations.palette.heading).toBe("Objekte");
+  });
+
+  it("drops a stale load when the preference changed meanwhile", async () => {
+    const s = useLabelStore.getState();
+    const pending = useLabelStore.getState().applyLocale("fr");
+    s.setLocale("en");
+    await pending;
+    const after = useLabelStore.getState();
+    expect(after.locale).toBe("en");
+    expect(after.loadedLocale).not.toBe("fr");
+  });
+});
+
 describe("resetSettings (scoped)", () => {
   it("restores prefs to defaults but keeps design and language", () => {
     const s = useLabelStore.getState();

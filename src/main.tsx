@@ -10,11 +10,31 @@ import '@fontsource/ibm-plex-mono/500.css'
 import '@fontsource/ibm-plex-mono/600.css'
 import './index.css'
 import App from './App.tsx'
+import { useLabelStore } from './store/labelStore'
 
-const root = document.getElementById('root');
-if (!root) throw new Error('Root element not found');
-createRoot(root).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+const rootEl = document.getElementById('root');
+if (!rootEl) throw new Error('Root element not found');
+const root = createRoot(rootEl);
+
+/** Cap on how long the first render waits for the active locale chunk. */
+const LOCALE_BOOT_WAIT_MS = 250;
+
+// Give the active locale chunk a brief head start so a persisted or
+// browser-detected non-en language normally paints without an English
+// flash, but never white-screen on a slow or stalled fetch: past the cap
+// the app renders with en and the dictionary swaps in when it arrives
+// (applyLocale keeps running and never rejects).
+async function bootstrap() {
+  const { locale, applyLocale } = useLabelStore.getState();
+  await Promise.race([
+    applyLocale(locale),
+    new Promise((resolve) => setTimeout(resolve, LOCALE_BOOT_WAIT_MS)),
+  ]);
+  root.render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+}
+
+void bootstrap();
