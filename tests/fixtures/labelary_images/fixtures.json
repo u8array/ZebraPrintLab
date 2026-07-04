@@ -549,6 +549,39 @@
         "height": 202
       },
       "image_ref": "barcode_code128_ft_b.png"
+    },
+    {
+      "id": "barcode_pdf417_auto_long60",
+      "zpl_input": "^XA^BY2^FO50,50^B7N,10,0,0,,,^FDABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ0123456789^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 206,
+        "height": 180
+      },
+      "image_ref": "barcode_pdf417_auto_long60.png"
+    },
+    {
+      "id": "barcode_pdf417_auto_long90_sec2",
+      "zpl_input": "^XA^BY2^FO50,50^B7N,10,2,0,,,^FDABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 240,
+        "height": 200
+      },
+      "image_ref": "barcode_pdf417_auto_long90_sec2.png"
+    },
+    {
+      "id": "barcode_pdf417_auto_long120",
+      "zpl_input": "^XA^BY2^FO50,50^B7N,10,0,0,,,^FD012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789^FS^XZ",
+      "expected_bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 240,
+        "height": 160
+      },
+      "image_ref": "barcode_pdf417_auto_long120.png"
     }
   ]
 }

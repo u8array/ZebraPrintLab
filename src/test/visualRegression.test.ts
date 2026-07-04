@@ -8,6 +8,12 @@ import { createCanvas, loadImage, type Canvas, type Image } from "@napi-rs/canva
 import { testCases } from "../../tests/fixtures/testCases";
 import { testModels } from "./testModels";
 import { defined } from "./helpers";
+import { inkBounds } from "./pngInk";
+import {
+  BOUNDS_ONLY_TESTS,
+  EXPECTED_BOUNDS_DELTA,
+  NO_REFERENCE_TESTS,
+} from "./barcodeFidelity";
 import {
   buildBwipOptions,
   get1DBwipScale,
@@ -37,25 +43,6 @@ if (!fs.existsSync(DIFF_DIR)) {
   fs.mkdirSync(DIFF_DIR, { recursive: true });
 }
 
-/** Ink bounding box of a black-on-white render; null when blank. */
-function inkBounds(png: PNG): { x: number; y: number; w: number; h: number } | null {
-  let minX = png.width;
-  let minY = png.height;
-  let maxX = -1;
-  let maxY = -1;
-  for (let y = 0; y < png.height; y++) {
-    for (let x = 0; x < png.width; x++) {
-      if ((png.data[(y * png.width + x) * 4] ?? 255) < 128) {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
-    }
-  }
-  if (maxX < 0) return null;
-  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
-}
 
 describe("Visual Regression - bwip-js vs Labelary", () => {
   it("should have test cases", () => {
@@ -63,33 +50,8 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
   });
 
   describe.each(testCases)("Visual Test: $id", (tc) => {
-    // Encoder-divergent cases: bwip picks different codewords/stacking than
-    // Zebra firmware, so cell patterns can't match pixel-for-pixel (also true
-    // for gs1databar sym 1, re-checked 2026-07-04). Size and placement still
-    // must, so these run the ink-bounds comparison instead.
-    const boundsOnlyTests = [
-      // Different DataMatrix codeword selection; both are valid 18×18 symbols.
-      "barcode_datamatrix_standard",
-      // Different MicroPDF417 encoding; same 38-module, 11-row layout.
-      "barcode_micropdf417_standard",
-      // GS1 DataBar stacking/finder-pattern differs from Zebra firmware.
-      "barcode_gs1databar_standard",
-      "barcode_gs1databar_truncated",
-      "barcode_gs1databar_stacked",
-      "barcode_gs1databar_stacked_omni",
-      "barcode_gs1databar_limited",
-      "barcode_gs1databar_expanded",
-      // Encoder discrepancies persist through rotation (QR mask choice shifts).
-      "barcode_qr_rot_R",
-      "barcode_datamatrix_rot_R",
-    ];
-    // No usable reference at all: Labelary renders ^BB wrong (see README
-    // limitations; the fixture's 58x7 dots cannot hold a Code128-based row).
-    // Real-printer reference pending; bwip stays best-effort.
-    const noReferenceTests = ["barcode_codablock_standard"];
-
-    const boundsOnly = boundsOnlyTests.includes(tc.id);
-    const noReference = noReferenceTests.includes(tc.id);
+    const boundsOnly = BOUNDS_ONLY_TESTS.has(tc.id);
+    const noReference = NO_REFERENCE_TESTS.has(tc.id);
 
     /** Render the case exactly like the pixel path and return both images. */
     async function renderLocal() {
@@ -218,7 +180,9 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
     }
 
     // Only the applicable mode is registered so the suite's skip count stays
-    // meaningful; codablock keeps a visible skip as the no-reference marker.
+    // meaningful. noReference keeps a visible it.skip (documents the missing
+    // reference in the run output); boundsOnly swaps the test body entirely,
+    // so its pixel mode is not registered at all.
     const pixelIt = noReference ? it.skip : boundsOnly ? null : it;
     pixelIt?.("should visually match Labelary output", async () => {
       const { labelaryRef, localPng, canvas, canvasWidth, canvasHeight } = await renderLocal();
@@ -250,7 +214,7 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
       expect(numDiffPixels).toBeLessThanOrEqual(ALLOWED_TOLERANCE);
     });
 
-    const boundsIt = boundsOnly ? it : null;
+    const boundsIt = boundsOnly && !noReference ? it : null;
     boundsIt?.("should match Labelary ink bounds", async () => {
       const { labelaryRef, localPng, canvas } = await renderLocal();
 
@@ -261,13 +225,15 @@ describe("Visual Regression - bwip-js vs Labelary", () => {
       if (!ref || !local) throw new Error("unreachable");
 
       // Dots at 8dpmm; placement and footprint must match even when the
-      // inner cell pattern legitimately differs.
+      // inner cell pattern legitimately differs. Known divergences enter as
+      // pinned signed deltas, not widened tolerances.
+      const expected = EXPECTED_BOUNDS_DELTA[tc.id] ?? {};
       const TOL = 3;
       const off =
         Math.abs(local.x - ref.x) > TOL ||
         Math.abs(local.y - ref.y) > TOL ||
-        Math.abs(local.w - ref.w) > TOL ||
-        Math.abs(local.h - ref.h) > TOL;
+        Math.abs(local.w - ref.w - (expected.w ?? 0)) > TOL ||
+        Math.abs(local.h - ref.h - (expected.h ?? 0)) > TOL;
       if (off) {
         fs.writeFileSync(
           path.join(DIFF_DIR, `${tc.id}_local.png`),

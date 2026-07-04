@@ -143,7 +143,10 @@ export function validateMaxicodeBwip(content: string, mode: number): string | nu
 }
 
 // Mirrors Zebra's columns=0 auto-heuristic. Empirically validated against
-// Labelary at 8dpmm, secLevel 0 and 1, content 10..49 chars.
+// Labelary at 8dpmm across content 10..120 chars (mixed text and all-numeric;
+// secLevel 0 and 2 probed at length, 1 only at short content): the column
+// choice matches throughout, only inner codewords and the all-numeric row
+// count diverge (see visualRegression bounds mode).
 function estimatePdf417Columns(content: string, securityLevel: number): number {
   const dataCodewords = Math.ceil((content.length || 1) / 2.3);
   const eccCodewords = Math.pow(2, securityLevel + 1);
