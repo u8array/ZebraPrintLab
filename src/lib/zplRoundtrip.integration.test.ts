@@ -3,6 +3,7 @@ import { useLabelStore } from "../store/labelStore";
 import { importZplText } from "./zplImportService";
 import { generateMultiPageZPL } from "./zplGenerator";
 import { serializeDesign, parseDesignFile } from "./designFile";
+import { getObjectStringContent } from "./variableBinding";
 
 // Integration: drive the REAL user paths (importZplText -> loadDesign -> store ->
 // generateMultiPageZPL), not parseZPL/generate in isolation. Asserts the actual
@@ -69,7 +70,7 @@ describe("round-trip integration (real import -> store -> export)", () => {
   it("a realistic foreign label: edit one field, the rest stays byte-identical", () => {
     importInto(REAL_LABEL);
     const addr = store().pages[0]!.objects.find(
-      (o) => "props" in o && (o.props as { content?: string }).content === "123 Main Street",
+      (o) => "props" in o && getObjectStringContent(o) === "123 Main Street",
     )!;
     store().updateObject(addr.id, { x: 60 });
     const out = exportZpl();

@@ -17,6 +17,7 @@ export const micropdf417: ObjectTypeCore<MicroPdf417Props> = {
   icon: "▤",
   zplCmd: "^BF",
   group: "code-2d",
+  barcodeClass: 'stacked2d',
   bindable: true,
   defaultProps: {
     content: "1234",

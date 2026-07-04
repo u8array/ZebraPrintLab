@@ -15,6 +15,7 @@ import {
   gtin14WithCheck,
   gs1ContentToElementString,
 } from "../../lib/gs1";
+import { getObjectStringContent } from "../../lib/variableBinding";
 import {
   barSubRect,
   CODE11_QUIET_ZONE_DELTA_MODULES,
@@ -987,7 +988,7 @@ export function renderBarcodeCanvas(
       !!(obj.props as { printInterpretation?: boolean }).printInterpretation;
     const canvas = renderEanUpcRawCanvas({
       type: obj.type as EanUpcType,
-      text: (obj.props as { content?: string }).content ?? "",
+      text: getObjectStringContent(obj) ?? "",
       modulePxInt: get1DBwipScale(moduleWidth, scale, dpmm),
       barHeightPx: dotsToPx((obj.props as { height: number }).height, scale, dpmm),
       tailHeightPx: dotsToPx(EAN_TEXT_ZONE_DOTS, scale, dpmm),

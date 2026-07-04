@@ -27,6 +27,7 @@ export const code49: ObjectTypeCore<Code49Props> = {
   icon: 'C49',
   zplCmd: '^B4',
   group: 'code-2d',
+  barcodeClass: '1d',
   bindable: true,
   preflight: moduleTooSmallPreflight<Code49Props>('moduleWidth'),
   defaultProps: {

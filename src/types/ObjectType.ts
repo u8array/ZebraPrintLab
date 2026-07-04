@@ -22,6 +22,13 @@ export interface ObjectTypeCore<P extends object = object> {
   defaultSize:
     | { width: number; height: number }
     | { widthMm: number; heightMm: number };
+  /** Dimensional truth for emit/rotation/bounds consumers: '1d' = linear bars
+   *  (HRI overlay, width-from-modules transformer), 'stacked2d' = row-stacked
+   *  matrix (PDF417 family). Distinct from the palette-only `group` (code49 is
+   *  displayed under 2D but IS dimensionally 1d). The registry derives its
+   *  BARCODE_1D_TYPES / STACKED_2D_TYPES sets from this field, so a new
+   *  symbology cannot silently miss them. */
+  barcodeClass?: '1d' | 'stacked2d';
   /** Height fixed by symbology spec; disables transformer height anchors. */
   heightLocked?: boolean;
   /** Symbology has no HRI in ZPL output; hides checkbox + suppresses overlay. */

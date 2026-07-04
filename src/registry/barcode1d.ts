@@ -93,6 +93,7 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
     icon: config.icon,
     zplCmd,
     group: config.group,
+    barcodeClass: '1d',
     bindable: true,
     // EAN/UPC opt out (fixed-length check digit); every other 1D serializes cleanly.
     serialisable: config.serialisable ?? true,
