@@ -46,7 +46,7 @@ const KIND_ICON: Record<HistoryStepKind, ComponentType<{ className?: string }>> 
 const fill = (template: string, token: string, value: string) =>
   template.split(token).join(value);
 
-// A descriptor `name` for add/remove/edit is either a custom object name or a
+// A descriptor `name` for object steps is either a custom object name or a
 // registry type id; resolve the type id to its registry label, leaving custom
 // names untouched. Variable names are passed through (never registry-resolved).
 function formatStep(t: Translations, d: HistoryStepDescriptor): string {
@@ -66,9 +66,13 @@ function formatStep(t: Translations, d: HistoryStepDescriptor): string {
         ? fill(h.removeOneFmt, '{name}', typeName(d.name))
         : fill(h.removeManyFmt, '{count}', String(d.count ?? 0));
     case 'move':
-      return d.count === 1 ? h.moveOne : fill(h.moveManyFmt, '{count}', String(d.count ?? 0));
+      return d.count === 1 && d.name
+        ? fill(h.moveOneFmt, '{name}', typeName(d.name))
+        : fill(h.moveManyFmt, '{count}', String(d.count ?? 0));
     case 'resize':
-      return d.count === 1 ? h.resizeOne : fill(h.resizeManyFmt, '{count}', String(d.count ?? 0));
+      return d.count === 1 && d.name
+        ? fill(h.resizeOneFmt, '{name}', typeName(d.name))
+        : fill(h.resizeManyFmt, '{count}', String(d.count ?? 0));
     case 'edit':
       return d.name
         ? fill(h.editOneFmt, '{name}', typeName(d.name))

@@ -139,9 +139,9 @@ export function describeHistoryStep(
         const resized = changed.some(
           ({ l, p }) => p && "props" in l && "props" in p && dimsDiffer(p.props, l.props),
         );
-        if (resized) return { kind: "resize", count: changed.length };
+        if (resized) return { kind: "resize", count: changed.length, name: changed.length === 1 ? labelOf(firstChanged.l) : undefined };
         const moved = changed.some(({ l, p }) => p && (p.x !== l.x || p.y !== l.y));
-        if (moved) return { kind: "move", count: changed.length };
+        if (moved) return { kind: "move", count: changed.length, name: changed.length === 1 ? labelOf(firstChanged.l) : undefined };
         return { kind: "edit", count: changed.length, name: changed.length === 1 ? labelOf(firstChanged.l) : undefined };
       }
 
