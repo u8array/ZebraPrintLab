@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { VariableIcon } from "@heroicons/react/16/solid";
 import { ContextMenu, type MenuSection } from "../ui/ContextMenu";
 import { CLOCK_TOKEN_LABELS, clockMarkerBody, type ClockChannel } from "../../lib/fcTemplate";
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
+import { useContextMenu } from "../../hooks/useContextMenu";
 
 /** Compact insert dropdown for builder value fields: variables flat, clock
  *  tokens per channel as submenus. Emits the marker BODY; the host field
@@ -11,7 +11,7 @@ import { useLabelStore } from "../../store/labelStore";
 export function MarkerInsertMenu({ onInsert }: { onInsert: (body: string) => void }) {
   const t = useT();
   const variables = useLabelStore((s) => s.variables);
-  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const { menu, openBelowAnchor, close } = useContextMenu<null>();
 
   const channelItems = (channel: ClockChannel) =>
     CLOCK_TOKEN_LABELS.map((e) => ({
@@ -51,15 +51,12 @@ export function MarkerInsertMenu({ onInsert }: { onInsert: (body: string) => voi
         type="button"
         aria-label={t.app.insertVariable}
         title={t.app.insertVariable}
-        onClick={(e) => {
-          const r = e.currentTarget.getBoundingClientRect();
-          setMenu({ x: r.left, y: r.bottom + 4 });
-        }}
+        onClick={(e) => openBelowAnchor(e.currentTarget, null)}
         className="shrink-0 p-1 rounded text-muted hover:text-accent hover:bg-surface-2 transition-colors"
       >
         <VariableIcon className="w-3.5 h-3.5" />
       </button>
-      {menu && <ContextMenu sections={sections} x={menu.x} y={menu.y} onClose={() => setMenu(null)} />}
+      {menu && <ContextMenu sections={sections} x={menu.x} y={menu.y} onClose={close} />}
     </>
   );
 }

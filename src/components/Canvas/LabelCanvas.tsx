@@ -26,6 +26,7 @@ import { objectBoundsDots, selectionUnionDots, printableRectDots } from "../../l
 import { computePreflight, markerValueFindings } from "../../lib/preflight";
 import { barcodeEncodeFindings } from "./barcodePreflight";
 import { usePreviewBinding } from "../../store/usePreviewBinding";
+import { useContextMenu } from "../../hooks/useContextMenu";
 import { rotateSelectionChanges } from "../../lib/groupRotation";
 import { selectTidyTargets } from "../../lib/tidyClassify";
 import { safeAreaRectDots } from "../../lib/safeArea";
@@ -143,7 +144,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // The white label paper; its drop shadow is dropped during image capture so
   // the PNG is the label rect, not a shadow-padded box.
   const labelPaperRef = useRef<Konva.Rect>(null);
-  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; sections: MenuSection[] } | null>(null);
+  const ctxMenu = useContextMenu<MenuSection[]>();
   const lockedFrameRef = useRef<Konva.Group>(null);
   const dragActiveRef = useRef(false);
   const transformActiveRef = useRef(false);
@@ -1131,7 +1132,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       addableGroups,
       dispatch,
     });
-    setCtxMenu({ x: e.evt.clientX, y: e.evt.clientY, sections });
+    ctxMenu.openAtPointer(e.evt, sections);
   };
 
   useDndMonitor({
@@ -1673,13 +1674,13 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
           </Layer>
         </Stage>
       )}
-      {ctxMenu && (
+      {ctxMenu.menu && (
         <CanvasContextMenu
-          sections={ctxMenu.sections}
-          x={ctxMenu.x}
-          y={ctxMenu.y}
+          sections={ctxMenu.menu.data}
+          x={ctxMenu.menu.x}
+          y={ctxMenu.menu.y}
           labels={t.contextMenu as unknown as Record<string, string>}
-          onClose={() => setCtxMenu(null)}
+          onClose={ctxMenu.close}
         />
       )}
     </div>
