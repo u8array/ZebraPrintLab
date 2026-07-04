@@ -140,6 +140,27 @@ export const testCases: TestCase[] = [
     expected_bounds: { x: 50, y: 50, width: 172, height: 32 },
     image_ref: "barcode_pdf417_auto_ecc.png",
   },
+  // Auto-columns probes beyond the original 10-49 char calibration range
+  // (mixed text, higher ECC, numeric compaction). Bounds Labelary-measured
+  // via tests/scripts/measure_bbox.ts after the fixture fetch.
+  {
+    id: "barcode_pdf417_auto_long60",
+    zpl_input: "^XA^BY2^FO50,50^B7N,10,0,0,,,^FDABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ0123456789^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 206, height: 180 },
+    image_ref: "barcode_pdf417_auto_long60.png",
+  },
+  {
+    id: "barcode_pdf417_auto_long90_sec2",
+    zpl_input: "^XA^BY2^FO50,50^B7N,10,2,0,,,^FDABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 240, height: 200 },
+    image_ref: "barcode_pdf417_auto_long90_sec2.png",
+  },
+  {
+    id: "barcode_pdf417_auto_long120",
+    zpl_input: "^XA^BY2^FO50,50^B7N,10,0,0,,,^FD012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789^FS^XZ",
+    expected_bounds: { x: 50, y: 50, width: 240, height: 160 },
+    image_ref: "barcode_pdf417_auto_long120.png",
+  },
   {
     id: "barcode_code93_standard",
     zpl_input: "^XA^BY2^FO50,50^BAN,100,N,N,N^FDCODE93^FS^XZ",
@@ -254,7 +275,7 @@ export const testCases: TestCase[] = [
   },
 
   // ── Rotation coverage ─────────────────────────────────────────────────────
-  // Bounds measured from the Labelary PNG via tests/scripts/measure_bbox.mjs.
+  // Bounds measured from the Labelary PNG via tests/scripts/measure_bbox.ts.
   // R/B swap width and height of the unrotated symbol; the QR +10 dot Y offset
   // applies to rotated QR codes too.
   {
@@ -288,7 +309,7 @@ export const testCases: TestCase[] = [
     image_ref: "barcode_datamatrix_rot_R.png",
   },
   // Code39 (^B3) and EAN13 (^BE) use different param orders than Code128's
-  // ^BC, so cover them too. Bounds populated via measure_bbox.mjs.
+  // ^BC, so cover them too. Bounds populated via measure_bbox.ts.
   {
     id: "barcode_code39_rot_R",
     zpl_input: "^XA^BY2^FO100,100^B3R,N,100,N,N^FDCODE39^FS^XZ",

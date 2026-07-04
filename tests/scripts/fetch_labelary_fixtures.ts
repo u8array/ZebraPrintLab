@@ -42,7 +42,7 @@ async function main() {
   // fixtures.json is the source of truth for Labelary-measured bounds. Only
   // append entries for new test cases — never overwrite existing ones, since
   // testCases.ts may carry rounded/placeholder bounds that have been refined
-  // by hand or via tests/scripts/measure_bbox.mjs.
+  // by hand or via tests/scripts/measure_bbox.ts.
   const existing: FixtureMapping = fs.existsSync(mappingFile)
     ? JSON.parse(fs.readFileSync(mappingFile, "utf8"))
     : { test_cases: [] };

@@ -94,12 +94,17 @@ export const MICROPDF417_QUIET_ZONE_ROWS = 3;
 // bwip-js renders MicroPDF417 at 2 internal px per data row, independent of `rowheight`.
 export const MICROPDF417_PX_PER_ROW = 2;
 
-/** approx = bitmap visual diverges but bbox is spec-correct.
- *  unverified = bitmap diverges AND bbox not Labelary-cross-checkable. */
+/** User contract per tier: approx = bitmap visual diverges, dimensions
+ *  match the print; unverified = bitmap diverges AND dimensions may
+ *  differ from the print. */
 export type BwipApproxSeverity = "approx" | "unverified";
 
 export const BWIP_APPROX_SEVERITY: ReadonlyMap<string, BwipApproxSeverity> = new Map([
   ["gs1databar", "approx"],
+  // Long payloads: same columns/rows as firmware but different inner
+  // codewords; all-numeric content packs one row SHORTER than the print
+  // (numeric compaction), so the dimension promise of "approx" would lie.
+  ["pdf417", "unverified"],
   ["code49", "unverified"],
   ["codablock", "unverified"],
 ]);

@@ -248,6 +248,53 @@ export const testModels: Record<string, LabelObject> = {
       rotation: "N",
     },
   },
+  // Auto-columns probes beyond the 10-49 char range the estimate was
+  // originally calibrated on (mixed text, higher ECC, numeric compaction).
+  barcode_pdf417_auto_long60: {
+    id: "16a",
+    type: "pdf417",
+    x: 50,
+    y: 50,
+    rotation: 0,
+    props: {
+      content: "ABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ0123456789",
+      rowHeight: 10,
+      securityLevel: 0,
+      columns: 0,
+      moduleWidth: 2,
+      rotation: "N",
+    },
+  },
+  barcode_pdf417_auto_long90_sec2: {
+    id: "16b",
+    type: "pdf417",
+    x: 50,
+    y: 50,
+    rotation: 0,
+    props: {
+      content: "ABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ0123456789ABCDEFGHIJ",
+      rowHeight: 10,
+      securityLevel: 2,
+      columns: 0,
+      moduleWidth: 2,
+      rotation: "N",
+    },
+  },
+  barcode_pdf417_auto_long120: {
+    id: "16c",
+    type: "pdf417",
+    x: 50,
+    y: 50,
+    rotation: 0,
+    props: {
+      content: "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789",
+      rowHeight: 10,
+      securityLevel: 0,
+      columns: 0,
+      moduleWidth: 2,
+      rotation: "N",
+    },
+  },
   barcode_code93_standard: {
     id: "18",
     type: "code93",
