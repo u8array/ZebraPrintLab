@@ -26,10 +26,14 @@ const LOCALE_BOOT_WAIT_MS = 250;
 // (applyLocale keeps running and never rejects).
 async function bootstrap() {
   const { locale, applyLocale } = useLabelStore.getState();
+  let timeoutId: number | undefined;
   await Promise.race([
     applyLocale(locale),
-    new Promise((resolve) => setTimeout(resolve, LOCALE_BOOT_WAIT_MS)),
+    new Promise<void>((resolve) => {
+      timeoutId = window.setTimeout(resolve, LOCALE_BOOT_WAIT_MS);
+    }),
   ]);
+  window.clearTimeout(timeoutId);
   root.render(
     <StrictMode>
       <App />
