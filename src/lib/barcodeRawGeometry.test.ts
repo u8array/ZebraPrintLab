@@ -98,4 +98,14 @@ describe("postal bar geometry", () => {
   it("classifies bwip bhs heights into tall and short", () => {
     expect(postalTallFlags([0.125, 0.05, 0.125])).toEqual([true, false, true]);
   });
+
+  it("integer-aligns the raster at odd module scales without cumulative drift", () => {
+    // pitch 2.5 * 3 = 7.5: per-bar rounding alternates 8/7 steps instead of
+    // drawing at x.5 (sub-pixel AA); shortH rounds when height % 5 != 0.
+    const { rects, width } = postalBarRects([0.125, 0.05, 0.125, 0.05], 3, 94);
+    expect(rects.map((r) => r.x)).toEqual([0, 8, 15, 23]);
+    expect(rects[1]).toMatchObject({ y: 56, h: 38 });
+    expect(width).toBe(26); // round(3 * 7.5) + 3
+    expect(rects.every((r) => Number.isInteger(r.x) && Number.isInteger(r.y) && Number.isInteger(r.h))).toBe(true);
+  });
 });
