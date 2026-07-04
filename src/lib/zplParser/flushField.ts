@@ -118,6 +118,7 @@ export function createFlushField(
           ? decodeFH(s.field.pendingFD, s.format.fhDelimiter, s.format.fhDecoder)
           : s.field.pendingFD;
         upsertVariable(s.comment.fnNumber, decl, s.comment.fnComment);
+        s.bareDeclaredFns.add(s.comment.fnNumber);
         s.comment.fnNumber = null;
         s.comment.fnComment = undefined;
       }
@@ -577,13 +578,20 @@ export function createFlushField(
         // value to stay symmetric with the generator; ^FB/plain keep content.
         const varDefault = isTbField ? decoded : content;
         const variable = upsertVariable(s.comment.fnNumber, varDefault, s.comment.fnComment);
-        // Field links to its variable via a single «name» marker (single-bind on
-        // emit), not a stored variableId. Serial wins over the binding, but only
-        // when actually applied (serialisable type); else a 2D field's ^FN binding
-        // would be silently dropped.
+        // Serial wins over the binding, but only when actually applied
+        // (serialisable type); else a 2D field's ^FN binding would be silently
+        // dropped. The upsert still runs: the slot is shared, so a later field
+        // or embed may reference it and must see this default. If none does,
+        // the end-of-parse sweep drops the orphan.
         const serialApplied = s.field.snPending && lastSerialisable;
-        const leaf = justPushed as { props?: { content?: string } };
-        if (leaf.props && !serialApplied) leaf.props.content = markerOf(variable.name);
+        if (serialApplied) {
+          s.serialStrippedFns.add(s.comment.fnNumber);
+        } else {
+          // Field links to its variable via a single «name» marker (single-bind
+          // on emit), not a stored variableId.
+          const leaf = justPushed as { props?: { content?: string } };
+          if (leaf.props) leaf.props.content = markerOf(variable.name);
+        }
       }
       s.comment.fnNumber = null;
       s.comment.fnComment = undefined;

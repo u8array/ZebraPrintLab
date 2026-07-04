@@ -1660,6 +1660,130 @@ describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
     expect(serialOf(objects[0])?.zplMode).toBe('SN');
     expect(props(objects[0]).content).toBe('001');
   });
+
+  it('in-field serial on an ^FN field creates no orphan variable', () => {
+    const { variables } = parseZPL('^XA^FO10,10^A0N,30,0^FN1^FD001^SN001,1,Y^FS^XZ', 8);
+    expect(variables).toHaveLength(0);
+  });
+
+  it('a shared slot still gets its variable from the non-serial sibling', () => {
+    const { objects, variables } = parseZPL(
+      '^XA^FO10,10^A0N,30,0^FN1^FD001^SN001,1,Y^FS^FO10,60^A0N,30,0^FN1^FDABC^FS^XZ', 8);
+    expect(variables).toHaveLength(1);
+    expect(serialOf(objects[0])?.zplMode).toBe('SN');
+    expect(props(objects[1]).content).toBe('«field_1»');
+  });
+
+  it('post-^FS ^SN removes the variable its stripped binding orphaned', () => {
+    const { variables } = parseZPL('^XA^FO10,10^A0N,30,0^FN1^FD001^FS\n^SN001,1,Y^XZ', 8);
+    expect(variables).toHaveLength(0);
+  });
+
+  it('post-^FS ^SN keeps a variable a sibling field still references', () => {
+    const { objects, variables } = parseZPL(
+      '^XA^FO10,10^A0N,30,0^FN1^FD001^FS^FO10,60^A0N,30,0^FN1^FDABC^FS\n^SN001,1,Y^XZ', 8);
+    expect(variables).toHaveLength(1);
+    expect(props(objects[0]).content).toBe('«field_1»');
+    expect(props(objects[1]).content).toBe('001');
+  });
+
+  it('post-^FS ^SN keeps a bare-declared variable', () => {
+    const { variables } = parseZPL(
+      '^XA^FN1^FDdecl^FS^FO10,10^A0N,30,0^FN1^FD001^FS\n^SN001,1,Y^XZ', 8);
+    expect(variables).toHaveLength(1);
+  });
+
+  it('in-field serial keeps the slot default for a later embed', () => {
+    // Same shared-slot rule as the post-^FS path: the embed must see the
+    // serial seed as default, not a freshly created empty variable.
+    const { objects, variables } = parseZPL(
+      '^XA^FO10,10^A0N,30,0^FN1^SN001,1,Y^FS^FO10,60^A0N,30,0^FDlot #1#^FS^XZ', 8);
+    expect(variables).toHaveLength(1);
+    expect(variables[0]?.defaultValue).toBe('001');
+    expect(props(objects[1]).content).toBe('lot «field_1»');
+  });
+
+  it('post-^FS ^SN keeps the variable when a later embed references the slot', () => {
+    // The slot is shared (spec p.200): a later #1# must reuse the original
+    // variable and its default, not a freshly created empty one.
+    const { objects, variables } = parseZPL(
+      '^XA^FO10,10^A0N,30,0^FN1^FD001^FS\n^SN001,1,Y\n^FO10,60^A0N,30,0^FDlot #1#^FS^XZ', 8);
+    expect(variables).toHaveLength(1);
+    expect(variables[0]?.defaultValue).toBe('001');
+    expect(props(objects[1]).content).toBe('lot «field_1»');
+  });
+});
+
+// ── prefix-junk tolerance (ZebraDesigner driver preamble) ────────────────────
+
+describe('parseZPL — prefix char followed by another prefix', () => {
+  it('discards the incomplete first prefix like firmware does', () => {
+    // ZebraDesigner's `CT~~CD,` preamble: the first `~` is immediately
+    // followed by another `~` and must be dropped, not read as command `~C`.
+    const { objects, importReport } = parseZPL(
+      'CT~~CD,~CC^~CT~^XA^FO10,20^A0N,30,0^FDHi^FS^XZ', 8);
+    expect(importReport.unknown).toEqual([]);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).content).toBe('Hi');
+  });
+
+  it('resyncs when a prefix char sits at the second command-name position', () => {
+    // A lone `~` before a newline must not swallow the following ^XA.
+    const { objects, importReport } = parseZPL(
+      '~\n^XA^FO10,20^A0N,30,0^FDHi^FS^XZ', 8);
+    expect(importReport.unknown).toEqual([]);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).content).toBe('Hi');
+  });
+
+  it('does not resync on an alphanumeric ^CC prefix that is a valid name char', () => {
+    // With ^CCA, `AA0N` is prefix A + command A0; resyncing there would
+    // shred every command whose name contains the remapped prefix.
+    const { objects, importReport } = parseZPL(
+      '^XA^CCAAFO10,20AA0N,30,0AFDHiAFSAXZ', 8);
+    expect(importReport.unknown).toEqual([]);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).content).toBe('Hi');
+  });
+});
+
+// ── ^FV field variable (data-equivalent of ^FD, spec p.207) ──────────────────
+
+describe('parseZPL — ^FV field variable', () => {
+  it('imports ^FV like ^FD for a plain text field', () => {
+    const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FVHello^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(objects[0]?.type).toBe('text');
+    expect(props(objects[0]).content).toBe('Hello');
+  });
+
+  it('binds ^FN + ^FV like ^FN + ^FD', () => {
+    const { objects, variables } = parseZPL('^XA^FO10,10^A0N,30,0^FN1^FVHELLO^FS^XZ', 8);
+    expect(objects).toHaveLength(1);
+    expect(props(objects[0]).content).toBe('«field_1»');
+    expect(variables.find((v) => v.fnNumber === 1)?.defaultValue).toBe('HELLO');
+  });
+
+  it('ignores an empty ^FV per spec', () => {
+    const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FV^FS^XZ', 8);
+    expect(objects).toHaveLength(0);
+  });
+
+  it('feeds a bare ^FN declaration through ^FV', () => {
+    const { variables } = parseZPL('^XA^FN1^FV001^FS^XZ', 8);
+    expect(variables.find((v) => v.fnNumber === 1)?.defaultValue).toBe('001');
+  });
+
+  it('a bare ^FN^FD^FS with empty data still declares the variable', () => {
+    const { variables } = parseZPL('^XA^FN1^FD^FS^XZ', 8);
+    expect(variables).toHaveLength(1);
+    expect(variables[0]?.defaultValue).toBe('');
+  });
+
+  it('a bare ^FN^FV^FS with empty data declares nothing', () => {
+    const { variables } = parseZPL('^XA^FN1^FV^FS^XZ', 8);
+    expect(variables).toHaveLength(0);
+  });
 });
 
 // ── pending per-field state lifetime at ^FS boundary ─────────────────────────

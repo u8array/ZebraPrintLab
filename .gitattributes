@@ -4,3 +4,6 @@
 THIRD-PARTY-LICENSES.md text eol=lf
 scripts/*.mjs text eol=lf
 scripts/**/*.mjs text eol=lf
+
+# Raw printer-capture fixtures: byte-exact, never eol-converted.
+*.prn binary

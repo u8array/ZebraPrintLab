@@ -203,6 +203,13 @@ export interface ParserState {
   fonts: FontsState;
   reverseBg: PendingReverseBg | null;
   field: FieldState;
+  /** ^FN slots declared bare (`^FN<n>^FD…^FS`, no field): marker-less by
+   *  design, so the post-^FS serial orphan cleanup must not remove them. */
+  bareDeclaredFns: Set<number>;
+  /** ^FN slots whose single-bind marker a post-^FS ^SN stripped. Orphan
+   *  cleanup runs at end of parse, not here: the slot is shared, so a later
+   *  field or embed may still reference the variable (spec p.200). */
+  serialStrippedFns: Set<number>;
 }
 
 /** Append to `skipped` and `browserLimit` (invariant: browserLimit ⊆ skipped). */
@@ -283,6 +290,8 @@ export function createParserState(): ParserState {
       referencedFontPaths: new Set<string>(),
     },
     reverseBg: null,
+    bareDeclaredFns: new Set<number>(),
+    serialStrippedFns: new Set<number>(),
     field: {
       x: 0,
       y: 0,
