@@ -119,13 +119,16 @@ export function postalBarRects(
   heightPx: number,
 ): { rects: RawBarRect[]; width: number } {
   const pitch = POSTAL_PITCH_MODULES * modulePx;
-  const shortH = POSTAL_SHORT_BAR_FRACTION * heightPx;
+  // Integer raster: at odd module scales the 2.5-module pitch lands on x.5,
+  // which anti-aliases into blur. Rounding per bar (not the pitch) keeps the
+  // grid drift-free (8/7 alternation); even module scales are unaffected.
+  const shortH = Math.round(POSTAL_SHORT_BAR_FRACTION * heightPx);
   const rects = postalTallFlags(bhs).map((tall, i) => ({
-    x: i * pitch,
+    x: Math.round(i * pitch),
     y: tall ? 0 : heightPx - shortH,
     w: modulePx,
     h: tall ? heightPx : shortH,
   }));
-  const width = bhs.length > 0 ? (bhs.length - 1) * pitch + modulePx : 0;
+  const width = bhs.length > 0 ? Math.round((bhs.length - 1) * pitch) + modulePx : 0;
   return { rects, width };
 }
