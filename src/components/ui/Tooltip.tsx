@@ -1,5 +1,5 @@
 import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from "react";
-import type { ReactElement, ReactNode } from "react";
+import type { AriaRole, ReactElement, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useAnchoredPosition } from "../../hooks/useAnchoredPosition";
 import { resolveTooltipPosition } from "../../lib/tooltipPosition";
@@ -18,7 +18,7 @@ interface TooltipProps {
   /** ARIA role for the wrapper span. Pass "none" when wrapping a child that
    *  must stay a direct owned child of its parent (e.g. a role=menuitem inside
    *  a role=menu), so the wrapper is transparent in the accessibility tree. */
-  wrapperRole?: string;
+  wrapperRole?: AriaRole;
 }
 
 /**
