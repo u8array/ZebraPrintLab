@@ -700,14 +700,13 @@ export function useKonvaTransformer({
       };
       useLabelStore.temporal.getState().pause();
     }
-    // 1D live reflow, armed per grabbed axis: moduleWidth axis (screen X for
-    // N/I, screen Y for R/B) re-renders per module crossing, the bar-height
-    // axis per dot. Needs the measured footprint for the start box; an
-    // unmeasured barcode falls back to bake-on-end. Gated on an unrotated view:
-    // under viewRotation != 0 boundBoxFunc bails to native Konva, so the per-tick
-    // model inversion would read rotated-frame coords (mirrors the ^FB reflow).
+    // 1D live reflow, armed per grabbed axis. Needs the measured footprint for
+    // the start box; an unmeasured barcode falls back to bake-on-end. View
+    // rotation is safe: node coords, anchor-name edges and the model inversion
+    // live in the unrotated parent frame, and the per-tick pin stands in for
+    // boundBoxFunc's band snap, which bails under rotation.
     barcodeReflowRef.current = null;
-    if (obj && !isGroup(obj) && BARCODE_1D_TYPES.has(obj.type) && viewRotation === 0) {
+    if (obj && !isGroup(obj) && BARCODE_1D_TYPES.has(obj.type)) {
       const edges = activeEdgesRef.current;
       const rot = objectRotation(obj.props);
       const swapped = isAxisSwapped(rot);
@@ -845,37 +844,39 @@ export function useKonvaTransformer({
         const mwCurrent = (cur.props as { moduleWidth?: number }).moduleWidth;
         if (typeof mwCurrent !== "number" || !(mwCurrent > 0)) return;
         const frameExtentPx = swapped ? natural.height * sy : natural.width * sx;
-        const geo = barcodeMwReflowGeometry(br, mwCurrent, frameExtentPx);
+        const geo = barcodeMwReflowGeometry(br, frameExtentPx);
         if (!geo) return;
-        const ratio = geo.moduleWidth / br.mw0;
-        // Same inversion as the end commit for the ACTIVE axis; the anchored
-        // axis keeps its pre-drag model value (mirrors the end commit's
-        // snapAxis), else the bar-zone offset (above-HRI, rotated EAN) that
-        // the FO inversion ignores would corrupt the stored anchor coordinate.
-        const model = modelPositionFromRenderedTopLeft(
-          cur,
-          pxToDots(geo.targetXPx - objectsOffsetX, scale, dpmm),
-          pxToDots(geo.targetYPx - labelOffsetY, scale, dpmm),
-          br.uprightW0 * ratio,
-          br.uprightH0,
-        );
-        flushSync(() => {
-          updateObject(id, {
-            x: swapped ? br.snapshot.x : model.x,
-            y: swapped ? model.y : br.snapshot.y,
-            props: { moduleWidth: geo.moduleWidth },
+        const crossed = geo.moduleWidth !== mwCurrent;
+        if (crossed) {
+          const ratio = geo.moduleWidth / br.mw0;
+          // Same inversion as the end commit for the ACTIVE axis; the anchored
+          // axis keeps its pre-drag model value (mirrors the end commit's
+          // snapAxis), else the bar-zone offset (above-HRI, rotated EAN) that
+          // the FO inversion ignores would corrupt the stored anchor coordinate.
+          const model = modelPositionFromRenderedTopLeft(
+            cur,
+            pxToDots(geo.targetXPx - objectsOffsetX, scale, dpmm),
+            pxToDots(geo.targetYPx - labelOffsetY, scale, dpmm),
+            br.uprightW0 * ratio,
+            br.uprightH0,
+          );
+          flushSync(() => {
+            updateObject(id, {
+              x: swapped ? br.snapshot.x : model.x,
+              y: swapped ? model.y : br.snapshot.y,
+              props: { moduleWidth: geo.moduleWidth },
+            });
           });
-        });
-        br.changed = true;
-        // Fit the re-rendered content into the frame's linear module model:
-        // the residual is 1 wherever pixels-per-module are exact and only
-        // deviates at zoom levels where adjacent module widths render at the
-        // same pixel width (there a crisp distinct width does not exist).
-        const rendered = node.getClientRect({
-          skipTransform: true,
-          skipStroke: true,
-          skipShadow: true,
-        });
+          br.changed = true;
+        }
+        // Pin every tick, not just on crossings: the reflow is the sole band
+        // pin, so the raster holds in rotated views where boundBoxFunc bails.
+        // The residual fits the re-rendered content into the linear frame (1
+        // when pixels-per-module are exact). Only a crossing re-renders, so
+        // mid-band `natural` is still the current rect.
+        const rendered = crossed
+          ? node.getClientRect({ skipTransform: true, skipStroke: true, skipShadow: true })
+          : natural;
         const renderedExtent = swapped ? rendered.height : rendered.width;
         const residual = renderedExtent > 0 ? geo.linearExtentPx / renderedExtent : 1;
         node.scaleX(swapped ? 1 : residual);
@@ -885,12 +886,11 @@ export function useKonvaTransformer({
         transformerRef.current?.forceUpdate();
         return;
       }
-      // Height axis: continuous, baked per integer dot. Each tick routes
-      // through the registry commit (identity scale + identity snap = clamp
-      // only) so per-type ranges hold mid-drag: code49 clamps into bwip's
-      // 8..50-module window, where an unclamped write would error the whole
-      // render. The pin recomputes from the committed height so the anchored
-      // edge lands exactly on the rendered size.
+      // Height axis, baked per integer dot. Route each tick through the registry
+      // commit at identity scale (= clamp only) so per-type ranges hold mid-drag:
+      // code49 must clamp into bwip's module window or the whole render errors.
+      // The height re-render lands on the frame exactly, so the pin needs no
+      // residual; the scale just resets to 1.
       const frameExtentPx = swapped ? natural.width * sx : natural.height * sy;
       const geo = barcodeHeightReflowGeometry(br, frameExtentPx);
       if (!geo) return;
@@ -908,24 +908,27 @@ export function useKonvaTransformer({
         resizeMode: blockResizeModeRef.current,
       }) as { height?: number } | undefined;
       const hNext = committed?.height ?? newHeightDots;
-      if (hNext === hCurrent) return;
       const pin = barcodeHeightReflowGeometry(br, dotsToPx(hNext, scale, dpmm));
       if (!pin) return;
-      const model = modelPositionFromRenderedTopLeft(
-        cur,
-        pxToDots(pin.targetXPx - objectsOffsetX, scale, dpmm),
-        pxToDots(pin.targetYPx - labelOffsetY, scale, dpmm),
-        br.uprightW0,
-        hNext,
-      );
-      flushSync(() => {
-        updateObject(id, {
-          x: swapped ? model.x : br.snapshot.x,
-          y: swapped ? br.snapshot.y : model.y,
-          props: { height: hNext },
+      if (hNext !== hCurrent) {
+        const model = modelPositionFromRenderedTopLeft(
+          cur,
+          pxToDots(pin.targetXPx - objectsOffsetX, scale, dpmm),
+          pxToDots(pin.targetYPx - labelOffsetY, scale, dpmm),
+          br.uprightW0,
+          hNext,
+        );
+        flushSync(() => {
+          updateObject(id, {
+            x: swapped ? model.x : br.snapshot.x,
+            y: swapped ? br.snapshot.y : model.y,
+            props: { height: hNext },
+          });
         });
-      });
-      br.changed = true;
+        br.changed = true;
+      }
+      // Pin every tick for the same reason as the mw axis: hold the node in
+      // rotated views between dot bakes, else the anchored edge jitters.
       node.scaleX(1);
       node.scaleY(1);
       node.x(pin.targetXPx);

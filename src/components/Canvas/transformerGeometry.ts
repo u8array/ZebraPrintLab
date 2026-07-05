@@ -32,21 +32,20 @@ export interface BarcodeMwReflowStart {
  *  TOTAL drag extent against the start box (identical inputs to the in-drag
  *  box snap, so the two can never disagree or oscillate: rendered pixel
  *  widths are stepwise in moduleWidth, an incremental-scale quantiser would
- *  hunt). Returns null while the drag sits inside the current module band.
- *  Both edges come from the start box's LINEAR module model, matching the
- *  frame the box snap shows; the caller fits the re-rendered content into
- *  that frame via a residual scale. */
+ *  hunt). Always returns the band's geometry, also mid-band: the caller pins
+ *  the node to it every tick, which makes the reflow the sole band pin and
+ *  keeps the module raster in rotated views where boundBoxFunc's snap bails.
+ *  Both edges come from the start box's LINEAR module model; the caller fits
+ *  the re-rendered content into that frame via a residual scale. */
 export function barcodeMwReflowGeometry(
   start: BarcodeMwReflowStart,
-  mwCurrent: number,
   frameExtentPx: number,
 ): { moduleWidth: number; targetXPx: number; targetYPx: number; linearExtentPx: number } | null {
-  if (!(mwCurrent > 0) || !(start.mw0 > 0)) return null;
+  if (!(start.mw0 > 0)) return null;
   const swapped = isAxisSwapped(start.rotation);
   const startExtent = swapped ? start.bottomY - start.topY : start.rightX - start.leftX;
   if (!(startExtent > 0) || !(frameExtentPx > 0)) return null;
   const moduleWidth = computeNewModules(start.mw0, frameExtentPx / startExtent, 1, 10);
-  if (moduleWidth === mwCurrent) return null;
   const linearExtentPx = startExtent * (moduleWidth / start.mw0);
   if (!swapped) {
     return {
