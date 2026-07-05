@@ -15,6 +15,98 @@ export interface ActiveEdgeFlags {
   bottom: boolean;
 }
 
+/** Start-of-drag frame for the 1D moduleWidth live reflow: the model box in
+ *  parent px plus the starting module width, captured once so the anchored
+ *  edge stays fixed across every re-render of the drag. */
+export interface BarcodeMwReflowStart {
+  rotation: ZplRotation;
+  edges: ActiveEdgeFlags;
+  mw0: number;
+  leftX: number;
+  topY: number;
+  rightX: number;
+  bottomY: number;
+}
+
+/** Per-tick geometry of the 1D moduleWidth live reflow. Quantises from the
+ *  TOTAL drag extent against the start box (identical inputs to the in-drag
+ *  box snap, so the two can never disagree or oscillate: rendered pixel
+ *  widths are stepwise in moduleWidth, an incremental-scale quantiser would
+ *  hunt). Returns null while the drag sits inside the current module band.
+ *  Both edges come from the start box's LINEAR module model, matching the
+ *  frame the box snap shows; the caller fits the re-rendered content into
+ *  that frame via a residual scale. */
+export function barcodeMwReflowGeometry(
+  start: BarcodeMwReflowStart,
+  mwCurrent: number,
+  frameExtentPx: number,
+): { moduleWidth: number; targetXPx: number; targetYPx: number; linearExtentPx: number } | null {
+  if (!(mwCurrent > 0) || !(start.mw0 > 0)) return null;
+  const swapped = isAxisSwapped(start.rotation);
+  const startExtent = swapped ? start.bottomY - start.topY : start.rightX - start.leftX;
+  if (!(startExtent > 0) || !(frameExtentPx > 0)) return null;
+  const moduleWidth = computeNewModules(start.mw0, frameExtentPx / startExtent, 1, 10);
+  if (moduleWidth === mwCurrent) return null;
+  const linearExtentPx = startExtent * (moduleWidth / start.mw0);
+  if (!swapped) {
+    return {
+      moduleWidth,
+      targetXPx: start.edges.left ? start.rightX - linearExtentPx : start.leftX,
+      targetYPx: start.topY,
+      linearExtentPx,
+    };
+  }
+  return {
+    moduleWidth,
+    targetXPx: start.leftX,
+    targetYPx: start.edges.top ? start.bottomY - linearExtentPx : start.topY,
+    linearExtentPx,
+  };
+}
+
+/** Start-of-drag frame for the 1D bar-height live reflow: the footprint bbox in
+ *  parent px plus the constant non-bar share of the height axis (HRI text zone,
+ *  EAN guard-tail zone). The transformer frames the bars only (the zone is
+ *  outside the client rect), so the frame extent is the bar height directly;
+ *  the zone is added back only to reconstruct the bbox for the anchored-edge
+ *  pin. The height axis is the screen Y for N/I and the screen X for R/B. */
+export interface BarcodeHeightReflowStart {
+  rotation: ZplRotation;
+  edges: ActiveEdgeFlags;
+  leftX: number;
+  topY: number;
+  rightX: number;
+  bottomY: number;
+  /** Constant (non-bar) share of the height-axis extent, px. */
+  zonePx: number;
+}
+
+/** Per-tick geometry of the 1D bar-height live reflow: the bar extent the frame
+ *  implies and the pinned top-left. The frame is bar-only, so bar height = frame
+ *  extent; the pin reconstructs the bbox as frame + zone so the anchored edge
+ *  holds. Null for a collapsed frame. */
+export function barcodeHeightReflowGeometry(
+  start: BarcodeHeightReflowStart,
+  frameExtentPx: number,
+): { barExtentPx: number; targetXPx: number; targetYPx: number } | null {
+  if (!(frameExtentPx > 0)) return null;
+  const barExtentPx = frameExtentPx;
+  const bboxExtentPx = frameExtentPx + start.zonePx;
+  const swapped = isAxisSwapped(start.rotation);
+  if (swapped) {
+    return {
+      barExtentPx,
+      targetXPx: start.edges.left ? start.rightX - bboxExtentPx : start.leftX,
+      targetYPx: start.topY,
+    };
+  }
+  return {
+    barExtentPx,
+    targetXPx: start.leftX,
+    targetYPx: start.edges.top ? start.bottomY - bboxExtentPx : start.topY,
+  };
+}
+
 /** Snap a height to a multiple of stepPx, with stepPx as the minimum. */
 export function snapBoxHeight(height: number, stepPx: number): number {
   return Math.max(stepPx, Math.round(height / stepPx) * stepPx);

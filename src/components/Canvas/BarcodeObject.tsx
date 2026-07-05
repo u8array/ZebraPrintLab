@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Image as KImage, Group, Rect, Text } from "react-konva";
 import type Konva from "konva";
 import { BARCODE_1D_TYPES, ObjectRegistry } from "../../registry";
@@ -84,8 +84,6 @@ export function BarcodeObject({
   onSelect,
   dragHandlers,
 }: KonvaObjectProps) {
-  const groupRef = useRef<Konva.Group>(null);
-  const overlayGroupRef = useRef<Konva.Group>(null);
   const colors = useColorScheme();
   // Vera Mono (HRI) loads async; Konva won't repaint on an unchanged
   // fontFamily once the FontFace resolves. Keying the overlay on this
@@ -93,11 +91,8 @@ export function BarcodeObject({
   const fontVersion = useFontCacheVersion();
 
   // Overlay group (HRI text + start/stop glyphs, or EAN/UPC digits) with
-  // getClientRect zeroed so the parent bbox stays tight on the bars, and the
-  // counter-scale target during resize so every element keeps constant size
-  // while the bars stretch (see handleTransform), not just the centered text.
+  // getClientRect zeroed so the parent bbox stays tight on the bars.
   const setOverlayGroupRef = useCallback((node: Konva.Group | null) => {
-    overlayGroupRef.current = node;
     if (node) {
       node.getClientRect = () => ({ x: 0, y: 0, width: 0, height: 0 });
     }
@@ -283,9 +278,7 @@ export function BarcodeObject({
     //    sys/trail digits stay visible (their x extends past the
     //    bar bbox); rotated EAN/UPC gets no clipping because the
     //    floated digits land within the rotated bbox after Konva's
-    //    bbox computation. Upright Other 1D additionally counter-
-    //    scales the HRI text during a resize drag so it stays at
-    //    constant visual size while the bars stretch.
+    //    bbox computation.
     const isEanUpc = EAN_UPC_TYPES.has(obj.type);
     const showHriOverlay =
       printInterpEnabled && BARCODE_1D_TYPES.has(obj.type);
@@ -333,9 +326,6 @@ export function BarcodeObject({
         overlayContent = eanOverlay.nodes;
       } else {
         // Other 1D: centered text, optionally flanked by start/stop glyphs.
-        // Counter-scaled as a group when upright (handleTransform); rotated
-        // paths can't (upright-Y is screen-X after R/B) and scale with the
-        // bars, a minor visual nit with no broken print output.
         // GS1-128 HRI prints in Font 0, not the generic HRI face.
         const fontFamily = gs1Hri
           ? HRI_FONT_0
@@ -373,29 +363,9 @@ export function BarcodeObject({
         overlayContent = startStopGlyphs ? [dataText, ...startStopGlyphs] : dataText;
       }
 
-      // Counter-scale the overlay group around the bar edge it hugs (bottom
-      // below-bars, top above-bars) so an element at local y c lands at
-      // anchor*sy + (c - anchor): constant size, gap to the bars preserved.
-      const useUprightTransform = isUpright && !isEanUpc;
-      const counterAnchorY = isTextAbove
-        ? ub.barTopPx
-        : ub.barTopPx + ub.barH;
-      const handleTransform = () => {
-        const grp = groupRef.current;
-        const overlay = overlayGroupRef.current;
-        if (!grp || !overlay) return;
-        const sy = grp.scaleY();
-        if (sy <= 0) return;
-        overlay.scaleY(1 / sy);
-        overlay.y(counterAnchorY * (1 - 1 / sy));
-      };
-      // react-konva doesn't track imperative scaleY/y; reset to JSX defaults.
-      const handleTransformEnd = () => {
-        const overlay = overlayGroupRef.current;
-        if (!overlay) return;
-        overlay.scaleY(1);
-        overlay.y(0);
-      };
+      // No counter-scaling: both resize axes live-reflow in useKonvaTransformer
+      // (per-tick re-render at the committed size), so bars, HRI, text zone and
+      // clip are always drawn at their true size and nothing stretches mid-drag.
 
       // Clip-expansion is upright-EAN/UPC only, absent on other paths
       // so Konva computes a natural bbox. Spread-or-empty keeps the
@@ -411,7 +381,6 @@ export function BarcodeObject({
 
       return (
         <Group
-          ref={useUprightTransform ? groupRef : undefined}
           id={obj.id}
           x={x}
           y={y}
@@ -420,8 +389,6 @@ export function BarcodeObject({
           {...selectionHandlers(onSelect)}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
-          onTransform={useUprightTransform ? handleTransform : undefined}
-          onTransformEnd={useUprightTransform ? handleTransformEnd : undefined}
         >
           <Group x={innerTr.x} y={innerTr.y} rotation={innerTr.rotation}>
             <KImage

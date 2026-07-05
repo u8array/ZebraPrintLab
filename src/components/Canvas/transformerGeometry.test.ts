@@ -6,12 +6,131 @@ import {
   applyHeightSnap,
   applyModuleWidthSnap,
   applyUniformModuleSnap,
+  barcodeHeightReflowGeometry,
+  barcodeMwReflowGeometry,
   pinInactiveEdges,
   computeNewModules,
   activeEdgesFromAnchorName,
   shrinkingBelowFloor,
+  type BarcodeHeightReflowStart,
+  type BarcodeMwReflowStart,
   type BoundingBox,
 } from "./transformerGeometry";
+
+describe("barcodeMwReflowGeometry", () => {
+  const edges = (over: Partial<BarcodeMwReflowStart["edges"]>): BarcodeMwReflowStart["edges"] =>
+    ({ left: false, right: false, top: false, bottom: false, ...over });
+  // Start box 100..300 x 50..130 px at moduleWidth 2 (mw axis: 100 px per module).
+  const start = (over: Partial<BarcodeMwReflowStart> = {}): BarcodeMwReflowStart => ({
+    rotation: "N",
+    edges: edges({ right: true }),
+    mw0: 2,
+    leftX: 100,
+    topY: 50,
+    rightX: 300,
+    bottomY: 130,
+    ...over,
+  });
+
+  it("returns null inside the current module band (same rounding as the box snap)", () => {
+    expect(barcodeMwReflowGeometry(start(), 2, 240)).toBeNull();
+    expect(barcodeMwReflowGeometry(start(), 2, 200)).toBeNull();
+  });
+
+  it("right-handle crossing keeps the left edge and bumps the module width", () => {
+    const geo = barcodeMwReflowGeometry(start(), 2, 300);
+    expect(geo).toEqual({ moduleWidth: 3, targetXPx: 100, targetYPx: 50, linearExtentPx: 300 });
+  });
+
+  it("left-handle crossing keeps the right edge fixed", () => {
+    const geo = barcodeMwReflowGeometry(start({ edges: edges({ left: true }) }), 2, 300);
+    // Linear width 300 pinned to rightX 300: x = 0.
+    expect(geo).toEqual({ moduleWidth: 3, targetXPx: 0, targetYPx: 50, linearExtentPx: 300 });
+  });
+
+  it("stays quantised on the TOTAL extent after earlier bakes (no oscillation)", () => {
+    // Baked at 3, pointer parked at 1.5x the start extent: still module 3, no
+    // re-bake even though the rendered pixel width may differ stepwise.
+    expect(barcodeMwReflowGeometry(start(), 3, 300)).toBeNull();
+    // Pointer moves on to 2x: crossing to 4 from the same start baseline.
+    const geo = barcodeMwReflowGeometry(start(), 3, 400);
+    expect(geo).toEqual({ moduleWidth: 4, targetXPx: 100, targetYPx: 50, linearExtentPx: 400 });
+  });
+
+  it("clamps at the ^BY bounds and reports no change there", () => {
+    expect(barcodeMwReflowGeometry(start({ mw0: 10 }), 10, 600)).toBeNull();
+    expect(barcodeMwReflowGeometry(start({ mw0: 1 }), 1, 10)).toBeNull();
+  });
+
+  it("R/B rotations quantise the vertical axis and pin top/bottom", () => {
+    const rb = start({ rotation: "R", edges: edges({ bottom: true }) });
+    // Vertical extent 80 px at mw 2; 120 px crosses to 3, top fixed.
+    const geo = barcodeMwReflowGeometry(rb, 2, 120);
+    expect(geo).toEqual({ moduleWidth: 3, targetXPx: 100, targetYPx: 50, linearExtentPx: 120 });
+    const topDrag = start({ rotation: "B", edges: edges({ top: true }) });
+    const geoTop = barcodeMwReflowGeometry(topDrag, 2, 120);
+    // Bottom fixed at 130: new top = 130 - 120 = 10.
+    expect(geoTop).toEqual({ moduleWidth: 3, targetXPx: 100, targetYPx: 10, linearExtentPx: 120 });
+  });
+
+  it("rejects degenerate extents", () => {
+    expect(barcodeMwReflowGeometry(start(), 2, 0)).toBeNull();
+    expect(barcodeMwReflowGeometry(start({ rightX: 100 }), 2, 300)).toBeNull();
+  });
+});
+
+describe("barcodeHeightReflowGeometry", () => {
+  const edges = (over: Partial<BarcodeHeightReflowStart["edges"]>): BarcodeHeightReflowStart["edges"] =>
+    ({ left: false, right: false, top: false, bottom: false, ...over });
+  // Footprint 100..300 x 50..150 px; 20 px of the height axis is the HRI zone.
+  const start = (over: Partial<BarcodeHeightReflowStart> = {}): BarcodeHeightReflowStart => ({
+    rotation: "N",
+    edges: edges({ bottom: true }),
+    leftX: 100,
+    topY: 50,
+    rightX: 300,
+    bottomY: 150,
+    zonePx: 20,
+    ...over,
+  });
+
+  it("bottom-handle drag keeps the top edge and maps frame straight to bar height", () => {
+    // Frame is bar-only, so bar extent == frame (no zone subtraction); top edge
+    // is the bbox top, unaffected by the bottom drag.
+    expect(barcodeHeightReflowGeometry(start(), 140)).toEqual({
+      barExtentPx: 140,
+      targetXPx: 100,
+      targetYPx: 50,
+    });
+  });
+
+  it("top-handle drag pins the bottom edge via the bbox (frame + zone)", () => {
+    const geo = barcodeHeightReflowGeometry(start({ edges: edges({ top: true }) }), 100);
+    // Bbox extent = frame 100 + zone 20 = 120; bottom fixed at 150 -> top = 30.
+    expect(geo).toEqual({ barExtentPx: 100, targetXPx: 100, targetYPx: 30 });
+  });
+
+  it("R/B rotations run the height axis on screen X and pin left/right", () => {
+    const rb = start({ rotation: "R", edges: edges({ right: true }) });
+    expect(barcodeHeightReflowGeometry(rb, 240)).toEqual({
+      barExtentPx: 240,
+      targetXPx: 100,
+      targetYPx: 50,
+    });
+    const leftDrag = start({ rotation: "B", edges: edges({ left: true }) });
+    // Bbox extent = frame 240 + zone 20 = 260; right fixed at 300 -> left = 40.
+    expect(barcodeHeightReflowGeometry(leftDrag, 240)).toEqual({
+      barExtentPx: 240,
+      targetXPx: 40,
+      targetYPx: 50,
+    });
+  });
+
+  it("rejects a collapsed frame", () => {
+    expect(barcodeHeightReflowGeometry(start(), 0)).toBeNull();
+    expect(barcodeHeightReflowGeometry(start(), -5)).toBeNull();
+  });
+});
 
 describe("shrinkingBelowFloor", () => {
   const box = (width: number, height: number): BoundingBox => ({ x: 0, y: 0, width, height, rotation: 0 });
