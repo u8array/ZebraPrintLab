@@ -340,6 +340,9 @@ const pl = {
 
   properties: {
     positionSection: 'Pozycja',
+    anchorMode: 'Kotwica',
+    anchorTopLeftHint: 'Pozycja to lewy górny róg',
+    anchorBaselineHint: 'Pozycja to linia bazowa (dolna krawędź dla kształtów i kodów kreskowych)',
     optionsSection: 'Opcje',
     contentSection: 'Treść',
     settingsSection: 'Ustawienia',
@@ -644,7 +647,7 @@ const pl = {
     app: {
       editorHeading: 'Edytor',
       powerUser: 'Tryb zaawansowany',
-      powerUserHint: 'Pokaż emitowane polecenie ZPL obok każdej właściwości',
+      powerUserHint: 'Pokaż emitowane polecenie ZPL obok każdej właściwości i odblokuj zaawansowane kontrolki',
       smartSnap: 'Inteligentne przyciąganie',
       smartSnapHint: 'Wyrównuje do innych obiektów podczas przeciągania. Przytrzymaj Ctrl/Cmd, aby pominąć.',
       privacyHeading: 'Prywatność',

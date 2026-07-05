@@ -340,6 +340,9 @@ const sl = {
 
   properties: {
     positionSection: 'Položaj',
+    anchorMode: 'Sidro',
+    anchorTopLeftHint: 'Položaj je zgornji levi kot',
+    anchorBaselineHint: 'Položaj je osnovna linija (spodnji rob za oblike in črtne kode)',
     optionsSection: 'Možnosti',
     contentSection: 'Vsebina',
     settingsSection: 'Nastavitve',
@@ -644,7 +647,7 @@ const sl = {
     app: {
       editorHeading: 'Urejevalnik',
       powerUser: 'Napredni uporabniški način',
-      powerUserHint: 'Pokaži generirani ZPL ukaz poleg vsake lastnosti',
+      powerUserHint: 'Pokaži generirani ZPL ukaz poleg vsake lastnosti in odkleni napredne kontrole',
       smartSnap: 'Pametno pritrjevanje',
       smartSnapHint: 'Poravnaj z drugimi objekti med vlečenjem. Drži Ctrl/Cmd za obhod.',
       privacyHeading: 'Zasebnost',

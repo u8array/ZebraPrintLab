@@ -24,7 +24,9 @@ import { SectionCard, StaticSectionCard } from "./SectionCard";
 import { UnitNumberInput } from "./UnitNumberInput";
 import { FieldLabel, ZplCmd } from "./ZplCmd";
 import { Tooltip } from "../ui/Tooltip";
+import { SegmentedControl } from "../ui/SegmentedControl";
 import { Select } from "../ui/Select";
+import { positionTypeOf, supportsPositionToggle } from "../../lib/positionConvert";
 import { fontSelectGroups } from "./fontSelectGroups";
 import { AlignToolbar } from "./AlignToolbar";
 import { DensityRescaleModal } from "./DensityRescaleModal";
@@ -311,6 +313,26 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
                   }
                 />
               </div>
+            </div>
+          )}
+          {/* Anchor style (^FO top-left vs ^FT baseline): power-user emit-style
+              choice, so it only appears with the ZPL-command preference. The
+              flip keeps the visual position constant. Hidden objects are
+              excluded: unmounted, so no measured footprint to convert against. */}
+          {!groupRow && showZplCommands && supportsPositionToggle(obj.type) && obj.visible !== false && (
+            <div className="flex items-center justify-between gap-2">
+              <span className={labelCls}>{t.properties.anchorMode}</span>
+              <SegmentedControl
+                value={positionTypeOf(obj)}
+                onChange={(target) => {
+                  if (target) canvasRef.current?.convertObjectPositionType(obj.id, target);
+                }}
+                options={[
+                  { value: "FO", label: "^FO", tooltip: t.properties.anchorTopLeftHint },
+                  { value: "FT", label: "^FT", tooltip: t.properties.anchorBaselineHint },
+                ]}
+                aria-label={t.properties.anchorMode}
+              />
             </div>
           )}
           <PositionSectionHeader

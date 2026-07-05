@@ -340,6 +340,9 @@ const pt = {
 
   properties: {
     positionSection: 'Posição',
+    anchorMode: 'Âncora',
+    anchorTopLeftHint: 'A posição é o canto superior esquerdo',
+    anchorBaselineHint: 'A posição é a linha de base (borda inferior para formas e códigos de barras)',
     optionsSection: 'Opções',
     contentSection: 'Conteúdo',
     settingsSection: 'Definições',
@@ -644,7 +647,7 @@ const pt = {
     app: {
       editorHeading: 'Editor',
       powerUser: 'Modo avançado',
-      powerUserHint: 'Mostrar o comando ZPL emitido junto de cada propriedade',
+      powerUserHint: 'Mostrar o comando ZPL emitido junto de cada propriedade e desbloquear controlos avançados',
       smartSnap: 'Encaixe inteligente',
       smartSnapHint: 'Alinhar com outros objetos ao arrastar. Segure Ctrl/Cmd para ignorar.',
       privacyHeading: 'Privacidade',

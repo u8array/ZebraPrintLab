@@ -340,6 +340,9 @@ const zhHant = {
 
   properties: {
     positionSection: '位置 (公釐)',
+    anchorMode: '錨點',
+    anchorTopLeftHint: '位置為左上角',
+    anchorBaselineHint: '位置為基線（圖形和條碼的下緣）',
     optionsSection: '選項',
     contentSection: '內容',
     settingsSection: '設定',
@@ -644,7 +647,7 @@ const zhHant = {
     app: {
       editorHeading: '編輯器',
       powerUser: '進階使用者模式',
-      powerUserHint: '在每個屬性旁顯示產生的ZPL指令',
+      powerUserHint: '在每個屬性旁顯示產生的ZPL指令，並解鎖進階控制項',
       smartSnap: '智慧對齊',
       smartSnapHint: '拖曳時對齊其他物件。按住Ctrl/Cmd可跳過對齊。',
       privacyHeading: '隱私',

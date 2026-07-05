@@ -340,6 +340,9 @@ const el = {
 
   properties: {
     positionSection: 'Θέση',
+    anchorMode: 'Άγκυρα',
+    anchorTopLeftHint: 'Η θέση είναι η επάνω αριστερή γωνία',
+    anchorBaselineHint: 'Η θέση είναι η γραμμή βάσης (κάτω άκρη για σχήματα και barcodes)',
     optionsSection: 'Επιλογές',
     contentSection: 'Περιεχόμενο',
     settingsSection: 'Ρυθμίσεις',
@@ -644,7 +647,7 @@ const el = {
     app: {
       editorHeading: 'Επεξεργαστής',
       powerUser: 'Λειτουργία έμπειρου χρήστη',
-      powerUserHint: 'Εμφάνιση της εκπεμπόμενης εντολής ZPL δίπλα σε κάθε ιδιότητα',
+      powerUserHint: 'Εμφάνιση της εκπεμπόμενης εντολής ZPL δίπλα σε κάθε ιδιότητα και ενεργοποίηση σύνθετων ρυθμίσεων',
       smartSnap: 'Έξυπνη προσάρτηση',
       smartSnapHint: 'Ευθυγράμμιση με άλλα αντικείμενα κατά τη μεταφορά. Κρατήστε Ctrl/Cmd για παράκαμψη.',
       privacyHeading: 'Απόρρητο',

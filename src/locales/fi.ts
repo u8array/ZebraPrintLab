@@ -340,6 +340,9 @@ const fi = {
 
   properties: {
     positionSection: 'Sijainti',
+    anchorMode: 'Ankkuri',
+    anchorTopLeftHint: 'Sijainti on vasen yläkulma',
+    anchorBaselineHint: 'Sijainti on perusviiva (alareuna muodoille ja viivakoodeille)',
     optionsSection: 'Valinnat',
     contentSection: 'Sisältö',
     settingsSection: 'Asetukset',
@@ -644,7 +647,7 @@ const fi = {
     app: {
       editorHeading: 'Editori',
       powerUser: 'Tehokäyttäjätila',
-      powerUserHint: 'Näytä lähetetty ZPL-komento jokaisen ominaisuuden vieressä',
+      powerUserHint: 'Näytä lähetetty ZPL-komento jokaisen ominaisuuden vieressä ja ota käyttöön lisäasetukset',
       smartSnap: 'Älykäs napsautus',
       smartSnapHint: 'Kohdistaa muihin objekteihin vedettäessä. Pidä Ctrl/Cmd ohitusta varten.',
       privacyHeading: 'Tietosuoja',

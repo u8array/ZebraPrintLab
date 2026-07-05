@@ -340,6 +340,9 @@ const fa = {
 
   properties: {
     positionSection: 'موقعیت (میلی‌متر)',
+    anchorMode: 'لنگر',
+    anchorTopLeftHint: 'موقعیت گوشه بالا سمت چپ است',
+    anchorBaselineHint: 'موقعیت خط پایه است (لبه پایین برای اشکال و بارکدها)',
     optionsSection: 'گزینه‌ها',
     contentSection: 'محتوا',
     settingsSection: 'تنظیمات',
@@ -644,7 +647,7 @@ const fa = {
     app: {
       editorHeading: 'ویرایشگر',
       powerUser: 'حالت کاربر حرفه‌ای',
-      powerUserHint: 'نمایش دستور ZPL تولیدشده در کنار هر ویژگی',
+      powerUserHint: 'نمایش دستور ZPL تولیدشده در کنار هر ویژگی و فعال‌سازی کنترل‌های پیشرفته',
       smartSnap: 'تراز هوشمند',
       smartSnapHint: 'در هنگام کشیدن با سایر اشیاء تراز شود. برای رد کردن Ctrl/Cmd را نگه دارید.',
       privacyHeading: 'حریم خصوصی',

@@ -340,6 +340,9 @@ const cs = {
 
   properties: {
     positionSection: 'Pozice',
+    anchorMode: 'Kotva',
+    anchorTopLeftHint: 'Poloha je levý horní roh',
+    anchorBaselineHint: 'Poloha je účaří (dolní hrana pro tvary a čárové kódy)',
     optionsSection: 'Možnosti',
     contentSection: 'Obsah',
     settingsSection: 'Nastavení',
@@ -644,7 +647,7 @@ const cs = {
     app: {
       editorHeading: 'Editor',
       powerUser: 'Pokročilý režim',
-      powerUserHint: 'Zobrazit vygenerovaný ZPL příkaz vedle každé vlastnosti',
+      powerUserHint: 'Zobrazit vygenerovaný ZPL příkaz vedle každé vlastnosti a odemknout pokročilé ovládání',
       smartSnap: 'Inteligentní přichycení',
       smartSnapHint: 'Zarovnávat na ostatní objekty při přetahování. Podržte Ctrl/Cmd pro přeskočení.',
       privacyHeading: 'Soukromí',

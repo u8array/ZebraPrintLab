@@ -340,6 +340,9 @@ const nl = {
 
   properties: {
     positionSection: 'Positie',
+    anchorMode: 'Anker',
+    anchorTopLeftHint: 'De positie is de linkerbovenhoek',
+    anchorBaselineHint: 'De positie is de basislijn (onderrand voor vormen en barcodes)',
     optionsSection: 'Opties',
     contentSection: 'Inhoud',
     settingsSection: 'Instellingen',
@@ -644,7 +647,7 @@ const nl = {
     app: {
       editorHeading: 'Editor',
       powerUser: 'Geavanceerde gebruikersmodus',
-      powerUserHint: 'Toon het geëmitteerde ZPL-commando naast elke eigenschap',
+      powerUserHint: 'Toon het geëmitteerde ZPL-commando naast elke eigenschap en ontgrendel geavanceerde bedieningselementen',
       smartSnap: 'Slim uitlijnen',
       smartSnapHint: 'Uitlijnen op andere objecten tijdens slepen. Houd Ctrl/Cmd ingedrukt om te omzeilen.',
       privacyHeading: 'Privacy',

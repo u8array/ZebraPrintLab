@@ -340,6 +340,9 @@ const tr = {
 
   properties: {
     positionSection: 'Konum',
+    anchorMode: 'Çapa',
+    anchorTopLeftHint: 'Konum sol üst köşedir',
+    anchorBaselineHint: 'Konum taban çizgisidir (şekiller ve barkodlar için alt kenar)',
     optionsSection: 'Seçenekler',
     contentSection: 'İçerik',
     settingsSection: 'Ayarlar',
@@ -644,7 +647,7 @@ const tr = {
     app: {
       editorHeading: 'Editör',
       powerUser: 'Uzman kullanıcı modu',
-      powerUserHint: 'Her özelliğin yanında gönderilen ZPL komutunu göster',
+      powerUserHint: 'Her özelliğin yanında gönderilen ZPL komutunu göster ve gelişmiş kontrolleri etkinleştir',
       smartSnap: 'Akıllı hizalama',
       smartSnapHint: 'Sürükleme sırasında diğer nesnelere hizala. Atlamak için Ctrl/Cmd basılı tutun.',
       privacyHeading: 'Gizlilik',

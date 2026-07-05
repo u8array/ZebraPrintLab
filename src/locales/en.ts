@@ -340,6 +340,9 @@ const en = {
 
   properties: {
     positionSection: 'Position',
+    anchorMode: 'Anchor',
+    anchorTopLeftHint: 'Position is the top-left corner',
+    anchorBaselineHint: 'Position is the baseline (bottom edge for shapes and barcodes)',
     optionsSection: 'Options',
     contentSection: 'Content',
     settingsSection: 'Settings',
@@ -644,7 +647,7 @@ const en = {
     app: {
       editorHeading: 'Editor',
       powerUser: 'Power-user mode',
-      powerUserHint: 'Show the emitted ZPL command next to each property',
+      powerUserHint: 'Show the generated ZPL command next to each property and unlock advanced controls',
       smartSnap: 'Smart snapping',
       smartSnapHint: 'Align to other objects while dragging. Hold Ctrl/Cmd to bypass.',
       privacyHeading: 'Privacy',

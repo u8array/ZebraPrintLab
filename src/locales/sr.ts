@@ -340,6 +340,9 @@ const sr = {
 
   properties: {
     positionSection: 'Položaj',
+    anchorMode: 'Сидро',
+    anchorTopLeftHint: 'Положај је горњи леви угао',
+    anchorBaselineHint: 'Положај је основна линија (доња ивица за облике и бар-кодове)',
     optionsSection: 'Опције',
     contentSection: 'Садржај',
     settingsSection: 'Подешавања',
@@ -644,7 +647,7 @@ const sr = {
     app: {
       editorHeading: 'Уређивач',
       powerUser: 'Напредни кориснички режим',
-      powerUserHint: 'Прикажи генерисану ZPL наредбу поред сваке особине',
+      powerUserHint: 'Прикажи генерисану ZPL наредбу поред сваке особине и откључај напредне контроле',
       smartSnap: 'Паметно причвршћивање',
       smartSnapHint: 'Поравнај са другим објектима при превлачењу. Држите Ctrl/Cmd за заобилажење.',
       privacyHeading: 'Приватност',

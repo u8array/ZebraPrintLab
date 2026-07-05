@@ -340,6 +340,9 @@ const ro = {
 
   properties: {
     positionSection: 'Poziție',
+    anchorMode: 'Ancoră',
+    anchorTopLeftHint: 'Poziția este colțul din stânga sus',
+    anchorBaselineHint: 'Poziția este linia de bază (marginea inferioară pentru forme și coduri de bare)',
     optionsSection: 'Opțiuni',
     contentSection: 'Conținut',
     settingsSection: 'Setări',
@@ -644,7 +647,7 @@ const ro = {
     app: {
       editorHeading: 'Editor',
       powerUser: 'Modul utilizator avansat',
-      powerUserHint: 'Afișează comanda ZPL emisă lângă fiecare proprietate',
+      powerUserHint: 'Afișează comanda ZPL emisă lângă fiecare proprietate și deblochează controalele avansate',
       smartSnap: 'Fixare inteligentă',
       smartSnapHint: 'Aliniați la alte obiecte în timp ce trageți. Țineți Ctrl/Cmd pentru a ocoli.',
       privacyHeading: 'Confidențialitate',

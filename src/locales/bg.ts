@@ -340,6 +340,9 @@ const bg = {
 
   properties: {
     positionSection: 'Позиция',
+    anchorMode: 'Котва',
+    anchorTopLeftHint: 'Позицията е горният ляв ъгъл',
+    anchorBaselineHint: 'Позицията е базовата линия (долен ръб за форми и баркодове)',
     optionsSection: 'Опции',
     contentSection: 'Съдържание',
     settingsSection: 'Настройки',
@@ -644,7 +647,7 @@ const bg = {
     app: {
       editorHeading: 'Редактор',
       powerUser: 'Режим за напреднали потребители',
-      powerUserHint: 'Показва генерирания ZPL команд до всяко свойство',
+      powerUserHint: 'Показва генерираната ZPL команда до всяко свойство и отключва разширени контроли',
       smartSnap: 'Интелигентно закрепване',
       smartSnapHint: 'Подравнява към другите обекти при плъзгане. Задръжте Ctrl/Cmd за заобикаляне.',
       privacyHeading: 'Поверителност',

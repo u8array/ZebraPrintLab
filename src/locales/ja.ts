@@ -340,6 +340,9 @@ const ja = {
 
   properties: {
     positionSection: '位置',
+    anchorMode: 'アンカー',
+    anchorTopLeftHint: '位置は左上の隅です',
+    anchorBaselineHint: '位置はベースライン（図形やバーコードの下端）です',
     optionsSection: 'オプション',
     contentSection: 'コンテンツ',
     settingsSection: '設定',
@@ -644,7 +647,7 @@ const ja = {
     app: {
       editorHeading: 'エディター',
       powerUser: 'パワーユーザーモード',
-      powerUserHint: '各プロパティの横に出力されるZPLコマンドを表示する',
+      powerUserHint: '各プロパティの横に出力されるZPLコマンドを表示し、高度なコントロールを有効にする',
       smartSnap: 'スマートスナップ',
       smartSnapHint: 'ドラッグ中に他のオブジェクトに合わせて整列します。Ctrl/Cmdを押し続けると無効になります。',
       privacyHeading: 'プライバシー',
