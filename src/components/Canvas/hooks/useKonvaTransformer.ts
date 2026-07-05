@@ -1134,8 +1134,8 @@ export function useKonvaTransformer({
         commit = {
           restore: { x: sr.snapshot.x, y: sr.snapshot.y, props: { width: sr.snapshot.width, height: sr.snapshot.height } },
           final: {
-            x: Math.round(pinAnchoredEdge(!!edges?.left, cur.x, sp.width, width)),
-            y: Math.round(pinAnchoredEdge(!!edges?.top, cur.y, sp.height, height)),
+            x: pinAnchoredEdge(!!edges?.left, sr.snapshot.x, sr.snapshot.width, width),
+            y: pinAnchoredEdge(!!edges?.top, sr.snapshot.y, sr.snapshot.height, height),
             props: { width, height },
           },
         };
