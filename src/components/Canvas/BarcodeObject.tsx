@@ -20,6 +20,7 @@ import { resolveHriAbove, gs1HriFontDots } from "../../lib/barcodeHri";
 import { gs1ContentToElementString } from "../../lib/gs1";
 import { placeholderContentFor } from "../../registry/placeholderContent";
 import { getObjectStringContent } from "../../lib/variableBinding";
+import { hasTemplateMarkers } from "../../lib/fnTemplate";
 import { objectRotation } from "../../registry/rotation";
 import { rotatedGroupTransform } from "./rotatedGroupTransform";
 import { buildEanUpcDigitOverlay } from "./eanUpcDigitNodes";
@@ -50,18 +51,19 @@ function resolveMwValue<T>(
     : v;
 }
 
-/** Warning marker over the blank-field sample: the soft tint mirrors the
- *  fallback-value tint, the dotted frame the empty-text placeholder. Full-
- *  strength bars keep the drop ghost legible (an alpha fade would dim twice
- *  under the ghost's own opacity). */
-function PlaceholderFrame({ width, height }: { width: number; height: number }) {
+/** State marker over sample bars: warning orange for a blank field, error red
+ *  for uncodable content. The soft tint mirrors the fallback-value tint, the
+ *  dotted frame the empty-text placeholder. Full-strength bars keep the drop
+ *  ghost legible (an alpha fade would dim twice under the ghost's own
+ *  opacity). */
+function StateFrame({ width, height, color }: { width: number; height: number; color: string }) {
   return (
     <>
-      <Rect width={width} height={height} fill={CANVAS_WARNING} opacity={0.12} listening={false} />
+      <Rect width={width} height={height} fill={color} opacity={0.12} listening={false} />
       <Rect
         width={width}
         height={height}
-        stroke={CANVAS_WARNING}
+        stroke={color}
         strokeWidth={PLACEHOLDER_STROKE_PX}
         lineCap="round"
         dash={PLACEHOLDER_DASH}
@@ -119,24 +121,39 @@ export function BarcodeObject({
   const blank = contentRaw.trim() === "";
   const blankWarns = useBlankFieldWarns(obj.id);
   const warnBlank = blank && blankWarns;
-  const placeholder = blank ? placeholderContentFor(obj.type, obj.props) ?? "" : null;
-  const renderObj =
-    placeholder !== null ? ({ ...obj, props: { ...obj.props, content: placeholder } } as typeof obj) : obj;
-  const effectiveContent = placeholder ?? contentRaw;
+  const sample = placeholderContentFor(obj.type, obj.props) ?? "";
+  const withSample = { ...obj, props: { ...obj.props, content: sample } } as typeof obj;
+
+  // Same encoder as the renderFailed preflight, on the same marker-resolved
+  // obj, so the canvas and the badge agree on what's codable.
+  const primary = renderBarcodeCanvas(blank ? withSample : obj, scale, dpmm);
+  // Uncodable content falls back to the sample bars so the object keeps its
+  // footprint instead of collapsing to the error box; the encoder message
+  // lives in the renderFailed preflight, not on the canvas.
+  const codableFail = !blank && primary.error !== null && sample !== "";
+  const secondary = codableFail ? renderBarcodeCanvas(withSample, scale, dpmm) : null;
+  // Prefer the sample render only if it actually produced a canvas; else the
+  // primary carries the real error to the fallback box (sample also failed).
+  const source = secondary?.canvas ? secondary : primary;
+  const usingSample = source === secondary;
+  const { canvas: barcodeCanvas, error: errorMsg } = source;
+  const showSample = blank || usingSample;
+  // Red "content is wrong" frame only for genuine content: an unresolved
+  // «marker» in schema-preview mode is expected to be uncodable (it resolves
+  // fine in preview/print), so it shows the sample bars without the alarm.
+  const invalid = usingSample && !hasTemplateMarkers(contentRaw);
+  const displayObj = showSample ? withSample : obj;
+  const effectiveContent = showSample ? sample : contentRaw;
   const rawContent = gs1Hri ? gs1ContentToElementString(effectiveContent) : effectiveContent;
   const printInterpEnabled =
     !ObjectRegistry[obj.type]?.interpretationLocked &&
     !!(obj.props as { printInterpretation?: boolean }).printInterpretation;
 
-  // Shared with the preflight encode check (barcodeEncodeFindings) so the
-  // displayed placeholder and the badge can't disagree on what's codable.
-  const { canvas: barcodeCanvas, error: errorMsg } = renderBarcodeCanvas(renderObj, scale, dpmm);
-
   // Single object holding the full ZPL footprint (w/h) and the bar
   // sub-rectangle (barW/barH/barLeftPx/barTopPx). Defaults zero out
   // when the bwip canvas hasn't rendered yet.
   const dim: BarcodeDisplaySize = barcodeCanvas
-    ? getDisplaySize(renderObj, barcodeCanvas, scale, dpmm)
+    ? getDisplaySize(displayObj, barcodeCanvas, scale, dpmm)
     : { w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0,
         upright: { w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0 } };
 
@@ -205,6 +222,11 @@ export function BarcodeObject({
   // top-left and KImage offsets back to land bars at FO.
   const x = offsetX + dotsToPx(displayX, scale, dpmm) - dim.barLeftPx;
   const y = offsetY + dotsToPx(displayY, scale, dpmm) - dim.barTopPx;
+
+  // Dotted frame over the sample bars: orange for a blank (unconfigured) field,
+  // red for genuinely uncodable content. Shared by both render branches.
+  const showStateFrame = warnBlank || invalid;
+  const stateFrameColor = invalid ? colors.error : CANVAS_WARNING;
 
   // Whole-object drag (snap + commit) is centralized in the drag controller;
   // the commit is a pure translation, so the bar-anchor offset math is moot.
@@ -440,7 +462,7 @@ export function BarcodeObject({
               />
             )}
             <Group key={`hri-${fontVersion}`} ref={setOverlayGroupRef}>{overlayContent}</Group>
-            {warnBlank && <PlaceholderFrame width={Math.max(ub.w, 1)} height={Math.max(ub.h, 1)} />}
+            {showStateFrame && <StateFrame width={Math.max(ub.w, 1)} height={Math.max(ub.h, 1)} color={stateFrameColor} />}
           </Group>
         </Group>
       );
@@ -473,7 +495,7 @@ export function BarcodeObject({
             strokeWidth={isSelected ? 2 : 0}
             strokeScaleEnabled={false}
           />
-          {warnBlank && <PlaceholderFrame width={Math.max(ub.w, 1)} height={Math.max(ub.h, 1)} />}
+          {showStateFrame && <StateFrame width={Math.max(ub.w, 1)} height={Math.max(ub.h, 1)} color={stateFrameColor} />}
         </Group>
       </Group>
     );
