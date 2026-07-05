@@ -32,50 +32,61 @@ describe("barcodeMwReflowGeometry", () => {
     ...over,
   });
 
-  it("returns null inside the current module band (same rounding as the box snap)", () => {
-    expect(barcodeMwReflowGeometry(start(), 2, 240)).toBeNull();
-    expect(barcodeMwReflowGeometry(start(), 2, 200)).toBeNull();
+  it("holds the current band's linear frame inside a module band", () => {
+    // 240 px = 1.2x start extent, still module 2: the geometry reports the
+    // band frame (200 px) so the caller can pin the node mid-band, which is
+    // what keeps the module raster in rotated views without boundBoxFunc.
+    expect(barcodeMwReflowGeometry(start(), 240)).toEqual({
+      moduleWidth: 2, targetXPx: 100, targetYPx: 50, linearExtentPx: 200,
+    });
+    expect(barcodeMwReflowGeometry(start(), 200)).toEqual({
+      moduleWidth: 2, targetXPx: 100, targetYPx: 50, linearExtentPx: 200,
+    });
   });
 
   it("right-handle crossing keeps the left edge and bumps the module width", () => {
-    const geo = barcodeMwReflowGeometry(start(), 2, 300);
+    const geo = barcodeMwReflowGeometry(start(), 300);
     expect(geo).toEqual({ moduleWidth: 3, targetXPx: 100, targetYPx: 50, linearExtentPx: 300 });
   });
 
   it("left-handle crossing keeps the right edge fixed", () => {
-    const geo = barcodeMwReflowGeometry(start({ edges: edges({ left: true }) }), 2, 300);
+    const geo = barcodeMwReflowGeometry(start({ edges: edges({ left: true }) }), 300);
     // Linear width 300 pinned to rightX 300: x = 0.
     expect(geo).toEqual({ moduleWidth: 3, targetXPx: 0, targetYPx: 50, linearExtentPx: 300 });
   });
 
   it("stays quantised on the TOTAL extent after earlier bakes (no oscillation)", () => {
-    // Baked at 3, pointer parked at 1.5x the start extent: still module 3, no
-    // re-bake even though the rendered pixel width may differ stepwise.
-    expect(barcodeMwReflowGeometry(start(), 3, 300)).toBeNull();
-    // Pointer moves on to 2x: crossing to 4 from the same start baseline.
-    const geo = barcodeMwReflowGeometry(start(), 3, 400);
+    // Pointer parked at 1.5x the start extent: still module 3 on the same
+    // start baseline, regardless of what was baked meanwhile.
+    expect(barcodeMwReflowGeometry(start(), 300)?.moduleWidth).toBe(3);
+    // Pointer moves on to 2x: module 4 from the same start baseline.
+    const geo = barcodeMwReflowGeometry(start(), 400);
     expect(geo).toEqual({ moduleWidth: 4, targetXPx: 100, targetYPx: 50, linearExtentPx: 400 });
   });
 
-  it("clamps at the ^BY bounds and reports no change there", () => {
-    expect(barcodeMwReflowGeometry(start({ mw0: 10 }), 10, 600)).toBeNull();
-    expect(barcodeMwReflowGeometry(start({ mw0: 1 }), 1, 10)).toBeNull();
+  it("clamps at the ^BY bounds and pins the frame there (hard stop)", () => {
+    expect(barcodeMwReflowGeometry(start({ mw0: 10 }), 600)).toEqual({
+      moduleWidth: 10, targetXPx: 100, targetYPx: 50, linearExtentPx: 200,
+    });
+    expect(barcodeMwReflowGeometry(start({ mw0: 1 }), 10)).toEqual({
+      moduleWidth: 1, targetXPx: 100, targetYPx: 50, linearExtentPx: 200,
+    });
   });
 
   it("R/B rotations quantise the vertical axis and pin top/bottom", () => {
     const rb = start({ rotation: "R", edges: edges({ bottom: true }) });
     // Vertical extent 80 px at mw 2; 120 px crosses to 3, top fixed.
-    const geo = barcodeMwReflowGeometry(rb, 2, 120);
+    const geo = barcodeMwReflowGeometry(rb, 120);
     expect(geo).toEqual({ moduleWidth: 3, targetXPx: 100, targetYPx: 50, linearExtentPx: 120 });
     const topDrag = start({ rotation: "B", edges: edges({ top: true }) });
-    const geoTop = barcodeMwReflowGeometry(topDrag, 2, 120);
+    const geoTop = barcodeMwReflowGeometry(topDrag, 120);
     // Bottom fixed at 130: new top = 130 - 120 = 10.
     expect(geoTop).toEqual({ moduleWidth: 3, targetXPx: 100, targetYPx: 10, linearExtentPx: 120 });
   });
 
   it("rejects degenerate extents", () => {
-    expect(barcodeMwReflowGeometry(start(), 2, 0)).toBeNull();
-    expect(barcodeMwReflowGeometry(start({ rightX: 100 }), 2, 300)).toBeNull();
+    expect(barcodeMwReflowGeometry(start(), 0)).toBeNull();
+    expect(barcodeMwReflowGeometry(start({ rightX: 100 }), 300)).toBeNull();
   });
 });
 
