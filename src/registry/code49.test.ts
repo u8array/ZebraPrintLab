@@ -99,3 +99,22 @@ describe('code49 — commitTransform height clamp on resize drag', () => {
     expect(result?.height).toBeLessThanOrEqual(100);
   });
 });
+
+describe('code49 — commitTransform at identity scale (live-reflow contract)', () => {
+  // The barcode live reflow bakes per-tick heights and re-commits them through
+  // commitTransform with sx=sy=1 and identity snap: the call must act as a
+  // pure range clamp, and must not disturb already-valid props.
+  const identityCtx = { sx: 1, sy: 1, snap: (v: number) => v, nodeHeight: 0, anchor: null };
+
+  it('clamps an out-of-range baked height at both bounds', () => {
+    const low = code49.commitTransform?.(baseObj({ height: 10, moduleWidth: 2 }), identityCtx);
+    expect(low?.height).toBe(16);
+    const high = code49.commitTransform?.(baseObj({ height: 300, moduleWidth: 2 }), identityCtx);
+    expect(high?.height).toBe(100);
+  });
+
+  it('passes valid props through unchanged', () => {
+    const result = code49.commitTransform?.(baseObj({ height: 40, moduleWidth: 3 }), identityCtx);
+    expect(result).toMatchObject({ height: 40, moduleWidth: 3 });
+  });
+});

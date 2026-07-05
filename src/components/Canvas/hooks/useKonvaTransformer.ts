@@ -19,12 +19,16 @@ import {
   applyHeightSnap,
   applyModuleWidthSnap,
   applyUniformModuleSnap,
+  barcodeHeightReflowGeometry,
+  barcodeMwReflowGeometry,
   computeNewModules,
   pinInactiveEdges,
   positionDidMove,
   forceSquareBox,
   shrinkingBelowFloor,
   type ActiveEdgeFlags,
+  type BarcodeHeightReflowStart,
+  type BarcodeMwReflowStart,
   type BoundingBox,
   type TransformAnchor,
 } from "../transformerGeometry";
@@ -34,7 +38,7 @@ import {
   renderedTopLeftFromModel,
 } from "../transformPosition";
 import { isBarcode } from "../../../lib/objectBounds";
-import { objectRotation } from "../../../registry/rotation";
+import { isAxisSwapped, objectRotation } from "../../../registry/rotation";
 import { getMeasuredSnapshot } from "../measuredBoundsCache";
 import {
   computeResizeSnap,
@@ -225,6 +229,10 @@ export interface TransformerState {
   onTransformEnd: () => void;
 }
 
+/** Pre-drag snapshot + collapsed final for a one-entry reflow commit, or null
+ *  when the drag baked nothing. */
+type ReflowCommit = { restore: ObjectChanges; final: ObjectChanges } | null;
+
 export function useKonvaTransformer({
   transformerRef,
   stageRef,
@@ -303,6 +311,33 @@ export function useKonvaTransformer({
     changed: boolean;
   } | null>(null);
 
+  // 1D barcode live reflow, both resize axes: the moduleWidth axis re-renders
+  // on each integer module crossing, the bar-height axis on each integer dot,
+  // so bars, HRI and text zone always draw at their true size instead of
+  // stretching the old bitmap until release.
+  const barcodeReflowRef = useRef<
+    | (BarcodeMwReflowStart & {
+        mode: "mw";
+        uprightW0: number;
+        uprightH0: number;
+        snapshot: { x: number; y: number; moduleWidth: number; height?: number };
+        changed: boolean;
+      })
+    | (BarcodeHeightReflowStart & {
+        mode: "height";
+        uprightW0: number;
+        snapshot: { x: number; y: number; height: number };
+        changed: boolean;
+      })
+    | null
+  >(null);
+
+  // True while any live reflow (text block, shape, or barcode) owns the drag.
+  const anyReflowActive = () =>
+    liveReflowRef.current !== null ||
+    shapeReflowRef.current !== null ||
+    barcodeReflowRef.current !== null;
+
   // Block resize mode resolved once at drag start (panel mode + Alt). Reused at
   // commit so toggling Alt mid-drag can't make start and end disagree.
   const blockResizeModeRef = useRef<"frame" | "glyph">("frame");
@@ -329,7 +364,7 @@ export function useKonvaTransformer({
   // idempotent set, so the no-active-drag case is a harmless no-op.
   useEffect(() => {
     return () => {
-      if (liveReflowRef.current || shapeReflowRef.current) {
+      if (anyReflowActive()) {
         useLabelStore.temporal.getState().resume();
       }
     };
@@ -363,7 +398,7 @@ export function useKonvaTransformer({
     // During a live reflow the per-tick store update re-runs this effect;
     // re-attaching (.nodes()) mid-drag aborts the gesture, so skip it. The
     // reflow handler keeps the transformer in sync via forceUpdate().
-    if (liveReflowRef.current || shapeReflowRef.current) return;
+    if (anyReflowActive()) return;
     if (selectedIds.length === 0) {
       transformerRef.current.nodes([]);
       return;
@@ -461,9 +496,35 @@ export function useKonvaTransformer({
     activeEdgesRef.current = null;
     liveReflowRef.current = null;
     shapeReflowRef.current = null;
+    barcodeReflowRef.current = null;
     glyphBlockStartRectRef.current = null;
     blockResizeModeRef.current = "frame";
     setGuides([]);
+  }
+
+  /** Collapse a paused live-reflow drag into one undo entry: reset any residual
+   *  node scale, and when the drag baked something (`commit` non-null), restore
+   *  the pre-drag snapshot while still paused, resume, then re-apply the final
+   *  geometry as a single tracked change. Always resumes + cleans up, even on a
+   *  throw (resume is idempotent). */
+  function collapseReflowToOneEntry(
+    id: string | undefined,
+    commit: ReflowCommit,
+  ) {
+    const node = id ? stageRef.current?.findOne<Konva.Node>(`#${id}`) : null;
+    node?.scaleX(1);
+    node?.scaleY(1);
+    const temporal = useLabelStore.temporal.getState();
+    try {
+      if (id && commit) {
+        updateObject(id, commit.restore);
+        temporal.resume();
+        updateObject(id, commit.final);
+      }
+    } finally {
+      temporal.resume();
+      cleanupTransformState();
+    }
   }
 
   const onTransformStart = () => {
@@ -639,6 +700,66 @@ export function useKonvaTransformer({
       };
       useLabelStore.temporal.getState().pause();
     }
+    // 1D live reflow, armed per grabbed axis: moduleWidth axis (screen X for
+    // N/I, screen Y for R/B) re-renders per module crossing, the bar-height
+    // axis per dot. Needs the measured footprint for the start box; an
+    // unmeasured barcode falls back to bake-on-end. Gated on an unrotated view:
+    // under viewRotation != 0 boundBoxFunc bails to native Konva, so the per-tick
+    // model inversion would read rotated-frame coords (mirrors the ^FB reflow).
+    barcodeReflowRef.current = null;
+    if (obj && !isGroup(obj) && BARCODE_1D_TYPES.has(obj.type) && viewRotation === 0) {
+      const edges = activeEdgesRef.current;
+      const rot = objectRotation(obj.props);
+      const swapped = isAxisSwapped(rot);
+      const cache = getMeasuredSnapshot().get(singleId);
+      const p = obj.props as { moduleWidth?: number; height?: number };
+      if (edges && cache) {
+        const leftX = node.x();
+        const topY = node.y();
+        const box = {
+          leftX,
+          topY,
+          rightX: leftX + dotsToPx(cache.width, scale, dpmm),
+          bottomY: topY + dotsToPx(cache.height, scale, dpmm),
+        };
+        const uprightH0 = cache.uprightBarHDots ?? p.height ?? 0;
+        const mwAxisActive = swapped ? edges.top || edges.bottom : edges.left || edges.right;
+        const heightAxisActive = swapped ? edges.left || edges.right : edges.top || edges.bottom;
+        if (mwAxisActive && typeof p.moduleWidth === "number" && p.moduleWidth > 0) {
+          barcodeReflowRef.current = {
+            mode: "mw",
+            rotation: rot,
+            edges,
+            ...box,
+            mw0: p.moduleWidth,
+            uprightW0: cache.uprightBarWDots ?? 0,
+            uprightH0,
+            // height rides along: normalizeChanges may re-clamp it as a side
+            // effect of the per-tick moduleWidth writes (code49), and the undo
+            // baseline must restore that too.
+            snapshot: { x: obj.x, y: obj.y, moduleWidth: p.moduleWidth, height: p.height },
+            changed: false,
+          };
+          useLabelStore.temporal.getState().pause();
+        } else if (heightAxisActive && typeof p.height === "number" && p.height > 0 && uprightH0 > 0) {
+          // The transformer frames the bars only, so per tick the bar height IS
+          // the frame extent; the constant non-bar zone (HRI text, EAN guard
+          // tails) is added back solely to pin the anchored bbox edge.
+          const axisFootprintDots = swapped ? cache.width : cache.height;
+          barcodeReflowRef.current = {
+            mode: "height",
+            rotation: rot,
+            edges,
+            ...box,
+            zonePx: Math.max(0, dotsToPx(axisFootprintDots - uprightH0, scale, dpmm)),
+            uprightW0: cache.uprightBarWDots ?? 0,
+            snapshot: { x: obj.x, y: obj.y, height: p.height },
+            changed: false,
+          };
+          useLabelStore.temporal.getState().pause();
+        }
+      }
+    }
   };
 
   // Per-tick live reflow for a frame-mode ^FB block: convert the group scale
@@ -702,6 +823,113 @@ export function useKonvaTransformer({
       node.scaleY(1);
       node.x(geo.targetXPx);
       node.y(geo.targetYPx);
+      transformerRef.current?.forceUpdate();
+      return;
+    }
+
+    // 1D barcode reflow: bake the next size step the moment the frame crosses
+    // it, so bars, HRI and text zone re-render at their true size instead of
+    // stretching. The moduleWidth axis quantises from the TOTAL drag extent
+    // (same inputs as the box snap) because rendered pixel widths are stepwise
+    // in moduleWidth; an incremental-scale quantiser would oscillate wherever
+    // adjacent module widths render at the same pixel width.
+    const br = barcodeReflowRef.current;
+    if (br) {
+      const swapped = isAxisSwapped(br.rotation);
+      const natural = node.getClientRect({
+        skipTransform: true,
+        skipStroke: true,
+        skipShadow: true,
+      });
+      if (br.mode === "mw") {
+        const mwCurrent = (cur.props as { moduleWidth?: number }).moduleWidth;
+        if (typeof mwCurrent !== "number" || !(mwCurrent > 0)) return;
+        const frameExtentPx = swapped ? natural.height * sy : natural.width * sx;
+        const geo = barcodeMwReflowGeometry(br, mwCurrent, frameExtentPx);
+        if (!geo) return;
+        const ratio = geo.moduleWidth / br.mw0;
+        // Same inversion as the end commit for the ACTIVE axis; the anchored
+        // axis keeps its pre-drag model value (mirrors the end commit's
+        // snapAxis), else the bar-zone offset (above-HRI, rotated EAN) that
+        // the FO inversion ignores would corrupt the stored anchor coordinate.
+        const model = modelPositionFromRenderedTopLeft(
+          cur,
+          pxToDots(geo.targetXPx - objectsOffsetX, scale, dpmm),
+          pxToDots(geo.targetYPx - labelOffsetY, scale, dpmm),
+          br.uprightW0 * ratio,
+          br.uprightH0,
+        );
+        flushSync(() => {
+          updateObject(id, {
+            x: swapped ? br.snapshot.x : model.x,
+            y: swapped ? model.y : br.snapshot.y,
+            props: { moduleWidth: geo.moduleWidth },
+          });
+        });
+        br.changed = true;
+        // Fit the re-rendered content into the frame's linear module model:
+        // the residual is 1 wherever pixels-per-module are exact and only
+        // deviates at zoom levels where adjacent module widths render at the
+        // same pixel width (there a crisp distinct width does not exist).
+        const rendered = node.getClientRect({
+          skipTransform: true,
+          skipStroke: true,
+          skipShadow: true,
+        });
+        const renderedExtent = swapped ? rendered.height : rendered.width;
+        const residual = renderedExtent > 0 ? geo.linearExtentPx / renderedExtent : 1;
+        node.scaleX(swapped ? 1 : residual);
+        node.scaleY(swapped ? residual : 1);
+        node.x(geo.targetXPx);
+        node.y(geo.targetYPx);
+        transformerRef.current?.forceUpdate();
+        return;
+      }
+      // Height axis: continuous, baked per integer dot. Each tick routes
+      // through the registry commit (identity scale + identity snap = clamp
+      // only) so per-type ranges hold mid-drag: code49 clamps into bwip's
+      // 8..50-module window, where an unclamped write would error the whole
+      // render. The pin recomputes from the committed height so the anchored
+      // edge lands exactly on the rendered size.
+      const frameExtentPx = swapped ? natural.width * sx : natural.height * sy;
+      const geo = barcodeHeightReflowGeometry(br, frameExtentPx);
+      if (!geo) return;
+      const newHeightDots = pxToDots(geo.barExtentPx, scale, dpmm);
+      const hCurrent = (cur.props as { height?: number }).height;
+      if (!(newHeightDots >= 1)) return;
+      const commitFn = getEntry(cur.type)?.commitTransform;
+      const candidate = { ...cur, props: { ...cur.props, height: newHeightDots } } as typeof cur;
+      const committed = commitFn?.(candidate, {
+        sx: 1,
+        sy: 1,
+        snap: (n: number) => n,
+        nodeHeight: 0,
+        anchor: null,
+        resizeMode: blockResizeModeRef.current,
+      }) as { height?: number } | undefined;
+      const hNext = committed?.height ?? newHeightDots;
+      if (hNext === hCurrent) return;
+      const pin = barcodeHeightReflowGeometry(br, dotsToPx(hNext, scale, dpmm));
+      if (!pin) return;
+      const model = modelPositionFromRenderedTopLeft(
+        cur,
+        pxToDots(pin.targetXPx - objectsOffsetX, scale, dpmm),
+        pxToDots(pin.targetYPx - labelOffsetY, scale, dpmm),
+        br.uprightW0,
+        hNext,
+      );
+      flushSync(() => {
+        updateObject(id, {
+          x: swapped ? model.x : br.snapshot.x,
+          y: swapped ? br.snapshot.y : model.y,
+          props: { height: hNext },
+        });
+      });
+      br.changed = true;
+      node.scaleX(1);
+      node.scaleY(1);
+      node.x(pin.targetXPx);
+      node.y(pin.targetYPx);
       transformerRef.current?.forceUpdate();
       return;
     }
@@ -823,91 +1051,92 @@ export function useKonvaTransformer({
   };
 
   const onTransformEnd = () => {
-    // Live reflow applied blockWidth/blockLines + position each tick while undo
-    // recording was paused. Collapse the whole drag into one history entry:
-    // restore the pre-drag snapshot (still paused), resume, then re-apply the
-    // final geometry as a single tracked change.
+    // Each live-reflow branch derives its (restore, final) prop delta and hands
+    // it to collapseReflowToOneEntry, which folds the paused per-tick writes into
+    // one undo entry (or resets the residual scale and bails when nothing baked).
     const lr = liveReflowRef.current;
     if (lr) {
       const id = selectedIds[0];
-      // A final tick that early-returned (e.g. node briefly unresolved) can
-      // leave a residual scale; reset it so the box doesn't stay stretched.
-      const lrNode = id ? stageRef.current?.findOne<Konva.Node>(`#${id}`) : null;
-      lrNode?.scaleX(1);
-      lrNode?.scaleY(1);
       const cur = id ? findObjectById(getCurrentObjects(), id) : undefined;
-      const temporal = useLabelStore.temporal.getState();
-      // try/finally so a throw can't leave undo paused (resume is idempotent).
-      try {
-        if (lr.changed && id && cur && !isGroup(cur)) {
-          const cp = cur.props as { blockWidth?: number; blockLines?: number; blockHeight?: number };
-          // ^TB collapses width + clip height; ^FB width + line count.
-          const secondAxis = lr.mode === "tb"
-            ? { blockHeight: cp.blockHeight }
-            : { blockLines: cp.blockLines };
-          const snapAxis = lr.mode === "tb"
-            ? { blockHeight: lr.snapshot.blockHeight }
-            : { blockLines: lr.snapshot.blockLines };
-          const final = {
-            x: cur.x,
-            y: cur.y,
-            props: { blockWidth: cp.blockWidth, ...secondAxis },
-          };
-          updateObject(id, {
-            x: lr.snapshot.x,
-            y: lr.snapshot.y,
-            props: {
-              blockWidth: lr.snapshot.blockWidth,
-              ...snapAxis,
-            },
-          });
-          temporal.resume();
-          updateObject(id, final);
-        }
-      } finally {
-        temporal.resume();
-        cleanupTransformState();
+      let commit: ReflowCommit = null;
+      if (lr.changed && id && cur && !isGroup(cur)) {
+        const cp = cur.props as { blockWidth?: number; blockLines?: number; blockHeight?: number };
+        // ^TB collapses width + clip height; ^FB width + line count.
+        const secondAxis = lr.mode === "tb" ? { blockHeight: cp.blockHeight } : { blockLines: cp.blockLines };
+        const snapAxis = lr.mode === "tb" ? { blockHeight: lr.snapshot.blockHeight } : { blockLines: lr.snapshot.blockLines };
+        commit = {
+          restore: { x: lr.snapshot.x, y: lr.snapshot.y, props: { blockWidth: lr.snapshot.blockWidth, ...snapAxis } },
+          final: { x: cur.x, y: cur.y, props: { blockWidth: cp.blockWidth, ...secondAxis } },
+        };
       }
+      collapseReflowToOneEntry(id, commit);
       return;
     }
-    // Shape live reflow: same collapse-to-one-entry as the text block. Dims were
-    // kept float during the drag; round + snap them once here for the commit.
+    const br = barcodeReflowRef.current;
+    if (br) {
+      const id = selectedIds[0];
+      const cur = id ? findObjectById(getCurrentObjects(), id) : undefined;
+      let commit: ReflowCommit = null;
+      if (br.changed && id && cur && !isGroup(cur)) {
+        const cp = cur.props as { moduleWidth?: number; height?: number };
+        // Final goes through the registry commit at identity scale (= re-commit
+        // the baked props) so per-type contracts hold: grid snap for height,
+        // the ^BY clamp, code49's bwip range clamp. The fallback mirrors the
+        // generic formula for entries without a commitTransform.
+        const commitFn = getEntry(cur.type)?.commitTransform;
+        const finalProps = commitFn
+          ? commitFn(cur, {
+              sx: 1,
+              sy: 1,
+              snap,
+              nodeHeight: 0,
+              anchor: null,
+              resizeMode: blockResizeModeRef.current,
+            })
+          : br.mode === "mw"
+            ? { moduleWidth: cp.moduleWidth }
+            : { height: Math.max(1, snap(Math.round(cp.height ?? 1))) };
+        commit = {
+          restore: {
+            x: br.snapshot.x,
+            y: br.snapshot.y,
+            props:
+              br.mode === "mw"
+                ? typeof br.snapshot.height === "number"
+                  ? { moduleWidth: br.snapshot.moduleWidth, height: br.snapshot.height }
+                  : { moduleWidth: br.snapshot.moduleWidth }
+                : { height: br.snapshot.height },
+          },
+          final: { x: cur.x, y: cur.y, props: finalProps },
+        };
+      }
+      collapseReflowToOneEntry(id, commit);
+      return;
+    }
     const sr = shapeReflowRef.current;
     if (sr) {
       const id = selectedIds[0];
-      const srNode = id ? stageRef.current?.findOne<Konva.Node>(`#${id}`) : null;
-      srNode?.scaleX(1);
-      srNode?.scaleY(1);
       const cur = id ? findObjectById(getCurrentObjects(), id) : undefined;
-      const temporal = useLabelStore.temporal.getState();
-      // try/finally so a throw can't leave undo paused (resume is idempotent).
-      try {
-        if (sr.changed && id && cur && !isGroup(cur)) {
-          const sp = cur.props as { width: number; height: number };
-          // Same snap/round/clamp contract as commitWidthHeightTransform, applied
-          // to the already-baked float dims.
-          const width = Math.max(1, snap(Math.round(sp.width)));
-          const height = Math.max(1, snap(Math.round(sp.height)));
-          // Pin the anchored edge: when dragging left/top, derive x/y from the
-          // snapped size so the opposite edge doesn't walk by the snap delta.
-          const edges = activeEdgesRef.current;
-          const final = {
+      let commit: ReflowCommit = null;
+      if (sr.changed && id && cur && !isGroup(cur)) {
+        const sp = cur.props as { width: number; height: number };
+        // Same snap/round/clamp contract as commitWidthHeightTransform, applied
+        // to the already-baked float dims.
+        const width = Math.max(1, snap(Math.round(sp.width)));
+        const height = Math.max(1, snap(Math.round(sp.height)));
+        // Pin the anchored edge: when dragging left/top, derive x/y from the
+        // snapped size so the opposite edge doesn't walk by the snap delta.
+        const edges = activeEdgesRef.current;
+        commit = {
+          restore: { x: sr.snapshot.x, y: sr.snapshot.y, props: { width: sr.snapshot.width, height: sr.snapshot.height } },
+          final: {
             x: Math.round(edges?.left ? cur.x + sp.width - width : cur.x),
             y: Math.round(edges?.top ? cur.y + sp.height - height : cur.y),
             props: { width, height },
-          };
-          updateObject(id, {
-            x: sr.snapshot.x,
-            y: sr.snapshot.y,
-            props: { width: sr.snapshot.width, height: sr.snapshot.height },
-          });
-          temporal.resume();
-          updateObject(id, final);
-        }
-      } finally {
-        temporal.resume();
-        cleanupTransformState();
+          },
+        };
       }
+      collapseReflowToOneEntry(id, commit);
       return;
     }
     if (selectedIds.length !== 1 || !selectedIds[0] || !stageRef.current) {
