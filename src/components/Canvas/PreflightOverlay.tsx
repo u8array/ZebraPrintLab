@@ -4,6 +4,7 @@ import { getEntry } from "../../registry";
 import type { LeafObject } from "../../registry";
 import { useT } from "../../lib/useT";
 import { useDismiss } from "../../hooks/useDismiss";
+import { Tooltip } from "../ui/Tooltip";
 import type { PreflightFinding, PreflightKind } from "../../lib/preflight";
 
 interface Props {
@@ -68,25 +69,29 @@ export function PreflightOverlay({ findings, objects, onSelect }: Props) {
             {findings.map((f, i) => {
               const Icon = f.severity === "error" ? ExclamationCircleIcon : ExclamationTriangleIcon;
               const tone = f.severity === "error" ? "text-error" : "text-accent";
+              // Tooltip instead of native title: the truncated detail is
+              // readable in full without the ~1s hover delay, and on focus.
+              // role="none" keeps the wrapper transparent so the menuitem
+              // stays a direct owned child of role=menu.
               return (
-                <button
-                  key={`${f.objectId}-${i}`}
-                  type="button"
-                  role="menuitem"
-                  title={f.detail || undefined}
-                  onClick={() => {
-                    onSelect(f.objectId);
-                    setOpen(false);
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs text-left hover:bg-surface-2 transition-colors"
-                >
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${tone}`} />
-                  <span className="flex flex-col min-w-0">
-                    <span className="truncate text-text">{nameOf(f.objectId)}</span>
-                    {f.detail && <span className="truncate text-[10px] text-muted">{f.detail}</span>}
-                  </span>
-                  <span className="ml-auto shrink-0 text-muted">{kindText(f.kind)}</span>
-                </button>
+                <Tooltip key={`${f.objectId}-${i}`} content={f.detail} className="w-full" wrapperRole="none">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      onSelect(f.objectId);
+                      setOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left hover:bg-surface-2 transition-colors"
+                  >
+                    <Icon className={`w-3.5 h-3.5 shrink-0 ${tone}`} />
+                    <span className="flex flex-col min-w-0">
+                      <span className="truncate text-text">{nameOf(f.objectId)}</span>
+                      {f.detail && <span className="truncate text-[10px] text-muted">{f.detail}</span>}
+                    </span>
+                    <span className="ml-auto shrink-0 text-muted">{kindText(f.kind)}</span>
+                  </button>
+                </Tooltip>
               );
             })}
           </div>

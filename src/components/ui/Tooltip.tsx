@@ -15,6 +15,10 @@ interface TooltipProps {
   delayMs?: number;
   /** Extra classes for the inline-flex wrapper (e.g. self-start in a column). */
   className?: string;
+  /** ARIA role for the wrapper span. Pass "none" when wrapping a child that
+   *  must stay a direct owned child of its parent (e.g. a role=menuitem inside
+   *  a role=menu), so the wrapper is transparent in the accessibility tree. */
+  wrapperRole?: string;
 }
 
 /**
@@ -24,7 +28,7 @@ interface TooltipProps {
  * the rendered tip so it flips to the side with room and clamps into the
  * viewport (never clipped behind the top menu bar or a side edge).
  */
-export function Tooltip({ content, children, placement = "top", delayMs = 120, className }: TooltipProps) {
+export function Tooltip({ content, children, placement = "top", delayMs = 120, className, wrapperRole }: TooltipProps) {
   const id = useId();
   const wrapRef = useRef<HTMLSpanElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
@@ -70,6 +74,7 @@ export function Tooltip({ content, children, placement = "top", delayMs = 120, c
   return (
     <span
       ref={wrapRef}
+      role={wrapperRole}
       className={className ? `inline-flex ${className}` : "inline-flex"}
       onPointerEnter={showAfterDelay}
       onPointerLeave={hide}
