@@ -22,6 +22,7 @@ import {
   barcodeHeightReflowGeometry,
   barcodeMwReflowGeometry,
   computeNewModules,
+  pinAnchoredEdge,
   pinInactiveEdges,
   positionDidMove,
   forceSquareBox,
@@ -937,8 +938,9 @@ export function useKonvaTransformer({
       return;
     }
 
-    // Box/ellipse: bake the group scale into width/height each tick for correct
-    // stroke inset; dims stay float until release to avoid per-tick rounding drift.
+    // Box/ellipse: bake the group scale into width/height each tick. Rounding
+    // into the store is drift-free because forceUpdate re-baselines to it each
+    // tick, so the store dim times the live scale stays the true current size.
     const sr = shapeReflowRef.current;
     if (sr) {
       const sp = cur.props as { width: number; height: number; lockAspect?: boolean };
@@ -947,20 +949,21 @@ export function useKonvaTransformer({
       const [scaleW, scaleH] = sp.lockAspect
         ? [Math.min(sx, sy), Math.min(sx, sy)]
         : [sx, sy];
-      const newW = Math.max(1, sp.width * scaleW);
-      const newH = Math.max(1, sp.height * scaleH);
-      // Konva already pinned the anchored edge via node.x/y; commit that, then
-      // re-pin from the same dots so node and store agree after the re-render.
-      const xDots = pxToDots(node.x() - objectsOffsetX, scale, dpmm);
-      const yDots = pxToDots(node.y() - labelOffsetY, scale, dpmm);
+      const width = Math.max(1, Math.round(sp.width * scaleW));
+      const height = Math.max(1, Math.round(sp.height * scaleH));
+      // Pin the anchored edge from the snapshot (mirrors the end commit):
+      // rebuilding it from a rounded node.x/y plus a float dim oscillated it.
+      const edges = activeEdgesRef.current;
+      const x = pinAnchoredEdge(!!edges?.left, sr.snapshot.x, sr.snapshot.width, width);
+      const y = pinAnchoredEdge(!!edges?.top, sr.snapshot.y, sr.snapshot.height, height);
       flushSync(() => {
-        updateObject(id, { x: xDots, y: yDots, props: { width: newW, height: newH } });
+        updateObject(id, { x, y, props: { width, height } });
       });
       sr.changed = true;
       node.scaleX(1);
       node.scaleY(1);
-      node.x(objectsOffsetX + dotsToPx(xDots, scale, dpmm));
-      node.y(labelOffsetY + dotsToPx(yDots, scale, dpmm));
+      node.x(objectsOffsetX + dotsToPx(x, scale, dpmm));
+      node.y(labelOffsetY + dotsToPx(y, scale, dpmm));
       transformerRef.current?.forceUpdate();
     }
   };
@@ -1123,18 +1126,16 @@ export function useKonvaTransformer({
       let commit: ReflowCommit = null;
       if (sr.changed && id && cur && !isGroup(cur)) {
         const sp = cur.props as { width: number; height: number };
-        // Same snap/round/clamp contract as commitWidthHeightTransform, applied
-        // to the already-baked float dims.
+        // Apply the grid snap the per-tick bake skips (round only); the anchored
+        // edge is then re-pinned from the snapped size so it can't walk.
         const width = Math.max(1, snap(Math.round(sp.width)));
         const height = Math.max(1, snap(Math.round(sp.height)));
-        // Pin the anchored edge: when dragging left/top, derive x/y from the
-        // snapped size so the opposite edge doesn't walk by the snap delta.
         const edges = activeEdgesRef.current;
         commit = {
           restore: { x: sr.snapshot.x, y: sr.snapshot.y, props: { width: sr.snapshot.width, height: sr.snapshot.height } },
           final: {
-            x: Math.round(edges?.left ? cur.x + sp.width - width : cur.x),
-            y: Math.round(edges?.top ? cur.y + sp.height - height : cur.y),
+            x: Math.round(pinAnchoredEdge(!!edges?.left, cur.x, sp.width, width)),
+            y: Math.round(pinAnchoredEdge(!!edges?.top, cur.y, sp.height, height)),
             props: { width, height },
           },
         };
