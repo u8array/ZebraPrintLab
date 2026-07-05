@@ -274,6 +274,17 @@ export function applyUniformModuleSnap(
   return { ...newBox, x, y, width: snapped, height: snapped };
 }
 
+/** Pin the anchored side of a resize: a grabbed min edge (left/top) shifts the
+ *  position so the opposite edge stays fixed; else the min edge holds. */
+export function pinAnchoredEdge(
+  minEdgeActive: boolean,
+  start: number,
+  startExtent: number,
+  newExtent: number,
+): number {
+  return minEdgeActive ? start + startExtent - newExtent : start;
+}
+
 /** Absorbs px<->dot float rounding so integer positions are preserved. */
 export const POSITION_MOVE_TOLERANCE_DOTS = 1;
 

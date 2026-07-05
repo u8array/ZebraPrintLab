@@ -11,6 +11,7 @@ import {
   pinInactiveEdges,
   computeNewModules,
   activeEdgesFromAnchorName,
+  pinAnchoredEdge,
   shrinkingBelowFloor,
   type BarcodeHeightReflowStart,
   type BarcodeMwReflowStart,
@@ -129,6 +130,19 @@ describe("barcodeHeightReflowGeometry", () => {
   it("rejects a collapsed frame", () => {
     expect(barcodeHeightReflowGeometry(start(), 0)).toBeNull();
     expect(barcodeHeightReflowGeometry(start(), -5)).toBeNull();
+  });
+});
+
+describe("pinAnchoredEdge", () => {
+  // Start edge 100, extent 40 (so the opposite edge sits at 140).
+  it("holds the min edge when the max side is grabbed", () => {
+    expect(pinAnchoredEdge(false, 100, 40, 60)).toBe(100);
+  });
+
+  it("moves the min edge so the max edge stays fixed when the min side is grabbed", () => {
+    // Opposite edge pinned at 140: grow to 60 -> start 80, shrink to 25 -> 115.
+    expect(pinAnchoredEdge(true, 100, 40, 60)).toBe(80);
+    expect(pinAnchoredEdge(true, 100, 40, 25)).toBe(115);
   });
 });
 
