@@ -441,6 +441,7 @@ const pl = {
     barcodeTooSmall: 'Moduł zbyt mały',
     textOverset: 'Tekst przycięty',
     imageMissing: 'Brak obrazu',
+    emptyContent: 'Pole puste',
     suspiciousChars: 'Podejrzane znaki',
     markerValueUnsafe: 'Wartość zmiennej łamie kodowanie',
     gs1ValueInvalid: 'Wartość zmiennej narusza dane GS1',

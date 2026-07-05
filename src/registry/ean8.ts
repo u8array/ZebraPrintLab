@@ -5,7 +5,7 @@ export type { Barcode1DProps as Ean8Props } from './barcode1d';
 export const ean8CoreConfig: Barcode1DCoreConfig = {
   label: 'EAN-8',
   icon: 'E8',
-  defaultContent: '1234567',
+  placeholderContent: '1234567',
   group: 'code-1d',
   serialisable: false,
   zplCommand: (p) => {

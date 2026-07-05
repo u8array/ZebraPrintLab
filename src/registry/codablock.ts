@@ -24,12 +24,13 @@ export const codablock: ObjectTypeCore<CodablockProps> = {
   bindable: true,
   preflight: moduleTooSmallPreflight<CodablockProps>('moduleWidth'),
   defaultProps: {
-    content: "1234567890",
+    content: '',
     moduleWidth: 2,
     rowHeight: 2,
     securityLevel: "Y",
     rotation: 'N',
   },
+  placeholderContent: '1234567890',
   defaultSize: { width: 250, height: 120 },
 
   moduleWidthMin: CODABLOCK_MODULE_WIDTH_MIN,

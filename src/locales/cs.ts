@@ -441,6 +441,7 @@ const cs = {
     barcodeTooSmall: 'Modul příliš malý',
     textOverset: 'Text oříznut',
     imageMissing: 'Chybí obrázek',
+    emptyContent: 'Pole prázdné',
     suspiciousChars: 'Podezřelé znaky',
     markerValueUnsafe: 'Hodnota proměnné porušuje kódování',
     gs1ValueInvalid: 'Hodnota proměnné porušuje GS1 data',

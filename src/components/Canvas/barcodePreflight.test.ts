@@ -23,6 +23,54 @@ describe("barcodeEncodeFindings", () => {
   it("returns nothing when every leaf encodes", () => {
     expect(barcodeEncodeFindings([bar("a")], 1, 8, noEnv, () => null)).toEqual([]);
   });
+
+  it("skips a literal-blank payload: computePreflight's emptyContent owns it, no bogus renderFailed", () => {
+    // Regression: a fresh blank UPC-A reported "EAN/UPC encode failed" on top
+    // of the emptyContent warning (the raw renderer has no dummy fallback).
+    // Literal blank (raw content "") emits nothing here (no double emptyContent).
+    const out = barcodeEncodeFindings([bar("a", "")], 1, 8, noEnv, () => "EAN/UPC encode failed");
+    expect(out).toEqual([]);
+  });
+
+  it("flags a bound field whose marker resolves empty as emptyContent, not renderFailed", () => {
+    // Bound to an empty default: raw content "«d»" is non-empty so
+    // computePreflight sees no emptyContent; the canvas shows the placeholder,
+    // so this producer surfaces the emptiness to keep panel and canvas in sync.
+    const env: EncodeEnv = {
+      variables: [{ id: "v", name: "d", fnNumber: 1, defaultValue: "" }],
+      active: null,
+    };
+    const out = barcodeEncodeFindings([bar("a", "«d»")], 1, 8, env, () => "EAN/UPC encode failed");
+    expect(out).toEqual([
+      { objectId: "a", kind: "emptyContent", severity: "warning" },
+    ]);
+  });
+
+  it("ignores non-barcode leaves: a bound TEXT resolving empty stays quiet", () => {
+    // Regression (GPT finding): the resolved-empty emptyContent must not leak
+    // to text; a bound text field is configured and its canvas box is honest.
+    const textLeaf = {
+      id: "t", type: "text", x: 0, y: 0, rotation: 0,
+      props: { content: "«d»", fontHeight: 30, fontWidth: 0, rotation: "N" },
+    } as LabelObject as LeafObject;
+    const env: EncodeEnv = {
+      variables: [{ id: "v", name: "d", fnNumber: 1, defaultValue: "" }],
+      active: null,
+    };
+    const out = barcodeEncodeFindings([textLeaf], 1, 8, env, () => "never");
+    expect(out).toEqual([]);
+  });
+
+  it("still checks a bound field whose resolved payload is non-empty", () => {
+    const env: EncodeEnv = {
+      variables: [{ id: "v", name: "d", fnNumber: 1, defaultValue: "0201" }],
+      active: null,
+    };
+    const out = barcodeEncodeFindings([bar("a", "«d»")], 1, 8, env, () => "bad");
+    expect(out).toEqual([
+      { objectId: "a", kind: "renderFailed", severity: "error", detail: "bad" },
+    ]);
+  });
 });
 
 describe("resolveForEncode", () => {

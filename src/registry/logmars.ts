@@ -6,7 +6,7 @@ export type { Barcode1DProps as LogmarsProps } from "./barcode1d";
 export const logmarsCoreConfig: Barcode1DCoreConfig = {
   label: "LOGMARS",
   icon: "LOG",
-  defaultContent: "LOGMARS1",
+  placeholderContent: 'LOGMARS1',
   group: 'code-postal',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";

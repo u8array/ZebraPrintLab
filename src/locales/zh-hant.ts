@@ -441,6 +441,7 @@ const zhHant = {
     barcodeTooSmall: '模組太小',
     textOverset: '文字截斷',
     imageMissing: '圖像缺失',
+    emptyContent: '欄位為空',
     suspiciousChars: '異常字元',
     markerValueUnsafe: '變數值破壞編碼',
     gs1ValueInvalid: '變數值違反GS1資料',

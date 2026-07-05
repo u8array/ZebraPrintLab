@@ -24,13 +24,14 @@ export const pdf417: ObjectTypeCore<Pdf417Props> = {
   barcodeClass: 'stacked2d',
   bindable: true,
   defaultProps: {
-    content: "1234567890",
+    content: '',
     rowHeight: 2,
     securityLevel: 0,
     columns: 0,
     moduleWidth: 2,
     rotation: 'N',
   },
+  placeholderContent: '1234567890',
   defaultSize: { width: 300, height: 150 },
 
   moduleWidthMin: PDF417_MODULE_WIDTH_MIN,

@@ -20,12 +20,13 @@ export const micropdf417: ObjectTypeCore<MicroPdf417Props> = {
   barcodeClass: 'stacked2d',
   bindable: true,
   defaultProps: {
-    content: "1234",
+    content: '',
     moduleWidth: 2,
     rowHeight: 2,
     mode: 0,
     rotation: 'N',
   },
+  placeholderContent: '1234',
   defaultSize: { width: 200, height: 100 },
 
   preflight: moduleTooSmallPreflight<MicroPdf417Props>('moduleWidth'),

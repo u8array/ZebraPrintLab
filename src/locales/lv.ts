@@ -441,6 +441,7 @@ const lv = {
     barcodeTooSmall: 'Modulis pārāk mazs',
     textOverset: 'Teksts apgriezts',
     imageMissing: 'Attēls trūkst',
+    emptyContent: 'Lauks tukšs',
     suspiciousChars: 'Aizdomīgas rakstzīmes',
     markerValueUnsafe: 'Mainīgā vērtība pārkāpj kodējumu',
     gs1ValueInvalid: 'Mainīgā vērtība pārkāpj GS1 datus',

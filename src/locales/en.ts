@@ -441,6 +441,7 @@ const en = {
     barcodeTooSmall: 'Module too small',
     textOverset: 'Text clipped',
     imageMissing: 'Image missing',
+    emptyContent: 'Field is empty',
     suspiciousChars: 'Odd characters',
     markerValueUnsafe: 'Variable value breaks encoding',
     gs1ValueInvalid: 'Variable value breaks GS1 data',

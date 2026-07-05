@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computePreflight, markerValueFindings } from "./preflight";
+import { computePreflight, markerValueFindings, suppressPristineEmpty, type PreflightFinding } from "./preflight";
 import { getEntry } from "../registry";
 import type { ObjectBoundsCtx } from "./objectBounds";
 import type { LabelObject } from "../types/Group";
@@ -116,6 +116,82 @@ describe("computePreflight (off-label producer)", () => {
       ["clip", "offLabelClipped"],
       ["out", "offLabelOutside"],
     ]);
+  });
+});
+
+describe("emptyContent producer", () => {
+  const text = (id: string, content: string, extraProps: object = {}): LeafObject =>
+    ({
+      id,
+      type: "text",
+      x: 10,
+      y: 10,
+      rotation: 0,
+      props: { content, fontHeight: 30, fontWidth: 0, rotation: "N", ...extraProps },
+    }) as LabelObject as LeafObject;
+
+  it("flags a blank text field as a warning, and only that", () => {
+    expect(computePreflight([text("t", "")], ctx)).toEqual([
+      { objectId: "t", kind: "emptyContent", severity: "warning" },
+    ]);
+  });
+
+  it("flags whitespace-only content (prints a gap all the same)", () => {
+    expect(computePreflight([text("t", "  ")], ctx)).toEqual([
+      { objectId: "t", kind: "emptyContent", severity: "warning" },
+    ]);
+  });
+
+  it("flags a blank barcode field", () => {
+    const bc = {
+      id: "bc",
+      type: "code128",
+      x: 10,
+      y: 10,
+      rotation: 0,
+      props: { content: "", height: 80, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "N" },
+    } as LabelObject as LeafObject;
+    expect(computePreflight([bc], ctx)).toEqual([
+      { objectId: "bc", kind: "emptyContent", severity: "warning" },
+    ]);
+  });
+
+  it("flags a serial field whose seed is blank (prints nothing to increment)", () => {
+    const serial = text("s", "", { serial: { increment: 1, zplMode: "SN" } });
+    expect(computePreflight([serial], ctx)).toEqual([
+      { objectId: "s", kind: "emptyContent", severity: "warning" },
+    ]);
+  });
+
+  it("does not fire on marker content: bound fields are configured even when a row resolves blank", () => {
+    expect(computePreflight([text("t", "«batch»")], ctx)).toEqual([]);
+  });
+
+  it("reports hidden-char-only content as suspiciousChars, not emptyContent", () => {
+    // NBSP-only content trims to empty but carries invisible ink: the specific
+    // 'NBSP x2' diagnostic must win over the generic 'field is empty'.
+    expect(computePreflight([text("t", "  ")], ctx)).toEqual([
+      { objectId: "t", kind: "suspiciousChars", severity: "warning", detail: "NBSP x2" },
+    ]);
+  });
+
+  it("does not fire on types without a content field", () => {
+    expect(computePreflight([box("b", 10, 10, 50, 50)], ctx)).toEqual([]);
+  });
+});
+
+describe("suppressPristineEmpty", () => {
+  const empty = (id: string): PreflightFinding => ({ objectId: id, kind: "emptyContent", severity: "warning" });
+  const outside = (id: string): PreflightFinding => ({ objectId: id, kind: "offLabelOutside", severity: "error" });
+
+  it("drops only emptyContent findings of pristine ids, everything else passes", () => {
+    const findings = [empty("a"), outside("a"), empty("b")];
+    expect(suppressPristineEmpty(findings, ["a"])).toEqual([outside("a"), empty("b")]);
+  });
+
+  it("is the identity when nothing is pristine", () => {
+    const findings = [empty("a")];
+    expect(suppressPristineEmpty(findings, [])).toBe(findings);
   });
 });
 

@@ -441,6 +441,7 @@ const tr = {
     barcodeTooSmall: 'Modül çok küçük',
     textOverset: 'Metin kesildi',
     imageMissing: 'Resim eksik',
+    emptyContent: 'Alan boş',
     suspiciousChars: 'Şüpheli karakterler',
     markerValueUnsafe: 'Değişken değeri kodlamayı bozuyor',
     gs1ValueInvalid: 'Değişken değeri GS1 verilerini bozuyor',

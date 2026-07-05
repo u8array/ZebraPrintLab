@@ -8,7 +8,7 @@ export const PLESSEY_RATIO = 2;
 export const plesseyCoreConfig: Barcode1DCoreConfig = {
   label: "Plessey",
   icon: "PLS",
-  defaultContent: "12345678",
+  placeholderContent: '12345678',
   group: 'code-postal',
   byRatio: PLESSEY_RATIO,
   zplCommand: (p) => {

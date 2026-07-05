@@ -4,7 +4,7 @@ export type { Barcode1DProps as Code39Props } from './barcode1d';
 export const code39CoreConfig: Barcode1DCoreConfig = {
   label: 'Code 39',
   icon: '|·|',
-  defaultContent: 'CODE39',
+  placeholderContent: 'CODE39',
   group: 'code-1d',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';

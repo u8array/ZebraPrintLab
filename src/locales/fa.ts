@@ -441,6 +441,7 @@ const fa = {
     barcodeTooSmall: 'ماژول خیلی کوچک',
     textOverset: 'متن برش‌خورده',
     imageMissing: 'تصویر ناموجود',
+    emptyContent: 'فیلد خالی',
     suspiciousChars: 'نویسه‌های مشکوک',
     markerValueUnsafe: 'مقدار متغیر کدگذاری را می‌شکند',
     gs1ValueInvalid: 'مقدار متغیر داده‌های GS1 را می‌شکند',

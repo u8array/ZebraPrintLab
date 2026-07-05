@@ -5,7 +5,7 @@ export type { Barcode1DProps as UpcAProps } from './barcode1d';
 export const upcaCoreConfig: Barcode1DCoreConfig = {
   label: 'UPC-A',
   icon: 'UPC',
-  defaultContent: '01234567890',
+  placeholderContent: '01234567890',
   group: 'code-1d',
   serialisable: false,
   zplCommand: (p) => {

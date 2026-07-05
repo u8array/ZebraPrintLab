@@ -5,7 +5,7 @@ export type { Barcode1DProps as UpcEProps } from './barcode1d';
 export const upceCoreConfig: Barcode1DCoreConfig = {
   label: 'UPC-E',
   icon: 'UPE',
-  defaultContent: '012345',
+  placeholderContent: '012345',
   group: 'code-1d',
   serialisable: false,
   zplCommand: (p) => {
@@ -17,7 +17,9 @@ export const upceCoreConfig: Barcode1DCoreConfig = {
   // ^B9 needs the number-system digit in ^FD (else Labelary lints/re-pads).
   // NS-aware so an already-prefixed content is not double-prefixed. NS
   // assumed 0 (spec allows 0 or 1; NS 1 round-trips lossily, see ticket).
-  fdContent: (c) => `0${upceData6FromFd(c)}`,
+  // Empty stays empty: the padding would otherwise fabricate a scannable
+  // 0000000 UPC-E from a blank field, breaking the empty-^FD invariant.
+  fdContent: (c) => (c === '' ? '' : `0${upceData6FromFd(c)}`),
 };
 
 export const upce = createBarcode1DCore(upceCoreConfig);

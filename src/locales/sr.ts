@@ -441,6 +441,7 @@ const sr = {
     barcodeTooSmall: 'Модул превише мали',
     textOverset: 'Tekst odsečen',
     imageMissing: 'Slika nedostaje',
+    emptyContent: 'Поље празно',
     suspiciousChars: 'Сумњиви знакови',
     markerValueUnsafe: 'Вредност квари кодирање',
     gs1ValueInvalid: 'Вредност променљиве нарушава GS1 податке',

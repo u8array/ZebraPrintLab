@@ -1,5 +1,11 @@
 import { useLabelStore } from '../store/labelStore';
 
+/** Warning orange for canvas "needs attention" overlays (fallback tint,
+ *  unconfigured-field placeholders). Theme-independent and readable on both
+ *  schemes; not a CanvasColors member because index.css carries no
+ *  counterpart token yet (theme-token SSOT ticket). */
+export const CANVAS_WARNING = '#fb923c';
+
 export interface CanvasColors {
   canvasBg: string;
   canvasDot: string;

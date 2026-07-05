@@ -4,7 +4,7 @@ export type { Barcode1DProps as CodabarProps } from "./barcode1d";
 export const codabarCoreConfig: Barcode1DCoreConfig = {
   label: "Codabar",
   icon: "CBA",
-  defaultContent: "A12345A",
+  placeholderContent: 'A12345A',
   group: 'code-postal',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";

@@ -441,6 +441,7 @@ const ro = {
     barcodeTooSmall: 'Modul prea mic',
     textOverset: 'Text trunchiat',
     imageMissing: 'Imagine lipsă',
+    emptyContent: 'Câmp gol',
     suspiciousChars: 'Caractere suspecte',
     markerValueUnsafe: 'Valoarea variabilei strică codificarea',
     gs1ValueInvalid: 'Valoarea variabilei încalcă datele GS1',

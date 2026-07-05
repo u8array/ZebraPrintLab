@@ -441,6 +441,7 @@ const zhHans = {
     barcodeTooSmall: '模块太小',
     textOverset: '文本截断',
     imageMissing: '图像缺失',
+    emptyContent: '字段为空',
     suspiciousChars: '异常字符',
     markerValueUnsafe: '变量值破坏编码',
     gs1ValueInvalid: '变量值违反GS1数据',

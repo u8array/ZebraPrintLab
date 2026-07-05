@@ -213,6 +213,16 @@ describe('generateZPL — structure', () => {
     expect(sn).toBe(fd); // serial seed carries the same transformed payload
   });
 
+  it('a blank UPC-E emits an empty field, not a fabricated 0000000 barcode', () => {
+    const obj = [{ id: 'u', type: 'upce', x: 0, y: 0, rotation: 0,
+      props: { content: '', height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: 'N' } },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any;
+    const zpl = generateZPL(BASE_LABEL, obj);
+    expect(zpl).toContain('^FD^FS');
+    expect(zpl).not.toContain('^FD0000000^FS');
+  });
+
   it('serial with an empty seed survives round-trip (field not dropped)', () => {
     const objs = [
       { id: 's', type: 'text', x: 0, y: 0, rotation: 0,

@@ -3,6 +3,10 @@ import { CANVAS_DROPPABLE_ID, type PaletteDragData } from "../../dnd/types";
 import { getEntry } from "../../registry";
 import type { LeafObject } from "../../registry";
 
+/** Id of the palette drop-preview object; renderers treat it like a pristine
+ *  (never-deselected) object so no warning styling flashes mid-drag. */
+export const PALETTE_GHOST_ID = "__ghost__";
+
 export interface PaletteGhostDeps {
   /** Drag-liveness flag in a ref: the handlers are rebuilt per render for
    *  fresh closures, the flag must span the whole drag. */
@@ -48,7 +52,7 @@ export function paletteGhostHandlers({ live, locked, pointerPos, setGhost, addOb
       const def = drag && getEntry(drag.type);
       if (!drag || !def) return;
       setGhost({
-        id: "__ghost__",
+        id: PALETTE_GHOST_ID,
         type: drag.type,
         ...drag.pos,
         rotation: 0,

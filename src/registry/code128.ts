@@ -4,7 +4,7 @@ export type { Barcode1DProps as Code128Props } from './barcode1d';
 export const code128CoreConfig: Barcode1DCoreConfig = {
   label: 'Code 128',
   icon: '|||',
-  defaultContent: '12345678',
+  placeholderContent: '12345678',
   group: 'code-1d',
   gs1Capable: true,
   zplCommand: (p) => {

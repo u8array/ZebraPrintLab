@@ -1,4 +1,5 @@
 import type { LeafObject } from "../../registry";
+import { isBarcode } from "../../lib/objectBounds";
 import { PREFLIGHT_SEVERITY, type PreflightFinding } from "../../lib/preflight";
 import type { Variable } from "../../types/Variable";
 import {
@@ -30,11 +31,10 @@ const encodeCache = new WeakMap<
 
 function cachedEncodeError(
   leaf: LeafObject,
+  resolved: LeafObject,
   scale: number,
   dpmm: number,
-  env: EncodeEnv,
 ): string | null {
-  const resolved = resolveForEncode(leaf, env);
   const content = getObjectStringContent(resolved) ?? "";
   const hit = encodeCache.get(leaf);
   if (hit && hit.scale === scale && hit.dpmm === dpmm && hit.content === content) {
@@ -59,12 +59,28 @@ export function barcodeEncodeFindings(
   scale: number,
   dpmm: number,
   env: EncodeEnv,
-  encodeError: (leaf: LeafObject) => string | null = (leaf) =>
-    cachedEncodeError(leaf, scale, dpmm, env),
+  encodeError: (leaf: LeafObject, resolved: LeafObject) => string | null = (leaf, resolved) =>
+    cachedEncodeError(leaf, resolved, scale, dpmm),
 ): PreflightFinding[] {
   const findings: PreflightFinding[] = [];
   for (const leaf of leaves) {
-    const error = encodeError(leaf);
+    // Barcode-only producer: text and shapes never encode, and a bound TEXT
+    // field resolving empty stays quiet (configured field, and the canvas
+    // shows an honest empty box there, unlike the barcode's sample bars).
+    if (!isBarcode(leaf)) continue;
+    const resolved = resolveForEncode(leaf, env);
+    if ((getObjectStringContent(resolved) ?? "").trim() === "") {
+      // A blank payload has nothing to encode, so never a renderFailed error.
+      // A literal-blank field is already owned by computePreflight's
+      // emptyContent (raw content ""); a BARCODE whose marker resolves empty
+      // (empty variable default / empty CSV cell) is raw-nonempty there, yet
+      // renders as sample bars, so surface its emptiness here.
+      if ((getObjectStringContent(leaf) ?? "").trim() !== "") {
+        findings.push({ objectId: leaf.id, kind: "emptyContent", severity: PREFLIGHT_SEVERITY.emptyContent });
+      }
+      continue;
+    }
+    const error = encodeError(leaf, resolved);
     if (error) {
       findings.push({ objectId: leaf.id, kind: "renderFailed", severity: PREFLIGHT_SEVERITY.renderFailed, detail: error });
     }

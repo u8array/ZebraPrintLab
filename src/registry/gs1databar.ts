@@ -42,11 +42,12 @@ export const gs1databar: ObjectTypeCore<Gs1DatabarProps> = {
   bindable: true,
   preflight: moduleTooSmallPreflight<Gs1DatabarProps>('magnification'),
   defaultProps: {
-    content: '0112345678901',
+    content: '',
     magnification: 2,
     symbology: 1,
     rotation: 'N',
   },
+  placeholderContent: '0112345678901',
   defaultSize: { width: 300, height: 120 },
   heightLocked: true,
 

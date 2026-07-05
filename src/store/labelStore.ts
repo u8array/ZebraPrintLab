@@ -472,6 +472,18 @@ export const useLabelStore = create<LabelState>()(
   )
 );
 
+// First-deselect latch for pristineEmptyIds: one subscription instead of a
+// prune in each of the dozen actions that write selectedIds. Dropping out of
+// the selection once ends the untouched-field grace for good.
+useLabelStore.subscribe((state, prev) => {
+  if (state.selectedIds === prev.selectedIds || state.pristineEmptyIds.length === 0) return;
+  const sel = new Set(state.selectedIds);
+  const next = state.pristineEmptyIds.filter((id) => sel.has(id));
+  if (next.length !== state.pristineEmptyIds.length) {
+    useLabelStore.setState({ pristineEmptyIds: next });
+  }
+});
+
 export const useCurrentObjects = () => useLabelStore(currentObjects);
 
 /** Non-reactive sibling of `useCurrentObjects` for use inside event handlers

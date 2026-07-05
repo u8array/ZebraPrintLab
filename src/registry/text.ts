@@ -105,7 +105,7 @@ export const text: ObjectTypeCore<TextProps> = {
     return mode === "fb" ? encodeFbContent : mode === "tb" ? encodeTbContent : undefined;
   },
   defaultProps: {
-    content: "Text",
+    content: '',
     fontHeight: 30,
     fontWidth: 0,
     rotation: "N",

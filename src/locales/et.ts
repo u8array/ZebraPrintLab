@@ -441,6 +441,7 @@ const et = {
     barcodeTooSmall: 'Moodul liiga väike',
     textOverset: 'Tekst lõigatud',
     imageMissing: 'Pilt puudub',
+    emptyContent: 'Väli tühi',
     suspiciousChars: 'Kahtlased märgid',
     markerValueUnsafe: 'Muutuja väärtus rikub kodeeringut',
     gs1ValueInvalid: 'Muutuja väärtus rikub GS1 andmeid',

@@ -441,6 +441,7 @@ const sk = {
     barcodeTooSmall: 'Modul príliš malý',
     textOverset: 'Text orezaný',
     imageMissing: 'Chýba obrázok',
+    emptyContent: 'Pole prázdne',
     suspiciousChars: 'Podozrivé znaky',
     markerValueUnsafe: 'Hodnota premennej porušuje kódovanie',
     gs1ValueInvalid: 'Hodnota premennej porušuje GS1 dáta',

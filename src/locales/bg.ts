@@ -441,6 +441,7 @@ const bg = {
     barcodeTooSmall: 'Модулът е твърде малък',
     textOverset: 'Текст отрязан',
     imageMissing: 'Липсва изображение',
+    emptyContent: 'Полето е празно',
     suspiciousChars: 'Съмнителни знаци',
     markerValueUnsafe: 'Стойност нарушава кодирането',
     gs1ValueInvalid: 'Стойността на променливата нарушава GS1 данни',

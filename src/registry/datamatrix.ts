@@ -25,12 +25,13 @@ export const datamatrix: ObjectTypeCore<DataMatrixProps> = {
   bindable: true,
   typedContent: true,
   defaultProps: {
-    content: '1234567890',
+    content: '',
     dimension: 5,
     quality: 200,
     rotation: 'N',
     gs1: false,
   },
+  placeholderContent: '1234567890',
   defaultSize: { width: 150, height: 150 },
 
   uniformScaleProp: { name: 'dimension', min: DIMENSION_MIN, max: DIMENSION_MAX },

@@ -19,6 +19,19 @@ import {
 export { PREFLIGHT_SEVERITY };
 export type { PreflightFinding, PreflightKind, PreflightSeverity };
 
+/** Untouched-field grace: drop emptyContent findings for just-created,
+ *  still-selected objects (store `pristineEmptyIds`) so the panel does not
+ *  nag while the user is configuring what they just dropped. Every other
+ *  kind passes through; the grace ends on first deselect. */
+export function suppressPristineEmpty(
+  findings: PreflightFinding[],
+  pristineIds: readonly string[],
+): PreflightFinding[] {
+  if (pristineIds.length === 0) return findings;
+  const pristine = new Set(pristineIds);
+  return findings.filter((f) => f.kind !== "emptyContent" || !pristine.has(f.objectId));
+}
+
 interface MarkerValueDeps {
   variables: readonly Variable[];
   csvDataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null;
@@ -206,11 +219,22 @@ export function computePreflight(
         : content;
       const detail = suspiciousCharDetail(scanned);
       if (detail) {
+        // Hidden chars win over emptiness: NBSP/BOM-only content trims to empty
+        // but carries invisible ink, so name it rather than call the field blank.
         findings.push({
           objectId: leaf.id,
           kind: "suspiciousChars",
           severity: PREFLIGHT_SEVERITY.suspiciousChars,
           detail,
+        });
+      } else if (content.trim() === "") {
+        // Raw content on purpose: markers make content non-empty, so bound and
+        // template fields never fire here; a blank literal (or serial seed) is
+        // the never-configured state that prints a gap.
+        findings.push({
+          objectId: leaf.id,
+          kind: "emptyContent",
+          severity: PREFLIGHT_SEVERITY.emptyContent,
         });
       }
     }

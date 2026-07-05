@@ -441,6 +441,7 @@ const hr = {
     barcodeTooSmall: 'Modul premali',
     textOverset: 'Tekst odrezan',
     imageMissing: 'Slika nedostaje',
+    emptyContent: 'Polje prazno',
     suspiciousChars: 'Sumnjivi znakovi',
     markerValueUnsafe: 'Vrijednost kvari kodiranje',
     gs1ValueInvalid: 'Vrijednost varijable kvari GS1 podatke',

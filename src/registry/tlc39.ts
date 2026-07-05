@@ -31,13 +31,14 @@ export const tlc39: ObjectTypeCore<Tlc39Props> = {
   bindable: true,
   preflight: moduleTooSmallPreflight<Tlc39Props>('moduleWidth'),
   defaultProps: {
-    content: "123456,SERIAL",
+    content: '',
     moduleWidth: 2,
     height: 40,
     microPdfRowHeight: 4,
     microPdfRows: 4,
     rotation: "N",
   },
+  placeholderContent: '123456,SERIAL',
   defaultSize: { width: 200, height: 80 },
 
   commitTransform: commitBarcodeWidthHeightTransform,

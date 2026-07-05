@@ -48,6 +48,7 @@ function reset() {
     csvMappingModalOpen: false,
     previewMode: { status: 'idle' },
     canvasSettings: { ...DEFAULT_CANVAS_SETTINGS },
+    pristineEmptyIds: [],
   });
 }
 
@@ -160,18 +161,47 @@ describe('updateObject — props merging', () => {
   it('merges partial props instead of replacing them', () => {
     state().addObject('text');
     const obj = defined(objs()[0]);
+    state().updateObject(obj.id, { props: { content: 'Hello' } });
     state().updateObject(obj.id, { props: { fontHeight: 99 } });
     const updated = defined(objs()[0]);
     expect(props(updated).fontHeight).toBe(99);
-    expect(props(updated).content).toBe('Text');
+    expect(props(updated).content).toBe('Hello');
   });
 
   it('updates top-level fields (x, y) without touching props', () => {
     state().addObject('text');
     const obj = defined(objs()[0]);
+    state().updateObject(obj.id, { props: { content: 'Hello' } });
     state().updateObject(obj.id, { x: 999 });
     expect(defined(objs()[0]).x).toBe(999);
-    expect(props(defined(objs()[0])).content).toBe('Text');
+    expect(props(defined(objs()[0])).content).toBe('Hello');
+  });
+});
+
+// ── pristineEmptyIds (untouched-field grace) ──────────────────────────────────
+
+describe('pristineEmptyIds', () => {
+  it('marks a blank-born object; the first deselect ends the grace for good', () => {
+    state().addObject('text');
+    const id = defined(objs()[0]).id;
+    expect(state().pristineEmptyIds).toEqual([id]);
+    state().selectObject(null);
+    expect(state().pristineEmptyIds).toEqual([]);
+    // Re-selecting must not restore the grace (panel click-through stability).
+    state().selectObject(id);
+    expect(state().pristineEmptyIds).toEqual([]);
+  });
+
+  it('adding a second object moves the selection and ends the first grace', () => {
+    state().addObject('text');
+    state().addObject('code128');
+    expect(state().pristineEmptyIds).toEqual([ids()[1]]);
+  });
+
+  it('does not mark objects born with content or without a content field', () => {
+    state().addObject('text', undefined, { content: '001' });
+    state().addObject('box');
+    expect(state().pristineEmptyIds).toEqual([]);
   });
 });
 
