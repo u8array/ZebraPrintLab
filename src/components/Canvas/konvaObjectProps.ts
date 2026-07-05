@@ -1,12 +1,28 @@
 import type Konva from "konva";
 import type { RefObject } from "react";
 import type { LeafObject } from "../../registry";
-import type { ObjectChanges } from "../../store/labelStore";
+import { useLabelStore, type ObjectChanges } from "../../store/labelStore";
 import type { SnapGuide, SnapRect } from "../../lib/snapGuides";
+import { PALETTE_GHOST_ID } from "./paletteGhostMonitor";
 
 /** Konva `name` on editor-only chrome (grid, safe-area, overset ghost, …) so
  *  image capture can hide it. Shared by LabelCanvas and the renderers. */
 export const CAPTURE_CHROME = "capture-chrome";
+
+/** Dotted outline shared by every unconfigured-field placeholder (empty-text
+ *  rect, blank-barcode frame) so "not configured yet" reads as one style. */
+export const PLACEHOLDER_STROKE_PX = 3;
+export const PLACEHOLDER_DASH: [number, number] = [0.1, 8];
+
+/** Whether a blank field should show its warning styling (orange frame /
+ *  placeholder): true once the untouched-field grace has ended, false while
+ *  the object is still pristine or is the palette drop ghost. One store read +
+ *  predicate shared by every renderer so the barcode frame and the text
+ *  placeholder can't disagree. */
+export function useBlankFieldWarns(objectId: string): boolean {
+  const pristine = useLabelStore((s) => s.pristineEmptyIds.includes(objectId));
+  return !pristine && objectId !== PALETTE_GHOST_ID;
+}
 
 /**
  * Click / tap handlers shared across every per-type renderer. Click reads

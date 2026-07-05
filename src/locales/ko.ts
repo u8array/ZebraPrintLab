@@ -441,6 +441,7 @@ const ko = {
     barcodeTooSmall: '모듈이 너무 작음',
     textOverset: '텍스트 잘림',
     imageMissing: '이미지 없음',
+    emptyContent: '빈칸',
     suspiciousChars: '의심스러운 문자',
     markerValueUnsafe: '변수 값이 인코딩을 깨뜨림',
     gs1ValueInvalid: '변수 값이 GS1 데이터를 위반',

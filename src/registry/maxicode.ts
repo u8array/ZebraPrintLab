@@ -23,10 +23,11 @@ export const maxicode: ObjectTypeCore<MaxicodeProps> = {
   group: "code-2d",
   bindable: true,
   defaultProps: {
-    content: "1234567890",
+    content: '',
     mode: MAXICODE_DEFAULT_MODE,
     rotation: "N",
   },
+  placeholderContent: '1234567890',
   // mm so palette resolves at active dpmm; heightLocked disables resize.
   defaultSize: { widthMm: 28.14, heightMm: 26.91 },
   heightLocked: true,

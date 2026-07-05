@@ -441,6 +441,7 @@ const fr = {
     barcodeTooSmall: 'Module trop petit',
     textOverset: 'Texte coupé',
     imageMissing: 'Image absente',
+    emptyContent: 'Champ vide',
     suspiciousChars: 'Caractères suspects',
     markerValueUnsafe: "Valeur brise l'encodage",
     gs1ValueInvalid: 'La valeur de la variable enfreint les données GS1',

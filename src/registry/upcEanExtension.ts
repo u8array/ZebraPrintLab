@@ -22,7 +22,7 @@ export type { Barcode1DProps as UpcEanExtensionProps } from './barcode1d';
 export const upcEanExtensionCoreConfig: Barcode1DCoreConfig = {
   label: 'UPC/EAN extension',
   icon: 'EXT',
-  defaultContent: '51999',
+  placeholderContent: '51999',
   group: 'code-1d',
   // Exactly 2 or 5 digits; ^SN/^SF could roll it to an invalid 3/4/6-digit
   // supplement, so it opts out of serial like EAN/UPC.

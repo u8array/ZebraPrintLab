@@ -441,6 +441,7 @@ const lt = {
     barcodeTooSmall: 'Modulis per mažas',
     textOverset: 'Tekstas apkarpytas',
     imageMissing: 'Trūksta vaizdo',
+    emptyContent: 'Laukas tuščias',
     suspiciousChars: 'Įtartini simboliai',
     markerValueUnsafe: 'Kintamojo reikšmė laužo kodavimą',
     gs1ValueInvalid: 'Kintamojo reikšmė pažeidžia GS1 duomenis',

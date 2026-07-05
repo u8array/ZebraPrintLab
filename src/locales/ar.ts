@@ -441,6 +441,7 @@ const ar = {
     barcodeTooSmall: 'الوحدة صغيرة جداً',
     textOverset: 'نص مقتطع',
     imageMissing: 'الصورة مفقودة',
+    emptyContent: 'الحقل فارغ',
     suspiciousChars: 'أحرف مريبة',
     markerValueUnsafe: 'قيمة المتغير تكسر الترميز',
     gs1ValueInvalid: 'قيمة المتغير تُفسد بيانات GS1',

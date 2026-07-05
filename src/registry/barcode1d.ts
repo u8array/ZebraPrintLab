@@ -29,7 +29,8 @@ export interface Barcode1DProps {
 export interface Barcode1DCoreConfig {
   label: string;
   icon: string;
-  defaultContent: string;
+  /** See {@link ObjectTypeCore.placeholderContent}. New objects start blank. */
+  placeholderContent: string;
   /** Build the ZPL barcode command (e.g. `^BUN,100,Y,N,N`). */
   zplCommand: (p: Barcode1DProps) => string;
   group: ObjectGroup;
@@ -59,7 +60,7 @@ export interface Barcode1DCoreConfig {
 
 export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore<Barcode1DProps> {
   const defaultProps: Barcode1DProps = {
-    content: config.defaultContent,
+    content: '',
     height: 100,
     moduleWidth: 2,
     printInterpretation: !config.interpretationLocked,
@@ -98,6 +99,7 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
     // EAN/UPC opt out (fixed-length check digit); every other 1D serializes cleanly.
     serialisable: config.serialisable ?? true,
     defaultProps,
+    placeholderContent: config.placeholderContent,
     defaultSize: { width: 300, height: 120 },
     heightLocked: config.heightLocked,
     interpretationLocked: config.interpretationLocked,

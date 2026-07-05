@@ -1,23 +1,42 @@
 import { generateZPL } from "./zplGenerator";
 import { fetchPreview } from "./labelary";
 import type { LabelConfig } from "../types/LabelConfig";
-import type { LabelObject } from "../types/Group";
+import { isGroup, type LabelObject } from "../types/Group";
 import type { Variable } from "../types/Variable";
-import { applyBindingToTree, clockCtxFromLabel, type ActiveCsvRow } from "./variableBinding";
+import { applyBindingToTree, clockCtxFromLabel, getObjectStringContent, type ActiveCsvRow } from "./variableBinding";
+import { placeholderContentFor } from "../registry/placeholderContent";
+
+/** Blank fields rendered with their symbology sample, so the preview overlay
+ *  matches the canvas (which shows the same sample behind the warning frame).
+ *  Overlay-only: print and export keep the empty ^FD. */
+function withBlankSamples(objects: LabelObject[]): LabelObject[] {
+  return objects.map((o): LabelObject => {
+    if (isGroup(o)) return { ...o, children: withBlankSamples(o.children) };
+    const content = getObjectStringContent(o);
+    if (content === undefined || content.trim() !== "") return o;
+    const sample = placeholderContentFor(o.type, o.props);
+    if (!sample) return o;
+    return { ...o, props: { ...o.props, content: sample } } as LabelObject;
+  });
+}
 
 /** Generate the ZPL we hand to Labelary: row-substituted + flat
  *  (no ^FN), so the rendered preview matches what would print for
  *  the active CSV row (or the variable defaults when no row is
  *  loaded). Shared by `printLabel` (new window with image) and
- *  `enterPreviewMode` (canvas overlay) so the two stay in lockstep. */
+ *  `enterPreviewMode` (canvas overlay) so the two stay in lockstep;
+ *  only the overlay opts into blank-field samples, printing must
+ *  never put sample data on paper. */
 export function buildPreviewZpl(
   label: LabelConfig,
   objects: LabelObject[],
   variables: readonly Variable[],
   active: ActiveCsvRow | null,
+  opts: { blankSamples?: boolean } = {},
 ): string {
   const substituted = applyBindingToTree(objects, variables, active, "preview", clockCtxFromLabel(label));
-  return generateZPL(label, substituted, []);
+  const previewed = opts.blankSamples ? withBlankSamples(substituted) : substituted;
+  return generateZPL(label, previewed, []);
 }
 
 export function buildLoadingHtml(): string {

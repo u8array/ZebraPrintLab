@@ -31,12 +31,13 @@ export const qrcode: ObjectTypeCore<QrCodeProps> = {
   bindable: true,
   typedContent: true,
   defaultProps: {
-    content: 'https://example.com',
+    content: '',
     magnification: 4,
     errorCorrection: 'Q',
     model: 2,
     rotation: 'N',
   },
+  placeholderContent: 'https://example.com',
   defaultSize: { width: 200, height: 200 },
 
   uniformScaleProp: { name: 'magnification', min: MAGNIFICATION_MIN, max: MAGNIFICATION_MAX },

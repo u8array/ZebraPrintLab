@@ -441,6 +441,7 @@ const da = {
     barcodeTooSmall: 'Modul for lille',
     textOverset: 'Tekst afskåret',
     imageMissing: 'Billede mangler',
+    emptyContent: 'Felt tomt',
     suspiciousChars: 'Mærkelige tegn',
     markerValueUnsafe: 'Variabelværdi bryder kodning',
     gs1ValueInvalid: 'Variabelværdi bryder GS1-data',

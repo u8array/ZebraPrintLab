@@ -100,18 +100,23 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
     const definition = getEntry(type);
     if (!definition) return;
 
+    const props = { ...definition.defaultProps, ...propsOverride };
     const obj = {
       id: crypto.randomUUID(),
       type,
       x: position.x,
       y: position.y,
       rotation: 0,
-      props: { ...definition.defaultProps, ...propsOverride },
+      props,
     } as LabelObject;
+    // A blank-born object gets the untouched-field grace: its emptyContent
+    // warning stays suppressed until the first deselect (selectionSlice).
+    const blank = (props as { content?: string }).content?.trim() === '';
 
     set((state) => ({
       ...updateCurrentObjects(state, (objs) => [...objs, obj]),
       selectedIds: [obj.id],
+      ...(blank ? { pristineEmptyIds: [...state.pristineEmptyIds, obj.id] } : {}),
     }));
   },
 

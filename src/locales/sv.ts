@@ -441,6 +441,7 @@ const sv = {
     barcodeTooSmall: 'Modul för liten',
     textOverset: 'Text avklippt',
     imageMissing: 'Bild saknas',
+    emptyContent: 'Fält tomt',
     suspiciousChars: 'Konstiga tecken',
     markerValueUnsafe: 'Variabelvärde bryter kodning',
     gs1ValueInvalid: 'Variabelvärde bryter GS1-data',

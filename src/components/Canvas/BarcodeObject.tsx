@@ -4,9 +4,9 @@ import type Konva from "konva";
 import { BARCODE_1D_TYPES, ObjectRegistry } from "../../registry";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { barcodeFtAnchorOffset } from "../../lib/objectBounds";
-import { useColorScheme } from "../../lib/useColorScheme";
+import { useColorScheme, CANVAS_WARNING } from "../../lib/useColorScheme";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
-import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
+import { selectionHandlers, useBlankFieldWarns, PLACEHOLDER_DASH, PLACEHOLDER_STROKE_PX, type KonvaObjectProps } from "./konvaObjectProps";
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 import {
   getDisplaySize,
@@ -18,6 +18,7 @@ import {
 } from "./bwipHelpers";
 import { resolveHriAbove, gs1HriFontDots } from "../../lib/barcodeHri";
 import { gs1ContentToElementString } from "../../lib/gs1";
+import { placeholderContentFor } from "../../registry/placeholderContent";
 import { getObjectStringContent } from "../../lib/variableBinding";
 import { objectRotation } from "../../registry/rotation";
 import { rotatedGroupTransform } from "./rotatedGroupTransform";
@@ -47,6 +48,28 @@ function resolveMwValue<T>(
   return typeof v === "function"
     ? (v as (mw: number) => T)(moduleWidth)
     : v;
+}
+
+/** Warning marker over the blank-field sample: the soft tint mirrors the
+ *  fallback-value tint, the dotted frame the empty-text placeholder. Full-
+ *  strength bars keep the drop ghost legible (an alpha fade would dim twice
+ *  under the ghost's own opacity). */
+function PlaceholderFrame({ width, height }: { width: number; height: number }) {
+  return (
+    <>
+      <Rect width={width} height={height} fill={CANVAS_WARNING} opacity={0.12} listening={false} />
+      <Rect
+        width={width}
+        height={height}
+        stroke={CANVAS_WARNING}
+        strokeWidth={PLACEHOLDER_STROKE_PX}
+        lineCap="round"
+        dash={PLACEHOLDER_DASH}
+        strokeScaleEnabled={false}
+        listening={false}
+      />
+    </>
+  );
 }
 
 export function BarcodeObject({
@@ -89,20 +112,31 @@ export function BarcodeObject({
   // parens it strips for encoding).
   const gs1Hri = !!(obj.props as { gs1?: boolean }).gs1;
   const contentRaw = getObjectStringContent(obj) ?? "";
-  const rawContent = gs1Hri ? gs1ContentToElementString(contentRaw) : contentRaw;
+  // A blank (unconfigured) field renders the symbology's sample (GS1 sample
+  // in GS1 mode): bwip still gets encodable content, so the object keeps its
+  // true footprint. The sample never reaches emit; the blank field's ^FD
+  // stays empty.
+  const blank = contentRaw.trim() === "";
+  const blankWarns = useBlankFieldWarns(obj.id);
+  const warnBlank = blank && blankWarns;
+  const placeholder = blank ? placeholderContentFor(obj.type, obj.props) ?? "" : null;
+  const renderObj =
+    placeholder !== null ? ({ ...obj, props: { ...obj.props, content: placeholder } } as typeof obj) : obj;
+  const effectiveContent = placeholder ?? contentRaw;
+  const rawContent = gs1Hri ? gs1ContentToElementString(effectiveContent) : effectiveContent;
   const printInterpEnabled =
     !ObjectRegistry[obj.type]?.interpretationLocked &&
     !!(obj.props as { printInterpretation?: boolean }).printInterpretation;
 
   // Shared with the preflight encode check (barcodeEncodeFindings) so the
   // displayed placeholder and the badge can't disagree on what's codable.
-  const { canvas: barcodeCanvas, error: errorMsg } = renderBarcodeCanvas(obj, scale, dpmm);
+  const { canvas: barcodeCanvas, error: errorMsg } = renderBarcodeCanvas(renderObj, scale, dpmm);
 
   // Single object holding the full ZPL footprint (w/h) and the bar
   // sub-rectangle (barW/barH/barLeftPx/barTopPx). Defaults zero out
   // when the bwip canvas hasn't rendered yet.
   const dim: BarcodeDisplaySize = barcodeCanvas
-    ? getDisplaySize(obj, barcodeCanvas, scale, dpmm)
+    ? getDisplaySize(renderObj, barcodeCanvas, scale, dpmm)
     : { w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0,
         upright: { w: 0, h: 0, barW: 0, barH: 0, barLeftPx: 0, barTopPx: 0 } };
 
@@ -406,6 +440,7 @@ export function BarcodeObject({
               />
             )}
             <Group key={`hri-${fontVersion}`} ref={setOverlayGroupRef}>{overlayContent}</Group>
+            {warnBlank && <PlaceholderFrame width={Math.max(ub.w, 1)} height={Math.max(ub.h, 1)} />}
           </Group>
         </Group>
       );
@@ -438,6 +473,7 @@ export function BarcodeObject({
             strokeWidth={isSelected ? 2 : 0}
             strokeScaleEnabled={false}
           />
+          {warnBlank && <PlaceholderFrame width={Math.max(ub.w, 1)} height={Math.max(ub.h, 1)} />}
         </Group>
       </Group>
     );

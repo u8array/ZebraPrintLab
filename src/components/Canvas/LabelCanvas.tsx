@@ -24,7 +24,7 @@ import type { SnapGuide } from "../../lib/snapGuides";
 import { computeAlignDeltas, computeDistribute, computeTidy } from "../../lib/align";
 import type { AlignOp, AlignBox, DistributeAxis, AlignRef } from "../../lib/align";
 import { objectBoundsDots, selectionUnionDots, printableRectDots, isBarcode } from "../../lib/objectBounds";
-import { computePreflight, markerValueFindings } from "../../lib/preflight";
+import { computePreflight, markerValueFindings, suppressPristineEmpty } from "../../lib/preflight";
 import { barcodeEncodeFindings } from "./barcodePreflight";
 import { usePreviewBinding } from "../../store/usePreviewBinding";
 import { useContextMenu } from "../../hooks/useContextMenu";
@@ -187,6 +187,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const {
     label,
     selectedIds,
+    pristineEmptyIds,
     addObject,
     updateObject,
     updateObjects,
@@ -524,15 +525,18 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const preflightLeaves = preflightSuppressed ? [] : exportableLeaves(objects);
   const preflightFindings = preflightSuppressed
     ? []
-    : [
-        ...computePreflight(preflightLeaves, frameCtx),
-        ...barcodeEncodeFindings(preflightLeaves, scale, label.dpmm, previewBinding),
-        ...markerValueFindings(preflightLeaves, {
-          variables: previewBinding.variables,
-          csvDataset,
-          csvMapping,
-        }),
-      ];
+    : suppressPristineEmpty(
+        [
+          ...computePreflight(preflightLeaves, frameCtx),
+          ...barcodeEncodeFindings(preflightLeaves, scale, label.dpmm, previewBinding),
+          ...markerValueFindings(preflightLeaves, {
+            variables: previewBinding.variables,
+            csvDataset,
+            csvMapping,
+          }),
+        ],
+        pristineEmptyIds,
+      );
   // Off-label marks pair each off-label finding with its on-screen bbox: a
   // clipped object gets a solid amber outline, a fully-outside one a dashed red
   // outline with a faint fill. Keyed on the off-label kind (not severity) so a

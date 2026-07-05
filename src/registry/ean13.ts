@@ -5,7 +5,7 @@ export type { Barcode1DProps as Ean13Props } from './barcode1d';
 export const ean13CoreConfig: Barcode1DCoreConfig = {
   label: 'EAN-13',
   icon: 'EAN',
-  defaultContent: '590123412345',
+  placeholderContent: '590123412345',
   group: 'code-1d',
   serialisable: false,
   zplCommand: (p) => {

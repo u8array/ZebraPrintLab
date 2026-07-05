@@ -441,6 +441,7 @@ const ja = {
     barcodeTooSmall: 'モジュールが小さすぎる',
     textOverset: 'テキスト切れ',
     imageMissing: '画像なし',
+    emptyContent: '空欄',
     suspiciousChars: '不審な文字',
     markerValueUnsafe: '変数値がエンコードを破損',
     gs1ValueInvalid: '変数値がGS1データを破損',

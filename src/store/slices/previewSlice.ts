@@ -55,7 +55,7 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
     }
     const objs = currentObjects(state);
     const active = buildActiveCsvRow(state.csvDataset, state.csvMapping);
-    const zpl = buildPreviewZpl(state.label, objs, state.variables, active);
+    const zpl = buildPreviewZpl(state.label, objs, state.variables, active, { blankSamples: true });
     // Toggling preview off then on for a side-by-side pixel compare
     // shouldn't burn an API call when nothing changed.
     const cachedUrl = previewCache.get(zpl);

@@ -17,6 +17,10 @@ export interface ObjectTypeCore<P extends object = object> {
   zplCmdFor?: (obj: LabelObjectBase & { props: P }) => string;
   group: ObjectGroup;
   defaultProps: P;
+  /** Sample the canvas and the preview overlay render while the field is
+   *  blank, so an unconfigured barcode keeps its true symbology footprint.
+   *  Never reaches emit or print; the blank field's ^FD stays empty. */
+  placeholderContent?: string;
   /** Drop footprint: dots (editor default) or mm (spec-fixed types
    *  like Maxicode). Palette resolves against current label dpmm. */
   defaultSize:

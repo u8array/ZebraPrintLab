@@ -441,6 +441,7 @@ const it = {
     barcodeTooSmall: 'Modulo troppo piccolo',
     textOverset: 'Testo tagliato',
     imageMissing: 'Immagine assente',
+    emptyContent: 'Campo vuoto',
     suspiciousChars: 'Caratteri sospetti',
     markerValueUnsafe: 'Valore rompe la codifica',
     gs1ValueInvalid: 'Il valore della variabile viola i dati GS1',

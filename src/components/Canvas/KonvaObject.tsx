@@ -10,13 +10,13 @@ import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { measureInkWidthPx } from "../../lib/labelGeometry/measureTextDots";
 import { outlineInset } from "../../lib/shapeGeometry";
 import { reverseShapeStyle } from "./reverseShapeStyle";
-import { useColorScheme } from "../../lib/useColorScheme";
+import { useColorScheme, CANVAS_WARNING } from "../../lib/useColorScheme";
 import { useLabelStore } from "../../store/labelStore";
 import { applyBindingToObject } from "../../lib/variableBinding";
 import { usePreviewBinding } from "../../store/usePreviewBinding";
 import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "../../lib/labelGeometry/textPositionTransforms";
 import { getTextRenderMetrics } from "../../lib/labelGeometry/textRenderMetrics";
-import { selectionHandlers, CAPTURE_CHROME, type KonvaObjectProps } from "./konvaObjectProps";
+import { selectionHandlers, useBlankFieldWarns, CAPTURE_CHROME, PLACEHOLDER_DASH, PLACEHOLDER_STROKE_PX, type KonvaObjectProps } from "./konvaObjectProps";
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 import { DEFAULT_GS_SYMBOL_META, GS_SYMBOLS } from "../../registry/symbol";
 import { GS_SYMBOL_PATHS, GS_VECTOR_CODES, type GsVectorCode } from "../../registry/gsSymbolPaths";
@@ -122,8 +122,6 @@ type TextFieldObj = LeafObject & { type: "text"; props: TextProps };
 /** Approx width of an empty single-line placeholder, expressed as
  *  fontHeight multiples (Glyph-row aspect ratio). */
 const EMPTY_TEXT_PLACEHOLDER_GLYPHS = 4;
-const PLACEHOLDER_STROKE_PX = 3;
-const PLACEHOLDER_DASH: [number, number] = [0.1, 8];
 
 function PlaceholderRect({
   x, y, width, height, rotation, color, fontVersion,
@@ -161,6 +159,7 @@ function TextFieldContent({
   dpmm,
   fontVersion,
   placeholderColor,
+  emptyColor,
   isSelected = false,
 }: {
   obj: TextFieldObj;
@@ -170,6 +169,9 @@ function TextFieldContent({
   dpmm: number;
   fontVersion: number;
   placeholderColor: string;
+  /** Empty-field placeholder stroke: warning orange once the untouched grace
+   *  ended, the affordance accent while pristine or on the drop ghost. */
+  emptyColor: string;
   isSelected?: boolean;
 }) {
   const shift = base.offsetXPx ?? 0;
@@ -191,7 +193,7 @@ function TextFieldContent({
           width={dotsToPx(fontHeight * EMPTY_TEXT_PLACEHOLDER_GLYPHS, scale, dpmm)}
           height={dotsToPx(fontHeight, scale, dpmm)}
           rotation={base.rotation}
-          color={placeholderColor}
+          color={emptyColor}
         />
       );
     }
@@ -232,7 +234,9 @@ function TextFieldContent({
         y={dotsToPx(bounds.y, scale, dpmm)}
         width={dotsToPx(bounds.width, scale, dpmm)}
         height={dotsToPx(bounds.height, scale, dpmm)}
-        color={placeholderColor}
+        // Unconfigured (empty) reads as the warning family, matching the
+        // blank-barcode frame; too-narrow keeps the design-affordance accent.
+        color={emptyContent ? emptyColor : placeholderColor}
       />
     );
   }
@@ -488,7 +492,7 @@ export function KonvaObject(props_: Props) {
         y={tintY}
         width={tintW}
         height={tintH}
-        fill="#fb923c"
+        fill={CANVAS_WARNING}
         opacity={0.12}
         listening={false}
       />
@@ -519,6 +523,7 @@ function KonvaObjectInner({
   const setSidebarTab = useLabelStore((s) => s.setSidebarTab);
   const selectObjects = useLabelStore((s) => s.selectObjects);
   const blockDragMode = useLabelStore((s) => s.blockDragMode);
+  const emptyPlaceholderColor = useBlankFieldWarns(obj.id) ? CANVAS_WARNING : colors.accent;
   // obj.x/y is the EM-bbox top-left; ZPL anchor delta is applied only
   // at the zplGenerator/zplParser boundary.
   const baseMetrics = getTextRenderMetrics(obj, undefined, label);
@@ -639,6 +644,7 @@ function KonvaObjectInner({
           obj={obj as TextFieldObj}
           content={fpContent}
           placeholderColor={colors.accent}
+          emptyColor={emptyPlaceholderColor}
           base={{
             fontSize: fontSizePx,
             fontFamily,

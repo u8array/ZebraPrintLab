@@ -441,6 +441,7 @@ const sl = {
     barcodeTooSmall: 'Modul premajhen',
     textOverset: 'Besedilo odrezano',
     imageMissing: 'Slika manjka',
+    emptyContent: 'Polje prazno',
     suspiciousChars: 'Sumljivi znaki',
     markerValueUnsafe: 'Vrednost spremenljivke krši kodiranje',
     gs1ValueInvalid: 'Vrednost spremenljivke krši GS1 podatke',

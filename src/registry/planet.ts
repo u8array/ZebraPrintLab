@@ -4,7 +4,7 @@ export type { Barcode1DProps as PlanetProps } from "./barcode1d";
 export const planetCoreConfig: Barcode1DCoreConfig = {
   label: "Planet Code",
   icon: "✉P",
-  defaultContent: "12345678901",
+  placeholderContent: '12345678901',
   group: 'code-postal',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";

@@ -441,6 +441,7 @@ const el = {
     barcodeTooSmall: 'Μονάδα πολύ μικρή',
     textOverset: 'Κείμενο αποκόπηκε',
     imageMissing: 'Λείπει εικόνα',
+    emptyContent: 'Πεδίο κενό',
     suspiciousChars: 'Ύποπτοι χαρακτήρες',
     markerValueUnsafe: 'Τιμή μεταβλητής παραβιάζει κωδικοποίηση',
     gs1ValueInvalid: 'Η τιμή μεταβλητής παραβιάζει δεδομένα GS1',

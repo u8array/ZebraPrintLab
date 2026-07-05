@@ -441,6 +441,7 @@ const no = {
     barcodeTooSmall: 'Modul for liten',
     textOverset: 'Tekst avkortet',
     imageMissing: 'Bilde mangler',
+    emptyContent: 'Felt tomt',
     suspiciousChars: 'Merkelige tegn',
     markerValueUnsafe: 'Variabelverdi bryter koding',
     gs1ValueInvalid: 'Variabelverdi bryter GS1-data',

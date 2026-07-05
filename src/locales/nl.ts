@@ -441,6 +441,7 @@ const nl = {
     barcodeTooSmall: 'Module te klein',
     textOverset: 'Tekst afgesneden',
     imageMissing: 'Afbeelding ontbreekt',
+    emptyContent: 'Veld leeg',
     suspiciousChars: 'Rare tekens',
     markerValueUnsafe: 'Variabelwaarde breekt codering',
     gs1ValueInvalid: 'Variabelewaarde schendt GS1-gegevens',

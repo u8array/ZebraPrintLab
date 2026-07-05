@@ -441,6 +441,7 @@ const fi = {
     barcodeTooSmall: 'Moduuli liian pieni',
     textOverset: 'Teksti katkaistu',
     imageMissing: 'Kuva puuttuu',
+    emptyContent: 'Kenttä tyhjä',
     suspiciousChars: 'Oudot merkit',
     markerValueUnsafe: 'Muuttujan arvo rikkoo koodauksen',
     gs1ValueInvalid: 'Muuttujan arvo rikkoo GS1-tiedot',

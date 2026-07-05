@@ -5,6 +5,13 @@ import { updateCurrentObjects } from '../labelStore.internals';
 
 export interface SelectionSlice {
   selectedIds: string[];
+  /** Objects created blank and never yet deselected: their emptyContent
+   *  preflight AND the canvas warning styling (orange frame/placeholder)
+   *  stay suppressed while the user is still configuring the fresh drop
+   *  (form "touched" semantics). Ephemeral UI state, excluded from persist
+   *  and the undo timeline; the first-deselect latch lives as one store
+   *  subscription in labelStore.ts, not in every selection writer. */
+  pristineEmptyIds: string[];
   selectObject: (id: string | null) => void;
   toggleSelectObject: (id: string) => void;
   selectObjects: (ids: string[]) => void;
@@ -21,6 +28,7 @@ export interface SelectionSlice {
 
 export const createSelectionSlice: StateCreator<LabelState, [], [], SelectionSlice> = (set, get) => ({
   selectedIds: [],
+  pristineEmptyIds: [],
 
   selectObject: (id) =>
     set((state) => {

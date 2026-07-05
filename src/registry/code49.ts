@@ -31,13 +31,14 @@ export const code49: ObjectTypeCore<Code49Props> = {
   bindable: true,
   preflight: moduleTooSmallPreflight<Code49Props>('moduleWidth'),
   defaultProps: {
-    content: 'CODE49',
+    content: '',
     height: 20,
     moduleWidth: 2,
     printInterpretation: true,
     mode: 'A',
     rotation: 'N',
   },
+  placeholderContent: 'CODE49',
   defaultSize: { width: 300, height: 120 },
 
   // Clamp height into bwip's range so drag past the limit lands in

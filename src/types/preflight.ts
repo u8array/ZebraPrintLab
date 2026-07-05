@@ -15,7 +15,8 @@ export type PreflightKind =
   | 'imageMissing'
   | 'suspiciousChars'
   | 'markerValueUnsafe'
-  | 'gs1ValueInvalid';
+  | 'gs1ValueInvalid'
+  | 'emptyContent';
 
 export interface PreflightFinding {
   objectId: string;
@@ -48,6 +49,9 @@ export const PREFLIGHT_SEVERITY: Record<PreflightKind, PreflightSeverity> = {
   // (wrong fixed-AI width, charset, date) from a substitution; it still
   // prints, so warn rather than block.
   gs1ValueInvalid: 'warning',
+  // A blank field is legal ZPL and a normal drafting state; it prints a gap,
+  // so warn rather than block. Mirrors the canvas placeholder.
+  emptyContent: 'warning',
 };
 
 /** What a per-type `preflight` producer receives. Minimal on purpose (just the

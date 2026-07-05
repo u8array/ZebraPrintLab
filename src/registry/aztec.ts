@@ -25,11 +25,12 @@ export const aztec: ObjectTypeCore<AztecProps> = {
   bindable: true,
   typedContent: true,
   defaultProps: {
-    content: "1234567890",
+    content: '',
     magnification: 4,
     ecLevel: 0,
     rotation: 'N',
   },
+  placeholderContent: '1234567890',
   defaultSize: { width: 200, height: 200 },
 
   uniformScaleProp: { name: 'magnification', min: MAGNIFICATION_MIN, max: MAGNIFICATION_MAX },

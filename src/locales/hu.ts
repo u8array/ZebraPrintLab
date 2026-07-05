@@ -441,6 +441,7 @@ const hu = {
     barcodeTooSmall: 'Modul túl kicsi',
     textOverset: 'Szöveg vágva',
     imageMissing: 'Kép hiányzik',
+    emptyContent: 'Mező üres',
     suspiciousChars: 'Gyanús karakterek',
     markerValueUnsafe: 'Változóérték megtöri a kódolást',
     gs1ValueInvalid: 'A változó értéke sérti a GS1 adatokat',

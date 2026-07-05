@@ -441,6 +441,7 @@ const he = {
     barcodeTooSmall: 'מודול קטן מדי',
     textOverset: 'טקסט חתוך',
     imageMissing: 'תמונה חסרה',
+    emptyContent: 'שדה ריק',
     suspiciousChars: 'תווים חשודים',
     markerValueUnsafe: 'ערך משתנה שובר קידוד',
     gs1ValueInvalid: 'ערך המשתנה שובר נתוני GS1',

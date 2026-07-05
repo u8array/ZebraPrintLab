@@ -1,5 +1,4 @@
 import { ObjectRegistry, getEntry } from './index';
-import { GS1_SAMPLE_CONTENT } from '../lib/gs1';
 import type { ObjectGroup } from '../types/LabelObject';
 import type { ObjectTypeDefinition } from '../types/ObjectType';
 import type { Translations } from '../locales';
@@ -42,11 +41,13 @@ const PALETTE_PRESETS: PalettePreset[] = [
     label: (t) => t.registry.text.modeTextBlock, propsOverride: { textMode: 'tb', blockWidth: 400, blockHeight: 120 }, defaultSize: { width: 400, height: 120 } },
   { id: 'text-serial', type: 'text', icon: '#', zplCmd: '^SN',
     label: (t) => t.types.serial, propsOverride: { content: '001', serial: { increment: 1, zplMode: 'SN' } }, defaultSize: { width: 100, height: 30 } },
+  // GS1 presets start empty on purpose: the builder then opens on its use-case
+  // presets instead of a sample element string the user has to replace.
   { id: 'datamatrix-gs1', type: 'datamatrix', icon: '▩', zplCmd: '^BX',
-    label: (t) => t.types.datamatrixGs1, propsOverride: { gs1: true, content: GS1_SAMPLE_CONTENT },
+    label: (t) => t.types.datamatrixGs1, propsOverride: { gs1: true },
     defaultSize: { width: 150, height: 150 } },
   { id: 'code128-gs1', type: 'code128', icon: '|||', zplCmd: '^BC',
-    label: (t) => t.types.code128Gs1, propsOverride: { gs1: true, content: GS1_SAMPLE_CONTENT },
+    label: (t) => t.types.code128Gs1, propsOverride: { gs1: true },
     defaultSize: { width: 300, height: 120 } },
 ];
 

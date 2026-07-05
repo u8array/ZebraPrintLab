@@ -21,9 +21,12 @@ describe('paletteTypes', () => {
   it('the GS1 DataMatrix preset follows datamatrix and seeds gs1:true', () => {
     const ids = addablesInGroup('code-2d', en).map((e) => e.id);
     expect(ids[ids.indexOf('datamatrix') + 1]).toBe('datamatrix-gs1');
+    // No content seed: an empty GS1 field opens the builder on its use-case
+    // presets instead of a sample element string.
     expect(resolveAddable('datamatrix-gs1', en)).toMatchObject({
       type: 'datamatrix',
-      propsOverride: { gs1: true, content: '0109501101530003' },
+      propsOverride: { gs1: true },
     });
+    expect((resolveAddable('datamatrix-gs1', en)?.propsOverride as { content?: string }).content).toBeUndefined();
   });
 });
