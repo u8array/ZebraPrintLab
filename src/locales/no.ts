@@ -340,6 +340,9 @@ const no = {
 
   properties: {
     positionSection: 'Posisjon',
+    anchorMode: 'Anker',
+    anchorTopLeftHint: 'Posisjonen er øverste venstre hjørne',
+    anchorBaselineHint: 'Posisjonen er grunnlinjen (underkant for former og strekkoder)',
     optionsSection: 'Alternativer',
     contentSection: 'Innhold',
     settingsSection: 'Innstillinger',
@@ -644,7 +647,7 @@ const no = {
     app: {
       editorHeading: 'Editor',
       powerUser: 'Avansert brukermodus',
-      powerUserHint: 'Vis den genererte ZPL-kommandoen ved siden av hver egenskap',
+      powerUserHint: 'Vis den genererte ZPL-kommandoen ved siden av hver egenskap og lås opp avanserte kontroller',
       smartSnap: 'Smart snapping',
       smartSnapHint: 'Juster mot andre objekter ved draing. Hold Ctrl/Cmd for å omgå.',
       privacyHeading: 'Personvern',

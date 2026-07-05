@@ -340,6 +340,9 @@ const de = {
 
   properties: {
     positionSection: 'Position',
+    anchorMode: 'Anker',
+    anchorTopLeftHint: 'Position ist die linke obere Ecke',
+    anchorBaselineHint: 'Position ist die Grundlinie (bei Formen und Barcodes die Unterkante)',
     optionsSection: 'Optionen',
     contentSection: 'Inhalt',
     settingsSection: 'Einstellungen',
@@ -644,7 +647,7 @@ const de = {
     app: {
       editorHeading: 'Editor',
       powerUser: 'Power-User-Modus',
-      powerUserHint: 'Den erzeugten ZPL-Befehl neben jeder Eigenschaft anzeigen',
+      powerUserHint: 'Zeigt den erzeugten ZPL-Befehl neben jeder Eigenschaft und schaltet erweiterte Funktionen frei',
       smartSnap: 'Intelligentes Einrasten',
       smartSnapHint: 'Beim Ziehen an anderen Objekten ausrichten. Ctrl/Cmd halten zum Überspringen.',
       privacyHeading: 'Datenschutz',

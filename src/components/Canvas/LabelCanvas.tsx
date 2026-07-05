@@ -23,7 +23,7 @@ import { Select } from "../ui/Select";
 import type { SnapGuide } from "../../lib/snapGuides";
 import { computeAlignDeltas, computeDistribute, computeTidy } from "../../lib/align";
 import type { AlignOp, AlignBox, DistributeAxis, AlignRef } from "../../lib/align";
-import { objectBoundsDots, selectionUnionDots, printableRectDots } from "../../lib/objectBounds";
+import { objectBoundsDots, selectionUnionDots, printableRectDots, isBarcode } from "../../lib/objectBounds";
 import { computePreflight, markerValueFindings } from "../../lib/preflight";
 import { barcodeEncodeFindings } from "./barcodePreflight";
 import { usePreviewBinding } from "../../store/usePreviewBinding";
@@ -41,6 +41,7 @@ import { GuideLines } from "./GuideLines";
 import { Ruler, RULER_SIZE } from "./Ruler";
 import { SHAPE_PRIMITIVE_TYPES } from "../../registry";
 import type { LeafObject } from "../../registry";
+import { convertPositionType } from "../../lib/positionConvert";
 import { addableGroupsFor } from "../Palette/paletteGroups";
 import { resolveAddable, type AddableEntry } from "../../registry/palettePresets";
 import { useColorScheme } from "../../lib/useColorScheme";
@@ -116,6 +117,7 @@ export interface LabelCanvasHandle {
   alignSelection: (op: AlignOp, ref: AlignRef) => void;
   distributeSelection: (axis: DistributeAxis) => void;
   tidySelection: () => void;
+  convertObjectPositionType: (id: string, target: "FO" | "FT") => void;
 }
 
 export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCanvas({
@@ -773,9 +775,27 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
           const updates = deltas.flatMap(sel.apply);
           if (updates.length > 0) updateObjects(updates);
         },
+        // ^FO<->^FT re-anchor: owned here so the measured-footprint read stays in
+        // the layer that publishes it, like align/distribute. Pure conversion,
+        // one undo step; no-op on groups and unsupported types. Barcodes need
+        // their published footprint for the anchor delta, so an unmeasured one
+        // (hidden/unmounted, or a failed render) refuses instead of converting
+        // on fallback dims that would shift the real position.
+        convertObjectPositionType: (id: string, target: "FO" | "FT") => {
+          const state = useLabelStore.getState();
+          const obj = findObjectById(currentObjects(state), id);
+          if (!obj || isGroup(obj)) return;
+          const measured = measuredBoundsMap();
+          if (isBarcode(obj) && !measured.has(id)) return;
+          const patch = convertPositionType(obj, target, {
+            label: state.label,
+            measured,
+          });
+          if (patch) updateObject(id, patch);
+        },
       };
     },
-    [updateObjects],
+    [updateObjects, updateObject],
   );
 
   const {

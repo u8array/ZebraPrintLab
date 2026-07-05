@@ -340,6 +340,9 @@ const ar = {
 
   properties: {
     positionSection: 'الموضع (مم)',
+    anchorMode: 'مرساة',
+    anchorTopLeftHint: 'الموضع هو الزاوية العلوية اليسرى',
+    anchorBaselineHint: 'الموضع هو خط الأساس (الحافة السفلية للأشكال والرموز الشريطية)',
     optionsSection: 'خيارات',
     contentSection: 'المحتوى',
     settingsSection: 'الإعدادات',
@@ -644,7 +647,7 @@ const ar = {
     app: {
       editorHeading: 'المحرر',
       powerUser: 'وضع المستخدم المتقدم',
-      powerUserHint: 'عرض أمر ZPL المُولَّد بجوار كل خاصية',
+      powerUserHint: 'عرض أمر ZPL المُولَّد بجوار كل خاصية وتفعيل عناصر التحكم المتقدمة',
       smartSnap: 'الإرساء الذكي',
       smartSnapHint: 'محاذاة مع الكائنات الأخرى أثناء السحب. اضغط Ctrl/Cmd للتخطي.',
       privacyHeading: 'الخصوصية',

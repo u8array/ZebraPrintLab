@@ -340,6 +340,9 @@ const lt = {
 
   properties: {
     positionSection: 'Padėtis',
+    anchorMode: 'Inkaras',
+    anchorTopLeftHint: 'Padėtis yra viršutinis kairysis kampas',
+    anchorBaselineHint: 'Padėtis yra bazinė linija (apatinis kraštas formoms ir brūkšniniams kodams)',
     optionsSection: 'Parinktys',
     contentSection: 'Turinys',
     settingsSection: 'Nustatymai',
@@ -644,7 +647,7 @@ const lt = {
     app: {
       editorHeading: 'Redaktorius',
       powerUser: 'Pažengusio vartotojo režimas',
-      powerUserHint: 'Rodyti sugeneruotą ZPL komandą šalia kiekvienos savybės',
+      powerUserHint: 'Rodyti sugeneruotą ZPL komandą šalia kiekvienos savybės ir atrakinti išplėstines valdymo parinktis',
       smartSnap: 'Išmanusis pritvirtinimas',
       smartSnapHint: 'Lygiuoja su kitais objektais tempiant. Laikykite Ctrl/Cmd, kad praleistumėte.',
       privacyHeading: 'Privatumas',

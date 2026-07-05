@@ -340,6 +340,9 @@ const da = {
 
   properties: {
     positionSection: 'Position',
+    anchorMode: 'Anker',
+    anchorTopLeftHint: 'Positionen er øverste venstre hjørne',
+    anchorBaselineHint: 'Positionen er grundlinjen (underkant for former og stregkoder)',
     optionsSection: 'Valg',
     contentSection: 'Indhold',
     settingsSection: 'Indstillinger',
@@ -644,7 +647,7 @@ const da = {
     app: {
       editorHeading: 'Editor',
       powerUser: 'Avanceret brugertilstand',
-      powerUserHint: 'Vis den genererede ZPL-kommando ved siden af hver egenskab',
+      powerUserHint: 'Vis den genererede ZPL-kommando ved siden af hver egenskab og lås avancerede indstillinger op',
       smartSnap: 'Smart snap',
       smartSnapHint: 'Juster mod andre objekter under trækning. Hold Ctrl/Cmd nede for at omgå.',
       privacyHeading: 'Privatliv',

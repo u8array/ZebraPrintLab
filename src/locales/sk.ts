@@ -340,6 +340,9 @@ const sk = {
 
   properties: {
     positionSection: 'Pozícia',
+    anchorMode: 'Kotva',
+    anchorTopLeftHint: 'Poloha je ľavý horný roh',
+    anchorBaselineHint: 'Poloha je základná čiara (dolný okraj pre tvary a čiarové kódy)',
     optionsSection: 'Možnosti',
     contentSection: 'Obsah',
     settingsSection: 'Nastavenia',
@@ -644,7 +647,7 @@ const sk = {
     app: {
       editorHeading: 'Editor',
       powerUser: 'Pokročilý režim',
-      powerUserHint: 'Zobraziť vygenerovaný ZPL príkaz vedľa každej vlastnosti',
+      powerUserHint: 'Zobraziť vygenerovaný ZPL príkaz vedľa každej vlastnosti a odomknúť rozšírené ovládacie prvky',
       smartSnap: 'Inteligentné prichytávanie',
       smartSnapHint: 'Zarovnanie na ostatné objekty pri presúvaní. Podržte Ctrl/Cmd pre preskočenie.',
       privacyHeading: 'Súkromie',

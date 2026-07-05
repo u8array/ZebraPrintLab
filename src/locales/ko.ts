@@ -340,6 +340,9 @@ const ko = {
 
   properties: {
     positionSection: '위치',
+    anchorMode: '앵커',
+    anchorTopLeftHint: '위치는 왼쪽 위 모서리입니다',
+    anchorBaselineHint: '위치는 기준선입니다 (도형 및 바코드의 하단 모서리)',
     optionsSection: '옵션',
     contentSection: '콘텐츠',
     settingsSection: '설정',
@@ -644,7 +647,7 @@ const ko = {
     app: {
       editorHeading: '편집기',
       powerUser: '고급 사용자 모드',
-      powerUserHint: '각 속성 옆에 생성된 ZPL 명령어 표시',
+      powerUserHint: '각 속성 옆에 생성된 ZPL 명령어를 표시하고 고급 컨트롤을 활성화합니다',
       smartSnap: '스마트 스냅',
       smartSnapHint: '드래그하는 동안 다른 오브젝트에 맞춰 정렬합니다. Ctrl/Cmd를 누르면 건너뜁니다.',
       privacyHeading: '개인정보',

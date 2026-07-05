@@ -340,6 +340,9 @@ const he = {
 
   properties: {
     positionSection: 'מיקום (מ"מ)',
+    anchorMode: 'עוגן',
+    anchorTopLeftHint: 'המיקום הוא הפינה השמאלית העליונה',
+    anchorBaselineHint: 'המיקום הוא קו הבסיס (הקצה התחתון לצורות ולברקודים)',
     optionsSection: 'אפשרויות',
     contentSection: 'תוכן',
     settingsSection: 'הגדרות',
@@ -644,7 +647,7 @@ const he = {
     app: {
       editorHeading: 'עורך',
       powerUser: 'מצב מתקדם',
-      powerUserHint: 'הצג את פקודת ZPL שנוצרה ליד כל מאפיין',
+      powerUserHint: 'הצג את פקודת ZPL שנוצרה ליד כל מאפיין ופתח פקדים מתקדמים',
       smartSnap: 'הצמדה חכמה',
       smartSnapHint: 'ישר לאובייקטים אחרים בזמן גרירה. לחץ Ctrl/Cmd לדילוג.',
       privacyHeading: 'פרטיות',

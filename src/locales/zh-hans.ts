@@ -340,6 +340,9 @@ const zhHans = {
 
   properties: {
     positionSection: '位置 (毫米)',
+    anchorMode: '锚点',
+    anchorTopLeftHint: '位置为左上角',
+    anchorBaselineHint: '位置为基线（图形和条形码的下边缘）',
     optionsSection: '选项',
     contentSection: '内容',
     settingsSection: '设置',
@@ -644,7 +647,7 @@ const zhHans = {
     app: {
       editorHeading: '编辑器',
       powerUser: '高级用户模式',
-      powerUserHint: '在每个属性旁边显示生成的ZPL命令',
+      powerUserHint: '在每个属性旁边显示生成的ZPL命令，并解锁高级控制项',
       smartSnap: '智能吸附',
       smartSnapHint: '拖动时对齐其他对象。按住Ctrl/Cmd可跳过对齐。',
       privacyHeading: '隐私',

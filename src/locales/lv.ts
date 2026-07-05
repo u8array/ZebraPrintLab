@@ -340,6 +340,9 @@ const lv = {
 
   properties: {
     positionSection: 'Pozīcija',
+    anchorMode: 'Enkurs',
+    anchorTopLeftHint: 'Pozīcija ir augšējais kreisais stūris',
+    anchorBaselineHint: 'Pozīcija ir bāzlīnija (apakšējā mala formām un svītrkodiem)',
     optionsSection: 'Opcijas',
     contentSection: 'Saturs',
     settingsSection: 'Iestatījumi',
@@ -644,7 +647,7 @@ const lv = {
     app: {
       editorHeading: 'Redaktors',
       powerUser: 'Pieredzējuša lietotāja režīms',
-      powerUserHint: 'Rādīt emitēto ZPL komandu blakus katram rekvizītam',
+      powerUserHint: 'Rādīt emitēto ZPL komandu blakus katram rekvizītam un atbloķēt papildu vadīklas',
       smartSnap: 'Viedā piestiprināšana',
       smartSnapHint: 'Vilkšanas laikā izlīdzina ar citiem objektiem. Turiet Ctrl/Cmd, lai apietu.',
       privacyHeading: 'Privātums',

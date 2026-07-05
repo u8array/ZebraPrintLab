@@ -340,6 +340,9 @@ const et = {
 
   properties: {
     positionSection: 'Asukoht',
+    anchorMode: 'Ankur',
+    anchorTopLeftHint: 'Asukoht on vasak ülemine nurk',
+    anchorBaselineHint: 'Asukoht on baasjoon (alumine serv kujundite ja vöötkoodi jaoks)',
     optionsSection: 'Valikud',
     contentSection: 'Sisu',
     settingsSection: 'Sätted',
@@ -644,7 +647,7 @@ const et = {
     app: {
       editorHeading: 'Redaktor',
       powerUser: 'Power-kasutaja režiim',
-      powerUserHint: 'Kuva emiteeritud ZPL käsk iga atribuudi kõrval',
+      powerUserHint: 'Kuva emiteeritud ZPL käsk iga atribuudi kõrval ja luba täpsemad juhtelemendid',
       smartSnap: 'Nutikas haakimine',
       smartSnapHint: 'Joonda teiste objektidega lohistades. Hoidke Ctrl/Cmd all, et vahele jätta.',
       privacyHeading: 'Privaatsus',

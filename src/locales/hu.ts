@@ -340,6 +340,9 @@ const hu = {
 
   properties: {
     positionSection: 'Pozíció',
+    anchorMode: 'Horgony',
+    anchorTopLeftHint: 'A pozíció a bal felső sarok',
+    anchorBaselineHint: 'A pozíció az alapvonal (alakzatok és vonalkódok alsó széle)',
     optionsSection: 'Lehetőségek',
     contentSection: 'Tartalom',
     settingsSection: 'Beállítások',
@@ -644,7 +647,7 @@ const hu = {
     app: {
       editorHeading: 'Szerkesztő',
       powerUser: 'Haladó felhasználói mód',
-      powerUserHint: 'Mutassa az emittált ZPL parancsot minden tulajdonság mellett',
+      powerUserHint: 'Mutassa az emittált ZPL parancsot minden tulajdonság mellett, és oldja fel a speciális vezérlőket',
       smartSnap: 'Intelligens illesztés',
       smartSnapHint: 'Igazítás más objektumokhoz húzás közben. Tartsa lenyomva a Ctrl/Cmd billentyűt az átugráshoz.',
       privacyHeading: 'Adatvédelem',

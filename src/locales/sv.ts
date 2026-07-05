@@ -340,6 +340,9 @@ const sv = {
 
   properties: {
     positionSection: 'Position',
+    anchorMode: 'Ankare',
+    anchorTopLeftHint: 'Positionen är det övre vänstra hörnet',
+    anchorBaselineHint: 'Positionen är baslinjen (underkant för former och streckkoder)',
     optionsSection: 'Alternativ',
     contentSection: 'Innehåll',
     settingsSection: 'Inställningar',
@@ -644,7 +647,7 @@ const sv = {
     app: {
       editorHeading: 'Redigerare',
       powerUser: 'Avancerat användarläge',
-      powerUserHint: 'Visa det utsända ZPL-kommandot bredvid varje egenskap',
+      powerUserHint: 'Visa det utsända ZPL-kommandot bredvid varje egenskap och lås upp avancerade kontroller',
       smartSnap: 'Smart snäppning',
       smartSnapHint: 'Justera mot andra objekt under dragning. Håll Ctrl/Cmd för att kringgå.',
       privacyHeading: 'Integritet',
