@@ -184,3 +184,17 @@ export const labelConfigSchema = z.object({
 });
 
 export type LabelConfig = z.infer<typeof labelConfigSchema>;
+
+/** Per-label ZPL overrides the printer-modal perLabel tabs edit; the store's
+ *  `resetPerLabelConfig` clears exactly these back to unset (= printer default,
+ *  not emitted). Design-time fields (size, dpmm, fonts) are not print overrides.
+ *  Lives here so the `keyof LabelConfig` check sits next to the schema, and a
+ *  leaf-module home keeps the slice and selectors that read it cycle-free. */
+export const PER_LABEL_ZPL_FIELDS = [
+  'mediaMode', 'mediaType', 'mediaTracking', 'maxLabelLength',
+  'mediaFeedPowerUp', 'mediaFeedHeadClose', 'suppressBackfeed', 'backfeedSequence',
+  'printOrientation', 'mirror', 'printSpeed', 'slewSpeed', 'backfeedSpeed',
+  'darkness', 'instantDarkness',
+  'labelHomeX', 'labelHomeY', 'labelTop', 'labelShift',
+  'printQuantity', 'pauseCount', 'replicates', 'overridePauseCount',
+] as const satisfies readonly (keyof LabelConfig)[];

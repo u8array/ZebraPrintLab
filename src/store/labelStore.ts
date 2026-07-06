@@ -42,6 +42,7 @@ export {
   canCallLabelary,
   selectLabelaryNoticeRequired,
   selectPreviewLocksEditor,
+  selectHasPerLabelOverrides,
   selectBatchInputs,
   selectCanBatchExport,
 } from './labelStore.selectors';

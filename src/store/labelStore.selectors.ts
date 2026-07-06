@@ -4,9 +4,15 @@ import type { CsvDataset } from './slices/csvSlice';
 import type { CsvMapping } from '../types/Variable';
 import type { LabelState } from './labelStore';
 import type { PageState } from './labelStore.internals';
+import { PER_LABEL_ZPL_FIELDS } from '../types/LabelConfig';
 
 export const currentObjects = (state: PageState): LabelObject[] =>
   state.pages[state.currentPageIndex]?.objects ?? [];
+
+/** True while any per-label print override is set; drives the reset button's
+ *  visibility so its disappearance after a reset doubles as feedback. */
+export const selectHasPerLabelOverrides = (s: LabelState): boolean =>
+  PER_LABEL_ZPL_FIELDS.some((k) => s.label[k] !== undefined);
 
 /** True when a Labelary network call is permitted: the integration is on
  *  AND, on the public host, the user has acknowledged the privacy notice.

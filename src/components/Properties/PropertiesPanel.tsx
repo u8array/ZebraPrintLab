@@ -1,5 +1,5 @@
 import { useId, useState, type RefObject } from "react";
-import { InformationCircleIcon, FolderPlusIcon } from "@heroicons/react/16/solid";
+import { Cog6ToothIcon, InformationCircleIcon, FolderPlusIcon } from "@heroicons/react/16/solid";
 import { useLabelStore, useCurrentObjects, selectPreviewLocksEditor } from "../../store/labelStore";
 import type { LabelCanvasHandle } from "../Canvas/LabelCanvas";
 import type { AlignOp, DistributeAxis, AlignRef } from "../../lib/align";
@@ -19,10 +19,9 @@ import {
 } from "../../lib/units";
 import type { Unit } from "../../lib/units";
 import { useT } from "../../lib/useT";
-import { parseIntOrUndef } from "../../lib/inputParse";
 import { SectionCard, StaticSectionCard } from "./SectionCard";
 import { UnitNumberInput } from "./UnitNumberInput";
-import { FieldLabel, ZplCmd } from "./ZplCmd";
+import { FieldLabel } from "./ZplCmd";
 import { Tooltip } from "../ui/Tooltip";
 import { SegmentedControl } from "../ui/SegmentedControl";
 import { Select } from "../ui/Select";
@@ -34,15 +33,6 @@ import { inputCls, labelCls } from "./styles";
 import { fieldGridCols, fieldGridCell } from "../ui/formStyles";
 import type { LabelConfig } from "../../types/LabelConfig";
 import type { LabelObjectBase } from "../../types/LabelObject";
-
-/** Optional dot value from a unit-string input: empty stays unset, otherwise
- *  the entered unit value is converted back to dots. */
-function dotsFromUnitOrUndef(raw: string, unit: Unit, dpmm: number): number | undefined {
-  if (raw.trim() === "") return undefined;
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return undefined;
-  return Math.round(mmToDots(unitToMm(n, unit), dpmm));
-}
 
 /** Tooltip-icon flagging that the canvas render is approximate for
  *  the given object type. Two severities collapse into one icon
@@ -464,6 +454,7 @@ function LabelConfigPanel({
   // so skip the prompt rather than open a modal that would do nothing.
   const hasObjects = useLabelStore((s) => s.pages.some((p) => p.objects.length > 0));
   const locked = useLabelStore(selectPreviewLocksEditor);
+  const setPrinterSettingsTab = useLabelStore((s) => s.setPrinterSettingsTab);
   const matchedPreset = PRESETS.find(
     (p) =>
       p.widthMm === label.widthMm &&
@@ -496,7 +487,21 @@ function LabelConfigPanel({
       </div>
 
       <div className="p-2 flex flex-col gap-2">
-        <StaticSectionCard title={t.label.formatSection}>
+        <StaticSectionCard
+          title={t.label.formatSection}
+          headerAction={
+            <Tooltip content={t.printerSettings.title}>
+              <button
+                type="button"
+                onClick={() => setPrinterSettingsTab("output")}
+                aria-label={t.printerSettings.title}
+                className="text-muted hover:text-text transition-colors"
+              >
+                <Cog6ToothIcon className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
+          }
+        >
         <div className="flex flex-col gap-1">
           <label className={labelCls}>{t.label.preset}</label>
           <Select<string>
@@ -606,156 +611,6 @@ function LabelConfigPanel({
           />
         </div>
         </StaticSectionCard>
-
-        <SectionCard
-          id="label-output"
-          title={t.label.outputHeading}
-          defaultOpen={false}
-        >
-        <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1">
-          <label className={labelCls}>
-            {t.label.offsetsHeading}
-            <Tooltip content={t.label.offsetsHint}>
-              <InformationCircleIcon className="w-3.5 h-3.5 ml-1 inline-block align-text-bottom text-muted cursor-help" />
-            </Tooltip>
-          </label>
-          <div className={`grid grid-cols-3 ${fieldGridCols}`}>
-            <div className={fieldGridCell}>
-              <div className="flex items-start justify-between gap-2">
-                <label className="text-[10px] text-muted">{`${t.label.labelHomeX} (${unitLabel(unit)})`}</label>
-                <ZplCmd cmd="^LH" />
-              </div>
-              <input
-                type="number"
-                className={inputCls}
-                value={label.labelHomeX === undefined ? "" : mmToUnit(dotsToMm(label.labelHomeX, label.dpmm), unit)}
-                min={0}
-                step={unitStep(unit)}
-                onChange={(e) =>
-                  onUpdate({ labelHomeX: dotsFromUnitOrUndef(e.target.value, unit, label.dpmm) })
-                }
-              />
-            </div>
-            <div className={fieldGridCell}>
-              <div className="flex items-start justify-between gap-2">
-                <label className="text-[10px] text-muted">{`${t.label.labelHomeY} (${unitLabel(unit)})`}</label>
-                <ZplCmd cmd="^LH" />
-              </div>
-              <input
-                type="number"
-                className={inputCls}
-                value={label.labelHomeY === undefined ? "" : mmToUnit(dotsToMm(label.labelHomeY, label.dpmm), unit)}
-                min={0}
-                step={unitStep(unit)}
-                onChange={(e) =>
-                  onUpdate({ labelHomeY: dotsFromUnitOrUndef(e.target.value, unit, label.dpmm) })
-                }
-              />
-            </div>
-            <div className={fieldGridCell}>
-              <div className="flex items-start justify-between gap-2">
-                <label className="text-[10px] text-muted">{`${t.label.labelTop} (${unitLabel(unit)})`}</label>
-                <ZplCmd cmd="^LT" />
-              </div>
-              <input
-                type="number"
-                className={inputCls}
-                value={label.labelTop === undefined ? "" : mmToUnit(dotsToMm(label.labelTop, label.dpmm), unit)}
-                min={mmToUnit(dotsToMm(-120, label.dpmm), unit)}
-                max={mmToUnit(dotsToMm(120, label.dpmm), unit)}
-                step={unitStep(unit)}
-                onChange={(e) =>
-                  onUpdate({ labelTop: dotsFromUnitOrUndef(e.target.value, unit, label.dpmm) })
-                }
-              />
-            </div>
-          </div>
-        </div>
-
-        <UnitNumberInput
-          label={t.label.labelShift}
-          valueDots={label.labelShift}
-          allowUnset
-          // ^LS shifts content left; the canvas viewport frames a non-negative
-          // shift. Negatives round-trip from import but aren't authored here
-          // (spec: "if print position is less than 0, set ^LS to 0").
-          minDots={0}
-          onChangeDots={(labelShift) => onUpdate({ labelShift })}
-          zplCmd="^LS"
-        />
-
-        <div className="flex flex-col gap-1">
-          <FieldLabel cmd="^PQ">{t.label.printQuantity}</FieldLabel>
-          <input
-            type="number"
-            className={inputCls}
-            value={label.printQuantity ?? 1}
-            min={1}
-            onChange={(e) =>
-              onUpdate({
-                printQuantity:
-                  Number(e.target.value) > 1
-                    ? Number(e.target.value)
-                    : undefined,
-              })
-            }
-          />
-        </div>
-
-        </div>
-        </SectionCard>
-
-        <SectionCard
-          id="label-quantity-advanced"
-          title={t.label.quantityAdvancedHeading}
-          defaultOpen={false}
-        >
-        <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1">
-          <FieldLabel cmd="^PQ">{t.label.pauseCount}</FieldLabel>
-          <input
-            type="number"
-            className={inputCls}
-            value={label.pauseCount ?? ""}
-            min={0}
-            max={99999999}
-            onChange={(e) =>
-              onUpdate({ pauseCount: parseIntOrUndef(e.target.value) })
-            }
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <FieldLabel cmd="^PQ">{t.label.replicates}</FieldLabel>
-          <input
-            type="number"
-            className={inputCls}
-            value={label.replicates ?? ""}
-            min={0}
-            max={99999999}
-            onChange={(e) =>
-              onUpdate({ replicates: parseIntOrUndef(e.target.value) })
-            }
-          />
-        </div>
-
-        <label className="flex w-full items-center gap-2 text-xs">
-          <Tooltip content={t.label.overridePauseCountHint}>
-            <input
-              type="checkbox"
-              checked={label.overridePauseCount === "Y"}
-              onChange={(e) =>
-                onUpdate({
-                  overridePauseCount: e.target.checked ? "Y" : undefined,
-                })
-              }
-            />
-          </Tooltip>
-          {t.label.overridePauseCount}
-        </label>
-        </div>
-        </SectionCard>
 
         <SectionCard
           id="label-fonts"

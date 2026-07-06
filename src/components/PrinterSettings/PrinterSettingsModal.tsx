@@ -1,9 +1,9 @@
-import { useId, type FC } from "react";
+import { useId, useRef, useState, type FC } from "react";
 import { CheckIcon, ClipboardDocumentIcon, TrashIcon, XMarkIcon } from "@heroicons/react/16/solid";
 import { useCopyToClipboard } from "../../lib/useCopyToClipboard";
 import { useT } from "../../lib/useT";
 import { generateSetupScript } from "../../lib/zplSetupScript";
-import { useLabelStore } from "../../store/labelStore";
+import { useLabelStore, selectHasPerLabelOverrides } from "../../store/labelStore";
 import type { PrinterSettingsTab } from "../../store/slices/uiSlice";
 import type { PrinterProfile } from "../../types/PrinterProfile";
 import { DialogShell } from "../ui/DialogShell";
@@ -16,7 +16,9 @@ import { FontsTab } from "./FontsTab";
 import { IdentityTab } from "./IdentityTab";
 import { MaintenanceTab } from "./MaintenanceTab";
 import { MediaFeedTab } from "./MediaFeedTab";
+import { OutputTab } from "./OutputTab";
 import { PrintQualityTab } from "./PrintQualityTab";
+import { IllustrationFocusProvider, PrinterIllustration } from "./printerIllustration";
 
 type TopTabId = 'app' | 'perLabel' | 'setupScript';
 
@@ -26,6 +28,7 @@ const TOP_TAB_OF = {
   appSettings: 'app',
   mediaFeed: 'perLabel',
   printQuality: 'perLabel',
+  output: 'perLabel',
   clockTime: 'setupScript',
   encodingLanguage: 'setupScript',
   fonts: 'setupScript',
@@ -56,6 +59,7 @@ const TAB_COMPONENTS: Partial<Record<PrinterSettingsTab, FC>> = {
   appSettings: AppSettingsTab,
   mediaFeed: MediaFeedTab,
   printQuality: PrintQualityTab,
+  output: OutputTab,
   clockTime: ClockAndTimeTab,
   encodingLanguage: EncodingAndLanguageTab,
   fonts: FontsTab,
@@ -69,12 +73,53 @@ const MODAL_BOX_CLS =
 
 const PREVIEW_HEIGHT = "h-40";
 
+/** Compact two-step reset for the narrow tab rail: one click arms (warning
+ *  text), the second resets. A single toggling button, not the shared
+ *  two-button DangerConfirmButton, because the rail can't fit confirm+cancel;
+ *  the caller's onReset moves focus into the trap before this unmounts. */
+function ResetPerLabelButton({
+  label,
+  confirmLabel,
+  onReset,
+}: {
+  label: string;
+  confirmLabel: string;
+  onReset: () => void;
+}) {
+  const [armed, setArmed] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => (armed ? onReset() : setArmed(true))}
+      onPointerLeave={() => setArmed(false)}
+      onBlur={() => setArmed(false)}
+      className={
+        "w-full px-2 py-1.5 text-[11px] rounded border transition-colors " +
+        (armed
+          ? "border-warning text-warning"
+          : "border-border text-muted hover:text-text hover:bg-surface-2")
+      }
+    >
+      {armed ? confirmLabel : label}
+    </button>
+  );
+}
+
 export function PrinterSettingsModal() {
   const t = useT();
   const tab = useLabelStore((s) => s.printerSettingsTab);
   const setTab = useLabelStore((s) => s.setPrinterSettingsTab);
   const printerProfile = useLabelStore((s) => s.printerProfile);
   const resetPrinterProfile = useLabelStore((s) => s.resetPrinterProfile);
+  const resetPerLabelConfig = useLabelStore((s) => s.resetPerLabelConfig);
+  // The reset button unmounts once its overrides are gone; move focus to the
+  // active top-tab first so it stays inside the dialog's focus trap.
+  const topTabsRef = useRef<HTMLDivElement>(null);
+  const resetPerLabel = () => {
+    topTabsRef.current?.querySelector<HTMLElement>('[aria-current="page"]')?.focus();
+    resetPerLabelConfig();
+  };
+  const hasPerLabelOverrides = useLabelStore(selectHasPerLabelOverrides);
   const openZebraPrint = useLabelStore((s) => s.openZebraPrint);
   const titleId = useId();
   const subtitleId = useId();
@@ -116,6 +161,7 @@ export function PrinterSettingsModal() {
       </header>
 
       <div
+        ref={topTabsRef}
         // Plain nav (not role=tablist) so the strip + rail share one
         // a11y paradigm.
         className="px-5 pt-3 border-b border-border flex gap-1"
@@ -147,27 +193,38 @@ export function PrinterSettingsModal() {
         })}
       </div>
 
-      <div className="flex-1 flex min-h-0">
-        <nav
-          className="w-44 shrink-0 border-r border-border bg-surface-2/40 py-2"
-          aria-label={t.printerSettings[activeLabelKey]}
-        >
-          {activeTabs.map((id) => (
-            <TabRailRow
-              key={id}
-              id={id}
-              active={id === tab}
-              onClick={() => setTab(id)}
-              label={t.printerSettings.tabs[id]}
-              wipLabel={t.printerSettings.wip}
-            />
-          ))}
-        </nav>
+      <IllustrationFocusProvider>
+        <div className="flex-1 flex min-h-0">
+          <div className="w-44 shrink-0 border-r border-border bg-surface-2/40 flex flex-col">
+            {activeTopTab === 'perLabel' && <PrinterIllustration />}
+            <nav className="py-2 flex-1" aria-label={t.printerSettings[activeLabelKey]}>
+              {activeTabs.map((id) => (
+                <TabRailRow
+                  key={id}
+                  id={id}
+                  active={id === tab}
+                  onClick={() => setTab(id)}
+                  label={t.printerSettings.tabs[id]}
+                  wipLabel={t.printerSettings.wip}
+                />
+              ))}
+            </nav>
+            {activeTopTab === 'perLabel' && hasPerLabelOverrides && (
+              <div className="px-3 pb-3">
+                <ResetPerLabelButton
+                  label={t.printerSettings.resetPerLabel}
+                  confirmLabel={t.printerSettings.resetPerLabelConfirm}
+                  onReset={resetPerLabel}
+                />
+              </div>
+            )}
+          </div>
 
-        <section className="flex-1 min-h-0 overflow-y-auto px-5 py-3">
-          {ActiveTab && <ActiveTab />}
-        </section>
-      </div>
+          <section className="flex-1 min-h-0 overflow-y-auto px-5 py-3">
+            {ActiveTab && <ActiveTab />}
+          </section>
+        </div>
+      </IllustrationFocusProvider>
 
       {activeTopTab === 'setupScript' && (
         <PreviewDock

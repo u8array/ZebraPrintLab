@@ -3,6 +3,7 @@ import type * as Labelary from '../lib/labelary';
 import {
   useLabelStore,
   currentObjects,
+  selectHasPerLabelOverrides,
   __resetPreviewCacheForTests,
   migrateLegacy,
 } from './labelStore';
@@ -631,6 +632,29 @@ describe('removeSelectedObjects', () => {
 });
 
 // ── reorder ───────────────────────────────────────────────────────────────────
+
+describe('resetPerLabelConfig', () => {
+  it('clears every per-label override but keeps design-time fields', () => {
+    state().setLabelConfig({ darkness: 25, labelHomeX: 40, printQuantity: 5, widthMm: 80 });
+    expect(selectHasPerLabelOverrides(state())).toBe(true);
+
+    state().resetPerLabelConfig();
+
+    expect(selectHasPerLabelOverrides(state())).toBe(false);
+    expect(state().label.darkness).toBeUndefined();
+    expect(state().label.labelHomeX).toBeUndefined();
+    expect(state().label.printQuantity).toBeUndefined();
+    // Design-time size is not a per-label override and survives the reset.
+    expect(state().label.widthMm).toBe(80);
+  });
+
+  it('is inert while the preview lock holds (routes through setLabelConfig)', () => {
+    state().setLabelConfig({ darkness: 25 });
+    useLabelStore.setState({ previewMode: { status: 'active', url: 'x' } });
+    state().resetPerLabelConfig();
+    expect(state().label.darkness).toBe(25);
+  });
+});
 
 describe('moveObjectToFront', () => {
   it('moves the object to the last position in the array', () => {

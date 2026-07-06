@@ -39,6 +39,7 @@ export type PrinterSettingsTab =
   | 'appSettings'
   | 'mediaFeed'
   | 'printQuality'
+  | 'output'
   | 'clockTime'
   | 'encodingLanguage'
   | 'fonts'
