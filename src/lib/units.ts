@@ -12,6 +12,14 @@ export function unitToMm(value: number, unit: Unit): number {
   return value;
 }
 
+/** Unrounded mm→unit; mmToUnit's input-field rounding is too coarse for
+ *  sub-millimetre values (barcode modules). */
+export function mmToUnitExact(mm: number, unit: Unit): number {
+  if (unit === 'cm') return mm / 10;
+  if (unit === 'in') return mm / 25.4;
+  return mm;
+}
+
 export function unitLabel(unit: Unit): string {
   return unit;
 }

@@ -527,7 +527,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     ? []
     : suppressPristineEmpty(
         [
-          ...computePreflight(preflightLeaves, frameCtx),
+          ...computePreflight(preflightLeaves, frameCtx, unit),
           ...barcodeEncodeFindings(preflightLeaves, scale, label.dpmm, previewBinding),
           ...markerValueFindings(preflightLeaves, {
             variables: previewBinding.variables,

@@ -10,6 +10,7 @@ import { parseContent, typedContentIncompleteRows, typedContentMarkerFindings } 
 import { getObjectStringContent, resolveForRow, variableSubstitutions } from "./variableBinding";
 import { resolveTextMode } from "../registry/text";
 import type { CsvMapping, Variable } from "../types/Variable";
+import type { Unit } from "./units";
 import {
   PREFLIGHT_SEVERITY,
   type PreflightFinding,
@@ -192,6 +193,7 @@ export function markerValueFindings(
 export function computePreflight(
   leaves: readonly LeafObject[],
   ctx: ObjectBoundsCtx,
+  unit: Unit,
 ): PreflightFinding[] {
   const findings: PreflightFinding[] = [];
   for (const leaf of leaves) {
@@ -203,7 +205,7 @@ export function computePreflight(
 
     const produce = getEntry(leaf.type)?.preflight;
     if (produce) {
-      for (const r of produce(leaf, { label: ctx.label })) {
+      for (const r of produce(leaf, { label: ctx.label, unit })) {
         findings.push({ objectId: leaf.id, kind: r.kind, severity: PREFLIGHT_SEVERITY[r.kind], detail: r.detail });
       }
     }
