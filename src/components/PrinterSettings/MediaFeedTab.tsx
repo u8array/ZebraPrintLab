@@ -1,6 +1,7 @@
 import { useT } from "../../lib/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { BACKFEED_SEQUENCE_VALUES, MAX_LABEL_LENGTH_RANGE, MEDIA_FEED_VALUES, MEDIA_MODE_VALUES, MEDIA_TRACKING_VALUES, MEDIA_TYPE_VALUES, type BackfeedSequence, type MediaFeedMode, type MediaMode, type MediaTracking, type MediaType } from "../../types/LabelConfig";
+import { RegionFocus } from "./printerIllustration";
 import {
   ZplBoundedIntInput,
   ZplCheckbox,
@@ -65,91 +66,105 @@ export function MediaFeedTab() {
 
   return (
     <div className="flex flex-col gap-4">
-      <ZplEnumCustomSelect
-        label={loc.mediaMode}
-        command="^MM"
-        values={MEDIA_MODE_VALUES}
-        value={label.mediaMode}
-        onChange={(v) => setLabelConfig({ mediaMode: v })}
-        defaultLabel={t.printerSettings.defaultOption}
-        optionLabel={(m) => loc[MEDIA_MODE_LABEL_KEYS[m]]}
-      />
+      <RegionFocus region="exit">
+        <ZplEnumCustomSelect
+          label={loc.mediaMode}
+          command="^MM"
+          values={MEDIA_MODE_VALUES}
+          value={label.mediaMode}
+          onChange={(v) => setLabelConfig({ mediaMode: v })}
+          defaultLabel={t.printerSettings.defaultOption}
+          optionLabel={(m) => loc[MEDIA_MODE_LABEL_KEYS[m]]}
+        />
+      </RegionFocus>
 
-      <ZplEnumCustomSelect
-        label={loc.mediaType}
-        command="^MT"
-        values={MEDIA_TYPE_VALUES}
-        value={label.mediaType}
-        onChange={(v) => setLabelConfig({ mediaType: v })}
-        defaultLabel={t.printerSettings.defaultOption}
-        optionLabel={(m) => loc[MEDIA_TYPE_LABEL_KEYS[m]]}
-      />
+      <RegionFocus region="printhead">
+        <ZplEnumCustomSelect
+          label={loc.mediaType}
+          command="^MT"
+          values={MEDIA_TYPE_VALUES}
+          value={label.mediaType}
+          onChange={(v) => setLabelConfig({ mediaType: v })}
+          defaultLabel={t.printerSettings.defaultOption}
+          optionLabel={(m) => loc[MEDIA_TYPE_LABEL_KEYS[m]]}
+        />
+      </RegionFocus>
 
-      <ZplEnumCustomSelect
-        label={loc.mediaTracking}
-        command="^MN"
-        values={MEDIA_TRACKING_VALUES}
-        value={label.mediaTracking}
-        onChange={(v) => setLabelConfig({ mediaTracking: v })}
-        defaultLabel={t.printerSettings.defaultOption}
-        optionLabel={(m) => loc[TRACKING_LABEL_KEYS[m]]}
-      />
+      <RegionFocus region="sensor">
+        <ZplEnumCustomSelect
+          label={loc.mediaTracking}
+          command="^MN"
+          values={MEDIA_TRACKING_VALUES}
+          value={label.mediaTracking}
+          onChange={(v) => setLabelConfig({ mediaTracking: v })}
+          defaultLabel={t.printerSettings.defaultOption}
+          optionLabel={(m) => loc[TRACKING_LABEL_KEYS[m]]}
+        />
+      </RegionFocus>
 
-      <ZplBoundedIntInput
-        label={loc.maxLabelLength}
-        command="^ML"
-        min={MAX_LABEL_LENGTH_RANGE.min}
-        max={MAX_LABEL_LENGTH_RANGE.max}
-        value={label.maxLabelLength}
-        onChange={(v) => setLabelConfig({ maxLabelLength: v })}
-        unit={t.printerSettings.dotsUnit}
-      />
+      <RegionFocus region="label">
+        <ZplBoundedIntInput
+          label={loc.maxLabelLength}
+          command="^ML"
+          min={MAX_LABEL_LENGTH_RANGE.min}
+          max={MAX_LABEL_LENGTH_RANGE.max}
+          value={label.maxLabelLength}
+          onChange={(v) => setLabelConfig({ maxLabelLength: v })}
+          unit={t.printerSettings.dotsUnit}
+        />
+      </RegionFocus>
 
       {/* ^MF carries two positional params, so the row's "control"
           slot is a 2-col grid instead of a single input. Both
           sub-selects share one ZPL command tag and one heading;
           ZplSubField gives each slot its own <label> while the
           parent ZplField carries the ^MF tag. */}
-      <ZplField>
-        <ZplCommandLabel text={loc.mediaFeedHeading} command="^MF" />
-        <div className={`grid grid-cols-2 ${fieldGridCols}`}>
-          <ZplEnumSubCustomSelect
-            label={loc.mediaFeedPowerUp}
-            values={MEDIA_FEED_VALUES}
-            value={label.mediaFeedPowerUp}
-            onChange={(v) => setLabelConfig({ mediaFeedPowerUp: v })}
-            defaultLabel={t.printerSettings.defaultOption}
-            optionLabel={(m) => loc[FEED_LABEL_KEYS[m]]}
-            className={fieldGridCell}
-          />
-          <ZplEnumSubCustomSelect
-            label={loc.mediaFeedHeadClose}
-            values={MEDIA_FEED_VALUES}
-            value={label.mediaFeedHeadClose}
-            onChange={(v) => setLabelConfig({ mediaFeedHeadClose: v })}
-            defaultLabel={t.printerSettings.defaultOption}
-            optionLabel={(m) => loc[FEED_LABEL_KEYS[m]]}
-            className={fieldGridCell}
-          />
-        </div>
-      </ZplField>
+      <RegionFocus region="feed">
+        <ZplField>
+          <ZplCommandLabel text={loc.mediaFeedHeading} command="^MF" />
+          <div className={`grid grid-cols-2 ${fieldGridCols}`}>
+            <ZplEnumSubCustomSelect
+              label={loc.mediaFeedPowerUp}
+              values={MEDIA_FEED_VALUES}
+              value={label.mediaFeedPowerUp}
+              onChange={(v) => setLabelConfig({ mediaFeedPowerUp: v })}
+              defaultLabel={t.printerSettings.defaultOption}
+              optionLabel={(m) => loc[FEED_LABEL_KEYS[m]]}
+              className={fieldGridCell}
+            />
+            <ZplEnumSubCustomSelect
+              label={loc.mediaFeedHeadClose}
+              values={MEDIA_FEED_VALUES}
+              value={label.mediaFeedHeadClose}
+              onChange={(v) => setLabelConfig({ mediaFeedHeadClose: v })}
+              defaultLabel={t.printerSettings.defaultOption}
+              optionLabel={(m) => loc[FEED_LABEL_KEYS[m]]}
+              className={fieldGridCell}
+            />
+          </div>
+        </ZplField>
+      </RegionFocus>
 
-      <ZplCheckbox
-        text={loc.suppressBackfeed}
-        command="^XB"
-        checked={!!label.suppressBackfeed}
-        onChange={(v) => setLabelConfig({ suppressBackfeed: v ? true : undefined })}
-      />
+      <RegionFocus region="backfeed">
+        <ZplCheckbox
+          text={loc.suppressBackfeed}
+          command="^XB"
+          checked={!!label.suppressBackfeed}
+          onChange={(v) => setLabelConfig({ suppressBackfeed: v ? true : undefined })}
+        />
+      </RegionFocus>
 
-      <ZplEnumCustomSelect
-        label={loc.backfeedSequence}
-        command="~JS"
-        values={BACKFEED_SEQUENCE_VALUES}
-        value={label.backfeedSequence}
-        onChange={(v) => setLabelConfig({ backfeedSequence: v })}
-        defaultLabel={t.printerSettings.defaultOption}
-        optionLabel={(m) => loc[BACKFEED_LABEL_KEYS[m]]}
-      />
+      <RegionFocus region="backfeed">
+        <ZplEnumCustomSelect
+          label={loc.backfeedSequence}
+          command="~JS"
+          values={BACKFEED_SEQUENCE_VALUES}
+          value={label.backfeedSequence}
+          onChange={(v) => setLabelConfig({ backfeedSequence: v })}
+          defaultLabel={t.printerSettings.defaultOption}
+          optionLabel={(m) => loc[BACKFEED_LABEL_KEYS[m]]}
+        />
+      </RegionFocus>
     </div>
   );
 }

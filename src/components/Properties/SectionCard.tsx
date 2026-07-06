@@ -116,19 +116,24 @@ export function SectionCard({
 export function StaticSectionCard({
   title,
   cmd,
+  headerAction,
   children,
 }: {
   title: ReactNode;
   /** ZPL command this single-field section emits (e.g. ^FD); shown as a tag
    *  when showZplCommands is on. Only for sections that map to one command. */
   cmd?: string;
+  /** Compact control rendered right-aligned in the header (e.g. a shortcut
+   *  into the printer-settings modal). */
+  headerAction?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className={cardCls}>
       <div className="flex items-center gap-2 px-2.5 py-2.5">
         <CardLabel active title={title} />
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          {headerAction}
           <ZplCmd cmd={cmd} />
         </div>
       </div>

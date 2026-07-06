@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand';
-import type { LabelConfig } from '../../types/LabelConfig';
+import { PER_LABEL_ZPL_FIELDS, type LabelConfig } from '../../types/LabelConfig';
 import type { Page } from '../../types/Group';
 import type { Variable, CsvMapping } from '../../types/Variable';
 import { forgetImport } from '../../lib/csvImport';
@@ -14,6 +14,8 @@ export interface LabelConfigSlice {
   /** Patch the per-label config; undefined keys fall back to width/dpmm
    *  defaults at emit time. */
   setLabelConfig: (config: Partial<LabelConfig>) => void;
+  /** Clear every PER_LABEL_ZPL_FIELDS override back to unset (printer default). */
+  resetPerLabelConfig: () => void;
   /** Atomic file-open: resets label, pages, currentPageIndex,
    *  selectedIds, variables, csvMapping, csvDataset in one set() so
    *  zundo records one undo step and no intermediate state leaks.
@@ -45,6 +47,11 @@ export const createLabelConfigSlice: StateCreator<LabelState, [], [], LabelConfi
       if (!configPatchAffectsEmit(state.label, config)) return { label };
       return { label, pages: dropPageOverlays(state.pages) };
     }),
+
+  resetPerLabelConfig: () =>
+    get().setLabelConfig(
+      Object.fromEntries(PER_LABEL_ZPL_FIELDS.map((k) => [k, undefined])) as Partial<LabelConfig>,
+    ),
 
   loadDesign: (label, pages, variables, csvMapping) => {
     if (selectPreviewLocksEditor(get())) return;
