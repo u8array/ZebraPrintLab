@@ -3,7 +3,7 @@ import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { DialogShell } from "../ui/DialogShell";
 import { DialogHeader } from "../ui/DialogHeader";
 import { DialogActions } from "../ui/DialogActions";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import type { Translations } from "../../locales";
 import { inputCls } from "../ui/formStyles";
 import { Tooltip } from "../ui/Tooltip";

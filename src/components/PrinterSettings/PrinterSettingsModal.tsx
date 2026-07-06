@@ -1,7 +1,7 @@
 import { useId, useRef, useState, type FC } from "react";
 import { CheckIcon, ClipboardDocumentIcon, TrashIcon, XMarkIcon } from "@heroicons/react/16/solid";
-import { useCopyToClipboard } from "../../lib/useCopyToClipboard";
-import { useT } from "../../lib/useT";
+import { useCopyToClipboard } from "../../hooks/useCopyToClipboard";
+import { useT } from "../../hooks/useT";
 import { generateSetupScript } from "../../lib/zplSetupScript";
 import { useLabelStore, selectHasPerLabelOverrides } from "../../store/labelStore";
 import type { PrinterSettingsTab } from "../../store/slices/uiSlice";

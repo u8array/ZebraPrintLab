@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { InformationCircleIcon, TrashIcon } from '@heroicons/react/16/solid';
-import type { ObjectTypeUi } from '../types/ObjectType';
-import { useT } from '../lib/useT';
+import type { ObjectTypeUi } from './panelTypes';
+import { useT } from '../hooks/useT';
 import { buttonCls, inputCls, labelCls } from '../components/Properties/styles';
 import { loadImageFile, getImage, getAllImages, removeImage } from '../lib/imageCache';
 import { imageToGFA } from '../lib/imageToZpl';

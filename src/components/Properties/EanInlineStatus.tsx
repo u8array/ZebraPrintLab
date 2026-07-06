@@ -1,4 +1,4 @@
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import { hasTemplateMarkers } from '../../lib/fnTemplate';
 import { validateEanUpc, type EanUpcType, type EanUpcStatus } from '../../lib/eanUpcValidate';
 import { eanPrefixKey } from '../../lib/eanPrefix';

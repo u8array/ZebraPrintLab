@@ -1,5 +1,5 @@
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { UnitNumberInput } from "../Properties/UnitNumberInput";
 import { Tooltip } from "../ui/Tooltip";

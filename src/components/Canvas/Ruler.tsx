@@ -1,6 +1,6 @@
 import { Group, Rect, Line, Text } from 'react-konva';
-import type { CanvasColors } from '../../lib/useColorScheme';
-import { DARK_COLORS } from '../../lib/useColorScheme';
+import type { CanvasColors } from '../../hooks/useColorScheme';
+import { DARK_COLORS } from '../../hooks/useColorScheme';
 import { rulerTicksMm, rulerLabel } from '../../lib/units';
 import type { Unit } from '../../lib/units';
 

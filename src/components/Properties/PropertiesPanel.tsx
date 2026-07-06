@@ -18,7 +18,7 @@ import {
   SNAP_DEFAULT_MM,
 } from "../../lib/units";
 import type { Unit } from "../../lib/units";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { SectionCard, StaticSectionCard } from "./SectionCard";
 import { UnitNumberInput } from "./UnitNumberInput";
 import { FieldLabel } from "./ZplCmd";

@@ -18,7 +18,7 @@ import {
   FolderOpenIcon,
 } from '@heroicons/react/16/solid';
 import { getEntry } from '../../registry';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import type { Translations } from '../../locales';
 import { useHistoryEntries } from '../../store/useHistoryEntries';
 import type { HistoryStepDescriptor, HistoryStepKind } from '../../lib/historyStep';

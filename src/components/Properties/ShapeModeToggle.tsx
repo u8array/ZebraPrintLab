@@ -1,6 +1,6 @@
 import type { LabelObject } from '../../types/Group';
 import type { LabelObjectBase } from '../../types/LabelObject';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import { useLabelStore } from '../../store/labelStore';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { canToggleShapeMode, oppositeShapeMode, toggleShapeMode } from '../../lib/lineBoxConvert';

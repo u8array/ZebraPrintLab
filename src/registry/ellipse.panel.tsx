@@ -1,5 +1,5 @@
-import type { ObjectTypeUi } from '../types/ObjectType';
-import { useT } from '../lib/useT';
+import type { ObjectTypeUi } from './panelTypes';
+import { useT } from '../hooks/useT';
 import { useLabelStore } from '../store/labelStore';
 import { labelCls } from '../components/Properties/styles';
 import { UnitNumberInput } from '../components/Properties/UnitNumberInput';

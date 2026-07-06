@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import type { ObjectTypeUi } from "../types/ObjectType";
-import { useT } from "../lib/useT";
+import type { ObjectTypeUi } from "./panelTypes";
+import { useT } from "../hooks/useT";
 import { buttonCls, inputCls, labelCls } from "../components/Properties/styles";
 import { getFont, loadFontFile } from "../lib/fontCache";
 import { useFontCacheVersion } from "../hooks/useFontCacheVersion";

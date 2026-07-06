@@ -1,5 +1,5 @@
 import { DialogShell } from "../ui/DialogShell";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { rescaleDesign } from "../../lib/densityRescale";
 

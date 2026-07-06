@@ -1,5 +1,5 @@
 import { useLabelStore } from "../../store/labelStore";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import type { BindableLeaf } from "../../lib/variableField";
 import { fieldIsMultiline } from "../../registry/text";
 import { getPanel } from "../../registry/panels";

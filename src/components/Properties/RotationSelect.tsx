@@ -1,5 +1,5 @@
 import { ZPL_ROTATIONS, type ZplRotation } from '../../registry/rotation';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import { useLabelStore } from '../../store/labelStore';
 import { FieldLabel } from './ZplCmd';
 import { Select } from '../ui/Select';

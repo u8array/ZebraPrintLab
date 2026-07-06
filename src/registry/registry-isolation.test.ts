@@ -1,3 +1,6 @@
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect, vi } from "vitest";
 // Panels pull in Headless UI, whose react-aria dep runs global focus setup at
 // import and needs DOM globals (this suite is node-env, key checks only, never
@@ -42,5 +45,87 @@ describe("registry isolation baseline", () => {
         "PropertiesPanel",
       );
     }
+  });
+
+  // Shared boundary matchers for the two tests below. Specs are collected from
+  // every import form (static `from`, side-effect, dynamic import()) so a
+  // breach can't hide behind a form the scan doesn't read; both tests share
+  // one ban list so their coverage can't drift apart.
+  const importSpecs = (src: string): string[] => [
+    ...[...src.matchAll(/from\s+['"]([^'"]+)['"]/g)].map((m) => m[1] ?? ""),
+    ...[...src.matchAll(/^\s*import\s+['"]([^'"]+)['"]/gm)].map((m) => m[1] ?? ""),
+    ...[...src.matchAll(/import\(\s*['"]([^'"]+)['"]\s*\)/g)].map((m) => m[1] ?? ""),
+  ];
+  const bannedExternal = /^(react($|[-/])|zustand|konva|@headlessui\/|@heroicons\/)/;
+  const bannedInternal = /(^|\/)(components|store|hooks)\/|\.panel($|\/)|\/panels$|panelTypes/;
+  const banned = (spec: string) =>
+    spec.startsWith(".") ? bannedInternal.test(spec) : bannedExternal.test(spec);
+
+  // The domain graph's promise is emit/import/batch without React (CLI/Tauri).
+  // Source-scan the core modules (types/ plus the non-panel registry .ts files)
+  // so a react/store/panel import can't sneak back in behind the type split.
+  it("core type graph stays free of react, store and panel imports", () => {
+    const registryDir = fileURLToPath(new URL(".", import.meta.url));
+    const typesDir = fileURLToPath(new URL("../types/", import.meta.url));
+    const coreFiles = [
+      ...readdirSync(typesDir)
+        .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
+        .map((f) => join(typesDir, f)),
+      ...readdirSync(registryDir)
+        .filter(
+          (f) =>
+            f.endsWith(".ts") &&
+            !f.endsWith(".test.ts") &&
+            f !== "panels.ts" &&
+            f !== "panelTypes.ts",
+        )
+        .map((f) => join(registryDir, f)),
+    ];
+    expect(coreFiles.length).toBeGreaterThan(30);
+    for (const file of coreFiles) {
+      expect(importSpecs(readFileSync(file, "utf8")).filter(banned), basename(file)).toEqual([]);
+    }
+  });
+
+  // The flat scan above guards the registry/types folders; this walks the
+  // TRANSITIVE import closure of the actual domain entrypoints, so the
+  // CLI/Tauri promise (emit/parse without React, store or UI) holds across
+  // everything they pull from lib/ too, not just the scanned folders.
+  it("emit/parse import closure stays free of react, store and UI imports", () => {
+    const srcDir = fileURLToPath(new URL("../", import.meta.url));
+    const entries = ["lib/zplGenerator.ts", "lib/zplParser.ts", "registry/index.ts"];
+    // A spec that names its extension resolves as written; anything else tries
+    // ts/tsx and directory-index forms. Returning null is NOT a skip: the
+    // caller flags it, so the walk can never silently shrink the closure.
+    const resolveRel = (fromFile: string, spec: string): string | null => {
+      const base = join(dirname(fromFile), spec);
+      const cands = /\.tsx?$/.test(spec)
+        ? [base]
+        : [`${base}.ts`, `${base}.tsx`, join(base, "index.ts"), join(base, "index.tsx")];
+      for (const cand of cands) {
+        if (existsSync(cand)) return cand;
+      }
+      return null;
+    };
+    const seen = new Set<string>();
+    const queue = entries.map((e) => join(srcDir, e));
+    const offenders: string[] = [];
+    for (let file = queue.pop(); file !== undefined; file = queue.pop()) {
+      if (seen.has(file)) continue;
+      seen.add(file);
+      for (const spec of importSpecs(readFileSync(file, "utf8"))) {
+        if (banned(spec)) {
+          offenders.push(`${basename(file)} -> ${spec}`);
+          continue;
+        }
+        if (!spec.startsWith(".")) continue;
+        const resolved = resolveRel(file, spec);
+        if (!resolved) offenders.push(`${basename(file)} -> ${spec} (unresolved)`);
+        else if (resolved.endsWith(".tsx")) offenders.push(`${basename(file)} -> ${spec} (tsx)`);
+        else queue.push(resolved);
+      }
+    }
+    expect(seen.size).toBeGreaterThan(40);
+    expect(offenders).toEqual([]);
   });
 });

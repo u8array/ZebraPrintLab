@@ -8,7 +8,7 @@ import {
 } from '../../lib/fontCache';
 import { useFontCacheVersion } from '../../hooks/useFontCacheVersion';
 import { useLabelStore } from '../../store/labelStore';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import {
   DEFAULT_FONT_DRIVE,
   ZPL_DRIVE_PREFIXES,

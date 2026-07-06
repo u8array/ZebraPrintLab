@@ -1,5 +1,5 @@
 import type { LabelObjectBase } from '../types/LabelObject';
-import type { ObjectTypeCore, ObjectTypeUi } from '../types/ObjectType';
+import type { ObjectTypeCore } from '../types/ObjectType';
 import type { TextProps } from './text';
 import type { Code128Props } from './code128';
 import type { Code39Props } from './code39';
@@ -83,8 +83,6 @@ export type LeafType = LeafObject['type'];
 /** Props for a given leaf type, extracted via the discriminator. */
 export type PropsFor<T extends LeafType> = Extract<LeafObject, { type: T }>['props'];
 
-/** Type-safe ObjectRegistry shape: each key carries the matching Core entry. */
+/** Type-safe ObjectRegistry shape: each key carries the matching Core entry.
+ *  The Ui counterpart (ObjectPanelsMap) lives in panelTypes.ts. */
 export type ObjectRegistryMap = { [T in LeafType]: ObjectTypeCore<PropsFor<T>> };
-
-/** Type-safe ObjectPanels shape: each key carries the matching Ui entry. */
-export type ObjectPanelsMap = { [T in LeafType]: ObjectTypeUi<PropsFor<T>> };

@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { ExclamationTriangleIcon, ExclamationCircleIcon } from "@heroicons/react/16/solid";
 import { getEntry } from "../../registry";
 import type { LeafObject } from "../../registry";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { useDismiss } from "../../hooks/useDismiss";
 import { Tooltip } from "../ui/Tooltip";
 import type { PreflightFinding, PreflightKind } from "../../lib/preflight";

@@ -1,4 +1,4 @@
-import { useT } from '../lib/useT';
+import { useT } from '../hooks/useT';
 import { useLabelStore } from '../store/labelStore';
 import { getEntry } from './index';
 import { StaticSectionCard } from '../components/Properties/SectionCard';

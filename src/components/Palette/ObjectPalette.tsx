@@ -9,7 +9,7 @@ import { ContextMenu, type MenuSection } from '../ui/ContextMenu';
 import { useContextMenu } from '../../hooks/useContextMenu';
 import { resolveAddable, type AddableEntry } from '../../registry/palettePresets';
 import { getEntry } from '../../registry';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import { useLabelStore } from '../../store/labelStore';
 import { printableRectDots } from '../../lib/objectBounds';
 import { resolveDefaultSizeDots } from '../../lib/resolveDefaultSize';

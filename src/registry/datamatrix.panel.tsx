@@ -1,5 +1,5 @@
-import type { ObjectTypeUi } from '../types/ObjectType';
-import { useT } from '../lib/useT';
+import type { ObjectTypeUi } from './panelTypes';
+import { useT } from '../hooks/useT';
 import { dataMatrixMinFitIndex } from '../components/Canvas/bwipHelpers';
 import { useLabelStore } from '../store/labelStore';
 import { RotationSelect } from '../components/Properties/RotationSelect';

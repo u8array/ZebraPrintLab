@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { TrashIcon } from "@heroicons/react/16/solid";
 import { useLabelStore, selectPreviewLocksEditor } from "../../store/labelStore";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { Tooltip } from "../ui/Tooltip";
 

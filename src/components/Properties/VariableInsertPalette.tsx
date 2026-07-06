@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MagnifyingGlassIcon, PlusIcon, LinkIcon } from "@heroicons/react/16/solid";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
 import {
   CLOCK_TOKEN_LABELS,

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { Tooltip } from "../ui/Tooltip";
 import { labelCls } from "./styles";
 import { UnitNumberInput } from "./UnitNumberInput";

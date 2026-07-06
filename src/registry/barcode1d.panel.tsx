@@ -1,6 +1,6 @@
-import type { ObjectTypeUi } from '../types/ObjectType';
+import type { ObjectTypeUi } from './panelTypes';
 import type { Translations } from '../locales';
-import { useT } from '../lib/useT';
+import { useT } from '../hooks/useT';
 import { useLabelStore } from '../store/labelStore';
 import { hasValidLength, type ContentSpec } from './contentSpec';
 import { RotationSelect } from '../components/Properties/RotationSelect';

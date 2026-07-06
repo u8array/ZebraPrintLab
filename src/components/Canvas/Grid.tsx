@@ -1,6 +1,6 @@
 import { Group, Line } from 'react-konva';
-import type { CanvasColors } from '../../lib/useColorScheme';
-import { DARK_COLORS } from '../../lib/useColorScheme';
+import type { CanvasColors } from '../../hooks/useColorScheme';
+import { DARK_COLORS } from '../../hooks/useColorScheme';
 
 interface Props {
   labelOffsetX: number;

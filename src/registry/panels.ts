@@ -1,5 +1,5 @@
-import type { ObjectTypeUi } from '../types/ObjectType';
-import type { LeafType, ObjectPanelsMap } from './leafObject';
+import type { ObjectPanelsMap, ObjectTypeUi } from './panelTypes';
+import type { LeafType } from './leafObject';
 
 import { textPanel } from './text.panel';
 import { symbolPanel } from './symbol.panel';

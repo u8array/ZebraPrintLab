@@ -1,4 +1,4 @@
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { labelCls } from "./styles";
 import { fieldGridCols, fieldGridCell } from "../ui/formStyles";
 import { NumberInput } from "./NumberInput";

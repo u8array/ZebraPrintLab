@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { inputCls, labelCls } from "../ui/formStyles";
 import { CLOCK_FORMAT_VALUES, CLOCK_LANGUAGE_VALUES, CLOCK_MODE_VALUES, CLOCK_TOLERANCE_DEFAULT, CLOCK_TOLERANCE_RANGE, isClockMode, type ClockFormat, type ClockLanguage, type ClockMode } from "../../types/PrinterProfile";

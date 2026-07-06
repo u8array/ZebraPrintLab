@@ -1,5 +1,5 @@
 import { MinusIcon, Bars3BottomLeftIcon, WindowIcon } from "@heroicons/react/16/solid";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { UnitNumberInput } from "./UnitNumberInput";
 import { BlockTextSettings } from "./BlockTextSettings";
 import { BlockDragModeToggle } from "./BlockDragModeToggle";
