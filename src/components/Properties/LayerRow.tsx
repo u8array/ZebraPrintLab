@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/16/solid';
 import { getEntry } from '../../registry';
 import { isGroup, type LabelObject } from '../../types/Group';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import { useLabelStore } from '../../store/labelStore';
 import { fieldVariableRefs } from '../../lib/variableField';
 import { DragHandleIcon } from '../ui/DragHandleIcon';

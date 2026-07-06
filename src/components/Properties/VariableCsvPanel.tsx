@@ -1,5 +1,5 @@
 import { TableCellsIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/16/solid";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
 import {
   buildActiveCsvRow,

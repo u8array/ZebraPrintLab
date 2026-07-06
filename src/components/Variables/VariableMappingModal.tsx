@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { PlusIcon, TableCellsIcon, XMarkIcon } from '@heroicons/react/16/solid';
 import { useLabelStore } from '../../store/labelStore';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import {
   nextDefaultVariableName,
   nextFreeFnNumber,

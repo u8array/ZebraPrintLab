@@ -49,7 +49,7 @@ import { VariableBuilderModal } from "./Properties/VariableBuilderModal";
 import { localeNames } from "../locales";
 import type { LocaleCode } from "../locales";
 import { mmToUnit } from "../lib/units";
-import { useT } from "../lib/useT";
+import { useT } from "../hooks/useT";
 import { kbd } from "../lib/kbd";
 import { useGlobalShortcuts } from "../hooks/useGlobalShortcuts";
 import { useDesignFileActions } from "../hooks/useDesignFileActions";

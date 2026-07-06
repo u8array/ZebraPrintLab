@@ -1,4 +1,4 @@
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { Tooltip } from "../ui/Tooltip";
 import type { AlignOp, DistributeAxis, AlignRef } from "../../lib/align";
 import type { AlignSelectionRef } from "../../store/slices/uiSlice";

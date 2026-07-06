@@ -21,7 +21,7 @@ import {
 import { inputCls } from '../Properties/styles';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { Tooltip } from '../ui/Tooltip';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import type { Translations } from '../../locales';
 import { getVariableSource, type VariableSource } from '../../lib/variableBinding';
 import { countBindings } from '../../lib/variableField';

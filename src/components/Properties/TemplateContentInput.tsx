@@ -7,7 +7,7 @@ import {
   useLayoutEffect,
 } from "react";
 import { flushSync } from "react-dom";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { formatClockLabel } from "../../lib/fcTemplate";
 import {

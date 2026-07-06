@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { BarcodeContentModalShell } from "./BarcodeContentModalShell";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { Select } from "../ui/Select";
 import { useLabelStore, useCurrentObjects, getCurrentObjects } from "../../store/labelStore";
 import { hasTemplateMarkers, resolvedContentLength } from "../../lib/fnTemplate";

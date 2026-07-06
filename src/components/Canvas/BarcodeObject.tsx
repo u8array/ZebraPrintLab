@@ -4,7 +4,7 @@ import type Konva from "konva";
 import { BARCODE_1D_TYPES, ObjectRegistry } from "../../registry";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { barcodeFtAnchorOffset } from "../../lib/objectBounds";
-import { useColorScheme, CANVAS_WARNING } from "../../lib/useColorScheme";
+import { useColorScheme, CANVAS_WARNING } from "../../hooks/useColorScheme";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { selectionHandlers, useBlankFieldWarns, PLACEHOLDER_DASH, PLACEHOLDER_STROKE_PX, type KonvaObjectProps } from "./konvaObjectProps";
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";

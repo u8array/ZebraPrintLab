@@ -10,7 +10,7 @@ import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { measureInkWidthPx } from "../../lib/labelGeometry/measureTextDots";
 import { outlineInset } from "../../lib/shapeGeometry";
 import { reverseShapeStyle } from "./reverseShapeStyle";
-import { useColorScheme, CANVAS_WARNING } from "../../lib/useColorScheme";
+import { useColorScheme, CANVAS_WARNING } from "../../hooks/useColorScheme";
 import { useLabelStore } from "../../store/labelStore";
 import { applyBindingToObject } from "../../lib/variableBinding";
 import { usePreviewBinding } from "../../store/usePreviewBinding";

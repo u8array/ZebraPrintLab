@@ -4,7 +4,7 @@ import type Konva from "konva";
 import type { LabelObject } from "../../types/Group";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { constrainLine, type ConstrainMode } from "../../lib/lineConstrain";
-import { useColorScheme } from "../../lib/useColorScheme";
+import { useColorScheme } from "../../hooks/useColorScheme";
 import {
   computePointSnap,
   computeResizeSnap,

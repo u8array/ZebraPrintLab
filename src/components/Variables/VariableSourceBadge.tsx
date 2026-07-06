@@ -3,7 +3,7 @@ import {
   MinusIcon,
   TableCellsIcon,
 } from '@heroicons/react/16/solid';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import { Tooltip } from '../ui/Tooltip';
 import type { VariableSource } from '../../lib/variableBinding';
 

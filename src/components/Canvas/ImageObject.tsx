@@ -3,7 +3,7 @@ import { Group, Image as KImage, Path, Rect } from "react-konva";
 import type { LabelObject } from "../../types/Group";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { getImage } from "../../lib/imageCache";
-import { useColorScheme } from "../../lib/useColorScheme";
+import { useColorScheme } from "../../hooks/useColorScheme";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 

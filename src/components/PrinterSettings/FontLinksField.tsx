@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { FONT_LINKS_MAX_PER_BASE } from "../../types/PrinterProfile";
 import { SafeStringInput, ZplCommandLabel, ZplField, ZplFieldHint } from "./zplFieldPrimitives";

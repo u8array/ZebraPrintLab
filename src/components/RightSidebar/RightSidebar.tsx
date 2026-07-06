@@ -9,7 +9,7 @@ import { PropertiesPanel } from '../Properties/PropertiesPanel';
 import { LayersPanel } from '../Properties/LayersPanel';
 import { FontManager } from '../Fonts/FontManager';
 import { VariablesPanel } from '../Variables/VariablesPanel';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import { useLabelStore } from '../../store/labelStore';
 import type { SidebarTab } from '../../store/slices/uiSlice';
 import type { LabelCanvasHandle } from '../Canvas/LabelCanvas';

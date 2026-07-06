@@ -1,4 +1,4 @@
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { getAllFonts } from "../../lib/fontCache";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { uploadedFontPath } from "../../lib/customFonts";

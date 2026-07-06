@@ -1,5 +1,5 @@
 import { useLabelStore } from '../../store/labelStore';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import { Tooltip } from '../ui/Tooltip';
 import { StarGlyph } from './StarGlyph';
 import type { PaletteView } from '../../store/slices/uiSlice';

@@ -5,7 +5,7 @@ import { FolderPlusIcon } from '@heroicons/react/16/solid';
 import { useLabelStore, useCurrentObjects } from '../../store/labelStore';
 import { canGroupSelection, dragBlockIds, effectiveSelection, findObjectById, isGroup, walkObjects } from '../../types/Group';
 import { getEntry } from '../../registry';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import { buildBulkToggleUpdates, type ToggleField } from '../../lib/bulkToggle';
 import { buildFlatRows, useLayerDnd, type FlatRow } from './useLayerDnd';
 import { LayerRow } from './LayerRow';

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowTopRightOnSquareIcon, LockClosedIcon, TrashIcon } from "@heroicons/react/16/solid";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { channelDatesFrom, resolveClockMarkers } from "../../lib/fcTemplate";
 import { isValidVariableName, markerOf } from "../../types/Variable";

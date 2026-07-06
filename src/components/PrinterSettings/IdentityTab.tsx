@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { inputCls, labelCls } from "../ui/formStyles";
 import {

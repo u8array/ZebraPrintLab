@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { Group, Circle, Path } from "react-konva";
 import type Konva from "konva";
-import { useColorScheme } from "../../lib/useColorScheme";
+import { useColorScheme } from "../../hooks/useColorScheme";
 
 /** Visual role of a button: drives resting/hover icon colour and the hover
  *  fill. `neutral` = muted→indigo, `active` = amber (e.g. unlock while locked),

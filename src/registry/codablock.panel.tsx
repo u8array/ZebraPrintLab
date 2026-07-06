@@ -1,5 +1,5 @@
-import type { ObjectTypeUi } from "../types/ObjectType";
-import { useT } from "../lib/useT";
+import type { ObjectTypeUi } from "./panelTypes";
+import { useT } from "../hooks/useT";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { NumberInput } from "../components/Properties/NumberInput";
 import { UnitNumberInput } from "../components/Properties/UnitNumberInput";

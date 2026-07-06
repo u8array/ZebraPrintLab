@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { Tooltip } from "../ui/Tooltip";
 import type { TextProps } from "../../registry/text";
 

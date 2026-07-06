@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { labelCls, fieldGridCols, fieldGridCell } from "../ui/formStyles";
 import { Select } from "../ui/Select";

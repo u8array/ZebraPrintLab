@@ -1,7 +1,5 @@
-import type React from 'react';
 import type { LabelObjectBase, ObjectChanges, ObjectGroup } from './LabelObject';
 import type { HriBehavior, TransformContext, ZplEmitContext } from './ZplEmit';
-import type { ContentSpec } from './contentSpec';
 import type { PreflightCtx, PreflightProducerResult } from './preflight';
 
 /** Domain half of a registry entry: emits ZPL, no React deps. */
@@ -91,17 +89,6 @@ export interface ObjectTypeCore<P extends object = object> {
   ) => PreflightProducerResult[];
 }
 
-/** Lives in `<type>.panel.tsx` so the domain `.ts` stays React-free. */
-export interface ObjectTypeUi<P extends object = object> {
-  PropertiesPanel: React.ComponentType<{
-    obj: LabelObjectBase & { props: P };
-    onChange: (props: Partial<P>) => void;
-  }>;
-  /** Per-symbology content charset/length rule, exposed on the panel entry so
-   *  the generic content editor (inline field + Variable-Builder modal) filters
-   *  input like the panel's own validation. A function lets the rule depend on
-   *  props (e.g. DataMatrix only restricts to the GS1 charset in GS1 mode). */
-  contentSpec?: ContentSpec | ((props: object) => ContentSpec | undefined);
-}
-
-export type ObjectTypeDefinition<P extends object = object> = ObjectTypeCore<P> & ObjectTypeUi<P>;
+// The UI half (ObjectTypeUi, ObjectPanelsMap) lives in registry/panelTypes.ts:
+// this file anchors the React-free domain type graph (registry-isolation.test
+// tripwires the boundary).

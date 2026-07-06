@@ -9,7 +9,7 @@ import type { PrinterProfile } from '../../types/PrinterProfile';
 import type { Variable } from '../../types/Variable';
 import { formatReportAsText, type ImportReport, type ImportResult } from '../../lib/importReport';
 import { ImportSummaryBody } from './ImportSummary';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 import { DialogShell } from '../ui/DialogShell';
 
 interface Props {

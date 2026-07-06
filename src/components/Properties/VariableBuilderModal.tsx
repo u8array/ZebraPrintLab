@@ -10,7 +10,7 @@ import { VariableInsertPalette } from "./VariableInsertPalette";
 import { VariableInspector } from "./VariableInspector";
 import { VariableCsvPanel } from "./VariableCsvPanel";
 import { SerialGlyph } from "./variableGlyphs";
-import { useT } from "../../lib/useT";
+import { useT } from "../../hooks/useT";
 import { labelCls } from "../ui/formStyles";
 import { useLabelStore, getCurrentObjects } from "../../store/labelStore";
 import { findObjectById } from "../../types/Group";

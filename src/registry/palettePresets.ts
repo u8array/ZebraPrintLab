@@ -1,6 +1,6 @@
 import { ObjectRegistry, getEntry } from './index';
 import type { ObjectGroup } from '../types/LabelObject';
-import type { ObjectTypeDefinition } from '../types/ObjectType';
+import type { ObjectTypeCore } from '../types/ObjectType';
 import type { Translations } from '../locales';
 
 /** A palette / context-menu entry that spawns an object. `id` is the stable
@@ -14,7 +14,7 @@ export interface AddableEntry {
   icon: string;
   zplCmd?: string;
   label: string;
-  defaultSize: ObjectTypeDefinition['defaultSize'];
+  defaultSize: ObjectTypeCore['defaultSize'];
   propsOverride?: object;
 }
 

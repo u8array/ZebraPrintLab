@@ -1,6 +1,6 @@
 import { mmToDots } from "./coordinates";
 import type { LabelConfig } from "../types/LabelConfig";
-import type { ObjectTypeDefinition } from "../types/ObjectType";
+import type { ObjectTypeCore } from "../types/ObjectType";
 /** Resolve a registry `defaultSize` declaration to dot units against
  *  the active label config. Spec-fixed-physical-size symbols (e.g.
  *  Maxicode) declare `widthMm`/`heightMm` so their footprint stays
@@ -8,7 +8,7 @@ import type { ObjectTypeDefinition } from "../types/ObjectType";
  *  directly in dots. Extracted from the palette so the resolver
  *  stays testable in isolation. */
 export function resolveDefaultSizeDots(
-  defaultSize: ObjectTypeDefinition["defaultSize"],
+  defaultSize: ObjectTypeCore["defaultSize"],
   label: LabelConfig,
 ): { width: number; height: number } {
   if ("widthMm" in defaultSize) {

@@ -1,5 +1,5 @@
 import { useLabelStore } from '../../store/labelStore';
-import { useT } from '../../lib/useT';
+import { useT } from '../../hooks/useT';
 
 /** "Edit / Done" switch for the curated type-list, shown in the sidebar collapse
  *  bar. Only meaningful in list view; hidden otherwise. Editing toggles the rows
