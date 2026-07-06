@@ -60,7 +60,14 @@ export function RegionFocus({
     <div
       className={className}
       onFocus={() => ctx.set("focus", region)}
-      onBlur={() => ctx.clear("focus", region)}
+      onBlur={(e) => {
+        // Tab between two fields of the SAME group fires blur before focus;
+        // only clear when focus actually leaves the wrapper, else the
+        // highlight flickers off and on within one region.
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          ctx.clear("focus", region);
+        }
+      }}
       onPointerEnter={() => ctx.set("hover", region)}
       onPointerLeave={() => ctx.clear("hover", region)}
     >
