@@ -1,4 +1,5 @@
 import type { LabelConfig } from './LabelConfig';
+import type { Unit } from '../lib/units';
 
 export type PreflightSeverity = 'error' | 'warning';
 
@@ -54,11 +55,14 @@ export const PREFLIGHT_SEVERITY: Record<PreflightKind, PreflightSeverity> = {
   emptyContent: 'warning',
 };
 
-/** What a per-type `preflight` producer receives. Minimal on purpose (just the
- *  label, for dpmm) so the registry capability stays free of the lib-layer
- *  ObjectBoundsCtx and its import cycle. */
+/** What a per-type `preflight` producer receives. Minimal on purpose (the
+ *  label for dpmm, the display unit for measurement details) so the registry
+ *  capability stays free of the lib-layer ObjectBoundsCtx and its import
+ *  cycle. */
 export interface PreflightCtx {
   label: LabelConfig;
+  /** Active display unit; measurement details render in it. */
+  unit: Unit;
 }
 
 /** A per-type producer's output: kind plus optional detail. computePreflight
