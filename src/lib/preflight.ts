@@ -2,7 +2,8 @@ import { getEntry, type LeafObject } from "../registry";
 import { objectBoundsDots, offLabelPlacement, type ObjectBoundsCtx } from "./objectBounds";
 import { emittedAnchorDots } from "./emittedAnchor";
 import { suspiciousCharDetail } from "./suspiciousChars";
-import { GS1_DATAMATRIX_ESCAPE, GS1_GS, parseGs1ToSegments, validateGs1Segment, validateGs1SegmentResolved } from "./gs1";
+import { GS1_GS, parseGs1ToSegments, validateGs1Segment, validateGs1SegmentResolved } from "./gs1";
+import { DATAMATRIX_FD_ESCAPE } from "./dataMatrixFd";
 import { extractTemplateRefs, hasTemplateMarkers } from "./fnTemplate";
 import { isLoneMarker } from "./variableField";
 import { parseContent, typedContentIncompleteRows, typedContentMarkerFindings } from "./typedContent";
@@ -129,8 +130,8 @@ export function markerValueFindings(
               // re-read as an escape sequence at print (FNC1 / de-doubling);
               // the literal-time doubling can't cover ^FN-inserted data. `_`
               // is a valid GS1 char, so the charset check won't catch it.
-              if (leaf.type === "datamatrix" && resolved.includes(GS1_DATAMATRIX_ESCAPE)) {
-                details.push(`${at}: (${seg.ai}) "${GS1_DATAMATRIX_ESCAPE}" collides with the ^BX escape character`);
+              if (leaf.type === "datamatrix" && resolved.includes(DATAMATRIX_FD_ESCAPE)) {
+                details.push(`${at}: (${seg.ai}) "${DATAMATRIX_FD_ESCAPE}" collides with the ^BX escape character`);
               }
               if (details.length >= 4) break outer;
             }

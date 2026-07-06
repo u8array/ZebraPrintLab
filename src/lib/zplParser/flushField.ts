@@ -10,7 +10,8 @@ import { embedsToMarkers } from "../fnTemplate";
 import { tokensToMarkers } from "../fcTemplate";
 import { decodeFbContent } from "../fbContent";
 import { decodeTbContent } from "../tbContent";
-import { dataMatrixFdToGs1Content, elementStringToContent } from "../gs1";
+import { elementStringToContent } from "../gs1";
+import { dataMatrixFdToGs1Content } from "../dataMatrixFd";
 import { zplAnchorToModel } from "../labelGeometry/textPositionTransforms";
 import { blockInterLineExtentDots } from "../zebraTextLayout";
 import { computeTextRenderMetrics } from "../labelGeometry/textRenderMetrics";
@@ -317,10 +318,9 @@ export function createFlushField(
       }
       case "datamatrix": {
         // The ^BX escape param is honored only at quality 200, so GS1 mode is
-        // valid only there; otherwise `_1` is literal field data.
-        const gs1Content = s.field.dmEscape && s.field.dmQuality === 200
-          ? dataMatrixFdToGs1Content(content, s.field.dmEscape)
-          : null;
+        // valid only there; otherwise the field data is plain, kept verbatim.
+        const esc = s.field.dmQuality === 200 ? s.field.dmEscape : undefined;
+        const gs1Content = esc ? dataMatrixFdToGs1Content(content, esc) : null;
         objects.push(
           makeObj(
             "datamatrix",
@@ -332,6 +332,9 @@ export function createFlushField(
               quality: s.field.dmQuality,
               rotation: s.field.bcRotation,
               gs1: gs1Content !== null,
+              ...(s.field.dmAspect === 2 ? { aspectRatio: 2 as const } : {}),
+              ...(s.field.dmCols ? { columns: s.field.dmCols } : {}),
+              ...(s.field.dmRows ? { rows: s.field.dmRows } : {}),
             } satisfies DataMatrixProps,
             posType,
             comment,

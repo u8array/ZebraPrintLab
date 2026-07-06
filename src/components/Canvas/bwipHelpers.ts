@@ -15,6 +15,7 @@ import {
   gtin14WithCheck,
   gs1ContentToElementString,
 } from "../../lib/gs1";
+import { isRectangular, dmVersionString, type DataMatrixProps } from "../../registry/datamatrix";
 import { getObjectStringContent } from "../../lib/variableBinding";
 import {
   barSubRect,
@@ -124,6 +125,33 @@ function getValidationCanvas(): HTMLCanvasElement {
 export function cleanBwipError(e: unknown): string {
   const raw = e instanceof Error ? e.message : String(e);
   return raw.replace(/^bwip-js:\s*/i, "").replace(/^bwipp\.[^:]+:\s*/i, "");
+}
+
+/** GS1 mode: bwip auto-inserts FNC1 from the (AI)… element string. */
+function dmBwipInput(p: DataMatrixProps): { bcid: string; text: string } {
+  const rect = isRectangular(p);
+  return {
+    bcid: p.gs1
+      ? (rect ? "gs1datamatrixrectangular" : "gs1datamatrix")
+      : (rect ? "datamatrixrectangular" : "datamatrix"),
+    text: (p.gs1 ? gs1ContentToElementString(p.content) : p.content) || " ",
+  };
+}
+
+/** Index of the smallest capacity-ordered ^BX size that fits `p`'s content:
+ *  auto mode picks it from the same table, so one encode ranks the whole list.
+ *  Returns 0 (disable nothing) when the content won't encode at any size —
+ *  that's a content error the preflight already reports. */
+export function dataMatrixMinFitIndex(
+  p: DataMatrixProps,
+  pairs: readonly (readonly [number, number])[],
+): number {
+  try {
+    const [sym] = bwipjs.raw(dmBwipInput(p) as never) as { pixx?: number; pixy?: number }[];
+    return Math.max(0, pairs.findIndex(([r, c]) => r === sym?.pixy && c === sym?.pixx));
+  } catch {
+    return 0;
+  }
 }
 
 /** Dry-run encode; returns null on success or cleaned error message. */
@@ -513,10 +541,12 @@ export function buildBwipOptions(
     }
     case "datamatrix": {
       const p = obj.props;
-      // GS1 mode: bwip auto-inserts FNC1 from the (AI)… element string.
-      opts = p.gs1
-        ? { bcid: "gs1datamatrix", text: gs1ContentToElementString(p.content) || " ", scale: BWIP_SCALE }
-        : { bcid, text: p.content || " ", scale: BWIP_SCALE };
+      const version = dmVersionString(p);
+      opts = {
+        ...dmBwipInput(p),
+        scale: BWIP_SCALE,
+        ...(version ? { version } : {}),
+      };
       break;
     }
     case "aztec": {
@@ -780,10 +810,10 @@ function getUprightDisplaySize(
       return { w: size, h: size };
     }
     case "datamatrix": {
+      // Rectangular symbols have cw ≠ ch; both map through the same module px.
       const modulePx = dotsToPx(obj.props.dimension, scale, dpmm);
-      const size =
-        (cw / (BWIP_SCALE * BWIP_2D_INTERNAL_SCALE)) * modulePx;
-      return { w: size, h: size };
+      const denom = BWIP_SCALE * BWIP_2D_INTERNAL_SCALE;
+      return { w: (cw / denom) * modulePx, h: (ch / denom) * modulePx };
     }
     case "aztec": {
       const modulePx = dotsToPx(obj.props.magnification, scale, dpmm);

@@ -125,14 +125,23 @@ export function shrinkingBelowFloor(
   );
 }
 
-/** Anchor inferred from non-moving edge (Konva hides it from boundBoxFunc). */
-export function forceSquareBox(oldBox: BoundingBox, newBox: BoundingBox): BoundingBox {
+/** Uniform scale preserving oldBox's aspect, from the dominant drag axis.
+ *  Square 2D symbols stay square; rectangular DataMatrix keeps its DMRE
+ *  shape. Anchor inferred from non-moving edge (Konva hides it from
+ *  boundBoxFunc). */
+export function forceAspectBox(oldBox: BoundingBox, newBox: BoundingBox): BoundingBox {
+  if (!(oldBox.width > 0) || !(oldBox.height > 0)) return newBox;
   const leftMoved = Math.abs(newBox.x - oldBox.x) > 0.001;
   const topMoved = Math.abs(newBox.y - oldBox.y) > 0.001;
-  const size = Math.max(Math.abs(newBox.width), Math.abs(newBox.height));
-  const x = leftMoved ? oldBox.x + oldBox.width - size : oldBox.x;
-  const y = topMoved ? oldBox.y + oldBox.height - size : oldBox.y;
-  return { ...newBox, x, y, width: size, height: size };
+  const scale = Math.max(
+    Math.abs(newBox.width) / oldBox.width,
+    Math.abs(newBox.height) / oldBox.height,
+  );
+  const width = oldBox.width * scale;
+  const height = oldBox.height * scale;
+  const x = leftMoved ? oldBox.x + oldBox.width - width : oldBox.x;
+  const y = topMoved ? oldBox.y + oldBox.height - height : oldBox.y;
+  return { ...newBox, x, y, width, height };
 }
 
 /** Stacked-2D (PDF417/MicroPDF417/Codablock): height steps by rowHeight,
@@ -161,10 +170,12 @@ export interface ModuleWidthAnchor {
 }
 
 /** Uniform 2D (QR/Aztec/DataMatrix) anchor; `edges` from Konva's active
- *  anchor name so the pin survives rotated-view where bbox-diff doesn't. */
+ *  anchor name so the pin survives rotated-view where bbox-diff doesn't.
+ *  Width and height are carried separately for rectangular DataMatrix. */
 export interface UniformModuleAnchor {
   kind: "uniformModule";
   nodeSize: number;
+  nodeHeight: number;
   modules: number;
   min: number;
   max: number;
@@ -256,7 +267,7 @@ export function applyModuleWidthSnap(
   return pinSnappedAxis(oldBox, newBox, swapped ? "y" : "x", snapped, HANDLE_MOVE_EPS);
 }
 
-/** Assumes forceSquareBox has run; pins the corner formed by anchor.edges. */
+/** Assumes forceAspectBox has run; pins the corner formed by anchor.edges. */
 export function applyUniformModuleSnap(
   oldBox: BoundingBox,
   newBox: BoundingBox,
@@ -267,10 +278,12 @@ export function applyUniformModuleSnap(
   }
   const scale = newBox.width / anchor.nodeSize;
   const nextModules = computeNewModules(anchor.modules, scale, anchor.min, anchor.max);
-  const snapped = anchor.nodeSize * (nextModules / anchor.modules);
-  const x = anchor.edges.left ? oldBox.x + oldBox.width - snapped : oldBox.x;
-  const y = anchor.edges.top ? oldBox.y + oldBox.height - snapped : oldBox.y;
-  return { ...newBox, x, y, width: snapped, height: snapped };
+  const factor = nextModules / anchor.modules;
+  const width = anchor.nodeSize * factor;
+  const height = (anchor.nodeHeight > 0 ? anchor.nodeHeight : anchor.nodeSize) * factor;
+  const x = anchor.edges.left ? oldBox.x + oldBox.width - width : oldBox.x;
+  const y = anchor.edges.top ? oldBox.y + oldBox.height - height : oldBox.y;
+  return { ...newBox, x, y, width, height };
 }
 
 /** Pin the anchored side of a resize: a grabbed min edge (left/top) shifts the

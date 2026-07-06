@@ -21,6 +21,11 @@ export interface ObjectTypeCore<P extends object = object> {
    *  blank, so an unconfigured barcode keeps its true symbology footprint.
    *  Never reaches emit or print; the blank field's ^FD stays empty. */
   placeholderContent?: string;
+  /** Prop overrides for sample rendering, so the sample stays encodable where
+   *  the object's own props wouldn't (a forced ^BX size reverts to auto). The
+   *  sample is the fallback for uncodable content, so it must never fail
+   *  itself. Canvas/overlay only; never emitted. */
+  sampleProps?: Partial<P>;
   /** Drop footprint: dots (editor default) or mm (spec-fixed types
    *  like Maxicode). Palette resolves against current label dpmm. */
   defaultSize:

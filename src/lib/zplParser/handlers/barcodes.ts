@@ -1,5 +1,5 @@
 import type { Code49Props } from "../../../registry/code49";
-import type { DataMatrixProps } from "../../../registry/datamatrix";
+import { isDmRectPair, type DataMatrixProps } from "../../../registry/datamatrix";
 import type { Gs1DatabarProps } from "../../../registry/gs1databar";
 import type { MaxicodeProps } from "../../../registry/maxicode";
 import { GS1_DATABAR_DEFAULT_SEGMENTS } from "../../gs1";
@@ -116,13 +116,28 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
       field.qrMag = int(p[2], 4);
     },
 
-    // ^BXN,{dimension},{quality},,,,{escape}; DataMatrix. p[6] = GS1 escape char.
+    // ^BXo,h,s,c,r,f,g,a; DataMatrix. p[6] = GS1 escape char, p[7] = aspect
+    // ratio (quality-200 only; below that firmware prints square). p[5]
+    // (format ID, quality 0-140 only) is intentionally dropped and
+    // canonicalized away on emit.
     BX(p) {
       field.fieldType = "datamatrix";
       field.bcRotation = readRotation(p[0]);
       field.dmDim = dots(p[1], 5);
       field.dmQuality = int(p[2], 200) as DataMatrixProps["quality"];
+      // c/r and the a param are ECC-200 features; below that the firmware
+      // auto-sizes a square symbol, so drop them to keep the model consistent
+      // with the preview (dmVersionString ignores them there anyway).
+      const q200 = field.dmQuality === 200;
+      const cols = q200 ? int(p[3], 0) || undefined : undefined;
+      const rows = q200 ? int(p[4], 0) || undefined : undefined;
+      field.dmCols = cols;
+      field.dmRows = rows;
       field.dmEscape = p[6] || undefined;
+      // A forced c/r pair decides the shape — the firmware honors it over the
+      // a param; only an auto-sized symbol takes its shape from a.
+      const rect = cols && rows ? isDmRectPair(rows, cols) : int(p[7], 1) === 2;
+      field.dmAspect = q200 && rect ? 2 : undefined;
     },
 
     // ^B7N,{rowHeight},{securityLevel},{columns},,,; PDF417

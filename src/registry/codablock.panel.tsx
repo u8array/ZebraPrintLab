@@ -1,12 +1,11 @@
 import type { ObjectTypeUi } from "../types/ObjectType";
 import { useT } from "../lib/useT";
-import { labelCls } from "../components/Properties/styles";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { NumberInput } from "../components/Properties/NumberInput";
 import { UnitNumberInput } from "../components/Properties/UnitNumberInput";
 import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
 import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
-import { ZplCmd } from "../components/Properties/ZplCmd";
+import { CheckboxRow } from "../components/Properties/CheckboxRow";
 import { fieldGridCols, fieldGridCell } from "../components/ui/formStyles";
 import type { CodablockProps } from "./codablock";
 
@@ -42,20 +41,12 @@ export const codablockPanel: ObjectTypeUi<CodablockProps> = {
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="accent-accent"
-                checked={p.securityLevel === "Y"}
-                onChange={(e) =>
-                  onChange({ securityLevel: e.target.checked ? "Y" : "N" })
-                }
-              />
-              <span className={labelCls}>{loc.security}</span>
-            </label>
-            <ZplCmd cmd="^BB" />
-          </div>
+          <CheckboxRow
+            checked={p.securityLevel === "Y"}
+            onChange={(checked) => onChange({ securityLevel: checked ? "Y" : "N" })}
+            label={loc.security}
+            cmd="^BB"
+          />
 
           <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^BB" />
         </SectionCard>

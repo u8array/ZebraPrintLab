@@ -171,6 +171,11 @@ export interface FieldState {
   dmQuality: DataMatrixProps["quality"];
   /** ^BX escape char (g param); set => GS1 DataMatrix field data. */
   dmEscape: string | undefined;
+  /** ^BX a param, normalized by the BX handler. */
+  dmAspect: DataMatrixProps["aspectRatio"];
+  /** ^BX c/r params: forced symbol size; undefined = auto. */
+  dmCols: number | undefined;
+  dmRows: number | undefined;
   // Stacked-2D pending
   pdfRowHeight: number;
   pdfSecurity: number;
@@ -323,6 +328,9 @@ export function createParserState(): ParserState {
       dmDim: 5,
       dmQuality: 200,
       dmEscape: undefined,
+      dmAspect: undefined,
+      dmCols: undefined,
+      dmRows: undefined,
       pdfRowHeight: 10,
       pdfSecurity: 0,
       pdfColumns: 0,

@@ -199,6 +199,50 @@ describe('round-trip — multi-barcode + shapes label', () => {
   });
 });
 
+// ── GS1 rectangular DataMatrix round-trip ────────────────────────────────────
+
+const GS1_RECT_DM_ZPL = `
+^XA
+^PW800^LL600
+^FO50,50^BXN,4,200,,,,~,2^FD~1010426011945468210FM260693^FS
+^XZ
+`.trim();
+
+describe('round-trip — GS1 rectangular DataMatrix (^BX g + a params)', () => {
+  it('decodes the tilde FNC1 escape and re-emits equivalent GS1 field data', () => {
+    const { first, second, regenerated } = roundtrip(GS1_RECT_DM_ZPL);
+    const dm1 = defined(first.objects.find((o) => o.type === 'datamatrix'));
+    const dm2 = defined(second.objects.find((o) => o.type === 'datamatrix'));
+    expect(props(dm1).gs1).toBe(true);
+    expect(props(dm1).content).toBe('010426011945468210FM260693');
+    expect(props(dm1).aspectRatio).toBe(2);
+    // The escape char normalizes to `_` on export; semantically identical.
+    expect(regenerated).toContain('^BXN,4,200,,,,_,2^FD_1010426011945468210FM260693^FS');
+    expect(props(dm2)).toEqual(props(dm1));
+  });
+
+  it('keeps non-GS1 field data verbatim across a round-trip', () => {
+    const { first, regenerated } = roundtrip(
+      '^XA^PW800^LL600^FO10,10^BXN,8,200^FDABC_DEF^FS^XZ',
+    );
+    expect(props(defined(first.objects[0])).content).toBe('ABC_DEF');
+    expect(props(defined(first.objects[0])).gs1).toBe(false);
+    expect(regenerated).toContain('^BXN,8,200^FDABC_DEF^FS');
+  });
+
+  it('preserves a forced symbol size and a _d029 GS separator', () => {
+    const { first, regenerated } = roundtrip(
+      '^XA^FO10,10^BXN,8,200,32,32,,_^FD_1010950110153000310ABC123_d0292112345^FS^XZ',
+    );
+    const dm = defined(first.objects.find((o) => o.type === 'datamatrix'));
+    expect(props(dm).columns).toBe(32);
+    expect(props(dm).rows).toBe(32);
+    expect(props(dm).content).toBe('010950110153000310ABC123\x1d2112345');
+    // Canonical emit: separator as `_1`, size retained.
+    expect(regenerated).toContain('^BXN,8,200,32,32,,_^FD_1010950110153000310ABC123_12112345^FS');
+  });
+});
+
 // ── field-block text round-trip ───────────────────────────────────────────────
 
 const BLOCK_TEXT_ZPL = `

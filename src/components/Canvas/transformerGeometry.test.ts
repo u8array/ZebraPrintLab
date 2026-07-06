@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   snapBoxHeight,
   positionDidMove,
-  forceSquareBox,
+  forceAspectBox,
   applyHeightSnap,
   applyModuleWidthSnap,
   applyUniformModuleSnap,
@@ -321,12 +321,12 @@ describe("pinInactiveEdges + applyHeightSnap (multi-frame regression)", () => {
   });
 });
 
-describe("forceSquareBox", () => {
+describe("forceAspectBox", () => {
   const oldBox = { x: 100, y: 100, width: 50, height: 50, rotation: 0 };
 
   it("clamps to max axis when dragging the bottom-right corner", () => {
     const newBox = { x: 100, y: 100, width: 80, height: 60, rotation: 0 };
-    expect(forceSquareBox(oldBox, newBox)).toEqual({
+    expect(forceAspectBox(oldBox, newBox)).toEqual({
       x: 100, y: 100, width: 80, height: 80, rotation: 0,
     });
   });
@@ -334,14 +334,14 @@ describe("forceSquareBox", () => {
   it("pins the bottom-right corner when dragging the top-left", () => {
     const newBox = { x: 70, y: 80, width: 80, height: 70, rotation: 0 };
     // Bottom-right of oldBox = (150, 150). Square of size 80 must end there.
-    expect(forceSquareBox(oldBox, newBox)).toEqual({
+    expect(forceAspectBox(oldBox, newBox)).toEqual({
       x: 70, y: 70, width: 80, height: 80, rotation: 0,
     });
   });
 
   it("pins the bottom-left corner when dragging the top-right", () => {
     const newBox = { x: 100, y: 80, width: 70, height: 70, rotation: 0 };
-    expect(forceSquareBox(oldBox, newBox)).toEqual({
+    expect(forceAspectBox(oldBox, newBox)).toEqual({
       x: 100, y: 80, width: 70, height: 70, rotation: 0,
     });
   });
@@ -349,9 +349,23 @@ describe("forceSquareBox", () => {
   it("pins the top-right corner when dragging the bottom-left", () => {
     const newBox = { x: 80, y: 100, width: 70, height: 70, rotation: 0 };
     // Top-right of oldBox = (150, 100). Square of size 70 stays there.
-    expect(forceSquareBox(oldBox, newBox)).toEqual({
+    expect(forceAspectBox(oldBox, newBox)).toEqual({
       x: 80, y: 100, width: 70, height: 70, rotation: 0,
     });
+  });
+
+  it("preserves a rectangular aspect (DMRE DataMatrix) from the dominant axis", () => {
+    // 8×18 symbol: twice as wide as tall (e.g. 90×40).
+    const rect = { x: 100, y: 100, width: 90, height: 40, rotation: 0 };
+    const out = forceAspectBox(rect, { x: 100, y: 100, width: 135, height: 40, rotation: 0 });
+    expect(out.width).toBe(135);
+    expect(out.height).toBe(60);
+    expect(out.x).toBe(100);
+    expect(out.y).toBe(100);
+    // Dragging the taller axis dominates when its relative growth is larger.
+    const tall = forceAspectBox(rect, { x: 100, y: 100, width: 90, height: 80, rotation: 0 });
+    expect(tall.height).toBe(80);
+    expect(tall.width).toBe(180);
   });
 });
 
@@ -432,6 +446,7 @@ describe("applyUniformModuleSnap", () => {
   const anchor = (edges: { left: boolean; right: boolean; top: boolean; bottom: boolean }) => ({
     kind: "uniformModule" as const,
     nodeSize: 100,
+    nodeHeight: 100,
     modules: 4,
     min: 1,
     max: 10,
@@ -469,6 +484,21 @@ describe("applyUniformModuleSnap", () => {
   it("no-ops on a non-uniform-2D anchor", () => {
     const out = applyUniformModuleSnap(oldBox, { ...oldBox, width: 140 }, null);
     expect(out.width).toBe(140);
+  });
+
+  it("scales a rectangular node's height by the same module factor", () => {
+    // 8×18 DMRE at dimension 4: bbox 180×80. One module step up → ×1.25.
+    const a = {
+      kind: "uniformModule" as const,
+      nodeSize: 180, nodeHeight: 80, modules: 4, min: 1, max: 10,
+      edges: { left: false, right: true, top: false, bottom: true },
+    };
+    const rectOld: BoundingBox = { x: 50, y: 50, width: 180, height: 80, rotation: 0 };
+    const out = applyUniformModuleSnap(rectOld, { ...rectOld, width: 230, height: 102 }, a);
+    expect(out.width).toBe(225);
+    expect(out.height).toBe(100);
+    expect(out.x).toBe(50);
+    expect(out.y).toBe(50);
   });
 });
 

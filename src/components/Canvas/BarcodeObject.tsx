@@ -18,7 +18,7 @@ import {
 } from "./bwipHelpers";
 import { resolveHriAbove, gs1HriFontDots } from "../../lib/barcodeHri";
 import { gs1ContentToElementString } from "../../lib/gs1";
-import { placeholderContentFor } from "../../registry/placeholderContent";
+import { placeholderContentFor, samplePropsFor } from "../../registry/placeholderContent";
 import { getObjectStringContent } from "../../lib/variableBinding";
 import { hasTemplateMarkers } from "../../lib/fnTemplate";
 import { objectRotation } from "../../registry/rotation";
@@ -117,7 +117,7 @@ export function BarcodeObject({
   const blankWarns = useBlankFieldWarns(obj.id);
   const warnBlank = blank && blankWarns;
   const sample = placeholderContentFor(obj.type, obj.props) ?? "";
-  const withSample = { ...obj, props: { ...obj.props, content: sample } } as typeof obj;
+  const withSample = { ...obj, props: { ...samplePropsFor(obj.type, obj.props), content: sample } } as typeof obj;
 
   // Same encoder as the renderFailed preflight, on the same marker-resolved
   // obj, so the canvas and the badge agree on what's codable.

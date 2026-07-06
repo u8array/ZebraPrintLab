@@ -2,8 +2,10 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { buildBwipOptions, getDisplaySize, getEanUpcHriFragments, parseZplCode128Escapes } from "./bwipHelpers";
+import { buildBwipOptions, dataMatrixMinFitIndex, getDisplaySize, getEanUpcHriFragments, parseZplCode128Escapes } from "./bwipHelpers";
 import type { LeafObject } from "../../registry";
+import { dmSizePairs, type DataMatrixProps } from "../../registry/datamatrix";
+import { placeholderContentFor, samplePropsFor } from "../../registry/placeholderContent";
 type LabelObject = LeafObject;
 
 describe("getEanUpcHriFragments", () => {
@@ -173,13 +175,13 @@ describe("buildBwipOptions gs1databar Expanded fallback", () => {
 });
 
 describe("buildBwipOptions datamatrix GS1 mode", () => {
-  const dm = (content: string, gs1: boolean): LabelObject => ({
+  const dm = (content: string, gs1: boolean, extra: Partial<DataMatrixProps> = {}): LabelObject => ({
     id: "1",
     type: "datamatrix",
     x: 0,
     y: 0,
     rotation: 0,
-    props: { content, dimension: 5, quality: 200, rotation: "N", gs1 },
+    props: { content, dimension: 5, quality: 200, rotation: "N", gs1, ...extra },
   });
 
   it("GS1 mode switches bcid and feeds the (AI) element string", () => {
@@ -192,6 +194,53 @@ describe("buildBwipOptions datamatrix GS1 mode", () => {
     const opts = buildBwipOptions(dm("DM123", false), 1, 8);
     expect(opts?.bcid).toBe("datamatrix");
     expect(opts?.text).toBe("DM123");
+  });
+
+  it("rectangular switches to the rectangular bcids", () => {
+    expect(buildBwipOptions(dm("DM123", false, { aspectRatio: 2 }), 1, 8)?.bcid)
+      .toBe("datamatrixrectangular");
+    expect(buildBwipOptions(dm("0109501101530003", true, { aspectRatio: 2 }), 1, 8)?.bcid)
+      .toBe("gs1datamatrixrectangular");
+  });
+
+  it("ranks forceable sizes by content fit (smaller sizes disabled)", () => {
+    // GS1 GTIN doesn't fit 8×18 (auto picks 8×32 → index 1); tiny plain
+    // content fits the smallest square (10×10 → index 0).
+    const gs1Rect = dm("0109501101530003", true, { aspectRatio: 2 }).props as DataMatrixProps;
+    expect(dataMatrixMinFitIndex(gs1Rect, dmSizePairs(gs1Rect))).toBe(1);
+    const tiny = dm("1", false).props as DataMatrixProps;
+    expect(dataMatrixMinFitIndex(tiny, dmSizePairs(tiny))).toBe(0);
+  });
+
+  it("sample fallback drops a forced size so the fallback render cannot fail", () => {
+    // The GS1 sample does not fit a forced 8×18; sampleProps reverts to auto.
+    const forced = dm("", true, { aspectRatio: 2, columns: 18, rows: 8 });
+    expect(buildBwipOptions(forced, 1, 8)?.version).toBe("8x18");
+    const sample = placeholderContentFor(forced.type, forced.props) ?? "";
+    const withSample = {
+      ...forced,
+      props: { ...samplePropsFor(forced.type, forced.props), content: sample },
+    } as LabelObject;
+    expect(buildBwipOptions(withSample, 1, 8)?.version).toBeUndefined();
+  });
+
+  it("disables nothing when the content cannot be auto-encoded at all", () => {
+    // Oversized (or invalid) content fails at every size — that is a content
+    // problem the preflight reports; the size list must stay usable.
+    const oversized = dm("X".repeat(200), false, { aspectRatio: 2 }).props as DataMatrixProps;
+    expect(dataMatrixMinFitIndex(oversized, dmSizePairs(oversized))).toBe(0);
+    const invalidGs1 = dm("01095011015300031", true).props as DataMatrixProps;
+    expect(dataMatrixMinFitIndex(invalidGs1, dmSizePairs(invalidGs1))).toBe(0);
+  });
+
+  it("forces a firmware-valid c/r pair via version; unknown pairs auto-size", () => {
+    expect(buildBwipOptions(dm("DM123", false, { columns: 22, rows: 22 }), 1, 8)?.version)
+      .toBe("22x22");
+    expect(buildBwipOptions(dm("DM123", false, { aspectRatio: 2, columns: 18, rows: 8 }), 1, 8)?.version)
+      .toBe("8x18");
+    // 13x13 is not an ECC 200 size; preview falls back to auto-sizing.
+    expect(buildBwipOptions(dm("DM123", false, { columns: 13, rows: 13 }), 1, 8)?.version)
+      .toBeUndefined();
   });
 });
 
