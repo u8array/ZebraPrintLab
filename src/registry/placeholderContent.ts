@@ -9,3 +9,11 @@ export function placeholderContentFor(type: string, props: object): string | und
   if ((props as { gs1?: boolean }).gs1) return GS1_SAMPLE_CONTENT;
   return getEntry(type)?.placeholderContent;
 }
+
+/** Props for sample rendering: the type's sampleProps overrides merged in, so
+ *  the sample stays encodable where the object's own props would reject it
+ *  (see ObjectTypeCore.sampleProps). */
+export function samplePropsFor<P extends object>(type: string, props: P): P {
+  const overrides = getEntry(type)?.sampleProps;
+  return overrides ? { ...props, ...overrides } : props;
+}

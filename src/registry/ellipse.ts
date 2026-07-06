@@ -37,7 +37,7 @@ export const ellipse: ObjectTypeCore<EllipseProps> = {
 
   commitTransform: (obj, ctx) => {
     // When lockAspect is true, the transformer already constrains the
-    // bbox to a square via forceSquareBox, so sx === sy here. We still
+    // bbox to a square via forceAspectBox, so sx === sy here. We still
     // collapse to a single axis to keep width === height exact under
     // float rounding rather than relying on identical Math.round inputs.
     if (obj.props.lockAspect) {

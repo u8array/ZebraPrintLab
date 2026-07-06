@@ -1,5 +1,6 @@
 import type { LabelObject } from "../../types/Group";
 import { isZplRotation, type ZplRotation } from "../../registry/rotation";
+import { opensImmediateCommand } from "../zplImmediate";
 
 /** Validated ZplRotation or `fallback` (default 'N'). */
 export function readRotation(
@@ -32,6 +33,12 @@ export interface TokenizerChars {
  *  the plain two-char read (`AA0` = prefix A + name A0). */
 const NAME_CHAR_RE = /[0-9A-Za-z@]/;
 
+/** Commands whose rest is a free-text payload: a tilde inside it ends the
+ *  field only when it opens a real immediate command (see zplImmediate.ts). */
+const PAYLOAD_CMDS = new Set(["FD", "FV", "FX"]);
+
+const LETTER_RE = /[A-Za-z]/;
+
 /** Stream tokens incrementally so ^CC/^CT changes mid-parse apply to
  *  subsequent commands. The caller passes a live ref (typically
  *  `s.format`) whose `caretChar`/`tildeChar` may be mutated between
@@ -40,12 +47,26 @@ export function* tokenize(
   zpl: string,
   chars: TokenizerChars,
 ): Generator<{ cmd: string; rest: string; start: number; end: number }> {
+  // Between commands, any letter after a tilde is read as a command name so
+  // unknown ~XX junk still surfaces in the import report; a tilde before a
+  // non-letter is data (e.g. `~1`, a ^BX FNC1 escape).
+  const isCmdStart = (i: number): boolean => {
+    const ch = zpl[i];
+    if (ch === chars.caretChar) return true;
+    if (ch !== chars.tildeChar) return false;
+    return LETTER_RE.test(zpl[i + 1] ?? "");
+  };
+  const isCmdStartInPayload = (i: number): boolean => {
+    const ch = zpl[i];
+    if (ch === chars.caretChar) return true;
+    if (ch !== chars.tildeChar) return false;
+    return opensImmediateCommand(zpl.slice(i + 1, i + 3));
+  };
   let pos = 0;
   while (pos < zpl.length) {
     let cmdStart = -1;
     for (let i = pos; i < zpl.length; i++) {
-      const ch = zpl[i];
-      if (ch === chars.caretChar || ch === chars.tildeChar) {
+      if (isCmdStart(i)) {
         cmdStart = i;
         break;
       }
@@ -77,10 +98,10 @@ export function* tokenize(
       yield { cmd, rest: argChar, start: cmdStart, end: pos };
       continue;
     }
+    const boundary = PAYLOAD_CMDS.has(cmd) ? isCmdStartInPayload : isCmdStart;
     let endPos = zpl.length;
     for (let i = cmdStart + 3; i < zpl.length; i++) {
-      const ch = zpl[i];
-      if (ch === chars.caretChar || ch === chars.tildeChar) {
+      if (boundary(i)) {
         endPos = i;
         break;
       }

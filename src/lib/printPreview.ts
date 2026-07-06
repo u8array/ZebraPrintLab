@@ -4,7 +4,7 @@ import type { LabelConfig } from "../types/LabelConfig";
 import { isGroup, type LabelObject } from "../types/Group";
 import type { Variable } from "../types/Variable";
 import { applyBindingToTree, clockCtxFromLabel, getObjectStringContent, type ActiveCsvRow } from "./variableBinding";
-import { placeholderContentFor } from "../registry/placeholderContent";
+import { placeholderContentFor, samplePropsFor } from "../registry/placeholderContent";
 
 /** Blank fields rendered with their symbology sample, so the preview overlay
  *  matches the canvas (which shows the same sample behind the warning frame).
@@ -16,7 +16,7 @@ function withBlankSamples(objects: LabelObject[]): LabelObject[] {
     if (content === undefined || content.trim() !== "") return o;
     const sample = placeholderContentFor(o.type, o.props);
     if (!sample) return o;
-    return { ...o, props: { ...o.props, content: sample } } as LabelObject;
+    return { ...o, props: { ...samplePropsFor(o.type, o.props), content: sample } } as LabelObject;
   });
 }
 

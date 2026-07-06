@@ -768,6 +768,75 @@ describe('parseZPL — ^BX DataMatrix', () => {
     expect(props(objects[0]).gs1).toBe(false);
     expect(props(objects[0]).content).toBe('_1010950110153000310');
   });
+
+  it('keeps non-GS1 field data verbatim (no leading FNC1, g set)', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BXN,8,200,,,,_^FDABC_DEF^FS^XZ', 8);
+    expect(props(objects[0]).gs1).toBe(false);
+    expect(props(objects[0]).content).toBe('ABC_DEF');
+  });
+
+  it('keeps ~dNNN escapes in field data (tilde before a letter that is no immediate command)', () => {
+    const { objects, importReport } = parseZPL(
+      '^XA^FO10,10^BXN,8,200,,,,~^FD~1010950110153000310ABC123~d0292112345^FS^XZ',
+      8,
+    );
+    expect(importReport.unknown).toEqual([]);
+    expect(props(objects[0]).gs1).toBe(true);
+    expect(props(objects[0]).content).toBe('010950110153000310ABC123\x1d2112345');
+  });
+
+  it('still ends field data at a real immediate command (~JA is intercepted by firmware)', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BXN,8,200^FDAB~JACD^FS^XZ', 8);
+    expect(props(objects[0]).content).toBe('AB');
+  });
+
+  it('reads a tilde escape char and the rectangular a param', () => {
+    // Production label: g=~ (the historic firmware default escape char), a=2.
+    // The tilde inside ^FD must survive tokenization, not start a command.
+    const { objects } = parseZPL(
+      '^XA^FO50,50^BXN,4,200,,,,~,2^FD~1010426011945468210FM260693^FS^XZ',
+      8,
+    );
+    expect(objects[0]?.type).toBe('datamatrix');
+    expect(props(objects[0]).gs1).toBe(true);
+    expect(props(objects[0]).content).toBe('010426011945468210FM260693');
+    expect(props(objects[0]).dimension).toBe(4);
+    expect(props(objects[0]).aspectRatio).toBe(2);
+  });
+
+  it('ignores the a param below quality 200 (firmware prints square)', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BXN,8,140,,,,,2^FDX^FS^XZ', 8);
+    expect(props(objects[0]).aspectRatio).toBeUndefined();
+  });
+
+  it('reads a forced symbol size from the c/r params', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BXN,8,200,22,22^FDX^FS^XZ', 8);
+    expect(props(objects[0]).columns).toBe(22);
+    expect(props(objects[0]).rows).toBe(22);
+  });
+
+  it('drops a forced c/r below quality 200 (invalid there; preview auto-sizes)', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BXN,8,140,22,22^FDX^FS^XZ', 8);
+    expect(props(objects[0]).columns).toBeUndefined();
+    expect(props(objects[0]).rows).toBeUndefined();
+  });
+
+  it('derives the rectangular shape from a forced DMRE pair without the a param', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BXN,8,200,18,8^FDX^FS^XZ', 8);
+    expect(props(objects[0]).columns).toBe(18);
+    expect(props(objects[0]).rows).toBe(8);
+    expect(props(objects[0]).aspectRatio).toBe(2);
+  });
+
+  it('a forced square pair overrides a stray a=2', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BXN,8,200,22,22,,,2^FDX^FS^XZ', 8);
+    expect(props(objects[0]).aspectRatio).toBeUndefined();
+  });
+
+  it('accepts quality 100 (convolution ECC)', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BXN,8,100^FDX^FS^XZ', 8);
+    expect(props(objects[0]).quality).toBe(100);
+  });
 });
 
 describe('parseZPL — ^BU UPC-A', () => {

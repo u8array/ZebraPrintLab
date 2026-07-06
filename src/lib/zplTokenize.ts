@@ -11,6 +11,8 @@
  * newlines (block line breaks are encoded as `\&`).
  */
 
+import { opensImmediateCommand } from "./zplImmediate";
+
 export type ZplTokenType =
   | "structural" // ^XA ^XZ: format boundaries
   | "command" // ^FO ^BU ^A0 …
@@ -34,7 +36,12 @@ const COMMENT_CMDS = new Set(["FX"]);
 // this, pushParams splits a multi-MB payload into millions of tokens.
 const OPAQUE_CMDS = new Set(["DY", "DG", "DB", "DT", "DU", "GF"]);
 
-const isCmdStart = (ch: string | undefined) => ch === "^" || ch === "~";
+// Between commands a tilde before any letter reads as a command; inside a
+// payload run only a real immediate command ends it (see zplImmediate.ts).
+const isCmdStart = (line: string, i: number) =>
+  line[i] === "^" || (line[i] === "~" && /[A-Za-z]/.test(line[i + 1] ?? ""));
+const isCmdStartInPayload = (line: string, i: number) =>
+  line[i] === "^" || (line[i] === "~" && opensImmediateCommand(line.slice(i + 1, i + 3)));
 
 // Split a parameter run into numbers, commas, and flag tokens. Field data is
 // never passed here, so a comma is always a real separator.
@@ -52,7 +59,7 @@ export function tokenizeZplLine(line: string): ZplToken[] {
   const n = line.length;
   let i = 0;
   while (i < n) {
-    if (isCmdStart(line[i])) {
+    if (isCmdStart(line, i)) {
       const code = line.slice(i + 1, i + 3).toUpperCase();
       out.push({
         type: STRUCTURAL.has(code) ? "structural" : "command",
@@ -60,18 +67,20 @@ export function tokenizeZplLine(line: string): ZplToken[] {
       });
       i += 3;
       // Everything up to the next command is this command's payload.
+      const isPayload = DATA_CMDS.has(code) || OPAQUE_CMDS.has(code) || COMMENT_CMDS.has(code);
+      const boundary = isPayload ? isCmdStartInPayload : isCmdStart;
       let j = i;
-      while (j < n && !isCmdStart(line[j])) j++;
+      while (j < n && !boundary(line, j)) j++;
       const run = line.slice(i, j);
       if (run) {
-        if (DATA_CMDS.has(code) || OPAQUE_CMDS.has(code)) out.push({ type: "fieldData", value: run });
-        else if (COMMENT_CMDS.has(code)) out.push({ type: "comment", value: run });
+        if (COMMENT_CMDS.has(code)) out.push({ type: "comment", value: run });
+        else if (isPayload) out.push({ type: "fieldData", value: run });
         else pushParams(run, out);
       }
       i = j;
     } else {
       let j = i;
-      while (j < n && !isCmdStart(line[j])) j++;
+      while (j < n && !isCmdStart(line, j)) j++;
       out.push({ type: "text", value: line.slice(i, j) });
       i = j;
     }

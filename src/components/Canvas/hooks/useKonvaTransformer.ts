@@ -25,7 +25,7 @@ import {
   pinAnchoredEdge,
   pinInactiveEdges,
   positionDidMove,
-  forceSquareBox,
+  forceAspectBox,
   shrinkingBelowFloor,
   type ActiveEdgeFlags,
   type BarcodeHeightReflowStart,
@@ -447,8 +447,9 @@ export function useKonvaTransformer({
   const singleType = singleSelected?.type ?? "";
   const typeEntry = getEntry(singleType);
   const uniformScaleDef = typeEntry?.uniformScale;
-  // uniformScaleProp implies uniformScale: integer-module 2D symbology
-  // is square by construction, so the registry doesn't need to set both.
+  // uniformScaleProp implies uniformScale: integer-module 2D symbology scales
+  // both axes together (square, or fixed-aspect rectangular DataMatrix), so
+  // the registry doesn't need to set both.
   const isUniformScale =
     !!typeEntry?.uniformScaleProp ||
     (typeof uniformScaleDef === "function"
@@ -583,6 +584,7 @@ export function useKonvaTransformer({
           return {
             kind: "uniformModule",
             nodeSize: rect.width,
+            nodeHeight: rect.height,
             modules,
             min: uniformProp.min,
             max: uniformProp.max,
@@ -976,14 +978,14 @@ export function useKonvaTransformer({
     // The text-block reflow re-pins from its own captured edges, so the snap /
     // inactive-edge pin below would fight it; skip entirely.
     if (liveReflowRef.current) return newBox;
-    // Locked-circle reflow needs forceSquareBox so Konva keeps sx==sy; node and
-    // reflow only agree when the bbox stays square. Snap/pin below is free-axis only.
+    // Locked-circle reflow needs forceAspectBox so Konva keeps sx==sy; node and
+    // reflow only agree when the bbox keeps its aspect. Snap/pin below is free-axis only.
     if (shapeReflowRef.current && isUniformScale) {
-      return forceSquareBox(oldBox, newBox);
+      return forceAspectBox(oldBox, newBox);
     }
     // Free-resize shapes fall through: object-snap + inactive-edge pin still
     // apply (reflow pins from the same node position), keeping edge snapping.
-    if (isUniformScale) newBox = forceSquareBox(oldBox, newBox);
+    if (isUniformScale) newBox = forceAspectBox(oldBox, newBox);
     // When the canvas view is rotated, Konva's bbox semantics in this
     // callback no longer match an axis-aware snap / pin model; visual
     // bottom-edge becomes node-local-left etc. Skip the height snap,

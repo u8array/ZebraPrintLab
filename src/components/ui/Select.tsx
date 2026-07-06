@@ -15,6 +15,9 @@ export interface SelectOption<T extends string | number> {
   badge?: string;
   /** Optional leading glyph (e.g. a file icon for uploaded fonts). */
   icon?: ReactNode;
+  /** Not selectable in the current state (e.g. a symbol size too small for
+   *  the content); still listed so the choice space stays visible. */
+  disabled?: boolean;
 }
 
 export interface SelectGroup<T extends string | number> {
@@ -73,7 +76,8 @@ export function Select<T extends string | number>({
               <ListboxOption
                 key={opt.value}
                 value={opt.value}
-                className="flex items-center gap-2 px-2 py-1 cursor-pointer text-xs text-text data-[focus]:bg-surface-2 data-[selected]:bg-accent-dim"
+                disabled={opt.disabled}
+                className="flex items-center gap-2 px-2 py-1 cursor-pointer text-xs text-text data-[focus]:bg-surface-2 data-[selected]:bg-accent-dim data-[disabled]:opacity-40 data-[disabled]:cursor-not-allowed"
               >
                 {({ selected: isSel }) => (
                   <>

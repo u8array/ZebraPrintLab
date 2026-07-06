@@ -2,7 +2,6 @@ import type { ObjectTypeUi } from '../types/ObjectType';
 import type { Translations } from '../locales';
 import { useT } from '../lib/useT';
 import { useLabelStore } from '../store/labelStore';
-import { labelCls } from '../components/Properties/styles';
 import { hasValidLength, type ContentSpec } from './contentSpec';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
@@ -10,10 +9,11 @@ import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { ContentEditorButton } from '../components/Properties/ContentEditorButton';
 import { fieldMode, boundDefaultOrContent, fieldVariableRefs, fieldHasVariable, asLabelObject } from '../lib/variableField';
 import { GS1_CONTENT_SPEC, gs1EnablePatch } from './gs1FieldSpec';
-import { Gs1BuilderButton, Gs1ModeToggle } from './gs1PanelControls';
+import { Gs1BuilderButton } from './gs1PanelControls';
+import { CheckboxRow } from '../components/Properties/CheckboxRow';
 import { extractClockTokens } from '../lib/fcTemplate';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
-import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
+import { FieldLabel } from '../components/Properties/ZplCmd';
 import { EanInlineStatus } from '../components/Properties/EanInlineStatus';
 import type { EanUpcType } from '../lib/eanUpcValidate';
 import type { Barcode1DProps } from './barcode1d';
@@ -95,7 +95,7 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
 
           <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
             {config.gs1Capable && (
-              <Gs1ModeToggle
+              <CheckboxRow
                 checked={p.gs1 ?? false}
                 onChange={(c) => onChange(c ? gs1EnablePatch(p.content, bound) : { gs1: false })}
                 label={loc.gs1Mode ?? ''}
@@ -122,48 +122,30 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
             />
 
             {!config.interpretationLocked && (
-              <div className="flex items-center justify-between gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="accent-accent"
-                    checked={p.printInterpretation}
-                    onChange={(e) => onChange({ printInterpretation: e.target.checked })}
-                  />
-                  <span className={labelCls}>{loc.printInterpretation}</span>
-                </label>
-                <ZplCmd cmd={config.zplCommand} />
-              </div>
+              <CheckboxRow
+                checked={p.printInterpretation}
+                onChange={(printInterpretation) => onChange({ printInterpretation })}
+                label={loc.printInterpretation}
+                cmd={config.zplCommand}
+              />
             )}
 
             {!config.interpretationLocked && config.hriAboveConfigurable && p.printInterpretation && (
-              <div className="flex items-center justify-between gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="accent-accent"
-                    checked={p.printInterpretationAbove ?? false}
-                    onChange={(e) => onChange({ printInterpretationAbove: e.target.checked })}
-                  />
-                  <span className={labelCls}>{t.registry.text.hriAbove}</span>
-                </label>
-                <ZplCmd cmd={config.zplCommand} />
-              </div>
+              <CheckboxRow
+                checked={p.printInterpretationAbove ?? false}
+                onChange={(printInterpretationAbove) => onChange({ printInterpretationAbove })}
+                label={t.registry.text.hriAbove}
+                cmd={config.zplCommand}
+              />
             )}
 
             {config.hasCheckDigit && (
-              <div className="flex items-center justify-between gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="accent-accent"
-                    checked={p.checkDigit}
-                    onChange={(e) => onChange({ checkDigit: e.target.checked })}
-                  />
-                  <span className={labelCls}>{loc.checkDigit}</span>
-                </label>
-                <ZplCmd cmd={config.zplCommand} />
-              </div>
+              <CheckboxRow
+                checked={p.checkDigit}
+                onChange={(checkDigit) => onChange({ checkDigit })}
+                label={loc.checkDigit ?? ''}
+                cmd={config.zplCommand}
+              />
             )}
 
             <RotationSelect

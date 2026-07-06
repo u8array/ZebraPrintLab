@@ -99,6 +99,24 @@ describe("tokenizeZplLine", () => {
     expect(tokens[0]).toEqual(["command", "~DG"]);
   });
 
+  it("keeps a tilde escape inside ^FD field data as content", () => {
+    // ^BX FNC1 escape: `~1` is data, not the start of a command.
+    expect(compact("^FD~1010426011945468210FM260693^FS")).toEqual([
+      ["command", "^FD"],
+      ["fieldData", "~1010426011945468210FM260693"],
+      ["command", "^FS"],
+    ]);
+  });
+
+  it("keeps a ~dNNN escape inside ^FD as content but breaks at a real immediate command", () => {
+    expect(compact("^FDAB~d029CD^FS")).toEqual([
+      ["command", "^FD"],
+      ["fieldData", "AB~d029CD"],
+      ["command", "^FS"],
+    ]);
+    expect(compact("^FDAB~JS^FS")[1]).toEqual(["fieldData", "AB"]);
+  });
+
   it("treats a ~DY download payload as one opaque token, not split params", () => {
     // The hex would otherwise explode into millions of number/enum tokens.
     expect(compact("~DYE:FONT,A,T,8,,DEADBEEF")).toEqual([

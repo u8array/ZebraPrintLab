@@ -1,12 +1,12 @@
 import type { ObjectTypeUi } from '../types/ObjectType';
 import { useT } from '../lib/useT';
-import { labelCls } from '../components/Properties/styles';
 import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
-import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
+import { CheckboxRow } from '../components/Properties/CheckboxRow';
+import { FieldLabel } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { fieldGridCols, fieldGridCell } from '../components/ui/formStyles';
 import {
@@ -63,18 +63,12 @@ export const code49Panel: ObjectTypeUi<Code49Props> = {
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                className="accent-accent"
-                checked={p.printInterpretation}
-                onChange={(e) => onChange({ printInterpretation: e.target.checked })}
-              />
-              <span className={labelCls}>{loc.printInterpretation}</span>
-            </label>
-            <ZplCmd cmd="^B4" />
-          </div>
+          <CheckboxRow
+            checked={p.printInterpretation}
+            onChange={(printInterpretation) => onChange({ printInterpretation })}
+            label={loc.printInterpretation}
+            cmd="^B4"
+          />
 
           <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^B4" />
         </SectionCard>

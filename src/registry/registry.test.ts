@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ObjectRegistry, getEntry } from './index';
 import type { LabelObjectBase } from '../types/LabelObject';
 import { defined } from '../test/helpers';
+import { qualityPatch, type DataMatrixProps } from './datamatrix';
 
 function makeObj<P extends object>(type: string, props: P, overrides?: Partial<LabelObjectBase>): LabelObjectBase & { props: P } {
   return {
@@ -368,6 +369,64 @@ describe('datamatrix.toZPL', () => {
     }));
     expect(zpl).toContain('^BXN,8,200,,,,_');
     expect(zpl).toContain('^FD_1010950110153000310ABC123_12112345^FS');
+  });
+
+  it('rectangular emits the a param in position 8', () => {
+    const plain = def.toZPL(makeObj('datamatrix', {
+      content: 'DM123', dimension: 8, quality: 200, rotation: 'N', gs1: false, aspectRatio: 2,
+    }));
+    expect(plain).toContain('^BXN,8,200,,,,,2');
+    const gs1 = def.toZPL(makeObj('datamatrix', {
+      content: '010950110153000310ABC123', dimension: 8, quality: 200, rotation: 'N', gs1: true, aspectRatio: 2,
+    }));
+    expect(gs1).toContain('^BXN,8,200,,,,_,2');
+  });
+
+  it('does not emit the a param below quality 200 (firmware prints square)', () => {
+    const zpl = def.toZPL(makeObj('datamatrix', {
+      content: 'DM123', dimension: 8, quality: 140, rotation: 'N', gs1: false, aspectRatio: 2,
+    }));
+    expect(zpl).toContain('^BXN,8,140^FD');
+  });
+
+  it('emits non-GS1 content verbatim without declaring g', () => {
+    const zpl = def.toZPL(makeObj('datamatrix', {
+      content: 'AB_CD', dimension: 8, quality: 200, rotation: 'N', gs1: false,
+    }));
+    expect(zpl).toContain('^BXN,8,200^FDAB_CD^FS');
+  });
+
+  it('emits a forced symbol size in the c/r params, trailing params trimmed', () => {
+    const square = def.toZPL(makeObj('datamatrix', {
+      content: 'DM123', dimension: 8, quality: 200, rotation: 'N', gs1: false, columns: 22, rows: 22,
+    }));
+    expect(square).toContain('^BXN,8,200,22,22^FD');
+    const rectGs1 = def.toZPL(makeObj('datamatrix', {
+      content: '0109501101530003', dimension: 8, quality: 200, rotation: 'N', gs1: true,
+      aspectRatio: 2, columns: 18, rows: 8,
+    }));
+    expect(rectGs1).toContain('^BXN,8,200,18,8,,_,2');
+  });
+});
+
+describe('datamatrix qualityPatch', () => {
+  const base: DataMatrixProps = {
+    content: '', dimension: 5, quality: 200, rotation: 'N', gs1: false,
+    aspectRatio: 2, columns: 18, rows: 8,
+  };
+
+  it('clears symbol size and shape when crossing the ECC-200 boundary', () => {
+    expect(qualityPatch(base, 140)).toEqual({
+      quality: 140, aspectRatio: undefined, columns: undefined, rows: undefined,
+    });
+    expect(qualityPatch({ ...base, quality: 140 }, 200)).toEqual({
+      quality: 200, aspectRatio: undefined, columns: undefined, rows: undefined,
+    });
+  });
+
+  it('keeps them within the same tier', () => {
+    expect(qualityPatch(base, 200)).toEqual({ quality: 200 });
+    expect(qualityPatch({ ...base, quality: 80 }, 140)).toEqual({ quality: 140 });
   });
 });
 
