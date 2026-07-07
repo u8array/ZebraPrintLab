@@ -1351,6 +1351,7 @@ const fi = {
     success: 'ZPL lähetetty onnistuneesti',
     sentNoResponse: 'Lähetetty. Tarkista tulostimelta.',
     errorRefused: 'Yhteys evätty, tarkista IP ja portti',
+    errorNoResponse: 'Tulostin ei vastannut, tarkista IP ja verkko',
     errorGeneric: 'ZPL:n lähetys epäonnistui',
     httpsWarning: 'Sivu on HTTPS:llä, suora IP-tulostus saattaa olla selaimen estämä (sekasisältö).',
   },

@@ -1351,6 +1351,7 @@ const lv = {
     success: 'ZPL veikmīgi nosūtīts',
     sentNoResponse: 'Nosūtīts. Pārbaudiet printerī.',
     errorRefused: 'Savienojums atteikts, pārbaudiet IP un portu',
+    errorNoResponse: 'Printeris neatbildēja, pārbaudiet IP un tīklu',
     errorGeneric: 'ZPL nosūtīšana neizdevās',
     httpsWarning: 'Lapa izmanto HTTPS, tiešā IP drukāšana var tikt bloķēta pārlūkprogrammā (jaukts saturs).',
   },

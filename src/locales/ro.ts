@@ -1351,6 +1351,7 @@ const ro = {
     success: 'ZPL trimis cu succes',
     sentNoResponse: 'Trimis. Verifică pe imprimantă.',
     errorRefused: 'Conexiune refuzată, verificați IP şi portul',
+    errorNoResponse: 'Imprimanta nu a răspuns, verificați IP-ul și rețeaua',
     errorGeneric: 'Trimiterea ZPL a eşuat',
     httpsWarning: 'Pagina este pe HTTPS, imprimarea directă prin IP poate fi blocată de browser (conținut mixt).',
   },

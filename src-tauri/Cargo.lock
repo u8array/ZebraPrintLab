@@ -4821,12 +4821,14 @@ dependencies = [
 name = "zebra-print-lab"
 version = "0.1.0"
 dependencies = [
+ "serde",
  "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-process",
  "tauri-plugin-updater",
  "tauri-plugin-window-state",
+ "tokio",
 ]
 
 [[package]]

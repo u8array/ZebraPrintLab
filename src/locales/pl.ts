@@ -1351,6 +1351,7 @@ const pl = {
     success: 'ZPL wysłany pomyślnie',
     sentNoResponse: 'Wysłano. Sprawdź na drukarce.',
     errorRefused: 'Odmowa połączenia, sprawdź IP i port',
+    errorNoResponse: 'Drukarka nie odpowiedziała, sprawdź adres IP i sieć',
     errorGeneric: 'Błąd wysyłania ZPL',
     httpsWarning: 'Strona używa HTTPS, bezpośrednie drukowanie przez IP może zostać zablokowane przez przeglądarkę (mieszana treść).',
   },

@@ -1351,6 +1351,7 @@ const sv = {
     success: 'ZPL skickades',
     sentNoResponse: 'Skickat. Verifiera på skrivaren.',
     errorRefused: 'Anslutning nekad, kontrollera IP och port',
+    errorNoResponse: 'Skrivaren svarade inte, kontrollera IP och nätverk',
     errorGeneric: 'Det gick inte att skicka ZPL',
     httpsWarning: 'Sidan använder HTTPS, direktutskrift via IP kan blockeras av webbläsaren (blandat innehåll).',
   },

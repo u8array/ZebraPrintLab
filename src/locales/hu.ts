@@ -1351,6 +1351,7 @@ const hu = {
     success: 'ZPL sikeresen elküldve',
     sentNoResponse: 'Elküldve. Ellenőrizze a nyomtatón.',
     errorRefused: 'Kapcsolat megtagadva, ellenőrizze az IP-t és a portot',
+    errorNoResponse: 'A nyomtató nem válaszolt, ellenőrizze az IP-címet és a hálózatot',
     errorGeneric: 'ZPL küldése sikertelen',
     httpsWarning: 'Az oldal HTTPS-en fut, az IP-n keresztüli közvetlen nyomtatást a böngésző blokkolhatja (vegyes tartalom).',
   },

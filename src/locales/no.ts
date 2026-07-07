@@ -1351,6 +1351,7 @@ const no = {
     success: 'ZPL sendt',
     sentNoResponse: 'Sendt. Sjekk på skriveren.',
     errorRefused: 'Tilkobling nektet, sjekk IP og port',
+    errorNoResponse: 'Skriveren svarte ikke, sjekk IP og nettverk',
     errorGeneric: 'Sending av ZPL mislyktes',
     httpsWarning: 'Siden bruker HTTPS, direkte utskrift via IP kan bli blokkert av nettleseren (blandet innhold).',
   },

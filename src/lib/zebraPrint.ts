@@ -1,3 +1,5 @@
+import { isDesktopShell } from "./platform";
+
 const BROWSER_PRINT_HTTP = "http://localhost:9100";
 const BROWSER_PRINT_HTTPS = "https://localhost:9101";
 
@@ -45,15 +47,21 @@ export function isConnectionRefused(e: unknown): boolean {
   return e instanceof TypeError && /refused/i.test(e.message);
 }
 
-/** no_response = timeout (raw-socket success OR unreachable; browser
- *  cannot distinguish); refused = TCP RST; responded = HTTP came back. */
+/** sent = desktop raw TCP, write confirmed; no_response = timeout (in the
+ *  browser transport that is raw-socket success OR unreachable, which fetch
+ *  cannot distinguish); refused = TCP RST; responded = HTTP came back;
+ *  error = the desktop shell rejected (bad input, unexpected IO failure). */
 export type NetworkPrintResult =
+  | { kind: "sent" }
   | { kind: "responded"; status: number }
   | { kind: "no_response" }
-  | { kind: "refused" };
+  | { kind: "refused" }
+  | { kind: "error" };
 
-/** Returns Result because raw-socket success and unreachable raise the same exception. */
-export async function sendViaNetwork(
+/** Browser transport: HTTP POST at a raw TCP port. The ZPL parser skips the
+ *  header bytes, so it prints, but success stays indistinguishable from an
+ *  unreachable host. */
+async function sendViaNetworkWeb(
   ip: string,
   port: number,
   zpl: string,
@@ -71,3 +79,19 @@ export async function sendViaNetwork(
     return { kind: "no_response" };
   }
 }
+
+/** Desktop transport: real raw TCP in the shell, exact connect/write outcome. */
+async function sendViaNetworkTcp(
+  ip: string,
+  port: number,
+  zpl: string,
+): Promise<NetworkPrintResult> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  try {
+    return await invoke<NetworkPrintResult>("send_zpl_tcp", { host: ip, port, zpl });
+  } catch {
+    return { kind: "error" };
+  }
+}
+
+export const sendViaNetwork = isDesktopShell ? sendViaNetworkTcp : sendViaNetworkWeb;

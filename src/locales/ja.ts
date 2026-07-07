@@ -1351,6 +1351,7 @@ const ja = {
     success: 'ZPL を送信しました',
     sentNoResponse: '送信しました。プリンターで確認してください。',
     errorRefused: '接続が拒否されました、IP とポートを確認してください',
+    errorNoResponse: 'プリンターが応答しませんでした。IP とネットワークを確認してください',
     errorGeneric: 'ZPL の送信に失敗しました',
     httpsWarning: 'ページが HTTPS 上にあります、ブラウザが直接 IP 印刷をブロックする場合があります（混在コンテンツ）。',
   },
