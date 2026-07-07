@@ -1351,6 +1351,7 @@ const sr = {
     success: 'ZPL uspešno poslat',
     sentNoResponse: 'Poslato. Proverite na štampaču.',
     errorRefused: 'Veza odbijena, proverite IP i port',
+    errorNoResponse: 'Штампач не одговара, проверите IP и мрежу',
     errorGeneric: 'Slanje ZPL-a nije uspelo',
     httpsWarning: 'Stranica koristi HTTPS, direktno štampanje putem IP može biti blokirano od strane pregledača (mešoviti sadržaj).',
   },

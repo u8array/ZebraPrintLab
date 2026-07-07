@@ -1,6 +1,9 @@
+mod print;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  let builder = tauri::Builder::default();
+  let builder = tauri::Builder::default()
+    .invoke_handler(tauri::generate_handler![print::send_zpl_tcp]);
   // On the builder, not in setup(): config windows exist before the setup
   // closure runs, and window-state only restores/tracks via on_window_ready.
   #[cfg(desktop)]

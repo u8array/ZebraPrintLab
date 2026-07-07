@@ -1351,6 +1351,7 @@ const he = {
     success: 'ZPL נשלח בהצלחה',
     sentNoResponse: 'נשלח. בדוק במדפסת.',
     errorRefused: 'החיבור סורב, בדוק IP ופורט',
+    errorNoResponse: 'המדפסת לא הגיבה, בדוק את כתובת ה-IP והרשת',
     errorGeneric: 'שליחת ZPL נכשלה',
     httpsWarning: 'הדף נמצא על HTTPS, הדפסה ישירה דרך IP עלולה להיחסם על ידי הדפדפן (תוכן מעורב).',
   },

@@ -1351,6 +1351,7 @@ const ar = {
     success: 'تم إرسال ZPL بنجاح',
     sentNoResponse: 'تم الإرسال. تحقق من الطابعة.',
     errorRefused: 'الاتصال مرفوض، تحقق من IP والمنفذ',
+    errorNoResponse: 'الطابعة لا تستجيب، تحقق من عنوان IP والشبكة',
     errorGeneric: 'فشل إرسال ZPL',
     httpsWarning: 'الصفحة على HTTPS، قد يحظر المتصفح الطباعة المباشرة عبر IP (محتوى مختلط).',
   },

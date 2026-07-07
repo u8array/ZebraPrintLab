@@ -1351,6 +1351,7 @@ const hr = {
     success: 'ZPL uspješno poslan',
     sentNoResponse: 'Poslano. Provjerite na pisaču.',
     errorRefused: 'Veza odbijena, provjerite IP i port',
+    errorNoResponse: 'Pisač ne odgovara, provjerite IP i mrežu',
     errorGeneric: 'Slanje ZPL-a nije uspjelo',
     httpsWarning: 'Stranica koristi HTTPS, izravno ispisivanje putem IP-a može biti blokirano od preglednika (mješoviti sadržaj).',
   },

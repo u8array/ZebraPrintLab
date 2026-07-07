@@ -1351,6 +1351,7 @@ const zhHans = {
     success: 'ZPL 发送成功',
     sentNoResponse: '已发送。请在打印机上确认。',
     errorRefused: '连接被拒绝，检查 IP 和端口',
+    errorNoResponse: '打印机无响应，请检查 IP 和网络',
     errorGeneric: '发送 ZPL 失败',
     httpsWarning: '页面在 HTTPS 上，浏览器可能阻止直接 IP 打印（混合内容）。',
   },

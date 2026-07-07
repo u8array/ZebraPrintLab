@@ -1351,6 +1351,7 @@ const da = {
     success: 'ZPL sendt',
     sentNoResponse: 'Sendt. Kontrollér printeren.',
     errorRefused: 'Forbindelse nægtet, kontroller IP og port',
+    errorNoResponse: 'Printeren svarer ikke, kontrollér IP og netværk',
     errorGeneric: 'Afsendelse af ZPL mislykkedes',
     httpsWarning: 'Siden bruger HTTPS, direkte udskrivning via IP kan blive blokeret af browseren (blandet indhold).',
   },

@@ -1351,6 +1351,7 @@ const et = {
     success: 'ZPL edukalt saadetud',
     sentNoResponse: 'Saadetud. Kontrolli printerit.',
     errorRefused: 'Ühendus keeldutud, kontrollige IP-d ja porti',
+    errorNoResponse: 'Printer ei vastanud, kontrolli IP-d ja võrku',
     errorGeneric: 'ZPL saatmine ebaõnnestus',
     httpsWarning: 'Leht kasutab HTTPS-i, otsene IP-printimistöö võib olla brauseri poolt blokeeritud (segasisaldus).',
   },

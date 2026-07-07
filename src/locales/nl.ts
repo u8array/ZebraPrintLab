@@ -1351,6 +1351,7 @@ const nl = {
     success: 'ZPL succesvol verzonden',
     sentNoResponse: 'Verzonden. Controleer op de printer.',
     errorRefused: 'Verbinding geweigerd, controleer IP en poort',
+    errorNoResponse: 'Printer reageerde niet, controleer IP en netwerk',
     errorGeneric: 'ZPL verzenden mislukt',
     httpsWarning: 'Pagina gebruikt HTTPS, direct afdrukken via IP kan worden geblokkeerd door de browser (gemengde inhoud).',
   },

@@ -9,6 +9,7 @@ import {
   sendViaNetwork,
   type BrowserPrintDevice,
 } from "../../lib/zebraPrint";
+import { isDesktopShell } from "../../lib/platform";
 
 const LS_IP = "zebra_print_ip";
 const LS_PORT = "zebra_print_port";
@@ -58,6 +59,12 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
     setNetStatus({ type: "sending" });
     const result = await sendViaNetwork(ip.trim(), Number(port) || 9100, zpl);
     switch (result.kind) {
+      case "sent":
+        setNetStatus({ type: "success", message: t.zebraPrint.success });
+        return;
+      case "error":
+        setNetStatus({ type: "error", message: t.zebraPrint.errorGeneric });
+        return;
       case "responded":
         // 2xx only counts as success; print servers / proxies that respond
         // with 4xx or 5xx must surface as an error rather than green-success.
@@ -68,10 +75,14 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
         }
         return;
       case "no_response":
-        // Raw-socket printers (port 9100) never reply with HTTP, so a
-        // timeout is the typical success case; but it is indistinguishable
-        // from an unreachable host. Report honestly instead of green-success.
-        setNetStatus({ type: "success", message: t.zebraPrint.sentNoResponse });
+        // Desktop TCP: a timeout IS an unreachable host. The browser hack
+        // cannot tell raw-socket success from a timeout, so only there does
+        // this stay a soft success.
+        if (isDesktopShell) {
+          setNetStatus({ type: "error", message: t.zebraPrint.errorNoResponse });
+        } else {
+          setNetStatus({ type: "success", message: t.zebraPrint.sentNoResponse });
+        }
         return;
       case "refused":
         setNetStatus({ type: "error", message: t.zebraPrint.errorRefused });
