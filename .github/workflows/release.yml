@@ -1,0 +1,159 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm licenses:check
+
+      - run: pnpm attribution:check
+
+      - run: pnpm lint
+
+      - run: pnpm test
+
+      - run: pnpm build
+
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses
+          manifest-path: ./src-tauri/Cargo.toml
+
+      - name: rust attribution freshness
+        run: |
+          curl -fsSL https://github.com/EmbarkStudios/cargo-about/releases/download/0.9.1/cargo-about-0.9.1-x86_64-unknown-linux-musl.tar.gz \
+            | tar xz --strip-components=1 -C /tmp
+          cd src-tauri
+          cargo fetch
+          /tmp/cargo-about generate about.hbs -o THIRD-PARTY-LICENSES-RUST.html
+          git diff --exit-code -- THIRD-PARTY-LICENSES-RUST.html
+
+      - id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: stage web dist for the release zip
+        run: cp .github/release/web-README.md dist/README.md
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: web-dist
+          path: dist
+
+  # Single creation point: tauri-action's own tag lookup races across matrix
+  # legs and can split assets over duplicate drafts (tauri-action#914).
+  create-release:
+    needs: gates
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      release_id: ${{ steps.create.outputs.release_id }}
+    steps:
+      - id: create
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ needs.gates.outputs.version }}"
+          ID=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+            --jq ".[] | select(.tag_name==\"$TAG\" and .draft) | .id" | head -n1)
+          if [ -z "$ID" ]; then
+            ID=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
+              -f tag_name="$TAG" \
+              -f name="ZebraPrintLab $TAG" \
+              -f body="See the assets to download this version and install." \
+              -F draft=true --jq .id)
+          fi
+          echo "release_id=$ID" >> "$GITHUB_OUTPUT"
+
+  publish-tauri:
+    needs: create-release
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest # Arm (M1+)
+            args: '--target aarch64-apple-darwin'
+          - platform: macos-latest # Intel, cross-compiled on the arm64 runner
+            args: '--target x86_64-apple-darwin'
+          - platform: ubuntu-24.04
+            args: ''
+          - platform: windows-latest
+            args: ''
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: install dependencies (ubuntu only)
+        if: startsWith(matrix.platform, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          args: ${{ matrix.args }}
+
+  upload-web-dist:
+    needs: [gates, create-release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: web-dist
+          path: dist
+
+      - name: zip browser build
+        run: |
+          cd dist
+          zip -r "../ZebraPrintLab_${{ needs.gates.outputs.version }}_web.zip" .
+
+      - name: upload to draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        # gh resolves the tag to the draft release even though the git ref
+        # does not exist until the release is published
+        run: gh release upload "v${{ needs.gates.outputs.version }}" "ZebraPrintLab_${{ needs.gates.outputs.version }}_web.zip" --clobber

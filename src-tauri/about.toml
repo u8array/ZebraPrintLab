@@ -1,0 +1,30 @@
+# cargo-about config: generates THIRD-PARTY-LICENSES-RUST.html (the Rust-side
+# counterpart of THIRD-PARTY-LICENSES.md). `accepted` mirrors deny.toml, which
+# stays the enforcing gate; this list only scopes the attribution output.
+
+# Pin the shipped targets so the output is host-independent (CI freshness
+# check diffs it) and covers every platform's dep tree.
+targets = [
+    "x86_64-pc-windows-msvc",
+    "x86_64-unknown-linux-gnu",
+    "aarch64-apple-darwin",
+    "x86_64-apple-darwin",
+]
+
+accepted = [
+    "MIT",
+    "MIT-0",
+    "ISC",
+    "0BSD",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BlueOak-1.0.0",
+    "Unlicense",
+    "CC0-1.0",
+    "Zlib",
+    "Python-2.0",
+    "Unicode-3.0",
+    "MPL-2.0",
+]

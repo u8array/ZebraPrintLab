@@ -35,6 +35,10 @@
     "category": "Productivity",
     "shortDescription": "ZPL label designer",
     "longDescription": "Visual designer for Zebra ZPL printer labels with live preview and ZPL import/export.",
+    "macOS": {
+      "signingIdentity": "-"
+    },
+    "resources": ["THIRD-PARTY-LICENSES-RUST.html"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

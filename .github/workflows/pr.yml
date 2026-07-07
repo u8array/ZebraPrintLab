@@ -23,6 +23,11 @@ jobs:
 
       - run: pnpm licenses:check
 
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses
+          manifest-path: ./src-tauri/Cargo.toml
+
       - run: pnpm attribution:check
 
       - run: pnpm lint
