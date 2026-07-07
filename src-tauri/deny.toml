@@ -1,0 +1,32 @@
+# Fail-closed license gate for the Rust dependency tree shipped in the desktop
+# binaries; mirror of scripts/check-licenses.mjs for npm. Adding an id to
+# `allow` or a crate to `exceptions` is a deliberate review step.
+[licenses]
+allow = [
+    "MIT",
+    "MIT-0",
+    "ISC",
+    "0BSD",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "Apache-2.0",
+    "BlueOak-1.0.0",
+    "Unlicense",
+    "CC0-1.0",
+    "Zlib",
+    "Python-2.0",
+    # ICU4X family (icu_*, zerovec, yoke, ...); OSI-approved permissive.
+    "Unicode-3.0",
+]
+
+# Weak file-level copyleft (MPL-2.0) and license exceptions are not allowed
+# globally; each crate here ships unmodified, which MPL-2.0 permits with the
+# attribution cargo-about generates. LLVM-exception only relaxes Apache-2.0.
+exceptions = [
+    { crate = "cssparser", allow = ["MPL-2.0"] },
+    { crate = "cssparser-macros", allow = ["MPL-2.0"] },
+    { crate = "dtoa-short", allow = ["MPL-2.0"] },
+    { crate = "option-ext", allow = ["MPL-2.0"] },
+    { crate = "selectors", allow = ["MPL-2.0"] },
+    { crate = "target-lexicon", allow = ["Apache-2.0 WITH LLVM-exception"] },
+]
