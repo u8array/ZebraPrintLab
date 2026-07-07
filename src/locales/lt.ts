@@ -1338,6 +1338,7 @@ const lt = {
     heading: 'Siųsti į Zebra spausdintuvą',
     tabNetwork: 'Tinklas (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Vietinis spausdintuvas',
     ipAddress: 'IP adresas',
     port: 'Prievadas',
     send: 'Siųsti ZPL',

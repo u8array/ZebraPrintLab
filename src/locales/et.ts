@@ -1338,6 +1338,7 @@ const et = {
     heading: 'Saada Zebra printerile',
     tabNetwork: 'Võrk (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Kohalik printer',
     ipAddress: 'IP-aadress',
     port: 'Port',
     send: 'Saada ZPL',

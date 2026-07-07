@@ -1338,6 +1338,7 @@ const it = {
     heading: 'Invia a stampante Zebra',
     tabNetwork: 'Rete (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Stampante locale',
     ipAddress: 'Indirizzo IP',
     port: 'Porta',
     send: 'Invia ZPL',

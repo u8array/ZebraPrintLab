@@ -1338,6 +1338,7 @@ const he = {
     heading: 'שלח למדפסת Zebra',
     tabNetwork: 'רשת (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'מדפסת מקומית',
     ipAddress: 'כתובת IP',
     port: 'פורט',
     send: 'שלח ZPL',

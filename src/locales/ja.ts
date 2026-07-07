@@ -1338,6 +1338,7 @@ const ja = {
     heading: 'Zebra プリンターへ送信',
     tabNetwork: 'ネットワーク (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'ローカルプリンター',
     ipAddress: 'IP アドレス',
     port: 'ポート',
     send: 'ZPL を送信',

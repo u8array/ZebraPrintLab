@@ -1338,6 +1338,7 @@ const ko = {
     heading: 'Zebra 프린터로 전송',
     tabNetwork: '네트워크 (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: '로컬 프린터',
     ipAddress: 'IP 주소',
     port: '포트',
     send: 'ZPL 전송',

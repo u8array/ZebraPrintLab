@@ -1338,6 +1338,7 @@ const no = {
     heading: 'Send til Zebra-skriver',
     tabNetwork: 'Nettverk (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Lokal skriver',
     ipAddress: 'IP-adresse',
     port: 'Port',
     send: 'Send ZPL',

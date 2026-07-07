@@ -1338,6 +1338,7 @@ const ro = {
     heading: 'Trimite la imprimanta Zebra',
     tabNetwork: 'Rețea (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Imprimantă locală',
     ipAddress: 'Adresă IP',
     port: 'Port',
     send: 'Trimite ZPL',

@@ -1338,6 +1338,7 @@ const bg = {
     heading: 'Изпрати към принтер Zebra',
     tabNetwork: 'Мрежа (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Локален принтер',
     ipAddress: 'IP адрес',
     port: 'Порт',
     send: 'Изпрати ZPL',

@@ -1338,6 +1338,7 @@ const fa = {
     heading: 'ارسال به چاپگر Zebra',
     tabNetwork: 'شبکه (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'چاپگر محلی',
     ipAddress: 'آدرس IP',
     port: 'پورت',
     send: 'ارسال ZPL',

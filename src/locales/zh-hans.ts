@@ -1338,6 +1338,7 @@ const zhHans = {
     heading: '发送到 Zebra 打印机',
     tabNetwork: '网络 (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: '本地打印机',
     ipAddress: 'IP 地址',
     port: '端口',
     send: '发送 ZPL',
