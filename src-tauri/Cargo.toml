@@ -18,6 +18,9 @@ tauri-build = { version = "2.6.3", features = [] }
 [dependencies]
 tauri = { version = "2.11.3", features = [] }
 
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-window-state = "2"
+
 # Bundle-size profile from the official Tauri size guide.
 [profile.release]
 codegen-units = 1
