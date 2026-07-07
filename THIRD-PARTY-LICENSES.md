@@ -2616,7 +2616,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### bwip-js 4.11.1
+### bwip-js 4.11.2
 
 - License: MIT
 - Author: Mark Warren
