@@ -1352,6 +1352,7 @@ const sv = {
     sentNoResponse: 'Skickat. Verifiera på skrivaren.',
     errorRefused: 'Anslutning nekad, kontrollera IP och port',
     errorNoResponse: 'Skrivaren svarade inte, kontrollera IP och nätverk',
+    errorInvalidPort: 'Ogiltig port (använd 1-65535)',
     errorGeneric: 'Det gick inte att skicka ZPL',
     httpsWarning: 'Sidan använder HTTPS, direktutskrift via IP kan blockeras av webbläsaren (blandat innehåll).',
   },

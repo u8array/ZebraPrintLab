@@ -1352,6 +1352,7 @@ const zhHant = {
     sentNoResponse: '已傳送。請在印表機上確認。',
     errorRefused: '連線遭拒，請確認 IP 和連接埠',
     errorNoResponse: '印表機無回應，請檢查 IP 與網路',
+    errorInvalidPort: '連接埠無效（使用 1-65535）',
     errorGeneric: '傳送 ZPL 失敗',
     httpsWarning: '頁面在 HTTPS 上，瀏覽器可能封鎖直接 IP 列印（混合內容）。',
   },

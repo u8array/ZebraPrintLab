@@ -1352,6 +1352,7 @@ const tr = {
     sentNoResponse: 'Gönderildi. Yazıcıdan doğrulayın.',
     errorRefused: 'Bağlantı reddedildi, IP ve portu kontrol edin',
     errorNoResponse: 'Yazıcı yanıt vermedi, IP ve ağı kontrol edin',
+    errorInvalidPort: 'Geçersiz bağlantı noktası (1-65535 kullanın)',
     errorGeneric: 'ZPL gönderilemedi',
     httpsWarning: 'Sayfa HTTPS üzerinde, doğrudan IP yazdırma tarayıcı tarafından engellenebilir (karma içerik).',
   },

@@ -1352,6 +1352,7 @@ const ar = {
     sentNoResponse: 'تم الإرسال. تحقق من الطابعة.',
     errorRefused: 'الاتصال مرفوض، تحقق من IP والمنفذ',
     errorNoResponse: 'الطابعة لا تستجيب، تحقق من عنوان IP والشبكة',
+    errorInvalidPort: 'منفذ غير صالح (استخدم 1-65535)',
     errorGeneric: 'فشل إرسال ZPL',
     httpsWarning: 'الصفحة على HTTPS، قد يحظر المتصفح الطباعة المباشرة عبر IP (محتوى مختلط).',
   },

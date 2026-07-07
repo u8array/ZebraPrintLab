@@ -1352,6 +1352,7 @@ const fi = {
     sentNoResponse: 'Lähetetty. Tarkista tulostimelta.',
     errorRefused: 'Yhteys evätty, tarkista IP ja portti',
     errorNoResponse: 'Tulostin ei vastannut, tarkista IP ja verkko',
+    errorInvalidPort: 'Virheellinen portti (käytä 1-65535)',
     errorGeneric: 'ZPL:n lähetys epäonnistui',
     httpsWarning: 'Sivu on HTTPS:llä, suora IP-tulostus saattaa olla selaimen estämä (sekasisältö).',
   },

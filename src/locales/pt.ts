@@ -1352,6 +1352,7 @@ const pt = {
     sentNoResponse: 'Enviado. Verifique na impressora.',
     errorRefused: 'Conexão recusada, verifique IP e porta',
     errorNoResponse: 'A impressora não respondeu, verifique o IP e a rede',
+    errorInvalidPort: 'Porta inválida (use 1-65535)',
     errorGeneric: 'Falha ao enviar ZPL',
     httpsWarning: 'A página está em HTTPS, a impressão direta por IP pode ser bloqueada pelo navegador (conteúdo misto).',
   },

@@ -47,12 +47,15 @@ export function isConnectionRefused(e: unknown): boolean {
   return e instanceof TypeError && /refused/i.test(e.message);
 }
 
-/** sent = desktop raw TCP, write confirmed; no_response = timeout (in the
- *  browser transport that is raw-socket success OR unreachable, which fetch
- *  cannot distinguish); refused = TCP RST; responded = HTTP came back;
- *  error = the desktop shell rejected (bad input, unexpected IO failure). */
+/** sent = desktop raw TCP, write confirmed; unreachable = desktop TCP could not
+ *  complete (connect/write timeout, no route); no_response = web timeout, which
+ *  fetch cannot tell from raw-socket success (so it stays a soft success);
+ *  refused = TCP RST; responded = HTTP came back; error = desktop shell rejected
+ *  (write broke mid-payload, bad arg). Each kind carries its own meaning so the
+ *  UI never needs to know which transport ran. */
 export type NetworkPrintResult =
   | { kind: "sent" }
+  | { kind: "unreachable" }
   | { kind: "responded"; status: number }
   | { kind: "no_response" }
   | { kind: "refused" }

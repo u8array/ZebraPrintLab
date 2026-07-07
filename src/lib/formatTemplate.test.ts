@@ -21,4 +21,12 @@ describe("formatTemplate", () => {
   it("leaves unknown placeholders untouched", () => {
     expect(formatTemplate("{a} {b}", { a: "1" })).toBe("1 {b}");
   });
+
+  it("does not re-substitute a placeholder that appears inside a value", () => {
+    expect(formatTemplate("{a} {b}", { a: "{b}", b: "x" })).toBe("{b} x");
+  });
+
+  it("does not resolve prototype-chain keys", () => {
+    expect(formatTemplate("{toString} {constructor}", {})).toBe("{toString} {constructor}");
+  });
 });

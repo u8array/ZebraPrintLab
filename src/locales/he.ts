@@ -1352,6 +1352,7 @@ const he = {
     sentNoResponse: 'נשלח. בדוק במדפסת.',
     errorRefused: 'החיבור סורב, בדוק IP ופורט',
     errorNoResponse: 'המדפסת לא הגיבה, בדוק את כתובת ה-IP והרשת',
+    errorInvalidPort: 'פורט לא תקין (השתמש ב-1-65535)',
     errorGeneric: 'שליחת ZPL נכשלה',
     httpsWarning: 'הדף נמצא על HTTPS, הדפסה ישירה דרך IP עלולה להיחסם על ידי הדפדפן (תוכן מעורב).',
   },

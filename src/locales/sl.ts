@@ -1352,6 +1352,7 @@ const sl = {
     sentNoResponse: 'Poslano. Preverite na tiskalniku.',
     errorRefused: 'Povezava zavrnjena, preverite IP in vrata',
     errorNoResponse: 'Tiskalnik se ni odzval, preverite IP in omrežje',
+    errorInvalidPort: 'Neveljavna vrata (uporabite 1-65535)',
     errorGeneric: 'Pošiljanje ZPL ni uspelo',
     httpsWarning: 'Stran uporablja HTTPS, neposredno tiskanje prek IP-ja je morda blokirano s strani brskalnika (mešana vsebina).',
   },

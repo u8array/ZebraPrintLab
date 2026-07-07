@@ -9,7 +9,6 @@ import {
   sendViaNetwork,
   type BrowserPrintDevice,
 } from "../../lib/zebraPrint";
-import { isDesktopShell } from "../../lib/platform";
 
 const LS_IP = "zebra_print_ip";
 const LS_PORT = "zebra_print_port";
@@ -55,15 +54,17 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
   }
 
   async function handleNetworkSend() {
+    const portNum = port.trim() === "" ? 9100 : Number(port);
+    if (!Number.isInteger(portNum) || portNum < 1 || portNum > 65535) {
+      setNetStatus({ type: "error", message: t.zebraPrint.errorInvalidPort });
+      return;
+    }
     persistNetwork();
     setNetStatus({ type: "sending" });
-    const result = await sendViaNetwork(ip.trim(), Number(port) || 9100, zpl);
+    const result = await sendViaNetwork(ip.trim(), portNum, zpl);
     switch (result.kind) {
       case "sent":
         setNetStatus({ type: "success", message: t.zebraPrint.success });
-        return;
-      case "error":
-        setNetStatus({ type: "error", message: t.zebraPrint.errorGeneric });
         return;
       case "responded":
         // 2xx only counts as success; print servers / proxies that respond
@@ -75,18 +76,23 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
         }
         return;
       case "no_response":
-        // Desktop TCP: a timeout IS an unreachable host. The browser hack
-        // cannot tell raw-socket success from a timeout, so only there does
-        // this stay a soft success.
-        if (isDesktopShell) {
-          setNetStatus({ type: "error", message: t.zebraPrint.errorNoResponse });
-        } else {
-          setNetStatus({ type: "success", message: t.zebraPrint.sentNoResponse });
-        }
+        // Web raw-socket printers never reply over HTTP, so a timeout is the
+        // typical success yet indistinguishable from an unreachable host.
+        setNetStatus({ type: "success", message: t.zebraPrint.sentNoResponse });
+        return;
+      case "unreachable":
+        setNetStatus({ type: "error", message: t.zebraPrint.errorNoResponse });
         return;
       case "refused":
         setNetStatus({ type: "error", message: t.zebraPrint.errorRefused });
         return;
+      case "error":
+        setNetStatus({ type: "error", message: t.zebraPrint.errorGeneric });
+        return;
+      default: {
+        const _exhaustive: never = result;
+        throw new Error(`unhandled print result: ${JSON.stringify(_exhaustive)}`);
+      }
     }
   }
 
@@ -191,6 +197,8 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
               </label>
               <input
                 type="number"
+                min={1}
+                max={65535}
                 value={port}
                 onChange={(e) => setPort(e.target.value)}
                 onBlur={persistNetwork}

@@ -3,14 +3,15 @@ use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
-/// Kinds mirror the frontend NetworkPrintResult union; `sent` is the
-/// desktop-only true success the browser transport can never report.
+/// Kinds mirror the frontend NetworkPrintResult union. `unreachable` (not the
+/// browser's ambiguous `no_response`) says the send did not complete, so the UI
+/// maps each kind to a message without knowing which transport ran.
 #[derive(serde::Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum TcpSendResult {
   Sent,
   Refused,
-  NoResponse,
+  Unreachable,
 }
 
 const IO_TIMEOUT: Duration = Duration::from_secs(4);
@@ -32,27 +33,25 @@ fn validate(host: &str, port: u16, zpl_len: usize) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn send_zpl_tcp(host: String, port: u16, zpl: String) -> Result<TcpSendResult, String> {
-  let host = host.trim().to_string();
-  validate(&host, port, zpl.len())?;
+  let host = host.trim();
+  validate(host, port, zpl.len())?;
 
-  let mut stream = match timeout(IO_TIMEOUT, TcpStream::connect((host.as_str(), port))).await {
-    Err(_) => return Ok(TcpSendResult::NoResponse),
+  let mut stream = match timeout(IO_TIMEOUT, TcpStream::connect((host, port))).await {
+    Ok(Ok(s)) => s,
     Ok(Err(e)) if e.kind() == std::io::ErrorKind::ConnectionRefused => {
       return Ok(TcpSendResult::Refused)
     }
-    Ok(Err(e)) => return Err(e.to_string()),
-    Ok(Ok(s)) => s,
+    // Timeout, no route, unresolvable host: the printer can't be reached.
+    Err(_) | Ok(Err(_)) => return Ok(TcpSendResult::Unreachable),
   };
 
-  match timeout(IO_TIMEOUT, async {
-    stream.write_all(zpl.as_bytes()).await?;
-    stream.shutdown().await
-  })
-  .await
-  {
-    Err(_) => Ok(TcpSendResult::NoResponse),
-    Ok(Err(e)) => Err(e.to_string()),
+  // Dropping the stream closes it (FIN), which the printer reads as job end;
+  // no explicit shutdown, so a printer that RSTs after reading can't fail the
+  // send. The write phase is reached, so its failures are not "unreachable".
+  match timeout(IO_TIMEOUT, stream.write_all(zpl.as_bytes())).await {
     Ok(Ok(())) => Ok(TcpSendResult::Sent),
+    Ok(Err(e)) => Err(e.to_string()),
+    Err(_) => Err("write timed out".to_string()),
   }
 }
 
