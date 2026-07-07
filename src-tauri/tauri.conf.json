@@ -1,0 +1,46 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "ZebraPrintLab",
+  "version": "../package.json",
+  "mainBinaryName": "ZebraPrintLab",
+  "identifier": "de.u8array.zebraprintlab",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "ZebraPrintLab",
+        "width": 1280,
+        "height": 832,
+        "minWidth": 900,
+        "minHeight": 600
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' ipc: http: https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+      "devCsp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' ipc: http: https: ws://localhost:5173; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "publisher": "u8array",
+    "copyright": "© 2026 u8array",
+    "license": "MIT",
+    "homepage": "https://github.com/u8array/ZebraPrintLab",
+    "category": "Productivity",
+    "shortDescription": "ZPL label designer",
+    "longDescription": "Visual designer for Zebra ZPL printer labels with live preview and ZPL import/export.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

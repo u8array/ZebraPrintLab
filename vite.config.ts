@@ -21,6 +21,15 @@ function thirdPartyLicenses(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   base: '/',
+  // Tauri drives Vite via `tauri dev`: pin the port its devUrl points at and
+  // skip watching the Rust crate, whose builds would trigger phantom reloads.
+  // Plain web dev keeps Vite's port fallback (TAURI_ENV_* only set by tauri).
+  clearScreen: false,
+  server: {
+    port: 5173,
+    strictPort: !!process.env.TAURI_ENV_PLATFORM,
+    watch: { ignored: ['**/src-tauri/**'] },
+  },
   plugins: [
     tailwindcss(),
     react(),
