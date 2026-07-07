@@ -8,6 +8,7 @@ import { extractTemplateRefs, hasTemplateMarkers } from "./fnTemplate";
 import { isLoneMarker } from "./variableField";
 import { parseContent, typedContentIncompleteRows, typedContentMarkerFindings } from "./typedContent";
 import { getObjectStringContent, resolveForRow, variableSubstitutions } from "./variableBinding";
+import { isBlankText } from "./zebraTextLayout";
 import { resolveTextMode } from "../registry/text";
 import type { CsvMapping, Variable } from "../types/Variable";
 import type { Unit } from "./units";
@@ -197,11 +198,18 @@ export function computePreflight(
 ): PreflightFinding[] {
   const findings: PreflightFinding[] = [];
   for (const leaf of leaves) {
+    const content = getObjectStringContent(leaf);
     const box = objectBoundsDots(leaf, ctx);
-    const placement = offLabelPlacement(emittedAnchorDots(leaf, ctx, box), box, ctx.label);
-    const kind =
-      placement === "outside" ? "offLabelOutside" : placement === "clipped" ? "offLabelClipped" : null;
-    if (kind) findings.push({ objectId: leaf.id, kind, severity: PREFLIGHT_SEVERITY[kind] });
+    // A blank text field draws a placeholder (its bounds) but emits an empty
+    // ^FD, so it prints nothing: skip off-label here, the emptyContent check
+    // below owns the blank-field signal.
+    const blankText = leaf.type === "text" && content !== undefined && isBlankText(content);
+    if (!blankText) {
+      const placement = offLabelPlacement(emittedAnchorDots(leaf, ctx, box), box, ctx.label);
+      const kind =
+        placement === "outside" ? "offLabelOutside" : placement === "clipped" ? "offLabelClipped" : null;
+      if (kind) findings.push({ objectId: leaf.id, kind, severity: PREFLIGHT_SEVERITY[kind] });
+    }
 
     const produce = getEntry(leaf.type)?.preflight;
     if (produce) {
@@ -213,7 +221,6 @@ export function computePreflight(
     // Cross-cutting: any content-bearing field (text, every barcode) can carry
     // invisible/ambiguous chars smuggled in via scan or foreign-tool import, so
     // check here once instead of duplicating the producer across every type.
-    const content = getObjectStringContent(leaf);
     if (content !== undefined) {
       // GS1 fields carry a structural GS separator (0x1D) between chained AIs;
       // it's intentional, not smuggled, so drop it before the scan.

@@ -72,6 +72,20 @@ describe("objectBoundsDots", () => {
     expect(objectBoundsDots(s, ctx())).toEqual({ x: 7, y: 9, width: 40, height: 30 });
   });
 
+  it("text single-line, empty content: placeholder footprint, not zero width", () => {
+    // The canvas draws a 4-glyph placeholder rect for blank text; the bounds
+    // must match it so the action bar centers on what is drawn.
+    const t = leaf("text", 50, 30, { content: "", fontHeight: 40, fontWidth: 0, rotation: "N" });
+    expect(objectBoundsDots(t, ctx())).toEqual({ x: 50, y: 30, width: 160, height: 40 });
+  });
+
+  it("text single-line, empty content (R): placeholder footprint swaps axes", () => {
+    const t = leaf("text", 50, 30, { content: "  ", fontHeight: 40, fontWidth: 0, rotation: "R" });
+    const b = objectBoundsDots(t, ctx());
+    expect(b.width).toBe(40);
+    expect(b.height).toBe(160);
+  });
+
   it("text ^FB block (N): blockBoundsDots footprint shifted to model space", () => {
     // lineStep = 40 + 10 = 50; linesExtent = (3-1)*50 + 40 = 140.
     const t = leaf("text", 50, 30, {
