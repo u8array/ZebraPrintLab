@@ -1338,6 +1338,7 @@ const lv = {
     heading: 'Sūtīt uz Zebra printeri',
     tabNetwork: 'Tīkls (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Vietējais printeris',
     ipAddress: 'IP adrese',
     port: 'Ports',
     send: 'Sūtīt ZPL',

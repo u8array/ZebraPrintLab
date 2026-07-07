@@ -1338,6 +1338,7 @@ const el = {
     heading: 'Αποστολή σε εκτυπωτή Zebra',
     tabNetwork: 'Δίκτυο (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Τοπικός εκτυπωτής',
     ipAddress: 'Διεύθυνση IP',
     port: 'Θύρα',
     send: 'Αποστολή ZPL',

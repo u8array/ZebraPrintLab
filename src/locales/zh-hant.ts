@@ -1338,6 +1338,7 @@ const zhHant = {
     heading: '傳送至 Zebra 印表機',
     tabNetwork: '網路 (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: '本機印表機',
     ipAddress: 'IP 位址',
     port: '連接埠',
     send: '傳送 ZPL',

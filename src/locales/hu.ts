@@ -1338,6 +1338,7 @@ const hu = {
     heading: 'Küldés Zebra nyomtatóra',
     tabNetwork: 'Hálózat (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Helyi nyomtató',
     ipAddress: 'IP-cím',
     port: 'Port',
     send: 'ZPL küldése',

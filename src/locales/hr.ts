@@ -1338,6 +1338,7 @@ const hr = {
     heading: 'Pošalji na Zebra pisač',
     tabNetwork: 'Mreža (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Lokalni pisač',
     ipAddress: 'IP adresa',
     port: 'Port',
     send: 'Pošalji ZPL',

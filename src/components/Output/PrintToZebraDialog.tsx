@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../hooks/useT";
 import { DialogShell } from "../ui/DialogShell";
@@ -9,12 +9,15 @@ import {
   sendViaNetwork,
   type BrowserPrintDevice,
 } from "../../lib/zebraPrint";
+import { isDesktopShell } from "../../lib/platform";
+import { listLocalPrinters, sendZplLocal, isLikelyZebra, type LocalPrinter } from "../../lib/localPrint";
 
 const LS_IP = "zebra_print_ip";
 const LS_PORT = "zebra_print_port";
 const LS_PRINTER_UID = "zebra_print_uid";
+const LS_LOCAL_PRINTER = "zebra_print_local";
 
-type Tab = "network" | "browserprint";
+type Tab = "network" | "browserprint" | "local";
 interface Status { type: "idle" | "sending" | "success" | "error"; message?: string }
 
 function StatusMessage({ status }: { status: Status }) {
@@ -47,6 +50,41 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
   );
   const [bpStatus, setBpStatus] = useState<Status>({ type: "idle" });
   const [discovering, setDiscovering] = useState(false);
+
+  // Local printer (OS spooler) tab state; desktop shell only.
+  const [localPrinters, setLocalPrinters] = useState<LocalPrinter[]>([]);
+  const [selectedLocal, setSelectedLocal] = useState<string>(
+    () => localStorage.getItem(LS_LOCAL_PRINTER) ?? "",
+  );
+  const [localStatus, setLocalStatus] = useState<Status>({ type: "idle" });
+  // Starts loading on desktop (the effect enumerates on mount); false on web.
+  const [loadingLocal, setLoadingLocal] = useState(isDesktopShell);
+
+  // Enumerate OS print queues once on mount; the web build has no spooler.
+  useEffect(() => {
+    if (!isDesktopShell) return;
+    let cancelled = false;
+    listLocalPrinters()
+      .then((printers) => {
+        if (cancelled) return;
+        setLocalPrinters(printers);
+        setSelectedLocal((cur) =>
+          cur && printers.some((p) => p.system_name === cur) ? cur : printers[0]?.system_name ?? "",
+        );
+      })
+      .catch((e: unknown) => {
+        // A failed enumeration must be visible, not a silent empty list.
+        if (!cancelled) {
+          setLocalStatus({ type: "error", message: e instanceof Error ? e.message : String(e) });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingLocal(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function persistNetwork() {
     localStorage.setItem(LS_IP, ip);
@@ -129,6 +167,18 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
     }
   }
 
+  async function handleLocalSend() {
+    if (!selectedLocal) return;
+    localStorage.setItem(LS_LOCAL_PRINTER, selectedLocal);
+    setLocalStatus({ type: "sending" });
+    const result = await sendZplLocal(selectedLocal, zpl);
+    if (result.kind === "sent") {
+      setLocalStatus({ type: "success", message: t.zebraPrint.success });
+    } else {
+      setLocalStatus({ type: "error", message: result.message || t.zebraPrint.errorGeneric });
+    }
+  }
+
   const tabClass = (active: boolean) =>
     `px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest transition-colors ${
       active
@@ -167,6 +217,11 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
         >
           {t.zebraPrint.tabBrowserPrint}
         </button>
+        {isDesktopShell && (
+          <button className={tabClass(tab === "local")} onClick={() => setTab("local")}>
+            {t.zebraPrint.tabLocal}
+          </button>
+        )}
       </div>
 
       {/* Network tab */}
@@ -265,6 +320,54 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
           </button>
 
           <StatusMessage status={bpStatus} />
+        </div>
+      )}
+
+      {/* Local printer tab (OS spooler, desktop shell only) */}
+      {tab === "local" && (
+        <div className="flex flex-col gap-3 p-4">
+          <div className="flex flex-col gap-1">
+            <label className="font-mono text-[10px] text-muted uppercase tracking-widest">
+              {t.zebraPrint.printer}
+            </label>
+            <Select<string>
+              value={selectedLocal}
+              onChange={(name) => {
+                setSelectedLocal(name);
+                localStorage.setItem(LS_LOCAL_PRINTER, name);
+              }}
+              disabled={localPrinters.length === 0}
+              groups={[
+                {
+                  options:
+                    localPrinters.length === 0
+                      ? [
+                          {
+                            value: "",
+                            label: loadingLocal ? t.zebraPrint.discovering : t.zebraPrint.noPrinters,
+                          },
+                        ]
+                      : localPrinters.map((p) => ({
+                          value: p.system_name,
+                          label: isLikelyZebra(p) ? `${p.name} · ZPL?` : p.name,
+                        })),
+                },
+              ]}
+            />
+          </div>
+          <button
+            onClick={handleLocalSend}
+            disabled={
+              !selectedLocal ||
+              localPrinters.length === 0 ||
+              loadingLocal ||
+              localStatus.type === "sending"
+            }
+            className="self-end px-3 py-1.5 text-xs font-mono rounded bg-accent text-bg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+          >
+            {localStatus.type === "sending" ? t.zebraPrint.sending : t.zebraPrint.send}
+          </button>
+          <StatusMessage status={localStatus} />
         </div>
       )}
     </DialogShell>

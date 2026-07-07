@@ -20,13 +20,13 @@ const MAX_ZPL_BYTES: usize = 16 * 1024 * 1024;
 
 fn validate(host: &str, port: u16, zpl_len: usize) -> Result<(), String> {
   if host.is_empty() || host.contains('/') || host.contains(char::is_whitespace) {
-    return Err("invalid host".into());
+    return Err("invalid host".to_string());
   }
   if port == 0 {
-    return Err("invalid port".into());
+    return Err("invalid port".to_string());
   }
   if zpl_len > MAX_ZPL_BYTES {
-    return Err("payload too large".into());
+    return Err("payload too large".to_string());
   }
   Ok(())
 }
@@ -53,6 +53,68 @@ pub async fn send_zpl_tcp(host: String, port: u16, zpl: String) -> Result<TcpSen
     Ok(Err(e)) => Err(e.to_string()),
     Err(_) => Err("write timed out".to_string()),
   }
+}
+
+/// One local OS print queue for the picker. driver_name/port_name let the UI
+/// hint which queues are likely Zebra/raw-capable (never for filtering).
+#[derive(serde::Serialize)]
+pub struct LocalPrinter {
+  system_name: String,
+  name: String,
+  driver_name: String,
+  port_name: String,
+}
+
+// Windows winspool defaults pDatatype to RAW; passing a CUPS MIME there would
+// set an invalid datatype. CUPS needs the explicit raw format to bypass filters.
+#[cfg(windows)]
+const RAW_PROPS: &[(&str, &str)] = &[];
+#[cfg(not(windows))]
+const RAW_PROPS: &[(&str, &str)] = &[("document-format", "application/vnd.cups-raw")];
+
+#[tauri::command]
+pub async fn list_printers() -> Result<Vec<LocalPrinter>, String> {
+  tauri::async_runtime::spawn_blocking(|| {
+    // No default-printer lookup: printers::get_default_printer() has a Windows
+    // dangling-deref when no default is set, and the UI sorts Zebra-first anyway.
+    printers::get_printers()
+      .into_iter()
+      .map(|p| LocalPrinter {
+        system_name: p.system_name,
+        name: p.name,
+        driver_name: p.driver_name,
+        port_name: p.port_name,
+      })
+      .collect::<Vec<_>>()
+  })
+  .await
+  .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn send_zpl_local(printer: String, zpl: String) -> Result<(), String> {
+  if zpl.len() > MAX_ZPL_BYTES {
+    return Err("payload too large".to_string());
+  }
+  tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
+    // Allowlist the caller's string against enumerated queues; never hand an
+    // arbitrary name to the spooler.
+    let target = printers::get_printers()
+      .into_iter()
+      .find(|p| p.system_name == printer)
+      .ok_or_else(|| "unknown printer".to_string())?;
+    let opts = printers::common::base::job::PrinterJobOptions {
+      name: Some("zpl-designer"),
+      raw_properties: RAW_PROPS,
+      ..printers::common::base::job::PrinterJobOptions::none()
+    };
+    target
+      .print(zpl.as_bytes(), opts)
+      .map(|_| ())
+      .map_err(|e| e.message)
+  })
+  .await
+  .map_err(|e| e.to_string())?
 }
 
 #[cfg(test)]

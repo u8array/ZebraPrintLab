@@ -1338,6 +1338,7 @@ const sk = {
     heading: 'Odoslať na tlačiareň Zebra',
     tabNetwork: 'Sieť (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Miestna tlačiareň',
     ipAddress: 'IP adresa',
     port: 'Port',
     send: 'Odoslať ZPL',

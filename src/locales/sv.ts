@@ -1338,6 +1338,7 @@ const sv = {
     heading: 'Skicka till Zebra-skrivare',
     tabNetwork: 'Nätverk (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Lokal skrivare',
     ipAddress: 'IP-adress',
     port: 'Port',
     send: 'Skicka ZPL',

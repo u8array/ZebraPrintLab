@@ -1338,6 +1338,7 @@ const tr = {
     heading: 'Zebra yazıcıya gönder',
     tabNetwork: 'Ağ (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Yerel yazıcı',
     ipAddress: 'IP Adresi',
     port: 'Port',
     send: 'ZPL Gönder',

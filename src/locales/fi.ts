@@ -1338,6 +1338,7 @@ const fi = {
     heading: 'Lähetä Zebra-tulostimelle',
     tabNetwork: 'Verkko (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'Paikallinen tulostin',
     ipAddress: 'IP-osoite',
     port: 'Portti',
     send: 'Lähetä ZPL',

@@ -1338,6 +1338,7 @@ const ar = {
     heading: 'إرسال إلى طابعة Zebra',
     tabNetwork: 'الشبكة (IP)',
     tabBrowserPrint: 'Zebra Browser Print',
+    tabLocal: 'طابعة محلية',
     ipAddress: 'عنوان IP',
     port: 'المنفذ',
     send: 'إرسال ZPL',
