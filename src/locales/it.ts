@@ -1352,6 +1352,7 @@ const it = {
     sentNoResponse: 'Inviato. Verifica sulla stampante.',
     errorRefused: 'Connessione rifiutata, verifica IP e porta',
     errorNoResponse: 'La stampante non ha risposto, controlla IP e rete',
+    errorInvalidPort: 'Porta non valida (usa 1-65535)',
     errorGeneric: 'Invio ZPL non riuscito',
     httpsWarning: 'La pagina è in HTTPS, la stampa diretta tramite IP potrebbe essere bloccata dal browser (contenuto misto).',
   },

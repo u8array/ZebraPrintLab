@@ -1352,6 +1352,7 @@ const lv = {
     sentNoResponse: 'Nosūtīts. Pārbaudiet printerī.',
     errorRefused: 'Savienojums atteikts, pārbaudiet IP un portu',
     errorNoResponse: 'Printeris neatbildēja, pārbaudiet IP un tīklu',
+    errorInvalidPort: 'Nederīgs ports (izmantojiet 1-65535)',
     errorGeneric: 'ZPL nosūtīšana neizdevās',
     httpsWarning: 'Lapa izmanto HTTPS, tiešā IP drukāšana var tikt bloķēta pārlūkprogrammā (jaukts saturs).',
   },

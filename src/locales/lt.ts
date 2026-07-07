@@ -1352,6 +1352,7 @@ const lt = {
     sentNoResponse: 'Išsiųsta. Patikrinkite spausdintuvą.',
     errorRefused: 'Ryšys atmestas, patikrinkite IP ir prievadą',
     errorNoResponse: 'Spausdintuvas neatsakė, patikrinkite IP ir tinklą',
+    errorInvalidPort: 'Netinkamas prievadas (naudokite 1-65535)',
     errorGeneric: 'ZPL siuntimas nepavyko',
     httpsWarning: 'Puslapis naudoja HTTPS, tiesioginis spausdinimas per IP gali būti užblokuotas naršyklės (mišrus turinys).',
   },

@@ -756,6 +756,7 @@ const en = {
     sentNoResponse: 'Sent. Verify on the printer.',
     errorRefused: 'Connection refused, check IP and port',
     errorNoResponse: 'Printer did not respond, check IP and network',
+    errorInvalidPort: 'Invalid port (use 1-65535)',
     errorGeneric: 'Failed to send ZPL',
     httpsWarning: 'Page is on HTTPS, direct IP printing may be blocked by the browser (Mixed Content).',
   },

@@ -1352,6 +1352,7 @@ const da = {
     sentNoResponse: 'Sendt. Kontrollér printeren.',
     errorRefused: 'Forbindelse nægtet, kontroller IP og port',
     errorNoResponse: 'Printeren svarer ikke, kontrollér IP og netværk',
+    errorInvalidPort: 'Ugyldig port (brug 1-65535)',
     errorGeneric: 'Afsendelse af ZPL mislykkedes',
     httpsWarning: 'Siden bruger HTTPS, direkte udskrivning via IP kan blive blokeret af browseren (blandet indhold).',
   },

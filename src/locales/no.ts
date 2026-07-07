@@ -1352,6 +1352,7 @@ const no = {
     sentNoResponse: 'Sendt. Sjekk på skriveren.',
     errorRefused: 'Tilkobling nektet, sjekk IP og port',
     errorNoResponse: 'Skriveren svarte ikke, sjekk IP og nettverk',
+    errorInvalidPort: 'Ugyldig port (bruk 1-65535)',
     errorGeneric: 'Sending av ZPL mislyktes',
     httpsWarning: 'Siden bruker HTTPS, direkte utskrift via IP kan bli blokkert av nettleseren (blandet innhold).',
   },

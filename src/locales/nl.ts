@@ -1352,6 +1352,7 @@ const nl = {
     sentNoResponse: 'Verzonden. Controleer op de printer.',
     errorRefused: 'Verbinding geweigerd, controleer IP en poort',
     errorNoResponse: 'Printer reageerde niet, controleer IP en netwerk',
+    errorInvalidPort: 'Ongeldige poort (gebruik 1-65535)',
     errorGeneric: 'ZPL verzenden mislukt',
     httpsWarning: 'Pagina gebruikt HTTPS, direct afdrukken via IP kan worden geblokkeerd door de browser (gemengde inhoud).',
   },

@@ -1352,6 +1352,7 @@ const sk = {
     sentNoResponse: 'Odoslané. Skontrolujte na tlačiarni.',
     errorRefused: 'Pripojenie odmietnuté, skontrolujte IP a port',
     errorNoResponse: 'Tlačiareň neodpovedá, skontrolujte IP a sieť',
+    errorInvalidPort: 'Neplatný port (použite 1-65535)',
     errorGeneric: 'Odoslanie ZPL zlyhalo',
     httpsWarning: 'Stránka beží cez HTTPS, priama tlač cez IP môže byť prehliadačom zablokovaná (zmiešaný obsah).',
   },

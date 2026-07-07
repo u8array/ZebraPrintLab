@@ -1352,6 +1352,7 @@ const et = {
     sentNoResponse: 'Saadetud. Kontrolli printerit.',
     errorRefused: 'Ühendus keeldutud, kontrollige IP-d ja porti',
     errorNoResponse: 'Printer ei vastanud, kontrolli IP-d ja võrku',
+    errorInvalidPort: 'Vigane port (kasutage 1-65535)',
     errorGeneric: 'ZPL saatmine ebaõnnestus',
     httpsWarning: 'Leht kasutab HTTPS-i, otsene IP-printimistöö võib olla brauseri poolt blokeeritud (segasisaldus).',
   },

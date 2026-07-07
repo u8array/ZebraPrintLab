@@ -756,6 +756,7 @@ const de = {
     sentNoResponse: 'Gesendet. Bitte am Drucker prüfen.',
     errorRefused: 'Verbindung abgelehnt, IP und Port prüfen',
     errorNoResponse: 'Drucker antwortet nicht, IP und Netzwerk prüfen',
+    errorInvalidPort: 'Ungültiger Port (1-65535 verwenden)',
     errorGeneric: 'Fehler beim Senden',
     httpsWarning: 'Seite läuft über HTTPS, direktes IP-Drucken kann vom Browser blockiert werden (Mixed Content).',
   },
