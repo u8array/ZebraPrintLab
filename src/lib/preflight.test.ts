@@ -108,6 +108,20 @@ describe("computePreflight (off-label producer)", () => {
     ]);
   });
 
+  it("does not flag a blank text field off-label (placeholder is drawn, not printed)", () => {
+    // Empty single-line text near the right edge: objectBounds returns the
+    // placeholder footprint (4*fontHeight wide) so the action bar centers, but
+    // an empty ^FD prints nothing, so off-label must stay silent. Only the
+    // emptyContent signal fires.
+    const blank = {
+      id: "t", type: "text", x: 780, y: 10, rotation: 0, positionType: "FO",
+      props: { content: "", fontHeight: 40, fontWidth: 0, rotation: "N" },
+    } as LabelObject as LeafObject;
+    expect(computePreflight([blank], ctx, "mm")).toEqual([
+      { objectId: "t", kind: "emptyContent", severity: "warning" },
+    ]);
+  });
+
   it("reports one finding per offending leaf and skips the inside one", () => {
     const findings = computePreflight(
       [box("in", 10, 10, 50, 50), box("clip", 760, 10, 80, 50), box("out", -200, 0, 50, 50)],

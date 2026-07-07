@@ -17,7 +17,7 @@ import { BARCODE_1D_TYPES, STACKED_2D_TYPES, getEntry } from "../registry";
 import type { LabelConfig } from "../types/LabelConfig";
 import { isAxisSwapped, objectRotation, type ZplRotation } from "../registry/rotation";
 import { resolveTextMode } from "../registry/text";
-import { blockBoundsDots, rotatedLineOffset, tbBoundsDots, zebraLineWidthDots } from "./zebraTextLayout";
+import { blockBoundsDots, EMPTY_TEXT_PLACEHOLDER_GLYPHS, isBlankText, rotatedLineOffset, tbBoundsDots, zebraLineWidthDots } from "./zebraTextLayout";
 import { resolveDefaultSizeDots } from "./resolveDefaultSize";
 import { mmToDots } from "./coordinates";
 import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET } from "./bwipConstants";
@@ -74,12 +74,16 @@ function fallbackSizeDots(
 
 /** Single-line text/serial footprint estimate from props when no measured
  *  size exists. Width is the Font-0 calibrated advance sum; height is the
- *  font height. Rotation swaps the axes. */
+ *  font height. Rotation swaps the axes. Empty content takes the canvas
+ *  placeholder's footprint, else the selection chrome (action bar, align,
+ *  snap) would center on a zero-width box left of what is drawn. */
 function singleLineEstimate(
   obj: LeafObject & { props: { content: string; fontHeight: number; fontWidth: number; rotation: ZplRotation } },
 ): { width: number; height: number } {
   const { content, fontHeight, fontWidth, rotation } = obj.props;
-  const width = zebraLineWidthDots(content, fontHeight, fontWidth);
+  const width = isBlankText(content)
+    ? fontHeight * EMPTY_TEXT_PLACEHOLDER_GLYPHS
+    : zebraLineWidthDots(content, fontHeight, fontWidth);
   return rotatedFootprint(width, fontHeight, rotation);
 }
 

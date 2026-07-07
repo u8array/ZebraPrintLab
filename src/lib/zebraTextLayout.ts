@@ -256,6 +256,18 @@ export function blockLineStepDots(fontHeight: number, blockLineSpacing: number):
   return fontHeight + blockLineSpacing;
 }
 
+/** Width of the empty single-line text placeholder, in fontHeight multiples.
+ *  Shared by the canvas placeholder rect and objectBounds so the selection
+ *  chrome (action bar, align, snap) centers on what is actually drawn. */
+export const EMPTY_TEXT_PLACEHOLDER_GLYPHS = 4;
+
+/** A field with no printable content: the canvas draws the placeholder rect and
+ *  emit writes an empty ^FD. Single source for the render / bounds / measured
+ *  gate so they can't drift on what counts as blank (whitespace trims away). */
+export function isBlankText(content: string): boolean {
+  return content.trim() === "";
+}
+
 /** ^TB line pitch ratio. Unlike ^FB (pitch = fontHeight), ^TB spaces lines at
  *  ~1.25x fontHeight (calibrated against Labelary for the default font). */
 export const TB_LINE_HEIGHT_RATIO = 1.25;

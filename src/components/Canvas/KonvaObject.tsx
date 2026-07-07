@@ -20,7 +20,7 @@ import { selectionHandlers, useBlankFieldWarns, CAPTURE_CHROME, PLACEHOLDER_DASH
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 import { DEFAULT_GS_SYMBOL_META, GS_SYMBOLS } from "../../registry/symbol";
 import { GS_SYMBOL_PATHS, GS_VECTOR_CODES, type GsVectorCode } from "../../registry/gsSymbolPaths";
-import { blockBoundsDots, blockJustifyWordPositions, blockLineStartDots, blockLineStepDots, tbBoundsDots, tbLineStepDots, wrapBlockLines, zebraAlignOffsetDots, zebraHangingIndentOffsetDots, zebraJustifyGapDots, zebraLineWidthDots, type ZplRotation } from "../../lib/zebraTextLayout";
+import { blockBoundsDots, blockJustifyWordPositions, blockLineStartDots, blockLineStepDots, EMPTY_TEXT_PLACEHOLDER_GLYPHS, isBlankText, tbBoundsDots, tbLineStepDots, wrapBlockLines, zebraAlignOffsetDots, zebraHangingIndentOffsetDots, zebraJustifyGapDots, zebraLineWidthDots, type ZplRotation } from "../../lib/zebraTextLayout";
 import { resolveTextMode } from "../../registry/text";
 import { isAxisSwapped } from "../../registry/rotation";
 import type { LeafObject } from "../../registry";
@@ -119,10 +119,6 @@ interface BaseTextProps {
  *  A0 advances and drifts noticeably on centred blocks. */
 type TextFieldObj = LeafObject & { type: "text"; props: TextProps };
 
-/** Approx width of an empty single-line placeholder, expressed as
- *  fontHeight multiples (Glyph-row aspect ratio). */
-const EMPTY_TEXT_PLACEHOLDER_GLYPHS = 4;
-
 function PlaceholderRect({
   x, y, width, height, rotation, color, fontVersion,
 }: {
@@ -184,7 +180,7 @@ function TextFieldContent({
   if (mode === "normal" || !blockWidth) {
     // Single-line text has no spec-defined min width, so only empty
     // content triggers the placeholder (block also covers too-narrow).
-    if (content.trim().length === 0) {
+    if (isBlankText(content)) {
       return (
         <PlaceholderRect
           fontVersion={fontVersion}
@@ -215,7 +211,7 @@ function TextFieldContent({
   const tooNarrow =
     firstChar !== "" &&
     dotsToPx(blockWidth, scale, dpmm) < measureLinePx(firstChar);
-  const emptyContent = content.trim().length === 0;
+  const emptyContent = isBlankText(content);
   if (tooNarrow || emptyContent) {
     const bounds =
       mode === "tb"
@@ -553,12 +549,16 @@ function KonvaObjectInner({
     obj.type === "text" && !!textMetrics && resolveTextMode(obj.props) === "normal";
   const inkWidthDots = textMetrics?.inkWidthDots ?? 0;
   const fontHeightDots = obj.type === "text" ? obj.props.fontHeight : 0;
+  // Whitespace-only content has a non-zero ink advance but draws the placeholder,
+  // so gate on the same blank test the placeholder does, not on inkWidth alone.
+  const blankSingleLine = isSingleLineText && isBlankText(textMetrics?.content ?? "");
   const rotation = obj.type === "text" ? obj.props.rotation : "N";
   const isQuarterTurn = isAxisSwapped(rotation);
   useEffect(() => {
     if (!isSingleLineText) return;
-    // Footprint dropped to zero (e.g. content cleared): drop the stale entry.
-    if (inkWidthDots <= 0 || fontHeightDots <= 0) {
+    // Blank (empty or whitespace) or zero-height: drop the measured entry so
+    // objectBounds falls to the placeholder footprint the canvas draws.
+    if (blankSingleLine || inkWidthDots <= 0 || fontHeightDots <= 0) {
       clearMeasuredBounds(obj.id);
       return;
     }
@@ -566,7 +566,7 @@ function KonvaObjectInner({
       width: isQuarterTurn ? fontHeightDots : inkWidthDots,
       height: isQuarterTurn ? inkWidthDots : fontHeightDots,
     });
-  }, [obj.id, isSingleLineText, inkWidthDots, fontHeightDots, isQuarterTurn]);
+  }, [obj.id, isSingleLineText, blankSingleLine, inkWidthDots, fontHeightDots, isQuarterTurn]);
   useEffect(() => {
     if (!isSingleLineText) return;
     return () => clearMeasuredBounds(obj.id);
