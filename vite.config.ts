@@ -18,9 +18,16 @@ function thirdPartyLicenses(): Plugin {
   }
 }
 
+const pkg = JSON.parse(
+  readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8'),
+) as { version: string }
+
 // https://vite.dev/config/
 export default defineConfig({
   base: '/',
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   // Tauri drives Vite via `tauri dev`: pin the port its devUrl points at and
   // skip watching the Rust crate, whose builds would trigger phantom reloads.
   // Plain web dev keeps Vite's port fallback (TAURI_ENV_* only set by tauri).

@@ -56,3 +56,4 @@ tmp/
 *.instructions.*
 
 CLAUDE.md
+*.tar.gz

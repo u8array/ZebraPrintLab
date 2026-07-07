@@ -29,4 +29,6 @@ exceptions = [
     { crate = "option-ext", allow = ["MPL-2.0"] },
     { crate = "selectors", allow = ["MPL-2.0"] },
     { crate = "target-lexicon", allow = ["Apache-2.0 WITH LLVM-exception"] },
+    # Permissive DATA license (Mozilla CA certificates for rustls).
+    { crate = "webpki-root-certs", allow = ["CDLA-Permissive-2.0"] },
 ]

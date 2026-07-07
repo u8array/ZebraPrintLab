@@ -26,8 +26,17 @@
       "devCsp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' ipc: http: https: ws://localhost:5173; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYzNTVGNUIzRjVERjQyMQpSV1FoOUYwL1cxODFEMW4xcVZYZndYVWlwM3lyaGYrK3FpSWN5cjBxanM1ZDdVR3B4a3Y2Y0ZsTAo=",
+      "endpoints": [
+        "https://github.com/u8array/ZebraPrintLab/releases/latest/download/latest.json"
+      ]
+    }
+  },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "publisher": "u8array",
     "copyright": "© 2026 u8array",
     "license": "MIT",

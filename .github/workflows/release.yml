@@ -23,6 +23,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
       - run: pnpm licenses:check
 
       - run: pnpm attribution:check
@@ -73,8 +77,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v${{ needs.gates.outputs.version }}"
-          ID=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
-            --jq ".[] | select(.tag_name==\"$TAG\" and .draft) | .id" | head -n1)
+          # Keep head off the gh pipe: piping into head masks a failed lookup
+          # (rate limit / 5xx) as "no draft" and would POST a duplicate.
+          DRAFTS=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+            --jq ".[] | select(.tag_name==\"$TAG\" and .draft) | .id")
+          ID=$(printf '%s\n' "$DRAFTS" | head -n1)
           if [ -z "$ID" ]; then
             ID=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
               -f tag_name="$TAG" \
@@ -130,8 +137,11 @@ jobs:
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
+          updaterJsonPreferNsis: true
           args: ${{ matrix.args }}
 
   upload-web-dist:

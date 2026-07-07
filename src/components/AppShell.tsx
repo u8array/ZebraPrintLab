@@ -41,6 +41,7 @@ import {
   ChevronDoubleRightIcon,
 } from "@heroicons/react/16/solid";
 import { useLabelStore, useHistory, selectLabelaryNoticeRequired, selectPreviewLocksEditor } from "../store/labelStore";
+import { formatTemplate } from "../lib/formatTemplate";
 import { LabelaryNoticeModal } from "./Output/LabelaryNoticeModal";
 import { PrinterSettingsModal } from "./PrinterSettings/PrinterSettingsModal";
 import { Gs1ContentModal } from "./Barcode/Gs1ContentModal";
@@ -99,6 +100,16 @@ export function AppShell() {
   const labelaryEnabled = useLabelStore((s) => s.thirdParty.labelary);
   const noticeRequired = useLabelStore(selectLabelaryNoticeRequired);
   const [showPrintNotice, setShowPrintNotice] = useState(false);
+  const appUpdate = useLabelStore((s) => s.appUpdate);
+  const checkForAppUpdate = useLabelStore((s) => s.checkForAppUpdate);
+  const installAppUpdate = useLabelStore((s) => s.installAppUpdate);
+  const relaunchApp = useLabelStore((s) => s.relaunchApp);
+  const dismissAppUpdate = useLabelStore((s) => s.dismissAppUpdate);
+
+  // Silent one-shot update check; only an actual update surfaces a banner.
+  useEffect(() => {
+    void checkForAppUpdate(false);
+  }, [checkForAppUpdate]);
 
   // Bridge the theme preference to <html data-theme> so the CSS variables in
   // index.css pick it up.
@@ -347,6 +358,44 @@ export function AppShell() {
       </header>
 
       {/* Notices */}
+      {(appUpdate.phase === "available" || appUpdate.phase === "installing" || appUpdate.phase === "installed" || appUpdate.phase === "error") && (
+        <div className="shrink-0 flex items-center gap-3 px-4 py-2 bg-accent-dim border-b border-border font-mono text-[10px] text-text">
+          <span className="flex-1">
+            {appUpdate.phase === "error"
+              ? formatTemplate(t.app.updateErrorFmt, { error: appUpdate.message })
+              : appUpdate.phase === "installing"
+                ? t.app.updateInstalling
+                : appUpdate.phase === "installed"
+                  ? t.app.updateInstalled
+                  : formatTemplate(t.app.updateAvailableFmt, { version: appUpdate.version })}
+          </span>
+          {appUpdate.phase === "available" && (
+            <button
+              onClick={() => void installAppUpdate()}
+              className="shrink-0 px-2 py-0.5 rounded bg-accent text-bg hover:opacity-90 transition-opacity"
+            >
+              {t.app.updateInstall}
+            </button>
+          )}
+          {appUpdate.phase === "installed" && (
+            <button
+              onClick={() => void relaunchApp()}
+              className="shrink-0 px-2 py-0.5 rounded bg-accent text-bg hover:opacity-90 transition-opacity"
+            >
+              {t.app.updateRestart}
+            </button>
+          )}
+          {appUpdate.phase !== "installing" && (
+            <button
+              onClick={dismissAppUpdate}
+              className="text-muted hover:text-text transition-colors"
+              aria-label={t.app.dismiss}
+            >
+              <XMarkIcon className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      )}
       {(loadError ?? printError ?? csvError) && (
         <div className="shrink-0 flex items-center gap-3 px-4 py-2 bg-red-950/40 border-b border-red-800/50 font-mono text-[10px] text-red-300">
           <span className="flex-1">{loadError ?? printError ?? csvError}</span>
@@ -362,7 +411,7 @@ export function AppShell() {
           <button
             onClick={loadError ? dismissLoadError : csvError ? dismissCsvError : dismissPrintError}
             className="text-red-400 hover:text-red-200 transition-colors"
-            aria-label="Dismiss"
+            aria-label={t.app.dismiss}
           >
             <XMarkIcon className="w-3.5 h-3.5" />
           </button>
