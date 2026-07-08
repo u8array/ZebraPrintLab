@@ -117,13 +117,9 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
     void loadUsbPrinters().finally(() => setLoadingUsb(false));
   }, [loadUsbPrinters]);
 
-  // Leaving the USB tab visible after the printer is unplugged strands the user
-  // on an empty, buttonless tab; fall back to a real tab. The setState is a
-  // deliberate derived-state correction, not an external-system side effect.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (tab === "usb" && usbPrinters.length === 0) setTab("network");
-  }, [tab, usbPrinters.length]);
+  // Unplugging the printer hides the USB tab button; correct the stranded tab
+  // during render (React's derived-state pattern) so there is no empty-tab flash.
+  if (tab === "usb" && usbPrinters.length === 0) setTab("network");
 
   function persistNetwork() {
     localStorage.setItem(LS_IP, ip);

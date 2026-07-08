@@ -166,9 +166,11 @@ const UDEV_RULE: &str = include_str!("../packaging/udev/70-zebraprintlab.rules")
 #[tauri::command]
 pub async fn setup_usb_access() -> Result<(), String> {
   // pkexec shows one polkit prompt, writes the rule, reloads udev. Used by
-  // AppImage (no installer) and as a repair path if the packaged rule is gone.
+  // AppImage (no installer) and as a repair path. Writes to /etc/udev/rules.d
+  // (writable on immutable distros, and the right place for a runtime rule);
+  // set -e so a failed install is reported instead of silently swallowed.
   let script = format!(
-    "install -Dm644 /dev/stdin /usr/lib/udev/rules.d/70-zebraprintlab.rules <<'ZEBRA_UDEV_RULE_EOF'\n{UDEV_RULE}\nZEBRA_UDEV_RULE_EOF\nrm -f /usr/lib/udev/rules.d/99-zebraprintlab.rules; udevadm control --reload-rules && udevadm trigger --subsystem-match=usbmisc --subsystem-match=usb"
+    "set -e\ninstall -Dm644 /dev/stdin /etc/udev/rules.d/70-zebraprintlab.rules <<'ZEBRA_UDEV_RULE_EOF'\n{UDEV_RULE}\nZEBRA_UDEV_RULE_EOF\nrm -f /usr/lib/udev/rules.d/99-zebraprintlab.rules /etc/udev/rules.d/99-zebraprintlab.rules || true\nudevadm control --reload-rules || true\nudevadm trigger --subsystem-match=usbmisc --subsystem-match=usb || true"
   );
   tauri::async_runtime::spawn_blocking(move || {
     let status = std::process::Command::new("pkexec")
