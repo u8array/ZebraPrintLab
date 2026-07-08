@@ -1356,6 +1356,10 @@ const ko = {
     errorInvalidPort: '잘못된 포트 (1-65535 사용)',
     errorGeneric: 'ZPL 전송에 실패했습니다',
     httpsWarning: '페이지가 HTTPS 상에 있습니다, 브라우저가 직접 IP 인쇄를 차단할 수 있습니다(혼합 콘텐츠).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

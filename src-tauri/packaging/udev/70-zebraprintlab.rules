@@ -1,0 +1,5 @@
+# Zebra USB label printers: grant the active desktop session raw access.
+# Numbered below 73-seat-late.rules so the uaccess tag is set before logind's
+# uaccess builtin runs (a higher number applies the tag too late, no ACL).
+SUBSYSTEM=="usbmisc", KERNEL=="lp[0-9]*", ATTRS{idVendor}=="0a5f", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="0a5f", TAG+="uaccess"

@@ -1356,6 +1356,10 @@ const sk = {
     errorInvalidPort: 'Neplatný port (použite 1-65535)',
     errorGeneric: 'Odoslanie ZPL zlyhalo',
     httpsWarning: 'Stránka beží cez HTTPS, priama tlač cez IP môže byť prehliadačom zablokovaná (zmiešaný obsah).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

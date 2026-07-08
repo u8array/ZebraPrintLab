@@ -760,6 +760,10 @@ const de = {
     errorInvalidPort: 'Ungültiger Port (1-65535 verwenden)',
     errorGeneric: 'Fehler beim Senden',
     httpsWarning: 'Seite läuft über HTTPS, direktes IP-Drucken kann vom Browser blockiert werden (Mixed Content).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'Kein Zugriff auf den USB-Drucker. Klicke auf Zugriff einrichten.',
+    usbSetupAccess: 'Zugriff einrichten',
+    usbNotFound: 'USB-Drucker nicht gefunden, neu einstecken und aktualisieren.',
   },
 
   output: {

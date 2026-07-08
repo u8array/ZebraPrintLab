@@ -1356,6 +1356,10 @@ const el = {
     errorInvalidPort: 'Μη έγκυρη θύρα (χρησιμοποιήστε 1-65535)',
     errorGeneric: 'Αποτυχία αποστολής ZPL',
     httpsWarning: 'Η σελίδα χρησιμοποιεί HTTPS, η άμεση εκτύπωση μέσω IP ενδέχεται να αποκλειστεί από τον φυλλομετρητή (μεικτό περιεχόμενο).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

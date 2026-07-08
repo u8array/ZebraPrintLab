@@ -1356,6 +1356,10 @@ const ja = {
     errorInvalidPort: '無効なポート (1-65535 を使用)',
     errorGeneric: 'ZPL の送信に失敗しました',
     httpsWarning: 'ページが HTTPS 上にあります、ブラウザが直接 IP 印刷をブロックする場合があります（混在コンテンツ）。',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

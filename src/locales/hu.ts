@@ -1356,6 +1356,10 @@ const hu = {
     errorInvalidPort: 'Érvénytelen port (használjon 1-65535)',
     errorGeneric: 'ZPL küldése sikertelen',
     httpsWarning: 'Az oldal HTTPS-en fut, az IP-n keresztüli közvetlen nyomtatást a böngésző blokkolhatja (vegyes tartalom).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

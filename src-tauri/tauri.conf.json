@@ -54,6 +54,20 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "linux": {
+      "deb": {
+        "files": {
+          "/usr/lib/udev/rules.d/70-zebraprintlab.rules": "packaging/udev/70-zebraprintlab.rules"
+        },
+        "postInstallScript": "packaging/linux/postinst"
+      },
+      "rpm": {
+        "files": {
+          "/usr/lib/udev/rules.d/70-zebraprintlab.rules": "packaging/udev/70-zebraprintlab.rules"
+        },
+        "postInstallScript": "packaging/linux/postinst"
+      }
+    }
   }
 }

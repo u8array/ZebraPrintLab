@@ -1356,6 +1356,10 @@ const ro = {
     errorInvalidPort: 'Port nevalid (utilizați 1-65535)',
     errorGeneric: 'Trimiterea ZPL a eşuat',
     httpsWarning: 'Pagina este pe HTTPS, imprimarea directă prin IP poate fi blocată de browser (conținut mixt).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

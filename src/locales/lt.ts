@@ -1356,6 +1356,10 @@ const lt = {
     errorInvalidPort: 'Netinkamas prievadas (naudokite 1-65535)',
     errorGeneric: 'ZPL siuntimas nepavyko',
     httpsWarning: 'Puslapis naudoja HTTPS, tiesioginis spausdinimas per IP gali būti užblokuotas naršyklės (mišrus turinys).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

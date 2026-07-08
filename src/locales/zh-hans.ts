@@ -1356,6 +1356,10 @@ const zhHans = {
     errorInvalidPort: '端口无效（使用 1-65535）',
     errorGeneric: '发送 ZPL 失败',
     httpsWarning: '页面在 HTTPS 上，浏览器可能阻止直接 IP 打印（混合内容）。',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

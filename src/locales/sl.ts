@@ -1356,6 +1356,10 @@ const sl = {
     errorInvalidPort: 'Neveljavna vrata (uporabite 1-65535)',
     errorGeneric: 'Pošiljanje ZPL ni uspelo',
     httpsWarning: 'Stran uporablja HTTPS, neposredno tiskanje prek IP-ja je morda blokirano s strani brskalnika (mešana vsebina).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

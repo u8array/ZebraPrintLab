@@ -1356,6 +1356,10 @@ const zhHant = {
     errorInvalidPort: '連接埠無效（使用 1-65535）',
     errorGeneric: '傳送 ZPL 失敗',
     httpsWarning: '頁面在 HTTPS 上，瀏覽器可能封鎖直接 IP 列印（混合內容）。',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

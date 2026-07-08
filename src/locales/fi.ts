@@ -1356,6 +1356,10 @@ const fi = {
     errorInvalidPort: 'Virheellinen portti (käytä 1-65535)',
     errorGeneric: 'ZPL:n lähetys epäonnistui',
     httpsWarning: 'Sivu on HTTPS:llä, suora IP-tulostus saattaa olla selaimen estämä (sekasisältö).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

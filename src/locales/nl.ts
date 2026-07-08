@@ -1356,6 +1356,10 @@ const nl = {
     errorInvalidPort: 'Ongeldige poort (gebruik 1-65535)',
     errorGeneric: 'ZPL verzenden mislukt',
     httpsWarning: 'Pagina gebruikt HTTPS, direct afdrukken via IP kan worden geblokkeerd door de browser (gemengde inhoud).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

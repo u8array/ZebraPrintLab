@@ -1356,6 +1356,10 @@ const no = {
     errorInvalidPort: 'Ugyldig port (bruk 1-65535)',
     errorGeneric: 'Sending av ZPL mislyktes',
     httpsWarning: 'Siden bruker HTTPS, direkte utskrift via IP kan bli blokkert av nettleseren (blandet innhold).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

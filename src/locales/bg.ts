@@ -1356,6 +1356,10 @@ const bg = {
     errorInvalidPort: 'Невалиден порт (използвайте 1-65535)',
     errorGeneric: 'Неуспешно изпращане на ZPL',
     httpsWarning: 'Страницата е на HTTPS, директният печат по IP може да бъде блокиран от браузъра (смесено съдържание).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 
