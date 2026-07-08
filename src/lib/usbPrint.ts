@@ -26,6 +26,7 @@ export async function listUsbPrinters(): Promise<UsbPrinter[]> {
 }
 
 export async function sendZplUsb(id: string, zpl: string): Promise<UsbPrintResult> {
+  if (!isDesktopShell) return { kind: "error", message: "USB printing requires the desktop app" };
   const { invoke } = await import("@tauri-apps/api/core");
   try {
     return await invoke<UsbPrintResult>("send_zpl_usb", { device: id, zpl });
@@ -35,6 +36,7 @@ export async function sendZplUsb(id: string, zpl: string): Promise<UsbPrintResul
 }
 
 export async function setupUsbAccess(): Promise<void> {
+  if (!isDesktopShell) return;
   const { invoke } = await import("@tauri-apps/api/core");
   await invoke("setup_usb_access");
 }
