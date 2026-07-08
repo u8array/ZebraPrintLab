@@ -1356,6 +1356,10 @@ const he = {
     errorInvalidPort: 'פורט לא תקין (השתמש ב-1-65535)',
     errorGeneric: 'שליחת ZPL נכשלה',
     httpsWarning: 'הדף נמצא על HTTPS, הדפסה ישירה דרך IP עלולה להיחסם על ידי הדפדפן (תוכן מעורב).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

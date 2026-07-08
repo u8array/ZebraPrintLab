@@ -1356,6 +1356,10 @@ const it = {
     errorInvalidPort: 'Porta non valida (usa 1-65535)',
     errorGeneric: 'Invio ZPL non riuscito',
     httpsWarning: 'La pagina è in HTTPS, la stampa diretta tramite IP potrebbe essere bloccata dal browser (contenuto misto).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

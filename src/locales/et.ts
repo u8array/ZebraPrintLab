@@ -1356,6 +1356,10 @@ const et = {
     errorInvalidPort: 'Vigane port (kasutage 1-65535)',
     errorGeneric: 'ZPL saatmine ebaõnnestus',
     httpsWarning: 'Leht kasutab HTTPS-i, otsene IP-printimistöö võib olla brauseri poolt blokeeritud (segasisaldus).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

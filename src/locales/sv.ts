@@ -1356,6 +1356,10 @@ const sv = {
     errorInvalidPort: 'Ogiltig port (använd 1-65535)',
     errorGeneric: 'Det gick inte att skicka ZPL',
     httpsWarning: 'Sidan använder HTTPS, direktutskrift via IP kan blockeras av webbläsaren (blandat innehåll).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

@@ -1356,6 +1356,10 @@ const tr = {
     errorInvalidPort: 'Geçersiz bağlantı noktası (1-65535 kullanın)',
     errorGeneric: 'ZPL gönderilemedi',
     httpsWarning: 'Sayfa HTTPS üzerinde, doğrudan IP yazdırma tarayıcı tarafından engellenebilir (karma içerik).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

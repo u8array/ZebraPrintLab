@@ -1356,6 +1356,10 @@ const lv = {
     errorInvalidPort: 'Nederīgs ports (izmantojiet 1-65535)',
     errorGeneric: 'ZPL nosūtīšana neizdevās',
     httpsWarning: 'Lapa izmanto HTTPS, tiešā IP drukāšana var tikt bloķēta pārlūkprogrammā (jaukts saturs).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 

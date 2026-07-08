@@ -760,6 +760,10 @@ const en = {
     errorInvalidPort: 'Invalid port (use 1-65535)',
     errorGeneric: 'Failed to send ZPL',
     httpsWarning: 'Page is on HTTPS, direct IP printing may be blocked by the browser (Mixed Content).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 
   output: {

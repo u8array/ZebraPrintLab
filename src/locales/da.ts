@@ -1356,6 +1356,10 @@ const da = {
     errorInvalidPort: 'Ugyldig port (brug 1-65535)',
     errorGeneric: 'Afsendelse af ZPL mislykkedes',
     httpsWarning: 'Siden bruger HTTPS, direkte udskrivning via IP kan blive blokeret af browseren (blandet indhold).',
+    tabUsb: 'USB',
+    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
+    usbSetupAccess: 'Set up access',
+    usbNotFound: 'USB printer not found, re-plug it and refresh.',
   },
 } as const;
 
