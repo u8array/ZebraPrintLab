@@ -1,4 +1,4 @@
 #!/bin/sh
 set -e
 udevadm control --reload-rules || true
-udevadm trigger --subsystem-match=usbmisc || true
+udevadm trigger --subsystem-match=usbmisc --subsystem-match=usb || true
