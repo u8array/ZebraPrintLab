@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { XMarkIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../hooks/useT";
 import { DialogShell } from "../ui/DialogShell";
@@ -67,6 +67,9 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
   const [selectedUsb, setSelectedUsb] = useState<string>(() => localStorage.getItem(LS_USB) ?? "");
   const [usbStatus, setUsbStatus] = useState<Status>({ type: "idle" });
   const [loadingUsb, setLoadingUsb] = useState(isDesktopShell);
+  // Tracks the last USB send being permission-denied, so the setup affordance
+  // survives locale changes and a cancelled polkit prompt.
+  const [usbNeedsSetup, setUsbNeedsSetup] = useState(false);
 
   // Enumerate OS print queues once on mount; the web build has no spooler.
   useEffect(() => {
@@ -94,28 +97,33 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
     };
   }, []);
 
-  // Enumerate USB printers once on mount; the web build and non-Linux desktops get nothing.
+  // Shared so a successful access grant can refresh the list too (dedup with the
+  // mount effect). React 19 makes a late setState after unmount a safe no-op.
+  const loadUsbPrinters = useCallback(async () => {
+    try {
+      const printers = await listUsbPrinters();
+      setUsbPrinters(printers);
+      setSelectedUsb((cur) => (cur && printers.some((p) => p.id === cur) ? cur : printers[0]?.id ?? ""));
+    } catch (e) {
+      setUsbStatus({ type: "error", message: e instanceof Error ? e.message : String(e) });
+    }
+  }, []);
+
   useEffect(() => {
     if (!isDesktopShell) return;
-    let cancelled = false;
-    listUsbPrinters()
-      .then((printers) => {
-        if (cancelled) return;
-        setUsbPrinters(printers);
-        setSelectedUsb((cur) =>
-          cur && printers.some((p) => p.id === cur) ? cur : printers[0]?.id ?? "",
-        );
-      })
-      .catch((e: unknown) => {
-        if (!cancelled) setUsbStatus({ type: "error", message: e instanceof Error ? e.message : String(e) });
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingUsb(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    // loadUsbPrinters sets state asynchronously; the disable covers both the
+    // function call (tracked by the plugin) and the finally callback.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadUsbPrinters().finally(() => setLoadingUsb(false));
+  }, [loadUsbPrinters]);
+
+  // Leaving the USB tab visible after the printer is unplugged strands the user
+  // on an empty, buttonless tab; fall back to a real tab. The setState is a
+  // deliberate derived-state correction, not an external-system side effect.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (tab === "usb" && usbPrinters.length === 0) setTab("network");
+  }, [tab, usbPrinters.length]);
 
   function persistNetwork() {
     localStorage.setItem(LS_IP, ip);
@@ -217,15 +225,19 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
     const result = await sendZplUsb(selectedUsb, zpl);
     switch (result.kind) {
       case "sent":
+        setUsbNeedsSetup(false);
         setUsbStatus({ type: "success", message: t.zebraPrint.success });
         return;
       case "permission_denied":
+        setUsbNeedsSetup(true);
         setUsbStatus({ type: "error", message: t.zebraPrint.usbPermissionDenied });
         return;
       case "not_found":
+        setUsbNeedsSetup(false);
         setUsbStatus({ type: "error", message: t.zebraPrint.usbNotFound });
         return;
       case "error":
+        setUsbNeedsSetup(false);
         setUsbStatus({ type: "error", message: result.message || t.zebraPrint.errorGeneric });
         return;
       default: {
@@ -238,8 +250,12 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
   async function handleUsbSetup() {
     try {
       await setupUsbAccess();
+      // Access granted: refresh (a hot-plugged printer may be new) and clear the prompt.
+      await loadUsbPrinters();
+      setUsbNeedsSetup(false);
       setUsbStatus({ type: "idle" });
     } catch (e) {
+      // Failed or cancelled: keep usbNeedsSetup so the button stays available.
       setUsbStatus({ type: "error", message: e instanceof Error ? e.message : String(e) });
     }
   }
@@ -469,7 +485,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
             />
           </div>
           <div className="flex items-center justify-between gap-2">
-            {usbStatus.type === "error" && usbStatus.message === t.zebraPrint.usbPermissionDenied ? (
+            {usbNeedsSetup ? (
               <button
                 onClick={handleUsbSetup}
                 className="px-3 py-1.5 text-xs font-mono rounded border border-border text-muted hover:text-text hover:bg-surface-2 transition-colors"
