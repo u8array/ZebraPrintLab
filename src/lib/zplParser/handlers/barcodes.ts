@@ -1,4 +1,5 @@
 import type { Code49Props } from "../../../registry/code49";
+import { clampCodablockColumns } from "../../../registry/codablock";
 import { isDmRectPair, type DataMatrixProps } from "../../../registry/datamatrix";
 import type { Gs1DatabarProps } from "../../../registry/gs1databar";
 import type { MaxicodeProps } from "../../../registry/maxicode";
@@ -172,12 +173,17 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
       field.mpdfRowHeight = dots(p[1], 10);
     },
 
-    // ^BBN,{rowHeight},{security},{numCharsPerRow},{numRows},{mode}: CODABLOCK
+    // ^BBN,{rowHeight},{security},{numCharsPerRow},{numRows},{mode}: CODABLOCK.
+    // c (p[3]) is the stacking control we model; r (p[4]) and mode (p[5]) are
+    // canonicalized on emit (r left to the firmware, mode pinned to F).
     BB(p) {
       field.fieldType = "codablock";
       field.bcRotation = readRotation(p[0]);
       field.cbRowHeight = dots(p[1], 10);
       field.cbSecurity = (p[2] ?? "Y") === "N" ? "N" : "Y";
+      // int(p[3], 0) || undefined: a missing OR empty c both fall back to the
+      // default (matches the dm cols/rows idiom above), not to the clamp floor.
+      field.cbColumns = clampCodablockColumns(int(p[3], 0) || undefined);
     },
 
     // ^BTo,w1,r1,h1,w2,h2: TLC39 (Code 39 + optional MicroPDF417 stack)

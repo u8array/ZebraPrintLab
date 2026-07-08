@@ -1,16 +1,33 @@
 import type { ObjectTypeCore } from "../types/ObjectType";
 import { fieldPos, fdFieldFor } from "./zplHelpers";
-import { commitStacked2DTransform } from "./transformHelpers";
+import { clamp, commitStacked2DTransform } from "./transformHelpers";
 import { moduleTooSmallPreflight } from "../lib/barcodeScannability";
 import { type ZplRotation } from "./rotation";
 
 /** CODABLOCK A requires ^BY module width >= 2 (spec). */
 const CODABLOCK_MODULE_WIDTH_MIN = 2;
 
+/** CODABLOCK ^BB c range (chars per row). The ZPL spec allows 2-62, but the
+ *  bwip-js codablockf preview rejects columns below 4, so we constrain to 4-62
+ *  to keep preview and print consistent. Row count is derived from data length
+ *  ÷ columns; the firmware collapses to a single row unless c is given (verified
+ *  on a ZD230: r alone does not stack). */
+export const CODABLOCK_COLUMNS_MIN = 4;
+export const CODABLOCK_COLUMNS_MAX = 62;
+export const CODABLOCK_DEFAULT_COLUMNS = 6;
+
+/** Clamp to the ^BB c range; also backfills legacy objects and imports that
+ *  predate the columns prop (undefined → default). */
+export function clampCodablockColumns(columns: number | undefined): number {
+  if (columns == null || !Number.isFinite(columns)) return CODABLOCK_DEFAULT_COLUMNS;
+  return clamp(CODABLOCK_COLUMNS_MIN, CODABLOCK_COLUMNS_MAX, Math.round(columns));
+}
+
 export interface CodablockProps {
   content: string;
   moduleWidth: number; // bar width in dots
   rowHeight: number; // row height in dots
+  columns: number; // ^BB c: data chars per row; drives the stacked row count
   securityLevel: "Y" | "N"; // security check
   rotation: ZplRotation;
 }
@@ -27,6 +44,7 @@ export const codablock: ObjectTypeCore<CodablockProps> = {
     content: '',
     moduleWidth: 2,
     rowHeight: 2,
+    columns: CODABLOCK_DEFAULT_COLUMNS,
     securityLevel: "Y",
     rotation: 'N',
   },
@@ -38,11 +56,14 @@ export const codablock: ObjectTypeCore<CodablockProps> = {
 
   toZPL: (obj, ctx) => {
     const p = obj.props;
-    // ^BB{orientation},{rowHeight},{security},{numCharsPerRow},{numRows},{mode}
+    // ^BB{orientation},{rowHeight},{security},{numCharsPerRow},{numRows},{mode}.
+    // Set chars/row (c) and leave rows (r) empty: the firmware derives the row
+    // count from the data and stacks only when c is present (r alone does not
+    // stack, verified on a ZD230). Mode F (Code 128) matches the codablockf preview.
     return [
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
-      `^BB${p.rotation},${p.rowHeight},${p.securityLevel}`,
+      `^BB${p.rotation},${p.rowHeight},${p.securityLevel},${clampCodablockColumns(p.columns)},,F`,
       fdFieldFor(p.content, ctx),
     ]
       .filter(Boolean)
