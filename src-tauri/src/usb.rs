@@ -57,11 +57,50 @@ fn parse_printer(usb_dev_dir: &Path) -> Option<UsbPrinter> {
   })
 }
 
-// Linux stubs: real implementation arrives in the next task.
+// Each /sys/class/usbmisc/lpN has a "device" symlink to the USB interface,
+// whose parent is the USB device carrying idVendor/idProduct/serial.
+#[cfg(target_os = "linux")]
+fn enumerate(usbmisc_root: &Path) -> Vec<(String, UsbPrinter)> {
+  let mut out: Vec<(String, UsbPrinter)> = Vec::new();
+  let Ok(entries) = std::fs::read_dir(usbmisc_root) else { return out };
+  for entry in entries.flatten() {
+    let node = entry.file_name().to_string_lossy().into_owned();
+    if !node.starts_with("lp") {
+      continue;
+    }
+    // The USB attributes live on the interface's parent device. The test
+    // fixture puts them directly under "device"; a real tree resolves the
+    // parent, so try "device" then "device/.." for idVendor.
+    let base = entry.path().join("device");
+    let dev_dir = if base.join("idVendor").exists() {
+      base
+    } else {
+      base.join("..")
+    };
+    if let Some(p) = parse_printer(&dev_dir) {
+      out.push((node, p));
+    }
+  }
+  // Zebra vendor first, then by name, so the label printer beats an office one.
+  out.sort_by(|a, b| {
+    let za = (a.1.vendor_id != "0a5f", a.1.name.clone());
+    let zb = (b.1.vendor_id != "0a5f", b.1.name.clone());
+    za.cmp(&zb)
+  });
+  out
+}
+
 #[cfg(target_os = "linux")]
 #[tauri::command]
 pub async fn list_usb_printers() -> Result<Vec<UsbPrinter>, String> {
-  Ok(Vec::new())
+  tauri::async_runtime::spawn_blocking(|| {
+    enumerate(Path::new("/sys/class/usbmisc"))
+      .into_iter()
+      .map(|(_, p)| p)
+      .collect::<Vec<_>>()
+  })
+  .await
+  .map_err(|e| e.to_string())
 }
 
 #[cfg(target_os = "linux")]
@@ -78,6 +117,30 @@ mod tests {
   fn send_result_serializes_with_kind_tag() {
     let json = serde_json::to_string(&UsbSendResult::PermissionDenied).unwrap();
     assert_eq!(json, r#"{"kind":"permission_denied"}"#);
+  }
+
+  #[cfg(target_os = "linux")]
+  #[test]
+  fn enumerates_and_sorts_zebra_first() {
+    use std::fs;
+    let root = std::env::temp_dir().join(format!("zpl_usbmisc_{}", std::process::id()));
+    // Two fake usbmisc entries: lp0 = generic, lp1 = Zebra. Each links to a
+    // "device" dir holding the USB attributes.
+    for (node, vid, pid, ser, man, prod) in [
+      ("lp0", "03f0", "0512", "S1", "HP", "LaserJet"),
+      ("lp1", "0a5f", "0166", "S2", "Zebra Technologies", "ZD230"),
+    ] {
+      let dev = root.join(node).join("device");
+      fs::create_dir_all(&dev).unwrap();
+      for (f, v) in [("idVendor", vid), ("idProduct", pid), ("serial", ser), ("manufacturer", man), ("product", prod)] {
+        fs::write(dev.join(f), format!("{v}\n")).unwrap();
+      }
+    }
+    let out = enumerate(&root);
+    assert_eq!(out.len(), 2);
+    assert_eq!(out[0].1.vendor_id, "0a5f"); // Zebra sorted first
+    assert_eq!(out[0].0, "lp1");
+    fs::remove_dir_all(&root).ok();
   }
 
   #[cfg(target_os = "linux")]
