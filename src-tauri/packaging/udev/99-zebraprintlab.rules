@@ -1,0 +1,3 @@
+# Zebra USB label printers: grant the active desktop session raw access.
+SUBSYSTEM=="usbmisc", KERNEL=="lp[0-9]*", ATTRS{idVendor}=="0a5f", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="0a5f", TAG+="uaccess"

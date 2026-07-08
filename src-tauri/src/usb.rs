@@ -30,6 +30,12 @@ pub async fn send_zpl_usb(_device: String, _zpl: String) -> Result<UsbSendResult
   Err("USB transport is Linux only".to_string())
 }
 
+#[cfg(not(target_os = "linux"))]
+#[tauri::command]
+pub async fn setup_usb_access() -> Result<(), String> {
+  Err("USB setup is Linux only".to_string())
+}
+
 #[cfg(target_os = "linux")]
 use std::path::Path;
 
@@ -141,6 +147,30 @@ pub async fn send_zpl_usb(device: String, zpl: String) -> Result<UsbSendResult, 
       Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(UsbSendResult::NotFound),
       Err(e) => Err(e.to_string()),
     }
+  })
+  .await
+  .map_err(|e| e.to_string())?
+}
+
+// One source of truth for the rule text: the packaged file is embedded so the
+// pkexec path and the package payload never drift.
+#[cfg(target_os = "linux")]
+const UDEV_RULE: &str = include_str!("../packaging/udev/99-zebraprintlab.rules");
+
+#[cfg(target_os = "linux")]
+#[tauri::command]
+pub async fn setup_usb_access() -> Result<(), String> {
+  // pkexec shows one polkit prompt, writes the rule, reloads udev. Used by
+  // AppImage (no installer) and as a repair path if the packaged rule is gone.
+  let script = format!(
+    "install -Dm644 /dev/stdin /usr/lib/udev/rules.d/99-zebraprintlab.rules <<'RULE'\n{UDEV_RULE}\nRULE\nudevadm control --reload-rules && udevadm trigger"
+  );
+  tauri::async_runtime::spawn_blocking(move || {
+    let status = std::process::Command::new("pkexec")
+      .args(["sh", "-c", &script])
+      .status()
+      .map_err(|e| e.to_string())?;
+    if status.success() { Ok(()) } else { Err("setup cancelled or failed".to_string()) }
   })
   .await
   .map_err(|e| e.to_string())?

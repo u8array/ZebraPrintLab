@@ -9,7 +9,8 @@ pub fn run() {
       print::list_printers,
       print::send_zpl_local,
       usb::list_usb_printers,
-      usb::send_zpl_usb
+      usb::send_zpl_usb,
+      usb::setup_usb_access
     ]);
   // On the builder, not in setup(): config windows exist before the setup
   // closure runs, and window-state only restores/tracks via on_window_ready.
