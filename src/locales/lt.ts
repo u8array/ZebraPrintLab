@@ -1357,9 +1357,9 @@ const lt = {
     errorGeneric: 'ZPL siuntimas nepavyko',
     httpsWarning: 'Puslapis naudoja HTTPS, tiesioginis spausdinimas per IP gali būti užblokuotas naršyklės (mišrus turinys).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Nėra prieigos prie USB spausdintuvo. Spustelėkite Nustatyti prieigą, kad ją suteiktumėte.',
+    usbSetupAccess: 'Nustatyti prieigą',
+    usbNotFound: 'USB spausdintuvas nerastas. Prijunkite jį iš naujo ir atnaujinkite.',
   },
 } as const;
 

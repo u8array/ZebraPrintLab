@@ -1357,9 +1357,9 @@ const zhHans = {
     errorGeneric: '发送 ZPL 失败',
     httpsWarning: '页面在 HTTPS 上，浏览器可能阻止直接 IP 打印（混合内容）。',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: '无法访问 USB 打印机。点击「设置访问权限」以授予权限。',
+    usbSetupAccess: '设置访问权限',
+    usbNotFound: '未找到 USB 打印机，请重新插入并刷新。',
   },
 } as const;
 

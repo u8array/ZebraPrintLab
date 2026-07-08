@@ -1357,9 +1357,9 @@ const hu = {
     errorGeneric: 'ZPL küldése sikertelen',
     httpsWarning: 'Az oldal HTTPS-en fut, az IP-n keresztüli közvetlen nyomtatást a böngésző blokkolhatja (vegyes tartalom).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Nincs hozzáférés az USB-nyomtatóhoz. Kattintson a Hozzáférés beállítása gombra az engedélyezéshez.',
+    usbSetupAccess: 'Hozzáférés beállítása',
+    usbNotFound: 'Az USB-nyomtató nem található. Csatlakoztassa újra, és frissítsen.',
   },
 } as const;
 

@@ -1357,9 +1357,9 @@ const ja = {
     errorGeneric: 'ZPL の送信に失敗しました',
     httpsWarning: 'ページが HTTPS 上にあります、ブラウザが直接 IP 印刷をブロックする場合があります（混在コンテンツ）。',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'USBプリンターにアクセスできません。「アクセスを設定」をクリックして許可してください。',
+    usbSetupAccess: 'アクセスを設定',
+    usbNotFound: 'USBプリンターが見つかりません。再接続して更新してください。',
   },
 } as const;
 

@@ -1357,9 +1357,9 @@ const it = {
     errorGeneric: 'Invio ZPL non riuscito',
     httpsWarning: 'La pagina è in HTTPS, la stampa diretta tramite IP potrebbe essere bloccata dal browser (contenuto misto).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Nessun accesso alla stampante USB. Fai clic su Configura accesso per concederlo.',
+    usbSetupAccess: 'Configura accesso',
+    usbNotFound: 'Stampante USB non trovata, ricollegala e aggiorna.',
   },
 } as const;
 

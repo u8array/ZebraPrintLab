@@ -1357,9 +1357,9 @@ const sr = {
     errorGeneric: 'Slanje ZPL-a nije uspelo',
     httpsWarning: 'Stranica koristi HTTPS, direktno štampanje putem IP može biti blokirano od strane pregledača (mešoviti sadržaj).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Нема приступа USB штампачу. Кликните на Подеси приступ да бисте га омогућили.',
+    usbSetupAccess: 'Подеси приступ',
+    usbNotFound: 'USB штампач није пронађен, поново га прикључите и освежите.',
   },
 } as const;
 

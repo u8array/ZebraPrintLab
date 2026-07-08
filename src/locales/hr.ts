@@ -1357,9 +1357,9 @@ const hr = {
     errorGeneric: 'Slanje ZPL-a nije uspjelo',
     httpsWarning: 'Stranica koristi HTTPS, izravno ispisivanje putem IP-a može biti blokirano od preglednika (mješoviti sadržaj).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Nema pristupa USB pisaču. Kliknite Postavi pristup da biste ga odobrili.',
+    usbSetupAccess: 'Postavi pristup',
+    usbNotFound: 'USB pisač nije pronađen. Ponovno ga priključite i osvježite.',
   },
 } as const;
 

@@ -1357,9 +1357,9 @@ const he = {
     errorGeneric: 'שליחת ZPL נכשלה',
     httpsWarning: 'הדף נמצא על HTTPS, הדפסה ישירה דרך IP עלולה להיחסם על ידי הדפדפן (תוכן מעורב).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: "אין גישה למדפסת ה-USB. לחץ על 'הגדרת גישה' כדי להעניק אותה.",
+    usbSetupAccess: 'הגדרת גישה',
+    usbNotFound: 'מדפסת ה-USB לא נמצאה, חבר אותה מחדש ורענן.',
   },
 } as const;
 

@@ -1357,9 +1357,9 @@ const ro = {
     errorGeneric: 'Trimiterea ZPL a eşuat',
     httpsWarning: 'Pagina este pe HTTPS, imprimarea directă prin IP poate fi blocată de browser (conținut mixt).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Fără acces la imprimanta USB. Fă clic pe Configurează accesul pentru a-l acorda.',
+    usbSetupAccess: 'Configurează accesul',
+    usbNotFound: 'Imprimanta USB nu a fost găsită, reconecteaz-o și reîmprospătează.',
   },
 } as const;
 

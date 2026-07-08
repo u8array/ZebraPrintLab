@@ -1357,9 +1357,9 @@ const da = {
     errorGeneric: 'Afsendelse af ZPL mislykkedes',
     httpsWarning: 'Siden bruger HTTPS, direkte udskrivning via IP kan blive blokeret af browseren (blandet indhold).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Ingen adgang til USB-printeren. Klik på Konfigurer adgang for at give den.',
+    usbSetupAccess: 'Konfigurer adgang',
+    usbNotFound: 'USB-printer ikke fundet. Tilslut den igen, og opdater.',
   },
 } as const;
 

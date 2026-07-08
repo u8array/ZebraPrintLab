@@ -1357,9 +1357,9 @@ const ko = {
     errorGeneric: 'ZPL 전송에 실패했습니다',
     httpsWarning: '페이지가 HTTPS 상에 있습니다, 브라우저가 직접 IP 인쇄를 차단할 수 있습니다(혼합 콘텐츠).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: "USB 프린터에 액세스할 수 없습니다. '액세스 설정'을 클릭하여 권한을 부여하세요.",
+    usbSetupAccess: '액세스 설정',
+    usbNotFound: 'USB 프린터를 찾을 수 없습니다. 다시 연결한 후 새로 고침하세요.',
   },
 } as const;
 
