@@ -1,11 +1,12 @@
 // Direct USB transport for label printers via the kernel usblp char device.
 // Linux only; other targets return empty so the UI tab self-hides.
 
-/// One USB printer node for the picker. `id` is stable across replug; the
-/// caller round-trips it back to send.
+/// One USB printer node for the picker. `id` is stable across replug (by serial,
+/// or by USB port path when the device has no serial); the caller round-trips it
+/// back to send.
 #[derive(serde::Serialize)]
 pub struct UsbPrinter {
-  pub id: String,        // "vid:pid:serial", fallback sysfs path
+  pub id: String,        // "vid:pid:serial", or "vid:pid:<canonical port path>"
   pub name: String,      // "<manufacturer> <product>"
   pub vendor_id: String, // lowercase hex, e.g. "0a5f"
 }
@@ -42,20 +43,30 @@ use std::path::{Path, PathBuf};
 #[cfg(target_os = "linux")]
 const ZEBRA_VENDOR_ID: &str = "0a5f";
 
-// Reads one sysfs attribute, trimmed. Missing/unreadable becomes None so a
-// half-described device is skipped rather than half-parsed.
+// Reads one sysfs attribute, trimmed. Missing, unreadable, or empty becomes
+// None so an empty `serial` file falls back to the path id instead of yielding
+// a colliding "vid:pid:" that would route to the wrong printer.
 #[cfg(target_os = "linux")]
 fn attr(dir: &Path, name: &str) -> Option<String> {
-  std::fs::read_to_string(dir.join(name)).ok().map(|s| s.trim().to_string())
+  std::fs::read_to_string(dir.join(name))
+    .ok()
+    .map(|s| s.trim().to_string())
+    .filter(|s| !s.is_empty())
 }
 
 #[cfg(target_os = "linux")]
 fn parse_printer(usb_dev_dir: &Path) -> Option<UsbPrinter> {
   let vendor_id = attr(usb_dev_dir, "idVendor")?;
   let product_id = attr(usb_dev_dir, "idProduct")?;
-  // No serial: fall back to the sysfs path so the id stays unique per port.
-  let serial = attr(usb_dev_dir, "serial")
-    .unwrap_or_else(|| usb_dev_dir.to_string_lossy().into_owned());
+  // No serial: derive a port-stable id from the canonical sysfs device path.
+  // canonicalize resolves the volatile lpN symlink to /sys/devices/.../<bus-port>,
+  // so the id survives replug into the same port instead of embedding lpN.
+  let serial = attr(usb_dev_dir, "serial").unwrap_or_else(|| {
+    std::fs::canonicalize(usb_dev_dir)
+      .unwrap_or_else(|_| usb_dev_dir.to_path_buf())
+      .to_string_lossy()
+      .into_owned()
+  });
   let manufacturer = attr(usb_dev_dir, "manufacturer").unwrap_or_default();
   let product = attr(usb_dev_dir, "product").unwrap_or_default();
   let name = format!("{manufacturer} {product}").trim().to_string();
@@ -70,25 +81,21 @@ fn parse_printer(usb_dev_dir: &Path) -> Option<UsbPrinter> {
 // whose parent is the USB device carrying idVendor/idProduct/serial.
 #[cfg(target_os = "linux")]
 fn enumerate(usbmisc_root: &Path) -> Vec<(String, UsbPrinter)> {
-  let mut out: Vec<(String, UsbPrinter)> = Vec::new();
-  let Ok(entries) = std::fs::read_dir(usbmisc_root) else { return out };
-  for entry in entries.flatten() {
-    let node = entry.file_name().to_string_lossy().into_owned();
-    if !node.starts_with("lp") {
-      continue;
-    }
-    // Attributes sit on the interface's parent device; fixtures flatten them
-    // under "device", so probe there first, then the parent.
-    let base = entry.path().join("device");
-    let dev_dir = if base.join("idVendor").exists() {
-      base
-    } else {
-      base.join("..")
-    };
-    if let Some(p) = parse_printer(&dev_dir) {
-      out.push((node, p));
-    }
-  }
+  let Ok(entries) = std::fs::read_dir(usbmisc_root) else { return Vec::new() };
+  let mut out: Vec<(String, UsbPrinter)> = entries
+    .flatten()
+    .filter_map(|entry| {
+      let node = entry.file_name().to_string_lossy().into_owned();
+      if !node.starts_with("lp") {
+        return None;
+      }
+      // Attributes sit on the interface's parent device; fixtures flatten them
+      // under "device", so probe there first, then the parent.
+      let base = entry.path().join("device");
+      let dev_dir = if base.join("idVendor").exists() { base } else { base.join("..") };
+      parse_printer(&dev_dir).map(|p| (node, p))
+    })
+    .collect();
   // Zebra vendor first, then by name, so the label printer beats an office one.
   out.sort_by(|a, b| {
     (a.1.vendor_id != ZEBRA_VENDOR_ID, &a.1.name).cmp(&(b.1.vendor_id != ZEBRA_VENDOR_ID, &b.1.name))
@@ -265,6 +272,25 @@ mod tests {
     assert!(out[0].1.id.starts_with("0a5f:0166:"));
     assert!(out[0].1.id.contains("lp0"));
     fs::remove_dir_all(&root).ok();
+  }
+
+  #[cfg(target_os = "linux")]
+  #[test]
+  fn empty_serial_falls_back_to_path_not_colliding_id() {
+    use std::fs;
+    let dir = std::env::temp_dir().join(format!("zpl_emptyser_{}", std::process::id()));
+    let dev = dir.join("1-6");
+    fs::create_dir_all(&dev).unwrap();
+    // A present-but-empty serial file must not yield "vid:pid:" (which would
+    // collide across identical models); it falls back to the unique path.
+    for (f, v) in [("idVendor", "0a5f"), ("idProduct", "0166"), ("serial", "  \n")] {
+      fs::write(dev.join(f), v).unwrap();
+    }
+    let p = parse_printer(&dev).unwrap();
+    assert_ne!(p.id, "0a5f:0166:");
+    assert!(p.id.starts_with("0a5f:0166:"));
+    assert!(p.id.contains("1-6"));
+    fs::remove_dir_all(&dir).ok();
   }
 
   #[cfg(target_os = "linux")]
