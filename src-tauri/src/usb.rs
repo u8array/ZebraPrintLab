@@ -37,7 +37,7 @@ pub async fn setup_usb_access() -> Result<(), String> {
 }
 
 #[cfg(target_os = "linux")]
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[cfg(target_os = "linux")]
 const ZEBRA_VENDOR_ID: &str = "0a5f";
@@ -91,9 +91,7 @@ fn enumerate(usbmisc_root: &Path) -> Vec<(String, UsbPrinter)> {
   }
   // Zebra vendor first, then by name, so the label printer beats an office one.
   out.sort_by(|a, b| {
-    let za = (a.1.vendor_id != ZEBRA_VENDOR_ID, a.1.name.clone());
-    let zb = (b.1.vendor_id != ZEBRA_VENDOR_ID, b.1.name.clone());
-    za.cmp(&zb)
+    (a.1.vendor_id != ZEBRA_VENDOR_ID, &a.1.name).cmp(&(b.1.vendor_id != ZEBRA_VENDOR_ID, &b.1.name))
   });
   out
 }
@@ -114,7 +112,7 @@ pub async fn list_usb_printers() -> Result<Vec<UsbPrinter>, String> {
 // Map the stable id back to the current char device. lpN numbering can change
 // across replug, so it is resolved fresh here, never trusted from the caller.
 #[cfg(target_os = "linux")]
-fn resolve_node(usbmisc_root: &Path, dev_root: &Path, id: &str) -> Result<std::path::PathBuf, UsbSendResult> {
+fn resolve_node(usbmisc_root: &Path, dev_root: &Path, id: &str) -> Result<PathBuf, UsbSendResult> {
   let node = enumerate(usbmisc_root)
     .into_iter()
     .find(|(_, p)| p.id == id)
@@ -146,11 +144,12 @@ pub async fn send_zpl_usb(device: String, zpl: String) -> Result<UsbSendResult, 
       Err(r) => return Ok(r),
     };
     use std::io::Write;
-    match std::fs::OpenOptions::new().write(true).open(&path) {
-      Ok(mut f) => match f.write_all(zpl.as_bytes()) {
-        Ok(()) => Ok(UsbSendResult::Sent),
-        Err(e) => map_send_io_err(e),
-      },
+    let result = std::fs::OpenOptions::new()
+      .write(true)
+      .open(&path)
+      .and_then(|mut f| f.write_all(zpl.as_bytes()));
+    match result {
+      Ok(()) => Ok(UsbSendResult::Sent),
       Err(e) => map_send_io_err(e),
     }
   })
