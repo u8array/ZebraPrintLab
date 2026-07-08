@@ -10,7 +10,7 @@ pub struct UsbPrinter {
   pub vendor_id: String, // lowercase hex, e.g. "0a5f"
 }
 
-#[derive(serde::Serialize)]
+#[derive(Debug, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum UsbSendResult {
   Sent,
@@ -104,9 +104,45 @@ pub async fn list_usb_printers() -> Result<Vec<UsbPrinter>, String> {
 }
 
 #[cfg(target_os = "linux")]
+const MAX_ZPL_BYTES: usize = 16 * 1024 * 1024;
+
+// Map the stable id back to the current char device. lpN numbering can change
+// across replug, so it is resolved fresh here, never trusted from the caller.
+#[cfg(target_os = "linux")]
+fn resolve_node(usbmisc_root: &Path, dev_root: &Path, id: &str) -> Result<std::path::PathBuf, UsbSendResult> {
+  let node = enumerate(usbmisc_root)
+    .into_iter()
+    .find(|(_, p)| p.id == id)
+    .map(|(node, _)| node)
+    .ok_or(UsbSendResult::NotFound)?;
+  Ok(dev_root.join(node))
+}
+
+#[cfg(target_os = "linux")]
 #[tauri::command]
-pub async fn send_zpl_usb(_device: String, _zpl: String) -> Result<UsbSendResult, String> {
-  Ok(UsbSendResult::NotFound)
+pub async fn send_zpl_usb(device: String, zpl: String) -> Result<UsbSendResult, String> {
+  if zpl.len() > MAX_ZPL_BYTES {
+    return Err("payload too large".to_string());
+  }
+  tauri::async_runtime::spawn_blocking(move || {
+    let path = match resolve_node(Path::new("/sys/class/usbmisc"), Path::new("/dev/usb"), &device) {
+      Ok(p) => p,
+      Err(r) => return Ok(r),
+    };
+    use std::io::Write;
+    match std::fs::OpenOptions::new().write(true).open(&path) {
+      Ok(mut f) => match f.write_all(zpl.as_bytes()) {
+        Ok(()) => Ok(UsbSendResult::Sent),
+        Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => Ok(UsbSendResult::PermissionDenied),
+        Err(e) => Err(e.to_string()),
+      },
+      Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => Ok(UsbSendResult::PermissionDenied),
+      Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(UsbSendResult::NotFound),
+      Err(e) => Err(e.to_string()),
+    }
+  })
+  .await
+  .map_err(|e| e.to_string())?
 }
 
 #[cfg(test)]
@@ -140,6 +176,27 @@ mod tests {
     assert_eq!(out.len(), 2);
     assert_eq!(out[0].1.vendor_id, "0a5f"); // Zebra sorted first
     assert_eq!(out[0].0, "lp1");
+    fs::remove_dir_all(&root).ok();
+  }
+
+  #[cfg(target_os = "linux")]
+  #[test]
+  fn resolve_node_maps_missing_device_to_not_found() {
+    use std::fs;
+    let root = std::env::temp_dir().join(format!("zpl_resolve_{}", std::process::id()));
+    let dev = root.join("lp0").join("device");
+    fs::create_dir_all(&dev).unwrap();
+    for (f, v) in [("idVendor", "0a5f"), ("idProduct", "0166"), ("serial", "S2")] {
+      fs::write(dev.join(f), format!("{v}\n")).unwrap();
+    }
+    let dev_root = root.join("dev");
+    fs::create_dir_all(&dev_root).unwrap();
+    // Matching id resolves to /dev/usb/lp0 under our fake dev_root.
+    let ok = resolve_node(&root, &dev_root, "0a5f:0166:S2").unwrap();
+    assert_eq!(ok, dev_root.join("lp0"));
+    // Unknown id is NotFound.
+    let miss = resolve_node(&root, &dev_root, "dead:beef:X").unwrap_err();
+    assert!(matches!(miss, UsbSendResult::NotFound));
     fs::remove_dir_all(&root).ok();
   }
 
