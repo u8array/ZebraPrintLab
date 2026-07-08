@@ -11,13 +11,15 @@ import {
 } from "../../lib/zebraPrint";
 import { isDesktopShell } from "../../lib/platform";
 import { listLocalPrinters, sendZplLocal, isLikelyZebra, type LocalPrinter } from "../../lib/localPrint";
+import { listUsbPrinters, sendZplUsb, setupUsbAccess, isLikelyZebra as isUsbZebra, type UsbPrinter } from "../../lib/usbPrint";
 
 const LS_IP = "zebra_print_ip";
 const LS_PORT = "zebra_print_port";
 const LS_PRINTER_UID = "zebra_print_uid";
 const LS_LOCAL_PRINTER = "zebra_print_local";
+const LS_USB = "zebra_print_usb";
 
-type Tab = "network" | "browserprint" | "local";
+type Tab = "network" | "browserprint" | "local" | "usb";
 interface Status { type: "idle" | "sending" | "success" | "error"; message?: string }
 
 function StatusMessage({ status }: { status: Status }) {
@@ -60,6 +62,12 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
   // Starts loading on desktop (the effect enumerates on mount); false on web.
   const [loadingLocal, setLoadingLocal] = useState(isDesktopShell);
 
+  // USB printer tab state; desktop shell only.
+  const [usbPrinters, setUsbPrinters] = useState<UsbPrinter[]>([]);
+  const [selectedUsb, setSelectedUsb] = useState<string>(() => localStorage.getItem(LS_USB) ?? "");
+  const [usbStatus, setUsbStatus] = useState<Status>({ type: "idle" });
+  const [loadingUsb, setLoadingUsb] = useState(isDesktopShell);
+
   // Enumerate OS print queues once on mount; the web build has no spooler.
   useEffect(() => {
     if (!isDesktopShell) return;
@@ -80,6 +88,29 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
       })
       .finally(() => {
         if (!cancelled) setLoadingLocal(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Enumerate USB printers once on mount; the web build and non-Linux desktops get nothing.
+  useEffect(() => {
+    if (!isDesktopShell) return;
+    let cancelled = false;
+    listUsbPrinters()
+      .then((printers) => {
+        if (cancelled) return;
+        setUsbPrinters(printers);
+        setSelectedUsb((cur) =>
+          cur && printers.some((p) => p.id === cur) ? cur : printers[0]?.id ?? "",
+        );
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setUsbStatus({ type: "error", message: e instanceof Error ? e.message : String(e) });
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingUsb(false);
       });
     return () => {
       cancelled = true;
@@ -179,6 +210,36 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
     }
   }
 
+  async function handleUsbSend() {
+    if (!selectedUsb) return;
+    localStorage.setItem(LS_USB, selectedUsb);
+    setUsbStatus({ type: "sending" });
+    const result = await sendZplUsb(selectedUsb, zpl);
+    switch (result.kind) {
+      case "sent":
+        setUsbStatus({ type: "success", message: t.zebraPrint.success });
+        return;
+      case "permission_denied":
+        setUsbStatus({ type: "error", message: t.zebraPrint.usbPermissionDenied });
+        return;
+      case "not_found":
+        setUsbStatus({ type: "error", message: t.zebraPrint.usbNotFound });
+        return;
+      case "error":
+        setUsbStatus({ type: "error", message: result.message || t.zebraPrint.errorGeneric });
+        return;
+    }
+  }
+
+  async function handleUsbSetup() {
+    try {
+      await setupUsbAccess();
+      setUsbStatus({ type: "idle" });
+    } catch (e) {
+      setUsbStatus({ type: "error", message: e instanceof Error ? e.message : String(e) });
+    }
+  }
+
   const tabClass = (active: boolean) =>
     `px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest transition-colors ${
       active
@@ -220,6 +281,11 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
         {isDesktopShell && (
           <button className={tabClass(tab === "local")} onClick={() => setTab("local")}>
             {t.zebraPrint.tabLocal}
+          </button>
+        )}
+        {isDesktopShell && usbPrinters.length > 0 && (
+          <button className={tabClass(tab === "usb")} onClick={() => setTab("usb")}>
+            {t.zebraPrint.tabUsb}
           </button>
         )}
       </div>
@@ -368,6 +434,56 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
             {localStatus.type === "sending" ? t.zebraPrint.sending : t.zebraPrint.send}
           </button>
           <StatusMessage status={localStatus} />
+        </div>
+      )}
+
+      {/* USB direct tab (Linux desktop only, shown only when devices found) */}
+      {tab === "usb" && (
+        <div className="flex flex-col gap-3 p-4">
+          <div className="flex flex-col gap-1">
+            <label className="font-mono text-[10px] text-muted uppercase tracking-widest">
+              {t.zebraPrint.printer}
+            </label>
+            <Select<string>
+              value={selectedUsb}
+              onChange={(id) => {
+                setSelectedUsb(id);
+                localStorage.setItem(LS_USB, id);
+              }}
+              disabled={usbPrinters.length === 0}
+              groups={[
+                {
+                  options:
+                    usbPrinters.length === 0
+                      ? [{ value: "", label: loadingUsb ? t.zebraPrint.discovering : t.zebraPrint.noPrinters }]
+                      : usbPrinters.map((p) => ({
+                          value: p.id,
+                          label: isUsbZebra(p) ? `${p.name} · ZPL?` : p.name,
+                        })),
+                },
+              ]}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            {usbStatus.type === "error" && usbStatus.message === t.zebraPrint.usbPermissionDenied ? (
+              <button
+                onClick={handleUsbSetup}
+                className="px-3 py-1.5 text-xs font-mono rounded border border-border text-muted hover:text-text hover:bg-surface-2 transition-colors"
+              >
+                {t.zebraPrint.usbSetupAccess}
+              </button>
+            ) : (
+              <span />
+            )}
+            <button
+              onClick={handleUsbSend}
+              disabled={!selectedUsb || usbPrinters.length === 0 || loadingUsb || usbStatus.type === "sending"}
+              className="px-3 py-1.5 text-xs font-mono rounded bg-accent text-bg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+            >
+              {usbStatus.type === "sending" ? t.zebraPrint.sending : t.zebraPrint.send}
+            </button>
+          </div>
+          <StatusMessage status={usbStatus} />
         </div>
       )}
     </DialogShell>
