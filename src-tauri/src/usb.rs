@@ -163,14 +163,22 @@ pub async fn setup_usb_access() -> Result<(), String> {
   // pkexec shows one polkit prompt, writes the rule, reloads udev. Used by
   // AppImage (no installer) and as a repair path if the packaged rule is gone.
   let script = format!(
-    "install -Dm644 /dev/stdin /usr/lib/udev/rules.d/99-zebraprintlab.rules <<'RULE'\n{UDEV_RULE}\nRULE\nudevadm control --reload-rules && udevadm trigger"
+    "install -Dm644 /dev/stdin /usr/lib/udev/rules.d/99-zebraprintlab.rules <<'ZEBRA_UDEV_RULE_EOF'\n{UDEV_RULE}\nZEBRA_UDEV_RULE_EOF\nudevadm control --reload-rules && udevadm trigger --subsystem-match=usb"
   );
   tauri::async_runtime::spawn_blocking(move || {
     let status = std::process::Command::new("pkexec")
       .args(["sh", "-c", &script])
       .status()
       .map_err(|e| e.to_string())?;
-    if status.success() { Ok(()) } else { Err("setup cancelled or failed".to_string()) }
+    if status.success() {
+      Ok(())
+    } else {
+      match status.code() {
+        // pkexec: 126 = auth dialog dismissed, 127 = not authorized.
+        Some(126) | Some(127) => Err("setup cancelled".to_string()),
+        _ => Err("setup failed".to_string()),
+      }
+    }
   })
   .await
   .map_err(|e| e.to_string())?
