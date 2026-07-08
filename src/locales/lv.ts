@@ -1357,9 +1357,9 @@ const lv = {
     errorGeneric: 'ZPL nosūtīšana neizdevās',
     httpsWarning: 'Lapa izmanto HTTPS, tiešā IP drukāšana var tikt bloķēta pārlūkprogrammā (jaukts saturs).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Nav piekļuves USB printerim. Noklikšķiniet uz Iestatīt piekļuvi, lai to piešķirtu.',
+    usbSetupAccess: 'Iestatīt piekļuvi',
+    usbNotFound: 'USB printeris nav atrasts. Pievienojiet to atkārtoti un atsvaidziniet.',
   },
 } as const;
 

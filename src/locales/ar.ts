@@ -1357,9 +1357,9 @@ const ar = {
     errorGeneric: 'فشل إرسال ZPL',
     httpsWarning: 'الصفحة على HTTPS، قد يحظر المتصفح الطباعة المباشرة عبر IP (محتوى مختلط).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'لا يمكن الوصول إلى طابعة USB. انقر على «إعداد الوصول» لمنح الإذن.',
+    usbSetupAccess: 'إعداد الوصول',
+    usbNotFound: 'لم يتم العثور على طابعة USB، أعد توصيلها وقم بالتحديث.',
   },
 } as const;
 

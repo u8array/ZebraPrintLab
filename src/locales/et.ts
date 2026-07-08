@@ -1357,9 +1357,9 @@ const et = {
     errorGeneric: 'ZPL saatmine ebaõnnestus',
     httpsWarning: 'Leht kasutab HTTPS-i, otsene IP-printimistöö võib olla brauseri poolt blokeeritud (segasisaldus).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'USB-printerile puudub juurdepääs. Klõpsa Seadista juurdepääs, et see anda.',
+    usbSetupAccess: 'Seadista juurdepääs',
+    usbNotFound: 'USB-printerit ei leitud. Ühenda see uuesti ja värskenda.',
   },
 } as const;
 

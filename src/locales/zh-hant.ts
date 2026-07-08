@@ -1357,9 +1357,9 @@ const zhHant = {
     errorGeneric: '傳送 ZPL 失敗',
     httpsWarning: '頁面在 HTTPS 上，瀏覽器可能封鎖直接 IP 列印（混合內容）。',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: '無法存取 USB 印表機。點按「設定存取權限」以授予權限。',
+    usbSetupAccess: '設定存取權限',
+    usbNotFound: '找不到 USB 印表機，請重新插入並重新整理。',
   },
 } as const;
 

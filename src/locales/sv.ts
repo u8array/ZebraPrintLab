@@ -1357,9 +1357,9 @@ const sv = {
     errorGeneric: 'Det gick inte att skicka ZPL',
     httpsWarning: 'Sidan använder HTTPS, direktutskrift via IP kan blockeras av webbläsaren (blandat innehåll).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Ingen åtkomst till USB-skrivaren. Klicka på Konfigurera åtkomst för att ge den.',
+    usbSetupAccess: 'Konfigurera åtkomst',
+    usbNotFound: 'USB-skrivaren hittades inte. Anslut den igen och uppdatera.',
   },
 } as const;
 

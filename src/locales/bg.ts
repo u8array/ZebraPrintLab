@@ -1357,9 +1357,9 @@ const bg = {
     errorGeneric: 'Неуспешно изпращане на ZPL',
     httpsWarning: 'Страницата е на HTTPS, директният печат по IP може да бъде блокиран от браузъра (смесено съдържание).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Няма достъп до USB принтера. Щракнете върху Настройване на достъп, за да го предоставите.',
+    usbSetupAccess: 'Настройване на достъп',
+    usbNotFound: 'USB принтерът не е намерен, включете го отново и обновете.',
   },
 } as const;
 

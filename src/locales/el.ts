@@ -1357,9 +1357,9 @@ const el = {
     errorGeneric: 'Αποτυχία αποστολής ZPL',
     httpsWarning: 'Η σελίδα χρησιμοποιεί HTTPS, η άμεση εκτύπωση μέσω IP ενδέχεται να αποκλειστεί από τον φυλλομετρητή (μεικτό περιεχόμενο).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Δεν υπάρχει πρόσβαση στον εκτυπωτή USB. Κάντε κλικ στο Ρύθμιση πρόσβασης για να την παραχωρήσετε.',
+    usbSetupAccess: 'Ρύθμιση πρόσβασης',
+    usbNotFound: 'Ο εκτυπωτής USB δεν βρέθηκε. Συνδέστε τον ξανά και ανανεώστε.',
   },
 } as const;
 

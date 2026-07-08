@@ -1357,9 +1357,9 @@ const nl = {
     errorGeneric: 'ZPL verzenden mislukt',
     httpsWarning: 'Pagina gebruikt HTTPS, direct afdrukken via IP kan worden geblokkeerd door de browser (gemengde inhoud).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Geen toegang tot de USB-printer. Klik op Toegang instellen om toegang te verlenen.',
+    usbSetupAccess: 'Toegang instellen',
+    usbNotFound: 'USB-printer niet gevonden. Sluit deze opnieuw aan en vernieuw.',
   },
 } as const;
 

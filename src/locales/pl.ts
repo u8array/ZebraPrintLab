@@ -1357,9 +1357,9 @@ const pl = {
     errorGeneric: 'Błąd wysyłania ZPL',
     httpsWarning: 'Strona używa HTTPS, bezpośrednie drukowanie przez IP może zostać zablokowane przez przeglądarkę (mieszana treść).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Brak dostępu do drukarki USB. Kliknij Skonfiguruj dostęp, aby go przyznać.',
+    usbSetupAccess: 'Skonfiguruj dostęp',
+    usbNotFound: 'Nie znaleziono drukarki USB, podłącz ją ponownie i odśwież.',
   },
 } as const;
 

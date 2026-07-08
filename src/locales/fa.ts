@@ -1357,9 +1357,9 @@ const fa = {
     errorGeneric: 'ارسال ZPL ناموفق بود',
     httpsWarning: 'صفحه روی HTTPS است، چاپ مستقیم از طریق IP ممکن است توسط مرورگر مسدود شود (محتوای مختلط).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'دسترسی به چاپگر USB وجود ندارد. برای اعطای دسترسی روی «تنظیم دسترسی» کلیک کنید.',
+    usbSetupAccess: 'تنظیم دسترسی',
+    usbNotFound: 'چاپگر USB یافت نشد، آن را دوباره وصل کنید و به‌روزرسانی کنید.',
   },
 } as const;
 

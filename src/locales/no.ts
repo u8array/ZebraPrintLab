@@ -1357,9 +1357,9 @@ const no = {
     errorGeneric: 'Sending av ZPL mislyktes',
     httpsWarning: 'Siden bruker HTTPS, direkte utskrift via IP kan bli blokkert av nettleseren (blandet innhold).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Ingen tilgang til USB-skriveren. Klikk på Konfigurer tilgang for å gi den.',
+    usbSetupAccess: 'Konfigurer tilgang',
+    usbNotFound: 'Fant ikke USB-skriveren. Koble den til på nytt, og oppdater.',
   },
 } as const;
 

@@ -1357,9 +1357,9 @@ const tr = {
     errorGeneric: 'ZPL gönderilemedi',
     httpsWarning: 'Sayfa HTTPS üzerinde, doğrudan IP yazdırma tarayıcı tarafından engellenebilir (karma içerik).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: "USB yazıcıya erişilemiyor. İzin vermek için Erişimi ayarla'ya tıklayın.",
+    usbSetupAccess: 'Erişimi ayarla',
+    usbNotFound: 'USB yazıcı bulunamadı, yeniden takıp yenileyin.',
   },
 } as const;
 

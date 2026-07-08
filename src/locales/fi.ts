@@ -1357,9 +1357,9 @@ const fi = {
     errorGeneric: 'ZPL:n lähetys epäonnistui',
     httpsWarning: 'Sivu on HTTPS:llä, suora IP-tulostus saattaa olla selaimen estämä (sekasisältö).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Ei käyttöoikeutta USB-tulostimeen. Napsauta Määritä käyttöoikeus myöntääksesi sen.',
+    usbSetupAccess: 'Määritä käyttöoikeus',
+    usbNotFound: 'USB-tulostinta ei löytynyt. Kytke se uudelleen ja päivitä.',
   },
 } as const;
 

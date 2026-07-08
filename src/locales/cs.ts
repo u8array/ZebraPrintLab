@@ -1357,9 +1357,9 @@ const cs = {
     errorGeneric: 'Odeslání ZPL selhalo',
     httpsWarning: 'Stránka používá HTTPS, přímý tisk přes IP může být prohlížečem zablokován (smíšený obsah).',
     tabUsb: 'USB',
-    usbPermissionDenied: 'No access to the USB printer. Click Set up access to grant it.',
-    usbSetupAccess: 'Set up access',
-    usbNotFound: 'USB printer not found, re-plug it and refresh.',
+    usbPermissionDenied: 'Bez přístupu k tiskárně USB. Přístup udělíte kliknutím na Nastavit přístup.',
+    usbSetupAccess: 'Nastavit přístup',
+    usbNotFound: 'Tiskárna USB nebyla nalezena, znovu ji zapojte a obnovte.',
   },
 } as const;
 

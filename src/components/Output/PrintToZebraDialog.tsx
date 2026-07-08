@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { XMarkIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../hooks/useT";
 import { DialogShell } from "../ui/DialogShell";
@@ -28,6 +28,48 @@ function StatusMessage({ status }: { status: Status }) {
     <p className={`font-mono text-[10px] ${status.type === "success" ? "text-green-400" : "text-red-400"}`}>
       {status.message}
     </p>
+  );
+}
+
+// The list-based transports (browser print, OS spooler, direct USB) share this
+// body; network keeps its own ip/port form and stays separate.
+interface TransportView {
+  key: Tab;
+  selected: string;
+  onSelect: (value: string) => void;
+  options: { value: string; label: string }[];
+  selectDisabled: boolean;
+  onSend: () => void;
+  sendLabel: string;
+  sendDisabled: boolean;
+  status: Status;
+  extra?: ReactNode;
+}
+
+function TransportBody({ view, fieldLabel }: { view: TransportView; fieldLabel: string }) {
+  return (
+    <div className="flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-1">
+        <label className="font-mono text-[10px] text-muted uppercase tracking-widest">{fieldLabel}</label>
+        <Select<string>
+          value={view.selected}
+          onChange={view.onSelect}
+          disabled={view.selectDisabled}
+          groups={[{ options: view.options }]}
+        />
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        {view.extra ?? <span />}
+        <button
+          onClick={view.onSend}
+          disabled={view.sendDisabled}
+          className="px-3 py-1.5 text-xs font-mono rounded bg-accent text-bg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+        >
+          {view.sendLabel}
+        </button>
+      </div>
+      <StatusMessage status={view.status} />
+    </div>
   );
 }
 
@@ -263,6 +305,92 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
         : "text-muted hover:text-text"
     }`;
 
+  const tabs: { key: Tab; label: string; enabled: boolean }[] = [
+    { key: "network", label: t.zebraPrint.tabNetwork, enabled: true },
+    { key: "browserprint", label: t.zebraPrint.tabBrowserPrint, enabled: !isDesktopShell },
+    { key: "local", label: t.zebraPrint.tabLocal, enabled: isDesktopShell },
+    { key: "usb", label: t.zebraPrint.tabUsb, enabled: isDesktopShell && usbPrinters.length > 0 },
+  ];
+
+  const views: TransportView[] = [
+    {
+      key: "browserprint",
+      selected: selectedUid,
+      onSelect: (uid) => {
+        setSelectedUid(uid);
+        localStorage.setItem(LS_PRINTER_UID, uid);
+      },
+      options:
+        devices.length === 0
+          ? [{ value: "", label: t.zebraPrint.noPrinters }]
+          : devices.map((d) => ({ value: d.uid, label: d.name || d.manufacturer || d.uid })),
+      selectDisabled: devices.length === 0,
+      onSend: handleBrowserPrintSend,
+      sendLabel: bpStatus.type === "sending" ? t.zebraPrint.sending : t.zebraPrint.send,
+      sendDisabled: !selectedUid || devices.length === 0 || bpStatus.type === "sending",
+      status: bpStatus,
+      extra: (
+        <button
+          onClick={handleDiscover}
+          disabled={discovering}
+          className="px-3 py-1.5 text-xs font-mono rounded border border-border text-muted hover:text-text hover:bg-surface-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          {discovering ? t.zebraPrint.discovering : t.zebraPrint.discover}
+        </button>
+      ),
+    },
+    {
+      key: "local",
+      selected: selectedLocal,
+      onSelect: (name) => {
+        setSelectedLocal(name);
+        localStorage.setItem(LS_LOCAL_PRINTER, name);
+      },
+      options:
+        localPrinters.length === 0
+          ? [{ value: "", label: loadingLocal ? t.zebraPrint.discovering : t.zebraPrint.noPrinters }]
+          : localPrinters.map((p) => ({
+              value: p.system_name,
+              label: isLikelyZebra(p) ? `${p.name} · ZPL?` : p.name,
+            })),
+      selectDisabled: localPrinters.length === 0,
+      onSend: handleLocalSend,
+      sendLabel: localStatus.type === "sending" ? t.zebraPrint.sending : t.zebraPrint.send,
+      sendDisabled:
+        !selectedLocal || localPrinters.length === 0 || loadingLocal || localStatus.type === "sending",
+      status: localStatus,
+    },
+    {
+      key: "usb",
+      selected: selectedUsb,
+      onSelect: (id) => {
+        setSelectedUsb(id);
+        localStorage.setItem(LS_USB, id);
+      },
+      options:
+        usbPrinters.length === 0
+          ? [{ value: "", label: loadingUsb ? t.zebraPrint.discovering : t.zebraPrint.noPrinters }]
+          : usbPrinters.map((p) => ({
+              value: p.id,
+              label: isUsbZebra(p) ? `${p.name} · ZPL?` : p.name,
+            })),
+      selectDisabled: usbPrinters.length === 0,
+      onSend: handleUsbSend,
+      sendLabel: usbStatus.type === "sending" ? t.zebraPrint.sending : t.zebraPrint.send,
+      sendDisabled: !selectedUsb || usbPrinters.length === 0 || loadingUsb || usbStatus.type === "sending",
+      status: usbStatus,
+      extra: usbNeedsSetup ? (
+        <button
+          onClick={handleUsbSetup}
+          className="px-3 py-1.5 text-xs font-mono rounded border border-border text-muted hover:text-text hover:bg-surface-2 transition-colors"
+        >
+          {t.zebraPrint.usbSetupAccess}
+        </button>
+      ) : undefined,
+    },
+  ];
+  const activeView = views.find((v) => v.key === tab);
+
   return (
     <DialogShell
       onClose={onClose}
@@ -285,25 +413,13 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
 
       {/* Tabs */}
       <div className="flex border-b border-border">
-        <button className={tabClass(tab === "network")} onClick={() => setTab("network")}>
-          {t.zebraPrint.tabNetwork}
-        </button>
-        <button
-          className={tabClass(tab === "browserprint")}
-          onClick={() => setTab("browserprint")}
-        >
-          {t.zebraPrint.tabBrowserPrint}
-        </button>
-        {isDesktopShell && (
-          <button className={tabClass(tab === "local")} onClick={() => setTab("local")}>
-            {t.zebraPrint.tabLocal}
-          </button>
-        )}
-        {isDesktopShell && usbPrinters.length > 0 && (
-          <button className={tabClass(tab === "usb")} onClick={() => setTab("usb")}>
-            {t.zebraPrint.tabUsb}
-          </button>
-        )}
+        {tabs
+          .filter((tb) => tb.enabled)
+          .map((tb) => (
+            <button key={tb.key} className={tabClass(tab === tb.key)} onClick={() => setTab(tb.key)}>
+              {tb.label}
+            </button>
+          ))}
       </div>
 
       {/* Network tab */}
@@ -356,152 +472,8 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
         </div>
       )}
 
-      {/* Browser Print tab */}
-      {tab === "browserprint" && (
-        <div className="flex flex-col gap-3 p-4">
-          <div className="flex items-end gap-2">
-            <div className="flex-1 flex flex-col gap-1">
-              <label className="font-mono text-[10px] text-muted uppercase tracking-widest">
-                {t.zebraPrint.printer}
-              </label>
-              <Select<string>
-                value={selectedUid}
-                onChange={(uid) => {
-                  setSelectedUid(uid);
-                  localStorage.setItem(LS_PRINTER_UID, uid);
-                }}
-                disabled={devices.length === 0}
-                groups={[
-                  {
-                    options:
-                      devices.length === 0
-                        ? [{ value: "", label: t.zebraPrint.noPrinters }]
-                        : devices.map((d) => ({
-                            value: d.uid,
-                            label: d.name || d.manufacturer || d.uid,
-                          })),
-                  },
-                ]}
-              />
-            </div>
-            <button
-              onClick={handleDiscover}
-              disabled={discovering}
-              className="px-3 py-1.5 text-xs font-mono rounded border border-border text-muted hover:text-text hover:bg-surface-2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              {discovering ? t.zebraPrint.discovering : t.zebraPrint.discover}
-            </button>
-          </div>
-
-          <button
-            onClick={handleBrowserPrintSend}
-            disabled={!selectedUid || devices.length === 0 || bpStatus.type === "sending"}
-            className="self-end px-3 py-1.5 text-xs font-mono rounded bg-accent text-bg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
-          >
-            {bpStatus.type === "sending" ? t.zebraPrint.sending : t.zebraPrint.send}
-          </button>
-
-          <StatusMessage status={bpStatus} />
-        </div>
-      )}
-
-      {/* Local printer tab (OS spooler, desktop shell only) */}
-      {tab === "local" && (
-        <div className="flex flex-col gap-3 p-4">
-          <div className="flex flex-col gap-1">
-            <label className="font-mono text-[10px] text-muted uppercase tracking-widest">
-              {t.zebraPrint.printer}
-            </label>
-            <Select<string>
-              value={selectedLocal}
-              onChange={(name) => {
-                setSelectedLocal(name);
-                localStorage.setItem(LS_LOCAL_PRINTER, name);
-              }}
-              disabled={localPrinters.length === 0}
-              groups={[
-                {
-                  options:
-                    localPrinters.length === 0
-                      ? [
-                          {
-                            value: "",
-                            label: loadingLocal ? t.zebraPrint.discovering : t.zebraPrint.noPrinters,
-                          },
-                        ]
-                      : localPrinters.map((p) => ({
-                          value: p.system_name,
-                          label: isLikelyZebra(p) ? `${p.name} · ZPL?` : p.name,
-                        })),
-                },
-              ]}
-            />
-          </div>
-          <button
-            onClick={handleLocalSend}
-            disabled={
-              !selectedLocal ||
-              localPrinters.length === 0 ||
-              loadingLocal ||
-              localStatus.type === "sending"
-            }
-            className="self-end px-3 py-1.5 text-xs font-mono rounded bg-accent text-bg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
-          >
-            {localStatus.type === "sending" ? t.zebraPrint.sending : t.zebraPrint.send}
-          </button>
-          <StatusMessage status={localStatus} />
-        </div>
-      )}
-
-      {/* USB direct tab (Linux desktop only, shown only when devices found) */}
-      {tab === "usb" && (
-        <div className="flex flex-col gap-3 p-4">
-          <div className="flex flex-col gap-1">
-            <label className="font-mono text-[10px] text-muted uppercase tracking-widest">
-              {t.zebraPrint.printer}
-            </label>
-            <Select<string>
-              value={selectedUsb}
-              onChange={(id) => {
-                setSelectedUsb(id);
-                localStorage.setItem(LS_USB, id);
-              }}
-              disabled={usbPrinters.length === 0}
-              groups={[
-                {
-                  options:
-                    usbPrinters.length === 0
-                      ? [{ value: "", label: loadingUsb ? t.zebraPrint.discovering : t.zebraPrint.noPrinters }]
-                      : usbPrinters.map((p) => ({
-                          value: p.id,
-                          label: isUsbZebra(p) ? `${p.name} · ZPL?` : p.name,
-                        })),
-                },
-              ]}
-            />
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            {usbNeedsSetup ? (
-              <button
-                onClick={handleUsbSetup}
-                className="px-3 py-1.5 text-xs font-mono rounded border border-border text-muted hover:text-text hover:bg-surface-2 transition-colors"
-              >
-                {t.zebraPrint.usbSetupAccess}
-              </button>
-            ) : (
-              <span />
-            )}
-            <button
-              onClick={handleUsbSend}
-              disabled={!selectedUsb || usbPrinters.length === 0 || loadingUsb || usbStatus.type === "sending"}
-              className="px-3 py-1.5 text-xs font-mono rounded bg-accent text-bg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
-            >
-              {usbStatus.type === "sending" ? t.zebraPrint.sending : t.zebraPrint.send}
-            </button>
-          </div>
-          <StatusMessage status={usbStatus} />
-        </div>
-      )}
+      {/* List-based transports (browser print, OS spooler, direct USB) */}
+      {activeView && <TransportBody view={activeView} fieldLabel={t.zebraPrint.printer} />}
     </DialogShell>
   );
 }
