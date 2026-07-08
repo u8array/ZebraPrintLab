@@ -16,7 +16,7 @@ pub enum TcpSendResult {
 
 const IO_TIMEOUT: Duration = Duration::from_secs(4);
 // The webview is untrusted input; bound the payload well above any real batch.
-const MAX_ZPL_BYTES: usize = 16 * 1024 * 1024;
+pub(crate) const MAX_ZPL_BYTES: usize = 16 * 1024 * 1024;
 
 fn validate(host: &str, port: u16, zpl_len: usize) -> Result<(), String> {
   if host.is_empty() || host.contains('/') || host.contains(char::is_whitespace) {

@@ -39,6 +39,9 @@ pub async fn setup_usb_access() -> Result<(), String> {
 #[cfg(target_os = "linux")]
 use std::path::Path;
 
+#[cfg(target_os = "linux")]
+const ZEBRA_VENDOR_ID: &str = "0a5f";
+
 // Reads one sysfs attribute, trimmed. Missing/unreadable becomes None so a
 // half-described device is skipped rather than half-parsed.
 #[cfg(target_os = "linux")]
@@ -88,8 +91,8 @@ fn enumerate(usbmisc_root: &Path) -> Vec<(String, UsbPrinter)> {
   }
   // Zebra vendor first, then by name, so the label printer beats an office one.
   out.sort_by(|a, b| {
-    let za = (a.1.vendor_id != "0a5f", a.1.name.clone());
-    let zb = (b.1.vendor_id != "0a5f", b.1.name.clone());
+    let za = (a.1.vendor_id != ZEBRA_VENDOR_ID, a.1.name.clone());
+    let zb = (b.1.vendor_id != ZEBRA_VENDOR_ID, b.1.name.clone());
     za.cmp(&zb)
   });
   out
@@ -108,9 +111,6 @@ pub async fn list_usb_printers() -> Result<Vec<UsbPrinter>, String> {
   .map_err(|e| e.to_string())
 }
 
-#[cfg(target_os = "linux")]
-const MAX_ZPL_BYTES: usize = 16 * 1024 * 1024;
-
 // Map the stable id back to the current char device. lpN numbering can change
 // across replug, so it is resolved fresh here, never trusted from the caller.
 #[cfg(target_os = "linux")]
@@ -123,10 +123,21 @@ fn resolve_node(usbmisc_root: &Path, dev_root: &Path, id: &str) -> Result<std::p
   Ok(dev_root.join(node))
 }
 
+// EACCES means the udev uaccess rule has not applied yet; ENOENT means the node
+// vanished (replug). Anything else is a genuine write failure.
+#[cfg(target_os = "linux")]
+fn map_send_io_err(e: std::io::Error) -> Result<UsbSendResult, String> {
+  match e.kind() {
+    std::io::ErrorKind::PermissionDenied => Ok(UsbSendResult::PermissionDenied),
+    std::io::ErrorKind::NotFound => Ok(UsbSendResult::NotFound),
+    _ => Err(e.to_string()),
+  }
+}
+
 #[cfg(target_os = "linux")]
 #[tauri::command]
 pub async fn send_zpl_usb(device: String, zpl: String) -> Result<UsbSendResult, String> {
-  if zpl.len() > MAX_ZPL_BYTES {
+  if zpl.len() > crate::print::MAX_ZPL_BYTES {
     return Err("payload too large".to_string());
   }
   tauri::async_runtime::spawn_blocking(move || {
@@ -138,13 +149,9 @@ pub async fn send_zpl_usb(device: String, zpl: String) -> Result<UsbSendResult, 
     match std::fs::OpenOptions::new().write(true).open(&path) {
       Ok(mut f) => match f.write_all(zpl.as_bytes()) {
         Ok(()) => Ok(UsbSendResult::Sent),
-        Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => Ok(UsbSendResult::PermissionDenied),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(UsbSendResult::NotFound),
-        Err(e) => Err(e.to_string()),
+        Err(e) => map_send_io_err(e),
       },
-      Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => Ok(UsbSendResult::PermissionDenied),
-      Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(UsbSendResult::NotFound),
-      Err(e) => Err(e.to_string()),
+      Err(e) => map_send_io_err(e),
     }
   })
   .await
