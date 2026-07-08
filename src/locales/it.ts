@@ -1121,6 +1121,7 @@ const it = {
       content: 'Contenuto',
       rowHeight: 'Altezza riga',
       moduleWidth: 'Larghezza modulo',
+      columns: 'Colonne',
       security: 'Controllo di sicurezza',
     },
     tlc39: {

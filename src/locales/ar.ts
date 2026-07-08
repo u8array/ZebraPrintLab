@@ -1121,6 +1121,7 @@ const ar = {
       content: 'المحتوى',
       rowHeight: 'ارتفاع الصف',
       moduleWidth: 'عرض الوحدة',
+      columns: 'الأعمدة',
       security: 'فحص الأمان',
     },
     tlc39: {

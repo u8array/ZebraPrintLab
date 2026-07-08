@@ -1121,6 +1121,7 @@ const nl = {
       content: 'Inhoud',
       rowHeight: 'Rijhoogte',
       moduleWidth: 'Modulebreedte',
+      columns: 'Kolommen',
       security: 'Beveiligingscontrole',
     },
     tlc39: {

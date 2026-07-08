@@ -1121,6 +1121,7 @@ const el = {
       content: 'Περιεχόμενο',
       rowHeight: 'Ύψος γραμμής',
       moduleWidth: 'Πλάτος μονάδας',
+      columns: 'Στήλες',
       security: 'Έλεγχος ασφαλείας',
     },
     tlc39: {

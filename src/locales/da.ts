@@ -1121,6 +1121,7 @@ const da = {
       content: 'Indhold',
       rowHeight: 'Rækkehøjde',
       moduleWidth: 'Modulbredde',
+      columns: 'Kolonner',
       security: 'Sikkerhedskontrol',
     },
     tlc39: {

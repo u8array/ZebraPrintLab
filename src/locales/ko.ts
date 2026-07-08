@@ -1121,6 +1121,7 @@ const ko = {
       content: '내용',
       rowHeight: '행 높이',
       moduleWidth: '모듈 폭',
+      columns: '열',
       security: '보안 검사',
     },
     tlc39: {

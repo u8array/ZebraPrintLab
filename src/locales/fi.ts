@@ -1121,6 +1121,7 @@ const fi = {
       content: 'Sisältö',
       rowHeight: 'Rivikorkeus',
       moduleWidth: 'Moduulin leveys',
+      columns: 'Sarakkeet',
       security: 'Turvatarkistus',
     },
     tlc39: {

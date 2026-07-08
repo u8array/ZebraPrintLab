@@ -1121,6 +1121,7 @@ const pt = {
       content: 'Conteúdo',
       rowHeight: 'Altura linha',
       moduleWidth: 'Largura módulo',
+      columns: 'Colunas',
       security: 'Verificação de segurança',
     },
     tlc39: {

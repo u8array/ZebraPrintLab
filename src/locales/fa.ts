@@ -1121,6 +1121,7 @@ const fa = {
       content: 'محتوا',
       rowHeight: 'ارتفاع ردیف',
       moduleWidth: 'عرض ماژول',
+      columns: 'ستون‌ها',
       security: 'بررسی امنیتی',
     },
     tlc39: {

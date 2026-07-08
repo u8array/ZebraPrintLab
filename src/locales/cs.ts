@@ -1121,6 +1121,7 @@ const cs = {
       content: 'Obsah',
       rowHeight: 'Výška řádku',
       moduleWidth: 'Šířka modulu',
+      columns: 'Sloupce',
       security: 'Bezpečnostní kontrola',
     },
     tlc39: {
