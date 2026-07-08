@@ -134,6 +134,7 @@ pub async fn send_zpl_usb(device: String, zpl: String) -> Result<UsbSendResult, 
       Ok(mut f) => match f.write_all(zpl.as_bytes()) {
         Ok(()) => Ok(UsbSendResult::Sent),
         Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => Ok(UsbSendResult::PermissionDenied),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(UsbSendResult::NotFound),
         Err(e) => Err(e.to_string()),
       },
       Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => Ok(UsbSendResult::PermissionDenied),
