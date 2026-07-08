@@ -1,4 +1,5 @@
 mod print;
+mod usb;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -6,7 +7,9 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       print::send_zpl_tcp,
       print::list_printers,
-      print::send_zpl_local
+      print::send_zpl_local,
+      usb::list_usb_printers,
+      usb::send_zpl_usb
     ]);
   // On the builder, not in setup(): config windows exist before the setup
   // closure runs, and window-state only restores/tracks via on_window_ready.
