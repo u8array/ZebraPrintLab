@@ -74,9 +74,8 @@ fn enumerate(usbmisc_root: &Path) -> Vec<(String, UsbPrinter)> {
     if !node.starts_with("lp") {
       continue;
     }
-    // The USB attributes live on the interface's parent device. The test
-    // fixture puts them directly under "device"; a real tree resolves the
-    // parent, so try "device" then "device/.." for idVendor.
+    // Attributes sit on the interface's parent device; fixtures flatten them
+    // under "device", so probe there first, then the parent.
     let base = entry.path().join("device");
     let dev_dir = if base.join("idVendor").exists() {
       base
@@ -236,6 +235,27 @@ mod tests {
     // Unknown id is NotFound.
     let miss = resolve_node(&root, &dev_root, "dead:beef:X").unwrap_err();
     assert!(matches!(miss, UsbSendResult::NotFound));
+    fs::remove_dir_all(&root).ok();
+  }
+
+  #[cfg(target_os = "linux")]
+  #[test]
+  fn enumerates_via_device_parent_and_serialless_id() {
+    use std::fs;
+    let root = std::env::temp_dir().join(format!("zpl_parent_{}", std::process::id()));
+    // Real sysfs: lpN/device is the interface (no idVendor); the USB device
+    // one level up (device/..) carries the attributes. Also omit serial.
+    let node = root.join("lp0");
+    fs::create_dir_all(node.join("device")).unwrap();
+    for (f, v) in [("idVendor", "0a5f"), ("idProduct", "0166"), ("manufacturer", "Zebra Technologies"), ("product", "ZD230")] {
+      fs::write(node.join(f), format!("{v}\n")).unwrap();
+    }
+    let out = enumerate(&root);
+    assert_eq!(out.len(), 1);
+    assert_eq!(out[0].1.vendor_id, "0a5f");
+    // No serial: id falls back to the sysfs device path (the device/.. dir).
+    assert!(out[0].1.id.starts_with("0a5f:0166:"));
+    assert!(out[0].1.id.contains("lp0"));
     fs::remove_dir_all(&root).ok();
   }
 
