@@ -58,13 +58,13 @@
     "linux": {
       "deb": {
         "files": {
-          "/usr/lib/udev/rules.d/99-zebraprintlab.rules": "packaging/udev/99-zebraprintlab.rules"
+          "/usr/lib/udev/rules.d/70-zebraprintlab.rules": "packaging/udev/70-zebraprintlab.rules"
         },
         "postInstallScript": "packaging/linux/postinst"
       },
       "rpm": {
         "files": {
-          "/usr/lib/udev/rules.d/99-zebraprintlab.rules": "packaging/udev/99-zebraprintlab.rules"
+          "/usr/lib/udev/rules.d/70-zebraprintlab.rules": "packaging/udev/70-zebraprintlab.rules"
         },
         "postInstallScript": "packaging/linux/postinst"
       }
