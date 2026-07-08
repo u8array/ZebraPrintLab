@@ -228,6 +228,10 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
       case "error":
         setUsbStatus({ type: "error", message: result.message || t.zebraPrint.errorGeneric });
         return;
+      default: {
+        const _exhaustive: never = result;
+        throw new Error(`unhandled print result: ${JSON.stringify(_exhaustive)}`);
+      }
     }
   }
 
