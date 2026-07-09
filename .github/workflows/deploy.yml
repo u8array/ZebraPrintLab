@@ -32,6 +32,7 @@ jobs:
       - run: pnpm licenses:check
 
       - run: pnpm attribution:check
+      - run: pnpm coverage:check
 
       - run: pnpm lint
 
