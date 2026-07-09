@@ -1,7 +1,7 @@
 import type { ObjectTypeCore } from '../types/ObjectType';
 import { fieldPos, fdFieldFor } from './zplHelpers';
 import { commitBarcodeWidthHeightTransform } from './transformHelpers';
-import { moduleTooSmallPreflight } from '../lib/barcodeScannability';
+import { limitedSupportPreflight } from '../lib/barcodeScannability';
 import { type ZplRotation } from './rotation';
 
 /** ZPL ^B4 m: 'A' = auto subset. 0-5 force a specific subset. */
@@ -26,10 +26,10 @@ export const code49: ObjectTypeCore<Code49Props> = {
   label: 'Code 49',
   icon: 'C49',
   zplCmd: '^B4',
-  group: 'code-2d',
+  group: 'legacy',
   barcodeClass: '1d',
   bindable: true,
-  preflight: moduleTooSmallPreflight<Code49Props>('moduleWidth'),
+  preflight: limitedSupportPreflight<Code49Props>('moduleWidth'),
   defaultProps: {
     content: '',
     height: 20,

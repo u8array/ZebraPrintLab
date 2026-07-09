@@ -5,7 +5,7 @@ export const codabarCoreConfig: Barcode1DCoreConfig = {
   label: "Codabar",
   icon: "CBA",
   placeholderContent: 'A12345A',
-  group: 'code-postal',
+  group: 'legacy',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     const check = p.checkDigit ? "Y" : "N";

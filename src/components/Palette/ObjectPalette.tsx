@@ -28,7 +28,7 @@ function typeLabel(typeId: string, t: Translations): string {
     case 'shape': return t.palette.typeForm;
     case 'code-1d': return t.palette.groupCode1d;
     case 'code-2d': return t.palette.groupCode2d;
-    case 'code-postal': return t.palette.groupCodePostal;
+    case 'legacy': return t.palette.groupLegacy;
     default: return (t.types as Record<string, string>)[typeId] ?? typeId;
   }
 }

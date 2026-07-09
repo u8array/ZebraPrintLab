@@ -5,7 +5,7 @@ export const postalCoreConfig: Barcode1DCoreConfig = {
   label: "POSTNET",
   icon: "✉Z",
   placeholderContent: '12345',
-  group: 'code-postal',
+  group: 'legacy',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     // ^BZ{orientation},{height},{interp},{interpAbove}

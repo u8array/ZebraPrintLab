@@ -9,9 +9,9 @@ import { props, serialOf } from '../test/helpers';
 // ^BY on regen, so it must be classified ^BY-consuming; a forgotten new one
 // would silently let a neighbour's ^BY leak. 2D mag-codes must stay excluded.
 describe('BY_CONSUMING_BARCODE_TYPES drift guard', () => {
-  it('includes every code-1d and code-postal type', () => {
+  it('includes every code-1d and legacy type', () => {
     for (const [type, entry] of Object.entries(ObjectRegistry)) {
-      if (entry.group === 'code-1d' || entry.group === 'code-postal') {
+      if (entry.group === 'code-1d' || entry.group === 'legacy') {
         expect(BY_CONSUMING_BARCODE_TYPES.has(type), `${type} (${entry.group})`).toBe(true);
       }
     }
