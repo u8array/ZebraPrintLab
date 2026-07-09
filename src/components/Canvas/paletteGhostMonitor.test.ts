@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { DragEndEvent, DragMoveEvent } from "@dnd-kit/core";
-import { paletteGhostHandlers, type PaletteGhostDeps } from "./paletteGhostMonitor";
+import { paletteGhostHandlers, PALETTE_GHOST_ID, type PaletteGhostDeps } from "./paletteGhostMonitor";
 import { CANVAS_DROPPABLE_ID } from "../../dnd/types";
 import type { LeafObject } from "../../registry";
 import { centeredSpawnAnchor } from "../../lib/spawn";
@@ -38,6 +38,7 @@ function harness(overrides: Partial<PaletteGhostDeps> = {}) {
     addObject: (type, position, propsOverride) => calls.added.push({ type, position, propsOverride }),
     viewRotation: () => 0,
     label: () => LABEL,
+    measured: () => undefined,
     ...overrides,
   };
   return { deps, calls, handlers: () => paletteGhostHandlers(deps) };
@@ -54,6 +55,18 @@ describe("paletteGhostHandlers", () => {
     expect(calls.ghost.at(-1)).toBeNull();
     // Ghost/drop parity: the spawn lands exactly where the preview sat.
     expect(calls.added).toEqual([{ type: "text", position: expected, propsOverride: undefined }]);
+  });
+
+  it("centers on the ghost's measured footprint, not the registry fallback", () => {
+    // The ghost publishes its real rendered size (e.g. a wide barcode); the
+    // anchor must halve THAT, so the drop lands centered on the pointer.
+    const measured = new Map([[PALETTE_GHOST_ID, { width: 400, height: 40 }]]);
+    const { calls, handlers } = harness({ measured: () => measured });
+    handlers().onDragStart();
+    handlers().onDragMove(dragEvent(CANVAS, { type: "code128" }));
+    const g = calls.ghost.at(-1)!;
+    expect(g.x).toBe(POINTER.x - 200);
+    expect(g.y).toBe(POINTER.y - 20);
   });
 
   it("previews the rotated view's spawn rotation on the ghost", () => {

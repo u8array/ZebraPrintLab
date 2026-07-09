@@ -57,6 +57,15 @@ describe('centeredSpawnAnchor', () => {
     }
   });
 
+  it('centers on the passed measured footprint instead of the registry fallback', () => {
+    // A barcode's real render size isn't computable upfront; the drag ghost's
+    // measured footprint (keyed by id) must drive the halving.
+    const footprints = new Map([['g', { width: 400, height: 40 }]]);
+    expect(
+      centeredSpawnAnchor('code128', undefined, { x: 500, y: 300 }, LABEL, 0, { footprints, id: 'g' }),
+    ).toEqual({ x: 300, y: 280 });
+  });
+
   it('returns null for unknown types', () => {
     expect(centeredSpawnAnchor('nonexistent_type_xyz', undefined, { x: 0, y: 0 }, LABEL, 0)).toBeNull();
   });

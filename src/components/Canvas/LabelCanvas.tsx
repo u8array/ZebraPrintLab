@@ -1170,6 +1170,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       addObject,
       viewRotation: () => viewRotation,
       label: () => label,
+      measured: () => getMeasuredSnapshot(),
     }),
   );
 

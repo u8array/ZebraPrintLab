@@ -1,6 +1,6 @@
 import { getEntry } from '../registry';
 import { getStepRotation, zplRotationForView, type ZplRotation } from '../registry/rotation';
-import { objectBoundsDots } from './objectBounds';
+import { objectBoundsDots, type ObjectBoundsCtx } from './objectBounds';
 import type { LabelConfig } from '../types/LabelConfig';
 import type { LabelObject } from '../types/Group';
 
@@ -28,13 +28,17 @@ export function spawnRotationOverride(
  *  rotations (the model anchor corner wanders per rotation), so the ghost sits
  *  under the cursor the same way in every view. Bounds come from the same
  *  objectBoundsDots the canvas reasons with, including the spawn rotation the
- *  store will apply. Null for unknown types. */
+ *  store will apply. Barcode/text size isn't computable upfront, so pass the
+ *  live drag ghost's measured footprint (keyed by `measured.id`) to center on
+ *  the real rendered size; without it the upright registry fallback is used.
+ *  Null for unknown types. */
 export function centeredSpawnAnchor(
   type: string,
   propsOverride: object | undefined,
   at: { x: number; y: number },
   label: LabelConfig,
   view: ViewRotation,
+  measured?: { footprints: ObjectBoundsCtx['measured']; id: string },
 ): { x: number; y: number } | null {
   const def = getEntry(type);
   if (!def) return null;
@@ -44,8 +48,8 @@ export function centeredSpawnAnchor(
     ...spawnRotationOverride(type, propsOverride, view),
   };
   const b = objectBoundsDots(
-    { id: '__spawn__', type, x: 0, y: 0, rotation: 0, props } as LabelObject,
-    { label },
+    { id: measured?.id ?? '__spawn__', type, x: 0, y: 0, rotation: 0, props } as LabelObject,
+    { label, measured: measured?.footprints },
   );
   return {
     x: Math.round(at.x - b.x - b.width / 2),

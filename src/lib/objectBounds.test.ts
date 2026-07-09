@@ -188,6 +188,17 @@ describe("objectBoundsDots", () => {
     expect(objectBoundsDots(bc, ctx(measured))).toEqual({ x: 20, y: 40, width: 150, height: 80 });
   });
 
+  it("barcode (FO, no measured): registry fallback swaps axes for a rotated field", () => {
+    // Without a measured entry the upright registry defaultSize is used; a
+    // rotated (R/B) barcode must report the swapped bbox, like singleLineEstimate.
+    const up = leaf("code128", 0, 0, { content: "123", moduleWidth: 2, height: 80, printInterpretation: true } as never);
+    const rot = leaf("code128", 0, 0, { content: "123", moduleWidth: 2, height: 80, rotation: "R", printInterpretation: true } as never);
+    const u = objectBoundsDots(up, ctx());
+    const r = objectBoundsDots(rot, ctx());
+    expect(r.width).toBe(u.height);
+    expect(r.height).toBe(u.width);
+  });
+
   it("barcode (FT 1D): top sits one bar-height above the baseline", () => {
     const bc = leaf(
       "code128", 20, 100,

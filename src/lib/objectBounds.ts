@@ -227,8 +227,13 @@ export function objectBoundsDots(obj: LabelObject, ctx: ObjectBoundsCtx): Boundi
     default: {
       if (isBarcode(obj)) {
         const m = ctx.measured?.get(obj.id);
-        const fp = m ?? fallbackSizeDots(obj, ctx.label);
-        const { x, y } = barcodeTopLeft(obj, fp.height, fp.width, m);
+        // The fallback is the upright registry footprint; rotate it so a rotated
+        // barcode's bbox swaps axes like the measured (already-rotated) path and
+        // like singleLineEstimate. barcodeTopLeft keeps the upright dims (its FT
+        // anchor math is upright-relative), only the returned bbox is rotated.
+        const up = m ?? fallbackSizeDots(obj, ctx.label);
+        const fp = m ?? rotatedFootprint(up.width, up.height, objectRotation(obj.props));
+        const { x, y } = barcodeTopLeft(obj, up.height, up.width, m);
         return { x, y, width: fp.width, height: fp.height };
       }
       // Unknown leaf: fall back to its registry footprint at the origin.
