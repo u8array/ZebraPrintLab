@@ -5,7 +5,6 @@ import { isDesktopShell } from "../../lib/platform";
 import { formatTemplate } from "../../lib/formatTemplate";
 import { labelCls } from "../ui/formStyles";
 import { DangerConfirmButton } from "../ui/DangerConfirmButton";
-import { isDefaultLabelaryHost } from "../../lib/labelary";
 
 function SettingToggle({ checked, onChange, label, hint }: {
   checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string;
@@ -29,7 +28,8 @@ function SettingToggle({ checked, onChange, label, hint }: {
 }
 
 /** Client-side app preferences (not printer/ZPL config): power-user mode,
- *  smart-snap, the Labelary privacy opt-in, and a scoped settings reset. */
+ *  smart-snap, updates, and a scoped settings reset. Preview/Labelary
+ *  configuration lives on its own tab (PreviewSettingsTab). */
 export function AppSettingsTab() {
   const t = useT();
   const loc = t.printerSettings.app;
@@ -38,10 +38,6 @@ export function AppSettingsTab() {
   const setShowZplCommands = useLabelStore((s) => s.setShowZplCommands);
   const smartSnapEnabled = useLabelStore((s) => s.canvasSettings.smartSnapEnabled);
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
-  const labelaryAvailable = useLabelStore((s) => s.thirdParty.labelary);
-  const labelaryConsent = useLabelStore((s) => s.labelaryNoticeAcknowledged);
-  const acknowledgeLabelaryNotice = useLabelStore((s) => s.acknowledgeLabelaryNotice);
-  const revokeLabelaryNotice = useLabelStore((s) => s.revokeLabelaryNotice);
   const resetSettings = useLabelStore((s) => s.resetSettings);
   const appUpdate = useLabelStore((s) => s.appUpdate);
   const checkForAppUpdate = useLabelStore((s) => s.checkForAppUpdate);
@@ -65,40 +61,6 @@ export function AppSettingsTab() {
           hint={loc.smartSnapHint}
         />
       </section>
-
-      {labelaryAvailable && (
-        <section className="flex flex-col gap-2">
-          <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{loc.privacyHeading}</h3>
-          {/* Consent only gates the public host; a custom endpoint is the
-              operator's own, so the toggle would be inert there. */}
-          {isDefaultLabelaryHost() && (
-            <SettingToggle
-              checked={labelaryConsent}
-              onChange={(v) => (v ? acknowledgeLabelaryNotice() : revokeLabelaryNotice())}
-              label={loc.labelary}
-            />
-          )}
-          <p className="text-[10px] text-muted leading-relaxed max-w-md">
-            {isDefaultLabelaryHost() ? (
-              <>
-                {t.output.previewNoticeBody}{" "}
-                {/* The plans/retention link is about the public service; a
-                    custom endpoint is the operator's own, so omit it there. */}
-                <a
-                  href="https://labelary.com/service.html#pricing"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-accent hover:underline"
-                >
-                  {t.output.previewNoticePrivacyLink}
-                </a>
-              </>
-            ) : (
-              loc.labelaryHint
-            )}
-          </p>
-        </section>
-      )}
 
       <section className="flex flex-col gap-2">
         <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{loc.updatesHeading}</h3>

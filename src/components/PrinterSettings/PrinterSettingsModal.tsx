@@ -17,6 +17,7 @@ import { IdentityTab } from "./IdentityTab";
 import { MaintenanceTab } from "./MaintenanceTab";
 import { MediaFeedTab } from "./MediaFeedTab";
 import { OutputTab } from "./OutputTab";
+import { PreviewSettingsTab } from "./PreviewSettingsTab";
 import { PrintQualityTab } from "./PrintQualityTab";
 import { IllustrationFocusProvider, PrinterIllustration } from "./printerIllustration";
 
@@ -26,6 +27,7 @@ type TopTabId = 'app' | 'perLabel' | 'setupScript';
  *  literal that gets added but forgotten here at compile time. */
 const TOP_TAB_OF = {
   appSettings: 'app',
+  previewSettings: 'app',
   mediaFeed: 'perLabel',
   printQuality: 'perLabel',
   output: 'perLabel',
@@ -57,6 +59,7 @@ const TABS_BY_TOP_TAB: Record<TopTabId, readonly PrinterSettingsTab[]> = (() => 
 /** Tabs absent here render as disabled WIP rail entries. */
 const TAB_COMPONENTS: Partial<Record<PrinterSettingsTab, FC>> = {
   appSettings: AppSettingsTab,
+  previewSettings: PreviewSettingsTab,
   mediaFeed: MediaFeedTab,
   printQuality: PrintQualityTab,
   output: OutputTab,

@@ -10,11 +10,10 @@ import {
   type BrowserPrintDevice,
 } from "../../lib/zebraPrint";
 import { isDesktopShell } from "../../lib/platform";
+import { getPrinterAddress, setPrinterAddress } from "../../lib/printerAddress";
 import { listLocalPrinters, sendZplLocal, isLikelyZebra, type LocalPrinter } from "../../lib/localPrint";
 import { listUsbPrinters, sendZplUsb, setupUsbAccess, isLikelyZebra as isUsbZebra, type UsbPrinter } from "../../lib/usbPrint";
 
-const LS_IP = "zebra_print_ip";
-const LS_PORT = "zebra_print_port";
 const LS_PRINTER_UID = "zebra_print_uid";
 const LS_LOCAL_PRINTER = "zebra_print_local";
 const LS_USB = "zebra_print_usb";
@@ -82,9 +81,9 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
   const t = useT();
   const [tab, setTab] = useState<Tab>("network");
 
-  // Network tab state
-  const [ip, setIp] = useState(() => localStorage.getItem(LS_IP) ?? "");
-  const [port, setPort] = useState(() => localStorage.getItem(LS_PORT) ?? "9100");
+  // Network tab state; the address is shared with the preview provider.
+  const [ip, setIp] = useState(() => getPrinterAddress().host);
+  const [port, setPort] = useState(() => String(getPrinterAddress().port));
   const [netStatus, setNetStatus] = useState<Status>({ type: "idle" });
 
   // Browser Print tab state
@@ -164,8 +163,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
   if (tab === "usb" && usbPrinters.length === 0) setTab("network");
 
   function persistNetwork() {
-    localStorage.setItem(LS_IP, ip);
-    localStorage.setItem(LS_PORT, port);
+    setPrinterAddress(ip, port);
   }
 
   async function handleNetworkSend() {

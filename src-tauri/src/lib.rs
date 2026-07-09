@@ -6,6 +6,7 @@ pub fn run() {
   let builder = tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![
       print::send_zpl_tcp,
+      print::query_zpl_tcp,
       print::list_printers,
       print::send_zpl_local,
       usb::list_usb_printers,

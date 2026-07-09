@@ -48,6 +48,7 @@ function reset() {
     csvMapping: null,
     csvMappingModalOpen: false,
     previewMode: { status: 'idle' },
+    previewProvider: 'labelary',
     canvasSettings: { ...DEFAULT_CANVAS_SETTINGS },
     pristineEmptyIds: [],
   });
@@ -1420,6 +1421,20 @@ describe('ungroup', () => {
       expect(fetchSpy).toHaveBeenCalledTimes(2);
       expect(revokeSpy).toHaveBeenCalledWith(firstUrl);
       expect(activeUrl()).not.toBe(firstUrl);
+    });
+
+    it('degrades a persisted printer provider to Labelary outside the desktop shell', async () => {
+      // jsdom is the web build (no Tauri): the printer path has no raw
+      // sockets, so the effective provider must fall back to Labelary.
+      const labelary = await import('../lib/labelary');
+      const fetchSpy = vi.mocked(labelary.fetchPreview);
+      fetchSpy.mockClear();
+
+      useLabelStore.setState({ previewProvider: 'printer' });
+      await state().enterPreviewMode();
+
+      expect(state().previewMode.status).toBe('active');
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
   });
 });
