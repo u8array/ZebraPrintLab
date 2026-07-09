@@ -115,6 +115,13 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
 export const BWIP_SCALE = 2;
 const BWIP_2D_INTERNAL_SCALE = 2;
 
+// bwip-js codablockf lays out each row 6 modules narrower than Zebra firmware
+// (measured on a ZD230: bwip width = 11*c+57, firmware = 11*c+63, a constant +6
+// of per-row overhead bwip omits). Added to the footprint so the canvas matches
+// the print for text and column-filling data; short numeric data the firmware
+// compacts down stays approximate (use the printer preview for exact size).
+const CODABLOCK_FIRMWARE_MODULE_OFFSET = 6;
+
 // Lazy so SSR imports don't crash on missing `document`.
 let _validationCanvas: HTMLCanvasElement | null = null;
 function getValidationCanvas(): HTMLCanvasElement {
@@ -848,7 +855,8 @@ function getUprightDisplaySize(
         Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
       );
       const w =
-        (cw / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
+        (cw / BWIP_SCALE + CODABLOCK_FIRMWARE_MODULE_OFFSET) *
+        dotsToPx(p.moduleWidth, scale, dpmm);
       const h =
         (ch / BWIP_SCALE) *
         (dotsToPx(p.rowHeight, scale, dpmm) / specRowheight);

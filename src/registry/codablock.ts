@@ -48,7 +48,9 @@ export const codablock: ObjectTypeCore<CodablockProps> = {
     securityLevel: "Y",
     rotation: 'N',
   },
-  placeholderContent: '1234567890',
+  // Alphanumeric so the default drag renders at the firmware width (numeric
+  // data the printer compacts, which the canvas can only approximate).
+  placeholderContent: 'CODABLOCK',
   defaultSize: { width: 250, height: 120 },
 
   moduleWidthMin: CODABLOCK_MODULE_WIDTH_MIN,
