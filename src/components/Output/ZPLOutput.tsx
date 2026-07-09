@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { CheckIcon, ClipboardDocumentIcon, ChevronDownIcon, ChevronUpIcon, EyeIcon } from '@heroicons/react/16/solid';
-import { useLabelStore, selectLabelaryNoticeRequired } from '../../store/labelStore';
+import { useLabelStore, selectLabelaryNoticeRequired, selectEffectivePreviewProvider } from '../../store/labelStore';
 import { generateMultiPageZPL } from '../../lib/zplGenerator';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
 import { useT } from '../../hooks/useT';
@@ -21,6 +21,7 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
   const variables = useLabelStore((s) => s.variables);
   const labelaryEnabled = useLabelStore((s) => s.thirdParty.labelary);
   const noticeRequired = useLabelStore(selectLabelaryNoticeRequired);
+  const effectiveProvider = useLabelStore(selectEffectivePreviewProvider);
   const previewMode = useLabelStore((s) => s.previewMode);
   const enterPreviewMode = useLabelStore((s) => s.enterPreviewMode);
   const exitPreviewMode = useLabelStore((s) => s.exitPreviewMode);
@@ -32,12 +33,17 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
   const previewActive =
     previewMode.status === 'loading' || previewMode.status === 'active';
 
+  // The button shows when the effective provider can run: Labelary when the
+  // gate is on, or the printer path (desktop only). The consent notice only
+  // guards Labelary; the printer talks to the user's own device.
+  const previewAvailable = effectiveProvider === 'printer' || labelaryEnabled;
+
   const togglePreview = () => {
     if (previewActive) {
       exitPreviewMode();
       return;
     }
-    if (noticeRequired) {
+    if (effectiveProvider === 'labelary' && noticeRequired) {
       setShowNotice(true);
       return;
     }
@@ -53,7 +59,7 @@ export function ZPLOutput({ collapsed, onCollapse, onExpand }: Props) {
         collapsed={collapsed}
         onCollapseToggle={collapsed ? onExpand : onCollapse}
         collapseLabel={collapsed ? t.app.expand : t.app.collapse}
-        extraActions={labelaryEnabled && (
+        extraActions={previewAvailable && (
           <Tooltip content={t.output.previewHeading}>
             <button
               onClick={togglePreview}

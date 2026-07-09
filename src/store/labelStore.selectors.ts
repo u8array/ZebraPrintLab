@@ -1,5 +1,6 @@
 import type { LabelObject } from '../types/Group';
 import { isDefaultLabelaryHost } from '../lib/labelary';
+import { isDesktopShell } from '../lib/platform';
 import type { CsvDataset } from './slices/csvSlice';
 import type { CsvMapping } from '../types/Variable';
 import type { LabelState } from './labelStore';
@@ -28,6 +29,12 @@ export const canCallLabelary = (s: LabelState): boolean =>
  *  already controls the endpoint and no third-party disclosure is needed. */
 export const selectLabelaryNoticeRequired = (s: LabelState): boolean =>
   isDefaultLabelaryHost() && !s.labelaryNoticeAcknowledged;
+
+/** The provider the preview will actually use: the printer path needs the
+ *  desktop shell's raw sockets, so a persisted 'printer' choice degrades to
+ *  Labelary in the web build instead of dead-ending the preview button. */
+export const selectEffectivePreviewProvider = (s: LabelState): 'labelary' | 'printer' =>
+  s.previewProvider === 'printer' && isDesktopShell ? 'printer' : 'labelary';
 
 /** True while the preview overlay is taking input away from the editor.
  *  Loading and active both qualify (loading blocks edits so the snapshot

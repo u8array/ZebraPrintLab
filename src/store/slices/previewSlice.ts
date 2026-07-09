@@ -1,30 +1,34 @@
 import type { StateCreator } from 'zustand';
 import { fetchPreview, labelaryErrorMessage } from '../../lib/labelary';
+import { bitmapToDataUrl, fetchPrinterPreview } from '../../lib/printerPreview';
+import { getPrinterAddress } from '../../lib/printerAddress';
 import { buildActiveCsvRow } from '../../lib/variableBinding';
 import { buildPreviewZpl } from '../../lib/printPreview';
-import { currentObjects } from '../labelStore.selectors';
+import { currentObjects, selectEffectivePreviewProvider } from '../labelStore.selectors';
 import type { LabelState } from '../labelStore';
 
-/** Labelary canvas-overlay state. Snapshot is frozen for the session's
- *  lifetime so the A/B comparison doesn't drift under the user. */
+/** Preview canvas-overlay state (Labelary or the printer's own firmware
+ *  render). Snapshot is frozen for the session's lifetime so the A/B
+ *  comparison doesn't drift under the user. */
 export type PreviewMode =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'active'; url: string }
   | { status: 'error'; error: string };
 
-/** Single-entry blob-URL cache keyed by the ZPL that produced it.
+/** Single-entry URL cache keyed by provider + the ZPL that produced it.
  *  Module-level: blob URLs are non-serialisable, persisting them would
- *  resurrect stale identifiers across reloads. */
+ *  resurrect stale identifiers across reloads. (revokeObjectURL on the
+ *  printer provider's data URLs is a harmless no-op.) */
 const previewCache = (() => {
-  let entry: { zpl: string; url: string } | null = null;
+  let entry: { key: string; url: string } | null = null;
   return {
-    get(zpl: string): string | null {
-      return entry && entry.zpl === zpl ? entry.url : null;
+    get(key: string): string | null {
+      return entry && entry.key === key ? entry.url : null;
     },
-    set(zpl: string, url: string): void {
+    set(key: string, url: string): void {
       if (entry) URL.revokeObjectURL(entry.url);
-      entry = { zpl, url };
+      entry = { key, url };
     },
     /** Test-only: drop the cached entry without revoking. */
     _resetForTests(): void {
@@ -56,9 +60,12 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
     const objs = currentObjects(state);
     const active = buildActiveCsvRow(state.csvDataset, state.csvMapping);
     const zpl = buildPreviewZpl(state.label, objs, state.variables, active, { blankSamples: true });
+    const provider = selectEffectivePreviewProvider(state);
     // Toggling preview off then on for a side-by-side pixel compare
-    // shouldn't burn an API call when nothing changed.
-    const cachedUrl = previewCache.get(zpl);
+    // shouldn't burn an API call (or a printer round-trip) when nothing
+    // changed; the provider is part of the key so switching re-renders.
+    const cacheKey = `${provider}:${zpl}`;
+    const cachedUrl = previewCache.get(cacheKey);
     if (cachedUrl !== null) {
       set({ previewMode: { status: 'active', url: cachedUrl } });
       return;
@@ -73,13 +80,56 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
       get().previewMode.status !== 'loading' ||
       get().label !== state.label ||
       currentObjects(get()) !== objs;
+
+    if (provider === 'printer') {
+      // Firmware render over raw TCP: ^IS stores the rendered label, ^HY
+      // uploads its bitmap. Errors stay plain strings like labelary's.
+      const { host, port } = getPrinterAddress();
+      const fail = (error: string): void => {
+        if (!isStale()) set({ previewMode: { status: 'error', error } });
+      };
+      if (!host) {
+        fail('No printer address configured. Set the IP under Settings, Preview.');
+        return;
+      }
+      const result = await fetchPrinterPreview(host, port, zpl);
+      if (isStale()) return;
+      switch (result.kind) {
+        case 'bitmap': {
+          const url = bitmapToDataUrl(result.bitmap);
+          if (!url) {
+            fail('Could not decode the printer preview.');
+            return;
+          }
+          previewCache.set(cacheKey, url);
+          set({ previewMode: { status: 'active', url } });
+          return;
+        }
+        case 'refused':
+          fail(`The printer refused the connection. Check that port ${port} is open.`);
+          return;
+        case 'unreachable':
+          fail('Could not reach the printer. Check the IP address and network.');
+          return;
+        case 'error':
+          fail(result.message);
+          return;
+        default: {
+          // Exhaustive: a new result kind must be handled here, not silently
+          // fall through to the Labelary path below with printer-specific ZPL.
+          const _exhaustive: never = result;
+          throw new Error(`unhandled preview result: ${JSON.stringify(_exhaustive)}`);
+        }
+      }
+    }
+
     try {
       const url = await fetchPreview(zpl, state.label);
       if (isStale()) {
         URL.revokeObjectURL(url);
         return;
       }
-      previewCache.set(zpl, url);
+      previewCache.set(cacheKey, url);
       set({ previewMode: { status: 'active', url } });
     } catch (e) {
       if (isStale()) return;

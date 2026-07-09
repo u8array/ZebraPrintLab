@@ -33,10 +33,15 @@ export interface CanvasSettings {
 
 export type ThemePreference = 'light' | 'dark';
 
+/** Which renderer the label preview asks: Labelary (software approximation)
+ *  or the connected printer's own firmware (^IS/^HY, desktop only). */
+export type PreviewProvider = 'labelary' | 'printer';
+
 /** Tab IDs for the Printer Settings modal. Adding a tab is a one-line
  *  union extension plus the matching locale-key + content component. */
 export type PrinterSettingsTab =
   | 'appSettings'
+  | 'previewSettings'
   | 'mediaFeed'
   | 'printQuality'
   | 'output'
@@ -89,6 +94,7 @@ export interface UiSlice {
   thirdParty: { labelary: boolean };
   /** Whether the user has dismissed the one-time Labelary privacy notice. */
   labelaryNoticeAcknowledged: boolean;
+  previewProvider: PreviewProvider;
   canvasSettings: CanvasSettings;
   /** Curated object-palette rows ({type, variant} instances, duplicates
    *  allowed) and the palette view mode. Persisted UI preferences, not
@@ -136,6 +142,7 @@ export interface UiSlice {
   applyLocale: (locale: LocaleCode) => Promise<void>;
   setTheme: (theme: ThemePreference) => void;
   setThirdPartyEnabled: (service: 'labelary', enabled: boolean) => void;
+  setPreviewProvider: (provider: PreviewProvider) => void;
   acknowledgeLabelaryNotice: () => void;
   revokeLabelaryNotice: () => void;
   /** Reset app preferences (theme, canvas, palette, power-user, Labelary
@@ -188,6 +195,7 @@ type UiPrefs = Pick<
   | 'theme'
   | 'thirdParty'
   | 'labelaryNoticeAcknowledged'
+  | 'previewProvider'
   | 'canvasSettings'
   | 'paletteRows'
   | 'paletteView'
@@ -203,6 +211,7 @@ function defaultUiPrefs(): UiPrefs {
     theme: detectInitialTheme(),
     thirdParty: thirdPartyDefaults(),
     labelaryNoticeAcknowledged: false,
+    previewProvider: 'labelary',
     canvasSettings: { ...DEFAULT_CANVAS_SETTINGS },
     paletteRows: defaultPaletteRows(),
     paletteView: 'flat',
@@ -246,6 +255,12 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set, ge
   setTheme: (theme) => set({ theme }),
   setThirdPartyEnabled: (service, enabled) =>
     set((state) => ({ thirdParty: { ...state.thirdParty, [service]: enabled } })),
+  // Tear down a live overlay on switch so one provider's render can't linger
+  // while the toggle already names the other.
+  setPreviewProvider: (provider) => {
+    set({ previewProvider: provider });
+    get().exitPreviewMode();
+  },
   acknowledgeLabelaryNotice: () => set({ labelaryNoticeAcknowledged: true }),
   // Revoke consent so the Labelary gate closes again; re-enabling re-shows the
   // disclosure, keeping consent explicit and reversible. Tear down any live
