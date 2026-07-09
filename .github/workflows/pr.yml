@@ -29,6 +29,7 @@ jobs:
           manifest-path: ./src-tauri/Cargo.toml
 
       - run: pnpm attribution:check
+      - run: pnpm coverage:check
 
       - run: pnpm lint
 
