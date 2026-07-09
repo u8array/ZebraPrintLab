@@ -30,6 +30,7 @@ function harness(overrides: Partial<PaletteGhostDeps> = {}) {
     pointerPos: () => ({ x: 10, y: 20 }),
     setGhost: (g) => calls.ghost.push(g),
     addObject: (type, position, propsOverride) => calls.added.push({ type, position, propsOverride }),
+    viewRotation: () => 0,
     ...overrides,
   };
   return { deps, calls, handlers: () => paletteGhostHandlers(deps) };
@@ -45,6 +46,13 @@ describe("paletteGhostHandlers", () => {
     expect(calls.ghost.at(-1)).toBeNull();
     // Assert the full spawn contract: the drop lands at the mapped pointer.
     expect(calls.added).toEqual([{ type: "text", position: { x: 10, y: 20 }, propsOverride: undefined }]);
+  });
+
+  it("previews the rotated view's spawn rotation on the ghost", () => {
+    const { calls, handlers } = harness({ viewRotation: () => 90 });
+    handlers().onDragStart();
+    handlers().onDragMove(dragEvent(CANVAS));
+    expect(calls.ghost.at(-1)?.props).toMatchObject({ rotation: "B" });
   });
 
   it("forwards the drag's propsOverride to both the ghost preview and the spawn", () => {

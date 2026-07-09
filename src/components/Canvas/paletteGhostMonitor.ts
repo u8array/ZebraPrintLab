@@ -2,6 +2,8 @@ import type { DragEndEvent, DragMoveEvent } from "@dnd-kit/core";
 import { CANVAS_DROPPABLE_ID, type PaletteDragData } from "../../dnd/types";
 import { getEntry } from "../../registry";
 import type { LeafObject } from "../../registry";
+import { spawnRotationOverride } from "../../lib/spawnRotation";
+import type { ViewRotation } from "./rotationGeometry";
 
 /** Id of the palette drop-preview object; renderers treat it like a pristine
  *  (never-deselected) object so no warning styling flashes mid-drag. */
@@ -16,6 +18,9 @@ export interface PaletteGhostDeps {
   pointerPos: () => { x: number; y: number } | null;
   setGhost: (ghost: LeafObject | null) => void;
   addObject: (type: string, position?: { x: number; y: number }, propsOverride?: object) => void;
+  /** Current canvas view rotation, so the ghost previews the same spawn
+   *  rotation the store applies on drop. */
+  viewRotation: () => ViewRotation;
 }
 
 /** The addable drag resolved at pointer, or null when the pointer is unmeasured
@@ -37,7 +42,7 @@ function resolvePaletteDrag(
  *  keyed on the drag translate, which the drag-end reducer resets, so a stale
  *  move can arrive after onDragEnd. The live flag drops those moves, else the
  *  ghost outlives the drag. */
-export function paletteGhostHandlers({ live, locked, pointerPos, setGhost, addObject }: PaletteGhostDeps) {
+export function paletteGhostHandlers({ live, locked, pointerPos, setGhost, addObject, viewRotation }: PaletteGhostDeps) {
   return {
     onDragStart() {
       live.current = true;
@@ -56,7 +61,11 @@ export function paletteGhostHandlers({ live, locked, pointerPos, setGhost, addOb
         type: drag.type,
         ...drag.pos,
         rotation: 0,
-        props: { ...def.defaultProps, ...drag.propsOverride },
+        props: {
+          ...def.defaultProps,
+          ...drag.propsOverride,
+          ...spawnRotationOverride(drag.type, drag.propsOverride, viewRotation()),
+        },
       } as LeafObject);
     },
     onDragEnd(event: DragEndEvent) {

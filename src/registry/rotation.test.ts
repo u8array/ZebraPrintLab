@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getStepRotation, isZplRotation, nextZplRotation, objectRotation, ZPL_ROTATIONS } from "./rotation";
+import { getStepRotation, isZplRotation, nextZplRotation, objectRotation, zplRotationForView, ZPL_ROTATIONS } from "./rotation";
 
 describe("isZplRotation", () => {
   it("accepts the four ZPL letters", () => {
@@ -36,6 +36,15 @@ describe("nextZplRotation", () => {
     expect(nextZplRotation("R")).toBe("I");
     expect(nextZplRotation("I")).toBe("B");
     expect(nextZplRotation("B")).toBe("N");
+  });
+});
+
+describe("zplRotationForView", () => {
+  it("pre-rotates against the CW view rotation so the field reads upright on screen", () => {
+    expect(zplRotationForView(0)).toBe("N");
+    expect(zplRotationForView(90)).toBe("B");
+    expect(zplRotationForView(180)).toBe("I");
+    expect(zplRotationForView(270)).toBe("R");
   });
 });
 

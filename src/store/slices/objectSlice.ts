@@ -15,6 +15,7 @@ import {
 import { getEntry } from '../../registry';
 import { reorderForZ, type ZOrderDir } from '../../lib/zorder';
 import { makeReverseBackingBox, precedingBackingExists, isOwnReverseBacking } from '../../lib/reverseBacking';
+import { spawnRotationOverride } from '../../lib/spawnRotation';
 import {
   applyObjectChanges,
   DUPLICATE_OFFSET_DOTS,
@@ -100,7 +101,11 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
     const definition = getEntry(type);
     if (!definition) return;
 
-    const props = { ...definition.defaultProps, ...propsOverride };
+    const props = {
+      ...definition.defaultProps,
+      ...propsOverride,
+      ...spawnRotationOverride(type, propsOverride, get().canvasSettings.viewRotation),
+    };
     const obj = {
       id: crypto.randomUUID(),
       type,

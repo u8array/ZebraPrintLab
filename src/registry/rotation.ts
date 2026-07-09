@@ -28,6 +28,17 @@ export function isAxisSwapped(r: ZplRotation): boolean {
   return r === 'R' || r === 'B';
 }
 
+/** ZPL rotation that reads upright under a rotated canvas view: the view
+ *  rotates the label +θ CW on screen, so the field pre-rotates −θ. */
+export function zplRotationForView(view: 0 | 90 | 180 | 270): ZplRotation {
+  switch (view) {
+    case 90: return 'B';
+    case 180: return 'I';
+    case 270: return 'R';
+    default: return 'N';
+  }
+}
+
 /** Next 90° step in the N → R → I → B → N cycle. */
 export function nextZplRotation(r: ZplRotation): ZplRotation {
   const i = ZPL_ROTATIONS.indexOf(r);
