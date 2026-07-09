@@ -2,6 +2,7 @@
 # diffs cleanly regardless of the checkout's core.autocrlf. The scripts emit LF,
 # so they must be checked out LF too or a fresh Windows clone would taint output.
 THIRD-PARTY-LICENSES.md text eol=lf
+THIRD-PARTY-LICENSES-RUST.md text eol=lf
 scripts/*.mjs text eol=lf
 scripts/**/*.mjs text eol=lf
 

@@ -35,21 +35,23 @@ jobs:
 
       - run: pnpm test
 
-      - run: pnpm build
-
-      - uses: EmbarkStudios/cargo-deny-action@v2
-        with:
-          command: check licenses
-          manifest-path: ./src-tauri/Cargo.toml
-
+      # Regenerate before `pnpm build` so the Vite plugin ships the freshly
+      # validated .md into dist/; the diff fails the build on any drift.
       - name: rust attribution freshness
         run: |
           curl -fsSL https://github.com/EmbarkStudios/cargo-about/releases/download/0.9.1/cargo-about-0.9.1-x86_64-unknown-linux-musl.tar.gz \
             | tar xz --strip-components=1 -C /tmp
           cd src-tauri
           cargo fetch
-          /tmp/cargo-about generate about.hbs -o THIRD-PARTY-LICENSES-RUST.html
-          git diff --exit-code -- THIRD-PARTY-LICENSES-RUST.html
+          /tmp/cargo-about generate about.hbs -o THIRD-PARTY-LICENSES-RUST.md
+          git diff --exit-code -- THIRD-PARTY-LICENSES-RUST.md
+
+      - run: pnpm build
+
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses
+          manifest-path: ./src-tauri/Cargo.toml
 
       - id: version
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"

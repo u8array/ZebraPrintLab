@@ -1,4 +1,4 @@
-# cargo-about config: generates THIRD-PARTY-LICENSES-RUST.html (the Rust-side
+# cargo-about config: generates THIRD-PARTY-LICENSES-RUST.md (the Rust-side
 # counterpart of THIRD-PARTY-LICENSES.md). `accepted` mirrors deny.toml, which
 # stays the enforcing gate; this list only scopes the attribution output.
 
