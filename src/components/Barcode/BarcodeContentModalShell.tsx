@@ -35,7 +35,10 @@ export function BarcodeContentModalShell({
       labelledBy={titleId}
       describedBy={subtitleId}
       onClose={onClose}
-      boxClassName="bg-surface border border-border rounded-lg shadow-2xl w-[640px] max-w-[95vw] max-h-[85vh] flex flex-col overflow-hidden"
+      // Fixed height so switching content types (1 field for url, 7 for vcard)
+      // and toggling the preview scroll inside the body instead of resizing the
+      // whole box; max-h caps it on short viewports.
+      boxClassName="bg-surface border border-border rounded-lg shadow-2xl w-[640px] max-w-[95vw] h-[620px] max-h-[85vh] flex flex-col overflow-hidden"
     >
       <DialogHeader
         titleId={titleId}
