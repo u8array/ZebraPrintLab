@@ -5,15 +5,29 @@ import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
 
-// Ship the generated attribution into dist/ so the MIT/Apache/OFL notices
-// actually accompany the redistributed code and fonts in the deployed app.
+// Ship the generated attribution into dist/ so the notices accompany the
+// redistributed code in the deployed app. Both the npm (repo root) and the Rust
+// (src-tauri, cargo-about) files are Markdown and land side by side in dist/;
+// for the Tauri build this dist/ is the frontendDist that gets bundled, so the
+// Rust notices ride along without a separate tauri `resources` entry.
+const LICENSE_FILES = [
+  { fileName: 'THIRD-PARTY-LICENSES.md', src: './THIRD-PARTY-LICENSES.md' },
+  { fileName: 'THIRD-PARTY-LICENSES-RUST.md', src: './src-tauri/THIRD-PARTY-LICENSES-RUST.md' },
+]
+
 function thirdPartyLicenses(): Plugin {
-  const src = fileURLToPath(new URL('./THIRD-PARTY-LICENSES.md', import.meta.url))
   return {
     name: 'third-party-licenses',
     apply: 'build',
     generateBundle() {
-      this.emitFile({ type: 'asset', fileName: 'THIRD-PARTY-LICENSES.md', source: readFileSync(src, 'utf8') })
+      for (const { fileName, src } of LICENSE_FILES) {
+        const path = fileURLToPath(new URL(src, import.meta.url))
+        // Normalise to LF so the shipped notice is byte-stable no matter the
+        // checkout's line endings (cargo-about copies some crate texts verbatim,
+        // CRLF included; the committed blob is LF via .gitattributes).
+        const source = readFileSync(path, 'utf8').replace(/\r\n?/g, '\n')
+        this.emitFile({ type: 'asset', fileName, source })
+      }
     },
   }
 }

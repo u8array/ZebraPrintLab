@@ -1,70 +1,29 @@
-<html>
+# Third-party licenses (Rust)
 
-<head>
-    <style>
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: #333;
-                color: white;
-            }
-            a {
-                color: skyblue;
-            }
-        }
-        .container {
-            font-family: sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .intro {
-            text-align: center;
-        }
-        .licenses-list {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
-        }
-        .license-used-by {
-            margin-top: -10px;
-        }
-        .license-text {
-            max-height: 200px;
-            overflow-y: scroll;
-            white-space: pre-wrap;
-        }
-    </style>
-</head>
+Licenses of the Rust crates redistributed in the ZebraPrintLab desktop app (the
+Tauri bundle). Generated from the crate dependency tree by `cargo-about` via
+`src-tauri/about.hbs`; the Rust-side counterpart of `THIRD-PARTY-LICENSES.md`
+(npm). A freshness gate in CI regenerates this file and fails the build if it
+drifts from the locked dependencies.
 
-<body>
-    <main class="container">
-        <div class="intro">
-            <h1>Third Party Licenses</h1>
-            <p>This page lists the licenses of the Rust projects used in ZebraPrintLab.</p>
-        </div>
-    
-        <h2>Overview of licenses:</h2>
-        <ul class="licenses-overview">
-            {{#each overview}}
-            <li><a href="#{{id}}">{{name}}</a> ({{count}})</li>
-            {{/each}}
-        </ul>
+## Overview
 
-        <h2>All license text:</h2>
-        <ul class="licenses-list">
-            {{#each licenses}}
-            <li class="license">
-                <h3 id="{{id}}">{{name}}</h3>
-                <h4>Used by:</h4>
-                <ul class="license-used-by">
-                    {{#each used_by}}
-                    <li><a href="{{#if crate.repository}} {{crate.repository}} {{else}} https://crates.io/crates/{{crate.name}} {{/if}}">{{crate.name}} {{crate.version}}</a></li>
-                    {{/each}}
-                </ul>
-                <pre class="license-text">{{text}}</pre>
-            </li>
-            {{/each}}
-        </ul>
-    </main>
-</body>
+{{#each overview}}
+- {{{name}}} ({{count}})
+{{/each}}
 
-</html>
+## License texts
+
+{{#each licenses}}
+### {{{name}}}
+
+Used by:
+
+{{#each used_by}}
+- [{{crate.name}} {{crate.version}}]({{#if crate.repository}}{{{crate.repository}}}{{else}}https://crates.io/crates/{{crate.name}}{{/if}})
+{{/each}}
+````
+{{{text}}}
+````
+
+{{/each}}
