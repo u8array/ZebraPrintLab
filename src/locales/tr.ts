@@ -6,8 +6,8 @@ const tr = {
     groupCodeCommon: 'Yaygın',
     groupCode1d: '1D Doğrusal',
     groupCode2d: '2D Matris',
-    groupCodePostal: 'Posta ve Eski',
     groupShapes: 'Şekiller',
+    groupLegacy: 'Eski',
     searchPlaceholder: 'Nesne ara…',
     removeRow: 'Kaldır',
     viewFlat: 'Düz',
@@ -443,6 +443,7 @@ const tr = {
     suspiciousChars: 'Şüpheli karakterler',
     markerValueUnsafe: 'Değişken değeri kodlamayı bozuyor',
     gs1ValueInvalid: 'Değişken değeri GS1 verilerini bozuyor',
+    printerSupportLimited: 'Sınırlı destek',
   },
 
   printerSettings: {

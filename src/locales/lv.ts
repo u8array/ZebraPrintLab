@@ -6,8 +6,8 @@ const lv = {
     groupCodeCommon: 'Izplatīti',
     groupCode1d: '1D Lineārs',
     groupCode2d: '2D Matrica',
-    groupCodePostal: 'Pasta & Legacy',
     groupShapes: 'Formas',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Meklēt objektus…',
     removeRow: 'Noņemt',
     viewFlat: 'Plakans',
@@ -443,6 +443,7 @@ const lv = {
     suspiciousChars: 'Aizdomīgas rakstzīmes',
     markerValueUnsafe: 'Mainīgā vērtība pārkāpj kodējumu',
     gs1ValueInvalid: 'Mainīgā vērtība pārkāpj GS1 datus',
+    printerSupportLimited: 'Ierobežots atbalsts',
   },
 
   printerSettings: {

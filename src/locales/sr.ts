@@ -6,8 +6,8 @@ const sr = {
     groupCodeCommon: 'Uobičajeni',
     groupCode1d: '1D Linearni',
     groupCode2d: '2D Matrica',
-    groupCodePostal: 'Poštanski i Legacy',
     groupShapes: 'Облици',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Претражи објекте…',
     removeRow: 'Уклони',
     viewFlat: 'Равно',
@@ -443,6 +443,7 @@ const sr = {
     suspiciousChars: 'Сумњиви знакови',
     markerValueUnsafe: 'Вредност квари кодирање',
     gs1ValueInvalid: 'Вредност променљиве нарушава GS1 податке',
+    printerSupportLimited: 'Ограничена подршка',
   },
 
   printerSettings: {

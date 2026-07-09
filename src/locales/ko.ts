@@ -6,8 +6,8 @@ const ko = {
     groupCodeCommon: '일반',
     groupCode1d: '1D 선형',
     groupCode2d: '2D 매트릭스',
-    groupCodePostal: '우편 & 레거시',
     groupShapes: '도형',
+    groupLegacy: '레거시',
     searchPlaceholder: '객체 검색…',
     removeRow: '제거',
     viewFlat: '평면',
@@ -443,6 +443,7 @@ const ko = {
     suspiciousChars: '의심스러운 문자',
     markerValueUnsafe: '변수 값이 인코딩을 깨뜨림',
     gs1ValueInvalid: '변수 값이 GS1 데이터를 위반',
+    printerSupportLimited: '지원 제한',
   },
 
   printerSettings: {

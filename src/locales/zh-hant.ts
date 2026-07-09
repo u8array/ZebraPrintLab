@@ -6,8 +6,8 @@ const zhHant = {
     groupCodeCommon: '常用',
     groupCode1d: '一維線性',
     groupCode2d: '二維矩陣',
-    groupCodePostal: '郵政 & 舊式',
     groupShapes: '形狀',
+    groupLegacy: '舊式',
     searchPlaceholder: '搜尋物件…',
     removeRow: '移除',
     viewFlat: '平鋪',
@@ -443,6 +443,7 @@ const zhHant = {
     suspiciousChars: '異常字元',
     markerValueUnsafe: '變數值破壞編碼',
     gs1ValueInvalid: '變數值違反GS1資料',
+    printerSupportLimited: '支援有限',
   },
 
   printerSettings: {

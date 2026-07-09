@@ -6,8 +6,8 @@ const el = {
     groupCodeCommon: 'Συνηθισμένα',
     groupCode1d: '1D Γραμμικός',
     groupCode2d: '2D Μήτρα',
-    groupCodePostal: 'Ταχυδρομικά & Παλαιά',
     groupShapes: 'Σχήματα',
+    groupLegacy: 'Παλαιά',
     searchPlaceholder: 'Αναζήτηση αντικειμένων…',
     removeRow: 'Αφαίρεση',
     viewFlat: 'Επίπεδη',
@@ -443,6 +443,7 @@ const el = {
     suspiciousChars: 'Ύποπτοι χαρακτήρες',
     markerValueUnsafe: 'Τιμή μεταβλητής παραβιάζει κωδικοποίηση',
     gs1ValueInvalid: 'Η τιμή μεταβλητής παραβιάζει δεδομένα GS1',
+    printerSupportLimited: 'Περιορισμένη υποστήριξη',
   },
 
   printerSettings: {

@@ -6,8 +6,8 @@ const sv = {
     groupCodeCommon: 'Vanliga',
     groupCode1d: '1D Linjär',
     groupCode2d: '2D Matris',
-    groupCodePostal: 'Post & Legacy',
     groupShapes: 'Former',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Sök objekt…',
     removeRow: 'Ta bort',
     viewFlat: 'Platt',
@@ -443,6 +443,7 @@ const sv = {
     suspiciousChars: 'Konstiga tecken',
     markerValueUnsafe: 'Variabelvärde bryter kodning',
     gs1ValueInvalid: 'Variabelvärde bryter GS1-data',
+    printerSupportLimited: 'Begränsat stöd',
   },
 
   printerSettings: {

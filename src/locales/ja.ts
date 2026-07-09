@@ -6,8 +6,8 @@ const ja = {
     groupCodeCommon: '一般的',
     groupCode1d: '1Dリニア',
     groupCode2d: '2Dマトリクス',
-    groupCodePostal: '郵便 & レガシー',
     groupShapes: '図形',
+    groupLegacy: 'レガシー',
     searchPlaceholder: 'オブジェクトを検索…',
     removeRow: '削除',
     viewFlat: 'フラット',
@@ -443,6 +443,7 @@ const ja = {
     suspiciousChars: '不審な文字',
     markerValueUnsafe: '変数値がエンコードを破損',
     gs1ValueInvalid: '変数値がGS1データを破損',
+    printerSupportLimited: '一部非対応',
   },
 
   printerSettings: {

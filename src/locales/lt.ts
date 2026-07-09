@@ -6,8 +6,8 @@ const lt = {
     groupCodeCommon: 'Dažniausi',
     groupCode1d: '1D Tiesinis',
     groupCode2d: '2D Matrica',
-    groupCodePostal: 'Pašto & Legacy',
     groupShapes: 'Figūros',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Ieškoti objektų…',
     removeRow: 'Pašalinti',
     viewFlat: 'Plokščias',
@@ -443,6 +443,7 @@ const lt = {
     suspiciousChars: 'Įtartini simboliai',
     markerValueUnsafe: 'Kintamojo reikšmė laužo kodavimą',
     gs1ValueInvalid: 'Kintamojo reikšmė pažeidžia GS1 duomenis',
+    printerSupportLimited: 'Ribotas palaikymas',
   },
 
   printerSettings: {

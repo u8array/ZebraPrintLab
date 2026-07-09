@@ -6,8 +6,8 @@ const es = {
     groupCodeCommon: 'Comunes',
     groupCode1d: '1D Lineal',
     groupCode2d: '2D Matricial',
-    groupCodePostal: 'Postal y Legados',
     groupShapes: 'Formas',
+    groupLegacy: 'Obsoletos',
     searchPlaceholder: 'Buscar objetos…',
     removeRow: 'Quitar',
     viewFlat: 'Plano',
@@ -443,6 +443,7 @@ const es = {
     suspiciousChars: 'Caracteres extraños',
     markerValueUnsafe: 'Valor rompe la codificación',
     gs1ValueInvalid: 'El valor de variable rompe los datos GS1',
+    printerSupportLimited: 'Soporte limitado',
   },
 
   printerSettings: {

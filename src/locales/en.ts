@@ -6,8 +6,8 @@ const en = {
     groupCodeCommon: 'Common',
     groupCode1d: '1D Linear',
     groupCode2d: '2D Matrix',
-    groupCodePostal: 'Postal & Legacy',
     groupShapes: 'Shapes',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Search objects…',
     removeRow: 'Remove',
     viewFlat: 'Flat',
@@ -443,6 +443,7 @@ const en = {
     suspiciousChars: 'Odd characters',
     markerValueUnsafe: 'Variable value breaks encoding',
     gs1ValueInvalid: 'Variable value breaks GS1 data',
+    printerSupportLimited: 'Limited support',
   },
 
   printerSettings: {

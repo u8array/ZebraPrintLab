@@ -6,8 +6,8 @@ const no = {
     groupCodeCommon: 'Vanlige',
     groupCode1d: '1D Lineær',
     groupCode2d: '2D Matrise',
-    groupCodePostal: 'Post & Legacy',
     groupShapes: 'Former',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Søk etter objekter…',
     removeRow: 'Fjern',
     viewFlat: 'Flat',
@@ -443,6 +443,7 @@ const no = {
     suspiciousChars: 'Merkelige tegn',
     markerValueUnsafe: 'Variabelverdi bryter koding',
     gs1ValueInvalid: 'Variabelverdi bryter GS1-data',
+    printerSupportLimited: 'Begrenset støtte',
   },
 
   printerSettings: {

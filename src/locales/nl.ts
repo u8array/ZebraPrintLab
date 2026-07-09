@@ -6,8 +6,8 @@ const nl = {
     groupCodeCommon: 'Veelgebruikt',
     groupCode1d: '1D Lineair',
     groupCode2d: '2D Matrix',
-    groupCodePostal: 'Post & Legacy',
     groupShapes: 'Vormen',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Objecten zoeken…',
     removeRow: 'Verwijderen',
     viewFlat: 'Plat',
@@ -443,6 +443,7 @@ const nl = {
     suspiciousChars: 'Rare tekens',
     markerValueUnsafe: 'Variabelwaarde breekt codering',
     gs1ValueInvalid: 'Variabelewaarde schendt GS1-gegevens',
+    printerSupportLimited: 'Beperkte ondersteuning',
   },
 
   printerSettings: {
