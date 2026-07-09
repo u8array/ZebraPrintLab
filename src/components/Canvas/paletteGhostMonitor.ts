@@ -2,7 +2,8 @@ import type { DragEndEvent, DragMoveEvent } from "@dnd-kit/core";
 import { CANVAS_DROPPABLE_ID, type PaletteDragData } from "../../dnd/types";
 import { getEntry } from "../../registry";
 import type { LeafObject } from "../../registry";
-import { spawnRotationOverride } from "../../lib/spawnRotation";
+import { centeredSpawnAnchor, spawnRotationOverride } from "../../lib/spawn";
+import type { LabelConfig } from "../../types/LabelConfig";
 import type { ViewRotation } from "./rotationGeometry";
 
 /** Id of the palette drop-preview object; renderers treat it like a pristine
@@ -21,19 +22,24 @@ export interface PaletteGhostDeps {
   /** Current canvas view rotation, so the ghost previews the same spawn
    *  rotation the store applies on drop. */
   viewRotation: () => ViewRotation;
+  /** Label config for the bounds math that centers the spawn on the pointer. */
+  label: () => LabelConfig;
 }
 
 /** The addable drag resolved at pointer, or null when the pointer is unmeasured
  *  or the drag carries no type. Shared so ghost preview and actual spawn agree
- *  on which drags are addable and where. */
+ *  on which drags are addable and where. The anchor is centered on the pointer
+ *  (see centeredSpawnAnchor), so ghost and drop land identically. */
 function resolvePaletteDrag(
   event: DragMoveEvent | DragEndEvent,
-  pointerPos: PaletteGhostDeps["pointerPos"],
+  { pointerPos, label, viewRotation }: PaletteGhostDeps,
 ) {
-  const pos = pointerPos();
-  if (!pos) return null;
+  const at = pointerPos();
+  if (!at) return null;
   const dragData = event.active.data.current as PaletteDragData | undefined;
   if (!dragData?.type) return null;
+  const pos = centeredSpawnAnchor(dragData.type, dragData.propsOverride, at, label(), viewRotation());
+  if (!pos) return null;
   return { pos, type: dragData.type, propsOverride: dragData.propsOverride };
 }
 
@@ -42,7 +48,8 @@ function resolvePaletteDrag(
  *  keyed on the drag translate, which the drag-end reducer resets, so a stale
  *  move can arrive after onDragEnd. The live flag drops those moves, else the
  *  ghost outlives the drag. */
-export function paletteGhostHandlers({ live, locked, pointerPos, setGhost, addObject, viewRotation }: PaletteGhostDeps) {
+export function paletteGhostHandlers(deps: PaletteGhostDeps) {
+  const { live, locked, setGhost, addObject, viewRotation } = deps;
   return {
     onDragStart() {
       live.current = true;
@@ -53,7 +60,7 @@ export function paletteGhostHandlers({ live, locked, pointerPos, setGhost, addOb
         setGhost(null);
         return;
       }
-      const drag = resolvePaletteDrag(event, pointerPos);
+      const drag = resolvePaletteDrag(event, deps);
       const def = drag && getEntry(drag.type);
       if (!drag || !def) return;
       setGhost({
@@ -73,7 +80,7 @@ export function paletteGhostHandlers({ live, locked, pointerPos, setGhost, addOb
       setGhost(null);
       if (locked) return;
       if (event.over?.id !== CANVAS_DROPPABLE_ID) return;
-      const drag = resolvePaletteDrag(event, pointerPos);
+      const drag = resolvePaletteDrag(event, deps);
       if (!drag) return;
       addObject(drag.type, drag.pos, drag.propsOverride);
     },

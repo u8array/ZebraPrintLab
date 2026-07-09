@@ -1169,6 +1169,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       setGhost,
       addObject,
       viewRotation: () => viewRotation,
+      label: () => label,
     }),
   );
 

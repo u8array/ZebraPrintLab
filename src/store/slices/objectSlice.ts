@@ -15,7 +15,7 @@ import {
 import { getEntry } from '../../registry';
 import { reorderForZ, type ZOrderDir } from '../../lib/zorder';
 import { makeReverseBackingBox, precedingBackingExists, isOwnReverseBacking } from '../../lib/reverseBacking';
-import { spawnRotationOverride } from '../../lib/spawnRotation';
+import { spawnRotationOverride } from '../../lib/spawn';
 import {
   applyObjectChanges,
   DUPLICATE_OFFSET_DOTS,

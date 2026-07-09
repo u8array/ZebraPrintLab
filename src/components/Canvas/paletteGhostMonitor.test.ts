@@ -3,8 +3,14 @@ import type { DragEndEvent, DragMoveEvent } from "@dnd-kit/core";
 import { paletteGhostHandlers, type PaletteGhostDeps } from "./paletteGhostMonitor";
 import { CANVAS_DROPPABLE_ID } from "../../dnd/types";
 import type { LeafObject } from "../../registry";
+import { centeredSpawnAnchor } from "../../lib/spawn";
 
 const CANVAS = CANVAS_DROPPABLE_ID;
+const LABEL = { widthMm: 100, heightMm: 60, dpmm: 8 };
+/** Pointer used by the default harness; spawns center on it. */
+const POINTER = { x: 10, y: 20 };
+const centeredAt = (type: string, propsOverride?: object) =>
+  centeredSpawnAnchor(type, propsOverride, POINTER, LABEL, 0);
 
 interface Added {
   type: string;
@@ -31,21 +37,23 @@ function harness(overrides: Partial<PaletteGhostDeps> = {}) {
     setGhost: (g) => calls.ghost.push(g),
     addObject: (type, position, propsOverride) => calls.added.push({ type, position, propsOverride }),
     viewRotation: () => 0,
+    label: () => LABEL,
     ...overrides,
   };
   return { deps, calls, handlers: () => paletteGhostHandlers(deps) };
 }
 
 describe("paletteGhostHandlers", () => {
-  it("sets the ghost while moving over the canvas and spawns at the pointer on drop", () => {
+  it("sets the ghost centered on the pointer and drops at the same spot", () => {
     const { calls, handlers } = harness();
     handlers().onDragStart();
     handlers().onDragMove(dragEvent(CANVAS));
-    expect(calls.ghost.at(-1)).toMatchObject({ id: "__ghost__", type: "text", x: 10, y: 20 });
+    const expected = centeredAt("text");
+    expect(calls.ghost.at(-1)).toMatchObject({ id: "__ghost__", type: "text", ...expected });
     handlers().onDragEnd(dragEvent(CANVAS));
     expect(calls.ghost.at(-1)).toBeNull();
-    // Assert the full spawn contract: the drop lands at the mapped pointer.
-    expect(calls.added).toEqual([{ type: "text", position: { x: 10, y: 20 }, propsOverride: undefined }]);
+    // Ghost/drop parity: the spawn lands exactly where the preview sat.
+    expect(calls.added).toEqual([{ type: "text", position: expected, propsOverride: undefined }]);
   });
 
   it("previews the rotated view's spawn rotation on the ghost", () => {
@@ -62,7 +70,7 @@ describe("paletteGhostHandlers", () => {
     handlers().onDragMove(dragEvent(CANVAS, { type: "text", propsOverride }));
     expect(calls.ghost.at(-1)?.props).toMatchObject(propsOverride);
     handlers().onDragEnd(dragEvent(CANVAS, { type: "text", propsOverride }));
-    expect(calls.added.at(-1)).toEqual({ type: "text", position: { x: 10, y: 20 }, propsOverride });
+    expect(calls.added.at(-1)).toEqual({ type: "text", position: centeredAt("text", propsOverride), propsOverride });
   });
 
   it("drops a stale onDragMove arriving after onDragEnd (lingering-ghost regression)", () => {
