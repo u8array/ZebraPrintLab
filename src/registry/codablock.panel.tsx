@@ -9,8 +9,8 @@ import { CheckboxRow } from "../components/Properties/CheckboxRow";
 import { fieldGridCols, fieldGridCell } from "../components/ui/formStyles";
 import {
   CODABLOCK_COLUMNS_MAX,
-  CODABLOCK_COLUMNS_MIN,
   CODABLOCK_DEFAULT_COLUMNS,
+  CODABLOCK_PREVIEW_COLUMNS_MIN,
   type CodablockProps,
 } from "./codablock";
 
@@ -47,7 +47,7 @@ export const codablockPanel: ObjectTypeUi<CodablockProps> = {
             <NumberInput
               label={loc.columns}
               value={p.columns ?? CODABLOCK_DEFAULT_COLUMNS}
-              min={CODABLOCK_COLUMNS_MIN}
+              min={CODABLOCK_PREVIEW_COLUMNS_MIN}
               max={CODABLOCK_COLUMNS_MAX}
               onChange={(columns) => onChange({ columns })}
               zplCmd="^BB"

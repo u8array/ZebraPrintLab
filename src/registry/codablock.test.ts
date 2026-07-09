@@ -38,8 +38,8 @@ describe('clampCodablockColumns', () => {
     expect(clampCodablockColumns(NaN)).toBe(6);
   });
 
-  it('clamps into the previewable c range 4-62 (bwip floor is 4)', () => {
-    expect(clampCodablockColumns(1)).toBe(4);
+  it('clamps into the spec c range 2-62 (kept faithful for round-trip)', () => {
+    expect(clampCodablockColumns(1)).toBe(2);
     expect(clampCodablockColumns(99)).toBe(62);
     expect(clampCodablockColumns(10)).toBe(10);
   });
@@ -52,9 +52,9 @@ describe('codablock ^BB emit', () => {
     expect(generateZPL(BASE_LABEL, cbObjects())).toContain('^BBN,2,Y,6,,F');
   });
 
-  it('clamps columns into the c range on emit', () => {
+  it('clamps columns into the spec c range on emit', () => {
     expect(generateZPL(BASE_LABEL, cbObjects({ columns: 99 }))).toContain(',62,,F');
-    expect(generateZPL(BASE_LABEL, cbObjects({ columns: 1 }))).toContain(',4,,F');
+    expect(generateZPL(BASE_LABEL, cbObjects({ columns: 1 }))).toContain(',2,,F');
   });
 
   it('backfills legacy codablock objects saved before columns existed', () => {
@@ -68,6 +68,14 @@ describe('codablock ^BB parse / round-trip', () => {
   it('reads the chars-per-row field and round-trips columns', () => {
     const obj = codablockOf('^XA^FO10,10^BY2^BBN,2,Y,10,,F^FD1234567890^FS^XZ');
     expect(obj?.props.columns).toBe(10);
+  });
+
+  it('preserves an imported c below the preview floor (round-trip faithful)', () => {
+    // c=2 is spec-valid; the model/emit keep it even though the preview floors
+    // at 4, so a re-export prints the same barcode as the source.
+    const obj = codablockOf('^XA^FO10,10^BY2^BBN,2,Y,2,,F^FD1234567890^FS^XZ');
+    expect(obj?.props.columns).toBe(2);
+    expect(generateZPL(BASE_LABEL, [obj as LabelObject])).toContain(',2,,F');
   });
 
   it('defaults columns when ^BB omits the c field (legacy single-row)', () => {

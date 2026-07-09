@@ -7,14 +7,17 @@ import { type ZplRotation } from "./rotation";
 /** CODABLOCK A requires ^BY module width >= 2 (spec). */
 const CODABLOCK_MODULE_WIDTH_MIN = 2;
 
-/** CODABLOCK ^BB c range (chars per row). The ZPL spec allows 2-62, but the
- *  bwip-js codablockf preview rejects columns below 4, so we constrain to 4-62
- *  to keep preview and print consistent. Row count is derived from data length
- *  ÷ columns; the firmware collapses to a single row unless c is given (verified
- *  on a ZD230: r alone does not stack). */
-export const CODABLOCK_COLUMNS_MIN = 4;
+/** CODABLOCK ^BB c (chars per row): the ZPL spec range, kept faithfully so an
+ *  imported c is preserved on re-emit. Row count derives from data length ÷ c;
+ *  the firmware collapses to one row unless c is given (verified on a ZD230: r
+ *  alone does not stack). */
+export const CODABLOCK_COLUMNS_MIN = 2;
 export const CODABLOCK_COLUMNS_MAX = 62;
 export const CODABLOCK_DEFAULT_COLUMNS = 6;
+/** bwip-js codablockf rejects columns below 4, so the on-canvas preview (and the
+ *  panel input that steers new values) floor here; the model/emit still carry
+ *  the true 2-62 so print and round-trip stay faithful for an imported c of 2-3. */
+export const CODABLOCK_PREVIEW_COLUMNS_MIN = 4;
 
 /** Clamp to the ^BB c range; also backfills legacy objects and imports that
  *  predate the columns prop (undefined → default). */

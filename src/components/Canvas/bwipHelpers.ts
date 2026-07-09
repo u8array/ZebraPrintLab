@@ -3,7 +3,7 @@
 
 import bwipjs from "bwip-js/browser";
 import { getEntry, type LeafObject } from "../../registry";
-import { clampCodablockColumns } from "../../registry/codablock";
+import { clampCodablockColumns, CODABLOCK_PREVIEW_COLUMNS_MIN } from "../../registry/codablock";
 import { barcodeTextZoneDots, barcodeZoneAbove } from "../../lib/barcodeHri";
 import { upceData6FromFd } from "../../registry/hriFormatters";
 import type { LabelObject } from "../../types/Group";
@@ -589,10 +589,11 @@ export function buildBwipOptions(
         text: p.content || " ",
         scale: BWIP_SCALE,
         // Pin columns to the ^BB c value so the preview tracks the columns
-        // control. Approximate only: bwip counts Code 128 codewords while the
+        // control, but floor at bwip's minimum of 4 (the model/emit keep the
+        // true 2-62). Approximate only: bwip counts Code 128 codewords while the
         // firmware counts characters, so numeric data stacks into fewer rows on
         // the printer (codablock stays "unverified").
-        columns: clampCodablockColumns(p.columns),
+        columns: Math.max(CODABLOCK_PREVIEW_COLUMNS_MIN, clampCodablockColumns(p.columns)),
         rowheight: Math.max(
           8,
           Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
