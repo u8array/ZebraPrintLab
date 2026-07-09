@@ -1121,6 +1121,7 @@ const sr = {
       content: 'Садржај',
       rowHeight: 'Висина реда',
       moduleWidth: 'Ширина модула',
+      columns: 'Колоне',
       security: 'Безбедносна провера',
     },
     tlc39: {

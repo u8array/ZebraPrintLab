@@ -1121,6 +1121,7 @@ const et = {
       content: 'Sisu',
       rowHeight: 'Rea kõrgus',
       moduleWidth: 'Mooduli laius',
+      columns: 'Veerud',
       security: 'Turvakontroll',
     },
     tlc39: {

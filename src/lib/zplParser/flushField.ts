@@ -517,6 +517,7 @@ export function createFlushField(
               content,
               moduleWidth: s.defaults.byModuleWidth,
               rowHeight: s.field.cbRowHeight,
+              columns: s.field.cbColumns,
               securityLevel: s.field.cbSecurity,
               rotation: s.field.bcRotation,
             } satisfies CodablockProps,

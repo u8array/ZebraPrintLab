@@ -1121,6 +1121,7 @@ const sv = {
       content: 'Innehåll',
       rowHeight: 'Radhöjd',
       moduleWidth: 'Modulbredd',
+      columns: 'Kolumner',
       security: 'Säkerhetskontroll',
     },
     tlc39: {

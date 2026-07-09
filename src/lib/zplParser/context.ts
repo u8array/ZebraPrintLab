@@ -8,7 +8,7 @@ import type { Code49Props } from "../../registry/code49";
 import type { Gs1DatabarProps } from "../../registry/gs1databar";
 import type { DataMatrixProps } from "../../registry/datamatrix";
 import type { MaxicodeProps } from "../../registry/maxicode";
-import type { CodablockProps } from "../../registry/codablock";
+import { CODABLOCK_DEFAULT_COLUMNS, type CodablockProps } from "../../registry/codablock";
 import type { ZplRotation } from "../../registry/rotation";
 import { DEFAULT_CLOCK_CHARS, type ClockChars } from "../fcTemplate";
 import { getDecoder } from "./helpers";
@@ -184,6 +184,7 @@ export interface FieldState {
   maxicodeMode: MaxicodeProps["mode"];
   mpdfRowHeight: number;
   cbRowHeight: number;
+  cbColumns: number;
   cbSecurity: CodablockProps["securityLevel"];
   // TLC39 pending
   tlcModuleWidth: number | undefined;
@@ -338,6 +339,7 @@ export function createParserState(): ParserState {
       maxicodeMode: 4,
       mpdfRowHeight: 10,
       cbRowHeight: 10,
+      cbColumns: CODABLOCK_DEFAULT_COLUMNS,
       cbSecurity: "Y",
       tlcModuleWidth: undefined,
       tlcHeight: 40,

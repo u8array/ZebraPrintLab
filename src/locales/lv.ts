@@ -1121,6 +1121,7 @@ const lv = {
       content: 'Saturs',
       rowHeight: 'Rindas augstums',
       moduleWidth: 'Moduļa platums',
+      columns: 'Kolonnas',
       security: 'Drošības pārbaude',
     },
     tlc39: {

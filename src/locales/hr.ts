@@ -1121,6 +1121,7 @@ const hr = {
       content: 'Sadržaj',
       rowHeight: 'Visina retka',
       moduleWidth: 'Širina modula',
+      columns: 'Stupci',
       security: 'Sigurnosna provjera',
     },
     tlc39: {

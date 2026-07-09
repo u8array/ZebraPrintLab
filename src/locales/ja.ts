@@ -1121,6 +1121,7 @@ const ja = {
       content: '内容',
       rowHeight: '行高さ（ドット）',
       moduleWidth: 'モジュール幅',
+      columns: '列数',
       security: 'セキュリティチェック',
     },
     tlc39: {

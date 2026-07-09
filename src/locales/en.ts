@@ -1149,6 +1149,7 @@ const en = {
       content: 'Content',
       rowHeight: 'Row height',
       moduleWidth: 'Module width',
+      columns: 'Columns',
       security: 'Security check',
     },
     tlc39: {

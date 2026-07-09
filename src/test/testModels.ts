@@ -214,6 +214,7 @@ export const testModels: Record<string, LabelObject> = {
       content: "1234567890",
       moduleWidth: 2,
       rowHeight: 2,
+      columns: 6,
       securityLevel: "Y",
       rotation: "N",
     },

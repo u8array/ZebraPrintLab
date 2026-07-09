@@ -1121,6 +1121,7 @@ const ro = {
       content: 'Conținut',
       rowHeight: 'Înălțime rând',
       moduleWidth: 'Lățime modul',
+      columns: 'Coloane',
       security: 'Verificare securitate',
     },
     tlc39: {

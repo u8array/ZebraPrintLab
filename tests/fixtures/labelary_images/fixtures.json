@@ -156,7 +156,7 @@
     },
     {
       "id": "barcode_codablock_standard",
-      "zpl_input": "^XA^BY2^FO50,50^BBN,2,Y^FD1234567890^FS^XZ",
+      "zpl_input": "^XA^BY2^FO50,50^BBN,2,Y,6,,F^FD1234567890^FS^XZ",
       "expected_bounds": {
         "x": 50,
         "y": 50,

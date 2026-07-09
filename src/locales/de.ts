@@ -1149,6 +1149,7 @@ const de = {
       content: 'Inhalt',
       rowHeight: 'Zeilenhöhe',
       moduleWidth: 'Modulbreite',
+      columns: 'Spalten',
       security: 'Sicherheitsprüfung',
     },
     tlc39: {

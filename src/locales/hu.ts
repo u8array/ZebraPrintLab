@@ -1121,6 +1121,7 @@ const hu = {
       content: 'Tartalom',
       rowHeight: 'Sormagasság',
       moduleWidth: 'Modulszélesség',
+      columns: 'Oszlopok',
       security: 'Biztonsági ellenőrzés',
     },
     tlc39: {

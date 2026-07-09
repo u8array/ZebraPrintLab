@@ -1121,6 +1121,7 @@ const no = {
       content: 'Innhold',
       rowHeight: 'Radhøyde',
       moduleWidth: 'Modulbredde',
+      columns: 'Kolonner',
       security: 'Sikkerhetskontroll',
     },
     tlc39: {

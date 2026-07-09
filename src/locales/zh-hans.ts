@@ -1121,6 +1121,7 @@ const zhHans = {
       content: '内容',
       rowHeight: '行高（点）',
       moduleWidth: '模块宽度',
+      columns: '列数',
       security: '安全检查',
     },
     tlc39: {

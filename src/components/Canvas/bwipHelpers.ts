@@ -3,6 +3,7 @@
 
 import bwipjs from "bwip-js/browser";
 import { getEntry, type LeafObject } from "../../registry";
+import { clampCodablockColumns, CODABLOCK_PREVIEW_COLUMNS_MIN } from "../../registry/codablock";
 import { barcodeTextZoneDots, barcodeZoneAbove } from "../../lib/barcodeHri";
 import { upceData6FromFd } from "../../registry/hriFormatters";
 import type { LabelObject } from "../../types/Group";
@@ -113,6 +114,13 @@ const BCID: Partial<Record<LabelObject["type"], string>> = {
 
 export const BWIP_SCALE = 2;
 const BWIP_2D_INTERNAL_SCALE = 2;
+
+// bwip-js codablockf lays out each row 6 modules narrower than Zebra firmware
+// (measured on a ZD230: bwip width = 11*c+57, firmware = 11*c+63, a constant +6
+// of per-row overhead bwip omits). Added to the footprint so the canvas matches
+// the print for text and column-filling data; short numeric data the firmware
+// compacts down stays approximate (use the printer preview for exact size).
+const CODABLOCK_FIRMWARE_MODULE_OFFSET = 6;
 
 // Lazy so SSR imports don't crash on missing `document`.
 let _validationCanvas: HTMLCanvasElement | null = null;
@@ -580,6 +588,12 @@ export function buildBwipOptions(
         bcid,
         text: p.content || " ",
         scale: BWIP_SCALE,
+        // Pin columns to the ^BB c value so the preview tracks the columns
+        // control, but floor at bwip's minimum of 4 (the model/emit keep the
+        // true 2-62). Approximate only: bwip counts Code 128 codewords while the
+        // firmware counts characters, so numeric data stacks into fewer rows on
+        // the printer (codablock stays "unverified").
+        columns: Math.max(CODABLOCK_PREVIEW_COLUMNS_MIN, clampCodablockColumns(p.columns)),
         rowheight: Math.max(
           8,
           Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
@@ -842,7 +856,8 @@ function getUprightDisplaySize(
         Math.round(p.rowHeight / Math.max(p.moduleWidth, 1)),
       );
       const w =
-        (cw / BWIP_SCALE) * dotsToPx(p.moduleWidth, scale, dpmm);
+        (cw / BWIP_SCALE + CODABLOCK_FIRMWARE_MODULE_OFFSET) *
+        dotsToPx(p.moduleWidth, scale, dpmm);
       const h =
         (ch / BWIP_SCALE) *
         (dotsToPx(p.rowHeight, scale, dpmm) / specRowheight);

@@ -1121,6 +1121,7 @@ const he = {
       content: 'תוכן',
       rowHeight: 'גובה שורה',
       moduleWidth: 'רוחב מודול',
+      columns: 'עמודות',
       security: 'בדיקת אבטחה',
     },
     tlc39: {

@@ -1121,6 +1121,7 @@ const lt = {
       content: 'Turinys',
       rowHeight: 'Eilutės aukštis',
       moduleWidth: 'Modulio plotis',
+      columns: 'Stulpeliai',
       security: 'Saugumo patikra',
     },
     tlc39: {

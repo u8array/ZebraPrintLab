@@ -1121,6 +1121,7 @@ const tr = {
       content: 'İçerik',
       rowHeight: 'Satır yüksekliği',
       moduleWidth: 'Modül genişliği',
+      columns: 'Sütunlar',
       security: 'Güvenlik kontrolü',
     },
     tlc39: {

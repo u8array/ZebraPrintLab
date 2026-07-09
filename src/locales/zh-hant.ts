@@ -1121,6 +1121,7 @@ const zhHant = {
       content: '內容',
       rowHeight: '行高（點）',
       moduleWidth: '模組寬度',
+      columns: '欄數',
       security: '安全檢查',
     },
     tlc39: {

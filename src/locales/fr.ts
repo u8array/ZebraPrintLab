@@ -1121,6 +1121,7 @@ const fr = {
       content: 'Contenu',
       rowHeight: 'Hauteur ligne',
       moduleWidth: 'Largeur module',
+      columns: 'Colonnes',
       security: 'Contrôle de sécurité',
     },
     tlc39: {

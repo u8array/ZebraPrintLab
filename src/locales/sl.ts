@@ -1121,6 +1121,7 @@ const sl = {
       content: 'Vsebina',
       rowHeight: 'Višina vrstice',
       moduleWidth: 'Širina modula',
+      columns: 'Stolpci',
       security: 'Varnostno preverjanje',
     },
     tlc39: {

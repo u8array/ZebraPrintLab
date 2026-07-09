@@ -1121,6 +1121,7 @@ const bg = {
       content: 'Съдържание',
       rowHeight: 'Височина на ред',
       moduleWidth: 'Ширина на модул',
+      columns: 'Колони',
       security: 'Проверка за сигурност',
     },
     tlc39: {
