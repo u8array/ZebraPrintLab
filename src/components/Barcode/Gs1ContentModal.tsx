@@ -199,7 +199,9 @@ function Gs1Builder({ objectId }: { objectId: string }) {
       labelledBy={titleId}
       describedBy={subtitleId}
       onClose={closeGs1Builder}
-      boxClassName="bg-surface border border-border rounded-lg shadow-2xl w-[900px] max-w-[95vw] max-h-[85vh] flex flex-col overflow-hidden"
+      // Fixed height so the palette's query-driven row count (curated set vs full
+      // catalog) scrolls inside the aside instead of resizing the whole box.
+      boxClassName="bg-surface border border-border rounded-lg shadow-2xl w-[900px] max-w-[95vw] h-[85vh] flex flex-col overflow-hidden"
     >
       <DialogHeader
         titleId={titleId}
