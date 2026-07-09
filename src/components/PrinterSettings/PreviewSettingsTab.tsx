@@ -55,7 +55,13 @@ export function PreviewSettingsTab() {
     const a = getPrinterAddress();
     return { host: a.host, port: String(a.port) };
   });
-  const persistAddress = () => setPrinterAddress(address.host.trim(), address.port);
+  const persistAddress = () => {
+    setPrinterAddress(address.host.trim(), address.port);
+    // Snap the inputs to the validated values (host trimmed, an invalid/empty
+    // port defaulted to 9100) so the display matches what the preview uses.
+    const a = getPrinterAddress();
+    setAddress({ host: a.host, port: String(a.port) });
+  };
 
   return (
     <div className="flex flex-col gap-5">

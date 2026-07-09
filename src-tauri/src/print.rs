@@ -106,10 +106,11 @@ pub async fn query_zpl_tcp(host: String, port: u16, zpl: String) -> Result<TcpQu
   let mut buf = [0u8; 64 * 1024];
   let deadline = tokio::time::Instant::now() + READ_DEADLINE;
   loop {
-    // A truncated body here is rejected downstream (the ~DY byte count won't
-    // match), so a hit deadline fails safe rather than returning garbage.
+    // A complete reply ends on the idle gap long before this cap, so reaching
+    // it means the stream is incomplete (slow render, trickle): report the
+    // timeout explicitly instead of returning a truncated body downstream.
     if tokio::time::Instant::now() >= deadline {
-      break;
+      return Err("read timed out".to_string());
     }
     let wait = if body.is_empty() { FIRST_BYTE_TIMEOUT } else { IDLE_TIMEOUT };
     match timeout(wait, stream.read(&mut buf)).await {
