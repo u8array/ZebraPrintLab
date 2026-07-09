@@ -10,7 +10,7 @@
 // in src/) prints advisory warnings but never fails; the source/handler mapping
 // is honestly ambiguous (barcodes in registry, layout in the parser, config
 // elsewhere), so it informs rather than gates.
-import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -116,10 +116,10 @@ function spliceReadme(current, block) {
 function codeCrossCheck(sections) {
   const files = [];
   (function walk(dir) {
-    for (const name of readdirSync(dir)) {
-      const p = join(dir, name);
-      if (statSync(p).isDirectory()) walk(p);
-      else if (/\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name)) files.push(p);
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, entry.name);
+      if (entry.isDirectory()) walk(p);
+      else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) files.push(p);
     }
   })(SRC);
   const haystack = files.map((f) => readFileSync(f, 'utf8')).join('\n');
