@@ -36,3 +36,15 @@ export function moduleTooSmallPreflight<P extends object>(
 ): (obj: { props: P }, ctx: PreflightCtx) => PreflightProducerResult[] {
   return (obj, ctx) => moduleTooSmallFindings(obj.props[prop] as number, ctx.label.dpmm, ctx.unit);
 }
+
+/** Registry `preflight` for legacy/niche symbologies (Code 49, TLC39): the
+ *  module-size check plus a standing "not supported on all printers" warning,
+ *  since many printers, especially entry-level, do not implement these. */
+export function limitedSupportPreflight<P extends object>(
+  prop: keyof P & string,
+): (obj: { props: P }, ctx: PreflightCtx) => PreflightProducerResult[] {
+  return (obj, ctx) => [
+    ...moduleTooSmallFindings(obj.props[prop] as number, ctx.label.dpmm, ctx.unit),
+    { kind: "printerSupportLimited" },
+  ];
+}

@@ -5,7 +5,7 @@ export const planetCoreConfig: Barcode1DCoreConfig = {
   label: "Planet Code",
   icon: "✉P",
   placeholderContent: '12345678901',
-  group: 'code-postal',
+  group: 'legacy',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     return `^B5${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;

@@ -6,8 +6,8 @@ const bg = {
     groupCodeCommon: 'Общи',
     groupCode1d: '1D Линеен',
     groupCode2d: '2D Матричен',
-    groupCodePostal: 'Пощенски и Legacy',
     groupShapes: 'Форми',
+    groupLegacy: 'Наследени',
     searchPlaceholder: 'Търсене на обекти…',
     removeRow: 'Премахни',
     viewFlat: 'Плосък',
@@ -443,6 +443,7 @@ const bg = {
     suspiciousChars: 'Съмнителни знаци',
     markerValueUnsafe: 'Стойност нарушава кодирането',
     gs1ValueInvalid: 'Стойността на променливата нарушава GS1 данни',
+    printerSupportLimited: 'Ограничена поддръжка',
   },
 
   printerSettings: {

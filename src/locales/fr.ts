@@ -6,8 +6,8 @@ const fr = {
     groupCodeCommon: 'Courants',
     groupCode1d: '1D Linéaire',
     groupCode2d: '2D Matriciel',
-    groupCodePostal: 'Postal & Obsolètes',
     groupShapes: 'Formes',
+    groupLegacy: 'Obsolètes',
     searchPlaceholder: 'Rechercher des objets…',
     removeRow: 'Supprimer',
     viewFlat: 'Plat',
@@ -443,6 +443,7 @@ const fr = {
     suspiciousChars: 'Caractères suspects',
     markerValueUnsafe: "Valeur brise l'encodage",
     gs1ValueInvalid: 'La valeur de la variable enfreint les données GS1',
+    printerSupportLimited: 'Support limité',
   },
 
   printerSettings: {

@@ -6,8 +6,8 @@ const et = {
     groupCodeCommon: 'Levinud',
     groupCode1d: '1D Lineaarne',
     groupCode2d: '2D Maatriks',
-    groupCodePostal: 'Postindeks ja Legacy',
     groupShapes: 'Kujundid',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Otsi objekte…',
     removeRow: 'Eemalda',
     viewFlat: 'Lame',
@@ -443,6 +443,7 @@ const et = {
     suspiciousChars: 'Kahtlased märgid',
     markerValueUnsafe: 'Muutuja väärtus rikub kodeeringut',
     gs1ValueInvalid: 'Muutuja väärtus rikub GS1 andmeid',
+    printerSupportLimited: 'Piiratud tugi',
   },
 
   printerSettings: {

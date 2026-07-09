@@ -6,8 +6,8 @@ const da = {
     groupCodeCommon: 'Almindelige',
     groupCode1d: '1D Lineær',
     groupCode2d: '2D Matrix',
-    groupCodePostal: 'Post & Legacy',
     groupShapes: 'Former',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Søg efter objekter…',
     removeRow: 'Fjern',
     viewFlat: 'Flad',
@@ -443,6 +443,7 @@ const da = {
     suspiciousChars: 'Mærkelige tegn',
     markerValueUnsafe: 'Variabelværdi bryder kodning',
     gs1ValueInvalid: 'Variabelværdi bryder GS1-data',
+    printerSupportLimited: 'Begrænset support',
   },
 
   printerSettings: {

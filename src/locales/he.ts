@@ -6,8 +6,8 @@ const he = {
     groupCodeCommon: 'נפוצים',
     groupCode1d: '1D ליניארי',
     groupCode2d: '2D מטריצה',
-    groupCodePostal: 'דואר ומורשת',
     groupShapes: 'צורות',
+    groupLegacy: 'מורשת',
     searchPlaceholder: 'חיפוש אובייקטים…',
     removeRow: 'הסר',
     viewFlat: 'שטוח',
@@ -443,6 +443,7 @@ const he = {
     suspiciousChars: 'תווים חשודים',
     markerValueUnsafe: 'ערך משתנה שובר קידוד',
     gs1ValueInvalid: 'ערך המשתנה שובר נתוני GS1',
+    printerSupportLimited: 'תמיכה מוגבלת',
   },
 
   printerSettings: {

@@ -6,8 +6,8 @@ const ar = {
     groupCodeCommon: 'شائعة',
     groupCode1d: 'خطي 1D',
     groupCode2d: 'مصفوفة 2D',
-    groupCodePostal: 'بريدي وإرث',
     groupShapes: 'أشكال',
+    groupLegacy: 'قديمة',
     searchPlaceholder: 'بحث عن كائنات…',
     removeRow: 'إزالة',
     viewFlat: 'مسطح',
@@ -443,6 +443,7 @@ const ar = {
     suspiciousChars: 'أحرف مريبة',
     markerValueUnsafe: 'قيمة المتغير تكسر الترميز',
     gs1ValueInvalid: 'قيمة المتغير تُفسد بيانات GS1',
+    printerSupportLimited: 'دعم محدود',
   },
 
   printerSettings: {

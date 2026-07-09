@@ -6,8 +6,8 @@ const fa = {
     groupCodeCommon: 'رایج',
     groupCode1d: 'خطی 1D',
     groupCode2d: 'ماتریسی 2D',
-    groupCodePostal: 'پستی و قدیمی',
     groupShapes: 'اشکال',
+    groupLegacy: 'قدیمی',
     searchPlaceholder: 'جستجوی اشیا…',
     removeRow: 'حذف',
     viewFlat: 'تخت',
@@ -443,6 +443,7 @@ const fa = {
     suspiciousChars: 'نویسه‌های مشکوک',
     markerValueUnsafe: 'مقدار متغیر کدگذاری را می‌شکند',
     gs1ValueInvalid: 'مقدار متغیر داده‌های GS1 را می‌شکند',
+    printerSupportLimited: 'پشتیبانی محدود',
   },
 
   printerSettings: {

@@ -6,8 +6,8 @@ const hu = {
     groupCodeCommon: 'Általános',
     groupCode1d: '1D Lineáris',
     groupCode2d: '2D Mátrix',
-    groupCodePostal: 'Postai és Legacy',
     groupShapes: 'Alakzatok',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Objektumok keresése…',
     removeRow: 'Eltávolítás',
     viewFlat: 'Lapos',
@@ -443,6 +443,7 @@ const hu = {
     suspiciousChars: 'Gyanús karakterek',
     markerValueUnsafe: 'Változóérték megtöri a kódolást',
     gs1ValueInvalid: 'A változó értéke sérti a GS1 adatokat',
+    printerSupportLimited: 'Korlátozott támogatás',
   },
 
   printerSettings: {

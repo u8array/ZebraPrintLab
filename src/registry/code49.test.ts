@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { code49 } from './code49';
 import type { Code49Props } from './code49';
 import type { LabelObjectBase } from '../types/LabelObject';
+import type { PreflightCtx } from '../types/preflight';
 /**
  * The four-layer height-clamp contract for ^B4 Code 49:
  *   - UI:        NumberInput min/max blocks invalid typing
@@ -97,6 +98,17 @@ describe('code49 — commitTransform height clamp on resize drag', () => {
       anchor: null,
     });
     expect(result?.height).toBeLessThanOrEqual(100);
+  });
+});
+
+describe('code49 — limited-support preflight', () => {
+  // moduleWidth 4 at 8 dpmm = 0.5 mm, above the scannability floor, so the only
+  // finding is the standing "not on all printers" warning.
+  const ctx: PreflightCtx = { label: { widthMm: 100, heightMm: 50, dpmm: 8 }, unit: 'mm' };
+
+  it('always warns that the symbology is not supported on all printers', () => {
+    const findings = code49.preflight?.(baseObj({ moduleWidth: 4 }), ctx) ?? [];
+    expect(findings.some((f) => f.kind === 'printerSupportLimited')).toBe(true);
   });
 });
 

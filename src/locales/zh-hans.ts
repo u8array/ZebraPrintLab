@@ -6,8 +6,8 @@ const zhHans = {
     groupCodeCommon: '常用',
     groupCode1d: '一维线性',
     groupCode2d: '二维矩阵',
-    groupCodePostal: '邮政 & 旧式',
     groupShapes: '形状',
+    groupLegacy: '旧式',
     searchPlaceholder: '搜索对象…',
     removeRow: '移除',
     viewFlat: '平铺',
@@ -443,6 +443,7 @@ const zhHans = {
     suspiciousChars: '异常字符',
     markerValueUnsafe: '变量值破坏编码',
     gs1ValueInvalid: '变量值违反GS1数据',
+    printerSupportLimited: '支持有限',
   },
 
   printerSettings: {

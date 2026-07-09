@@ -17,7 +17,8 @@ export type PreflightKind =
   | 'suspiciousChars'
   | 'markerValueUnsafe'
   | 'gs1ValueInvalid'
-  | 'emptyContent';
+  | 'emptyContent'
+  | 'printerSupportLimited';
 
 export interface PreflightFinding {
   objectId: string;
@@ -53,6 +54,9 @@ export const PREFLIGHT_SEVERITY: Record<PreflightKind, PreflightSeverity> = {
   // A blank field is legal ZPL and a normal drafting state; it prints a gap,
   // so warn rather than block. Mirrors the canvas placeholder.
   emptyContent: 'warning',
+  // A legacy/niche symbology (Code 49, TLC39) many printers, especially
+  // entry-level, do not implement; the ZPL is valid but may print nothing.
+  printerSupportLimited: 'warning',
 };
 
 /** What a per-type `preflight` producer receives. Minimal on purpose (the

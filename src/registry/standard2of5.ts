@@ -5,7 +5,7 @@ export const standard2of5CoreConfig: Barcode1DCoreConfig = {
   label: "Standard 2 of 5",
   icon: "S25",
   placeholderContent: '12345678',
-  group: 'code-postal',
+  group: 'legacy',
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";
     return `^BJ${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;

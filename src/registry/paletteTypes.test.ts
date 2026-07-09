@@ -18,6 +18,12 @@ describe('paletteTypes', () => {
     for (const id of PALETTE_PRESET_IDS) expect(browseIds.has(id), id).toBe(true);
   });
 
+  it('the legacy group holds the rarely-supported symbologies (Code 49, TLC39)', () => {
+    const ids = addablesInGroup('legacy', en).map((e) => e.id);
+    expect(ids).toContain('code49');
+    expect(ids).toContain('tlc39');
+  });
+
   it('the GS1 DataMatrix preset follows datamatrix and seeds gs1:true', () => {
     const ids = addablesInGroup('code-2d', en).map((e) => e.id);
     expect(ids[ids.indexOf('datamatrix') + 1]).toBe('datamatrix-gs1');

@@ -6,8 +6,8 @@ const sk = {
     groupCodeCommon: 'Bežné',
     groupCode1d: '1D Lineárny',
     groupCode2d: '2D Maticový',
-    groupCodePostal: 'Poštové a Legacy',
     groupShapes: 'Tvary',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Hľadať objekty…',
     removeRow: 'Odstrániť',
     viewFlat: 'Plochý',
@@ -443,6 +443,7 @@ const sk = {
     suspiciousChars: 'Podozrivé znaky',
     markerValueUnsafe: 'Hodnota premennej porušuje kódovanie',
     gs1ValueInvalid: 'Hodnota premennej porušuje GS1 dáta',
+    printerSupportLimited: 'Obmedzená podpora',
   },
 
   printerSettings: {

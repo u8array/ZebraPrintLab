@@ -6,8 +6,8 @@ const ro = {
     groupCodeCommon: 'Comune',
     groupCode1d: '1D Liniar',
     groupCode2d: '2D Matricial',
-    groupCodePostal: 'Poștal și Legacy',
     groupShapes: 'Forme',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Caută obiecte…',
     removeRow: 'Elimină',
     viewFlat: 'Plat',
@@ -443,6 +443,7 @@ const ro = {
     suspiciousChars: 'Caractere suspecte',
     markerValueUnsafe: 'Valoarea variabilei strică codificarea',
     gs1ValueInvalid: 'Valoarea variabilei încalcă datele GS1',
+    printerSupportLimited: 'Suport limitat',
   },
 
   printerSettings: {

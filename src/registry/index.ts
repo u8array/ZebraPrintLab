@@ -71,18 +71,18 @@ const _ObjectRegistry = {
   maxicode,
   micropdf417,
   codablock,
+  // legacy (palette bottom): still-used first, oldest/rarest last
+  codabar,
+  logmars,
   code49,
   tlc39,
-  // code-postal ("Postal & Legacy"): postal codes first, then legacy linear
   postal,
   planet,
   code11,
-  codabar,
-  logmars,
   msi,
-  plessey,
   standard2of5,
   industrial2of5,
+  plessey,
   // shape
   box,
   ellipse,

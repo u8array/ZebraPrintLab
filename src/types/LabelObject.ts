@@ -44,7 +44,8 @@ export type LabelObjectBase = z.infer<typeof labelObjectBaseSchema>;
 
 export type ObjectChanges = Partial<Omit<LabelObjectBase, 'id' | 'type'>> & { props?: object };
 
-/** Palette DISPLAY grouping only, not a barcode's dimension: `code-postal` is
- *  the "Postal & Legacy" bucket (postal + obsolete linear). The 1D/2D truth
- *  lives in BARCODE_1D_TYPES / STACKED_2D_TYPES, which emit/rotation read. */
-export type ObjectGroup = 'text' | 'code-1d' | 'code-2d' | 'code-postal' | 'shape';
+/** Palette DISPLAY grouping only, not a barcode's dimension: `legacy` collects
+ *  deprecated/rarely-supported symbologies (obsolete linear + deprecated postal
+ *  like PLANET/POSTNET). The 1D/2D truth lives in BARCODE_1D_TYPES /
+ *  STACKED_2D_TYPES, which emit/rotation read. */
+export type ObjectGroup = 'text' | 'code-1d' | 'code-2d' | 'legacy' | 'shape';

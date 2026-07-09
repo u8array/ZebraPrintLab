@@ -9,7 +9,7 @@ export const plesseyCoreConfig: Barcode1DCoreConfig = {
   label: "Plessey",
   icon: "PLS",
   placeholderContent: '12345678',
-  group: 'code-postal',
+  group: 'legacy',
   byRatio: PLESSEY_RATIO,
   zplCommand: (p) => {
     const interp = p.printInterpretation ? "Y" : "N";

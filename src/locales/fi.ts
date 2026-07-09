@@ -6,8 +6,8 @@ const fi = {
     groupCodeCommon: 'Yleiset',
     groupCode1d: '1D Lineaarinen',
     groupCode2d: '2D Matriisi',
-    groupCodePostal: 'Postit & Legacy',
     groupShapes: 'Muodot',
+    groupLegacy: 'Legacy',
     searchPlaceholder: 'Hae objekteja…',
     removeRow: 'Poista',
     viewFlat: 'Tasainen',
@@ -443,6 +443,7 @@ const fi = {
     suspiciousChars: 'Oudot merkit',
     markerValueUnsafe: 'Muuttujan arvo rikkoo koodauksen',
     gs1ValueInvalid: 'Muuttujan arvo rikkoo GS1-tiedot',
+    printerSupportLimited: 'Rajoitettu tuki',
   },
 
   printerSettings: {
