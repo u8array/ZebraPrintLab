@@ -2,6 +2,8 @@ import type { ObjectTypeCore } from '../types/ObjectType';
 import { graphicFieldPos } from './zplHelpers';
 import { getImage } from '../lib/imageCache';
 import { formatStoragePath } from '../lib/storagePath';
+import { rasterToGfa } from '../lib/imageToZpl';
+import { isAxisSwapped, objectRotation, type ZplRotation } from './rotation';
 
 /** ^GF rows are byte-packed, so the emitted (and re-parsed) width is the next
  *  multiple of 8. Shared by the emitter and the home-shift drop check so a
@@ -16,14 +18,39 @@ export function gfByteWidth(widthDots: number): number {
  *  the emitter and the home-shift drop check so the ^FT bottom anchor agrees. */
 export function imageEmitHeight(p: ImageProps): number {
   const cached = getImage(p.imageId);
+  // max(1,…) mirrors rasterToGfa's clamp so the anchor footprint can't diverge
+  // from the emitted GRF at an extreme aspect (widthDots*aspect rounding to 0).
   return cached
-    ? Math.round(p.widthDots * (cached.height / cached.width))
+    ? Math.max(1, Math.round(p.widthDots * (cached.height / cached.width)))
     : p.heightDots ?? p.widthDots;
+}
+
+/** An image rotates only when it's an inline cached bitmap: ^XG recall and
+ *  opaque rawGf can't be re-encoded. The single predicate for "this instance
+ *  turns", so the rotate button, emit footprint, and canvas can't disagree. */
+export function isImageRotatable(p: ImageProps): boolean {
+  return !!getImage(p.imageId) && !p.storedAs && !p.rawGf;
+}
+
+/** Emitted (byte-padded) footprint of the image field, axes swapped on a baked
+ *  R/B rotation. Shared by toZPL and the generator's home-shift drop check so
+ *  the two can't disagree on the anchor footprint. */
+export function imageEmitDims(p: ImageProps): { width: number; height: number } {
+  if (isImageRotatable(p) && isAxisSwapped(objectRotation(p))) {
+    return { width: gfByteWidth(imageEmitHeight(p)), height: p.widthDots };
+  }
+  return { width: gfByteWidth(p.widthDots), height: imageEmitHeight(p) };
 }
 
 export interface ImageProps {
   /** ID into the image cache */
   imageId: string;
+  /** 90-degree orientation. `^GF` has no orientation letter, so a non-N
+   *  rotation is baked into the emitted bitmap (see toZPL); the canvas shows it
+   *  via rotatedGroupTransform. Only cached (editable) images honour it.
+   *  Optional: designs saved before image rotation existed omit it (read as
+   *  'N' via objectRotation). New images seed it from defaultProps. */
+  rotation?: ZplRotation;
   /** Target width in dots (height derived from aspect ratio when a cached
    *  PNG is available; falls back to `heightDots` for recall-only
    *  placeholders). */
@@ -58,46 +85,14 @@ export interface ImageProps {
   };
 }
 
-/** Synchronously generate ^GFA using a blocking canvas (for toZPL). */
-function gfaSync(dataUrl: string, widthDots: number, threshold: number): string {
+/** Synchronously generate ^GFA using a blocking canvas (for toZPL), rotation
+ *  baked in. Shares the encoder with the async panel path via rasterToGfa. */
+function gfaSync(dataUrl: string, widthDots: number, threshold: number, rotation: ZplRotation): string {
   const img = new Image();
   // data-URL loads are synchronous on a freshly-created Image.
   img.src = dataUrl;
   if (!img.complete || !img.naturalWidth) return '';
-
-  const aspect = img.naturalHeight / img.naturalWidth;
-  const heightDots = Math.max(1, Math.round(widthDots * aspect));
-  const bytesPerRow = Math.ceil(widthDots / 8);
-  const paddedWidth = bytesPerRow * 8;
-
-  const canvas = document.createElement('canvas');
-  canvas.width = paddedWidth;
-  canvas.height = heightDots;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Could not get 2d context');
-
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, paddedWidth, heightDots);
-  ctx.drawImage(img, 0, 0, widthDots, heightDots);
-
-  const pixels = ctx.getImageData(0, 0, paddedWidth, heightDots).data;
-  const totalBytes = bytesPerRow * heightDots;
-  const hexChars: string[] = [];
-
-  for (let row = 0; row < heightDots; row++) {
-    for (let byteIdx = 0; byteIdx < bytesPerRow; byteIdx++) {
-      let byte = 0;
-      for (let bit = 0; bit < 8; bit++) {
-        const px = byteIdx * 8 + bit;
-        const idx = (row * paddedWidth + px) * 4;
-        const lum = 0.299 * (pixels[idx] ?? 255) + 0.587 * (pixels[idx + 1] ?? 255) + 0.114 * (pixels[idx + 2] ?? 255);
-        if (lum < threshold) byte |= (0x80 >> bit);
-      }
-      hexChars.push(byte.toString(16).toUpperCase().padStart(2, '0'));
-    }
-  }
-
-  return `^GFA,${totalBytes},${totalBytes},${bytesPerRow},${hexChars.join('')}`;
+  return rasterToGfa(img, widthDots, threshold, rotation).zpl;
 }
 
 export const image: ObjectTypeCore<ImageProps> = {
@@ -109,6 +104,7 @@ export const image: ObjectTypeCore<ImageProps> = {
     imageId: '',
     widthDots: 200,
     threshold: 128,
+    rotation: 'N',
   },
   defaultSize: { width: 200, height: 200 },
 
@@ -159,9 +155,11 @@ export const image: ObjectTypeCore<ImageProps> = {
     const p = obj.props;
     const cached = getImage(p.imageId);
     // ^FT anchors the graphic's bottom-left (spec p.205); right-justified ^FT
-    // keys its x off the byte-padded ^GF width. Both via shared helpers so the
-    // home-shift drop check agrees. ^FO ignores the footprint.
-    const anchor = graphicFieldPos(obj, gfByteWidth(p.widthDots), imageEmitHeight(p));
+    // keys its x off the byte-padded ^GF width. imageEmitDims applies the R/B
+    // axis swap (cached only), and the same helper feeds the home-shift drop
+    // check so the two agree. ^FO ignores the footprint.
+    const d = imageEmitDims(p);
+    const anchor = graphicFieldPos(obj, d.width, d.height);
     // Opaque graphic: re-emit the original ^GF verbatim at the (possibly moved)
     // field position. The bytes were never decoded, so there's nothing to regen.
     if (p.rawGf) return `${anchor}${p.rawGf}^FS`;
@@ -173,8 +171,12 @@ export const image: ObjectTypeCore<ImageProps> = {
       return `${anchor}^XG${formatStoragePath(p.storedAs, true)},1,1^FS`;
     }
     if (!cached) return `${anchor}^FD^FS`;
-    // Use cached GFA if available, otherwise generate synchronously
-    const gfa = p._gfaCache || gfaSync(cached.dataUrl, p.widthDots, p.threshold);
+    // Cached: bake the rotation into the bytes (^GF has no orientation letter).
+    // The cache is always upright, so a rotated field regenerates fresh here.
+    const rot = objectRotation(p);
+    const gfa = rot === 'N'
+      ? (p._gfaCache || gfaSync(cached.dataUrl, p.widthDots, p.threshold, 'N'))
+      : gfaSync(cached.dataUrl, p.widthDots, p.threshold, rot);
     return `${anchor}${gfa}^FS`;
   },
 };

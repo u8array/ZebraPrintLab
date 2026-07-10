@@ -6,6 +6,8 @@ import { getImage } from "../../lib/imageCache";
 import { useColorScheme } from "../../hooks/useColorScheme";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
+import { rotatedGroupTransform } from "./rotatedGroupTransform";
+import { isAxisSwapped, objectRotation } from "../../registry/rotation";
 
 type ImageLabelObject = Extract<LabelObject, { type: "image" }>;
 type Props = Omit<KonvaObjectProps, "obj"> & { obj: ImageLabelObject };
@@ -38,10 +40,19 @@ export function ImageObject({
   const x = offsetX + dotsToPx(obj.x, scale, dpmm);
   const y = offsetY + dotsToPx(obj.y, scale, dpmm);
 
+  // Only inline cached (editable) images bake a rotation; rawGf verbatim and
+  // storedAs recall (^XG) can't turn, so they stay upright, matching the emit.
+  const rotatable = !!cached && !p.storedAs && !p.rawGf;
+  const rotation = rotatable ? objectRotation(p) : "N";
+  const swap = isAxisSwapped(rotation);
+
   // Publish the rendered footprint (dots) for align/distribute; height tracks
-  // the aspect-locked PNG size, not the stale heightDots prop.
-  const footprintWDots = pxToDots(w, scale, dpmm);
-  const footprintHDots = pxToDots(h, scale, dpmm);
+  // the aspect-locked PNG size, not the stale heightDots prop. Store the
+  // already-rotated footprint (axes swapped on R/B) so bounds/selection match.
+  const uprightWDots = pxToDots(w, scale, dpmm);
+  const uprightHDots = pxToDots(h, scale, dpmm);
+  const footprintWDots = swap ? uprightHDots : uprightWDots;
+  const footprintHDots = swap ? uprightWDots : uprightHDots;
   useEffect(() => {
     // Footprint dropped to zero (e.g. content cleared): drop the stale entry.
     if (footprintWDots <= 0 || footprintHDots <= 0) {
@@ -81,21 +92,31 @@ export function ImageObject({
   const handleDragEnd = dragHandlers?.onDragEnd;
 
   if (htmlImg && cached) {
+    // bwip-style rotation: the bitmap draws upright inside an inner Group whose
+    // rotatedGroupTransform places it for R/I/B; the outer Group keeps the
+    // object's x/y and interaction (matches BarcodeObject).
+    const innerTr = rotatedGroupTransform(rotation, w, h);
     return (
-      <KImage
+      <Group
         id={obj.id}
         x={x}
         y={y}
-        image={htmlImg}
-        width={w}
-        height={h}
-        stroke={isSelected ? colors.selection : undefined}
-        strokeWidth={isSelected ? 2 : 0}
         draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
-      />
+      >
+        <Group x={innerTr.x} y={innerTr.y} rotation={innerTr.rotation}>
+          <KImage
+            image={htmlImg}
+            width={w}
+            height={h}
+            stroke={isSelected ? colors.selection : undefined}
+            strokeWidth={isSelected ? 2 : 0}
+            strokeScaleEnabled={false}
+          />
+        </Group>
+      </Group>
     );
   }
 

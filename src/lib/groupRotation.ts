@@ -85,9 +85,11 @@ function leafChanges(
     return { x: r.x, y: r.y, props: { width: r.width, height: r.height } };
   }
 
-  // Symbol / image: footprint can't turn (Zebra rotates only the symbol glyph,
-  // images not at all), so keep w x h and just reposition by the centre. Odd
-  // dims can round here, but that's isolated, not a per-step accumulation.
+  // Symbol / image: footprint can't turn via a group here (symbol rotates only
+  // the glyph; image group-rotation is a follow-up), so keep w x h and just
+  // reposition by the centre. Symbol advances its glyph rotation; image keeps
+  // its own single-object rotation prop untouched. Odd dims can round here,
+  // but that's isolated, not a per-step accumulation.
   if (leaf.type === "symbol" || leaf.type === "image") {
     const b = objectBoundsDots(leaf, ctx);
     const centre = rotateAbout({ x: b.x + b.width / 2, y: b.y + b.height / 2 }, pivot, steps);

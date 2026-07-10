@@ -43,6 +43,20 @@ describe("objectBoundsDots", () => {
     expect(objectBoundsDots(cached, ctx(measured))).toEqual({ x: 1, y: 1, width: 120, height: 40 });
   });
 
+  it("image: a rotated field swaps the footprint axes (no measured)", () => {
+    const up = leaf("image", 0, 0, { imageId: "a", widthDots: 200, heightDots: 100, threshold: 128 } as never);
+    const rot = leaf("image", 0, 0, { imageId: "a", widthDots: 200, heightDots: 100, threshold: 128, rotation: "R" } as never);
+    expect(objectBoundsDots(up, ctx())).toEqual({ x: 0, y: 0, width: 200, height: 100 });
+    expect(objectBoundsDots(rot, ctx())).toEqual({ x: 0, y: 0, width: 100, height: 200 });
+  });
+
+  it("image: storedAs/rawGf ignore rotation (emit upright, so bounds don't swap)", () => {
+    const stored = leaf("image", 0, 0, { imageId: "a", widthDots: 200, heightDots: 100, threshold: 128, rotation: "R", storedAs: { device: "R", name: "L" } } as never);
+    const raw = leaf("image", 0, 0, { imageId: "a", widthDots: 200, heightDots: 100, threshold: 128, rotation: "R", rawGf: "^GFA,0,0,0," } as never);
+    expect(objectBoundsDots(stored, ctx())).toEqual({ x: 0, y: 0, width: 200, height: 100 });
+    expect(objectBoundsDots(raw, ctx())).toEqual({ x: 0, y: 0, width: 200, height: 100 });
+  });
+
   it("line: horizontal bbox uses thickness on thin axis", () => {
     const ln = leaf("line", 10, 50, { angle: 0, length: 200, thickness: 4, color: "B" });
     expect(objectBoundsDots(ln, ctx())).toEqual({ x: 10, y: 50, width: 200, height: 4 });

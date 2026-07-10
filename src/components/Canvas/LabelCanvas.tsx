@@ -41,6 +41,7 @@ import { GuideLines } from "./GuideLines";
 import { Ruler, RULER_SIZE } from "./Ruler";
 import { SHAPE_PRIMITIVE_TYPES } from "../../registry";
 import type { LeafObject } from "../../registry";
+import { isImageRotatable, type ImageProps } from "../../registry/image";
 import { convertPositionType } from "../../lib/positionConvert";
 import { addableGroupsFor } from "../Palette/paletteGroups";
 import { resolveAddable, type AddableEntry } from "../../registry/palettePresets";
@@ -68,6 +69,7 @@ import { isShapeToggleable, canToggleShapeMode, oppositeShapeMode, toggleShapeMo
 import {
   getStepRotation,
   nextZplRotation,
+  objectRotation,
 } from "../../registry/rotation";
 import { CanvasContextMenu } from "./CanvasContextMenu";
 import { buildContextMenu, type MenuSection } from "./canvasActions";
@@ -836,7 +838,15 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const singleSelected = selectedIds.length === 1
     ? objects.find((o) => o.id === selectedIds[0]) ?? null
     : null;
-  const stepRotation = singleSelected ? getStepRotation(singleSelected) : null;
+  // Only an inline cached bitmap can actually turn (storedAs/rawGf emit and
+  // render upright), so gate the rotate affordance on that, not on the presence
+  // of a rotation prop: pre-feature saves omit it, and objectRotation defaults
+  // a rotatable image to 'N' so the button still shows.
+  const stepRotation = !singleSelected
+    ? null
+    : singleSelected.type === "image"
+      ? (isImageRotatable(singleSelected.props as ImageProps) ? objectRotation(singleSelected.props) : null)
+      : getStepRotation(singleSelected);
   // Shape primitives get the single-rotate button too, not only via a group.
   const singleShapeRotatable =
     !!singleSelected && !isGroup(singleSelected) && SHAPE_PRIMITIVE_TYPES.has(singleSelected.type);

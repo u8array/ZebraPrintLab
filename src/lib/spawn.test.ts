@@ -11,16 +11,18 @@ describe('spawnRotationOverride', () => {
     expect(spawnRotationOverride('text', undefined, 90)).toEqual({ rotation: 'B' });
     expect(spawnRotationOverride('qrcode', undefined, 180)).toEqual({ rotation: 'I' });
     expect(spawnRotationOverride('text', undefined, 270)).toEqual({ rotation: 'R' });
+    // image is a step-rotation type too (bitmap baked), so it lands upright in
+    // a rotated view like the others.
+    expect(spawnRotationOverride('image', undefined, 90)).toEqual({ rotation: 'B' });
   });
 
   it('is a no-op in the unrotated view', () => {
     expect(spawnRotationOverride('text', undefined, 0)).toBeUndefined();
   });
 
-  it('leaves types without a reading direction alone', () => {
+  it('leaves shapes without a rotation prop alone', () => {
     expect(spawnRotationOverride('box', undefined, 90)).toBeUndefined();
     expect(spawnRotationOverride('line', undefined, 90)).toBeUndefined();
-    expect(spawnRotationOverride('image', undefined, 90)).toBeUndefined();
   });
 
   it('yields to an explicit rotation override', () => {
