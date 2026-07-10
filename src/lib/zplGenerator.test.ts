@@ -917,8 +917,7 @@ describe('generateZPL — ^TB text block', () => {
 
   // ZD230-verified (2026-07-10, ^IS/^HY firmware renders): without a ^FE
   // immediately before the ^FD, #n# embeds print LITERALLY even for the
-  // default char (spec p.191); same for ^FC clock tokens (spec p.189). The
-  // armings must ride on each field, not sit in the header.
+  // default char (spec p.191); same for ^FC clock tokens (spec p.189).
   it('arms ^FE directly before a template ^FD, even for the default char', () => {
     const vars = [
       { id: 'v1', name: 'sku', fnNumber: 1, defaultValue: 'DEF' },

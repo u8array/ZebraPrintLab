@@ -196,20 +196,18 @@ export function fdFieldFor(
       return `^FN${v.fnNumber}${fdField(transform(encodeDefault(v.defaultValue)))}`;
     }
   }
-  // Template path: ^FE embeds first then ^FC clock; absent ctx delim signals
-  // "templates not emittable" and the content stays literal. Firmware scopes
-  // both armings to the one ^FD they precede and skips them otherwise, even
-  // for the default chars (spec p.189/p.191; ZD230-verified: without them,
-  // embeds and clock tokens print literally). So they ride on this field,
-  // ^FC first, ^FE flush against ^FD.
+  // Template path: arm ^FE/^FC on this field (absent ctx delim = templates not
+  // emittable, so content stays literal). Firmware scopes both armings to the
+  // ^FD they precede, even for default chars (spec p.189/191; ZD230-verified:
+  // without them embeds and clock tokens print literally).
   let payload = content;
   let arm = '';
   if (ctx?.variables && ctx.embedChar && hasTemplateMarkers(payload)) {
     // Arm ^FE only when a marker actually became an embed: hasTemplateMarkers
     // also matches non-variable «...» spans (e.g. clock markers), which
     // markersToEmbeds leaves untouched.
-    const next = markersToEmbeds(payload, ctx.variables, ctx.embedChar).payload;
-    if (next !== payload) arm = `^FE${ctx.embedChar}`;
+    const { payload: next, referencedFnNumbers } = markersToEmbeds(payload, ctx.variables, ctx.embedChar);
+    if (referencedFnNumbers.size > 0) arm = `^FE${ctx.embedChar}`;
     payload = next;
   }
   if (ctx?.clockChars && hasClockMarkers(payload)) {

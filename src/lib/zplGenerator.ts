@@ -103,11 +103,8 @@ export function planTemplateHeader(
   const emitCtx: ZplEmitContext = { label, variables };
 
   if (pickedEmbedChar !== null) {
-    // A non-default delimiter also goes in the header so re-import parses a
-    // literal `#n#` in any field emitted before the first armed field as
-    // literal: the parser tracks the delimiter as block state, while firmware
-    // only honours the per-field arming fdFieldFor adds. (Default `#` is the
-    // parser's own default, so no header line is needed for it.)
+    // Default `#` is the parser's own default; only a non-default delimiter
+    // needs the header ^FE (the block-state note on planTemplateHeader).
     if (pickedEmbedChar !== '#') headerLines.push(`^FE${pickedEmbedChar}`);
     for (const [fn, v] of [...templateVarsByFn].sort(([a], [b]) => a - b)) {
       if (singleBindFns.has(fn)) continue;
@@ -127,8 +124,8 @@ export function planTemplateHeader(
       const so3 = formatSetOffset(3, label.tertiaryClockOffset);
       if (so2) headerLines.push(so2);
       if (so3) headerLines.push(so3);
-      // Same block-state reason as ^FE: a non-default clock char goes in the
-      // header for parse fidelity of literals before the first armed field.
+      // Non-default clock chars need the header ^FC for the same block-state
+      // reason as ^FE above.
       if (!isDefaultClockChars(picked)) {
         headerLines.push(`^FC${picked.date},${picked.time},${picked.tertiary}`);
       }
