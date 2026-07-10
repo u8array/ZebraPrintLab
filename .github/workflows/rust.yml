@@ -1,0 +1,59 @@
+name: Rust
+
+# Rust lives in src-tauri and is only compiled during a release build, so its
+# unit tests, clippy, and fmt never gated a PR. This runs them on every change
+# that touches the crate. Path-filtered so pure-frontend PRs don't pay the
+# (heavy) Tauri dependency compile.
+on:
+  pull_request:
+    branches: [main, prod]
+    paths: ['src-tauri/**', '.github/workflows/rust.yml']
+  push:
+    branches: [main, prod]
+    paths: ['src-tauri/**', '.github/workflows/rust.yml']
+
+defaults:
+  run:
+    working-directory: ./src-tauri
+
+jobs:
+  # Format check is platform-independent (rustfmt parses, doesn't compile), so
+  # run it once instead of per matrix platform.
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  clippy-test:
+    name: clippy-test (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows covers the winspool RAW path (#[cfg(windows)] in print.rs);
+        # Linux covers the libcups + Secret Service + USB ioctl paths.
+        platform: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: install dependencies (ubuntu only)
+        if: startsWith(matrix.platform, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libcups2-dev libdbus-1-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - run: cargo clippy --all-targets -- -D warnings
+
+      - run: cargo test

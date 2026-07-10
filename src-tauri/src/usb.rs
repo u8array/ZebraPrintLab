@@ -11,6 +11,9 @@ pub struct UsbPrinter {
   pub vendor_id: String, // lowercase hex, e.g. "0a5f"
 }
 
+// Linux-only: the usblp send is the sole producer, and non-Linux targets never
+// resolve a device, so the variants would read as dead code elsewhere.
+#[cfg(target_os = "linux")]
 #[derive(Debug, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum UsbSendResult {
@@ -27,7 +30,7 @@ pub async fn list_usb_printers() -> Result<Vec<UsbPrinter>, String> {
 
 #[cfg(not(target_os = "linux"))]
 #[tauri::command]
-pub async fn send_zpl_usb(_device: String, _zpl: String) -> Result<UsbSendResult, String> {
+pub async fn send_zpl_usb(_device: String, _zpl: String) -> Result<(), String> {
   Err("USB transport is Linux only".to_string())
 }
 
@@ -81,7 +84,9 @@ fn parse_printer(usb_dev_dir: &Path) -> Option<UsbPrinter> {
 // whose parent is the USB device carrying idVendor/idProduct/serial.
 #[cfg(target_os = "linux")]
 fn enumerate(usbmisc_root: &Path) -> Vec<(String, UsbPrinter)> {
-  let Ok(entries) = std::fs::read_dir(usbmisc_root) else { return Vec::new() };
+  let Ok(entries) = std::fs::read_dir(usbmisc_root) else {
+    return Vec::new();
+  };
   let mut out: Vec<(String, UsbPrinter)> = entries
     .flatten()
     .filter_map(|entry| {
@@ -92,13 +97,18 @@ fn enumerate(usbmisc_root: &Path) -> Vec<(String, UsbPrinter)> {
       // Attributes sit on the interface's parent device; fixtures flatten them
       // under "device", so probe there first, then the parent.
       let base = entry.path().join("device");
-      let dev_dir = if base.join("idVendor").exists() { base } else { base.join("..") };
+      let dev_dir = if base.join("idVendor").exists() {
+        base
+      } else {
+        base.join("..")
+      };
       parse_printer(&dev_dir).map(|p| (node, p))
     })
     .collect();
   // Zebra vendor first, then by name, so the label printer beats an office one.
   out.sort_by(|a, b| {
-    (a.1.vendor_id != ZEBRA_VENDOR_ID, &a.1.name).cmp(&(b.1.vendor_id != ZEBRA_VENDOR_ID, &b.1.name))
+    (a.1.vendor_id != ZEBRA_VENDOR_ID, &a.1.name)
+      .cmp(&(b.1.vendor_id != ZEBRA_VENDOR_ID, &b.1.name))
   });
   out
 }
@@ -146,7 +156,11 @@ pub async fn send_zpl_usb(device: String, zpl: String) -> Result<UsbSendResult, 
     return Err("payload too large".to_string());
   }
   tauri::async_runtime::spawn_blocking(move || {
-    let path = match resolve_node(Path::new("/sys/class/usbmisc"), Path::new("/dev/usb"), &device) {
+    let path = match resolve_node(
+      Path::new("/sys/class/usbmisc"),
+      Path::new("/dev/usb"),
+      &device,
+    ) {
       Ok(p) => p,
       Err(r) => return Ok(r),
     };
@@ -198,17 +212,19 @@ pub async fn setup_usb_access() -> Result<(), String> {
   .map_err(|e| e.to_string())?
 }
 
-#[cfg(test)]
+// The whole suite exercises the Linux usblp paths (enumerate/parse/resolve) and
+// the Linux-only UsbSendResult, so gate the module rather than each test.
+#[cfg(all(test, target_os = "linux"))]
 mod tests {
   use super::*;
 
+  // Pins the wire format the frontend parses.
   #[test]
   fn send_result_serializes_with_kind_tag() {
     let json = serde_json::to_string(&UsbSendResult::PermissionDenied).unwrap();
     assert_eq!(json, r#"{"kind":"permission_denied"}"#);
   }
 
-  #[cfg(target_os = "linux")]
   #[test]
   fn enumerates_and_sorts_zebra_first() {
     use std::fs;
@@ -221,7 +237,13 @@ mod tests {
     ] {
       let dev = root.join(node).join("device");
       fs::create_dir_all(&dev).unwrap();
-      for (f, v) in [("idVendor", vid), ("idProduct", pid), ("serial", ser), ("manufacturer", man), ("product", prod)] {
+      for (f, v) in [
+        ("idVendor", vid),
+        ("idProduct", pid),
+        ("serial", ser),
+        ("manufacturer", man),
+        ("product", prod),
+      ] {
         fs::write(dev.join(f), format!("{v}\n")).unwrap();
       }
     }
@@ -232,14 +254,17 @@ mod tests {
     fs::remove_dir_all(&root).ok();
   }
 
-  #[cfg(target_os = "linux")]
   #[test]
   fn resolve_node_maps_missing_device_to_not_found() {
     use std::fs;
     let root = std::env::temp_dir().join(format!("zpl_resolve_{}", std::process::id()));
     let dev = root.join("lp0").join("device");
     fs::create_dir_all(&dev).unwrap();
-    for (f, v) in [("idVendor", "0a5f"), ("idProduct", "0166"), ("serial", "S2")] {
+    for (f, v) in [
+      ("idVendor", "0a5f"),
+      ("idProduct", "0166"),
+      ("serial", "S2"),
+    ] {
       fs::write(dev.join(f), format!("{v}\n")).unwrap();
     }
     let dev_root = root.join("dev");
@@ -253,7 +278,6 @@ mod tests {
     fs::remove_dir_all(&root).ok();
   }
 
-  #[cfg(target_os = "linux")]
   #[test]
   fn enumerates_via_device_parent_and_serialless_id() {
     use std::fs;
@@ -262,7 +286,12 @@ mod tests {
     // one level up (device/..) carries the attributes. Also omit serial.
     let node = root.join("lp0");
     fs::create_dir_all(node.join("device")).unwrap();
-    for (f, v) in [("idVendor", "0a5f"), ("idProduct", "0166"), ("manufacturer", "Zebra Technologies"), ("product", "ZD230")] {
+    for (f, v) in [
+      ("idVendor", "0a5f"),
+      ("idProduct", "0166"),
+      ("manufacturer", "Zebra Technologies"),
+      ("product", "ZD230"),
+    ] {
       fs::write(node.join(f), format!("{v}\n")).unwrap();
     }
     let out = enumerate(&root);
@@ -274,7 +303,6 @@ mod tests {
     fs::remove_dir_all(&root).ok();
   }
 
-  #[cfg(target_os = "linux")]
   #[test]
   fn empty_serial_falls_back_to_path_not_colliding_id() {
     use std::fs;
@@ -283,7 +311,11 @@ mod tests {
     fs::create_dir_all(&dev).unwrap();
     // A present-but-empty serial file must not yield "vid:pid:" (which would
     // collide across identical models); it falls back to the unique path.
-    for (f, v) in [("idVendor", "0a5f"), ("idProduct", "0166"), ("serial", "  \n")] {
+    for (f, v) in [
+      ("idVendor", "0a5f"),
+      ("idProduct", "0166"),
+      ("serial", "  \n"),
+    ] {
       fs::write(dev.join(f), v).unwrap();
     }
     let p = parse_printer(&dev).unwrap();
@@ -293,7 +325,6 @@ mod tests {
     fs::remove_dir_all(&dir).ok();
   }
 
-  #[cfg(target_os = "linux")]
   #[test]
   fn parses_printer_from_sysfs_dir() {
     use std::fs;
