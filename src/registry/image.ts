@@ -1,8 +1,8 @@
 import type { ObjectTypeCore } from '../types/ObjectType';
 import { graphicFieldPos } from './zplHelpers';
 import { getImage } from '../lib/imageCache';
+import { gfaFromRaster, rasterizeMono, scaledHeightDots } from '../lib/imageToZpl';
 import { formatStoragePath } from '../lib/storagePath';
-import { rasterToGfa } from '../lib/imageToZpl';
 import { isAxisSwapped, objectRotation, type ZplRotation } from './rotation';
 
 /** ^GF rows are byte-packed, so the emitted (and re-parsed) width is the next
@@ -18,11 +18,11 @@ export function gfByteWidth(widthDots: number): number {
  *  the emitter and the home-shift drop check so the ^FT bottom anchor agrees. */
 export function imageEmitHeight(p: ImageProps): number {
   const cached = getImage(p.imageId);
-  // max(1,…) mirrors rasterToGfa's clamp so the anchor footprint can't diverge
-  // from the emitted GRF at an extreme aspect (widthDots*aspect rounding to 0).
-  // width>0 guards a malformed 0-width decode, matching the render path.
+  // scaledHeightDots is the shared aspect+clamp SSOT (so the anchor can't
+  // diverge from the emitted GRF); width>0 guards a malformed 0-width decode,
+  // matching the render path.
   return cached && cached.width > 0
-    ? Math.max(1, Math.round(p.widthDots * (cached.height / cached.width)))
+    ? scaledHeightDots(p.widthDots, cached.width, cached.height)
     : p.heightDots ?? p.widthDots;
 }
 
@@ -87,13 +87,14 @@ export interface ImageProps {
 }
 
 /** Synchronously generate ^GFA using a blocking canvas (for toZPL), rotation
- *  baked in. Shares the encoder with the async panel path via rasterToGfa. */
+ *  baked in. Shares the encoder (rasterizeMono) with the async panel path. */
 function gfaSync(dataUrl: string, widthDots: number, threshold: number, rotation: ZplRotation): string {
   const img = new Image();
   // data-URL loads are synchronous on a freshly-created Image.
   img.src = dataUrl;
   if (!img.complete || !img.naturalWidth) return '';
-  return rasterToGfa(img, widthDots, threshold, rotation).zpl;
+  const raster = rasterizeMono(img, widthDots, threshold, rotation);
+  return raster ? gfaFromRaster(raster) : '';
 }
 
 export const image: ObjectTypeCore<ImageProps> = {
@@ -173,7 +174,7 @@ export const image: ObjectTypeCore<ImageProps> = {
     }
     if (!cached) return `${anchor}^FD^FS`;
     // _gfaCache holds the upright bytes, so a rotated field regenerates fresh
-    // (rasterToGfa bakes the rotation in).
+    // (rasterizeMono bakes the rotation in).
     const rot = objectRotation(p);
     const gfa = rot === 'N'
       ? (p._gfaCache || gfaSync(cached.dataUrl, p.widthDots, p.threshold, 'N'))

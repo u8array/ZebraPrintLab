@@ -5,6 +5,7 @@ import { useT } from '../hooks/useT';
 import { buttonCls, inputCls, labelCls } from '../components/Properties/styles';
 import { loadImageFile, getImage, getAllImages, removeImage } from '../lib/imageCache';
 import { imageToGFA } from '../lib/imageToZpl';
+import { MonoThumbnail } from '../components/Properties/MonoThumbnail';
 import {
   defaultStorageName,
   formatStoragePath,
@@ -60,22 +61,24 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
       }
       const img = getImage(imageId);
       if (!img) return;
-      const result = await imageToGFA(img.dataUrl, p.widthDots, p.threshold);
-      onChange({ imageId, _gfaCache: result.zpl });
+      // A width-0 image (dimensionless SVG) rejects; still select it, just with
+      // no cache, so the emit stays blank instead of leaving stale bytes.
+      const result = await imageToGFA(img.dataUrl, p.widthDots, p.threshold).catch(() => null);
+      onChange({ imageId, _gfaCache: result?.zpl });
     }, [onChange, p.widthDots, p.threshold]);
 
     const handleWidthChange = useCallback(async (widthDots: number) => {
       const img = getImage(p.imageId);
       if (!img) { onChange({ widthDots }); return; }
-      const result = await imageToGFA(img.dataUrl, widthDots, p.threshold);
-      onChange({ widthDots, _gfaCache: result.zpl });
+      const result = await imageToGFA(img.dataUrl, widthDots, p.threshold).catch(() => null);
+      onChange(result ? { widthDots, _gfaCache: result.zpl } : { widthDots });
     }, [onChange, p.imageId, p.threshold]);
 
     const handleThresholdChange = useCallback(async (threshold: number) => {
       const img = getImage(p.imageId);
       if (!img) { onChange({ threshold }); return; }
-      const result = await imageToGFA(img.dataUrl, p.widthDots, threshold);
-      onChange({ threshold, _gfaCache: result.zpl });
+      const result = await imageToGFA(img.dataUrl, p.widthDots, threshold).catch(() => null);
+      onChange(result ? { threshold, _gfaCache: result.zpl } : { threshold });
     }, [onChange, p.imageId, p.widthDots]);
 
     // Lifted local const so the storage-section closures get a narrowed
@@ -146,14 +149,16 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
             )}
           </div>
 
-          {/* Preview thumbnail */}
+          {/* Preview thumbnail: the thresholded print result, not the colored
+              source, so the threshold slider gives live WYSIWYG feedback. */}
           {cached && (
             <div className="flex flex-col gap-1">
               <label className={labelCls}>{t.registry.image.preview}</label>
-              <img
-                src={cached.dataUrl}
-                alt={cached.name}
-                className="max-w-full max-h-20 object-contain rounded border border-border bg-white"
+              <MonoThumbnail
+                dataUrl={cached.dataUrl}
+                name={cached.name}
+                widthDots={p.widthDots}
+                threshold={p.threshold}
               />
               <span className="text-[10px] text-muted font-mono">
                 {cached.width} × {cached.height} px

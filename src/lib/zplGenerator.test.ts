@@ -1827,6 +1827,16 @@ describe('generateZPL — ^FT graphic anchors (bottom corner, spec p.205)', () =
     expect(zpl).not.toContain('NaN');
   });
 
+  it('cached image ^FT: a wide/short image that rounds to 0 rows anchors at 1 dot', () => {
+    // round(8 * 30/1000) = 0, but the emitted ^GF is still 1 row tall, so the
+    // ^FT bottom anchor must clamp to 1 to agree with the bitmap.
+    putImage({ id: 'imgWide', name: 'w', dataUrl: 'data:,', width: 1000, height: 30 });
+    const zpl = generateZPL(BASE_LABEL, mk('image',
+      { imageId: 'imgWide', widthDots: 8, threshold: 128, _gfaCache: '^GFA1,1,1,00' }));
+    expect(zpl).toContain('^FT50,71'); // 70 + max(1, round(8 * 30/1000)) = 71
+    expect(zpl).not.toContain('^FT50,70'); // not 70 + 0
+  });
+
   it('keeps a hand-authored ^FT reverse box + ^FR text as two FT objects and round-trips them', () => {
     // Spec-true reverse: the filled ^FT ^GB stays its own box and the ^FR text
     // stays a separate reverse text; neither is collapsed or rewritten to ^FO,
