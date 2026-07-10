@@ -676,6 +676,13 @@ const nl = {
       privacyHeading: 'Privacy',
       labelaryConsent: 'Labelary voorbeeld',
       labelaryHint: 'Stuurt uw ZPL naar de geconfigureerde Labelary-server voor rendering.',
+      apiHeading: 'Labelary API',
+      apiHost: 'Server-URL',
+      apiKey: 'API-sleutel',
+      apiKeySave: 'Opslaan',
+      apiKeySaveError: 'Kan de sleutel niet opslaan in de referentieopslag van het systeem.',
+      apiHintDesktop: 'Voor Labelary premium-abonnementen. Laat leeg om de gratis openbare dienst te gebruiken. De sleutel wordt opgeslagen in de sleutelhanger van het besturingssysteem.',
+      apiHintWeb: 'Voor Labelary premium-abonnementen. Laat leeg om de gratis openbare dienst te gebruiken. De sleutel wordt in deze browser opgeslagen.',
     },
   },
 

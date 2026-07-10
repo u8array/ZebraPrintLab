@@ -8,6 +8,7 @@ const EXPECTED_PERSIST_KEYS = [
   'csvMapping',
   'currentPageIndex',
   'label',
+  'labelaryHost',
   'labelaryNoticeAcknowledged',
   'locale',
   'pages',

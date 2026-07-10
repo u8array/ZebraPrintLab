@@ -676,6 +676,13 @@ const ko = {
       privacyHeading: '개인정보',
       labelaryConsent: 'Labelary 미리보기',
       labelaryHint: '렌더링을 위해 구성된 Labelary 서버에 ZPL을 전송합니다.',
+      apiHeading: 'Labelary API',
+      apiHost: '서버 URL',
+      apiKey: 'API 키',
+      apiKeySave: '저장',
+      apiKeySaveError: '키를 시스템 자격 증명 저장소에 저장할 수 없습니다.',
+      apiHintDesktop: 'Labelary 프리미엄 요금제용입니다. 무료 공개 서비스를 사용하려면 비워 두세요. 키는 운영 체제의 키체인에 저장됩니다.',
+      apiHintWeb: 'Labelary 프리미엄 요금제용입니다. 무료 공개 서비스를 사용하려면 비워 두세요. 키는 이 브라우저에 저장됩니다.',
     },
   },
 

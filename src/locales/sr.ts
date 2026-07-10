@@ -676,6 +676,13 @@ const sr = {
       privacyHeading: 'Приватност',
       labelaryConsent: 'Labelary преглед',
       labelaryHint: 'Шаље ваш ZPL на конфигурисани Labelary сервер за рендеровање.',
+      apiHeading: 'Labelary API',
+      apiHost: 'URL сервера',
+      apiKey: 'API кључ',
+      apiKeySave: 'Sačuvaj',
+      apiKeySaveError: 'Кључ није могуће сачувати у системско складиште акредитива.',
+      apiHintDesktop: 'За Labelary премијум планове. Оставите празно да бисте користили бесплатну јавну услугу. Кључ се чува у привеску за кључеве оперативног система.',
+      apiHintWeb: 'За Labelary премијум планове. Оставите празно да бисте користили бесплатну јавну услугу. Кључ се чува у овом прегледачу.',
     },
   },
 

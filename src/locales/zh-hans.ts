@@ -676,6 +676,13 @@ const zhHans = {
       privacyHeading: '隐私',
       labelaryConsent: 'Labelary预览',
       labelaryHint: '将您的ZPL发送到已配置的Labelary服务器进行渲染。',
+      apiHeading: 'Labelary API',
+      apiHost: '服务器 URL',
+      apiKey: 'API 密钥',
+      apiKeySave: '保存',
+      apiKeySaveError: '无法将密钥保存到系统凭据存储。',
+      apiHintDesktop: '适用于 Labelary 高级套餐。留空则使用免费的公共服务。密钥存储在操作系统的密钥链中。',
+      apiHintWeb: '适用于 Labelary 高级套餐。留空则使用免费的公共服务。密钥存储在此浏览器中。',
     },
   },
 

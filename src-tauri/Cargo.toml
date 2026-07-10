@@ -20,10 +20,13 @@ tauri = { version = "2.11.3", features = [] }
 # generate_context! expands plugin config (plugins.updater) via serde_json.
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
-tokio = { version = "1", features = ["net", "time", "io-util"] }
+tokio = { version = "1", features = ["net", "time", "io-util", "rt"] }
 # OS-native raw printing: winspool RAW on Windows, libcups on macOS/Linux.
 # Sole transitive dep is libc. Linux CI needs libcups2-dev to link.
 printers = "2.3.0"
+# OS credential store for API keys: Windows Credential Manager, macOS
+# Keychain, Linux DBus Secret Service. Linux CI needs libdbus-1-dev.
+keyring = { version = "3", features = ["windows-native", "apple-native", "sync-secret-service"] }
 
 [dev-dependencies]
 # rt only: the macros feature would pull tokio-macros, which lags tokio

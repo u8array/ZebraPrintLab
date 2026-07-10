@@ -676,6 +676,13 @@ const lv = {
       privacyHeading: 'Privātums',
       labelaryConsent: 'Labelary priekšskatījums',
       labelaryHint: 'Nosūta jūsu ZPL uz konfigurēto Labelary serveri renderēšanai.',
+      apiHeading: 'Labelary API',
+      apiHost: 'Servera URL',
+      apiKey: 'API atslēga',
+      apiKeySave: 'Saglabāt',
+      apiKeySaveError: 'Neizdevās saglabāt atslēgu sistēmas akreditācijas datu krātuvē.',
+      apiHintDesktop: 'Labelary premium plāniem. Atstājiet tukšu, lai izmantotu bezmaksas publisko pakalpojumu. Atslēga tiek glabāta operētājsistēmas atslēgu saišķī.',
+      apiHintWeb: 'Labelary premium plāniem. Atstājiet tukšu, lai izmantotu bezmaksas publisko pakalpojumu. Atslēga tiek glabāta šajā pārlūkprogrammā.',
     },
   },
 

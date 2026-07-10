@@ -676,6 +676,13 @@ const sl = {
       privacyHeading: 'Zasebnost',
       labelaryConsent: 'Labelary predogled',
       labelaryHint: 'Pošlje vaš ZPL na konfigurirani Labelary strežnik za upodabljanje.',
+      apiHeading: 'Labelary API',
+      apiHost: 'URL strežnika',
+      apiKey: 'Ključ API',
+      apiKeySave: 'Shrani',
+      apiKeySaveError: 'Ključa ni bilo mogoče shraniti v sistemsko shrambo poverilnic.',
+      apiHintDesktop: 'Za premium načrte Labelary. Pustite prazno za uporabo brezplačne javne storitve. Ključ se shrani v zbirko ključev operacijskega sistema.',
+      apiHintWeb: 'Za premium načrte Labelary. Pustite prazno za uporabo brezplačne javne storitve. Ključ se shrani v ta brskalnik.',
     },
   },
 

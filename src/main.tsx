@@ -25,7 +25,10 @@ const LOCALE_BOOT_WAIT_MS = 250;
 // the app renders with en and the dictionary swaps in when it arrives
 // (applyLocale keeps running and never rejects).
 async function bootstrap() {
-  const { locale, applyLocale } = useLabelStore.getState();
+  const { locale, applyLocale, hydrateLabelaryApiKey } = useLabelStore.getState();
+  // Load the API key from the OS credential store into memory before any
+  // preview can fire; fire-and-forget so a slow keychain never delays paint.
+  void hydrateLabelaryApiKey();
   let timeoutId: number | undefined;
   await Promise.race([
     applyLocale(locale),

@@ -10,6 +10,7 @@ import { generateSetupScript } from "../lib/zplSetupScript";
 import { printLabel } from "../lib/printPreview";
 import { triggerDownload } from "../lib/triggerDownload";
 import { labelaryErrorMessage } from "../lib/labelary";
+import { selectLabelaryEndpoint } from "../store/labelStore.selectors";
 import { buildActiveCsvRow } from "../lib/variableBinding";
 
 export function useZplImportExport() {
@@ -51,10 +52,17 @@ export function useZplImportExport() {
   // active CSV row (if any) is substituted into bound fields so the
   // preview reflects what would actually print for the selected row.
   const handlePrint = async () => {
-    const s = useLabelStore.getState();
     try {
+      // Ensure the keychain key is loaded before printing to a premium host,
+      // then snapshot once so the design, endpoint, and key are consistent
+      // (the await could otherwise let the design change under a stale copy).
+      if (!useLabelStore.getState().labelaryApiKeyLoaded) {
+        await useLabelStore.getState().hydrateLabelaryApiKey();
+      }
+      const s = useLabelStore.getState();
       const active = buildActiveCsvRow(s.csvDataset, s.csvMapping);
-      await printLabel(s.label, currentObjects(s), s.variables, active);
+      const { host, apiKey } = selectLabelaryEndpoint(s);
+      await printLabel(s.label, currentObjects(s), host, apiKey, s.variables, active);
     } catch (e) {
       setPrintError(labelaryErrorMessage(e));
     }

@@ -676,6 +676,13 @@ const no = {
       privacyHeading: 'Personvern',
       labelaryConsent: 'Labelary-forhåndsvisning',
       labelaryHint: 'Sender din ZPL til den konfigurerte Labelary-serveren for rendering.',
+      apiHeading: 'Labelary API',
+      apiHost: 'Server-URL',
+      apiKey: 'API-nøkkel',
+      apiKeySave: 'Lagre',
+      apiKeySaveError: 'Kunne ikke lagre nøkkelen i systemets legitimasjonslager.',
+      apiHintDesktop: 'For Labelary premium-abonnementer. La feltet stå tomt for å bruke den gratis offentlige tjenesten. Nøkkelen lagres i operativsystemets nøkkelring.',
+      apiHintWeb: 'For Labelary premium-abonnementer. La feltet stå tomt for å bruke den gratis offentlige tjenesten. Nøkkelen lagres i denne nettleseren.',
     },
   },
 

@@ -676,6 +676,13 @@ const lt = {
       privacyHeading: 'Privatumas',
       labelaryConsent: 'Labelary peržiūra',
       labelaryHint: 'Siunčia jūsų ZPL į sukonfigūruotą Labelary serverį atvaizdavimui.',
+      apiHeading: 'Labelary API',
+      apiHost: 'Serverio URL',
+      apiKey: 'API raktas',
+      apiKeySave: 'Išsaugoti',
+      apiKeySaveError: 'Nepavyko išsaugoti rakto sistemos kredencialų saugykloje.',
+      apiHintDesktop: 'Labelary premium planams. Palikite tuščią, kad naudotumėte nemokamą viešąją paslaugą. Raktas saugomas operacinės sistemos raktų pakabuke.',
+      apiHintWeb: 'Labelary premium planams. Palikite tuščią, kad naudotumėte nemokamą viešąją paslaugą. Raktas saugomas šioje naršyklėje.',
     },
   },
 

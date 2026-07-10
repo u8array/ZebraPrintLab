@@ -676,6 +676,13 @@ const da = {
       privacyHeading: 'Privatliv',
       labelaryConsent: 'Labelary-forhåndsvisning',
       labelaryHint: 'Sender dit ZPL til den konfigurerede Labelary-server til gengivelse.',
+      apiHeading: 'Labelary API',
+      apiHost: 'Server-URL',
+      apiKey: 'API-nøgle',
+      apiKeySave: 'Gem',
+      apiKeySaveError: 'Nøglen kunne ikke gemmes i systemets legitimationslager.',
+      apiHintDesktop: 'Til Labelary premium-abonnementer. Lad feltet være tomt for at bruge den gratis offentlige tjeneste. Nøglen gemmes i operativsystemets nøglering.',
+      apiHintWeb: 'Til Labelary premium-abonnementer. Lad feltet være tomt for at bruge den gratis offentlige tjeneste. Nøglen gemmes i denne browser.',
     },
   },
 

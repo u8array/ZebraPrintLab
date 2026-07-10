@@ -676,6 +676,13 @@ const et = {
       privacyHeading: 'Privaatsus',
       labelaryConsent: 'Labelary eelvaade',
       labelaryHint: 'Saadab teie ZPL-i seadistatud Labelary serverisse renderdamiseks.',
+      apiHeading: 'Labelary API',
+      apiHost: 'Serveri URL',
+      apiKey: 'API-võti',
+      apiKeySave: 'Salvesta',
+      apiKeySaveError: 'Võtit ei õnnestunud süsteemi mandaadihoidlasse salvestada.',
+      apiHintDesktop: 'Labelary premium-pakettide jaoks. Jätke tühjaks, et kasutada tasuta avalikku teenust. Võti salvestatakse operatsioonisüsteemi võtmehoidlasse.',
+      apiHintWeb: 'Labelary premium-pakettide jaoks. Jätke tühjaks, et kasutada tasuta avalikku teenust. Võti salvestatakse sellesse brauserisse.',
     },
   },
 

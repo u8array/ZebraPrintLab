@@ -4,7 +4,7 @@ import { bitmapToDataUrl, fetchPrinterPreview } from '../../lib/printerPreview';
 import { getPrinterAddress } from '../../lib/printerAddress';
 import { buildActiveCsvRow } from '../../lib/variableBinding';
 import { buildPreviewZpl } from '../../lib/printPreview';
-import { currentObjects, selectEffectivePreviewProvider } from '../labelStore.selectors';
+import { currentObjects, selectEffectivePreviewProvider, selectLabelaryEndpoint } from '../labelStore.selectors';
 import type { LabelState } from '../labelStore';
 
 /** Preview canvas-overlay state (Labelary or the printer's own firmware
@@ -53,18 +53,31 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
   previewMode: { status: 'idle' },
 
   enterPreviewMode: async () => {
+    // First Labelary preview after a cold start races the async keychain read;
+    // await it once (gated on the loaded flag) so the request isn't sent keyless.
+    // Placed before the snapshot+guard so the captured design can't go stale and
+    // a concurrent enter can't slip past the status guard.
+    if (selectEffectivePreviewProvider(get()) === 'labelary' && !get().labelaryApiKeyLoaded) {
+      await get().hydrateLabelaryApiKey();
+    }
     const state = get();
     if (state.previewMode.status === 'loading' || state.previewMode.status === 'active') {
       return;
     }
+    // Re-read after the await: switching the provider mid-hydrate exits the
+    // preview, so a stale value would render the wrong renderer.
+    const provider = selectEffectivePreviewProvider(state);
     const objs = currentObjects(state);
     const active = buildActiveCsvRow(state.csvDataset, state.csvMapping);
     const zpl = buildPreviewZpl(state.label, objs, state.variables, active, { blankSamples: true });
-    const provider = selectEffectivePreviewProvider(state);
-    // Toggling preview off then on for a side-by-side pixel compare
-    // shouldn't burn an API call (or a printer round-trip) when nothing
-    // changed; the provider is part of the key so switching re-renders.
-    const cacheKey = `${provider}:${zpl}`;
+    // Cache the render so an off/on toggle doesn't re-fetch when nothing changed.
+    // Labelary folds host+key in so a runtime endpoint change invalidates the old
+    // render; the printer path is independent of both. NUL-joined so a ':' inside
+    // any field can't shift a boundary and collide.
+    const endpoint = selectLabelaryEndpoint(state);
+    const cacheKey = provider === 'labelary'
+      ? [provider, endpoint.host, endpoint.apiKey ?? '', zpl].join('\0')
+      : [provider, zpl].join('\0');
     const cachedUrl = previewCache.get(cacheKey);
     if (cachedUrl !== null) {
       set({ previewMode: { status: 'active', url: cachedUrl } });
@@ -124,7 +137,7 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
     }
 
     try {
-      const url = await fetchPreview(zpl, state.label);
+      const url = await fetchPreview(zpl, state.label, endpoint.host, endpoint.apiKey);
       if (isStale()) {
         URL.revokeObjectURL(url);
         return;

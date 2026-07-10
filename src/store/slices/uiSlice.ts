@@ -9,6 +9,16 @@ import {
 } from '../labelStore.internals';
 import type { LabelState } from '../labelStore';
 import { defaultPaletteRows } from '../../registry/paletteTypes';
+import { getCredential, setCredential } from '../../lib/credentialStore';
+import { selectEffectivePreviewProvider } from '../labelStore.selectors';
+
+/** Credential-store account name for the Labelary API key. */
+const LABELARY_KEY_CRED = 'labelary-api-key';
+
+/** Deduplicates concurrent startup/settings hydrations of the API key into one
+ *  credential read. Module-scoped transient coordination, not source of truth;
+ *  cleared when the read settles so a failed load can retry. */
+let hydrateInFlight: Promise<void> | null = null;
 
 export interface CanvasSettings {
   showGrid: boolean;
@@ -94,6 +104,17 @@ export interface UiSlice {
   thirdParty: { labelary: boolean };
   /** Whether the user has dismissed the one-time Labelary privacy notice. */
   labelaryNoticeAcknowledged: boolean;
+  /** Runtime Labelary endpoint override (empty = build env / public default).
+   *  Persisted; not sensitive, so it lives in the store like other prefs. */
+  labelaryHost: string;
+  /** Runtime Labelary API key. NOT persisted to the store's localStorage blob
+   *  (that is plaintext on disk); it is held only in memory here and durably in
+   *  the OS credential store, hydrated once at startup. Empty until loaded. */
+  labelaryApiKey: string;
+  /** Guards the startup credential read against a concurrent user save: once
+   *  either the hydrate or a save has set the key, a late-resolving hydrate is
+   *  a no-op so it can't clobber a freshly saved key. Transient. */
+  labelaryApiKeyLoaded: boolean;
   previewProvider: PreviewProvider;
   canvasSettings: CanvasSettings;
   /** Curated object-palette rows ({type, variant} instances, duplicates
@@ -143,6 +164,14 @@ export interface UiSlice {
   setTheme: (theme: ThemePreference) => void;
   setThirdPartyEnabled: (service: 'labelary', enabled: boolean) => void;
   setPreviewProvider: (provider: PreviewProvider) => void;
+  setLabelaryHost: (host: string) => void;
+  /** Persist the key to the OS credential store (empty deletes it) and mirror
+   *  it in memory. Rejects with the backend's message when the store is
+   *  unavailable, so the settings UI can surface the failure. */
+  saveLabelaryApiKey: (key: string) => Promise<void>;
+  /** Load the key from the credential store once at startup. Idempotent and
+   *  race-safe: skips if a save already populated the key. */
+  hydrateLabelaryApiKey: () => Promise<void>;
   acknowledgeLabelaryNotice: () => void;
   revokeLabelaryNotice: () => void;
   /** Reset app preferences (theme, canvas, palette, power-user, Labelary
@@ -225,6 +254,13 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set, ge
   loadedLocale: 'en',
   translations: fallbackTranslations,
   ...defaultUiPrefs(),
+  // Endpoint config is persisted but out of `defaultUiPrefs`, so a settings
+  // reset leaves it untouched (resetting the host without the keychain-held
+  // key would send a premium key to the public host). Key is transient here,
+  // hydrated from the credential store at startup.
+  labelaryHost: '',
+  labelaryApiKey: '',
+  labelaryApiKeyLoaded: false,
   sidebarTab: 'properties',
   blockDragMode: 'frame',
   alignRef: 'selection',
@@ -260,6 +296,45 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set, ge
   setPreviewProvider: (provider) => {
     set({ previewProvider: provider });
     get().exitPreviewMode();
+  },
+  // Changing the effective endpoint tears down a live LABELARY overlay, like
+  // the sibling endpoint actions, so a render from the old host/key can't
+  // linger. A printer render is independent of the host/key, so leave it.
+  setLabelaryHost: (host) => {
+    const next = host.trim();
+    if (next === get().labelaryHost) return;
+    set({ labelaryHost: next });
+    if (selectEffectivePreviewProvider(get()) === 'labelary') get().exitPreviewMode();
+  },
+  saveLabelaryApiKey: async (key) => {
+    const trimmed = key.trim();
+    // Throws on an unavailable store; caller surfaces it. Mark loaded so a
+    // still-pending startup hydrate can't overwrite the value we just set.
+    await setCredential(LABELARY_KEY_CRED, trimmed);
+    set({ labelaryApiKey: trimmed, labelaryApiKeyLoaded: true });
+    if (selectEffectivePreviewProvider(get()) === 'labelary') get().exitPreviewMode();
+  },
+  hydrateLabelaryApiKey: () => {
+    if (get().labelaryApiKeyLoaded) return Promise.resolve();
+    // Single-flight: the startup bootstrap and a settings-open retry can race;
+    // share one read so they can't issue two keychain prompts, and so the
+    // preview/print path can await the same load. Reset on completion so a
+    // failed read retries. This is transient coordination, not stored state.
+    hydrateInFlight ??= (async () => {
+      try {
+        const key = await getCredential(LABELARY_KEY_CRED);
+        // A user save during the read already set the key; don't clobber it.
+        if (!get().labelaryApiKeyLoaded) {
+          set({ labelaryApiKey: (key ?? '').trim(), labelaryApiKeyLoaded: true });
+        }
+      } catch {
+        // Store unreadable (e.g. no Secret Service daemon): stay unloaded so a
+        // later settings-open or preview retries instead of caching keyless.
+      } finally {
+        hydrateInFlight = null;
+      }
+    })();
+    return hydrateInFlight;
   },
   acknowledgeLabelaryNotice: () => set({ labelaryNoticeAcknowledged: true }),
   // Revoke consent so the Labelary gate closes again; re-enabling re-shows the

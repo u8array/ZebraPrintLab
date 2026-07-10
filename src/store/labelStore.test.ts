@@ -51,6 +51,9 @@ function reset() {
     previewProvider: 'labelary',
     canvasSettings: { ...DEFAULT_CANVAS_SETTINGS },
     pristineEmptyIds: [],
+    // Pre-load so enterPreviewMode skips the one-shot keychain-hydrate await;
+    // these tests exercise the fetch/cache path, not key loading.
+    labelaryApiKeyLoaded: true,
   });
 }
 

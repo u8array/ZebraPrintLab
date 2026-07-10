@@ -1,3 +1,4 @@
+mod credentials;
 mod print;
 mod usb;
 
@@ -11,7 +12,10 @@ pub fn run() {
       print::send_zpl_local,
       usb::list_usb_printers,
       usb::send_zpl_usb,
-      usb::setup_usb_access
+      usb::setup_usb_access,
+      credentials::credential_get,
+      credentials::credential_set,
+      credentials::credential_delete
     ]);
   // On the builder, not in setup(): config windows exist before the setup
   // closure runs, and window-state only restores/tracks via on_window_ready.

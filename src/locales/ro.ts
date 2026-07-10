@@ -676,6 +676,13 @@ const ro = {
       privacyHeading: 'Confidențialitate',
       labelaryConsent: 'Previzualizare Labelary',
       labelaryHint: 'Trimite ZPL-ul dvs. la serverul Labelary configurat pentru randare.',
+      apiHeading: 'Labelary API',
+      apiHost: 'URL server',
+      apiKey: 'Cheie API',
+      apiKeySave: 'Salvează',
+      apiKeySaveError: 'Cheia nu a putut fi salvată în depozitul de credențiale al sistemului.',
+      apiHintDesktop: 'Pentru planurile premium Labelary. Lăsați gol pentru a utiliza serviciul public gratuit. Cheia este stocată în inelul de chei al sistemului de operare.',
+      apiHintWeb: 'Pentru planurile premium Labelary. Lăsați gol pentru a utiliza serviciul public gratuit. Cheia este stocată în acest browser.',
     },
   },
 

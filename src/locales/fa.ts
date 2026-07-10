@@ -676,6 +676,13 @@ const fa = {
       privacyHeading: 'حریم خصوصی',
       labelaryConsent: 'پیش‌نمایش Labelary',
       labelaryHint: 'ZPL شما را برای رندرینگ به سرور Labelary پیکربندی‌شده می‌فرستد.',
+      apiHeading: 'Labelary API',
+      apiHost: 'نشانی URL سرور',
+      apiKey: 'کلید API',
+      apiKeySave: 'ذخیره',
+      apiKeySaveError: 'ذخیره کلید در مخزن اطلاعات اعتبار سیستم ممکن نشد.',
+      apiHintDesktop: 'برای پلن‌های پرمیوم Labelary. برای استفاده از سرویس عمومی رایگان، خالی بگذارید. کلید در جاکلیدی سیستم‌عامل ذخیره می‌شود.',
+      apiHintWeb: 'برای پلن‌های پرمیوم Labelary. برای استفاده از سرویس عمومی رایگان، خالی بگذارید. کلید در این مرورگر ذخیره می‌شود.',
     },
   },
 
