@@ -112,9 +112,13 @@ pub async fn query_zpl_tcp(host: String, port: u16, zpl: String) -> Result<TcpQu
     if tokio::time::Instant::now() >= deadline {
       return Err("read timed out".to_string());
     }
-    let wait = if body.is_empty() { FIRST_BYTE_TIMEOUT } else { IDLE_TIMEOUT };
+    let wait = if body.is_empty() {
+      FIRST_BYTE_TIMEOUT
+    } else {
+      IDLE_TIMEOUT
+    };
     match timeout(wait, stream.read(&mut buf)).await {
-      Ok(Ok(0)) => break,          // printer closed the connection
+      Ok(Ok(0)) => break, // printer closed the connection
       Ok(Ok(n)) => {
         if body.len() + n > MAX_RESPONSE_BYTES {
           return Err("response too large".to_string());
@@ -123,7 +127,7 @@ pub async fn query_zpl_tcp(host: String, port: u16, zpl: String) -> Result<TcpQu
       }
       Ok(Err(e)) => return Err(e.to_string()),
       Err(_) if body.is_empty() => return Err("no response from printer".to_string()),
-      Err(_) => break,             // idle gap after data = end of reply
+      Err(_) => break, // idle gap after data = end of reply
     }
   }
   // Covers a close-without-reply (read 0 on the first pass): print-only
@@ -132,7 +136,9 @@ pub async fn query_zpl_tcp(host: String, port: u16, zpl: String) -> Result<TcpQu
     return Err("no response from printer".to_string());
   }
   // ~DY payloads are ASCII (ZB64); lossy keeps any stray control bytes benign.
-  Ok(TcpQueryResult::Data { body: String::from_utf8_lossy(&body).into_owned() })
+  Ok(TcpQueryResult::Data {
+    body: String::from_utf8_lossy(&body).into_owned(),
+  })
 }
 
 /// One local OS print queue for the picker. driver_name/port_name let the UI
@@ -218,7 +224,10 @@ mod tests {
   }
 
   fn rt() -> tokio::runtime::Runtime {
-    tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap()
+    tokio::runtime::Builder::new_current_thread()
+      .enable_all()
+      .build()
+      .unwrap()
   }
 
   #[test]
@@ -229,10 +238,14 @@ mod tests {
       let server = tokio::spawn(async move {
         let (mut sock, _) = listener.accept().await.unwrap();
         let mut buf = Vec::new();
-        tokio::io::AsyncReadExt::read_to_end(&mut sock, &mut buf).await.unwrap();
+        tokio::io::AsyncReadExt::read_to_end(&mut sock, &mut buf)
+          .await
+          .unwrap();
         buf
       });
-      let res = send_zpl_tcp("127.0.0.1".into(), port, "^XA^FDx^FS^XZ".into()).await.unwrap();
+      let res = send_zpl_tcp("127.0.0.1".into(), port, "^XA^FDx^FS^XZ".into())
+        .await
+        .unwrap();
       assert!(matches!(res, TcpSendResult::Sent));
       assert_eq!(server.await.unwrap(), b"^XA^FDx^FS^XZ");
     });
@@ -247,11 +260,16 @@ mod tests {
         let (mut sock, _) = listener.accept().await.unwrap();
         let mut buf = [0u8; 1024];
         let _ = sock.read(&mut buf).await.unwrap();
-        sock.write_all(b"~DYPRE,A,G,4,2,:B64:gAE=:AAAA").await.unwrap();
+        sock
+          .write_all(b"~DYPRE,A,G,4,2,:B64:gAE=:AAAA")
+          .await
+          .unwrap();
         // Keep the socket open: the client must end on the idle gap, not FIN.
         tokio::time::sleep(Duration::from_secs(5)).await;
       });
-      let res = query_zpl_tcp("127.0.0.1".into(), port, "^XA^HYR:PRE.GRF^XZ".into()).await.unwrap();
+      let res = query_zpl_tcp("127.0.0.1".into(), port, "^XA^HYR:PRE.GRF^XZ".into())
+        .await
+        .unwrap();
       match res {
         TcpQueryResult::Data { body } => assert!(body.starts_with("~DYPRE,A,G,4,2,")),
         _ => panic!("expected data"),
@@ -282,7 +300,9 @@ mod tests {
       let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
       let port = listener.local_addr().unwrap().port();
       drop(listener);
-      let res = send_zpl_tcp("127.0.0.1".into(), port, "^XA^XZ".into()).await.unwrap();
+      let res = send_zpl_tcp("127.0.0.1".into(), port, "^XA^XZ".into())
+        .await
+        .unwrap();
       assert!(matches!(res, TcpSendResult::Refused));
     });
   }

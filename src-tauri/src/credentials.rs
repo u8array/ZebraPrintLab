@@ -27,7 +27,9 @@ pub async fn credential_get(name: String) -> Result<Option<String>, String> {
 #[tauri::command]
 pub async fn credential_set(name: String, value: String) -> Result<(), String> {
   tokio::task::spawn_blocking(move || {
-    entry(&name)?.set_password(&value).map_err(|e| e.to_string())
+    entry(&name)?
+      .set_password(&value)
+      .map_err(|e| e.to_string())
   })
   .await
   .map_err(|e| e.to_string())?
