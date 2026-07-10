@@ -676,6 +676,13 @@ const en = {
       privacyHeading: 'Privacy',
       labelaryConsent: 'Labelary preview',
       labelaryHint: 'Sends your ZPL to the configured Labelary server for rendering.',
+      apiHeading: 'Labelary API',
+      apiHost: 'Server URL',
+      apiKey: 'API key',
+      apiKeySave: 'Save',
+      apiKeySaveError: 'Could not save the key to the system credential store.',
+      apiHintDesktop: 'For Labelary premium plans. Leave empty to use the free public service. The key is stored in the operating system keychain.',
+      apiHintWeb: 'For Labelary premium plans. Leave empty to use the free public service. The key is stored in this browser.',
     },
   },
 

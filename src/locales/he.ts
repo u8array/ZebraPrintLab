@@ -676,6 +676,13 @@ const he = {
       privacyHeading: 'פרטיות',
       labelaryConsent: 'תצוגה מקדימה של Labelary',
       labelaryHint: 'שולח את ה-ZPL שלך לשרת Labelary המוגדר לצורך עיבוד.',
+      apiHeading: 'Labelary API',
+      apiHost: 'כתובת URL של השרת',
+      apiKey: 'מפתח API',
+      apiKeySave: 'שמור',
+      apiKeySaveError: 'לא ניתן היה לשמור את המפתח במאגר האישורים של המערכת.',
+      apiHintDesktop: 'לתוכניות הפרימיום של Labelary. השאירו ריק כדי להשתמש בשירות הציבורי החינמי. המפתח נשמר במחזיק המפתחות של מערכת ההפעלה.',
+      apiHintWeb: 'לתוכניות הפרימיום של Labelary. השאירו ריק כדי להשתמש בשירות הציבורי החינמי. המפתח נשמר בדפדפן זה.',
     },
   },
 

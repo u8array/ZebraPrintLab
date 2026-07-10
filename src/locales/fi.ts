@@ -676,6 +676,13 @@ const fi = {
       privacyHeading: 'Tietosuoja',
       labelaryConsent: 'Labelary-esikatselu',
       labelaryHint: 'Lähettää ZPL:si määritetylle Labelary-palvelimelle renderöintiä varten.',
+      apiHeading: 'Labelary API',
+      apiHost: 'Palvelimen URL',
+      apiKey: 'API-avain',
+      apiKeySave: 'Tallenna',
+      apiKeySaveError: 'Avainta ei voitu tallentaa järjestelmän tunnistetietovarastoon.',
+      apiHintDesktop: 'Labelaryn premium-tilauksiin. Jätä tyhjäksi käyttääksesi ilmaista julkista palvelua. Avain tallennetaan käyttöjärjestelmän avainnippuun.',
+      apiHintWeb: 'Labelaryn premium-tilauksiin. Jätä tyhjäksi käyttääksesi ilmaista julkista palvelua. Avain tallennetaan tähän selaimeen.',
     },
   },
 

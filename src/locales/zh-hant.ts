@@ -676,6 +676,13 @@ const zhHant = {
       privacyHeading: '隱私',
       labelaryConsent: 'Labelary預覽',
       labelaryHint: '將您的ZPL傳送到已設定的Labelary伺服器進行渲染。',
+      apiHeading: 'Labelary API',
+      apiHost: '伺服器 URL',
+      apiKey: 'API 金鑰',
+      apiKeySave: '儲存',
+      apiKeySaveError: '無法將金鑰儲存至系統認證儲存區。',
+      apiHintDesktop: '適用於 Labelary 進階方案。留空則使用免費的公用服務。金鑰儲存在作業系統的鑰匙圈中。',
+      apiHintWeb: '適用於 Labelary 進階方案。留空則使用免費的公用服務。金鑰儲存在此瀏覽器中。',
     },
   },
 

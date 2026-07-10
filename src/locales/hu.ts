@@ -676,6 +676,13 @@ const hu = {
       privacyHeading: 'Adatvédelem',
       labelaryConsent: 'Labelary előnézet',
       labelaryHint: 'Elküldi a ZPL-t a beállított Labelary szerverre rendereléshez.',
+      apiHeading: 'Labelary API',
+      apiHost: 'Kiszolgáló URL-je',
+      apiKey: 'API-kulcs',
+      apiKeySave: 'Mentés',
+      apiKeySaveError: 'A kulcsot nem sikerült elmenteni a rendszer hitelesítőadat-tárolójába.',
+      apiHintDesktop: 'A Labelary prémium csomagokhoz. Hagyja üresen az ingyenes nyilvános szolgáltatás használatához. A kulcs az operációs rendszer kulcstartójában tárolódik.',
+      apiHintWeb: 'A Labelary prémium csomagokhoz. Hagyja üresen az ingyenes nyilvános szolgáltatás használatához. A kulcs ebben a böngészőben tárolódik.',
     },
   },
 

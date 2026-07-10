@@ -676,6 +676,13 @@ const ar = {
       privacyHeading: 'الخصوصية',
       labelaryConsent: 'معاينة Labelary',
       labelaryHint: 'يرسل ZPL الخاص بك إلى خادم Labelary المُهيَّأ للتصيير.',
+      apiHeading: 'Labelary API',
+      apiHost: 'عنوان URL للخادم',
+      apiKey: 'مفتاح API',
+      apiKeySave: 'حفظ',
+      apiKeySaveError: 'تعذّر حفظ المفتاح في مخزن بيانات اعتماد النظام.',
+      apiHintDesktop: 'لخطط Labelary المدفوعة. اتركه فارغًا لاستخدام الخدمة العامة المجانية. يُخزَّن المفتاح في سلسلة مفاتيح نظام التشغيل.',
+      apiHintWeb: 'لخطط Labelary المدفوعة. اتركه فارغًا لاستخدام الخدمة العامة المجانية. يُخزَّن المفتاح في هذا المتصفح.',
     },
   },
 

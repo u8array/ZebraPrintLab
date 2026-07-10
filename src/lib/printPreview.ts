@@ -59,6 +59,8 @@ export function buildPrintHtml(imageUrl: string): string {
 export async function printLabel(
   label: LabelConfig,
   objects: LabelObject[],
+  host: string,
+  apiKey: string | undefined,
   variables: readonly Variable[] = [],
   active: ActiveCsvRow | null = null,
 ): Promise<void> {
@@ -71,7 +73,7 @@ export async function printLabel(
 
   try {
     const zpl = buildPreviewZpl(label, objects, variables, active);
-    const url = await fetchPreview(zpl, label);
+    const url = await fetchPreview(zpl, label, host, apiKey);
     win.document.open();
     win.document.write(buildPrintHtml(url));
     win.document.close();

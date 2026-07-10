@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useT } from "../../hooks/useT";
 import { useLabelStore, selectEffectivePreviewProvider } from "../../store/labelStore";
 import { isDesktopShell } from "../../lib/platform";
-import { isDefaultLabelaryHost } from "../../lib/labelary";
+import { isDefaultHost } from "../../lib/labelary";
 import { getPrinterAddress, setPrinterAddress } from "../../lib/printerAddress";
-import { labelCls, inputCls } from "../ui/formStyles";
+import { labelCls, inputCls, buttonCls } from "../ui/formStyles";
 import type { PreviewProvider } from "../../store/slices/uiSlice";
 
 function ProviderOption({ value, current, onSelect, label, hint, disabled }: {
@@ -49,6 +49,12 @@ export function PreviewSettingsTab() {
   const acknowledgeLabelaryNotice = useLabelStore((s) => s.acknowledgeLabelaryNotice);
   const revokeLabelaryNotice = useLabelStore((s) => s.revokeLabelaryNotice);
 
+  const storeHost = useLabelStore((s) => s.labelaryHost);
+  const storeKey = useLabelStore((s) => s.labelaryApiKey);
+  const setLabelaryHost = useLabelStore((s) => s.setLabelaryHost);
+  const saveLabelaryApiKey = useLabelStore((s) => s.saveLabelaryApiKey);
+  const hydrateLabelaryApiKey = useLabelStore((s) => s.hydrateLabelaryApiKey);
+
   // Address is shared with the print dialog via localStorage, not the store;
   // local state mirrors it for controlled inputs, persisted on blur.
   const [address, setAddress] = useState(() => {
@@ -62,6 +68,37 @@ export function PreviewSettingsTab() {
     const a = getPrinterAddress();
     setAddress({ host: a.host, port: String(a.port) });
   };
+
+  // Host and key inputs use a `draft` (null = show the store value): the field
+  // tracks the store until the user edits, then holds their text so a late
+  // async change (hydrate) can't clobber in-progress typing. Committing resets
+  // the draft to null so the field snaps to the persisted value.
+  const [hostDraft, setHostDraft] = useState<string | null>(null);
+  const hostValue = hostDraft ?? storeHost;
+  const persistHost = () => {
+    setLabelaryHost(hostValue);
+    setHostDraft(null);
+  };
+
+  // Retry the credential-store load on open (a startup hydrate may have
+  // failed). Persist only via an explicit Save: a keychain write can raise an
+  // OS unlock prompt, so it must be deliberate, not an incidental blur.
+  useEffect(() => {
+    void hydrateLabelaryApiKey();
+  }, [hydrateLabelaryApiKey]);
+  const [keyDraft, setKeyDraft] = useState<string | null>(null);
+  const keyValue = keyDraft ?? storeKey;
+  const [keySaveFailed, setKeySaveFailed] = useState(false);
+  const keyDirty = keyValue.trim() !== storeKey;
+  const saveKey = () => {
+    setKeySaveFailed(false);
+    saveLabelaryApiKey(keyValue)
+      .then(() => setKeyDraft(null))
+      .catch(() => setKeySaveFailed(true));
+  };
+
+  // Consent only gates the public host; a custom endpoint is the operator's own.
+  const publicHost = isDefaultHost(storeHost);
 
   return (
     <div className="flex flex-col gap-5">
@@ -116,12 +153,58 @@ export function PreviewSettingsTab() {
         </section>
       )}
 
-      {labelaryAvailable && (
+      {labelaryAvailable && provider === "labelary" && (
+        <section className="flex flex-col gap-2">
+          <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{loc.apiHeading}</h3>
+          <div className="flex flex-col gap-2 max-w-md">
+            <div className="flex flex-col gap-1">
+              <label className={labelCls}>{loc.apiHost}</label>
+              <input
+                type="text"
+                value={hostValue}
+                onChange={(e) => setHostDraft(e.target.value)}
+                onBlur={persistHost}
+                placeholder="https://api.labelary.com"
+                className={inputCls}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className={labelCls}>{loc.apiKey}</label>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  value={keyValue}
+                  onChange={(e) => {
+                    setKeyDraft(e.target.value);
+                    setKeySaveFailed(false);
+                  }}
+                  autoComplete="off"
+                  className={`${inputCls} flex-1`}
+                />
+                <button
+                  type="button"
+                  className={`${buttonCls} disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface-2`}
+                  disabled={!keyDirty}
+                  onClick={saveKey}
+                >
+                  {loc.apiKeySave}
+                </button>
+              </div>
+              {keySaveFailed && (
+                <span className="text-[10px] font-mono text-error">{loc.apiKeySaveError}</span>
+              )}
+            </div>
+          </div>
+          <span className="text-[10px] text-muted max-w-md">
+            {isDesktopShell ? loc.apiHintDesktop : loc.apiHintWeb}
+          </span>
+        </section>
+      )}
+
+      {labelaryAvailable && provider === "labelary" && (
         <section className="flex flex-col gap-2">
           <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{loc.privacyHeading}</h3>
-          {/* Consent only gates the public host; a custom endpoint is the
-              operator's own, so the toggle would be inert there. */}
-          {isDefaultLabelaryHost() && (
+          {publicHost && (
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -133,7 +216,7 @@ export function PreviewSettingsTab() {
             </label>
           )}
           <p className="text-[10px] text-muted leading-relaxed max-w-md">
-            {isDefaultLabelaryHost() ? (
+            {publicHost ? (
               <>
                 {t.output.previewNoticeBody}{" "}
                 {/* The plans/retention link is about the public service; a

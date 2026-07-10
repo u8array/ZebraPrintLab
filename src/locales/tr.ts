@@ -676,6 +676,13 @@ const tr = {
       privacyHeading: 'Gizlilik',
       labelaryConsent: 'Labelary önizleme',
       labelaryHint: "ZPL'inizi yapılandırılmış Labelary sunucusuna işleme için gönderir.",
+      apiHeading: 'Labelary API',
+      apiHost: "Sunucu URL'si",
+      apiKey: 'API anahtarı',
+      apiKeySave: 'Kaydet',
+      apiKeySaveError: 'Anahtar sistemin kimlik bilgisi deposuna kaydedilemedi.',
+      apiHintDesktop: 'Labelary premium planları için. Ücretsiz genel hizmeti kullanmak için boş bırakın. Anahtar, işletim sisteminin anahtar zincirinde saklanır.',
+      apiHintWeb: 'Labelary premium planları için. Ücretsiz genel hizmeti kullanmak için boş bırakın. Anahtar bu tarayıcıda saklanır.',
     },
   },
 

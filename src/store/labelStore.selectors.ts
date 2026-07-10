@@ -1,5 +1,5 @@
 import type { LabelObject } from '../types/Group';
-import { isDefaultLabelaryHost } from '../lib/labelary';
+import { isDefaultHost, resolveHost, resolveApiKey } from '../lib/labelary';
 import { isDesktopShell } from '../lib/platform';
 import type { CsvDataset } from './slices/csvSlice';
 import type { CsvMapping } from '../types/Variable';
@@ -22,13 +22,21 @@ export const selectHasPerLabelOverrides = (s: LabelState): boolean =>
  *  `thirdParty.labelary` and `labelaryNoticeAcknowledged` separately
  *  to distinguish "hide" (gate off) from "show notice first". */
 export const canCallLabelary = (s: LabelState): boolean =>
-  s.thirdParty.labelary && (!isDefaultLabelaryHost() || s.labelaryNoticeAcknowledged);
+  s.thirdParty.labelary && (!isDefaultHost(s.labelaryHost) || s.labelaryNoticeAcknowledged);
 
 /** True when clicking a Labelary-backed action must first surface the
  *  privacy notice modal. A custom-host build implies the operator
  *  already controls the endpoint and no third-party disclosure is needed. */
 export const selectLabelaryNoticeRequired = (s: LabelState): boolean =>
-  isDefaultLabelaryHost() && !s.labelaryNoticeAcknowledged;
+  isDefaultHost(s.labelaryHost) && !s.labelaryNoticeAcknowledged;
+
+/** Effective Labelary endpoint: the runtime host/key resolved against the
+ *  build env fallback. Single owner of the store-field to resolver mapping,
+ *  shared by the preview overlay and the print-to-window flow. */
+export const selectLabelaryEndpoint = (s: LabelState): { host: string; apiKey?: string } => ({
+  host: resolveHost(s.labelaryHost),
+  apiKey: resolveApiKey(s.labelaryApiKey),
+});
 
 /** The provider the preview will actually use: the printer path needs the
  *  desktop shell's raw sockets, so a persisted 'printer' choice degrades to

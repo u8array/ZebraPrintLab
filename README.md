@@ -82,6 +82,8 @@ File menu → **Import CSV data** loads a CSV. The mapping dialog pairs each Var
 
 File menu → **Printer settings…** configures label-level media and print quality, plus a Setup Script for clock, locale, encoding, and printer identity (sent once when first setting up a printer). Setup-Script values stay out of saved designs so sharing a `.zpl` or `.json` doesn't leak your printer name or locale.
 
+Its **Preview** tab chooses which renderer draws the overlay (Labelary's online service, or on desktop the connected printer's own firmware) and holds an optional premium Labelary endpoint and API key; the key is stored in the OS keychain on desktop, in browser storage on the web.
+
 ### Keyboard shortcuts
 
 | Shortcut | Action |
@@ -150,7 +152,7 @@ Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable conte
 ## Limitations
 
 - The canvas is a design preview, not a pixel-perfect simulation. Shapes, spacing, and positions match the print; text approximates Zebra's built-in font to within a few dots, but exact letterforms and anti-aliasing differ. For a faithful render, use the **Preview** in the bottom-right panel (powered by Labelary).
-- Label preview is rendered by Labelary. The default build calls `api.labelary.com`; self-hosters can point at a private endpoint or turn it off.
+- Label preview is rendered by Labelary. The default build calls `api.labelary.com`; self-hosters can point at a private endpoint or turn it off (a premium endpoint and key can also be set at runtime, see Printer settings).
 - The Labelary preview doesn't render every ZPL feature. Some less common elements (e.g. Codablock F, Maxicode) may be missing or wrong in the preview even when the actual print is fine.
 - The Labelary preview shows only the current page; the printed/exported ZPL still contains every page.
 

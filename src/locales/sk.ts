@@ -676,6 +676,13 @@ const sk = {
       privacyHeading: 'Súkromie',
       labelaryConsent: 'Náhľad Labelary',
       labelaryHint: 'Odošle váš ZPL na nakonfigurovaný Labelary server na vykreslenie.',
+      apiHeading: 'Labelary API',
+      apiHost: 'URL servera',
+      apiKey: 'Kľúč API',
+      apiKeySave: 'Uložiť',
+      apiKeySaveError: 'Kľúč sa nepodarilo uložiť do úložiska poverení systému.',
+      apiHintDesktop: 'Pre prémiové plány Labelary. Ponechajte prázdne na použitie bezplatnej verejnej služby. Kľúč sa ukladá do zväzku kľúčov operačného systému.',
+      apiHintWeb: 'Pre prémiové plány Labelary. Ponechajte prázdne na použitie bezplatnej verejnej služby. Kľúč sa ukladá do tohto prehliadača.',
     },
   },
 

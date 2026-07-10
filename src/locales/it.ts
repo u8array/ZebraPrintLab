@@ -676,6 +676,13 @@ const it = {
       privacyHeading: 'Privacy',
       labelaryConsent: 'Anteprima Labelary',
       labelaryHint: 'Invia il tuo ZPL al server Labelary configurato per il rendering.',
+      apiHeading: 'Labelary API',
+      apiHost: 'URL del server',
+      apiKey: 'Chiave API',
+      apiKeySave: 'Salva',
+      apiKeySaveError: "Impossibile salvare la chiave nell'archivio credenziali del sistema.",
+      apiHintDesktop: 'Per i piani premium di Labelary. Lasciare vuoto per usare il servizio pubblico gratuito. La chiave è memorizzata nel portachiavi del sistema operativo.',
+      apiHintWeb: 'Per i piani premium di Labelary. Lasciare vuoto per usare il servizio pubblico gratuito. La chiave è memorizzata in questo browser.',
     },
   },
 

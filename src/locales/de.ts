@@ -676,6 +676,13 @@ const de = {
       privacyHeading: 'Datenschutz',
       labelaryConsent: 'Labelary-Vorschau',
       labelaryHint: 'Sendet dein ZPL zum konfigurierten Labelary-Server zum Rendern.',
+      apiHeading: 'Labelary API',
+      apiHost: 'Server-URL',
+      apiKey: 'API-Schlüssel',
+      apiKeySave: 'Speichern',
+      apiKeySaveError: 'Der Schlüssel konnte nicht im Anmeldeinformationsspeicher des Systems gespeichert werden.',
+      apiHintDesktop: 'Für Labelary-Premium-Tarife. Leer lassen, um den kostenlosen öffentlichen Dienst zu nutzen. Der Schlüssel wird im Schlüsselbund des Betriebssystems gespeichert.',
+      apiHintWeb: 'Für Labelary-Premium-Tarife. Leer lassen, um den kostenlosen öffentlichen Dienst zu nutzen. Der Schlüssel wird in diesem Browser gespeichert.',
     },
   },
 

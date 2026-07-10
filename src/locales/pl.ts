@@ -676,6 +676,13 @@ const pl = {
       privacyHeading: 'Prywatność',
       labelaryConsent: 'Podgląd Labelary',
       labelaryHint: 'Wysyła Twój ZPL do skonfigurowanego serwera Labelary w celu renderowania.',
+      apiHeading: 'Labelary API',
+      apiHost: 'URL serwera',
+      apiKey: 'Klucz API',
+      apiKeySave: 'Zapisz',
+      apiKeySaveError: 'Nie udało się zapisać klucza w magazynie poświadczeń systemu.',
+      apiHintDesktop: 'Dla planów premium Labelary. Pozostaw puste, aby korzystać z bezpłatnej usługi publicznej. Klucz jest przechowywany w pęku kluczy systemu operacyjnego.',
+      apiHintWeb: 'Dla planów premium Labelary. Pozostaw puste, aby korzystać z bezpłatnej usługi publicznej. Klucz jest przechowywany w tej przeglądarce.',
     },
   },
 

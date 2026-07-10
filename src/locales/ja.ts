@@ -676,6 +676,13 @@ const ja = {
       privacyHeading: 'プライバシー',
       labelaryConsent: 'Labelaryプレビュー',
       labelaryHint: 'あなたのZPLをレンダリングのために設定されたLabelaryサーバーに送信します。',
+      apiHeading: 'Labelary API',
+      apiHost: 'サーバーURL',
+      apiKey: 'APIキー',
+      apiKeySave: '保存',
+      apiKeySaveError: 'キーをシステムの資格情報ストアに保存できませんでした。',
+      apiHintDesktop: 'Labelaryのプレミアムプラン用です。空欄のままにすると無料の公開サービスを使用します。キーはオペレーティングシステムのキーチェーンに保存されます。',
+      apiHintWeb: 'Labelaryのプレミアムプラン用です。空欄のままにすると無料の公開サービスを使用します。キーはこのブラウザーに保存されます。',
     },
   },
 

@@ -2,13 +2,9 @@ import type { LabelConfig } from '../types/LabelConfig';
 const TIMEOUT_MS = 10_000;
 const DEFAULT_HOST = 'https://api.labelary.com';
 
-// Build-time Labelary endpoint configuration. Labelary's premium plans
-// (Plus, Business, On-Premise) hand out a private hostname; and for the
-// metered plans also an API key; via email upon sign-up. Operators set:
-//   - VITE_LABELARY_API_URL – e.g. https://acme.labelary.com
-//   - VITE_LABELARY_API_KEY – the key value, if the plan requires one
-// The key is sent as X-API-Key, matching Labelary's own viewer
-// (https://labelary.com/viewer.html source).
+// Runtime host/key (from the store) fall back to the build env. Vite inlines
+// VITE_* into the public bundle, so never set the key variable for a published
+// build. The key is sent as X-API-Key, matching Labelary's own viewer.
 
 function trimmed(raw: unknown): string | undefined {
   if (typeof raw !== 'string') return undefined;
@@ -16,22 +12,24 @@ function trimmed(raw: unknown): string | undefined {
   return t || undefined;
 }
 
-function host(): string {
-  const configured = trimmed(import.meta.env.VITE_LABELARY_API_URL);
+/** Effective host: runtime setting, else build env, else the public service.
+ *  Trailing slashes trimmed so the path join stays clean. */
+export function resolveHost(runtimeHost: string): string {
+  const configured = trimmed(runtimeHost) ?? trimmed(import.meta.env.VITE_LABELARY_API_URL);
   if (!configured) return DEFAULT_HOST;
   return configured.replace(/\/+$/, '');
 }
 
-function apiKey(): string | undefined {
-  return trimmed(import.meta.env.VITE_LABELARY_API_KEY);
+/** Effective key: runtime setting, else build env, else none. */
+export function resolveApiKey(runtimeKey: string): string | undefined {
+  return trimmed(runtimeKey) ?? trimmed(import.meta.env.VITE_LABELARY_API_KEY);
 }
 
-/** True when the build targets the public api.labelary.com service. UI uses
- *  this to decide whether to surface the third-party-data-leaves-this-app
- *  privacy notice; a custom host implies the operator already controls the
- *  endpoint. Reads env per call so tests can stub the host. */
-export function isDefaultLabelaryHost(): boolean {
-  return host() === DEFAULT_HOST;
+/** True when the effective host is the public api.labelary.com. UI uses this
+ *  to gate the third-party-data-leaves-this-app privacy notice; a custom host
+ *  implies the operator already controls the endpoint. */
+export function isDefaultHost(runtimeHost: string): boolean {
+  return resolveHost(runtimeHost) === DEFAULT_HOST;
 }
 
 class LabelaryError extends Error {
@@ -43,15 +41,19 @@ class LabelaryError extends Error {
   }
 }
 
-export async function fetchPreview(zpl: string, label: LabelConfig): Promise<string> {
+export async function fetchPreview(
+  zpl: string,
+  label: LabelConfig,
+  host: string,
+  apiKey?: string,
+): Promise<string> {
   const { dpmm, widthMm, heightMm } = label;
   const widthIn = (widthMm / 25.4).toFixed(3);
   const heightIn = (heightMm / 25.4).toFixed(3);
-  const url = `${host()}/v1/printers/${dpmm}dpmm/labels/${widthIn}x${heightIn}/0/`;
+  const url = `${host}/v1/printers/${dpmm}dpmm/labels/${widthIn}x${heightIn}/0/`;
 
   const headers: Record<string, string> = { 'Content-Type': 'application/x-www-form-urlencoded' };
-  const key = apiKey();
-  if (key) headers['X-API-Key'] = key;
+  if (apiKey) headers['X-API-Key'] = apiKey;
 
   let res: Response;
   try {
