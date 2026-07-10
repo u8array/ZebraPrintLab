@@ -3,6 +3,7 @@ import { Group, Image as KImage, Path, Rect } from "react-konva";
 import type { LabelObject } from "../../types/Group";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { getImage } from "../../lib/imageCache";
+import { monoPreviewCanvas } from "../../lib/imageToZpl";
 import { useColorScheme } from "../../hooks/useColorScheme";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
@@ -29,39 +30,6 @@ export function ImageObject({
   const p = obj.props;
   const colors = useColorScheme();
   const cached = getImage(p.imageId);
-  const w = dotsToPx(p.widthDots, scale, dpmm);
-  // Aspect-lock when a real PNG is cached; fall back to `heightDots` for
-  // recall-only placeholders so the user can shape the box freely. Guard
-  // against 0-width cached images (malformed file edge case); div-by-
-  // zero would otherwise render NaN-sized canvas nodes.
-  const h = cached && cached.width > 0
-    ? w * (cached.height / cached.width)
-    : dotsToPx(p.heightDots ?? p.widthDots, scale, dpmm);
-  const x = offsetX + dotsToPx(obj.x, scale, dpmm);
-  const y = offsetY + dotsToPx(obj.y, scale, dpmm);
-
-  // Rotatable only for an inline cached bitmap (see isImageRotatable); reuse
-  // the `cached` lookup already made above.
-  const rotatable = !!cached && !p.storedAs && !p.rawGf;
-  const rotation = rotatable ? objectRotation(p) : "N";
-  const swap = isAxisSwapped(rotation);
-
-  // Publish the rendered footprint (dots) for align/distribute; height tracks
-  // the aspect-locked PNG size, not the stale heightDots prop. Store the
-  // already-rotated footprint (axes swapped on R/B) so bounds/selection match.
-  const uprightWDots = pxToDots(w, scale, dpmm);
-  const uprightHDots = pxToDots(h, scale, dpmm);
-  const footprintWDots = swap ? uprightHDots : uprightWDots;
-  const footprintHDots = swap ? uprightWDots : uprightHDots;
-  useEffect(() => {
-    // Footprint dropped to zero (e.g. content cleared): drop the stale entry.
-    if (footprintWDots <= 0 || footprintHDots <= 0) {
-      clearMeasuredBounds(obj.id);
-      return;
-    }
-    setMeasuredBounds(obj.id, { width: footprintWDots, height: footprintHDots });
-  }, [obj.id, footprintWDots, footprintHDots]);
-  useEffect(() => () => clearMeasuredBounds(obj.id), [obj.id]);
 
   const [htmlImg, setHtmlImg] = useState<HTMLImageElement | null>(null);
   // Reset the cached HTMLImageElement during render when the source changes,
@@ -87,12 +55,57 @@ export function ImageObject({
     };
   }, [cached]);
 
+  // Rotatable only for an inline cached bitmap (see isImageRotatable); reuse
+  // the `cached` lookup already made above.
+  const rotatable = !!cached && !p.storedAs && !p.rawGf;
+  const rotation = rotatable ? objectRotation(p) : "N";
+  const swap = isAxisSwapped(rotation);
+
+  const w = dotsToPx(p.widthDots, scale, dpmm);
+  // WYSIWYG mono preview (see monoPreviewCanvas), handed to Konva to nearest-
+  // neighbour upscale (imageSmoothingEnabled=false, as BarcodeObject). Upright;
+  // the inner Group turns it. The colored source is never shown on the label.
+  const preview = htmlImg && cached
+    ? monoPreviewCanvas(htmlImg, p.widthDots, p.threshold)
+    : null;
+  // Height from the raster is dot-quantised, so the box matches the emitted
+  // ^GF height exactly. Pre-load, aspect-lock off the cached dimensions
+  // (guarding 0-width malformed files: NaN-sized nodes otherwise); recall-only
+  // placeholders fall back to `heightDots` so the user can shape the box.
+  const h = preview
+    ? w * (preview.height / preview.width)
+    : cached && cached.width > 0
+      ? w * (cached.height / cached.width)
+      : dotsToPx(p.heightDots ?? p.widthDots, scale, dpmm);
+  const x = offsetX + dotsToPx(obj.x, scale, dpmm);
+  const y = offsetY + dotsToPx(obj.y, scale, dpmm);
+
+  // Publish the rendered footprint (dots) for align/distribute; height tracks
+  // the aspect-locked size, not the stale heightDots prop. Store the already-
+  // rotated footprint (axes swapped on R/B) so bounds/selection match.
+  const uprightWDots = pxToDots(w, scale, dpmm);
+  const uprightHDots = pxToDots(h, scale, dpmm);
+  const footprintWDots = swap ? uprightHDots : uprightWDots;
+  const footprintHDots = swap ? uprightWDots : uprightHDots;
+  useEffect(() => {
+    // Footprint dropped to zero (e.g. content cleared): drop the stale entry.
+    if (footprintWDots <= 0 || footprintHDots <= 0) {
+      clearMeasuredBounds(obj.id);
+      return;
+    }
+    setMeasuredBounds(obj.id, { width: footprintWDots, height: footprintHDots });
+  }, [obj.id, footprintWDots, footprintHDots]);
+  useEffect(() => () => clearMeasuredBounds(obj.id), [obj.id]);
+
   // Whole-object drag (snap + commit) is centralized in the drag controller.
   const handleDragMove = dragHandlers?.onDragMove;
   const handleDragEnd = dragHandlers?.onDragEnd;
 
-  if (htmlImg && cached) {
-    // bwip-style rotation: the bitmap draws upright inside an inner Group whose
+  // Gate on `preview`, not `htmlImg`: an image that loaded but can't rasterize
+  // (dimensionless SVG, naturalWidth 0) emits a blank ^GF, so showing the color
+  // source would lie. Fall through to the placeholder in that case.
+  if (preview && cached) {
+    // bwip-style rotation: the upright preview draws inside an inner Group whose
     // rotatedGroupTransform places it for R/I/B; the outer Group keeps the
     // object's x/y and interaction (matches BarcodeObject).
     const innerTr = rotatedGroupTransform(rotation, w, h);
@@ -108,9 +121,10 @@ export function ImageObject({
       >
         <Group x={innerTr.x} y={innerTr.y} rotation={innerTr.rotation}>
           <KImage
-            image={htmlImg}
+            image={preview}
             width={w}
             height={h}
+            imageSmoothingEnabled={false}
             stroke={isSelected ? colors.selection : undefined}
             strokeWidth={isSelected ? 2 : 0}
             strokeScaleEnabled={false}
