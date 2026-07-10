@@ -1,4 +1,5 @@
-export type ViewRotation = 0 | 90 | 180 | 270;
+import type { ViewRotation } from "../../registry/rotation";
+export type { ViewRotation };
 
 /**
  * Applies the inverse of a clockwise screen-space rotation to a delta vector.

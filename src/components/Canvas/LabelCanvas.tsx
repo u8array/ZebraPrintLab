@@ -1168,6 +1168,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       pointerPos: () => pointerToLabelDots(lastPointerRef.current.x, lastPointerRef.current.y),
       setGhost,
       addObject,
+      viewRotation: () => viewRotation,
+      label: () => label,
+      measured: () => getMeasuredSnapshot(),
     }),
   );
 

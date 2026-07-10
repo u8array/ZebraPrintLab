@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { Unit } from '../../lib/units';
-import type { ViewRotation } from '../../components/Canvas/rotationGeometry';
+import type { ViewRotation } from '../../registry/rotation';
 import { fallbackTranslations, loadLocale, type LocaleCode, type Translations } from '../../locales';
 import {
   detectLocale,

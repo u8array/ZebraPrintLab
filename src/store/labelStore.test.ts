@@ -96,6 +96,20 @@ describe('addObject', () => {
     expect(objs()).toHaveLength(0);
   });
 
+  it('spawns step-rotation types pre-rotated in a rotated view', () => {
+    state().setCanvasSettings({ viewRotation: 90 });
+    state().addObject('text');
+    expect(props(defined(objs()[0])).rotation).toBe('B');
+  });
+
+  it('leaves shapes and explicit rotation overrides alone in a rotated view', () => {
+    state().setCanvasSettings({ viewRotation: 90 });
+    state().addObject('box');
+    state().addObject('text', undefined, { rotation: 'R' });
+    expect(props(defined(objs()[0]))).not.toHaveProperty('rotation');
+    expect(props(defined(objs()[1])).rotation).toBe('R');
+  });
+
   it('gives each object a unique id', () => {
     state().addObject('text');
     state().addObject('text');

@@ -12,7 +12,7 @@ import { getEntry } from '../../registry';
 import { useT } from '../../hooks/useT';
 import { useLabelStore } from '../../store/labelStore';
 import { printableRectDots } from '../../lib/objectBounds';
-import { resolveDefaultSizeDots } from '../../lib/resolveDefaultSize';
+import { centeredSpawnAnchor } from '../../lib/spawn';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 import { DragChip } from '../ui/DragChip';
 import { CollapsibleSection } from '../ui/CollapsibleSection';
@@ -39,20 +39,15 @@ function entryCategory(entry: AddableEntry, t: Translations): string {
 }
 
 /** Drop an entry centred on the visible (printable) label area, which ^LS can
- *  shift off the physical center (double-click / "no drag" path). */
+ *  shift off the physical center (double-click / "no drag" path). Shares
+ *  centeredSpawnAnchor with the drag path, so both gestures land the same way
+ *  and honour the spawn rotation of a rotated canvas view. */
 function spawnCentered(entry: AddableEntry) {
-  const addObject = useLabelStore.getState().addObject;
-  const { label } = useLabelStore.getState();
-  const size = resolveDefaultSizeDots(entry.defaultSize, label);
+  const { addObject, label, canvasSettings } = useLabelStore.getState();
   const r = printableRectDots(label);
-  addObject(
-    entry.type,
-    {
-      x: Math.round(r.x + r.width / 2 - size.width / 2),
-      y: Math.round(r.y + r.height / 2 - size.height / 2),
-    },
-    entry.propsOverride,
-  );
+  const at = { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+  const pos = centeredSpawnAnchor(entry.type, entry.propsOverride, at, label, canvasSettings.viewRotation);
+  if (pos) addObject(entry.type, pos, entry.propsOverride);
 }
 
 const rowBodyCls =
