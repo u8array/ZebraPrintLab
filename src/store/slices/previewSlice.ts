@@ -53,18 +53,20 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
   previewMode: { status: 'idle' },
 
   enterPreviewMode: async () => {
-    const provider = selectEffectivePreviewProvider(get());
     // First Labelary preview after a cold start races the async keychain read;
     // await it once (gated on the loaded flag) so the request isn't sent keyless.
     // Placed before the snapshot+guard so the captured design can't go stale and
     // a concurrent enter can't slip past the status guard.
-    if (provider === 'labelary' && !get().labelaryApiKeyLoaded) {
+    if (selectEffectivePreviewProvider(get()) === 'labelary' && !get().labelaryApiKeyLoaded) {
       await get().hydrateLabelaryApiKey();
     }
     const state = get();
     if (state.previewMode.status === 'loading' || state.previewMode.status === 'active') {
       return;
     }
+    // Re-read after the await: switching the provider mid-hydrate exits the
+    // preview, so a stale value would render the wrong renderer.
+    const provider = selectEffectivePreviewProvider(state);
     const objs = currentObjects(state);
     const active = buildActiveCsvRow(state.csvDataset, state.csvMapping);
     const zpl = buildPreviewZpl(state.label, objs, state.variables, active, { blankSamples: true });

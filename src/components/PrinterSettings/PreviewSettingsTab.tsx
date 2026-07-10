@@ -89,12 +89,17 @@ export function PreviewSettingsTab() {
   const [keyDraft, setKeyDraft] = useState<string | null>(null);
   const keyValue = keyDraft ?? storeKey;
   const [keySaveFailed, setKeySaveFailed] = useState(false);
+  // A keychain write can raise an OS unlock prompt and take seconds; block a
+  // second save (and its duplicate prompt) until this one settles.
+  const [keySaving, setKeySaving] = useState(false);
   const keyDirty = keyValue.trim() !== storeKey;
   const saveKey = () => {
     setKeySaveFailed(false);
+    setKeySaving(true);
     saveLabelaryApiKey(keyValue)
       .then(() => setKeyDraft(null))
-      .catch(() => setKeySaveFailed(true));
+      .catch(() => setKeySaveFailed(true))
+      .finally(() => setKeySaving(false));
   };
 
   // Consent only gates the public host; a custom endpoint is the operator's own.
@@ -178,13 +183,14 @@ export function PreviewSettingsTab() {
                     setKeyDraft(e.target.value);
                     setKeySaveFailed(false);
                   }}
+                  disabled={keySaving}
                   autoComplete="off"
                   className={`${inputCls} flex-1`}
                 />
                 <button
                   type="button"
                   className={`${buttonCls} disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-surface-2`}
-                  disabled={!keyDirty}
+                  disabled={!keyDirty || keySaving}
                   onClick={saveKey}
                 >
                   {loc.apiKeySave}
