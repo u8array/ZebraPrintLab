@@ -19,7 +19,7 @@ import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
-import type { ImageProps } from './image';
+import { isImageRotatable, type ImageProps } from './image';
 
 export const imagePanel: ObjectTypeUi<ImageProps> = {
   PropertiesPanel: ({ obj, onChange }) => {
@@ -186,10 +186,9 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
             <span className="text-[10px] text-muted font-mono text-right">{p.threshold}</span>
           </div>
 
-          {/* Rotation only for inline cached bitmaps: ^GF has no orientation
-              letter, so it's baked into the emitted bytes. storedAs (^XG recall)
-              and opaque rawGf can't be re-encoded, so the control is hidden. */}
-          {cached && !p.storedAs && (
+          {/* Rotation control only for a rotatable inline bitmap; storedAs/rawGf
+              emit upright (isImageRotatable is the single gate). */}
+          {isImageRotatable(p) && (
             <RotationSelect
               value={p.rotation ?? 'N'}
               onChange={(rotation) => onChange({ rotation })}

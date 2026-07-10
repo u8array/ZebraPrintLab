@@ -40,8 +40,8 @@ export function ImageObject({
   const x = offsetX + dotsToPx(obj.x, scale, dpmm);
   const y = offsetY + dotsToPx(obj.y, scale, dpmm);
 
-  // Only inline cached (editable) images bake a rotation; rawGf verbatim and
-  // storedAs recall (^XG) can't turn, so they stay upright, matching the emit.
+  // Rotatable only for an inline cached bitmap (see isImageRotatable); reuse
+  // the `cached` lookup already made above.
   const rotatable = !!cached && !p.storedAs && !p.rawGf;
   const rotation = rotatable ? objectRotation(p) : "N";
   const swap = isAxisSwapped(rotation);

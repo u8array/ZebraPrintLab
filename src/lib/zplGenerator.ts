@@ -425,10 +425,9 @@ function shiftObjectsByHome(
       const b = objectBoundsDots(obj, ctx);
       let w = b.width;
       let h = b.height;
-      // Images emit a byte-padded ^GF width and an aspect-derived height (axes
-      // swapped on a baked R/B rotation); match toZPL via the shared helper so
-      // neither edge is dropped over the difference. Other graphics emit their
-      // footprint verbatim.
+      // Image emit dims differ from the footprint (byte-padded width, aspect
+      // height, R/B axis swap), so key the drop check off imageEmitDims like
+      // toZPL. Other graphics emit their footprint verbatim.
       if (obj.type === 'image') {
         const d = imageEmitDims(obj.props);
         w = d.width;

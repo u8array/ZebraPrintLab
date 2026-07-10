@@ -184,9 +184,9 @@ export function objectBoundsDots(obj: LabelObject, ctx: ObjectBoundsCtx): Boundi
       // fallback rotates the upright prop dims itself for R/B.
       const m = ctx.measured?.get(obj.id);
       if (m) return { x: obj.x, y: obj.y, width: m.width, height: m.height };
-      // storedAs/rawGf emit upright (can't re-encode), so don't swap their
-      // fallback footprint; only bakeable cached images turn. (Pure path: no
-      // cache check here, but a no-cache image is empty and inconsequential.)
+      // storedAs/rawGf stay upright (rot='N'), so their fallback footprint isn't
+      // swapped. (Pure path: no cache check, but a no-cache image is empty and
+      // inconsequential.)
       const rot = p.storedAs || p.rawGf ? "N" : objectRotation(p);
       const fp = rotatedFootprint(p.widthDots, p.heightDots ?? p.widthDots, rot);
       return { x: obj.x, y: obj.y, width: fp.width, height: fp.height };

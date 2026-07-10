@@ -838,10 +838,9 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const singleSelected = selectedIds.length === 1
     ? objects.find((o) => o.id === selectedIds[0]) ?? null
     : null;
-  // Only an inline cached bitmap can actually turn (storedAs/rawGf emit and
-  // render upright), so gate the rotate affordance on that, not on the presence
-  // of a rotation prop: pre-feature saves omit it, and objectRotation defaults
-  // a rotatable image to 'N' so the button still shows.
+  // Gate the image rotate button on isImageRotatable, not on a rotation prop:
+  // pre-feature saves omit it, and objectRotation defaults a rotatable image to
+  // 'N' so the button still shows.
   const stepRotation = !singleSelected
     ? null
     : singleSelected.type === "image"

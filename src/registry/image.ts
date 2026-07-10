@@ -20,7 +20,8 @@ export function imageEmitHeight(p: ImageProps): number {
   const cached = getImage(p.imageId);
   // max(1,…) mirrors rasterToGfa's clamp so the anchor footprint can't diverge
   // from the emitted GRF at an extreme aspect (widthDots*aspect rounding to 0).
-  return cached
+  // width>0 guards a malformed 0-width decode, matching the render path.
+  return cached && cached.width > 0
     ? Math.max(1, Math.round(p.widthDots * (cached.height / cached.width)))
     : p.heightDots ?? p.widthDots;
 }
@@ -171,8 +172,8 @@ export const image: ObjectTypeCore<ImageProps> = {
       return `${anchor}^XG${formatStoragePath(p.storedAs, true)},1,1^FS`;
     }
     if (!cached) return `${anchor}^FD^FS`;
-    // Cached: bake the rotation into the bytes (^GF has no orientation letter).
-    // The cache is always upright, so a rotated field regenerates fresh here.
+    // _gfaCache holds the upright bytes, so a rotated field regenerates fresh
+    // (rasterToGfa bakes the rotation in).
     const rot = objectRotation(p);
     const gfa = rot === 'N'
       ? (p._gfaCache || gfaSync(cached.dataUrl, p.widthDots, p.threshold, 'N'))
