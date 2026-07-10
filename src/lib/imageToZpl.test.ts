@@ -3,6 +3,7 @@ import {
   packMonoBits,
   monoRasterToRgba,
   gfaFromRaster,
+  rasterizeMono,
   scaledHeightDots,
   type MonoRaster,
 } from "./imageToZpl";
@@ -128,5 +129,20 @@ describe("gfaFromRaster", () => {
       heightDots: 2,
     });
     expect(zpl).toBe("^GFA,4,4,2,8100FF0A");
+  });
+});
+
+describe("rasterizeMono guards", () => {
+  // The guard returns before any canvas op, so a 0 dimension never reaches
+  // getImageData (which throws IndexSizeError). Node lane: no DOM needed.
+  const img = { naturalWidth: 100, naturalHeight: 50 } as HTMLImageElement;
+
+  it("returns null for a non-positive widthDots (degenerate ^GF import)", () => {
+    expect(rasterizeMono(img, 0, 128)).toBeNull();
+    expect(rasterizeMono(img, -4, 128)).toBeNull();
+  });
+
+  it("returns null for a 0-width image (dimensionless SVG)", () => {
+    expect(rasterizeMono({ naturalWidth: 0, naturalHeight: 0 } as HTMLImageElement, 100, 128)).toBeNull();
   });
 });

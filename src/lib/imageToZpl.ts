@@ -106,7 +106,10 @@ export function rasterizeMono(
   threshold: number,
   rotation: ZplRotation = 'N',
 ): MonoRaster | null {
-  if (!img.naturalWidth) return null;
+  // widthDots<=0 (a degenerate ^GF import with bytesPerRow 0) would leave a 0
+  // canvas dimension, and getImageData throws IndexSizeError on it; fail safe
+  // to a placeholder instead of crashing the render.
+  if (widthDots <= 0 || !img.naturalWidth) return null;
   const uprightH = scaledHeightDots(widthDots, img.naturalWidth, img.naturalHeight);
   const swap = isAxisSwapped(rotation);
   const outW = swap ? uprightH : widthDots;
