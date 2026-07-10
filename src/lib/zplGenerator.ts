@@ -21,7 +21,7 @@ import { isGroup, walkObjects, type LabelObject, type LeafObject, type Page } fr
 import { isOverlayConsistent } from './zplOverlay/overlay';
 import { objectBoundsDots, type ObjectBoundsCtx } from './objectBounds';
 import { formatFontDownloadFromPath } from './customFonts';
-import { gfByteWidth, imageEmitHeight, type ImageProps } from '../registry/image';
+import { imageEmitDims, type ImageProps } from '../registry/image';
 import { formatStoragePath } from './storagePath';
 
 function formatDownloadObject(m: CustomFontMapping): string | undefined {
@@ -425,12 +425,13 @@ function shiftObjectsByHome(
       const b = objectBoundsDots(obj, ctx);
       let w = b.width;
       let h = b.height;
-      // Images emit a byte-padded ^GF width and an aspect-derived height; match
-      // those (the generator has no measured cache) so neither edge is dropped
-      // over the difference. Other graphics emit their footprint verbatim.
+      // Image emit dims differ from the footprint (byte-padded width, aspect
+      // height, R/B axis swap), so key the drop check off imageEmitDims like
+      // toZPL. Other graphics emit their footprint verbatim.
       if (obj.type === 'image') {
-        w = gfByteWidth(obj.props.widthDots);
-        h = imageEmitHeight(obj.props);
+        const d = imageEmitDims(obj.props);
+        w = d.width;
+        h = d.height;
       }
       const anchorX = (obj.fieldJustify === 'R' ? b.x + w : b.x) - homeX;
       const anchorY = b.y + h - homeY - top;

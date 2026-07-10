@@ -16,9 +16,10 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Tooltip } from '../components/ui/Tooltip';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
+import { RotationSelect } from '../components/Properties/RotationSelect';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
-import type { ImageProps } from './image';
+import { isImageRotatable, type ImageProps } from './image';
 
 export const imagePanel: ObjectTypeUi<ImageProps> = {
   PropertiesPanel: ({ obj, onChange }) => {
@@ -184,6 +185,16 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
             />
             <span className="text-[10px] text-muted font-mono text-right">{p.threshold}</span>
           </div>
+
+          {/* Rotation control only for a rotatable inline bitmap; storedAs/rawGf
+              emit upright (isImageRotatable is the single gate). */}
+          {isImageRotatable(p) && (
+            <RotationSelect
+              value={p.rotation ?? 'N'}
+              onChange={(rotation) => onChange({ rotation })}
+              zplCmd="^GF"
+            />
+          )}
 
           {/* Printer storage (~DY + ^XG). Section label + info icon are
               always visible so the feature is discoverable in both states;

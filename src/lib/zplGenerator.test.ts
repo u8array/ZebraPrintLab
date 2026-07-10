@@ -1816,6 +1816,17 @@ describe('generateZPL — ^FT graphic anchors (bottom corner, spec p.205)', () =
     expect(zpl).not.toContain('^FT50,1069'); // not 70 + stale 999
   });
 
+  it('cached image ^FT: a 0-width (malformed) cache falls back, no Infinity anchor', () => {
+    // A malformed 0-width decode would make widthDots*(h/0) Infinity; the emit
+    // path must fall back to heightDots like the render path does.
+    putImage({ id: 'imgZero', name: 'z', dataUrl: 'data:,', width: 0, height: 50 });
+    const zpl = generateZPL(BASE_LABEL, mk('image',
+      { imageId: 'imgZero', widthDots: 120, heightDots: 80, threshold: 128, _gfaCache: '^GFA1,1,1,00' }));
+    expect(zpl).toContain('^FT50,150'); // 70 + heightDots 80
+    expect(zpl).not.toContain('Infinity');
+    expect(zpl).not.toContain('NaN');
+  });
+
   it('keeps a hand-authored ^FT reverse box + ^FR text as two FT objects and round-trips them', () => {
     // Spec-true reverse: the filled ^FT ^GB stays its own box and the ^FR text
     // stays a separate reverse text; neither is collapsed or rewritten to ^FO,

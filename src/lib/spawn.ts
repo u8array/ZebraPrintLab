@@ -5,10 +5,10 @@ import type { LabelConfig } from '../types/LabelConfig';
 import type { LabelObject } from '../types/Group';
 
 /** Props patch so a palette spawn lands upright in a rotated canvas view.
- *  Only step-rotation types (text, symbol, barcodes) qualify; shapes/lines/
- *  images have no reading direction. An explicit rotation in the caller's override wins.
- *  Shared by the store spawn and the drag ghost so the preview matches the
- *  dropped object. */
+ *  Only step-rotation types (text, symbol, barcodes, image) qualify; box/
+ *  ellipse/line have no rotation prop. An explicit rotation in the caller's
+ *  override wins. Shared by the store spawn and the drag ghost so the preview
+ *  matches the dropped object. */
 export function spawnRotationOverride(
   type: string,
   propsOverride: object | undefined,
