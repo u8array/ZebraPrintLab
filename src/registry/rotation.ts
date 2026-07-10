@@ -7,6 +7,10 @@ export type ZplRotation = 'N' | 'R' | 'I' | 'B';
 
 export const ZPL_ROTATIONS: readonly ZplRotation[] = ['N', 'R', 'I', 'B'] as const;
 
+/** Canvas view rotation in degrees CW. Distinct from a field's ZplRotation:
+ *  this turns the whole viewport, not one object. */
+export type ViewRotation = 0 | 90 | 180 | 270;
+
 export function isZplRotation(value: string): value is ZplRotation {
   return value === 'N' || value === 'R' || value === 'I' || value === 'B';
 }
@@ -30,7 +34,7 @@ export function isAxisSwapped(r: ZplRotation): boolean {
 
 /** ZPL rotation that reads upright under a rotated canvas view: the view
  *  rotates the label +θ CW on screen, so the field pre-rotates −θ. */
-export function zplRotationForView(view: 0 | 90 | 180 | 270): ZplRotation {
+export function zplRotationForView(view: ViewRotation): ZplRotation {
   switch (view) {
     case 90: return 'B';
     case 180: return 'I';

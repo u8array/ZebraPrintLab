@@ -1,14 +1,12 @@
 import { getEntry } from '../registry';
-import { getStepRotation, zplRotationForView, type ZplRotation } from '../registry/rotation';
+import { getStepRotation, zplRotationForView, type ViewRotation, type ZplRotation } from '../registry/rotation';
 import { objectBoundsDots, type ObjectBoundsCtx } from './objectBounds';
 import type { LabelConfig } from '../types/LabelConfig';
 import type { LabelObject } from '../types/Group';
 
-type ViewRotation = 0 | 90 | 180 | 270;
-
 /** Props patch so a palette spawn lands upright in a rotated canvas view.
- *  Only step-rotation types (text, barcodes) qualify; shapes/lines/images have
- *  no reading direction. An explicit rotation in the caller's override wins.
+ *  Only step-rotation types (text, symbol, barcodes) qualify; shapes/lines/
+ *  images have no reading direction. An explicit rotation in the caller's override wins.
  *  Shared by the store spawn and the drag ghost so the preview matches the
  *  dropped object. */
 export function spawnRotationOverride(
