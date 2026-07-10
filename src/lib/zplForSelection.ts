@@ -5,9 +5,10 @@ import { planFieldEmission } from "./zplGenerator";
 
 /** Just the field commands for the selected objects (no ^XA / label config /
  *  ^XZ): the page's top-level objects that are selected, a group counting when
- *  it or any descendant leaf is. Includes the template/clock header (^FE/^FN/
- *  ^SO/^FC) the bodies depend on, so a selection using variables stays valid;
- *  it stays empty for plain objects. Empty string when nothing is selected. */
+ *  it or any descendant leaf is. Includes the template header (^FN/^SO) the
+ *  bodies depend on, so a selection using variables stays valid (the ^FE/^FC
+ *  armings ride on each field, not here); it stays empty for plain objects.
+ *  Empty string when nothing is selected. */
 export function zplForSelection(
   label: LabelConfig,
   pageObjects: readonly LabelObject[],

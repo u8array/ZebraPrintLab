@@ -49,9 +49,12 @@ function flattenObjects(objects: LabelObject[]): LabelObject[] {
   return out;
 }
 
-/** Plan `^FE` + header `^FN` declarations for inline-embed templates,
- *  plus the emit context. embedChar is only set when a safe char exists,
- *  which fdFieldFor uses as the "templates allowed" gate. */
+/** Plan header `^FN` declarations (+ `^SO` clock offsets) for inline-embed
+ *  templates, plus the emit context. embedChar is only set when a safe char
+ *  exists, which fdFieldFor uses as the "templates allowed" gate. Firmware
+ *  honours ^FE/^FC only per ^FD, so fdFieldFor arms them on each consuming
+ *  field; the header additionally declares a NON-default delimiter as block
+ *  state so re-import decodes literals before the first armed field correctly. */
 export function planTemplateHeader(
   shifted: LabelObject[],
   label: LabelConfig,
@@ -100,6 +103,8 @@ export function planTemplateHeader(
   const emitCtx: ZplEmitContext = { label, variables };
 
   if (pickedEmbedChar !== null) {
+    // Default `#` is the parser's own default; only a non-default delimiter
+    // needs the header ^FE (the block-state note on planTemplateHeader).
     if (pickedEmbedChar !== '#') headerLines.push(`^FE${pickedEmbedChar}`);
     for (const [fn, v] of [...templateVarsByFn].sort(([a], [b]) => a - b)) {
       if (singleBindFns.has(fn)) continue;
@@ -108,18 +113,19 @@ export function planTemplateHeader(
     emitCtx.embedChar = pickedEmbedChar;
   }
 
-  // Same fail-safe as ^FE: emit only when non-default and safe.
   if (clockPayloads.length > 0) {
     const picked = pickClockChars(clockPayloads);
     if (picked) {
-      // ^SO precedes ^FC so the offsets are armed when the firmware
-      // activates the secondary/tertiary clock chars. ^SO is session-
-      // scoped; emitting on every label that uses these channels
+      // ^SO precedes the per-field ^FC armings so the offsets are set when
+      // the firmware activates the secondary/tertiary clock chars. ^SO is
+      // session-scoped; emitting on every label that uses these channels
       // overwrites any stale state from a prior label.
       const so2 = formatSetOffset(2, label.secondaryClockOffset);
       const so3 = formatSetOffset(3, label.tertiaryClockOffset);
       if (so2) headerLines.push(so2);
       if (so3) headerLines.push(so3);
+      // Non-default clock chars need the header ^FC for the same block-state
+      // reason as ^FE above.
       if (!isDefaultClockChars(picked)) {
         headerLines.push(`^FC${picked.date},${picked.time},${picked.tertiary}`);
       }

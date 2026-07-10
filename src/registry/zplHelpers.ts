@@ -163,11 +163,14 @@ function hex(ch: string): string {
   );
 }
 
-/** Hex-escape ^/~ via ^FH_ (and _ itself) so user content can't smuggle commands. */
-export function fdField(payload: string): string {
-  if (!NEEDS_FH.test(payload)) return `^FD${payload}^FS`;
+/** Hex-escape ^/~ via ^FH_ (and _ itself) so user content can't smuggle commands.
+ *  `arm` carries per-field ^FC/^FE armings; it sits after a ^FH but flush
+ *  against ^FD, because ^FE only applies when it immediately precedes its ^FD
+ *  (spec p.191). */
+export function fdField(payload: string, arm = ''): string {
+  if (!NEEDS_FH.test(payload)) return `${arm}^FD${payload}^FS`;
   const escaped = payload.replace(/[\^~_]/g, hex);
-  return `^FH${FH_DELIM}^FD${escaped}^FS`;
+  return `^FH${FH_DELIM}${arm}^FD${escaped}^FS`;
 }
 
 /** Single-bind content (`«name»`) emits `^FN{n}` + default; a template expands
@@ -193,14 +196,23 @@ export function fdFieldFor(
       return `^FN${v.fnNumber}${fdField(transform(encodeDefault(v.defaultValue)))}`;
     }
   }
-  // Template path: ^FE embeds first then ^FC clock; absent ctx delim signals
-  // "templates not emittable" and the content stays literal.
+  // Template path: arm ^FE/^FC on this field (absent ctx delim = templates not
+  // emittable, so content stays literal). Firmware scopes both armings to the
+  // ^FD they precede, even for default chars (spec p.189/191; ZD230-verified:
+  // without them embeds and clock tokens print literally).
   let payload = content;
+  let arm = '';
   if (ctx?.variables && ctx.embedChar && hasTemplateMarkers(payload)) {
-    payload = markersToEmbeds(payload, ctx.variables, ctx.embedChar).payload;
+    // Arm ^FE only when a marker actually became an embed: hasTemplateMarkers
+    // also matches non-variable «...» spans (e.g. clock markers), which
+    // markersToEmbeds leaves untouched.
+    const { payload: next, referencedFnNumbers } = markersToEmbeds(payload, ctx.variables, ctx.embedChar);
+    if (referencedFnNumbers.size > 0) arm = `^FE${ctx.embedChar}`;
+    payload = next;
   }
   if (ctx?.clockChars && hasClockMarkers(payload)) {
     payload = markersToTokens(payload, ctx.clockChars);
+    arm = `^FC${ctx.clockChars.date},${ctx.clockChars.time},${ctx.clockChars.tertiary}${arm}`;
   }
-  return fdField(transform(payload));
+  return fdField(transform(payload), arm);
 }
