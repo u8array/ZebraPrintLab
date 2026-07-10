@@ -899,7 +899,7 @@ describe('generateZPL — ^TB text block', () => {
       ^CI28
       ^FN7^FDL7^FS
       ^FO10,15^A0N,30,0^FN1^FDDEF^FS
-      ^FO10,55^A0N,30,0^FD#1#-#7#^FS
+      ^FO10,55^A0N,30,0^FE#^FD#1#-#7#^FS
       ^XZ"
     `);
   });
@@ -913,6 +913,43 @@ describe('generateZPL — ^TB text block', () => {
     const out = generateZPL(BASE_LABEL, [byContent], vars);
     expect(out).toContain('^FN1^FDDEF^FS');
     expect(out.match(/\^FN1/g)?.length).toBe(1); // inline only, never also in header
+  });
+
+  // ZD230-verified (2026-07-10, ^IS/^HY firmware renders): without a ^FE
+  // immediately before the ^FD, #n# embeds print LITERALLY even for the
+  // default char (spec p.191); same for ^FC clock tokens (spec p.189). The
+  // armings must ride on each field, not sit in the header.
+  it('arms ^FE directly before a template ^FD, even for the default char', () => {
+    const vars = [
+      { id: 'v1', name: 'sku', fnNumber: 1, defaultValue: 'DEF' },
+      { id: 'v2', name: 'lot', fnNumber: 7, defaultValue: 'L7' },
+    ];
+    const template = {
+      id: 'b', type: 'text', x: 10, y: 50, rotation: 0,
+      props: { content: '«sku»-«lot»', fontHeight: 30, fontWidth: 0, rotation: 'N' },
+    } as unknown as LabelObject;
+    const zpl = generateZPL(BASE_LABEL, [template], vars);
+    expect(zpl).toContain('^FE#^FD#1#-#7#^FS');
+  });
+
+  it('arms ^FC directly before a clock ^FD, even for default chars', () => {
+    const obj = {
+      id: 'c', type: 'text', x: 10, y: 10, rotation: 0,
+      props: { content: '«clock:Y»', fontHeight: 30, fontWidth: 0, rotation: 'N' },
+    } as unknown as LabelObject;
+    const zpl = generateZPL(BASE_LABEL, [obj]);
+    expect(zpl).toMatch(/\^FC%,\{,#\^FD%Y\^FS/);
+  });
+
+  it('arms ^FC then ^FE when a field mixes clock tokens and embeds', () => {
+    // Order is firmware-verified: ^FC%^FE#^FD expands both (check 07 field 1).
+    const vars = [{ id: 'v1', name: 'sku', fnNumber: 1, defaultValue: 'DEF' }];
+    const obj = {
+      id: 'm', type: 'text', x: 10, y: 10, rotation: 0,
+      props: { content: '«sku» «clock:Y»', fontHeight: 30, fontWidth: 0, rotation: 'N' },
+    } as unknown as LabelObject;
+    const zpl = generateZPL(BASE_LABEL, [obj], vars);
+    expect(zpl).toMatch(/\^FC%,\{,#\^FE#\^FD#1# %Y\^FS/);
   });
 
   it('round-trips a reverse ^TB (bare ^FR, no box, even h < fontHeight)', () => {
@@ -1215,9 +1252,9 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const reparsed = parseZPL(regenerated, 8);
     const text = defined(reparsed.objects.find((o) => o.type === 'text'));
     expect(props(text).content).toBe('«clock:d»/«clock:m»/«clock:Y» «clock:H»:«clock:M»');
-    // No ^FC line when defaults work; payload has no `%` `{` or `#`
-    // literals beyond the token positions.
-    expect(regenerated).not.toMatch(/\^FC/);
+    // ^FC must arm each clock field even for default chars (ZD230: %Y prints
+    // literally without it), riding directly on the ^FD.
+    expect(regenerated).toMatch(/\^FC%,\{,#\^FD/);
   });
 
   it('resets ^FC and ^FE state between sibling ^XA blocks', () => {
@@ -1243,6 +1280,30 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const original = parseZPL(src, 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
     expect(regenerated).toMatch(/\^FC\$/);
+  });
+
+  // Per-field ^FE/^FC arming (firmware scoping) must not desync the parser's
+  // block-state model: a non-default delimiter also rides in the header so a
+  // literal before the first armed field round-trips instead of mis-decoding.
+  it('round-trips a literal #n# before a template field (non-default embed char)', () => {
+    const vars = [{ id: 'v1', name: 'sku', fnNumber: 1, defaultValue: 'A#B' }];
+    const literal = { id: 'a', type: 'text', x: 10, y: 10, rotation: 0,
+      props: { content: 'lane #1# here', fontHeight: 30, fontWidth: 0, rotation: 'N' } } as unknown as LabelObject;
+    const template = { id: 'b', type: 'text', x: 10, y: 50, rotation: 0,
+      props: { content: '«sku» end', fontHeight: 30, fontWidth: 0, rotation: 'N' } } as unknown as LabelObject;
+    const zpl = generateZPL(BASE_LABEL, [literal, template], vars);
+    const back = parseZPL(zpl, 8);
+    expect(props(defined(back.objects[0])).content).toBe('lane #1# here');
+  });
+
+  it('round-trips a literal %Y before a clock field (non-default clock char)', () => {
+    const literal = { id: 'a', type: 'text', x: 10, y: 10, rotation: 0,
+      props: { content: 'year %Y now', fontHeight: 30, fontWidth: 0, rotation: 'N' } } as unknown as LabelObject;
+    const clock = { id: 'b', type: 'text', x: 10, y: 50, rotation: 0,
+      props: { content: '«clock:Y» 100% done', fontHeight: 30, fontWidth: 0, rotation: 'N' } } as unknown as LabelObject;
+    const zpl = generateZPL(BASE_LABEL, [literal, clock]);
+    const back = parseZPL(zpl, 8);
+    expect(props(defined(back.objects[0])).content).toBe('year %Y now');
   });
 
   it('round-trips ^SO2 offsets via labelConfig.secondaryClockOffset', () => {
