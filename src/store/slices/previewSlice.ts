@@ -14,7 +14,7 @@ import { buildPreviewZpl } from '../../lib/printPreview';
 import { currentObjects, selectEffectivePreviewProvider, selectLabelaryEndpoint } from '../labelStore.selectors';
 import type { LabelState } from '../labelStore';
 
-/** A finished render. `printerDims` (printer provider only — Labelary already
+/** A finished render. `printerDims` (printer provider only; Labelary already
  *  fits the label) drives the overlay's crop and mismatch hatching. */
 export interface PreviewRender {
   url: string;

@@ -15,7 +15,7 @@ export interface PrinterBitmap {
  *  before the label's final `^XZ` so it captures the rendered format. */
 export function buildPrinterPreviewZpl(designZpl: string): string {
   // `^LL` applies to continuous media only; `,Y` forces the design length onto
-  // gap/notch media too. Preview-only — the print path respects real media.
+  // gap/notch media too. Preview-only; the print path respects real media.
   const sized = designZpl.replace(/(\^LL\d+)(?![\d,])/g, "$1,Y");
   const store = /\^XZ\s*$/.test(sized)
     ? sized.replace(/\^XZ\s*$/, "^ISR:PRE.GRF,N^XZ")

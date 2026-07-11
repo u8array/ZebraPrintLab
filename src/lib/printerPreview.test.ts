@@ -71,7 +71,7 @@ describe("printerPreviewLayout", () => {
     // Overhang corner [800..816]x[800..900] must be hatched, and the two rects
     // must not double-paint it.
     expect(layout.hatches).toHaveLength(2);
-    expect(overlaps(layout.hatches[0], layout.hatches[1])).toBe(false);
+    expect(overlaps(layout.hatches[0]!, layout.hatches[1]!)).toBe(false);
     const corner = { x: 800, y: 800, width: 16, height: 100 };
     expect(layout.hatches.some((h) => overlaps(h, corner))).toBe(true);
   });
@@ -82,8 +82,8 @@ describe("printerPreviewLayout", () => {
       label,
     );
     expect(layout.hatches).toHaveLength(2);
-    expect(overlaps(layout.hatches[0], layout.hatches[1])).toBe(false);
-    expect(area(layout.hatches[0]) + area(layout.hatches[1])).toBeGreaterThan(0);
+    expect(overlaps(layout.hatches[0]!, layout.hatches[1]!)).toBe(false);
+    expect(area(layout.hatches[0]!) + area(layout.hatches[1]!)).toBeGreaterThan(0);
   });
 
   it("handles a blank render without shifting or hatching", () => {

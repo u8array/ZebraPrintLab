@@ -93,7 +93,7 @@ export function printerPreviewLayout(
   const drawWidth = x.drawSize;
   const drawHeight = y.drawSize;
 
-  // Two non-overlapping bands so a mismatch corner is hatched exactly once —
+  // Two non-overlapping bands so a mismatch corner is hatched exactly once:
   // no gap, no double-opacity overlap.
   const hatches: Rect[] = [];
   const sharedWidth = Math.min(drawWidth, label.width);
