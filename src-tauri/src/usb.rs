@@ -12,6 +12,7 @@ pub struct UsbPrinter {
   pub vendor_id: String, // lowercase hex, so comparisons need no folding
 }
 
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 impl UsbPrinter {
   /// `vendor_id`/`product_id` as lowercase hex; `serial` must be non-empty
   /// (callers fall back to a port-stable id) so identical models can't
@@ -32,13 +33,16 @@ impl UsbPrinter {
   }
 }
 
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 const ZEBRA_VENDOR_ID: &str = "0a5f";
 
 /// Zebra vendor first, then by name, so the label printer beats an office one.
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 fn zebra_first(a: &UsbPrinter, b: &UsbPrinter) -> std::cmp::Ordering {
   (a.vendor_id != ZEBRA_VENDOR_ID, &a.name).cmp(&(b.vendor_id != ZEBRA_VENDOR_ID, &b.name))
 }
 
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 #[derive(Debug, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum UsbSendResult {
@@ -49,7 +53,9 @@ pub enum UsbSendResult {
   NotFound,
 }
 
-/// Serialized like TcpQueryResult so the UI decodes both the same way.
+/// Serialized like TcpQueryResult; only the Data payload shape is shared (the
+/// USB path has no refused/unreachable, and a TCP path has no not_found).
+#[cfg(target_os = "macos")]
 #[derive(Debug, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum UsbQueryResult {
@@ -65,7 +71,7 @@ pub async fn list_usb_printers() -> Result<Vec<UsbPrinter>, String> {
 
 #[cfg(not(any(target_os = "linux", target_os = "macos")))]
 #[tauri::command]
-pub async fn send_zpl_usb(_device: String, _zpl: String) -> Result<UsbSendResult, String> {
+pub async fn send_zpl_usb(_device: String, _zpl: String) -> Result<(), String> {
   Err("USB transport is not supported on this platform".to_string())
 }
 
@@ -73,7 +79,7 @@ pub async fn send_zpl_usb(_device: String, _zpl: String) -> Result<UsbSendResult
 // transport goes through usblp, whose read side is not wired up here yet.
 #[cfg(not(target_os = "macos"))]
 #[tauri::command]
-pub async fn query_zpl_usb(_device: String, _zpl: String) -> Result<UsbQueryResult, String> {
+pub async fn query_zpl_usb(_device: String, _zpl: String) -> Result<(), String> {
   Err("USB query is only supported on macOS".to_string())
 }
 
@@ -429,7 +435,7 @@ pub async fn setup_usb_access() -> Result<(), String> {
   .await?
 }
 
-#[cfg(test)]
+#[cfg(all(test, any(target_os = "linux", target_os = "macos")))]
 mod tests {
   use super::*;
 
@@ -440,6 +446,7 @@ mod tests {
     assert_eq!(json, r#"{"kind":"not_found"}"#);
   }
 
+  #[cfg(target_os = "macos")]
   #[test]
   fn query_result_serializes_with_kind_tag() {
     let json = serde_json::to_string(&UsbQueryResult::Data {
