@@ -545,6 +545,9 @@ export function buildBwipOptions(
         text: p.content || " ",
         scale: BWIP_SCALE,
         eclevel: p.errorCorrection,
+        // BWIPP raises eclevel to fill the version; Zebra keeps it as requested,
+        // so without this the canvas pattern diverges from the print.
+        fixedeclevel: true,
       };
       break;
     }
