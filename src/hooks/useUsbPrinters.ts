@@ -56,9 +56,26 @@ export function useUsbPrinters(enabled: boolean): UsbPrintersState {
 
   useEffect(() => {
     if (!enabled) return;
-    // Setters are stable, so [enabled] is exhaustive; React 19 makes a late
-    // setState after unmount a safe no-op, so no cancellation guard is needed.
-    void loadInto({ setPrinters, setSelectedId, setError }).finally(() => setLoading(false));
+    // `loading` starts true via useState(enabled); the active flag drops a stale
+    // load's writes if the component unmounts mid-load. Setters are stable, so
+    // [enabled] is exhaustive.
+    let active = true;
+    loadInto({
+      setPrinters: (p) => {
+        if (active) setPrinters(p);
+      },
+      setSelectedId: (id) => {
+        if (active) setSelectedId(id);
+      },
+      setError: (e) => {
+        if (active) setError(e);
+      },
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
   }, [enabled]);
 
   const select = (id: string): void => {
@@ -66,7 +83,14 @@ export function useUsbPrinters(enabled: boolean): UsbPrintersState {
     setUsbPrinterId(id);
   };
 
-  const refresh = (): Promise<void> => loadInto({ setPrinters, setSelectedId, setError });
+  const refresh = async (): Promise<void> => {
+    setLoading(true);
+    try {
+      await loadInto({ setPrinters, setSelectedId, setError });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return { printers, selectedId, select, loading, error, refresh };
 }

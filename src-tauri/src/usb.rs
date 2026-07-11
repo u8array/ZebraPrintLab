@@ -98,11 +98,15 @@ mod macos {
   // The printer may consume slowly while storing a ~DY download, so far above
   // the TCP socket timeout.
   const SEND_TIMEOUT: Duration = Duration::from_secs(60);
-  // The printer renders before answering (seconds on a font download), then
-  // streams to a short packet; one bound covers the whole read.
-  const REPLY_TIMEOUT: Duration = Duration::from_secs(30);
+  // The printer renders before answering (seconds on a font download), so wait
+  // that long for the first packet.
+  const REPLY_FIRST_BYTE: Duration = Duration::from_secs(30);
+  // Fallback delimiter for firmware that omits the terminating zero-length
+  // packet: after data flows, a gap this long ends the reply instead of waiting
+  // out REPLY_FIRST_BYTE. The short packet ends it sooner in the common case.
+  const REPLY_IDLE: Duration = Duration::from_millis(1200);
   // Defense-in-depth against a runaway reply; a ~DY label bitmap is ~200 KiB.
-  const MAX_REPLY_BYTES: u64 = 8 * 1024 * 1024;
+  const MAX_REPLY_BYTES: usize = 8 * 1024 * 1024;
   // nusb splits larger payloads across transfers, so this only sizes the buffer.
   const TRANSFER_SIZE: usize = 64 * 1024;
 
@@ -207,24 +211,30 @@ mod macos {
       .map_err(|e| e.to_string())?
       .reader(TRANSFER_SIZE);
     write_zpl(&interface, zpl).await?;
-    // USB frames the reply with a short packet, so read to that delimiter
-    // rather than the TCP idle-gap heuristic: no fixed end-of-reply wait, and
-    // no truncation when the reply spans several bulk-in transfers.
+    // The short packet ends the reply immediately in the common case; the idle
+    // gap is only a fallback for firmware that omits it (see REPLY_IDLE), so a
+    // multiple-of-packet reply ends in REPLY_IDLE rather than REPLY_FIRST_BYTE.
+    let mut short = reader.until_short_packet();
     let mut body = Vec::new();
-    let read = timeout(
-      REPLY_TIMEOUT,
-      reader
-        .until_short_packet()
-        .take(MAX_REPLY_BYTES)
-        .read_to_end(&mut body),
-    )
-    .await;
-    // A read error abandons the reply. A clean end or a timeout keeps the
-    // collected body: a reply whose length is a multiple of the packet size
-    // carries no short packet, so it ends on the timeout rather than EOF, but
-    // the body is still complete. An empty body means the printer never spoke.
-    if let Ok(Err(e)) = read {
-      return Err(e.to_string());
+    let mut buf = [0u8; 64 * 1024];
+    loop {
+      let wait = if body.is_empty() {
+        REPLY_FIRST_BYTE
+      } else {
+        REPLY_IDLE
+      };
+      match timeout(wait, short.read(&mut buf)).await {
+        Ok(Ok(0)) => break, // short packet = end of reply
+        Ok(Ok(n)) => {
+          if body.len() + n > MAX_REPLY_BYTES {
+            return Err("response too large".to_string());
+          }
+          body.extend_from_slice(&buf[..n]);
+        }
+        Ok(Err(e)) => return Err(e.to_string()),
+        Err(_) if body.is_empty() => return Err("no response from printer".to_string()),
+        Err(_) => break, // idle gap after data = end of reply
+      }
     }
     if body.is_empty() {
       return Err("no response from printer".to_string());
