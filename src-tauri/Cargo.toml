@@ -28,6 +28,13 @@ printers = "2.3.0"
 # Keychain, Linux DBus Secret Service. Linux CI needs libdbus-1-dev.
 keyring = { version = "3", features = ["windows-native", "apple-native", "sync-secret-service"] }
 
+[target.'cfg(target_os = "macos")'.dependencies]
+# Direct USB printer IO: macOS has no usblp equivalent, so list/send/query go
+# through IOKit via this pure-Rust stack (no libusb to link or vendor). The
+# tokio feature gives the endpoints AsyncRead/AsyncWrite, so the TCP reply
+# loop in transport.rs is reused verbatim.
+nusb = { version = "0.2", features = ["tokio"] }
+
 [dev-dependencies]
 # rt only: the macros feature would pull tokio-macros, which lags tokio
 # releases on crates.io; tests build their runtime by hand instead.

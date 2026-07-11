@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { errorMessage } from "../../lib/errorMessage";
 import { XMarkIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../hooks/useT";
@@ -13,11 +13,11 @@ import {
 import { isDesktopShell } from "../../lib/platform";
 import { getPrinterAddress, setPrinterAddress } from "../../lib/printerAddress";
 import { listLocalPrinters, sendZplLocal, isLikelyZebra, type LocalPrinter } from "../../lib/localPrint";
-import { listUsbPrinters, sendZplUsb, setupUsbAccess, isLikelyZebra as isUsbZebra, type UsbPrinter } from "../../lib/usbPrint";
+import { sendZplUsb, setupUsbAccess, isLikelyZebra as isUsbZebra } from "../../lib/usbPrint";
+import { useUsbPrinters } from "../../hooks/useUsbPrinters";
 
 const LS_PRINTER_UID = "zebra_print_uid";
 const LS_LOCAL_PRINTER = "zebra_print_local";
-const LS_USB = "zebra_print_usb";
 
 type Tab = "network" | "browserprint" | "local" | "usb";
 interface Status { type: "idle" | "sending" | "success" | "error"; message?: string }
@@ -104,14 +104,17 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
   // Starts loading on desktop (the effect enumerates on mount); false on web.
   const [loadingLocal, setLoadingLocal] = useState(isDesktopShell);
 
-  // USB printer tab state; desktop shell only.
-  const [usbPrinters, setUsbPrinters] = useState<UsbPrinter[]>([]);
-  const [selectedUsb, setSelectedUsb] = useState<string>(() => localStorage.getItem(LS_USB) ?? "");
+  // USB tab; desktop shell only. Device enumeration/selection is shared with
+  // the preview settings via the hook; send status and setup stay local.
+  const usb = useUsbPrinters(isDesktopShell);
   const [usbStatus, setUsbStatus] = useState<Status>({ type: "idle" });
-  const [loadingUsb, setLoadingUsb] = useState(isDesktopShell);
   // Tracks the last USB send being permission-denied, so the setup affordance
   // survives locale changes and a cancelled polkit prompt.
   const [usbNeedsSetup, setUsbNeedsSetup] = useState(false);
+  // Enumeration failures surface in the tab's status area, unless a send status
+  // is already showing.
+  const usbViewStatus: Status =
+    usb.error && usbStatus.type === "idle" ? { type: "error", message: usb.error } : usbStatus;
 
   // Enumerate OS print queues once on mount; the web build has no spooler.
   useEffect(() => {
@@ -139,29 +142,9 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
     };
   }, []);
 
-  // Shared so a successful access grant can refresh the list too (dedup with the
-  // mount effect). React 19 makes a late setState after unmount a safe no-op.
-  const loadUsbPrinters = useCallback(async () => {
-    try {
-      const printers = await listUsbPrinters();
-      setUsbPrinters(printers);
-      setSelectedUsb((cur) => (cur && printers.some((p) => p.id === cur) ? cur : printers[0]?.id ?? ""));
-    } catch (e) {
-      setUsbStatus({ type: "error", message: errorMessage(e) });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isDesktopShell) return;
-    // loadUsbPrinters sets state asynchronously; the disable covers both the
-    // function call (tracked by the plugin) and the finally callback.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadUsbPrinters().finally(() => setLoadingUsb(false));
-  }, [loadUsbPrinters]);
-
   // Unplugging the printer hides the USB tab button; correct the stranded tab
   // during render (React's derived-state pattern) so there is no empty-tab flash.
-  if (tab === "usb" && usbPrinters.length === 0) setTab("network");
+  if (tab === "usb" && usb.printers.length === 0) setTab("network");
 
   function persistNetwork() {
     setPrinterAddress(ip, port);
@@ -256,10 +239,9 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
   }
 
   async function handleUsbSend() {
-    if (!selectedUsb) return;
-    localStorage.setItem(LS_USB, selectedUsb);
+    if (!usb.selectedId) return;
     setUsbStatus({ type: "sending" });
-    const result = await sendZplUsb(selectedUsb, zpl);
+    const result = await sendZplUsb(usb.selectedId, zpl);
     switch (result.kind) {
       case "sent":
         setUsbNeedsSetup(false);
@@ -288,7 +270,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
     try {
       await setupUsbAccess();
       // Access granted: refresh (a hot-plugged printer may be new) and clear the prompt.
-      await loadUsbPrinters();
+      await usb.refresh();
       setUsbNeedsSetup(false);
       setUsbStatus({ type: "idle" });
     } catch (e) {
@@ -308,7 +290,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
     { key: "network", label: t.zebraPrint.tabNetwork, enabled: true },
     { key: "browserprint", label: t.zebraPrint.tabBrowserPrint, enabled: !isDesktopShell },
     { key: "local", label: t.zebraPrint.tabLocal, enabled: isDesktopShell },
-    { key: "usb", label: t.zebraPrint.tabUsb, enabled: isDesktopShell && usbPrinters.length > 0 },
+    { key: "usb", label: t.zebraPrint.tabUsb, enabled: isDesktopShell && usb.printers.length > 0 },
   ];
 
   const views: TransportView[] = [
@@ -361,23 +343,20 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
     },
     {
       key: "usb",
-      selected: selectedUsb,
-      onSelect: (id) => {
-        setSelectedUsb(id);
-        localStorage.setItem(LS_USB, id);
-      },
+      selected: usb.selectedId,
+      onSelect: usb.select,
       options:
-        usbPrinters.length === 0
-          ? [{ value: "", label: loadingUsb ? t.zebraPrint.discovering : t.zebraPrint.noPrinters }]
-          : usbPrinters.map((p) => ({
+        usb.printers.length === 0
+          ? [{ value: "", label: usb.loading ? t.zebraPrint.discovering : t.zebraPrint.noPrinters }]
+          : usb.printers.map((p) => ({
               value: p.id,
               label: isUsbZebra(p) ? `${p.name} · ZPL?` : p.name,
             })),
-      selectDisabled: usbPrinters.length === 0,
+      selectDisabled: usb.printers.length === 0,
       onSend: handleUsbSend,
       sendLabel: usbStatus.type === "sending" ? t.zebraPrint.sending : t.zebraPrint.send,
-      sendDisabled: !selectedUsb || usbPrinters.length === 0 || loadingUsb || usbStatus.type === "sending",
-      status: usbStatus,
+      sendDisabled: !usb.selectedId || usb.printers.length === 0 || usb.loading || usbStatus.type === "sending",
+      status: usbViewStatus,
       extra: usbNeedsSetup ? (
         <button
           onClick={handleUsbSetup}

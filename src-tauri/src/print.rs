@@ -1,8 +1,6 @@
-use std::time::Duration;
-use tokio::io::AsyncReadExt;
-use tokio::time::timeout;
-
-use crate::transport::{blocking, check_payload, connect, write_all_timeout, ConnectError};
+use crate::transport::{
+  blocking, check_payload, connect, read_reply, write_all_timeout, ConnectError,
+};
 
 /// Kinds mirror the frontend NetworkPrintResult union. `unreachable` (not the
 /// browser's ambiguous `no_response`) says the send did not complete, so the UI
@@ -54,20 +52,6 @@ pub enum TcpQueryResult {
   Unreachable,
 }
 
-// A ~DY upload of a full label bitmap is ~200 KiB base64; bound far above that.
-const MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
-// The printer renders the format before replying, and a label carrying a font
-// download (~DY) can take an entry-level printer well past 10s to store, render,
-// and answer ^HY (observed: the ZD230 keeps working while a shorter wait times
-// out). Generous, since a preview is a manual one-shot the user waits on.
-const FIRST_BYTE_TIMEOUT: Duration = Duration::from_secs(30);
-// After data flows, a short idle gap marks the end of the reply (the printer
-// keeps the connection open, so waiting for FIN would always hit the timeout).
-const IDLE_TIMEOUT: Duration = Duration::from_millis(1200);
-// Overall cap on the read phase: a peer that trickles bytes just under the idle
-// gap would otherwise never break, holding the query open until MAX_RESPONSE_BYTES.
-const READ_DEADLINE: Duration = Duration::from_secs(60);
-
 /// Send ZPL and read the reply (host-status / graphic-upload commands like
 /// ^HY answer on the same connection). Not for plain print jobs: those use
 /// send_zpl_tcp, which never waits.
@@ -84,39 +68,7 @@ pub async fn query_zpl_tcp(host: String, port: u16, zpl: String) -> Result<TcpQu
 
   write_all_timeout(&mut stream, zpl.as_bytes()).await?;
 
-  let mut body = Vec::new();
-  let mut buf = [0u8; 64 * 1024];
-  let deadline = tokio::time::Instant::now() + READ_DEADLINE;
-  loop {
-    // A complete reply ends on the idle gap long before this cap, so reaching
-    // it means the stream is incomplete (slow render, trickle): report the
-    // timeout explicitly instead of returning a truncated body downstream.
-    if tokio::time::Instant::now() >= deadline {
-      return Err("read timed out".to_string());
-    }
-    let wait = if body.is_empty() {
-      FIRST_BYTE_TIMEOUT
-    } else {
-      IDLE_TIMEOUT
-    };
-    match timeout(wait, stream.read(&mut buf)).await {
-      Ok(Ok(0)) => break, // printer closed the connection
-      Ok(Ok(n)) => {
-        if body.len() + n > MAX_RESPONSE_BYTES {
-          return Err("response too large".to_string());
-        }
-        body.extend_from_slice(&buf[..n]);
-      }
-      Ok(Err(e)) => return Err(e.to_string()),
-      Err(_) if body.is_empty() => return Err("no response from printer".to_string()),
-      Err(_) => break, // idle gap after data = end of reply
-    }
-  }
-  // Covers a close-without-reply (read 0 on the first pass): print-only
-  // endpoints accept the job silently, which is not a queryable response.
-  if body.is_empty() {
-    return Err("no response from printer".to_string());
-  }
+  let body = read_reply(&mut stream).await?;
   // ~DY payloads are ASCII (ZB64); lossy keeps any stray control bytes benign.
   Ok(TcpQueryResult::Data {
     body: String::from_utf8_lossy(&body).into_owned(),
@@ -184,7 +136,8 @@ pub async fn send_zpl_local(printer: String, zpl: String) -> Result<(), String> 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use tokio::io::AsyncWriteExt;
+  use std::time::Duration;
+  use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
   #[test]
   fn rejects_empty_and_malformed_hosts() {

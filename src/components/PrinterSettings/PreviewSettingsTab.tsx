@@ -1,16 +1,25 @@
 import { useState, useEffect } from "react";
 import { useT } from "../../hooks/useT";
 import { useLabelStore, selectEffectivePreviewProvider } from "../../store/labelStore";
-import { isDesktopShell } from "../../lib/platform";
+import { isDesktopShell, isMacDesktop } from "../../lib/platform";
 import { isDefaultHost } from "../../lib/labelary";
-import { getPrinterAddress, setPrinterAddress } from "../../lib/printerAddress";
+import {
+  getPreviewTransport,
+  getPrinterAddress,
+  setPreviewTransport,
+  setPrinterAddress,
+  type PreviewTransport,
+} from "../../lib/printerAddress";
+import { isLikelyZebra } from "../../lib/usbPrint";
+import { useUsbPrinters } from "../../hooks/useUsbPrinters";
 import { labelCls, inputCls, buttonCls } from "../ui/formStyles";
-import type { PreviewProvider } from "../../store/slices/uiSlice";
+import { Select } from "../ui/Select";
 
-function ProviderOption({ value, current, onSelect, label, hint, disabled }: {
-  value: PreviewProvider;
-  current: PreviewProvider;
-  onSelect: (v: PreviewProvider) => void;
+function RadioOption<T extends string>({ name, value, current, onSelect, label, hint, disabled }: {
+  name: string;
+  value: T;
+  current: T;
+  onSelect: (v: T) => void;
   label: string;
   hint?: string;
   disabled?: boolean;
@@ -20,7 +29,7 @@ function ProviderOption({ value, current, onSelect, label, hint, disabled }: {
       <label className={`flex items-center gap-2 ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}>
         <input
           type="radio"
-          name="preview-provider"
+          name={name}
           className="accent-accent"
           checked={current === value}
           disabled={disabled}
@@ -55,12 +64,24 @@ export function PreviewSettingsTab() {
   const saveLabelaryApiKey = useLabelStore((s) => s.saveLabelaryApiKey);
   const hydrateLabelaryApiKey = useLabelStore((s) => s.hydrateLabelaryApiKey);
 
-  // Address is shared with the print dialog via localStorage, not the store;
-  // local state mirrors it for controlled inputs, persisted on blur.
+  // Address, USB device, and transport are shared with the print dialog via
+  // localStorage, not the store; local state mirrors them for controlled
+  // inputs (address persisted on blur, the others on change).
   const [address, setAddress] = useState(() => {
     const a = getPrinterAddress();
     return { host: a.host, port: String(a.port) };
   });
+  // USB preview needs the direct interface driver, which only macOS has; on
+  // other desktops the transport stays network without offering the choice.
+  const [transport, setTransport] = useState<PreviewTransport>(() =>
+    isMacDesktop ? getPreviewTransport() : "network",
+  );
+  const selectTransport = (v: PreviewTransport) => {
+    setTransport(v);
+    setPreviewTransport(v);
+  };
+  // Shared with the print dialog so both pick from the same enumerated devices.
+  const usb = useUsbPrinters(isMacDesktop);
   const persistAddress = () => {
     setPrinterAddress(address.host.trim(), address.port);
     // Snap the inputs to the validated values (host trimmed, an invalid/empty
@@ -109,14 +130,16 @@ export function PreviewSettingsTab() {
     <div className="flex flex-col gap-5">
       <section className="flex flex-col gap-2">
         <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{loc.providerHeading}</h3>
-        <ProviderOption
+        <RadioOption
+          name="preview-provider"
           value="labelary"
           current={provider}
           onSelect={setProvider}
           label={loc.providerLabelary}
           disabled={!labelaryAvailable}
         />
-        <ProviderOption
+        <RadioOption
+          name="preview-provider"
           value="printer"
           current={provider}
           onSelect={setProvider}
@@ -126,7 +149,27 @@ export function PreviewSettingsTab() {
         />
       </section>
 
-      {provider === "printer" && isDesktopShell && (
+      {provider === "printer" && isMacDesktop && (
+        <section className="flex flex-col gap-2">
+          <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{loc.transportHeading}</h3>
+          <RadioOption
+            name="preview-transport"
+            value="network"
+            current={transport}
+            onSelect={selectTransport}
+            label={loc.transportNetwork}
+          />
+          <RadioOption
+            name="preview-transport"
+            value="usb"
+            current={transport}
+            onSelect={selectTransport}
+            label={loc.transportUsb}
+          />
+        </section>
+      )}
+
+      {provider === "printer" && isDesktopShell && transport === "network" && (
         <section className="flex flex-col gap-2">
           <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{loc.printerAddressHeading}</h3>
           <div className="flex gap-2 max-w-md">
@@ -155,6 +198,31 @@ export function PreviewSettingsTab() {
             </div>
           </div>
           <span className="text-[10px] text-muted max-w-md">{loc.printerAddressHint}</span>
+        </section>
+      )}
+
+      {provider === "printer" && transport === "usb" && (
+        <section className="flex flex-col gap-2">
+          <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{t.zebraPrint.printer}</h3>
+          <div className="max-w-md">
+            <Select<string>
+              value={usb.selectedId}
+              onChange={usb.select}
+              disabled={usb.printers.length === 0}
+              groups={[{
+                options:
+                  usb.printers.length === 0
+                    ? [{ value: "", label: usb.loading ? t.zebraPrint.discovering : t.zebraPrint.noPrinters }]
+                    : usb.printers.map((p) => ({
+                        value: p.id,
+                        label: isLikelyZebra(p) ? `${p.name} · ZPL?` : p.name,
+                      })),
+              }]}
+            />
+          </div>
+          {usb.error && (
+            <span className="text-[10px] font-mono text-error">{usb.error}</span>
+          )}
         </section>
       )}
 

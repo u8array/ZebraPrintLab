@@ -1,37 +1,80 @@
-// Direct USB transport for label printers via the kernel usblp char device.
-// Linux only; other targets return empty so the UI tab self-hides.
+// Direct USB transport for label printers. Linux writes the kernel usblp char
+// device; macOS drives the printer interface via IOKit (nusb), which also gives
+// a read channel for bidirectional queries (^HY preview). Windows has neither.
 
-/// One USB printer node for the picker. `id` is stable across replug (by serial,
-/// or by USB port path when the device has no serial); the caller round-trips it
-/// back to send.
+/// One USB printer for the picker. `id` is stable across replug (by serial, or
+/// by a port-stable fallback when the device has no serial); the caller
+/// round-trips it back to send.
 #[derive(serde::Serialize)]
 pub struct UsbPrinter {
-  pub id: String,        // "vid:pid:serial", or "vid:pid:<canonical port path>"
-  pub name: String,      // "<manufacturer> <product>"
-  pub vendor_id: String, // lowercase hex, e.g. "0a5f"
+  pub id: String,
+  pub name: String,
+  pub vendor_id: String, // lowercase hex, so comparisons need no folding
 }
 
-// Linux-only: the usblp send is the sole producer, and non-Linux targets never
-// resolve a device, so the variants would read as dead code elsewhere.
-#[cfg(target_os = "linux")]
+impl UsbPrinter {
+  /// `vendor_id`/`product_id` as lowercase hex; `serial` must be non-empty
+  /// (callers fall back to a port-stable id) so identical models can't
+  /// collide on "vid:pid:".
+  fn new(
+    vendor_id: String,
+    product_id: &str,
+    serial: &str,
+    manufacturer: &str,
+    product: &str,
+  ) -> Self {
+    let name = format!("{manufacturer} {product}").trim().to_string();
+    Self {
+      id: format!("{vendor_id}:{product_id}:{serial}"),
+      name,
+      vendor_id,
+    }
+  }
+}
+
+const ZEBRA_VENDOR_ID: &str = "0a5f";
+
+/// Zebra vendor first, then by name, so the label printer beats an office one.
+fn zebra_first(a: &UsbPrinter, b: &UsbPrinter) -> std::cmp::Ordering {
+  (a.vendor_id != ZEBRA_VENDOR_ID, &a.name).cmp(&(b.vendor_id != ZEBRA_VENDOR_ID, &b.name))
+}
+
 #[derive(Debug, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum UsbSendResult {
   Sent,
+  /// Linux only: the udev uaccess rule has not applied yet.
+  #[cfg(target_os = "linux")]
   PermissionDenied,
   NotFound,
 }
 
-#[cfg(not(target_os = "linux"))]
+/// Serialized like TcpQueryResult so the UI decodes both the same way.
+#[derive(Debug, serde::Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum UsbQueryResult {
+  Data { body: String },
+  NotFound,
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
 #[tauri::command]
 pub async fn list_usb_printers() -> Result<Vec<UsbPrinter>, String> {
   Ok(Vec::new())
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
 #[tauri::command]
-pub async fn send_zpl_usb(_device: String, _zpl: String) -> Result<(), String> {
-  Err("USB transport is Linux only".to_string())
+pub async fn send_zpl_usb(_device: String, _zpl: String) -> Result<UsbSendResult, String> {
+  Err("USB transport is not supported on this platform".to_string())
+}
+
+// The read channel needs the interface driven directly (nusb); the Linux
+// transport goes through usblp, whose read side is not wired up here yet.
+#[cfg(not(target_os = "macos"))]
+#[tauri::command]
+pub async fn query_zpl_usb(_device: String, _zpl: String) -> Result<UsbQueryResult, String> {
+  Err("USB query is only supported on macOS".to_string())
 }
 
 #[cfg(not(target_os = "linux"))]
@@ -40,13 +83,183 @@ pub async fn setup_usb_access() -> Result<(), String> {
   Err("USB setup is Linux only".to_string())
 }
 
+#[cfg(target_os = "macos")]
+mod macos {
+  use super::{zebra_first, UsbPrinter, UsbQueryResult, UsbSendResult};
+  use nusb::descriptors::TransferType;
+  use nusb::transfer::{Bulk, Direction, In, Out};
+  use nusb::{DeviceInfo, Interface};
+  use std::time::Duration;
+  use tokio::io::{AsyncReadExt, AsyncWriteExt};
+  use tokio::time::timeout;
+
+  /// USB base class 07: printer.
+  const PRINTER_CLASS: u8 = 7;
+  // The printer may consume slowly while storing a ~DY download, so far above
+  // the TCP socket timeout.
+  const SEND_TIMEOUT: Duration = Duration::from_secs(60);
+  // The printer renders before answering (seconds on a font download), then
+  // streams to a short packet; one bound covers the whole read.
+  const REPLY_TIMEOUT: Duration = Duration::from_secs(30);
+  // Defense-in-depth against a runaway reply; a ~DY label bitmap is ~200 KiB.
+  const MAX_REPLY_BYTES: u64 = 8 * 1024 * 1024;
+  // nusb splits larger payloads across transfers, so this only sizes the buffer.
+  const TRANSFER_SIZE: usize = 64 * 1024;
+
+  fn printer_interface(info: &DeviceInfo) -> Option<u8> {
+    info
+      .interfaces()
+      .find(|i| i.class() == PRINTER_CLASS)
+      .map(|i| i.interface_number())
+  }
+
+  fn to_printer(info: &DeviceInfo) -> UsbPrinter {
+    // No serial (or an empty one): the IOKit location id is stable per
+    // physical port, mirroring the sysfs-path fallback on Linux.
+    let serial = info
+      .serial_number()
+      .filter(|s| !s.is_empty())
+      .map(str::to_string)
+      .unwrap_or_else(|| format!("loc:{:08x}", info.location_id()));
+    UsbPrinter::new(
+      format!("{:04x}", info.vendor_id()),
+      &format!("{:04x}", info.product_id()),
+      &serial,
+      info.manufacturer_string().unwrap_or_default(),
+      info.product_string().unwrap_or_default(),
+    )
+  }
+
+  pub(super) async fn list() -> Result<Vec<UsbPrinter>, String> {
+    let devices = nusb::list_devices().await.map_err(|e| e.to_string())?;
+    let mut out: Vec<UsbPrinter> = devices
+      .filter(|d| printer_interface(d).is_some())
+      .map(|d| to_printer(&d))
+      .collect();
+    out.sort_by(zebra_first);
+    Ok(out)
+  }
+
+  // The id is resolved fresh against the current device list, never trusted
+  // from the caller; None means the printer was unplugged.
+  async fn resolve(id: &str) -> Result<Option<(DeviceInfo, u8)>, String> {
+    let mut devices = nusb::list_devices().await.map_err(|e| e.to_string())?;
+    Ok(devices.find_map(|d| {
+      let interface = printer_interface(&d)?;
+      (to_printer(&d).id == id).then_some((d, interface))
+    }))
+  }
+
+  async fn claim(info: &DeviceInfo, interface: u8) -> Result<Interface, String> {
+    let device = info.open().await.map_err(|e| e.to_string())?;
+    // Fails with "exclusive access" while CUPS is mid-job on the same printer.
+    device
+      .claim_interface(interface)
+      .await
+      .map_err(|e| e.to_string())
+  }
+
+  fn bulk_endpoint(interface: &Interface, direction: Direction) -> Option<u8> {
+    interface.descriptor()?.endpoints().find_map(|e| {
+      (e.transfer_type() == TransferType::Bulk && e.direction() == direction).then(|| e.address())
+    })
+  }
+
+  async fn write_zpl(interface: &Interface, zpl: &[u8]) -> Result<(), String> {
+    let out = bulk_endpoint(interface, Direction::Out)
+      .ok_or_else(|| "printer has no bulk-out endpoint".to_string())?;
+    let mut writer = interface
+      .endpoint::<Bulk, Out>(out)
+      .map_err(|e| e.to_string())?
+      .writer(TRANSFER_SIZE);
+    timeout(SEND_TIMEOUT, async {
+      writer.write_all(zpl).await?;
+      // flush_end (not flush) terminates with a short/zero-length packet, so a
+      // payload that is an exact multiple of the endpoint max packet size is
+      // still marked complete instead of leaving the printer waiting for more.
+      writer.flush_end_async().await
+    })
+    .await
+    .map_err(|_| "write timed out".to_string())?
+    .map_err(|e| e.to_string())
+  }
+
+  pub(super) async fn send(device: &str, zpl: &[u8]) -> Result<UsbSendResult, String> {
+    let Some((info, interface)) = resolve(device).await? else {
+      return Ok(UsbSendResult::NotFound);
+    };
+    let interface = claim(&info, interface).await?;
+    write_zpl(&interface, zpl).await?;
+    Ok(UsbSendResult::Sent)
+  }
+
+  pub(super) async fn query(device: &str, zpl: &[u8]) -> Result<UsbQueryResult, String> {
+    let Some((info, interface)) = resolve(device).await? else {
+      return Ok(UsbQueryResult::NotFound);
+    };
+    let interface = claim(&info, interface).await?;
+    // Probe the read channel before sending: a unidirectional interface can't
+    // answer, and the job must not print as a side effect of a failed preview.
+    let input = bulk_endpoint(&interface, Direction::In)
+      .ok_or_else(|| "printer interface has no read-back endpoint".to_string())?;
+    let mut reader = interface
+      .endpoint::<Bulk, In>(input)
+      .map_err(|e| e.to_string())?
+      .reader(TRANSFER_SIZE);
+    write_zpl(&interface, zpl).await?;
+    // USB frames the reply with a short packet, so read to that delimiter
+    // rather than the TCP idle-gap heuristic: no fixed end-of-reply wait, and
+    // no truncation when the reply spans several bulk-in transfers.
+    let mut body = Vec::new();
+    let read = timeout(
+      REPLY_TIMEOUT,
+      reader
+        .until_short_packet()
+        .take(MAX_REPLY_BYTES)
+        .read_to_end(&mut body),
+    )
+    .await;
+    // A read error abandons the reply. A clean end or a timeout keeps the
+    // collected body: a reply whose length is a multiple of the packet size
+    // carries no short packet, so it ends on the timeout rather than EOF, but
+    // the body is still complete. An empty body means the printer never spoke.
+    if let Ok(Err(e)) = read {
+      return Err(e.to_string());
+    }
+    if body.is_empty() {
+      return Err("no response from printer".to_string());
+    }
+    // ~DY payloads are ASCII (ZB64); lossy keeps any stray control bytes benign.
+    Ok(UsbQueryResult::Data {
+      body: String::from_utf8_lossy(&body).into_owned(),
+    })
+  }
+}
+
+#[cfg(target_os = "macos")]
+#[tauri::command]
+pub async fn list_usb_printers() -> Result<Vec<UsbPrinter>, String> {
+  macos::list().await
+}
+
+#[cfg(target_os = "macos")]
+#[tauri::command]
+pub async fn send_zpl_usb(device: String, zpl: String) -> Result<UsbSendResult, String> {
+  crate::transport::check_payload(zpl.len())?;
+  macos::send(&device, zpl.as_bytes()).await
+}
+
+#[cfg(target_os = "macos")]
+#[tauri::command]
+pub async fn query_zpl_usb(device: String, zpl: String) -> Result<UsbQueryResult, String> {
+  crate::transport::check_payload(zpl.len())?;
+  macos::query(&device, zpl.as_bytes()).await
+}
+
 #[cfg(target_os = "linux")]
 use crate::transport::{blocking, check_payload};
 #[cfg(target_os = "linux")]
 use std::path::{Path, PathBuf};
-
-#[cfg(target_os = "linux")]
-const ZEBRA_VENDOR_ID: &str = "0a5f";
 
 // Reads one sysfs attribute, trimmed. Missing, unreadable, or empty becomes
 // None so an empty `serial` file falls back to the path id instead of yielding
@@ -74,12 +287,13 @@ fn parse_printer(usb_dev_dir: &Path) -> Option<UsbPrinter> {
   });
   let manufacturer = attr(usb_dev_dir, "manufacturer").unwrap_or_default();
   let product = attr(usb_dev_dir, "product").unwrap_or_default();
-  let name = format!("{manufacturer} {product}").trim().to_string();
-  Some(UsbPrinter {
-    id: format!("{vendor_id}:{product_id}:{serial}"),
-    name,
+  Some(UsbPrinter::new(
     vendor_id,
-  })
+    &product_id,
+    &serial,
+    &manufacturer,
+    &product,
+  ))
 }
 
 // Each /sys/class/usbmisc/lpN has a "device" symlink to the USB interface,
@@ -107,11 +321,7 @@ fn enumerate(usbmisc_root: &Path) -> Vec<(String, UsbPrinter)> {
       parse_printer(&dev_dir).map(|p| (node, p))
     })
     .collect();
-  // Zebra vendor first, then by name, so the label printer beats an office one.
-  out.sort_by(|a, b| {
-    (a.1.vendor_id != ZEBRA_VENDOR_ID, &a.1.name)
-      .cmp(&(b.1.vendor_id != ZEBRA_VENDOR_ID, &b.1.name))
-  });
+  out.sort_by(|a, b| zebra_first(&a.1, &b.1));
   out
 }
 
@@ -209,15 +419,64 @@ pub async fn setup_usb_access() -> Result<(), String> {
   .await?
 }
 
-// The whole suite exercises the Linux usblp paths (enumerate/parse/resolve) and
-// the Linux-only UsbSendResult, so gate the module rather than each test.
-#[cfg(all(test, target_os = "linux"))]
+#[cfg(test)]
 mod tests {
   use super::*;
 
-  // Pins the wire format the frontend parses.
+  // Pins the wire formats the frontend parses.
   #[test]
   fn send_result_serializes_with_kind_tag() {
+    let json = serde_json::to_string(&UsbSendResult::NotFound).unwrap();
+    assert_eq!(json, r#"{"kind":"not_found"}"#);
+  }
+
+  #[test]
+  fn query_result_serializes_with_kind_tag() {
+    let json = serde_json::to_string(&UsbQueryResult::Data {
+      body: "~DY".to_string(),
+    })
+    .unwrap();
+    assert_eq!(json, r#"{"kind":"data","body":"~DY"}"#);
+    let json = serde_json::to_string(&UsbQueryResult::NotFound).unwrap();
+    assert_eq!(json, r#"{"kind":"not_found"}"#);
+  }
+
+  #[test]
+  fn printer_ctor_builds_id_and_trims_name() {
+    let p = UsbPrinter::new(
+      "0a5f".to_string(),
+      "0166",
+      "D4J260700032",
+      "Zebra Technologies",
+      "ZTC ZD230-203dpi ZPL",
+    );
+    assert_eq!(p.id, "0a5f:0166:D4J260700032");
+    assert_eq!(p.vendor_id, "0a5f");
+    assert_eq!(p.name, "Zebra Technologies ZTC ZD230-203dpi ZPL");
+    // Missing strings must not leave stray whitespace in the name.
+    let anon = UsbPrinter::new("0a5f".to_string(), "0166", "S", "", "ZD230");
+    assert_eq!(anon.name, "ZD230");
+  }
+
+  #[test]
+  fn zebra_sorts_before_other_vendors() {
+    let mut printers = [
+      UsbPrinter::new("03f0".to_string(), "0512", "S1", "HP", "LaserJet"),
+      UsbPrinter::new("0a5f".to_string(), "0166", "S2", "Zebra", "ZD230"),
+    ];
+    printers.sort_by(zebra_first);
+    assert_eq!(printers[0].vendor_id, "0a5f");
+  }
+}
+
+// The suite exercises the Linux usblp paths (enumerate/parse/resolve); it is
+// gated as a module because every case builds sysfs fixtures.
+#[cfg(all(test, target_os = "linux"))]
+mod linux_tests {
+  use super::*;
+
+  #[test]
+  fn permission_denied_serializes_with_kind_tag() {
     let json = serde_json::to_string(&UsbSendResult::PermissionDenied).unwrap();
     assert_eq!(json, r#"{"kind":"permission_denied"}"#);
   }
@@ -342,5 +601,48 @@ mod tests {
     assert_eq!(p.vendor_id, "0a5f");
     assert_eq!(p.name, "Zebra Technologies ZTC ZD230-203dpi ZPL");
     fs::remove_dir_all(&dir).ok();
+  }
+}
+
+// Talks to real hardware; excluded from the default run. With the ZD230
+// attached: cd src-tauri && cargo test -- --ignored
+#[cfg(all(test, target_os = "macos"))]
+mod hardware_tests {
+  #[test]
+  #[ignore = "needs a USB printer attached"]
+  fn lists_and_queries_the_attached_printer() {
+    let rt = tokio::runtime::Builder::new_current_thread()
+      .enable_all()
+      .build()
+      .unwrap();
+    rt.block_on(async {
+      let printers = super::macos::list().await.unwrap();
+      let printer = printers.first().expect("a USB printer should be attached");
+      assert!(!printer.id.is_empty());
+      // ~HI answers with the model string, e.g. "ZD230-203dpi,V84.20.18Z,...".
+      let res = super::macos::query(&printer.id, b"~HI").await.unwrap();
+      match res {
+        super::UsbQueryResult::Data { body } => {
+          assert!(!body.is_empty(), "expected a ~HI reply");
+          println!("~HI reply: {body}");
+        }
+        other => panic!("expected data, got {other:?}"),
+      }
+      // The plain send path (print dialog): an empty format is accepted
+      // without feeding a label.
+      let res = super::macos::send(&printer.id, b"^XA^XZ").await.unwrap();
+      assert!(matches!(res, super::UsbSendResult::Sent));
+      // The preview flow the frontend runs: store the rendered format without
+      // printing (^IS..,N), then upload its bitmap (^HY answers with ~DY).
+      let preview = b"^XA^FO30,30^A0N,40,40^FDUSB Preview^FS^ISR:PRE.GRF,N^XZ\n^XA^HYR:PRE.GRF^XZ";
+      let res = super::macos::query(&printer.id, preview).await.unwrap();
+      match res {
+        super::UsbQueryResult::Data { body } => {
+          assert!(body.contains("~DY"), "expected a ~DY graphic upload");
+          println!("preview reply: {} bytes", body.len());
+        }
+        other => panic!("expected data, got {other:?}"),
+      }
+    });
   }
 }
