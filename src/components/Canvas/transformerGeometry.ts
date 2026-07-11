@@ -169,20 +169,48 @@ export interface ModuleWidthAnchor {
   rotation: "N" | "R" | "I" | "B";
 }
 
-/** Uniform 2D (QR/Aztec/DataMatrix) anchor; `edges` from Konva's active
- *  anchor name so the pin survives rotated-view where bbox-diff doesn't.
- *  Width and height are carried separately for rectangular DataMatrix. */
-export interface UniformModuleAnchor {
-  kind: "uniformModule";
-  nodeSize: number;
-  nodeHeight: number;
-  modules: number;
+/** Start-of-drag frame for the uniform-module (2D code) reflow: rendered bbox
+ *  in parent px plus the module range. The per-tick pin from it replaces
+ *  boundBoxFunc's snap/aspect, which is frame-wrong under view rotation. */
+export interface UniformReflowStart {
+  edges: ActiveEdgeFlags;
+  modules0: number;
   min: number;
   max: number;
-  edges: ActiveEdgeFlags;
+  leftX: number;
+  topY: number;
+  rightX: number;
+  bottomY: number;
 }
 
-export type TransformAnchor = RowAnchor | ModuleWidthAnchor | UniformModuleAnchor;
+/** Per-tick geometry of the uniform-module reflow. Quantises the TOTAL frame
+ *  extent (not incremental scale) to integer modules: the per-tick scale reset
+ *  re-bases on the re-rendered bitmap, so incremental quantising would
+ *  oscillate across crossings. Both axes scale by the smaller axis's ratio. */
+export function uniformReflowGeometry(
+  start: UniformReflowStart,
+  frameWPx: number,
+  frameHPx: number,
+): { modules: number; targetXPx: number; targetYPx: number; linearW: number; linearH: number } | null {
+  const startW = start.rightX - start.leftX;
+  const startH = start.bottomY - start.topY;
+  if (!(start.modules0 > 0) || !(startW > 0) || !(startH > 0)) return null;
+  if (!(frameWPx > 0) || !(frameHPx > 0)) return null;
+  const scale = Math.min(frameWPx / startW, frameHPx / startH);
+  const modules = computeNewModules(start.modules0, scale, start.min, start.max);
+  const factor = modules / start.modules0;
+  const linearW = startW * factor;
+  const linearH = startH * factor;
+  return {
+    modules,
+    targetXPx: start.edges.left ? start.rightX - linearW : start.leftX,
+    targetYPx: start.edges.top ? start.bottomY - linearH : start.topY,
+    linearW,
+    linearH,
+  };
+}
+
+export type TransformAnchor = RowAnchor | ModuleWidthAnchor;
 
 /** Single source of truth for module-step rounding shared by the
  *  in-drag snap and the on-release commit so they cannot diverge. */
@@ -265,25 +293,6 @@ export function applyModuleWidthSnap(
     min,
   );
   return pinSnappedAxis(oldBox, newBox, swapped ? "y" : "x", snapped, HANDLE_MOVE_EPS);
-}
-
-/** Assumes forceAspectBox has run; pins the corner formed by anchor.edges. */
-export function applyUniformModuleSnap(
-  oldBox: BoundingBox,
-  newBox: BoundingBox,
-  anchor: TransformAnchor | null,
-): BoundingBox {
-  if (anchor?.kind !== "uniformModule" || !(anchor.nodeSize > 0) || !(anchor.modules > 0)) {
-    return newBox;
-  }
-  const scale = newBox.width / anchor.nodeSize;
-  const nextModules = computeNewModules(anchor.modules, scale, anchor.min, anchor.max);
-  const factor = nextModules / anchor.modules;
-  const width = anchor.nodeSize * factor;
-  const height = (anchor.nodeHeight > 0 ? anchor.nodeHeight : anchor.nodeSize) * factor;
-  const x = anchor.edges.left ? oldBox.x + oldBox.width - width : oldBox.x;
-  const y = anchor.edges.top ? oldBox.y + oldBox.height - height : oldBox.y;
-  return { ...newBox, x, y, width, height };
 }
 
 /** Pin the anchored side of a resize: a grabbed min edge (left/top) shifts the

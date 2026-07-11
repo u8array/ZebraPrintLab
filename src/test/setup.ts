@@ -114,6 +114,8 @@ function createFakeCanvas() {
       return _imageData ?? new FakeImageData(w, h);
     },
     fillRect(): void { /* noop */ },
+    // Konva probes the hit canvas (getHitColor) on Shape construction.
+    clearRect(): void { /* noop */ },
     drawImage(): void { /* noop */ },
     set fillStyle(_v: string) { /* noop */ },
   };
