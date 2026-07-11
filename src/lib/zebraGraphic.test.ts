@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { zlibSync } from "fflate";
 import {
   buildPrinterPreviewZpl,
+  contentBounds,
   decodeDyGraphic,
   monoToRgba,
   type PrinterBitmap,
@@ -30,6 +31,57 @@ describe("buildPrinterPreviewZpl", () => {
 
   it("appends ^IS even when the design has no trailing ^XZ", () => {
     expect(buildPrinterPreviewZpl("^XA^FDx^FS")).toContain("^ISR:PRE.GRF,N^XZ");
+  });
+
+  it("forces ^LL onto all media so the render matches the design length", () => {
+    expect(buildPrinterPreviewZpl("^XA^PW400^LL600^FDx^FS^XZ")).toContain("^LL600,Y");
+  });
+
+  it("leaves an already-parameterised ^LL untouched", () => {
+    const out = buildPrinterPreviewZpl("^XA^LL600,N^FDx^FS^XZ");
+    expect(out).toContain("^LL600,N");
+    expect(out).not.toContain("^LL600,Y");
+  });
+
+  it("leaves a design with no ^LL unchanged apart from the preview wrapper", () => {
+    expect(buildPrinterPreviewZpl("^XA^FDx^FS^XZ")).not.toContain(",Y");
+  });
+});
+
+describe("contentBounds", () => {
+  const bitmap = (width: number, height: number): PrinterBitmap => ({
+    width,
+    height,
+    mono: new Uint8Array((width / 8) * height),
+  });
+
+  it("returns zeros for an all-blank bitmap", () => {
+    expect(contentBounds(bitmap(16, 4))).toEqual({ left: 0, right: 0, top: 0, bottom: 0 });
+  });
+
+  it("measures the full bounding box of the black pixels", () => {
+    const bmp = bitmap(24, 5);
+    bmp.mono[3] = 0b00100000; // row 1, byte 0, bit 5 -> col 2
+    bmp.mono[2 * 3 + 1] = 0b00000100; // row 2, byte 1, bit 2 -> col 13
+    expect(contentBounds(bmp)).toEqual({ left: 2, right: 14, top: 1, bottom: 3 });
+  });
+
+  it("locates centered content inside head-width padding", () => {
+    const bmp = bitmap(32, 2);
+    bmp.mono[1] = 0b11111111; // row 0: cols 8-15 black, bytes 0/2/3 blank
+    expect(contentBounds(bmp)).toEqual({ left: 8, right: 16, top: 0, bottom: 1 });
+  });
+
+  it("finds both edges when they share a byte", () => {
+    const bmp = bitmap(8, 1);
+    bmp.mono[0] = 0b01000010; // cols 1 and 6
+    expect(contentBounds(bmp)).toEqual({ left: 1, right: 7, top: 0, bottom: 1 });
+  });
+
+  it("measures top from the first non-blank row", () => {
+    const bmp = bitmap(8, 4);
+    bmp.mono[2] = 0b10000000; // row 2 only
+    expect(contentBounds(bmp)).toEqual({ left: 0, right: 1, top: 2, bottom: 3 });
   });
 });
 
