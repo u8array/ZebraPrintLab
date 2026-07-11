@@ -1,6 +1,12 @@
 import type { StateCreator } from 'zustand';
 import { fetchPreview, labelaryErrorMessage } from '../../lib/labelary';
-import { bitmapToDataUrl, fetchPrinterPreview, type PreviewTarget } from '../../lib/printerPreview';
+import {
+  bitmapToDataUrl,
+  fetchPrinterPreview,
+  printerRenderDims,
+  type PreviewTarget,
+  type PrinterRenderDims,
+} from '../../lib/printerPreview';
 import { getPreviewTransport, getPrinterAddress, getUsbPrinterId } from '../../lib/printerAddress';
 import { isMacDesktop } from '../../lib/platform';
 import { buildActiveCsvRow } from '../../lib/variableBinding';
@@ -8,28 +14,32 @@ import { buildPreviewZpl } from '../../lib/printPreview';
 import { currentObjects, selectEffectivePreviewProvider, selectLabelaryEndpoint } from '../labelStore.selectors';
 import type { LabelState } from '../labelStore';
 
-/** Preview canvas-overlay state (Labelary or the printer's own firmware
- *  render). Snapshot is frozen for the session's lifetime so the A/B
- *  comparison doesn't drift under the user. */
+/** A finished render. `printerDims` (printer provider only — Labelary already
+ *  fits the label) drives the overlay's crop and mismatch hatching. */
+export interface PreviewRender {
+  url: string;
+  printerDims?: PrinterRenderDims;
+}
+
 export type PreviewMode =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'active'; url: string }
+  | ({ status: 'active' } & PreviewRender)
   | { status: 'error'; error: string };
 
-/** Single-entry URL cache keyed by provider + the ZPL that produced it.
+/** Single-entry render cache keyed by provider + the ZPL that produced it.
  *  Module-level: blob URLs are non-serialisable, persisting them would
  *  resurrect stale identifiers across reloads. (revokeObjectURL on the
  *  printer provider's data URLs is a harmless no-op.) */
 const previewCache = (() => {
-  let entry: { key: string; url: string } | null = null;
+  let entry: { key: string; render: PreviewRender } | null = null;
   return {
-    get(key: string): string | null {
-      return entry && entry.key === key ? entry.url : null;
+    get(key: string): PreviewRender | null {
+      return entry && entry.key === key ? entry.render : null;
     },
-    set(key: string, url: string): void {
-      if (entry) URL.revokeObjectURL(entry.url);
-      entry = { key, url };
+    set(key: string, render: PreviewRender): void {
+      if (entry) URL.revokeObjectURL(entry.render.url);
+      entry = { key, render };
     },
     /** Test-only: drop the cached entry without revoking. */
     _resetForTests(): void {
@@ -115,9 +125,9 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
     const cacheKey = printerTarget
       ? [provider, previewTargetKey(printerTarget), zpl].join('\0')
       : [provider, endpoint.host, endpoint.apiKey ?? '', zpl].join('\0');
-    const cachedUrl = previewCache.get(cacheKey);
-    if (cachedUrl !== null) {
-      set({ previewMode: { status: 'active', url: cachedUrl } });
+    const cached = previewCache.get(cacheKey);
+    if (cached !== null) {
+      set({ previewMode: { status: 'active', ...cached } });
       return;
     }
     set({ previewMode: { status: 'loading' } });
@@ -146,8 +156,12 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
             fail('Could not decode the printer preview.');
             return;
           }
-          previewCache.set(cacheKey, url);
-          set({ previewMode: { status: 'active', url } });
+          const render: PreviewRender = {
+            url,
+            printerDims: printerRenderDims(result.bitmap),
+          };
+          previewCache.set(cacheKey, render);
+          set({ previewMode: { status: 'active', ...render } });
           return;
         }
         case 'refused': {
@@ -183,7 +197,7 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
         URL.revokeObjectURL(url);
         return;
       }
-      previewCache.set(cacheKey, url);
+      previewCache.set(cacheKey, { url });
       set({ previewMode: { status: 'active', url } });
     } catch (e) {
       if (isStale()) return;

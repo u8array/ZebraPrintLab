@@ -14,9 +14,12 @@ export interface PrinterBitmap {
  *  is a ~DY the caller decodes with {@link decodeDyGraphic}. `^IS` is injected
  *  before the label's final `^XZ` so it captures the rendered format. */
 export function buildPrinterPreviewZpl(designZpl: string): string {
-  const store = /\^XZ\s*$/.test(designZpl)
-    ? designZpl.replace(/\^XZ\s*$/, "^ISR:PRE.GRF,N^XZ")
-    : `${designZpl}^ISR:PRE.GRF,N^XZ`;
+  // `^LL` applies to continuous media only; `,Y` forces the design length onto
+  // gap/notch media too. Preview-only — the print path respects real media.
+  const sized = designZpl.replace(/(\^LL\d+)(?![\d,])/g, "$1,Y");
+  const store = /\^XZ\s*$/.test(sized)
+    ? sized.replace(/\^XZ\s*$/, "^ISR:PRE.GRF,N^XZ")
+    : `${sized}^ISR:PRE.GRF,N^XZ`;
   return `${store}\n^XA^HYR:PRE.GRF^XZ`;
 }
 
@@ -65,6 +68,46 @@ export function decodeDyGraphic(raw: string): PrinterBitmap | null {
   const height = Math.floor(total / bytesPerRow);
   if (height <= 0 || grf.length < bytesPerRow * height) return null;
   return { width: bytesPerRow * 8, height, mono: grf.subarray(0, bytesPerRow * height) };
+}
+
+export interface ContentBounds {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
+/** Black-pixel bounding box (right/bottom exclusive). The print is padded
+ *  inside the full head raster, so the bitmap frame isn't the content. */
+export function contentBounds(bmp: PrinterBitmap): ContentBounds {
+  const bytesPerRow = bmp.width / 8;
+  let left = bmp.width;
+  let right = 0;
+  let top = bmp.height;
+  let bottom = 0;
+  for (let y = 0; y < bmp.height; y++) {
+    const row = y * bytesPerRow;
+    for (let b = bytesPerRow - 1; b >= 0; b--) {
+      const v = bmp.mono[row + b] ?? 0;
+      if (v === 0) continue;
+      // MSB is the leftmost pixel, so the lowest set bit is the rightmost.
+      let low = 0;
+      while ((v & (1 << low)) === 0) low++;
+      right = Math.max(right, b * 8 + (8 - low));
+      top = Math.min(top, y);
+      bottom = y + 1;
+      break;
+    }
+    for (let b = 0; b * 8 < left && b < bytesPerRow; b++) {
+      const v = bmp.mono[row + b] ?? 0;
+      if (v === 0) continue;
+      let high = 7;
+      while ((v & (1 << high)) === 0) high--;
+      left = Math.min(left, b * 8 + (7 - high));
+      break;
+    }
+  }
+  return bottom === 0 ? { left: 0, right: 0, top: 0, bottom: 0 } : { left, right, top, bottom };
 }
 
 /** Expand a 1bpp GRF bitmap to RGBA (1 = black) for a canvas ImageData. Pure so

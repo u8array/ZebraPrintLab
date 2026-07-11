@@ -16,7 +16,7 @@ import { Stage, Layer, Group, Image as KImage, Rect, Transformer } from "react-k
 import type Konva from "konva";
 import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects, selectPreviewLocksEditor } from "../../store/labelStore";
 import { isGroup, getAllLeaves, expandSelection, selectionTargetId, findObjectById, canDeleteSelection, canGroupSelection, canUngroupSelection, isSelectionLocked, type LabelObject } from "../../types/Group";
-import { pxToDots, dotsToPx, SCREEN_PX_PER_MM } from "../../lib/coordinates";
+import { pxToDots, dotsToPx, mmToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
 import { loadImage } from "../../lib/loadImage";
 import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
@@ -77,6 +77,7 @@ import { buildContextMenu, type MenuSection } from "./canvasActions";
 import { zplForSelection } from "../../lib/zplForSelection";
 import { generateMultiPageZPL, exportableLeaves } from "../../lib/zplGenerator";
 import { nodeToPngBlob, downloadBlob, copyPngToClipboard } from "../../lib/canvasImage";
+import { printerPreviewLayout } from "../../lib/printerPreview";
 
 /** Object types offered by the context menu's "Add object here". */
 // Curated quick-add subset for the context menu, not every registry type; the
@@ -85,6 +86,36 @@ import { nodeToPngBlob, downloadBlob, copyPngToClipboard } from "../../lib/canva
 const PADDING = 40;
 // Horizontal stride between action-bar buttons (render-side row layout).
 const BUTTON_STEP_PX = 32;
+
+// Amber stripe tile for the mismatch hatch. Never throws and isn't cached on
+// failure, so a broken tile drops the hatch rather than blocking the preview.
+let hatchTilePromise: Promise<HTMLImageElement> | null = null;
+function loadHatchTile(): Promise<HTMLImageElement> {
+  if (hatchTilePromise) return hatchTilePromise;
+  try {
+    const tile = document.createElement("canvas");
+    tile.width = 8;
+    tile.height = 8;
+    const ctx = tile.getContext("2d");
+    if (!ctx) return Promise.reject(new Error("no 2d context"));
+    ctx.strokeStyle = "rgba(251, 191, 36, 0.9)";
+    ctx.lineWidth = 1.5;
+    // Offset copies either side so the diagonal tiles seamlessly.
+    for (const off of [-8, 0, 8]) {
+      ctx.beginPath();
+      ctx.moveTo(off, 8);
+      ctx.lineTo(off + 8, 0);
+      ctx.stroke();
+    }
+    hatchTilePromise = loadImage(tile.toDataURL()).catch((e: unknown) => {
+      hatchTilePromise = null;
+      throw e;
+    });
+    return hatchTilePromise;
+  } catch (e) {
+    return Promise.reject(e instanceof Error ? e : new Error("hatch tile failed"));
+  }
+}
 
 interface RectPx { x: number; y: number; width: number; height: number }
 /** Union of two optional rects (px); null only when both are null. */
@@ -247,6 +278,22 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     };
   }, [previewUrl]);
 
+  // Loaded independently so a tile failure can't block the preview render.
+  const [hatchImg, setHatchImg] = useState<HTMLImageElement | null>(null);
+  useEffect(() => {
+    let active = true;
+    void loadHatchTile()
+      .then((img) => {
+        if (active) setHatchImg(img);
+      })
+      .catch(() => {
+        // No tile -> no hatch.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   // Leaves only; group lock/visible cascades down so per-leaf checks see one value.
   const visibleLeaves = useMemo(() => {
     const out: LeafObject[] = [];
@@ -404,6 +451,22 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const labelWidthPx = effectiveWidthMm * scale;
   const physicalWidthPx = label.widthMm * scale;
   const labelHeightPx = label.heightMm * scale;
+  // Printer render reconciled against the label in dot space; Labelary fills
+  // the rect as-is.
+  const toPreviewPx = (dots: number) => dotsToPx(dots, scale, label.dpmm);
+  const printerLayout =
+    previewMode.status === 'active' && previewMode.printerDims
+      ? printerPreviewLayout(previewMode.printerDims, {
+          width: mmToDots(label.widthMm, label.dpmm),
+          height: mmToDots(label.heightMm, label.dpmm),
+        })
+      : null;
+  const previewSize = printerLayout
+    ? {
+        width: toPreviewPx(printerLayout.crop.width),
+        height: toPreviewPx(printerLayout.crop.height),
+      }
+    : { width: physicalWidthPx, height: labelHeightPx };
   const labelOffsetX = RULER_SIZE + (usableWidth - labelWidthPx) / 2 + panOffset.x;
   const labelShiftPx = labelShiftMm * scale;
   // model x=0 at the viewport left; the physical label rect sits labelShift right.
@@ -1412,17 +1475,32 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                 </Group>
               )}
 
-              {/* Preview replaces editor leaves so user sees the Labelary render at same scale. */}
               {previewLocks ? (
                 previewImg && (
-                  <KImage
-                    image={previewImg}
-                    x={physicalLabelX}
-                    y={labelOffsetY}
-                    width={physicalWidthPx}
-                    height={labelHeightPx}
-                    listening={false}
-                  />
+                  <>
+                    <KImage
+                      image={previewImg}
+                      x={physicalLabelX}
+                      y={labelOffsetY}
+                      width={previewSize.width}
+                      height={previewSize.height}
+                      crop={printerLayout?.crop}
+                      listening={false}
+                    />
+                    {hatchImg &&
+                      printerLayout?.hatches.map((h) => (
+                        <Rect
+                          key={`${h.x}:${h.y}`}
+                          x={physicalLabelX + toPreviewPx(h.x)}
+                          y={labelOffsetY + toPreviewPx(h.y)}
+                          width={toPreviewPx(h.width)}
+                          height={toPreviewPx(h.height)}
+                          fillPatternImage={hatchImg}
+                          fillPatternRepeat="repeat"
+                          listening={false}
+                        />
+                      ))}
+                  </>
                 )
               ) : (
                 visibleLeaves.map((obj) => (
