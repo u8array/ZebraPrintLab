@@ -381,3 +381,77 @@ describe("buildBwipOptions code128 escape handling", () => {
   });
 });
 
+
+describe("qrcode canvas fidelity (ZPL firmware parity)", () => {
+  const qr = (errorCorrection: "L" | "M" | "Q" | "H"): LabelObject =>
+    ({
+      id: "1",
+      type: "qrcode",
+      x: 0,
+      y: 0,
+      rotation: 0,
+      props: { content: "123", magnification: 8, errorCorrection, model: 2, rotation: "N" },
+    }) as LabelObject;
+
+  it("pins the requested eclevel (BWIPP would silently raise it)", () => {
+    const opts = buildBwipOptions(qr("Q"), 1, 8);
+    expect(opts?.eclevel).toBe("Q");
+    expect(opts?.fixedeclevel).toBe(true);
+  });
+
+  // Fixture from a real ZD230 print of ^BQN,2,8 + ^FDQA,123 (EC Q).
+  const ZD230_QA_123 = [
+    "#######.#.#...#######",
+    "#.....#.#.#.#.#.....#",
+    "#.###.#.##.##.#.###.#",
+    "#.###.#.#...#.#.###.#",
+    "#.###.#.#..##.#.###.#",
+    "#.....#..#.#..#.....#",
+    "#######.#.#.#.#######",
+    "........#..##........",
+    ".##.#.##.#.##.#.#####",
+    ".####...#..#.#.#.#..#",
+    "....#.###...####..#..",
+    ".#.###...#.#.#.###..#",
+    "..##..#.##.#.###..###",
+    "........#####.#...##.",
+    "#######.#.##....#..#.",
+    "#.....#....##.#...##.",
+    "#.###.#.##.#..#.#.#.#",
+    "#.###.#..#.#.#.#.#.#.",
+    "#.###.#.#.##.###.##.#",
+    "#.....#.##.###.###...",
+    "#######....#.###.##.#",
+  ];
+
+  // Through the production builder, so reverting fixedeclevel turns these red.
+  const rawMatrix = async (obj: LabelObject) => {
+    const bwipjs = (await import("bwip-js/browser")).default;
+    const opts = buildBwipOptions(obj, 1, 8);
+    if (!opts) throw new Error("no options");
+    const [sym] = bwipjs.raw(opts as never) as {
+      pixx: number;
+      pixy: number;
+      pixs: number[];
+    }[];
+    if (!sym) throw new Error("no symbol");
+    const rows: string[] = [];
+    for (let y = 0; y < sym.pixy; y++) {
+      let r = "";
+      for (let x = 0; x < sym.pixx; x++) r += sym.pixs[y * sym.pixx + x] ? "#" : ".";
+      rows.push(r);
+    }
+    return rows;
+  };
+
+  it("matches the ZD230 print module-for-module at EC Q", async () => {
+    const rows = await rawMatrix(qr("Q"));
+    expect(rows).toEqual(ZD230_QA_123);
+  });
+
+  it("renders each eclevel distinctly (no silent raise)", async () => {
+    const l = await rawMatrix(qr("L"));
+    const h = await rawMatrix(qr("H"));
+    expect(l).not.toEqual(h);
+  });
+});
