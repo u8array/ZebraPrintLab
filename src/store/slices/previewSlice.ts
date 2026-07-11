@@ -1,7 +1,8 @@
 import type { StateCreator } from 'zustand';
 import { fetchPreview, labelaryErrorMessage } from '../../lib/labelary';
-import { bitmapToDataUrl, fetchPrinterPreview } from '../../lib/printerPreview';
-import { getPrinterAddress } from '../../lib/printerAddress';
+import { bitmapToDataUrl, fetchPrinterPreview, type PreviewTarget } from '../../lib/printerPreview';
+import { getPreviewTransport, getPrinterAddress, getUsbPrinterId } from '../../lib/printerAddress';
+import { isMacDesktop } from '../../lib/platform';
 import { buildActiveCsvRow } from '../../lib/variableBinding';
 import { buildPreviewZpl } from '../../lib/printPreview';
 import { currentObjects, selectEffectivePreviewProvider, selectLabelaryEndpoint } from '../labelStore.selectors';
@@ -40,6 +41,31 @@ const previewCache = (() => {
 /** Test-only handle to clear the preview cache between test cases. */
 export const __resetPreviewCacheForTests = (): void => previewCache._resetForTests();
 
+/** The configured preview target, or the message telling the user what to
+ *  configure. USB and network live in separate settings so an incomplete one
+ *  never silently falls back to the other. */
+function resolvePreviewTarget(): { target: PreviewTarget } | { error: string } {
+  // USB query is macOS-only, and the settings UI only offers it there; gate the
+  // same way so a persisted 'usb' choice carried onto another OS falls back to
+  // the network address instead of routing to a command that always errors.
+  if (isMacDesktop && getPreviewTransport() === 'usb') {
+    const id = getUsbPrinterId();
+    return id
+      ? { target: { kind: 'usb', id } }
+      : { error: 'No USB printer selected. Pick one under Settings, Preview.' };
+  }
+  const { host, port } = getPrinterAddress();
+  return host
+    ? { target: { kind: 'network', host, port } }
+    : { error: 'No printer address configured. Set the IP under Settings, Preview.' };
+}
+
+/** Cache-key part identifying the device, so switching the preview transport
+ *  or printer invalidates the cached render (different dpi, different label). */
+function previewTargetKey(target: PreviewTarget): string {
+  return target.kind === 'usb' ? `usb:${target.id}` : `net:${target.host}:${target.port}`;
+}
+
 export interface PreviewSlice {
   previewMode: PreviewMode;
   /** Render current page → fetch → set status. Caller-checked: only
@@ -70,14 +96,25 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
     const objs = currentObjects(state);
     const active = buildActiveCsvRow(state.csvDataset, state.csvMapping);
     const zpl = buildPreviewZpl(state.label, objs, state.variables, active, { blankSamples: true });
+    // The printer target resolves before the cache lookup so the key can fold
+    // the device in; an unconfigured target fails here, before 'loading'.
+    let printerTarget: PreviewTarget | null = null;
+    if (provider === 'printer') {
+      const resolved = resolvePreviewTarget();
+      if ('error' in resolved) {
+        set({ previewMode: { status: 'error', error: resolved.error } });
+        return;
+      }
+      printerTarget = resolved.target;
+    }
     // Cache the render so an off/on toggle doesn't re-fetch when nothing changed.
     // Labelary folds host+key in so a runtime endpoint change invalidates the old
-    // render; the printer path is independent of both. NUL-joined so a ':' inside
-    // any field can't shift a boundary and collide.
+    // render; the printer path folds the target in instead. NUL-joined so a ':'
+    // inside any field can't shift a boundary and collide.
     const endpoint = selectLabelaryEndpoint(state);
-    const cacheKey = provider === 'labelary'
-      ? [provider, endpoint.host, endpoint.apiKey ?? '', zpl].join('\0')
-      : [provider, zpl].join('\0');
+    const cacheKey = printerTarget
+      ? [provider, previewTargetKey(printerTarget), zpl].join('\0')
+      : [provider, endpoint.host, endpoint.apiKey ?? '', zpl].join('\0');
     const cachedUrl = previewCache.get(cacheKey);
     if (cachedUrl !== null) {
       set({ previewMode: { status: 'active', url: cachedUrl } });
@@ -94,18 +131,13 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
       get().label !== state.label ||
       currentObjects(get()) !== objs;
 
-    if (provider === 'printer') {
-      // Firmware render over raw TCP: ^IS stores the rendered label, ^HY
-      // uploads its bitmap. Errors stay plain strings like labelary's.
-      const { host, port } = getPrinterAddress();
+    if (printerTarget) {
+      // Firmware render over raw TCP or USB; errors stay plain strings like
+      // labelary's so the UI maps both providers the same.
       const fail = (error: string): void => {
         if (!isStale()) set({ previewMode: { status: 'error', error } });
       };
-      if (!host) {
-        fail('No printer address configured. Set the IP under Settings, Preview.');
-        return;
-      }
-      const result = await fetchPrinterPreview(host, port, zpl);
+      const result = await fetchPrinterPreview(printerTarget, zpl);
       if (isStale()) return;
       switch (result.kind) {
         case 'bitmap': {
@@ -118,11 +150,20 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
           set({ previewMode: { status: 'active', url } });
           return;
         }
-        case 'refused':
-          fail(`The printer refused the connection. Check that port ${port} is open.`);
+        case 'refused': {
+          // 'refused' only arises from the network transport (USB has no such
+          // kind), so the port hint is appended whenever a network target is
+          // present rather than duplicated into an unreachable USB message.
+          const hint =
+            printerTarget.kind === 'network' ? ` Check that port ${printerTarget.port} is open.` : '';
+          fail(`The printer refused the connection.${hint}`);
           return;
+        }
         case 'unreachable':
           fail('Could not reach the printer. Check the IP address and network.');
+          return;
+        case 'not_found':
+          fail('USB printer not found. Re-plug it and check Settings, Preview.');
           return;
         case 'error':
           fail(result.message);

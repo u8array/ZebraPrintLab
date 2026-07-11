@@ -12,6 +12,7 @@ pub fn run() {
     print::send_zpl_local,
     usb::list_usb_printers,
     usb::send_zpl_usb,
+    usb::query_zpl_usb,
     usb::setup_usb_access,
     credentials::credential_get,
     credentials::credential_set,
