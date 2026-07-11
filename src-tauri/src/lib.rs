@@ -1,5 +1,6 @@
 mod credentials;
 mod print;
+mod transport;
 mod usb;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

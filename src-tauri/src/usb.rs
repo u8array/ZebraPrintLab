@@ -41,6 +41,8 @@ pub async fn setup_usb_access() -> Result<(), String> {
 }
 
 #[cfg(target_os = "linux")]
+use crate::transport::{blocking, check_payload};
+#[cfg(target_os = "linux")]
 use std::path::{Path, PathBuf};
 
 #[cfg(target_os = "linux")]
@@ -116,14 +118,13 @@ fn enumerate(usbmisc_root: &Path) -> Vec<(String, UsbPrinter)> {
 #[cfg(target_os = "linux")]
 #[tauri::command]
 pub async fn list_usb_printers() -> Result<Vec<UsbPrinter>, String> {
-  tauri::async_runtime::spawn_blocking(|| {
+  blocking(|| {
     enumerate(Path::new("/sys/class/usbmisc"))
       .into_iter()
       .map(|(_, p)| p)
       .collect::<Vec<_>>()
   })
   .await
-  .map_err(|e| e.to_string())
 }
 
 // Map the stable id back to the current char device. lpN numbering can change
@@ -152,10 +153,8 @@ fn map_send_io_err(e: std::io::Error) -> Result<UsbSendResult, String> {
 #[cfg(target_os = "linux")]
 #[tauri::command]
 pub async fn send_zpl_usb(device: String, zpl: String) -> Result<UsbSendResult, String> {
-  if zpl.len() > crate::print::MAX_ZPL_BYTES {
-    return Err("payload too large".to_string());
-  }
-  tauri::async_runtime::spawn_blocking(move || {
+  check_payload(zpl.len())?;
+  blocking(move || {
     let path = match resolve_node(
       Path::new("/sys/class/usbmisc"),
       Path::new("/dev/usb"),
@@ -174,8 +173,7 @@ pub async fn send_zpl_usb(device: String, zpl: String) -> Result<UsbSendResult, 
       Err(e) => map_send_io_err(e),
     }
   })
-  .await
-  .map_err(|e| e.to_string())?
+  .await?
 }
 
 // One source of truth for the rule text: the packaged file is embedded so the
@@ -193,7 +191,7 @@ pub async fn setup_usb_access() -> Result<(), String> {
   let script = format!(
     "set -e\ninstall -Dm644 /dev/stdin /etc/udev/rules.d/70-zebraprintlab.rules <<'ZEBRA_UDEV_RULE_EOF'\n{UDEV_RULE}\nZEBRA_UDEV_RULE_EOF\nrm -f /usr/lib/udev/rules.d/99-zebraprintlab.rules /etc/udev/rules.d/99-zebraprintlab.rules || true\nudevadm control --reload-rules || true\nudevadm trigger --subsystem-match=usbmisc --subsystem-match=usb || true"
   );
-  tauri::async_runtime::spawn_blocking(move || {
+  blocking(move || {
     let status = std::process::Command::new("pkexec")
       .args(["sh", "-c", &script])
       .status()
@@ -208,8 +206,7 @@ pub async fn setup_usb_access() -> Result<(), String> {
       }
     }
   })
-  .await
-  .map_err(|e| e.to_string())?
+  .await?
 }
 
 // The whole suite exercises the Linux usblp paths (enumerate/parse/resolve) and
