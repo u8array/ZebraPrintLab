@@ -1,8 +1,8 @@
 // Shared plumbing for the TCP printer commands: connect, write-with-timeout,
 // read-one-reply, the blocking-pool wrapper, and the payload bound, so a
 // timeout or classification change lives in one place. The USB transport
-// (usb.rs) frames its IO differently — ZLP-terminated writes, short-packet
-// reads — so it does its own bulk IO rather than going through these.
+// (usb.rs) frames its IO differently (ZLP-terminated writes, short-packet
+// reads), so it does its own bulk IO rather than going through these.
 
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
