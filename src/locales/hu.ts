@@ -650,6 +650,9 @@ const hu = {
     },
     app: {
       editorHeading: 'Szerkesztő',
+      appearanceHeading: 'Megjelenés',
+      language: 'Nyelv',
+      theme: 'Téma',
       powerUser: 'Haladó felhasználói mód',
       powerUserHint: 'Mutassa az emittált ZPL parancsot minden tulajdonság mellett, és oldja fel a speciális vezérlőket',
       smartSnap: 'Intelligens illesztés',
@@ -688,6 +691,9 @@ const hu = {
 
   app: {
     file: 'Fájl',
+    editMenu: 'Szerkesztés',
+    helpMenu: 'Súgó',
+    quitMenu: 'Kilépés',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Meglévő oldalak megtartása',
     updateAvailableFmt: '{version} frissítés elérhető',
@@ -726,6 +732,7 @@ const hu = {
     clockOffsetClear: 'Törlés',
     clockOffsetPreview: 'Előnézet',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Az alkalmazás menüje nem tölthető be. Indítsa újra az alkalmazást.',
     importCsvData: 'CSV-adatok importálása',
     exportBatchZplFmt: 'Köteg ZPL exportálása ({n} címke)',
     newDesign: 'Új terv',

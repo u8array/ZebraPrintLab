@@ -5,6 +5,7 @@
  */
 
 import { hydrateLocalStoragePrefix, safeLocalStorageSet } from "./localStorageBucket";
+import { loadImage } from "./loadImage";
 
 export interface CachedImage {
   id: string;
@@ -62,20 +63,19 @@ export async function loadImageFile(file: File): Promise<CachedImage> {
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result as string;
-      const img = new Image();
-      img.onload = () => {
-        const entry: CachedImage = {
-          id: crypto.randomUUID(),
-          name: file.name,
-          dataUrl,
-          width: img.naturalWidth,
-          height: img.naturalHeight,
-        };
-        putImage(entry);
-        resolve(entry);
-      };
-      img.onerror = () => reject(new Error(`Failed to decode image: ${file.name}`));
-      img.src = dataUrl;
+      loadImage(dataUrl, `Failed to decode image: ${file.name}`)
+        .then((img) => {
+          const entry: CachedImage = {
+            id: crypto.randomUUID(),
+            name: file.name,
+            dataUrl,
+            width: img.naturalWidth,
+            height: img.naturalHeight,
+          };
+          putImage(entry);
+          resolve(entry);
+        })
+        .catch(reject);
     };
     reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
     reader.readAsDataURL(file);

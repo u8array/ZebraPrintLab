@@ -3,6 +3,7 @@ import { Group, Image as KImage, Path, Rect } from "react-konva";
 import type { LabelObject } from "../../types/Group";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { getImage } from "../../lib/imageCache";
+import { loadImage } from "../../lib/loadImage";
 import { monoPreviewCanvas } from "../../lib/imageToZpl";
 import { useColorScheme } from "../../hooks/useColorScheme";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
@@ -45,11 +46,13 @@ export function ImageObject({
   useEffect(() => {
     if (!cached) return;
     let active = true;
-    const img = new window.Image();
-    img.src = cached.dataUrl;
-    img.onload = () => {
-      if (active) setHtmlImg(img);
-    };
+    void loadImage(cached.dataUrl)
+      .then((img) => {
+        if (active) setHtmlImg(img);
+      })
+      .catch(() => {
+        // A bitmap that fails to decode just doesn't render (as before).
+      });
     return () => {
       active = false;
     };

@@ -9,6 +9,16 @@
     "core:default",
     "window-state:default",
     "updater:default",
-    "process:allow-restart"
+    "process:allow-restart",
+    "process:allow-exit",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "fs:allow-read-text-file",
+    "fs:allow-read-file",
+    "fs:allow-write-text-file",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "https://github.com/u8array/ZebraPrintLab" }]
+    }
   ]
 }

@@ -650,6 +650,9 @@ const fi = {
     },
     app: {
       editorHeading: 'Editori',
+      appearanceHeading: 'Ulkoasu',
+      language: 'Kieli',
+      theme: 'Teema',
       powerUser: 'Tehokäyttäjätila',
       powerUserHint: 'Näytä lähetetty ZPL-komento jokaisen ominaisuuden vieressä ja ota käyttöön lisäasetukset',
       smartSnap: 'Älykäs napsautus',
@@ -688,6 +691,9 @@ const fi = {
 
   app: {
     file: 'Tiedosto',
+    editMenu: 'Muokkaa',
+    helpMenu: 'Ohje',
+    quitMenu: 'Lopeta',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Säilytä olemassa olevat sivut',
     updateAvailableFmt: 'Päivitys {version} saatavilla',
@@ -726,6 +732,7 @@ const fi = {
     clockOffsetClear: 'Tyhjennä',
     clockOffsetPreview: 'Esikatselu',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Sovelluksen valikkoa ei voitu ladata. Käynnistä sovellus uudelleen.',
     importCsvData: 'Tuo CSV-tiedot',
     exportBatchZplFmt: 'Vie erä-ZPL ({n} etikettiä)',
     newDesign: 'Uusi rakenne',

@@ -650,6 +650,9 @@ const ar = {
     },
     app: {
       editorHeading: 'المحرر',
+      appearanceHeading: 'المظهر',
+      language: 'اللغة',
+      theme: 'السمة',
       powerUser: 'وضع المستخدم المتقدم',
       powerUserHint: 'عرض أمر ZPL المُولَّد بجوار كل خاصية وتفعيل عناصر التحكم المتقدمة',
       smartSnap: 'الإرساء الذكي',
@@ -688,6 +691,9 @@ const ar = {
 
   app: {
     file: 'ملف',
+    editMenu: 'تحرير',
+    helpMenu: 'مساعدة',
+    quitMenu: 'إنهاء',
     importZpl: 'استيراد ZPL',
     keepExistingPages: 'الاحتفاظ بالصفحات الحالية',
     updateAvailableFmt: 'التحديث {version} متوفر',
@@ -726,6 +732,7 @@ const ar = {
     clockOffsetClear: 'مسح',
     clockOffsetPreview: 'معاينة',
     exportZpl: 'تصدير ZPL',
+    menuInitError: 'تعذّر تحميل قائمة التطبيق. يُرجى إعادة تشغيل التطبيق.',
     importCsvData: 'استيراد بيانات CSV',
     exportBatchZplFmt: 'تصدير ZPL دفعي ({n} ملصقات)',
     newDesign: 'تصميم جديد',

@@ -37,6 +37,13 @@ tokio = { version = "1", features = ["rt"] }
 tauri-plugin-window-state = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+# External links (GitHub) via the system browser; window.open does not leave
+# the webview sandbox without it.
+tauri-plugin-opener = "2"
+# Native open/save dialogs plus scoped file IO for the File menu; DOM file
+# inputs need transient user activation that native menu callbacks may lack.
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
 
 # Bundle-size profile from the official Tauri size guide.
 [profile.release]

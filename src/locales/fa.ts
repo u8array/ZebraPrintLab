@@ -650,6 +650,9 @@ const fa = {
     },
     app: {
       editorHeading: 'ویرایشگر',
+      appearanceHeading: 'ظاهر',
+      language: 'زبان',
+      theme: 'زمینه',
       powerUser: 'حالت کاربر حرفه‌ای',
       powerUserHint: 'نمایش دستور ZPL تولیدشده در کنار هر ویژگی و فعال‌سازی کنترل‌های پیشرفته',
       smartSnap: 'تراز هوشمند',
@@ -688,6 +691,9 @@ const fa = {
 
   app: {
     file: 'فایل',
+    editMenu: 'ویرایش',
+    helpMenu: 'راهنما',
+    quitMenu: 'خروج',
     importZpl: 'وارد کردن ZPL',
     keepExistingPages: 'حفظ صفحات موجود',
     updateAvailableFmt: 'به‌روزرسانی {version} در دسترس است',
@@ -726,6 +732,7 @@ const fa = {
     clockOffsetClear: 'پاک کردن',
     clockOffsetPreview: 'پیش‌نمایش',
     exportZpl: 'خروجی ZPL',
+    menuInitError: 'منوی برنامه بارگذاری نشد. لطفاً برنامه را دوباره اجرا کنید.',
     importCsvData: 'وارد کردن داده‌های CSV',
     exportBatchZplFmt: 'خروجی ZPL دسته‌ای ({n} برچسب)',
     newDesign: 'طرح جدید',

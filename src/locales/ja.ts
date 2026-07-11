@@ -650,6 +650,9 @@ const ja = {
     },
     app: {
       editorHeading: 'エディター',
+      appearanceHeading: '外観',
+      language: '言語',
+      theme: 'テーマ',
       powerUser: 'パワーユーザーモード',
       powerUserHint: '各プロパティの横に出力されるZPLコマンドを表示し、高度なコントロールを有効にする',
       smartSnap: 'スマートスナップ',
@@ -688,6 +691,9 @@ const ja = {
 
   app: {
     file: 'ファイル',
+    editMenu: '編集',
+    helpMenu: 'ヘルプ',
+    quitMenu: '終了',
     importZpl: 'ZPL インポート',
     keepExistingPages: '既存のページを保持',
     updateAvailableFmt: 'アップデート {version} が利用可能です',
@@ -726,6 +732,7 @@ const ja = {
     clockOffsetClear: 'クリア',
     clockOffsetPreview: 'プレビュー',
     exportZpl: 'ZPL エクスポート',
+    menuInitError: 'アプリケーションメニューを読み込めませんでした。アプリを再起動してください。',
     importCsvData: 'CSVデータをインポート',
     exportBatchZplFmt: 'バッチZPLをエクスポート ({n} ラベル)',
     newDesign: '新しいデザイン',

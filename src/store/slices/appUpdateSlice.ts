@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand';
 import type { Update } from '@tauri-apps/plugin-updater';
 import { isDesktopShell } from '../../lib/platform';
+import { errorMessage } from '../../lib/errorMessage';
 import type { LabelState } from '../labelStore';
 
 /** installed = downloadAndInstall succeeded but relaunch failed or is pending;
@@ -23,7 +24,6 @@ export interface AppUpdateSlice {
    *  explicit=true drives the settings button (checking/upToDate/error). */
   checkForAppUpdate: (explicit: boolean) => Promise<void>;
   installAppUpdate: () => Promise<void>;
-  relaunchApp: () => Promise<void>;
   dismissAppUpdate: () => void;
 }
 
@@ -49,7 +49,7 @@ export const createAppUpdateSlice: StateCreator<LabelState, [], [], AppUpdateSli
     } catch (e) {
       // The silent startup check must never disturb the editor.
       if (explicit) {
-        set({ appUpdate: { phase: 'error', message: e instanceof Error ? e.message : String(e) } });
+        set({ appUpdate: { phase: 'error', message: errorMessage(e) } });
       }
     }
   },
@@ -63,16 +63,7 @@ export const createAppUpdateSlice: StateCreator<LabelState, [], [], AppUpdateSli
       set({ appUpdate: { phase: 'installed' } });
       await get().relaunchApp();
     } catch (e) {
-      set({ appUpdate: { phase: 'error', message: e instanceof Error ? e.message : String(e) } });
-    }
-  },
-
-  relaunchApp: async () => {
-    try {
-      const { relaunch } = await import('@tauri-apps/plugin-process');
-      await relaunch();
-    } catch {
-      // Stay in 'installed': the update applies on the next manual start.
+      set({ appUpdate: { phase: 'error', message: errorMessage(e) } });
     }
   },
 

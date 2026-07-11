@@ -650,6 +650,9 @@ const da = {
     },
     app: {
       editorHeading: 'Editor',
+      appearanceHeading: 'Udseende',
+      language: 'Sprog',
+      theme: 'Tema',
       powerUser: 'Avanceret brugertilstand',
       powerUserHint: 'Vis den genererede ZPL-kommando ved siden af hver egenskab og lås avancerede indstillinger op',
       smartSnap: 'Smart snap',
@@ -688,6 +691,9 @@ const da = {
 
   app: {
     file: 'Fil',
+    editMenu: 'Rediger',
+    helpMenu: 'Hjælp',
+    quitMenu: 'Afslut',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Behold eksisterende sider',
     updateAvailableFmt: 'Opdatering {version} tilgængelig',
@@ -726,6 +732,7 @@ const da = {
     clockOffsetClear: 'Ryd',
     clockOffsetPreview: 'Forhåndsvisning',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Programmets menu kunne ikke indlæses. Genstart appen.',
     importCsvData: 'Importer CSV-data',
     exportBatchZplFmt: 'Eksportér batch-ZPL ({n} etiketter)',
     newDesign: 'Nyt design',

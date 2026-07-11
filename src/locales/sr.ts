@@ -650,6 +650,9 @@ const sr = {
     },
     app: {
       editorHeading: 'Уређивач',
+      appearanceHeading: 'Изглед',
+      language: 'Језик',
+      theme: 'Тема',
       powerUser: 'Напредни кориснички режим',
       powerUserHint: 'Прикажи генерисану ZPL наредбу поред сваке особине и откључај напредне контроле',
       smartSnap: 'Паметно причвршћивање',
@@ -688,6 +691,9 @@ const sr = {
 
   app: {
     file: 'Датотека',
+    editMenu: 'Уређивање',
+    helpMenu: 'Помоћ',
+    quitMenu: 'Излаз',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Задржи постојеће странице',
     updateAvailableFmt: 'Доступна је надоградња {version}',
@@ -726,6 +732,7 @@ const sr = {
     clockOffsetClear: 'Obriši',
     clockOffsetPreview: 'Pregled',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Мени апликације није могао да се учита. Поново покрените апликацију.',
     importCsvData: 'Увоз CSV података',
     exportBatchZplFmt: 'Извоз групног ZPL-а ({n} етикета)',
     newDesign: 'Нови дизајн',

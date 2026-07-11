@@ -650,6 +650,9 @@ const ko = {
     },
     app: {
       editorHeading: '편집기',
+      appearanceHeading: '모양',
+      language: '언어',
+      theme: '테마',
       powerUser: '고급 사용자 모드',
       powerUserHint: '각 속성 옆에 생성된 ZPL 명령어를 표시하고 고급 컨트롤을 활성화합니다',
       smartSnap: '스마트 스냅',
@@ -688,6 +691,9 @@ const ko = {
 
   app: {
     file: '파일',
+    editMenu: '편집',
+    helpMenu: '도움말',
+    quitMenu: '끝내기',
     importZpl: 'ZPL 가져오기',
     keepExistingPages: '기존 페이지 유지',
     updateAvailableFmt: '업데이트 {version} 사용 가능',
@@ -726,6 +732,7 @@ const ko = {
     clockOffsetClear: '지우기',
     clockOffsetPreview: '미리보기',
     exportZpl: 'ZPL 내보내기',
+    menuInitError: '애플리케이션 메뉴를 불러올 수 없습니다. 앱을 다시 시작하세요.',
     importCsvData: 'CSV 데이터 가져오기',
     exportBatchZplFmt: '일괄 ZPL 내보내기 ({n}개 라벨)',
     newDesign: '새 디자인',

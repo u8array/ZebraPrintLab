@@ -650,6 +650,9 @@ const lv = {
     },
     app: {
       editorHeading: 'Redaktors',
+      appearanceHeading: 'Izskats',
+      language: 'Valoda',
+      theme: 'Motīvs',
       powerUser: 'Pieredzējuša lietotāja režīms',
       powerUserHint: 'Rādīt emitēto ZPL komandu blakus katram rekvizītam un atbloķēt papildu vadīklas',
       smartSnap: 'Viedā piestiprināšana',
@@ -688,6 +691,9 @@ const lv = {
 
   app: {
     file: 'Fails',
+    editMenu: 'Rediģēt',
+    helpMenu: 'Palīdzība',
+    quitMenu: 'Iziet',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Saglabāt esošās lapas',
     updateAvailableFmt: 'Pieejams atjauninājums {version}',
@@ -726,6 +732,7 @@ const lv = {
     clockOffsetClear: 'Notīrīt',
     clockOffsetPreview: 'Priekšskatījums',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Neizdevās ielādēt lietotnes izvēlni. Lūdzu, restartējiet lietotni.',
     importCsvData: 'Importēt CSV datus',
     exportBatchZplFmt: 'Eksportēt pakešu ZPL ({n} etiķetes)',
     newDesign: 'Jauns dizains',

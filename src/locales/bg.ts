@@ -650,6 +650,9 @@ const bg = {
     },
     app: {
       editorHeading: 'Редактор',
+      appearanceHeading: 'Облик',
+      language: 'Език',
+      theme: 'Тема',
       powerUser: 'Режим за напреднали потребители',
       powerUserHint: 'Показва генерираната ZPL команда до всяко свойство и отключва разширени контроли',
       smartSnap: 'Интелигентно закрепване',
@@ -688,6 +691,9 @@ const bg = {
 
   app: {
     file: 'Файл',
+    editMenu: 'Редактиране',
+    helpMenu: 'Помощ',
+    quitMenu: 'Изход',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Запазване на съществуващите страници',
     updateAvailableFmt: 'Налична е актуализация {version}',
@@ -726,6 +732,7 @@ const bg = {
     clockOffsetClear: 'Изчисти',
     clockOffsetPreview: 'Преглед',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Менюто на приложението не можа да се зареди. Рестартирайте приложението.',
     importCsvData: 'Импортиране на CSV данни',
     exportBatchZplFmt: 'Експорт на пакетен ZPL ({n} етикета)',
     newDesign: 'Нов дизайн',

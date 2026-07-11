@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ComponentType, type SVGProps } from "react";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { makePaletteCollision } from "../dnd/collision";
 import { ObjectPalette } from "./Palette/ObjectPalette";
@@ -33,23 +33,27 @@ import {
   PrinterIcon,
   Cog6ToothIcon,
   PaperAirplaneIcon,
-  GlobeAltIcon,
   XMarkIcon,
-  SunIcon,
-  MoonIcon,
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
+  SunIcon,
+  MoonIcon,
+  GlobeAltIcon,
 } from "@heroicons/react/16/solid";
 import { useLabelStore, useHistory, selectLabelaryNoticeRequired, selectPreviewLocksEditor } from "../store/labelStore";
 import { formatTemplate } from "../lib/formatTemplate";
+import { buildMenuModel, type MenuItemId } from "../lib/menuModel";
+import { NativeMenuBridge } from "./NativeMenuBridge";
+import type { MenuHandlers } from "../hooks/useNativeMenu";
+import { isDesktopShell, isMacDesktop } from "../lib/platform";
+import { openExternal, REPO_URL } from "../lib/openExternal";
 import { LabelaryNoticeModal } from "./Output/LabelaryNoticeModal";
 import { PrinterSettingsModal } from "./PrinterSettings/PrinterSettingsModal";
 import { Gs1ContentModal } from "./Barcode/Gs1ContentModal";
 import { ContentBuilderModal } from "./Barcode/ContentBuilderModal";
 import { VariableBuilderModal } from "./Properties/VariableBuilderModal";
-import { localeNames } from "../locales";
-import type { LocaleCode } from "../locales";
 import { mmToUnit } from "../lib/units";
+import { localeOptions } from "../locales";
 import { useT } from "../hooks/useT";
 import { kbd } from "../lib/kbd";
 import { useGlobalShortcuts } from "../hooks/useGlobalShortcuts";
@@ -86,6 +90,25 @@ function ExpandStrip({
   );
 }
 
+/** Icons per menu item id, shared by both surfaces: the DOM dropdown renders
+ *  them as components, the native menu rasterizes them (useNativeMenu). */
+const MENU_ICONS: Partial<Record<MenuItemId, ComponentType<SVGProps<SVGSVGElement>>>> = {
+  new: DocumentPlusIcon,
+  addPage: DocumentDuplicateIcon,
+  importZpl: ArrowUpTrayIcon,
+  settings: Cog6ToothIcon,
+  exportZpl: ArrowDownTrayIcon,
+  exportBatch: ArrowDownTrayIcon,
+  openDesign: FolderOpenIcon,
+  saveDesign: DocumentArrowDownIcon,
+  importCsv: TableCellsIcon,
+  print: PrinterIcon,
+  sendToZebra: PaperAirplaneIcon,
+  undo: ArrowUturnLeftIcon,
+  redo: ArrowUturnRightIcon,
+  github: GitHubIcon,
+};
+
 export function AppShell() {
   const t = useT();
   const label = useLabelStore((s) => s.label);
@@ -93,10 +116,12 @@ export function AppShell() {
   const selectObject = useLabelStore((s) => s.selectObject);
   const addPage = useLabelStore((s) => s.addPage);
   const setPrinterSettingsTab = useLabelStore((s) => s.setPrinterSettingsTab);
-  const locale = useLabelStore((s) => s.locale);
-  const setLocale = useLabelStore((s) => s.setLocale);
   const theme = useLabelStore((s) => s.theme);
   const setTheme = useLabelStore((s) => s.setTheme);
+  const locale = useLabelStore((s) => s.locale);
+  const setLocale = useLabelStore((s) => s.setLocale);
+  const userError = useLabelStore((s) => s.userError);
+  const clearUserError = useLabelStore((s) => s.clearUserError);
   const labelaryEnabled = useLabelStore((s) => s.thirdParty.labelary);
   const noticeRequired = useLabelStore(selectLabelaryNoticeRequired);
   const [showPrintNotice, setShowPrintNotice] = useState(false);
@@ -104,6 +129,7 @@ export function AppShell() {
   const checkForAppUpdate = useLabelStore((s) => s.checkForAppUpdate);
   const installAppUpdate = useLabelStore((s) => s.installAppUpdate);
   const relaunchApp = useLabelStore((s) => s.relaunchApp);
+  const quitApp = useLabelStore((s) => s.quitApp);
   const dismissAppUpdate = useLabelStore((s) => s.dismissAppUpdate);
 
   // Silent one-shot update check; only an actual update surfaces a banner.
@@ -135,12 +161,11 @@ export function AppShell() {
   const collisionDetection = makePaletteCollision(paletteEditing);
 
   useGlobalShortcuts();
-  const { handleNew, handleSave, handleLoad, loadInputRef, loadError, dismissLoadError } = useDesignFileActions();
+  const { handleNew, handleSave, handleOpen, handleLoad, loadInputRef } = useDesignFileActions();
   const {
     csvInputRef,
     handleCsvImport,
-    csvError,
-    dismissCsvError,
+    openCsvPicker,
     pendingImport,
     confirmPendingImport,
     cancelPendingImport,
@@ -160,8 +185,6 @@ export function AppShell() {
     openZebraPrint,
     closeZebraPrint,
     currentZpl,
-    printError,
-    dismissPrintError,
     handleDownload,
     handleExportBatch,
     canBatchExport,
@@ -171,175 +194,170 @@ export function AppShell() {
   const outputPanel = useOutputPanel(OUTPUT_DEFAULT_H);
   const leftPanel = useCollapsiblePanel("zpl-panel-left");
   const rightPanel = useCollapsiblePanel("zpl-panel-right");
+
+  // One menu model for both surfaces: the DOM dropdown (web header) and the
+  // native OS menu (desktop, where the header row is not rendered at all).
+  const menuModel = buildMenuModel(t, {
+    hasObjects,
+    canBatchExport,
+    batchRowCount,
+    labelaryEnabled,
+    canUndo,
+    canRedo,
+    // On macOS quit lives in the app submenu (Cmd+Q), not the File section.
+    includeQuit: isDesktopShell && !isMacDesktop,
+  });
+  const menuHandlers: MenuHandlers = {
+    new: handleNew,
+    addPage,
+    importZpl: openZplImport,
+    settings: () => setPrinterSettingsTab("appSettings"),
+    exportZpl: handleDownload,
+    exportBatch: handleExportBatch,
+    openDesign: handleOpen,
+    saveDesign: handleSave,
+    importCsv: openCsvPicker,
+    // Print routes through Labelary; clicking before the notice has been
+    // acknowledged opens the disclosure first, then prints.
+    print: () => (noticeRequired ? setShowPrintNotice(true) : void handlePrint()),
+    sendToZebra: openZebraPrint,
+    undo: () => undo(),
+    redo: () => redo(),
+    github: () => openExternal(REPO_URL),
+    // Desktop-only item (includeQuit); never reached on web.
+    quit: () => void quitApp(),
+  };
   // Imperative handle to the canvas for actions PropertiesPanel needs live
   // render bboxes for (e.g. align-to-label centring).
   const canvasRef = useRef<LabelCanvasHandle>(null);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-bg text-text font-sans">
-      {/* Header */}
-      <header className="h-11 shrink-0 flex items-center justify-between px-4 border-b border-border bg-surface-2">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => selectObject(null)}
-            className="text-accent font-semibold tracking-tight text-sm hover:opacity-75 transition-opacity"
-          >
-            Zebra Print Lab
-          </button>
-          <span className="text-border-2 select-none">·</span>
-          <span className="font-mono text-xs text-muted">
-            {mmToUnit(label.widthMm, unit)} × {mmToUnit(label.heightMm, unit)} {unit} · {label.dpmm} dpmm
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <div className="w-px h-4 bg-border mx-1" />
-
-          <Tooltip content={`${t.app.undo} (${kbd('Z')})`}>
+      {/* Desktop: the menu model renders as the native OS menu; undo/redo and
+          the history timeline ride its Edit menu plus the keyboard shortcuts,
+          and theme/language live in the settings. */}
+      {isDesktopShell && (
+        <NativeMenuBridge
+          model={menuModel}
+          submenuLabels={{ file: t.app.file, edit: t.app.editMenu, help: t.app.helpMenu, quit: t.app.quitMenu }}
+          handlers={menuHandlers}
+          icons={MENU_ICONS}
+        />
+      )}
+      {/* Header: web only; the desktop build has no header row. */}
+      {!isDesktopShell && (
+        <header className="h-11 shrink-0 flex items-center justify-between px-4 border-b border-border bg-surface-2">
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => undo()}
-              disabled={!canUndo}
-              aria-label={t.app.undo}
-              className="p-1.5 rounded text-muted hover:text-text hover:bg-border disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+              onClick={() => selectObject(null)}
+              className="text-accent font-semibold tracking-tight text-sm hover:opacity-75 transition-opacity"
             >
-              <ArrowUturnLeftIcon className="w-3.5 h-3.5" />
+              Zebra Print Lab
             </button>
-          </Tooltip>
-          <Tooltip content={`${t.app.redo} (${kbd('Z', { shift: true })})`}>
-            <button
-              onClick={() => redo()}
-              disabled={!canRedo}
-              aria-label={t.app.redo}
-              className="p-1.5 rounded text-muted hover:text-text hover:bg-border disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+            <span className="text-border-2 select-none">·</span>
+            <span className="font-mono text-xs text-muted">
+              {mmToUnit(label.widthMm, unit)} × {mmToUnit(label.heightMm, unit)} {unit} · {label.dpmm} dpmm
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <div className="w-px h-4 bg-border mx-1" />
+
+            <Tooltip content={`${t.app.undo} (${kbd('Z')})`}>
+              <button
+                onClick={() => undo()}
+                disabled={!canUndo}
+                aria-label={t.app.undo}
+                className="p-1.5 rounded text-muted hover:text-text hover:bg-border disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+              >
+                <ArrowUturnLeftIcon className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
+            <Tooltip content={`${t.app.redo} (${kbd('Z', { shift: true })})`}>
+              <button
+                onClick={() => redo()}
+                disabled={!canRedo}
+                aria-label={t.app.redo}
+                className="p-1.5 rounded text-muted hover:text-text hover:bg-border disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
+              >
+                <ArrowUturnRightIcon className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
+            <HistoryDropdown />
+
+            <div className="w-px h-4 bg-border mx-1" />
+
+            {/* Theme, language, GitHub: web-header power gestures, unchanged
+                from the pre-native-menu layout. Desktop has no header. */}
+            <Tooltip content={theme === "dark" ? t.app.themeLight : t.app.themeDark}>
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                aria-label={t.app.themeToggle}
+                className="p-1.5 rounded text-muted hover:text-text hover:bg-border transition-colors"
+              >
+                {theme === "dark" ? (
+                  <SunIcon className="w-3.5 h-3.5" />
+                ) : (
+                  <MoonIcon className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </Tooltip>
+
+            <DropdownMenu
+              label={<GlobeAltIcon className="w-3.5 h-3.5" />}
+              ariaLabel={t.printerSettings.app.language}
+              maxHeight="260px"
             >
-              <ArrowUturnRightIcon className="w-3.5 h-3.5" />
-            </button>
-          </Tooltip>
-          <HistoryDropdown />
-
-          <div className="w-px h-4 bg-border mx-1" />
-
-          <Tooltip content={theme === "dark" ? t.app.themeLight : t.app.themeDark}>
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              aria-label={t.app.themeToggle}
-              className="p-1.5 rounded text-muted hover:text-text hover:bg-border transition-colors"
-            >
-              {theme === "dark" ? (
-                <SunIcon className="w-3.5 h-3.5" />
-              ) : (
-                <MoonIcon className="w-3.5 h-3.5" />
-              )}
-            </button>
-          </Tooltip>
-
-          <DropdownMenu
-            label={<GlobeAltIcon className="w-3.5 h-3.5" />}
-            maxHeight="260px"
-          >
-            {(Object.entries(localeNames) as [LocaleCode, string][]).map(
-              ([code, name]) => (
+              {localeOptions().map(({ value, label }) => (
                 <DropdownItem
-                  key={code}
-                  onClick={() => setLocale(code)}
-                  shortcut={code === locale ? "✓" : undefined}
+                  key={value}
+                  onClick={() => setLocale(value)}
+                  shortcut={value === locale ? "✓" : undefined}
                 >
-                  {name}
+                  {label}
                 </DropdownItem>
-              ),
-            )}
-          </DropdownMenu>
+              ))}
+            </DropdownMenu>
 
-          <Tooltip content="GitHub">
-            <a
-              href="https://github.com/u8array/ZebraPrintLab"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub"
-              className="p-1.5 rounded text-muted hover:text-text hover:bg-border transition-colors"
-            >
-              <GitHubIcon className="w-3.5 h-3.5" />
-            </a>
-          </Tooltip>
-
-          <div className="w-px h-4 bg-border mx-1" />
-
-          <DropdownMenu label={t.app.file}>
-            <DropdownItem icon={DocumentPlusIcon} onClick={handleNew}>
-              {t.app.newDesign}
-            </DropdownItem>
-            <DropdownItem icon={DocumentDuplicateIcon} onClick={addPage}>
-              {t.app.addPage}
-            </DropdownItem>
-            <DropdownSeparator />
-            <DropdownItem icon={ArrowUpTrayIcon} onClick={openZplImport}>
-              {t.app.importZpl}
-            </DropdownItem>
-            <DropdownSeparator />
-            <DropdownItem
-              icon={Cog6ToothIcon}
-              onClick={() => setPrinterSettingsTab("appSettings")}
-            >
-              {t.printerSettings.open}
-            </DropdownItem>
-            <DropdownItem
-              icon={ArrowDownTrayIcon}
-              onClick={handleDownload}
-              disabled={!hasObjects}
-            >
-              {t.app.exportZpl}
-            </DropdownItem>
-            {canBatchExport && (
-              <DropdownItem
-                icon={ArrowDownTrayIcon}
-                onClick={handleExportBatch}
-                disabled={!hasObjects}
+            <Tooltip content="GitHub">
+              <a
+                href={REPO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub"
+                className="p-1.5 rounded text-muted hover:text-text hover:bg-border transition-colors"
               >
-                {t.app.exportBatchZplFmt.replace('{n}', String(batchRowCount))}
-              </DropdownItem>
-            )}
-            <DropdownSeparator />
-            <DropdownItem
-              icon={FolderOpenIcon}
-              onClick={() => loadInputRef.current?.click()}
-            >
-              {t.app.openDesign}
-            </DropdownItem>
-            <DropdownItem
-              icon={DocumentArrowDownIcon}
-              onClick={handleSave}
-              disabled={!hasObjects}
-            >
-              {t.app.saveDesign}
-            </DropdownItem>
-            <DropdownItem
-              icon={TableCellsIcon}
-              onClick={() => csvInputRef.current?.click()}
-            >
-              {t.app.importCsvData}
-            </DropdownItem>
-            <DropdownSeparator />
-            {/* Print routes through Labelary. The button is shown whenever
-                the Labelary gate is on; clicking it before the notice has
-                been acknowledged opens the disclosure first, then prints. */}
-            {labelaryEnabled && (
-              <DropdownItem
-                icon={PrinterIcon}
-                onClick={() => (noticeRequired ? setShowPrintNotice(true) : handlePrint())}
-                disabled={!hasObjects}
-              >
-                {t.app.print}
-              </DropdownItem>
-            )}
-            <DropdownItem
-              icon={PaperAirplaneIcon}
-              onClick={openZebraPrint}
-              disabled={!hasObjects}
-            >
-              {t.app.sendToZebra}
-            </DropdownItem>
-          </DropdownMenu>
+                <GitHubIcon className="w-3.5 h-3.5" />
+              </a>
+            </Tooltip>
 
+            <div className="w-px h-4 bg-border mx-1" />
+
+            <DropdownMenu label={t.app.file}>
+              {menuModel.file.map((section, i) => (
+                <div key={i} className="contents">
+                  {i > 0 && <DropdownSeparator />}
+                  {section.map((item) => (
+                    <DropdownItem
+                      key={item.id}
+                      icon={MENU_ICONS[item.id]}
+                      onClick={menuHandlers[item.id]}
+                      disabled={!item.enabled}
+                    >
+                      {item.label}
+                    </DropdownItem>
+                  ))}
+                </div>
+              ))}
+            </DropdownMenu>
+          </div>
+        </header>
+      )}
+
+      {/* Web only: desktop routes open/import through native dialogs
+          (lib/fileDialogs), so these inputs never fire there. */}
+      {!isDesktopShell && (
+        <>
           <input
             ref={loadInputRef}
             type="file"
@@ -354,8 +372,8 @@ export function AppShell() {
             className="hidden"
             onChange={handleCsvImport}
           />
-        </div>
-      </header>
+        </>
+      )}
 
       {/* Notices */}
       {(appUpdate.phase === "available" || appUpdate.phase === "installing" || appUpdate.phase === "installed" || appUpdate.phase === "error") && (
@@ -396,20 +414,20 @@ export function AppShell() {
           )}
         </div>
       )}
-      {(loadError ?? printError ?? csvError) && (
+      {userError && (
         <div className="shrink-0 flex items-center gap-3 px-4 py-2 bg-red-950/40 border-b border-red-800/50 font-mono text-[10px] text-red-300">
-          <span className="flex-1">{loadError ?? printError ?? csvError}</span>
-          {printError && (
+          <span className="flex-1">{userError.message}</span>
+          {userError.retryExport && (
             <button
               onClick={handleDownload}
               className="flex items-center gap-1 text-red-300 hover:text-red-100 transition-colors shrink-0"
             >
               <ArrowDownTrayIcon className="w-3.5 h-3.5" />
-              Export ZPL
+              {t.app.exportZpl}
             </button>
           )}
           <button
-            onClick={loadError ? dismissLoadError : csvError ? dismissCsvError : dismissPrintError}
+            onClick={clearUserError}
             className="text-red-400 hover:text-red-200 transition-colors"
             aria-label={t.app.dismiss}
           >
@@ -493,7 +511,7 @@ export function AppShell() {
         <VariableMappingModal
           key={csvDatasetKey ?? "none"}
           onClose={closeCsvMappingModal}
-          onImportCsv={() => csvInputRef.current?.click()}
+          onImportCsv={openCsvPicker}
         />
       )}
       {pendingImport && (

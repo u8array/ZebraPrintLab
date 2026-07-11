@@ -650,6 +650,9 @@ const pl = {
     },
     app: {
       editorHeading: 'Edytor',
+      appearanceHeading: 'Wygląd',
+      language: 'Język',
+      theme: 'Motyw',
       powerUser: 'Tryb zaawansowany',
       powerUserHint: 'Pokaż emitowane polecenie ZPL obok każdej właściwości i odblokuj zaawansowane kontrolki',
       smartSnap: 'Inteligentne przyciąganie',
@@ -688,6 +691,9 @@ const pl = {
 
   app: {
     file: 'Plik',
+    editMenu: 'Edycja',
+    helpMenu: 'Pomoc',
+    quitMenu: 'Zakończ',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Zachowaj istniejące strony',
     updateAvailableFmt: 'Dostępna aktualizacja {version}',
@@ -726,6 +732,7 @@ const pl = {
     clockOffsetClear: 'Wyczyść',
     clockOffsetPreview: 'Podgląd',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Nie udało się załadować menu aplikacji. Uruchom aplikację ponownie.',
     importCsvData: 'Importuj dane CSV',
     exportBatchZplFmt: 'Eksportuj wsadowy ZPL ({n} etykiet)',
     newDesign: 'Nowy projekt',

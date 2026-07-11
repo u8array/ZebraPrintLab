@@ -1,8 +1,8 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useLabelStore } from "../store/labelStore";
-import { triggerDownload } from "../lib/triggerDownload";
 import { parseDesignFile, serializeDesign, designFileErrors } from "../lib/designFile";
 import { readFileAsText } from "../lib/readFile";
+import { pickFileText, pickViaMenu, saveTextFile, saveErrorMessage, DESIGN_FILTER } from "../lib/fileDialogs";
 
 export function useDesignFileActions() {
   const label = useLabelStore((s) => s.label);
@@ -10,7 +10,8 @@ export function useDesignFileActions() {
   const variables = useLabelStore((s) => s.variables);
   const csvMapping = useLabelStore((s) => s.csvMapping);
   const loadDesign = useLabelStore((s) => s.loadDesign);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const setUserError = useLabelStore((s) => s.setUserError);
+  const clearUserError = useLabelStore((s) => s.clearUserError);
   const loadInputRef = useRef<HTMLInputElement>(null);
 
   const handleNew = () => {
@@ -19,7 +20,39 @@ export function useDesignFileActions() {
 
   const handleSave = () => {
     const data = serializeDesign(label, pages, variables, csvMapping);
-    triggerDownload(new Blob([data], { type: "application/json" }), "label.json");
+    void saveTextFile(data, {
+      filename: "label.json",
+      mimeType: "application/json",
+      filter: DESIGN_FILTER,
+    })
+      .then((wrote) => wrote && clearUserError())
+      .catch(() => setUserError(saveErrorMessage));
+  };
+
+  const applyDesignText = (text: string) => {
+    const result = parseDesignFile(text);
+    if (!result.ok) {
+      setUserError(designFileErrors[result.error]);
+      return;
+    }
+    clearUserError();
+    loadDesign(
+      result.value.label,
+      result.value.pages,
+      result.value.variables,
+      result.value.csvMapping,
+    );
+  };
+
+  // No clear here: a cancelled pick must leave any existing error in place;
+  // applyDesignText clears on a successful load instead.
+  const handleOpen = () => {
+    pickViaMenu(
+      loadInputRef,
+      () => pickFileText(DESIGN_FILTER),
+      (picked) => applyDesignText(picked.text),
+      () => setUserError(designFileErrors.parse_error),
+    );
   };
 
   const handleLoad = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,31 +64,11 @@ export function useDesignFileActions() {
     try {
       text = await readFileAsText(file);
     } catch {
-      setLoadError(designFileErrors.parse_error);
+      setUserError(designFileErrors.parse_error);
       return;
     }
-    const result = parseDesignFile(text);
-
-    if (!result.ok) {
-      setLoadError(designFileErrors[result.error]);
-      return;
-    }
-
-    setLoadError(null);
-    loadDesign(
-      result.value.label,
-      result.value.pages,
-      result.value.variables,
-      result.value.csvMapping,
-    );
+    applyDesignText(text);
   };
 
-  return {
-    handleNew,
-    handleSave,
-    handleLoad,
-    loadInputRef,
-    loadError,
-    dismissLoadError: () => setLoadError(null),
-  };
+  return { handleNew, handleSave, handleOpen, handleLoad, loadInputRef };
 }

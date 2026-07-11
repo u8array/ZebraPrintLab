@@ -650,6 +650,9 @@ const el = {
     },
     app: {
       editorHeading: 'Επεξεργαστής',
+      appearanceHeading: 'Εμφάνιση',
+      language: 'Γλώσσα',
+      theme: 'Θέμα',
       powerUser: 'Λειτουργία έμπειρου χρήστη',
       powerUserHint: 'Εμφάνιση της εκπεμπόμενης εντολής ZPL δίπλα σε κάθε ιδιότητα και ενεργοποίηση σύνθετων ρυθμίσεων',
       smartSnap: 'Έξυπνη προσάρτηση',
@@ -688,6 +691,9 @@ const el = {
 
   app: {
     file: 'Αρχείο',
+    editMenu: 'Επεξεργασία',
+    helpMenu: 'Βοήθεια',
+    quitMenu: 'Έξοδος',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Διατήρηση υπαρχουσών σελίδων',
     updateAvailableFmt: 'Διαθέσιμη ενημέρωση {version}',
@@ -726,6 +732,7 @@ const el = {
     clockOffsetClear: 'Καθαρισμός',
     clockOffsetPreview: 'Προεπισκόπηση',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Δεν ήταν δυνατή η φόρτωση του μενού της εφαρμογής. Επανεκκινήστε την εφαρμογή.',
     importCsvData: 'Εισαγωγή δεδομένων CSV',
     exportBatchZplFmt: 'Εξαγωγή παρτίδας ZPL ({n} ετικέτες)',
     newDesign: 'Νέο σχέδιο',

@@ -1,4 +1,5 @@
 import { isDesktopShell } from "./platform";
+import { errorMessage } from "./errorMessage";
 
 /** Mirrors the Rust LocalPrinter DTO (one OS print queue). */
 export interface LocalPrinter {
@@ -36,6 +37,6 @@ export async function sendZplLocal(systemName: string, zpl: string): Promise<Loc
     await invoke("send_zpl_local", { printer: systemName, zpl });
     return { kind: "sent" };
   } catch (e) {
-    return { kind: "error", message: e instanceof Error ? e.message : String(e) };
+    return { kind: "error", message: errorMessage(e) };
   }
 }

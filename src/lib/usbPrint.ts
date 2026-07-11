@@ -1,4 +1,5 @@
 import { isDesktopShell } from "./platform";
+import { errorMessage } from "./errorMessage";
 
 /** Mirrors the Rust UsbPrinter DTO (one usblp device). */
 export interface UsbPrinter {
@@ -31,7 +32,7 @@ export async function sendZplUsb(id: string, zpl: string): Promise<UsbPrintResul
   try {
     return await invoke<UsbPrintResult>("send_zpl_usb", { device: id, zpl });
   } catch (e) {
-    return { kind: "error", message: e instanceof Error ? e.message : String(e) };
+    return { kind: "error", message: errorMessage(e) };
   }
 }
 

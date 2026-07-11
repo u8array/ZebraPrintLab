@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { errorMessage } from "../../lib/errorMessage";
 import { XMarkIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../hooks/useT";
 import { DialogShell } from "../ui/DialogShell";
@@ -127,7 +128,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
       .catch((e: unknown) => {
         // A failed enumeration must be visible, not a silent empty list.
         if (!cancelled) {
-          setLocalStatus({ type: "error", message: e instanceof Error ? e.message : String(e) });
+          setLocalStatus({ type: "error", message: errorMessage(e) });
         }
       })
       .finally(() => {
@@ -146,7 +147,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
       setUsbPrinters(printers);
       setSelectedUsb((cur) => (cur && printers.some((p) => p.id === cur) ? cur : printers[0]?.id ?? ""));
     } catch (e) {
-      setUsbStatus({ type: "error", message: e instanceof Error ? e.message : String(e) });
+      setUsbStatus({ type: "error", message: errorMessage(e) });
     }
   }, []);
 
@@ -292,7 +293,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
       setUsbStatus({ type: "idle" });
     } catch (e) {
       // Failed or cancelled: keep usbNeedsSetup so the button stays available.
-      setUsbStatus({ type: "error", message: e instanceof Error ? e.message : String(e) });
+      setUsbStatus({ type: "error", message: errorMessage(e) });
     }
   }
 

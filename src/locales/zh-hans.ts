@@ -650,6 +650,9 @@ const zhHans = {
     },
     app: {
       editorHeading: '编辑器',
+      appearanceHeading: '外观',
+      language: '语言',
+      theme: '主题',
       powerUser: '高级用户模式',
       powerUserHint: '在每个属性旁边显示生成的ZPL命令，并解锁高级控制项',
       smartSnap: '智能吸附',
@@ -688,6 +691,9 @@ const zhHans = {
 
   app: {
     file: '文件',
+    editMenu: '编辑',
+    helpMenu: '帮助',
+    quitMenu: '退出',
     importZpl: '导入 ZPL',
     keepExistingPages: '保留现有页面',
     updateAvailableFmt: '有可用更新 {version}',
@@ -726,6 +732,7 @@ const zhHans = {
     clockOffsetClear: '清除',
     clockOffsetPreview: '预览',
     exportZpl: '导出 ZPL',
+    menuInitError: '无法加载应用程序菜单。请重新启动应用。',
     importCsvData: '导入 CSV 数据',
     exportBatchZplFmt: '导出批量 ZPL ({n} 个标签)',
     newDesign: '新建设计',

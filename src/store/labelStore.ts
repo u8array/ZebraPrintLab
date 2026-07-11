@@ -21,6 +21,8 @@ import { createVariablesSlice, type VariablesSlice } from './slices/variablesSli
 import { createLabelConfigSlice, type LabelConfigSlice } from './slices/labelConfigSlice';
 import { createObjectSlice, type ObjectSlice } from './slices/objectSlice';
 import { createAppUpdateSlice, type AppUpdateSlice } from './slices/appUpdateSlice';
+import { createFeedbackSlice, type FeedbackSlice } from './slices/feedbackSlice';
+import { createLifecycleSlice, type LifecycleSlice } from './slices/lifecycleSlice';
 import type { Variable, VariableInput } from '../types/Variable';
 
 export { __resetPreviewCacheForTests } from './slices/previewSlice';
@@ -37,7 +39,9 @@ export type LabelState =
   & CsvSlice
   & VariablesSlice
   & LabelConfigSlice
-  & AppUpdateSlice;
+  & AppUpdateSlice
+  & FeedbackSlice
+  & LifecycleSlice;
 
 export {
   currentObjects,
@@ -461,6 +465,8 @@ export const useLabelStore = create<LabelState>()(
       ...createVariablesSlice(set, get, store),
       ...createLabelConfigSlice(set, get, store),
       ...createAppUpdateSlice(set, get, store),
+      ...createFeedbackSlice(set, get, store),
+      ...createLifecycleSlice(set, get, store),
     }),
     {
       name: 'zpl-designer-session',
