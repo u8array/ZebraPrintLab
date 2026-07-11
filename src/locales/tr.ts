@@ -650,6 +650,9 @@ const tr = {
     },
     app: {
       editorHeading: 'Editör',
+      appearanceHeading: 'Görünüm',
+      language: 'Dil',
+      theme: 'Tema',
       powerUser: 'Uzman kullanıcı modu',
       powerUserHint: 'Her özelliğin yanında gönderilen ZPL komutunu göster ve gelişmiş kontrolleri etkinleştir',
       smartSnap: 'Akıllı hizalama',
@@ -688,6 +691,9 @@ const tr = {
 
   app: {
     file: 'Dosya',
+    editMenu: 'Düzen',
+    helpMenu: 'Yardım',
+    quitMenu: 'Çıkış',
     importZpl: 'ZPL İçe Aktar',
     keepExistingPages: 'Mevcut sayfaları koru',
     updateAvailableFmt: '{version} güncellemesi mevcut',
@@ -726,6 +732,7 @@ const tr = {
     clockOffsetClear: 'Temizle',
     clockOffsetPreview: 'Önizleme',
     exportZpl: 'ZPL Dışa Aktar',
+    menuInitError: 'Uygulama menüsü yüklenemedi. Lütfen uygulamayı yeniden başlatın.',
     importCsvData: 'CSV verisi içe aktar',
     exportBatchZplFmt: 'Toplu ZPL dışa aktar ({n} etiket)',
     newDesign: 'Yeni Tasarım',

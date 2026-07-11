@@ -650,6 +650,9 @@ const nl = {
     },
     app: {
       editorHeading: 'Editor',
+      appearanceHeading: 'Weergave',
+      language: 'Taal',
+      theme: 'Thema',
       powerUser: 'Geavanceerde gebruikersmodus',
       powerUserHint: 'Toon het geëmitteerde ZPL-commando naast elke eigenschap en ontgrendel geavanceerde bedieningselementen',
       smartSnap: 'Slim uitlijnen',
@@ -688,6 +691,9 @@ const nl = {
 
   app: {
     file: 'Bestand',
+    editMenu: 'Bewerken',
+    helpMenu: 'Help',
+    quitMenu: 'Afsluiten',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Bestaande pagina\'s behouden',
     updateAvailableFmt: 'Update {version} beschikbaar',
@@ -726,6 +732,7 @@ const nl = {
     clockOffsetClear: 'Wissen',
     clockOffsetPreview: 'Voorbeeld',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Het menu van de applicatie kon niet worden geladen. Start de app opnieuw.',
     importCsvData: 'CSV-gegevens importeren',
     exportBatchZplFmt: 'Batch-ZPL exporteren ({n} etiketten)',
     newDesign: 'Nieuw ontwerp',

@@ -650,6 +650,9 @@ const de = {
     },
     app: {
       editorHeading: 'Editor',
+      appearanceHeading: 'Darstellung',
+      language: 'Sprache',
+      theme: 'Farbschema',
       powerUser: 'Power-User-Modus',
       powerUserHint: 'Zeigt den erzeugten ZPL-Befehl neben jeder Eigenschaft und schaltet erweiterte Funktionen frei',
       smartSnap: 'Intelligentes Einrasten',
@@ -688,6 +691,9 @@ const de = {
 
   app: {
     file: 'Datei',
+    editMenu: 'Bearbeiten',
+    helpMenu: 'Hilfe',
+    quitMenu: 'Beenden',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Bestehende Seiten behalten',
     updateAvailableFmt: 'Update {version} verfügbar',
@@ -726,6 +732,7 @@ const de = {
     clockOffsetClear: 'Löschen',
     clockOffsetPreview: 'Vorschau',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Das Anwendungsmenü konnte nicht geladen werden. Bitte starten Sie die App neu.',
     importCsvData: 'CSV-Daten importieren',
     exportBatchZplFmt: 'Batch-ZPL exportieren ({n} Etiketten)',
     newDesign: 'Neues Design',

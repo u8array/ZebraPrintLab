@@ -5,6 +5,10 @@ import { isDesktopShell } from "../../lib/platform";
 import { formatTemplate } from "../../lib/formatTemplate";
 import { labelCls } from "../ui/formStyles";
 import { DangerConfirmButton } from "../ui/DangerConfirmButton";
+import { Select } from "../ui/Select";
+import { GitHubIcon } from "../ui/GitHubIcon";
+import { localeOptions, type LocaleCode } from "../../locales";
+import { openExternal, REPO_URL } from "../../lib/openExternal";
 
 function SettingToggle({ checked, onChange, label, hint }: {
   checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string;
@@ -43,9 +47,42 @@ export function AppSettingsTab() {
   const checkForAppUpdate = useLabelStore((s) => s.checkForAppUpdate);
   const installAppUpdate = useLabelStore((s) => s.installAppUpdate);
   const relaunchApp = useLabelStore((s) => s.relaunchApp);
+  const locale = useLabelStore((s) => s.locale);
+  const setLocale = useLabelStore((s) => s.setLocale);
+  const theme = useLabelStore((s) => s.theme);
+  const setTheme = useLabelStore((s) => s.setTheme);
 
   return (
     <div className="flex flex-col gap-5">
+      <section className="flex flex-col gap-2">
+        <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{loc.appearanceHeading}</h3>
+        <div className="grid grid-cols-2 gap-2 max-w-md">
+          <div className="flex flex-col gap-1">
+            <span className={labelCls}>{loc.language}</span>
+            <Select<LocaleCode>
+              value={locale}
+              onChange={setLocale}
+              aria-label={loc.language}
+              groups={[{ options: localeOptions() }]}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className={labelCls}>{loc.theme}</span>
+            <Select<'light' | 'dark'>
+              value={theme}
+              onChange={setTheme}
+              aria-label={loc.theme}
+              groups={[{
+                options: [
+                  { value: 'light', label: t.app.themeLight },
+                  { value: 'dark', label: t.app.themeDark },
+                ],
+              }]}
+            />
+          </div>
+        </div>
+      </section>
+
       <section className="flex flex-col gap-2">
         <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{loc.editorHeading}</h3>
         <SettingToggle
@@ -113,6 +150,21 @@ export function AppSettingsTab() {
             {formatTemplate(t.app.updateErrorFmt, { error: appUpdate.message })}
           </span>
         )}
+        {/* onClick routes through openExternal: the desktop webview sandboxes
+            target=_blank, so the anchor alone would be dead there. */}
+        <a
+          href={REPO_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => {
+            e.preventDefault();
+            openExternal(REPO_URL);
+          }}
+          className="flex items-center gap-1.5 text-[10px] font-mono text-muted hover:text-text transition-colors self-start"
+        >
+          <GitHubIcon className="w-3.5 h-3.5" />
+          GitHub
+        </a>
       </section>
 
       <section className="flex flex-col gap-2">

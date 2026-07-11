@@ -17,11 +17,11 @@ import {
   FlagIcon,
   FolderOpenIcon,
 } from '@heroicons/react/16/solid';
-import { getEntry } from '../../registry';
 import { useT } from '../../hooks/useT';
 import type { Translations } from '../../locales';
 import { useHistoryEntries } from '../../store/useHistoryEntries';
-import type { HistoryStepDescriptor, HistoryStepKind } from '../../lib/historyStep';
+import type { HistoryStepKind } from '../../lib/historyStep';
+import { formatStep } from '../../lib/historyFormat';
 import { Tooltip } from '../ui/Tooltip';
 
 const KIND_ICON: Record<HistoryStepKind, ComponentType<{ className?: string }>> = {
@@ -40,59 +40,6 @@ const KIND_ICON: Record<HistoryStepKind, ComponentType<{ className?: string }>> 
   page: DocumentIcon,
   mixed: EllipsisHorizontalIcon,
 };
-
-// split/join replaces every token occurrence and inserts a user-supplied name
-// verbatim, with no String.replace special-pattern handling ($&, $$, ...).
-const fill = (template: string, token: string, value: string) =>
-  template.split(token).join(value);
-
-// A descriptor `name` for object steps is either a custom object name or a
-// registry type id; resolve the type id to its registry label, leaving custom
-// names untouched. Variable names are passed through (never registry-resolved).
-function formatStep(t: Translations, d: HistoryStepDescriptor): string {
-  const h = t.history;
-  const typeName = (name: string) => getEntry(name)?.label ?? name;
-  switch (d.kind) {
-    case 'initial':
-      return h.initial;
-    case 'load':
-      return h.load;
-    case 'add':
-      return d.name
-        ? fill(h.addOneFmt, '{name}', typeName(d.name))
-        : fill(h.addManyFmt, '{count}', String(d.count ?? 0));
-    case 'remove':
-      return d.name
-        ? fill(h.removeOneFmt, '{name}', typeName(d.name))
-        : fill(h.removeManyFmt, '{count}', String(d.count ?? 0));
-    case 'move':
-      return d.name
-        ? fill(h.moveOneFmt, '{name}', typeName(d.name))
-        : fill(h.moveManyFmt, '{count}', String(d.count ?? 0));
-    case 'resize':
-      return d.name
-        ? fill(h.resizeOneFmt, '{name}', typeName(d.name))
-        : fill(h.resizeManyFmt, '{count}', String(d.count ?? 0));
-    case 'edit':
-      return d.name
-        ? fill(h.editOneFmt, '{name}', typeName(d.name))
-        : fill(h.editManyFmt, '{count}', String(d.count ?? 0));
-    case 'group':
-      return h.group;
-    case 'reorder':
-      return h.reorder;
-    case 'variable':
-      return d.name ? fill(h.variableFmt, '{name}', d.name) : h.variableGeneric;
-    case 'csv':
-      return h.csv;
-    case 'label':
-      return h.label;
-    case 'page':
-      return h.page;
-    case 'mixed':
-      return h.mixed;
-  }
-}
 
 /** The timeline list. Split into its own component so the (per-render) timeline
  *  build + descriptor diffs only run while the popover is open, not on every

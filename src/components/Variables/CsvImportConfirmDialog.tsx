@@ -17,7 +17,7 @@ interface Props {
  *  supports a single confirm action. */
 export function CsvImportConfirmDialog({ pending, onConfirm, onCancel }: Props) {
   const tv = useT().variables;
-  const newFilename = pending.parsed.file.name;
+  const newFilename = pending.parsed.filename;
   const oldFilename = pending.replacingFilename ?? '';
   const headline = tv.csvReplaceCsvBodyFmt
     .replace('{old}', oldFilename)

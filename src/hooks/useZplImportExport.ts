@@ -8,7 +8,7 @@ import {
 import { generateMultiPageZPL, generateBatchZpl } from "../lib/zplGenerator";
 import { generateSetupScript } from "../lib/zplSetupScript";
 import { printLabel } from "../lib/printPreview";
-import { triggerDownload } from "../lib/triggerDownload";
+import { saveTextFile, saveErrorMessage, ZPL_FILTER } from "../lib/fileDialogs";
 import { labelaryErrorMessage } from "../lib/labelary";
 import { selectLabelaryEndpoint } from "../store/labelStore.selectors";
 import { buildActiveCsvRow } from "../lib/variableBinding";
@@ -28,13 +28,20 @@ export function useZplImportExport() {
   const openZebraPrintStore = useLabelStore((s) => s.openZebraPrint);
   const closeZebraPrintStore = useLabelStore((s) => s.closeZebraPrint);
 
+  const setUserError = useLabelStore((s) => s.setUserError);
+  const clearUserError = useLabelStore((s) => s.clearUserError);
   const [showZplImport, setShowZplImport] = useState(false);
-  const [printError, setPrintError] = useState<string | null>(null);
 
   const handleDownload = () => {
     const s = useLabelStore.getState();
     const zpl = generateMultiPageZPL(s.label, s.pages, s.variables);
-    triggerDownload(new Blob([zpl], { type: "text/plain" }), "label.zpl");
+    void saveTextFile(zpl, {
+      filename: "label.zpl",
+      mimeType: "text/plain",
+      filter: ZPL_FILTER,
+    })
+      .then((wrote) => wrote && clearUserError())
+      .catch(() => setUserError(saveErrorMessage));
   };
 
   const handleExportBatch = () => {
@@ -44,7 +51,13 @@ export function useZplImportExport() {
     const zpl = generateBatchZpl(
       s.label, currentObjects(s), s.variables, batch.dataset, batch.mapping,
     );
-    triggerDownload(new Blob([zpl], { type: "text/plain" }), "label-batch.zpl");
+    void saveTextFile(zpl, {
+      filename: "label-batch.zpl",
+      mimeType: "text/plain",
+      filter: ZPL_FILTER,
+    })
+      .then((wrote) => wrote && clearUserError())
+      .catch(() => setUserError(saveErrorMessage));
   };
 
   // Print previews via Labelary, which renders one image at a time. We send
@@ -63,8 +76,9 @@ export function useZplImportExport() {
       const active = buildActiveCsvRow(s.csvDataset, s.csvMapping);
       const { host, apiKey } = selectLabelaryEndpoint(s);
       await printLabel(s.label, currentObjects(s), host, apiKey, s.variables, active);
+      clearUserError();
     } catch (e) {
-      setPrintError(labelaryErrorMessage(e));
+      setUserError(labelaryErrorMessage(e), { retryExport: true });
     }
   };
 
@@ -94,8 +108,6 @@ export function useZplImportExport() {
     openZebraPrint: () => openZebraPrintStore('label'),
     closeZebraPrint: closeZebraPrintStore,
     currentZpl,
-    printError,
-    dismissPrintError: () => setPrintError(null),
     handleDownload,
     handleExportBatch,
     canBatchExport,

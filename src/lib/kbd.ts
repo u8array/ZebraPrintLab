@@ -3,12 +3,7 @@
  *  shortcut handling already accepts metaKey or ctrlKey
  *  (see useGlobalShortcuts), so this module only affects the label. */
 
-const isMac = ((): boolean => {
-  if (typeof navigator === 'undefined') return false;
-  const ua = navigator.userAgent ?? '';
-  const platform = navigator.platform ?? '';
-  return /Mac|iPhone|iPad|iPod/.test(platform) || /Mac OS X/.test(ua);
-})();
+import { isMac } from './platform';
 
 /** Render a keyboard shortcut for the current platform. */
 export function kbd(key: string, opts: { shift?: boolean } = {}): string {

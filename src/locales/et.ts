@@ -650,6 +650,9 @@ const et = {
     },
     app: {
       editorHeading: 'Redaktor',
+      appearanceHeading: 'Välimus',
+      language: 'Keel',
+      theme: 'Teema',
       powerUser: 'Power-kasutaja režiim',
       powerUserHint: 'Kuva emiteeritud ZPL käsk iga atribuudi kõrval ja luba täpsemad juhtelemendid',
       smartSnap: 'Nutikas haakimine',
@@ -688,6 +691,9 @@ const et = {
 
   app: {
     file: 'Fail',
+    editMenu: 'Redigeeri',
+    helpMenu: 'Abi',
+    quitMenu: 'Välju',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Säilita olemasolevad lehed',
     updateAvailableFmt: 'Saadaval on värskendus {version}',
@@ -726,6 +732,7 @@ const et = {
     clockOffsetClear: 'Tühjenda',
     clockOffsetPreview: 'Eelvaade',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Rakenduse menüüd ei õnnestunud laadida. Käivitage rakendus uuesti.',
     importCsvData: 'Impordi CSV-andmed',
     exportBatchZplFmt: 'Ekspordi partii-ZPL ({n} silti)',
     newDesign: 'Uus kujundus',

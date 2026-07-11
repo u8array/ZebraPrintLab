@@ -650,6 +650,9 @@ const sl = {
     },
     app: {
       editorHeading: 'Urejevalnik',
+      appearanceHeading: 'Videz',
+      language: 'Jezik',
+      theme: 'Tema',
       powerUser: 'Napredni uporabniški način',
       powerUserHint: 'Pokaži generirani ZPL ukaz poleg vsake lastnosti in odkleni napredne kontrole',
       smartSnap: 'Pametno pritrjevanje',
@@ -688,6 +691,9 @@ const sl = {
 
   app: {
     file: 'Datoteka',
+    editMenu: 'Urejanje',
+    helpMenu: 'Pomoč',
+    quitMenu: 'Izhod',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Ohrani obstoječe strani',
     updateAvailableFmt: 'Na voljo je posodobitev {version}',
@@ -726,6 +732,7 @@ const sl = {
     clockOffsetClear: 'Počisti',
     clockOffsetPreview: 'Predogled',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Menija aplikacije ni bilo mogoče naložiti. Znova zaženite aplikacijo.',
     importCsvData: 'Uvozi podatke CSV',
     exportBatchZplFmt: 'Izvozi paketni ZPL ({n} etiket)',
     newDesign: 'Nov dizajn',

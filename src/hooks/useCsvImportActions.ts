@@ -7,13 +7,14 @@ import {
   type CsvParseResult,
 } from "../lib/csvImport";
 import { isMappingCompatibleWith, type CsvMapping } from "../types/Variable";
+import { pickFileBytes, pickViaMenu, CSV_FILTER } from "../lib/fileDialogs";
 
 /** Captures everything decided during parse so the caller can either
  *  apply directly or stash on the pending-import slot until the user
  *  confirms. Bytes/text live here because a "Cancel" must not pollute
  *  the module-scope cache that the modal re-decodes from. */
 interface ParsedImport {
-  file: File;
+  filename: string;
   bytes: Uint8Array;
   text: string;
   result: CsvParseResult;
@@ -38,30 +39,17 @@ export interface PendingImport {
 }
 
 /** File-picker hook for "Import CSV data" in the File menu. Owns the
- *  hidden <input> ref, the parse-error state, and the pending-import
- *  slot that gates a destructive replace behind a ConfirmDialog. */
+ *  hidden <input> ref (web), the native-dialog entry point (desktop), and
+ *  the pending-import slot that gates a destructive replace behind a
+ *  ConfirmDialog. Errors go to the shared user-error channel. */
 export function useCsvImportActions() {
   const csvInputRef = useRef<HTMLInputElement>(null);
-  const [csvError, setCsvError] = useState<string | null>(null);
+  const setUserError = useLabelStore((s) => s.setUserError);
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
 
-  const handleCsvImport = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setCsvError(null);
-
-    let bytes: Uint8Array;
-    try {
-      bytes = new Uint8Array(await file.arrayBuffer());
-    } catch {
-      setCsvError(csvParseErrors.read_failed);
-      return;
-    }
-
-    // Re-read store state AFTER the await so a discard/replace that
-    // happened during file I/O doesn't drive the decision off a stale
-    // snapshot.
+  const importCsvData = (filename: string, bytes: Uint8Array) => {
+    // Re-read store state AFTER the file IO so a discard/replace that
+    // happened meanwhile doesn't drive the decision off a stale snapshot.
     const { csvMapping, csvDataset } = useLabelStore.getState();
     // Re-use the parse options the mapping was last applied with so a
     // headerless / windows-1252 / semicolon-delimited dataset doesn't
@@ -72,22 +60,22 @@ export function useCsvImportActions() {
     try {
       text = new TextDecoder(encoding).decode(bytes);
     } catch {
-      setCsvError(csvParseErrors.read_failed);
+      setUserError(csvParseErrors.read_failed);
       return;
     }
     const result = parseCsvText(text, {
-      filename: file.name,
+      filename,
       delimiter: persistedOpts?.delimiter,
       hasHeaderRow: persistedOpts?.hasHeaderRow,
       skipRows: persistedOpts?.skipRows,
       encoding,
     });
     if (!result.ok) {
-      setCsvError(csvParseErrors[result.error]);
+      setUserError(csvParseErrors[result.error]);
       return;
     }
 
-    const parsed: ParsedImport = { file, bytes, text, result: result.value };
+    const parsed: ParsedImport = { filename, bytes, text, result: result.value };
 
     // Fresh import (nothing to overwrite): commit immediately. The
     // mapping-modal auto-open (driven by absent or incompatible
@@ -111,6 +99,32 @@ export function useCsvImportActions() {
     });
   };
 
+  const handleCsvImport = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    let bytes: Uint8Array;
+    try {
+      bytes = new Uint8Array(await file.arrayBuffer());
+    } catch {
+      setUserError(csvParseErrors.read_failed);
+      return;
+    }
+    importCsvData(file.name, bytes);
+  };
+
+  // No clear here: a cancelled pick keeps any existing error; a committed
+  // import clears it in applyImport instead.
+  const openCsvPicker = () => {
+    pickViaMenu(
+      csvInputRef,
+      () => pickFileBytes(CSV_FILTER),
+      (picked) => importCsvData(picked.name, picked.bytes),
+      () => setUserError(csvParseErrors.read_failed),
+    );
+  };
+
   const confirmPendingImport = (opts: { keepMapping: boolean }) => {
     if (!pendingImport) return;
     applyImport(pendingImport.parsed, opts);
@@ -122,8 +136,7 @@ export function useCsvImportActions() {
   return {
     csvInputRef,
     handleCsvImport,
-    csvError,
-    dismissCsvError: () => setCsvError(null),
+    openCsvPicker,
     pendingImport,
     confirmPendingImport,
     cancelPendingImport,
@@ -135,12 +148,13 @@ export function useCsvImportActions() {
  *  modal whenever the resulting state needs user review: no mapping
  *  (fresh / discarded) or a kept-but-incompatible mapping. */
 function applyImport(p: ParsedImport, opts: { keepMapping: boolean }): void {
-  const { loadCsv, setCsvMapping, openCsvMappingModal, csvMapping } =
+  const { loadCsv, setCsvMapping, openCsvMappingModal, csvMapping, clearUserError } =
     useLabelStore.getState();
   rememberImport(p.bytes, p.text);
   const effectiveMapping: CsvMapping | null = opts.keepMapping ? csvMapping : null;
   if (!opts.keepMapping) setCsvMapping(null);
   loadCsv(p.result);
+  clearUserError();
   const needsReview =
     !effectiveMapping ||
     !isMappingCompatibleWith(effectiveMapping, p.result.headers);

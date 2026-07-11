@@ -650,6 +650,9 @@ const en = {
     },
     app: {
       editorHeading: 'Editor',
+      appearanceHeading: 'Appearance',
+      language: 'Language',
+      theme: 'Theme',
       powerUser: 'Power-user mode',
       powerUserHint: 'Show the generated ZPL command next to each property and unlock advanced controls',
       smartSnap: 'Smart snapping',
@@ -688,6 +691,9 @@ const en = {
 
   app: {
     file: 'File',
+    editMenu: 'Edit',
+    helpMenu: 'Help',
+    quitMenu: 'Exit',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Keep existing pages',
     updateAvailableFmt: 'Update {version} available',
@@ -726,6 +732,7 @@ const en = {
     clockOffsetClear: 'Clear',
     clockOffsetPreview: 'Preview',
     exportZpl: 'Export ZPL',
+    menuInitError: 'The application menu could not be loaded. Please restart the app.',
     importCsvData: 'Import CSV data',
     exportBatchZplFmt: 'Export batch ZPL ({n} labels)',
     newDesign: 'New design',

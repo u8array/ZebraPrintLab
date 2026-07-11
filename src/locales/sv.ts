@@ -650,6 +650,9 @@ const sv = {
     },
     app: {
       editorHeading: 'Redigerare',
+      appearanceHeading: 'Utseende',
+      language: 'Språk',
+      theme: 'Tema',
       powerUser: 'Avancerat användarläge',
       powerUserHint: 'Visa det utsända ZPL-kommandot bredvid varje egenskap och lås upp avancerade kontroller',
       smartSnap: 'Smart snäppning',
@@ -688,6 +691,9 @@ const sv = {
 
   app: {
     file: 'Fil',
+    editMenu: 'Redigera',
+    helpMenu: 'Hjälp',
+    quitMenu: 'Avsluta',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Behåll befintliga sidor',
     updateAvailableFmt: 'Uppdatering {version} tillgänglig',
@@ -726,6 +732,7 @@ const sv = {
     clockOffsetClear: 'Rensa',
     clockOffsetPreview: 'Förhandsvisning',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Programmets meny kunde inte laddas. Starta om appen.',
     importCsvData: 'Importera CSV-data',
     exportBatchZplFmt: 'Exportera batch-ZPL ({n} etiketter)',
     newDesign: 'Nytt design',

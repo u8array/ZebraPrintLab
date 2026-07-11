@@ -115,3 +115,11 @@ export const localeNames: Record<LocaleCode, string> = {
   ja: '日本語',
   ko: '한국어',
 };
+
+/** localeNames as `{value, label}` options for the language pickers (settings
+ *  Select and the web-header dropdown consume the same source). */
+export function localeOptions(): { value: LocaleCode; label: string }[] {
+  return (Object.entries(localeNames) as [LocaleCode, string][]).map(
+    ([value, label]) => ({ value, label }),
+  );
+}

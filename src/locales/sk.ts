@@ -650,6 +650,9 @@ const sk = {
     },
     app: {
       editorHeading: 'Editor',
+      appearanceHeading: 'Vzhľad',
+      language: 'Jazyk',
+      theme: 'Motív',
       powerUser: 'Pokročilý režim',
       powerUserHint: 'Zobraziť vygenerovaný ZPL príkaz vedľa každej vlastnosti a odomknúť rozšírené ovládacie prvky',
       smartSnap: 'Inteligentné prichytávanie',
@@ -688,6 +691,9 @@ const sk = {
 
   app: {
     file: 'Súbor',
+    editMenu: 'Upraviť',
+    helpMenu: 'Pomocník',
+    quitMenu: 'Ukončiť',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Zachovať existujúce stránky',
     updateAvailableFmt: 'K dispozícii je aktualizácia {version}',
@@ -726,6 +732,7 @@ const sk = {
     clockOffsetClear: 'Vymazať',
     clockOffsetPreview: 'Náhľad',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Ponuku aplikácie sa nepodarilo načítať. Reštartujte aplikáciu.',
     importCsvData: 'Importovať údaje CSV',
     exportBatchZplFmt: 'Exportovať dávkové ZPL ({n} etikiet)',
     newDesign: 'Nový návrh',

@@ -650,6 +650,9 @@ const lt = {
     },
     app: {
       editorHeading: 'Redaktorius',
+      appearanceHeading: 'Išvaizda',
+      language: 'Kalba',
+      theme: 'Tema',
       powerUser: 'Pažengusio vartotojo režimas',
       powerUserHint: 'Rodyti sugeneruotą ZPL komandą šalia kiekvienos savybės ir atrakinti išplėstines valdymo parinktis',
       smartSnap: 'Išmanusis pritvirtinimas',
@@ -688,6 +691,9 @@ const lt = {
 
   app: {
     file: 'Failas',
+    editMenu: 'Redaguoti',
+    helpMenu: 'Žinynas',
+    quitMenu: 'Išeiti',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Išsaugoti esamus puslapius',
     updateAvailableFmt: 'Yra atnaujinimas {version}',
@@ -726,6 +732,7 @@ const lt = {
     clockOffsetClear: 'Išvalyti',
     clockOffsetPreview: 'Peržiūra',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Nepavyko įkelti programos meniu. Iš naujo paleiskite programą.',
     importCsvData: 'Importuoti CSV duomenis',
     exportBatchZplFmt: 'Eksportuoti paketinį ZPL ({n} etikečių)',
     newDesign: 'Naujas dizainas',

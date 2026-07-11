@@ -650,6 +650,9 @@ const he = {
     },
     app: {
       editorHeading: 'עורך',
+      appearanceHeading: 'מראה',
+      language: 'שפה',
+      theme: 'ערכת נושא',
       powerUser: 'מצב מתקדם',
       powerUserHint: 'הצג את פקודת ZPL שנוצרה ליד כל מאפיין ופתח פקדים מתקדמים',
       smartSnap: 'הצמדה חכמה',
@@ -688,6 +691,9 @@ const he = {
 
   app: {
     file: 'קובץ',
+    editMenu: 'עריכה',
+    helpMenu: 'עזרה',
+    quitMenu: 'יציאה',
     importZpl: 'ייבוא ZPL',
     keepExistingPages: 'שמור על דפים קיימים',
     updateAvailableFmt: 'עדכון {version} זמין',
@@ -726,6 +732,7 @@ const he = {
     clockOffsetClear: 'נקה',
     clockOffsetPreview: 'תצוגה מקדימה',
     exportZpl: 'ייצוא ZPL',
+    menuInitError: 'לא ניתן היה לטעון את תפריט היישום. יש להפעיל מחדש את היישום.',
     importCsvData: 'ייבוא נתוני CSV',
     exportBatchZplFmt: 'ייצוא ZPL באצווה ({n} תוויות)',
     newDesign: 'עיצוב חדש',

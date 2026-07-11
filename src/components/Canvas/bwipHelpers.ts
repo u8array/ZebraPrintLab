@@ -2,6 +2,7 @@
 // canvas. Per-symbology rationale lives at each case in getUprightDisplaySize.
 
 import bwipjs from "bwip-js/browser";
+import { errorMessage } from "../../lib/errorMessage";
 import { getEntry, type LeafObject } from "../../registry";
 import { clampCodablockColumns, CODABLOCK_PREVIEW_COLUMNS_MIN } from "../../registry/codablock";
 import { barcodeTextZoneDots, barcodeZoneAbove } from "../../lib/barcodeHri";
@@ -131,7 +132,7 @@ function getValidationCanvas(): HTMLCanvasElement {
 
 /** Strip `bwip-js: bwipp.symbology:` prefixes from encoder errors for UI display. */
 export function cleanBwipError(e: unknown): string {
-  const raw = e instanceof Error ? e.message : String(e);
+  const raw = errorMessage(e);
   return raw.replace(/^bwip-js:\s*/i, "").replace(/^bwipp\.[^:]+:\s*/i, "");
 }
 

@@ -17,6 +17,7 @@ import type Konva from "konva";
 import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects, selectPreviewLocksEditor } from "../../store/labelStore";
 import { isGroup, getAllLeaves, expandSelection, selectionTargetId, findObjectById, canDeleteSelection, canGroupSelection, canUngroupSelection, isSelectionLocked, type LabelObject } from "../../types/Group";
 import { pxToDots, dotsToPx, SCREEN_PX_PER_MM } from "../../lib/coordinates";
+import { loadImage } from "../../lib/loadImage";
 import { SNAP_OPTIONS } from "../../lib/units";
 import type { Unit } from "../../lib/units";
 import { Select } from "../ui/Select";
@@ -233,11 +234,16 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       setPreviewImg(null);
       return;
     }
-    const img = new window.Image();
-    img.onload = () => setPreviewImg(img);
-    img.src = previewUrl;
+    let active = true;
+    void loadImage(previewUrl)
+      .then((img) => {
+        if (active) setPreviewImg(img);
+      })
+      .catch(() => {
+        // A preview that fails to decode just stays hidden.
+      });
     return () => {
-      img.onload = null;
+      active = false;
     };
   }, [previewUrl]);
 

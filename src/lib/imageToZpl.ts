@@ -11,6 +11,7 @@
  * so what the editor shows is bit-identical to what the printer receives.
  */
 import { isAxisSwapped, type ZplRotation } from '../registry/rotation';
+import { loadImage } from './loadImage';
 
 export interface GfaResult {
   /** Complete ^GFA command string */
@@ -176,27 +177,18 @@ export function monoPreviewCanvas(
  * @param threshold Luminance threshold 0-255 for black (default 128)
  * @param rotation  Baked-in orientation (default 'N')
  */
-export function imageToGFA(
+export async function imageToGFA(
   dataUrl: string,
   widthDots: number,
   threshold = 128,
   rotation: ZplRotation = 'N',
 ): Promise<GfaResult> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const raster = rasterizeMono(img, widthDots, threshold, rotation);
-      if (!raster) {
-        reject(new Error("Could not rasterize image"));
-        return;
-      }
-      resolve({
-        zpl: gfaFromRaster(raster),
-        widthDots: raster.paddedWidth,
-        heightDots: raster.heightDots,
-      });
-    };
-    img.onerror = () => reject(new Error('Failed to load image for GFA conversion'));
-    img.src = dataUrl;
-  });
+  const img = await loadImage(dataUrl, 'Failed to load image for GFA conversion');
+  const raster = rasterizeMono(img, widthDots, threshold, rotation);
+  if (!raster) throw new Error("Could not rasterize image");
+  return {
+    zpl: gfaFromRaster(raster),
+    widthDots: raster.paddedWidth,
+    heightDots: raster.heightDots,
+  };
 }

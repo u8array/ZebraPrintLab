@@ -650,6 +650,9 @@ const ro = {
     },
     app: {
       editorHeading: 'Editor',
+      appearanceHeading: 'Aspect',
+      language: 'Limbă',
+      theme: 'Temă',
       powerUser: 'Modul utilizator avansat',
       powerUserHint: 'Afișează comanda ZPL emisă lângă fiecare proprietate și deblochează controalele avansate',
       smartSnap: 'Fixare inteligentă',
@@ -688,6 +691,9 @@ const ro = {
 
   app: {
     file: 'Fișier',
+    editMenu: 'Editare',
+    helpMenu: 'Ajutor',
+    quitMenu: 'Ieșire',
     importZpl: 'Import ZPL',
     keepExistingPages: 'Păstrează paginile existente',
     updateAvailableFmt: 'Actualizarea {version} este disponibilă',
@@ -726,6 +732,7 @@ const ro = {
     clockOffsetClear: 'Șterge',
     clockOffsetPreview: 'Previzualizare',
     exportZpl: 'Export ZPL',
+    menuInitError: 'Meniul aplicației nu a putut fi încărcat. Reporniți aplicația.',
     importCsvData: 'Importă date CSV',
     exportBatchZplFmt: 'Exportă ZPL în lot ({n} etichete)',
     newDesign: 'Design nou',

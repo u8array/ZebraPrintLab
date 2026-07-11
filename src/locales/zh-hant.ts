@@ -650,6 +650,9 @@ const zhHant = {
     },
     app: {
       editorHeading: '編輯器',
+      appearanceHeading: '外觀',
+      language: '語言',
+      theme: '佈景主題',
       powerUser: '進階使用者模式',
       powerUserHint: '在每個屬性旁顯示產生的ZPL指令，並解鎖進階控制項',
       smartSnap: '智慧對齊',
@@ -688,6 +691,9 @@ const zhHant = {
 
   app: {
     file: '檔案',
+    editMenu: '編輯',
+    helpMenu: '說明',
+    quitMenu: '結束',
     importZpl: '匯入 ZPL',
     keepExistingPages: '保留現有頁面',
     updateAvailableFmt: '有可用更新 {version}',
@@ -726,6 +732,7 @@ const zhHant = {
     clockOffsetClear: '清除',
     clockOffsetPreview: '預覽',
     exportZpl: '匯出 ZPL',
+    menuInitError: '無法載入應用程式選單。請重新啟動應用程式。',
     importCsvData: '匯入 CSV 資料',
     exportBatchZplFmt: '匯出批次 ZPL ({n} 個標籤)',
     newDesign: '新增設計',

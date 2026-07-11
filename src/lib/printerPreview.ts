@@ -1,4 +1,5 @@
 import { isDesktopShell } from "./platform";
+import { errorMessage } from "./errorMessage";
 import { buildPrinterPreviewZpl, decodeDyGraphic, monoToRgba, type PrinterBitmap } from "./zebraGraphic";
 
 export type PrinterPreviewResult =
@@ -51,6 +52,6 @@ export async function fetchPrinterPreview(
       ? { kind: "bitmap", bitmap }
       : { kind: "error", message: "no graphic in printer response" };
   } catch (e) {
-    return { kind: "error", message: e instanceof Error ? e.message : String(e) };
+    return { kind: "error", message: errorMessage(e) };
   }
 }

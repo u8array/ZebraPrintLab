@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { rasterizeMono, monoRasterToRgba } from '../../lib/imageToZpl';
+import { loadImage } from '../../lib/loadImage';
 
 /** Mono-thresholded print-result thumbnail (WYSIWYG). Draws straight to a
  *  canvas (no toDataURL / React state per frame) so threshold-slider drags stay
@@ -22,8 +23,7 @@ export function MonoThumbnail({ dataUrl, name, widthDots, threshold }: {
       prevDataUrl.current = dataUrl;
       canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
     }
-    const img = new Image();
-    img.onload = () => {
+    void loadImage(dataUrl).then((img) => {
       const c = canvasRef.current;
       if (!active || !c) return;
       const raster = rasterizeMono(img, widthDots, threshold);
@@ -35,8 +35,9 @@ export function MonoThumbnail({ dataUrl, name, widthDots, threshold }: {
         0,
         0,
       );
-    };
-    img.src = dataUrl;
+    }).catch(() => {
+      // A thumbnail that fails to decode just stays blank (as before).
+    });
     return () => {
       active = false;
     };
