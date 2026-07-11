@@ -5,9 +5,9 @@ import {
   forceAspectBox,
   applyHeightSnap,
   applyModuleWidthSnap,
-  applyUniformModuleSnap,
   barcodeHeightReflowGeometry,
   barcodeMwReflowGeometry,
+  uniformReflowGeometry,
   pinInactiveEdges,
   computeNewModules,
   activeEdgesFromAnchorName,
@@ -442,63 +442,72 @@ describe("applyModuleWidthSnap", () => {
   });
 });
 
-describe("applyUniformModuleSnap", () => {
-  const anchor = (edges: { left: boolean; right: boolean; top: boolean; bottom: boolean }) => ({
-    kind: "uniformModule" as const,
-    nodeSize: 100,
-    nodeHeight: 100,
-    modules: 4,
+describe("uniformReflowGeometry", () => {
+  const start = (edges: { left: boolean; right: boolean; top: boolean; bottom: boolean }) => ({
+    edges,
+    modules0: 4,
     min: 1,
     max: 10,
-    edges,
+    leftX: 50,
+    topY: 50,
+    rightX: 150,
+    bottomY: 150,
   });
-  const oldBox: BoundingBox = { x: 50, y: 50, width: 100, height: 100, rotation: 0 };
+  const E = (left: boolean, top: boolean) => ({ left, right: !left, top, bottom: !top });
 
-  it("snaps to whole-module square (bottom-right grab keeps top-left)", () => {
-    const a = anchor({ left: false, right: true, top: false, bottom: true });
-    const out = applyUniformModuleSnap(oldBox, { ...oldBox, width: 140, height: 140 }, a);
-    expect(out.width).toBe(150);
-    expect(out.height).toBe(150);
-    expect(out.x).toBe(50);
-    expect(out.y).toBe(50);
+  it("quantises to whole modules and keeps top-left on a bottom-right grab", () => {
+    const geo = uniformReflowGeometry(start(E(false, false)), 140, 140);
+    expect(geo).toEqual({ modules: 6, targetXPx: 50, targetYPx: 50, linearW: 150, linearH: 150 });
   });
 
   it("pins bottom-right when top-left was grabbed", () => {
-    const a = anchor({ left: true, right: false, top: true, bottom: false });
-    const out = applyUniformModuleSnap(
-      oldBox,
-      { x: 10, y: 10, width: 140, height: 140, rotation: 0 },
-      a,
+    const geo = uniformReflowGeometry(start(E(true, true)), 140, 140);
+    expect(geo?.targetXPx).toBe(150 - 150);
+    expect(geo?.targetYPx).toBe(150 - 150);
+    expect((geo?.targetXPx ?? 0) + (geo?.linearW ?? 0)).toBe(150);
+    expect((geo?.targetYPx ?? 0) + (geo?.linearH ?? 0)).toBe(150);
+  });
+
+  // Regression: at 90 degree view rotation the visual right handles are the
+  // node-frame TOP anchors; the pin must hold the node-frame bottom edge.
+  it("pins the bottom edge on a top-edge grab (visual right side at 90deg)", () => {
+    const geo = uniformReflowGeometry(start(E(false, true)), 250, 250);
+    expect(geo?.modules).toBe(10);
+    expect(geo?.targetXPx).toBe(50);
+    expect((geo?.targetYPx ?? 0) + (geo?.linearH ?? 0)).toBe(150);
+  });
+
+  // Regression: total-extent quantise is reset-invariant. After baking modules
+  // 5 and re-basing the scale, 137% must still map to 5, not oscillate back to
+  // 4 (the mid-drag flicker).
+  it("is stable across crossings (total extent, not incremental scale)", () => {
+    const s = start(E(false, false));
+    expect(uniformReflowGeometry(s, 125, 125)?.modules).toBe(5);
+    expect(uniformReflowGeometry(s, 137, 137)?.modules).toBe(5);
+    expect(uniformReflowGeometry(s, 137.5, 137.5)?.modules).toBe(6);
+  });
+
+  it("clamps to min on a collapse and to max on an overshoot", () => {
+    expect(uniformReflowGeometry(start(E(false, false)), 1, 1)?.modules).toBe(1);
+    expect(uniformReflowGeometry(start(E(false, false)), 900, 900)?.modules).toBe(10);
+  });
+
+  it("scales a rectangular start box by the same module factor", () => {
+    // 8x18 DMRE at dimension 4: bbox 180x80. One module step up -> x1.25.
+    const geo = uniformReflowGeometry(
+      { edges: E(false, false), modules0: 4, min: 1, max: 10, leftX: 50, topY: 50, rightX: 230, bottomY: 130 },
+      228.6,
+      101.6,
     );
-    expect(out.width).toBe(150);
-    expect(out.x + out.width).toBe(oldBox.x + oldBox.width);
-    expect(out.y + out.height).toBe(oldBox.y + oldBox.height);
+    expect(geo?.modules).toBe(5);
+    expect(geo?.linearW).toBe(225);
+    expect(geo?.linearH).toBe(100);
+    expect(geo?.targetXPx).toBe(50);
+    expect(geo?.targetYPx).toBe(50);
   });
 
-  it("clamps to anchor min", () => {
-    const a = anchor({ left: false, right: true, top: false, bottom: true });
-    const out = applyUniformModuleSnap(oldBox, { ...oldBox, width: 5, height: 5 }, a);
-    expect(out.width).toBe(25);
-  });
-
-  it("no-ops on a non-uniform-2D anchor", () => {
-    const out = applyUniformModuleSnap(oldBox, { ...oldBox, width: 140 }, null);
-    expect(out.width).toBe(140);
-  });
-
-  it("scales a rectangular node's height by the same module factor", () => {
-    // 8×18 DMRE at dimension 4: bbox 180×80. One module step up → ×1.25.
-    const a = {
-      kind: "uniformModule" as const,
-      nodeSize: 180, nodeHeight: 80, modules: 4, min: 1, max: 10,
-      edges: { left: false, right: true, top: false, bottom: true },
-    };
-    const rectOld: BoundingBox = { x: 50, y: 50, width: 180, height: 80, rotation: 0 };
-    const out = applyUniformModuleSnap(rectOld, { ...rectOld, width: 230, height: 102 }, a);
-    expect(out.width).toBe(225);
-    expect(out.height).toBe(100);
-    expect(out.x).toBe(50);
-    expect(out.y).toBe(50);
+  it("returns null for a degenerate start box", () => {
+    expect(uniformReflowGeometry({ ...start(E(false, false)), rightX: 50 }, 140, 140)).toBeNull();
   });
 });
 

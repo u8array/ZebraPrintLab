@@ -18,10 +18,9 @@ import {
   activeEdgesFromAnchorName,
   applyHeightSnap,
   applyModuleWidthSnap,
-  applyUniformModuleSnap,
   barcodeHeightReflowGeometry,
   barcodeMwReflowGeometry,
-  computeNewModules,
+  uniformReflowGeometry,
   pinAnchoredEdge,
   pinInactiveEdges,
   positionDidMove,
@@ -32,7 +31,9 @@ import {
   type BarcodeMwReflowStart,
   type BoundingBox,
   type TransformAnchor,
+  type UniformReflowStart,
 } from "../transformerGeometry";
+import { naturalRect, parentRect, stageRect } from "../nodeRect";
 import {
   committedUprightBarDots,
   modelPositionFromRenderedTopLeft,
@@ -52,75 +53,6 @@ import {
  *  this the user is presumed to have flicked past the object and we keep the
  *  previous box rather than collapsing it to a sliver. */
 const MIN_RESIZE_BOX_PX = 10;
-
-interface UniformResizeArgs {
-  obj: LeafObject;
-  spec: { name: string; min: number; max: number };
-  anchor: { nodeSize: number; modules: number; edges: ActiveEdgeFlags } | null;
-  startRect: { x: number; y: number; width: number; height: number } | null;
-  fallbackPos: { x: number; y: number };
-  sx: number;
-  sy: number;
-  objectsOffsetX: number;
-  labelOffsetY: number;
-  scale: number;
-  dpmm: number;
-}
-
-/** Pin the user-fixed corner via startRect + edges so the round-to-
- *  integer-modules on commit doesn't walk the anchor. */
-function commitUniformModuleResize({
-  obj,
-  spec,
-  anchor,
-  startRect,
-  fallbackPos,
-  sx,
-  sy,
-  objectsOffsetX,
-  labelOffsetY,
-  scale,
-  dpmm,
-}: UniformResizeArgs): ObjectChanges {
-  const current = (obj.props as unknown as Record<string, number>)[spec.name];
-  if (typeof current !== "number" || !(current > 0))
-    return { ...fallbackPos, props: {} };
-  const newModules = computeNewModules(
-    current,
-    Math.min(sx, sy),
-    spec.min,
-    spec.max,
-  );
-  const props = { [spec.name]: newModules };
-  if (!anchor || !startRect) return { ...fallbackPos, props };
-  const sizeRatio = newModules / current;
-  const newW = startRect.width * sizeRatio;
-  const newH = startRect.height * sizeRatio;
-  const renderedX = anchor.edges.left
-    ? startRect.x + startRect.width - newW
-    : startRect.x;
-  const renderedY = anchor.edges.top
-    ? startRect.y + startRect.height - newH
-    : startRect.y;
-  // Uniform resize scales both axes by sizeRatio (clamped via newModules), so an
-  // FT barcode's anchor inversion uses the committed post-resize bar size. For a
-  // QR the firmware shift scales with magnification, so pass the committed value
-  // (newModules) too, else the inverse uses the old shift and the code jumps.
-  // Pass undefined (not 0) when a dim isn't cached so the downstream nullish
-  // fallback applies instead of being defeated by a 0.
-  const cache = getMeasuredSnapshot().get(obj.id);
-  const uprightW = cache?.uprightBarWDots;
-  const uprightH = cache?.uprightBarHDots;
-  const model = modelPositionFromRenderedTopLeft(
-    obj,
-    pxToDots(renderedX - objectsOffsetX, scale, dpmm),
-    pxToDots(renderedY - labelOffsetY, scale, dpmm),
-    uprightW !== undefined ? uprightW * sizeRatio : undefined,
-    uprightH !== undefined ? uprightH * sizeRatio : undefined,
-    newModules,
-  );
-  return { x: model.x, y: model.y, props };
-}
 
 /** Pack a Konva clientRect into the SnapRect shape used by snap helpers. */
 function toSnapRect(
@@ -144,12 +76,7 @@ function captureOtherRects(
     if (o.id === excludeId) continue;
     const n = stage.findOne<Konva.Node>(`#${o.id}`);
     if (!n) continue;
-    const cr = n.getClientRect({
-      skipShadow: true,
-      skipStroke: true,
-      relativeTo: stage,
-    });
-    result.push(toSnapRect(o.id, cr));
+    result.push(toSnapRect(o.id, stageRect(n, stage)));
   }
   return result;
 }
@@ -263,14 +190,6 @@ export function useKonvaTransformer({
   // Snapshot of the other objects' bboxes at transform start. Other objects
   // can't move during a resize, so we avoid re-querying Konva on every tick.
   const othersSnapshotRef = useRef<SnapRect[]>([]);
-  // Stage-frame node rect at uniform-2D drag start; commit uses it to
-  // pin the anchor corner under rotated view too.
-  const uniformStartRectRef = useRef<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  } | null>(null);
   // Anchor name at drag start; commit skips grid-snap on inactive axes
   // so the opposite corner stays put.
   const activeEdgesRef = useRef<ActiveEdgeFlags | null>(null);
@@ -312,10 +231,10 @@ export function useKonvaTransformer({
     changed: boolean;
   } | null>(null);
 
-  // 1D barcode live reflow, both resize axes: the moduleWidth axis re-renders
-  // on each integer module crossing, the bar-height axis on each integer dot,
-  // so bars, HRI and text zone always draw at their true size instead of
-  // stretching the old bitmap until release.
+  // Barcode live reflow: re-renders on each integer crossing (module width,
+  // height dot, or magnification, per mode) so the bitmap always draws at its
+  // true size instead of stretching until release. The per-tick pin also
+  // stands in for boundBoxFunc's band snap, which breaks under rotation.
   const barcodeReflowRef = useRef<
     | (BarcodeMwReflowStart & {
         mode: "mw";
@@ -328,6 +247,17 @@ export function useKonvaTransformer({
         mode: "height";
         uprightW0: number;
         snapshot: { x: number; y: number; height: number };
+        changed: boolean;
+      })
+    | (UniformReflowStart & {
+        mode: "uniform";
+        propName: string;
+        // Captured at arm time like the 1D modes: the cache updates after each
+        // crossing's re-render, so a fresh read times the start-relative ratio
+        // would double-count from the second crossing on.
+        uprightW0?: number;
+        uprightH0?: number;
+        snapshot: { x: number; y: number; modules: number };
         changed: boolean;
       })
     | null
@@ -494,7 +424,6 @@ export function useKonvaTransformer({
     transformAnchorRef.current = null;
     transformStartBboxRef.current = null;
     othersSnapshotRef.current = [];
-    uniformStartRectRef.current = null;
     activeEdgesRef.current = null;
     liveReflowRef.current = null;
     shapeReflowRef.current = null;
@@ -544,11 +473,7 @@ export function useKonvaTransformer({
         // Group .height/.width return their attrs (0); without the rect
         // read the snap guards early-return on 0 and the drag drifts on
         // commit.
-        const rect = node.getClientRect({
-          skipTransform: true,
-          skipStroke: true,
-          skipShadow: true,
-        });
+        const rect = naturalRect(node);
         return {
           kind: "row",
           nodeHeight: rect.height,
@@ -559,50 +484,13 @@ export function useKonvaTransformer({
           rotation: objectRotation(obj.props),
         };
       }
-      const uniformProp = getEntry(obj.type)?.uniformScaleProp;
-      if (uniformProp) {
-        const rect = node.getClientRect({
-          skipTransform: true,
-          skipStroke: true,
-          skipShadow: true,
-        });
-        const modules = (obj.props as unknown as Record<string, number>)[
-          uniformProp.name
-        ];
-        const edges = activeEdgesRef.current;
-        if (
-          typeof modules === "number" &&
-          modules > 0 &&
-          rect.width > 0 &&
-          edges
-        ) {
-          uniformStartRectRef.current = node.getClientRect({
-            skipShadow: true,
-            skipStroke: true,
-            relativeTo: stageRef.current ?? undefined,
-          });
-          return {
-            kind: "uniformModule",
-            nodeSize: rect.width,
-            nodeHeight: rect.height,
-            modules,
-            min: uniformProp.min,
-            max: uniformProp.max,
-            edges,
-          };
-        }
-      }
       // Live moduleWidth snap for 1D barcodes, all rotations: quantise the
       // moduleWidth axis (screen width for N/I, screen height for R/B) so
       // overshoot is blocked and the anchored edge stays put, like N.
       if (BARCODE_1D_TYPES.has(obj.type)) {
         // Konva Group .width() returns its attr (0 here); the visible
         // bbox comes from the children via getClientRect.
-        const rect = node.getClientRect({
-          skipTransform: true,
-          skipStroke: true,
-          skipShadow: true,
-        });
+        const rect = naturalRect(node);
         return {
           kind: "moduleWidth",
           nodeWidth: rect.width,
@@ -686,11 +574,7 @@ export function useKonvaTransformer({
       } else if (!frameMode && (bp.blockWidth ?? 0) > 0 && viewRotation === 0) {
         // Glyph mode bakes on end: capture the start rect so commit can re-pin
         // the stable point after the font re-justifies.
-        glyphBlockStartRectRef.current = node.getClientRect({
-          relativeTo: stageRef.current ?? undefined,
-          skipStroke: true,
-          skipShadow: true,
-        });
+        glyphBlockStartRectRef.current = stageRect(node, stageRef.current);
       }
     }
     // Free-resize shapes reflow live (see onTransform): pause undo so the
@@ -760,6 +644,34 @@ export function useKonvaTransformer({
           };
           useLabelStore.temporal.getState().pause();
         }
+      }
+    }
+    // Uniform 2D (QR/Aztec/DataMatrix): arm the reflow so the per-tick pin,
+    // not boundBoxFunc, drives quantise and aspect (see the bail below).
+    const uniformProp = obj && !isGroup(obj) ? getEntry(obj.type)?.uniformScaleProp : undefined;
+    if (obj && uniformProp) {
+      const edges = activeEdgesRef.current;
+      const modules = (obj.props as unknown as Record<string, number>)[uniformProp.name];
+      const box = parentRect(node);
+      if (edges && typeof modules === "number" && modules > 0 && box.width > 0 && box.height > 0) {
+        const cache = getMeasuredSnapshot().get(singleId);
+        barcodeReflowRef.current = {
+          mode: "uniform",
+          edges,
+          modules0: modules,
+          min: uniformProp.min,
+          max: uniformProp.max,
+          leftX: box.x,
+          topY: box.y,
+          rightX: box.x + box.width,
+          bottomY: box.y + box.height,
+          propName: uniformProp.name,
+          uprightW0: cache?.uprightBarWDots,
+          uprightH0: cache?.uprightBarHDots,
+          snapshot: { x: obj.x, y: obj.y, modules },
+          changed: false,
+        };
+        useLabelStore.temporal.getState().pause();
       }
     }
   };
@@ -837,12 +749,48 @@ export function useKonvaTransformer({
     // adjacent module widths render at the same pixel width.
     const br = barcodeReflowRef.current;
     if (br) {
+      const natural = naturalRect(node);
+      // The FT anchor and QR firmware shift both scale with magnification, so
+      // the same inversion as the 1D modes keeps them consistent with the
+      // render.
+      if (br.mode === "uniform") {
+        const geo = uniformReflowGeometry(br, natural.width * sx, natural.height * sy);
+        if (!geo) return;
+        const modCurrent = (cur.props as unknown as Record<string, number>)[br.propName];
+        if (typeof modCurrent !== "number" || !(modCurrent > 0)) return;
+        const crossed = geo.modules !== modCurrent;
+        if (crossed) {
+          const ratio = geo.modules / br.modules0;
+          const model = modelPositionFromRenderedTopLeft(
+            cur,
+            pxToDots(geo.targetXPx - objectsOffsetX, scale, dpmm),
+            pxToDots(geo.targetYPx - labelOffsetY, scale, dpmm),
+            br.uprightW0 !== undefined ? br.uprightW0 * ratio : undefined,
+            br.uprightH0 !== undefined ? br.uprightH0 * ratio : undefined,
+            geo.modules,
+          );
+          flushSync(() => {
+            updateObject(id, {
+              x: model.x,
+              y: model.y,
+              props: { [br.propName]: geo.modules },
+            });
+          });
+          br.changed = true;
+        }
+        // Pin every tick; subtract the child render offset (QR draws off the
+        // group origin) so the rendered top-left lands on the target.
+        const rendered = crossed ? naturalRect(node) : natural;
+        const rx = rendered.width > 0 ? geo.linearW / rendered.width : 1;
+        const ry = rendered.height > 0 ? geo.linearH / rendered.height : 1;
+        node.scaleX(rx);
+        node.scaleY(ry);
+        node.x(geo.targetXPx - rendered.x * rx);
+        node.y(geo.targetYPx - rendered.y * ry);
+        transformerRef.current?.forceUpdate();
+        return;
+      }
       const swapped = isAxisSwapped(br.rotation);
-      const natural = node.getClientRect({
-        skipTransform: true,
-        skipStroke: true,
-        skipShadow: true,
-      });
       if (br.mode === "mw") {
         const mwCurrent = (cur.props as { moduleWidth?: number }).moduleWidth;
         if (typeof mwCurrent !== "number" || !(mwCurrent > 0)) return;
@@ -877,9 +825,7 @@ export function useKonvaTransformer({
         // The residual fits the re-rendered content into the linear frame (1
         // when pixels-per-module are exact). Only a crossing re-renders, so
         // mid-band `natural` is still the current rect.
-        const rendered = crossed
-          ? node.getClientRect({ skipTransform: true, skipStroke: true, skipShadow: true })
-          : natural;
+        const rendered = crossed ? naturalRect(node) : natural;
         const renderedExtent = swapped ? rendered.height : rendered.width;
         const residual = renderedExtent > 0 ? geo.linearExtentPx / renderedExtent : 1;
         node.scaleX(swapped ? 1 : residual);
@@ -978,6 +924,11 @@ export function useKonvaTransformer({
     // The text-block reflow re-pins from its own captured edges, so the snap /
     // inactive-edge pin below would fight it; skip entirely.
     if (liveReflowRef.current) return newBox;
+    // Uniform 2D bails too, INCLUDING forceAspectBox: its moved-edge inference
+    // reads the box position in the transformer frame, so it re-anchors on the
+    // wrong axis under view rotation (the mid-drag sideways walk). The per-tick
+    // pin is the sole aspect and band snap.
+    if (barcodeReflowRef.current?.mode === "uniform") return newBox;
     // Locked-circle reflow needs forceAspectBox so Konva keeps sx==sy; node and
     // reflow only agree when the bbox keeps its aspect. Snap/pin below is free-axis only.
     if (shapeReflowRef.current && isUniformScale) {
@@ -1018,7 +969,6 @@ export function useKonvaTransformer({
       transformAnchorRef.current,
     );
     bbox = applyModuleWidthSnap(oldBox, bbox, transformAnchorRef.current);
-    bbox = applyUniformModuleSnap(oldBox, bbox, transformAnchorRef.current);
     // Quantised types skip object-snap: a sub-module neighbour-pixel
     // alignment breaks the integer-module commit and the post-render
     // bitmap drifts off the anchor.
@@ -1081,6 +1031,22 @@ export function useKonvaTransformer({
       return;
     }
     const br = barcodeReflowRef.current;
+    if (br && br.mode === "uniform") {
+      const id = selectedIds[0];
+      const cur = id ? findObjectById(getCurrentObjects(), id) : undefined;
+      let commit: ReflowCommit = null;
+      if (br.changed && id && cur && !isGroup(cur)) {
+        // Per-tick writes already went through computeNewModules, so the final
+        // value is clamped; re-commit it as the single tracked change.
+        const modules = (cur.props as unknown as Record<string, number>)[br.propName];
+        commit = {
+          restore: { x: br.snapshot.x, y: br.snapshot.y, props: { [br.propName]: br.snapshot.modules } },
+          final: { x: cur.x, y: cur.y, props: { [br.propName]: modules } },
+        };
+      }
+      collapseReflowToOneEntry(id, commit);
+      return;
+    }
     if (br) {
       const id = selectedIds[0];
       const cur = id ? findObjectById(getCurrentObjects(), id) : undefined;
@@ -1214,42 +1180,14 @@ export function useKonvaTransformer({
     };
     const pos = { x: snapAxis("x"), y: snapAxis("y") };
     const entry = getEntry(obj.type);
-    if (entry?.uniformScaleProp) {
-      const uniformAnchor =
-        transformAnchorRef.current?.kind === "uniformModule"
-          ? transformAnchorRef.current
-          : null;
-      const update = commitUniformModuleResize({
-        obj,
-        spec: entry.uniformScaleProp,
-        anchor: uniformAnchor,
-        startRect: uniformStartRectRef.current,
-        fallbackPos: pos,
-        sx,
-        sy,
-        objectsOffsetX,
-        labelOffsetY,
-        scale,
-        dpmm,
-      });
-      updateObject(singleId, update);
-      cleanupTransformState();
-      return;
-    }
     const commit = entry?.commitTransform;
     if (commit) {
-      // uniformModule anchors short-circuit above; the row/moduleWidth
-      // commit context only narrows those two kinds.
-      const ctxAnchor =
-        transformAnchorRef.current?.kind === "uniformModule"
-          ? null
-          : transformAnchorRef.current;
       const propChanges = commit(obj, {
         sx,
         sy,
         snap,
         nodeHeight,
-        anchor: ctxAnchor,
+        anchor: transformAnchorRef.current,
         resizeMode: blockResizeModeRef.current,
       });
       const start = glyphBlockStartRectRef.current;
@@ -1278,11 +1216,7 @@ export function useKonvaTransformer({
           node.x(objectsOffsetX + dotsToPx(obj.x, scale, dpmm));
           node.y(labelOffsetY + dotsToPx(obj.y, scale, dpmm));
           flushSync(() => updateObject(singleId, { props: propChanges }));
-          const newRect = node.getClientRect({
-            relativeTo: stageRef.current ?? undefined,
-            skipStroke: true,
-            skipShadow: true,
-          });
+          const newRect = stageRect(node, stageRef.current);
           const edges = activeEdgesRef.current;
           const justify = fp.blockJustify ?? "L";
           const anchorArgs = { rotation: fp.rotation, justify, edges, centeredStacking: centeredScaling };
