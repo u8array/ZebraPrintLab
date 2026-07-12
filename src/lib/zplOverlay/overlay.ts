@@ -33,7 +33,7 @@ export interface BlockOverlay {
   v: number;
   /** When false, a dirty/new object in this block cannot be regenerated in
    *  place because a surviving raw command would re-interpret its bytes
-   *  (^MU unit scale, non-default ^CC/^CT/^CD prefix, non-UTF-8 ^CI with ^FH,
+   *  (^MU unit scale, non-default ^CC/^CT/^CD prefix, any non-UTF-8 ^CI,
    *  non-default ^FE embed). Export then falls back to full regeneration the
    *  moment any edit exists; a zero-edit verbatim replay stays safe regardless. */
   regenSafe: boolean;
