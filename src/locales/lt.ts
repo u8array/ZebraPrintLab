@@ -444,6 +444,8 @@ const lt = {
     markerValueUnsafe: 'Kintamojo reikšmė laužo kodavimą',
     gs1ValueInvalid: 'Kintamojo reikšmė pažeidžia GS1 duomenis',
     printerSupportLimited: 'Ribotas palaikymas',
+    qrRotatedStatic: 'Pasuktas QR kodas spausdina statinę reikšmę',
+    qrRotatedModel2: 'Pasuktas QR kodas spausdina kaip 2 modelis',
   },
 
   printerSettings: {

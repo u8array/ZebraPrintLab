@@ -444,6 +444,8 @@ const sl = {
     markerValueUnsafe: 'Vrednost spremenljivke krši kodiranje',
     gs1ValueInvalid: 'Vrednost spremenljivke krši GS1 podatke',
     printerSupportLimited: 'Omejena podpora',
+    qrRotatedStatic: 'Zasukana QR koda natisne statično vrednost',
+    qrRotatedModel2: 'Zasukana QR koda natisne kot Model 2',
   },
 
   printerSettings: {

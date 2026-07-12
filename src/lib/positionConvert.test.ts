@@ -79,7 +79,7 @@ describe("convertPositionType", () => {
   });
 
   it("qrcode: flip compensates both firmware shifts, bounds stay put", () => {
-    const qr = leaf("qrcode", 50, 70, { content: "Q", magnification: 4, rotation: "N", errorCorrection: "M", model: 2 });
+    const qr = leaf("qrcode", 50, 70, { content: "Q", magnification: 4, errorCorrection: "M", model: 2, rotation: "N" });
     const measured = new Map([[qr.id, { width: 100, height: 100, uprightBarWDots: 100, uprightBarHDots: 100 }]]);
     const before = objectBoundsDots(qr, ctx(measured));
     const ft = flipped(qr, "FT", ctx(measured));

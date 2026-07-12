@@ -308,7 +308,8 @@ export function createFlushField(
               errorCorrection: ec,
               // ^BQ b: only 1 and 2 are valid; anything else falls to 2.
               model: s.field.qrModel === 1 ? 1 : 2,
-              rotation: s.field.bcRotation,
+              // ^BQ orientation slot is a no-op; rotated QRs arrive as ^GFA + sidecar.
+              rotation: "N",
             } satisfies QrCodeProps,
             posType,
             comment,
@@ -482,7 +483,6 @@ export function createFlushField(
             {
               content,
               mode: s.field.maxicodeMode,
-              rotation: s.field.bcRotation,
             } satisfies MaxicodeProps,
             posType,
             comment,

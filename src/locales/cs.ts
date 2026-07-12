@@ -444,6 +444,8 @@ const cs = {
     markerValueUnsafe: 'Hodnota proměnné porušuje kódování',
     gs1ValueInvalid: 'Hodnota proměnné porušuje GS1 data',
     printerSupportLimited: 'Omezená podpora',
+    qrRotatedStatic: 'Otočený QR kód tiskne statickou hodnotu',
+    qrRotatedModel2: 'Otočený QR kód tiskne jako Model 2',
   },
 
   printerSettings: {

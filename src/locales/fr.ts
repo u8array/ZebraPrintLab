@@ -444,6 +444,8 @@ const fr = {
     markerValueUnsafe: "Valeur brise l'encodage",
     gs1ValueInvalid: 'La valeur de la variable enfreint les données GS1',
     printerSupportLimited: 'Support limité',
+    qrRotatedStatic: 'QR Code pivoté imprime une valeur statique',
+    qrRotatedModel2: 'QR Code pivoté imprime en modèle 2',
   },
 
   printerSettings: {

@@ -444,6 +444,8 @@ const sr = {
     markerValueUnsafe: 'Вредност квари кодирање',
     gs1ValueInvalid: 'Вредност променљиве нарушава GS1 податке',
     printerSupportLimited: 'Ограничена подршка',
+    qrRotatedStatic: 'Ротирани QR код штампа статичну вредност',
+    qrRotatedModel2: 'Ротирани QR код штампа као Модел 2',
   },
 
   printerSettings: {

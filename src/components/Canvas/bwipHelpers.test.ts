@@ -6,6 +6,7 @@ import { buildBwipOptions, dataMatrixMinFitIndex, getDisplaySize, getEanUpcHriFr
 import type { LeafObject } from "../../registry";
 import { dmSizePairs, type DataMatrixProps } from "../../registry/datamatrix";
 import { placeholderContentFor, samplePropsFor } from "../../registry/placeholderContent";
+import { ZD230_QA_123 } from "../../test/qrFixtures";
 type LabelObject = LeafObject;
 
 describe("getEanUpcHriFragments", () => {
@@ -399,30 +400,7 @@ describe("qrcode canvas fidelity (ZPL firmware parity)", () => {
     expect(opts?.fixedeclevel).toBe(true);
   });
 
-  // Fixture from a real ZD230 print of ^BQN,2,8 + ^FDQA,123 (EC Q).
-  const ZD230_QA_123 = [
-    "#######.#.#...#######",
-    "#.....#.#.#.#.#.....#",
-    "#.###.#.##.##.#.###.#",
-    "#.###.#.#...#.#.###.#",
-    "#.###.#.#..##.#.###.#",
-    "#.....#..#.#..#.....#",
-    "#######.#.#.#.#######",
-    "........#..##........",
-    ".##.#.##.#.##.#.#####",
-    ".####...#..#.#.#.#..#",
-    "....#.###...####..#..",
-    ".#.###...#.#.#.###..#",
-    "..##..#.##.#.###..###",
-    "........#####.#...##.",
-    "#######.#.##....#..#.",
-    "#.....#....##.#...##.",
-    "#.###.#.##.#..#.#.#.#",
-    "#.###.#..#.#.#.#.#.#.",
-    "#.###.#.#.##.###.##.#",
-    "#.....#.##.###.###...",
-    "#######....#.###.##.#",
-  ];
+  // Shared hardware fixture; see src/test/qrFixtures.ts.
 
   // Through the production builder, so reverting fixedeclevel turns these red.
   const rawMatrix = async (obj: LabelObject) => {

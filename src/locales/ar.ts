@@ -444,6 +444,8 @@ const ar = {
     markerValueUnsafe: 'قيمة المتغير تكسر الترميز',
     gs1ValueInvalid: 'قيمة المتغير تُفسد بيانات GS1',
     printerSupportLimited: 'دعم محدود',
+    qrRotatedStatic: 'رمز QR الدوّار يطبع قيمة ثابتة',
+    qrRotatedModel2: 'رمز QR الدوّار يطبع كطراز 2',
   },
 
   printerSettings: {

@@ -444,6 +444,8 @@ const sv = {
     markerValueUnsafe: 'Variabelvärde bryter kodning',
     gs1ValueInvalid: 'Variabelvärde bryter GS1-data',
     printerSupportLimited: 'Begränsat stöd',
+    qrRotatedStatic: 'Roterad QR-kod skriver ut statiskt värde',
+    qrRotatedModel2: 'Roterad QR-kod skriver ut som Modell 2',
   },
 
   printerSettings: {

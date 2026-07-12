@@ -444,6 +444,8 @@ const da = {
     markerValueUnsafe: 'Variabelværdi bryder kodning',
     gs1ValueInvalid: 'Variabelværdi bryder GS1-data',
     printerSupportLimited: 'Begrænset support',
+    qrRotatedStatic: 'Roteret QR-kode udskriver statisk værdi',
+    qrRotatedModel2: 'Roteret QR-kode udskriver som Model 2',
   },
 
   printerSettings: {

@@ -466,14 +466,6 @@ export const testModels: Record<string, LabelObject> = {
     rotation: 0,
     props: { content: "123456", height: 100, moduleWidth: 2, printInterpretation: false, checkDigit: false, rotation: "B" },
   },
-  barcode_qr_rot_R: {
-    id: "rot4",
-    type: "qrcode",
-    x: 100,
-    y: 100,
-    rotation: 0,
-    props: { content: "Hello World", magnification: 4, errorCorrection: "Q", model: 2, rotation: "R" },
-  },
   barcode_datamatrix_rot_R: {
     id: "rot5",
     type: "datamatrix",

@@ -444,6 +444,8 @@ const fi = {
     markerValueUnsafe: 'Muuttujan arvo rikkoo koodauksen',
     gs1ValueInvalid: 'Muuttujan arvo rikkoo GS1-tiedot',
     printerSupportLimited: 'Rajoitettu tuki',
+    qrRotatedStatic: 'Käännetty QR-koodi tulostaa staattisen arvon',
+    qrRotatedModel2: 'Käännetty QR-koodi tulostaa mallina 2',
   },
 
   printerSettings: {

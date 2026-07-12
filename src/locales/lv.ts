@@ -444,6 +444,8 @@ const lv = {
     markerValueUnsafe: 'Mainīgā vērtība pārkāpj kodējumu',
     gs1ValueInvalid: 'Mainīgā vērtība pārkāpj GS1 datus',
     printerSupportLimited: 'Ierobežots atbalsts',
+    qrRotatedStatic: 'Pagriezts QR kods drukā statisku vērtību',
+    qrRotatedModel2: 'Pagriezts QR kods drukā kā 2. modeli',
   },
 
   printerSettings: {

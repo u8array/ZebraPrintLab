@@ -444,6 +444,8 @@ const de = {
     markerValueUnsafe: 'Variablenwert bricht Kodierung',
     gs1ValueInvalid: 'Variablenwert bricht GS1-Daten',
     printerSupportLimited: 'Eingeschränkt unterstützt',
+    qrRotatedStatic: 'Gedrehter QR-Code druckt statischen Wert',
+    qrRotatedModel2: 'Gedrehter QR-Code druckt als Modell 2',
   },
 
   printerSettings: {

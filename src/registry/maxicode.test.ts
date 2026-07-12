@@ -21,20 +21,14 @@ function makeObj(props: MaxicodeProps, overrides?: Partial<LabelObjectBase>): La
 describe("maxicode.toZPL", () => {
   const def = defined(ObjectRegistry["maxicode"]);
 
-  it("emits ^BV with rotation, mode and pinned (1,1) structured-append fields", () => {
+  it("emits ^BV with mode and pinned (1,1) structured-append fields", () => {
     const zpl = def.toZPL(makeObj({
       content: "abc",
       mode: 4,
-      rotation: "N",
     }));
     expect(zpl).toContain("^FO100,200");
     expect(zpl).toContain("^BVN,4,1,1");
     expect(zpl).toContain("^FDabc^FS");
-  });
-
-  it("rotation passes through unchanged", () => {
-    const zpl = def.toZPL(makeObj({ content: "x", mode: 4, rotation: "R" }));
-    expect(zpl).toContain("^BVR,4,1,1");
   });
 });
 
@@ -63,7 +57,7 @@ describe("validateMaxicodeBwip", () => {
 });
 
 describe("maxicode parser roundtrip", () => {
-  it("parses ^BV back to a maxicode object with the right content + mode + rotation", () => {
+  it("parses ^BV back to a maxicode object; the no-op orientation slot is canonicalized away", () => {
     const src = "^XA^PW400^LL400^FO50,50^BVR,3,1,1^FDPAYLOAD^FS^XZ";
     const { objects } = parseZPL(src);
     const obj = objects[0];
@@ -71,7 +65,8 @@ describe("maxicode parser roundtrip", () => {
     if (obj?.type !== "maxicode") return;
     expect(obj.props.content).toBe("PAYLOAD");
     expect(obj.props.mode).toBe(3);
-    expect(obj.props.rotation).toBe("R");
+    // Firmware ignores the slot; re-emit pins it to N.
+    expect(defined(ObjectRegistry["maxicode"]).toZPL(obj)).toContain("^BVN,3,1,1");
   });
 
   it("defaults mode to 4 when an out-of-range value is given", () => {
@@ -83,12 +78,11 @@ describe("maxicode parser roundtrip", () => {
     expect(obj.props.mode).toBe(4);
   });
 
-  it("emit -> parse roundtrip preserves content, mode, rotation", () => {
+  it("emit -> parse roundtrip preserves content and mode", () => {
     const def = defined(ObjectRegistry["maxicode"]);
     const body = def.toZPL(makeObj({
       content: "HELLO123",
       mode: 5,
-      rotation: "B",
     }));
     const src = `^XA${body}^XZ`;
     const { objects } = parseZPL(src);
@@ -96,6 +90,5 @@ describe("maxicode parser roundtrip", () => {
     if (obj?.type !== "maxicode") throw new Error("expected maxicode");
     expect(obj.props.content).toBe("HELLO123");
     expect(obj.props.mode).toBe(5);
-    expect(obj.props.rotation).toBe("B");
   });
 });

@@ -444,6 +444,8 @@ const el = {
     markerValueUnsafe: 'Τιμή μεταβλητής παραβιάζει κωδικοποίηση',
     gs1ValueInvalid: 'Η τιμή μεταβλητής παραβιάζει δεδομένα GS1',
     printerSupportLimited: 'Περιορισμένη υποστήριξη',
+    qrRotatedStatic: 'Περιστραμμένος κωδικός QR εκτυπώνει στατική τιμή',
+    qrRotatedModel2: 'Περιστραμμένος κωδικός QR εκτυπώνει ως Μοντέλο 2',
   },
 
   printerSettings: {

@@ -109,10 +109,9 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
           : undefined;
     },
 
-    // ^BQN,{model},{magnification}; QR Code
+    // ^BQ orientation slot is decorative; canonicalized to N on emit.
     BQ(p) {
       field.fieldType = "qrcode";
-      field.bcRotation = readRotation(p[0]);
       field.qrModel = int(p[1], 2);
       field.qrMag = int(p[2], 4);
     },
@@ -159,9 +158,9 @@ export function createBarcodeHandlers(s: ParserState): Record<string, Handler> {
     // describe structured-append composition; we don't expose that
     // in the editor, so the params are read but the emitted form
     // pins them to (1, 1).
+    // ^BV orientation slot is a firmware no-op; canonicalized on emit.
     BV(p) {
       field.fieldType = "maxicode";
-      field.bcRotation = readRotation(p[0]);
       const m = int(p[1], 4);
       field.maxicodeMode = (m >= 2 && m <= 6 ? m : 4) as MaxicodeProps["mode"];
     },

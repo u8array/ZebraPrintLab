@@ -3,7 +3,7 @@ import { Image as KImage, Group, Rect, Text } from "react-konva";
 import type Konva from "konva";
 import { BARCODE_1D_TYPES, ObjectRegistry } from "../../registry";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
-import { barcodeFtAnchorOffset } from "../../lib/objectBounds";
+import { barcodeFtAnchorOffset, qrPrintsAsGraphic } from "../../lib/objectBounds";
 import { useColorScheme, CANVAS_WARNING } from "../../hooks/useColorScheme";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { selectionHandlers, useBlankFieldWarns, PLACEHOLDER_DASH, PLACEHOLDER_STROKE_PX, type KonvaObjectProps } from "./konvaObjectProps";
@@ -195,15 +195,17 @@ export function BarcodeObject({
       : BARCODE_1D_TYPES.has(obj.type)
         ? (obj.props as { height: number }).height
         : 0;
-  const ftOffset = barcodeFtAnchorOffset(rotation, uprightBarWDots, ftBarHDots);
+  // A rotated QR prints as a shift-free ^GFA, so the ^BQ artifacts below are N-only.
+  const graphicQr = qrPrintsAsGraphic(obj);
+  const ftOffset = barcodeFtAnchorOffset(graphicQr ? "N" : rotation, uprightBarWDots, ftBarHDots);
   // Zebra firmware artifact: ^FT for QR shifts the symbol up by exactly 3 modules
   // (= 3 * magnification dots), independent of dpmm or content; ^FO QR is +10 dots.
   // Verified against Labelary across magnifications 4-10 at 8 and 12 dpmm.
   const qrFtShiftDots =
-    obj.type === "qrcode"
+    obj.type === "qrcode" && !graphicQr
       ? QR_FT_MODULE_OFFSET * (obj.props as { magnification: number }).magnification
       : 0;
-  const foYShiftDots = obj.type === "qrcode" ? QR_FO_Y_OFFSET_DOTS : 0;
+  const foYShiftDots = obj.type === "qrcode" && !graphicQr ? QR_FO_Y_OFFSET_DOTS : 0;
 
   const displayX = obj.positionType === "FT" ? obj.x + ftOffset.x : obj.x;
   const displayY =

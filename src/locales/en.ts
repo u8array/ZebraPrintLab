@@ -444,6 +444,8 @@ const en = {
     markerValueUnsafe: 'Variable value breaks encoding',
     gs1ValueInvalid: 'Variable value breaks GS1 data',
     printerSupportLimited: 'Limited support',
+    qrRotatedStatic: 'Rotated QR prints a static value',
+    qrRotatedModel2: 'Rotated QR prints as Model 2',
   },
 
   printerSettings: {

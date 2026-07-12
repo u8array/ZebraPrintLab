@@ -19,6 +19,7 @@ import {
 } from "../../lib/gs1";
 import { isRectangular, dmVersionString, type DataMatrixProps } from "../../registry/datamatrix";
 import { getObjectStringContent } from "../../lib/variableBinding";
+import { qrBwipOptions } from "../../lib/qrGraphic";
 import {
   barSubRect,
   EAN_TEXT_ZONE_DOTS,
@@ -540,15 +541,8 @@ export function buildBwipOptions(
     }
     case "qrcode": {
       const p = obj.props;
-      opts = {
-        bcid,
-        text: p.content || " ",
-        scale: BWIP_SCALE,
-        eclevel: p.errorCorrection,
-        // BWIPP raises eclevel to fill the version; Zebra keeps it as requested,
-        // so without this the canvas pattern diverges from the print.
-        fixedeclevel: true,
-      };
+      // Shared with the rotated ^GFA emit so screen and print cannot diverge.
+      opts = { ...qrBwipOptions(p.content, p.errorCorrection), scale: BWIP_SCALE };
       break;
     }
     case "datamatrix": {

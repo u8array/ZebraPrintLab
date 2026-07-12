@@ -444,6 +444,8 @@ const he = {
     markerValueUnsafe: 'ערך משתנה שובר קידוד',
     gs1ValueInvalid: 'ערך המשתנה שובר נתוני GS1',
     printerSupportLimited: 'תמיכה מוגבלת',
+    qrRotatedStatic: 'קוד QR מסובב מדפיס ערך סטטי',
+    qrRotatedModel2: 'קוד QR מסובב מדפיס כדגם 2',
   },
 
   printerSettings: {

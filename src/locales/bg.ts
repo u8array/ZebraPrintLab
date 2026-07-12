@@ -444,6 +444,8 @@ const bg = {
     markerValueUnsafe: 'Стойност нарушава кодирането',
     gs1ValueInvalid: 'Стойността на променливата нарушава GS1 данни',
     printerSupportLimited: 'Ограничена поддръжка',
+    qrRotatedStatic: 'Завъртян QR код отпечатва статична стойност',
+    qrRotatedModel2: 'Завъртян QR код отпечатва като Модел 2',
   },
 
   printerSettings: {

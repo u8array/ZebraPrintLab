@@ -444,6 +444,8 @@ const nl = {
     markerValueUnsafe: 'Variabelwaarde breekt codering',
     gs1ValueInvalid: 'Variabelewaarde schendt GS1-gegevens',
     printerSupportLimited: 'Beperkte ondersteuning',
+    qrRotatedStatic: 'Gedraaide QR-code drukt statische waarde',
+    qrRotatedModel2: 'Gedraaide QR-code drukt als model 2',
   },
 
   printerSettings: {
