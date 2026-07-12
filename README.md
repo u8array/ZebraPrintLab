@@ -6,13 +6,15 @@
 [![CI](https://github.com/u8array/ZebraPrintLab/actions/workflows/pr.yml/badge.svg)](https://github.com/u8array/ZebraPrintLab/actions/workflows/pr.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A browser-based visual editor that generates ZPL for Zebra printers.
+A browser-based ZPL editor for Zebra printers: design labels visually, or import existing ZPL, edit it, and re-export it byte-for-byte.
 
-Writing ZPL by hand is tedious: cryptic commands, dot coordinates, no visual feedback until something comes out of the printer. Zebra Print Lab lets you build labels visually instead. Drag elements onto the canvas, tweak them in the properties panel, then copy or download the ZPL. No installation, no ZPL knowledge required.
+Writing ZPL (Zebra Programming Language) by hand is tedious: cryptic commands, dot coordinates, no visual feedback until something comes out of the printer. Zebra Print Lab lets you build labels visually instead. Drag elements onto the canvas, tweak them in the properties panel, then copy or download the ZPL. No installation, no ZPL knowledge required.
+
+Existing ZPL files are a first-class source, not a one-way import: a re-exported label stays byte-for-byte identical except for the objects you actually edited (see [Import guarantees](#import-guarantees)); GS1 and EAN/UPC content is validated field by field.
 
 **[Try it](https://u8array.github.io/ZebraPrintLab/)** · [Report an issue](https://github.com/u8array/ZebraPrintLab/issues)
 
-> **Disclaimer:** This project is not affiliated with, endorsed by, or associated with Zebra Technologies Corp. ZPL (Zebra Programming Language) is a trademark of Zebra Technologies. This is an independent open-source tool.
+> **Disclaimer:** This is an independent open-source tool, not affiliated with, endorsed by, or associated with Zebra Technologies Corp. Zebra is a trademark of Zebra Technologies Corp.; all other trademarks are the property of their respective owners.
 
 ---
 
@@ -66,9 +68,21 @@ The **ZPL output** panel at the bottom shows the generated ZPL. It updates in re
 
 File menu → **Import ZPL**: paste ZPL code directly, or open a `.zpl` file.
 
-> Import round-trips text, barcodes, shapes, images (including printer-stored and compressed graphics), label-header settings, and template fields (`^FN` slots land in the **Variables** tab; `^FE` inline embeds like `^FD#1#-#2#` import as `«name»` markers in the field content). Anything else the parser doesn't recognize is skipped and listed in the import report.
+> Import round-trips text, barcodes, shapes, images (including printer-stored and compressed graphics), label-header settings, and template fields (`^FN` slots land in the **Variables** tab; `^FE` inline embeds like `^FD#1#-#2#` import as `«name»` markers in the field content). Anything else the parser doesn't recognize is listed in the import report; it doesn't appear on the canvas, but it survives in the exported ZPL (see below).
 
-**Lossless re-export:** edit an imported label and export it again, and the parts you didn't touch come back byte-for-byte. Untouched fields, settings, and even commands the editor doesn't model are preserved exactly; only the objects you edit, add, or remove are regenerated. A few constructs (non-default encodings or command-prefix changes, for example) disable safe patching, so the first edit on such a label regenerates it in full rather than per object. Setup or device commands that would re-run when the ZPL is sent again are flagged in the import report.
+### Import guarantees
+
+Edit an imported label and export it again:
+
+- **Preserved:** everything you didn't touch comes back byte-for-byte, including fields, label settings, comments, whitespace, and commands the editor doesn't model. A zero-edit import/export cycle reproduces the file exactly.
+- **Regenerated:** only the objects you edit, add, or delete are re-emitted from the model. The rest of the file is spliced back unchanged.
+- **Full-regeneration fallback:** a few constructs make per-object patching unsafe: `^MU` unit scaling, non-default `^CC`/`^CT`/`^CD` command prefixes, non-UTF-8 `^CI` combined with `^FH`, non-default `^FE` embed delimiters, a bare `^FN` declared outside a field, and a barcode relying on a `^BY` from an earlier field. On such labels the first edit regenerates the whole label; with no edits the export stays byte-for-byte.
+
+Byte capture at import is deliberately conservative: when a field can't be mapped cleanly to a single object, the whole label falls back to model regeneration, which keeps the content but not the exact bytes. The captured bytes are stored in saved `.json` designs; a design from an older app version with an outdated capture format is detected and rebuilt.
+
+### Replay-risk commands
+
+Because unmodeled commands are preserved, printer-configuration commands in an imported file run again every time the exported ZPL is sent: setup and identity commands (clock, locale, encoding, network, printer name and password) and device actions (calibration, diagnostics, reset, pause). The import report flags each one it finds; if you don't want them re-sent with every label, remove them from the source file.
 
 ### Multiple labels (pages)
 
@@ -112,7 +126,7 @@ Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable conte
 
 - Smart alignment and spacing guides
 - Layers panel with reordering
-- Lossless ZPL round-trip: imported ZPL re-exports byte-for-byte, regenerating only the objects you edit and preserving everything else (comments and unmodeled commands included); a few constructs force a full regenerate on the first edit
+- Lossless ZPL round-trip: imported ZPL re-exports byte-for-byte, regenerating only what you edit ([import guarantees](#import-guarantees))
 - Variables: bind text and barcode fields to named defaults that emit as `^FN` slots (or `^FE` inline embeds when one field references multiple variables), round-tripping with printer-side templates
 - CSV batch printing: import a CSV, map columns to Variables, print or export with efficient printer-side data merge (template ships once, each row sends only its overrides)
 - GS1 content builder: assemble GS1 content from Application Identifiers (DataBar Expanded and GS1 DataMatrix), validated per field and against GS1 combination rules
