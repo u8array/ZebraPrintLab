@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useGlobalShortcuts } from "./useGlobalShortcuts";
 import { useLabelStore } from "../store/labelStore";
@@ -11,6 +11,11 @@ function key(code: string, init: KeyboardEventInit = {}) {
 // Regression: bare S/R toggle snap / rotate the view, but with a modifier they
 // must stay inert (Ctrl+S / Ctrl+R belong to the browser, like the G guard).
 describe("useGlobalShortcuts modifier guards", () => {
+  const initialCanvasSettings = useLabelStore.getState().canvasSettings;
+
+  beforeEach(() => {
+    useLabelStore.setState({ canvasSettings: initialCanvasSettings });
+  });
   it("bare S toggles snap; Ctrl+S does not", () => {
     renderHook(() => useGlobalShortcuts());
     const before = useLabelStore.getState().canvasSettings.snapEnabled;
