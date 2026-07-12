@@ -55,7 +55,9 @@ export function objectIdsAtPointForCycle(
     if (o.type !== "box" && o.type !== "ellipse") continue;
     const node = stage.findOne(`#${o.id}`);
     if (!node) continue;
-    const r = node.getClientRect({ relativeTo: stage });
+    // Absolute (container) coords, matching getAllIntersections' pointer
+    // space; relativeTo: stage would drop a stage-level transform.
+    const r = node.getClientRect();
     if (point.x >= r.x && point.x <= r.x + r.width && point.y >= r.y && point.y <= r.y + r.height) {
       out.push(o.id);
     }
