@@ -1,10 +1,11 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useLayoutEffect } from "react";
 import { flushSync } from "react-dom";
 import type Konva from "konva";
 import { dotsToPx, pxToDots } from "../../../lib/coordinates";
 import { blockBoundsDots, blockGlyphAnchorPoint, blockReflowGeometry, tbBoundsDots, tbReflowGeometry, type BlockJustify, type ZplRotation } from "../../../lib/zebraTextLayout";
 import { getCurrentObjects, useLabelStore } from "../../../store/labelStore";
 import {
+  SHAPE_PRIMITIVE_TYPES,
   BARCODE_1D_TYPES,
   STACKED_2D_TYPES,
   getEntry,
@@ -39,7 +40,9 @@ import {
   modelPositionFromRenderedTopLeft,
   renderedTopLeftFromModel,
 } from "../transformPosition";
-import { isBarcode } from "../../../lib/objectBounds";
+import { isBarcode, type BoundingBoxDots } from "../../../lib/objectBounds";
+import { projectMultiResize } from "../../../lib/multiResize";
+import { lineHandlesNodeId, lineRootNodeId } from "../konvaObjectProps";
 import { isAxisSwapped, objectRotation } from "../../../registry/rotation";
 import { getMeasuredSnapshot } from "../measuredBoundsCache";
 import {
@@ -114,6 +117,10 @@ function applyResizeObjectSnap(
   };
 }
 
+/** Invisible rect at the selection's model union; the transformer attaches to
+ *  it for multi-resize so member nodes never stretch live. */
+export const MULTI_RESIZE_PROXY_ID = "multi-resize-proxy";
+
 interface Options {
   transformerRef: React.RefObject<Konva.Transformer | null>;
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -125,6 +132,10 @@ interface Options {
   labelOffsetY: number;
   snap: (dots: number) => number;
   updateObject: (id: string, changes: ObjectChanges) => void;
+  updateObjects: (updates: { id: string; changes: ObjectChanges }[]) => void;
+  /** Model union bbox of the selection when every member is movable; null
+   *  disables multi-resize (locked member, or single selection). */
+  multiResizeBboxDots: BoundingBoxDots | null;
   /** Label rect in stage-screen space, used as a snap target. */
   labelRect: SnapRect;
   /** True when grid-snap is OFF; object-snap during resize mirrors drag. */
@@ -172,6 +183,8 @@ export function useKonvaTransformer({
   labelOffsetY,
   snap,
   updateObject,
+  updateObjects,
+  multiResizeBboxDots,
   labelRect,
   objectSnapEnabled,
   snapBypassRef,
@@ -263,11 +276,31 @@ export function useKonvaTransformer({
     | null
   >(null);
 
+  const multiResizeRef = useRef<{
+    proxy: Konva.Node;
+    bboxDots: BoundingBoxDots;
+    start: { x: number; y: number };
+    nodes: {
+      node: Konva.Node;
+      startX: number;
+      startY: number;
+      anchorPxX: number;
+      anchorPxY: number;
+      scales: boolean;
+      uniform: boolean;
+      hide?: Konva.Node;
+    }[];
+    ids: string[];
+  } | null>(null);
+
   // True while any live reflow (text block, shape, or barcode) owns the drag.
   const anyReflowActive = () =>
     liveReflowRef.current !== null ||
     shapeReflowRef.current !== null ||
     barcodeReflowRef.current !== null;
+
+  // Same indirection as anyReflowActive, for the React Compiler.
+  const multiResizeActive = () => multiResizeRef.current !== null;
 
   // Block resize mode resolved once at drag start (panel mode + Alt). Reused at
   // commit so toggling Alt mid-drag can't make start and end disagree.
@@ -324,12 +357,13 @@ export function useKonvaTransformer({
   // transformer must re-measure even though no object prop changed.
   const blockDragMode = useLabelStore((s) => s.blockDragMode);
 
-  useEffect(() => {
+  // Layout effect: sync before paint or the border flashes for one frame.
+  useLayoutEffect(() => {
     if (!transformerRef.current || !stageRef.current) return;
     // During a live reflow the per-tick store update re-runs this effect;
     // re-attaching (.nodes()) mid-drag aborts the gesture, so skip it. The
     // reflow handler keeps the transformer in sync via forceUpdate().
-    if (anyReflowActive()) return;
+    if (anyReflowActive() || multiResizeActive()) return;
     if (selectedIds.length === 0) {
       transformerRef.current.nodes([]);
       return;
@@ -343,11 +377,24 @@ export function useKonvaTransformer({
         : null;
       transformerRef.current.nodes(node ? [node] : []);
     } else {
-      // Multi-select has no resize/rotate anchors and its frame is drawn from
-      // selectionUnionDots (model bounds) to match the snap borders. Detach the
-      // transformer so it doesn't also draw a disagreeing client-rect frame
-      // (fat diagonals, barcode HRI, etc.).
-      transformerRef.current.nodes([]);
+      // Attach to the proxy at the model union (client rects disagree for
+      // fat diagonals / HRI); synced here, outside any gesture.
+      const proxy = multiResizeBboxDots
+        ? stageRef.current.findOne<Konva.Node>(`#${MULTI_RESIZE_PROXY_ID}`)
+        : null;
+      if (proxy && multiResizeBboxDots) {
+        proxy.setAttrs({
+          x: objectsOffsetX + dotsToPx(multiResizeBboxDots.x, scale, dpmm),
+          y: labelOffsetY + dotsToPx(multiResizeBboxDots.y, scale, dpmm),
+          width: dotsToPx(multiResizeBboxDots.width, scale, dpmm),
+          height: dotsToPx(multiResizeBboxDots.height, scale, dpmm),
+          scaleX: 1,
+          scaleY: 1,
+        });
+        transformerRef.current.nodes([proxy]);
+      } else {
+        transformerRef.current.nodes([]);
+      }
     }
     // Force a re-measure: after commitTransform the node's getClientRect has
     // changed but the transformer caches its bounds from the last interaction.
@@ -367,13 +414,24 @@ export function useKonvaTransformer({
     stageRef,
     transformerRef,
     previewLocks,
+    multiResizeBboxDots?.x,
+    multiResizeBboxDots?.y,
+    multiResizeBboxDots?.width,
+    multiResizeBboxDots?.height,
+    scale,
+    dpmm,
+    objectsOffsetX,
+    labelOffsetY,
   ]);
 
   const singleSelected =
     selectedIds.length === 1
       ? objects.find((o) => o.id === selectedIds[0])
       : undefined;
-  const resizeEnabled = selectedIds.length <= 1 && !singleSelected?.locked;
+  const resizeEnabled =
+    selectedIds.length > 1
+      ? multiResizeBboxDots != null
+      : selectedIds.length === 1 && !singleSelected?.locked;
   const singleType = singleSelected?.type ?? "";
   const typeEntry = getEntry(singleType);
   const uniformScaleDef = typeEntry?.uniformScale;
@@ -389,7 +447,7 @@ export function useKonvaTransformer({
       : !!uniformScaleDef);
   const enabledAnchors: string[] | undefined =
     selectedIds.length > 1
-      ? []
+      ? undefined
       : getEntry(singleType)?.heightLocked
         ? []
         : BARCODE_1D_TYPES.has(singleType)
@@ -421,6 +479,7 @@ export function useKonvaTransformer({
 
   /** Reset all transform-time state. Idempotent; safe to call from any exit path. */
   function cleanupTransformState() {
+    multiResizeRef.current = null;
     transformAnchorRef.current = null;
     transformStartBboxRef.current = null;
     othersSnapshotRef.current = [];
@@ -459,6 +518,49 @@ export function useKonvaTransformer({
   }
 
   const onTransformStart = () => {
+    if (selectedIds.length > 1) {
+      const stage = stageRef.current;
+      const proxy = stage?.findOne<Konva.Node>(`#${MULTI_RESIZE_PROXY_ID}`);
+      if (!stage || !proxy || !multiResizeBboxDots) return;
+      const nodes = selectedIds.flatMap((id) => {
+        const leaf = objects.find((o) => o.id === id);
+        if (!leaf) return [];
+        // Lines are flat: transform their root group so body, hit line and
+        // selection chrome all follow; other types transform their own node.
+        const node = stage.findOne<Konva.Node>(
+          leaf.type === "line" ? `#${lineRootNodeId(id)}` : `#${id}`,
+        );
+        if (!node) return [];
+        // Grips would deform under the group scale; hide for the gesture.
+        const hide = leaf.type === "line" ? stage.findOne<Konva.Node>(`#${lineHandlesNodeId(id)}`) : null;
+        hide?.visible(false);
+        return [
+          {
+            node,
+            startX: node.x(),
+            startY: node.y(),
+            // Commit and live both project the MODEL anchor; render-offset
+            // nodes (^FT bar base, ^BQ shift) would jump by off*(f-1) else.
+            anchorPxX: objectsOffsetX + dotsToPx(leaf.x, scale, dpmm),
+            anchorPxY: labelOffsetY + dotsToPx(leaf.y, scale, dpmm),
+            scales: SHAPE_PRIMITIVE_TYPES.has(leaf.type),
+            // lockAspect commits min(fx, fy); live must match or it snaps back.
+            uniform:
+              leaf.type === "ellipse" &&
+              (leaf.props as { lockAspect?: boolean }).lockAspect === true,
+            hide: hide ?? undefined,
+          },
+        ];
+      });
+      multiResizeRef.current = {
+        proxy,
+        bboxDots: multiResizeBboxDots,
+        start: { x: proxy.x(), y: proxy.y() },
+        nodes,
+        ids: [...selectedIds],
+      };
+      return;
+    }
     const singleId = selectedIds[0];
     if (!singleId || !stageRef.current) return;
     const node = stageRef.current.findOne<Konva.Node>(`#${singleId}`);
@@ -681,6 +783,32 @@ export function useKonvaTransformer({
   // the scale, re-pin the anchored edge, and re-baseline the handles. Keeps
   // glyphs constant and justify correct because the content actually re-renders.
   const onTransform = () => {
+    const mr = multiResizeRef.current;
+    if (mr) {
+      const fx = mr.proxy.scaleX();
+      const fy = mr.proxy.scaleY();
+      const px = mr.proxy.x();
+      const py = mr.proxy.y();
+      for (const n of mr.nodes) {
+        if (n.scales) {
+          // Scaling nodes hold the anchor in their scaled children (line roots
+          // at 0, shape groups at the anchor): the position projects linearly.
+          n.node.position({
+            x: px + (n.startX - mr.start.x) * fx,
+            y: py + (n.startY - mr.start.y) * fy,
+          });
+          const u = Math.min(fx, fy);
+          n.node.scale(n.uniform ? { x: u, y: u } : { x: fx, y: fy });
+        } else {
+          // Anchor projects, the render offset rides along unscaled.
+          n.node.position({
+            x: px + (n.anchorPxX - mr.start.x) * fx + (n.startX - n.anchorPxX),
+            y: py + (n.anchorPxY - mr.start.y) * fy + (n.startY - n.anchorPxY),
+          });
+        }
+      }
+      return;
+    }
     if (selectedIds.length !== 1 || !stageRef.current) return;
     const id = selectedIds[0];
     if (!id) return;
@@ -920,6 +1048,11 @@ export function useKonvaTransformer({
     oldBox: BoundingBox,
     newBox: BoundingBox,
   ): BoundingBox => {
+    // No axis pin / band snap; only the shrink floor, so a union already
+    // thinner than the floor stays resizable on the other axis.
+    if (multiResizeRef.current) {
+      return shrinkingBelowFloor(oldBox, newBox, MIN_RESIZE_BOX_PX) ? oldBox : newBox;
+    }
     if (shrinkingBelowFloor(oldBox, newBox, MIN_RESIZE_BOX_PX)) return oldBox;
     // The text-block reflow re-pins from its own captured edges, so the snap /
     // inactive-edge pin below would fight it; skip entirely.
@@ -1109,6 +1242,77 @@ export function useKonvaTransformer({
         };
       }
       collapseReflowToOneEntry(id, commit);
+      return;
+    }
+    const mr = multiResizeRef.current;
+    if (mr) {
+      const fx = mr.proxy.scaleX();
+      const fy = mr.proxy.scaleY();
+      // Left/top anchors move the proxy origin (the opposite edge is pinned);
+      // capture it before the reset so the commit keeps that translation.
+      const endX = mr.proxy.x();
+      const endY = mr.proxy.y();
+      // Restore pre-gesture transforms; the commit re-render applies the new
+      // model. Line bodies have no x/y props, react-konva keeps live offsets.
+      for (const n of mr.nodes) {
+        n.node.position({ x: n.startX, y: n.startY });
+        if (n.scales) n.node.scale({ x: 1, y: 1 });
+        n.hide?.visible(true);
+      }
+      let committed = false;
+      if (fx !== 1 || fy !== 1) {
+        // Visible leaves only, matching the drag gesture (which skips hidden
+        // members); `objects` also carries the cascaded lock.
+        const leafById = new Map(objects.map((o) => [o.id, o]));
+        const leafs = mr.ids.flatMap((id) => {
+          const l = leafById.get(id);
+          return l ? [l] : [];
+        });
+        const origin = {
+          x: mr.bboxDots.x + pxToDots(endX - mr.start.x, scale, dpmm),
+          y: mr.bboxDots.y + pxToDots(endY - mr.start.y, scale, dpmm),
+        };
+        // Drop no-op entries so a sub-dot jiggle records no undo step.
+        const changes = projectMultiResize(leafs, mr.bboxDots, origin, fx, fy, snap).filter(
+          (c) => {
+            const l = leafById.get(c.id);
+            if (!l) return false;
+            if (c.x !== l.x || c.y !== l.y) return true;
+            const lp = l.props as unknown as Record<string, number>;
+            return !!c.props && Object.entries(c.props).some(([k, v]) => lp[k] !== v);
+          },
+        );
+        if (changes.length > 0) {
+          committed = true;
+          updateObjects(
+            changes.map((c) => ({
+              id: c.id,
+              changes: { x: c.x, y: c.y, ...(c.props ? { props: c.props } : {}) },
+            })),
+          );
+        }
+      }
+      // Committed: park on the end geometry (no flash before the sync effect
+      // re-measures). No commit: restore the start, nothing will re-sync.
+      if (committed) {
+        mr.proxy.setAttrs({
+          scaleX: 1,
+          scaleY: 1,
+          width: mr.proxy.width() * fx,
+          height: mr.proxy.height() * fy,
+        });
+      } else {
+        mr.proxy.setAttrs({
+          scaleX: 1,
+          scaleY: 1,
+          x: mr.start.x,
+          y: mr.start.y,
+        });
+      }
+      // A mid-gesture delete destroyed the proxy; do not hold ghost anchors.
+      if (!mr.proxy.getStage()) transformerRef.current?.nodes([]);
+      transformerRef.current?.forceUpdate();
+      cleanupTransformState();
       return;
     }
     if (selectedIds.length !== 1 || !selectedIds[0] || !stageRef.current) {

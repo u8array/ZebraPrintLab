@@ -50,7 +50,7 @@ import { useColorScheme } from "../../hooks/useColorScheme";
 import { useT } from "../../hooks/useT";
 import { useCanvasPanZoom } from "./hooks/useCanvasPanZoom";
 import { useCanvasLasso } from "./hooks/useCanvasLasso";
-import { useKonvaTransformer } from "./hooks/useKonvaTransformer";
+import { useKonvaTransformer, MULTI_RESIZE_PROXY_ID } from "./hooks/useKonvaTransformer";
 import { useKonvaDragController } from "./hooks/useKonvaDragController";
 import { useSnapBypassRef } from "./hooks/useSnapBypassRef";
 import { PaginationControl } from "./PaginationControl";
@@ -355,6 +355,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       if (isEditableTarget(e.target as HTMLElement)) return;
       // Preview is a frozen snapshot; editing would drift the comparison.
       if (selectPreviewLocksEditor(useLabelStore.getState())) return;
+      // Deleting mid-resize would destroy the nodes under the active gesture.
+      if (transformActiveRef.current) return;
       const { selectedIds: ids } = useLabelStore.getState();
       if (ids.length === 0) return;
       e.preventDefault();
@@ -558,6 +560,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // part (follows the drag) and a static part (locked, stays put) so the chrome
   // reflects the real union, not a rigid translate.
   const selectionFrameRef = useRef<Konva.Rect>(null);
+  const multiResizeProxyRef = useRef<Konva.Rect>(null);
   // Movable group sub-outlines share one drag offset.
   const subOutlineGroupRef = useRef<Konva.Group>(null);
   const isMultiFrame = attachableIds.length > 1;
@@ -586,7 +589,14 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   // (single drags too), so compute them for any selection.
   const hasSelection = visibleSelIds.length > 0;
   const selectionFrameBase = isMultiFrame ? toFramePx(selectionUnionDots(objects, visibleSelIds, frameCtx)) : null;
-  const movableFrameBase = hasSelection ? toFramePx(selectionUnionDots(objects, movableSelIds, frameCtx)) : null;
+  const movableUnionDots = hasSelection ? selectionUnionDots(objects, movableSelIds, frameCtx) : null;
+  // Needs >1 visible movable leaf (attachableIds counts hidden ones) and no
+  // locked member; either would break the projected union.
+  const multiResizeBboxDots =
+    movableSelIds.length > 1 && staticSelIds.length === 0 && !previewLocks
+      ? movableUnionDots
+      : null;
+  const movableFrameBase = toFramePx(movableUnionDots);
   const staticFrameBase = hasSelection ? toFramePx(selectionUnionDots(objects, staticSelIds, frameCtx)) : null;
   // Preflight runs over the EXPORTABLE leaves (includeInExport), not the visible
   // ones, so a hidden-but-exported object is still warned and a visible-but-not-
@@ -720,6 +730,11 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       if (!live) return;
       selectionFrameRef.current?.position({ x: live.x, y: live.y });
       selectionFrameRef.current?.size({ width: live.width, height: live.height });
+      // Proxy follows the drag so the transformer chrome tracks live (the
+      // controller already forceUpdates the transformer each tick).
+      if (multiResizeBboxDots && moved) {
+        multiResizeProxyRef.current?.position({ x: moved.x, y: moved.y });
+      }
       // Movable sub-outlines follow the drag (reset to 0 on end).
       subOutlineGroupRef.current?.position({ x: dx, y: dy });
       // Shared clamp/flip policy; measure the bar lazily since a drag that selects
@@ -895,6 +910,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     labelOffsetY,
     snap,
     updateObject,
+    updateObjects,
+    multiResizeBboxDots,
     labelRect: transformerSnapLabelRect,
     objectSnapEnabled: smartSnapActive,
     snapBypassRef,
@@ -1583,7 +1600,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
 
               {/* Multi-select/group frame from model bounds (matches snap borders);
                   positioned imperatively in useLayoutEffect + the drag onDelta. */}
-              {!previewLocks && selectionFrameBase && (
+              {!previewLocks && selectionFrameBase && !multiResizeBboxDots && (
                 <Rect
                   ref={selectionFrameRef}
                   name={CAPTURE_CHROME}
@@ -1591,6 +1608,18 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
                   strokeWidth={1.5}
                   dash={isMultiSelection || allSelectedLocked ? [6, 4] : undefined}
                   listening={false}
+                />
+              )}
+
+              {/* Multi-resize proxy; geometry synced by the transformer hook. */}
+              {!previewLocks && multiResizeBboxDots && (
+                <Rect
+                  ref={multiResizeProxyRef}
+                  id={MULTI_RESIZE_PROXY_ID}
+                  name={CAPTURE_CHROME}
+                  listening={false}
+                  fillEnabled={false}
+                  strokeEnabled={false}
                 />
               )}
 
@@ -1654,6 +1683,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
             {!previewLocks && (
               <Transformer
                 ref={transformerRef}
+                borderDash={isMultiSelection && multiResizeBboxDots ? [6, 4] : undefined}
                 rotateEnabled={rotateEnabled}
                 resizeEnabled={resizeEnabled}
                 enabledAnchors={enabledAnchors}
