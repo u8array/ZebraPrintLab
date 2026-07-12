@@ -1,9 +1,9 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "ZebraPrintLab",
+  "productName": "ZPLab",
   "version": "../package.json",
-  "mainBinaryName": "ZebraPrintLab",
-  "identifier": "de.u8array.zebraprintlab",
+  "mainBinaryName": "ZPLab",
+  "identifier": "de.u8array.zplab",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "ZebraPrintLab",
+        "title": "ZPLab",
         "width": 1280,
         "height": 832,
         "minWidth": 900,
@@ -57,13 +57,13 @@
     "linux": {
       "deb": {
         "files": {
-          "/usr/lib/udev/rules.d/70-zebraprintlab.rules": "packaging/udev/70-zebraprintlab.rules"
+          "/usr/lib/udev/rules.d/70-zplab.rules": "packaging/udev/70-zplab.rules"
         },
         "postInstallScript": "packaging/linux/postinst"
       },
       "rpm": {
         "files": {
-          "/usr/lib/udev/rules.d/70-zebraprintlab.rules": "packaging/udev/70-zebraprintlab.rules"
+          "/usr/lib/udev/rules.d/70-zplab.rules": "packaging/udev/70-zplab.rules"
         },
         "postInstallScript": "packaging/linux/postinst"
       }

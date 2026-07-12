@@ -252,7 +252,7 @@ export function AppShell() {
               onClick={() => selectObject(null)}
               className="text-accent font-semibold tracking-tight text-sm hover:opacity-75 transition-opacity"
             >
-              Zebra Print Lab
+              ZPLab
             </button>
             <span className="text-border-2 select-none">·</span>
             <span className="font-mono text-xs text-muted">

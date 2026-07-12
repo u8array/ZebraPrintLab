@@ -88,7 +88,7 @@ jobs:
           if [ -z "$ID" ]; then
             ID=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
               -f tag_name="$TAG" \
-              -f name="ZebraPrintLab $TAG" \
+              -f name="ZPLab $TAG" \
               -f body="See the assets to download this version and install." \
               -F draft=true --jq .id)
           fi
@@ -161,7 +161,7 @@ jobs:
       - name: zip browser build
         run: |
           cd dist
-          zip -r "../ZebraPrintLab_${{ needs.gates.outputs.version }}_web.zip" .
+          zip -r "../ZPLab_${{ needs.gates.outputs.version }}_web.zip" .
 
       - name: upload to draft release
         env:
@@ -169,4 +169,4 @@ jobs:
           GH_REPO: ${{ github.repository }}
         # gh resolves the tag to the draft release even though the git ref
         # does not exist until the release is published
-        run: gh release upload "v${{ needs.gates.outputs.version }}" "ZebraPrintLab_${{ needs.gates.outputs.version }}_web.zip" --clobber
+        run: gh release upload "v${{ needs.gates.outputs.version }}" "ZPLab_${{ needs.gates.outputs.version }}_web.zip" --clobber

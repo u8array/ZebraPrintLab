@@ -8,7 +8,7 @@ use crate::transport::blocking;
 
 /// Keychain service name; the credential name (e.g. "labelary-api-key") is
 /// the account under it.
-const SERVICE: &str = "ZebraPrintLab";
+const SERVICE: &str = "ZPLab";
 
 fn entry(name: &str) -> Result<Entry, String> {
   Entry::new(SERVICE, name).map_err(|e| e.to_string())

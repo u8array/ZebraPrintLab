@@ -1,4 +1,4 @@
-# ZebraPrintLab web build (self-hosted)
+# ZPLab web build (self-hosted)
 
 Static single-page app. Serve this folder with any web server; no backend required.
 
