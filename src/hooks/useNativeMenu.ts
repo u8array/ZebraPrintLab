@@ -247,7 +247,7 @@ async function rebuildMenu(structureKey: string, d: MenuData, gen: number): Prom
     // a leading app submenu (standard items + Quit) or File gets swallowed.
     const appSub = isMacDesktop
       ? [track(await Submenu.new({
-          text: 'ZebraPrintLab',
+          text: 'ZPLab',
           items: [
             track(await PredefinedMenuItem.new({ item: { About: null } })),
             track(await PredefinedMenuItem.new({ item: 'Separator' })),
