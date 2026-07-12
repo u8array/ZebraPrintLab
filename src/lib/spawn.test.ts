@@ -25,6 +25,12 @@ describe('spawnRotationOverride', () => {
     expect(spawnRotationOverride('line', undefined, 90)).toBeUndefined();
   });
 
+  // ^BV has no working ZPL orientation and no graphic-emit fallback, so the
+  // props carry no rotation and the spawn override must skip it.
+  it('skips maxicode (not rotatable in ZPL)', () => {
+    expect(spawnRotationOverride('maxicode', undefined, 90)).toBeUndefined();
+  });
+
   it('yields to an explicit rotation override', () => {
     expect(spawnRotationOverride('text', { rotation: 'R' }, 90)).toBeUndefined();
   });

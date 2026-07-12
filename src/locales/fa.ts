@@ -444,6 +444,8 @@ const fa = {
     markerValueUnsafe: 'مقدار متغیر کدگذاری را می‌شکند',
     gs1ValueInvalid: 'مقدار متغیر داده‌های GS1 را می‌شکند',
     printerSupportLimited: 'پشتیبانی محدود',
+    qrRotatedStatic: 'کد QR چرخانده‌شده مقدار ثابت چاپ می‌کند',
+    qrRotatedModel2: 'کد QR چرخانده‌شده به‌صورت مدل ۲ چاپ می‌کند',
   },
 
   printerSettings: {

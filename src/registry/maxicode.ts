@@ -1,6 +1,5 @@
 import type { ObjectTypeCore } from "../types/ObjectType";
 import { fieldPos, fdFieldFor } from "./zplHelpers";
-import { type ZplRotation } from "./rotation";
 
 // ISO/IEC 16023 fixed physical size (28.14 x 26.91 mm); no magnification.
 // 2=US SCM, 3=intl SCM, 4=standard, 5=full EEC, 6=reader programming.
@@ -10,10 +9,10 @@ export const ALL_MODES = [2, 3, 4, 5, 6] as const;
 /** Mode 4 = standard symbol, only mode without UPS-domain SCM requirement. */
 const MAXICODE_DEFAULT_MODE = 4 as const;
 
+// No rotation prop: ^BV orientation slot is a firmware no-op (^BD has none).
 export interface MaxicodeProps {
   content: string;
   mode: 2 | 3 | 4 | 5 | 6;
-  rotation: ZplRotation;
 }
 
 export const maxicode: ObjectTypeCore<MaxicodeProps> = {
@@ -25,7 +24,6 @@ export const maxicode: ObjectTypeCore<MaxicodeProps> = {
   defaultProps: {
     content: '',
     mode: MAXICODE_DEFAULT_MODE,
-    rotation: "N",
   },
   placeholderContent: '1234567890',
   // mm so palette resolves at active dpmm; heightLocked disables resize.
@@ -37,7 +35,7 @@ export const maxicode: ObjectTypeCore<MaxicodeProps> = {
     // ^BV; structured-append slots fixed at (1,1) since unexposed.
     return [
       fieldPos(obj),
-      `^BV${p.rotation},${p.mode},1,1`,
+      `^BVN,${p.mode},1,1`,
       fdFieldFor(p.content, ctx),
     ].join("");
   },

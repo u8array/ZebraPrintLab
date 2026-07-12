@@ -2,6 +2,9 @@ import type { ObjectTypeCore } from '../types/ObjectType';
 import type { LabelObjectBase } from '../types/LabelObject';
 import { fieldPos, fdFieldFor } from './zplHelpers';
 import { moduleTooSmallPreflight } from '../lib/barcodeScannability';
+import { hasTemplateMarkers } from '../lib/fnTemplate';
+import { formatQrSidecarComment, qrRotatedGfaCached } from '../lib/qrGraphic';
+import { clockCtxFromLabel, resolveContentPreview } from '../lib/variableBinding';
 import { type ZplRotation } from './rotation';
 
 /** ZPL prefixes the QR payload with `{ec}A,` inside ^FD. Shared by toZPL and
@@ -20,6 +23,8 @@ export interface QrCodeProps {
   errorCorrection: 'H' | 'Q' | 'M' | 'L';
   /** ^BQ b: 1 = original, 2 = enhanced (recommended, default). */
   model: 1 | 2;
+  /** ^BQ can't rotate (firmware no-op), so a non-N rotation emits a pre-rotated
+   *  ^GFA graphic + sidecar. */
   rotation: ZplRotation;
 }
 
@@ -42,18 +47,45 @@ export const qrcode: ObjectTypeCore<QrCodeProps> = {
 
   uniformScaleProp: { name: 'magnification', min: MAGNIFICATION_MIN, max: MAGNIFICATION_MAX },
 
-  preflight: moduleTooSmallPreflight<QrCodeProps>('magnification'),
+  preflight: (obj, ctx) => [
+    ...moduleTooSmallPreflight<QrCodeProps>('magnification')(obj, ctx),
+    // A ^GFA has no ^FN, so a rotated QR freezes dynamic content (markers or
+    // serial) at its export-time value.
+    ...(obj.props.rotation !== 'N' &&
+    (hasTemplateMarkers(obj.props.content) || 'serial' in obj.props)
+      ? [{ kind: 'qrRotatedStatic' as const }]
+      : []),
+    // The graphic encoder only produces Model 2 symbols.
+    ...(obj.props.rotation !== 'N' && obj.props.model === 1
+      ? [{ kind: 'qrRotatedModel2' as const }]
+      : []),
+  ],
 
   fdTransform: qrFdTransform,
 
   toZPL: (obj, ctx) => {
     const p = obj.props;
+    // ^BQ can't rotate: emit the exact matrix as a pre-rotated ^GFA. It bakes the
+    // preview value (no ^FN, so static, hence qrRotatedStatic); the sidecar keeps
+    // the raw content for reimport; fieldPos keeps the barcode anchor. Empty or
+    // unencodable content falls through to plain ^BQ (payload stays empty there).
+    if (p.rotation !== 'N') {
+      const resolved = resolveContentPreview(
+        p.content,
+        ctx?.variables ?? [],
+        ctx ? clockCtxFromLabel(ctx.label) : undefined,
+      );
+      const g = resolved ? qrRotatedGfaCached(p, { ...p, content: resolved }) : null;
+      if (g) {
+        return [formatQrSidecarComment(p), fieldPos(obj), g.gfa, '^FS'].join('');
+      }
+    }
     // Prefix passed as the fdFieldFor transform (not baked into content) so it
     // composes with the binding: single-bind default / template / CSV override
     // all get the prefix instead of the payload being emitted raw.
     return [
       fieldPos(obj),
-      `^BQ${p.rotation},${p.model},${p.magnification}`,
+      `^BQN,${p.model},${p.magnification}`,
       fdFieldFor(p.content, ctx, qrFdTransform(obj)),
     ].join('');
   },

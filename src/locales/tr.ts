@@ -444,6 +444,8 @@ const tr = {
     markerValueUnsafe: 'Değişken değeri kodlamayı bozuyor',
     gs1ValueInvalid: 'Değişken değeri GS1 verilerini bozuyor',
     printerSupportLimited: 'Sınırlı destek',
+    qrRotatedStatic: 'Döndürülmüş QR Kodu statik değer basar',
+    qrRotatedModel2: 'Döndürülmüş QR Kodu Model 2 olarak basar',
   },
 
   printerSettings: {

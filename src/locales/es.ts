@@ -444,6 +444,8 @@ const es = {
     markerValueUnsafe: 'Valor rompe la codificación',
     gs1ValueInvalid: 'El valor de variable rompe los datos GS1',
     printerSupportLimited: 'Soporte limitado',
+    qrRotatedStatic: 'Código QR rotado imprime un valor estático',
+    qrRotatedModel2: 'Código QR rotado imprime como Modelo 2',
   },
 
   printerSettings: {

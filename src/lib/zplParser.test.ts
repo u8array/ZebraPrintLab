@@ -482,13 +482,66 @@ describe('parseZPL — barcode rotation', () => {
     ['^XA^BY2^FO0,0^BCR,100,Y,N,N^FD123^FS^XZ', 'R'],
     ['^XA^BY2^FO0,0^BCI,100,Y,N,N^FD123^FS^XZ', 'I'],
     ['^XA^BY2^FO0,0^BCB,100,Y,N,N^FD123^FS^XZ', 'B'],
-    ['^XA^FO0,0^BQR,2,4^FDQA,X^FS^XZ', 'R'],
     ['^XA^FO0,0^BXB,5,200^FDX^FS^XZ', 'B'],
     ['^XA^FO0,0^B7I,4,0,0,,,^FDX^FS^XZ', 'I'],
     ['^XA^FO0,0^B0R,4,N,N,N,N^FDX^FS^XZ', 'R'],
   ])('reads orientation from %s', (zpl, expected) => {
     const { objects } = parseZPL(zpl, 8);
     expect((props(objects[0]) as { rotation?: string }).rotation).toBe(expected);
+  });
+
+  // ^BQ's orientation slot is a firmware no-op; the parser pins it to N (a
+  // rotated QR arrives as ^GFA + sidecar instead).
+  it('canonicalizes the decorative ^BQ orientation slot to N', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BQR,2,4^FDQA,X^FS^XZ', 8);
+    const obj = objects[0];
+    expect((props(obj) as { rotation?: string }).rotation).toBe('N');
+  });
+
+  // The generator prefixes obj.comment as its own ^FX line; the sidecar must
+  // still be found (and the user comment kept) or the QR degrades to an image.
+  it('keeps a rotated QR and its comment when a user comment precedes the sidecar', () => {
+    const def = ObjectRegistry['qrcode'];
+    const body = def!.toZPL({
+      id: 'q', type: 'qrcode', x: 40, y: 60, rotation: 0,
+      props: { content: 'X', magnification: 4, errorCorrection: 'Q', model: 2, rotation: 'R' },
+    } as never);
+    const { objects } = parseZPL(`^XA^FXmy note
+${body}^XZ`, 8);
+    expect(objects[0]?.type).toBe('qrcode');
+    expect(objects[0]?.comment).toBe('my note');
+  });
+
+  // Emit and reimport share the barcode anchor convention, so a ^FT rotated
+  // QR must round-trip its raw anchor (no ftTopLeft/height re-mapping).
+  it('round-trips a rotated QR under ^FT without anchor drift', () => {
+    const def = ObjectRegistry['qrcode'];
+    const body = def!.toZPL({
+      id: 'q', type: 'qrcode', x: 40, y: 160, rotation: 0, positionType: 'FT',
+      props: { content: 'X', magnification: 4, errorCorrection: 'Q', model: 2, rotation: 'R' },
+    } as never);
+    const { objects } = parseZPL(`^XA${body}^XZ`, 8);
+    expect(objects[0]?.type).toBe('qrcode');
+    expect(objects[0]?.positionType).toBe('FT');
+    expect(objects[0]?.x).toBe(40);
+    expect(objects[0]?.y).toBe(160);
+  });
+
+  it('reconstructs a rotated QR from the graphic sidecar', () => {
+    const def = ObjectRegistry['qrcode'];
+    const body = def!.toZPL({
+      id: 'q', type: 'qrcode', x: 40, y: 60, rotation: 0,
+      props: { content: 'https://x.de', magnification: 5, errorCorrection: 'M', model: 2, rotation: 'B' },
+    } as never);
+    const { objects } = parseZPL(`^XA${body}^XZ`, 8);
+    expect(objects).toHaveLength(1);
+    const obj = objects[0];
+    expect(obj?.type).toBe('qrcode');
+    expect(obj?.x).toBe(40);
+    expect(obj?.y).toBe(60);
+    expect(props(obj)).toMatchObject({
+      content: 'https://x.de', magnification: 5, errorCorrection: 'M', model: 2, rotation: 'B',
+    });
   });
 
   it('defaults to N when orientation is missing or unrecognised', () => {

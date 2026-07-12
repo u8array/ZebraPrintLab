@@ -21,8 +21,7 @@ export const BOUNDS_ONLY_TESTS: ReadonlySet<string> = new Set([
   "barcode_gs1databar_stacked_omni",
   "barcode_gs1databar_limited",
   "barcode_gs1databar_expanded",
-  // Encoder discrepancies persist through rotation (QR mask choice shifts).
-  "barcode_qr_rot_R",
+  // Encoder discrepancies persist through rotation.
   "barcode_datamatrix_rot_R",
   // PDF417 is pixel-exact for short content, but longer payloads expose
   // encoder freedom (text sub-mode switching, padding/ECC arrangement):

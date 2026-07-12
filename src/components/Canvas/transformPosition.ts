@@ -1,6 +1,6 @@
 import type { LeafObject } from "../../registry";
 import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET } from "../../lib/bwipConstants";
-import { barcodeFtAnchorOffset, isBarcode } from "../../lib/objectBounds";
+import { barcodeFtAnchorOffset, isBarcode, qrPrintsAsGraphic } from "../../lib/objectBounds";
 import { isAxisSwapped, objectRotation, type ZplRotation } from "../../registry/rotation";
 import { getMeasuredSnapshot } from "./measuredBoundsCache";
 
@@ -26,9 +26,14 @@ function ftBarcodeRenderDelta(
   qrMagnification?: number,
 ): { x: number; y: number } {
   const { barLeft, barTop } = cacheBar(obj);
-  const off = barcodeFtAnchorOffset(objectRotation(obj.props), uprightW, uprightH);
+  const graphicQr = qrPrintsAsGraphic(obj);
+  const off = barcodeFtAnchorOffset(
+    graphicQr ? "N" : objectRotation(obj.props),
+    uprightW,
+    uprightH,
+  );
   const qrShift =
-    obj.type === "qrcode"
+    obj.type === "qrcode" && !graphicQr
       ? QR_FT_MODULE_OFFSET *
         (qrMagnification ?? (obj.props as { magnification: number }).magnification)
       : 0;
@@ -67,7 +72,7 @@ export function modelPositionFromRenderedTopLeft(
   committedUprightH?: number,
   committedMagnification?: number,
 ): { x: number; y: number } {
-  if (obj.type === "qrcode" && obj.positionType !== "FT") {
+  if (obj.type === "qrcode" && obj.positionType !== "FT" && !qrPrintsAsGraphic(obj)) {
     return { x: renderedXDots, y: renderedYDots - QR_FO_Y_OFFSET_DOTS };
   }
   if (isFtBarcode(obj)) {
@@ -83,7 +88,7 @@ export function renderedTopLeftFromModel(obj: LeafObject): {
   x: number;
   y: number;
 } {
-  if (obj.type === "qrcode" && obj.positionType !== "FT") {
+  if (obj.type === "qrcode" && obj.positionType !== "FT" && !qrPrintsAsGraphic(obj)) {
     return { x: obj.x, y: obj.y + QR_FO_Y_OFFSET_DOTS };
   }
   if (isFtBarcode(obj)) {

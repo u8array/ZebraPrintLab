@@ -444,6 +444,8 @@ const ro = {
     markerValueUnsafe: 'Valoarea variabilei strică codificarea',
     gs1ValueInvalid: 'Valoarea variabilei încalcă datele GS1',
     printerSupportLimited: 'Suport limitat',
+    qrRotatedStatic: 'Codul QR rotit imprimă o valoare statică',
+    qrRotatedModel2: 'Codul QR rotit imprimă ca Modelul 2',
   },
 
   printerSettings: {

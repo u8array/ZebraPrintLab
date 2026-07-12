@@ -444,6 +444,8 @@ const zhHans = {
     markerValueUnsafe: '变量值破坏编码',
     gs1ValueInvalid: '变量值违反GS1数据',
     printerSupportLimited: '支持有限',
+    qrRotatedStatic: '旋转的二维码打印静态值',
+    qrRotatedModel2: '旋转的二维码以型号2打印',
   },
 
   printerSettings: {

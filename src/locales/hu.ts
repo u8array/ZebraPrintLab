@@ -444,6 +444,8 @@ const hu = {
     markerValueUnsafe: 'Változóérték megtöri a kódolást',
     gs1ValueInvalid: 'A változó értéke sérti a GS1 adatokat',
     printerSupportLimited: 'Korlátozott támogatás',
+    qrRotatedStatic: 'Forgatott QR-kód statikus értéket nyomtat',
+    qrRotatedModel2: 'Forgatott QR-kód 2. modellként nyomtat',
   },
 
   printerSettings: {

@@ -18,7 +18,9 @@ export type PreflightKind =
   | 'markerValueUnsafe'
   | 'gs1ValueInvalid'
   | 'emptyContent'
-  | 'printerSupportLimited';
+  | 'printerSupportLimited'
+  | 'qrRotatedStatic'
+  | 'qrRotatedModel2';
 
 export interface PreflightFinding {
   objectId: string;
@@ -57,6 +59,12 @@ export const PREFLIGHT_SEVERITY: Record<PreflightKind, PreflightSeverity> = {
   // A legacy/niche symbology (Code 49, TLC39) many printers, especially
   // entry-level, do not implement; the ZPL is valid but may print nothing.
   printerSupportLimited: 'warning',
+  // A rotated QR prints as a static graphic: variable/serial values are baked
+  // at export, the printer no longer substitutes them per label.
+  qrRotatedStatic: 'warning',
+  // The graphic encoder only produces Model 2 symbols, so a rotated Model 1
+  // QR prints as Model 2 (legacy scanners may reject it).
+  qrRotatedModel2: 'warning',
 };
 
 /** What a per-type `preflight` producer receives. Minimal on purpose (the

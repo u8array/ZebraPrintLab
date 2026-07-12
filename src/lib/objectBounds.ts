@@ -87,6 +87,12 @@ function singleLineEstimate(
   return rotatedFootprint(width, fontHeight, rotation);
 }
 
+/** True when a QR emits as a rotated ^GFA (no ^BQ firmware shifts, plain
+ *  bottom-left anchor) rather than a ^BQ barcode. */
+export function qrPrintsAsGraphic(obj: { type: string; props: object }): boolean {
+  return obj.type === "qrcode" && objectRotation(obj.props) !== "N";
+}
+
 /** Visual-top-left offset of a ^FT barcode from its typeset anchor (bar base,
  *  left edge), per rotation, using the upright bar-rect size. The ^FT anchor
  *  rotates with the field, so R/I/B differ from N. Mirrors the verified ^FO
@@ -136,18 +142,21 @@ function barcodeTopLeft(
     // Pre-publish (no measured dims) the width-dependent I/B anchors fall back to
     // the same footprint width the bbox uses, so the returned box stays self-
     // consistent (else x is offset as if width 0 while width = the fallback).
+    const graphicQr = qrPrintsAsGraphic(obj);
     const off = barcodeFtAnchorOffset(
-      objectRotation(obj.props),
+      graphicQr ? "N" : objectRotation(obj.props),
       measured?.uprightBarWDots ?? fallbackWidth,
       upH,
     );
     const qrShift =
-      obj.type === "qrcode"
+      obj.type === "qrcode" && !graphicQr
         ? QR_FT_MODULE_OFFSET * (obj.props as { magnification: number }).magnification
         : 0;
     return { x: obj.x + off.x - barLeft, y: obj.y + off.y - qrShift - barTop };
   }
-  if (obj.type === "qrcode") return { x: obj.x - barLeft, y: obj.y + QR_FO_Y_OFFSET_DOTS - barTop };
+  if (obj.type === "qrcode" && !qrPrintsAsGraphic(obj)) {
+    return { x: obj.x - barLeft, y: obj.y + QR_FO_Y_OFFSET_DOTS - barTop };
+  }
   return { x: obj.x - barLeft, y: obj.y - barTop };
 }
 

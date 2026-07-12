@@ -444,6 +444,8 @@ const ja = {
     markerValueUnsafe: '変数値がエンコードを破損',
     gs1ValueInvalid: '変数値がGS1データを破損',
     printerSupportLimited: '一部非対応',
+    qrRotatedStatic: '回転したQRコードは固定値を印刷',
+    qrRotatedModel2: '回転したQRコードはモデル2として印刷',
   },
 
   printerSettings: {

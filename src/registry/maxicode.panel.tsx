@@ -2,7 +2,6 @@ import type { ObjectTypeUi } from "./panelTypes";
 import { useT } from "../hooks/useT";
 import { useLabelStore } from "../store/labelStore";
 import { validateMaxicodeBwip } from "../components/Canvas/bwipHelpers";
-import { RotationSelect } from "../components/Properties/RotationSelect";
 import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
 import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
 import { FieldLabel } from "../components/Properties/ZplCmd";
@@ -53,7 +52,6 @@ export const maxicodePanel: ObjectTypeUi<MaxicodeProps> = {
             )}
           </div>
 
-          <RotationSelect value={p.rotation} onChange={(rotation) => onChange({ rotation })} zplCmd="^BV" />
         </SectionCard>
       </>
     );

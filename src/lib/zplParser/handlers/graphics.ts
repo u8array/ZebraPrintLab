@@ -6,6 +6,8 @@ import { loadFontBytesSync } from "../../fontCache";
 import { formatStoragePath, parseStoragePath } from "../../storagePath";
 import { getPosType, pushBrowserLimit, type ParserState } from "../context";
 import { decodeGraphicToImage } from "../decoders/graphic";
+import { extractQrSidecar } from "../../qrGraphic";
+import type { QrCodeProps } from "../../../registry/qrcode";
 import { dotsFor, ftTopLeft, int, makeObj, readColor, readRotation } from "../helpers";
 import type { Handler } from "../types";
 
@@ -245,6 +247,30 @@ export function createGraphicsHandlers(
         return;
       }
       if (!gfImage.crcOk) s.result.partialCmds.add("^GF");
+      const gfComment = takeComment();
+      // Rotated-QR sidecar: rebuild the QR object, not an image. The emit anchors
+      // via fieldPos, so keep the raw field coords, not pushGraphic's ftTopLeft.
+      const sidecar = gfComment ? extractQrSidecar(gfComment) : null;
+      if (sidecar) {
+        const { qr, rest } = sidecar;
+        const obj = makeObj(
+          "qrcode",
+          s.field.x,
+          s.field.y,
+          {
+            content: qr.content,
+            magnification: qr.magnification,
+            errorCorrection: qr.errorCorrection,
+            model: qr.model,
+            rotation: qr.rotation,
+          } satisfies QrCodeProps,
+          getPosType(s.field),
+          rest,
+        );
+        if (s.field.justify === "R") obj.fieldJustify = "R";
+        s.result.objects.push(obj);
+        return;
+      }
       pushGraphic(
         "image",
         gfImage.widthDots,
@@ -256,7 +282,7 @@ export function createGraphicsHandlers(
           threshold: 128,
           _gfaCache: gfImage.gfaCache,
         } satisfies ImageProps,
-        takeComment(),
+        gfComment,
       );
     },
     GE(p) {

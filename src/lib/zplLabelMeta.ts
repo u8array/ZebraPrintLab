@@ -20,26 +20,35 @@ export interface LabelMeta {
 const isMm = (v: unknown): v is number =>
   typeof v === "number" && Number.isFinite(v) && v >= MM_MIN && v <= MM_MAX;
 
+/** Shared ZPLLAB envelope (label meta, QR props). Body must be free of ^/~
+ *  or the ^FX comment terminates mid-payload. */
+export function formatSidecarComment(body: string): string {
+  return `^FX${LABEL_META_PREFIX}${body}^FS`;
+}
+
+/** Sidecar payload, or null for a foreign comment. */
+export function sidecarBody(commentBody: string): string | null {
+  const trimmed = commentBody.trim();
+  return trimmed.startsWith(LABEL_META_PREFIX) ? trimmed.slice(LABEL_META_PREFIX.length) : null;
+}
+
 /** The leading sidecar line. Numbers only, no `^`/`~`, so it is a valid ^FX
  *  comment terminated by ^FS (verified against the ZPL spec and Labelary). */
 export function formatLabelMetaComment(meta: LabelMeta): string {
-  const body = JSON.stringify({
-    dpmm: meta.dpmm,
-    wMm: meta.widthMm,
-    hMm: meta.heightMm,
-  });
-  return `^FX${LABEL_META_PREFIX}${body}^FS`;
+  return formatSidecarComment(
+    JSON.stringify({ dpmm: meta.dpmm, wMm: meta.widthMm, hMm: meta.heightMm }),
+  );
 }
 
 /** Parse a ^FX comment body (text after `^FX`) into validated label meta, or
  *  null if it is not our sentinel or any field is out of range. Defensive
  *  against foreign comments and corrupt payloads. */
 export function parseLabelMetaComment(commentBody: string): LabelMeta | null {
-  const trimmed = commentBody.trim();
-  if (!trimmed.startsWith(LABEL_META_PREFIX)) return null;
+  const body = sidecarBody(commentBody);
+  if (body === null) return null;
   let parsed: unknown;
   try {
-    parsed = JSON.parse(trimmed.slice(LABEL_META_PREFIX.length));
+    parsed = JSON.parse(body);
   } catch {
     return null;
   }

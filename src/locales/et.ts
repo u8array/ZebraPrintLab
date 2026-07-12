@@ -444,6 +444,8 @@ const et = {
     markerValueUnsafe: 'Muutuja väärtus rikub kodeeringut',
     gs1ValueInvalid: 'Muutuja väärtus rikub GS1 andmeid',
     printerSupportLimited: 'Piiratud tugi',
+    qrRotatedStatic: 'Pööratud QR-kood trükib staatilise väärtuse',
+    qrRotatedModel2: 'Pööratud QR-kood trükib mudelina 2',
   },
 
   printerSettings: {

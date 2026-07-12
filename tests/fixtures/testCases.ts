@@ -297,12 +297,6 @@ export const testCases: TestCase[] = [
     image_ref: "barcode_code128_rot_B.png",
   },
   {
-    id: "barcode_qr_rot_R",
-    zpl_input: "^XA^FO100,100^BQR,2,4^FDQA,Hello World^FS^XZ",
-    expected_bounds: { x: 100, y: 110, width: 84, height: 84 },
-    image_ref: "barcode_qr_rot_R.png",
-  },
-  {
     id: "barcode_datamatrix_rot_R",
     zpl_input: "^XA^FO100,100^BXR,5,200^FDDataMatrixTest^FS^XZ",
     expected_bounds: { x: 100, y: 100, width: 90, height: 90 },

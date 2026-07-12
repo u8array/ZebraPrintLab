@@ -300,7 +300,6 @@ describe('barcode rotation in ZPL output', () => {
     ['code128',    '^BCR,', 'R', { height: 100, moduleWidth: 2, printInterpretation: true, checkDigit: false }],
     ['code39',     '^B3I,', 'I', { height: 100, moduleWidth: 2, printInterpretation: true, checkDigit: false }],
     ['ean13',      '^BEB,', 'B', { height: 100, moduleWidth: 2, printInterpretation: true }],
-    ['qrcode',     '^BQR,', 'R', { magnification: 4, errorCorrection: 'Q' }],
     ['datamatrix', '^BXI,', 'I', { dimension: 5, quality: 200, gs1: false }],
     ['pdf417',     '^B7B,', 'B', { rowHeight: 4, securityLevel: 0, columns: 0, moduleWidth: 2 }],
     ['aztec',      '^B0R,', 'R', { magnification: 4, ecLevel: 0 }],
@@ -310,6 +309,106 @@ describe('barcode rotation in ZPL output', () => {
     const content = type === 'ean13' ? '590123412345' : 'X';
     const zpl = def.toZPL(makeObj(type, { content, ...baseProps, rotation }));
     expect(zpl).toContain(expected);
+  });
+
+  // ^BQ's orientation slot is decorative (firmware prints normal only), so the
+  // emit pins it to N instead of pretending the code can rotate.
+  it('qrcode pins the decorative orientation slot to N', () => {
+    const def = defined(getEntry('qrcode'));
+    const zpl = def.toZPL(makeObj('qrcode', { content: 'X', magnification: 4, errorCorrection: 'Q', model: 2, rotation: 'N' }));
+    expect(zpl).toContain('^BQN,');
+  });
+
+  // Rotated QR: ^BQ cannot rotate, so the emit switches to a pre-rotated
+  // ^GFA graphic plus a sidecar for lossless reimport.
+  it('qrcode rotated emits sidecar + ^GFA instead of ^BQ', () => {
+    const def = defined(getEntry('qrcode'));
+    const zpl = def.toZPL(makeObj('qrcode', { content: 'X', magnification: 4, errorCorrection: 'Q', model: 2, rotation: 'R' }));
+    expect(zpl).toContain('^FXZPLLAB:');
+    expect(zpl).toContain('^GFA,');
+    expect(zpl).not.toContain('^BQ');
+  });
+
+  // Canvas, bounds and preflight read obj.y as the ^FT bottom anchor, so the
+  // graphic must use fieldPos, not an image-style y+h (one height too low).
+  it('qrcode rotated under ^FT keeps the barcode bottom anchor', () => {
+    const def = defined(getEntry('qrcode'));
+    const zpl = def.toZPL(makeObj(
+      'qrcode',
+      { content: 'X', magnification: 4, errorCorrection: 'Q', model: 2, rotation: 'R' },
+      { positionType: 'FT' },
+    ));
+    expect(zpl).toContain('^FT100,200');
+  });
+
+  // A bound rotated QR must bake the value the preview shows (the variable's
+  // default), not the literal marker text.
+  it('qrcode rotated bakes the resolved variable value, not the marker', () => {
+    const def = defined(getEntry('qrcode'));
+    const ctx = {
+      label: { widthMm: 100, heightMm: 50, dpmm: 8 },
+      variables: [{ id: 'v1', name: 'sku', fnNumber: 1, defaultValue: '12345' }],
+    } as unknown as Parameters<typeof def.toZPL>[1];
+    const gfaOf = (zpl: string) => zpl.slice(zpl.indexOf('^GFA'));
+    const qr = { magnification: 4, errorCorrection: 'Q', model: 2, rotation: 'R' } as const;
+    const bound = def.toZPL(makeObj('qrcode', { ...qr, content: '«sku»' }), ctx);
+    const literal = def.toZPL(makeObj('qrcode', { ...qr, content: '12345' }), ctx);
+    expect(gfaOf(bound)).toBe(gfaOf(literal));
+  });
+
+  // Empty must not bake the canvas placeholder (" "); plain ^BQ keeps the
+  // payload empty.
+  it('qrcode rotated with empty content falls back to plain ^BQ', () => {
+    const def = defined(getEntry('qrcode'));
+    const zpl = def.toZPL(makeObj('qrcode', { content: '', magnification: 4, errorCorrection: 'Q', model: 2, rotation: 'R' }));
+    expect(zpl).toContain('^BQN,');
+    expect(zpl).not.toContain('^GFA');
+  });
+
+  // Preview and print couple clock2/clock3 to the label's ^SO offsets, so the
+  // baked graphic must apply them too.
+  it('qrcode rotated applies the label clock offsets to clock markers', () => {
+    const def = defined(getEntry('qrcode'));
+    const ctxFor = (offset?: { years: number }) => ({
+      label: { widthMm: 100, heightMm: 50, dpmm: 8, secondaryClockOffset: offset },
+      variables: [],
+    }) as unknown as Parameters<typeof def.toZPL>[1];
+    const gfaOf = (zpl: string) => zpl.slice(zpl.indexOf('^GFA'));
+    const qr = { content: '«clock2:Y»', magnification: 4, errorCorrection: 'Q', model: 2, rotation: 'R' } as const;
+    const shifted = def.toZPL(makeObj('qrcode', { ...qr }), ctxFor({ years: 5 }));
+    const plain = def.toZPL(makeObj('qrcode', { ...qr }), ctxFor(undefined));
+    expect(gfaOf(shifted)).not.toBe(gfaOf(plain));
+  });
+
+  // The graphic encoder only produces Model 2, so a rotated Model 1 QR needs
+  // the warning.
+  it('qrcode rotated model 1 warns that it prints as Model 2', () => {
+    const def = defined(getEntry('qrcode'));
+    const ctx = { label: { widthMm: 100, heightMm: 50, dpmm: 8 }, unit: 'mm' } as const;
+    const kinds = (model: 1 | 2, rotation: 'N' | 'R') =>
+      (def.preflight?.(
+        makeObj('qrcode', { content: 'X', magnification: 4, errorCorrection: 'Q', model, rotation }),
+        ctx,
+      ) ?? []).map((f) => f.kind);
+    expect(kinds(1, 'R')).toContain('qrRotatedModel2');
+    expect(kinds(1, 'N')).not.toContain('qrRotatedModel2');
+    expect(kinds(2, 'R')).not.toContain('qrRotatedModel2');
+  });
+
+  // The graphic freezes dynamic content, so every per-label marker kind must
+  // trip the static warning (clock markers share the «…» form, so they count).
+  it('qrcode rotated warns for variable and clock markers, only when rotated', () => {
+    const def = defined(getEntry('qrcode'));
+    const ctx = { label: { widthMm: 100, heightMm: 50, dpmm: 8 }, unit: 'mm' } as const;
+    const warns = (content: string, rotation: 'N' | 'R') =>
+      (def.preflight?.(
+        makeObj('qrcode', { content, magnification: 4, errorCorrection: 'Q', model: 2, rotation }),
+        ctx,
+      ) ?? []).some((f) => f.kind === 'qrRotatedStatic');
+    expect(warns('«sku»', 'R')).toBe(true);
+    expect(warns('«clock:Y»', 'R')).toBe(true);
+    expect(warns('«clock:Y»', 'N')).toBe(false);
+    expect(warns('static', 'R')).toBe(false);
   });
 });
 
@@ -573,5 +672,24 @@ describe('ObjectRegistry', () => {
       const hasCommit = !!def.commitTransform || !!def.uniformScaleProp;
       expect(hasCommit, `${key} is missing commitTransform or uniformScaleProp`).toBe(true);
     }
+  });
+
+  // The rotation prop's existence IS the rotatability capability (spawn, panel,
+  // canvas and emit all key off it). qrcode rotates via a baked ^GFA like image;
+  // maxicode stays off (^BV is a no-op, MaxiCode is omnidirectional). Belongs
+  // here only with a working o=N/R/I/B or a baked graphic emit.
+  it('rotation prop membership matches the ZPL orientation capability', () => {
+    const rotatable = Object.entries(ObjectRegistry)
+      .filter(([, def]) => 'rotation' in (def.defaultProps as object))
+      .map(([key]) => key)
+      .sort();
+    expect(rotatable).toEqual([
+      'aztec', 'codabar', 'codablock', 'code11', 'code128', 'code39',
+      'code49', 'code93', 'datamatrix', 'ean13', 'ean8', 'gs1databar',
+      'image', 'industrial2of5', 'interleaved2of5', 'logmars',
+      'micropdf417', 'msi', 'pdf417', 'planet', 'plessey', 'postal',
+      'qrcode', 'standard2of5', 'symbol', 'text', 'tlc39',
+      'upcEanExtension', 'upca', 'upce',
+    ]);
   });
 });
