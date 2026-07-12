@@ -11,7 +11,7 @@ import {
   type SnapRect,
 } from "../../lib/snapGuides";
 import { diagonalPolygonPoints } from "../../lib/shapeGeometry";
-import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
+import { selectionHandlers, type KonvaObjectProps, MIN_HIT_STROKE_PX } from "./konvaObjectProps";
 
 const HANDLE_VISIBLE_SIZE = 7;
 const HANDLE_HIT_SIZE = 14;
@@ -389,7 +389,7 @@ export function LineObject({
           y2 + visualShiftY,
         ]}
         stroke="transparent"
-        strokeWidth={Math.max(lineStrokeWidth, 14)}
+        strokeWidth={Math.max(lineStrokeWidth, MIN_HIT_STROKE_PX)}
         draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         {...dragHandlers}
