@@ -75,11 +75,11 @@ export function useGlobalShortcuts() {
         e.preventDefault();
         setCanvasSettings({ showGrid: !useLabelStore.getState().canvasSettings.showGrid });
       }
-      if (e.code === "KeyS") {
+      if (e.code === "KeyS" && !mod) {
         e.preventDefault();
         setCanvasSettings({ snapEnabled: !useLabelStore.getState().canvasSettings.snapEnabled });
       }
-      if (e.code === "KeyR") {
+      if (e.code === "KeyR" && !mod) {
         e.preventDefault();
         const current = useLabelStore.getState().canvasSettings.viewRotation;
         setCanvasSettings({ viewRotation: nextRotation(current) });
