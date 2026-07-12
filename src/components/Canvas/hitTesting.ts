@@ -34,3 +34,31 @@ export function objectIdsAtPoint(
   }
   return hits;
 }
+
+/** {@link objectIdsAtPoint} for the alt-click cycle: its contract is every
+ *  object stacked at the point, so hit-transparent frame interiors
+ *  (shapeHitProps) fall back to a client-rect test. Top first. */
+export function objectIdsAtPointForCycle(
+  stage: Konva.Stage,
+  point: { x: number; y: number },
+  objects: readonly { id: string; type: string }[],
+): string[] {
+  const hitSet = new Set(objectIdsAtPoint(stage, point, new Set(objects.map((o) => o.id))));
+  const out: string[] = [];
+  for (let i = objects.length - 1; i >= 0; i--) {
+    const o = objects[i];
+    if (!o) continue;
+    if (hitSet.has(o.id)) {
+      out.push(o.id);
+      continue;
+    }
+    if (o.type !== "box" && o.type !== "ellipse") continue;
+    const node = stage.findOne(`#${o.id}`);
+    if (!node) continue;
+    const r = node.getClientRect({ relativeTo: stage });
+    if (point.x >= r.x && point.x <= r.x + r.width && point.y >= r.y && point.y <= r.y + r.height) {
+      out.push(o.id);
+    }
+  }
+  return out;
+}

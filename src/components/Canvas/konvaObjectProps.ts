@@ -24,6 +24,24 @@ export function useBlankFieldWarns(objectId: string): boolean {
   return !pristine && objectId !== PALETTE_GHOST_ID;
 }
 
+/** Minimum grab width for stroke-only hit areas (shared with LineObject). */
+export const MIN_HIT_STROKE_PX = 14;
+
+/** An unselected frame hits only on its stroke so the enclosed area stays
+ *  click-through; thin strokes widen to MIN_HIT_STROKE_PX. Selected, the
+ *  full area hits so the frame drags from its middle. */
+export function shapeHitProps(
+  renderFilled: boolean,
+  strokeWidthPx: number,
+  isSelected: boolean,
+): { fillEnabled: boolean; hitStrokeWidth?: number } {
+  if (renderFilled) return { fillEnabled: true };
+  return {
+    fillEnabled: isSelected,
+    hitStrokeWidth: Math.max(strokeWidthPx, MIN_HIT_STROKE_PX),
+  };
+}
+
 /**
  * Click / tap handlers shared across every per-type renderer. Click reads
  * shift / ctrl / meta to toggle multi-select; tap (touch) is always a

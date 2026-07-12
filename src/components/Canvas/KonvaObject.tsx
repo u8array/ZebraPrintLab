@@ -16,7 +16,7 @@ import { applyBindingToObject } from "../../lib/variableBinding";
 import { usePreviewBinding } from "../../store/usePreviewBinding";
 import { ZPL_FONT_HEIGHT_TO_CSS_RATIO } from "../../lib/labelGeometry/textPositionTransforms";
 import { getTextRenderMetrics } from "../../lib/labelGeometry/textRenderMetrics";
-import { selectionHandlers, useBlankFieldWarns, CAPTURE_CHROME, PLACEHOLDER_DASH, PLACEHOLDER_STROKE_PX, type KonvaObjectProps } from "./konvaObjectProps";
+import { selectionHandlers, shapeHitProps, useBlankFieldWarns, CAPTURE_CHROME, PLACEHOLDER_DASH, PLACEHOLDER_STROKE_PX, type KonvaObjectProps } from "./konvaObjectProps";
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 import { DEFAULT_GS_SYMBOL_META, GS_SYMBOLS } from "../../registry/symbol";
 import { GS_SYMBOL_PATHS, GS_VECTOR_CODES, type GsVectorCode } from "../../registry/gsSymbolPaths";
@@ -834,6 +834,7 @@ function KonvaObjectInner({
           fill={fill}
           cornerRadius={insetCornerRadius}
           globalCompositeOperation={globalCompositeOperation}
+          {...shapeHitProps(renderFilled, strokeWidth, isSelected)}
         />
         {isSelected && (
           <SelectionOverlay
@@ -884,6 +885,7 @@ function KonvaObjectInner({
           strokeScaleEnabled={false}
           fill={fill}
           globalCompositeOperation={globalCompositeOperation}
+          {...shapeHitProps(renderFilled, strokeWidth, isSelected)}
         />
         {isSelected && (
           <EllipseSelectionOverlay rx={rx} ry={ry} color={colors.selection} />

@@ -6,7 +6,7 @@ import {
   nextCycleIndex,
   type CycleAnchor,
 } from "../altClickCycle";
-import { objectIdsAtPoint } from "../hitTesting";
+import { objectIdsAtPointForCycle } from "../hitTesting";
 
 interface Options {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -36,10 +36,9 @@ export function useAltClickCycle({ containerRef, stageRef, selectObject }: Optio
       const rect = el.getBoundingClientRect();
       const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       // Konva's own hit-graph respects view rotation, pan offset,
-      // per-shape transforms and the listening flag, far cheaper than
-      // mirroring all of that in our own bbox math.
-      const objIds = new Set(getCurrentObjects().map((o) => o.id));
-      const hits = objectIdsAtPoint(stage, point, objIds);
+      // per-shape transforms and the listening flag; the cycle variant adds
+      // a client-rect fallback so frame interiors stay reachable.
+      const hits = objectIdsAtPointForCycle(stage, point, getCurrentObjects());
       if (hits.length === 0) return;
       e.stopPropagation();
       e.preventDefault();
