@@ -11,7 +11,8 @@ import {
   type SnapRect,
 } from "../../lib/snapGuides";
 import { diagonalPolygonPoints } from "../../lib/shapeGeometry";
-import { selectionHandlers, type KonvaObjectProps, MIN_HIT_STROKE_PX } from "./konvaObjectProps";
+import { selectionHandlers, type KonvaObjectProps, MIN_HIT_STROKE_PX, lineHandlesNodeId, lineRootNodeId } from "./konvaObjectProps";
+
 
 const HANDLE_VISIBLE_SIZE = 7;
 const HANDLE_HIT_SIZE = 14;
@@ -329,7 +330,7 @@ export function LineObject({
     lineCenterY + (isHorizontal ? lineStrokeWidth : 0);
 
   return (
-    <Group>
+    <Group id={lineRootNodeId(obj.id)}>
       {isAxisAligned ? (
         <>
           <KLine
@@ -341,6 +342,7 @@ export function LineObject({
             ]}
             stroke={strokeColor}
             strokeWidth={lineStrokeWidth}
+            strokeScaleEnabled={false}
             lineCap="butt"
             listening={false}
             globalCompositeOperation={isReverse ? "difference" : "source-over"}
@@ -390,12 +392,13 @@ export function LineObject({
         ]}
         stroke="transparent"
         strokeWidth={Math.max(lineStrokeWidth, MIN_HIT_STROKE_PX)}
+        strokeScaleEnabled={false}
         draggable={!obj.locked}
         {...selectionHandlers(onSelect)}
         {...dragHandlers}
       />
       {isSelected && (
-        <>
+        <Group id={lineHandlesNodeId(obj.id)}>
           {/* Start point: dragging moves origin; end stays fixed. */}
           <Rect
             x={(livePt1?.x ?? x1 + dx) - HANDLE_HIT_SIZE / 2}
@@ -586,7 +589,7 @@ export function LineObject({
             strokeWidth={1}
             listening={false}
           />
-        </>
+        </Group>
       )}
     </Group>
   );

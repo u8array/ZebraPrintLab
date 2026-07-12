@@ -27,6 +27,14 @@ export function useBlankFieldWarns(objectId: string): boolean {
 /** Minimum grab width for stroke-only hit areas (shared with LineObject). */
 export const MIN_HIT_STROKE_PX = 14;
 
+/** Line root group id: the multi-resize live projection transforms the whole
+ *  group (body, hit, chrome) since line children are flat points. */
+export const lineRootNodeId = (id: string): string => `${id}:line-root`;
+
+/** Endpoint/thickness grips of a line; hidden during a multi-resize gesture
+ *  because the root-group scale would deform their squares. */
+export const lineHandlesNodeId = (id: string): string => `${id}:line-handles`;
+
 /** An unselected frame hits only on its stroke so the enclosed area stays
  *  click-through; thin strokes widen to MIN_HIT_STROKE_PX. Selected, the
  *  full area hits so the frame drags from its middle. */

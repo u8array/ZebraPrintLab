@@ -28,7 +28,7 @@ export interface LineGeometry {
   dy: number;
 }
 
-function makeFree(dxDots: number, dyDots: number): LineGeometry {
+export function makeFree(dxDots: number, dyDots: number): LineGeometry {
   const length = Math.max(
     1,
     Math.round(Math.sqrt(dxDots * dxDots + dyDots * dyDots)),
