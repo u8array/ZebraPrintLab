@@ -415,7 +415,7 @@ pub async fn setup_usb_access() -> Result<(), String> {
   // (writable on immutable distros, and the right place for a runtime rule);
   // set -e so a failed install is reported instead of silently swallowed.
   let script = format!(
-    "set -e\ninstall -Dm644 /dev/stdin /etc/udev/rules.d/70-zplab.rules <<'ZEBRA_UDEV_RULE_EOF'\n{UDEV_RULE}\nZEBRA_UDEV_RULE_EOF\nrm -f /usr/lib/udev/rules.d/99-zebraprintlab.rules /etc/udev/rules.d/99-zebraprintlab.rules /etc/udev/rules.d/70-zebraprintlab.rules || true\nudevadm control --reload-rules || true\nudevadm trigger --subsystem-match=usbmisc --subsystem-match=usb || true"
+    "set -e\ninstall -Dm644 /dev/stdin /etc/udev/rules.d/70-zplab.rules <<'ZEBRA_UDEV_RULE_EOF'\n{UDEV_RULE}\nZEBRA_UDEV_RULE_EOF\nrm -f /usr/lib/udev/rules.d/99-zebraprintlab.rules /etc/udev/rules.d/99-zebraprintlab.rules /etc/udev/rules.d/70-zebraprintlab.rules /usr/lib/udev/rules.d/70-zebraprintlab.rules || true\nudevadm control --reload-rules || true\nudevadm trigger --subsystem-match=usbmisc --subsystem-match=usb || true"
   );
   blocking(move || {
     let status = std::process::Command::new("pkexec")
