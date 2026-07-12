@@ -30,7 +30,7 @@ Existing ZPL files are a first-class source, not a one-way import: a re-exported
 
 ### 1. Set up the label
 
-The label dimensions and print resolution are shown in the header (`width × height mm · dpmm`). Click on them to adjust.
+The label dimensions and print resolution are shown in the header (`width × height mm · dpmm`). Deselect everything (click empty canvas) to edit them in the **Properties** panel.
 
 The print resolution (dpmm = dots per millimeter) must match your printer. Common values: 6 dpmm (152 dpi), 8 dpmm (203 dpi), 12 dpmm (300 dpi), 24 dpmm (600 dpi). Check your printer's manual if unsure; 8 dpmm is the most common.
 
@@ -38,7 +38,7 @@ The print resolution (dpmm = dots per millimeter) must match your printer. Commo
 
 Drag items from the left panel onto the canvas, or double-click them to add at the center.
 
-Available objects: text, serial (auto-incrementing number fields), barcodes (28 symbologies including Code 128, QR, DataMatrix, PDF417, Maxicode), shapes (box, line, ellipse), and images.
+Available objects: text, serial (auto-incrementing number fields), barcodes (28 symbologies including Code 128, QR, DataMatrix, PDF417, Maxicode), shapes (box, line, ellipse), images, and graphic symbols (®/©/™).
 
 <details>
 <summary>Full list of supported barcode symbologies</summary>
@@ -53,16 +53,16 @@ Available objects: text, serial (auto-incrementing number fields), barcodes (28 
 
 Select an object to configure it in the **Properties** panel on the right: content, size, font, barcode options, etc.
 
-Multiple objects can be selected by holding Shift or drawing a lasso. Position and size changes apply to all selected objects.
+Multiple objects can be selected by holding Shift or drawing a lasso. Position changes apply to all selected objects; resizing works one object at a time.
 
 ### 4. Print or export
 
 The **ZPL output** panel at the bottom shows the generated ZPL. It updates in real time as you edit.
 
 - **Copy**: copies the ZPL to the clipboard; paste it into your printer software or send it straight to the printer
-- **Preview**: fetches a rendered preview image from [Labelary](https://labelary.com/)
-- **Export**: downloads a `.zpl` file (File menu)
-- **Print**: opens the Labelary preview and triggers the browser print dialog
+- **Preview**: renders a preview image via [Labelary](https://labelary.com/) or, on desktop, the connected printer's own firmware (see Printer settings)
+- **Export** (File menu): downloads a `.zpl` file
+- **Print** (File menu): opens the Labelary preview and triggers the browser print dialog
 
 ### Importing existing ZPL
 
@@ -76,7 +76,7 @@ Edit an imported label and export it again:
 
 - **Preserved:** everything you didn't touch comes back byte-for-byte, including fields, label settings, comments, whitespace, and commands the editor doesn't model. A zero-edit import/export cycle reproduces the file exactly.
 - **Regenerated:** only the objects you edit, add, or delete are re-emitted from the model. The rest of the file is spliced back unchanged.
-- **Full-regeneration fallback:** a few constructs make per-object patching unsafe: `^MU` unit scaling, non-default `^CC`/`^CT`/`^CD` command prefixes, non-UTF-8 `^CI` combined with `^FH`, non-default `^FE` embed delimiters, a bare `^FN` declared outside a field, and a barcode relying on a `^BY` from an earlier field. On such labels the first edit regenerates the whole label; with no edits the export stays byte-for-byte.
+- **Full-regeneration fallback:** a few constructs make per-object patching unsafe: `^MU` unit scaling, non-default `^CC`/`^CT`/`^CD` command prefixes, non-UTF-8 `^CI` encoding, non-default `^FE` embed delimiters, a bare `^FN` declared outside a field, and a barcode relying on a `^BY` from an earlier field. On such labels the first edit regenerates the whole label; with no edits the export stays byte-for-byte.
 
 Byte capture at import is deliberately conservative: when a field can't be mapped cleanly to a single object, the whole label falls back to model regeneration, which keeps the content but not the exact bytes. The captured bytes are stored in saved `.json` designs; a design from an older app version with an outdated capture format is detected and rebuilt.
 
@@ -94,7 +94,7 @@ File menu → **Import CSV data** loads a CSV. The mapping dialog pairs each Var
 
 ### Printer settings
 
-File menu → **Printer settings…** configures label-level media and print quality, plus a Setup Script for clock, locale, encoding, and printer identity (sent once when first setting up a printer). Setup-Script values stay out of saved designs so sharing a `.zpl` or `.json` doesn't leak your printer name or locale.
+File menu → **Printer settings…** configures label-level media and print quality, plus a Setup Script for clock, locale, encoding, and printer identity (meant to be sent once when first setting up a printer). Setup-Script values stay out of saved designs so sharing a `.zpl` or `.json` doesn't leak your printer name or locale.
 
 Its **Preview** tab chooses which renderer draws the overlay (Labelary's online service, or on desktop the connected printer's own firmware) and holds an optional premium Labelary endpoint and API key; the key is stored in the OS keychain on desktop, in browser storage on the web.
 
@@ -106,7 +106,10 @@ Its **Preview** tab chooses which renderer draws the overlay (Labelary's online 
 | `Ctrl/⌘+A` | Select all |
 | `Ctrl/⌘+C` / `Ctrl/⌘+V` | Copy / Paste |
 | `Ctrl/⌘+D` | Duplicate selection |
+| `Ctrl/⌘+G` / `Ctrl/⌘+Shift+G` | Group / Ungroup selection |
+| `Ctrl/⌘+L` / `Ctrl/⌘+Shift+L` | Lock / Unlock selection |
 | `Del` / `Backspace` | Delete selection |
+| Arrow keys / `Shift`+Arrow | Nudge selection (snap step / 10 mm) |
 | `G` | Toggle grid |
 | `S` | Toggle snap |
 | `R` | Rotate view (0° → 90° → 180° → 270°) |
@@ -129,8 +132,8 @@ Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable conte
 - Lossless ZPL round-trip: imported ZPL re-exports byte-for-byte, regenerating only what you edit ([import guarantees](#import-guarantees))
 - Variables: bind text and barcode fields to named defaults that emit as `^FN` slots (or `^FE` inline embeds when one field references multiple variables), round-tripping with printer-side templates
 - CSV batch printing: import a CSV, map columns to Variables, print or export with efficient printer-side data merge (template ships once, each row sends only its overrides)
-- GS1 content builder: assemble GS1 content from Application Identifiers (DataBar Expanded and GS1 DataMatrix), validated per field and against GS1 combination rules
-- Content builder: generate typed QR/DataMatrix content (URL, WiFi, contact, email, phone, SMS, geo) with the right encoding and escaping
+- GS1 content builder: assemble GS1 content from Application Identifiers (DataBar Expanded, GS1-128, and GS1 DataMatrix), validated per field and against GS1 combination rules
+- Content builder: generate typed QR/DataMatrix/Aztec content (URL, WiFi, contact, email, phone, SMS, geo) with the right encoding and escaping
 - EAN/UPC inline validation: live length counter, computed check-digit preview, and a GS1 prefix hint right under the content field
 - Printer settings: label-level hardware tuning plus a Setup Script for clock, locale, encoding, and printer identity
 - 32 UI languages (auto-detected from browser)
@@ -165,10 +168,10 @@ Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable conte
 
 ## Limitations
 
-- The canvas is a design preview, not a pixel-perfect simulation. Shapes, spacing, and positions match the print; text approximates Zebra's built-in font to within a few dots, but exact letterforms and anti-aliasing differ. For a faithful render, use the **Preview** in the bottom-right panel (powered by Labelary).
-- Label preview is rendered by Labelary. The default build calls `api.labelary.com`; self-hosters can point at a private endpoint or turn it off (a premium endpoint and key can also be set at runtime, see Printer settings).
+- The canvas is a design preview, not a pixel-perfect simulation. Shapes, spacing, and positions match the print; text approximates Zebra's built-in font to within a few dots, but exact letterforms and anti-aliasing differ. For a faithful render, use the **Preview** in the bottom-right panel (Labelary, or on desktop the printer's own firmware).
+- The default preview renderer is Labelary; the web build calls `api.labelary.com`, and self-hosters can point at a private endpoint or turn it off (a premium endpoint and key can also be set at runtime, see Printer settings). The desktop app can preview on the connected printer instead.
 - The Labelary preview doesn't render every ZPL feature. Some less common elements (e.g. Codablock F, Maxicode) may be missing or wrong in the preview even when the actual print is fine.
-- The Labelary preview shows only the current page; the printed/exported ZPL still contains every page.
+- The preview shows only the current page (either renderer); the printed/exported ZPL still contains every page.
 
 ---
 
@@ -185,7 +188,7 @@ Requires Node.js ≥ 24 and pnpm. Alternatively use `npm install` / `npm run dev
 pnpm build   # output goes to dist/
 ```
 
-The build output is entirely static and can be served from any web server or file host.
+The web build output is entirely static and can be served from any web server or file host. The desktop app is a separate [Tauri](https://tauri.app/) shell (`src-tauri/`) with native printer I/O.
 
 ### Tech stack
 
@@ -195,10 +198,11 @@ The build output is entirely static and can be served from any web server or fil
 - [Zustand](https://github.com/pmndrs/zustand) + [zundo](https://github.com/charkour/zundo): state and undo history
 - [bwip-js](https://github.com/metafloor/bwip-js): barcode rendering
 - [Tailwind CSS v4](https://tailwindcss.com/)
+- [Tauri](https://tauri.app/): desktop shell (native printing and file dialogs)
 
 ### How it works
 
-The editor stores the label as a list of objects in Zustand. On every change, ZPL II is generated client-side by mapping each object to its corresponding ZPL commands. Barcodes are rendered on the canvas using bwip-js. Preview images are fetched from the Labelary API.
+The editor stores the label as a list of objects in Zustand. On every change, ZPL II is generated client-side by mapping each object to its corresponding ZPL commands. Barcodes are rendered on the canvas using bwip-js. Preview images come from the Labelary API or, on desktop, the connected printer's firmware.
 
 ---
 
