@@ -8,6 +8,7 @@ import { extractTemplateRefs, hasTemplateMarkers } from "./fnTemplate";
 import { isLoneMarker } from "./variableField";
 import { parseContent, typedContentIncompleteRows, typedContentMarkerFindings } from "./typedContent";
 import { getObjectStringContent, resolveForRow, variableSubstitutions } from "./variableBinding";
+import { gs1ModeDSharedFns, isModeDLeaf } from "./gs1ModeDFns";
 import { isBlankText } from "./zebraTextLayout";
 import { resolveTextMode } from "../registry/text";
 import type { CsvMapping, Variable } from "../types/Variable";
@@ -182,6 +183,32 @@ export function markerValueFindings(
     }
     markerValueCache.set(leaf, { ...deps, findings });
     out.push(...findings);
+  }
+  // Shared slot (see gs1ModeDSharedFns): a > in any printing value scans as
+  // an invocation code. Cross-leaf state, so outside the per-leaf cache.
+  const shared = gs1ModeDSharedFns(leaves, deps.variables);
+  if (shared.size > 0) {
+    const byName = new Map(deps.variables.map((v) => [v.name, v]));
+    for (const leaf of leaves) {
+      if (!isModeDLeaf(leaf)) continue;
+      const content = getObjectStringContent(leaf);
+      if (content === undefined || !hasTemplateMarkers(content)) continue;
+      const dirty: string[] = [];
+      for (const name of new Set(extractTemplateRefs(content))) {
+        const v = byName.get(name);
+        if (!v || !shared.has(v.fnNumber)) continue;
+        if (variableSubstitutions(v, deps.csvDataset, deps.csvMapping).some((val) => val.includes(">"))) {
+          dirty.push(v.name);
+        }
+      }
+      if (dirty.length > 0) {
+        out.push(finding(
+          leaf,
+          "markerValueUnsafe",
+          `">" in ${dirty.join(", ")} prints as an invocation code (slot shared with a non-GS1 field)`,
+        ));
+      }
+    }
   }
   return out;
 }

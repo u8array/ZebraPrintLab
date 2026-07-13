@@ -15,7 +15,7 @@ import { paletteGhostHandlers } from "./paletteGhostMonitor";
 import { Stage, Layer, Group, Image as KImage, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects, selectPreviewLocksEditor } from "../../store/labelStore";
-import { isGroup, getAllLeaves, expandSelection, selectionTargetId, findObjectById, canDeleteSelection, canGroupSelection, canUngroupSelection, isSelectionLocked, type LabelObject } from "../../types/Group";
+import { isGroup, getAllLeaves, exportableLeaves, expandSelection, selectionTargetId, findObjectById, canDeleteSelection, canGroupSelection, canUngroupSelection, isSelectionLocked, type LabelObject } from "../../types/Group";
 import { pxToDots, dotsToPx, mmToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
 import { loadImage } from "../../lib/loadImage";
 import { SNAP_OPTIONS } from "../../lib/units";
@@ -75,7 +75,7 @@ import {
 import { CanvasContextMenu } from "./CanvasContextMenu";
 import { buildContextMenu, type MenuSection } from "./canvasActions";
 import { zplForSelection } from "../../lib/zplForSelection";
-import { generateMultiPageZPL, exportableLeaves } from "../../lib/zplGenerator";
+import { generateMultiPageZPL } from "../../lib/zplGenerator";
 import { nodeToPngBlob, downloadBlob, copyPngToClipboard } from "../../lib/canvasImage";
 import { printerPreviewLayout } from "../../lib/printerPreview";
 

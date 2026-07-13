@@ -501,3 +501,37 @@ describe("markerValueFindings (typed-content marker values)", () => {
     ]);
   });
 });
+
+describe("markerValueFindings (mode-D shared ^FN slot)", () => {
+  const code128 = (id: string, content: string, gs1: boolean): LeafObject =>
+    ({ id, type: "code128", x: 0, y: 0, rotation: 0,
+       props: { content, height: 100, moduleWidth: 2, printInterpretation: false,
+                printInterpretationAbove: false, checkDigit: false, rotation: "N", gs1 } } as LabelObject as LeafObject);
+  const text = (id: string, content: string): LeafObject =>
+    ({ id, type: "text", x: 0, y: 0, rotation: 0,
+       props: { content, fontHeight: 30, fontWidth: 0, rotation: "N" } } as LabelObject as LeafObject);
+  const vars = [{ id: "v", name: "batch", fnNumber: 1, defaultValue: "A>B" }];
+  const deps = { variables: vars, csvDataset: null, csvMapping: null };
+  const gs1Content = "0104012345678901" + "10«batch»";
+
+  it("warns when a > value feeds a slot shared with a non-GS1 field", () => {
+    const out = markerValueFindings(
+      [code128("c", gs1Content, true), text("t", "lot «batch» end")], deps);
+    expect(out).toEqual([
+      { objectId: "c", kind: "markerValueUnsafe", severity: "warning",
+        detail: '">" in batch prints as an invocation code (slot shared with a non-GS1 field)' },
+    ]);
+  });
+
+  it("stays quiet for an exclusive slot (the emit escape handles it)", () => {
+    expect(markerValueFindings([code128("c", gs1Content, true)], deps)).toEqual([]);
+  });
+
+  it("stays quiet for a shared slot without > in any printing value", () => {
+    const clean = [{ id: "v", name: "batch", fnNumber: 1, defaultValue: "LOT7" }];
+    const out = markerValueFindings(
+      [code128("c", gs1Content, true), text("t", "lot «batch» end")],
+      { variables: clean, csvDataset: null, csvMapping: null });
+    expect(out).toEqual([]);
+  });
+});

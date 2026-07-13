@@ -10,7 +10,7 @@ import { embedsToMarkers } from "../fnTemplate";
 import { tokensToMarkers } from "../fcTemplate";
 import { decodeFbContent } from "../fbContent";
 import { decodeTbContent } from "../tbContent";
-import { elementStringToContent } from "../gs1";
+import { zplFdToModelContent } from "../gs1";
 import { dataMatrixFdToGs1Content } from "../dataMatrixFd";
 import { zplAnchorToModel } from "../labelGeometry/textPositionTransforms";
 import { blockInterLineExtentDots } from "../zebraTextLayout";
@@ -238,7 +238,7 @@ export function createFlushField(
             s.field.x,
             s.field.y,
             {
-              content: gs1 ? (elementStringToContent(content) ?? content) : content,
+              content: gs1 ? (zplFdToModelContent(content) ?? content) : content,
               height: s.field.bcHeight,
               moduleWidth: s.defaults.byModuleWidth,
               printInterpretation: s.field.bcInterp,

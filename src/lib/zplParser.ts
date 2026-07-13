@@ -1,4 +1,8 @@
 import { DEFAULT_CLOCK_CHARS, isDefaultClockChars } from "./fcTemplate";
+import { unescapeGs1FdValue, zplFdToModelContent } from "./gs1";
+import { gs1ModeDExclusiveFns } from "./gs1ModeDFns";
+import { extractTemplateRefs } from "./fnTemplate";
+import { isLoneMarker } from "./variableField";
 import { markerOf } from "../types/Variable";
 import { getObjectStringContent } from "./variableBinding";
 import { parseLabelMetaComment, type LabelMeta } from "./zplLabelMeta";
@@ -271,6 +275,29 @@ export function parseZPL(
     const marker = markerOf(v.name);
     const used = objects.some((o) => getObjectStringContent(o)?.includes(marker));
     if (!used) variables.splice(i, 1);
+  }
+
+  // Normalize mode-D-exclusive ^FN defaults to model form (inverse of the
+  // emit escape; mixed slots stay raw, see gs1ModeDExclusiveFns). A lone-marker
+  // slot holds the whole payload and gets the full decode; an embedded slot is
+  // one AI's value, where canonicalization could mutate bytes (GTIN check
+  // digit), so only the >0 escape reverses.
+  const modeDFns = gs1ModeDExclusiveFns(objects, variables);
+  if (modeDFns.size > 0) {
+    const fnByVarName = new Map(variables.map((v) => [v.name, v.fnNumber]));
+    const loneMarkerFns = new Set<number>();
+    for (const o of objects) {
+      const c = getObjectStringContent(o);
+      if (c === undefined || !isLoneMarker(c)) continue;
+      const fn = fnByVarName.get(extractTemplateRefs(c)[0] ?? "");
+      if (fn !== undefined) loneMarkerFns.add(fn);
+    }
+    for (const v of variables) {
+      if (!modeDFns.has(v.fnNumber)) continue;
+      v.defaultValue = loneMarkerFns.has(v.fnNumber)
+        ? (zplFdToModelContent(v.defaultValue) ?? unescapeGs1FdValue(v.defaultValue))
+        : unescapeGs1FdValue(v.defaultValue);
+    }
   }
 
   // Build the overlay only when every parsed object linked to a source span;

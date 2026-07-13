@@ -375,30 +375,78 @@ function validateGs1SegmentImpl(ai: string, value: string): string | null {
   }
 }
 
+/** Escape a literal `>` in mode-D ^FD data; unescaped it reads as the >N
+ *  invocation prefix. */
+export function escapeGs1FdValue(value: string): string {
+  return value.replaceAll(">", ">0");
+}
+
+/** Inverse of escapeGs1FdValue: >0 only. Leaves >8 / GS / subset invocations
+ *  untouched so a foreign payload stays byte-stable. */
+export function unescapeGs1FdValue(value: string): string {
+  return value.replaceAll(">0", ">");
+}
+
+/** Segment value as emitted: GTIN completed to 14 digits, others verbatim. */
+function segmentValue(s: Gs1Segment): string {
+  return AI_BY_CODE.get(s.ai)?.kind === "gtin" ? gtin14WithCheck(s.value) : s.value;
+}
+
+/** A variable-length AI that is not the last segment needs a trailing FNC1
+ *  separator (GS in raw content, >8 in ZPL) so the next AI isn't absorbed. */
+function needsSeparator(s: Gs1Segment, index: number, count: number): boolean {
+  const spec = AI_BY_CODE.get(s.ai);
+  return !!spec && isVariableKind(spec.kind) && index < count - 1;
+}
+
 /** Element string `(01)…(10)…` for display and bwip-js input. GTIN values are
  *  completed to 14 digits so bwip-js accepts them. */
 export function segmentsToElementString(segments: readonly Gs1Segment[]): string {
+  return segments.map((s) => `(${s.ai})${segmentValue(s)}`).join("");
+}
+
+/** ZPL ^BC mode-D field data. Mode D auto-inserts only the LEADING FNC1
+ *  (Labelary-decoded), so a >8 after each non-final variable AI is required or
+ *  the next AI is read as value; a literal `>` escapes to >0. */
+export function segmentsToZplFd(segments: readonly Gs1Segment[]): string {
   return segments
-    .map((s) => {
-      const spec = AI_BY_CODE.get(s.ai);
-      const value = spec?.kind === "gtin" ? gtin14WithCheck(s.value) : s.value;
-      return `(${s.ai})${value}`;
-    })
+    .map((s, i) => `(${s.ai})${escapeGs1FdValue(segmentValue(s))}` +
+      (needsSeparator(s, i, segments.length) ? ">8" : ""))
     .join("");
+}
+
+/** ^FD form of model content, raw or parenthesized (see segmentsToZplFd).
+ *  Unparseable content passes through unchanged: its FNC1 positions are
+ *  unknown, and re-escaping would corrupt existing invocations. */
+export function gs1ContentToZplFd(content: string): string {
+  const segs = parseGs1ToSegments(content);
+  return segs ? segmentsToZplFd(segs) : content;
+}
+
+/** Undo the ^FD invocations on import: strip FNC1 markers (the parens already
+ *  delimit segments) and unescape literal `>`. Order matters: `>08` is an
+ *  escaped `>` followed by a data `8`, not an FNC1. */
+export function zplFdToGs1Input(raw: string): string {
+  return raw.replaceAll(">8", "").replaceAll(GS1_GS, "").replaceAll(">0", ">");
+}
+
+/** Canonical model content from a mode-D ^FD payload, or null (caller keeps
+ *  it verbatim). Parens delimit segments, so >8 is stripped there; in the raw
+ *  form >8 IS the separator and maps to GS. */
+export function zplFdToModelContent(raw: string): string | null {
+  if (raw.startsWith("(")) return elementStringToContent(zplFdToGs1Input(raw));
+  const content = unescapeGs1FdValue(raw.replaceAll(">8", GS1_GS));
+  const segs = parseGs1ToSegments(content);
+  return segs && segs.length > 0 ? segmentsToContent(segs) : null;
 }
 
 /** Raw model `content`: AI+value concatenated, with a GS separator after a
  *  variable-length AI that is not the last segment. GTIN completed to 14. */
 export function segmentsToContent(segments: readonly Gs1Segment[]): string {
-  let out = "";
-  segments.forEach((s, i) => {
-    const spec = AI_BY_CODE.get(s.ai);
-    const value = spec?.kind === "gtin" ? gtin14WithCheck(s.value) : s.value;
-    out += s.ai + value;
-    const variable = spec ? isVariableKind(spec.kind) : false;
-    if (variable && i < segments.length - 1) out += GS1_GS;
-  });
-  return out;
+  return segments
+    .map((s, i) => s.ai + segmentValue(s) +
+      (needsSeparator(s, i, segments.length) ? GS1_GS : ""))
+    .join("");
 }
 
 /** AI code present at `pos`, longest match first, or null. */

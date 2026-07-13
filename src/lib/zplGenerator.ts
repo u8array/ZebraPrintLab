@@ -13,11 +13,13 @@ import {
 } from './fcTemplate';
 import { boundColumnIndex, getObjectStringContent } from './variableBinding';
 import { classifyField } from './variableField';
+import { escapeGs1FdValue } from './gs1';
+import { gs1ModeDExclusiveFns } from './gs1ModeDFns';
 import { formatLabelMetaComment } from './zplLabelMeta';
 import type { ClockOffset, CustomFontMapping, LabelConfig } from '../types/LabelConfig';
 import type { ZplEmitContext } from '../types/ZplEmit';
 import type { Variable } from '../types/Variable';
-import { isGroup, walkObjects, type LabelObject, type LeafObject, type Page } from '../types/Group';
+import { exportableLeaves, isGroup, walkObjects, type LabelObject, type LeafObject, type Page } from '../types/Group';
 import { isOverlayConsistent } from './zplOverlay/overlay';
 import { objectBoundsDots, type ObjectBoundsCtx } from './objectBounds';
 import { formatFontDownloadFromPath } from './customFonts';
@@ -62,6 +64,7 @@ export function planTemplateHeader(
 ): { headerLines: string[]; emitCtx: ZplEmitContext } {
   // O(N+V) vs O(N*V) per-marker re-scan.
   const varsByName = new Map(variables.map((v) => [v.name, v]));
+  const modeDFns = gs1ModeDExclusiveFns(shifted, variables);
 
   const templatePayloads: string[] = [];
   const clockPayloads: string[] = [];
@@ -108,7 +111,9 @@ export function planTemplateHeader(
     if (pickedEmbedChar !== '#') headerLines.push(`^FE${pickedEmbedChar}`);
     for (const [fn, v] of [...templateVarsByFn].sort(([a], [b]) => a - b)) {
       if (singleBindFns.has(fn)) continue;
-      headerLines.push(`^FN${fn}${fdField(v.defaultValue)}`);
+      // Mode-D-exclusive slot: > needs its >0 invocation (parser reverses).
+      const def = modeDFns.has(fn) ? escapeGs1FdValue(v.defaultValue) : v.defaultValue;
+      headerLines.push(`^FN${fn}${fdField(def)}`);
     }
     emitCtx.embedChar = pickedEmbedChar;
   }
@@ -201,21 +206,6 @@ export function generateMultiPageZPL(
   return out;
 }
 
-/** Leaves that would actually export, honouring the `includeInExport=false`
- *  cascade through groups (mirrors `emitLeaf`). Also the leaf set preflight
- *  warns over, so its off-label checks track what prints, not editor visibility. */
-export function exportableLeaves(objects: LabelObject[]): LeafObject[] {
-  const out: LeafObject[] = [];
-  const walk = (list: LabelObject[]): void => {
-    for (const o of list) {
-      if (o.includeInExport === false) continue;
-      if (isGroup(o)) walk(o.children);
-      else out.push(o);
-    }
-  };
-  walk(objects);
-  return out;
-}
 
 /** Emit one page from its overlay: verbatim segments for untouched objects,
  *  in-place regeneration for dirty ones, appended fields for new ones, raw
@@ -361,6 +351,7 @@ export function generateBatchZpl(
   // Excluded leaves aren't in the stored template, so don't source a transform
   // from one (it could shadow an exported field sharing the same variable).
   const leaves = [...walkObjects(objects)].filter((o) => o.includeInExport !== false);
+  const modeDFns = gs1ModeDExclusiveFns(objects, variables);
   const overrides: { fn: number; colIdx: number; transform: (s: string) => string }[] = [];
   for (const v of variables) {
     const colIdx = boundColumnIndex(v, csvDataset, csvMapping);
@@ -375,9 +366,11 @@ export function generateBatchZpl(
       const cls = classifyField(c, variables);
       return cls.kind === "single" && cls.variable.id === v.id;
     });
+    // A template-embedded mode-D slot has no bound transform but still
+    // needs the > escape.
     const transform =
       (bound && !isGroup(bound) ? getEntry(bound.type)?.fdTransform?.(bound) : undefined) ??
-      identity;
+      (modeDFns.has(v.fnNumber) ? escapeGs1FdValue : identity);
     overrides.push({ fn: v.fnNumber, colIdx, transform });
   }
 
