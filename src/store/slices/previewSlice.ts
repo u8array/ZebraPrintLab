@@ -8,7 +8,6 @@ import {
   type PrinterRenderDims,
 } from '../../lib/printerPreview';
 import { getPreviewTransport, getPrinterAddress, getUsbPrinterId } from '../../lib/printerAddress';
-import { isMacDesktop } from '../../lib/platform';
 import { buildActiveCsvRow } from '../../lib/variableBinding';
 import { buildPreviewZpl } from '../../lib/printPreview';
 import { currentObjects, selectEffectivePreviewProvider, selectLabelaryEndpoint } from '../labelStore.selectors';
@@ -52,22 +51,19 @@ const previewCache = (() => {
 export const __resetPreviewCacheForTests = (): void => previewCache._resetForTests();
 
 /** The configured preview target, or the message telling the user what to
- *  configure. USB and network live in separate settings so an incomplete one
- *  never silently falls back to the other. */
+ *  configure. */
 function resolvePreviewTarget(): { target: PreviewTarget } | { error: string } {
-  // USB query is macOS-only, and the settings UI only offers it there; gate the
-  // same way so a persisted 'usb' choice carried onto another OS falls back to
-  // the network address instead of routing to a command that always errors.
-  if (isMacDesktop && getPreviewTransport() === 'usb') {
+  // Keep a persisted 'usb' choice even if the device is gone: enterPreviewMode
+  // falls back to network at fetch time, so a re-plug restores it. An empty
+  // selection falls through to network.
+  if (getPreviewTransport() === 'usb') {
     const id = getUsbPrinterId();
-    return id
-      ? { target: { kind: 'usb', id } }
-      : { error: 'No USB printer selected. Pick one under Settings, Preview.' };
+    if (id) return { target: { kind: 'usb', id } };
   }
   const { host, port } = getPrinterAddress();
   return host
     ? { target: { kind: 'network', host, port } }
-    : { error: 'No printer address configured. Set the IP under Settings, Preview.' };
+    : { error: 'No printer configured. Set a USB device or IP under Settings, Preview.' };
 }
 
 /** Cache-key part identifying the device, so switching the preview transport
@@ -78,8 +74,7 @@ function previewTargetKey(target: PreviewTarget): string {
 
 export interface PreviewSlice {
   previewMode: PreviewMode;
-  /** Render current page → fetch → set status. Caller-checked: only
-   *  call when `previewMode.status` is `idle` or `error`. */
+  /** Caller-checked: only call when `previewMode.status` is `idle` or `error`. */
   enterPreviewMode: () => Promise<void>;
   /** Reset to `idle`; blob URL stays cached for re-toggle. */
   exitPreviewMode: () => void;
@@ -122,14 +117,16 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
     // render; the printer path folds the target in instead. NUL-joined so a ':'
     // inside any field can't shift a boundary and collide.
     const endpoint = selectLabelaryEndpoint(state);
+    const printerKey = (t: PreviewTarget): string => [provider, previewTargetKey(t), zpl].join('\0');
+    const serveCached = (k: string): boolean => {
+      const hit = previewCache.get(k);
+      if (hit) set({ previewMode: { status: 'active', ...hit } });
+      return hit !== null;
+    };
     const cacheKey = printerTarget
-      ? [provider, previewTargetKey(printerTarget), zpl].join('\0')
+      ? printerKey(printerTarget)
       : [provider, endpoint.host, endpoint.apiKey ?? '', zpl].join('\0');
-    const cached = previewCache.get(cacheKey);
-    if (cached !== null) {
-      set({ previewMode: { status: 'active', ...cached } });
-      return;
-    }
+    if (serveCached(cacheKey)) return;
     set({ previewMode: { status: 'loading' } });
     // Stale-request guard: status check catches an exit mid-fetch; the
     // reference-equality check catches re-entry with a different design
@@ -147,8 +144,22 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
       const fail = (error: string): void => {
         if (!isStale()) set({ previewMode: { status: 'error', error } });
       };
-      const result = await fetchPrinterPreview(printerTarget, zpl);
+      let target = printerTarget;
+      let key = cacheKey;
+      let result = await fetchPrinterPreview(target, zpl);
       if (isStale()) return;
+      // USB device gone: preview over network without touching the persisted
+      // USB choice (resolvePreviewTarget explains why).
+      if (target.kind === 'usb' && result.kind === 'not_found') {
+        const net = getPrinterAddress();
+        if (net.host) {
+          target = { kind: 'network', host: net.host, port: net.port };
+          key = printerKey(target);
+          if (serveCached(key)) return;
+          result = await fetchPrinterPreview(target, zpl);
+          if (isStale()) return;
+        }
+      }
       switch (result.kind) {
         case 'bitmap': {
           const url = bitmapToDataUrl(result.bitmap);
@@ -160,16 +171,15 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
             url,
             printerDims: printerRenderDims(result.bitmap),
           };
-          previewCache.set(cacheKey, render);
+          previewCache.set(key, render);
           set({ previewMode: { status: 'active', ...render } });
           return;
         }
         case 'refused': {
-          // 'refused' only arises from the network transport (USB has no such
-          // kind), so the port hint is appended whenever a network target is
-          // present rather than duplicated into an unreachable USB message.
+          // 'refused' is network-only (USB has no such kind), so gate the port
+          // hint on a network target.
           const hint =
-            printerTarget.kind === 'network' ? ` Check that port ${printerTarget.port} is open.` : '';
+            target.kind === 'network' ? ` Check that port ${target.port} is open.` : '';
           fail(`The printer refused the connection.${hint}`);
           return;
         }
@@ -178,6 +188,9 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
           return;
         case 'not_found':
           fail('USB printer not found. Re-plug it and check Settings, Preview.');
+          return;
+        case 'permission_denied':
+          fail('No access to the USB printer. Grant it in the print dialog, USB tab.');
           return;
         case 'error':
           fail(result.message);

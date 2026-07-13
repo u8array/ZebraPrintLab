@@ -14,6 +14,7 @@ import { isDesktopShell } from "../../lib/platform";
 import { getPrinterAddress, setPrinterAddress } from "../../lib/printerAddress";
 import { listLocalPrinters, sendZplLocal, isLikelyZebra, type LocalPrinter } from "../../lib/localPrint";
 import { sendZplUsb, setupUsbAccess, isLikelyZebra as isUsbZebra } from "../../lib/usbPrint";
+import { printerOptionLabel } from "../../lib/printerLabel";
 import { useUsbPrinters } from "../../hooks/useUsbPrinters";
 
 const LS_PRINTER_UID = "zebra_print_uid";
@@ -332,7 +333,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
           ? [{ value: "", label: loadingLocal ? t.zebraPrint.discovering : t.zebraPrint.noPrinters }]
           : localPrinters.map((p) => ({
               value: p.system_name,
-              label: isLikelyZebra(p) ? `${p.name} · ZPL?` : p.name,
+              label: printerOptionLabel(p.name, isLikelyZebra(p)),
             })),
       selectDisabled: localPrinters.length === 0,
       onSend: handleLocalSend,
@@ -350,7 +351,7 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
           ? [{ value: "", label: usb.loading ? t.zebraPrint.discovering : t.zebraPrint.noPrinters }]
           : usb.printers.map((p) => ({
               value: p.id,
-              label: isUsbZebra(p) ? `${p.name} · ZPL?` : p.name,
+              label: printerOptionLabel(p.name, isUsbZebra(p)),
             })),
       selectDisabled: usb.printers.length === 0,
       onSend: handleUsbSend,

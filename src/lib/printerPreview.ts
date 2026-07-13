@@ -20,6 +20,7 @@ type PrinterQueryFailure =
   | { kind: "refused" }
   | { kind: "unreachable" }
   | { kind: "not_found" }
+  | { kind: "permission_denied" }
   | { kind: "error"; message: string };
 
 export type PrinterPreviewResult = { kind: "bitmap"; bitmap: PrinterBitmap } | PrinterQueryFailure;

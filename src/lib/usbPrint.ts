@@ -8,51 +8,59 @@ export interface UsbPrinter {
   vendor_id: string;
 }
 
+/** The invoke-rejection member shared by the USB result unions. */
+interface UsbError {
+  kind: "error";
+  message: string;
+}
+
 export type UsbPrintResult =
   | { kind: "sent" }
   | { kind: "permission_denied" }
   | { kind: "not_found" }
-  | { kind: "error"; message: string };
+  | UsbError;
+
+/** Mirrors the Rust UsbQueryResult; `error` covers the invoke rejection. */
+export type UsbQueryResult =
+  | { kind: "data"; body: string }
+  | { kind: "permission_denied" }
+  | { kind: "not_found" }
+  | UsbError;
 
 /** Hint only for sorting/labels: the Zebra USB vendor id. */
 export function isLikelyZebra(p: UsbPrinter): boolean {
   return p.vendor_id.toLowerCase() === "0a5f";
 }
 
-/** Desktop shell only; the web build and unsupported desktops (Windows) return
- *  nothing. Linux enumerates via usblp, macOS via IOKit. */
+/** Desktop shell only (web and Windows return nothing). */
 export async function listUsbPrinters(): Promise<UsbPrinter[]> {
   if (!isDesktopShell) return [];
   const { invoke } = await import("@tauri-apps/api/core");
   return await invoke<UsbPrinter[]>("list_usb_printers");
 }
 
-export async function sendZplUsb(id: string, zpl: string): Promise<UsbPrintResult> {
+/** Desktop guard + lazy Tauri import; a rejection folds into the union's
+ *  `error` member. */
+async function invokeUsbCommand<R>(
+  cmd: string,
+  args: Record<string, unknown>,
+): Promise<R | UsbError> {
   if (!isDesktopShell) return { kind: "error", message: "USB printing requires the desktop app" };
   const { invoke } = await import("@tauri-apps/api/core");
   try {
-    return await invoke<UsbPrintResult>("send_zpl_usb", { device: id, zpl });
+    return await invoke<R>(cmd, args);
   } catch (e) {
     return { kind: "error", message: errorMessage(e) };
   }
 }
 
-/** Mirrors the Rust UsbQueryResult; `error` covers the invoke rejection. */
-export type UsbQueryResult =
-  | { kind: "data"; body: string }
-  | { kind: "not_found" }
-  | { kind: "error"; message: string };
+export function sendZplUsb(id: string, zpl: string): Promise<UsbPrintResult> {
+  return invokeUsbCommand<UsbPrintResult>("send_zpl_usb", { device: id, zpl });
+}
 
-/** Send ZPL and read the printer's reply over the bulk-in endpoint (macOS
- *  only; the Linux usblp transport has no read side wired up). */
-export async function queryZplUsb(id: string, zpl: string): Promise<UsbQueryResult> {
-  if (!isDesktopShell) return { kind: "error", message: "USB printing requires the desktop app" };
-  const { invoke } = await import("@tauri-apps/api/core");
-  try {
-    return await invoke<UsbQueryResult>("query_zpl_usb", { device: id, zpl });
-  } catch (e) {
-    return { kind: "error", message: errorMessage(e) };
-  }
+/** Send ZPL and read the printer's reply. Desktop transports only. */
+export function queryZplUsb(id: string, zpl: string): Promise<UsbQueryResult> {
+  return invokeUsbCommand<UsbQueryResult>("query_zpl_usb", { device: id, zpl });
 }
 
 export async function setupUsbAccess(): Promise<void> {
