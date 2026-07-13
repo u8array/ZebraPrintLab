@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useT } from "../../hooks/useT";
 import { useLabelStore, selectEffectivePreviewProvider } from "../../store/labelStore";
-import { isDesktopShell, isMacDesktop } from "../../lib/platform";
+import { isDesktopShell } from "../../lib/platform";
 import { isDefaultHost } from "../../lib/labelary";
 import {
   getPreviewTransport,
@@ -11,6 +11,7 @@ import {
   type PreviewTransport,
 } from "../../lib/printerAddress";
 import { isLikelyZebra } from "../../lib/usbPrint";
+import { printerOptionLabel } from "../../lib/printerLabel";
 import { useUsbPrinters } from "../../hooks/useUsbPrinters";
 import { labelCls, inputCls, buttonCls } from "../ui/formStyles";
 import { Select } from "../ui/Select";
@@ -71,17 +72,19 @@ export function PreviewSettingsTab() {
     const a = getPrinterAddress();
     return { host: a.host, port: String(a.port) };
   });
-  // USB preview needs the direct interface driver, which only macOS has; on
-  // other desktops the transport stays network without offering the choice.
-  const [transport, setTransport] = useState<PreviewTransport>(() =>
-    isMacDesktop ? getPreviewTransport() : "network",
-  );
+  const [transport, setTransport] = useState<PreviewTransport>(getPreviewTransport);
   const selectTransport = (v: PreviewTransport) => {
     setTransport(v);
     setPreviewTransport(v);
   };
-  // Shared with the print dialog so both pick from the same enumerated devices.
-  const usb = useUsbPrinters(isMacDesktop);
+  // Shared with the print dialog; enumerate only when the printer provider can
+  // consume the result.
+  const usb = useUsbPrinters(isDesktopShell && provider === "printer");
+  // Unplugging every USB printer hides the transport section; render the
+  // stranded 'usb' choice as network without persisting it, so a replug
+  // restores the selection (mirrors the print dialog's stranded-tab fix).
+  const usbAvailable = usb.printers.length > 0;
+  const effectiveTransport: PreviewTransport = usbAvailable ? transport : "network";
   const persistAddress = () => {
     setPrinterAddress(address.host.trim(), address.port);
     // Snap the inputs to the validated values (host trimmed, an invalid/empty
@@ -149,27 +152,27 @@ export function PreviewSettingsTab() {
         />
       </section>
 
-      {provider === "printer" && isMacDesktop && (
+      {provider === "printer" && usbAvailable && (
         <section className="flex flex-col gap-2">
           <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{loc.transportHeading}</h3>
           <RadioOption
             name="preview-transport"
             value="network"
-            current={transport}
+            current={effectiveTransport}
             onSelect={selectTransport}
             label={loc.transportNetwork}
           />
           <RadioOption
             name="preview-transport"
             value="usb"
-            current={transport}
+            current={effectiveTransport}
             onSelect={selectTransport}
             label={loc.transportUsb}
           />
         </section>
       )}
 
-      {provider === "printer" && isDesktopShell && transport === "network" && (
+      {provider === "printer" && isDesktopShell && effectiveTransport === "network" && (
         <section className="flex flex-col gap-2">
           <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{loc.printerAddressHeading}</h3>
           <div className="flex gap-2 max-w-md">
@@ -201,7 +204,7 @@ export function PreviewSettingsTab() {
         </section>
       )}
 
-      {provider === "printer" && transport === "usb" && (
+      {provider === "printer" && effectiveTransport === "usb" && (
         <section className="flex flex-col gap-2">
           <h3 className="font-mono text-[10px] uppercase tracking-widest text-muted">{t.zebraPrint.printer}</h3>
           <div className="max-w-md">
@@ -215,7 +218,7 @@ export function PreviewSettingsTab() {
                     ? [{ value: "", label: usb.loading ? t.zebraPrint.discovering : t.zebraPrint.noPrinters }]
                     : usb.printers.map((p) => ({
                         value: p.id,
-                        label: isLikelyZebra(p) ? `${p.name} · ZPL?` : p.name,
+                        label: printerOptionLabel(p.name, isLikelyZebra(p)),
                       })),
               }]}
             />
