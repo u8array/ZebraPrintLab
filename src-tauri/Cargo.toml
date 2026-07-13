@@ -28,17 +28,22 @@ printers = "2.3.0"
 # Keychain, Linux DBus Secret Service. Linux CI needs libdbus-1-dev.
 keyring = { version = "3", features = ["windows-native", "apple-native", "sync-secret-service"] }
 
+[target.'cfg(target_os = "linux")'.dependencies]
+# O_NONBLOCK for the usblp read-back fd (AsyncFd needs a non-blocking fd).
+# Already transitive via printers, so this pins no new code.
+libc = "0.2"
+
 [target.'cfg(target_os = "macos")'.dependencies]
 # Direct USB printer IO: macOS has no usblp equivalent, so list/send/query go
-# through IOKit via this pure-Rust stack (no libusb to link or vendor). The
-# tokio feature gives the endpoints AsyncRead/AsyncWrite, so the TCP reply
-# loop in transport.rs is reused verbatim.
+# through IOKit via this pure-Rust stack (no libusb to link). The tokio feature
+# gives the endpoints AsyncRead/AsyncWrite, reusing the transport.rs reply loop.
 nusb = { version = "0.2", features = ["tokio"] }
 
 [dev-dependencies]
-# rt only: the macros feature would pull tokio-macros, which lags tokio
-# releases on crates.io; tests build their runtime by hand instead.
-tokio = { version = "1", features = ["rt"] }
+# rt for hand-built runtimes, test-util for the paused clock in the reply-loop
+# tests; the macros feature would pull tokio-macros, which lags tokio releases
+# on crates.io, so tests build their runtime by hand instead.
+tokio = { version = "1", features = ["rt", "test-util"] }
 
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-window-state = "2"

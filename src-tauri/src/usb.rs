@@ -14,9 +14,8 @@ pub struct UsbPrinter {
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 impl UsbPrinter {
-  /// `vendor_id`/`product_id` as lowercase hex; `serial` must be non-empty
-  /// (callers fall back to a port-stable id) so identical models can't
-  /// collide on "vid:pid:".
+  /// `serial` must be non-empty (callers fall back to a port-stable id) so
+  /// identical models can't collide on "vid:pid:".
   fn new(
     vendor_id: String,
     product_id: &str,
@@ -35,6 +34,11 @@ impl UsbPrinter {
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 const ZEBRA_VENDOR_ID: &str = "0a5f";
+
+// The printer may consume slowly while storing a ~DY download, so far above
+// the TCP socket timeout.
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+const SEND_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
 
 /// Zebra vendor first, then by name, so the label printer beats an office one.
 #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -55,12 +59,27 @@ pub enum UsbSendResult {
 
 /// Serialized like TcpQueryResult; only the Data payload shape is shared (the
 /// USB path has no refused/unreachable, and a TCP path has no not_found).
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 #[derive(Debug, serde::Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum UsbQueryResult {
-  Data { body: String },
+  Data {
+    body: String,
+  },
+  /// Linux only: the udev uaccess rule has not applied yet.
+  #[cfg(target_os = "linux")]
+  PermissionDenied,
   NotFound,
+}
+
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+impl UsbQueryResult {
+  /// ~DY payloads are ASCII (ZB64); lossy keeps any stray control bytes benign.
+  fn from_reply(body: Vec<u8>) -> Self {
+    Self::Data {
+      body: String::from_utf8_lossy(&body).into_owned(),
+    }
+  }
 }
 
 #[cfg(not(any(target_os = "linux", target_os = "macos")))]
@@ -75,12 +94,10 @@ pub async fn send_zpl_usb(_device: String, _zpl: String) -> Result<(), String> {
   Err("USB transport is not supported on this platform".to_string())
 }
 
-// The read channel needs the interface driven directly (nusb); the Linux
-// transport goes through usblp, whose read side is not wired up here yet.
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
 #[tauri::command]
 pub async fn query_zpl_usb(_device: String, _zpl: String) -> Result<(), String> {
-  Err("USB query is only supported on macOS".to_string())
+  Err("USB query is not supported on this platform".to_string())
 }
 
 #[cfg(not(target_os = "linux"))]
@@ -91,28 +108,15 @@ pub async fn setup_usb_access() -> Result<(), String> {
 
 #[cfg(target_os = "macos")]
 mod macos {
-  use super::{zebra_first, UsbPrinter, UsbQueryResult, UsbSendResult};
+  use super::{zebra_first, UsbPrinter, UsbQueryResult, UsbSendResult, SEND_TIMEOUT};
   use nusb::descriptors::TransferType;
   use nusb::transfer::{Bulk, Direction, In, Out};
   use nusb::{DeviceInfo, Interface};
-  use std::time::Duration;
-  use tokio::io::{AsyncReadExt, AsyncWriteExt};
+  use tokio::io::AsyncWriteExt;
   use tokio::time::timeout;
 
   /// USB base class 07: printer.
   const PRINTER_CLASS: u8 = 7;
-  // The printer may consume slowly while storing a ~DY download, so far above
-  // the TCP socket timeout.
-  const SEND_TIMEOUT: Duration = Duration::from_secs(60);
-  // The printer renders before answering (seconds on a font download), so wait
-  // that long for the first packet.
-  const REPLY_FIRST_BYTE: Duration = Duration::from_secs(30);
-  // Fallback delimiter for firmware that omits the terminating zero-length
-  // packet: after data flows, a gap this long ends the reply instead of waiting
-  // out REPLY_FIRST_BYTE. The short packet ends it sooner in the common case.
-  const REPLY_IDLE: Duration = Duration::from_millis(1200);
-  // Defense-in-depth against a runaway reply; a ~DY label bitmap is ~200 KiB.
-  const MAX_REPLY_BYTES: usize = 8 * 1024 * 1024;
   // nusb splits larger payloads across transfers, so this only sizes the buffer.
   const TRANSFER_SIZE: usize = 64 * 1024;
 
@@ -124,8 +128,8 @@ mod macos {
   }
 
   fn to_printer(info: &DeviceInfo) -> UsbPrinter {
-    // No serial (or an empty one): the IOKit location id is stable per
-    // physical port, mirroring the sysfs-path fallback on Linux.
+    // No serial: the IOKit location id is stable per physical port (mirrors
+    // the Linux sysfs-path fallback).
     let serial = info
       .serial_number()
       .filter(|s| !s.is_empty())
@@ -217,38 +221,11 @@ mod macos {
       .map_err(|e| e.to_string())?
       .reader(TRANSFER_SIZE);
     write_zpl(&interface, zpl).await?;
-    // The short packet ends the reply immediately in the common case; the idle
-    // gap is only a fallback for firmware that omits it (see REPLY_IDLE), so a
-    // multiple-of-packet reply ends in REPLY_IDLE rather than REPLY_FIRST_BYTE.
+    // The short packet ends the reply immediately in the common case; the
+    // idle gap inside read_reply is the fallback for firmware that omits it.
     let mut short = reader.until_short_packet();
-    let mut body = Vec::new();
-    let mut buf = [0u8; 64 * 1024];
-    loop {
-      let wait = if body.is_empty() {
-        REPLY_FIRST_BYTE
-      } else {
-        REPLY_IDLE
-      };
-      match timeout(wait, short.read(&mut buf)).await {
-        Ok(Ok(0)) => break, // short packet = end of reply
-        Ok(Ok(n)) => {
-          if body.len() + n > MAX_REPLY_BYTES {
-            return Err("response too large".to_string());
-          }
-          body.extend_from_slice(&buf[..n]);
-        }
-        Ok(Err(e)) => return Err(e.to_string()),
-        Err(_) if body.is_empty() => return Err("no response from printer".to_string()),
-        Err(_) => break, // idle gap after data = end of reply
-      }
-    }
-    if body.is_empty() {
-      return Err("no response from printer".to_string());
-    }
-    // ~DY payloads are ASCII (ZB64); lossy keeps any stray control bytes benign.
-    Ok(UsbQueryResult::Data {
-      body: String::from_utf8_lossy(&body).into_owned(),
-    })
+    let body = crate::transport::read_reply(&mut short).await?;
+    Ok(UsbQueryResult::from_reply(body))
   }
 }
 
@@ -353,6 +330,12 @@ pub async fn list_usb_printers() -> Result<Vec<UsbPrinter>, String> {
   .await
 }
 
+// The two sysfs/dev roots the send and query paths both resolve through.
+#[cfg(target_os = "linux")]
+const USBMISC_ROOT: &str = "/sys/class/usbmisc";
+#[cfg(target_os = "linux")]
+const DEV_USB_ROOT: &str = "/dev/usb";
+
 // Map the stable id back to the current char device. lpN numbering can change
 // across replug, so it is resolved fresh here, never trusted from the caller.
 #[cfg(target_os = "linux")]
@@ -365,13 +348,13 @@ fn resolve_node(usbmisc_root: &Path, dev_root: &Path, id: &str) -> Result<PathBu
   Ok(dev_root.join(node))
 }
 
-// EACCES means the udev uaccess rule has not applied yet; ENOENT means the node
-// vanished (replug). Anything else is a genuine write failure.
+// EACCES: the udev uaccess rule has not applied yet. ENOENT: the node vanished
+// (replug). Anything else (e.g. EBUSY while CUPS holds it) is a genuine error.
 #[cfg(target_os = "linux")]
-fn map_send_io_err(e: std::io::Error) -> Result<UsbSendResult, String> {
+fn classify_lp_io_err<T>(e: std::io::Error, on_perm: T, on_missing: T) -> Result<T, String> {
   match e.kind() {
-    std::io::ErrorKind::PermissionDenied => Ok(UsbSendResult::PermissionDenied),
-    std::io::ErrorKind::NotFound => Ok(UsbSendResult::NotFound),
+    std::io::ErrorKind::PermissionDenied => Ok(on_perm),
+    std::io::ErrorKind::NotFound => Ok(on_missing),
     _ => Err(e.to_string()),
   }
 }
@@ -381,11 +364,7 @@ fn map_send_io_err(e: std::io::Error) -> Result<UsbSendResult, String> {
 pub async fn send_zpl_usb(device: String, zpl: String) -> Result<UsbSendResult, String> {
   check_payload(zpl.len())?;
   blocking(move || {
-    let path = match resolve_node(
-      Path::new("/sys/class/usbmisc"),
-      Path::new("/dev/usb"),
-      &device,
-    ) {
+    let path = match resolve_node(Path::new(USBMISC_ROOT), Path::new(DEV_USB_ROOT), &device) {
       Ok(p) => p,
       Err(r) => return Ok(r),
     };
@@ -396,7 +375,7 @@ pub async fn send_zpl_usb(device: String, zpl: String) -> Result<UsbSendResult, 
       .and_then(|mut f| f.write_all(zpl.as_bytes()));
     match result {
       Ok(()) => Ok(UsbSendResult::Sent),
-      Err(e) => map_send_io_err(e),
+      Err(e) => classify_lp_io_err(e, UsbSendResult::PermissionDenied, UsbSendResult::NotFound),
     }
   })
   .await?
@@ -410,10 +389,9 @@ const UDEV_RULE: &str = include_str!("../packaging/udev/70-zplab.rules");
 #[cfg(target_os = "linux")]
 #[tauri::command]
 pub async fn setup_usb_access() -> Result<(), String> {
-  // pkexec shows one polkit prompt, writes the rule, reloads udev. Used by
-  // AppImage (no installer) and as a repair path. Writes to /etc/udev/rules.d
-  // (writable on immutable distros, and the right place for a runtime rule);
-  // set -e so a failed install is reported instead of silently swallowed.
+  // Used by AppImage (no installer) and as a repair path. Writes to
+  // /etc/udev/rules.d (writable on immutable distros, the right place for a
+  // runtime rule); set -e so a failed step surfaces instead of being swallowed.
   let script = format!(
     "set -e\ninstall -Dm644 /dev/stdin /etc/udev/rules.d/70-zplab.rules <<'ZEBRA_UDEV_RULE_EOF'\n{UDEV_RULE}\nZEBRA_UDEV_RULE_EOF\nrm -f /usr/lib/udev/rules.d/99-zebraprintlab.rules /etc/udev/rules.d/99-zebraprintlab.rules /etc/udev/rules.d/70-zebraprintlab.rules /usr/lib/udev/rules.d/70-zebraprintlab.rules || true\nudevadm control --reload-rules || true\nudevadm trigger --subsystem-match=usbmisc --subsystem-match=usb || true"
   );
@@ -435,6 +413,125 @@ pub async fn setup_usb_access() -> Result<(), String> {
   .await?
 }
 
+// AsyncRead/AsyncWrite over the non-blocking usblp fd, so the shared
+// transport::read_reply loop drives the char device like a socket.
+#[cfg(target_os = "linux")]
+mod lp_io {
+  use std::fs::File;
+  use std::io::{Read, Write};
+  use std::pin::Pin;
+  use std::task::{Context, Poll};
+  use tokio::io::unix::AsyncFd;
+  use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
+
+  pub(super) struct LpDevice(AsyncFd<File>);
+
+  impl LpDevice {
+    pub(super) fn new(file: File) -> std::io::Result<Self> {
+      Ok(Self(AsyncFd::new(file)?))
+    }
+  }
+
+  impl AsyncRead for LpDevice {
+    fn poll_read(
+      self: Pin<&mut Self>,
+      cx: &mut Context<'_>,
+      buf: &mut ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
+      let this = self.get_mut();
+      loop {
+        let mut guard = match this.0.poll_read_ready_mut(cx) {
+          Poll::Ready(r) => r?,
+          Poll::Pending => return Poll::Pending,
+        };
+        match guard.try_io(|inner| inner.get_mut().read(buf.initialize_unfilled())) {
+          Ok(Ok(n)) => {
+            buf.advance(n);
+            return Poll::Ready(Ok(()));
+          }
+          Ok(Err(e)) => return Poll::Ready(Err(e)),
+          Err(_would_block) => continue,
+        }
+      }
+    }
+  }
+
+  impl AsyncWrite for LpDevice {
+    fn poll_write(
+      self: Pin<&mut Self>,
+      cx: &mut Context<'_>,
+      buf: &[u8],
+    ) -> Poll<std::io::Result<usize>> {
+      let this = self.get_mut();
+      loop {
+        let mut guard = match this.0.poll_write_ready_mut(cx) {
+          Poll::Ready(r) => r?,
+          Poll::Pending => return Poll::Pending,
+        };
+        match guard.try_io(|inner| inner.get_mut().write(buf)) {
+          Ok(result) => return Poll::Ready(result),
+          Err(_would_block) => continue,
+        }
+      }
+    }
+
+    // usblp has no userspace buffer to flush and no half-close.
+    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+      Poll::Ready(Ok(()))
+    }
+
+    fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+      Poll::Ready(Ok(()))
+    }
+  }
+}
+
+#[cfg(target_os = "linux")]
+#[tauri::command]
+pub async fn query_zpl_usb(device: String, zpl: String) -> Result<UsbQueryResult, String> {
+  check_payload(zpl.len())?;
+  // Resolve (sysfs walk) and open (a char-device open can sleep) off the runtime
+  // like the send path; only the read-back needs it.
+  let opened = blocking(
+    move || -> Result<Result<std::fs::File, UsbQueryResult>, String> {
+      let path = match resolve_node(Path::new(USBMISC_ROOT), Path::new(DEV_USB_ROOT), &device) {
+        Ok(p) => p,
+        Err(_) => return Ok(Err(UsbQueryResult::NotFound)),
+      };
+      use std::os::unix::fs::OpenOptionsExt;
+      match std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .custom_flags(libc::O_NONBLOCK)
+        .open(&path)
+      {
+        Ok(f) => Ok(Ok(f)),
+        Err(e) => classify_lp_io_err(
+          e,
+          UsbQueryResult::PermissionDenied,
+          UsbQueryResult::NotFound,
+        )
+        .map(Err),
+      }
+    },
+  )
+  .await??;
+  let file = match opened {
+    Ok(f) => f,
+    Err(result) => return Ok(result),
+  };
+  let mut dev = lp_io::LpDevice::new(file).map_err(|e| e.to_string())?;
+  use tokio::io::AsyncWriteExt;
+  tokio::time::timeout(SEND_TIMEOUT, dev.write_all(zpl.as_bytes()))
+    .await
+    .map_err(|_| "write timed out".to_string())?
+    .map_err(|e| e.to_string())?;
+  // No short-packet boundary on the char device; the idle gap inside
+  // read_reply delimits the reply instead.
+  let body = crate::transport::read_reply(&mut dev).await?;
+  Ok(UsbQueryResult::from_reply(body))
+}
+
 #[cfg(all(test, any(target_os = "linux", target_os = "macos")))]
 mod tests {
   use super::*;
@@ -446,7 +543,6 @@ mod tests {
     assert_eq!(json, r#"{"kind":"not_found"}"#);
   }
 
-  #[cfg(target_os = "macos")]
   #[test]
   fn query_result_serializes_with_kind_tag() {
     let json = serde_json::to_string(&UsbQueryResult::Data {
@@ -486,8 +582,7 @@ mod tests {
   }
 }
 
-// The suite exercises the Linux usblp paths (enumerate/parse/resolve); it is
-// gated as a module because every case builds sysfs fixtures.
+// Linux usblp paths (enumerate/parse/resolve); every case builds sysfs fixtures.
 #[cfg(all(test, target_os = "linux"))]
 mod linux_tests {
   use super::*;
@@ -499,11 +594,48 @@ mod linux_tests {
   }
 
   #[test]
+  fn query_permission_denied_serializes_with_kind_tag() {
+    let json = serde_json::to_string(&UsbQueryResult::PermissionDenied).unwrap();
+    assert_eq!(json, r#"{"kind":"permission_denied"}"#);
+  }
+
+  // A pipe stands in for the usblp node: both deliver readiness via poll.
+  #[test]
+  fn lp_device_reply_ends_on_idle_gap() {
+    use std::io::Write;
+    use std::os::fd::FromRawFd;
+    let mut fds = [0i32; 2];
+    assert_eq!(
+      unsafe { libc::pipe2(fds.as_mut_ptr(), libc::O_NONBLOCK) },
+      0
+    );
+    let (read_end, mut write_end) = unsafe {
+      (
+        std::fs::File::from_raw_fd(fds[0]),
+        std::fs::File::from_raw_fd(fds[1]),
+      )
+    };
+    // Written before the reader starts, so the paused clock's auto-advance
+    // cannot outrun fd readiness.
+    write_end.write_all(b"~HIreply").unwrap();
+    let rt = tokio::runtime::Builder::new_current_thread()
+      .enable_all()
+      .start_paused(true)
+      .build()
+      .unwrap();
+    rt.block_on(async {
+      let mut dev = lp_io::LpDevice::new(read_end).unwrap();
+      let body = crate::transport::read_reply(&mut dev).await.unwrap();
+      assert_eq!(body, b"~HIreply");
+    });
+  }
+
+  #[test]
   fn enumerates_and_sorts_zebra_first() {
     use std::fs;
     let root = std::env::temp_dir().join(format!("zpl_usbmisc_{}", std::process::id()));
-    // Two fake usbmisc entries: lp0 = generic, lp1 = Zebra. Each links to a
-    // "device" dir holding the USB attributes.
+    // Two usbmisc entries: lp0 generic, lp1 Zebra, each with a "device" dir of
+    // USB attributes.
     for (node, vid, pid, ser, man, prod) in [
       ("lp0", "03f0", "0512", "S1", "HP", "LaserJet"),
       ("lp1", "0a5f", "0166", "S2", "Zebra Technologies", "ZD230"),
@@ -522,7 +654,7 @@ mod linux_tests {
     }
     let out = enumerate(&root);
     assert_eq!(out.len(), 2);
-    assert_eq!(out[0].1.vendor_id, "0a5f"); // Zebra sorted first
+    assert_eq!(out[0].1.vendor_id, "0a5f");
     assert_eq!(out[0].0, "lp1");
     fs::remove_dir_all(&root).ok();
   }
@@ -542,10 +674,8 @@ mod linux_tests {
     }
     let dev_root = root.join("dev");
     fs::create_dir_all(&dev_root).unwrap();
-    // Matching id resolves to /dev/usb/lp0 under our fake dev_root.
     let ok = resolve_node(&root, &dev_root, "0a5f:0166:S2").unwrap();
     assert_eq!(ok, dev_root.join("lp0"));
-    // Unknown id is NotFound.
     let miss = resolve_node(&root, &dev_root, "dead:beef:X").unwrap_err();
     assert!(matches!(miss, UsbSendResult::NotFound));
     fs::remove_dir_all(&root).ok();
@@ -555,8 +685,8 @@ mod linux_tests {
   fn enumerates_via_device_parent_and_serialless_id() {
     use std::fs;
     let root = std::env::temp_dir().join(format!("zpl_parent_{}", std::process::id()));
-    // Real sysfs: lpN/device is the interface (no idVendor); the USB device
-    // one level up (device/..) carries the attributes. Also omit serial.
+    // Real sysfs: lpN/device is the interface (no idVendor); the device one
+    // level up carries the attributes. Also omit serial.
     let node = root.join("lp0");
     fs::create_dir_all(node.join("device")).unwrap();
     for (f, v) in [
@@ -570,7 +700,7 @@ mod linux_tests {
     let out = enumerate(&root);
     assert_eq!(out.len(), 1);
     assert_eq!(out[0].1.vendor_id, "0a5f");
-    // No serial: id falls back to the sysfs device path (the device/.. dir).
+    // No serial: id falls back to the sysfs device path.
     assert!(out[0].1.id.starts_with("0a5f:0166:"));
     assert!(out[0].1.id.contains("lp0"));
     fs::remove_dir_all(&root).ok();
@@ -645,8 +775,7 @@ mod hardware_tests {
         }
         other => panic!("expected data, got {other:?}"),
       }
-      // The plain send path (print dialog): an empty format is accepted
-      // without feeding a label.
+      // Plain send path: an empty format is accepted without feeding a label.
       let res = super::macos::send(&printer.id, b"^XA^XZ").await.unwrap();
       assert!(matches!(res, super::UsbSendResult::Sent));
       // The preview flow the frontend runs: store the rendered format without
@@ -659,6 +788,82 @@ mod hardware_tests {
           println!("preview reply: {} bytes", body.len());
         }
         other => panic!("expected data, got {other:?}"),
+      }
+    });
+  }
+}
+
+// Talks to real hardware; excluded from the default run. With the ZD230
+// attached: cd src-tauri && cargo test -- --ignored
+#[cfg(all(test, target_os = "linux"))]
+mod linux_hardware_tests {
+  #[test]
+  #[ignore = "needs a USB printer attached"]
+  fn queries_the_attached_printer() {
+    let rt = tokio::runtime::Builder::new_current_thread()
+      .enable_all()
+      .build()
+      .unwrap();
+    rt.block_on(async {
+      let printers = super::list_usb_printers().await.unwrap();
+      let printer = printers.first().expect("a USB printer should be attached");
+      // ~HI answers with the model string, e.g. "ZD230-203dpi,V84.20.18Z,...".
+      let res = super::query_zpl_usb(printer.id.clone(), "~HI".to_string())
+        .await
+        .unwrap();
+      match res {
+        super::UsbQueryResult::Data { body } => {
+          assert!(!body.is_empty(), "expected a ~HI reply");
+          println!("~HI reply: {body}");
+        }
+        other => panic!("expected data, got {other:?}"),
+      }
+      // The preview flow the frontend runs: store the rendered format without
+      // printing (^IS..,N), then upload its bitmap (^HY answers with ~DY).
+      let preview = "^XA^FO30,30^A0N,40,40^FDUSB Preview^FS^ISR:PRE.GRF,N^XZ\n^XA^HYR:PRE.GRF^XZ";
+      let res = super::query_zpl_usb(printer.id.clone(), preview.to_string())
+        .await
+        .unwrap();
+      match res {
+        super::UsbQueryResult::Data { body } => {
+          assert!(body.contains("~DY"), "expected a ~DY graphic upload");
+          println!("preview reply: {} bytes", body.len());
+        }
+        other => panic!("expected data, got {other:?}"),
+      }
+      // Multi-packet read: dense varied text resists Z64, so this ~DY spans many
+      // USB packets. Two identical replies past the CRC prove read_reply never
+      // takes a mid-stream boundary for the end (usblp signals no-more-data with
+      // EAGAIN, not a zero-length read). Sequential: usblp is single-opener.
+      let mut big = String::from("^XA^PW812^LL1218");
+      let mut y = 0;
+      while y < 1180 {
+        big.push_str(&format!(
+          "^FO5,{y}^A0N,18,18^FD{y} the quick brown fox 0123456789 ABCDEFGHIJKLM^FS"
+        ));
+        y += 20;
+      }
+      big.push_str("^ISR:PRE.GRF,N^XZ\n^XA^HYR:PRE.GRF^XZ");
+      let run = || super::query_zpl_usb(printer.id.clone(), big.clone());
+      match (run().await.unwrap(), run().await.unwrap()) {
+        (super::UsbQueryResult::Data { body: a }, super::UsbQueryResult::Data { body: b }) => {
+          println!("multi-packet reply: {} bytes", a.len());
+          assert!(
+            a.len() > 4000,
+            "expected a multi-packet reply, got {}",
+            a.len()
+          );
+          assert_eq!(a, b, "reply differed across runs (truncation)");
+          // A complete Z64 stream ends with ":crc16" (4 hex digits); a
+          // truncated reply would not.
+          assert!(a.contains(":Z64:"), "expected a Z64 payload");
+          let crc = a.trim_end().rsplit(':').next().unwrap_or_default();
+          assert!(
+            crc.len() == 4 && crc.bytes().all(|c| c.is_ascii_hexdigit()),
+            "reply did not end with a Z64 CRC: {crc:?}"
+          );
+        }
+        other => panic!("expected data twice, got {other:?}"),
       }
     });
   }
