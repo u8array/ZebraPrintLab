@@ -1,8 +1,8 @@
-// Shared plumbing for the TCP printer commands: connect, write-with-timeout,
+// Shared plumbing for the printer commands: connect, write-with-timeout,
 // read-one-reply, the blocking-pool wrapper, and the payload bound, so a
-// timeout or classification change lives in one place. The USB transport
-// (usb.rs) frames its IO differently (ZLP-terminated writes, short-packet
-// reads), so it does its own bulk IO rather than going through these.
+// timeout or classification change lives in one place. The USB transports
+// frame their writes themselves (ZLP-terminated on macOS), but their reply
+// reads go through read_reply like TCP.
 
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -16,10 +16,9 @@ const IO_TIMEOUT: Duration = Duration::from_secs(4);
 
 // A ~DY upload of a full label bitmap is ~200 KiB base64; bound far above that.
 const MAX_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
-// The printer renders the format before replying, and a label carrying a font
-// download (~DY) can take an entry-level printer well past 10s to store, render,
-// and answer ^HY (observed: the ZD230 keeps working while a shorter wait times
-// out). Generous, since a preview is a manual one-shot the user waits on.
+// The printer renders before replying; a ~DY font download can take an
+// entry-level printer past 10s (observed on the ZD230). Generous: a preview is
+// a manual one-shot the user waits on.
 const FIRST_BYTE_TIMEOUT: Duration = Duration::from_secs(30);
 // After data flows, a short idle gap marks the end of the reply (the printer
 // keeps the channel open, so waiting for a close would always hit the timeout).
@@ -76,14 +75,15 @@ pub(crate) async fn write_all_timeout(stream: &mut TcpStream, bytes: &[u8]) -> R
 /// reply that never starts, trickles past the deadline, or overflows the bound
 /// is an error. An empty body is reported as "no response" because print-only
 /// endpoints accept a job silently, which is not a queryable response.
-pub(crate) async fn read_reply(stream: &mut TcpStream) -> Result<Vec<u8>, String> {
+pub(crate) async fn read_reply<R: tokio::io::AsyncRead + Unpin>(
+  stream: &mut R,
+) -> Result<Vec<u8>, String> {
   let mut body = Vec::new();
   let mut buf = [0u8; 64 * 1024];
   let deadline = tokio::time::Instant::now() + READ_DEADLINE;
   loop {
-    // A complete reply ends on the idle gap long before this cap, so reaching
-    // it means the stream is incomplete (slow render, trickle): report the
-    // timeout explicitly instead of returning a truncated body downstream.
+    // Reaching this cap means the reply never idled (slow render, trickle):
+    // report the timeout instead of returning a truncated body.
     if tokio::time::Instant::now() >= deadline {
       return Err("read timed out".to_string());
     }
@@ -109,4 +109,65 @@ pub(crate) async fn read_reply(stream: &mut TcpStream) -> Result<Vec<u8>, String
     return Err("no response from printer".to_string());
   }
   Ok(body)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  // Paused clock: the timeouts auto-advance when the reader idles, so the
+  // 30s/60s waits complete instantly.
+  fn rt() -> tokio::runtime::Runtime {
+    tokio::runtime::Builder::new_current_thread()
+      .enable_all()
+      .start_paused(true)
+      .build()
+      .unwrap()
+  }
+
+  #[test]
+  fn read_reply_ends_on_idle_gap() {
+    rt().block_on(async {
+      let (mut a, mut b) = tokio::io::duplex(1024);
+      a.write_all(b"~DYreply").await.unwrap();
+      // `a` stays open, so only the idle gap can end the reply.
+      let body = read_reply(&mut b).await.unwrap();
+      assert_eq!(body, b"~DYreply");
+    });
+  }
+
+  #[test]
+  fn read_reply_reports_no_response() {
+    rt().block_on(async {
+      let (_a, mut b) = tokio::io::duplex(1024);
+      let err = read_reply(&mut b).await.unwrap_err();
+      assert_eq!(err, "no response from printer");
+    });
+  }
+
+  #[test]
+  fn read_reply_treats_eof_without_data_as_no_response() {
+    rt().block_on(async {
+      let (a, mut b) = tokio::io::duplex(1024);
+      drop(a);
+      let err = read_reply(&mut b).await.unwrap_err();
+      assert_eq!(err, "no response from printer");
+    });
+  }
+
+  #[test]
+  fn read_reply_times_out_on_trickle() {
+    rt().block_on(async {
+      let (mut a, mut b) = tokio::io::duplex(1024);
+      // A byte just inside every idle gap holds the reply open past the
+      // overall deadline.
+      tokio::spawn(async move {
+        while a.write_all(b"x").await.is_ok() {
+          tokio::time::sleep(Duration::from_millis(1000)).await;
+        }
+      });
+      let err = read_reply(&mut b).await.unwrap_err();
+      assert_eq!(err, "read timed out");
+    });
+  }
 }
