@@ -976,7 +976,7 @@ const sv = {
       upload: 'Ladda upp bild',
       uploading: 'Laddar upp…',
       uploadError: 'Kunde inte ladda bilden',
-      preview: 'Förhandsvisning',
+      original: 'Original',
       widthDots: 'Bredd',
       threshold: 'Mono-tröskel',
       storage: 'Skrivarlagring',

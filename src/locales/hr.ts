@@ -976,7 +976,7 @@ const hr = {
       upload: 'Prenesi sliku',
       uploading: 'Prenošenje…',
       uploadError: 'Sliku nije moguće učitati',
-      preview: 'Pregled',
+      original: 'Original',
       widthDots: 'Širina',
       threshold: 'Mono prag',
       storage: 'Pohrana pisača',

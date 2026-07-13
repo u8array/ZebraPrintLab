@@ -976,7 +976,7 @@ const ko = {
       upload: '이미지 업로드',
       uploading: '업로드 중…',
       uploadError: '이미지를 불러올 수 없습니다',
-      preview: '미리보기',
+      original: '원본',
       widthDots: '너비',
       threshold: '모노 임계값',
       storage: '프린터 저장소',

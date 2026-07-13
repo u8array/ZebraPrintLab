@@ -1004,7 +1004,7 @@ const en = {
       upload: 'Upload image',
       uploading: 'Uploading…',
       uploadError: 'Could not load image',
-      preview: 'Preview',
+      original: 'Original',
       widthDots: 'Width',
       threshold: 'Mono threshold',
       storage: 'Printer storage',

@@ -976,7 +976,7 @@ const es = {
       upload: 'Subir imagen',
       uploading: 'Subiendo…',
       uploadError: 'No se pudo cargar la imagen',
-      preview: 'Vista previa',
+      original: 'Original',
       widthDots: 'Ancho',
       threshold: 'Umbral mono',
       storage: 'Almacenamiento de impresora',

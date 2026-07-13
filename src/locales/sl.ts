@@ -976,7 +976,7 @@ const sl = {
       upload: 'Naloži sliko',
       uploading: 'Nalaganje…',
       uploadError: 'Slike ni bilo mogoče naložiti',
-      preview: 'Predogled',
+      original: 'Izvirnik',
       widthDots: 'Širina',
       threshold: 'Mono prag',
       storage: 'Shramba tiskalnika',

@@ -976,7 +976,7 @@ const lv = {
       upload: 'Augšupielādēt attēlu',
       uploading: 'Augšupielāde…',
       uploadError: 'Neizdevās ielādēt attēlu',
-      preview: 'Priekšskatījums',
+      original: 'Oriģināls',
       widthDots: 'Platums',
       threshold: 'Mono slieksnis',
       storage: 'Printera krātuve',

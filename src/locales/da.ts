@@ -976,7 +976,7 @@ const da = {
       upload: 'Upload billede',
       uploading: 'Uploader…',
       uploadError: 'Kunne ikke indlæse billede',
-      preview: 'Forhåndsvisning',
+      original: 'Original',
       widthDots: 'Bredde',
       threshold: 'Mono-tærskel',
       storage: 'Printer-lager',

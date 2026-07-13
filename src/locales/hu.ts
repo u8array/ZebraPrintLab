@@ -976,7 +976,7 @@ const hu = {
       upload: 'Kép feltöltése',
       uploading: 'Feltöltés…',
       uploadError: 'A kép nem tölthető be',
-      preview: 'Előnézet',
+      original: 'Eredeti',
       widthDots: 'Szélesség',
       threshold: 'Mono küszöb',
       storage: 'Nyomtató tárhely',

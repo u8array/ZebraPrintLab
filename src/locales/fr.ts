@@ -976,7 +976,7 @@ const fr = {
       upload: 'Télécharger une image',
       uploading: 'Téléchargement…',
       uploadError: 'Impossible de charger l\'image',
-      preview: 'Aperçu',
+      original: 'Original',
       widthDots: 'Largeur',
       threshold: 'Seuil mono',
       storage: 'Stockage de l’imprimante',

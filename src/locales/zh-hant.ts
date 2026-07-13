@@ -976,7 +976,7 @@ const zhHant = {
       upload: '上傳圖片',
       uploading: '上傳中…',
       uploadError: '無法載入圖片',
-      preview: '預覽',
+      original: '原圖',
       widthDots: '寬度（點）',
       threshold: '單色閾值',
       storage: '印表機儲存',

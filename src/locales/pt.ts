@@ -976,7 +976,7 @@ const pt = {
       upload: 'Carregar imagem',
       uploading: 'Carregando…',
       uploadError: 'Não foi possível carregar a imagem',
-      preview: 'Pré-visualização',
+      original: 'Original',
       widthDots: 'Largura',
       threshold: 'Limiar mono',
       storage: 'Armazenamento da impressora',
