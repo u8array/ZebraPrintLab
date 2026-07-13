@@ -1004,7 +1004,7 @@ const de = {
       upload: 'Bild hochladen',
       uploading: 'Hochladen…',
       uploadError: 'Bild konnte nicht geladen werden',
-      preview: 'Vorschau',
+      original: 'Original',
       widthDots: 'Breite',
       threshold: 'Mono-Schwellenwert',
       storage: 'Drucker-Speicher',

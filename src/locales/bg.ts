@@ -976,7 +976,7 @@ const bg = {
       upload: 'Качване на изображение',
       uploading: 'Качване…',
       uploadError: 'Изображението не може да бъде заредено',
-      preview: 'Преглед',
+      original: 'Оригинал',
       widthDots: 'Ширина',
       threshold: 'Моно праг',
       storage: 'Памет на принтера',

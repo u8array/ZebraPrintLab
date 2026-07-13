@@ -976,7 +976,7 @@ const it = {
       upload: 'Carica immagine',
       uploading: 'Caricamento…',
       uploadError: 'Impossibile caricare l\'immagine',
-      preview: 'Anteprima',
+      original: 'Originale',
       widthDots: 'Larghezza',
       threshold: 'Soglia mono',
       storage: 'Archiviazione stampante',

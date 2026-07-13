@@ -976,7 +976,7 @@ const fa = {
       upload: 'بارگذاری تصویر',
       uploading: 'در حال بارگذاری…',
       uploadError: 'بارگذاری تصویر ممکن نشد',
-      preview: 'پیش‌نمایش',
+      original: 'اصل',
       widthDots: 'عرض',
       threshold: 'آستانه تک‌رنگ',
       storage: 'ذخیره چاپگر',

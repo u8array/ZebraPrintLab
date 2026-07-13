@@ -976,7 +976,7 @@ const he = {
       upload: 'העלאת תמונה',
       uploading: 'מעלה…',
       uploadError: 'לא ניתן לטעון את התמונה',
-      preview: 'תצוגה מקדימה',
+      original: 'מקור',
       widthDots: 'רוחב',
       threshold: 'סף מונו',
       storage: 'אחסון מדפסת',

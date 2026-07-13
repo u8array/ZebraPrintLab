@@ -976,7 +976,7 @@ const pl = {
       upload: 'Prześlij obraz',
       uploading: 'Przesyłanie…',
       uploadError: 'Nie można załadować obrazu',
-      preview: 'Podgląd',
+      original: 'Oryginał',
       widthDots: 'Szerokość',
       threshold: 'Próg mono',
       storage: 'Pamięć drukarki',

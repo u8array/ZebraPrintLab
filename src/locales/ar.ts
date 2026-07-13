@@ -976,7 +976,7 @@ const ar = {
       upload: 'رفع صورة',
       uploading: 'جارٍ الرفع…',
       uploadError: 'تعذر تحميل الصورة',
-      preview: 'معاينة',
+      original: 'الأصل',
       widthDots: 'العرض',
       threshold: 'عتبة أحادية',
       storage: 'تخزين الطابعة',

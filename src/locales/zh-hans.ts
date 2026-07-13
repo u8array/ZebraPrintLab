@@ -976,7 +976,7 @@ const zhHans = {
       upload: '上传图片',
       uploading: '上传中…',
       uploadError: '无法加载图像',
-      preview: '预览',
+      original: '原图',
       widthDots: '宽度（点）',
       threshold: '单色阈值',
       storage: '打印机存储',

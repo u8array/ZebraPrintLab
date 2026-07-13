@@ -976,7 +976,7 @@ const ja = {
       upload: '画像をアップロード',
       uploading: 'アップロード中…',
       uploadError: '画像を読み込めませんでした',
-      preview: 'プレビュー',
+      original: 'オリジナル',
       widthDots: '幅（ドット）',
       threshold: 'モノクロしきい値',
       storage: 'プリンター記憶',

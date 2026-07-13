@@ -976,7 +976,7 @@ const sr = {
       upload: 'Отпремите слику',
       uploading: 'Отпремање…',
       uploadError: 'Слика није могла да се учита',
-      preview: 'Преглед',
+      original: 'Оригинал',
       widthDots: 'Ширина',
       threshold: 'Моно праг',
       storage: 'Меморија штампача',

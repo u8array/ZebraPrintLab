@@ -976,7 +976,7 @@ const ro = {
       upload: 'Încărcați imaginea',
       uploading: 'Se încarcă…',
       uploadError: 'Imaginea nu a putut fi încărcată',
-      preview: 'Previzualizare',
+      original: 'Original',
       widthDots: 'Lățime',
       threshold: 'Prag mono',
       storage: 'Stocare imprimantă',

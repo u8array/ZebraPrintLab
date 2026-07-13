@@ -5,7 +5,6 @@ import { useT } from '../hooks/useT';
 import { buttonCls, inputCls, labelCls } from '../components/Properties/styles';
 import { loadImageFile, getImage, getAllImages, removeImage } from '../lib/imageCache';
 import { imageToGFA } from '../lib/imageToZpl';
-import { MonoThumbnail } from '../components/Properties/MonoThumbnail';
 import {
   defaultStorageName,
   formatStoragePath,
@@ -149,16 +148,15 @@ export const imagePanel: ObjectTypeUi<ImageProps> = {
             )}
           </div>
 
-          {/* Preview thumbnail: the thresholded print result, not the colored
-              source, so the threshold slider gives live WYSIWYG feedback. */}
+          {/* The colored source, shown nowhere else; the canvas already gives
+              live mono feedback for the threshold slider. */}
           {cached && (
             <div className="flex flex-col gap-1">
-              <label className={labelCls}>{t.registry.image.preview}</label>
-              <MonoThumbnail
-                dataUrl={cached.dataUrl}
-                name={cached.name}
-                widthDots={p.widthDots}
-                threshold={p.threshold}
+              <label className={labelCls}>{t.registry.image.original}</label>
+              <img
+                src={cached.dataUrl}
+                alt={cached.name}
+                className="max-w-full max-h-20 object-contain rounded border border-border bg-white"
               />
               <span className="text-[10px] text-muted font-mono">
                 {cached.width} × {cached.height} px

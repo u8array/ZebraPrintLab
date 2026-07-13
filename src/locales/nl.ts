@@ -976,7 +976,7 @@ const nl = {
       upload: 'Afbeelding uploaden',
       uploading: 'Uploaden…',
       uploadError: 'Kon afbeelding niet laden',
-      preview: 'Voorbeeld',
+      original: 'Origineel',
       widthDots: 'Breedte',
       threshold: 'Mono-drempelwaarde',
       storage: 'Printer-opslag',

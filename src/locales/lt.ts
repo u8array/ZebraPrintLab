@@ -976,7 +976,7 @@ const lt = {
       upload: 'Įkelti vaizdą',
       uploading: 'Įkeliama…',
       uploadError: 'Nepavyko įkelti vaizdo',
-      preview: 'Peržiūra',
+      original: 'Originalas',
       widthDots: 'Plotis',
       threshold: 'Mono slenkstis',
       storage: 'Spausdintuvo saugykla',

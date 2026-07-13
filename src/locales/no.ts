@@ -976,7 +976,7 @@ const no = {
       upload: 'Last opp bilde',
       uploading: 'Laster opp…',
       uploadError: 'Kunne ikke laste bilde',
-      preview: 'Forhåndsvisning',
+      original: 'Original',
       widthDots: 'Bredde',
       threshold: 'Mono-terskel',
       storage: 'Skriverlagring',

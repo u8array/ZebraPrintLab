@@ -976,7 +976,7 @@ const sk = {
       upload: 'Nahrať obrázok',
       uploading: 'Nahrávanie…',
       uploadError: 'Obrázok sa nedá načítať',
-      preview: 'Náhľad',
+      original: 'Originál',
       widthDots: 'Šírka',
       threshold: 'Mono prah',
       storage: 'Úložisko tlačiarne',

@@ -976,7 +976,7 @@ const el = {
       upload: 'Μεταφόρτωση εικόνας',
       uploading: 'Μεταφόρτωση…',
       uploadError: 'Αδυναμία φόρτωσης εικόνας',
-      preview: 'Προεπισκόπηση',
+      original: 'Πρωτότυπο',
       widthDots: 'Πλάτος',
       threshold: 'Κατώφλι mono',
       storage: 'Αποθήκευση εκτυπωτή',

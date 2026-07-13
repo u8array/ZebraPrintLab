@@ -976,7 +976,7 @@ const cs = {
       upload: 'Nahrát obrázek',
       uploading: 'Nahrávání…',
       uploadError: 'Obrázek nelze načíst',
-      preview: 'Náhled',
+      original: 'Originál',
       widthDots: 'Šířka',
       threshold: 'Mono práh',
       storage: 'Úložiště tiskárny',

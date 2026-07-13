@@ -976,7 +976,7 @@ const et = {
       upload: 'Laadi pilt üles',
       uploading: 'Üleslaadimine…',
       uploadError: 'Pildi laadimine ebaõnnestus',
-      preview: 'Eelvaade',
+      original: 'Originaal',
       widthDots: 'Laius',
       threshold: 'Mono lävi',
       storage: 'Printeri salvestus',

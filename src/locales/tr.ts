@@ -976,7 +976,7 @@ const tr = {
       upload: 'Görsel yükle',
       uploading: 'Yükleniyor…',
       uploadError: 'Görsel yüklenemedi',
-      preview: 'Önizleme',
+      original: 'Orijinal',
       widthDots: 'Genişlik',
       threshold: 'Mono eşik',
       storage: 'Yazıcı depolama',

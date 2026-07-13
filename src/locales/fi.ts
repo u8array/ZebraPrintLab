@@ -976,7 +976,7 @@ const fi = {
       upload: 'Lataa kuva',
       uploading: 'Ladataan…',
       uploadError: 'Kuvaa ei voitu ladata',
-      preview: 'Esikatselu',
+      original: 'Alkuperäinen',
       widthDots: 'Leveys',
       threshold: 'Mono-kynnys',
       storage: 'Tulostimen tallennus',
