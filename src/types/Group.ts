@@ -27,13 +27,28 @@ export function isGroup(obj: LabelObject): obj is GroupObject {
 }
 
 /** DFS yielding parent before children, in render order. */
-export function* walkObjects(objects: LabelObject[]): Iterable<LabelObject> {
+export function* walkObjects(objects: readonly LabelObject[]): Iterable<LabelObject> {
   for (const obj of objects) {
     yield obj;
     if (isGroup(obj)) {
       yield* walkObjects(obj.children);
     }
   }
+}
+
+/** Leaves that actually export: an `includeInExport=false` node hides its
+ *  whole subtree. Also the preflight leaf set, so checks track what prints. */
+export function exportableLeaves(objects: readonly LabelObject[]): LeafObject[] {
+  const out: LeafObject[] = [];
+  const walk = (list: readonly LabelObject[]): void => {
+    for (const o of list) {
+      if (o.includeInExport === false) continue;
+      if (isGroup(o)) walk(o.children);
+      else out.push(o);
+    }
+  };
+  walk(objects);
+  return out;
 }
 
 /** Flat list of every leaf descendant of `objects`. Skips group nodes themselves. */

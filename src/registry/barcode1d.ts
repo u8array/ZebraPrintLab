@@ -7,7 +7,7 @@ import { commitBarcodeWidthHeightTransform } from './transformHelpers';
 import { hasTemplateMarkers } from '../lib/fnTemplate';
 import { moduleTooSmallPreflight } from '../lib/barcodeScannability';
 import { isLoneMarker } from '../lib/variableField';
-import { gs1ContentToElementString, parseGs1ToSegments, segmentsToElementString } from '../lib/gs1';
+import { gs1ContentToZplFd, parseGs1ToSegments, segmentsToZplFd } from '../lib/gs1';
 import { type ZplRotation } from './rotation';
 
 export interface Barcode1DProps {
@@ -68,10 +68,10 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
     checkDigit: false,
     rotation: 'N',
   };
-  // Obj-aware ^FD transform (fdContent, or the GS1 element-string form in GS1
+  // Obj-aware ^FD transform (fdContent, or the GS1 mode-D ^FD form in GS1
   // mode), applied to literal/single-bind payloads. A template gets none: the
   // post-embed transform would mangle its #n# references; GS1 templates are
-  // instead pre-mapped to element-string form at segment level in toZPL.
+  // instead pre-mapped to the ^FD form at segment level in toZPL.
   // Shared by toZPL and the batch override.
   const fdTransformFor =
     config.fdContent || config.gs1Capable
@@ -81,7 +81,7 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
           if (hasTemplateMarkers(obj.props.content) && !isLoneMarker(obj.props.content)) {
             return undefined;
           }
-          if (config.gs1Capable && obj.props.gs1) return gs1ContentToElementString;
+          if (config.gs1Capable && obj.props.gs1) return gs1ContentToZplFd;
           return config.fdContent;
         }
       : undefined;
@@ -116,7 +116,7 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
     // e.g. UPC-E compaction; shared with the CSV batch override so a per-row
     // value is compacted the same way as the single-format default. Undefined
     // on a template field (see fdTransformFor; GS1 templates are handled by
-    // toZPL's segment-level element-string pre-map instead).
+    // toZPL's segment-level ^FD pre-map instead).
     fdTransform: fdTransformFor,
 
     toZPL: (obj, ctx) => {
@@ -138,19 +138,23 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
       // symbology's fdContent transform (e.g. UPC-E's number-system prefix) so a
       // serialized barcode emits the same payload shape as a non-serial one.
       const fdTransform = fdTransformFor?.(obj);
-      // GS1 TEMPLATE payload: convert to the element-string form at SEGMENT
-      // level (markers intact) BEFORE ^FE embed expansion. The post-embed
-      // transform would mangle the #n# references, and skipping it entirely
-      // would emit the raw GS-separated form literal payloads never use.
-      // Unparseable template content falls back to raw emit unchanged.
+      // GS1 TEMPLATE payload: pre-map to the mode-D ^FD form at SEGMENT level
+      // BEFORE ^FE embed expansion (the post-embed transform would mangle the
+      // #n# references). Unparseable content falls back to raw emit; marker
+      // VALUES are escaped at their ^FN declaration (gs1ModeDExclusiveFns).
       let content = p.content;
+      let fdTransformOnce = fdTransform;
       if (config.gs1Capable && p.gs1 && hasTemplateMarkers(content) && !isLoneMarker(content)) {
         const segs = ctx?.variables ? parseGs1ToSegments(content, ctx.variables) : null;
-        if (segs && segs.length > 0) content = segmentsToElementString(segs);
+        // Already the ^FD form; a second transform would double the >0 escapes.
+        if (segs && segs.length > 0) {
+          content = segmentsToZplFd(segs);
+          fdTransformOnce = undefined;
+        }
       }
       const fieldData = obj.props.serial
         ? serialFieldData(fdTransform ? fdTransform(p.content) : p.content, obj.props.serial)
-        : fdFieldFor(content, ctx, fdTransform);
+        : fdFieldFor(content, ctx, fdTransformOnce);
       return [
         byCmd,
         fieldPos(obj),

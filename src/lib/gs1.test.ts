@@ -17,6 +17,9 @@ import {
   GS1_DATABAR_DEFAULT_SEGMENTS,
   GS1_AI_SPECS,
   gs1AddBlockReason,
+  segmentsToZplFd,
+  gs1ContentToZplFd,
+  zplFdToGs1Input,
 } from "./gs1";
 
 describe("gtin14WithCheck", () => {
@@ -364,5 +367,45 @@ describe("constants", () => {
   it("uses the spec-maximum 22 as the Expanded Stacked segments default", () => {
     expect(GS1_DATABAR_DEFAULT_SEGMENTS).toBe(22);
     expect(GS1_DATABAR_DEFAULT_SEGMENTS % 2).toBe(0);
+  });
+});
+
+describe("segmentsToZplFd / gs1ContentToZplFd (mode D ^FD form)", () => {
+  const content = "0104012345678901" + "1020260707" + GS1_GS + "17261231" + "30144";
+
+  it("adds the >8 FNC1 invocation only after non-final variable AIs", () => {
+    expect(gs1ContentToZplFd(content)).toBe(
+      "(01)04012345678901(10)20260707>8(17)261231(30)144",
+    );
+  });
+
+  it("passes unparseable content through verbatim (no re-escape corruption)", () => {
+    // A foreign mode-D field kept verbatim on import must round-trip byte-stable;
+    // re-escaping > here would turn >8 into >08 and corrupt the FNC1.
+    expect(gs1ContentToZplFd(">;>80100003486")).toBe(">;>80100003486");
+  });
+
+  it("inserts >8 for the element-string form too, not just raw content", () => {
+    // The parenthesized form must not bypass segment parsing into the fallback.
+    expect(gs1ContentToZplFd("(01)04012345678901(10)20260707(17)261231(30)144")).toBe(
+      "(01)04012345678901(10)20260707>8(17)261231(30)144",
+    );
+  });
+
+  it("adds no separator for a single or final variable AI", () => {
+    expect(gs1ContentToZplFd("1020260707")).toBe("(10)20260707");
+    expect(gs1ContentToZplFd("010401234567890110ABC")).toBe("(01)04012345678901(10)ABC");
+  });
+
+  it("escapes a literal > in values as >0", () => {
+    const segs = parseGs1ToSegments("10A>B" + GS1_GS + "30144");
+    expect(segs).not.toBeNull();
+    expect(segmentsToZplFd(segs!)).toBe("(10)A>0B>8(30)144");
+  });
+
+  it("zplFdToGs1Input undoes the invocations, including the >08 edge", () => {
+    expect(zplFdToGs1Input("(10)A>0B>8(30)144")).toBe("(10)A>B(30)144");
+    // >08 is an escaped > followed by a data 8, not an FNC1.
+    expect(zplFdToGs1Input("(10)A>08>8(30)144")).toBe("(10)A>8(30)144");
   });
 });

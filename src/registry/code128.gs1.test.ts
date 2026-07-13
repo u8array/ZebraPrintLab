@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { code128 } from './code128';
 import { parseZPL } from '../lib/zplParser';
-import { generateZPL } from '../lib/zplGenerator';
-import { GS1_SAMPLE_CONTENT, elementStringToContent } from '../lib/gs1';
+import { generateZPL, generateBatchZpl } from '../lib/zplGenerator';
+import type { Variable } from '../types/Variable';
+import { GS1_SAMPLE_CONTENT, GS1_GS, elementStringToContent } from '../lib/gs1';
 import { PALETTE_PRESET_IDS } from './palettePresets';
 import type { LabelConfig } from '../types/LabelConfig';
 import type { LabelObject } from '../types/Group';
@@ -61,7 +62,7 @@ describe('GS1-128 (code128 gs1 mode)', () => {
     const canonical = elementStringToContent('(01)09501101530003(10)LOT123(21)SER456');
     expect(canonical).not.toBeNull();
     const zpl = generateZPL(LABEL, [mk({ ...baseProps, gs1: true, content: canonical! })]);
-    expect(zpl).toContain('^FD(01)09501101530003(10)LOT123(21)SER456^FS');
+    expect(zpl).toContain('^FD(01)09501101530003(10)LOT123>8(21)SER456^FS');
     const { objects } = parseZPL(zpl, LABEL.dpmm);
     expect(propsOf(objects[0]).gs1).toBe(true);
     expect(propsOf(objects[0]).content).toBe(canonical);
@@ -92,5 +93,120 @@ describe('GS1-128 (code128 gs1 mode)', () => {
 
   it('registers the GS1-128 palette preset', () => {
     expect(PALETTE_PRESET_IDS).toContain('code128-gs1');
+  });
+});
+
+describe('GS1-128 FNC1 separators (mode D)', () => {
+  // Mode D only auto-inserts the leading FNC1 (Labelary-decoded), so the emit
+  // must place >8 after each non-final variable AI or scanners merge the AIs.
+  it('emits >8 after a non-final variable AI', () => {
+    const content = '0104012345678901' + '1020260707' + GS1_GS + '17261231' + '30144';
+    const zpl = code128.toZPL(mk({ ...baseProps, gs1: true, content }) as never);
+    expect(zpl).toContain('^FD(01)04012345678901(10)20260707>8(17)261231(30)144^FS');
+  });
+
+  it('round-trips a literal > in static content without compounding the escape', () => {
+    // (10)A>B emits (10)A>0B; parse must unescape so a second export is stable.
+    const zpl1 = generateZPL(LABEL, [mk({ ...baseProps, gs1: true, content: '10A>B' })]);
+    expect(zpl1).toContain('^FD(10)A>0B^FS');
+    const { objects } = parseZPL(zpl1, LABEL.dpmm);
+    expect(propsOf(objects[0]).content).toBe('10A>B');
+    expect(generateZPL(LABEL, objects as never)).toContain('^FD(10)A>0B^FS');
+  });
+
+  it('round-trips the >8 form back to canonical GS content', () => {
+    const zpl = '^XA^FO10,10^BCN,100,N,N,N,D^FD(01)04012345678901(10)20260707>8(17)261231(30)144^FS^XZ';
+    const { objects } = parseZPL(zpl, 8);
+    const p = propsOf(objects[0]);
+    expect(p.gs1).toBe(true);
+    expect(p.content).toBe('0104012345678901' + '1020260707' + GS1_GS + '17261231' + '30144');
+  });
+});
+
+describe('GS1-128 mode-D ^FN value symmetry', () => {
+  const vars: Variable[] = [{ id: 'v', name: 'batch', fnNumber: 1, defaultValue: 'A>B' }];
+  const tplContent = '01' + '04012345678901' + '10' + '«' + 'batch' + '»';
+  const gs1Tpl = () => mk({ ...baseProps, gs1: true, content: tplContent });
+  const textConsumer = () => ({
+    id: 't', type: 'text', x: 10, y: 60, rotation: 0,
+    props: { content: '«' + 'batch' + '» suffix', fontHeight: 30, fontWidth: 0, rotation: 'N' },
+  }) as never;
+
+  it('escapes > in the ^FN default when the slot feeds only mode-D fields', () => {
+    expect(generateZPL(LABEL, [gs1Tpl()], vars)).toContain('^FN1^FDA>0B^FS');
+  });
+
+  it('normalizes a raw (non-paren) mode-D field payload to model form', () => {
+    const zpl = '^XA^FO10,10^BCN,100,N,N,N,D^FD010401234567890110LOT>821SER^FS^XZ';
+    const { objects } = parseZPL(zpl, LABEL.dpmm);
+    expect(propsOf(objects[0]).content).toBe('010401234567890110LOT' + GS1_GS + '21SER');
+  });
+
+  it('normalizes a raw mode-D single-bind ^FN default to model form', () => {
+    const zpl =
+      '^XA^FN1^FD010401234567890110LOT>821SER^FS' +
+      '^BY2^FO10,10^BCN,100,N,N,N,D^FE#^FD#1#^FS^XZ';
+    const parsed = parseZPL(zpl, LABEL.dpmm);
+    expect(parsed.variables.find((v) => v.fnNumber === 1)?.defaultValue)
+      .toBe('010401234567890110LOT' + GS1_GS + '21SER');
+  });
+
+  it('keeps an embedded numeric default byte-identical (no GS1 canonicalization)', () => {
+    // Value slot of (10); a 16-digit serial that HAPPENS to parse as (01)+14
+    // digits must not get a recomputed check digit.
+    const zpl =
+      '^XA^FN1^FD0112345678901231^FS' +
+      '^BY2^FO10,10^BCN,100,N,N,N,D^FE#^FD(01)04012345678901(10)#1#^FS^XZ';
+    const parsed = parseZPL(zpl, LABEL.dpmm);
+    expect(parsed.variables.find((v) => v.fnNumber === 1)?.defaultValue).toBe('0112345678901231');
+  });
+
+  it('preserves a foreign mode-D ^FN default byte-for-byte (no >8/GS stripping)', () => {
+    const zpl =
+      '^XA^FN1^FD>;>80100003486^FS' +
+      '^BY2^FO10,10^BCN,100,N,N,N,D^FE#^FD(01)04012345678901(10)#1#^FS^XZ';
+    const parsed = parseZPL(zpl, LABEL.dpmm);
+    expect(parsed.variables.find((v) => v.fnNumber === 1)?.defaultValue).toBe('>;>80100003486');
+  });
+
+  it('does not suppress the escape for a slot shared only with an EXCLUDED consumer', () => {
+    const gs1 = mk({ ...baseProps, gs1: true, content: '01' + '04012345678901' + '10' + '«' + 'batch' + '»' });
+    const excluded = {
+      id: 'g', type: 'group', x: 0, y: 0, rotation: 0, includeInExport: false,
+      children: [{ id: 't', type: 'text', x: 10, y: 60, rotation: 0,
+        props: { content: '«' + 'batch' + '» x', fontHeight: 30, fontWidth: 0, rotation: 'N' } }],
+      props: {},
+    } as never;
+    expect(generateZPL(LABEL, [gs1, excluded], vars)).toContain('^FN1^FDA>0B^FS');
+  });
+
+  it('round-trips the escaped default back to the raw > (no compounding)', () => {
+    const zpl = generateZPL(LABEL, [gs1Tpl()], vars);
+    const parsed = parseZPL(zpl, LABEL.dpmm);
+    expect(parsed.variables.find((v) => v.fnNumber === 1)?.defaultValue).toBe('A>B');
+    const zpl2 = generateZPL(LABEL, parsed.objects as never, parsed.variables);
+    expect(zpl2).toContain('^FN1^FDA>0B^FS');
+  });
+
+  it('keeps the default raw when a non-GS1 field shares the slot', () => {
+    expect(generateZPL(LABEL, [gs1Tpl(), textConsumer()], vars)).toContain('^FN1^FDA>B^FS');
+  });
+
+  it('escapes the per-row CSV value only for a mode-D-exclusive slot', () => {
+    const batch = (objs: Parameters<typeof generateBatchZpl>[1]) => generateBatchZpl(LABEL, objs, vars,
+      { headers: ['batch'], rows: [['X>Y']] }, { bindings: { v: 'batch' } });
+    expect(batch([gs1Tpl()])).toContain('^FN1^FDX>0Y^FS');
+    expect(batch([gs1Tpl(), textConsumer()])).toContain('^FN1^FDX>Y^FS');
+  });
+
+  it('normalizes a single-bind gs1 default to model form (stable re-export)', () => {
+    const content = '0104012345678901' + '10LOT>X' + GS1_GS + '21SER';
+    const single = mk({ ...baseProps, gs1: true, content: '«' + 'lot' + '»' });
+    const singleVars: Variable[] = [{ id: 'w', name: 'lot', fnNumber: 2, defaultValue: content }];
+    const zpl1 = generateZPL(LABEL, [single], singleVars);
+    const parsed = parseZPL(zpl1, LABEL.dpmm);
+    expect(parsed.variables.find((v) => v.fnNumber === 2)?.defaultValue).toBe(content);
+    const zpl2 = generateZPL(LABEL, parsed.objects as never, parsed.variables);
+    expect(zpl2).toBe(zpl1);
   });
 });
