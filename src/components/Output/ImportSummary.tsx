@@ -12,6 +12,8 @@ const TONE: Record<ImportFindingKind, string> = {
   unknown: 'text-muted',
   // Higher severity: a printer-config command that runs on the device.
   replayRisk: 'text-red-400',
+  // Higher severity: a transient device action that runs on the device.
+  deviceAction: 'text-red-400',
   // Round-trip caveat: byte-exact replay ends at the first edit.
   lossyEdit: 'text-amber-400',
   // Informational: the field kept its data, only the slot number moved.
@@ -20,7 +22,7 @@ const TONE: Record<ImportFindingKind, string> = {
   fnDefaultDropped: 'text-red-400',
 };
 
-function FindingRow({ finding, showPage }: { finding: ImportFinding; showPage: boolean }) {
+export function FindingRow({ finding, showPage }: { finding: ImportFinding; showPage: boolean }) {
   const { title, detail } = describeFinding(finding);
   return (
     <div className="flex items-start gap-2 px-3 py-2">

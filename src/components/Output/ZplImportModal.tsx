@@ -1,14 +1,15 @@
 import { useRef, useState } from 'react';
 import { XMarkIcon, ClipboardDocumentIcon, CheckIcon, FolderOpenIcon } from '@heroicons/react/16/solid';
-import { importZplText } from '../../lib/zplImportService';
+import { importZplText, routeSetupCommands, mergeSetupFonts, type ZplImportResult, type SetupCommandChoice } from '../../lib/zplImportService';
 import { readFileAsText } from '../../lib/readFile';
 import { useLabelStore } from '../../store/labelStore';
 import type { Page } from '../../types/Group';
 import type { LabelConfig } from '../../types/LabelConfig';
 import type { PrinterProfile } from '../../types/PrinterProfile';
 import type { Variable } from '../../types/Variable';
-import { formatReportAsText, type ImportReport, type ImportResult } from '../../lib/importReport';
+import { formatReportAsText, replayRiskFindings, printerCommandFindings, resolveRoutedReport, type ImportReport, type ImportResult } from '../../lib/importReport';
 import { ImportSummaryBody } from './ImportSummary';
+import { ImportSetupChoice } from './ImportSetupChoice';
 import { useT } from '../../hooks/useT';
 import { DialogShell } from '../ui/DialogShell';
 
@@ -21,6 +22,8 @@ export function ZplImportModal({ onClose }: Props) {
   const [zpl, setZpl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
+  // Import held back for the setup-command routing prompt.
+  const [pending, setPending] = useState<ZplImportResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [appendMode, setAppendMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,23 +46,34 @@ export function ZplImportModal({ onClose }: Props) {
     importedPages: Page[],
     importedVariables: Variable[],
   ) => {
-    if (appendMode && hasExistingContent) {
-      // Keep the current label config: the user opted to keep the
-      // existing design's dimensions, so any imported ^PW/^LL is
-      // intentionally discarded. Imported variables are dropped too:
-      // append-mode preserves the current Variables tab; merging here
-      // would risk name/fnNumber collisions the user can't see in the
-      // dialog. Round-trip from a saved design uses Save/Load, not Append.
-      appendPages(importedPages);
-    } else {
-      loadDesign({ ...label, ...labelConfig }, importedPages, importedVariables);
+    // No pages (setup-only import): loading would blank the document.
+    if (importedPages.length > 0) {
+      if (appendMode && hasExistingContent) {
+        // Keep the current label config: the user opted to keep the
+        // existing design's dimensions, so any imported ^PW/^LL is
+        // intentionally discarded. Imported variables are dropped too:
+        // append-mode preserves the current Variables tab; merging here
+        // would risk name/fnNumber collisions the user can't see in the
+        // dialog. Round-trip from a saved design uses Save/Load, not Append.
+        appendPages(importedPages);
+      } else {
+        loadDesign({ ...label, ...labelConfig }, importedPages, importedVariables);
+      }
     }
-    // Setup-Script fields update the active profile regardless of
-    // append/replace; they are per-installation state, not per-design,
-    // so an import of a ZPL that carries Setup-Script commands should
-    // reflect those commands' intent on the user's profile.
-    if (Object.keys(printerProfile).length > 0) {
-      patchPrinterProfile(printerProfile);
+    // Profile fields are per-installation state, applied regardless of
+    // append/replace. Setup fonts merge additively: a stream expresses no
+    // deletion.
+    const profileToPatch = printerProfile.setupFonts
+      ? {
+          ...printerProfile,
+          setupFonts: mergeSetupFonts(
+            useLabelStore.getState().printerProfile.setupFonts,
+            printerProfile.setupFonts,
+          ),
+        }
+      : printerProfile;
+    if (Object.keys(profileToPatch).length > 0) {
+      patchPrinterProfile(profileToPatch);
     }
   };
 
@@ -75,20 +89,22 @@ export function ZplImportModal({ onClose }: Props) {
     }
   };
 
-  // Shared post-source path: parse, gate on supported content, hand off
-  // to the store + finishImport. The two entry points (paste textarea,
-  // file picker) only differ in how they obtain the text and which
-  // source-specific error they surface; everything past that point is
-  // identical, so it lives here.
+  const commitImport = (imported: ZplImportResult, choice: SetupCommandChoice) => {
+    const { printerProfile, pages, keptPageIndexes } = routeSetupCommands(choice, imported);
+    applyImport(imported.labelConfig, printerProfile, pages, imported.variables);
+    const totalObjects = pages.reduce((s, p) => s + p.objects.length, 0);
+    // The summary must not warn about findings the routing just resolved.
+    const report =
+      choice === 'keep' ? imported.report : resolveRoutedReport(imported.report, keptPageIndexes);
+    finishImport(totalObjects, report);
+  };
+
+  // Shared by both entry points (paste, file picker); they differ only in how
+  // they obtain the text.
   const processImport = (text: string) => {
-    const {
-      labelConfig,
-      printerProfile,
-      pages: importedPages,
-      variables: importedVariables,
-      report,
-    } = importZplText(text, label.dpmm);
-    const totalObjects = importedPages.reduce((s, p) => s + p.objects.length, 0);
+    const imported = importZplText(text, label.dpmm);
+    const { labelConfig, printerProfile, pages } = imported;
+    const totalObjects = pages.reduce((s, p) => s + p.objects.length, 0);
     if (
       totalObjects === 0 &&
       Object.keys(labelConfig).length === 0 &&
@@ -97,8 +113,11 @@ export function ZplImportModal({ onClose }: Props) {
       setError('No supported objects found in the ZPL code.');
       return;
     }
-    applyImport(labelConfig, printerProfile, importedPages, importedVariables);
-    finishImport(totalObjects, report);
+    if (replayRiskFindings(imported.report).length > 0) {
+      setPending(imported);
+      return;
+    }
+    commitImport(imported, 'keep');
   };
 
   const handleImport = () => {
@@ -156,7 +175,17 @@ export function ZplImportModal({ onClose }: Props) {
         </button>
       </div>
 
-      {result ? (
+      {pending ? (
+        <ImportSetupChoice
+          findings={printerCommandFindings(pending.report)}
+          canKeep={!(appendMode && hasExistingContent)}
+          onChoose={(choice) => {
+            const imported = pending;
+            setPending(null);
+            commitImport(imported, choice);
+          }}
+        />
+      ) : result ? (
         <>
           <ImportSummaryBody result={result} />
           <div className="flex justify-between items-center px-4 py-3 border-t border-border shrink-0">

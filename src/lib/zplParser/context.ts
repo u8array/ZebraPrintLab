@@ -46,9 +46,10 @@ export interface ParserResult {
   partialCmds: Set<string>;
   browserLimit: string[];
   unknown: string[];
-  /** Setup-Script / printer-config commands seen (persist/change device state
-   *  on print/export); surfaced as a replay-risk import finding. */
+  /** Setup-Script commands seen (profile-backed, routable on import). */
   replayRisk: string[];
+  /** Device-action commands seen (no profile field, not routable). */
+  deviceAction: string[];
   /** Every in-range ^FN slot the tokenizer saw, including on fields that end
    *  up passthrough-only (no Variable). Import renumbering must avoid these:
    *  overlays replay the original bytes. */
@@ -251,6 +252,7 @@ export function createParserState(): ParserState {
       browserLimit: [],
       unknown: [],
       replayRisk: [],
+      deviceAction: [],
       sourceFnNumbers: new Set<number>(),
     },
     label: {

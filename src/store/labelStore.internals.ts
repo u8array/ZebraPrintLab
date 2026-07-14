@@ -40,19 +40,6 @@ export function configPatchAffectsEmit(
   );
 }
 
-/** Strip overlays from every page (identity-preserving when none carry one).
- *  A page with no overlay regenerates from the model, the safe fallback when
- *  config edits would otherwise replay stale raw config bytes. */
-export function dropPageOverlays(pages: Page[]): Page[] {
-  if (!pages.some((p) => p.overlay)) return pages;
-  return pages.map((p) => {
-    if (!p.overlay) return p;
-    const next = { ...p };
-    delete next.overlay;
-    return next;
-  });
-}
-
 /** Drop round-trip provenance from a leaf: a clone/copy is a net-new object with
  *  a new id, so it has no overlay segment and must regenerate from the model. */
 function dropProvenance<T extends LabelObject>(node: T): T {

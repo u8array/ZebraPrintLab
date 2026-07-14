@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { importZplText } from './zplImportService';
+import { importZplText, routeSetupCommands, mergeSetupFonts } from './zplImportService';
 import { generateSetupScript } from './zplSetupScript';
-import { describeFinding } from './importReport';
+import { generateMultiPageZPL } from './zplGenerator';
+import { describeFinding, replayRiskFindings, printerCommandFindings, resolveRoutedReport } from './importReport';
 import type { PrinterProfile } from '../types/PrinterProfile';
+import type { LabelConfig } from '../types/LabelConfig';
 
 describe('importZplText - replay-risk findings', () => {
   it('flags printer setup commands (run on the printer when exported/printed)', () => {
@@ -24,15 +26,18 @@ describe('importZplText - replay-risk findings', () => {
     expect(r.report.replayRisk).toEqual(['^ST']);
   });
 
-  it('flags device-action commands (calibration/reset) that were silently noop-ed', () => {
+  it('flags device-action commands (calibration/reset) as a distinct deviceAction kind', () => {
     const r = importZplText('^XA~JC~JR^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
-    expect(r.report.replayRisk).toContain('^JC');
-    expect(r.report.replayRisk).toContain('^JR');
+    // Not profile-backed: own kind, so routing never offers to "move" them.
+    expect(r.report.deviceAction).toContain('^JC');
+    expect(r.report.deviceAction).toContain('^JR');
+    expect(r.report.replayRisk).toEqual([]);
   });
 
   it('does not flag design noops (^FM) or visible label settings (^MD/^PR)', () => {
     const r = importZplText('^XA^MD8^PR4^FM^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
     expect(r.report.replayRisk).toEqual([]);
+    expect(r.report.deviceAction).toEqual([]);
   });
 });
 
@@ -396,5 +401,198 @@ describe('importZplText - cross-block variable merge (content markers)', () => {
     // Page 2's marker is rewired onto the first page's Variable (lossy).
     const p1 = r.pages[1]?.objects[0] as unknown as { props: { content: string } };
     expect(p1.props.content).toBe(`«${r.variables[0]?.name}»`);
+  });
+});
+
+describe('routeSetupCommands', () => {
+  const HEX = '01020304';
+  // Preamble setup font + ^ST + one object (page gets an overlay to strip).
+  const STREAM =
+    `~DYE:SETUP,A,T,4,,${HEX}\n` +
+    `^XA^ST05,20,2026,12,00,00^FO10,10^A0N,20,0^FDhi^FS^XZ`;
+
+  it('keep leaves profile and overlay untouched', () => {
+    const imported = importZplText(STREAM, 8);
+    expect(imported.pages[0]?.overlay).toBeDefined();
+    const { printerProfile, pages } = routeSetupCommands('keep', imported);
+    expect(printerProfile).toBe(imported.printerProfile);
+    expect(pages).toBe(imported.pages);
+    expect(printerProfile.setRealtimeClock).toBeDefined();
+    expect(printerProfile.setupFonts).toEqual([{ path: 'E:SETUP.TTF' }]);
+  });
+
+  it('setupScript keeps the profile but drops the overlay of replay-risk pages', () => {
+    const imported = importZplText(STREAM, 8);
+    const { printerProfile, pages } = routeSetupCommands('setupScript', imported);
+    expect(printerProfile.setRealtimeClock).toBeDefined();
+    expect(printerProfile.setupFonts).toEqual([{ path: 'E:SETUP.TTF' }]);
+    expect(pages[0]?.overlay).toBeUndefined();
+    // Objects survive; only the byte-exact overlay is dropped.
+    expect(pages[0]?.objects).toHaveLength(1);
+  });
+
+  it('remove strips the setup profile fields but keeps setupFonts and drops the overlay', () => {
+    const imported = importZplText(STREAM, 8);
+    const { printerProfile, pages } = routeSetupCommands('remove', imported);
+    expect(printerProfile.setRealtimeClock).toBeUndefined();
+    expect(printerProfile.setupFonts).toEqual([{ path: 'E:SETUP.TTF' }]);
+    expect(pages[0]?.overlay).toBeUndefined();
+    expect(pages[0]?.objects).toHaveLength(1);
+  });
+
+  it('remove yields an empty profile when there is no setup font', () => {
+    const imported = importZplText('^XA^ST05,20,2026,12,00,00^FO10,10^A0N,20,0^FDhi^FS^XZ', 8);
+    const { printerProfile } = routeSetupCommands('remove', imported);
+    expect(printerProfile).toEqual({});
+  });
+
+  it('only strips the overlay of pages that carry a replay-risk command', () => {
+    // Page 1 has ^ST (replay-risk), page 2 is clean.
+    const zpl =
+      `^XA^ST05,20,2026,12,00,00^FO10,10^A0N,20,0^FDp1^FS^XZ\n` +
+      `^XA^FO10,10^A0N,20,0^FDp2^FS^XZ`;
+    const imported = importZplText(zpl, 8);
+    expect(imported.pages[0]?.overlay).toBeDefined();
+    expect(imported.pages[1]?.overlay).toBeDefined();
+    const { pages } = routeSetupCommands('setupScript', imported);
+    expect(pages[0]?.overlay).toBeUndefined();
+    expect(pages[1]?.overlay).toBeDefined();
+  });
+
+  it('exports the setup command on keep but omits it on setupScript/remove', () => {
+    const imported = importZplText(STREAM, 8);
+    const label = { widthMm: 100, heightMm: 60, dpmm: 8, ...imported.labelConfig } as LabelConfig;
+    const exportOf = (choice: Parameters<typeof routeSetupCommands>[0]) =>
+      generateMultiPageZPL(label, routeSetupCommands(choice, imported).pages);
+    // keep replays verbatim; the other two regenerate (never emits setup).
+    expect(exportOf('keep')).toContain('^ST');
+    expect(exportOf('setupScript')).not.toContain('^ST');
+    expect(exportOf('remove')).not.toContain('^ST');
+  });
+
+  it('exports a mixed multi-page result cleanly (regenerated risk page + verbatim clean page)', () => {
+    const zpl =
+      `^XA^ST05,20,2026,12,00,00^FO10,10^A0N,20,0^FDp1^FS^XZ\n` +
+      `^XA^FO10,10^A0N,20,0^FDp2^FS^XZ`;
+    const imported = importZplText(zpl, 8);
+    const label = { widthMm: 100, heightMm: 60, dpmm: 8, ...imported.labelConfig } as LabelConfig;
+    const out = generateMultiPageZPL(label, routeSetupCommands('setupScript', imported).pages);
+    expect(out).not.toContain('^ST');
+    expect(out).toContain('p1'); // regenerated risk page keeps its content
+    expect(out).toContain('p2'); // clean page replays verbatim
+    // Both label blocks survive the overlay/regen mix, none doubled or merged.
+    expect(out.match(/\^XA/g)).toHaveLength(2);
+    expect(out.match(/\^XZ/g)).toHaveLength(2);
+  });
+});
+
+describe('replay-risk report helpers', () => {
+  it('replayRiskFindings selects only the replayRisk kind', () => {
+    const { report } = importZplText('^XA^KNfoo^FO0,0^A@N,20,0,E:A.TTF^FDx^FS^XZ', 8);
+    // ^KN is replayRisk, ^A@ is a partial: only the former is selected.
+    const risk = replayRiskFindings(report);
+    expect(risk).toHaveLength(1);
+    expect(risk[0]?.command).toBe('^KN');
+  });
+
+  it('resolveRoutedReport drops the replayRisk findings and bucket, keeps the rest', () => {
+    const { report } = importZplText('^XA^KNfoo^FO0,0^A@N,20,0,E:A.TTF^FDx^FS^XZ', 8);
+    expect(report.replayRisk).toContain('^KN');
+    const stripped = resolveRoutedReport(report, [0]);
+    expect(stripped.replayRisk).toEqual([]);
+    expect(stripped.findings.some((f) => f.kind === 'replayRisk')).toBe(false);
+    // The unrelated partial finding survives.
+    expect(stripped.findings.some((f) => f.kind === 'partial')).toBe(true);
+    expect(stripped.partial).toEqual(report.partial);
+  });
+
+  it('resolveRoutedReport clears a deviceAction finding on a routed (overlay-dropped) page', () => {
+    // ^ST and ~JC share page 0; the overlay drop moots the device action too.
+    const { report } = importZplText('^XA^ST05,20,2026,12,00,00~JC^FO10,10^A0N,20,0^FDx^FS^XZ', 8);
+    expect(report.deviceAction).toContain('^JC');
+    const stripped = resolveRoutedReport(report, [0]);
+    expect(stripped.deviceAction).toEqual([]);
+    expect(stripped.findings.some((f) => f.kind === 'deviceAction')).toBe(false);
+  });
+
+  it('resolveRoutedReport keeps a deviceAction finding on a page that was not routed', () => {
+    // Page 1's device action keeps its overlay, so its warning survives.
+    const zpl =
+      '^XA^ST05,20,2026,12,00,00^FO10,10^A0N,20,0^FDp1^FS^XZ\n' +
+      '^XA~JC^FO10,10^A0N,20,0^FDp2^FS^XZ';
+    const { report } = importZplText(zpl, 8);
+    const stripped = resolveRoutedReport(report, [0, 1]);
+    expect(stripped.deviceAction).toContain('^JC');
+  });
+
+  it('drops findings on a removed page and remaps survivors to the new index', () => {
+    // Page 0 (setup-only, ^IM finding) is routed away; page 1 has an ^A@ partial.
+    const zpl =
+      '^XA^ST05,20,2026,12,00,00^IMR:LOGO.GRF^XZ\n' +
+      '^XA^FO0,0^A@N,20,0,E:A.TTF^FDx^FS^XZ';
+    const imported = importZplText(zpl, 8);
+    const { pages, keptPageIndexes } = routeSetupCommands('remove', imported);
+    expect(pages).toHaveLength(1); // the setup-only page 0 is dropped
+    expect(keptPageIndexes).toEqual([1]);
+    const stripped = resolveRoutedReport(imported.report, keptPageIndexes);
+    // The removed page's ^IM finding is gone; the survivor is remapped to page 0.
+    expect(stripped.browserLimit).toEqual([]);
+    expect(stripped.findings.some((f) => f.kind === 'browserLimit')).toBe(false);
+    const partial = stripped.findings.filter((f) => f.kind === 'partial');
+    expect(partial).toHaveLength(1);
+    expect(partial[0]?.pageIndex).toBe(0);
+  });
+});
+
+describe('printerCommandFindings', () => {
+  it('returns replayRisk and deviceAction findings together', () => {
+    const { report } = importZplText('^XA^KNfoo~JC^FO10,10^A0N,20,0^FDx^FS^XZ', 8);
+    const kinds = printerCommandFindings(report).map((f) => f.kind).sort();
+    expect(kinds).toEqual(['deviceAction', 'replayRisk']);
+  });
+});
+
+describe('mergeSetupFonts', () => {
+  it('unions incoming onto existing, deduped by normalized path', () => {
+    const existing = [{ path: 'E:OLD.TTF' }, { path: 'E:SHARED.TTF' }];
+    const incoming = [{ path: 'e:shared.ttf' }, { path: 'E:NEW.TTF' }];
+    expect(mergeSetupFonts(existing, incoming)).toEqual([
+      { path: 'E:OLD.TTF' },
+      { path: 'E:SHARED.TTF' },
+      { path: 'E:NEW.TTF' },
+    ]);
+  });
+
+  it('returns the incoming set when there is no existing profile', () => {
+    expect(mergeSetupFonts(undefined, [{ path: 'E:A.TTF' }])).toEqual([{ path: 'E:A.TTF' }]);
+  });
+});
+
+describe('routeSetupCommands - setup-only pages', () => {
+  it('drops a setup-only block to no page on remove/setupScript', () => {
+    const imported = importZplText('^XA^ST05,20,2026,12,00,00^XZ', 8);
+    expect(imported.pages).toHaveLength(1); // the empty block is a page pre-routing
+    const setupScript = routeSetupCommands('setupScript', imported);
+    expect(setupScript.pages).toHaveLength(0);
+    expect(setupScript.keptPageIndexes).toEqual([]);
+    expect(routeSetupCommands('remove', imported).pages).toHaveLength(0);
+  });
+
+  it('keeps a real page and drops only the setup-only block in a mixed import', () => {
+    const zpl =
+      '^XA^FO10,10^A0N,20,0^FDreal^FS^XZ\n' +
+      '^XA^ST05,20,2026,12,00,00^XZ';
+    const imported = importZplText(zpl, 8);
+    const { pages, keptPageIndexes } = routeSetupCommands('remove', imported);
+    expect(pages).toHaveLength(1);
+    expect(pages[0]?.objects).toHaveLength(1);
+    expect(keptPageIndexes).toEqual([0]); // page 1 (setup-only) dropped
+  });
+
+  it('keeps the setup-only block as a page on keep (overlay round-trips it)', () => {
+    const imported = importZplText('^XA^ST05,20,2026,12,00,00^XZ', 8);
+    const { pages, keptPageIndexes } = routeSetupCommands('keep', imported);
+    expect(pages).toHaveLength(1);
+    expect(keptPageIndexes).toEqual([0]);
   });
 });
