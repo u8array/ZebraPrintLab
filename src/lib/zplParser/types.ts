@@ -9,6 +9,7 @@ export type ImportFindingKind =
   | "browserLimit"
   | "unknown"
   | "replayRisk"
+  | "deviceAction"
   | "lossyEdit"
   | "fnRenumbered"
   | "fnDefaultDropped";
@@ -32,7 +33,7 @@ export interface ImportFinding {
 
 export interface ImportReport {
   findings: ImportFinding[];
-  // The buckets below are command-code dedup views for these four kinds only.
+  // The buckets below are command-code dedup views for these five kinds only.
   // Every other kind (lossyEdit, fnRenumbered, fnDefaultDropped) lives solely
   // in `findings`; iterate `findings` for a kind-complete view.
   /** Commands imported with known loss. Deduplicated by command code. */
@@ -41,10 +42,10 @@ export interface ImportReport {
   browserLimit: string[];
   /** Commands not recognised at all. */
   unknown: string[];
-  /** Setup-Script / printer-configuration commands that persist or change
-   *  device state when the design is printed or exported (e.g. ^ST, ^KN, ^KP,
-   *  ^JU, ^SE). Lossless replay re-emits them, so the user is warned. */
+  /** Setup-Script commands (^ST, ^KN, …): profile-backed, routable on import. */
   replayRisk: string[];
+  /** Device actions (^JC, ^JR, …): run on re-emit, no profile field, not routable. */
+  deviceAction: string[];
 }
 
 export interface ParsedZPL {

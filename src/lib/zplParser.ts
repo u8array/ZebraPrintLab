@@ -53,7 +53,7 @@ export function parseZPL(
   const tokens = tokenize(zpl, s.format);
   const {
     objects, labelConfig, printerProfile, variables,
-    skipped, partialCmds, browserLimit, unknown, replayRisk,
+    skipped, partialCmds, browserLimit, unknown, replayRisk, deviceAction,
   } = s.result;
 
   const takeComment = (): string | undefined => {
@@ -107,17 +107,13 @@ export function parseZPL(
   Object.assign(handlers, createBarcodeHandlers(s));
   Object.assign(handlers, createFieldHandlers(s, { flushField, appendComment }));
   Object.assign(handlers, graphicsFamily.handlers);
-  // Replay-risk = printer-config (Setup-Script) commands PLUS device-action
-  // commands (calibration/reset/diagnostics/ZBI/pause) that change device or
-  // queue state when the lossless overlay re-emits them on export. Setup keys
-  // derive from the handler set; device actions are listed explicitly because
-  // their noop handlers are mixed with design noops (^FM) that are NOT
-  // replay-risk. Visible label settings (labelConfig: ^MD/^PR/^MM...) and ^DY
-  // font uploads are intentionally excluded (the former are shown in the label
-  // panel; a non-font ^DY surfaces as a browserLimit finding).
   const setupScriptHandlers = createSetupScriptHandlers(s);
-  const replayRiskCodes = new Set([
-    ...Object.keys(setupScriptHandlers),
+  // Setup-Script codes are profile-backed (routable on import); device actions
+  // are not, hence a separate finding kind, listed explicitly because their
+  // noop handlers mix with design noops (^FM). Label settings (^MD/^PR/…) and
+  // ^DY font uploads are intentionally not flagged.
+  const replayRiskCodes = new Set(Object.keys(setupScriptHandlers));
+  const deviceActionCodes = new Set([
     "JA", "JM", "JC", "JD", "JE", "JI", "JR", "PP",
   ]);
   Object.assign(handlers, setupScriptHandlers);
@@ -163,6 +159,7 @@ export function parseZPL(
     // Flag printer-config commands: lossless replay re-emits them, so they run
     // on the user's printer at print/export. Recorded by code (deduped later).
     if (replayRiskCodes.has(cmd)) replayRisk.push(`^${cmd}`);
+    else if (deviceActionCodes.has(cmd)) deviceAction.push(`^${cmd}`);
     const handler = handlers[cmd] ?? wildcards.find((w) => w.matches(cmd))?.handle;
     if (handler) {
       const reverseBefore = s.reverseBg;
@@ -350,6 +347,9 @@ export function parseZPL(
     ...replayRisk.map(
       (command): ImportFinding => ({ kind: "replayRisk", command, pageIndex: 0 }),
     ),
+    ...deviceAction.map(
+      (command): ImportFinding => ({ kind: "deviceAction", command, pageIndex: 0 }),
+    ),
   ];
 
   // An overlay that exists but isn't regenSafe replays verbatim only until the
@@ -382,6 +382,7 @@ export function parseZPL(
       browserLimit,
       unknown,
       replayRisk,
+      deviceAction,
     },
     overlay,
   };

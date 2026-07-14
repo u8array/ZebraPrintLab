@@ -1,4 +1,6 @@
-import { parseZPL, type ImportFinding, type ImportFindingKind, type ImportReport } from "./zplParser";
+import { parseZPL, type ImportFinding, type ImportReport } from "./zplParser";
+import { replayRiskFindings, dedupCommandsByKind } from "./importReport";
+import { dropPageOverlays } from "./pageOverlay";
 import { pruneUndefined } from "./pruneUndefined";
 import { stripDrivePrefix } from "./customFonts";
 import { renameTemplateMarkers } from "./fnTemplate";
@@ -57,7 +59,7 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
       printerProfile: {},
       pages: [],
       variables: [],
-      report: { findings: [], partial: [], browserLimit: [], unknown: [], replayRisk: [] },
+      report: { findings: [], partial: [], browserLimit: [], unknown: [], replayRisk: [], deviceAction: [] },
     };
   }
 
@@ -219,17 +221,69 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
   // `findings`; consumers that only need the set of distinct affected commands
   // read these buckets unchanged. Only command-based kinds get a bucket; a
   // block-level kind like 'lossyEdit' stays in `findings` by design.
-  const dedupBy = (kind: ImportFindingKind) =>
-    [...new Set(findings.filter((f) => f.kind === kind).map((f) => f.command))];
   const report: ImportReport = {
     findings,
-    partial: dedupBy('partial'),
-    browserLimit: dedupBy('browserLimit'),
-    unknown: dedupBy('unknown'),
-    replayRisk: dedupBy('replayRisk'),
+    partial: dedupCommandsByKind(findings, 'partial'),
+    browserLimit: dedupCommandsByKind(findings, 'browserLimit'),
+    unknown: dedupCommandsByKind(findings, 'unknown'),
+    replayRisk: dedupCommandsByKind(findings, 'replayRisk'),
+    deviceAction: dedupCommandsByKind(findings, 'deviceAction'),
   };
 
   return { labelConfig, printerProfile, pages, variables, report };
+}
+
+/** Additive setup-font merge (dedupe by normalized path): a stream lists only
+ *  its own uploads and expresses no deletion. */
+export function mergeSetupFonts(
+  existing: readonly { path: string }[] | undefined,
+  incoming: readonly { path: string }[],
+): { path: string }[] {
+  const base = existing ?? [];
+  const seen = new Set(base.map((f) => f.path.trim().toUpperCase()));
+  const added = incoming.filter((f) => !seen.has(f.path.trim().toUpperCase()));
+  return [...base, ...added];
+}
+
+/** Routing for imported setup commands: keep in label, keep only in the
+ *  setup-script channel (profile), or drop entirely (setup fonts stay). */
+export type SetupCommandChoice = "keep" | "setupScript" | "remove";
+
+/** Apply a SetupCommandChoice to a parsed import (pure). The label re-emits
+ *  setup commands only via overlay raw bytes, so routing them out drops those
+ *  pages' overlays: model regen never emits setup commands. */
+export function routeSetupCommands(
+  choice: SetupCommandChoice,
+  result: ZplImportResult,
+): { printerProfile: Partial<PrinterProfile>; pages: Page[]; keptPageIndexes: number[] } {
+  if (choice === "keep") {
+    return {
+      printerProfile: result.printerProfile,
+      pages: result.pages,
+      keptPageIndexes: result.pages.map((_p, i) => i),
+    };
+  }
+  const riskPages = new Set(replayRiskFindings(result.report).map((f) => f.pageIndex));
+  // A routed page left empty (setup-only block) must not survive as a blank
+  // page; keptPageIndexes lets the report drop/remap its findings.
+  const dropped = dropPageOverlays(result.pages, (_p, i) => riskPages.has(i));
+  const pages: Page[] = [];
+  const keptPageIndexes: number[] = [];
+  dropped.forEach((p, i) => {
+    if (p.objects.length > 0 || !riskPages.has(i)) {
+      pages.push(p);
+      keptPageIndexes.push(i);
+    }
+  });
+  if (choice === "setupScript") {
+    return { printerProfile: result.printerProfile, pages, keptPageIndexes };
+  }
+  // remove: every profile field except setupFonts is replayRisk-derived, so
+  // keeping only setupFonts strips exactly those.
+  const printerProfile: Partial<PrinterProfile> = result.printerProfile.setupFonts
+    ? { setupFonts: result.printerProfile.setupFonts }
+    : {};
+  return { printerProfile, pages, keptPageIndexes };
 }
 
 /** In-place rewrite of cross-block variable references on freshly-parsed objects
