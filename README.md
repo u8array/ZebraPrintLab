@@ -80,10 +80,6 @@ Edit an imported label and export it again:
 
 Byte capture at import is deliberately conservative: when a field can't be mapped cleanly to a single object, the whole label falls back to model regeneration, which keeps the content but not the exact bytes. The captured bytes are stored in saved `.json` designs; a design from an older app version with an outdated capture format is detected and rebuilt.
 
-### Replay-risk commands
-
-Because unmodeled commands are preserved, printer-configuration commands in an imported file run again every time the exported ZPL is sent: setup and identity commands (clock, locale, encoding, network, printer name and password) and device actions (calibration, diagnostics, reset, pause). The import report flags each one it finds; if you don't want them re-sent with every label, remove them from the source file.
-
 ### Multiple labels (pages)
 
 File menu → **Add page** creates a new page. With multiple pages, the control at the bottom-center of the canvas switches between them and removes them. All pages share the same dimensions; export and import handle each page as a separate label.
