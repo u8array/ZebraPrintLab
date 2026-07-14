@@ -12,8 +12,8 @@ import {
 import {
   rewriteTemplateMarkers,
   substituteTemplateMarkers,
-  dropPageOverlays,
 } from '../labelStore.internals';
+import { dropPageOverlays } from '../../lib/pageOverlay';
 import { selectPreviewLocksEditor } from '../labelStore.selectors';
 import type { LabelState } from '../labelStore';
 

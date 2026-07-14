@@ -5,7 +5,8 @@ import type { Variable, CsvMapping } from '../../types/Variable';
 import { forgetImport } from '../../lib/csvImport';
 import { dropLegacyFontBindings } from '../../lib/customFonts';
 import { selectPreviewLocksEditor } from '../labelStore.selectors';
-import { configPatchAffectsEmit, dropPageOverlays } from '../labelStore.internals';
+import { configPatchAffectsEmit } from '../labelStore.internals';
+import { dropPageOverlays } from '../../lib/pageOverlay';
 import { rescaleDesign } from '../../lib/densityRescale';
 import type { LabelState } from '../labelStore';
 
