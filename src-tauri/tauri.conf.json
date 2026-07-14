@@ -36,6 +36,7 @@
   },
   "bundle": {
     "active": true,
+    "targets": ["nsis", "app", "dmg", "appimage", "deb", "rpm"],
     "createUpdaterArtifacts": true,
     "publisher": "u8array",
     "copyright": "© 2026 u8array",

@@ -8,7 +8,7 @@ drifts from the locked dependencies.
 
 ## Overview
 
-- MIT License (384)
+- MIT License (387)
 - Unicode License v3 (19)
 - Apache License 2.0 (5)
 - Mozilla Public License 2.0 (5)
@@ -2630,6 +2630,22 @@ DEALINGS IN THE SOFTWARE.
 
 Used by:
 
+- [io-kit-sys 0.5.0](https://github.com/jtakakura/io-kit-rs)
+````
+Copyright (c) 2017-2018 Junji Takakura
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+````
+
+### MIT License
+
+Used by:
+
 - [enumflags2 0.7.12](https://github.com/meithecatte/enumflags2)
 ````
 Copyright (c) 2017-2023 Maik Klein, Maja Kądziołka
@@ -3064,6 +3080,40 @@ Used by:
 - [cfg-expr 0.15.8](https://github.com/EmbarkStudios/cfg-expr)
 ````
 Copyright (c) 2019 Embark Studios
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+````
+
+### MIT License
+
+Used by:
+
+- [mach2 0.5.0](https://github.com/JohnTitor/mach2)
+````
+Copyright (c) 2019 Nick Fitzgerald, 2021 Yuki Okushi
 
 Permission is hereby granted, free of charge, to any
 person obtaining a copy of this software and associated
@@ -4895,6 +4945,7 @@ Used by:
 - [futures-lite 2.6.1](https://github.com/smol-rs/futures-lite)
 - [itoa 1.0.18](https://github.com/dtolnay/itoa)
 - [linux-raw-sys 0.12.1](https://github.com/sunfishcode/linux-raw-sys)
+- [nusb 0.2.4](https://github.com/kevinmehall/nusb)
 - [once_cell 1.21.4](https://github.com/matklad/once_cell)
 - [ordered-stream 0.2.0](https://github.com/danieldg/ordered-stream)
 - [parking 2.2.1](https://github.com/smol-rs/parking)
