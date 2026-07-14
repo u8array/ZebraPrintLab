@@ -86,11 +86,13 @@ jobs:
             --jq ".[] | select(.tag_name==\"$TAG\" and .draft) | .id")
           ID=$(printf '%s\n' "$DRAFTS" | head -n1)
           if [ -z "$ID" ]; then
+            # prerelease default: 0.x must not become "latest" by a publish
+            # click alone (the updater endpoint serves releases/latest).
             ID=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
               -f tag_name="$TAG" \
               -f name="ZPLab $TAG" \
               -f body="See the assets to download this version and install." \
-              -F draft=true --jq .id)
+              -F draft=true -F prerelease=true --jq .id)
           fi
           echo "release_id=$ID" >> "$GITHUB_OUTPUT"
 
