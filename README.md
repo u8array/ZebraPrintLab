@@ -28,13 +28,13 @@ Existing ZPL files are a first-class source, not a one-way import: a re-exported
 
 ## Download
 
-| Platform | v0.1.0 |
+| Platform | [v0.1.0](https://github.com/u8array/ZebraPrintLab/releases/tag/v0.1.0) (pre-release) |
 |---|---|
 | Windows | [x64 installer](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_x64-setup.exe) |
 | macOS | [Apple Silicon](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_aarch64.dmg) · [Intel](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_x64.dmg) |
 | Linux | [AppImage](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_amd64.AppImage) · [deb](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_amd64.deb) · [rpm](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab-0.1.0-1.x86_64.rpm) |
 
-All versions and signatures: [releases](https://github.com/u8array/ZebraPrintLab/releases). macOS blocks the first launch; allow the app under *System Settings > Privacy & Security*.
+macOS blocks the first launch; allow the app under *System Settings > Privacy & Security*.
 
 ## Usage
 
