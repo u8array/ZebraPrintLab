@@ -155,7 +155,12 @@ export function stripZplCommandChars(s: string): string {
 }
 
 const FH_DELIM = "_";
-const NEEDS_FH = /[\^~]/;
+// C0 control bytes re-escape too: an imported ^FH field (decoded to raw bytes
+// in content) or a control-key chip would otherwise re-emit unescaped.
+// eslint-disable-next-line no-control-regex
+const NEEDS_FH = /[\^~\x00-\x1F]/;
+// eslint-disable-next-line no-control-regex
+const FH_ESCAPE = /[\^~_\x00-\x1F]/g;
 
 function hex(ch: string): string {
   return (
@@ -163,13 +168,13 @@ function hex(ch: string): string {
   );
 }
 
-/** Hex-escape ^/~ via ^FH_ (and _ itself) so user content can't smuggle commands.
- *  `arm` carries per-field ^FC/^FE armings; it sits after a ^FH but flush
- *  against ^FD, because ^FE only applies when it immediately precedes its ^FD
- *  (spec p.191). */
+/** Hex-escape ^/~ and control bytes via ^FH_ (and _ itself) so user content
+ *  can't smuggle commands and nonprintables survive re-emit. `arm` carries
+ *  per-field ^FC/^FE armings; it sits after a ^FH but flush against ^FD,
+ *  because ^FE only applies when it immediately precedes its ^FD (spec p.191). */
 export function fdField(payload: string, arm = ''): string {
   if (!NEEDS_FH.test(payload)) return `${arm}^FD${payload}^FS`;
-  const escaped = payload.replace(/[\^~_]/g, hex);
+  const escaped = payload.replace(FH_ESCAPE, hex);
   return `^FH${FH_DELIM}${arm}^FD${escaped}^FS`;
 }
 

@@ -1707,6 +1707,17 @@ describe('generateBatchZpl', () => {
     expect(result).toMatch(/\^XA\n\^DFR:LBL\.ZPL/);
   });
 
+  it('re-escapes control bytes from an imported ^FH field on model re-emit', () => {
+    // Import decodes _09 to a raw tab in props.content; regeneration from the
+    // model (post-edit path) must escape it again or the byte ships raw.
+    const { objects } = parseZPL('^XA^FO0,0^BY2^BCN,100,Y,N,N^FH_^FDAB_09CD^FS^XZ', 8);
+    expect(props(defined(objects[0])).content).toBe('AB\tCD');
+    const out = generateZPL(baseLabel, objects);
+    expect(out).toContain('^FH_');
+    expect(out).toContain('AB_09CD');
+    expect(out).not.toContain('AB\tCD');
+  });
+
   it('hex-escapes ^ and ~ in CSV cell values via ^FH', () => {
     const variables = [{ id: 'v1', name: 'name', fnNumber: 1, defaultValue: '' }];
     const objects = [textObj('name')];
