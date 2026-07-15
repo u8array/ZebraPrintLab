@@ -2,7 +2,7 @@ import { useLabelStore } from "../../store/labelStore";
 import { useT } from "../../hooks/useT";
 import type { BindableLeaf } from "../../lib/variableField";
 import { fieldIsMultiline } from "../../registry/text";
-import { getEntry } from "../../registry";
+import { getEntry, objectResolvesCtrl } from "../../registry";
 import { contentSanitiser, resolveContentSpec } from "../../registry/contentSpec";
 import { TemplateContentInput } from "./TemplateContentInput";
 
@@ -36,6 +36,7 @@ export function ContentEditorButton({ obj }: { obj: BindableLeaf }) {
           multiline={fieldIsMultiline(obj)}
           sanitise={spec ? contentSanitiser(spec) : undefined}
           maxLength={spec?.maxLength}
+          ctrlAsByte={objectResolvesCtrl(obj)}
           placeholder={t.variableBuilder.placeholder}
           boxClassName="flex-1 min-w-0 bg-transparent px-2.5 py-2 text-xs font-mono leading-6 break-words focus:outline-none"
         />

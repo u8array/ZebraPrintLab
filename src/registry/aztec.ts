@@ -17,12 +17,16 @@ export interface AztecProps {
   rotation: ZplRotation;
 }
 
+// One switch for the capability flag and the emitter's chip resolution.
+const CONTROL_CHARS = true;
+
 export const aztec: ObjectTypeCore<AztecProps> = {
   label: "Aztec",
   icon: "◇",
   zplCmd: "^B0",
   group: "code-2d",
   bindable: true,
+  controlChars: CONTROL_CHARS,
   typedContent: true,
   defaultProps: {
     content: '',
@@ -45,7 +49,7 @@ export const aztec: ObjectTypeCore<AztecProps> = {
     return [
       fieldPos(obj),
       `^B0${p.rotation},${p.magnification},N,${p.ecLevel}`,
-      fdFieldFor(p.content, ctx),
+      fdFieldFor(p.content, ctx, undefined, undefined, CONTROL_CHARS),
     ].join("");
   },
 };

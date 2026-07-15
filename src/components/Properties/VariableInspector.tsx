@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowTopRightOnSquareIcon, LockClosedIcon, TrashIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../hooks/useT";
+import { controlKeyFromBody } from "../../types/controlKey";
 import { useLabelStore } from "../../store/labelStore";
 import { channelDatesFrom, resolveClockMarkers } from "../../lib/fcTemplate";
 import { isValidVariableName, markerOf } from "../../types/Variable";
@@ -109,6 +110,20 @@ export function VariableInspector({
 
   if (selected.kind === "clock") {
     return <ClockState body={selected.key} onRemove={onRemoveSelected} />;
+  }
+
+  if (selected.kind === "ctrl") {
+    return (
+      <section className={`${CARD} border border-ok/60`}>
+        <Head
+          label={controlKeyFromBody(selected.key)}
+          color="text-ok"
+          onRemove={onRemoveSelected}
+          removeLabel={tv.remove}
+        />
+        <p className="text-[10px] leading-relaxed text-muted">{tv.controlHint}</p>
+      </section>
+    );
   }
 
   // Orphan marker: unknown name, can only be removed.

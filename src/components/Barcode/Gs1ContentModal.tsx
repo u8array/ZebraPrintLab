@@ -139,7 +139,8 @@ function Gs1Builder({ objectId }: { objectId: string }) {
 
   // Validate each segment as its preview substitution (variable defaults,
   // current clock), so a marker is checked as the text it prints.
-  const resolvedValues = segments.map((s) => resolveDefaults(s.value));
+  // resolveCtrl: false = emitter parity (GS1 keeps a stray chip literal).
+  const resolvedValues = segments.map((s) => resolveDefaults(s.value, { resolveCtrl: false }));
   const errors = segments.map((s, i) => validateGs1SegmentResolved(s.ai, s.value, resolvedValues[i] ?? ""));
   const fieldErrorCount = errors.filter((e) => e !== null).length;
   const fieldsOk = segments.length > 0 && fieldErrorCount === 0;
@@ -321,7 +322,7 @@ function Gs1Builder({ objectId }: { objectId: string }) {
                   <span className="text-[10px] text-muted">{tg.elementSublabel}</span>
                 </span>
                 <code className="text-xs font-mono text-text break-all bg-surface-2 rounded px-2 py-1.5">
-                  {resolveDefaults(segmentsToElementString(segments))}
+                  {resolveDefaults(segmentsToElementString(segments), { resolveCtrl: false })}
                 </code>
               </div>
               <div className="flex flex-col gap-1">

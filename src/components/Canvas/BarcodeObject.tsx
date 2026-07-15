@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from "react";
 import { Image as KImage, Group, Rect, Text } from "react-konva";
 import type Konva from "konva";
-import { BARCODE_1D_TYPES, ObjectRegistry } from "../../registry";
+import { BARCODE_1D_TYPES, ObjectRegistry, objectResolvesCtrl } from "../../registry";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
 import { barcodeFtAnchorOffset, qrPrintsAsGraphic } from "../../lib/objectBounds";
 import { useColorScheme, CANVAS_WARNING } from "../../hooks/useColorScheme";
@@ -21,6 +21,7 @@ import { gs1ContentToElementString } from "../../lib/gs1";
 import { placeholderContentFor, samplePropsFor } from "../../registry/placeholderContent";
 import { getObjectStringContent } from "../../lib/variableBinding";
 import { hasTemplateMarkers } from "../../lib/fnTemplate";
+import { hasControlMarkers } from "../../types/controlKey";
 import { objectRotation } from "../../registry/rotation";
 import { rotatedGroupTransform } from "./rotatedGroupTransform";
 import { buildEanUpcDigitOverlay } from "./eanUpcDigitNodes";
@@ -136,7 +137,11 @@ export function BarcodeObject({
   // Red "content is wrong" frame only for genuine content: an unresolved
   // «marker» in schema-preview mode is expected to be uncodable (it resolves
   // fine in preview/print), so it shows the sample bars without the alarm.
-  const invalid = usingSample && !hasTemplateMarkers(contentRaw);
+  // A control chip that will NEVER resolve on this object (incapable type or
+  // GS1 mode) is genuine bad content and must not be masked, not even by
+  // other markers next to it.
+  const unresolvableCtrl = !objectResolvesCtrl(obj) && hasControlMarkers(contentRaw);
+  const invalid = usingSample && (unresolvableCtrl || !hasTemplateMarkers(contentRaw));
   const displayObj = showSample ? withSample : obj;
   const effectiveContent = showSample ? sample : contentRaw;
   const rawContent = gs1Hri ? gs1ContentToElementString(effectiveContent) : effectiveContent;

@@ -17,7 +17,7 @@ export interface PreviewBinding {
   /** Content string -> its builder-preview substitution: variable DEFAULTS +
    *  label clock, explicitly NO CSV row (the builders' validation semantics).
    *  Named to keep it from being mistaken for an `active`-aware resolver. */
-  resolveDefaults: (content: string) => string;
+  resolveDefaults: (content: string, opts?: { resolveCtrl?: boolean }) => string;
 }
 
 /** The one seam for "what would this print": every preview consumer (builders,
@@ -34,6 +34,6 @@ export function usePreviewBinding(): PreviewBinding {
     variables,
     active,
     clock,
-    resolveDefaults: (content) => resolveContentPreview(content, variables, clock),
+    resolveDefaults: (content, opts) => resolveContentPreview(content, variables, clock, opts),
   };
 }

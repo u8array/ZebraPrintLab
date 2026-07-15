@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CLOCK_BODY_RE } from "./clockMarker";
+import { CTRL_BODY_RE } from "./controlKey";
 
 /** Classic ZPL ^FN bounds; newer firmware allows more but stay portable. */
 export const FN_NUMBER_MIN = 1;
@@ -45,6 +46,7 @@ export function isValidVariableName(name: string): boolean {
   if (trimmed === '') return false;
   if (/[«»\n]/.test(trimmed)) return false;
   if (CLOCK_BODY_RE.test(trimmed)) return false;
+  if (CTRL_BODY_RE.test(trimmed)) return false;
   return true;
 }
 

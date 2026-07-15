@@ -16,6 +16,9 @@ export interface Pdf417Props {
   rotation: ZplRotation;
 }
 
+// One switch for the capability flag and the emitter's chip resolution.
+const CONTROL_CHARS = true;
+
 export const pdf417: ObjectTypeCore<Pdf417Props> = {
   label: "PDF417",
   icon: "▥",
@@ -23,6 +26,7 @@ export const pdf417: ObjectTypeCore<Pdf417Props> = {
   group: "code-2d",
   barcodeClass: 'stacked2d',
   bindable: true,
+  controlChars: CONTROL_CHARS,
   defaultProps: {
     content: '',
     rowHeight: 2,
@@ -44,7 +48,7 @@ export const pdf417: ObjectTypeCore<Pdf417Props> = {
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^B7${p.rotation},${p.rowHeight},${p.securityLevel},${p.columns},,,`,
-      fdFieldFor(p.content, ctx),
+      fdFieldFor(p.content, ctx, undefined, undefined, CONTROL_CHARS),
     ]
       .filter(Boolean)
       .join("");

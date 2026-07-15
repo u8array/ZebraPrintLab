@@ -12,6 +12,9 @@ export interface MicroPdf417Props {
   rotation: ZplRotation;
 }
 
+// One switch for the capability flag and the emitter's chip resolution.
+const CONTROL_CHARS = true;
+
 export const micropdf417: ObjectTypeCore<MicroPdf417Props> = {
   label: "MicroPDF417",
   icon: "▤",
@@ -19,6 +22,7 @@ export const micropdf417: ObjectTypeCore<MicroPdf417Props> = {
   group: "code-2d",
   barcodeClass: 'stacked2d',
   bindable: true,
+  controlChars: CONTROL_CHARS,
   defaultProps: {
     content: '',
     moduleWidth: 2,
@@ -40,7 +44,7 @@ export const micropdf417: ObjectTypeCore<MicroPdf417Props> = {
       `^BY${p.moduleWidth}`,
       fieldPos(obj),
       `^BF${p.rotation},${p.rowHeight},${p.mode}`,
-      fdFieldFor(p.content, ctx),
+      fdFieldFor(p.content, ctx, undefined, undefined, CONTROL_CHARS),
     ]
       .filter(Boolean)
       .join("");

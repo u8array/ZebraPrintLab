@@ -25,11 +25,12 @@ import {
 } from "../../lib/contentEditableCaret";
 import { capLiteralLength, hasTemplateMarkers, literalInsertRoom, resolvedContentLength } from "../../lib/fnTemplate";
 import { markerOf, type Variable } from "../../types/Variable";
+import { controlKeyFromBody } from "../../types/controlKey";
 
 /** A selected token in the editor: its kind, the key the inspector needs
  *  (variable name / clock marker body), and the marker index for the ring. */
 export interface SelectedMarker {
-  kind: "var" | "clock" | "orphan";
+  kind: "var" | "clock" | "ctrl" | "orphan";
   key: string;
   index: number;
 }
@@ -63,6 +64,9 @@ interface Props {
   /** Accessible name when it should differ from the placeholder. */
   ariaLabel?: string;
   maxLength?: number;
+  /** Length gates count a control chip as 1 byte only when the host field's
+   *  emitter resolves chips; default counts its literal marker text. */
+  ctrlAsByte?: boolean;
   /** Scopes editorFocusRequest so only the matching editor focuses. */
   objectId?: string;
   /** False for single-line restricted-charset fields. */
@@ -84,10 +88,11 @@ export const editorBoxCls =
 // Token chip pills. Variable/clock render as atomic widgets (see segmentsToHTML)
 // so the chip can drop the raw `«»` syntax; orphan stays inline-editable text so
 // a typo'd marker can be fixed in place. indigo = variable, info = clock,
-// amber = orphan (soft warning).
+// ok = control key, amber = orphan (soft warning).
 const CHIP_BASE = "group inline-flex items-center align-[1px] rounded-[5px] border pl-2 pr-1 py-px select-none cursor-pointer";
 const VAR_CLS = `${CHIP_BASE} border-indigo/60 bg-indigo-dim text-indigo`;
 const CLOCK_CLS = `${CHIP_BASE} border-info/60 bg-info/15 text-info`;
+const CTRL_CLS = `${CHIP_BASE} border-ok/60 bg-ok/10 text-ok font-mono`;
 const ORPHAN_CLS = "rounded-[5px] border border-warning/60 bg-warning/10 px-1 text-warning";
 const ZPL_SUB_CLS = "ml-0.5 text-[9px] text-muted/70";
 // Selection ring: double box-shadow (surface gap + currentColor ring).
@@ -148,6 +153,11 @@ function segmentsToHTML(segments: MarkerSegment[], deco: ChipDeco): string {
       const fn = deco.show ? deco.fnByName.get(body) : undefined;
       const zpl = fn !== undefined ? `<span class="${ZPL_SUB_CLS}">^FN${fn}</span>` : "";
       parts.push(`<span class="${VAR_CLS}${ring}" ${dm} ${mi} ${a11y} aria-label="${escapeAttr(body)}">${escapeHTML(body)}${zpl}${x}</span>`);
+    } else if (s.kind === "ctrl") {
+      // Keycap look: the key name (TAB, CR, ...) reads universally.
+      const key = controlKeyFromBody(body);
+      const zpl = deco.show ? `<span class="${ZPL_SUB_CLS}">^FH</span>` : "";
+      parts.push(`<span class="${CTRL_CLS}${ring}" ${dm} ${mi} ${a11y} aria-label="${escapeAttr(key)}">${escapeHTML(key)}${zpl}${x}</span>`);
     } else {
       const zpl = deco.show ? `<span class="${ZPL_SUB_CLS}">^FC</span>` : "";
       const label = deco.clockLabel(body);
@@ -178,7 +188,7 @@ function escapeAttr(s: string): string {
  *  the caret. The insert palette lives outside and drives it via the ref. */
 export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
   function TemplateContentInput(
-    { value, onChange, sanitise, placeholder, ariaLabel, maxLength, objectId, multiline = true, selectedIndex, onSelectMarker, boxClassName },
+    { value, onChange, sanitise, placeholder, ariaLabel, maxLength, ctrlAsByte = false, objectId, multiline = true, selectedIndex, onSelectMarker, boxClassName },
     ref,
   ) {
     const t = useT();
@@ -218,7 +228,7 @@ export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
       const next = value.slice(0, at) + marker + value.slice(at);
       // Length-inheritance gate (same rule as paste): a token counts at its
       // resolved width and fits whole or not at all.
-      if (maxLength !== undefined && resolvedContentLength(next, variables) > maxLength) return;
+      if (maxLength !== undefined && resolvedContentLength(next, variables, ctrlAsByte) > maxLength) return;
       onChange(next);
       const caret = at + marker.length;
       lastCaretRef.current = caret;
@@ -282,9 +292,9 @@ export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
 
     // React 19 onBeforeInput is unreliable on contenteditable; native listener
     // with latest-state ref so closure stays stable.
-    const stateRef = useRef({ value, onChange, sanitise, maxLength, multiline, variables });
+    const stateRef = useRef({ value, onChange, sanitise, maxLength, ctrlAsByte, multiline, variables });
     useLayoutEffect(() => {
-      stateRef.current = { value, onChange, sanitise, maxLength, multiline, variables };
+      stateRef.current = { value, onChange, sanitise, maxLength, ctrlAsByte, multiline, variables };
     });
 
     useEffect(() => {
@@ -336,7 +346,7 @@ export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
         // and let a wide-resolving marker slip past the cap.
         if (hasTemplateMarkers(clean)) {
           const next = value.slice(0, lo) + clean + value.slice(hi);
-          if (maxLength !== undefined && resolvedContentLength(next, variables) > maxLength) return;
+          if (maxLength !== undefined && resolvedContentLength(next, variables, stateRef.current.ctrlAsByte) > maxLength) return;
           commitInline(next, lo + clean.length);
           return;
         }
@@ -401,8 +411,8 @@ export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
       // sliced), so typed growth past the resolved-width cap is rejected
       // instead. Shrinking edits pass so an over-cap field can be edited down.
       if (maxLength !== undefined && hasTemplateMarkers(next)) {
-        const len = resolvedContentLength(next, variables);
-        if (len > maxLength && len > resolvedContentLength(value, variables)) {
+        const len = resolvedContentLength(next, variables, stateRef.current.ctrlAsByte);
+        if (len > maxLength && len > resolvedContentLength(value, variables, stateRef.current.ctrlAsByte)) {
           setResyncNonce((n) => n + 1);
           return;
         }
@@ -448,7 +458,7 @@ export const TemplateContentInput = forwardRef<TemplateEditorHandle, Props>(
       let off = 0;
       for (const s of segments) {
         const end = off + s.text.length;
-        if (s.kind === "var" || s.kind === "clock") {
+        if (s.kind === "var" || s.kind === "clock" || s.kind === "ctrl") {
           if (dir === "left" ? caret === end : caret === off) return { start: off, end };
           if (caret > off && caret < end) return { start: off, end };
         }

@@ -8,6 +8,7 @@ import {
 } from "../../types/Variable";
 import { embedsToMarkers } from "../fnTemplate";
 import { tokensToMarkers } from "../fcTemplate";
+import { controlBytesToMarkers } from "../../types/controlKey";
 import { decodeFbContent } from "../fbContent";
 import { decodeTbContent } from "../tbContent";
 import { zplFdToModelContent } from "../gs1";
@@ -133,7 +134,15 @@ export function createFlushField(
       : s.field.pendingFD;
     // FN embeds → markers, then ^FC clock tokens (order matters: `%FN#1#%Y`).
     const afterFn = applyFnEmbeds(rawDecoded);
-    const content = tokensToMarkers(afterFn, s.format.clockChars);
+    let content = tokensToMarkers(afterFn, s.format.clockChars);
+    // Control bytes chip-tokenise only where the symbology can encode them,
+    // and never in GS1 mode: there a raw GS is the AI separator the GS1
+    // normalisation in the type cases below must still see. Text keeps raw
+    // newlines (^FB); other types keep the bytes for the suspicious preflight.
+    const gs1Field = s.field.bcGs1 || (s.field.dmQuality === 200 && !!s.field.dmEscape);
+    if (!gs1Field && s.field.fieldType && getEntry(s.field.fieldType)?.controlChars) {
+      content = controlBytesToMarkers(content);
+    }
     const posType = getPosType(s.field);
     const comment = takeComment();
 

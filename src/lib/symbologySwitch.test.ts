@@ -71,6 +71,13 @@ describe('symbologyTargets', () => {
     expect(byType(targets, 'ean13')?.disabled).toBe(false);
   });
 
+  it('judges a control-key chip as its byte, not as an exempt marker', () => {
+    const targets = symbologyTargets(barcode('code128', { content: '123«ctrl:TAB»456' }));
+    expect(byType(targets, 'ean13')).toMatchObject({ disabled: true, reason: 'digitsOnly' });
+    expect(byType(targets, 'code39')).toMatchObject({ disabled: true, reason: 'charset' });
+    expect(byType(targets, 'qrcode')?.disabled).toBe(false);
+  });
+
   it('judges a gs1-capable target in the GS1 mode the convert lands in', () => {
     // 'ä' violates the GS1 charset but plain DataMatrix accepts any bytes: the
     // fit must follow the carried gs1 flag, not the non-GS1 defaults.

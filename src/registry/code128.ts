@@ -7,6 +7,8 @@ export const code128CoreConfig: Barcode1DCoreConfig = {
   placeholderContent: '12345678',
   group: 'code-1d',
   gs1Capable: true,
+  // Code Set A covers the C0 range.
+  controlChars: true,
   zplCommand: (p) => {
     const interp = p.printInterpretation ? 'Y' : 'N';
     const check = p.checkDigit ? 'Y' : 'N';

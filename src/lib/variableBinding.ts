@@ -1,8 +1,14 @@
 import type { LabelObject } from "../types/Group";
 import { markerOf, type CsvMapping, type Variable } from "../types/Variable";
-import { hasTemplateMarkers, resolveTemplateMarkers } from "./fnTemplate";
-import { channelDatesFrom, hasClockMarkers, resolveClockMarkers, type ChannelDates } from "./fcTemplate";
-import type { ClockOffset, LabelConfig } from "../types/LabelConfig";
+import { resolveTemplateMarkers } from "./fnTemplate";
+import { channelDatesFrom, hasClockMarkers, resolveClockMarkers } from "./fcTemplate";
+import { clockDatesThunk, resolveMarkerChain, type ClockResolveCtx } from "./markerResolve";
+
+// Chain internals live in markerResolve (a leaf module): this module sits in
+// the registry's own init chain (typedContent/preflight/variableField import
+// it), so it must never import the registry back. Capability flags therefore
+// arrive as caller params (see `ctrlOk` / `isCtrlOk`).
+export { clockCtxFromLabel, resolveContentPreview, type ClockResolveCtx } from "./markerResolve";
 
 /** Read `props.content` if present and string-typed; one place for the
  *  unsafe cast that consumers walking heterogeneous trees share. */
@@ -65,6 +71,9 @@ export function applyBindingToTree<T extends LabelObject>(
   /** Shared clock context so every leaf sees the same instant and the
    *  same label-level ^SO offsets. */
   clock?: ClockResolveCtx,
+  /** Per-leaf control-chip capability (`objectResolvesCtrl`); see
+   *  applyBindingToObject. */
+  isCtrlOk?: (obj: LabelObject) => boolean,
 ): T[] {
   // Lift once per tree so all leaves share one instant + offsets.
   const now = clock?.now ?? new Date();
@@ -77,10 +86,10 @@ export function applyBindingToTree<T extends LabelObject>(
   return objects.map((o) => {
     const asGroup = o as unknown as { type?: string; children?: readonly T[] };
     if (asGroup.type === "group" && Array.isArray(asGroup.children)) {
-      const nextChildren = applyBindingToTree(asGroup.children, variables, active, mode, shared);
+      const nextChildren = applyBindingToTree(asGroup.children, variables, active, mode, shared, isCtrlOk);
       return { ...o, children: nextChildren } as T;
     }
-    return applyBindingToObject(o, variables, active, mode, shared);
+    return applyBindingToObject(o, variables, active, mode, shared, isCtrlOk?.(o) ?? false);
   });
 }
 
@@ -165,52 +174,6 @@ export function buildActiveCsvRow(
   return { headers: csvDataset.headers, row, mapping: csvMapping };
 }
 
-/** Per-call clock context. `dates` is preferred (pre-applies the
- *  label's ^SO2/^SO3 offsets); `now` is a back-compat shortcut for
- *  callers without label-level offset access. */
-export interface ClockResolveCtx {
-  dates?: ChannelDates;
-  now?: Date;
-  secondaryOffset?: ClockOffset;
-  tertiaryOffset?: ClockOffset;
-}
-
-/** Builds a ClockResolveCtx from the label's ^SO offsets. */
-export function clockCtxFromLabel(
-  label: Pick<LabelConfig, "secondaryClockOffset" | "tertiaryClockOffset">,
-): ClockResolveCtx {
-  return {
-    secondaryOffset: label.secondaryClockOffset,
-    tertiaryOffset: label.tertiaryClockOffset,
-  };
-}
-
-/** Resolve a bare content string the way the canvas preview would: clock
- *  markers to the current instant, variable markers to their default (no CSV
- *  row). Lets builders validate marker-bearing values as concrete text. Keep
- *  the clock-then-variable order in lockstep with applyBindingToObject so
- *  builder preview and canvas/export can't diverge. */
-export function resolveContentPreview(
-  content: string,
-  variables: readonly Variable[],
-  clock?: ClockResolveCtx,
-): string {
-  let next = content;
-  if (hasClockMarkers(next)) {
-    const dates = clock?.dates ?? channelDatesFrom(
-      clock?.now ?? new Date(),
-      clock?.secondaryOffset,
-      clock?.tertiaryOffset,
-    );
-    next = resolveClockMarkers(next, dates);
-  }
-  if (hasTemplateMarkers(next)) {
-    const byName = new Map(variables.map((v) => [v.name, v]));
-    next = resolveTemplateMarkers(next, (name) => byName.get(name)?.defaultValue);
-  }
-  return next;
-}
-
 /** Identity-preserving: returns same ref when unbound or unchanged. */
 export function applyBindingToObject<T extends LabelObject>(
   obj: T,
@@ -219,6 +182,9 @@ export function applyBindingToObject<T extends LabelObject>(
   mode: RenderMode = "preview",
   /** Lazy-initialised inside the clock branch. */
   clock?: ClockResolveCtx,
+  /** Emitter parity for control chips (`objectResolvesCtrl(obj)`); default
+   *  false keeps a chip literal, matching export on incapable types. */
+  ctrlOk = false,
 ): T {
   const content = getObjectStringContent(obj);
   if (content === undefined) return obj;
@@ -226,28 +192,18 @@ export function applyBindingToObject<T extends LabelObject>(
   // Content is the only source: `«name»` markers (single known marker is the
   // derived single-bind, others are templates) resolve to the variable value,
   // exactly as `fdFieldFor`/`classifyField` decide on export, so preview and
-  // export can never diverge.
-  let next = content;
-  // Resolve the field's OWN clock markers first (preview only); a «clock:Y» that
-  // arrives via a substituted variable value (CSV/default) stays literal, matching
-  // export (^FC fires only for clock in field content, not in substituted data).
-  if (mode === "preview" && hasClockMarkers(next)) {
-    const ctx = clock ?? {};
-    const dates = ctx.dates ?? channelDatesFrom(
-      ctx.now ?? new Date(),
-      ctx.secondaryOffset,
-      ctx.tertiaryOffset,
-    );
-    next = resolveClockMarkers(next, dates);
-  }
-  if (hasTemplateMarkers(next)) {
-    // O(N+V) vs O(N*V).
-    const byName = new Map(variables.map((v) => [v.name, v]));
-    next = resolveTemplateMarkers(next, (name) => {
+  // export can never diverge. Clock/control resolve in preview mode only
+  // (export emits ^FC / ^FH itself).
+  const byName = new Map(variables.map((v) => [v.name, v]));
+  const next = resolveMarkerChain(
+    content,
+    (name) => {
       const v = byName.get(name);
       return v ? resolveVariableValue(v, active, mode) : undefined;
-    });
-  }
+    },
+    mode === "preview" ? clockDatesThunk(clock) : null,
+    ctrlOk,
+  );
   if (next === content) return obj;
   const props = (obj as { props: object }).props;
   return {

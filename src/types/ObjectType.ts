@@ -65,6 +65,10 @@ export interface ObjectTypeCore<P extends object = object> {
   /** Props patch that puts THIS type into its GS1 mode when a symbology switch
    *  carries GS1 content in. Default for `gs1Capable`: `{ gs1: true }`. */
   gs1EnterProps?: Partial<P>;
+  /** Symbology can encode raw control bytes (TAB/CR/...): gates the content
+   *  editor's control-key chips and the import's byte-to-chip tokenising.
+   *  False/absent for fixed-charset symbologies (EAN/UPC, Code 39) and text. */
+  controlChars?: boolean;
   /** 1:1 aspect-locked free resize (ellipse with lockAspect). For
    *  integer-module 2D symbologies use uniformScaleProp instead. */
   uniformScale?: boolean | ((props: P) => boolean);

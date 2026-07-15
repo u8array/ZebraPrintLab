@@ -1,4 +1,5 @@
 import { markerOf, markerRe, type Variable } from "../types/Variable";
+import { isControlBody } from "../types/controlKey";
 import { clockBodyLength } from "./fcTemplate";
 
 // ^FE embeds (#n#) <-> «name» markers. Recognition grammar lives in
@@ -64,15 +65,24 @@ export function hasTemplateMarkers(content: string): boolean {
 /** Printed length of `content` with markers resolved: a variable marker
  *  inherits its defaultValue's length, a clock marker its fixed token width,
  *  and an unknown marker counts as its literal characters (matching emit,
- *  where unresolved markers stay literal). */
-export function resolvedContentLength(content: string, variables: readonly Variable[]): number {
+ *  where unresolved markers stay literal). A control-key chip counts one byte
+ *  only when `ctrlAsByte` (the field's emitter resolves chips); elsewhere it
+ *  stays literal at emit and counts its full marker text. */
+export function resolvedContentLength(
+  content: string,
+  variables: readonly Variable[],
+  ctrlAsByte = false,
+): number {
   const byName = new Map(variables.map((v) => [v.name, v.defaultValue.length]));
   let len = 0;
   let last = 0;
   for (const m of content.matchAll(markerRe())) {
     len += (m.index ?? 0) - last;
     const body = m[1] ?? "";
-    len += clockBodyLength(body) ?? byName.get(body) ?? m[0].length;
+    len += clockBodyLength(body)
+      ?? (ctrlAsByte && isControlBody(body) ? 1 : undefined)
+      ?? byName.get(body)
+      ?? m[0].length;
     last = (m.index ?? 0) + m[0].length;
   }
   return len + (content.length - last);

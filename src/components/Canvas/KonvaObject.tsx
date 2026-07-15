@@ -23,7 +23,7 @@ import { GS_SYMBOL_PATHS, GS_VECTOR_CODES, type GsVectorCode } from "../../regis
 import { blockBoundsDots, blockJustifyWordPositions, blockLineStartDots, blockLineStepDots, EMPTY_TEXT_PLACEHOLDER_GLYPHS, isBlankText, tbBoundsDots, tbLineStepDots, wrapBlockLines, zebraAlignOffsetDots, zebraHangingIndentOffsetDots, zebraJustifyGapDots, zebraLineWidthDots, type ZplRotation } from "../../lib/zebraTextLayout";
 import { resolveTextMode } from "../../registry/text";
 import { isAxisSwapped } from "../../registry/rotation";
-import type { LeafObject } from "../../registry";
+import { objectResolvesCtrl, type LeafObject } from "../../registry";
 import type { TextProps } from "../../registry/text";
 
 type Props = KonvaObjectProps;
@@ -452,7 +452,7 @@ export function KonvaObject(props_: Props) {
   const csvDataset = useLabelStore((s) => s.csvDataset);
   const csvMapping = useLabelStore((s) => s.csvMapping);
   const csvRenderMode = useLabelStore((s) => s.canvasSettings.csvRenderMode);
-  const obj = applyBindingToObject(props_.obj, variables, active, csvRenderMode, clock);
+  const obj = applyBindingToObject(props_.obj, variables, active, csvRenderMode, clock, objectResolvesCtrl(props_.obj));
   const renderProps = obj === props_.obj ? props_ : { ...props_, obj };
 
   // Classify the ORIGINAL content: `obj` has had its markers resolved to print

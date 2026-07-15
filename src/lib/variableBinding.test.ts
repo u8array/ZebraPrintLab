@@ -9,6 +9,7 @@ import {
   resolveContentPreview,
   type ActiveCsvRow,
 } from './variableBinding';
+import { objectResolvesCtrl } from '../registry';
 import type { CsvMapping, Variable } from '../types/Variable';
 import type { LabelObject } from '../types/Group';
 
@@ -140,6 +141,34 @@ describe('applyBindingToObject', () => {
   it('returns identity for plain literal content (no markers)', () => {
     const o = obj();
     expect(applyBindingToObject(o, [variable()])).toBe(o);
+  });
+
+  it('resolves control chips only when the caller grants emitter parity (ctrlOk)', () => {
+    const chip = (type: string, extra: object = {}): LabelObject =>
+      ({ id: 'c1', type, x: 0, y: 0, rotation: 0, props: { content: 'A«ctrl:TAB»B', ...extra } }) as unknown as LabelObject;
+    const content = (o: LabelObject) => (o as unknown as { props: { content: string } }).props.content;
+    expect(content(applyBindingToObject(chip('code128'), [], null, 'preview', undefined, true))).toBe('A\tB');
+    // Default (and explicit false) keeps the chip literal, like export on
+    // incapable types; identity preserved.
+    const e = chip('ean13');
+    expect(applyBindingToObject(e, [])).toBe(e);
+    const g = chip('code128', { gs1: true });
+    expect(applyBindingToObject(g, [], null, 'preview', undefined, false)).toBe(g);
+  });
+
+  it('resolveContentPreview keeps chips literal on request (GS1 builder parity)', () => {
+    expect(resolveContentPreview('A«ctrl:GS»B', [])).toBe('A\x1DB');
+    expect(resolveContentPreview('A«ctrl:GS»B', [], undefined, { resolveCtrl: false })).toBe('A«ctrl:GS»B');
+  });
+
+  it('objectResolvesCtrl mirrors the emitter gate (capability + non-GS1)', () => {
+    const o = (type: string, props: object = {}) => ({ type, props });
+    expect(objectResolvesCtrl(o('code128'))).toBe(true);
+    expect(objectResolvesCtrl(o('qrcode'))).toBe(true);
+    expect(objectResolvesCtrl(o('code128', { gs1: true }))).toBe(false);
+    expect(objectResolvesCtrl(o('datamatrix', { gs1: true }))).toBe(false);
+    expect(objectResolvesCtrl(o('ean13'))).toBe(false);
+    expect(objectResolvesCtrl(o('text'))).toBe(false);
   });
 
   it('substitutes a single marker default when no active row', () => {
