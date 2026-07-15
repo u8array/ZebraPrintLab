@@ -10,6 +10,7 @@ export const industrial2of5CoreConfig: Barcode1DCoreConfig = {
     const interp = p.printInterpretation ? "Y" : "N";
     return `^BI${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
   },
+  contentSpec: { charset: '0-9' },
 };
 
 export const industrial2of5 = createBarcode1DCore(industrial2of5CoreConfig);

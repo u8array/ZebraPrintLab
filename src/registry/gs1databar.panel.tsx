@@ -7,11 +7,8 @@ import { NumberInput } from '../components/Properties/NumberInput';
 import {
   GS1_DATABAR_DEFAULT_SEGMENTS,
   GS1_DATABAR_EXPANDED_SYMBOLOGIES,
-  GS1_EXPANDED_CHARSET,
-  elementStringToContent,
   gtinBodyFromContent,
 } from '../lib/gs1';
-import type { ContentSpec } from './contentSpec';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
 import { FieldLabel } from '../components/Properties/ZplCmd';
@@ -20,18 +17,7 @@ import { builderButtonCls } from '../components/ui/formStyles';
 import { fieldHasVariable, asLabelObject } from '../lib/variableField';
 import { type Gs1DatabarProps, SYMBOLOGY_LABELS } from './gs1databar';
 
-// Stable specs so the sanitiser/regex WeakMap caches hit across keystrokes.
-// Expanded carries multi-AI GS1 data: restrict to the GS1 charset and keep the
-// "(01)…(10)…" element-string paste shortcut. Non-expanded (sym 1-5) is a bare
-// numeric GTIN.
-const EXPANDED_SPEC: ContentSpec = { charset: GS1_EXPANDED_CHARSET, normalize: elementStringToContent };
-const GTIN_SPEC: ContentSpec = { charset: '0-9' };
-
 export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
-  contentSpec: (props) =>
-    GS1_DATABAR_EXPANDED_SYMBOLOGIES.has((props as Gs1DatabarProps).symbology)
-      ? EXPANDED_SPEC
-      : GTIN_SPEC,
   PropertiesPanel: ({ obj, onChange }) => {
     const t = useT();
     const p = obj.props;

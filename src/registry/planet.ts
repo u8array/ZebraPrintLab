@@ -10,6 +10,7 @@ export const planetCoreConfig: Barcode1DCoreConfig = {
     const interp = p.printInterpretation ? "Y" : "N";
     return `^B5${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
   },
+  contentSpec: { charset: '0-9' },
 };
 
 export const planet = createBarcode1DCore(planetCoreConfig);

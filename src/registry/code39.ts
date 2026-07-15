@@ -14,6 +14,7 @@ export const code39CoreConfig: Barcode1DCoreConfig = {
   // Start/stop is the asterisk; rendered as flanking glyphs (lowered to sit
   // centered like Labelary), so the data text carries no `*`.
   hri: { startStopGlyph: 'asterisk' },
+  contentSpec: { charset: '0-9A-Za-z\\-. $/+%' },
 };
 
 export const code39 = createBarcode1DCore(code39CoreConfig);

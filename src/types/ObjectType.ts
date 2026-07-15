@@ -1,4 +1,5 @@
 import type { LabelObjectBase, ObjectChanges, ObjectGroup } from './LabelObject';
+import type { ContentSpec } from './contentSpec';
 import type { HriBehavior, TransformContext, ZplEmitContext } from './ZplEmit';
 import type { PreflightCtx, PreflightProducerResult } from './preflight';
 
@@ -51,6 +52,12 @@ export interface ObjectTypeCore<P extends object = object> {
    *  family do; 2D/stacked emitters and fixed-check EAN/UPC do not, so the
    *  Variable-Builder hides the serial option there. */
   serialisable?: boolean;
+  /** Per-symbology content charset/length rule; a function when it depends on
+   *  props (GS1 mode). Drives editor input filtering and symbology-switch fit. */
+  contentSpec?: ContentSpec | ((props: object) => ContentSpec | undefined);
+  /** Symbology offers a GS1 mode (`props.gs1`). Lets a symbology switch carry
+   *  the flag only to targets that can honour it. */
+  gs1Capable?: boolean;
   /** 1:1 aspect-locked free resize (ellipse with lockAspect). For
    *  integer-module 2D symbologies use uniformScaleProp instead. */
   uniformScale?: boolean | ((props: P) => boolean);

@@ -2,7 +2,7 @@ import { useLabelStore } from "../../store/labelStore";
 import { useT } from "../../hooks/useT";
 import type { BindableLeaf } from "../../lib/variableField";
 import { fieldIsMultiline } from "../../registry/text";
-import { getPanel } from "../../registry/panels";
+import { getEntry } from "../../registry";
 import { contentSanitiser, resolveContentSpec } from "../../registry/contentSpec";
 import { TemplateContentInput } from "./TemplateContentInput";
 
@@ -21,7 +21,7 @@ export function ContentEditorButton({ obj }: { obj: BindableLeaf }) {
   const isSerial = !!(obj.props as { serial?: unknown }).serial;
   // Per-symbology charset/length, so restrictive barcodes filter inline input
   // (the panel's own validation still warns on length).
-  const spec = resolveContentSpec(getPanel(obj.type)?.contentSpec, obj.props);
+  const spec = resolveContentSpec(getEntry(obj.type)?.contentSpec, obj.props);
   return (
     <div className="flex items-stretch bg-surface-2 border border-border rounded-md overflow-hidden focus-within:border-accent">
       {isSerial ? (

@@ -18,7 +18,6 @@ import { markerOf } from "../../types/Variable";
 import { serialSeed, type SerialMode, SERIAL_DEFAULT } from "../../registry/serialField";
 import { fieldIsMultiline } from "../../registry/text";
 import { getEntry } from "../../registry";
-import { getPanel } from "../../registry/panels";
 import { contentSanitiser, resolveContentSpec } from "../../registry/contentSpec";
 import { removeMarkerAt } from "../../lib/markerTokens";
 import { extractTemplateRefs, renameTemplateMarker, resolveTemplateMarkers } from "../../lib/fnTemplate";
@@ -52,7 +51,7 @@ function VariableBuilder({ objectId }: { objectId: string }) {
   const seed = useState(() => {
     const obj = findObjectById(getCurrentObjects(), objectId);
     const p = (obj && "props" in obj ? (obj.props as LeafProps) : {}) ?? {};
-    const spec = obj ? resolveContentSpec(getPanel(obj.type)?.contentSpec, p) : undefined;
+    const spec = obj ? resolveContentSpec(getEntry(obj.type)?.contentSpec, p) : undefined;
     return {
       content: p.content ?? "",
       serialOn: !!p.serial,

@@ -20,6 +20,7 @@ export const upceCoreConfig: Barcode1DCoreConfig = {
   // Empty stays empty: the padding would otherwise fabricate a scannable
   // 0000000 UPC-E from a blank field, breaking the empty-^FD invariant.
   fdContent: (c) => (c === '' ? '' : `0${upceData6FromFd(c)}`),
+  contentSpec: { charset: '0-9', maxLength: 6 },
 };
 
 export const upce = createBarcode1DCore(upceCoreConfig);

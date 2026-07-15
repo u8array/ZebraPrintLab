@@ -8,6 +8,8 @@ import { hasTemplateMarkers } from '../lib/fnTemplate';
 import { moduleTooSmallPreflight } from '../lib/barcodeScannability';
 import { isLoneMarker } from '../lib/variableField';
 import { gs1ContentToZplFd, parseGs1ToSegments, segmentsToZplFd } from '../lib/gs1';
+import { GS1_CONTENT_SPEC } from './gs1FieldSpec';
+import type { ContentSpec } from '../types/contentSpec';
 import { type ZplRotation } from './rotation';
 
 export interface Barcode1DProps {
@@ -56,6 +58,8 @@ export interface Barcode1DCoreConfig {
   /** Symbology offers a GS1 mode (Code 128 → GS1-128); `zplCommand` must emit
    *  the mode flag when `props.gs1` is set. */
   gs1Capable?: boolean;
+  /** See {@link ObjectTypeCore.contentSpec}; static half, GS1 mode is derived. */
+  contentSpec?: ContentSpec;
 }
 
 export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore<Barcode1DProps> {
@@ -104,6 +108,12 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
     heightLocked: config.heightLocked,
     interpretationLocked: config.interpretationLocked,
     hri: config.hri,
+    // GS1 mode swaps in the shared GS1 element-string spec; the static half
+    // stays the symbology's own rule.
+    contentSpec: config.gs1Capable
+      ? (props) => ((props as Barcode1DProps).gs1 ? GS1_CONTENT_SPEC : config.contentSpec)
+      : config.contentSpec,
+    gs1Capable: config.gs1Capable,
 
     preflight: moduleTooSmallPreflight<Barcode1DProps>('moduleWidth'),
 

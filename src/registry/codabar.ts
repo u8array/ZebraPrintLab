@@ -11,6 +11,7 @@ export const codabarCoreConfig: Barcode1DCoreConfig = {
     const check = p.checkDigit ? "Y" : "N";
     return `^BK${p.rotation},${check},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
   },
+  contentSpec: { charset: '0-9A-Da-d\\-$:/.+' },
 };
 
 export const codabar = createBarcode1DCore(codabarCoreConfig);

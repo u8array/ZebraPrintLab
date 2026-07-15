@@ -16,6 +16,7 @@ export const plesseyCoreConfig: Barcode1DCoreConfig = {
     const check = p.checkDigit ? "Y" : "N";
     return `^BP${p.rotation},${check},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
   },
+  contentSpec: { charset: '0-9A-Fa-f' },
 };
 
 export const plessey = createBarcode1DCore(plesseyCoreConfig);

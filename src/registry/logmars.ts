@@ -17,6 +17,7 @@ export const logmarsCoreConfig: Barcode1DCoreConfig = {
     aboveGapDots: LOGMARS_TEXT_ABOVE_GAP_DOTS,
     formatHri: formatLogmarsHri,
   },
+  contentSpec: { charset: '0-9A-Za-z\\-. $/+%' },
 };
 
 export const logmars = createBarcode1DCore(logmarsCoreConfig);

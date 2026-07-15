@@ -41,6 +41,7 @@ export const upcEanExtensionCoreConfig: Barcode1DCoreConfig = {
     fontDots: ocrbEanHriFontDots,
     formatHri: formatUpcEanExtensionHri,
   },
+  contentSpec: { charset: '0-9', maxLength: 5, validLengths: [2, 5] },
 };
 
 export const upcEanExtension = createBarcode1DCore(upcEanExtensionCoreConfig);

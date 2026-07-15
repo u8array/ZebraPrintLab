@@ -14,6 +14,13 @@ function rejectPattern(spec: ContentSpec): RegExp {
   return re;
 }
 
+/** True when `text` contains a character outside the spec's charset. */
+export function violatesCharset(text: string, spec: ContentSpec): boolean {
+  const re = rejectPattern(spec);
+  re.lastIndex = 0; // shared /g regex is stateful
+  return re.test(text);
+}
+
 export function filterContent(raw: string, spec?: ContentSpec): string {
   if (!spec) return raw;
   const filtered = raw.replace(rejectPattern(spec), '');
