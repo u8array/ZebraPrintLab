@@ -14,7 +14,7 @@ interface ConfirmDialogProps {
  * Minimal confirm dialog matching the project's modal aesthetic.
  *
  * Mount it conditionally (`{open && <ConfirmDialog … />}`); the parent owns
- * visibility state. Backdrop click and Escape both fire `onCancel`.
+ * visibility state. Escape fires `onCancel`.
  */
 export function ConfirmDialog({
   message,
