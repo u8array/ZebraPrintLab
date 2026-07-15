@@ -807,6 +807,7 @@ const hu = {
     copyImage: 'Kép másolása',
     exportImage: 'Kép exportálása (PNG)',
     addObjectHere: 'Objektum hozzáadása ide',
+    switchType: 'Típus váltása',
     selectAll: 'Összes kijelölése',
   },
 
@@ -896,6 +897,12 @@ const hu = {
       box: 'Doboz',
       diagonalHint: 'Először egyenesítse ki az átlós vonalat, hogy dobozzá alakítsa.',
       outlineHint: 'Csak kitöltött, lekerekítés nélküli doboz alakítható vonallá.',
+    },
+    symbologySwitch: {
+      label: 'Szimbológia',
+      digitsOnly: 'Csak számjegyek',
+      charset: 'Olyan karaktereket tartalmaz, amelyeket ez a típus nem tud kódolni',
+      length: 'A tartalom hossza nem megfelelő',
     },
     code39: {
       content: 'Tartalom',

@@ -807,6 +807,7 @@ const it = {
     copyImage: 'Copia immagine',
     exportImage: 'Esporta immagine (PNG)',
     addObjectHere: 'Aggiungi oggetto qui',
+    switchType: 'Cambia tipo',
     selectAll: 'Seleziona tutto',
   },
 
@@ -896,6 +897,12 @@ const it = {
       box: 'Riquadro',
       diagonalHint: 'Raddrizza prima la linea diagonale per trasformarla in un riquadro.',
       outlineHint: 'Solo una casella piena senza arrotondamento può diventare una linea.',
+    },
+    symbologySwitch: {
+      label: 'Simbologia',
+      digitsOnly: 'Solo cifre',
+      charset: 'Contiene caratteri che questo tipo non può codificare',
+      length: 'La lunghezza del contenuto non è adatta',
     },
     code39: {
       content: 'Contenuto',

@@ -807,6 +807,7 @@ const sv = {
     copyImage: 'Kopiera bild',
     exportImage: 'Exportera bild (PNG)',
     addObjectHere: 'Lägg till objekt här',
+    switchType: 'Byt typ',
     selectAll: 'Markera allt',
   },
 
@@ -896,6 +897,12 @@ const sv = {
       box: 'Ruta',
       diagonalHint: 'Räta först ut den diagonala linjen för att göra den till en ruta.',
       outlineHint: 'Endast en fylld ruta utan rundning kan bli en linje.',
+    },
+    symbologySwitch: {
+      label: 'Symbologi',
+      digitsOnly: 'Endast siffror',
+      charset: 'Innehåller tecken som denna typ inte kan koda',
+      length: 'Innehållets längd passar inte',
     },
     code39: {
       content: 'Innehåll',

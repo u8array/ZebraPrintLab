@@ -97,6 +97,13 @@ export function selectionTargetId(objects: LabelObject[], id: string): string {
   return findAncestors(objects, id)[0]?.id ?? id;
 }
 
+/** True when any ancestor group of `id` is locked (lock cascades down). The
+ *  node's own `locked` is the caller's check; some sites treat it differently
+ *  (lock-bypass meta keys). */
+export function hasLockedAncestor(objects: LabelObject[], id: string): boolean {
+  return findAncestors(objects, id).some((g) => !!g.locked);
+}
+
 /** Identity-preserving: unaffected subtrees keep their original references. */
 export function mapObjectById(
   objects: LabelObject[],

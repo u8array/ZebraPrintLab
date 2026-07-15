@@ -807,6 +807,7 @@ const pt = {
     copyImage: 'Copiar imagem',
     exportImage: 'Exportar imagem (PNG)',
     addObjectHere: 'Adicionar objeto aqui',
+    switchType: 'Alterar tipo',
     selectAll: 'Selecionar tudo',
   },
 
@@ -896,6 +897,12 @@ const pt = {
       box: 'Caixa',
       diagonalHint: 'Endireite primeiro a linha diagonal para transformá-la numa caixa.',
       outlineHint: 'Apenas uma caixa preenchida sem arredondamento pode tornar-se uma linha.',
+    },
+    symbologySwitch: {
+      label: 'Simbologia',
+      digitsOnly: 'Apenas dígitos',
+      charset: 'Contém caracteres que este tipo não consegue codificar',
+      length: 'O comprimento do conteúdo não cabe',
     },
     code39: {
       content: 'Conteúdo',

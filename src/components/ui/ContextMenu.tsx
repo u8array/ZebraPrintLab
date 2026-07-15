@@ -12,6 +12,8 @@ export interface MenuAction {
   label?: string;
   run?: () => void;
   disabled?: boolean;
+  /** Why the entry is disabled, shown as a native title on hover. */
+  tooltip?: string;
   danger?: boolean;
   submenu?: MenuAction[];
 }
@@ -133,7 +135,7 @@ function Row({
         onMouseEnter={openSub}
         onMouseLeave={scheduleClose}
       >
-        <button disabled={item.disabled} className={cls}>
+        <button disabled={item.disabled} title={item.tooltip} className={cls}>
           <RowIcon icon={iconFor?.(item)} />
           <span className="flex-1">{labelOf(item, labels)}</span>
           <ChevronRightIcon className="w-3.5 h-3.5 text-muted shrink-0" />
@@ -167,6 +169,7 @@ function Row({
   return (
     <button
       disabled={item.disabled}
+      title={item.tooltip}
       className={cls}
       onClick={() => {
         if (item.disabled) return;

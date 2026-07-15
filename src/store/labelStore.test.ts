@@ -250,6 +250,15 @@ describe('convertObjectType', () => {
     expect(defined(objs()[0]).type).toBe('line');
   });
 
+  it('leaves pages untouched on a no-op mapper (no phantom undo entry)', () => {
+    state().addObject('line');
+    const id = defined(objs()[0]).id;
+    const pagesBefore = state().pages;
+    state().convertObjectType(id, (o) => o);
+    // Same ref: a rebuilt array would record a zundo step (ref-compare equality).
+    expect(state().pages).toBe(pagesBefore);
+  });
+
   it('converts a line to a box end-to-end via the real toggleShapeMode mapper', () => {
     state().addObject('line', { x: 0, y: 0 });
     const id = defined(objs()[0]).id;

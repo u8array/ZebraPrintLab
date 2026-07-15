@@ -807,6 +807,7 @@ const zhHant = {
     copyImage: '複製影像',
     exportImage: '匯出影像（PNG）',
     addObjectHere: '在此處新增物件',
+    switchType: '切換類型',
     selectAll: '全選',
   },
 
@@ -896,6 +897,12 @@ const zhHant = {
       box: '方框',
       diagonalHint: '請先將對角線拉直，以將其轉換為方框。',
       outlineHint: '只有沒有圓角的填滿方框才能轉換為線條。',
+    },
+    symbologySwitch: {
+      label: '碼制',
+      digitsOnly: '僅數字',
+      charset: '包含此類型無法編碼的字元',
+      length: '內容長度不符合',
     },
     code39: {
       content: '內容',

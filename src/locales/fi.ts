@@ -807,6 +807,7 @@ const fi = {
     copyImage: 'Kopioi kuva',
     exportImage: 'Vie kuva (PNG)',
     addObjectHere: 'Lisää objekti tähän',
+    switchType: 'Vaihda tyyppi',
     selectAll: 'Valitse kaikki',
   },
 
@@ -896,6 +897,12 @@ const fi = {
       box: 'Laatikko',
       diagonalHint: 'Suorista viisto viiva ensin muuttaaksesi sen laatikoksi.',
       outlineHint: 'Vain täytetty laatikko ilman pyöristystä voi muuttua viivaksi.',
+    },
+    symbologySwitch: {
+      label: 'Symboliikka',
+      digitsOnly: 'Vain numeroita',
+      charset: 'Sisältää merkkejä, joita tämä tyyppi ei voi koodata',
+      length: 'Sisällön pituus ei sovi',
     },
     code39: {
       content: 'Sisältö',

@@ -807,6 +807,7 @@ const sr = {
     copyImage: 'Копирај слику',
     exportImage: 'Извези слику (PNG)',
     addObjectHere: 'Додај објекат овде',
+    switchType: 'Промени тип',
     selectAll: 'Изабери све',
   },
 
@@ -896,6 +897,12 @@ const sr = {
       box: 'Оквир',
       diagonalHint: 'Прво исправите дијагоналну линију да бисте је претворили у оквир.',
       outlineHint: 'Само попуњени оквир без заобљења може постати линија.',
+    },
+    symbologySwitch: {
+      label: 'Симболика',
+      digitsOnly: 'Само цифре',
+      charset: 'Садржи знакове које овај тип не може кодирати',
+      length: 'Дужина садржаја не одговара',
     },
     code39: {
       content: 'Sadržaj',

@@ -69,6 +69,13 @@ export const gs1databar: ObjectTypeCore<Gs1DatabarProps> = {
       ? EXPANDED_SPEC
       : GTIN_SPEC,
 
+  // GS1-ness is the symbology variant, not a props.gs1 flag: expanded (6/7)
+  // carries multi-AI GS1 content, sym 1-5 a bare GTIN. Carrying GS1 in lands
+  // on Expanded.
+  gs1Capable: true,
+  gs1Active: (props) => GS1_DATABAR_EXPANDED_SYMBOLOGIES.has((props as Gs1DatabarProps).symbology),
+  gs1EnterProps: { symbology: 6 },
+
   toZPL: (obj: LabelObjectBase & { props: Gs1DatabarProps }, ctx) => {
     const p = obj.props;
     // ^BRo,s,m,sep,h[,sg]: segments must only be present for Expanded Stacked (7).

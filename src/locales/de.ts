@@ -835,6 +835,7 @@ const de = {
     copyImage: 'Bild kopieren',
     exportImage: 'Bild exportieren (PNG)',
     addObjectHere: 'Objekt hier hinzufügen',
+    switchType: 'Typ wechseln',
     selectAll: 'Alles auswählen',
   },
 
@@ -924,6 +925,12 @@ const de = {
       box: 'Box',
       diagonalHint: 'Diagonale Linie erst gerade ziehen, um sie in eine Box umzuwandeln.',
       outlineHint: 'Nur eine gefüllte Box ohne Rundung lässt sich in eine Linie umwandeln.',
+    },
+    symbologySwitch: {
+      label: 'Symbologie',
+      digitsOnly: 'Nur Ziffern',
+      charset: 'Enthält Zeichen, die dieser Typ nicht codieren kann',
+      length: 'Inhaltslänge passt nicht',
     },
     code39: {
       content: 'Inhalt',

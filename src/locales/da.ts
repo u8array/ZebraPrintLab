@@ -807,6 +807,7 @@ const da = {
     copyImage: 'Kopiér billede',
     exportImage: 'Eksportér billede (PNG)',
     addObjectHere: 'Tilføj objekt her',
+    switchType: 'Skift type',
     selectAll: 'Markér alt',
   },
 
@@ -896,6 +897,12 @@ const da = {
       box: 'Boks',
       diagonalHint: 'Ret først den diagonale linje ud for at gøre den til en boks.',
       outlineHint: 'Kun en udfyldt boks uden afrunding kan blive til en linje.',
+    },
+    symbologySwitch: {
+      label: 'Symbologi',
+      digitsOnly: 'Kun cifre',
+      charset: 'Indeholder tegn, som denne type ikke kan kode',
+      length: 'Indholdets længde passer ikke',
     },
     code39: {
       content: 'Indhold',

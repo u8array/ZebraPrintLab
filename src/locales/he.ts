@@ -807,6 +807,7 @@ const he = {
     copyImage: 'העתק תמונה',
     exportImage: 'ייצא תמונה (PNG)',
     addObjectHere: 'הוסף אובייקט כאן',
+    switchType: 'החלף סוג',
     selectAll: 'בחר הכול',
   },
 
@@ -896,6 +897,12 @@ const he = {
       box: 'תיבה',
       diagonalHint: 'יישר תחילה את הקו האלכסוני כדי להפוך אותו לתיבה.',
       outlineHint: 'רק תיבה מלאה ללא עיגול פינות יכולה להפוך לקו.',
+    },
+    symbologySwitch: {
+      label: 'סוג ברקוד',
+      digitsOnly: 'ספרות בלבד',
+      charset: 'מכיל תווים שהסוג הזה אינו יכול לקודד',
+      length: 'אורך התוכן אינו מתאים',
     },
     code39: {
       content: 'תוכן',

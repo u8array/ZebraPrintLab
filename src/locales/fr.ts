@@ -807,6 +807,7 @@ const fr = {
     copyImage: "Copier l'image",
     exportImage: "Exporter l'image (PNG)",
     addObjectHere: 'Ajouter un objet ici',
+    switchType: 'Changer de type',
     selectAll: 'Tout sélectionner',
   },
 
@@ -896,6 +897,12 @@ const fr = {
       box: 'Cadre',
       diagonalHint: "Redressez d'abord la ligne diagonale pour la transformer en cadre.",
       outlineHint: 'Seule une boîte pleine sans arrondi peut devenir une ligne.',
+    },
+    symbologySwitch: {
+      label: 'Symbologie',
+      digitsOnly: 'Chiffres uniquement',
+      charset: 'Contient des caractères que ce type ne peut pas coder',
+      length: 'La longueur du contenu ne convient pas',
     },
     code39: {
       content: 'Contenu',

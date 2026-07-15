@@ -55,9 +55,16 @@ export interface ObjectTypeCore<P extends object = object> {
   /** Per-symbology content charset/length rule; a function when it depends on
    *  props (GS1 mode). Drives editor input filtering and symbology-switch fit. */
   contentSpec?: ContentSpec | ((props: object) => ContentSpec | undefined);
-  /** Symbology offers a GS1 mode (`props.gs1`). Lets a symbology switch carry
-   *  the flag only to targets that can honour it. */
+  /** Symbology offers a GS1 mode. Lets a symbology switch carry GS1 content
+   *  only to targets that can honour it. */
   gs1Capable?: boolean;
+  /** Whether this object currently carries GS1 content. Default:
+   *  `gs1Capable && props.gs1`; types that model GS1 differently (GS1 DataBar's
+   *  expanded symbologies) override. */
+  gs1Active?: (props: object) => boolean;
+  /** Props patch that puts THIS type into its GS1 mode when a symbology switch
+   *  carries GS1 content in. Default for `gs1Capable`: `{ gs1: true }`. */
+  gs1EnterProps?: Partial<P>;
   /** 1:1 aspect-locked free resize (ellipse with lockAspect). For
    *  integer-module 2D symbologies use uniformScaleProp instead. */
   uniformScale?: boolean | ((props: P) => boolean);

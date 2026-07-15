@@ -807,6 +807,7 @@ const es = {
     copyImage: 'Copiar imagen',
     exportImage: 'Exportar imagen (PNG)',
     addObjectHere: 'Agregar objeto aquí',
+    switchType: 'Cambiar tipo',
     selectAll: 'Seleccionar todo',
   },
 
@@ -896,6 +897,12 @@ const es = {
       box: 'Caja',
       diagonalHint: 'Endereza primero la línea diagonal para convertirla en una caja.',
       outlineHint: 'Solo una caja rellena sin redondeo puede convertirse en línea.',
+    },
+    symbologySwitch: {
+      label: 'Simbología',
+      digitsOnly: 'Solo dígitos',
+      charset: 'Contiene caracteres que este tipo no puede codificar',
+      length: 'La longitud del contenido no encaja',
     },
     code39: {
       content: 'Contenido',

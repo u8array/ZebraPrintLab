@@ -6,7 +6,10 @@ import type { AlignOp, DistributeAxis, AlignRef } from "../../lib/align";
 import type { AlignSelectionRef } from "../../store/slices/uiSlice";
 import { getEntry } from "../../registry";
 import { getPanel } from "../../registry/panels";
-import { canGroupSelection, findObjectById, isGroup } from "../../types/Group";
+import { canGroupSelection, findObjectById, hasLockedAncestor, isGroup } from "../../types/Group";
+import { symbologyTargets } from "../../lib/symbologySwitch";
+import { typeLabelFor } from "../../registry/palettePresets";
+import { SymbologySelect } from "./SymbologySelect";
 import { BWIP_APPROX_SEVERITY } from "../../lib/bwipConstants";
 import { stripZplCommandChars } from "../../registry/zplHelpers";
 import { dotsToMm, mmToDots } from "../../lib/coordinates";
@@ -200,9 +203,10 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
     showZplCommands && !groupRow
       ? definition?.zplCmdFor?.(obj as LabelObjectBase & { props: object }) ?? definition?.zplCmd ?? icon
       : icon;
-  const typeLabel = groupRow
-    ? t.types.group
-    : (t.types as Record<string, string>)[obj.type] ?? definition?.label;
+  const typeLabel = groupRow ? t.types.group : typeLabelFor(obj.type, t);
+  const switchTargets = groupRow ? [] : symbologyTargets(obj);
+  // An ancestor lock blocks convertObjectType too, so the select must reflect it.
+  const switchLocked = !!obj.locked || hasLockedAncestor(objects, obj.id);
 
   return (
     <div className="flex flex-col">
@@ -211,9 +215,13 @@ export function PropertiesPanel({ canvasRef }: PropertiesPanelProps) {
         <span className="flex items-center justify-center min-w-[22px] h-[22px] px-1 rounded-md bg-accent-dim text-accent font-mono text-xs font-semibold shrink-0">
           {headerBadge}
         </span>
-        <span className="text-[13px] font-semibold text-text">
-          {typeLabel}
-        </span>
+        {switchTargets.length > 0 ? (
+          <SymbologySelect obj={obj} targets={switchTargets} locked={switchLocked} />
+        ) : (
+          <span className="text-[13px] font-semibold text-text">
+            {typeLabel}
+          </span>
+        )}
         <BwipApproxIcon type={obj.type} />
       </div>
 

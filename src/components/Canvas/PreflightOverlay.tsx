@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { ExclamationTriangleIcon, ExclamationCircleIcon } from "@heroicons/react/16/solid";
-import { getEntry } from "../../registry";
+import { typeLabelFor } from "../../registry/palettePresets";
 import type { LeafObject } from "../../registry";
 import { useT } from "../../hooks/useT";
 import { useDismiss } from "../../hooks/useDismiss";
@@ -40,9 +40,8 @@ export function PreflightOverlay({ findings, objects, onSelect }: Props) {
   const nameOf = (id: string) => {
     const o = byId.get(id);
     if (!o) return id;
-    // `||` (not `??`) so an empty name falls through; prefer the localized type
-    // name like PropertiesPanel/Palette, English registry label as last resort.
-    return o.name || (t.types as Record<string, string>)[o.type] || getEntry(o.type)?.label || o.type;
+    // `||` (not `??`) so an empty name falls through to the shared type label.
+    return o.name || typeLabelFor(o.type, t);
   };
 
   return (
