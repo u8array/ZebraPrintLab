@@ -807,6 +807,7 @@ const ja = {
     copyImage: '画像をコピー',
     exportImage: '画像をエクスポート（PNG）',
     addObjectHere: 'ここにオブジェクトを追加',
+    switchType: 'タイプを切り替え',
     selectAll: 'すべて選択',
   },
 
@@ -896,6 +897,12 @@ const ja = {
       box: 'ボックス',
       diagonalHint: '斜めの線をボックスに変換するには、まず線をまっすぐにしてください。',
       outlineHint: '塗りつぶされた角丸なしのボックスのみを線に変換できます。',
+    },
+    symbologySwitch: {
+      label: 'シンボロジー',
+      digitsOnly: '数字のみ',
+      charset: 'このタイプでは符号化できない文字が含まれています',
+      length: '内容の長さが収まりません',
     },
     code39: {
       content: 'コンテンツ',

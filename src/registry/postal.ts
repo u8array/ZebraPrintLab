@@ -11,6 +11,7 @@ export const postalCoreConfig: Barcode1DCoreConfig = {
     // ^BZ{orientation},{height},{interp},{interpAbove}
     return `^BZ${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
   },
+  contentSpec: { charset: '0-9' },
 };
 
 export const postal = createBarcode1DCore(postalCoreConfig);

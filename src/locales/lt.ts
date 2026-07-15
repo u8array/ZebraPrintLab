@@ -807,6 +807,7 @@ const lt = {
     copyImage: 'Kopijuoti vaizdą',
     exportImage: 'Eksportuoti vaizdą (PNG)',
     addObjectHere: 'Pridėti objektą čia',
+    switchType: 'Keisti tipą',
     selectAll: 'Pasirinkti viską',
   },
 
@@ -896,6 +897,12 @@ const lt = {
       box: 'Stačiakampis',
       diagonalHint: 'Pirmiausia ištiesinkite įstrižą liniją, kad paverstumėte ją stačiakampiu.',
       outlineHint: 'Į liniją galima paversti tik užpildytą stačiakampį be suapvalinimo.',
+    },
+    symbologySwitch: {
+      label: 'Simbolika',
+      digitsOnly: 'Tik skaitmenys',
+      charset: 'Yra simbolių, kurių šis tipas negali užkoduoti',
+      length: 'Turinio ilgis netinka',
     },
     code39: {
       content: 'Turinys',

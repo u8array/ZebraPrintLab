@@ -9,7 +9,7 @@ import { TypedContentSection } from './typedContentSection';
 import { FieldLabel } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { fieldHasVariable, asLabelObject } from '../lib/variableField';
-import { GS1_CONTENT_SPEC, gs1EnablePatch } from './gs1FieldSpec';
+import { gs1EnablePatch } from './gs1FieldSpec';
 import { CheckboxRow } from '../components/Properties/CheckboxRow';
 import {
   type DataMatrixProps,
@@ -39,9 +39,6 @@ function symbolSizeOptions(p: DataMatrixProps, autoLabel: string, minFit: number
 }
 
 export const datamatrixPanel: ObjectTypeUi<DataMatrixProps> = {
-  // GS1 mode restricts the editor to the GS1 charset (and enables the element-
-  // string paste shortcut); plain ECC200 accepts a wide byte range, unfiltered.
-  contentSpec: (props) => ((props as DataMatrixProps).gs1 ? GS1_CONTENT_SPEC : undefined),
   PropertiesPanel: ({ obj, onChange }) => {
     const t = useT();
     const p = obj.props;

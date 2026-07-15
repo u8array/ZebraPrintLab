@@ -1,6 +1,5 @@
 import type React from 'react';
 import type { LabelObjectBase } from '../types/LabelObject';
-import type { ContentSpec } from '../types/contentSpec';
 import type { LeafType, PropsFor } from './leafObject';
 
 /** UI half of a registry entry. Lives beside panels.ts, NOT in types/, so the
@@ -10,11 +9,6 @@ export interface ObjectTypeUi<P extends object = object> {
     obj: LabelObjectBase & { props: P };
     onChange: (props: Partial<P>) => void;
   }>;
-  /** Per-symbology content charset/length rule, exposed on the panel entry so
-   *  the generic content editor (inline field + Variable-Builder modal) filters
-   *  input like the panel's own validation. A function lets the rule depend on
-   *  props (e.g. DataMatrix only restricts to the GS1 charset in GS1 mode). */
-  contentSpec?: ContentSpec | ((props: object) => ContentSpec | undefined);
 }
 
 /** Type-safe ObjectPanels shape: each key carries the matching Ui entry. */

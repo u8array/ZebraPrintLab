@@ -17,6 +17,7 @@ export const upcaCoreConfig: Barcode1DCoreConfig = {
     return `^BU${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'},Y`;
   },
   hri: { formatHri: formatUpcaHri },
+  contentSpec: { charset: '0-9', maxLength: 11 },
 };
 
 export const upca = createBarcode1DCore(upcaCoreConfig);

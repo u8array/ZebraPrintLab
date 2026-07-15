@@ -807,6 +807,7 @@ const et = {
     copyImage: 'Kopeeri pilt',
     exportImage: 'Ekspordi pilt (PNG)',
     addObjectHere: 'Lisa objekt siia',
+    switchType: 'Vaheta tüüpi',
     selectAll: 'Vali kõik',
   },
 
@@ -896,6 +897,12 @@ const et = {
       box: 'Kast',
       diagonalHint: 'Sirgesta esmalt diagonaaljoon, et muuta see kastiks.',
       outlineHint: 'Jooneks saab muuta ainult täidetud kasti ilma ümarduseta.',
+    },
+    symbologySwitch: {
+      label: 'Sümboloogia',
+      digitsOnly: 'Ainult numbrid',
+      charset: 'Sisaldab märke, mida see tüüp ei suuda kodeerida',
+      length: 'Sisu pikkus ei sobi',
     },
     code39: {
       content: 'Sisu',

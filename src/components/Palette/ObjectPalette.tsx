@@ -7,7 +7,7 @@ import { StarGlyph } from './StarGlyph';
 import { buildFavoritesAddMenu, buildPaletteRowMenu } from './paletteActions';
 import { ContextMenu, type MenuSection } from '../ui/ContextMenu';
 import { useContextMenu } from '../../hooks/useContextMenu';
-import { resolveAddable, type AddableEntry } from '../../registry/palettePresets';
+import { resolveAddable, typeLabelFor, type AddableEntry } from '../../registry/palettePresets';
 import { getEntry } from '../../registry';
 import { useT } from '../../hooks/useT';
 import { useLabelStore } from '../../store/labelStore';
@@ -29,7 +29,7 @@ function typeLabel(typeId: string, t: Translations): string {
     case 'code-1d': return t.palette.groupCode1d;
     case 'code-2d': return t.palette.groupCode2d;
     case 'legacy': return t.palette.groupLegacy;
-    default: return (t.types as Record<string, string>)[typeId] ?? typeId;
+    default: return typeLabelFor(typeId, t);
   }
 }
 

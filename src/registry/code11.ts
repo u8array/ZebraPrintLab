@@ -13,6 +13,7 @@ export const code11CoreConfig: Barcode1DCoreConfig = {
     return `^B1${p.rotation},${check},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
   },
   hri: { formatHri: formatCode11Hri, startStopGlyph: 'triangle' },
+  contentSpec: { charset: '0-9\\-' },
 };
 
 export const code11 = createBarcode1DCore(code11CoreConfig);

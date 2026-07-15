@@ -3,6 +3,7 @@ import { fieldPos, fdFieldFor } from './zplHelpers';
 import { DATAMATRIX_FD_ESCAPE, gs1ContentToDataMatrixFd } from '../lib/dataMatrixFd';
 import { moduleTooSmallPreflight } from '../lib/barcodeScannability';
 import { type ZplRotation } from './rotation';
+import { GS1_CONTENT_SPEC } from './gs1FieldSpec';
 
 export const DIMENSION_MIN = 1;
 export const DIMENSION_MAX = 12;
@@ -56,6 +57,11 @@ export const datamatrix: ObjectTypeCore<DataMatrixProps> = {
   uniformScaleProp: { name: 'dimension', min: DIMENSION_MIN, max: DIMENSION_MAX },
 
   preflight: moduleTooSmallPreflight<DataMatrixProps>('dimension'),
+
+  // GS1 mode restricts the editor to the GS1 charset (and enables the element-
+  // string paste shortcut); plain ECC200 accepts a wide byte range, unfiltered.
+  contentSpec: (props) => ((props as DataMatrixProps).gs1 ? GS1_CONTENT_SPEC : undefined),
+  gs1Capable: true,
 
   // GS1 mode FNC1-escapes the payload; shared with the CSV batch override.
   // Non-GS1 content is arbitrary bytes, emitted verbatim (the printer owns any

@@ -15,7 +15,7 @@ import { paletteGhostHandlers } from "./paletteGhostMonitor";
 import { Stage, Layer, Group, Image as KImage, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects, selectPreviewLocksEditor } from "../../store/labelStore";
-import { isGroup, getAllLeaves, exportableLeaves, expandSelection, selectionTargetId, findObjectById, canDeleteSelection, canGroupSelection, canUngroupSelection, isSelectionLocked, type LabelObject } from "../../types/Group";
+import { isGroup, getAllLeaves, exportableLeaves, expandSelection, selectionTargetId, findObjectById, canDeleteSelection, canGroupSelection, canUngroupSelection, hasLockedAncestor, isSelectionLocked, type LabelObject } from "../../types/Group";
 import { pxToDots, dotsToPx, mmToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
 import { loadImage } from "../../lib/loadImage";
 import { SNAP_OPTIONS } from "../../lib/units";
@@ -44,7 +44,9 @@ import { SHAPE_PRIMITIVE_TYPES } from "../../registry";
 import type { LeafObject } from "../../registry";
 import { isImageRotatable, type ImageProps } from "../../registry/image";
 import { convertPositionType } from "../../lib/positionConvert";
-import { addableGroupsFor } from "../Palette/paletteGroups";
+import { addableGroupsFor, symbologyGroupsFor } from "../Palette/paletteGroups";
+import { symbologyTargets, convertSymbologyMapper } from "../../lib/symbologySwitch";
+import type { LeafType } from "../../registry";
 import { resolveAddable, type AddableEntry } from "../../registry/palettePresets";
 import { useColorScheme } from "../../hooks/useColorScheme";
 import { useT } from "../../hooks/useT";
@@ -1176,10 +1178,12 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     // Find the object under the click by walking up to the first node whose id
     // is a known object; the white label Rect / stage count as empty.
     let targetId: string | null = null;
+    let hitLeafId: string | null = null;
     let node: Konva.Node | null = e.target;
     while (node && node !== stage) {
       const id = node.id?.();
       if (id && findObjectById(objects, id)) {
+        hitLeafId = id;
         // Resolve a grouped child to its outermost group, like the drag handler.
         targetId = selectionTargetId(objects, id);
         break;
@@ -1193,6 +1197,15 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     const sel =
       targetId && !selectedIds.includes(targetId) ? [targetId] : selectedIds;
     const click = pointerToLabelDots(e.evt.clientX, e.evt.clientY) ?? { x: 0, y: 0 };
+    // Symbology switch acts on the barcode under the cursor: the leaf that was
+    // actually hit (selection may have promoted to its group), else a single
+    // selected object (e.g. drilled in via the layers panel).
+    const singleForSwitch =
+      (hitLeafId ? findObjectById(objects, hitLeafId) : null) ??
+      (sel.length === 1 ? findObjectById(objects, sel[0] ?? "") : null);
+    const switchTypeLocked =
+      !!singleForSwitch &&
+      (!!singleForSwitch.locked || hasLockedAncestor(objects, singleForSwitch.id));
     const dispatch = {
       copy: copySelectedObjects,
       cut: () => {
@@ -1227,7 +1240,18 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
         if (blob) downloadBlob(blob, "label.png");
       },
       selectAll: () => selectObjects(objects.map((o) => o.id)),
+      switchType: (type: string) => {
+        if (singleForSwitch) {
+          convertObjectType(singleForSwitch.id, convertSymbologyMapper(type as LeafType));
+        }
+      },
     };
+    const switchTargets = singleForSwitch ? symbologyTargets(singleForSwitch) : [];
+    // The menu offers only real moves; the current type stays in the panel select.
+    const switchTypeGroups = symbologyGroupsFor(
+      switchTargets.filter((s) => s.type !== singleForSwitch?.type),
+      t,
+    ).map((g) => ({ id: g.key as string, label: g.label, types: g.types }));
     // Add-here mirrors the palette: the curated quick list first, then the
     // registry groups in palette order, presets included. Empty groups drop out.
     const toAddable = (e: AddableEntry) => ({ id: e.id, type: e.type, label: e.label, propsOverride: e.propsOverride });
@@ -1250,6 +1274,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
       hasObjects: objects.length > 0,
       previewLocks,
       addableGroups,
+      switchTypeGroups,
+      switchTypeLocked,
       dispatch,
     });
     ctxMenu.openAtPointer(e.evt, sections);

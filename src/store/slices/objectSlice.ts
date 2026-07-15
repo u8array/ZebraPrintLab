@@ -6,7 +6,7 @@ import {
   isSelectionLocked,
   mapObjectById,
   findObjectById,
-  findAncestors,
+  hasLockedAncestor,
   reparentNodes,
   type GroupObject,
   type LabelObject,
@@ -131,7 +131,7 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
       const objs = currentObjects(state);
       const text = findObjectById(objs, textId);
       if (!text || isGroup(text) || text.type !== 'text') return {};
-      if (text.locked || findAncestors(objs, textId).some((g) => !!g.locked)) return {};
+      if (text.locked || hasLockedAncestor(objs, textId)) return {};
       const box = makeReverseBackingBox(text, state.label);
       // Insert into the text's own container, right before it, so it renders
       // behind. Idempotent: skip if a backing already sits there.
@@ -160,7 +160,7 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
       const objs = currentObjects(state);
       const text = findObjectById(objs, textId);
       if (!text || isGroup(text) || text.type !== 'text') return {};
-      if (text.locked || findAncestors(objs, textId).some((g) => !!g.locked)) return {};
+      if (text.locked || hasLockedAncestor(objs, textId)) return {};
       let removedId: string | undefined;
       const removeBehind = (list: LabelObject[]): LabelObject[] => {
         const i = list.findIndex((o) => o.id === textId);
@@ -185,7 +185,7 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
     set((state) => {
       if (selectPreviewLocksEditor(state)) return {};
       const objs = currentObjects(state);
-      const ancestorLocked = findAncestors(objs, id).some((g) => !!g.locked);
+      const ancestorLocked = hasLockedAncestor(objs, id);
       return updateCurrentObjects(state, (curr) =>
         mapObjectById(curr, id, (obj) =>
           applyObjectChanges(obj, changes, ancestorLocked),
@@ -199,14 +199,16 @@ export const createObjectSlice: StateCreator<LabelState, [], [], ObjectSlice> = 
       const objs = currentObjects(state);
       const target = findObjectById(objs, id);
       if (!target || isGroup(target) || target.locked) return {};
-      if (findAncestors(objs, id).some((g) => !!g.locked)) return {};
+      if (hasLockedAncestor(objs, id)) return {};
       // Wholesale node replacement, so registry normalizeChanges is bypassed by
       // design; the mapper owns the result's validity (line/box have no hook).
       // The type/props change is stamped dirty centrally by the dirtyTracking
       // middleware.
-      return updateCurrentObjects(state, (curr) =>
-        mapObjectById(curr, id, (o) => mapper(o)),
-      );
+      const next = mapObjectById(objs, id, (o) => mapper(o));
+      // A no-op mapper must not rebuild pages: the fresh array would record a
+      // phantom undo step (temporalEquality is a ref compare).
+      if (next === objs) return {};
+      return updateCurrentObjects(state, () => next);
     }),
 
   updateObjects: (updates) =>

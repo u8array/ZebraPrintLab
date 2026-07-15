@@ -11,6 +11,7 @@ export const interleaved2of5CoreConfig: Barcode1DCoreConfig = {
     const check = p.checkDigit ? 'Y' : 'N';
     return `^B2${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'},${check}`;
   },
+  contentSpec: { charset: '0-9' },
 };
 
 export const interleaved2of5 = createBarcode1DCore(interleaved2of5CoreConfig);

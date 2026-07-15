@@ -807,6 +807,7 @@ const cs = {
     copyImage: 'Kopírovat obrázek',
     exportImage: 'Exportovat obrázek (PNG)',
     addObjectHere: 'Přidat objekt sem',
+    switchType: 'Změnit typ',
     selectAll: 'Vybrat vše',
   },
 
@@ -896,6 +897,12 @@ const cs = {
       box: 'Obdélník',
       diagonalHint: 'Nejprve narovnejte šikmou čáru, abyste ji převedli na obdélník.',
       outlineHint: 'Na čáru lze převést pouze vyplněný obdélník bez zaoblení.',
+    },
+    symbologySwitch: {
+      label: 'Symbologie',
+      digitsOnly: 'Pouze číslice',
+      charset: 'Obsahuje znaky, které tento typ nedokáže zakódovat',
+      length: 'Délka obsahu neodpovídá',
     },
     code39: {
       content: 'Obsah',

@@ -807,6 +807,7 @@ const ro = {
     copyImage: 'Copiază imaginea',
     exportImage: 'Exportă imaginea (PNG)',
     addObjectHere: 'Adaugă obiect aici',
+    switchType: 'Schimbă tipul',
     selectAll: 'Selectează tot',
   },
 
@@ -896,6 +897,12 @@ const ro = {
       box: 'Casetă',
       diagonalHint: 'Îndreptați mai întâi linia diagonală pentru a o transforma într-o casetă.',
       outlineHint: 'Doar o casetă plină fără colțuri rotunjite poate deveni o linie.',
+    },
+    symbologySwitch: {
+      label: 'Simbologie',
+      digitsOnly: 'Doar cifre',
+      charset: 'Conține caractere pe care acest tip nu le poate codifica',
+      length: 'Lungimea conținutului nu se potrivește',
     },
     code39: {
       content: 'Conținut',

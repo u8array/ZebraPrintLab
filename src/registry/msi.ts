@@ -17,6 +17,7 @@ export const msiCoreConfig: Barcode1DCoreConfig = {
     const checkType = p.checkDigit ? "A" : "N";
     return `^BM${p.rotation},${checkType},${p.height},${interp},${p.printInterpretationAbove ? "Y" : "N"}`;
   },
+  contentSpec: { charset: '0-9' },
 };
 
 export const msi = createBarcode1DCore(msiCoreConfig);

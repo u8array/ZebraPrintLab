@@ -13,6 +13,7 @@ export const ean13CoreConfig: Barcode1DCoreConfig = {
     return `^BE${p.rotation},${p.height},${interp},${p.printInterpretationAbove ? 'Y' : 'N'}`;
   },
   hri: { formatHri: formatEan13Hri },
+  contentSpec: { charset: '0-9', maxLength: 12 },
 };
 
 export const ean13 = createBarcode1DCore(ean13CoreConfig);

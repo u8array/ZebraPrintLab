@@ -835,6 +835,7 @@ const en = {
     copyImage: 'Copy image',
     exportImage: 'Export image (PNG)',
     addObjectHere: 'Add object here',
+    switchType: 'Switch type',
     selectAll: 'Select all',
   },
 
@@ -924,6 +925,12 @@ const en = {
       box: 'Box',
       diagonalHint: 'Straighten the diagonal line first to turn it into a box.',
       outlineHint: 'Only a filled box without rounding can become a line.',
+    },
+    symbologySwitch: {
+      label: 'Symbology',
+      digitsOnly: 'Digits only',
+      charset: 'Contains characters this type cannot encode',
+      length: 'Content length does not fit',
     },
     code39: {
       content: 'Content',

@@ -807,6 +807,7 @@ const pl = {
     copyImage: 'Kopiuj obraz',
     exportImage: 'Eksportuj obraz (PNG)',
     addObjectHere: 'Dodaj obiekt tutaj',
+    switchType: 'Zmień typ',
     selectAll: 'Zaznacz wszystko',
   },
 
@@ -896,6 +897,12 @@ const pl = {
       box: 'Prostokąt',
       diagonalHint: 'Najpierw wyprostuj linię ukośną, aby zmienić ją w prostokąt.',
       outlineHint: 'Tylko wypełnione pole bez zaokrąglenia może stać się linią.',
+    },
+    symbologySwitch: {
+      label: 'Symbolika',
+      digitsOnly: 'Tylko cyfry',
+      charset: 'Zawiera znaki, których ten typ nie może zakodować',
+      length: 'Długość treści nie pasuje',
     },
     code39: {
       content: 'Zawartość',

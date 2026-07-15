@@ -4,7 +4,7 @@ import { buildContextMenu, type ContextMenuCtx } from "./canvasActions";
 const dispatch = () => ({
   copy: vi.fn(), cut: vi.fn(), duplicate: vi.fn(), remove: vi.fn(),
   pasteHere: vi.fn(), reorder: vi.fn(), group: vi.fn(), ungroup: vi.fn(),
-  toggleLock: vi.fn(), addHere: vi.fn(), copyZplSelected: vi.fn(),
+  toggleLock: vi.fn(), addHere: vi.fn(), switchType: vi.fn(), copyZplSelected: vi.fn(),
   copyZplLabel: vi.fn(), copyImage: vi.fn(), exportImage: vi.fn(), selectAll: vi.fn(),
 });
 
@@ -13,8 +13,17 @@ const ctx = (over: Partial<ContextMenuCtx> = {}): ContextMenuCtx => ({
   canDelete: true, locked: false, hasClipboard: false, hasObjects: true,
   previewLocks: false,
   addableGroups: [{ id: "text", label: "Text", types: [{ id: "text", type: "text", label: "Text" }] }],
+  switchTypeGroups: [],
+  switchTypeLocked: false,
   dispatch: dispatch(), ...over,
 });
+
+const switchGroups = () => [
+  { id: "code-1d", label: "1D", types: [
+    { type: "code39", label: "Code 39" },
+    { type: "ean13", label: "EAN-13", disabled: true, tooltip: "Digits only" },
+  ] },
+];
 
 const ids = (sections: ReturnType<typeof buildContextMenu>) =>
   sections.flatMap((s) => s.items.map((i) => i.id));
@@ -87,5 +96,29 @@ describe("buildContextMenu", () => {
     expect(d.duplicate).toHaveBeenCalledOnce();
     sections.flatMap((s) => s.items).find((i) => i.id === "toFront")?.run?.();
     expect(d.reorder).toHaveBeenCalledWith("front");
+  });
+
+  it("switch-type renders group/type submenus and passes disabled + tooltip through", () => {
+    const sections = buildContextMenu(ctx({ switchTypeGroups: switchGroups() }));
+    const entry = sections.flatMap((s) => s.items).find((i) => i.id === "switchType");
+    expect(entry?.submenu?.map((s) => s.id)).toEqual(["switchgrp:code-1d"]);
+    const types = entry?.submenu?.[0]?.submenu;
+    expect(types?.map((s) => s.id)).toEqual(["switch:code39", "switch:ean13"]);
+    expect(types?.[1]).toMatchObject({ disabled: true, tooltip: "Digits only" });
+    expect(types?.[0]?.disabled).toBe(false);
+  });
+
+  it("switch-type run dispatches the target type; absent without targets", () => {
+    const d = dispatch();
+    const sections = buildContextMenu(ctx({ switchTypeGroups: switchGroups(), dispatch: d }));
+    sections.flatMap((s) => s.items).find((i) => i.id === "switchType")
+      ?.submenu?.[0]?.submenu?.[0]?.run?.();
+    expect(d.switchType).toHaveBeenCalledWith("code39");
+    expect(ids(buildContextMenu(ctx()))).not.toContain("switchType");
+  });
+
+  it("switch-type disables on the candidate's lock, independent of the selection lock", () => {
+    const sections = buildContextMenu(ctx({ switchTypeGroups: switchGroups(), switchTypeLocked: true }));
+    expect(sections.flatMap((s) => s.items).find((i) => i.id === "switchType")?.disabled).toBe(true);
   });
 });

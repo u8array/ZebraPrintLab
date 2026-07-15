@@ -3,7 +3,13 @@ import type { ObjectTypeCore } from '../types/ObjectType';
 import { fieldPos, fdFieldFor } from './zplHelpers';
 import { moduleTooSmallPreflight } from '../lib/barcodeScannability';
 import { type ZplRotation } from './rotation';
-import { GS1_DATABAR_DEFAULT_SEGMENTS } from '../lib/gs1';
+import {
+  GS1_DATABAR_DEFAULT_SEGMENTS,
+  GS1_DATABAR_EXPANDED_SYMBOLOGIES,
+  GS1_EXPANDED_CHARSET,
+  elementStringToContent,
+} from '../lib/gs1';
+import type { ContentSpec } from './contentSpec';
 
 export interface Gs1DatabarProps {
   content: string;
@@ -19,6 +25,13 @@ export interface Gs1DatabarProps {
 // intrinsic bar height for sym 1–5; only Expanded Stacked (sym 7) uses it as
 // per-row height. Hardcoded because heightLocked: true forbids resizing.
 const ZPL_HEIGHT_PLACEHOLDER = 100;
+
+// Stable specs so the sanitiser/regex WeakMap caches hit across keystrokes.
+// Expanded carries multi-AI GS1 data: restrict to the GS1 charset and keep the
+// "(01)…(10)…" element-string paste shortcut. Non-expanded (sym 1-5) is a bare
+// numeric GTIN.
+const EXPANDED_SPEC: ContentSpec = { charset: GS1_EXPANDED_CHARSET, normalize: elementStringToContent };
+const GTIN_SPEC: ContentSpec = { charset: '0-9' };
 
 // GS1 standard variant names. Kept in source rather than i18n because the spec
 // defines them as proper nouns (matches the convention used for barcode-type
@@ -50,6 +63,18 @@ export const gs1databar: ObjectTypeCore<Gs1DatabarProps> = {
   placeholderContent: '0112345678901',
   defaultSize: { width: 300, height: 120 },
   heightLocked: true,
+
+  contentSpec: (props) =>
+    GS1_DATABAR_EXPANDED_SYMBOLOGIES.has((props as Gs1DatabarProps).symbology)
+      ? EXPANDED_SPEC
+      : GTIN_SPEC,
+
+  // GS1-ness is the symbology variant, not a props.gs1 flag: expanded (6/7)
+  // carries multi-AI GS1 content, sym 1-5 a bare GTIN. Carrying GS1 in lands
+  // on Expanded.
+  gs1Capable: true,
+  gs1Active: (props) => GS1_DATABAR_EXPANDED_SYMBOLOGIES.has((props as Gs1DatabarProps).symbology),
+  gs1EnterProps: { symbology: 6 },
 
   toZPL: (obj: LabelObjectBase & { props: Gs1DatabarProps }, ctx) => {
     const p = obj.props;

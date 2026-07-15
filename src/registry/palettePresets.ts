@@ -60,10 +60,15 @@ function presetEntry(p: PalettePreset, t: Translations): AddableEntry {
   return { id: p.id, type: p.type, icon: p.icon, zplCmd: p.zplCmd, label: p.label(t), defaultSize: p.defaultSize, propsOverride: p.propsOverride };
 }
 
+/** Display name for a leaf type: localized override, registry label, raw type. */
+export function typeLabelFor(type: string, t: Translations): string {
+  return (t.types as Record<string, string>)[type] ?? getEntry(type)?.label ?? type;
+}
+
 function registryEntry(type: string, t: Translations): AddableEntry | null {
   const def = getEntry(type);
   if (!def) return null;
-  return { id: type, type, icon: def.icon, zplCmd: def.zplCmd, label: (t.types as Record<string, string>)[type] ?? def.label, defaultSize: def.defaultSize };
+  return { id: type, type, icon: def.icon, zplCmd: def.zplCmd, label: typeLabelFor(type, t), defaultSize: def.defaultSize };
 }
 
 /** Resolve an entry by id (registry type or preset id); null if unknown. Used

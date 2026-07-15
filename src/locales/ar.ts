@@ -807,6 +807,7 @@ const ar = {
     copyImage: 'نسخ الصورة',
     exportImage: 'تصدير الصورة (PNG)',
     addObjectHere: 'إضافة كائن هنا',
+    switchType: 'تبديل النوع',
     selectAll: 'تحديد الكل',
   },
 
@@ -896,6 +897,12 @@ const ar = {
       box: 'مربع',
       diagonalHint: 'قم بفرد الخط المائل أولاً لتحويله إلى مربع.',
       outlineHint: 'يمكن تحويل المربع المملوء بدون زوايا مستديرة فقط إلى خط.',
+    },
+    symbologySwitch: {
+      label: 'الترميز',
+      digitsOnly: 'أرقام فقط',
+      charset: 'يحتوي على أحرف لا يمكن لهذا النوع ترميزها',
+      length: 'طول المحتوى لا يتناسب',
     },
     code39: {
       content: 'المحتوى',

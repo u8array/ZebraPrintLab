@@ -807,6 +807,7 @@ const tr = {
     copyImage: 'Görüntüyü kopyala',
     exportImage: 'Görüntüyü dışa aktar (PNG)',
     addObjectHere: 'Buraya nesne ekle',
+    switchType: 'Türü değiştir',
     selectAll: 'Tümünü seç',
   },
 
@@ -896,6 +897,12 @@ const tr = {
       box: 'Kutu',
       diagonalHint: 'Çapraz çizgiyi kutuya dönüştürmek için önce düzleştirin.',
       outlineHint: 'Yalnızca köşeleri yuvarlatılmamış dolu bir kutu çizgiye dönüştürülebilir.',
+    },
+    symbologySwitch: {
+      label: 'Semboloji',
+      digitsOnly: 'Yalnızca rakam',
+      charset: 'Bu türün kodlayamayacağı karakterler içeriyor',
+      length: 'İçerik uzunluğu sığmıyor',
     },
     code39: {
       content: 'İçerik',

@@ -18,6 +18,9 @@ export interface SelectOption<T extends string | number> {
   /** Not selectable in the current state (e.g. a symbol size too small for
    *  the content); still listed so the choice space stays visible. */
   disabled?: boolean;
+  /** Why the option is disabled, shown as a native title on hover (mirrors
+   *  SegmentedControl's per-option tooltip). */
+  tooltip?: string;
 }
 
 export interface SelectGroup<T extends string | number> {
@@ -77,6 +80,7 @@ export function Select<T extends string | number>({
                 key={opt.value}
                 value={opt.value}
                 disabled={opt.disabled}
+                title={opt.tooltip}
                 className="flex items-center gap-2 px-2 py-1 cursor-pointer text-xs text-text data-[focus]:bg-surface-2 data-[selected]:bg-accent-dim data-[disabled]:opacity-40 data-[disabled]:cursor-not-allowed"
               >
                 {({ selected: isSel }) => (

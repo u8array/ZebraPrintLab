@@ -807,6 +807,7 @@ const lv = {
     copyImage: 'Kopēt attēlu',
     exportImage: 'Eksportēt attēlu (PNG)',
     addObjectHere: 'Pievienot objektu šeit',
+    switchType: 'Mainīt tipu',
     selectAll: 'Atlasīt visu',
   },
 
@@ -896,6 +897,12 @@ const lv = {
       box: 'Taisnstūris',
       diagonalHint: 'Vispirms iztaisnojiet diagonālo līniju, lai pārvērstu to taisnstūrī.',
       outlineHint: 'Par līniju var pārvērst tikai aizpildītu lodziņu bez noapaļojuma.',
+    },
+    symbologySwitch: {
+      label: 'Simbolika',
+      digitsOnly: 'Tikai cipari',
+      charset: 'Satur rakstzīmes, ko šis tips nevar kodēt',
+      length: 'Satura garums neatbilst',
     },
     code39: {
       content: 'Saturs',

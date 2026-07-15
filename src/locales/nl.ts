@@ -807,6 +807,7 @@ const nl = {
     copyImage: 'Afbeelding kopiëren',
     exportImage: 'Afbeelding exporteren (PNG)',
     addObjectHere: 'Object hier toevoegen',
+    switchType: 'Type wijzigen',
     selectAll: 'Alles selecteren',
   },
 
@@ -896,6 +897,12 @@ const nl = {
       box: 'Kader',
       diagonalHint: 'Maak eerst de diagonale lijn recht om er een kader van te maken.',
       outlineHint: 'Alleen een gevuld vak zonder afronding kan een lijn worden.',
+    },
+    symbologySwitch: {
+      label: 'Symbologie',
+      digitsOnly: 'Alleen cijfers',
+      charset: 'Bevat tekens die dit type niet kan coderen',
+      length: 'Inhoudslengte past niet',
     },
     code39: {
       content: 'Inhoud',

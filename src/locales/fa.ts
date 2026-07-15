@@ -807,6 +807,7 @@ const fa = {
     copyImage: 'کپی تصویر',
     exportImage: 'خروجی تصویر (PNG)',
     addObjectHere: 'افزودن شیء اینجا',
+    switchType: 'تغییر نوع',
     selectAll: 'انتخاب همه',
   },
 
@@ -896,6 +897,12 @@ const fa = {
       box: 'کادر',
       diagonalHint: 'ابتدا خط مورب را صاف کنید تا به یک کادر تبدیل شود.',
       outlineHint: 'فقط یک کادر پر بدون گردی گوشه می‌تواند به خط تبدیل شود.',
+    },
+    symbologySwitch: {
+      label: 'نوع بارکد',
+      digitsOnly: 'فقط رقم',
+      charset: 'شامل نویسه‌هایی است که این نوع نمی‌تواند رمزگذاری کند',
+      length: 'طول محتوا مناسب نیست',
     },
     code39: {
       content: 'محتوا',

@@ -807,6 +807,7 @@ const sk = {
     copyImage: 'Kopírovať obrázok',
     exportImage: 'Exportovať obrázok (PNG)',
     addObjectHere: 'Pridať objekt sem',
+    switchType: 'Zmeniť typ',
     selectAll: 'Vybrať všetko',
   },
 
@@ -896,6 +897,12 @@ const sk = {
       box: 'Obdĺžnik',
       diagonalHint: 'Najprv narovnajte šikmú čiaru, aby ste ju zmenili na obdĺžnik.',
       outlineHint: 'Na čiaru možno previesť iba vyplnený obdĺžnik bez zaoblenia.',
+    },
+    symbologySwitch: {
+      label: 'Symbológia',
+      digitsOnly: 'Iba číslice',
+      charset: 'Obsahuje znaky, ktoré tento typ nedokáže zakódovať',
+      length: 'Dĺžka obsahu nevyhovuje',
     },
     code39: {
       content: 'Obsah',

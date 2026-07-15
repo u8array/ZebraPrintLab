@@ -21,6 +21,13 @@ export interface ContextMenuCtx {
    *  palette categories; first group is favorites when any are pinned). Each
    *  group becomes a submenu, its types the third level. */
   addableGroups: { id: string; label: string; types: { id: string; type: string; label: string; propsOverride?: object }[] }[];
+  /** Symbology-switch targets for the barcode under the cursor (or a single
+   *  selected one), grouped + labelled by the caller (from `symbologyTargets`);
+   *  empty otherwise. */
+  switchTypeGroups: { id: string; label: string; types: { type: string; label: string; disabled?: boolean; tooltip?: string }[] }[];
+  /** Effective lock of the switch candidate (own or ancestor); may differ from
+   *  `locked`, which describes the selection. */
+  switchTypeLocked: boolean;
   dispatch: {
     copy: () => void;
     cut: () => void;
@@ -32,6 +39,7 @@ export interface ContextMenuCtx {
     ungroup: () => void;
     toggleLock: () => void;
     addHere: (type: string, propsOverride?: object) => void;
+    switchType: (type: string) => void;
     copyZplSelected: () => void;
     copyZplLabel: () => void;
     copyImage: () => void;
@@ -81,6 +89,26 @@ export function buildContextMenu(ctx: ContextMenuCtx): MenuSection[] {
       ],
     });
     const arrange: MenuAction[] = [];
+    // Mirrors "Add object here": group submenus, types as the third level.
+    if (ctx.switchTypeGroups.length > 0) {
+      arrange.push({
+        id: "switchType",
+        labelKey: "switchType",
+        disabled: off || ctx.switchTypeLocked,
+        submenu: ctx.switchTypeGroups.map((g) => ({
+          id: `switchgrp:${g.id}`,
+          label: g.label,
+          disabled: off,
+          submenu: g.types.map((a) => ({
+            id: `switch:${a.type}`,
+            label: a.label,
+            run: () => d.switchType(a.type),
+            disabled: off || !!a.disabled,
+            tooltip: a.tooltip,
+          })),
+        })),
+      });
+    }
     if (ctx.canGroup) arrange.push({ id: "group", labelKey: "group", run: d.group, disabled: off });
     if (ctx.canUngroup) arrange.push({ id: "ungroup", labelKey: "ungroup", run: d.ungroup, disabled: off });
     arrange.push({

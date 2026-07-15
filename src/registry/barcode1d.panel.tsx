@@ -2,13 +2,14 @@ import type { ObjectTypeUi } from './panelTypes';
 import type { Translations } from '../locales';
 import { useT } from '../hooks/useT';
 import { useLabelStore } from '../store/labelStore';
-import { hasValidLength, type ContentSpec } from './contentSpec';
+import { hasValidLength, resolveContentSpec } from './contentSpec';
+import { getEntry } from './index';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { ContentEditorButton } from '../components/Properties/ContentEditorButton';
 import { fieldMode, boundDefaultOrContent, fieldVariableRefs, fieldHasVariable, asLabelObject } from '../lib/variableField';
-import { GS1_CONTENT_SPEC, gs1EnablePatch } from './gs1FieldSpec';
+import { gs1EnablePatch } from './gs1FieldSpec';
 import { Gs1BuilderButton } from './gs1PanelControls';
 import { CheckboxRow } from '../components/Properties/CheckboxRow';
 import { extractClockTokens } from '../lib/fcTemplate';
@@ -33,7 +34,6 @@ export interface BarcodeLocale {
 export interface Barcode1DPanelConfig {
   locale: (t: Translations) => BarcodeLocale;
   hasCheckDigit: boolean;
-  contentSpec?: ContentSpec;
   heightLocked?: boolean;
   interpretationLocked?: boolean;
   /** Symbology supports the HRI above/below toggle (ZPL g-param). */
@@ -52,10 +52,6 @@ export interface Barcode1DPanelConfig {
 
 export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi<Barcode1DProps> {
   return {
-    // GS1 mode swaps in the GS1 charset; otherwise the symbology's own spec.
-    contentSpec: config.gs1Capable
-      ? (props) => ((props as Barcode1DProps).gs1 ? GS1_CONTENT_SPEC : config.contentSpec)
-      : config.contentSpec,
     PropertiesPanel: ({ obj, onChange }) => {
       const t = useT();
       const loc = config.locale(t);
@@ -84,7 +80,7 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
               <FieldLabel cmd="^FD">{loc.content}</FieldLabel>
               <ContentEditorButton obj={obj} />
               {config.gs1Capable && p.gs1 && <Gs1BuilderButton objId={obj.id} />}
-              {validate && !config.eanValidation && !hasValidLength(validationContent, config.contentSpec) && loc.placeholder && (
+              {validate && !config.eanValidation && !hasValidLength(validationContent, resolveContentSpec(getEntry(obj.type)?.contentSpec, p)) && loc.placeholder && (
                 <p className="font-mono text-[10px] text-warning">{loc.placeholder}</p>
               )}
               {validate && config.eanValidation && (

@@ -807,6 +807,7 @@ const zhHans = {
     copyImage: '复制图像',
     exportImage: '导出图像（PNG）',
     addObjectHere: '在此处添加对象',
+    switchType: '切换类型',
     selectAll: '全选',
   },
 
@@ -896,6 +897,12 @@ const zhHans = {
       box: '方框',
       diagonalHint: '请先将对角线拉直，以将其转换为方框。',
       outlineHint: '只有没有圆角的填充框才能转换为线条。',
+    },
+    symbologySwitch: {
+      label: '码制',
+      digitsOnly: '仅数字',
+      charset: '包含此类型无法编码的字符',
+      length: '内容长度不符合',
     },
     code39: {
       content: '内容',

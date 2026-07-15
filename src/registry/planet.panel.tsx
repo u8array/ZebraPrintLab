@@ -4,6 +4,5 @@ export const planetPanel = createBarcode1DPanel({
   zplCommand: '^B5',
   locale: (t) => t.registry.planet,
   hasCheckDigit: false,
-  contentSpec: { charset: '0-9' },
   hriAboveConfigurable: true,
 });

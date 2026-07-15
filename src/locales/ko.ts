@@ -807,6 +807,7 @@ const ko = {
     copyImage: '이미지 복사',
     exportImage: '이미지 내보내기 (PNG)',
     addObjectHere: '여기에 개체 추가',
+    switchType: '유형 전환',
     selectAll: '모두 선택',
   },
 
@@ -896,6 +897,12 @@ const ko = {
       box: '상자',
       diagonalHint: '대각선을 상자로 바꾸려면 먼저 선을 곧게 펴세요.',
       outlineHint: '모서리가 둥글지 않은 채워진 상자만 선으로 바꿀 수 있습니다.',
+    },
+    symbologySwitch: {
+      label: '심볼로지',
+      digitsOnly: '숫자만',
+      charset: '이 유형이 인코딩할 수 없는 문자가 포함되어 있습니다',
+      length: '내용 길이가 맞지 않습니다',
     },
     code39: {
       content: '내용',

@@ -1,5 +1,7 @@
 import type { ObjectGroup } from '../../types/LabelObject';
-import { addablesInGroup, type AddableEntry } from '../../registry/palettePresets';
+import { addablesInGroup, typeLabelFor, type AddableEntry } from '../../registry/palettePresets';
+import type { LeafType } from '../../registry';
+import type { SymbologyTarget } from '../../lib/symbologySwitch';
 import type { Translations } from '../../locales';
 
 export const PALETTE_GROUPS = [
@@ -22,4 +24,25 @@ export function addableGroupsFor(
     label: t.palette[g.labelKey],
     entries: addablesInGroup(g.key, t),
   }));
+}
+
+/** Symbology-switch targets grouped + labelled in palette order. Single source
+ *  for both switch UIs (panel select, context menu), so type labels, disabled
+ *  state and reason tooltips cannot drift between them. */
+export function symbologyGroupsFor(
+  targets: readonly SymbologyTarget[],
+  t: Translations,
+): { key: ObjectGroup; label: string; types: { type: LeafType; label: string; disabled: boolean; tooltip?: string }[] }[] {
+  return PALETTE_GROUPS.map((g) => ({
+    key: g.key,
+    label: t.palette[g.labelKey],
+    types: targets
+      .filter((s) => s.group === g.key)
+      .map((s) => ({
+        type: s.type,
+        label: typeLabelFor(s.type, t),
+        disabled: s.disabled,
+        tooltip: s.reason ? t.registry.symbologySwitch[s.reason] : undefined,
+      })),
+  })).filter((g) => g.types.length > 0);
 }
