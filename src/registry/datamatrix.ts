@@ -35,12 +35,16 @@ export interface DataMatrixProps {
   rows?: number;
 }
 
+// One switch for the capability flag and the emitter's chip resolution.
+const CONTROL_CHARS = true;
+
 export const datamatrix: ObjectTypeCore<DataMatrixProps> = {
   label: 'DataMatrix',
   icon: '▦',
   zplCmd: '^BX',
   group: 'code-2d',
   bindable: true,
+  controlChars: CONTROL_CHARS,
   typedContent: true,
   defaultProps: {
     content: '',
@@ -87,7 +91,7 @@ export const datamatrix: ObjectTypeCore<DataMatrixProps> = {
     return [
       fieldPos(obj),
       `^BX${params.join(',')}`,
-      fdFieldFor(p.content, ctx, p.gs1 ? gs1ContentToDataMatrixFd : undefined),
+      fdFieldFor(p.content, ctx, p.gs1 ? gs1ContentToDataMatrixFd : undefined, undefined, CONTROL_CHARS && !p.gs1),
     ].join('');
   },
 };

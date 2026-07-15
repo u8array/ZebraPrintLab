@@ -5,6 +5,7 @@ import type { LeafType } from "../registry/leafObject";
 import type { ObjectGroup } from "../types/LabelObject";
 import type { LabelObject } from "../types/Group";
 import { mapLiteralSpans } from "./fnTemplate";
+import { hasControlMarkers, resolveControlMarkers } from "../types/controlKey";
 
 const BARCODE_GROUPS: ReadonlySet<ObjectGroup> = new Set(["code-1d", "code-2d", "legacy"]);
 
@@ -38,6 +39,9 @@ export interface SymbologyTarget {
  *  error frame catches what a static rule cannot know. */
 function contentFitReason(content: string, spec: ContentSpec | undefined): SymbologyFitReason | null {
   if (!spec || content === "") return null;
+  // Control chips have a known byte, so judge them AS that byte: a TAB chip
+  // must disable EAN/Code 39 exactly like a typed control char would.
+  if (hasControlMarkers(content)) content = resolveControlMarkers(content);
   let badCharset = false;
   mapLiteralSpans(content, (slice) => {
     if (violatesCharset(slice, spec)) badCharset = true;

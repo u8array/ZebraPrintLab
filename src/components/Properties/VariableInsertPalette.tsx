@@ -10,6 +10,7 @@ import {
 import { applyClockOffset, clockOffsetIsEmpty, type ClockOffset } from "../../types/LabelConfig";
 import { getVariableSource } from "../../lib/variableBinding";
 import { extractTemplateRefs } from "../../lib/fnTemplate";
+import { CONTROL_KEY_NAMES, controlKeyBody, type ControlKeyName } from "../../types/controlKey";
 import {
   nextDefaultVariableName,
   nextFreeFnNumber,
@@ -31,6 +32,7 @@ export function VariableInsertPalette({
   content,
   serialActive,
   serialEnabled,
+  controlKeysEnabled,
   onActivateSerial,
   onBindWhole,
 }: {
@@ -39,6 +41,8 @@ export function VariableInsertPalette({
   serialActive: boolean;
   /** Symbology supports ^SN/^SF; GS1/MaxiCode/TLC39 hide the Serie section. */
   serialEnabled: boolean;
+  /** Symbology can encode raw control bytes (registry `controlChars`). */
+  controlKeysEnabled: boolean;
   onActivateSerial: () => void;
   /** Replace the whole field content with one variable marker (single-bind). */
   onBindWhole: (name: string) => void;
@@ -61,6 +65,10 @@ export function VariableInsertPalette({
   // Insert at the editor's remembered caret. mousedown-preventDefault on the
   // buttons keeps the editor focused so the caret position survives the click.
   const insert = (body: string) => editorRef.current?.insertMarker(body);
+
+  const ctrlLabels: Record<ControlKeyName, string> = {
+    TAB: tv.ctrlTab, CR: tv.ctrlCr, LF: tv.ctrlLf, GS: tv.ctrlGs, FS: tv.ctrlFs,
+  };
 
   const usedNames = new Set(extractTemplateRefs(content));
   const q = search.trim().toLowerCase();
@@ -162,6 +170,31 @@ export function VariableInsertPalette({
           </button>
         )}
       </section>
+
+      {controlKeysEnabled && (
+      <section className={SECTION}>
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-sm bg-ok shrink-0" />
+          <span className={HEADER}>{tv.paletteControlTitle}</span>
+        </div>
+        <p className="text-[11px] text-muted mt-1">{tv.controlHint}</p>
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
+          {CONTROL_KEY_NAMES.map((key) => (
+            <button
+              key={key}
+              type="button"
+              disabled={disabledBySerial}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-mono border border-ok/60 bg-ok/10 text-ok hover:bg-ok/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => insert(controlKeyBody(key))}
+            >
+              {ctrlLabels[key]}
+              <span className="text-[9px] opacity-70">{key}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+      )}
 
       {/* Date & time */}
       <section className={SECTION}>

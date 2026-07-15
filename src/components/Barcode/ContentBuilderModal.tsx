@@ -8,6 +8,7 @@ import { usePreviewBinding } from "../../store/usePreviewBinding";
 import { getObjectStringContent } from "../../lib/variableBinding";
 import { MarkerTextField } from "../Properties/MarkerTextField";
 import { findObjectById } from "../../types/Group";
+import { objectResolvesCtrl } from "../../registry";
 import { encodeContent, parseContent, recommendedEc, isContentComplete, typedContentMarkerFindings, CONTENT_TYPES, type ContentType, type ContentFields } from "../../lib/typedContent";
 
 type FieldKind = "text" | "password" | "textarea" | "checkbox" | "auth";
@@ -210,7 +211,7 @@ function ContentBuilder({ objectId }: { objectId: string }) {
         <section className="flex flex-col gap-1">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[10px] text-muted">{tc.preview}</span>
-            <span className="text-[10px] text-muted">{tc.charsFmt.replace("{n}", String(resolvedContentLength(content, variables)))}</span>
+            <span className="text-[10px] text-muted">{tc.charsFmt.replace("{n}", String(resolvedContentLength(content, variables, target ? objectResolvesCtrl(target) : false)))}</span>
           </div>
           {/* Print preview: markers resolved in the assembled payload,
               matching the GS1 modal's semantics. */}

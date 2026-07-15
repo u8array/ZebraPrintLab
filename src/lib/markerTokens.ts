@@ -1,11 +1,12 @@
 import { CLOCK_TOKEN_LABELS } from "./fcTemplate";
 import { CLOCK_BODY_RE } from "../types/clockMarker";
+import { isControlBody } from "../types/controlKey";
 import { markerRe } from "../types/Variable";
 
 /** Segment kinds the content editor's colour-mirror layer renders. */
 export type MarkerSegment =
   | { kind: "text"; text: string }
-  | { kind: "var" | "clock"; text: string }
+  | { kind: "var" | "clock" | "ctrl"; text: string }
   | { kind: "orphan"; text: string };
 
 const KNOWN_CLOCK_TOKENS = new Set<string>(CLOCK_TOKEN_LABELS.map((x) => x.token));
@@ -16,12 +17,13 @@ const KNOWN_CLOCK_TOKENS = new Set<string>(CLOCK_TOKEN_LABELS.map((x) => x.token
 export function classifyMarkerBody(
   body: string,
   variableNames: ReadonlySet<string>,
-): "var" | "clock" | "orphan" {
+): "var" | "clock" | "ctrl" | "orphan" {
   const clockMatch = body.match(CLOCK_BODY_RE);
   if (clockMatch) {
     const tok = clockMatch[2] ?? "";
     return KNOWN_CLOCK_TOKENS.has(tok) ? "clock" : "orphan";
   }
+  if (isControlBody(body)) return "ctrl";
   return variableNames.has(body) ? "var" : "orphan";
 }
 

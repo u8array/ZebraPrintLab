@@ -1,4 +1,5 @@
 import { GS1_SAMPLE_CONTENT, GS1_EXPANDED_CHARSET, elementStringToContent, parseGs1ToSegments } from '../lib/gs1';
+import { hasControlMarkers } from '../types/controlKey';
 import type { ContentSpec } from './contentSpec';
 
 /** Editor charset for GS1 element strings, with the `(01)…(10)…` paste shortcut.
@@ -13,7 +14,9 @@ export const GS1_CONTENT_SPEC: ContentSpec = {
  *  for an unbound, non-GS1 field so the encoder never throws; a bound field keeps
  *  its variable value. Callers spread any symbology extras (e.g. `quality: 200`). */
 export function gs1EnablePatch(content: string, bound: boolean): { gs1: true; content?: string } {
-  return !bound && parseGs1ToSegments(content) === null
+  // Control chips can never be GS1 data, so they force the sample seed even
+  // when the field classifies as bound (a lone chip reads as a template).
+  return hasControlMarkers(content) || (!bound && parseGs1ToSegments(content) === null)
     ? { gs1: true, content: GS1_SAMPLE_CONTENT }
     : { gs1: true };
 }

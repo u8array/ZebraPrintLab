@@ -4,6 +4,7 @@ import type { LabelConfig } from "../types/LabelConfig";
 import { isGroup, type LabelObject } from "../types/Group";
 import type { Variable } from "../types/Variable";
 import { applyBindingToTree, clockCtxFromLabel, getObjectStringContent, type ActiveCsvRow } from "./variableBinding";
+import { objectResolvesCtrl } from "../registry";
 import { placeholderContentFor, samplePropsFor } from "../registry/placeholderContent";
 
 /** Blank fields rendered with their symbology sample, so the preview overlay
@@ -34,7 +35,7 @@ export function buildPreviewZpl(
   active: ActiveCsvRow | null,
   opts: { blankSamples?: boolean } = {},
 ): string {
-  const substituted = applyBindingToTree(objects, variables, active, "preview", clockCtxFromLabel(label));
+  const substituted = applyBindingToTree(objects, variables, active, "preview", clockCtxFromLabel(label), objectResolvesCtrl);
   const previewed = opts.blankSamples ? withBlankSamples(substituted) : substituted;
   return generateZPL(label, previewed, []);
 }

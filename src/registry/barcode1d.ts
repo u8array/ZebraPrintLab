@@ -60,6 +60,8 @@ export interface Barcode1DCoreConfig {
   gs1Capable?: boolean;
   /** See {@link ObjectTypeCore.contentSpec}; static half, GS1 mode is derived. */
   contentSpec?: ContentSpec;
+  /** See {@link ObjectTypeCore.controlChars}. */
+  controlChars?: boolean;
 }
 
 export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore<Barcode1DProps> {
@@ -114,6 +116,7 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
       ? (props) => ((props as Barcode1DProps).gs1 ? GS1_CONTENT_SPEC : config.contentSpec)
       : config.contentSpec,
     gs1Capable: config.gs1Capable,
+    controlChars: config.controlChars,
 
     preflight: moduleTooSmallPreflight<Barcode1DProps>('moduleWidth'),
 
@@ -164,7 +167,10 @@ export function createBarcode1DCore(config: Barcode1DCoreConfig): ObjectTypeCore
       }
       const fieldData = obj.props.serial
         ? serialFieldData(fdTransform ? fdTransform(p.content) : p.content, obj.props.serial)
-        : fdFieldFor(content, ctx, fdTransformOnce);
+        : fdFieldFor(content, ctx, fdTransformOnce, undefined,
+            // Chips resolve only outside GS1 mode (a raw byte would corrupt
+            // the element-string payload).
+            config.controlChars === true && !p.gs1);
       return [
         byCmd,
         fieldPos(obj),

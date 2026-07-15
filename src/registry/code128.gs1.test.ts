@@ -5,6 +5,7 @@ import { generateZPL, generateBatchZpl } from '../lib/zplGenerator';
 import type { Variable } from '../types/Variable';
 import { GS1_SAMPLE_CONTENT, GS1_GS, elementStringToContent } from '../lib/gs1';
 import { PALETTE_PRESET_IDS } from './palettePresets';
+import { gs1EnablePatch } from './gs1FieldSpec';
 import type { LabelConfig } from '../types/LabelConfig';
 import type { LabelObject } from '../types/Group';
 
@@ -24,6 +25,20 @@ const mk = (props: object): LabelObject =>
   ({ id: 'c', type: 'code128', x: 10, y: 10, rotation: 0, props }) as unknown as LabelObject;
 
 const propsOf = (o: unknown) => (o as { props: { gs1?: boolean; content: string } }).props;
+
+describe('gs1EnablePatch', () => {
+  it('seeds the sample when content carries a control chip, even when "bound"', () => {
+    // A lone chip classifies as a template (bound=true), but chips can never
+    // be GS1 data; leaving them would put unencodable content into GS1 mode.
+    expect(gs1EnablePatch('A«ctrl:TAB»B', true).content).toBe(GS1_SAMPLE_CONTENT);
+    expect(gs1EnablePatch('«ctrl:GS»', true).content).toBe(GS1_SAMPLE_CONTENT);
+  });
+
+  it('keeps parseable GS1 content and bound variable content', () => {
+    expect(gs1EnablePatch('0104012345678901', false).content).toBeUndefined();
+    expect(gs1EnablePatch('«sku»', true).content).toBeUndefined();
+  });
+});
 
 describe('GS1-128 (code128 gs1 mode)', () => {
   it('emits ^BC..,D with the parenthesized element string as ^FD', () => {

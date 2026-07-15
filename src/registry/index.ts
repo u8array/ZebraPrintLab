@@ -112,3 +112,14 @@ export const STACKED_2D_TYPES: ReadonlySet<string> = new Set(
 export function getEntry(type: string): (typeof ObjectRegistry)[LeafType] | undefined {
   return (ObjectRegistry as Record<string, (typeof ObjectRegistry)[LeafType] | undefined>)[type];
 }
+
+/** Emitter parity for control-key chips: they resolve to bytes only on a
+ *  `controlChars` type outside GS1 mode. Callers pass this into the binding
+ *  resolvers (variableBinding sits in the registry's init chain and must not
+ *  look the flag up itself). */
+export function objectResolvesCtrl(obj: { type: string; props?: object }): boolean {
+  return (
+    getEntry(obj.type)?.controlChars === true &&
+    (obj.props as { gs1?: boolean } | undefined)?.gs1 !== true
+  );
+}

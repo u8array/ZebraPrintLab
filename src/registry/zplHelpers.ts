@@ -2,6 +2,7 @@ import type { LabelObjectBase } from "../types/LabelObject";
 import type { ZplEmitContext } from "../types/ZplEmit";
 import { hasTemplateMarkers, markersToEmbeds } from "../lib/fnTemplate";
 import { hasClockMarkers, markersToTokens } from "../lib/fcTemplate";
+import { hasControlMarkers, resolveControlMarkers } from "../types/controlKey";
 import { classifyField } from "../lib/variableField";
 import { modelToZplAnchor } from "../lib/labelGeometry/textPositionTransforms";
 import { getTextRenderMetrics } from "../lib/labelGeometry/textRenderMetrics";
@@ -190,6 +191,10 @@ export function fdFieldFor(
   ctx?: ZplEmitContext,
   transform: (payload: string) => string = (s) => s,
   encodeDefault: (payload: string) => string = (s) => s,
+  /** Opt-in per emitter: only `controlChars`-capable types may turn chips into
+   *  raw bytes; everywhere else a leftover chip stays literal marker text,
+   *  like any other unresolved marker. */
+  resolveCtrl = false,
 ): string {
   // Single-bind emits the variable's ^FN + default literally (never expanding a
   // marker inside the mirrored default), so preview and export agree. Derived
@@ -219,5 +224,7 @@ export function fdFieldFor(
     payload = markersToTokens(payload, ctx.clockChars);
     arm = `^FC${ctx.clockChars.date},${ctx.clockChars.time},${ctx.clockChars.tertiary}${arm}`;
   }
+  // Control-key chips become their raw byte; fdField hex-escapes it via ^FH.
+  if (resolveCtrl && hasControlMarkers(payload)) payload = resolveControlMarkers(payload);
   return fdField(transform(payload), arm);
 }

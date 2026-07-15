@@ -17,11 +17,13 @@ import { findObjectById } from "../../types/Group";
 import { markerOf } from "../../types/Variable";
 import { serialSeed, type SerialMode, SERIAL_DEFAULT } from "../../registry/serialField";
 import { fieldIsMultiline } from "../../registry/text";
-import { getEntry } from "../../registry";
+import { getEntry, objectResolvesCtrl } from "../../registry";
 import { contentSanitiser, resolveContentSpec } from "../../registry/contentSpec";
 import { removeMarkerAt } from "../../lib/markerTokens";
-import { extractTemplateRefs, renameTemplateMarker, resolveTemplateMarkers } from "../../lib/fnTemplate";
-import { extractClockTokens, hasClockMarkers, resolveClockMarkers, channelDatesFrom } from "../../lib/fcTemplate";
+import { extractTemplateRefs, renameTemplateMarker } from "../../lib/fnTemplate";
+import { extractClockTokens } from "../../lib/fcTemplate";
+import { resolveContentPreview } from "../../lib/variableBinding";
+import { ctrlMarkerReGlobal } from "../../types/controlKey";
 
 interface LeafProps {
   content?: string;
@@ -59,6 +61,7 @@ function VariableBuilder({ objectId }: { objectId: string }) {
       // Whether this symbology's emitter honours ^SN/^SF. Stable per type, so
       // reading it once at open is enough (the modal is keyed by objectId).
       serialEnabled: obj ? (getEntry(obj.type)?.serialisable ?? false) : false,
+      controlKeysEnabled: obj ? objectResolvesCtrl(obj) : false,
       // Only block text (^FB/^TB) accepts line breaks; everything else is single-line.
       multiline: obj ? fieldIsMultiline(obj) : false,
       // Per-symbology charset filter + length cap, marker-aware.
@@ -110,15 +113,14 @@ function VariableBuilder({ objectId }: { objectId: string }) {
   // Serial seed from the field's current PRINTABLE value, not its marker syntax:
   // resolve markers to their defaults first (so «sku» becomes the default, not
   // "sku"), then keep only serial-legal chars.
-  const seedFromContent = (raw: string): string => {
-    const byName = new Map(variables.map((v) => [v.name, v.defaultValue]));
-    let resolved = resolveTemplateMarkers(raw, (n) => byName.get(n));
-    // Resolve clock markers too, else «clock:Y» would filter to "clockY".
-    if (hasClockMarkers(resolved)) {
-      resolved = resolveClockMarkers(resolved, channelDatesFrom(new Date(), secondaryOffset, tertiaryOffset));
-    }
-    return serialSeed(resolved, seed.contentSpec);
-  };
+  const seedFromContent = (raw: string): string =>
+    serialSeed(
+      // Emitter parity: chips resolve to bytes only where export would too.
+      resolveContentPreview(raw, variables, { secondaryOffset, tertiaryOffset }, {
+        resolveCtrl: seed.controlKeysEnabled,
+      }),
+      seed.contentSpec,
+    );
 
   const activateSerial = () => {
     // Idempotent: a second activation while already serial would overwrite the
@@ -164,11 +166,13 @@ function VariableBuilder({ objectId }: { objectId: string }) {
 
   const fnCount = extractTemplateRefs(content).filter((n) => names.has(n)).length;
   const fcCount = extractClockTokens(content).length;
+  const ctrlCount = [...content.matchAll(ctrlMarkerReGlobal())].length;
   const summary = serialOn
     ? tv.serialActive
     : [
         fnCount > 0 ? `${fnCount} ${t.variableField.groupVariables}` : null,
         fcCount > 0 ? `${fcCount} ${t.variableField.groupDateTime}` : null,
+        ctrlCount > 0 ? `${ctrlCount} ${tv.paletteControlTitle}` : null,
       ].filter(Boolean).join(" · ") || tv.summaryEmpty;
 
   return (
@@ -214,6 +218,7 @@ function VariableBuilder({ objectId }: { objectId: string }) {
             multiline={seed.multiline}
             sanitise={seed.sanitise}
             maxLength={seed.maxLength}
+            ctrlAsByte={seed.controlKeysEnabled}
             selectedIndex={selected?.index}
             onSelectMarker={setSelected}
           />
@@ -228,6 +233,7 @@ function VariableBuilder({ objectId }: { objectId: string }) {
           content={content}
           serialActive={serialOn}
           serialEnabled={seed.serialEnabled}
+          controlKeysEnabled={seed.controlKeysEnabled}
           onActivateSerial={activateSerial}
           onBindWhole={bindWhole}
         />

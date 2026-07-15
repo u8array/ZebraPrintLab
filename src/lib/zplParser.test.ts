@@ -559,6 +559,22 @@ describe('parseZPL — ^FH hex escape', () => {
     expect(props(objects[0]).content).toBe('ABC');
   });
 
+  it('keeps a ^FH-encoded GS as the GS1 separator instead of a control chip', () => {
+    // GS1-128 with a hex-escaped separator between variable AIs: the raw GS
+    // must reach the GS1 normalisation, not be chip-tokenised away.
+    const { objects } = parseZPL(
+      '^XA^FO0,0^BY2^BCN,100,Y,N,N,D^FH_^FD010401234567890110AB_1D21XY^FS^XZ', 8,
+    );
+    const content = props(objects[0]).content as string;
+    expect(content).not.toContain('ctrl:');
+    expect(content).toContain('10AB\x1D21XY');
+  });
+
+  it('chip-tokenises a ^FH control byte on a non-GS1 code128', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BY2^BCN,100,Y,N,N^FH_^FDAB_09CD^FS^XZ', 8);
+    expect(props(objects[0]).content).toBe('AB«ctrl:TAB»CD');
+  });
+
   it('decodes UTF-8 multibyte escapes (German umlauts)', () => {
     // _C3_A4 = ä, _C3_B6 = ö, _C3_BC = ü
     const { objects } = parseZPL('^XA^FH_^FO0,0^A0N,30,0^FD_C3_A4_C3_B6_C3_BC^FS^XZ', 8);

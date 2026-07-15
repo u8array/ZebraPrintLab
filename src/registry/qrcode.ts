@@ -4,7 +4,7 @@ import { fieldPos, fdFieldFor } from './zplHelpers';
 import { moduleTooSmallPreflight } from '../lib/barcodeScannability';
 import { hasTemplateMarkers } from '../lib/fnTemplate';
 import { formatQrSidecarComment, qrRotatedGfaCached } from '../lib/qrGraphic';
-import { clockCtxFromLabel, resolveContentPreview } from '../lib/variableBinding';
+import { clockCtxFromLabel, resolveContentPreview } from '../lib/markerResolve';
 import { type ZplRotation } from './rotation';
 
 /** ZPL prefixes the QR payload with `{ec}A,` inside ^FD. Shared by toZPL and
@@ -28,12 +28,16 @@ export interface QrCodeProps {
   rotation: ZplRotation;
 }
 
+// One switch for the capability flag and the emitter's chip resolution.
+const CONTROL_CHARS = true;
+
 export const qrcode: ObjectTypeCore<QrCodeProps> = {
   label: 'QR Code',
   icon: '⬚',
   zplCmd: '^BQ',
   group: 'code-2d',
   bindable: true,
+  controlChars: CONTROL_CHARS,
   typedContent: true,
   defaultProps: {
     content: '',
@@ -86,7 +90,7 @@ export const qrcode: ObjectTypeCore<QrCodeProps> = {
     return [
       fieldPos(obj),
       `^BQN,${p.model},${p.magnification}`,
-      fdFieldFor(p.content, ctx, qrFdTransform(obj)),
+      fdFieldFor(p.content, ctx, qrFdTransform(obj), undefined, CONTROL_CHARS),
     ].join('');
   },
 };

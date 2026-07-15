@@ -1707,15 +1707,65 @@ describe('generateBatchZpl', () => {
     expect(result).toMatch(/\^XA\n\^DFR:LBL\.ZPL/);
   });
 
-  it('re-escapes control bytes from an imported ^FH field on model re-emit', () => {
-    // Import decodes _09 to a raw tab in props.content; regeneration from the
-    // model (post-edit path) must escape it again or the byte ships raw.
-    const { objects } = parseZPL('^XA^FO0,0^BY2^BCN,100,Y,N,N^FH_^FDAB_09CD^FS^XZ', 8);
+  it('re-escapes raw control bytes from an imported ^FH field on model re-emit', () => {
+    // Text has no control-key chips, so the decoded raw byte stays in content;
+    // regeneration must escape it again or the byte ships raw.
+    const { objects } = parseZPL('^XA^FH_^FO0,0^A0N,30,0^FDAB_09CD^FS^XZ', 8);
     expect(props(defined(objects[0])).content).toBe('AB\tCD');
     const out = generateZPL(baseLabel, objects);
     expect(out).toContain('^FH_');
     expect(out).toContain('AB_09CD');
     expect(out).not.toContain('AB\tCD');
+  });
+
+  it('imports ^FH control bytes as chips on control-capable barcodes and re-emits them', () => {
+    const { objects } = parseZPL('^XA^FO0,0^BY2^BCN,100,Y,N,N^FH_^FDAB_09CD^FS^XZ', 8);
+    expect(props(defined(objects[0])).content).toBe('AB«ctrl:TAB»CD');
+    const out = generateZPL(baseLabel, objects);
+    expect(out).toContain('^FH_');
+    expect(out).toContain('AB_09CD');
+  });
+
+  it('emits a control-key chip as its ^FH-escaped byte', () => {
+    const objects = [{
+      id: 'b1', type: 'code128', x: 0, y: 0, rotation: 0,
+      props: { content: 'A«ctrl:GS»B«ctrl:CR»', height: 100, moduleWidth: 2, printInterpretation: true, printInterpretationAbove: false, checkDigit: false, rotation: 'N' },
+    }] as unknown as LabelObject[];
+    const out = generateZPL(baseLabel, objects);
+    expect(out).toContain('^FH_');
+    expect(out).toContain('A_1DB_0D');
+    expect(out).not.toContain('«ctrl:');
+  });
+
+  it('resolves chips on every controlChars-capable 2D emitter', () => {
+    const cases: [string, Record<string, unknown>][] = [
+      ['qrcode', { magnification: 4, errorCorrection: 'Q', model: 2, rotation: 'N' }],
+      ['datamatrix', { dimension: 5, quality: 200, rotation: 'N', gs1: false }],
+      ['pdf417', { rotation: 'N' }],
+      ['micropdf417', { rotation: 'N' }],
+      ['aztec', { rotation: 'N' }],
+    ];
+    for (const [type, extra] of cases) {
+      const objects = [{
+        id: 'x', type, x: 0, y: 0, rotation: 0,
+        props: { content: 'A«ctrl:TAB»B', ...extra },
+      }] as unknown as LabelObject[];
+      const out = generateZPL(baseLabel, objects);
+      expect(out, type).toContain('_09');
+      expect(out, type).not.toContain('«ctrl:');
+    }
+  });
+
+  it('keeps a stray chip literal on a type that cannot encode control bytes', () => {
+    // Import/paste can smuggle a chip onto EAN content; the emitter must not
+    // turn it into a raw byte the symbology cannot carry.
+    const objects = [{
+      id: 'e1', type: 'ean13', x: 0, y: 0, rotation: 0,
+      props: { content: '123«ctrl:TAB»', height: 100, moduleWidth: 2, printInterpretation: true, printInterpretationAbove: false, checkDigit: false, rotation: 'N' },
+    }] as unknown as LabelObject[];
+    const out = generateZPL(baseLabel, objects);
+    expect(out).not.toContain('_09');
+    expect(out).toContain('«ctrl:TAB»');
   });
 
   it('hex-escapes ^ and ~ in CSV cell values via ^FH', () => {

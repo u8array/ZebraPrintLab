@@ -1,4 +1,4 @@
-import type { LeafObject } from "../../registry";
+import { objectResolvesCtrl, type LeafObject } from "../../registry";
 import { isBarcode } from "../../lib/objectBounds";
 import { PREFLIGHT_SEVERITY, type PreflightFinding } from "../../lib/preflight";
 import type { Variable } from "../../types/Variable";
@@ -47,7 +47,7 @@ function cachedEncodeError(
 
 /** Preview-resolved leaf for the encoder (identity-preserving when unbound). */
 export function resolveForEncode(leaf: LeafObject, env: EncodeEnv): LeafObject {
-  return applyBindingToObject(leaf, env.variables, env.active, "preview", env.clock);
+  return applyBindingToObject(leaf, env.variables, env.active, "preview", env.clock, objectResolvesCtrl(leaf));
 }
 
 /** Encode check over ALL exportable leaves, not just rendered ones, so a

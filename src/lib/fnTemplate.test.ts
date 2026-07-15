@@ -163,6 +163,12 @@ describe("resolvedContentLength", () => {
   it("counts an unknown marker literally (it stays literal on emit)", () => {
     expect(resolvedContentLength("«ghost»", [])).toBe("«ghost»".length);
   });
+  it("counts a control chip as 1 byte only with ctrlAsByte (emitter parity)", () => {
+    // Incapable/GS1 fields keep the chip literal at emit, so the length gate
+    // must count the full marker text there.
+    expect(resolvedContentLength("A«ctrl:TAB»B", [], true)).toBe(3);
+    expect(resolvedContentLength("A«ctrl:TAB»B", [])).toBe("A«ctrl:TAB»B".length);
+  });
   it("handles empty defaults and plain literals", () => {
     expect(resolvedContentLength("abc", VARS)).toBe(3);
     expect(resolvedContentLength("«e»", [{ id: "v", name: "e", fnNumber: 3, defaultValue: "" }])).toBe(0);
