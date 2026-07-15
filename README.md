@@ -12,7 +12,7 @@ Writing ZPL (Zebra Programming Language) by hand is tedious: cryptic commands, d
 
 Existing ZPL files are a first-class source, not a one-way import: a re-exported label stays byte-for-byte identical except for the objects you actually edited (see [Import guarantees](#import-guarantees)); GS1 and EAN/UPC content is validated field by field.
 
-**[Try it](https://u8array.github.io/ZebraPrintLab/)** · [Report an issue](https://github.com/u8array/ZebraPrintLab/issues)
+**[Try it](https://zebraprintlab.org/)** · [Download the desktop app](#download) · [Report an issue](https://github.com/u8array/ZebraPrintLab/issues)
 
 > **Disclaimer:** This is an independent open-source tool, not affiliated with, endorsed by, or associated with Zebra Technologies Corp. Zebra is a trademark of Zebra Technologies Corp.; all other trademarks are the property of their respective owners.
 
@@ -25,6 +25,16 @@ Existing ZPL files are a first-class source, not a one-way import: a re-exported
 </picture>
 
 ---
+
+## Download
+
+| Platform | v0.1.0 |
+|---|---|
+| Windows | [x64 installer](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_x64-setup.exe) |
+| macOS | [Apple Silicon](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_aarch64.dmg) · [Intel](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_x64.dmg) |
+| Linux | [AppImage](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_amd64.AppImage) · [deb](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_amd64.deb) · [rpm](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab-0.1.0-1.x86_64.rpm) |
+
+All versions and signatures: [releases](https://github.com/u8array/ZebraPrintLab/releases). macOS blocks the first launch; allow the app under *System Settings > Privacy & Security*.
 
 ## Usage
 
