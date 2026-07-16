@@ -4,6 +4,7 @@ import type { LeafObject } from "../../registry";
 import { useLabelStore, type ObjectChanges } from "../../store/labelStore";
 import type { SnapGuide, SnapRect } from "../../lib/snapGuides";
 import { PALETTE_GHOST_ID } from "./paletteGhostMonitor";
+import { HOLLOW_HIT_NAME } from "./lassoGeometry";
 
 /** Konva `name` on editor-only chrome (grid, safe-area, overset ghost, …) so
  *  image capture can hide it. Shared by LabelCanvas and the renderers. */
@@ -35,18 +36,19 @@ export const lineRootNodeId = (id: string): string => `${id}:line-root`;
  *  because the root-group scale would deform their squares. */
 export const lineHandlesNodeId = (id: string): string => `${id}:line-handles`;
 
-/** An unselected frame hits only on its stroke so the enclosed area stays
- *  click-through; thin strokes widen to MIN_HIT_STROKE_PX. Selected, the
+/** An unselected frame hits only on its stroke (stamped HOLLOW_HIT_NAME so the
+ *  lasso mirrors that); thin strokes widen to MIN_HIT_STROKE_PX. Selected, the
  *  full area hits so the frame drags from its middle. */
 export function shapeHitProps(
   renderFilled: boolean,
   strokeWidthPx: number,
   isSelected: boolean,
-): { fillEnabled: boolean; hitStrokeWidth?: number } {
+): { fillEnabled: boolean; hitStrokeWidth?: number; name?: string } {
   if (renderFilled) return { fillEnabled: true };
   return {
     fillEnabled: isSelected,
     hitStrokeWidth: Math.max(strokeWidthPx, MIN_HIT_STROKE_PX),
+    ...(isSelected ? {} : { name: HOLLOW_HIT_NAME }),
   };
 }
 
