@@ -80,9 +80,8 @@ interface Props {
   boxClassName?: string;
 }
 
-/** Hero-editor box styling, shared with the modal's serial-seed input so the
- *  two fields look identical. */
-export const editorBoxCls =
+/** Hero-editor box styling, the default when no boxClassName is passed. */
+const editorBoxCls =
   "w-full bg-surface-2 border border-accent rounded-[7px] px-3 py-[11px] text-[13.5px] font-mono leading-[2.1] whitespace-pre-wrap break-words caret-accent focus:outline-none";
 
 // Token chip pills. Variable/clock render as atomic widgets (see segmentsToHTML)

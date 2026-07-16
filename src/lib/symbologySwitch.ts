@@ -97,7 +97,11 @@ export function convertSymbologyMapper(targetType: LeafType): (obj: LabelObject)
     if (typeof p.content === "string") props.content = p.content;
     if (p.rotation !== undefined && "rotation" in props) props.rotation = p.rotation;
     if (isGs1Active(source, p) && target.gs1Capable) Object.assign(props, gs1EnterProps(target));
-    if (p.serial !== undefined && target.serialisable) props.serial = { ...(p.serial as object) };
+    if (p.serial !== undefined && target.serialisable) {
+      props.serial = { ...(p.serial as object) };
+      // The serial-off restore snapshot travels with the serial flag.
+      if (typeof p.preSerialContent === "string") props.preSerialContent = p.preSerialContent;
+    }
     return { ...obj, type: targetType, props } as unknown as LabelObject;
   };
 }

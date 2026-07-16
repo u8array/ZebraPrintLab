@@ -13,6 +13,7 @@ import { ContentEditorButton } from "../components/Properties/ContentEditorButto
 import { FpSettings } from "../components/Properties/FpSettings";
 import { TextModeSection } from "../components/Properties/TextModeSection";
 import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
+import { SerialModeCheckbox, SerialParts } from "../components/Properties/SerialModeSection";
 import { FieldLabel, ZplCmd } from "../components/Properties/ZplCmd";
 import { Select } from "../components/ui/Select";
 import { fontSelectGroups } from "../components/Properties/fontSelectGroups";
@@ -69,10 +70,11 @@ export const textPanel: ObjectTypeUi<TextProps> = {
     return (
       <>
         <StaticSectionCard title={t.registry.text.content} cmd="^FD">
-          <ContentEditorButton obj={obj} />
+          {isSerial ? <SerialParts obj={obj} onChange={onChange} /> : <ContentEditorButton obj={obj} />}
         </StaticSectionCard>
 
         <SectionCard id="text-typography" title={t.properties.typographySection}>
+          <SerialModeCheckbox obj={obj} onChange={onChange} />
           <div className="flex flex-col gap-1">
             <FieldLabel cmd="^A">{t.registry.text.printerFont}</FieldLabel>
             <Select

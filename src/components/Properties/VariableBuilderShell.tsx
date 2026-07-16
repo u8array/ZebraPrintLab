@@ -5,7 +5,7 @@ import { DialogShell } from "../ui/DialogShell";
 /** Dedicated chrome for the Variable-Builder modal (712px, scrolling body,
  *  footer with a left token-summary slot). Separate from the shared
  *  BarcodeContentModalShell so the GS1/QR builders keep their 640px layout.
- *  The modal edits live (content/serial write straight through, variables are
+ *  The modal edits live (content writes straight through, variables are
  *  global), so there is no Apply/Cancel: a single Done button closes, and
  *  reverts go through global undo. */
 export function VariableBuilderShell({

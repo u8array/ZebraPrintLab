@@ -1,5 +1,6 @@
 import type { ObjectTypeCore } from '../types/ObjectType';
 import type { LeafType, ObjectRegistryMap } from './leafObject';
+import { resolveContentSpec, type ContentSpec } from './contentSpec';
 
 export type { LeafObject, LeafType } from './leafObject';
 
@@ -122,4 +123,9 @@ export function objectResolvesCtrl(obj: { type: string; props?: object }): boole
     getEntry(obj.type)?.controlChars === true &&
     (obj.props as { gs1?: boolean } | undefined)?.gs1 !== true
   );
+}
+
+/** The object's effective content spec: its entry's rule resolved against props. */
+export function specForObject(obj: { type: string; props?: object }): ContentSpec | undefined {
+  return resolveContentSpec(getEntry(obj.type)?.contentSpec, obj.props ?? {});
 }
