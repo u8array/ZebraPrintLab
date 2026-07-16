@@ -17,33 +17,25 @@ import {
   type Variable,
 } from "../../types/Variable";
 import type { TemplateEditorHandle } from "./TemplateContentInput";
-import { ClockGlyph, SerialGlyph } from "./variableGlyphs";
+import { ClockGlyph } from "./variableGlyphs";
 
 const SECTION = "py-3 first:pt-0 last:pb-0";
 const HEADER = "font-mono text-[9px] font-semibold uppercase tracking-wider text-muted";
 const ROW = "flex items-center gap-2 w-full text-left px-2 py-1 rounded hover:bg-surface-2 transition-colors disabled:opacity-40 disabled:pointer-events-none";
 
-/** Always-visible insert palette: variables (+ inline create), date/time tokens
- *  (channel cycle + offset editor) and the exclusive serial token. Drives the
- *  editor via its imperative handle; the serial button hands off to the modal
- *  (serial is a whole-field counter, not a mid-content token). */
+/** Always-visible insert palette: variables (+ inline create), control keys and
+ *  date/time tokens (channel cycle + offset editor). Drives the editor via its
+ *  imperative handle. */
 export function VariableInsertPalette({
   editorRef,
   content,
-  serialActive,
-  serialEnabled,
   controlKeysEnabled,
-  onActivateSerial,
   onBindWhole,
 }: {
   editorRef: React.RefObject<TemplateEditorHandle | null>;
   content: string;
-  serialActive: boolean;
-  /** Symbology supports ^SN/^SF; GS1/MaxiCode/TLC39 hide the Serie section. */
-  serialEnabled: boolean;
   /** Symbology can encode raw control bytes (registry `controlChars`). */
   controlKeysEnabled: boolean;
-  onActivateSerial: () => void;
   /** Replace the whole field content with one variable marker (single-bind). */
   onBindWhole: (name: string) => void;
 }) {
@@ -94,10 +86,6 @@ export function VariableInsertPalette({
     if (created) insert(created.name);
   };
 
-  // Serial is a whole-field counter, so its presence disables every
-  // mid-content insert affordance (variables, clock, search).
-  const disabledBySerial = serialActive;
-
   return (
     <div className="flex-1 min-w-0 rounded-[9px] bg-bg border border-border px-3 divide-y divide-border">
       {/* Variables */}
@@ -109,7 +97,7 @@ export function VariableInsertPalette({
           </span>
           <span className="text-[9px] text-muted/70">{tv.manageInVariablesTab}</span>
         </div>
-        {variables.length > 5 && !disabledBySerial && (
+        {variables.length > 5 && (
           <div className="relative mb-1">
             <MagnifyingGlassIcon className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted pointer-events-none" />
             <input
@@ -117,7 +105,6 @@ export function VariableInsertPalette({
               placeholder={t.variableField.searchVariable}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              disabled={disabledBySerial}
             />
           </div>
         )}
@@ -128,7 +115,6 @@ export function VariableInsertPalette({
               <button
                 type="button"
                 className="flex items-center gap-2 flex-1 min-w-0 text-left px-2 py-1 disabled:opacity-40 disabled:pointer-events-none"
-                disabled={disabledBySerial}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => insert(v.name)}
               >
@@ -147,7 +133,6 @@ export function VariableInsertPalette({
                 type="button"
                 aria-label={tv.bindWhole}
                 title={tv.bindWhole}
-                disabled={disabledBySerial}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => onBindWhole(v.name)}
                 className="shrink-0 px-1.5 self-stretch text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:text-indigo transition-opacity disabled:opacity-0 disabled:pointer-events-none"
@@ -157,18 +142,16 @@ export function VariableInsertPalette({
             </div>
           );
         })}
-        {!disabledBySerial && (
-          <button
-            type="button"
-            disabled={!slotsLeft}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={addAndInsert}
-            className="flex items-center gap-1.5 w-full px-2 py-1.5 mt-1 rounded text-xs font-mono border border-dashed border-border text-muted hover:text-text hover:border-border-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <PlusIcon className="w-3.5 h-3.5" />
-            {t.variables.add}
-          </button>
-        )}
+        <button
+          type="button"
+          disabled={!slotsLeft}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={addAndInsert}
+          className="flex items-center gap-1.5 w-full px-2 py-1.5 mt-1 rounded text-xs font-mono border border-dashed border-border text-muted hover:text-text hover:border-border-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <PlusIcon className="w-3.5 h-3.5" />
+          {t.variables.add}
+        </button>
       </section>
 
       {controlKeysEnabled && (
@@ -183,7 +166,6 @@ export function VariableInsertPalette({
             <button
               key={key}
               type="button"
-              disabled={disabledBySerial}
               className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-mono border border-ok/60 bg-ok/10 text-ok hover:bg-ok/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => insert(controlKeyBody(key))}
@@ -207,7 +189,6 @@ export function VariableInsertPalette({
             <span className="text-[10px] text-muted">{t.variableField.channelLabel}</span>
             <button
               type="button"
-              disabled={disabledBySerial}
               className="flex items-center gap-1 bg-surface-2 border border-border rounded px-2 py-0.5 text-[11px] text-text hover:border-accent transition-colors disabled:opacity-40"
               onClick={() => { setChannel((c) => (((c % 3) + 1) as ClockChannel)); setOffsetOpen(false); }}
             >
@@ -217,7 +198,7 @@ export function VariableInsertPalette({
           </span>
         </div>
 
-        {channel !== 1 && !disabledBySerial && (
+        {channel !== 1 && (
           <div className="mb-1.5 flex flex-col gap-1.5">
             <div className="flex items-center gap-2 rounded border border-info/35 bg-info/10 px-2 py-1.5">
               <span className="text-info shrink-0">{ClockGlyph}</span>
@@ -245,7 +226,6 @@ export function VariableInsertPalette({
             key={token}
             type="button"
             className={ROW}
-            disabled={disabledBySerial}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => insert(clockMarkerBody(channel, token))}
           >
@@ -256,34 +236,6 @@ export function VariableInsertPalette({
         ))}
       </section>
 
-      {/* Serial: hidden for symbologies ^SN/^SF would corrupt (GS1, MaxiCode, TLC39). */}
-      {serialEnabled && (
-      <section className={SECTION}>
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-sm bg-accent shrink-0" />
-          <span className={HEADER}>{tv.paletteSerialTitle}</span>
-        </div>
-        <div className="flex items-center justify-between gap-2 mt-1.5">
-          <span className="text-[11px] text-muted flex-1 min-w-0">{tv.serialDescription}</span>
-          <button
-            type="button"
-            aria-pressed={serialActive}
-            // Already-active is a no-op state: removal lives in the inspector
-            // (× on the Serial card), so re-clicking can't clobber the restore
-            // snapshot.
-            disabled={serialActive}
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono border transition-colors disabled:cursor-default ${
-              serialActive ? "bg-accent text-bg border-accent" : "bg-accent-dim text-accent border-accent/60 hover:bg-accent/20"
-            }`}
-            onClick={onActivateSerial}
-          >
-            <span className="shrink-0">{SerialGlyph}</span>
-            {tv.serialButton}
-            {showZpl && <span className="text-[9px] opacity-70">^SN</span>}
-          </button>
-        </div>
-      </section>
-      )}
     </div>
   );
 }

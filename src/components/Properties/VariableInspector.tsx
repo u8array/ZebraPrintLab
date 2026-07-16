@@ -6,7 +6,6 @@ import { useLabelStore } from "../../store/labelStore";
 import { channelDatesFrom, resolveClockMarkers } from "../../lib/fcTemplate";
 import { isValidVariableName, markerOf } from "../../types/Variable";
 import type { SelectedMarker } from "./TemplateContentInput";
-import type { SerialMode } from "../../registry/serialField";
 
 const CARD = "rounded-[9px] p-[13px] flex flex-col gap-2";
 const LABEL = "text-[9px] font-mono uppercase tracking-wider text-muted";
@@ -14,27 +13,15 @@ const INPUT = "w-full bg-surface-2 border border-border rounded px-2 py-1 text-x
 const REMOVE = "inline-flex items-center gap-1 text-[10px] text-muted border border-border rounded px-1.5 py-0.5 hover:text-error hover:border-error transition-colors";
 
 /** Right-column contextual inspector. Mirrors the selected badge: variable
- *  default (global), clock read-only + channel hint, or the serial counter.
+ *  default (global), clock read-only + channel hint, or a control key.
  *  Nothing selected shows the dashed default hint. */
 export function VariableInspector({
   selected,
-  serialActive,
-  serial,
-  serialSeed,
-  onChangeSeed,
-  onChangeSerial,
-  onRemoveSerial,
   onRemoveSelected,
   onLeave,
   onRename,
 }: {
   selected: SelectedMarker | null;
-  serialActive: boolean;
-  serial: SerialMode;
-  serialSeed: string;
-  onChangeSeed: (next: string) => void;
-  onChangeSerial: (patch: Partial<SerialMode>) => void;
-  onRemoveSerial: () => void;
   onRemoveSelected: () => void;
   /** Close the modal (content is already live); used by deep-links out to the
    *  Variables tab. */
@@ -45,55 +32,6 @@ export function VariableInspector({
 }) {
   const t = useT();
   const tv = t.variableBuilder;
-
-  if (serialActive) {
-    return (
-      <section className={`${CARD} border border-accent`}>
-        <Head label={tv.serialActive} color="text-accent" onRemove={onRemoveSerial} removeLabel={tv.remove} />
-        <div className="flex flex-col gap-1">
-          <span className={LABEL}>{t.registry.serial.content}</span>
-          <input
-            className={INPUT}
-            value={serialSeed}
-            placeholder={tv.serialSeedPlaceholder}
-            onChange={(e) => onChangeSeed(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className={LABEL}>{t.registry.serial.increment}</span>
-          <input
-            type="number"
-            min={1}
-            step={1}
-            className={INPUT}
-            value={serial.increment}
-            // Increment is a positive whole step (matches the old serial panel's
-            // min=1); clamp so a typed 0 / negative / decimal can't reach ^SN/^SF.
-            onChange={(e) => onChangeSerial({ increment: Math.max(1, Math.trunc(Number(e.target.value) || 1)) })}
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className={LABEL}>{t.registry.serial.zplMode}</span>
-          <div className="flex items-center gap-1">
-            {(["SN", "SF"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                aria-pressed={serial.zplMode === m}
-                className={`px-2 py-1 rounded text-[11px] font-mono border transition-colors ${
-                  serial.zplMode === m ? "bg-accent text-bg border-accent" : "bg-surface-2 text-text border-border hover:bg-border"
-                }`}
-                onClick={() => onChangeSerial({ zplMode: m })}
-              >
-                {m === "SN" ? t.registry.serial.zplModeSN : t.registry.serial.zplModeSF}
-              </button>
-            ))}
-          </div>
-        </div>
-        <p className="text-[10px] leading-relaxed text-muted">{tv.inspectorSerialHint}</p>
-      </section>
-    );
-  }
 
   if (!selected) {
     return (

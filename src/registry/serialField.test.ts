@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { getEntry } from "./index";
+import { serialDisablePatch, serialEnablePatch, SERIAL_DEFAULT } from "./serialField";
 
 describe("serialisable capability (matches what the emitter actually emits)", () => {
   it("is set for text and free-data 1D symbologies", () => {
@@ -18,5 +19,31 @@ describe("serialisable capability (matches what the emitter actually emits)", ()
     for (const type of ["qrcode", "datamatrix", "pdf417", "aztec", "micropdf417", "codablock", "code49", "gs1databar", "maxicode", "tlc39"]) {
       expect(getEntry(type)?.serialisable).toBeFalsy();
     }
+  });
+});
+
+describe("serialEnablePatch / serialDisablePatch (checkbox props patches)", () => {
+  it("on: defaults the mode, filters the seed, snapshots the raw template", () => {
+    expect(serialEnablePatch("«sku»-7", "AB-12 34")).toEqual({
+      serial: { ...SERIAL_DEFAULT },
+      content: "AB1234",
+      preSerialContent: "«sku»-7",
+    });
+  });
+
+  it("on: intersects with the symbology charset", () => {
+    expect(serialEnablePatch("AB1234", "AB1234", { charset: "0-9" }).content).toBe("1234");
+  });
+
+  it("off: restores the snapshot and clears it", () => {
+    expect(serialDisablePatch({ preSerialContent: "«sku»-7" })).toEqual({
+      serial: undefined,
+      preSerialContent: undefined,
+      content: "«sku»-7",
+    });
+  });
+
+  it("off without a snapshot (parser import) keeps the seed", () => {
+    expect(serialDisablePatch({})).toEqual({ serial: undefined, preSerialContent: undefined });
   });
 });

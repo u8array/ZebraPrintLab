@@ -2,8 +2,8 @@ import type { ObjectTypeUi } from './panelTypes';
 import type { Translations } from '../locales';
 import { useT } from '../hooks/useT';
 import { useLabelStore } from '../store/labelStore';
-import { hasValidLength, resolveContentSpec } from './contentSpec';
-import { getEntry } from './index';
+import { hasValidLength } from './contentSpec';
+import { specForObject } from './index';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
@@ -16,6 +16,7 @@ import { extractClockTokens } from '../lib/fcTemplate';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel } from '../components/Properties/ZplCmd';
 import { EanInlineStatus } from '../components/Properties/EanInlineStatus';
+import { SerialModeCheckbox, SerialParts } from '../components/Properties/SerialModeSection';
 import type { EanUpcType } from '../lib/eanUpcValidate';
 import type { Barcode1DProps } from './barcode1d';
 
@@ -76,21 +77,26 @@ export function createBarcode1DPanel(config: Barcode1DPanelConfig): ObjectTypeUi
       return (
         <>
           <StaticSectionCard title={t.properties.contentSection}>
-            <div className="flex flex-col gap-1">
-              <FieldLabel cmd="^FD">{loc.content}</FieldLabel>
-              <ContentEditorButton obj={obj} />
-              {config.gs1Capable && p.gs1 && <Gs1BuilderButton objId={obj.id} />}
-              {validate && !config.eanValidation && !hasValidLength(validationContent, resolveContentSpec(getEntry(obj.type)?.contentSpec, p)) && loc.placeholder && (
-                <p className="font-mono text-[10px] text-warning">{loc.placeholder}</p>
-              )}
-              {validate && config.eanValidation && (
-                <EanInlineStatus type={config.eanValidation} content={validationContent} />
-              )}
-            </div>
+            {p.serial ? (
+              <SerialParts obj={obj} onChange={onChange} />
+            ) : (
+              <div className="flex flex-col gap-1">
+                <FieldLabel cmd="^FD">{loc.content}</FieldLabel>
+                <ContentEditorButton obj={obj} />
+                {config.gs1Capable && p.gs1 && <Gs1BuilderButton objId={obj.id} />}
+                {validate && !config.eanValidation && !hasValidLength(validationContent, specForObject(obj)) && loc.placeholder && (
+                  <p className="font-mono text-[10px] text-warning">{loc.placeholder}</p>
+                )}
+                {validate && config.eanValidation && (
+                  <EanInlineStatus type={config.eanValidation} content={validationContent} />
+                )}
+              </div>
+            )}
           </StaticSectionCard>
 
           <SectionCard id={`${obj.type}-settings`} title={t.properties.settingsSection}>
-            {config.gs1Capable && (
+            <SerialModeCheckbox obj={obj} onChange={onChange} />
+            {config.gs1Capable && !p.serial && (
               <CheckboxRow
                 checked={p.gs1 ?? false}
                 onChange={(c) => onChange(c ? gs1EnablePatch(p.content, bound) : { gs1: false })}

@@ -22,6 +22,35 @@ export interface SerialMode {
 /** Seed for a freshly enabled serial field. */
 export const SERIAL_DEFAULT: SerialMode = { increment: 1, zplMode: "SN" };
 
+/** Checkbox-on props patch, the `gs1EnablePatch` analogue. Seeds from the
+ *  field's marker-RESOLVED content (caller resolves with emitter parity) and
+ *  snapshots the raw template so `serialDisablePatch` can restore it. */
+export function serialEnablePatch(
+  rawContent: string,
+  resolvedContent: string,
+  spec?: ContentSpec,
+): { serial: SerialMode; content: string; preSerialContent: string } {
+  return {
+    serial: { ...SERIAL_DEFAULT },
+    content: serialSeed(resolvedContent, spec),
+    preSerialContent: rawContent,
+  };
+}
+
+/** Checkbox-off patch: restores the snapshotted template when present; a field
+ *  without one (parser-imported ^SN/^SF) keeps its seed as literal content. */
+export function serialDisablePatch(props: { preSerialContent?: string }): {
+  serial: undefined;
+  preSerialContent: undefined;
+  content?: string;
+} {
+  return {
+    serial: undefined,
+    preSerialContent: undefined,
+    ...(props.preSerialContent !== undefined ? { content: props.preSerialContent } : {}),
+  };
+}
+
 /** Single parser-side writer that flags a just-parsed leaf as serial. The caller
  *  keeps the leaf's seed content (never a variable marker), so a field carrying
  *  both ^FN and ^SN/^SF (contradictory ZPL) resolves to serial. */

@@ -24,6 +24,9 @@ export interface Barcode1DProps {
   /** Per-field firmware counter (^SN/^SF). When set, the ^FD payload is the
    *  seed and serializes per label. Mutually exclusive with variable binding. */
   serial?: SerialMode;
+  /** Template snapshot from before serial mode replaced `content` with the
+   *  seed; consumed by the serial-off restore. Never emitted. */
+  preSerialContent?: string;
   /** GS1-128 mode (`^BC…,D`). Only honoured by a `gs1Capable` symbology. */
   gs1?: boolean;
 }

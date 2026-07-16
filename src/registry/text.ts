@@ -86,6 +86,9 @@ export interface TextProps {
    *  at emit and render (`resolveTextMode` returns 'normal'); those props lie
    *  dormant and return when serial is turned off, so the switch is reversible. */
   serial?: SerialMode;
+  /** Template snapshot from before serial mode replaced `content` with the
+   *  seed; consumed by the serial-off restore. Never emitted. */
+  preSerialContent?: string;
 }
 
 export const text: ObjectTypeCore<TextProps> = {
