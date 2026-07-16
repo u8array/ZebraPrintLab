@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type Konva from "konva";
 import { selectionHandlers, shapeHitProps, MIN_HIT_STROKE_PX } from "./konvaObjectProps";
+import { HOLLOW_HIT_NAME } from "./lassoGeometry";
 
 const clickEvt = (evt: Partial<MouseEvent>) =>
   ({ evt } as Konva.KonvaEventObject<MouseEvent>);
@@ -45,11 +46,16 @@ describe("shapeHitProps", () => {
     expect(shapeHitProps(false, 2, false)).toEqual({
       fillEnabled: false,
       hitStrokeWidth: MIN_HIT_STROKE_PX,
+      name: HOLLOW_HIT_NAME,
     });
   });
 
   it("thick frames keep their real stroke as the hit zone", () => {
-    expect(shapeHitProps(false, 20, false)).toEqual({ fillEnabled: false, hitStrokeWidth: 20 });
+    expect(shapeHitProps(false, 20, false)).toEqual({
+      fillEnabled: false,
+      hitStrokeWidth: 20,
+      name: HOLLOW_HIT_NAME,
+    });
   });
 
   it("a selected frame hits on its full area so it can be dragged from the middle", () => {
