@@ -18,6 +18,9 @@ export function decodeGraphicToImage(
   dataBytesHeader: string,
   nameHint: string,
 ): DecodedGraphic | null {
+  // Headless (Node/MCP): no canvas to paint the bitmap; degrade to the same
+  // browserLimit path as an undecodable payload.
+  if (typeof document === "undefined") return null;
   const decoded = gfPayloadToBytes(rawData, format, bytesPerRow);
   if (!decoded) return null;
   const widthDots = bytesPerRow * BITS_PER_BYTE;

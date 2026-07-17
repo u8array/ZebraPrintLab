@@ -89,6 +89,8 @@ export interface ImageProps {
 /** Synchronously generate ^GFA using a blocking canvas (for toZPL), rotation
  *  baked in. Shares the encoder (rasterizeMono) with the async panel path. */
 function gfaSync(dataUrl: string, widthDots: number, threshold: number, rotation: ZplRotation): string {
+  // Headless (Node/MCP): no Image decode; emits the anchor without bytes.
+  if (typeof Image === "undefined") return '';
   const img = new Image();
   // data-URL loads are synchronous on a freshly-created Image.
   img.src = dataUrl;

@@ -4,7 +4,7 @@
  * so they survive page reloads.
  */
 
-import { hydrateLocalStoragePrefix, safeLocalStorageSet } from "./localStorageBucket";
+import { hydrateLocalStoragePrefix, safeLocalStorageRemove, safeLocalStorageSet } from "./localStorageBucket";
 import { loadImage } from "./loadImage";
 
 export interface CachedImage {
@@ -47,7 +47,7 @@ export function putImage(img: CachedImage): void {
 
 export function removeImage(id: string): void {
   cache.delete(id);
-  localStorage.removeItem(LS_PREFIX + id);
+  safeLocalStorageRemove(LS_PREFIX + id);
 }
 
 /** Load a File into the cache. Returns the CachedImage entry. Rejects on
