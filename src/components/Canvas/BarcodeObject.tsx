@@ -73,11 +73,14 @@ export function StateFrame({
     <Shape
       listening={false}
       sceneFunc={(ctx) => {
+        // Scale by the inherited alpha (a plain Rect would); the drop ghost
+        // renders this frame under a 0.5 group, so the tint must fade with it.
+        const base = ctx.globalAlpha;
         ctx.save();
-        ctx.globalAlpha = 0.12;
+        ctx.globalAlpha = base * 0.12;
         ctx.fillStyle = color;
         ctx.fillRect(x, y, width, height);
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha = base;
         ctx.beginPath();
         ctx.setLineDash(PLACEHOLDER_DASH);
         ctx.lineCap = "round";
