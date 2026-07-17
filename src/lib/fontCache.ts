@@ -1,6 +1,6 @@
 // ^A@ printer TTF cache; data-URL + FontFace registration + localStorage persistence.
 
-import { hydrateLocalStoragePrefix, safeLocalStorageSet } from "./localStorageBucket";
+import { hydrateLocalStoragePrefix, safeLocalStorageRemove, safeLocalStorageSet } from "./localStorageBucket";
 
 export interface CachedFont {
   id: string;
@@ -175,7 +175,7 @@ export async function loadFontFile(file: File, printerName: string): Promise<Cac
     // back via the primitives (not removeFont) so a font that never existed
     // doesn't fire a cache-changed notification before we throw.
     cache.delete(entry.name);
-    localStorage.removeItem(LS_PREFIX + entry.name);
+    safeLocalStorageRemove(LS_PREFIX + entry.name);
     throw new Error(`Font could not be registered: ${file.name}`);
   }
   notify();
@@ -185,6 +185,6 @@ export async function loadFontFile(file: File, printerName: string): Promise<Cac
 export function removeFont(printerName: string): void {
   const name = printerName.toUpperCase();
   cache.delete(name);
-  localStorage.removeItem(LS_PREFIX + name);
+  safeLocalStorageRemove(LS_PREFIX + name);
   notify();
 }
