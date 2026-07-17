@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from "react";
-import { Image as KImage, Group, Rect, Text } from "react-konva";
+import { Image as KImage, Group, Rect, Shape, Text } from "react-konva";
 import type Konva from "konva";
 import { BARCODE_1D_TYPES, ObjectRegistry, objectResolvesCtrl } from "../../registry";
 import { dotsToPx, pxToDots } from "../../lib/coordinates";
@@ -10,6 +10,7 @@ import { selectionHandlers, useBlankFieldWarns, PLACEHOLDER_DASH, PLACEHOLDER_ST
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 import {
   getDisplaySize,
+  stateFrameProps,
   get1DBwipScale,
   getEanUpcHriFragments,
   renderBarcodeCanvas,
@@ -53,25 +54,42 @@ function resolveMwValue<T>(
 }
 
 /** State marker over sample bars: warning orange for a blank field, error red
- *  for uncodable content. The soft tint mirrors the fallback-value tint, the
- *  dotted frame the empty-text placeholder. Full-strength bars keep the drop
- *  ghost legible (an alpha fade would dim twice under the ghost's own
- *  opacity). */
-function StateFrame({ width, height, color }: { width: number; height: number; color: string }) {
+ *  for uncodable content. Drawn via a sceneFunc Shape (zero clientRect) so
+ *  the frame never inflates the Transformer bbox. */
+export function StateFrame({
+  x = 0,
+  y = 0,
+  width,
+  height,
+  color,
+}: {
+  x?: number;
+  y?: number;
+  width: number;
+  height: number;
+  color: string;
+}) {
   return (
-    <>
-      <Rect width={width} height={height} fill={color} opacity={0.12} listening={false} />
-      <Rect
-        width={width}
-        height={height}
-        stroke={color}
-        strokeWidth={PLACEHOLDER_STROKE_PX}
-        lineCap="round"
-        dash={PLACEHOLDER_DASH}
-        strokeScaleEnabled={false}
-        listening={false}
-      />
-    </>
+    <Shape
+      listening={false}
+      sceneFunc={(ctx) => {
+        // Scale by the inherited alpha (a plain Rect would); the drop ghost
+        // renders this frame under a 0.5 group, so the tint must fade with it.
+        const base = ctx.globalAlpha;
+        ctx.save();
+        ctx.globalAlpha = base * 0.12;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, width, height);
+        ctx.globalAlpha = base;
+        ctx.beginPath();
+        ctx.setLineDash(PLACEHOLDER_DASH);
+        ctx.lineCap = "round";
+        ctx.strokeStyle = color;
+        ctx.lineWidth = PLACEHOLDER_STROKE_PX;
+        ctx.strokeRect(x, y, width, height);
+        ctx.restore();
+      }}
+    />
   );
 }
 
@@ -436,7 +454,9 @@ export function BarcodeObject({
               />
             )}
             <Group key={`hri-${fontVersion}`} ref={setOverlayGroupRef}>{overlayContent}</Group>
-            {showStateFrame && <StateFrame width={Math.max(ub.w, 1)} height={Math.max(ub.h, 1)} color={stateFrameColor} />}
+            {showStateFrame && (
+              <StateFrame {...stateFrameProps(ub, isEanUpc)} color={stateFrameColor} />
+            )}
           </Group>
         </Group>
       );
@@ -469,7 +489,9 @@ export function BarcodeObject({
             strokeWidth={isSelected ? 2 : 0}
             strokeScaleEnabled={false}
           />
-          {showStateFrame && <StateFrame width={Math.max(ub.w, 1)} height={Math.max(ub.h, 1)} color={stateFrameColor} />}
+          {showStateFrame && (
+            <StateFrame {...stateFrameProps(ub, isEanUpc)} color={stateFrameColor} />
+          )}
         </Group>
       </Group>
     );
