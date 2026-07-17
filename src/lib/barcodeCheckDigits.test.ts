@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { code11CheckDigits } from './barcodeCheckDigits';
+import { code11CheckDigits } from '@zplab/core/lib/barcodeCheckDigits';
 
 // Verified against Labelary (^B1 ^FD..., HRI shows data + check digit(s)).
 describe('code11CheckDigits', () => {

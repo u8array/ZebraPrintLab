@@ -7,7 +7,7 @@ import { SectionCard } from '../components/Properties/SectionCard';
 import { TypedContentSection } from './typedContentSection';
 import { FieldLabel } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
-import { type QrCodeProps, MAGNIFICATION_MIN, MAGNIFICATION_MAX } from './qrcode';
+import { type QrCodeProps, MAGNIFICATION_MIN, MAGNIFICATION_MAX } from '@zplab/core/registry/qrcode';
 
 export const qrcodePanel: ObjectTypeUi<QrCodeProps> = {
   PropertiesPanel: ({ obj, onChange }) => {

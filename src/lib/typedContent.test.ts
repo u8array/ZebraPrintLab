@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { encodeContent, markerUnsafeChars, parseContent, recommendedEc, isContentComplete, typedContentIncompleteRows, typedContentMarkerFindings, type ContentType, type ContentFields } from "./typedContent";
+import { encodeContent, markerUnsafeChars, parseContent, recommendedEc, isContentComplete, typedContentIncompleteRows, typedContentMarkerFindings, type ContentType, type ContentFields } from "@zplab/core/lib/typedContent";
 
 function roundtrip(type: ContentType, fields: ContentFields) {
   const parsed = parseContent(encodeContent(type, fields));

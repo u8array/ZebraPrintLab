@@ -4,7 +4,7 @@ import {
   validateVariablesUnique,
   type CsvMapping,
   type Variable,
-} from '../../types/Variable';
+} from '@zplab/core/types/Variable';
 import { selectPreviewLocksEditor } from '../labelStore.selectors';
 import { rewriteTemplateMarkersMap } from '../labelStore.internals';
 import type { LabelState } from '../labelStore';

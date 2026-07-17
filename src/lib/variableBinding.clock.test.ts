@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { applyBindingToObject } from "./variableBinding";
-import type { LabelObject } from "../types/Group";
+import { applyBindingToObject } from "@zplab/core/lib/variableBinding";
+import type { LabelObject } from "@zplab/core/types/Group";
 
 const newTextObj = (content: string): LabelObject =>
   ({

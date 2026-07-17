@@ -1,6 +1,6 @@
 import type React from 'react';
-import type { LabelObjectBase } from '../types/LabelObject';
-import type { LeafType, PropsFor } from './leafObject';
+import type { LabelObjectBase } from '@zplab/core/types/LabelObject';
+import type { LeafType, PropsFor } from '@zplab/core/registry/leafObject';
 
 /** UI half of a registry entry. Lives beside panels.ts, NOT in types/, so the
  *  domain type graph stays React-free (registry-isolation.test tripwires it). */

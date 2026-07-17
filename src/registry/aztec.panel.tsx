@@ -10,7 +10,7 @@ import {
   MAGNIFICATION_MAX,
   EC_LEVEL_MIN,
   EC_LEVEL_MAX,
-} from "./aztec";
+} from "@zplab/core/registry/aztec";
 
 export const aztecPanel: ObjectTypeUi<AztecProps> = {
   PropertiesPanel: ({ obj, onChange }) => {

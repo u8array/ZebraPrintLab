@@ -2,7 +2,7 @@
 // positive rect. Konva y-down, CW rotation positive.
 //   R: +90, translate (+H, 0). I: +180, (+W, +H). B: -90, (0, +W).
 
-import type { ZplRotation } from "../../registry/rotation";
+import type { ZplRotation } from "@zplab/core/registry/rotation";
 
 export interface RotatedGroupTransform {
   x: number;

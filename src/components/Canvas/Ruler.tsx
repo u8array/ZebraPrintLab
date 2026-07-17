@@ -1,8 +1,8 @@
 import { Group, Rect, Line, Text } from 'react-konva';
 import type { CanvasColors } from '../../hooks/useColorScheme';
 import { DARK_COLORS } from '../../hooks/useColorScheme';
-import { rulerTicksMm, rulerLabel } from '../../lib/units';
-import type { Unit } from '../../lib/units';
+import { rulerTicksMm, rulerLabel } from '@zplab/core/lib/units';
+import type { Unit } from '@zplab/core/lib/units';
 
 export const RULER_SIZE = 20; // px; width/height of the ruler strip
 

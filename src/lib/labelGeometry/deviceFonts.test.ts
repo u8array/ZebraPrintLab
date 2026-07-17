@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { applyDeviceFontCase, deviceFontMetrics } from "./deviceFonts";
-import { ZPL_BUILTIN_FONT_LETTERS, builtinFontFamily } from "../customFonts";
+import { applyDeviceFontCase, deviceFontMetrics } from "@zplab/core/lib/labelGeometry/deviceFonts";
+import { ZPL_BUILTIN_FONT_LETTERS, builtinFontFamily } from "@zplab/core/lib/customFonts";
 
 describe("device-font table parity", () => {
   // Metrics table and canvas-face map are keyed independently; a font in one

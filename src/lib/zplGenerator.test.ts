@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { zlibSync } from 'fflate';
-import { generateZPL, generateMultiPageZPL, generateBatchZpl } from './zplGenerator';
-import { parseZPL } from './zplParser';
-import type { LabelConfig } from '../types/LabelConfig';
-import type { GroupObject, LabelObject } from '../types/Group';
+import { generateZPL, generateMultiPageZPL, generateBatchZpl } from '@zplab/core/lib/zplGenerator';
+import { parseZPL } from '@zplab/core/lib/zplParser';
+import type { LabelConfig } from '@zplab/core/types/LabelConfig';
+import type { GroupObject, LabelObject } from '@zplab/core/types/Group';
 import { defined, props, serialOf } from '../test/helpers';
 import { NON_EMITTING_CONFIG_KEYS } from '../store/labelStore.internals';
-import { putImage } from '../lib/imageCache';
+import { putImage } from '@zplab/core/lib/imageCache';
 
 const BASE_LABEL: LabelConfig = {
   widthMm: 100,
@@ -451,7 +451,7 @@ describe('generateZPL — printer params', () => {
   });
 
   it('emits ~DY before ^XA when embedInZpl is true and bytes are cached', async () => {
-    const { loadFontBytes, removeFont } = await import('./fontCache');
+    const { loadFontBytes, removeFont } = await import('@zplab/core/lib/fontCache');
     // Tiny fake TTF; content does not need to be valid for the emit
     // path to pick up the bytes; the formatter just hex-encodes them.
     const bytes = new Uint8Array([0x00, 0x01, 0xff, 0xab]);
@@ -497,7 +497,7 @@ describe('generateZPL — printer params', () => {
   });
 
   it('round-trips embedInZpl: ~DY emit → ~DY parse preserves the flag', async () => {
-    const { loadFontBytes, removeFont } = await import('./fontCache');
+    const { loadFontBytes, removeFont } = await import('@zplab/core/lib/fontCache');
     const bytes = new Uint8Array([0xab, 0xcd, 0xef, 0x12]);
     await loadFontBytes(bytes, 'ROUND.TTF');
     try {

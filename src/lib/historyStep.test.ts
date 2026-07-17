@@ -5,10 +5,10 @@ import {
   historyJumpSteps,
   type HistorySnapshot,
 } from "./historyStep";
-import type { LabelObject, Page } from "../types/Group";
-import type { LeafObject } from "../registry";
-import type { Variable } from "../types/Variable";
-import type { LabelConfig } from "../types/LabelConfig";
+import type { LabelObject, Page } from "@zplab/core/types/Group";
+import type { LeafObject } from "@zplab/core/registry/index";
+import type { Variable } from "@zplab/core/types/Variable";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 
 const label: LabelConfig = { widthMm: 100, heightMm: 50, dpmm: 8 };
 

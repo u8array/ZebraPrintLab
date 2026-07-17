@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { ObjectRegistry } from './index';
-import { resolveContentSpec, contentSanitiser } from './contentSpec';
-import { GS1_DATABAR_EXPANDED_SYMBOLOGIES, GS1_EXPANDED_CHARSET, GS1_GS } from '../lib/gs1';
+import { ObjectRegistry } from '@zplab/core/registry/index';
+import { resolveContentSpec, contentSanitiser } from '@zplab/core/registry/contentSpec';
+import { GS1_DATABAR_EXPANDED_SYMBOLOGIES, GS1_EXPANDED_CHARSET, GS1_GS } from '@zplab/core/lib/gs1';
 
 describe('gs1databar.contentSpec', () => {
   it('restricts non-expanded symbologies to a numeric GTIN', () => {

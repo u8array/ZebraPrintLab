@@ -11,15 +11,15 @@ import { VariableCsvPanel } from "./VariableCsvPanel";
 import { useT } from "../../hooks/useT";
 import { labelCls } from "../ui/formStyles";
 import { useLabelStore, getCurrentObjects } from "../../store/labelStore";
-import { findObjectById } from "../../types/Group";
-import { markerOf } from "../../types/Variable";
-import { fieldIsMultiline } from "../../registry/text";
-import { objectResolvesCtrl, specForObject } from "../../registry";
-import { contentSanitiser } from "../../registry/contentSpec";
+import { findObjectById } from "@zplab/core/types/Group";
+import { markerOf } from "@zplab/core/types/Variable";
+import { fieldIsMultiline } from "@zplab/core/registry/text";
+import { objectResolvesCtrl, specForObject } from "@zplab/core/registry/index";
+import { contentSanitiser } from "@zplab/core/registry/contentSpec";
 import { removeMarkerAt } from "../../lib/markerTokens";
-import { extractTemplateRefs, renameTemplateMarker } from "../../lib/fnTemplate";
-import { extractClockTokens } from "../../lib/fcTemplate";
-import { ctrlMarkerReGlobal } from "../../types/controlKey";
+import { extractTemplateRefs, renameTemplateMarker } from "@zplab/core/lib/fnTemplate";
+import { extractClockTokens } from "@zplab/core/lib/fcTemplate";
+import { ctrlMarkerReGlobal } from "@zplab/core/types/controlKey";
 
 interface LeafProps {
   content?: string;

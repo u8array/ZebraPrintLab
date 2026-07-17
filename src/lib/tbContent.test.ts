@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { encodeTbContent, decodeTbContent } from "./tbContent";
+import { encodeTbContent, decodeTbContent } from "@zplab/core/lib/tbContent";
 
 describe("tbContent encode/decode", () => {
   it("escapes a literal < as <<> (Labelary escape syntax)", () => {

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { CheckIcon, ClipboardDocumentIcon, ChevronDownIcon, ChevronUpIcon, EyeIcon } from '@heroicons/react/16/solid';
 import { useLabelStore, selectLabelaryNoticeRequired, selectEffectivePreviewProvider } from '../../store/labelStore';
-import { generateMultiPageZPL } from '../../lib/zplGenerator';
+import { generateMultiPageZPL } from '@zplab/core/lib/zplGenerator';
 import { useCopyToClipboard } from '../../hooks/useCopyToClipboard';
 import { useT } from '../../hooks/useT';
 import { LabelaryNoticeModal } from './LabelaryNoticeModal';

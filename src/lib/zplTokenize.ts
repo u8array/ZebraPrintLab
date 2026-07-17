@@ -11,7 +11,7 @@
  * newlines (block line breaks are encoded as `\&`).
  */
 
-import { opensImmediateCommand } from "./zplImmediate";
+import { opensImmediateCommand } from "@zplab/core/lib/zplImmediate";
 
 export type ZplTokenType =
   | "structural" // ^XA ^XZ: format boundaries

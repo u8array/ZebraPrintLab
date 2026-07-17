@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { subscribe } from '../lib/fontCache';
+import { subscribe } from '@zplab/core/lib/fontCache';
 
 /** Returns a version counter that increments whenever the font cache
  *  changes or the browser finishes loading additional @font-face fonts.

@@ -1,10 +1,10 @@
-import { generateZPL } from "./zplGenerator";
+import { generateZPL } from "@zplab/core/lib/zplGenerator";
 import { fetchPreview } from "./labelary";
-import type { LabelConfig } from "../types/LabelConfig";
-import { isGroup, type LabelObject } from "../types/Group";
-import type { Variable } from "../types/Variable";
-import { applyBindingToTree, clockCtxFromLabel, getObjectStringContent, type ActiveCsvRow } from "./variableBinding";
-import { objectResolvesCtrl } from "../registry";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
+import { isGroup, type LabelObject } from "@zplab/core/types/Group";
+import type { Variable } from "@zplab/core/types/Variable";
+import { applyBindingToTree, clockCtxFromLabel, getObjectStringContent, type ActiveCsvRow } from "@zplab/core/lib/variableBinding";
+import { objectResolvesCtrl } from "@zplab/core/registry/index";
 import { placeholderContentFor, samplePropsFor } from "../registry/placeholderContent";
 
 /** Blank fields rendered with their symbology sample, so the preview overlay

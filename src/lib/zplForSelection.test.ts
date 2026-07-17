@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { zplForSelection } from "./zplForSelection";
-import type { LabelConfig } from "../types/LabelConfig";
-import type { LabelObject } from "../types/Group";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
+import type { LabelObject } from "@zplab/core/types/Group";
 
 const LABEL: LabelConfig = { widthMm: 100, heightMm: 50, dpmm: 8 };
 

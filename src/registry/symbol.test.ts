@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { symbol, type SymbolProps } from "./symbol";
-import type { LabelObjectBase } from "../types/LabelObject";
+import { symbol, type SymbolProps } from "@zplab/core/registry/symbol";
+import type { LabelObjectBase } from "@zplab/core/types/LabelObject";
 const baseObj = (
   props: Partial<SymbolProps> = {},
 ): LabelObjectBase & { props: SymbolProps } => ({

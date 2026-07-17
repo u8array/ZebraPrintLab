@@ -9,7 +9,7 @@ import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { fieldGridCols, fieldGridCell } from '../components/ui/formStyles';
 import { ShapeModeToggle } from '../components/Properties/ShapeModeToggle';
-import type { BoxProps } from './box';
+import type { BoxProps } from '@zplab/core/registry/box';
 
 export const boxPanel: ObjectTypeUi<BoxProps> = {
   PropertiesPanel: ({ obj, onChange }) => {

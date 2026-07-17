@@ -1,5 +1,5 @@
 import type { StateCreator, StoreMutatorIdentifier } from 'zustand';
-import { isGroup, type LabelObject, type Page } from '../types/Group';
+import { isGroup, type LabelObject, type Page } from '@zplab/core/types/Group';
 import { EMIT_AFFECTING_KEYS } from './labelStore.internals';
 
 // Centralizes round-trip dirty-tracking that was otherwise scattered across every

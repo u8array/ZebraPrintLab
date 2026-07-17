@@ -1,7 +1,7 @@
-import type { Page, LeafObject } from "../types/Group";
-import { getAllLeaves, walkObjects } from "../types/Group";
-import type { Variable } from "../types/Variable";
-import type { LabelConfig } from "../types/LabelConfig";
+import type { Page, LeafObject } from "@zplab/core/types/Group";
+import { getAllLeaves, walkObjects } from "@zplab/core/types/Group";
+import type { Variable } from "@zplab/core/types/Variable";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 
 /** The undoable document slice zundo snapshots (mirrors `temporalPartialize`).
  *  Fields are compared by reference: the store is identity-preserving, so an

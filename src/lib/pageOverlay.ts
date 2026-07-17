@@ -1,4 +1,4 @@
-import type { Page } from "../types/Group";
+import type { Page } from "@zplab/core/types/Group";
 
 /** Strip overlays (all pages, or those matching `shouldDrop`) so they
  *  regenerate from the model instead of replaying stale bytes.

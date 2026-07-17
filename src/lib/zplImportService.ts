@@ -1,13 +1,13 @@
-import { parseZPL, type ImportFinding, type ImportReport } from "./zplParser";
+import { parseZPL, type ImportFinding, type ImportReport } from "@zplab/core/lib/zplParser";
 import { replayRiskFindings, dedupCommandsByKind } from "./importReport";
 import { dropPageOverlays } from "./pageOverlay";
 import { pruneUndefined } from "./pruneUndefined";
-import { stripDrivePrefix } from "./customFonts";
-import { renameTemplateMarkers } from "./fnTemplate";
-import type { CustomFontMapping, LabelConfig } from "../types/LabelConfig";
-import type { PrinterProfile } from "../types/PrinterProfile";
-import type { LabelObject, Page } from "../types/Group";
-import { nextFreeFnNumber, uniqueVariableName, type Variable } from "../types/Variable";
+import { stripDrivePrefix } from "@zplab/core/lib/customFonts";
+import { renameTemplateMarkers } from "@zplab/core/lib/fnTemplate";
+import type { CustomFontMapping, LabelConfig } from "@zplab/core/types/LabelConfig";
+import type { PrinterProfile } from "@zplab/core/types/PrinterProfile";
+import type { LabelObject, Page } from "@zplab/core/types/Group";
+import { nextFreeFnNumber, uniqueVariableName, type Variable } from "@zplab/core/types/Variable";
 
 export interface ZplImportResult {
   labelConfig: Partial<LabelConfig>;

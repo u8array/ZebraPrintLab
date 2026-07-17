@@ -17,14 +17,14 @@ import {
   nextDefaultVariableName,
   isValidVariableName,
   type Variable,
-} from '../../types/Variable';
+} from '@zplab/core/types/Variable';
 import { inputCls } from '../Properties/styles';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { Tooltip } from '../ui/Tooltip';
 import { useT } from '../../hooks/useT';
 import type { Translations } from '../../locales';
-import { getVariableSource, type VariableSource } from '../../lib/variableBinding';
-import { countBindings } from '../../lib/variableField';
+import { getVariableSource, type VariableSource } from '@zplab/core/lib/variableBinding';
+import { countBindings } from '@zplab/core/lib/variableField';
 import { VariableSourceBadge } from './VariableSourceBadge';
 
 export function VariablesPanel() {

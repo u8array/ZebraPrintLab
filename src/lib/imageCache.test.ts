@@ -6,8 +6,8 @@ import {
   removeImage,
   loadImageFile,
   MAX_IMAGE_BYTES,
-} from './imageCache';
-import type { CachedImage } from './imageCache';
+} from '@zplab/core/lib/imageCache';
+import type { CachedImage } from '@zplab/core/lib/imageCache';
 
 function makeFakeImage(id: string): CachedImage {
   return {

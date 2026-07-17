@@ -2,13 +2,13 @@ import { create, useStore } from 'zustand';
 import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { dirtyTracking } from './dirtyTracking';
-import type { ObjectChanges } from '../types/LabelObject';
-import { PRINTER_PROFILE_FIELDS, printerProfileSchema } from '../types/PrinterProfile';
-import { visitLeavesInPages, foldSerialLeaf, bindSingleMarkerLeaf, sanitiseVariableNames, safeUniqueNameById } from '../lib/objectTree';
-import { insertReverseBackingBoxes, pageNeedsReverseBacking } from '../lib/reverseBacking';
-import { dropLegacyFontBindings } from '../lib/customFonts';
-import type { CustomFontMapping, LabelConfig } from '../types/LabelConfig';
-import type { LabelObject } from '../types/Group';
+import type { ObjectChanges } from '@zplab/core/types/LabelObject';
+import { PRINTER_PROFILE_FIELDS, printerProfileSchema } from '@zplab/core/types/PrinterProfile';
+import { visitLeavesInPages, foldSerialLeaf, bindSingleMarkerLeaf, sanitiseVariableNames, safeUniqueNameById } from '@zplab/core/lib/objectTree';
+import { insertReverseBackingBoxes, pageNeedsReverseBacking } from '@zplab/core/lib/reverseBacking';
+import { dropLegacyFontBindings } from '@zplab/core/lib/customFonts';
+import type { CustomFontMapping, LabelConfig } from '@zplab/core/types/LabelConfig';
+import type { LabelObject } from '@zplab/core/types/Group';
 import {
   createPrinterProfileSlice,
   type PrinterProfileSlice,
@@ -23,7 +23,7 @@ import { createObjectSlice, type ObjectSlice } from './slices/objectSlice';
 import { createAppUpdateSlice, type AppUpdateSlice } from './slices/appUpdateSlice';
 import { createFeedbackSlice, type FeedbackSlice } from './slices/feedbackSlice';
 import { createLifecycleSlice, type LifecycleSlice } from './slices/lifecycleSlice';
-import type { Variable, VariableInput } from '../types/Variable';
+import type { Variable, VariableInput } from '@zplab/core/types/Variable';
 
 export { __resetPreviewCacheForTests } from './slices/previewSlice';
 export type { ObjectChanges };

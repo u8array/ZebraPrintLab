@@ -52,7 +52,7 @@ import { PrinterSettingsModal } from "./PrinterSettings/PrinterSettingsModal";
 import { Gs1ContentModal } from "./Barcode/Gs1ContentModal";
 import { ContentBuilderModal } from "./Barcode/ContentBuilderModal";
 import { VariableBuilderModal } from "./Properties/VariableBuilderModal";
-import { mmToUnit } from "../lib/units";
+import { mmToUnit } from "@zplab/core/lib/units";
 import { localeOptions } from "../locales";
 import { useT } from "../hooks/useT";
 import { kbd } from "../lib/kbd";

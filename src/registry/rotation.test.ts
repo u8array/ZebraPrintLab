@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getStepRotation, isZplRotation, nextZplRotation, objectRotation, zplRotationForView, ZPL_ROTATIONS } from "./rotation";
+import { getStepRotation, isZplRotation, nextZplRotation, objectRotation, zplRotationForView, ZPL_ROTATIONS } from "@zplab/core/registry/rotation";
 
 describe("isZplRotation", () => {
   it("accepts the four ZPL letters", () => {

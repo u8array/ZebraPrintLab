@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { zlibSync } from 'fflate';
-import { parseZPL, BY_CONSUMING_BARCODE_TYPES } from './zplParser';
-import { formatLabelMetaComment } from './zplLabelMeta';
-import { ObjectRegistry } from '../registry';
+import { parseZPL, BY_CONSUMING_BARCODE_TYPES } from '@zplab/core/lib/zplParser';
+import { formatLabelMetaComment } from '@zplab/core/lib/zplLabelMeta';
+import { ObjectRegistry } from '@zplab/core/registry/index';
 import { props, serialOf } from '../test/helpers';
 
 // Drift guard for the bare-^BY hazard set. Every 1D and postal barcode emits a
@@ -2168,14 +2168,14 @@ describe('parseZPL — ^BT TLC39', () => {
   });
 
   it('drops non-canonical r1 on round-trip (re-emits as 2)', async () => {
-    const { ObjectRegistry } = await import('../registry');
+    const { ObjectRegistry } = await import('@zplab/core/registry/index');
     const { objects } = parseZPL('^XA^FO0,0^BTN,2,3,40,4,4^FD123,X^FS^XZ', 8);
     const emitted = ObjectRegistry.tlc39.toZPL(objects[0] as never);
     expect(emitted).toContain('^BTN,2,2,40,4,4');
   });
 
   it('round-trips ^BT without serial (no MicroPDF block, no trailing comma)', async () => {
-    const { ObjectRegistry } = await import('../registry');
+    const { ObjectRegistry } = await import('@zplab/core/registry/index');
     const original = '^XA^FO10,20^BY2^BTN,2,2,40,4,4^FD123456^FS^XZ';
     const { objects } = parseZPL(original, 8);
     expect(objects[0]?.type).toBe('tlc39');
@@ -2187,7 +2187,7 @@ describe('parseZPL — ^BT TLC39', () => {
   });
 
   it('round-trips ^BT via parse → toZPL → parse', async () => {
-    const { ObjectRegistry } = await import('../registry');
+    const { ObjectRegistry } = await import('@zplab/core/registry/index');
     const original = '^XA^FO50,60^BY3^BTN,3,2,80,5,8^FD654321,ABCDEF^FS^XZ';
     const { objects } = parseZPL(original, 8);
     expect(objects).toHaveLength(1);

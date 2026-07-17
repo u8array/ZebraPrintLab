@@ -6,16 +6,16 @@ import {
   CLOCK_TOKEN_LABELS,
   clockMarkerBody,
   type ClockChannel,
-} from "../../lib/fcTemplate";
-import { applyClockOffset, clockOffsetIsEmpty, type ClockOffset } from "../../types/LabelConfig";
-import { getVariableSource } from "../../lib/variableBinding";
-import { extractTemplateRefs } from "../../lib/fnTemplate";
-import { CONTROL_KEY_NAMES, controlKeyBody, type ControlKeyName } from "../../types/controlKey";
+} from "@zplab/core/lib/fcTemplate";
+import { applyClockOffset, clockOffsetIsEmpty, type ClockOffset } from "@zplab/core/types/LabelConfig";
+import { getVariableSource } from "@zplab/core/lib/variableBinding";
+import { extractTemplateRefs } from "@zplab/core/lib/fnTemplate";
+import { CONTROL_KEY_NAMES, controlKeyBody, type ControlKeyName } from "@zplab/core/types/controlKey";
 import {
   nextDefaultVariableName,
   nextFreeFnNumber,
   type Variable,
-} from "../../types/Variable";
+} from "@zplab/core/types/Variable";
 import type { TemplateEditorHandle } from "./TemplateContentInput";
 import { ClockGlyph } from "./variableGlyphs";
 

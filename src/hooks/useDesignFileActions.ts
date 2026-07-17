@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { useLabelStore } from "../store/labelStore";
-import { parseDesignFile, serializeDesign, designFileErrors } from "../lib/designFile";
+import { parseDesignFile, serializeDesign, designFileErrors } from "@zplab/core/lib/designFile";
 import { readFileAsText } from "../lib/readFile";
 import { pickFileText, pickViaMenu, saveTextFile, saveErrorMessage, DESIGN_FILTER } from "../lib/fileDialogs";
 

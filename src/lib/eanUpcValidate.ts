@@ -8,7 +8,7 @@
  * check-digit math; nothing new is implemented here.
  */
 
-import { eanCheckDigit, upceCheckDigit } from "./barcodeCheckDigits";
+import { eanCheckDigit, upceCheckDigit } from "@zplab/core/lib/barcodeCheckDigits";
 
 export type EanUpcType = "ean13" | "ean8" | "upca" | "upce";
 export type EanUpcStatus = "empty" | "short" | "complete" | "badCheck" | "tooLong";

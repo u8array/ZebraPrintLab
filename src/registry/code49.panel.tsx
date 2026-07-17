@@ -15,7 +15,7 @@ import {
   CODE49_MODES,
   code49MinHeight,
   code49MaxHeight,
-} from './code49';
+} from '@zplab/core/registry/code49';
 
 export const code49Panel: ObjectTypeUi<Code49Props> = {
   PropertiesPanel: ({ obj, onChange }) => {

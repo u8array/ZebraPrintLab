@@ -15,12 +15,12 @@ import {
   zebraWidthBarText,
   type ZebraWidthBarType,
 } from "../lib/barcodeRawGeometry";
-import { dotsToPx } from "../lib/coordinates";
-import { getObjectStringContent } from "../lib/variableBinding";
-import { upcSuppTextZoneDots, QR_FT_MODULE_OFFSET } from "../lib/bwipConstants";
-import { barcodeFtAnchorOffset } from "../lib/objectBounds";
-import { ObjectRegistry } from "../registry";
-import { objectRotation } from "../registry/rotation";
+import { dotsToPx } from "@zplab/core/lib/coordinates";
+import { getObjectStringContent } from "@zplab/core/lib/variableBinding";
+import { upcSuppTextZoneDots, QR_FT_MODULE_OFFSET } from "@zplab/core/lib/bwipConstants";
+import { barcodeFtAnchorOffset } from "@zplab/core/lib/objectBounds";
+import { ObjectRegistry } from "@zplab/core/registry/index";
+import { objectRotation } from "@zplab/core/registry/rotation";
 import { defined } from "./helpers";
 import { testModels } from "./testModels";
 import { EXPECTED_BOUNDS_DELTA } from "./barcodeFidelity";

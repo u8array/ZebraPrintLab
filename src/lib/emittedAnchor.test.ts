@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { emittedAnchorDots } from "./emittedAnchor";
-import type { ObjectBoundsCtx } from "./objectBounds";
-import type { LabelObject } from "../types/Group";
-import type { LeafObject } from "../registry";
+import { emittedAnchorDots } from "@zplab/core/lib/emittedAnchor";
+import type { ObjectBoundsCtx } from "@zplab/core/lib/objectBounds";
+import type { LabelObject } from "@zplab/core/types/Group";
+import type { LeafObject } from "@zplab/core/registry/index";
 
 const label = { widthMm: 100, heightMm: 50, dpmm: 8 };
 const ctx: ObjectBoundsCtx = { label };

@@ -9,11 +9,11 @@ import { inputCls } from "../ui/formStyles";
 import { Tooltip } from "../ui/Tooltip";
 import { useLabelStore, getCurrentObjects } from "../../store/labelStore";
 import { usePreviewBinding } from "../../store/usePreviewBinding";
-import { getObjectStringContent } from "../../lib/variableBinding";
-import { extractTemplateRefs, hasTemplateMarkers, markersToEmbeds } from "../../lib/fnTemplate";
-import { DEFAULT_CLOCK_CHARS, markersToTokens } from "../../lib/fcTemplate";
+import { getObjectStringContent } from "@zplab/core/lib/variableBinding";
+import { extractTemplateRefs, hasTemplateMarkers, markersToEmbeds } from "@zplab/core/lib/fnTemplate";
+import { DEFAULT_CLOCK_CHARS, markersToTokens } from "@zplab/core/lib/fcTemplate";
 import { MarkerTextField } from "../Properties/MarkerTextField";
-import { findObjectById } from "../../types/Group";
+import { findObjectById } from "@zplab/core/types/Group";
 import {
   aiSpec,
   gs1AddBlockReason,
@@ -27,7 +27,7 @@ import {
   type Gs1AiSpec,
   type Gs1Segment,
   type Gs1SetError,
-} from "../../lib/gs1";
+} from "@zplab/core/lib/gs1";
 import {
   AI_BY_GROUP,
   GS1_GROUP_ORDER,

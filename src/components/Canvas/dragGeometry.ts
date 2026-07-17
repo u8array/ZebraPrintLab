@@ -3,7 +3,7 @@
 // stage and the controller stays a thin imperative layer.
 
 import { computeSnap, type SnapGuide, type SnapRect } from "../../lib/snapGuides";
-import { printableRectDots, type BoundingBoxDots } from "../../lib/objectBounds";
+import { printableRectDots, type BoundingBoxDots } from "@zplab/core/lib/objectBounds";
 
 /** Printable-area snap rect (dots), the {@link printableRectDots} rect tagged
  *  with the snap id so it shares one source with the out-of-bounds check. */

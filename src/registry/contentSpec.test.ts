@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { filterContent, hasValidLength, contentSanitiser, resolveContentSpec, type ContentSpec } from './contentSpec';
+import { filterContent, hasValidLength, contentSanitiser, resolveContentSpec, type ContentSpec } from '@zplab/core/registry/contentSpec';
 
 describe('filterContent', () => {
   it('strips characters outside the charset', () => {

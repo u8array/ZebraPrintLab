@@ -7,7 +7,7 @@ import {
   qrRotatedGfa,
   rotateModules,
   type QrGraphicInput,
-} from "./qrGraphic";
+} from "@zplab/core/lib/qrGraphic";
 import { ZD230_QA_123 } from "../test/qrFixtures";
 
 const ascii = (m: boolean[][]) => m.map((r) => r.map((v) => (v ? "#" : ".")).join(""));

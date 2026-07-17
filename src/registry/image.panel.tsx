@@ -3,15 +3,15 @@ import { InformationCircleIcon, TrashIcon } from '@heroicons/react/16/solid';
 import type { ObjectTypeUi } from './panelTypes';
 import { useT } from '../hooks/useT';
 import { buttonCls, inputCls, labelCls } from '../components/Properties/styles';
-import { loadImageFile, getImage, getAllImages, removeImage } from '../lib/imageCache';
-import { imageToGFA } from '../lib/imageToZpl';
+import { loadImageFile, getImage, getAllImages, removeImage } from '@zplab/core/lib/imageCache';
+import { imageToGFA } from '@zplab/core/lib/imageToZpl';
 import {
   defaultStorageName,
   formatStoragePath,
   MAX_STORAGE_NAME_LEN,
   STORAGE_DEVICES,
   STORAGE_NAME_FILTER_RE,
-} from '../lib/storagePath';
+} from '@zplab/core/lib/storagePath';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Tooltip } from '../components/ui/Tooltip';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
@@ -19,7 +19,7 @@ import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
-import { isImageRotatable, type ImageProps } from './image';
+import { isImageRotatable, type ImageProps } from '@zplab/core/registry/image';
 
 export const imagePanel: ObjectTypeUi<ImageProps> = {
   PropertiesPanel: ({ obj, onChange }) => {

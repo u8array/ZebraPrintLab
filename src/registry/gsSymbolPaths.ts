@@ -3,7 +3,7 @@
 // upright vector + per-rotation glyph rect (Zebra's anchor varies).
 // D/E (trademarked UL/CSA) intentionally absent.
 
-import type { ZplRotation } from './rotation';
+import type { ZplRotation } from '@zplab/core/registry/rotation';
 
 export interface GsSymbolPath {
   readonly d: string;

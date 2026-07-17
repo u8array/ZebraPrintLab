@@ -5,8 +5,8 @@ import {
   resolveContentPreview,
   type ActiveCsvRow,
   type ClockResolveCtx,
-} from "../lib/variableBinding";
-import type { Variable } from "../types/Variable";
+} from "@zplab/core/lib/variableBinding";
+import type { Variable } from "@zplab/core/types/Variable";
 
 export interface PreviewBinding {
   variables: readonly Variable[];

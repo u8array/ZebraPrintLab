@@ -6,7 +6,7 @@ import {
   csvParseErrors,
   type CsvParseResult,
 } from "../lib/csvImport";
-import { isMappingCompatibleWith, type CsvMapping } from "../types/Variable";
+import { isMappingCompatibleWith, type CsvMapping } from "@zplab/core/types/Variable";
 import { pickFileBytes, pickViaMenu, CSV_FILTER } from "../lib/fileDialogs";
 
 /** Captures everything decided during parse so the caller can either

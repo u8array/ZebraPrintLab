@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { parseDesignFile, serializeDesign, CURRENT_DESIGN_SCHEMA_VERSION } from './designFile';
-import type { LabelObject } from '../types/Group';
-import type { Variable } from '../types/Variable';
+import { parseDesignFile, serializeDesign, CURRENT_DESIGN_SCHEMA_VERSION } from '@zplab/core/lib/designFile';
+import type { LabelObject } from '@zplab/core/types/Group';
+import type { Variable } from '@zplab/core/types/Variable';
 
 const SAMPLE_OBJECTS: LabelObject[] = [
   {

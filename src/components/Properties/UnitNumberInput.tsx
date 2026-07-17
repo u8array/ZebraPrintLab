@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useLabelStore } from '../../store/labelStore';
 import { inputCls } from './styles';
 import { FieldLabel } from './ZplCmd';
-import { mmToUnit, unitToMm, unitLabel, unitStep } from '../../lib/units';
-import { dotsToMm, mmToDots } from '../../lib/coordinates';
+import { mmToUnit, unitToMm, unitLabel, unitStep } from '@zplab/core/lib/units';
+import { dotsToMm, mmToDots } from '@zplab/core/lib/coordinates';
 
 interface UnitNumberInputProps {
   label: string;

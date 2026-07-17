@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { cloneShifted, EMIT_AFFECTING_KEYS } from "../store/labelStore.internals";
 import { stampDirtyLeaves } from "../store/dirtyTracking";
-import type { LabelObject, Page } from "../types/Group";
-import { labelObjectBaseSchema } from "../types/LabelObject";
+import type { LabelObject, Page } from "@zplab/core/types/Group";
+import { labelObjectBaseSchema } from "@zplab/core/types/LabelObject";
 
 // Byte-identical round-trip lives in zplOverlay/* (capture + emitOverlayPage).
 // This file guards the `dirty` model that drives it. Dirty is stamped centrally

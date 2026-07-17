@@ -3,8 +3,8 @@ import { useT } from '../../hooks/useT';
 import { Select, type SelectGroup } from '../ui/Select';
 import { symbologyGroupsFor } from '../Palette/paletteGroups';
 import { convertSymbologyMapper, type SymbologyTarget } from '../../lib/symbologySwitch';
-import type { LeafType } from '../../registry';
-import type { LabelObjectBase } from '../../types/LabelObject';
+import type { LeafType } from '@zplab/core/registry/index';
+import type { LabelObjectBase } from '@zplab/core/types/LabelObject';
 
 /** Panel-header symbology switcher: shows the current barcode type and converts
  *  in place on selection (content + rotation survive, see convertSymbologyMapper).

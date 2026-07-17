@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import type Konva from "konva";
-import { pxToDots, dotsToPx } from "../../../lib/coordinates";
+import { pxToDots, dotsToPx } from "@zplab/core/lib/coordinates";
 import { gridSnapDelta, smartSnapDelta, labelSnapRectDots } from "../dragGeometry";
 import { SNAP_THRESHOLD_PX } from "../../../lib/snapGuides";
 import type { SnapGuide, SnapRect } from "../../../lib/snapGuides";
@@ -8,9 +8,9 @@ import {
   objectBoundsDots,
   selectionUnionDots,
   type BoundingBoxDots,
-} from "../../../lib/objectBounds";
+} from "@zplab/core/lib/objectBounds";
 import { measuredBoundsMap } from "../measuredBoundsCache";
-import { expandSelection, findObjectById, getAllLeaves } from "../../../types/Group";
+import { expandSelection, findObjectById, getAllLeaves } from "@zplab/core/types/Group";
 import { useLabelStore, currentObjects, type ObjectChanges } from "../../../store/labelStore";
 
 /** Everything the controller needs from LabelCanvas; mirrors the param style of

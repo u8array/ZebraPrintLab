@@ -6,9 +6,9 @@ import {
   boxToLine,
   toggleShapeMode,
 } from "./lineBoxConvert";
-import { line, type LineProps } from "../registry/line";
-import { box, type BoxProps } from "../registry/box";
-import type { LabelObject } from "../types/Group";
+import { line, type LineProps } from "@zplab/core/registry/line";
+import { box, type BoxProps } from "@zplab/core/registry/box";
+import type { LabelObject } from "@zplab/core/types/Group";
 
 const lineLeaf = (x: number, y: number, props: Partial<LineProps>): LabelObject =>
   ({

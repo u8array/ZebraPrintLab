@@ -1,8 +1,14 @@
 // Prefix-keyed localStorage helpers shared by image/font caches. Quota
-// exhaustion and corrupt JSON are routine; hydration must never throw.
-// Headless consumers (Node/MCP) have no localStorage: caches stay in-memory.
+// exhaustion and corrupt JSON are routine; hydration must never throw. Headless
+// (Node/MCP) or a throwing accessor (blocked cookies) counts as absent: in-memory.
 
-const hasLocalStorage = (): boolean => typeof localStorage !== "undefined";
+const hasLocalStorage = (): boolean => {
+  try {
+    return typeof localStorage !== "undefined";
+  } catch {
+    return false;
+  }
+};
 
 /** Keys snapshotted before iteration so accept() mutations don't shift indexes. */
 export function hydrateLocalStoragePrefix<T>(

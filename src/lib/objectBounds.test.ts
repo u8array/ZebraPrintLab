@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { objectBoundsDots, selectionUnionDots, barcodeFtAnchorOffset, offLabelPlacement, type ObjectBoundsCtx } from "./objectBounds";
-import type { ZplRotation } from "../registry/rotation";
-import { QR_FT_MODULE_OFFSET } from "./bwipConstants";
-import type { LabelConfig } from "../types/LabelConfig";
-import type { LabelObject } from "../types/Group";
-import type { LeafObject } from "../registry";
+import { objectBoundsDots, selectionUnionDots, barcodeFtAnchorOffset, offLabelPlacement, type ObjectBoundsCtx } from "@zplab/core/lib/objectBounds";
+import type { ZplRotation } from "@zplab/core/registry/rotation";
+import { QR_FT_MODULE_OFFSET } from "@zplab/core/lib/bwipConstants";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
+import type { LabelObject } from "@zplab/core/types/Group";
+import type { LeafObject } from "@zplab/core/registry/index";
 
 const label: LabelConfig = { widthMm: 100, heightMm: 50, dpmm: 8 };
 const ctx = (measured?: ObjectBoundsCtx["measured"]): ObjectBoundsCtx => ({ label, measured });

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { symbologyGroupsFor } from './paletteGroups';
 import { symbologyTargets } from '../../lib/symbologySwitch';
 import en from '../../locales/en';
-import type { LabelObject } from '../../types/Group';
+import type { LabelObject } from '@zplab/core/types/Group';
 
 const barcode = (type: string, content: string): LabelObject =>
   ({ id: 'x', type, x: 0, y: 0, rotation: 0, props: { content } }) as unknown as LabelObject;

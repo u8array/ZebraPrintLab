@@ -1,6 +1,6 @@
-import type { ObjectGroup } from '../../types/LabelObject';
+import type { ObjectGroup } from '@zplab/core/types/LabelObject';
 import { addablesInGroup, typeLabelFor, type AddableEntry } from '../../registry/palettePresets';
-import type { LeafType } from '../../registry';
+import type { LeafType } from '@zplab/core/registry/index';
 import type { SymbologyTarget } from '../../lib/symbologySwitch';
 import type { Translations } from '../../locales';
 

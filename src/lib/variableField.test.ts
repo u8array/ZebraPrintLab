@@ -7,9 +7,9 @@ import {
   fieldTokenSummary,
   countBindings,
   boundDefaultOrContent,
-} from "./variableField";
-import type { Variable } from "../types/Variable";
-import type { LabelObject } from "../types/Group";
+} from "@zplab/core/lib/variableField";
+import type { Variable } from "@zplab/core/types/Variable";
+import type { LabelObject } from "@zplab/core/types/Group";
 
 const sku: Variable = { id: "v1", name: "sku", fnNumber: 1, defaultValue: "DEFAULT" };
 const lot: Variable = { id: "v2", name: "lot", fnNumber: 7, defaultValue: "L7" };

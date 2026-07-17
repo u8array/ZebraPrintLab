@@ -1,5 +1,5 @@
-import type { LabelObject } from '../../types/Group';
-import type { LabelObjectBase } from '../../types/LabelObject';
+import type { LabelObject } from '@zplab/core/types/Group';
+import type { LabelObjectBase } from '@zplab/core/types/LabelObject';
 import { useT } from '../../hooks/useT';
 import { useLabelStore } from '../../store/labelStore';
 import { SegmentedControl } from '../ui/SegmentedControl';

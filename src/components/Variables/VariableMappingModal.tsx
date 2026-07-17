@@ -10,7 +10,7 @@ import {
   type CsvMapping,
   type CsvParseOptionsPersisted,
   type Variable,
-} from '../../types/Variable';
+} from '@zplab/core/types/Variable';
 import {
   decodeImportedText,
   getImportedText,
@@ -20,7 +20,7 @@ import { DialogShell } from '../ui/DialogShell';
 import { CollapsibleSection } from '../ui/CollapsibleSection';
 import { inputCls } from '../Properties/styles';
 import { Select } from '../ui/Select';
-import { getVariableSource } from '../../lib/variableBinding';
+import { getVariableSource } from '@zplab/core/lib/variableBinding';
 import { VariableSourceBadge } from './VariableSourceBadge';
 import { Tooltip } from '../ui/Tooltip';
 

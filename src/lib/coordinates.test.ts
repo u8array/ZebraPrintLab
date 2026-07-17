@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mmToDots, dotsToMm, pxToDots, dotsToPx } from './coordinates';
+import { mmToDots, dotsToMm, pxToDots, dotsToPx } from '@zplab/core/lib/coordinates';
 
 describe('mmToDots', () => {
   it('converts mm to dots at 8 dpmm', () => {

@@ -1,6 +1,6 @@
 import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { BACKFEED_SEQUENCE_VALUES, MAX_LABEL_LENGTH_RANGE, MEDIA_FEED_VALUES, MEDIA_MODE_VALUES, MEDIA_TRACKING_VALUES, MEDIA_TYPE_VALUES, type BackfeedSequence, type MediaFeedMode, type MediaMode, type MediaTracking, type MediaType } from "../../types/LabelConfig";
+import { BACKFEED_SEQUENCE_VALUES, MAX_LABEL_LENGTH_RANGE, MEDIA_FEED_VALUES, MEDIA_MODE_VALUES, MEDIA_TRACKING_VALUES, MEDIA_TYPE_VALUES, type BackfeedSequence, type MediaFeedMode, type MediaMode, type MediaTracking, type MediaType } from "@zplab/core/types/LabelConfig";
 import { RegionFocus } from "./printerIllustration";
 import {
   ZplBoundedIntInput,

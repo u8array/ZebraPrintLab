@@ -1,5 +1,5 @@
 import { useT } from '../../hooks/useT';
-import { hasTemplateMarkers } from '../../lib/fnTemplate';
+import { hasTemplateMarkers } from '@zplab/core/lib/fnTemplate';
 import { validateEanUpc, type EanUpcType, type EanUpcStatus } from '../../lib/eanUpcValidate';
 import { eanPrefixKey } from '../../lib/eanPrefix';
 import {
@@ -7,7 +7,7 @@ import {
   formatEan8Hri,
   formatUpcaHri,
   formatUpceHri,
-} from '../../registry/hriFormatters';
+} from '@zplab/core/registry/hriFormatters';
 
 // The exact printed HRI per type, so the full-code display can never drift from
 // the renderer (incl. UPC-E's number-system prefix). Check digit = last char.

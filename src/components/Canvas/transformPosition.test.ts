@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { committedUprightBarDots, modelPositionFromRenderedTopLeft, renderedTopLeftFromModel } from "./transformPosition";
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
-import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET } from "../../lib/bwipConstants";
-import type { LabelObject } from "../../types/Group";
-import type { LeafObject } from "../../registry";
-import type { ZplRotation } from "../../registry/rotation";
+import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET } from "@zplab/core/lib/bwipConstants";
+import type { LabelObject } from "@zplab/core/types/Group";
+import type { LeafObject } from "@zplab/core/registry/index";
+import type { ZplRotation } from "@zplab/core/registry/rotation";
 
 const qrFo: LabelObject = {
   id: "q1",

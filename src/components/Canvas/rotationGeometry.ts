@@ -1,4 +1,4 @@
-import type { ViewRotation } from "../../registry/rotation";
+import type { ViewRotation } from "@zplab/core/registry/rotation";
 export type { ViewRotation };
 
 /**

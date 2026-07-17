@@ -7,9 +7,9 @@
  * full round-trip without structural loss.
  */
 import { describe, it, expect } from 'vitest';
-import { parseZPL } from '../lib/zplParser';
-import { generateZPL } from '../lib/zplGenerator';
-import type { LabelConfig } from '../types/LabelConfig';
+import { parseZPL } from '@zplab/core/lib/zplParser';
+import { generateZPL } from '@zplab/core/lib/zplGenerator';
+import type { LabelConfig } from '@zplab/core/types/LabelConfig';
 import { props, defined } from './helpers';
 
 const BASE: LabelConfig = { widthMm: 100, heightMm: 60, dpmm: 8 };

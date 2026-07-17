@@ -1,5 +1,5 @@
 import { createElement, type ComponentType, type SVGProps } from 'react';
-import { loadImage } from './loadImage';
+import { loadImage } from '@zplab/core/lib/loadImage';
 
 /** Rasterizes an SVG icon to RGBA bytes for the native OS menu, which takes
  *  bitmaps not SVG. `color` replaces `currentColor` so the caller can match the

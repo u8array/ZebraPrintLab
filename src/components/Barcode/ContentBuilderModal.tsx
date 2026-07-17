@@ -3,13 +3,13 @@ import { BarcodeContentModalShell } from "./BarcodeContentModalShell";
 import { useT } from "../../hooks/useT";
 import { Select } from "../ui/Select";
 import { useLabelStore, useCurrentObjects, getCurrentObjects } from "../../store/labelStore";
-import { hasTemplateMarkers, resolvedContentLength } from "../../lib/fnTemplate";
+import { hasTemplateMarkers, resolvedContentLength } from "@zplab/core/lib/fnTemplate";
 import { usePreviewBinding } from "../../store/usePreviewBinding";
-import { getObjectStringContent } from "../../lib/variableBinding";
+import { getObjectStringContent } from "@zplab/core/lib/variableBinding";
 import { MarkerTextField } from "../Properties/MarkerTextField";
-import { findObjectById } from "../../types/Group";
-import { objectResolvesCtrl } from "../../registry";
-import { encodeContent, parseContent, recommendedEc, isContentComplete, typedContentMarkerFindings, CONTENT_TYPES, type ContentType, type ContentFields } from "../../lib/typedContent";
+import { findObjectById } from "@zplab/core/types/Group";
+import { objectResolvesCtrl } from "@zplab/core/registry/index";
+import { encodeContent, parseContent, recommendedEc, isContentComplete, typedContentMarkerFindings, CONTENT_TYPES, type ContentType, type ContentFields } from "@zplab/core/lib/typedContent";
 
 type FieldKind = "text" | "password" | "textarea" | "checkbox" | "auth";
 

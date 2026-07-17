@@ -1,11 +1,11 @@
 import { useRef, useState } from "react";
 import { ExclamationTriangleIcon, ExclamationCircleIcon } from "@heroicons/react/16/solid";
 import { typeLabelFor } from "../../registry/palettePresets";
-import type { LeafObject } from "../../registry";
+import type { LeafObject } from "@zplab/core/registry/index";
 import { useT } from "../../hooks/useT";
 import { useDismiss } from "../../hooks/useDismiss";
 import { Tooltip } from "../ui/Tooltip";
-import type { PreflightFinding, PreflightKind } from "../../lib/preflight";
+import type { PreflightFinding, PreflightKind } from "@zplab/core/lib/preflight";
 
 interface Props {
   findings: PreflightFinding[];

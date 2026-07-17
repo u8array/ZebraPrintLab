@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useLabelStore } from "../store/labelStore";
 import { importZplText } from "./zplImportService";
-import { generateMultiPageZPL } from "./zplGenerator";
-import { serializeDesign, parseDesignFile } from "./designFile";
-import { getObjectStringContent } from "./variableBinding";
+import { generateMultiPageZPL } from "@zplab/core/lib/zplGenerator";
+import { serializeDesign, parseDesignFile } from "@zplab/core/lib/designFile";
+import { getObjectStringContent } from "@zplab/core/lib/variableBinding";
 
 // Integration: drive the REAL user paths (importZplText -> loadDesign -> store ->
 // generateMultiPageZPL), not parseZPL/generate in isolation. Asserts the actual

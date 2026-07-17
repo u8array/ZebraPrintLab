@@ -7,7 +7,7 @@ import { SectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { fieldGridCols, fieldGridCell } from '../components/ui/formStyles';
-import type { EllipseProps } from './ellipse';
+import type { EllipseProps } from '@zplab/core/registry/ellipse';
 
 export const ellipsePanel: ObjectTypeUi<EllipseProps> = {
   PropertiesPanel: ({ obj, onChange }) => {

@@ -8,7 +8,7 @@ import {
   formatCode11Hri,
   formatLogmarsHri,
   formatUpcEanExtensionHri,
-} from './hriFormatters';
+} from '@zplab/core/registry/hriFormatters';
 
 describe('HRI formatters', () => {
   describe('formatEan13Hri', () => {

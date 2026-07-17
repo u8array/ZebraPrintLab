@@ -1,10 +1,10 @@
 import type { DragEndEvent, DragMoveEvent } from "@dnd-kit/core";
 import { CANVAS_DROPPABLE_ID, type PaletteDragData } from "../../dnd/types";
-import { getEntry } from "../../registry";
-import type { LeafObject } from "../../registry";
+import { getEntry } from "@zplab/core/registry/index";
+import type { LeafObject } from "@zplab/core/registry/index";
 import { centeredSpawnAnchor, spawnRotationOverride } from "../../lib/spawn";
-import type { ObjectBoundsCtx } from "../../lib/objectBounds";
-import type { LabelConfig } from "../../types/LabelConfig";
+import type { ObjectBoundsCtx } from "@zplab/core/lib/objectBounds";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 import type { ViewRotation } from "./rotationGeometry";
 
 /** Id of the palette drop-preview object; renderers treat it like a pristine

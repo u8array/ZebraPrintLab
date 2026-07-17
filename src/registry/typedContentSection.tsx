@@ -1,10 +1,10 @@
 import { useT } from '../hooks/useT';
 import { useLabelStore } from '../store/labelStore';
-import { getEntry } from './index';
+import { getEntry } from '@zplab/core/registry/index';
 import { StaticSectionCard } from '../components/Properties/SectionCard';
 import { ContentEditorButton } from '../components/Properties/ContentEditorButton';
 import { builderButtonCls } from '../components/ui/formStyles';
-import type { BindableLeaf } from '../lib/variableField';
+import type { BindableLeaf } from '@zplab/core/lib/variableField';
 import { Gs1BuilderButton } from './gs1PanelControls';
 
 /** Content section for typed-content carriers: inline chip editor plus the

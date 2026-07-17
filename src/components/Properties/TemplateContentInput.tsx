@@ -9,7 +9,7 @@ import {
 import { flushSync } from "react-dom";
 import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { formatClockLabel } from "../../lib/fcTemplate";
+import { formatClockLabel } from "@zplab/core/lib/fcTemplate";
 import {
   classifyMarkerBody,
   findAtomicMarker,
@@ -23,9 +23,9 @@ import {
   findCaretPosition,
   getCaretOffset,
 } from "../../lib/contentEditableCaret";
-import { capLiteralLength, hasTemplateMarkers, literalInsertRoom, resolvedContentLength } from "../../lib/fnTemplate";
-import { markerOf, type Variable } from "../../types/Variable";
-import { controlKeyFromBody } from "../../types/controlKey";
+import { capLiteralLength, hasTemplateMarkers, literalInsertRoom, resolvedContentLength } from "@zplab/core/lib/fnTemplate";
+import { markerOf, type Variable } from "@zplab/core/types/Variable";
+import { controlKeyFromBody } from "@zplab/core/types/controlKey";
 
 /** A selected token in the editor: its kind, the key the inspector needs
  *  (variable name / clock marker body), and the marker index for the ring. */

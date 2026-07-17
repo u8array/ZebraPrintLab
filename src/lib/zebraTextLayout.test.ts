@@ -17,7 +17,7 @@ import {
   tbBoundsDots,
   tbLineStepDots,
   tbReflowGeometry,
-} from "./zebraTextLayout";
+} from "@zplab/core/lib/zebraTextLayout";
 
 describe("tbLineStepDots", () => {
   it("uses the 1.25 ratio (looser than ^FB's 1.0)", () => {

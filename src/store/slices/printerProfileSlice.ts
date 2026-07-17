@@ -4,7 +4,7 @@ import {
   normalizeMaintenanceTypes,
   printerProfileSchema,
   type PrinterProfile,
-} from '../../types/PrinterProfile';
+} from '@zplab/core/types/PrinterProfile';
 import { pruneUndefined } from '../../lib/pruneUndefined';
 import { selectPreviewLocksEditor } from '../labelStore.selectors';
 import type { LabelState } from '../labelStore';

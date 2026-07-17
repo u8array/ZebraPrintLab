@@ -9,7 +9,7 @@ import { FieldLabel, ZplCmd } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { fieldGridCols, fieldGridCell } from '../components/ui/formStyles';
 import { ShapeModeToggle } from '../components/Properties/ShapeModeToggle';
-import { type LineProps, pickAngle, lineZplCmd } from './line';
+import { type LineProps, pickAngle, lineZplCmd } from '@zplab/core/registry/line';
 
 /**
  * Quick-orientation picker.

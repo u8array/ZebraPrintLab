@@ -3,7 +3,7 @@ import { useT } from "../../hooks/useT";
 import { Tooltip } from "../ui/Tooltip";
 import { labelCls } from "./styles";
 import { UnitNumberInput } from "./UnitNumberInput";
-import type { TextProps } from "../../registry/text";
+import type { TextProps } from "@zplab/core/registry/text";
 
 type FpDir = NonNullable<TextProps["fpDirection"]>;
 

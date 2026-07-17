@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect } from "react";
 import { Image as KImage, Group, Rect, Shape, Text } from "react-konva";
 import type Konva from "konva";
-import { BARCODE_1D_TYPES, ObjectRegistry, objectResolvesCtrl } from "../../registry";
-import { dotsToPx, pxToDots } from "../../lib/coordinates";
-import { barcodeFtAnchorOffset, qrPrintsAsGraphic } from "../../lib/objectBounds";
+import { BARCODE_1D_TYPES, ObjectRegistry, objectResolvesCtrl } from "@zplab/core/registry/index";
+import { dotsToPx, pxToDots } from "@zplab/core/lib/coordinates";
+import { barcodeFtAnchorOffset, qrPrintsAsGraphic } from "@zplab/core/lib/objectBounds";
 import { useColorScheme, CANVAS_WARNING } from "../../hooks/useColorScheme";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
 import { selectionHandlers, useBlankFieldWarns, PLACEHOLDER_DASH, PLACEHOLDER_STROKE_PX, type KonvaObjectProps } from "./konvaObjectProps";
@@ -18,12 +18,12 @@ import {
   type EanUpcType,
 } from "./bwipHelpers";
 import { resolveHriAbove, gs1HriFontDots } from "../../lib/barcodeHri";
-import { gs1ContentToElementString } from "../../lib/gs1";
+import { gs1ContentToElementString } from "@zplab/core/lib/gs1";
 import { placeholderContentFor, samplePropsFor } from "../../registry/placeholderContent";
-import { getObjectStringContent } from "../../lib/variableBinding";
-import { hasTemplateMarkers } from "../../lib/fnTemplate";
-import { hasControlMarkers } from "../../types/controlKey";
-import { objectRotation } from "../../registry/rotation";
+import { getObjectStringContent } from "@zplab/core/lib/variableBinding";
+import { hasTemplateMarkers } from "@zplab/core/lib/fnTemplate";
+import { hasControlMarkers } from "@zplab/core/types/controlKey";
+import { objectRotation } from "@zplab/core/registry/rotation";
 import { rotatedGroupTransform } from "./rotatedGroupTransform";
 import { buildEanUpcDigitOverlay } from "./eanUpcDigitNodes";
 import { buildCode1dStartStopGlyphs } from "./code1dHriOverlay";
@@ -40,7 +40,7 @@ import {
   EAN_UPC_TYPES,
   QR_FO_Y_OFFSET_DOTS,
   QR_FT_MODULE_OFFSET,
-} from "../../lib/bwipConstants";
+} from "@zplab/core/lib/bwipConstants";
 
 /** Resolve a registry value that may be a constant or a function of
  *  moduleWidth. Mirrors the pattern formatHri uses for content. */

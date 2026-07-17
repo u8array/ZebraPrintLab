@@ -9,7 +9,7 @@ vi.mock("@headlessui/react", () => {
   const Stub = () => null;
   return { Listbox: Stub, ListboxButton: Stub, ListboxOptions: Stub, ListboxOption: Stub };
 });
-import { ObjectRegistry, BARCODE_1D_TYPES, STACKED_2D_TYPES } from "./index";
+import { ObjectRegistry, BARCODE_1D_TYPES, STACKED_2D_TYPES } from "@zplab/core/registry/index";
 import { ObjectPanels } from "./panels";
 
 describe("registry isolation baseline", () => {
@@ -47,10 +47,9 @@ describe("registry isolation baseline", () => {
     }
   });
 
-  // Shared boundary matchers for the two tests below. Specs are collected from
-  // every import form (static `from`, side-effect, dynamic import()) so a
-  // breach can't hide behind a form the scan doesn't read; both tests share
-  // one ban list so their coverage can't drift apart.
+  // Specs cover every import form (static `from`, side-effect, dynamic import())
+  // so a breach can't hide behind an unscanned form; both tests below share
+  // this ban list so their coverage can't drift apart.
   const importSpecs = (src: string): string[] => [
     ...[...src.matchAll(/from\s+['"]([^'"]+)['"]/g)].map((m) => m[1] ?? ""),
     ...[...src.matchAll(/^\s*import\s+['"]([^'"]+)['"]/gm)].map((m) => m[1] ?? ""),
@@ -65,8 +64,8 @@ describe("registry isolation baseline", () => {
   // Source-scan the core modules (types/ plus the non-panel registry .ts files)
   // so a react/store/panel import can't sneak back in behind the type split.
   it("core type graph stays free of react, store and panel imports", () => {
-    const registryDir = fileURLToPath(new URL(".", import.meta.url));
-    const typesDir = fileURLToPath(new URL("../types/", import.meta.url));
+    const registryDir = fileURLToPath(new URL("../../packages/core/src/registry/", import.meta.url));
+    const typesDir = fileURLToPath(new URL("../../packages/core/src/types/", import.meta.url));
     const coreFiles = [
       ...readdirSync(typesDir)
         .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
@@ -87,12 +86,11 @@ describe("registry isolation baseline", () => {
     }
   });
 
-  // The flat scan above guards the registry/types folders; this walks the
-  // TRANSITIVE import closure of the actual domain entrypoints, so the
-  // CLI/Tauri promise (emit/parse without React, store or UI) holds across
-  // everything they pull from lib/ too, not just the scanned folders.
+  // Unlike the flat scan above, this walks the transitive import closure of
+  // the domain entrypoints, so the CLI/Tauri promise (emit/parse without
+  // React, store or UI) holds across everything they pull from lib/ too.
   it("emit/parse import closure stays free of react, store and UI imports", () => {
-    const srcDir = fileURLToPath(new URL("../", import.meta.url));
+    const srcDir = fileURLToPath(new URL("../../packages/core/src/", import.meta.url));
     const entries = ["lib/zplGenerator.ts", "lib/zplParser.ts", "registry/index.ts"];
     // A spec that names its extension resolves as written; anything else tries
     // ts/tsx and directory-index forms. Returning null is NOT a skip: the

@@ -6,7 +6,7 @@ import { NumberInput } from "../components/Properties/NumberInput";
 import { UnitNumberInput } from "../components/Properties/UnitNumberInput";
 import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
 import { fieldGridCols, fieldGridCell } from "../components/ui/formStyles";
-import type { Pdf417Props } from "./pdf417";
+import type { Pdf417Props } from "@zplab/core/registry/pdf417";
 
 export const pdf417Panel: ObjectTypeUi<Pdf417Props> = {
   PropertiesPanel: ({ obj, onChange }) => {

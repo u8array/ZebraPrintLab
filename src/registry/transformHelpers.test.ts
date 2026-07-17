@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveBlockResizeMode } from "./transformHelpers";
+import { resolveBlockResizeMode } from "@zplab/core/registry/transformHelpers";
 
 describe("resolveBlockResizeMode", () => {
   it("returns the panel mode unchanged when Alt is not held", () => {

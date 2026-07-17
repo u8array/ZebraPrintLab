@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { suspiciousCharDetail } from "./suspiciousChars";
+import { suspiciousCharDetail } from "@zplab/core/lib/suspiciousChars";
 
 const CH = (cp: number) => String.fromCharCode(cp);
 const NBSP = CH(0xa0);

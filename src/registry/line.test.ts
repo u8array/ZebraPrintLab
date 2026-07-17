@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { pickAngle, line, lineZplCmd } from "./line";
-import type { LabelObject } from "../types/Group";
+import { pickAngle, line, lineZplCmd } from "@zplab/core/registry/line";
+import type { LabelObject } from "@zplab/core/types/Group";
 
 describe("lineZplCmd", () => {
   it("axis-aligned angles emit ^GB", () => {

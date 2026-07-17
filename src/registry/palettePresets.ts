@@ -1,6 +1,6 @@
-import { ObjectRegistry, getEntry } from './index';
-import type { ObjectGroup } from '../types/LabelObject';
-import type { ObjectTypeCore } from '../types/ObjectType';
+import { ObjectRegistry, getEntry } from '@zplab/core/registry/index';
+import type { ObjectGroup } from '@zplab/core/types/LabelObject';
+import type { ObjectTypeCore } from '@zplab/core/types/ObjectType';
 import type { Translations } from '../locales';
 
 /** A palette / context-menu entry that spawns an object. `id` is the stable

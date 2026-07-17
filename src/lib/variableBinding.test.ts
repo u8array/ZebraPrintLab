@@ -8,10 +8,10 @@ import {
   shouldShowFallbackTint,
   resolveContentPreview,
   type ActiveCsvRow,
-} from './variableBinding';
-import { objectResolvesCtrl } from '../registry';
-import type { CsvMapping, Variable } from '../types/Variable';
-import type { LabelObject } from '../types/Group';
+} from '@zplab/core/lib/variableBinding';
+import { objectResolvesCtrl } from '@zplab/core/registry/index';
+import type { CsvMapping, Variable } from '@zplab/core/types/Variable';
+import type { LabelObject } from '@zplab/core/types/Group';
 
 const variable = (over: Partial<Variable> = {}): Variable => ({
   id: 'v1',

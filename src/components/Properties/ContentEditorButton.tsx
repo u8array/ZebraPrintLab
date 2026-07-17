@@ -1,9 +1,9 @@
 import { useLabelStore } from "../../store/labelStore";
 import { useT } from "../../hooks/useT";
-import type { BindableLeaf } from "../../lib/variableField";
-import { fieldIsMultiline } from "../../registry/text";
-import { objectResolvesCtrl, specForObject } from "../../registry";
-import { contentSanitiser } from "../../registry/contentSpec";
+import type { BindableLeaf } from "@zplab/core/lib/variableField";
+import { fieldIsMultiline } from "@zplab/core/registry/text";
+import { objectResolvesCtrl, specForObject } from "@zplab/core/registry/index";
+import { contentSanitiser } from "@zplab/core/registry/contentSpec";
 import { TemplateContentInput } from "./TemplateContentInput";
 
 /** Properties-panel entry point for a bindable field's content (handoff variant

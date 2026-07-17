@@ -30,7 +30,7 @@ export function decodeGraphicToImage(
   canvas.width = widthDots;
   canvas.height = heightDots;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Could not get 2d context");
+  if (!ctx) return null;
   const imgData = ctx.createImageData(widthDots, heightDots);
   const pixels = imgData.data;
   for (let row = 0; row < heightDots; row++) {

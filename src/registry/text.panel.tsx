@@ -2,11 +2,11 @@ import { useRef, useState } from "react";
 import type { ObjectTypeUi } from "./panelTypes";
 import { useT } from "../hooks/useT";
 import { buttonCls, inputCls, labelCls } from "../components/Properties/styles";
-import { getFont, loadFontFile } from "../lib/fontCache";
+import { getFont, loadFontFile } from "@zplab/core/lib/fontCache";
 import { useFontCacheVersion } from "../hooks/useFontCacheVersion";
 import { useLabelStore } from "../store/labelStore";
 import { currentObjects } from "../store/labelStore.selectors";
-import { reverseTextHasBacking, reverseTextHasOwnBacking } from "../lib/reverseBacking";
+import { reverseTextHasBacking, reverseTextHasOwnBacking } from "@zplab/core/lib/reverseBacking";
 import { RotationSelect } from "../components/Properties/RotationSelect";
 import { UnitNumberInput } from "../components/Properties/UnitNumberInput";
 import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
@@ -18,7 +18,7 @@ import { FieldLabel, ZplCmd } from "../components/Properties/ZplCmd";
 import { Select } from "../components/ui/Select";
 import { fontSelectGroups } from "../components/Properties/fontSelectGroups";
 import { fieldGridCols, fieldGridCell } from "../components/ui/formStyles";
-import { type TextProps } from "./text";
+import { type TextProps } from "@zplab/core/registry/text";
 
 export const textPanel: ObjectTypeUi<TextProps> = {
   PropertiesPanel: ({ obj, onChange }) => {

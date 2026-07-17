@@ -1,6 +1,6 @@
 import type Konva from "konva";
 import type { RefObject } from "react";
-import type { LeafObject } from "../../registry";
+import type { LeafObject } from "@zplab/core/registry/index";
 import { useLabelStore, type ObjectChanges } from "../../store/labelStore";
 import type { SnapGuide, SnapRect } from "../../lib/snapGuides";
 import { PALETTE_GHOST_ID } from "./paletteGhostMonitor";

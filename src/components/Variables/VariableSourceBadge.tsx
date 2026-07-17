@@ -5,7 +5,7 @@ import {
 } from '@heroicons/react/16/solid';
 import { useT } from '../../hooks/useT';
 import { Tooltip } from '../ui/Tooltip';
-import type { VariableSource } from '../../lib/variableBinding';
+import type { VariableSource } from '@zplab/core/lib/variableBinding';
 
 interface Props {
   source: VariableSource;

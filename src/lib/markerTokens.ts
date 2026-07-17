@@ -1,7 +1,7 @@
-import { CLOCK_TOKEN_LABELS } from "./fcTemplate";
-import { CLOCK_BODY_RE } from "../types/clockMarker";
-import { isControlBody } from "../types/controlKey";
-import { markerRe } from "../types/Variable";
+import { CLOCK_TOKEN_LABELS } from "@zplab/core/lib/fcTemplate";
+import { CLOCK_BODY_RE } from "@zplab/core/types/clockMarker";
+import { isControlBody } from "@zplab/core/types/controlKey";
+import { markerRe } from "@zplab/core/types/Variable";
 
 /** Segment kinds the content editor's colour-mirror layer renders. */
 export type MarkerSegment =

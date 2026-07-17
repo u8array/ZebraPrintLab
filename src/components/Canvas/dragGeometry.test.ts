@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { snapToGrid, gridSnapDelta, smartSnapDelta, labelSnapRectDots } from "./dragGeometry";
-import type { BoundingBoxDots } from "../../lib/objectBounds";
+import type { BoundingBoxDots } from "@zplab/core/lib/objectBounds";
 import type { SnapRect } from "../../lib/snapGuides";
 
 describe("labelSnapRectDots", () => {

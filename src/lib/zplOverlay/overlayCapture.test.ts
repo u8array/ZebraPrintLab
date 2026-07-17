@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { parseZPL } from "../zplParser";
-import { generateZPL } from "../zplGenerator";
-import { overlayText, type BlockOverlay } from "./overlay";
+import { parseZPL } from "@zplab/core/lib/zplParser";
+import { generateZPL } from "@zplab/core/lib/zplGenerator";
+import { overlayText, type BlockOverlay } from "@zplab/core/lib/zplOverlay/overlay";
 
 /** Parse with overlay capture and assert the load-bearing invariant:
  *  segment texts always concatenate back to the source. */

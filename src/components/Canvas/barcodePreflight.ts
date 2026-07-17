@@ -1,13 +1,13 @@
-import { objectResolvesCtrl, type LeafObject } from "../../registry";
-import { isBarcode } from "../../lib/objectBounds";
-import { PREFLIGHT_SEVERITY, type PreflightFinding } from "../../lib/preflight";
-import type { Variable } from "../../types/Variable";
+import { objectResolvesCtrl, type LeafObject } from "@zplab/core/registry/index";
+import { isBarcode } from "@zplab/core/lib/objectBounds";
+import { PREFLIGHT_SEVERITY, type PreflightFinding } from "@zplab/core/lib/preflight";
+import type { Variable } from "@zplab/core/types/Variable";
 import {
   applyBindingToObject,
   getObjectStringContent,
   type ActiveCsvRow,
   type ClockResolveCtx,
-} from "../../lib/variableBinding";
+} from "@zplab/core/lib/variableBinding";
 import { renderBarcodeCanvas } from "./bwipHelpers";
 
 /** Binding context so the check encodes what PRINTS: `«marker»` content is

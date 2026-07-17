@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { PRINTER_LOCALE_VALUES, ZPL_MODE_VALUES, type PrinterLocale, type ZplMode } from "../../types/PrinterProfile";
+import { PRINTER_LOCALE_VALUES, ZPL_MODE_VALUES, type PrinterLocale, type ZplMode } from "@zplab/core/types/PrinterProfile";
 import {
   SafeStringInput,
   ZplCheckbox,

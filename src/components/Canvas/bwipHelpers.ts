@@ -3,23 +3,23 @@
 
 import bwipjs from "bwip-js/browser";
 import { errorMessage } from "../../lib/errorMessage";
-import { getEntry, type LeafObject } from "../../registry";
-import { clampCodablockColumns, CODABLOCK_PREVIEW_COLUMNS_MIN } from "../../registry/codablock";
+import { getEntry, type LeafObject } from "@zplab/core/registry/index";
+import { clampCodablockColumns, CODABLOCK_PREVIEW_COLUMNS_MIN } from "@zplab/core/registry/codablock";
 import { barcodeTextZoneDots, barcodeZoneAbove } from "../../lib/barcodeHri";
-import { upceData6FromFd } from "../../registry/hriFormatters";
-import type { LabelObject } from "../../types/Group";
-import type { Gs1DatabarProps } from "../../registry/gs1databar";
-import { isAxisSwapped, objectRotation } from "../../registry/rotation";
-import { dotsToPx } from "../../lib/coordinates";
+import { upceData6FromFd } from "@zplab/core/registry/hriFormatters";
+import type { LabelObject } from "@zplab/core/types/Group";
+import type { Gs1DatabarProps } from "@zplab/core/registry/gs1databar";
+import { isAxisSwapped, objectRotation } from "@zplab/core/registry/rotation";
+import { dotsToPx } from "@zplab/core/lib/coordinates";
 import {
   GS1_DATABAR_DEFAULT_SEGMENTS,
   GS1_DATABAR_EXPANDED_SYMBOLOGIES,
   gtin14WithCheck,
   gs1ContentToElementString,
-} from "../../lib/gs1";
-import { isRectangular, dmVersionString, type DataMatrixProps } from "../../registry/datamatrix";
-import { getObjectStringContent } from "../../lib/variableBinding";
-import { qrBwipOptions } from "../../lib/qrGraphic";
+} from "@zplab/core/lib/gs1";
+import { isRectangular, dmVersionString, type DataMatrixProps } from "@zplab/core/registry/datamatrix";
+import { getObjectStringContent } from "@zplab/core/lib/variableBinding";
+import { qrBwipOptions } from "@zplab/core/lib/qrGraphic";
 import {
   barSubRect,
   EAN_TEXT_ZONE_DOTS,
@@ -30,7 +30,7 @@ import {
   MICROPDF417_PX_PER_ROW,
   MICROPDF417_QUIET_ZONE_ROWS,
   upcSuppTextZoneDots,
-} from "../../lib/bwipConstants";
+} from "@zplab/core/lib/bwipConstants";
 import {
   drawBarRects,
   firstRawEntry,
@@ -41,7 +41,7 @@ import {
   zebraWidthBarText,
   type ZebraWidthBarType,
 } from "../../lib/barcodeRawGeometry";
-import { code11CheckDigits } from "../../lib/barcodeCheckDigits";
+import { code11CheckDigits } from "@zplab/core/lib/barcodeCheckDigits";
 
 export { ZEBRA_WIDTH_BAR_TYPES };
 
@@ -217,7 +217,7 @@ function bwipScale1D(
     : BWIP_SCALE;
 }
 
-export { eanCheckDigit, upceCheckDigit } from "../../lib/barcodeCheckDigits";
+export { eanCheckDigit, upceCheckDigit } from "@zplab/core/lib/barcodeCheckDigits";
 
 /** Sub-pixel overlap so adjacent module rects don't leave hairline gaps. */
 const RAW_BAR_SEAM = 0.4;

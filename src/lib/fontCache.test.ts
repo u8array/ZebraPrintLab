@@ -8,7 +8,7 @@ import {
   subscribe,
   fontByteLength,
   MAX_FONT_BYTES,
-} from './fontCache';
+} from '@zplab/core/lib/fontCache';
 
 function clearCache(): void {
   for (const font of getAllFonts()) {

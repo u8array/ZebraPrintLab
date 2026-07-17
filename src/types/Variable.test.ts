@@ -8,7 +8,7 @@ import {
   isValidVariableName,
   type CsvMapping,
   type Variable,
-} from './Variable';
+} from '@zplab/core/types/Variable';
 
 function mapping(
   headerSnapshot: string[],

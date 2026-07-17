@@ -1,4 +1,4 @@
-import { isAxisSwapped, type ZplRotation } from "../../registry/rotation";
+import { isAxisSwapped, type ZplRotation } from "@zplab/core/registry/rotation";
 
 export interface BoundingBox {
   x: number;

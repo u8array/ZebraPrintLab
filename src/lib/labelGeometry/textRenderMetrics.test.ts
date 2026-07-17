@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { getTextRenderMetrics } from "./textRenderMetrics";
-import type { LabelObject } from "../../types/Group";
-import type { LabelConfig } from "../../types/LabelConfig";
+import { getTextRenderMetrics } from "@zplab/core/lib/labelGeometry/textRenderMetrics";
+import type { LabelObject } from "@zplab/core/types/Group";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 
 const textObj = (fontId?: string): LabelObject =>
   ({

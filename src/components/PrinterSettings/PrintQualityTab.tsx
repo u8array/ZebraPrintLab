@@ -1,7 +1,7 @@
 import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { DARKNESS_INSTANT_RANGE, DARKNESS_PERMANENT_RANGE, PRINT_ORIENTATION_VALUES, SPEED_RANGE, type PrintOrientation } from "../../types/LabelConfig";
-import { HEAD_TEST_INTERVAL_RANGE, TEAR_OFF_ADJUST_RANGE } from "../../types/PrinterProfile";
+import { DARKNESS_INSTANT_RANGE, DARKNESS_PERMANENT_RANGE, PRINT_ORIENTATION_VALUES, SPEED_RANGE, type PrintOrientation } from "@zplab/core/types/LabelConfig";
+import { HEAD_TEST_INTERVAL_RANGE, TEAR_OFF_ADJUST_RANGE } from "@zplab/core/types/PrinterProfile";
 import { RegionFocus } from "./printerIllustration";
 import {
   BoundedIntControl,

@@ -7,7 +7,7 @@ import {
   __resetPreviewCacheForTests,
   migrateLegacy,
 } from './labelStore';
-import { isGroup, getAllLeaves, type LabelObject } from '../types/Group';
+import { isGroup, getAllLeaves, type LabelObject } from '@zplab/core/types/Group';
 import { DEFAULT_CANVAS_SETTINGS } from './slices/uiSlice';
 import { toggleShapeMode } from '../lib/lineBoxConvert';
 import { defined, props } from '../test/helpers';
