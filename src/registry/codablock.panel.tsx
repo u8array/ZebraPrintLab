@@ -12,7 +12,7 @@ import {
   CODABLOCK_DEFAULT_COLUMNS,
   CODABLOCK_PREVIEW_COLUMNS_MIN,
   type CodablockProps,
-} from "./codablock";
+} from "@zplab/core/registry/codablock";
 
 export const codablockPanel: ObjectTypeUi<CodablockProps> = {
   PropertiesPanel: ({ obj, onChange }) => {

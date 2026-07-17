@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { text, textZplCmd, resolveTextMode } from './text';
-import type { TextProps } from './text';
-import type { LabelObjectBase } from '../types/LabelObject';
+import { text, textZplCmd, resolveTextMode } from '@zplab/core/registry/text';
+import type { TextProps } from '@zplab/core/registry/text';
+import type { LabelObjectBase } from '@zplab/core/types/LabelObject';
 
 describe('textZplCmd', () => {
   it('plain text emits ^A', () => {

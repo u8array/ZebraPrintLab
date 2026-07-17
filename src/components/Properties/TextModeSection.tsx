@@ -7,8 +7,8 @@ import { SectionCard } from "./SectionCard";
 import { ZplCmd } from "./ZplCmd";
 import { Tooltip } from "../ui/Tooltip";
 import { fieldGridCols, fieldGridCell } from "../ui/formStyles";
-import { FB_DEFAULTS } from "../../lib/textBlock";
-import { resolveTextMode, type TextMode, type TextProps } from "../../registry/text";
+import { FB_DEFAULTS } from "@zplab/core/lib/textBlock";
+import { resolveTextMode, type TextMode, type TextProps } from "@zplab/core/registry/text";
 
 type IconType = typeof MinusIcon;
 

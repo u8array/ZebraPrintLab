@@ -1,5 +1,5 @@
 import type { StateCreator } from 'zustand';
-import type { ObjectChanges } from '../../types/LabelObject';
+import type { ObjectChanges } from '@zplab/core/types/LabelObject';
 import {
   isGroup,
   getAllLeaves,
@@ -11,10 +11,10 @@ import {
   type GroupObject,
   type LabelObject,
   type Page,
-} from '../../types/Group';
-import { getEntry } from '../../registry';
+} from '@zplab/core/types/Group';
+import { getEntry } from '@zplab/core/registry/index';
 import { reorderForZ, type ZOrderDir } from '../../lib/zorder';
-import { makeReverseBackingBox, precedingBackingExists, isOwnReverseBacking } from '../../lib/reverseBacking';
+import { makeReverseBackingBox, precedingBackingExists, isOwnReverseBacking } from '@zplab/core/lib/reverseBacking';
 import { spawnRotationOverride } from '../../lib/spawn';
 import {
   applyObjectChanges,

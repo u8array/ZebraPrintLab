@@ -6,7 +6,7 @@ import { NumberInput } from "../components/Properties/NumberInput";
 import { UnitNumberInput } from "../components/Properties/UnitNumberInput";
 import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
 import { fieldGridCols, fieldGridCell } from "../components/ui/formStyles";
-import type { Tlc39Props } from "./tlc39";
+import type { Tlc39Props } from "@zplab/core/registry/tlc39";
 
 export const tlc39Panel: ObjectTypeUi<Tlc39Props> = {
   PropertiesPanel: ({ obj, onChange }) => {

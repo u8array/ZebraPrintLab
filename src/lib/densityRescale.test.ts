@@ -1,9 +1,9 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { rescaleDesign } from "./densityRescale";
 import { useLabelStore } from "../store/labelStore";
-import type { LabelObject, Page } from "../types/Group";
-import type { LeafObject } from "../registry";
-import type { LabelConfig } from "../types/LabelConfig";
+import type { LabelObject, Page } from "@zplab/core/types/Group";
+import type { LeafObject } from "@zplab/core/registry/index";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 
 const label: LabelConfig = { widthMm: 100, heightMm: 50, dpmm: 8 };
 

@@ -1,4 +1,4 @@
-import type { LabelObject } from "../types/Group";
+import type { LabelObject } from "@zplab/core/types/Group";
 
 export const testModels: Record<string, LabelObject> = {
   barcode_code128_standard: {

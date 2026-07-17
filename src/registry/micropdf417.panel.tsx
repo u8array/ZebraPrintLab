@@ -6,7 +6,7 @@ import { NumberInput } from "../components/Properties/NumberInput";
 import { UnitNumberInput } from "../components/Properties/UnitNumberInput";
 import { SectionCard, StaticSectionCard } from "../components/Properties/SectionCard";
 import { fieldGridCols, fieldGridCell } from "../components/ui/formStyles";
-import type { MicroPdf417Props } from "./micropdf417";
+import type { MicroPdf417Props } from "@zplab/core/registry/micropdf417";
 
 export const micropdf417Panel: ObjectTypeUi<MicroPdf417Props> = {
   PropertiesPanel: ({ obj, onChange }) => {

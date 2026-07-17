@@ -2,8 +2,8 @@ import { useId, useState, type InputHTMLAttributes, type ReactNode } from "react
 import { labelCls, inputCls, zplCommandTagCls } from "../ui/formStyles";
 import { SegmentedControl } from "../ui/SegmentedControl";
 import { Select } from "../ui/Select";
-import { clampBoundedInt, readBoundedInt } from "../../lib/inputParse";
-import { stripUnsafeChars } from "../../types/PrinterProfile";
+import { clampBoundedInt, readBoundedInt } from "@zplab/core/lib/inputParse";
+import { stripUnsafeChars } from "@zplab/core/types/PrinterProfile";
 
 const commandTagCls = zplCommandTagCls;
 const hintCls = "font-mono text-[10px] text-muted/70 normal-case tracking-normal";

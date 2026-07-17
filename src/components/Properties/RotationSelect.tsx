@@ -1,4 +1,4 @@
-import { ZPL_ROTATIONS, type ZplRotation } from '../../registry/rotation';
+import { ZPL_ROTATIONS, type ZplRotation } from '@zplab/core/registry/rotation';
 import { useT } from '../../hooks/useT';
 import { useLabelStore } from '../../store/labelStore';
 import { FieldLabel } from './ZplCmd';

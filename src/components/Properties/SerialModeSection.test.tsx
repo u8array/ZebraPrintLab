@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, cleanup, fireEvent, act } from "@testing-library/react";
 import { SerialModeCheckbox, SerialParts } from "./SerialModeSection";
 import { useLabelStore } from "../../store/labelStore";
-import type { SerialMode } from "../../registry/serialField";
+import type { SerialMode } from "@zplab/core/registry/serialField";
 
 afterEach(cleanup);
 

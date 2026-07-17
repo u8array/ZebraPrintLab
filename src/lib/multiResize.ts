@@ -1,6 +1,6 @@
-import type { LeafObject } from "../registry";
-import { getEntry, SHAPE_PRIMITIVE_TYPES } from "../registry";
-import type { BoundingBoxDots } from "./objectBounds";
+import type { LeafObject } from "@zplab/core/registry/index";
+import { getEntry, SHAPE_PRIMITIVE_TYPES } from "@zplab/core/registry/index";
+import type { BoundingBoxDots } from "@zplab/core/lib/objectBounds";
 import { makeFree } from "./lineConstrain";
 
 export interface MultiResizeChange {

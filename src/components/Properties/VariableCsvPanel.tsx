@@ -5,7 +5,7 @@ import {
   buildActiveCsvRow,
   getVariableSource,
   resolveVariableValue,
-} from "../../lib/variableBinding";
+} from "@zplab/core/lib/variableBinding";
 
 /** Read-only CSV context: file, mapped count, row stepper, and the selected
  *  variable's mapping + live active-row value. Mapping and import stay in the

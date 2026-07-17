@@ -3,10 +3,10 @@ import { XMarkIcon, ClipboardDocumentIcon, CheckIcon, FolderOpenIcon } from '@he
 import { importZplText, routeSetupCommands, mergeSetupFonts, type ZplImportResult, type SetupCommandChoice } from '../../lib/zplImportService';
 import { readFileAsText } from '../../lib/readFile';
 import { useLabelStore } from '../../store/labelStore';
-import type { Page } from '../../types/Group';
-import type { LabelConfig } from '../../types/LabelConfig';
-import type { PrinterProfile } from '../../types/PrinterProfile';
-import type { Variable } from '../../types/Variable';
+import type { Page } from '@zplab/core/types/Group';
+import type { LabelConfig } from '@zplab/core/types/LabelConfig';
+import type { PrinterProfile } from '@zplab/core/types/PrinterProfile';
+import type { Variable } from '@zplab/core/types/Variable';
 import { formatReportAsText, replayRiskFindings, printerCommandFindings, resolveRoutedReport, type ImportReport, type ImportResult } from '../../lib/importReport';
 import { ImportSummaryBody } from './ImportSummary';
 import { ImportSetupChoice } from './ImportSetupChoice';

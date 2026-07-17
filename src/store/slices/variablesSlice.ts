@@ -8,7 +8,7 @@ import {
   FN_NUMBER_MAX,
   type Variable,
   type VariableInput,
-} from '../../types/Variable';
+} from '@zplab/core/types/Variable';
 import {
   rewriteTemplateMarkers,
   substituteTemplateMarkers,

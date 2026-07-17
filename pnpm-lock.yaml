@@ -4,6 +4,18 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    bwip-js:
+      specifier: ^4.11.2
+      version: 4.11.2
+    fflate:
+      specifier: ^0.8.3
+      version: 0.8.3
+    zod:
+      specifier: ^4.4.3
+      version: 4.4.3
+
 importers:
 
   .:
@@ -44,11 +56,14 @@ importers:
       '@tauri-apps/plugin-updater':
         specifier: ^2.10.1
         version: 2.10.1
+      '@zplab/core':
+        specifier: workspace:*
+        version: link:packages/core
       bwip-js:
-        specifier: ^4.11.2
+        specifier: 'catalog:'
         version: 4.11.2
       fflate:
-        specifier: ^0.8.3
+        specifier: 'catalog:'
         version: 0.8.3
       konva:
         specifier: ^10.3.0
@@ -66,7 +81,7 @@ importers:
         specifier: ^19.2.5
         version: 19.2.5(@types/react@19.2.17)(konva@10.3.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       zod:
-        specifier: ^4.4.3
+        specifier: 'catalog:'
         version: 4.4.3
       zundo:
         specifier: ^2.3.0
@@ -171,6 +186,18 @@ importers:
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(jsdom@29.1.1)(vite@8.1.4(@types/node@26.1.1)(jiti@2.7.0))
+
+  packages/core:
+    dependencies:
+      bwip-js:
+        specifier: 'catalog:'
+        version: 4.11.2
+      fflate:
+        specifier: 'catalog:'
+        version: 0.8.3
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
 
 packages:
 

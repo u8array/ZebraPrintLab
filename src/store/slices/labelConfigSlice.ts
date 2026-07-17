@@ -1,9 +1,9 @@
 import type { StateCreator } from 'zustand';
-import { PER_LABEL_ZPL_FIELDS, type LabelConfig } from '../../types/LabelConfig';
-import type { Page } from '../../types/Group';
-import type { Variable, CsvMapping } from '../../types/Variable';
+import { PER_LABEL_ZPL_FIELDS, type LabelConfig } from '@zplab/core/types/LabelConfig';
+import type { Page } from '@zplab/core/types/Group';
+import type { Variable, CsvMapping } from '@zplab/core/types/Variable';
 import { forgetImport } from '../../lib/csvImport';
-import { dropLegacyFontBindings } from '../../lib/customFonts';
+import { dropLegacyFontBindings } from '@zplab/core/lib/customFonts';
 import { selectPreviewLocksEditor } from '../labelStore.selectors';
 import { configPatchAffectsEmit } from '../labelStore.internals';
 import { dropPageOverlays } from '../../lib/pageOverlay';

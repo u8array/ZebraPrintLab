@@ -4,13 +4,13 @@ import {
   SETUP_SCRIPT_FIELDS,
   __SETUP_SCRIPT_EMITTERS_FOR_TESTS,
 } from "./zplSetupScript";
-import { parseZPL } from "./zplParser";
+import { parseZPL } from "@zplab/core/lib/zplParser";
 import {
   MAINTENANCE_ALERT_DEFAULTS,
   MAINTENANCE_DISTANCE_MAX_BY_TYPE,
   printerProfileSchema,
   type PrinterProfile,
-} from "../types/PrinterProfile";
+} from "@zplab/core/types/PrinterProfile";
 
 const base: PrinterProfile = {};
 
@@ -543,7 +543,7 @@ describe("generateSetupScript — maintenance commands", () => {
   });
 
   it("emits ~DY for each setupFonts entry with bytes in fontCache, before ^FL", async () => {
-    const { loadFontBytes } = await import("./fontCache");
+    const { loadFontBytes } = await import("@zplab/core/lib/fontCache");
     await loadFontBytes(new Uint8Array([1, 2, 3, 4]), "TESTSU.TTF");
     const script = generateSetupScript({
       ...base,

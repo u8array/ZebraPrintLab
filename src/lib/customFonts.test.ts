@@ -10,8 +10,8 @@ import {
   resolveDefaultPrinterFontName,
   resolvePreviewFontName,
   upsertCustomFontMapping,
-} from "./customFonts";
-import { loadFontFile, removeFont, EMBED_WARN_FONT_BYTES } from "./fontCache";
+} from "@zplab/core/lib/customFonts";
+import { loadFontFile, removeFont, EMBED_WARN_FONT_BYTES } from "@zplab/core/lib/fontCache";
 
 describe("dropLegacyFontBindings", () => {
   it("returns undefined for undefined or empty input", () => {

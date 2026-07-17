@@ -15,7 +15,7 @@ import {
   CLOCK_TOKEN_LABELS,
   type ClockChannel,
   clockBodyLength,
-} from "./fcTemplate";
+} from "@zplab/core/lib/fcTemplate";
 
 describe("clockMarkerBody / parseClockBody", () => {
   it("round-trips every token on every channel", () => {
@@ -55,7 +55,7 @@ describe("formatClockLabel", () => {
     expect(formatClockLabel("clock:Q", labelFor)).toBe("clock:Q");
   });
 });
-import { clockOffsetSchema, labelConfigSchema } from "../types/LabelConfig";
+import { clockOffsetSchema, labelConfigSchema } from "@zplab/core/types/LabelConfig";
 
 // Fixed reference date used across formatter tests so the assertions
 // stay stable regardless of when the suite runs. 2026-03-14 13:09:42

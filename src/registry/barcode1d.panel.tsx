@@ -2,23 +2,23 @@ import type { ObjectTypeUi } from './panelTypes';
 import type { Translations } from '../locales';
 import { useT } from '../hooks/useT';
 import { useLabelStore } from '../store/labelStore';
-import { hasValidLength } from './contentSpec';
-import { specForObject } from './index';
+import { hasValidLength } from '@zplab/core/registry/contentSpec';
+import { specForObject } from '@zplab/core/registry/index';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { UnitNumberInput } from '../components/Properties/UnitNumberInput';
 import { ContentEditorButton } from '../components/Properties/ContentEditorButton';
-import { fieldMode, boundDefaultOrContent, fieldVariableRefs, fieldHasVariable, asLabelObject } from '../lib/variableField';
-import { gs1EnablePatch } from './gs1FieldSpec';
+import { fieldMode, boundDefaultOrContent, fieldVariableRefs, fieldHasVariable, asLabelObject } from '@zplab/core/lib/variableField';
+import { gs1EnablePatch } from '@zplab/core/registry/gs1FieldSpec';
 import { Gs1BuilderButton } from './gs1PanelControls';
 import { CheckboxRow } from '../components/Properties/CheckboxRow';
-import { extractClockTokens } from '../lib/fcTemplate';
+import { extractClockTokens } from '@zplab/core/lib/fcTemplate';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel } from '../components/Properties/ZplCmd';
 import { EanInlineStatus } from '../components/Properties/EanInlineStatus';
 import { SerialModeCheckbox, SerialParts } from '../components/Properties/SerialModeSection';
 import type { EanUpcType } from '../lib/eanUpcValidate';
-import type { Barcode1DProps } from './barcode1d';
+import type { Barcode1DProps } from '@zplab/core/registry/barcode1d';
 
 /** Per-symbology locale block: labels rendered by the panel. */
 export interface BarcodeLocale {

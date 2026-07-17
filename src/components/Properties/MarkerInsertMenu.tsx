@@ -1,6 +1,6 @@
 import { VariableIcon } from "@heroicons/react/16/solid";
 import { ContextMenu, type MenuSection } from "../ui/ContextMenu";
-import { CLOCK_TOKEN_LABELS, clockMarkerBody, type ClockChannel } from "../../lib/fcTemplate";
+import { CLOCK_TOKEN_LABELS, clockMarkerBody, type ClockChannel } from "@zplab/core/lib/fcTemplate";
 import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { useContextMenu } from "../../hooks/useContextMenu";

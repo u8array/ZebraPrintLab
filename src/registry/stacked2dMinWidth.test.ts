@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { pdf417 } from "./pdf417";
-import { codablock } from "./codablock";
-import { micropdf417 } from "./micropdf417";
+import { pdf417 } from "@zplab/core/registry/pdf417";
+import { codablock } from "@zplab/core/registry/codablock";
+import { micropdf417 } from "@zplab/core/registry/micropdf417";
 
 const ctx = { sx: 0.1, sy: 1, snap: (v: number) => v, nodeHeight: 0, anchor: null };
 const leaf = (type: string, props: object) =>

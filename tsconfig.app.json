@@ -23,7 +23,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src"],
+  "include": ["src", "packages/core/src"],
   "exclude": [
     "src/**/*.test.ts",
     "src/**/*.test.tsx",

@@ -1,16 +1,15 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { generateZPL } from "./zplGenerator";
-import { parseZPL } from "./zplParser";
-import { rasterizeMono } from "./imageToZpl";
-import { decodeGraphicToImage } from "./zplParser/decoders/graphic";
-import { measureInkWidthPx } from "./labelGeometry/measureTextDots";
-import { safeLocalStorageRemove, safeLocalStorageSet } from "./localStorageBucket";
-import type { LabelConfig } from "../types/LabelConfig";
-import type { LabelObject } from "../types/Group";
+import { generateZPL } from "@zplab/core/lib/zplGenerator";
+import { parseZPL } from "@zplab/core/lib/zplParser";
+import { rasterizeMono } from "@zplab/core/lib/imageToZpl";
+import { decodeGraphicToImage } from "@zplab/core/lib/zplParser/decoders/graphic";
+import { measureInkWidthPx } from "@zplab/core/lib/labelGeometry/measureTextDots";
+import { safeLocalStorageRemove, safeLocalStorageSet } from "@zplab/core/lib/localStorageBucket";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
+import type { LabelObject } from "@zplab/core/types/Group";
 
-// Regression for the core extraction: every closure of the future @zplab/core
-// package (generator, parser, registry) must survive WITHOUT browser globals,
-// degrading instead of throwing. This is the contract the MCP server runs on.
+// @zplab/core must survive without browser globals, degrading instead of
+// throwing; this is the contract the MCP server runs on.
 const headless = () => {
   vi.stubGlobal("document", undefined);
   vi.stubGlobal("localStorage", undefined);

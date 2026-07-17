@@ -4,9 +4,9 @@ import {
   JH_SLOT_F,
   JH_SLOT_G,
   type PrinterProfile,
-} from '../types/PrinterProfile';
-import { formatFontDownloadFromPath } from './customFonts';
-import { formatRealtimeClockForZpl, toLocalIsoString } from './realtimeClock';
+} from '@zplab/core/types/PrinterProfile';
+import { formatFontDownloadFromPath } from '@zplab/core/lib/customFonts';
+import { formatRealtimeClockForZpl, toLocalIsoString } from '@zplab/core/lib/realtimeClock';
 
 /** Generates the one-shot Setup-Script ZPL for a printer profile:
  *  EEPROM-persistent state (~TA, ^JZ, ^JT, clock / encoding / identity)

@@ -28,9 +28,9 @@ import {
   zebraWidthBarText,
   type ZebraWidthBarType,
 } from "../lib/barcodeRawGeometry";
-import { dotsToPx } from "../lib/coordinates";
-import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET, upcSuppTextZoneDots } from "../lib/bwipConstants";
-import { barcodeFtAnchorOffset, isBarcode } from "../lib/objectBounds";
+import { dotsToPx } from "@zplab/core/lib/coordinates";
+import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET, upcSuppTextZoneDots } from "@zplab/core/lib/bwipConstants";
+import { barcodeFtAnchorOffset, isBarcode } from "@zplab/core/lib/objectBounds";
 
 const FIXTURES_DIR = path.resolve(
   process.cwd(),

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ObjectRegistry, getEntry } from './index';
-import type { LabelObjectBase } from '../types/LabelObject';
+import { ObjectRegistry, getEntry } from '@zplab/core/registry/index';
+import type { LabelObjectBase } from '@zplab/core/types/LabelObject';
 import { defined } from '../test/helpers';
-import { qualityPatch, type DataMatrixProps } from './datamatrix';
+import { qualityPatch, type DataMatrixProps } from '@zplab/core/registry/datamatrix';
 
 function makeObj<P extends object>(type: string, props: P, overrides?: Partial<LabelObjectBase>): LabelObjectBase & { props: P } {
   return {

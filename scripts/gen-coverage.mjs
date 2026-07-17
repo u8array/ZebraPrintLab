@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const ROADMAP = join(ROOT, 'docs', 'zpl-roadmap.md');
 const README = join(ROOT, 'README.md');
-const SRC = join(ROOT, 'src');
+const SRC_ROOTS = [join(ROOT, 'src'), join(ROOT, 'packages', 'core', 'src')];
 
 // README row order and how each maps onto roadmap `## sections`. Most are 1:1;
 // the hardware bucket collapses four infrastructure sections into one row. Every
@@ -115,13 +115,14 @@ function spliceReadme(current, block) {
 /** Advisory only: roadmap `[x]` commands with no literal anywhere in src/. */
 function codeCrossCheck(sections) {
   const files = [];
-  (function walk(dir) {
+  function walk(dir) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const p = join(dir, entry.name);
       if (entry.isDirectory()) walk(p);
       else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) files.push(p);
     }
-  })(SRC);
+  }
+  SRC_ROOTS.forEach(walk);
   const haystack = files.map((f) => readFileSync(f, 'utf8')).join('\n');
   const missing = [];
   for (const sec of sections.values()) {

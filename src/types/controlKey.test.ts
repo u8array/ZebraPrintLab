@@ -6,7 +6,7 @@ import {
   hasControlMarkers,
   resolveControlMarkers,
   controlBytesToMarkers,
-} from './controlKey';
+} from '@zplab/core/types/controlKey';
 
 describe('control-key markers', () => {
   it('resolve and detokenise are symmetric for every catalogued key', () => {

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useT } from "../../hooks/useT";
 import { Tooltip } from "../ui/Tooltip";
-import type { TextProps } from "../../registry/text";
+import type { TextProps } from "@zplab/core/registry/text";
 
 type Justify = NonNullable<TextProps["blockJustify"]>;
 

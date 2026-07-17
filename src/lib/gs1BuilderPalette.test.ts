@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { aiSpec, validateGs1Segments } from "./gs1";
+import { aiSpec, validateGs1Segments } from "@zplab/core/lib/gs1";
 import {
   AI_BY_GROUP,
   GS1_COMMON_AIS,

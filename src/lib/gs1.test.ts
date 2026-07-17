@@ -20,7 +20,7 @@ import {
   segmentsToZplFd,
   gs1ContentToZplFd,
   zplFdToGs1Input,
-} from "./gs1";
+} from "@zplab/core/lib/gs1";
 
 describe("gtin14WithCheck", () => {
   it("computes the check digit for a 13-digit body", () => {

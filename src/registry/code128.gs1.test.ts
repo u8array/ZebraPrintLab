@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { code128 } from './code128';
-import { parseZPL } from '../lib/zplParser';
-import { generateZPL, generateBatchZpl } from '../lib/zplGenerator';
-import type { Variable } from '../types/Variable';
-import { GS1_SAMPLE_CONTENT, GS1_GS, elementStringToContent } from '../lib/gs1';
+import { code128 } from '@zplab/core/registry/code128';
+import { parseZPL } from '@zplab/core/lib/zplParser';
+import { generateZPL, generateBatchZpl } from '@zplab/core/lib/zplGenerator';
+import type { Variable } from '@zplab/core/types/Variable';
+import { GS1_SAMPLE_CONTENT, GS1_GS, elementStringToContent } from '@zplab/core/lib/gs1';
 import { PALETTE_PRESET_IDS } from './palettePresets';
-import { gs1EnablePatch } from './gs1FieldSpec';
-import type { LabelConfig } from '../types/LabelConfig';
-import type { LabelObject } from '../types/Group';
+import { gs1EnablePatch } from '@zplab/core/registry/gs1FieldSpec';
+import type { LabelConfig } from '@zplab/core/types/LabelConfig';
+import type { LabelObject } from '@zplab/core/types/Group';
 
 const LABEL: LabelConfig = { widthMm: 100, heightMm: 50, dpmm: 8 };
 

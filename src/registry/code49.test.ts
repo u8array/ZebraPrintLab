@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { code49 } from './code49';
-import type { Code49Props } from './code49';
-import type { LabelObjectBase } from '../types/LabelObject';
-import type { PreflightCtx } from '../types/preflight';
+import { code49 } from '@zplab/core/registry/code49';
+import type { Code49Props } from '@zplab/core/registry/code49';
+import type { LabelObjectBase } from '@zplab/core/types/LabelObject';
+import type { PreflightCtx } from '@zplab/core/types/preflight';
 /**
  * The four-layer height-clamp contract for ^B4 Code 49:
  *   - UI:        NumberInput min/max blocks invalid typing

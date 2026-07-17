@@ -6,7 +6,7 @@ import {
   rasterizeMono,
   scaledHeightDots,
   type MonoRaster,
-} from "./imageToZpl";
+} from "@zplab/core/lib/imageToZpl";
 
 /** Build an RGBA buffer (paddedWidth × height) from per-pixel [r,g,b] rows. */
 function rgba(rows: [number, number, number][][]): Uint8ClampedArray {

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { rotateSelectionChanges } from "./groupRotation";
-import type { LabelObject } from "../types/Group";
-import { objectBoundsDots, type ObjectBoundsCtx } from "./objectBounds";
-import { barSubRect, EAN_TEXT_ZONE_DOTS } from "./bwipConstants";
+import type { LabelObject } from "@zplab/core/types/Group";
+import { objectBoundsDots, type ObjectBoundsCtx } from "@zplab/core/lib/objectBounds";
+import { barSubRect, EAN_TEXT_ZONE_DOTS } from "@zplab/core/lib/bwipConstants";
 
 const LABEL = { widthMm: 100, heightMm: 50, dpmm: 8 };
 const ctx = (measured?: ObjectBoundsCtx["measured"]): ObjectBoundsCtx => ({ label: LABEL, measured });

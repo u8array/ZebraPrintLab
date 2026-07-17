@@ -1,6 +1,6 @@
 // Single source of truth for CSV ingestion; no direct papaparse imports elsewhere.
 import Papa from "papaparse";
-import { ok, err, type Result } from "./result";
+import { ok, err, type Result } from "@zplab/core/lib/result";
 
 export interface CsvParseResult {
   /** Header names from the first row, in source order. */

@@ -3,8 +3,8 @@ import {
   DATAMATRIX_FD_ESCAPE,
   gs1ContentToDataMatrixFd,
   dataMatrixFdToGs1Content,
-} from "./dataMatrixFd";
-import { GS1_GS } from "./gs1";
+} from "@zplab/core/lib/dataMatrixFd";
+import { GS1_GS } from "@zplab/core/lib/gs1";
 
 describe("GS1 DataMatrix field data", () => {
   // (01)09501101530003(10)ABC123(21)12345 in raw model form (GS after the

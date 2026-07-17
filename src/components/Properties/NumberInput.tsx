@@ -1,4 +1,4 @@
-import { clampMin } from '../../lib/inputParse';
+import { clampMin } from '@zplab/core/lib/inputParse';
 import { inputCls } from './styles';
 import { FieldLabel } from './ZplCmd';
 

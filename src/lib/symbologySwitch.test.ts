@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { symbologyTargets, convertSymbologyMapper } from './symbologySwitch';
-import type { LabelObject } from '../types/Group';
+import type { LabelObject } from '@zplab/core/types/Group';
 
 function barcode(type: string, props: Record<string, unknown>): LabelObject {
   return {

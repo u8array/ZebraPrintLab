@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { computePreflight, markerValueFindings, suppressPristineEmpty, type PreflightFinding } from "./preflight";
-import { getEntry } from "../registry";
-import type { ObjectBoundsCtx } from "./objectBounds";
-import type { LabelObject } from "../types/Group";
-import type { LeafObject } from "../registry";
-import type { LabelConfig } from "../types/LabelConfig";
+import { computePreflight, markerValueFindings, suppressPristineEmpty, type PreflightFinding } from "@zplab/core/lib/preflight";
+import { getEntry } from "@zplab/core/registry/index";
+import type { ObjectBoundsCtx } from "@zplab/core/lib/objectBounds";
+import type { LabelObject } from "@zplab/core/types/Group";
+import type { LeafObject } from "@zplab/core/registry/index";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 
 const label: LabelConfig = { widthMm: 100, heightMm: 50, dpmm: 8 }; // printable 800 x 400
 const ctx: ObjectBoundsCtx = { label };

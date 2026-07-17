@@ -1,20 +1,20 @@
 import { useRef, useEffect, useLayoutEffect } from "react";
 import { flushSync } from "react-dom";
 import type Konva from "konva";
-import { dotsToPx, pxToDots } from "../../../lib/coordinates";
-import { blockBoundsDots, blockGlyphAnchorPoint, blockReflowGeometry, tbBoundsDots, tbReflowGeometry, type BlockJustify, type ZplRotation } from "../../../lib/zebraTextLayout";
+import { dotsToPx, pxToDots } from "@zplab/core/lib/coordinates";
+import { blockBoundsDots, blockGlyphAnchorPoint, blockReflowGeometry, tbBoundsDots, tbReflowGeometry, type BlockJustify, type ZplRotation } from "@zplab/core/lib/zebraTextLayout";
 import { getCurrentObjects, useLabelStore } from "../../../store/labelStore";
 import {
   SHAPE_PRIMITIVE_TYPES,
   BARCODE_1D_TYPES,
   STACKED_2D_TYPES,
   getEntry,
-} from "../../../registry";
-import type { LeafObject } from "../../../registry";
-import { resolveBlockResizeMode } from "../../../registry/transformHelpers";
-import { resolveTextMode, type TextProps } from "../../../registry/text";
+} from "@zplab/core/registry/index";
+import type { LeafObject } from "@zplab/core/registry/index";
+import { resolveBlockResizeMode } from "@zplab/core/registry/transformHelpers";
+import { resolveTextMode, type TextProps } from "@zplab/core/registry/text";
 import type { ObjectChanges } from "../../../store/labelStore";
-import { findObjectById, isGroup } from "../../../types/Group";
+import { findObjectById, isGroup } from "@zplab/core/types/Group";
 import {
   activeEdgesFromAnchorName,
   applyHeightSnap,
@@ -40,10 +40,10 @@ import {
   modelPositionFromRenderedTopLeft,
   renderedTopLeftFromModel,
 } from "../transformPosition";
-import { isBarcode, type BoundingBoxDots } from "../../../lib/objectBounds";
+import { isBarcode, type BoundingBoxDots } from "@zplab/core/lib/objectBounds";
 import { projectMultiResize } from "../../../lib/multiResize";
 import { lineHandlesNodeId, lineRootNodeId } from "../konvaObjectProps";
-import { isAxisSwapped, objectRotation } from "../../../registry/rotation";
+import { isAxisSwapped, objectRotation } from "@zplab/core/registry/rotation";
 import { getMeasuredSnapshot } from "../measuredBoundsCache";
 import {
   computeResizeSnap,

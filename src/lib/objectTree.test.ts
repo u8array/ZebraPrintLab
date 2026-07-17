@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitiseVariableNames } from "./objectTree";
+import { sanitiseVariableNames } from "@zplab/core/lib/objectTree";
 
 const page = (content: string) => ({ objects: [{ type: "text", props: { content } }] });
 const contentOf = (p: { objects: { props: { content: string } }[] }) => p.objects[0]!.props.content;

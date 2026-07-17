@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
-import { isGroup, findObjectById, findAncestors, isSelfOrDescendant } from '../../types/Group';
-import type { GroupObject, LabelObject } from '../../types/Group';
+import { isGroup, findObjectById, findAncestors, isSelfOrDescendant } from '@zplab/core/types/Group';
+import type { GroupObject, LabelObject } from '@zplab/core/types/Group';
 import { INDENT_STEP } from './layerLayout';
 
 /** Sentinel id for the top-level container. */

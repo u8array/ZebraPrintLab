@@ -5,7 +5,7 @@ import {
   loadFontFile,
   removeFont,
   isEmbedLarge,
-} from '../../lib/fontCache';
+} from '@zplab/core/lib/fontCache';
 import { useFontCacheVersion } from '../../hooks/useFontCacheVersion';
 import { useLabelStore } from '../../store/labelStore';
 import { useT } from '../../hooks/useT';
@@ -17,12 +17,12 @@ import {
   normalizeAlias,
   uploadedFontPath,
   upsertCustomFontMapping,
-} from '../../lib/customFonts';
+} from '@zplab/core/lib/customFonts';
 import { inputCls, labelCls } from '../Properties/styles';
 import { CollapsibleSection } from '../ui/CollapsibleSection';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { Tooltip } from '../ui/Tooltip';
-import type { CustomFontMapping } from '../../types/LabelConfig';
+import type { CustomFontMapping } from '@zplab/core/types/LabelConfig';
 const PATHS_DATALIST_ID = 'zpl-custom-font-paths';
 
 const addBtnCls =

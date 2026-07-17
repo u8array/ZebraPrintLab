@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildFlatRows, dropBand, gapAnchor, isPastListEnd, siblingDropIndex } from './useLayerDnd';
-import { reparentNodes, type GroupObject, type LabelObject } from '../../types/Group';
+import { reparentNodes, type GroupObject, type LabelObject } from '@zplab/core/types/Group';
 
 const leaf = (id: string): LabelObject =>
   ({ id, type: 'text', x: 0, y: 0, rotation: 0, props: {} } as unknown as LabelObject);

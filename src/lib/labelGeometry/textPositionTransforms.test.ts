@@ -4,7 +4,7 @@ import {
   ZPL_FONT_HEIGHT_TO_CSS_RATIO,
   modelToZplAnchor,
   zplAnchorToModel,
-} from './textPositionTransforms';
+} from '@zplab/core/lib/labelGeometry/textPositionTransforms';
 
 const ROT = ['N', 'R', 'I', 'B'] as const;
 const BIAS = 0.08;

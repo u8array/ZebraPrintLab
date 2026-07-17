@@ -8,14 +8,14 @@ import {
   GS1_DATABAR_DEFAULT_SEGMENTS,
   GS1_DATABAR_EXPANDED_SYMBOLOGIES,
   gtinBodyFromContent,
-} from '../lib/gs1';
+} from '@zplab/core/lib/gs1';
 import { SectionCard, StaticSectionCard } from '../components/Properties/SectionCard';
 import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
 import { FieldLabel } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { builderButtonCls } from '../components/ui/formStyles';
-import { fieldHasVariable, asLabelObject } from '../lib/variableField';
-import { type Gs1DatabarProps, SYMBOLOGY_LABELS } from './gs1databar';
+import { fieldHasVariable, asLabelObject } from '@zplab/core/lib/variableField';
+import { type Gs1DatabarProps, SYMBOLOGY_LABELS } from '@zplab/core/registry/gs1databar';
 
 export const gs1databarPanel: ObjectTypeUi<Gs1DatabarProps> = {
   PropertiesPanel: ({ obj, onChange }) => {

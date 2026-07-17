@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { barcodeEncodeFindings, resolveForEncode, type EncodeEnv } from "./barcodePreflight";
-import type { LabelObject } from "../../types/Group";
-import type { LeafObject } from "../../registry";
+import type { LabelObject } from "@zplab/core/types/Group";
+import type { LeafObject } from "@zplab/core/registry/index";
 
 const bar = (id: string, content = "X"): LeafObject =>
   ({ id, type: "code128", x: 0, y: 0, rotation: 0,

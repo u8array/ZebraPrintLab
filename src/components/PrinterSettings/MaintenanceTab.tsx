@@ -3,7 +3,7 @@ import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
 import { labelCls, fieldGridCols, fieldGridCell } from "../ui/formStyles";
 import { Select } from "../ui/Select";
-import type { PrinterProfile } from "../../types/PrinterProfile";
+import type { PrinterProfile } from "@zplab/core/types/PrinterProfile";
 import {
   HEAD_CLEANING_INTERVAL_METERS,
   MAINTENANCE_ALERT_DEFAULTS,
@@ -16,7 +16,7 @@ import {
   type HeadCleaningIntervalMeters,
   type MaintenanceAlertType,
   type MaintenanceAlertUnit,
-} from "../../types/PrinterProfile";
+} from "@zplab/core/types/PrinterProfile";
 import {
   BoundedIntControl,
   SafeStringInput,

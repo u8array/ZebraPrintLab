@@ -5,13 +5,13 @@ import { NumberInput } from "./NumberInput";
 import { UnitNumberInput } from "./UnitNumberInput";
 import { JustifyButtons } from "./JustifyButtons";
 import { BlockDragModeToggle } from "./BlockDragModeToggle";
-import type { TextProps } from "../../registry/text";
+import type { TextProps } from "@zplab/core/registry/text";
 import {
   isBlockTooNarrow,
   zebraGlyphAdvanceDots,
   zebraLineWidthDots,
   wrapBlockLines,
-} from "../../lib/zebraTextLayout";
+} from "@zplab/core/lib/zebraTextLayout";
 
 interface Props {
   props: TextProps;

@@ -15,17 +15,17 @@ import { paletteGhostHandlers } from "./paletteGhostMonitor";
 import { Stage, Layer, Group, Image as KImage, Rect, Transformer } from "react-konva";
 import type Konva from "konva";
 import { useLabelStore, useCurrentObjects, currentObjects, getCurrentObjects, selectPreviewLocksEditor } from "../../store/labelStore";
-import { isGroup, getAllLeaves, exportableLeaves, expandSelection, selectionTargetId, findObjectById, canDeleteSelection, canGroupSelection, canUngroupSelection, hasLockedAncestor, isSelectionLocked, type LabelObject } from "../../types/Group";
-import { pxToDots, dotsToPx, mmToDots, SCREEN_PX_PER_MM } from "../../lib/coordinates";
-import { loadImage } from "../../lib/loadImage";
-import { SNAP_OPTIONS } from "../../lib/units";
-import type { Unit } from "../../lib/units";
+import { isGroup, getAllLeaves, exportableLeaves, expandSelection, selectionTargetId, findObjectById, canDeleteSelection, canGroupSelection, canUngroupSelection, hasLockedAncestor, isSelectionLocked, type LabelObject } from "@zplab/core/types/Group";
+import { pxToDots, dotsToPx, mmToDots, SCREEN_PX_PER_MM } from "@zplab/core/lib/coordinates";
+import { loadImage } from "@zplab/core/lib/loadImage";
+import { SNAP_OPTIONS } from "@zplab/core/lib/units";
+import type { Unit } from "@zplab/core/lib/units";
 import { Select } from "../ui/Select";
 import type { SnapGuide } from "../../lib/snapGuides";
 import { computeAlignDeltas, computeDistribute, computeTidy } from "../../lib/align";
 import type { AlignOp, AlignBox, DistributeAxis, AlignRef } from "../../lib/align";
-import { objectBoundsDots, selectionUnionDots, printableRectDots, isBarcode } from "../../lib/objectBounds";
-import { computePreflight, markerValueFindings, suppressPristineEmpty } from "../../lib/preflight";
+import { objectBoundsDots, selectionUnionDots, printableRectDots, isBarcode } from "@zplab/core/lib/objectBounds";
+import { computePreflight, markerValueFindings, suppressPristineEmpty } from "@zplab/core/lib/preflight";
 import { barcodeEncodeFindings } from "./barcodePreflight";
 import { usePreviewBinding } from "../../store/usePreviewBinding";
 import { useContextMenu } from "../../hooks/useContextMenu";
@@ -40,13 +40,13 @@ import { CAPTURE_CHROME } from "./konvaObjectProps";
 import { Grid } from "./Grid";
 import { GuideLines } from "./GuideLines";
 import { Ruler, RULER_SIZE } from "./Ruler";
-import { SHAPE_PRIMITIVE_TYPES } from "../../registry";
-import type { LeafObject } from "../../registry";
-import { isImageRotatable, type ImageProps } from "../../registry/image";
+import { SHAPE_PRIMITIVE_TYPES } from "@zplab/core/registry/index";
+import type { LeafObject } from "@zplab/core/registry/index";
+import { isImageRotatable, type ImageProps } from "@zplab/core/registry/image";
 import { convertPositionType } from "../../lib/positionConvert";
 import { addableGroupsFor, symbologyGroupsFor } from "../Palette/paletteGroups";
 import { symbologyTargets, convertSymbologyMapper } from "../../lib/symbologySwitch";
-import type { LeafType } from "../../registry";
+import type { LeafType } from "@zplab/core/registry/index";
 import { resolveAddable, type AddableEntry } from "../../registry/palettePresets";
 import { useColorScheme } from "../../hooks/useColorScheme";
 import { useT } from "../../hooks/useT";
@@ -73,11 +73,11 @@ import {
   getStepRotation,
   nextZplRotation,
   objectRotation,
-} from "../../registry/rotation";
+} from "@zplab/core/registry/rotation";
 import { CanvasContextMenu } from "./CanvasContextMenu";
 import { buildContextMenu, type MenuSection } from "./canvasActions";
 import { zplForSelection } from "../../lib/zplForSelection";
-import { generateMultiPageZPL } from "../../lib/zplGenerator";
+import { generateMultiPageZPL } from "@zplab/core/lib/zplGenerator";
 import { nodeToPngBlob, downloadBlob, copyPngToClipboard } from "../../lib/canvasImage";
 import { printerPreviewLayout } from "../../lib/printerPreview";
 

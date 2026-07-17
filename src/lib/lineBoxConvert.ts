@@ -4,9 +4,9 @@
 // Geometry is carried via top-left + width/height; the store replaces the whole
 // node (props are swapped, never merged) so no stale line/box props leak.
 
-import type { LabelObject } from "../types/Group";
-import type { LineProps } from "../registry/line";
-import { box, type BoxProps } from "../registry/box";
+import type { LabelObject } from "@zplab/core/types/Group";
+import type { LineProps } from "@zplab/core/registry/line";
+import { box, type BoxProps } from "@zplab/core/registry/box";
 import { outlineInset } from "./shapeGeometry";
 
 type LineLeaf = LabelObject & { type: "line"; props: LineProps };

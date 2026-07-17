@@ -1,5 +1,5 @@
 import type { ObjectPanelsMap, ObjectTypeUi } from './panelTypes';
-import type { LeafType } from './leafObject';
+import type { LeafType } from '@zplab/core/registry/leafObject';
 
 import { textPanel } from './text.panel';
 import { symbolPanel } from './symbol.panel';

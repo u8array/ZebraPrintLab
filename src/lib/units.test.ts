@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mmToUnit, unitToMm } from './units';
+import { mmToUnit, unitToMm } from '@zplab/core/lib/units';
 
 describe('mmToUnit — mm', () => {
   it('rounds to 1 decimal place', () => {

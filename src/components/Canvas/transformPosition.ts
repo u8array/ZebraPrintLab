@@ -1,7 +1,7 @@
-import type { LeafObject } from "../../registry";
-import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET } from "../../lib/bwipConstants";
-import { barcodeFtAnchorOffset, isBarcode, qrPrintsAsGraphic } from "../../lib/objectBounds";
-import { isAxisSwapped, objectRotation, type ZplRotation } from "../../registry/rotation";
+import type { LeafObject } from "@zplab/core/registry/index";
+import { QR_FO_Y_OFFSET_DOTS, QR_FT_MODULE_OFFSET } from "@zplab/core/lib/bwipConstants";
+import { barcodeFtAnchorOffset, isBarcode, qrPrintsAsGraphic } from "@zplab/core/lib/objectBounds";
+import { isAxisSwapped, objectRotation, type ZplRotation } from "@zplab/core/registry/rotation";
 import { getMeasuredSnapshot } from "./measuredBoundsCache";
 
 /** Cached upright (unrotated) bar-rect size + HRI zone offsets (dots). Falls

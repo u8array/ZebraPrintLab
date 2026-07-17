@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { importZplText } from "../zplImportService";
-import { emitOverlayPage, generateMultiPageZPL } from "../zplGenerator";
-import type { LabelConfig } from "../../types/LabelConfig";
-import type { LabelObject, Page } from "../../types/Group";
+import { emitOverlayPage, generateMultiPageZPL } from "@zplab/core/lib/zplGenerator";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
+import type { LabelObject, Page } from "@zplab/core/types/Group";
 
 const LABEL: LabelConfig = { widthMm: 100, heightMm: 60, dpmm: 8 };
 

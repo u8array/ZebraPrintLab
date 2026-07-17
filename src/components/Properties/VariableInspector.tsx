@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { ArrowTopRightOnSquareIcon, LockClosedIcon, TrashIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../hooks/useT";
-import { controlKeyFromBody } from "../../types/controlKey";
+import { controlKeyFromBody } from "@zplab/core/types/controlKey";
 import { useLabelStore } from "../../store/labelStore";
-import { channelDatesFrom, resolveClockMarkers } from "../../lib/fcTemplate";
-import { isValidVariableName, markerOf } from "../../types/Variable";
+import { channelDatesFrom, resolveClockMarkers } from "@zplab/core/lib/fcTemplate";
+import { isValidVariableName, markerOf } from "@zplab/core/types/Variable";
 import type { SelectedMarker } from "./TemplateContentInput";
 
 const CARD = "rounded-[9px] p-[13px] flex flex-col gap-2";

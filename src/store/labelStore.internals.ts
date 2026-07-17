@@ -1,9 +1,9 @@
-import { isGroup, type LabelObject, type Page } from '../types/Group';
-import type { ObjectChanges } from '../types/LabelObject';
+import { isGroup, type LabelObject, type Page } from '@zplab/core/types/Group';
+import type { ObjectChanges } from '@zplab/core/types/LabelObject';
 import { isLocaleCode, type LocaleCode } from '../locales';
-import { renameTemplateMarkers, substituteTemplateMarker } from '../lib/fnTemplate';
-import { getObjectStringContent } from '../lib/variableBinding';
-import { getEntry } from '../registry';
+import { renameTemplateMarkers, substituteTemplateMarker } from '@zplab/core/lib/fnTemplate';
+import { getObjectStringContent } from '@zplab/core/lib/variableBinding';
+import { getEntry } from '@zplab/core/registry/index';
 
 /** Meta fields that remain editable on a locked object so the user can
  *  release the lock or annotate without unlocking first. Everything else

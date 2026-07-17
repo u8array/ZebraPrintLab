@@ -4,8 +4,8 @@
 // tidy must exclude them. Decoupled from Konva/store; operates on model-space
 // dot bboxes (see objectBounds.ts).
 
-import type { BoundingBoxDots } from "./objectBounds";
-import { SHAPE_PRIMITIVE_TYPES } from "../registry";
+import type { BoundingBoxDots } from "@zplab/core/lib/objectBounds";
+import { SHAPE_PRIMITIVE_TYPES } from "@zplab/core/registry/index";
 
 export type TidyClass = "frame" | "divider" | "content";
 

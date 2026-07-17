@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Group, Line as KLine, Rect } from "react-konva";
 import type Konva from "konva";
-import type { LabelObject } from "../../types/Group";
-import { dotsToPx, pxToDots } from "../../lib/coordinates";
+import type { LabelObject } from "@zplab/core/types/Group";
+import { dotsToPx, pxToDots } from "@zplab/core/lib/coordinates";
 import { constrainLine, type ConstrainMode } from "../../lib/lineConstrain";
 import { useColorScheme } from "../../hooks/useColorScheme";
 import {

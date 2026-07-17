@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { markerOf } from "../../types/Variable";
+import { markerOf } from "@zplab/core/types/Variable";
 import { inputCls } from "../ui/formStyles";
 import { MarkerInsertMenu } from "./MarkerInsertMenu";
 import { TemplateContentInput, type TemplateEditorHandle } from "./TemplateContentInput";

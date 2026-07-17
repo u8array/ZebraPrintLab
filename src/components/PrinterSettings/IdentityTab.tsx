@@ -7,7 +7,7 @@ import {
   type ConfigUpdateAction,
   PRINTER_NAME_MAX_LEN,
   PRINTER_PASSWORD_REGEX,
-} from "../../types/PrinterProfile";
+} from "@zplab/core/types/PrinterProfile";
 import {
   SafeStringInput,
   ZplCommandLabel,

@@ -1,4 +1,4 @@
-import type { LabelObject } from "../../src/types/Group";
+import type { LabelObject } from "@zplab/core/types/Group";
 
 /**
  * Pixel-regression cases for the geometric primitives (box, line, ellipse) —

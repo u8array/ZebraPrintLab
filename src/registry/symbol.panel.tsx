@@ -6,7 +6,7 @@ import { SectionCard } from '../components/Properties/SectionCard';
 import { FieldLabel } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
 import { fieldGridCols, fieldGridCell } from '../components/ui/formStyles';
-import { type SymbolProps, type SymbolCode, GS_SYMBOLS } from './symbol';
+import { type SymbolProps, type SymbolCode, GS_SYMBOLS } from '@zplab/core/registry/symbol';
 
 export const symbolPanel: ObjectTypeUi<SymbolProps> = {
   PropertiesPanel: ({ obj, onChange }) => {

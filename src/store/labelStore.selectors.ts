@@ -1,11 +1,11 @@
-import type { LabelObject } from '../types/Group';
+import type { LabelObject } from '@zplab/core/types/Group';
 import { isDefaultHost, resolveHost, resolveApiKey } from '../lib/labelary';
 import { isDesktopShell } from '../lib/platform';
 import type { CsvDataset } from './slices/csvSlice';
-import type { CsvMapping } from '../types/Variable';
+import type { CsvMapping } from '@zplab/core/types/Variable';
 import type { LabelState } from './labelStore';
 import type { PageState } from './labelStore.internals';
-import { PER_LABEL_ZPL_FIELDS } from '../types/LabelConfig';
+import { PER_LABEL_ZPL_FIELDS } from '@zplab/core/types/LabelConfig';
 
 export const currentObjects = (state: PageState): LabelObject[] =>
   state.pages[state.currentPageIndex]?.objects ?? [];

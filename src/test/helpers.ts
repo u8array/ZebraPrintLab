@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import type { SerialMode } from '../registry/serialField';
+import type { SerialMode } from '@zplab/core/registry/serialField';
 
 /** Read the serial-mode prop off a parsed leaf for assertions. */
 export const serialOf = (

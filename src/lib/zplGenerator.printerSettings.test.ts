@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { generateZPL } from "./zplGenerator";
+import { generateZPL } from "@zplab/core/lib/zplGenerator";
 import { generateSetupScript } from "./zplSetupScript";
-import { parseZPL } from "./zplParser";
-import type { LabelConfig } from "../types/LabelConfig";
+import { parseZPL } from "@zplab/core/lib/zplParser";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 const base: LabelConfig = { widthMm: 100, heightMm: 50, dpmm: 8 };
 
 describe("Printer Settings Modal Tab 1 — generator", () => {

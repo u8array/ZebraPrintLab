@@ -5,13 +5,13 @@ import {
   selectCanBatchExport,
   useLabelStore,
 } from "../store/labelStore";
-import { generateMultiPageZPL, generateBatchZpl } from "../lib/zplGenerator";
+import { generateMultiPageZPL, generateBatchZpl } from "@zplab/core/lib/zplGenerator";
 import { generateSetupScript } from "../lib/zplSetupScript";
 import { printLabel } from "../lib/printPreview";
 import { saveTextFile, saveErrorMessage, ZPL_FILTER } from "../lib/fileDialogs";
 import { labelaryErrorMessage } from "../lib/labelary";
 import { selectLabelaryEndpoint } from "../store/labelStore.selectors";
-import { buildActiveCsvRow } from "../lib/variableBinding";
+import { buildActiveCsvRow } from "@zplab/core/lib/variableBinding";
 
 export function useZplImportExport() {
   // Reactive: only what the UI rendering needs (menu enable +

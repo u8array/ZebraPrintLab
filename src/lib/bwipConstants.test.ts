@@ -4,7 +4,7 @@ import {
   eanUpcHriFontFamily,
   upcSuppAboveGapDots,
   upcSuppTextZoneDots,
-} from "./bwipConstants";
+} from "@zplab/core/lib/bwipConstants";
 
 // Labelary uses Font A (Vera) for small EAN/UPC HRI and OCR-B from mw 3 up.
 describe("eanUpcHriFontFamily", () => {

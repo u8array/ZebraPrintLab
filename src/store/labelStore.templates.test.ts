@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useLabelStore } from "./labelStore";
-import type { LabelObject } from "../types/Group";
+import type { LabelObject } from "@zplab/core/types/Group";
 
 const newTextObj = (id: string, content: string): LabelObject =>
   ({

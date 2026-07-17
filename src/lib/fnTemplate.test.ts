@@ -12,8 +12,8 @@ import {
   resolvedContentLength,
   substituteTemplateMarker,
   renameTemplateMarkers,
-} from "./fnTemplate";
-import type { Variable } from "../types/Variable";
+} from "@zplab/core/lib/fnTemplate";
+import type { Variable } from "@zplab/core/types/Variable";
 
 const vars: Variable[] = [
   { id: "a", name: "sku", fnNumber: 1, defaultValue: "DEFAULT-1" },

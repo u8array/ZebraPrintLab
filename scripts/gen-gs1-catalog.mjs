@@ -112,5 +112,5 @@ const header = `// GENERATED from the GS1 Barcode Syntax Dictionary (GS1 AISBL, 
 import type { Gs1AiCatalogEntry } from './gs1AiCatalog.types';
 
 export const GS1_AI_FULL_CATALOG: readonly Gs1AiCatalogEntry[] = [`;
-writeFileSync(join(ROOT, 'src', 'lib', 'gs1AiCatalog.ts'), header + '\n' + out.map(toLine).join('\n') + '\n];\n');
-console.log('wrote src/lib/gs1AiCatalog.ts with', out.length, 'entries');
+writeFileSync(join(ROOT, 'packages', 'core', 'src', 'lib', 'gs1AiCatalog.ts'), header + '\n' + out.map(toLine).join('\n') + '\n];\n');
+console.log('wrote packages/core/src/lib/gs1AiCatalog.ts with', out.length, 'entries');

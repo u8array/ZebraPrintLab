@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildBlockOverlay, overlayText, type LinkedSpan } from "./overlay";
+import { buildBlockOverlay, overlayText, type LinkedSpan } from "@zplab/core/lib/zplOverlay/overlay";
 
 describe("buildBlockOverlay", () => {
   const src = "^XA\n^FO10,10^FDa^FS\n^FO10,50^FDb^FS\n^XZ";

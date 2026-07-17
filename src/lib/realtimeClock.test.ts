@@ -4,7 +4,7 @@ import {
   parseRealtimeClock,
   realtimeClockIsoRegex,
   toLocalIsoString,
-} from './realtimeClock';
+} from '@zplab/core/lib/realtimeClock';
 
 describe('formatRealtimeClockForZpl', () => {
   it('splits a full ISO datetime into MM,DD,YYYY,HH,MM,SS', () => {

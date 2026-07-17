@@ -6,8 +6,8 @@ import { SectionCard, StaticSectionCard } from "../components/Properties/Section
 import { ContentEditorButton } from "../components/Properties/ContentEditorButton";
 import { FieldLabel } from "../components/Properties/ZplCmd";
 import { Select } from "../components/ui/Select";
-import { fieldMode, boundDefaultOrContent, asLabelObject } from "../lib/variableField";
-import { type MaxicodeProps, ALL_MODES } from "./maxicode";
+import { fieldMode, boundDefaultOrContent, asLabelObject } from "@zplab/core/lib/variableField";
+import { type MaxicodeProps, ALL_MODES } from "@zplab/core/registry/maxicode";
 
 export const maxicodePanel: ObjectTypeUi<MaxicodeProps> = {
   PropertiesPanel: ({ obj, onChange }) => {

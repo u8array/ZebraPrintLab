@@ -5,9 +5,9 @@ import {
   insertReverseBackingBoxes,
   isReverseBackingFor,
   isOwnReverseBacking,
-} from "./reverseBacking";
-import type { LabelObject } from "./../types/Group";
-import type { TextProps } from "../registry/text";
+} from "@zplab/core/lib/reverseBacking";
+import type { LabelObject } from "@zplab/core/types/Group";
+import type { TextProps } from "@zplab/core/registry/text";
 
 /** A reverse backing is a filled black box or a black line (a filled ^GB is
  *  canonically a line once one side equals the thickness). */

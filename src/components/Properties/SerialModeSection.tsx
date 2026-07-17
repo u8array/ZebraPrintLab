@@ -6,14 +6,14 @@ import { CheckboxRow } from "./CheckboxRow";
 import { NumberInput } from "./NumberInput";
 import { SegmentedControl } from "../ui/SegmentedControl";
 import { inputCls, labelCls } from "../ui/formStyles";
-import { getEntry, objectResolvesCtrl, specForObject } from "../../registry";
+import { getEntry, objectResolvesCtrl, specForObject } from "@zplab/core/registry/index";
 import {
   serialDisablePatch,
   serialEnablePatch,
   serialSeed,
   type SerialMode,
-} from "../../registry/serialField";
-import type { LabelObjectBase } from "../../types/LabelObject";
+} from "@zplab/core/registry/serialField";
+import type { LabelObjectBase } from "@zplab/core/types/LabelObject";
 
 type SerialLeaf = LabelObjectBase & {
   props: { content?: string; serial?: SerialMode; gs1?: boolean; preSerialContent?: string };

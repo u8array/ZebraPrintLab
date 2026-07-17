@@ -10,11 +10,11 @@ import {
   LinkSlashIcon,
   VariableIcon,
 } from '@heroicons/react/16/solid';
-import { getEntry } from '../../registry';
-import { isGroup, type LabelObject } from '../../types/Group';
+import { getEntry } from '@zplab/core/registry/index';
+import { isGroup, type LabelObject } from '@zplab/core/types/Group';
 import { useT } from '../../hooks/useT';
 import { useLabelStore } from '../../store/labelStore';
-import { fieldVariableRefs } from '../../lib/variableField';
+import { fieldVariableRefs } from '@zplab/core/lib/variableField';
 import { DragHandleIcon } from '../ui/DragHandleIcon';
 import { Tooltip } from '../ui/Tooltip';
 import { INDENT_STEP } from './layerLayout';

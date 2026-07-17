@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseStoragePath, formatStoragePath } from "./storagePath";
+import { parseStoragePath, formatStoragePath } from "@zplab/core/lib/storagePath";
 
 describe("storagePath", () => {
   it("parses device:name without extension", () => {

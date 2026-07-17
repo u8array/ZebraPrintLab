@@ -7,7 +7,7 @@ import {
   segmentsToElementString,
   decimalValuePreview,
   GS1_GS,
-} from "./gs1";
+} from "@zplab/core/lib/gs1";
 import { AI_BY_GROUP, GS1_COMMON_AIS } from "./gs1BuilderPalette";
 
 describe("full AI catalog wiring", () => {

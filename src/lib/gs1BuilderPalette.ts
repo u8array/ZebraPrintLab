@@ -1,6 +1,6 @@
 /** Builder-palette policy over the GS1 domain core (gs1.ts). Pure; no UI. */
 
-import { GS1_AI_SPECS, aiMatchesPattern, type Gs1AiSpec, type Gs1Group } from "./gs1";
+import { GS1_AI_SPECS, aiMatchesPattern, type Gs1AiSpec, type Gs1Group } from "@zplab/core/lib/gs1";
 
 /** Palette group order; single source for the AI_BY_GROUP index and the
  *  modal's rendering order. */

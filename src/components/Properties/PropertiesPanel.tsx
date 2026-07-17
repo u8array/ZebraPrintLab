@@ -4,23 +4,23 @@ import { useLabelStore, useCurrentObjects, selectPreviewLocksEditor } from "../.
 import type { LabelCanvasHandle } from "../Canvas/LabelCanvas";
 import type { AlignOp, DistributeAxis, AlignRef } from "../../lib/align";
 import type { AlignSelectionRef } from "../../store/slices/uiSlice";
-import { getEntry } from "../../registry";
+import { getEntry } from "@zplab/core/registry/index";
 import { getPanel } from "../../registry/panels";
-import { canGroupSelection, findObjectById, hasLockedAncestor, isGroup } from "../../types/Group";
+import { canGroupSelection, findObjectById, hasLockedAncestor, isGroup } from "@zplab/core/types/Group";
 import { symbologyTargets } from "../../lib/symbologySwitch";
 import { typeLabelFor } from "../../registry/palettePresets";
 import { SymbologySelect } from "./SymbologySelect";
-import { BWIP_APPROX_SEVERITY } from "../../lib/bwipConstants";
-import { stripZplCommandChars } from "../../registry/zplHelpers";
-import { dotsToMm, mmToDots } from "../../lib/coordinates";
+import { BWIP_APPROX_SEVERITY } from "@zplab/core/lib/bwipConstants";
+import { stripZplCommandChars } from "@zplab/core/registry/zplHelpers";
+import { dotsToMm, mmToDots } from "@zplab/core/lib/coordinates";
 import {
   mmToUnit,
   unitToMm,
   unitLabel,
   unitStep,
   SNAP_DEFAULT_MM,
-} from "../../lib/units";
-import type { Unit } from "../../lib/units";
+} from "@zplab/core/lib/units";
+import type { Unit } from "@zplab/core/lib/units";
 import { useT } from "../../hooks/useT";
 import { SectionCard, StaticSectionCard } from "./SectionCard";
 import { UnitNumberInput } from "./UnitNumberInput";
@@ -34,8 +34,8 @@ import { AlignToolbar } from "./AlignToolbar";
 import { DensityRescaleModal } from "./DensityRescaleModal";
 import { inputCls, labelCls } from "./styles";
 import { fieldGridCols, fieldGridCell } from "../ui/formStyles";
-import type { LabelConfig } from "../../types/LabelConfig";
-import type { LabelObjectBase } from "../../types/LabelObject";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
+import type { LabelObjectBase } from "@zplab/core/types/LabelObject";
 
 /** Tooltip-icon flagging that the canvas render is approximate for
  *  the given object type. Two severities collapse into one icon

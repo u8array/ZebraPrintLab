@@ -5,7 +5,7 @@ import { useT } from "../../hooks/useT";
 import { generateSetupScript } from "../../lib/zplSetupScript";
 import { useLabelStore, selectHasPerLabelOverrides } from "../../store/labelStore";
 import type { PrinterSettingsTab } from "../../store/slices/uiSlice";
-import type { PrinterProfile } from "../../types/PrinterProfile";
+import type { PrinterProfile } from "@zplab/core/types/PrinterProfile";
 import { DialogShell } from "../ui/DialogShell";
 import { Tooltip } from "../ui/Tooltip";
 import { ZplLine } from "../Output/ZplLine";

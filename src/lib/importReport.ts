@@ -1,4 +1,4 @@
-import type { ImportFinding, ImportFindingKind, ImportReport } from './zplParser';
+import type { ImportFinding, ImportFindingKind, ImportReport } from '@zplab/core/lib/zplParser';
 import { ZPL_COMMAND_MAP } from './zplCommandSupport';
 
 // Re-export the parser-side domain types so UI code talks to the report

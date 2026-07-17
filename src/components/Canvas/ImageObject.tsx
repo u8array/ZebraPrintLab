@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef, type ReactElement } from "react";
 import { Group, Image as KImage, Path, Rect } from "react-konva";
-import type { LabelObject } from "../../types/Group";
-import { dotsToPx, pxToDots } from "../../lib/coordinates";
-import { getImage } from "../../lib/imageCache";
-import { loadImage } from "../../lib/loadImage";
-import { monoPreviewCanvas } from "../../lib/imageToZpl";
+import type { LabelObject } from "@zplab/core/types/Group";
+import { dotsToPx, pxToDots } from "@zplab/core/lib/coordinates";
+import { getImage } from "@zplab/core/lib/imageCache";
+import { loadImage } from "@zplab/core/lib/loadImage";
+import { monoPreviewCanvas } from "@zplab/core/lib/imageToZpl";
 import { useColorScheme } from "../../hooks/useColorScheme";
 import { selectionHandlers, type KonvaObjectProps } from "./konvaObjectProps";
 import { setMeasuredBounds, clearMeasuredBounds } from "./measuredBoundsCache";
 import { rotatedGroupTransform } from "./rotatedGroupTransform";
-import { isAxisSwapped, objectRotation } from "../../registry/rotation";
+import { isAxisSwapped, objectRotation } from "@zplab/core/registry/rotation";
 
 type ImageLabelObject = Extract<LabelObject, { type: "image" }>;
 type Props = Omit<KonvaObjectProps, "obj"> & { obj: ImageLabelObject };

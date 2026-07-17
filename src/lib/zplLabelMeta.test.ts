@@ -3,7 +3,7 @@ import {
   formatLabelMetaComment,
   parseLabelMetaComment,
   LABEL_META_PREFIX,
-} from "./zplLabelMeta";
+} from "@zplab/core/lib/zplLabelMeta";
 
 describe("zplLabelMeta", () => {
   it("round-trips dpmm/width/height through format → parse", () => {

@@ -3,13 +3,13 @@
 // steps. Every leaf rotates its VISUAL centre to stay rigid despite per-type
 // anchor quirks; see leafChanges for the per-type handling.
 
-import type { LabelObject, LeafObject } from "../types/Group";
-import { isGroup } from "../types/Group";
-import { objectBoundsDots, selectionUnionDots, type ObjectBoundsCtx } from "./objectBounds";
-import { ZPL_ROTATIONS, isZplRotation, type ZplRotation } from "../registry/rotation";
-import { barSubRect } from "./bwipConstants";
+import type { LabelObject, LeafObject } from "@zplab/core/types/Group";
+import { isGroup } from "@zplab/core/types/Group";
+import { objectBoundsDots, selectionUnionDots, type ObjectBoundsCtx } from "@zplab/core/lib/objectBounds";
+import { ZPL_ROTATIONS, isZplRotation, type ZplRotation } from "@zplab/core/registry/rotation";
+import { barSubRect } from "@zplab/core/lib/bwipConstants";
 import { barcodeTextZoneDots, barcodeZoneAbove } from "./barcodeHri";
-import type { ObjectChanges } from "../types/LabelObject";
+import type { ObjectChanges } from "@zplab/core/types/LabelObject";
 
 interface Vec { x: number; y: number }
 

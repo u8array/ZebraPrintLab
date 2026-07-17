@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { encodeFbContent, decodeFbContent } from "./fbContent";
+import { encodeFbContent, decodeFbContent } from "@zplab/core/lib/fbContent";
 
 describe("fbContent encode/decode", () => {
   it("encodes newlines as \\&", () => {

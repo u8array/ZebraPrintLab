@@ -8,7 +8,7 @@ import {
   type PrinterRenderDims,
 } from '../../lib/printerPreview';
 import { getPreviewTransport, getPrinterAddress, getUsbPrinterId } from '../../lib/printerAddress';
-import { buildActiveCsvRow } from '../../lib/variableBinding';
+import { buildActiveCsvRow } from '@zplab/core/lib/variableBinding';
 import { buildPreviewZpl } from '../../lib/printPreview';
 import { currentObjects, selectEffectivePreviewProvider, selectLabelaryEndpoint } from '../labelStore.selectors';
 import type { LabelState } from '../labelStore';

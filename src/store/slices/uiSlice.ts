@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
-import type { Unit } from '../../lib/units';
-import type { ViewRotation } from '../../registry/rotation';
+import type { Unit } from '@zplab/core/lib/units';
+import type { ViewRotation } from '@zplab/core/registry/rotation';
 import { fallbackTranslations, loadLocale, type LocaleCode, type Translations } from '../../locales';
 import {
   detectLocale,

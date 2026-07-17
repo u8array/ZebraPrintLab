@@ -1,7 +1,7 @@
-import type { LabelConfig } from "../types/LabelConfig";
-import { isGroup, getAllLeaves, type LabelObject } from "../types/Group";
-import type { Variable } from "../types/Variable";
-import { planFieldEmission } from "./zplGenerator";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
+import { isGroup, getAllLeaves, type LabelObject } from "@zplab/core/types/Group";
+import type { Variable } from "@zplab/core/types/Variable";
+import { planFieldEmission } from "@zplab/core/lib/zplGenerator";
 
 /** Just the field commands for the selected objects (no ^XA / label config /
  *  ^XZ): the page's top-level objects that are selected, a group counting when

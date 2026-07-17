@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { importZplText, routeSetupCommands, mergeSetupFonts } from './zplImportService';
 import { generateSetupScript } from './zplSetupScript';
-import { generateMultiPageZPL } from './zplGenerator';
+import { generateMultiPageZPL } from '@zplab/core/lib/zplGenerator';
 import { describeFinding, replayRiskFindings, printerCommandFindings, resolveRoutedReport } from './importReport';
-import type { PrinterProfile } from '../types/PrinterProfile';
-import type { LabelConfig } from '../types/LabelConfig';
+import type { PrinterProfile } from '@zplab/core/types/PrinterProfile';
+import type { LabelConfig } from '@zplab/core/types/LabelConfig';
 
 describe('importZplText - replay-risk findings', () => {
   it('flags printer setup commands (run on the printer when exported/printed)', () => {
@@ -292,7 +292,7 @@ describe('importZplText - ~DY font scope (setup vs design)', () => {
   });
 
   it('round-trips generateSetupScript setupFonts back into the profile', async () => {
-    const { loadFontBytes } = await import('./fontCache');
+    const { loadFontBytes } = await import('@zplab/core/lib/fontCache');
     await loadFontBytes(new Uint8Array([1, 2, 3, 4]), 'RTFONT.TTF');
     const script = generateSetupScript({
       setupFonts: [{ path: 'E:RTFONT.TTF' }],

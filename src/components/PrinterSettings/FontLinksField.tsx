@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useT } from "../../hooks/useT";
 import { useLabelStore } from "../../store/labelStore";
-import { FONT_LINKS_MAX_PER_BASE } from "../../types/PrinterProfile";
+import { FONT_LINKS_MAX_PER_BASE } from "@zplab/core/types/PrinterProfile";
 import { SafeStringInput, ZplCommandLabel, ZplField, ZplFieldHint } from "./zplFieldPrimitives";
 
 function overflowingBases(links: readonly { base: string }[]): string[] {

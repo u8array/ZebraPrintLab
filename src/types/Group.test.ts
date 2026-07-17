@@ -20,7 +20,7 @@ import {
   mapObjectById,
   type GroupObject,
   type LabelObject,
-} from './Group';
+} from '@zplab/core/types/Group';
 
 function leaf(id: string): LabelObject {
   // The tree helpers under test only inspect id / type / children, never

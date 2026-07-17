@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { ObjectRegistry } from "./index";
-import { parseZPL } from "../lib/zplParser";
+import { ObjectRegistry } from "@zplab/core/registry/index";
+import { parseZPL } from "@zplab/core/lib/zplParser";
 import { validateMaxicodeBwip } from "../components/Canvas/bwipHelpers";
-import type { LabelObjectBase } from "../types/LabelObject";
-import type { MaxicodeProps } from "./maxicode";
+import type { LabelObjectBase } from "@zplab/core/types/LabelObject";
+import type { MaxicodeProps } from "@zplab/core/registry/maxicode";
 import { defined } from "../test/helpers";
 
 function makeObj(props: MaxicodeProps, overrides?: Partial<LabelObjectBase>): LabelObjectBase & { props: MaxicodeProps } {

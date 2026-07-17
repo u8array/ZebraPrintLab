@@ -3,8 +3,8 @@ import {
   getAvailableFontIds,
   stripDrivePrefix,
   type FontIdOption,
-} from '../../lib/customFonts';
-import type { LabelConfig } from '../../types/LabelConfig';
+} from '@zplab/core/lib/customFonts';
+import type { LabelConfig } from '@zplab/core/types/LabelConfig';
 import type { Translations } from '../../locales';
 import type { SelectGroup } from '../ui/Select';
 

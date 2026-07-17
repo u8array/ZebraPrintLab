@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { parseZPL } from "./zplParser";
+import { parseZPL } from "@zplab/core/lib/zplParser";
 
 // Authentic ZDesigner ZD230-203dpi driver output (GDI job captured via
 // PrintToFile): control-char remap preamble (`CT~~CD,~CC^~CT~`), `##` framing

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { safeAreaRectDots } from "./safeArea";
-import type { LabelConfig } from "../types/LabelConfig";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 
 const base: LabelConfig = { widthMm: 100, heightMm: 50, dpmm: 8 };
 

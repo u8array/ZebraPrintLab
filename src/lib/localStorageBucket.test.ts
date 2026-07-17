@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
   hydrateLocalStoragePrefix,
   safeLocalStorageSet,
-} from "./localStorageBucket";
+} from "@zplab/core/lib/localStorageBucket";
 
 // The vitest setup's localStorage shim retains keys after `clear()` (sets to
 // undefined), so cross-test ghost keys would leak into hydration. Each test

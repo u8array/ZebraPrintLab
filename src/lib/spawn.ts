@@ -1,8 +1,8 @@
-import { getEntry } from '../registry';
-import { getStepRotation, zplRotationForView, type ViewRotation, type ZplRotation } from '../registry/rotation';
-import { objectBoundsDots, type ObjectBoundsCtx } from './objectBounds';
-import type { LabelConfig } from '../types/LabelConfig';
-import type { LabelObject } from '../types/Group';
+import { getEntry } from '@zplab/core/registry/index';
+import { getStepRotation, zplRotationForView, type ViewRotation, type ZplRotation } from '@zplab/core/registry/rotation';
+import { objectBoundsDots, type ObjectBoundsCtx } from '@zplab/core/lib/objectBounds';
+import type { LabelConfig } from '@zplab/core/types/LabelConfig';
+import type { LabelObject } from '@zplab/core/types/Group';
 
 /** Props patch so a palette spawn lands upright in a rotated canvas view.
  *  Only step-rotation types (text, symbol, barcodes, image) qualify; box/

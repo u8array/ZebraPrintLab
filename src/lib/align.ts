@@ -2,7 +2,7 @@
 // model-space bboxes (see objectBounds.ts) and returns per-object shift deltas
 // the caller applies via updateObjects (one undo entry).
 
-import type { BoundingBoxDots } from "./objectBounds";
+import type { BoundingBoxDots } from "@zplab/core/lib/objectBounds";
 
 export type AlignOp =
   | "left"

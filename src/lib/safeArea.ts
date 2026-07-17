@@ -2,9 +2,9 @@
 // margin in mm, converted to dots, that align/pin and the canvas guide use
 // so elements keep a consistent distance to the label edge.
 
-import { printableRectDots, type BoundingBoxDots } from "./objectBounds";
-import type { LabelConfig } from "../types/LabelConfig";
-import { mmToDots } from "./coordinates";
+import { printableRectDots, type BoundingBoxDots } from "@zplab/core/lib/objectBounds";
+import type { LabelConfig } from "@zplab/core/types/LabelConfig";
+import { mmToDots } from "@zplab/core/lib/coordinates";
 
 /** Inset rectangle (dots) for the label's safe area, or null when no safe
  *  area applies: unset/zero margin, or an inset so large the rect collapses.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseIntOrUndef, clampMin, readBoundedInt, clampBoundedInt } from './inputParse';
+import { parseIntOrUndef, clampMin, readBoundedInt, clampBoundedInt } from '@zplab/core/lib/inputParse';
 
 describe('parseIntOrUndef', () => {
   it('returns undefined for empty input', () => {

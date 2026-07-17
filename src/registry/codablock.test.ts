@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { generateZPL } from '../lib/zplGenerator';
-import { parseZPL } from '../lib/zplParser';
-import { clampCodablockColumns, type CodablockProps } from './codablock';
-import type { LabelConfig } from '../types/LabelConfig';
-import type { LabelObject } from '../types/Group';
+import { generateZPL } from '@zplab/core/lib/zplGenerator';
+import { parseZPL } from '@zplab/core/lib/zplParser';
+import { clampCodablockColumns, type CodablockProps } from '@zplab/core/registry/codablock';
+import type { LabelConfig } from '@zplab/core/types/LabelConfig';
+import type { LabelObject } from '@zplab/core/types/Group';
 
 const BASE_LABEL: LabelConfig = { widthMm: 100, heightMm: 50, dpmm: 8 };
 

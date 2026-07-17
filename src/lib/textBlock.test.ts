@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deriveBlockTextPatch, FB_DEFAULTS } from "./textBlock";
+import { deriveBlockTextPatch, FB_DEFAULTS } from "@zplab/core/lib/textBlock";
 
 const H = 30;
 const W = 0;

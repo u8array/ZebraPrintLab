@@ -1,7 +1,7 @@
 import { useT } from "../../hooks/useT";
-import { getAllFonts } from "../../lib/fontCache";
+import { getAllFonts } from "@zplab/core/lib/fontCache";
 import { useFontCacheVersion } from "../../hooks/useFontCacheVersion";
-import { uploadedFontPath } from "../../lib/customFonts";
+import { uploadedFontPath } from "@zplab/core/lib/customFonts";
 import { useLabelStore } from "../../store/labelStore";
 import { zplCommandTagCls } from "../ui/formStyles";
 import { FontLinksField } from "./FontLinksField";

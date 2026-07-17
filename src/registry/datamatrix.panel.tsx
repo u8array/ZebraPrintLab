@@ -8,8 +8,8 @@ import { SectionCard } from '../components/Properties/SectionCard';
 import { TypedContentSection } from './typedContentSection';
 import { FieldLabel } from '../components/Properties/ZplCmd';
 import { Select } from '../components/ui/Select';
-import { fieldHasVariable, asLabelObject } from '../lib/variableField';
-import { gs1EnablePatch } from './gs1FieldSpec';
+import { fieldHasVariable, asLabelObject } from '@zplab/core/lib/variableField';
+import { gs1EnablePatch } from '@zplab/core/registry/gs1FieldSpec';
 import { CheckboxRow } from '../components/Properties/CheckboxRow';
 import {
   type DataMatrixProps,
@@ -18,7 +18,7 @@ import {
   dmSizePairs,
   isRectangular,
   qualityPatch,
-} from './datamatrix';
+} from '@zplab/core/registry/datamatrix';
 
 /** ^BX c/r symbol-size options: firmware-valid ECC 200 sizes for the shape,
  *  plus a verbatim entry for an imported pair outside the list so it

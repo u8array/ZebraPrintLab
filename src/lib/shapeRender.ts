@@ -1,4 +1,4 @@
-import type { LabelObject } from "../types/Group";
+import type { LabelObject } from "@zplab/core/types/Group";
 import { diagonalPolygonPoints, outlineInset } from "./shapeGeometry";
 
 /** Inward-extruded ^GE / ^GC ring or solid disc for the ellipse type

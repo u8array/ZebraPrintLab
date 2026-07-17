@@ -1,11 +1,11 @@
-import { getEntry, ObjectRegistry } from "../registry";
-import { resolveContentSpec, hasValidLength, violatesCharset } from "../registry/contentSpec";
-import type { ContentSpec } from "../types/contentSpec";
-import type { LeafType } from "../registry/leafObject";
-import type { ObjectGroup } from "../types/LabelObject";
-import type { LabelObject } from "../types/Group";
-import { mapLiteralSpans } from "./fnTemplate";
-import { hasControlMarkers, resolveControlMarkers } from "../types/controlKey";
+import { getEntry, ObjectRegistry } from "@zplab/core/registry/index";
+import { resolveContentSpec, hasValidLength, violatesCharset } from "@zplab/core/registry/contentSpec";
+import type { ContentSpec } from "@zplab/core/types/contentSpec";
+import type { LeafType } from "@zplab/core/registry/leafObject";
+import type { ObjectGroup } from "@zplab/core/types/LabelObject";
+import type { LabelObject } from "@zplab/core/types/Group";
+import { mapLiteralSpans } from "@zplab/core/lib/fnTemplate";
+import { hasControlMarkers, resolveControlMarkers } from "@zplab/core/types/controlKey";
 
 const BARCODE_GROUPS: ReadonlySet<ObjectGroup> = new Set(["code-1d", "code-2d", "legacy"]);
 
