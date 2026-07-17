@@ -632,6 +632,15 @@ export interface BarcodeDisplaySize {
   bitmapCrop?: { x: number; y: number; width: number; height: number };
 }
 
+/** Warning frame geometry: the bar sub-rect for EAN/UPC (guard tails and the
+ *  reserved HRI zone excluded, matching the selection frame), the full
+ *  footprint otherwise. Same on both render paths so HRI on/off stays aligned. */
+export function stateFrameProps(ub: BarcodeDisplaySize["upright"], isEanUpc: boolean) {
+  return isEanUpc
+    ? { x: ub.barLeftPx, y: ub.barTopPx, width: ub.barW, height: ub.barH }
+    : { width: Math.max(ub.w, 1), height: Math.max(ub.h, 1) };
+}
+
 export function getDisplaySize(
   obj: LeafObject,
   canvas: HTMLCanvasElement,
