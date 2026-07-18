@@ -1,13 +1,13 @@
-import { parseZPL, type ImportFinding, type ImportReport } from "@zplab/core/lib/zplParser";
+import { parseZPL, type ImportFinding, type ImportReport } from "./zplParser";
 import { replayRiskFindings, dedupCommandsByKind } from "./importReport";
 import { dropPageOverlays } from "./pageOverlay";
 import { pruneUndefined } from "./pruneUndefined";
-import { stripDrivePrefix } from "@zplab/core/lib/customFonts";
-import { renameTemplateMarkers } from "@zplab/core/lib/fnTemplate";
-import type { CustomFontMapping, LabelConfig } from "@zplab/core/types/LabelConfig";
-import type { PrinterProfile } from "@zplab/core/types/PrinterProfile";
-import type { LabelObject, Page } from "@zplab/core/types/Group";
-import { nextFreeFnNumber, uniqueVariableName, type Variable } from "@zplab/core/types/Variable";
+import { stripDrivePrefix } from "./customFonts";
+import { renameTemplateMarkers } from "./fnTemplate";
+import type { CustomFontMapping, LabelConfig } from "../types/LabelConfig";
+import type { PrinterProfile } from "../types/PrinterProfile";
+import type { LabelObject, Page } from "../types/Group";
+import { nextFreeFnNumber, uniqueVariableName, type Variable } from "../types/Variable";
 
 export interface ZplImportResult {
   labelConfig: Partial<LabelConfig>;
@@ -20,6 +20,10 @@ export interface ZplImportResult {
   pages: Page[];
   variables: Variable[];
   report: ImportReport;
+  /** True when ^XA blocks set different ^PW/^LL: the single-label design keeps
+   *  only block 0's size, so later pages would render/preflight at the wrong
+   *  size. Interactive import ignores it; the MCP tools reject on it. */
+  mixedPageGeometry: boolean;
 }
 
 interface SplitBlocks {
@@ -60,6 +64,7 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
       pages: [],
       variables: [],
       report: { findings: [], partial: [], browserLimit: [], unknown: [], replayRisk: [], deviceAction: [] },
+      mixedPageGeometry: false,
     };
   }
 
@@ -230,7 +235,24 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     deviceAction: dedupCommandsByKind(findings, 'deviceAction'),
   };
 
-  return { labelConfig, printerProfile, pages, variables, report };
+  // ^PW/^LL persist across ^XA on a printer, so only an explicit re-statement
+  // to a different size is a real divergence.
+  const explicitSizes = new Set(
+    parsedBlocks
+      .map((r) => r.labelConfig)
+      .filter((lc) => lc.widthMm !== undefined || lc.heightMm !== undefined)
+      .map((lc) => `${lc.widthMm ?? ''}x${lc.heightMm ?? ''}`),
+  );
+  const mixedPageGeometry = explicitSizes.size > 1;
+  if (mixedPageGeometry) {
+    report.findings.push({
+      kind: 'mixedPageGeometry',
+      command: [...explicitSizes].join(', '),
+      pageIndex: 0,
+    });
+  }
+
+  return { labelConfig, printerProfile, pages, variables, report, mixedPageGeometry };
 }
 
 /** Additive setup-font merge (dedupe by normalized path): a stream lists only

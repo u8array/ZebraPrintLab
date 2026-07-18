@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { importZplText, routeSetupCommands, mergeSetupFonts } from './zplImportService';
+import { importZplText, routeSetupCommands, mergeSetupFonts } from '@zplab/core/lib/zplImportService';
 import { generateSetupScript } from './zplSetupScript';
 import { generateMultiPageZPL } from '@zplab/core/lib/zplGenerator';
-import { describeFinding, replayRiskFindings, printerCommandFindings, resolveRoutedReport } from './importReport';
+import { describeFinding } from './importReport';
+import { replayRiskFindings, printerCommandFindings, resolveRoutedReport } from '@zplab/core/lib/importReport';
 import type { PrinterProfile } from '@zplab/core/types/PrinterProfile';
 import type { LabelConfig } from '@zplab/core/types/LabelConfig';
 
@@ -594,5 +595,18 @@ describe('routeSetupCommands - setup-only pages', () => {
     const { pages, keptPageIndexes } = routeSetupCommands('keep', imported);
     expect(pages).toHaveLength(1);
     expect(keptPageIndexes).toEqual([0]);
+  });
+
+  it('flags divergent ^PW/^LL between blocks as mixedPageGeometry', () => {
+    const imported = importZplText('^XA^PW400^LL200^FO10,10^FDA^FS^XZ^XA^PW800^LL400^FO10,10^FDB^FS^XZ', 8);
+    expect(imported.mixedPageGeometry).toBe(true);
+    const finding = imported.report.findings.find((f) => f.kind === 'mixedPageGeometry');
+    expect(finding).toBeDefined();
+    expect(describeFinding(finding!).title).toMatch(/Multiple label sizes/);
+  });
+
+  it('does not flag a shared explicit size (^PW/^LL persist across ^XA)', () => {
+    const imported = importZplText('^XA^PW800^LL400^FO10,10^FDA^FS^XZ^XA^FO10,10^FDB^FS^XZ', 8);
+    expect(imported.mixedPageGeometry).toBe(false);
   });
 });

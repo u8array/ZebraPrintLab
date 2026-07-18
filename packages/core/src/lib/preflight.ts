@@ -225,6 +225,12 @@ export function computePreflight(
 ): PreflightFinding[] {
   const findings: PreflightFinding[] = [];
   for (const leaf of leaves) {
+    // An unregistered type has no emitter/bounds producer, so it prints
+    // nothing; flag it and skip the checks that dereference the entry.
+    if (getEntry(leaf.type) === undefined) {
+      findings.push({ objectId: leaf.id, kind: "unknownType", severity: PREFLIGHT_SEVERITY.unknownType });
+      continue;
+    }
     const content = getObjectStringContent(leaf);
     const box = objectBoundsDots(leaf, ctx);
     // A blank text field draws a placeholder (its bounds) but emits an empty

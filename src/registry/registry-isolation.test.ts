@@ -9,7 +9,7 @@ vi.mock("@headlessui/react", () => {
   const Stub = () => null;
   return { Listbox: Stub, ListboxButton: Stub, ListboxOptions: Stub, ListboxOption: Stub };
 });
-import { ObjectRegistry, BARCODE_1D_TYPES, STACKED_2D_TYPES } from "@zplab/core/registry/index";
+import { ObjectRegistry, BARCODE_1D_TYPES, STACKED_2D_TYPES } from "@zplab/core/registry";
 import { ObjectPanels } from "./panels";
 
 describe("registry isolation baseline", () => {
@@ -91,7 +91,16 @@ describe("registry isolation baseline", () => {
   // React, store or UI) holds across everything they pull from lib/ too.
   it("emit/parse import closure stays free of react, store and UI imports", () => {
     const srcDir = fileURLToPath(new URL("../../packages/core/src/", import.meta.url));
-    const entries = ["lib/zplGenerator.ts", "lib/zplParser.ts", "registry/index.ts"];
+    // zplImportService + objectOverlap are the MCP server's extra entry points;
+    // they sit ABOVE the emit/parse closure (nothing in it imports them back),
+    // so they must be listed explicitly or the scan never reaches them.
+    const entries = [
+      "lib/zplGenerator.ts",
+      "lib/zplParser.ts",
+      "lib/zplImportService.ts",
+      "lib/objectOverlap.ts",
+      "registry/index.ts",
+    ];
     // A spec that names its extension resolves as written; anything else tries
     // ts/tsx and directory-index forms. Returning null is NOT a skip: the
     // caller flags it, so the walk can never silently shrink the closure.

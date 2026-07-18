@@ -175,6 +175,17 @@ export function isBarcode(obj: { type: string }): boolean {
   return BARCODE_TYPES.has(obj.type);
 }
 
+/** True when objectBoundsDots estimates this leaf headlessly (no measured
+ *  footprint): barcode registry footprint, single-line-text font estimate,
+ *  image-without-heightDots square guess. Everything else is exact. */
+export function boundsAreApprox(obj: LabelObject): boolean {
+  if (isBarcode(obj)) return true;
+  if (obj.type === "image") return obj.props.heightDots === undefined;
+  if (obj.type !== "text") return false;
+  const p = obj.props;
+  return !(resolveTextMode(p) !== "normal" && !!p.blockWidth && p.blockWidth > 0);
+}
+
 /** Axis-aligned model-space bbox (dots) for one object. Always the VISUAL
  *  top-left regardless of FO/FT, so align/distribute can use min/max edges. */
 export function objectBoundsDots(obj: LabelObject, ctx: ObjectBoundsCtx): BoundingBoxDots {

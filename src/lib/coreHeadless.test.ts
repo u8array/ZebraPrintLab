@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { generateZPL } from "@zplab/core/lib/zplGenerator";
 import { parseZPL } from "@zplab/core/lib/zplParser";
+import { importZplText } from "@zplab/core/lib/zplImportService";
 import { rasterizeMono } from "@zplab/core/lib/imageToZpl";
 import { decodeGraphicToImage } from "@zplab/core/lib/zplParser/decoders/graphic";
 import { measureInkWidthPx } from "@zplab/core/lib/labelGeometry/measureTextDots";
@@ -30,10 +31,17 @@ describe("core closures without browser globals", () => {
       { id: "b", type: "code128", x: 10, y: 60, rotation: 0,
         props: { content: "12345", height: 80, moduleWidth: 2, printInterpretation: true,
           checkDigit: false, rotation: "N" } },
+      // Exercises the image guard (gfaSync typeof Image): no decode, emits an
+      // anchor-only field instead of throwing.
+      { id: "i", type: "image", x: 10, y: 150, rotation: 0,
+        props: { imageId: "x", widthDots: 100, threshold: 128, rotation: "N" } },
     ] as unknown as LabelObject[];
     const zpl = generateZPL(LABEL, objs);
     expect(zpl).toContain("^FDHi");
     expect(zpl).toContain("^BCN,80");
+    // The image degraded (no bytes) but the whole label still generated.
+    expect(zpl.startsWith("^XA")).toBe(true);
+    expect(zpl.endsWith("^XZ")).toBe(true);
   });
 
   it("parseZPL degrades an inline ^GFA to the browserLimit path", () => {
@@ -42,6 +50,15 @@ describe("core closures without browser globals", () => {
     // No canvas: the graphic cannot become an editable bitmap; the parse
     // itself must not throw.
     expect(result).toBeDefined();
+  });
+
+  it("importZplText splits multi-^XA blocks (the MCP raw-ZPL entry)", () => {
+    headless();
+    const { pages } = importZplText(
+      "^XA^FO50,50^A0N,30,30^FDA^FS^XZ^XA^FO50,50^A0N,30,30^FDB^FS^XZ",
+      8,
+    );
+    expect(pages).toHaveLength(2);
   });
 
   it("raster/measure/storage helpers degrade instead of throwing", () => {

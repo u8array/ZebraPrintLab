@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { zlibSync } from 'fflate';
 import { parseZPL, BY_CONSUMING_BARCODE_TYPES } from '@zplab/core/lib/zplParser';
 import { formatLabelMetaComment } from '@zplab/core/lib/zplLabelMeta';
-import { ObjectRegistry } from '@zplab/core/registry/index';
+import { ObjectRegistry } from '@zplab/core/registry';
 import { props, serialOf } from '../test/helpers';
 
 // Drift guard for the bare-^BY hazard set. Every 1D and postal barcode emits a
@@ -2168,14 +2168,14 @@ describe('parseZPL — ^BT TLC39', () => {
   });
 
   it('drops non-canonical r1 on round-trip (re-emits as 2)', async () => {
-    const { ObjectRegistry } = await import('@zplab/core/registry/index');
+    const { ObjectRegistry } = await import('@zplab/core/registry');
     const { objects } = parseZPL('^XA^FO0,0^BTN,2,3,40,4,4^FD123,X^FS^XZ', 8);
     const emitted = ObjectRegistry.tlc39.toZPL(objects[0] as never);
     expect(emitted).toContain('^BTN,2,2,40,4,4');
   });
 
   it('round-trips ^BT without serial (no MicroPDF block, no trailing comma)', async () => {
-    const { ObjectRegistry } = await import('@zplab/core/registry/index');
+    const { ObjectRegistry } = await import('@zplab/core/registry');
     const original = '^XA^FO10,20^BY2^BTN,2,2,40,4,4^FD123456^FS^XZ';
     const { objects } = parseZPL(original, 8);
     expect(objects[0]?.type).toBe('tlc39');
@@ -2187,7 +2187,7 @@ describe('parseZPL — ^BT TLC39', () => {
   });
 
   it('round-trips ^BT via parse → toZPL → parse', async () => {
-    const { ObjectRegistry } = await import('@zplab/core/registry/index');
+    const { ObjectRegistry } = await import('@zplab/core/registry');
     const original = '^XA^FO50,60^BY3^BTN,3,2,80,5,8^FD654321,ABCDEF^FS^XZ';
     const { objects } = parseZPL(original, 8);
     expect(objects).toHaveLength(1);
@@ -2343,6 +2343,27 @@ describe('parseZPL — importReport.unknown', () => {
     const { skipped, importReport } = parseZPL('^XA^XX99^FO0,0^A0N,30,0^FDText^FS^XZ', 8);
     expect(skipped.some((s) => s.startsWith('^XX'))).toBe(true);
     expect(importReport.unknown.some((s) => s.startsWith('^XX'))).toBe(true);
+  });
+
+  it('surfaces unknown/browserLimit tokens without a trailing newline', () => {
+    const { skipped, importReport } = parseZPL('^XA\n^XX99\n^IMR:LOGO.GRF\n^XZ', 8);
+    expect(importReport.unknown).toContain('^XX99');
+    expect(importReport.browserLimit).toContain('^IMR:LOGO.GRF');
+    for (const s of [...importReport.unknown, ...importReport.browserLimit, ...skipped]) {
+      expect(s).toBe(s.trimEnd());
+    }
+  });
+
+  it('keeps the source prefix on unknown tilde commands', () => {
+    const { importReport } = parseZPL('^XA\n~QQ1,2\n^XZ', 8);
+    expect(importReport.unknown).toContain('~QQ1,2');
+  });
+
+  it('does not bake a line break into a truncated ~DY summary token', () => {
+    // Short malformed ~DY: rest ended with \n before the appended ellipsis,
+    // where the push-site trim cannot reach.
+    const { importReport } = parseZPL('^XA\n~DYR:X,Q,G,10,2,ZZ\n^XZ', 8);
+    expect(importReport.browserLimit).toContain('~DYR:X,Q,G,10,2,ZZ…');
   });
 
   it('preserves an undecodable ^GFB format as an opaque verbatim image', () => {
