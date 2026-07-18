@@ -446,6 +446,7 @@ const ar = {
     printerSupportLimited: 'دعم محدود',
     qrRotatedStatic: 'رمز QR الدوّار يطبع قيمة ثابتة',
     qrRotatedModel2: 'رمز QR الدوّار يطبع كطراز 2',
+    unknownType: 'نوع كائن غير معروف',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const ar = {
       mediaFeed: 'الوسائط والتغذية',
       appSettings: 'التطبيق',
       previewSettings: 'معاينة',
+      mcpServer: 'MCP',
       printQuality: 'جودة الطباعة',
       output: 'الإخراج',
       clockTime: 'التاريخ والوقت',
@@ -692,6 +694,18 @@ const ar = {
       apiHintDesktop: 'لخطط Labelary المدفوعة. اتركه فارغًا لاستخدام الخدمة العامة المجانية. يُخزَّن المفتاح في سلسلة مفاتيح نظام التشغيل.',
       apiHintWeb: 'لخطط Labelary المدفوعة. اتركه فارغًا لاستخدام الخدمة العامة المجانية. يُخزَّن المفتاح في هذا المتصفح.',
     },
+    mcp: {
+      heading: 'خادم MCP',
+      enable: 'تفعيل خادم MCP',
+      hint: 'يتيح لمساعد ذكاء اصطناعي محلي مثل Claude Desktop قراءة هذا الملصق وتحريره عبر Model Context Protocol.',
+      port: 'منفذ',
+      token: 'رمز الوصول',
+      regenerate: 'إعادة توليد',
+      copyConfig: 'نسخ الإعداد',
+      copied: 'تم النسخ',
+      statusRunning: 'قيد التشغيل',
+      statusStopped: 'متوقف',
+      },
   },
 
   app: {

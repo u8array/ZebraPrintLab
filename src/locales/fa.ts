@@ -446,6 +446,7 @@ const fa = {
     printerSupportLimited: 'پشتیبانی محدود',
     qrRotatedStatic: 'کد QR چرخانده‌شده مقدار ثابت چاپ می‌کند',
     qrRotatedModel2: 'کد QR چرخانده‌شده به‌صورت مدل ۲ چاپ می‌کند',
+    unknownType: 'نوع شیء ناشناخته',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const fa = {
       mediaFeed: 'رسانه و تغذیه',
       appSettings: 'برنامه',
       previewSettings: 'پیش‌نمایش',
+      mcpServer: 'MCP',
       printQuality: 'کیفیت چاپ',
       output: 'خروجی',
       clockTime: 'تاریخ و زمان',
@@ -692,6 +694,18 @@ const fa = {
       apiHintDesktop: 'برای پلن‌های پرمیوم Labelary. برای استفاده از سرویس عمومی رایگان، خالی بگذارید. کلید در جاکلیدی سیستم‌عامل ذخیره می‌شود.',
       apiHintWeb: 'برای پلن‌های پرمیوم Labelary. برای استفاده از سرویس عمومی رایگان، خالی بگذارید. کلید در این مرورگر ذخیره می‌شود.',
     },
+    mcp: {
+      heading: 'سرور MCP',
+      enable: 'فعال‌سازی سرور MCP',
+      hint: 'به یک دستیار هوش مصنوعی محلی مانند Claude Desktop اجازه می‌دهد این برچسب را از طریق Model Context Protocol بخواند و ویرایش کند.',
+      port: 'پورت',
+      token: 'توکن دسترسی',
+      regenerate: 'بازتولید',
+      copyConfig: 'کپی پیکربندی',
+      copied: 'کپی شد',
+      statusRunning: 'در حال اجرا',
+      statusStopped: 'متوقف',
+      },
   },
 
   app: {

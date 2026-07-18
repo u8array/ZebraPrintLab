@@ -446,6 +446,7 @@ const hu = {
     printerSupportLimited: 'Korlátozott támogatás',
     qrRotatedStatic: 'Forgatott QR-kód statikus értéket nyomtat',
     qrRotatedModel2: 'Forgatott QR-kód 2. modellként nyomtat',
+    unknownType: 'Ismeretlen objektumtípus',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const hu = {
       mediaFeed: 'Hordozó és továbbítás',
       appSettings: 'Alkalmazás',
       previewSettings: 'Előnézet',
+      mcpServer: 'MCP',
       printQuality: 'Nyomtatási minőség',
       output: 'Kimenet',
       clockTime: 'Dátum és idő',
@@ -692,6 +694,18 @@ const hu = {
       apiHintDesktop: 'A Labelary prémium csomagokhoz. Hagyja üresen az ingyenes nyilvános szolgáltatás használatához. A kulcs az operációs rendszer kulcstartójában tárolódik.',
       apiHintWeb: 'A Labelary prémium csomagokhoz. Hagyja üresen az ingyenes nyilvános szolgáltatás használatához. A kulcs ebben a böngészőben tárolódik.',
     },
+    mcp: {
+      heading: 'MCP-kiszolgáló',
+      enable: 'MCP-kiszolgáló engedélyezése',
+      hint: 'Lehetővé teszi egy helyi AI-asszisztens, például a Claude Desktop számára, hogy a Model Context Protocol segítségével olvassa és szerkessze ezt a címkét.',
+      port: 'Port',
+      token: 'Hozzáférési token',
+      regenerate: 'Újragenerálás',
+      copyConfig: 'Konfiguráció másolása',
+      copied: 'Másolva',
+      statusRunning: 'Fut',
+      statusStopped: 'Leállítva',
+      },
   },
 
   app: {

@@ -446,6 +446,7 @@ const da = {
     printerSupportLimited: 'Begrænset support',
     qrRotatedStatic: 'Roteret QR-kode udskriver statisk værdi',
     qrRotatedModel2: 'Roteret QR-kode udskriver som Model 2',
+    unknownType: 'Ukendt objekttype',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const da = {
       mediaFeed: 'Medie og fremføring',
       appSettings: 'App',
       previewSettings: 'Forhåndsvisning',
+      mcpServer: 'MCP',
       printQuality: 'Udskriftskvalitet',
       output: 'Output',
       clockTime: 'Dato og tid',
@@ -692,6 +694,18 @@ const da = {
       apiHintDesktop: 'Til Labelary premium-abonnementer. Lad feltet være tomt for at bruge den gratis offentlige tjeneste. Nøglen gemmes i operativsystemets nøglering.',
       apiHintWeb: 'Til Labelary premium-abonnementer. Lad feltet være tomt for at bruge den gratis offentlige tjeneste. Nøglen gemmes i denne browser.',
     },
+    mcp: {
+      heading: 'MCP-server',
+      enable: 'Aktivér MCP-server',
+      hint: 'Lader en lokal AI-assistent som Claude Desktop læse og redigere denne etiket via Model Context Protocol.',
+      port: 'Port',
+      token: 'Adgangstoken',
+      regenerate: 'Generér igen',
+      copyConfig: 'Kopiér konfiguration',
+      copied: 'Kopieret',
+      statusRunning: 'Kører',
+      statusStopped: 'Stoppet',
+      },
   },
 
   app: {

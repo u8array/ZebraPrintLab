@@ -446,6 +446,7 @@ const nl = {
     printerSupportLimited: 'Beperkte ondersteuning',
     qrRotatedStatic: 'Gedraaide QR-code drukt statische waarde',
     qrRotatedModel2: 'Gedraaide QR-code drukt als model 2',
+    unknownType: 'Onbekend objecttype',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const nl = {
       mediaFeed: 'Materiaal en doorvoer',
       appSettings: 'App',
       previewSettings: 'Voorbeeld',
+      mcpServer: 'MCP',
       printQuality: 'Afdrukkwaliteit',
       output: 'Uitvoer',
       clockTime: 'Datum en tijd',
@@ -692,6 +694,18 @@ const nl = {
       apiHintDesktop: 'Voor Labelary premium-abonnementen. Laat leeg om de gratis openbare dienst te gebruiken. De sleutel wordt opgeslagen in de sleutelhanger van het besturingssysteem.',
       apiHintWeb: 'Voor Labelary premium-abonnementen. Laat leeg om de gratis openbare dienst te gebruiken. De sleutel wordt in deze browser opgeslagen.',
     },
+    mcp: {
+      heading: 'MCP-server',
+      enable: 'MCP-server inschakelen',
+      hint: 'Laat een lokale AI-assistent zoals Claude Desktop dit label lezen en bewerken via het Model Context Protocol.',
+      port: 'Poort',
+      token: 'Toegangstoken',
+      regenerate: 'Opnieuw genereren',
+      copyConfig: 'Configuratie kopiëren',
+      copied: 'Gekopieerd',
+      statusRunning: 'Actief',
+      statusStopped: 'Gestopt',
+      },
   },
 
   app: {

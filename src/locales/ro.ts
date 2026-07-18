@@ -446,6 +446,7 @@ const ro = {
     printerSupportLimited: 'Suport limitat',
     qrRotatedStatic: 'Codul QR rotit imprimă o valoare statică',
     qrRotatedModel2: 'Codul QR rotit imprimă ca Modelul 2',
+    unknownType: 'Tip de obiect necunoscut',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const ro = {
       mediaFeed: 'Suport și alimentare',
       appSettings: 'Aplicație',
       previewSettings: 'Previzualizare',
+      mcpServer: 'MCP',
       printQuality: 'Calitate imprimare',
       output: 'Ieșire',
       clockTime: 'Data și ora',
@@ -692,6 +694,18 @@ const ro = {
       apiHintDesktop: 'Pentru planurile premium Labelary. Lăsați gol pentru a utiliza serviciul public gratuit. Cheia este stocată în inelul de chei al sistemului de operare.',
       apiHintWeb: 'Pentru planurile premium Labelary. Lăsați gol pentru a utiliza serviciul public gratuit. Cheia este stocată în acest browser.',
     },
+    mcp: {
+      heading: 'Server MCP',
+      enable: 'Activează serverul MCP',
+      hint: 'Permite unui asistent IA local precum Claude Desktop să citească și să editeze această etichetă prin Model Context Protocol.',
+      port: 'Port',
+      token: 'Token de acces',
+      regenerate: 'Regenerează',
+      copyConfig: 'Copiază configurația',
+      copied: 'Copiat',
+      statusRunning: 'În execuție',
+      statusStopped: 'Oprit',
+      },
   },
 
   app: {

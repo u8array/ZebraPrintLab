@@ -1,10 +1,12 @@
 import { useId, useRef, useState, type FC } from "react";
 import { CheckIcon, ClipboardDocumentIcon, TrashIcon, XMarkIcon } from "@heroicons/react/16/solid";
 import { useCopyToClipboard } from "../../hooks/useCopyToClipboard";
+import { useMcpAvailability } from "../../hooks/useMcpServer";
 import { useT } from "../../hooks/useT";
 import { generateSetupScript } from "../../lib/zplSetupScript";
 import { useLabelStore, selectHasPerLabelOverrides } from "../../store/labelStore";
 import type { PrinterSettingsTab } from "../../store/slices/uiSlice";
+import { TAB_GATES, type TabGateCtx } from "./tabVisibility";
 import type { PrinterProfile } from "@zplab/core/types/PrinterProfile";
 import { DialogShell } from "../ui/DialogShell";
 import { Tooltip } from "../ui/Tooltip";
@@ -15,6 +17,7 @@ import { EncodingAndLanguageTab } from "./EncodingAndLanguageTab";
 import { FontsTab } from "./FontsTab";
 import { IdentityTab } from "./IdentityTab";
 import { MaintenanceTab } from "./MaintenanceTab";
+import { McpServerTab } from "./McpServerTab";
 import { MediaFeedTab } from "./MediaFeedTab";
 import { OutputTab } from "./OutputTab";
 import { PreviewSettingsTab } from "./PreviewSettingsTab";
@@ -28,6 +31,7 @@ type TopTabId = 'app' | 'perLabel' | 'setupScript';
 const TOP_TAB_OF = {
   appSettings: 'app',
   previewSettings: 'app',
+  mcpServer: 'app',
   mediaFeed: 'perLabel',
   printQuality: 'perLabel',
   output: 'perLabel',
@@ -60,6 +64,7 @@ const TABS_BY_TOP_TAB: Record<TopTabId, readonly PrinterSettingsTab[]> = (() => 
 const TAB_COMPONENTS: Partial<Record<PrinterSettingsTab, FC>> = {
   appSettings: AppSettingsTab,
   previewSettings: PreviewSettingsTab,
+  mcpServer: McpServerTab,
   mediaFeed: MediaFeedTab,
   printQuality: PrintQualityTab,
   output: OutputTab,
@@ -123,16 +128,24 @@ export function PrinterSettingsModal() {
     resetPerLabelConfig();
   };
   const hasPerLabelOverrides = useLabelStore(selectHasPerLabelOverrides);
+  const mcpSidecarAvailable = useLabelStore((s) => s.mcpSidecarAvailable);
+  const gateCtx: TabGateCtx = { mcpSidecarAvailable };
   const openZebraPrint = useLabelStore((s) => s.openZebraPrint);
   const titleId = useId();
   const subtitleId = useId();
+  // Recover the capability stamp if the boot ping never landed, so the MCP tab
+  // is not permanently hidden by a transient status reject.
+  useMcpAvailability();
 
   if (!tab) return null;
 
   const activeTopTab = TOP_TAB_OF[tab];
-  const activeTabs = TABS_BY_TOP_TAB[activeTopTab];
+  const isVisible = (id: PrinterSettingsTab) => TAB_GATES[id]?.(gateCtx) ?? true;
+  const activeTabs = TABS_BY_TOP_TAB[activeTopTab].filter(isVisible);
   const activeLabelKey = TOP_TAB_LABEL_KEY[activeTopTab];
-  const ActiveTab = TAB_COMPONENTS[tab];
+  // Gate the content pane too, not just the rail, so a gated-out tab never
+  // renders its body (the tab component then needs no self-guard).
+  const ActiveTab = isVisible(tab) ? TAB_COMPONENTS[tab] : undefined;
 
   const setupScript = generateSetupScript(printerProfile);
 

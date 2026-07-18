@@ -446,6 +446,7 @@ const fi = {
     printerSupportLimited: 'Rajoitettu tuki',
     qrRotatedStatic: 'Käännetty QR-koodi tulostaa staattisen arvon',
     qrRotatedModel2: 'Käännetty QR-koodi tulostaa mallina 2',
+    unknownType: 'Tuntematon objektityyppi',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const fi = {
       mediaFeed: 'Materiaali ja syöttö',
       appSettings: 'Sovellus',
       previewSettings: 'Esikatselu',
+      mcpServer: 'MCP',
       printQuality: 'Tulostuslaatu',
       output: 'Tuloste',
       clockTime: 'Päivämäärä ja aika',
@@ -692,6 +694,18 @@ const fi = {
       apiHintDesktop: 'Labelaryn premium-tilauksiin. Jätä tyhjäksi käyttääksesi ilmaista julkista palvelua. Avain tallennetaan käyttöjärjestelmän avainnippuun.',
       apiHintWeb: 'Labelaryn premium-tilauksiin. Jätä tyhjäksi käyttääksesi ilmaista julkista palvelua. Avain tallennetaan tähän selaimeen.',
     },
+    mcp: {
+      heading: 'MCP-palvelin',
+      enable: 'Ota MCP-palvelin käyttöön',
+      hint: 'Antaa paikallisen tekoälyavustajan, kuten Claude Desktopin, lukea ja muokata tätä etikettiä Model Context Protocolin kautta.',
+      port: 'Portti',
+      token: 'Käyttöoikeustunnus',
+      regenerate: 'Luo uudelleen',
+      copyConfig: 'Kopioi asetukset',
+      copied: 'Kopioitu',
+      statusRunning: 'Käynnissä',
+      statusStopped: 'Pysäytetty',
+      },
   },
 
   app: {

@@ -446,6 +446,7 @@ const he = {
     printerSupportLimited: 'תמיכה מוגבלת',
     qrRotatedStatic: 'קוד QR מסובב מדפיס ערך סטטי',
     qrRotatedModel2: 'קוד QR מסובב מדפיס כדגם 2',
+    unknownType: 'סוג אובייקט לא ידוע',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const he = {
       mediaFeed: 'מדיה והזנה',
       appSettings: 'אפליקציה',
       previewSettings: 'תצוגה מקדימה',
+      mcpServer: 'MCP',
       printQuality: 'איכות הדפסה',
       output: 'פלט',
       clockTime: 'תאריך ושעה',
@@ -692,6 +694,18 @@ const he = {
       apiHintDesktop: 'לתוכניות הפרימיום של Labelary. השאירו ריק כדי להשתמש בשירות הציבורי החינמי. המפתח נשמר במחזיק המפתחות של מערכת ההפעלה.',
       apiHintWeb: 'לתוכניות הפרימיום של Labelary. השאירו ריק כדי להשתמש בשירות הציבורי החינמי. המפתח נשמר בדפדפן זה.',
     },
+    mcp: {
+      heading: 'שרת MCP',
+      enable: 'הפעלת שרת MCP',
+      hint: 'מאפשר לעוזר AI מקומי כמו Claude Desktop לקרוא ולערוך תווית זו באמצעות Model Context Protocol.',
+      port: 'פורט',
+      token: 'אסימון גישה',
+      regenerate: 'יצירה מחדש',
+      copyConfig: 'העתקת תצורה',
+      copied: 'הועתק',
+      statusRunning: 'פועל',
+      statusStopped: 'הופסק',
+      },
   },
 
   app: {

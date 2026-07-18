@@ -446,6 +446,7 @@ const sk = {
     printerSupportLimited: 'Obmedzená podpora',
     qrRotatedStatic: 'Otočený QR kód tlačí statickú hodnotu',
     qrRotatedModel2: 'Otočený QR kód tlačí ako Model 2',
+    unknownType: 'Neznámy typ objektu',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const sk = {
       mediaFeed: 'Médium a posuv',
       appSettings: 'Aplikácia',
       previewSettings: 'Náhľad',
+      mcpServer: 'MCP',
       printQuality: 'Kvalita tlače',
       output: 'Výstup',
       clockTime: 'Dátum a čas',
@@ -692,6 +694,18 @@ const sk = {
       apiHintDesktop: 'Pre prémiové plány Labelary. Ponechajte prázdne na použitie bezplatnej verejnej služby. Kľúč sa ukladá do zväzku kľúčov operačného systému.',
       apiHintWeb: 'Pre prémiové plány Labelary. Ponechajte prázdne na použitie bezplatnej verejnej služby. Kľúč sa ukladá do tohto prehliadača.',
     },
+    mcp: {
+      heading: 'Server MCP',
+      enable: 'Povoliť server MCP',
+      hint: 'Umožňuje miestnemu asistentovi AI, ako je Claude Desktop, čítať a upravovať tento štítok prostredníctvom Model Context Protocol.',
+      port: 'Port',
+      token: 'Prístupový token',
+      regenerate: 'Vygenerovať znova',
+      copyConfig: 'Kopírovať konfiguráciu',
+      copied: 'Skopírované',
+      statusRunning: 'Beží',
+      statusStopped: 'Zastavené',
+      },
   },
 
   app: {

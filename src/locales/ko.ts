@@ -446,6 +446,7 @@ const ko = {
     printerSupportLimited: '지원 제한',
     qrRotatedStatic: '회전된 QR 코드는 고정값을 인쇄',
     qrRotatedModel2: '회전된 QR 코드는 모델 2로 인쇄',
+    unknownType: '알 수 없는 개체 유형',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const ko = {
       mediaFeed: '미디어 및 급지',
       appSettings: '앱',
       previewSettings: '미리보기',
+      mcpServer: 'MCP',
       printQuality: '인쇄 품질',
       output: '출력',
       clockTime: '날짜 및 시간',
@@ -692,6 +694,18 @@ const ko = {
       apiHintDesktop: 'Labelary 프리미엄 요금제용입니다. 무료 공개 서비스를 사용하려면 비워 두세요. 키는 운영 체제의 키체인에 저장됩니다.',
       apiHintWeb: 'Labelary 프리미엄 요금제용입니다. 무료 공개 서비스를 사용하려면 비워 두세요. 키는 이 브라우저에 저장됩니다.',
     },
+    mcp: {
+      heading: 'MCP 서버',
+      enable: 'MCP 서버 사용',
+      hint: 'Claude Desktop 같은 로컬 AI 어시스턴트가 Model Context Protocol을 통해 이 라벨을 읽고 편집할 수 있게 합니다.',
+      port: '포트',
+      token: '액세스 토큰',
+      regenerate: '재생성',
+      copyConfig: '구성 복사',
+      copied: '복사됨',
+      statusRunning: '실행 중',
+      statusStopped: '중지됨',
+      },
   },
 
   app: {

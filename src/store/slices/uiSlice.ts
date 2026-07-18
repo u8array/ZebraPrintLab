@@ -10,6 +10,7 @@ import {
 import type { LabelState } from '../labelStore';
 import { defaultPaletteRows } from '../../registry/paletteTypes';
 import { getCredential, setCredential } from '../../lib/credentialStore';
+import { generateMcpToken, stopMcpServer } from '../../lib/mcpServer';
 import { selectEffectivePreviewProvider } from '../labelStore.selectors';
 
 /** Credential-store account name for the Labelary API key. */
@@ -52,6 +53,7 @@ export type PreviewProvider = 'labelary' | 'printer';
 export type PrinterSettingsTab =
   | 'appSettings'
   | 'previewSettings'
+  | 'mcpServer'
   | 'mediaFeed'
   | 'printQuality'
   | 'output'
@@ -129,6 +131,18 @@ export interface UiSlice {
   /** Power-user opt-in: show the emitted ZPL command next to each properties
    *  field. Persisted UI preference; default off so beginners aren't burdened. */
   showZplCommands: boolean;
+  /** Desktop-only opt-in for the local MCP loopback server. Off by default so
+   *  no port opens unless the user asks; persisted like other prefs. */
+  mcpServerEnabled: boolean;
+  mcpServerPort: number;
+  /** Bearer token for the loopback server, generated on first enable and reused
+   *  so a Claude Desktop config the user already wired up keeps working.
+   *  Persisted but out of the settings-reset defaults (see labelaryHost). */
+  mcpServerToken: string;
+  /** Build capability from mcp_status: whether this build can spawn the MCP
+   *  sidecar (false on web and sidecar-less releases). Stamped at boot;
+   *  null until the first status lands. Transient. */
+  mcpSidecarAvailable: boolean | null;
 
   /** Right-sidebar tab. Lives in the store so canvas interactions can
    *  drive the panel (e.g. double-click a text field). Transient; not
@@ -187,6 +201,13 @@ export interface UiSlice {
   setPaletteView: (view: PaletteView) => void;
   togglePaletteEditing: () => void;
   setShowZplCommands: (show: boolean) => void;
+  /** Persist the enable flag; generates a token on first enable so the section
+   *  never starts the server tokenless. Does not start/stop the server itself
+   *  (that side effect is orchestrated by the useMcpServer hook). */
+  setMcpServerEnabled: (enabled: boolean) => void;
+  setMcpServerPort: (port: number) => void;
+  regenerateMcpToken: () => void;
+  setMcpSidecarAvailable: (available: boolean) => void;
   setSidebarTab: (tab: SidebarTab) => void;
   setBlockDragMode: (mode: BlockDragMode) => void;
   setAlignRef: (ref: AlignSelectionRef) => void;
@@ -230,7 +251,13 @@ type UiPrefs = Pick<
   | 'paletteView'
   | 'paletteEditing'
   | 'showZplCommands'
+  | 'mcpServerEnabled'
+  | 'mcpServerPort'
 >;
+
+/** Default port for the MCP loopback server. High and IANA-unassigned, so it
+ *  is unlikely to collide with a service already bound on the loopback. */
+export const DEFAULT_MCP_PORT = 4923;
 
 /** Defaults `resetSettings` restores. Shared with initial state so the `Pick`
  *  turns a forgotten entry into a compile error. Excludes `locale` (reset keeps
@@ -246,6 +273,8 @@ function defaultUiPrefs(): UiPrefs {
     paletteView: 'flat',
     paletteEditing: false,
     showZplCommands: false,
+    mcpServerEnabled: false,
+    mcpServerPort: DEFAULT_MCP_PORT,
   };
 }
 
@@ -261,6 +290,10 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set, ge
   labelaryHost: '',
   labelaryApiKey: '',
   labelaryApiKeyLoaded: false,
+  // Token is persisted but out of `defaultUiPrefs`, so a settings reset keeps
+  // it (regenerating would break a Claude Desktop config already pointing here).
+  mcpServerToken: '',
+  mcpSidecarAvailable: null,
   sidebarTab: 'properties',
   blockDragMode: 'frame',
   alignRef: 'selection',
@@ -362,6 +395,9 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set, ge
     });
     // Reset drops Labelary consent; end any live preview so it doesn't linger.
     get().exitPreviewMode();
+    // Reset also drops the MCP opt-in; a running sidecar must not outlive it.
+    // stopMcpServer no-ops in the web build; catch only guards a real invoke failure.
+    void stopMcpServer().catch(() => undefined);
   },
   setCanvasSettings: (settings) =>
     set((state) => ({ canvasSettings: { ...state.canvasSettings, ...settings } })),
@@ -389,6 +425,15 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set, ge
   setPaletteView: (view) => set({ paletteView: view }),
   togglePaletteEditing: () => set((state) => ({ paletteEditing: !state.paletteEditing })),
   setShowZplCommands: (show) => set({ showZplCommands: show }),
+  setMcpServerEnabled: (enabled) =>
+    set((state) => ({
+      mcpServerEnabled: enabled,
+      mcpServerToken:
+        enabled && !state.mcpServerToken ? generateMcpToken() : state.mcpServerToken,
+    })),
+  setMcpServerPort: (port) => set({ mcpServerPort: port }),
+  regenerateMcpToken: () => set({ mcpServerToken: generateMcpToken() }),
+  setMcpSidecarAvailable: (available) => set({ mcpSidecarAvailable: available }),
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
   setBlockDragMode: (mode) => set({ blockDragMode: mode }),
   setAlignRef: (ref) => set({ alignRef: ref }),

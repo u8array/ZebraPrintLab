@@ -446,6 +446,7 @@ const lv = {
     printerSupportLimited: 'Ierobežots atbalsts',
     qrRotatedStatic: 'Pagriezts QR kods drukā statisku vērtību',
     qrRotatedModel2: 'Pagriezts QR kods drukā kā 2. modeli',
+    unknownType: 'Nezināms objekta tips',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const lv = {
       mediaFeed: 'Materiāls un padeve',
       appSettings: 'Lietotne',
       previewSettings: 'Priekšskatījums',
+      mcpServer: 'MCP',
       printQuality: 'Drukas kvalitāte',
       output: 'Izvade',
       clockTime: 'Datums un laiks',
@@ -692,6 +694,18 @@ const lv = {
       apiHintDesktop: 'Labelary premium plāniem. Atstājiet tukšu, lai izmantotu bezmaksas publisko pakalpojumu. Atslēga tiek glabāta operētājsistēmas atslēgu saišķī.',
       apiHintWeb: 'Labelary premium plāniem. Atstājiet tukšu, lai izmantotu bezmaksas publisko pakalpojumu. Atslēga tiek glabāta šajā pārlūkprogrammā.',
     },
+    mcp: {
+      heading: 'MCP serveris',
+      enable: 'Iespējot MCP serveri',
+      hint: 'Ļauj vietējam MI asistentam, piemēram, Claude Desktop, lasīt un rediģēt šo uzlīmi, izmantojot Model Context Protocol.',
+      port: 'Ports',
+      token: 'Piekļuves marķieris',
+      regenerate: 'Ģenerēt no jauna',
+      copyConfig: 'Kopēt konfigurāciju',
+      copied: 'Nokopēts',
+      statusRunning: 'Darbojas',
+      statusStopped: 'Apturēts',
+      },
   },
 
   app: {

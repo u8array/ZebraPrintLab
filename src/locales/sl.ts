@@ -446,6 +446,7 @@ const sl = {
     printerSupportLimited: 'Omejena podpora',
     qrRotatedStatic: 'Zasukana QR koda natisne statično vrednost',
     qrRotatedModel2: 'Zasukana QR koda natisne kot Model 2',
+    unknownType: 'Neznana vrsta predmeta',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const sl = {
       mediaFeed: 'Medij in podajanje',
       appSettings: 'Aplikacija',
       previewSettings: 'Predogled',
+      mcpServer: 'MCP',
       printQuality: 'Kakovost tiskanja',
       output: 'Izhod',
       clockTime: 'Datum in čas',
@@ -692,6 +694,18 @@ const sl = {
       apiHintDesktop: 'Za premium načrte Labelary. Pustite prazno za uporabo brezplačne javne storitve. Ključ se shrani v zbirko ključev operacijskega sistema.',
       apiHintWeb: 'Za premium načrte Labelary. Pustite prazno za uporabo brezplačne javne storitve. Ključ se shrani v ta brskalnik.',
     },
+    mcp: {
+      heading: 'Strežnik MCP',
+      enable: 'Omogoči strežnik MCP',
+      hint: 'Lokalnemu pomočniku UI, kot je Claude Desktop, omogoča branje in urejanje te etikete prek Model Context Protocol.',
+      port: 'Vrata',
+      token: 'Žeton za dostop',
+      regenerate: 'Znova ustvari',
+      copyConfig: 'Kopiraj konfiguracijo',
+      copied: 'Kopirano',
+      statusRunning: 'Se izvaja',
+      statusStopped: 'Zaustavljeno',
+      },
   },
 
   app: {
