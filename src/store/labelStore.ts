@@ -416,6 +416,9 @@ export const persistPartialize = (state: LabelState) => ({
   paletteRows: state.paletteRows,
   paletteView: state.paletteView,
   showZplCommands: state.showZplCommands,
+  mcpServerEnabled: state.mcpServerEnabled,
+  mcpServerPort: state.mcpServerPort,
+  mcpServerToken: state.mcpServerToken,
   variables: state.variables,
   csvMapping: state.csvMapping,
 });

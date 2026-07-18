@@ -446,6 +446,7 @@ const et = {
     printerSupportLimited: 'Piiratud tugi',
     qrRotatedStatic: 'Pööratud QR-kood trükib staatilise väärtuse',
     qrRotatedModel2: 'Pööratud QR-kood trükib mudelina 2',
+    unknownType: 'Tundmatu objekti tüüp',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const et = {
       mediaFeed: 'Kandja ja söötmine',
       appSettings: 'Rakendus',
       previewSettings: 'Eelvaade',
+      mcpServer: 'MCP',
       printQuality: 'Printimise kvaliteet',
       output: 'Väljund',
       clockTime: 'Kuupäev ja kellaaeg',
@@ -692,6 +694,18 @@ const et = {
       apiHintDesktop: 'Labelary premium-pakettide jaoks. Jätke tühjaks, et kasutada tasuta avalikku teenust. Võti salvestatakse operatsioonisüsteemi võtmehoidlasse.',
       apiHintWeb: 'Labelary premium-pakettide jaoks. Jätke tühjaks, et kasutada tasuta avalikku teenust. Võti salvestatakse sellesse brauserisse.',
     },
+    mcp: {
+      heading: 'MCP-server',
+      enable: 'Luba MCP-server',
+      hint: 'Võimaldab kohalikul AI-abilisel, näiteks Claude Desktopil, seda silti Model Context Protocoli kaudu lugeda ja muuta.',
+      port: 'Port',
+      token: 'Juurdepääsuluba',
+      regenerate: 'Loo uuesti',
+      copyConfig: 'Kopeeri seadistus',
+      copied: 'Kopeeritud',
+      statusRunning: 'Töötab',
+      statusStopped: 'Peatatud',
+      },
   },
 
   app: {

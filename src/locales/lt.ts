@@ -446,6 +446,7 @@ const lt = {
     printerSupportLimited: 'Ribotas palaikymas',
     qrRotatedStatic: 'Pasuktas QR kodas spausdina statinę reikšmę',
     qrRotatedModel2: 'Pasuktas QR kodas spausdina kaip 2 modelis',
+    unknownType: 'Nežinomas objekto tipas',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const lt = {
       mediaFeed: 'Laikmena ir tiekimas',
       appSettings: 'Programa',
       previewSettings: 'Peržiūra',
+      mcpServer: 'MCP',
       printQuality: 'Spausdinimo kokybė',
       output: 'Išvestis',
       clockTime: 'Data ir laikas',
@@ -692,6 +694,18 @@ const lt = {
       apiHintDesktop: 'Labelary premium planams. Palikite tuščią, kad naudotumėte nemokamą viešąją paslaugą. Raktas saugomas operacinės sistemos raktų pakabuke.',
       apiHintWeb: 'Labelary premium planams. Palikite tuščią, kad naudotumėte nemokamą viešąją paslaugą. Raktas saugomas šioje naršyklėje.',
     },
+    mcp: {
+      heading: 'MCP serveris',
+      enable: 'Įjungti MCP serverį',
+      hint: 'Leidžia vietiniam DI asistentui, pavyzdžiui, „Claude Desktop", skaityti ir redaguoti šią etiketę per „Model Context Protocol".',
+      port: 'Prievadas',
+      token: 'Prieigos raktas',
+      regenerate: 'Sugeneruoti iš naujo',
+      copyConfig: 'Kopijuoti konfigūraciją',
+      copied: 'Nukopijuota',
+      statusRunning: 'Veikia',
+      statusStopped: 'Sustabdyta',
+      },
   },
 
   app: {

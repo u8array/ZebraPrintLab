@@ -446,6 +446,7 @@ const bg = {
     printerSupportLimited: 'Ограничена поддръжка',
     qrRotatedStatic: 'Завъртян QR код отпечатва статична стойност',
     qrRotatedModel2: 'Завъртян QR код отпечатва като Модел 2',
+    unknownType: 'Неизвестен тип обект',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const bg = {
       mediaFeed: 'Носител и подаване',
       appSettings: 'Приложение',
       previewSettings: 'Преглед',
+      mcpServer: 'MCP',
       printQuality: 'Качество на печат',
       output: 'Изход',
       clockTime: 'Дата и час',
@@ -692,6 +694,18 @@ const bg = {
       apiHintDesktop: 'За премиум планове на Labelary. Оставете празно, за да използвате безплатната публична услуга. Ключът се съхранява в ключодържателя на операционната система.',
       apiHintWeb: 'За премиум планове на Labelary. Оставете празно, за да използвате безплатната публична услуга. Ключът се съхранява в този браузър.',
     },
+    mcp: {
+      heading: 'MCP сървър',
+      enable: 'Активиране на MCP сървъра',
+      hint: 'Позволява на локален AI асистент като Claude Desktop да чете и редактира този етикет чрез Model Context Protocol.',
+      port: 'Порт',
+      token: 'Токен за достъп',
+      regenerate: 'Генериране наново',
+      copyConfig: 'Копиране на конфигурацията',
+      copied: 'Копирано',
+      statusRunning: 'Работи',
+      statusStopped: 'Спрян',
+      },
   },
 
   app: {

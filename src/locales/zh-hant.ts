@@ -446,6 +446,7 @@ const zhHant = {
     printerSupportLimited: '支援有限',
     qrRotatedStatic: '旋轉的二維碼列印靜態值',
     qrRotatedModel2: '旋轉的二維碼以型號2列印',
+    unknownType: '未知的物件類型',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const zhHant = {
       mediaFeed: '介質與送紙',
       appSettings: '應用程式',
       previewSettings: '預覽',
+      mcpServer: 'MCP',
       printQuality: '列印品質',
       output: '輸出',
       clockTime: '日期與時間',
@@ -692,6 +694,18 @@ const zhHant = {
       apiHintDesktop: '適用於 Labelary 進階方案。留空則使用免費的公用服務。金鑰儲存在作業系統的鑰匙圈中。',
       apiHintWeb: '適用於 Labelary 進階方案。留空則使用免費的公用服務。金鑰儲存在此瀏覽器中。',
     },
+    mcp: {
+      heading: 'MCP 伺服器',
+      enable: '啟用 MCP 伺服器',
+      hint: '允許 Claude Desktop 等本機 AI 助理透過 Model Context Protocol 讀取及編輯此標籤。',
+      port: '連接埠',
+      token: '存取權杖',
+      regenerate: '重新產生',
+      copyConfig: '複製設定',
+      copied: '已複製',
+      statusRunning: '執行中',
+      statusStopped: '已停止',
+      },
   },
 
   app: {

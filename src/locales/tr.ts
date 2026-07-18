@@ -446,6 +446,7 @@ const tr = {
     printerSupportLimited: 'Sınırlı destek',
     qrRotatedStatic: 'Döndürülmüş QR Kodu statik değer basar',
     qrRotatedModel2: 'Döndürülmüş QR Kodu Model 2 olarak basar',
+    unknownType: 'Bilinmeyen nesne türü',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const tr = {
       mediaFeed: 'Ortam ve besleme',
       appSettings: 'Uygulama',
       previewSettings: 'Önizleme',
+      mcpServer: 'MCP',
       printQuality: 'Baskı kalitesi',
       output: 'Çıktı',
       clockTime: 'Tarih ve saat',
@@ -692,6 +694,18 @@ const tr = {
       apiHintDesktop: 'Labelary premium planları için. Ücretsiz genel hizmeti kullanmak için boş bırakın. Anahtar, işletim sisteminin anahtar zincirinde saklanır.',
       apiHintWeb: 'Labelary premium planları için. Ücretsiz genel hizmeti kullanmak için boş bırakın. Anahtar bu tarayıcıda saklanır.',
     },
+    mcp: {
+      heading: 'MCP sunucusu',
+      enable: 'MCP sunucusunu etkinleştir',
+      hint: 'Claude Desktop gibi yerel bir yapay zekâ asistanının bu etiketi Model Context Protocol üzerinden okumasını ve düzenlemesini sağlar.',
+      port: 'Bağlantı noktası',
+      token: 'Erişim belirteci',
+      regenerate: 'Yeniden oluştur',
+      copyConfig: 'Yapılandırmayı kopyala',
+      copied: 'Kopyalandı',
+      statusRunning: 'Çalışıyor',
+      statusStopped: 'Durduruldu',
+      },
   },
 
   app: {

@@ -1,5 +1,6 @@
 import { describeFinding } from '../../lib/importReport';
-import type { ImportFinding, ImportFindingKind, ImportResult } from '../../lib/importReport';
+import type { ImportResult } from '../../lib/importReport';
+import type { ImportFinding, ImportFindingKind } from '@zplab/core/lib/importReport';
 
 export type { ImportResult };
 
@@ -20,6 +21,8 @@ const TONE: Record<ImportFindingKind, string> = {
   fnRenumbered: 'text-muted',
   // Higher severity: a page's divergent default was discarded (99 slots full).
   fnDefaultDropped: 'text-red-400',
+  // Higher severity: later pages render at the wrong size (single-label model).
+  mixedPageGeometry: 'text-red-400',
 };
 
 export function FindingRow({ finding, showPage }: { finding: ImportFinding; showPage: boolean }) {

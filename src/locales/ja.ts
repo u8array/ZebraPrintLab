@@ -446,6 +446,7 @@ const ja = {
     printerSupportLimited: '一部非対応',
     qrRotatedStatic: '回転したQRコードは固定値を印刷',
     qrRotatedModel2: '回転したQRコードはモデル2として印刷',
+    unknownType: '不明なオブジェクトタイプ',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const ja = {
       mediaFeed: 'メディアと給紙',
       appSettings: 'アプリ',
       previewSettings: 'プレビュー',
+      mcpServer: 'MCP',
       printQuality: '印刷品質',
       output: '出力',
       clockTime: '日付と時刻',
@@ -692,6 +694,18 @@ const ja = {
       apiHintDesktop: 'Labelaryのプレミアムプラン用です。空欄のままにすると無料の公開サービスを使用します。キーはオペレーティングシステムのキーチェーンに保存されます。',
       apiHintWeb: 'Labelaryのプレミアムプラン用です。空欄のままにすると無料の公開サービスを使用します。キーはこのブラウザーに保存されます。',
     },
+    mcp: {
+      heading: 'MCP サーバー',
+      enable: 'MCP サーバーを有効にする',
+      hint: 'Claude Desktop などのローカル AI アシスタントが Model Context Protocol を通じてこのラベルを読み書きできるようにします。',
+      port: 'ポート',
+      token: 'アクセストークン',
+      regenerate: '再生成',
+      copyConfig: '設定をコピー',
+      copied: 'コピーしました',
+      statusRunning: '実行中',
+      statusStopped: '停止中',
+      },
   },
 
   app: {

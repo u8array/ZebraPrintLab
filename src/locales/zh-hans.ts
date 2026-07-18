@@ -446,6 +446,7 @@ const zhHans = {
     printerSupportLimited: '支持有限',
     qrRotatedStatic: '旋转的二维码打印静态值',
     qrRotatedModel2: '旋转的二维码以型号2打印',
+    unknownType: '未知的对象类型',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const zhHans = {
       mediaFeed: '介质与走纸',
       appSettings: '应用',
       previewSettings: '预览',
+      mcpServer: 'MCP',
       printQuality: '打印质量',
       output: '输出',
       clockTime: '日期与时间',
@@ -692,6 +694,18 @@ const zhHans = {
       apiHintDesktop: '适用于 Labelary 高级套餐。留空则使用免费的公共服务。密钥存储在操作系统的密钥链中。',
       apiHintWeb: '适用于 Labelary 高级套餐。留空则使用免费的公共服务。密钥存储在此浏览器中。',
     },
+    mcp: {
+      heading: 'MCP 服务器',
+      enable: '启用 MCP 服务器',
+      hint: '允许 Claude Desktop 等本地 AI 助手通过 Model Context Protocol 读取和编辑此标签。',
+      port: '端口',
+      token: '访问令牌',
+      regenerate: '重新生成',
+      copyConfig: '复制配置',
+      copied: '已复制',
+      statusRunning: '运行中',
+      statusStopped: '已停止',
+      },
   },
 
   app: {

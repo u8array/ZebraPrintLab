@@ -446,6 +446,7 @@ const sr = {
     printerSupportLimited: 'Ограничена подршка',
     qrRotatedStatic: 'Ротирани QR код штампа статичну вредност',
     qrRotatedModel2: 'Ротирани QR код штампа као Модел 2',
+    unknownType: 'Непозната врста објекта',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const sr = {
       mediaFeed: 'Медијум и увлачење',
       appSettings: 'Апликација',
       previewSettings: 'Pregled',
+      mcpServer: 'MCP',
       printQuality: 'Квалитет штампе',
       output: 'Излаз',
       clockTime: 'Датум и време',
@@ -692,6 +694,18 @@ const sr = {
       apiHintDesktop: 'За Labelary премијум планове. Оставите празно да бисте користили бесплатну јавну услугу. Кључ се чува у привеску за кључеве оперативног система.',
       apiHintWeb: 'За Labelary премијум планове. Оставите празно да бисте користили бесплатну јавну услугу. Кључ се чува у овом прегледачу.',
     },
+    mcp: {
+      heading: 'MCP server',
+      enable: 'Omogući MCP server',
+      hint: 'Omogućava lokalnom AI asistentu poput Claude Desktop da čita i uređuje ovu etiketu putem Model Context Protocol.',
+      port: 'Port',
+      token: 'Pristupni token',
+      regenerate: 'Ponovo generiši',
+      copyConfig: 'Kopiraj konfiguraciju',
+      copied: 'Kopirano',
+      statusRunning: 'Radi',
+      statusStopped: 'Zaustavljeno',
+      },
   },
 
   app: {

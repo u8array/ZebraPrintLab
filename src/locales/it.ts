@@ -446,6 +446,7 @@ const it = {
     printerSupportLimited: 'Supporto limitato',
     qrRotatedStatic: 'Codice QR ruotato stampa un valore statico',
     qrRotatedModel2: 'Codice QR ruotato stampa come Modello 2',
+    unknownType: 'Tipo di oggetto sconosciuto',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const it = {
       mediaFeed: 'Supporto e avanzamento',
       appSettings: 'App',
       previewSettings: 'Anteprima',
+      mcpServer: 'MCP',
       printQuality: 'Qualità di stampa',
       output: 'Output',
       clockTime: 'Data e ora',
@@ -692,6 +694,18 @@ const it = {
       apiHintDesktop: 'Per i piani premium di Labelary. Lasciare vuoto per usare il servizio pubblico gratuito. La chiave è memorizzata nel portachiavi del sistema operativo.',
       apiHintWeb: 'Per i piani premium di Labelary. Lasciare vuoto per usare il servizio pubblico gratuito. La chiave è memorizzata in questo browser.',
     },
+    mcp: {
+      heading: 'Server MCP',
+      enable: 'Attiva il server MCP',
+      hint: 'Consente a un assistente IA locale come Claude Desktop di leggere e modificare questa etichetta tramite il Model Context Protocol.',
+      port: 'Porta',
+      token: 'Token di accesso',
+      regenerate: 'Rigenera',
+      copyConfig: 'Copia configurazione',
+      copied: 'Copiato',
+      statusRunning: 'In esecuzione',
+      statusStopped: 'Arrestato',
+      },
   },
 
   app: {

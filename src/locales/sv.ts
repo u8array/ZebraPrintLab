@@ -446,6 +446,7 @@ const sv = {
     printerSupportLimited: 'Begränsat stöd',
     qrRotatedStatic: 'Roterad QR-kod skriver ut statiskt värde',
     qrRotatedModel2: 'Roterad QR-kod skriver ut som Modell 2',
+    unknownType: 'Okänd objekttyp',
   },
 
   printerSettings: {
@@ -465,6 +466,7 @@ const sv = {
       mediaFeed: 'Material och matning',
       appSettings: 'App',
       previewSettings: 'Förhandsvisning',
+      mcpServer: 'MCP',
       printQuality: 'Utskriftskvalitet',
       output: 'Utmatning',
       clockTime: 'Datum och tid',
@@ -692,6 +694,18 @@ const sv = {
       apiHintDesktop: 'För Labelary premium-abonnemang. Lämna tomt för att använda den kostnadsfria offentliga tjänsten. Nyckeln lagras i operativsystemets nyckelring.',
       apiHintWeb: 'För Labelary premium-abonnemang. Lämna tomt för att använda den kostnadsfria offentliga tjänsten. Nyckeln lagras i den här webbläsaren.',
     },
+    mcp: {
+      heading: 'MCP-server',
+      enable: 'Aktivera MCP-server',
+      hint: 'Låter en lokal AI-assistent som Claude Desktop läsa och redigera denna etikett via Model Context Protocol.',
+      port: 'Port',
+      token: 'Åtkomsttoken',
+      regenerate: 'Generera på nytt',
+      copyConfig: 'Kopiera konfiguration',
+      copied: 'Kopierad',
+      statusRunning: 'Körs',
+      statusStopped: 'Stoppad',
+      },
   },
 
   app: {
