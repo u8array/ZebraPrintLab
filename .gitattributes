@@ -6,5 +6,9 @@ THIRD-PARTY-LICENSES-RUST.md text eol=lf
 scripts/*.mjs text eol=lf
 scripts/**/*.mjs text eol=lf
 
+# Rust manifests: pin LF so a Windows checkout stops flagging Cargo.toml as
+# perpetually modified (autocrlf phantom, empty content diff).
+src-tauri/Cargo.toml text eol=lf
+
 # Raw printer-capture fixtures: byte-exact, never eol-converted.
 *.prn binary
