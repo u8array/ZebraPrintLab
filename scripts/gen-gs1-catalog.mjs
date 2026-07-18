@@ -106,7 +106,7 @@ const toLine = (e) => {
 const header = `// GENERATED from the GS1 Barcode Syntax Dictionary (GS1 AISBL, Apache-2.0,
 // derived from BWIPP + Zint) via scripts/gen-gs1-catalog.mjs. Do not hand-edit.
 // Data only; the entry types live in gs1AiCatalog.types.ts. Consumed by
-// src/lib/gs1.ts (AI_BY_CODE), which expands ranges and skips multiComponent
+// gs1.ts (AI_BY_CODE), which expands ranges and skips multiComponent
 // AIs (their extra fields are not modeled yet).
 
 import type { Gs1AiCatalogEntry } from './gs1AiCatalog.types';

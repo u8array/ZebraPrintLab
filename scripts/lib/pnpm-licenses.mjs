@@ -1,7 +1,8 @@
 // Single source for reading the production dependency license tree. Both the
-// license gate and the attribution generator depend on the exact same scope
-// (--prod = what ships in dist/), so the invocation lives here: changing the
-// flags in one place keeps the gate and the attribution file in agreement.
+// license gate and the attribution generator depend on the exact same scope:
+// the shipped app only (--filter zebra-print-lab). Since the workspace split,
+// an unscoped read would also pull packages/mcp-server's tree, which runs as a
+// separate process and never lands in dist/.
 import { execSync } from 'node:child_process';
 
 // Returns pnpm's grouped output: { [spdxId]: Array<{name, versions, paths,
@@ -12,7 +13,7 @@ export function readProdLicenses() {
   try {
     // maxBuffer well above the current ~20 KB so a growing tree can't hit the
     // 1 MB default and turn a license read into an ENOBUFS crash.
-    raw = execSync('pnpm licenses list --prod --json', { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    raw = execSync('pnpm licenses list --prod --json --filter zebra-print-lab', { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   } catch (e) {
     console.error('Could not read `pnpm licenses list --prod --json`:', e.message);
     process.exit(2);
