@@ -47,5 +47,9 @@ export function safeLocalStorageSet(key: string, value: string): void {
 
 export function safeLocalStorageRemove(key: string): void {
   if (!hasLocalStorage()) return;
-  localStorage.removeItem(key);
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // extension/policy interception can make removeItem throw; module must not
+  }
 }

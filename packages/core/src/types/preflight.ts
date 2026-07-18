@@ -20,7 +20,8 @@ export type PreflightKind =
   | 'emptyContent'
   | 'printerSupportLimited'
   | 'qrRotatedStatic'
-  | 'qrRotatedModel2';
+  | 'qrRotatedModel2'
+  | 'unknownType';
 
 export interface PreflightFinding {
   objectId: string;
@@ -65,6 +66,9 @@ export const PREFLIGHT_SEVERITY: Record<PreflightKind, PreflightSeverity> = {
   // The graphic encoder only produces Model 2 symbols, so a rotated Model 1
   // QR prints as Model 2 (legacy scanners may reject it).
   qrRotatedModel2: 'warning',
+  // A leaf whose type isn't in the registry: it has no emitter, so it prints
+  // nothing. Only reachable via an imported/foreign design file.
+  unknownType: 'error',
 };
 
 /** What a per-type `preflight` producer receives. Minimal on purpose (the

@@ -254,7 +254,10 @@ export function parseZPL(
     }
 
     if (rest.trim() || cmd.trim()) {
-      const token = `^${cmd}${rest}`;
+      // Source prefix from `start`: tilde commands must not surface as `^`.
+      // trimEnd: `rest` runs to the next command, dragging the line break in
+      // multi-line ZPL into the surfaced token.
+      const token = `${zpl[start] ?? "^"}${cmd}${rest}`.trimEnd();
       skipped.push(token);
       unknown.push(token);
     }

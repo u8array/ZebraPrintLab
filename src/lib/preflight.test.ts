@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { computePreflight, markerValueFindings, suppressPristineEmpty, type PreflightFinding } from "@zplab/core/lib/preflight";
-import { getEntry } from "@zplab/core/registry/index";
+import { getEntry } from "@zplab/core/registry";
 import type { ObjectBoundsCtx } from "@zplab/core/lib/objectBounds";
 import type { LabelObject } from "@zplab/core/types/Group";
-import type { LeafObject } from "@zplab/core/registry/index";
+import type { LeafObject } from "@zplab/core/registry";
 import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 
 const label: LabelConfig = { widthMm: 100, heightMm: 50, dpmm: 8 }; // printable 800 x 400
@@ -193,6 +193,22 @@ describe("emptyContent producer", () => {
 
   it("does not fire on types without a content field", () => {
     expect(computePreflight([box("b", 10, 10, 50, 50)], ctx, "mm")).toEqual([]);
+  });
+});
+
+describe("unknownType producer", () => {
+  it("flags a leaf whose type is not in the registry", () => {
+    const leaf = {
+      id: "u",
+      type: "not-a-real-type",
+      x: 10,
+      y: 10,
+      rotation: 0,
+      props: {},
+    } as unknown as LeafObject;
+    expect(computePreflight([leaf], ctx, "mm")).toEqual([
+      { objectId: "u", kind: "unknownType", severity: "error" },
+    ]);
   });
 });
 

@@ -435,7 +435,9 @@ export function createGraphicsHandlers(
       const size = parseInt(rest.slice(c2 + 1, c3), 10);
       const dyBytesPerRow = parseInt(rest.slice(c3 + 1, c4), 10);
       const data = rest.slice(c4 + 1);
-      const dySummary = `~DY${rest.slice(0, IMPORT_FINDING_PAYLOAD_LIMIT)}…`;
+      // trimEnd before slicing: a short rest ends with the line break, which
+      // would land mid-token where pushBrowserLimit's trim cannot reach.
+      const dySummary = `~DY${rest.trimEnd().slice(0, IMPORT_FINDING_PAYLOAD_LIMIT)}…`;
 
       // Graphic uploads (~DY ...,A/B/C,G,...): decode via the same payload
       // pipeline as ^GF, register the resulting image under the full

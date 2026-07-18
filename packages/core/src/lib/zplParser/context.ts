@@ -219,10 +219,13 @@ export interface ParserState {
   serialStrippedFns: Set<number>;
 }
 
-/** Append to `skipped` and `browserLimit` (invariant: browserLimit ⊆ skipped). */
+/** Append to `skipped` and `browserLimit` (invariant: browserLimit ⊆ skipped).
+ *  trimEnd: `token` carries `rest` up to the next command, which in multi-line
+ *  ZPL includes the trailing newline (noise in this diagnostic surface). */
 export function pushBrowserLimit(result: ParserResult, token: string): void {
-  result.skipped.push(token);
-  result.browserLimit.push(token);
+  const clean = token.trimEnd();
+  result.skipped.push(clean);
+  result.browserLimit.push(clean);
 }
 
 /** Default text height: ^CF override, else ZPL baseline 30. */

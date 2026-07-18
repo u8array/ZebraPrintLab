@@ -12,7 +12,8 @@ export type ImportFindingKind =
   | "deviceAction"
   | "lossyEdit"
   | "fnRenumbered"
-  | "fnDefaultDropped";
+  | "fnDefaultDropped"
+  | "mixedPageGeometry";
 
 /**
  * One import finding. Created per-occurrence so each entry can be navigated
