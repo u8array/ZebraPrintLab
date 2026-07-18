@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.app.json",
+  "compilerOptions": {
+    // DOM lib inherited from tsconfig.app.json: @zplab/core's type graph
+    // references DOM types (HTMLImageElement, Canvas, document, FontFace), so a
+    // Node-only lib fails to type-check even though this server never uses them.
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

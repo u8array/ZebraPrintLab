@@ -1,0 +1,17 @@
+{
+  "name": "@zplab/mcp-server",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@zplab/core": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}
