@@ -9,7 +9,7 @@ import {
   resolveContentPreview,
   type ActiveCsvRow,
 } from '@zplab/core/lib/variableBinding';
-import { objectResolvesCtrl } from '@zplab/core/registry/index';
+import { objectResolvesCtrl } from '@zplab/core/registry';
 import type { CsvMapping, Variable } from '@zplab/core/types/Variable';
 import type { LabelObject } from '@zplab/core/types/Group';
 

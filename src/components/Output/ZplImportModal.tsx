@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react';
 import { XMarkIcon, ClipboardDocumentIcon, CheckIcon, FolderOpenIcon } from '@heroicons/react/16/solid';
-import { importZplText, routeSetupCommands, mergeSetupFonts, type ZplImportResult, type SetupCommandChoice } from '../../lib/zplImportService';
+import { importZplText, routeSetupCommands, mergeSetupFonts, type ZplImportResult, type SetupCommandChoice } from '@zplab/core/lib/zplImportService';
 import { readFileAsText } from '../../lib/readFile';
 import { useLabelStore } from '../../store/labelStore';
 import type { Page } from '@zplab/core/types/Group';
 import type { LabelConfig } from '@zplab/core/types/LabelConfig';
 import type { PrinterProfile } from '@zplab/core/types/PrinterProfile';
 import type { Variable } from '@zplab/core/types/Variable';
-import { formatReportAsText, replayRiskFindings, printerCommandFindings, resolveRoutedReport, type ImportReport, type ImportResult } from '../../lib/importReport';
+import { formatReportAsText, type ImportResult } from '../../lib/importReport';
+import { replayRiskFindings, printerCommandFindings, resolveRoutedReport, type ImportReport } from '@zplab/core/lib/importReport';
 import { ImportSummaryBody } from './ImportSummary';
 import { ImportSetupChoice } from './ImportSetupChoice';
 import { useT } from '../../hooks/useT';

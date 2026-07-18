@@ -4,7 +4,7 @@ import { useLabelStore, useCurrentObjects, selectPreviewLocksEditor } from "../.
 import type { LabelCanvasHandle } from "../Canvas/LabelCanvas";
 import type { AlignOp, DistributeAxis, AlignRef } from "../../lib/align";
 import type { AlignSelectionRef } from "../../store/slices/uiSlice";
-import { getEntry } from "@zplab/core/registry/index";
+import { getEntry } from "@zplab/core/registry";
 import { getPanel } from "../../registry/panels";
 import { canGroupSelection, findObjectById, hasLockedAncestor, isGroup } from "@zplab/core/types/Group";
 import { symbologyTargets } from "../../lib/symbologySwitch";

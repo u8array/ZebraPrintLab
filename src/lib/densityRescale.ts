@@ -1,5 +1,5 @@
 import { isGroup, type LabelObject, type LeafObject, type Page } from "@zplab/core/types/Group";
-import { getEntry } from "@zplab/core/registry/index";
+import { getEntry } from "@zplab/core/registry";
 import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 
 /** A field whose scaled value had to be clamped or snapped, so the rescale is

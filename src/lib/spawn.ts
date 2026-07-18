@@ -1,4 +1,4 @@
-import { getEntry } from '@zplab/core/registry/index';
+import { getEntry } from '@zplab/core/registry';
 import { getStepRotation, zplRotationForView, type ViewRotation, type ZplRotation } from '@zplab/core/registry/rotation';
 import { objectBoundsDots, type ObjectBoundsCtx } from '@zplab/core/lib/objectBounds';
 import type { LabelConfig } from '@zplab/core/types/LabelConfig';

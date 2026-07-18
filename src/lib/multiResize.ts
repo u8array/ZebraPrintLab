@@ -1,5 +1,5 @@
-import type { LeafObject } from "@zplab/core/registry/index";
-import { getEntry, SHAPE_PRIMITIVE_TYPES } from "@zplab/core/registry/index";
+import type { LeafObject } from "@zplab/core/registry";
+import { getEntry, SHAPE_PRIMITIVE_TYPES } from "@zplab/core/registry";
 import type { BoundingBoxDots } from "@zplab/core/lib/objectBounds";
 import { makeFree } from "./lineConstrain";
 

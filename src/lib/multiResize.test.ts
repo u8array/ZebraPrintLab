@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { projectMultiResize } from "./multiResize";
-import type { LeafObject } from "@zplab/core/registry/index";
+import type { LeafObject } from "@zplab/core/registry";
 
 const ident = (v: number) => v;
 const bbox = { x: 100, y: 100, width: 200, height: 100 };

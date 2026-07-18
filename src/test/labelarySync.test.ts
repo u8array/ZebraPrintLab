@@ -19,7 +19,7 @@ import { dotsToPx } from "@zplab/core/lib/coordinates";
 import { getObjectStringContent } from "@zplab/core/lib/variableBinding";
 import { upcSuppTextZoneDots, QR_FT_MODULE_OFFSET } from "@zplab/core/lib/bwipConstants";
 import { barcodeFtAnchorOffset } from "@zplab/core/lib/objectBounds";
-import { ObjectRegistry } from "@zplab/core/registry/index";
+import { ObjectRegistry } from "@zplab/core/registry";
 import { objectRotation } from "@zplab/core/registry/rotation";
 import { defined } from "./helpers";
 import { testModels } from "./testModels";

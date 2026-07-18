@@ -8,7 +8,7 @@ import { buildFavoritesAddMenu, buildPaletteRowMenu } from './paletteActions';
 import { ContextMenu, type MenuSection } from '../ui/ContextMenu';
 import { useContextMenu } from '../../hooks/useContextMenu';
 import { resolveAddable, typeLabelFor, type AddableEntry } from '../../registry/palettePresets';
-import { getEntry } from '@zplab/core/registry/index';
+import { getEntry } from '@zplab/core/registry';
 import { useT } from '../../hooks/useT';
 import { useLabelStore } from '../../store/labelStore';
 import { printableRectDots } from '@zplab/core/lib/objectBounds';

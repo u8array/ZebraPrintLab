@@ -13,7 +13,7 @@ import {
   rewriteTemplateMarkers,
   substituteTemplateMarkers,
 } from '../labelStore.internals';
-import { dropPageOverlays } from '../../lib/pageOverlay';
+import { dropPageOverlays } from '@zplab/core/lib/pageOverlay';
 import { selectPreviewLocksEditor } from '../labelStore.selectors';
 import type { LabelState } from '../labelStore';
 

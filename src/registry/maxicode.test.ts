@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ObjectRegistry } from "@zplab/core/registry/index";
+import { ObjectRegistry } from "@zplab/core/registry";
 import { parseZPL } from "@zplab/core/lib/zplParser";
 import { validateMaxicodeBwip } from "../components/Canvas/bwipHelpers";
 import type { LabelObjectBase } from "@zplab/core/types/LabelObject";

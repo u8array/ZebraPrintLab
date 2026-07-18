@@ -2,7 +2,7 @@ import { useLabelStore } from "../../store/labelStore";
 import { useT } from "../../hooks/useT";
 import type { BindableLeaf } from "@zplab/core/lib/variableField";
 import { fieldIsMultiline } from "@zplab/core/registry/text";
-import { objectResolvesCtrl, specForObject } from "@zplab/core/registry/index";
+import { objectResolvesCtrl, specForObject } from "@zplab/core/registry";
 import { contentSanitiser } from "@zplab/core/registry/contentSpec";
 import { TemplateContentInput } from "./TemplateContentInput";
 

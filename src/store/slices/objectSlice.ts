@@ -12,7 +12,7 @@ import {
   type LabelObject,
   type Page,
 } from '@zplab/core/types/Group';
-import { getEntry } from '@zplab/core/registry/index';
+import { getEntry } from '@zplab/core/registry';
 import { reorderForZ, type ZOrderDir } from '../../lib/zorder';
 import { makeReverseBackingBox, precedingBackingExists, isOwnReverseBacking } from '@zplab/core/lib/reverseBacking';
 import { spawnRotationOverride } from '../../lib/spawn';

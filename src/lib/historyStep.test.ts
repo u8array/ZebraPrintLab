@@ -6,7 +6,7 @@ import {
   type HistorySnapshot,
 } from "./historyStep";
 import type { LabelObject, Page } from "@zplab/core/types/Group";
-import type { LeafObject } from "@zplab/core/registry/index";
+import type { LeafObject } from "@zplab/core/registry";
 import type { Variable } from "@zplab/core/types/Variable";
 import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 

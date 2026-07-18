@@ -10,7 +10,7 @@ import {
   LinkSlashIcon,
   VariableIcon,
 } from '@heroicons/react/16/solid';
-import { getEntry } from '@zplab/core/registry/index';
+import { getEntry } from '@zplab/core/registry';
 import { isGroup, type LabelObject } from '@zplab/core/types/Group';
 import { useT } from '../../hooks/useT';
 import { useLabelStore } from '../../store/labelStore';

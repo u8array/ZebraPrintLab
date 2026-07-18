@@ -1,4 +1,4 @@
-import { ObjectRegistry, getEntry } from '@zplab/core/registry/index';
+import { ObjectRegistry, getEntry } from '@zplab/core/registry';
 import type { ObjectGroup } from '@zplab/core/types/LabelObject';
 import type { ObjectTypeCore } from '@zplab/core/types/ObjectType';
 import type { Translations } from '../locales';

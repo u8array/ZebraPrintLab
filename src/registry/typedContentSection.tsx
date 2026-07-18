@@ -1,6 +1,6 @@
 import { useT } from '../hooks/useT';
 import { useLabelStore } from '../store/labelStore';
-import { getEntry } from '@zplab/core/registry/index';
+import { getEntry } from '@zplab/core/registry';
 import { StaticSectionCard } from '../components/Properties/SectionCard';
 import { ContentEditorButton } from '../components/Properties/ContentEditorButton';
 import { builderButtonCls } from '../components/ui/formStyles';

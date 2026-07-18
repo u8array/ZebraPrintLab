@@ -14,7 +14,7 @@ import { useLabelStore, getCurrentObjects } from "../../store/labelStore";
 import { findObjectById } from "@zplab/core/types/Group";
 import { markerOf } from "@zplab/core/types/Variable";
 import { fieldIsMultiline } from "@zplab/core/registry/text";
-import { objectResolvesCtrl, specForObject } from "@zplab/core/registry/index";
+import { objectResolvesCtrl, specForObject } from "@zplab/core/registry";
 import { contentSanitiser } from "@zplab/core/registry/contentSpec";
 import { removeMarkerAt } from "../../lib/markerTokens";
 import { extractTemplateRefs, renameTemplateMarker } from "@zplab/core/lib/fnTemplate";

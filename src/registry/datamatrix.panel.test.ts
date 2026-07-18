@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { ObjectRegistry } from '@zplab/core/registry/index';
+import { ObjectRegistry } from '@zplab/core/registry';
 import { resolveContentSpec, contentSanitiser } from '@zplab/core/registry/contentSpec';
 import { GS1_EXPANDED_CHARSET, GS1_GS } from '@zplab/core/lib/gs1';
 

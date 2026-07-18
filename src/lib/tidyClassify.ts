@@ -5,7 +5,7 @@
 // dot bboxes (see objectBounds.ts).
 
 import type { BoundingBoxDots } from "@zplab/core/lib/objectBounds";
-import { SHAPE_PRIMITIVE_TYPES } from "@zplab/core/registry/index";
+import { SHAPE_PRIMITIVE_TYPES } from "@zplab/core/registry";
 
 export type TidyClass = "frame" | "divider" | "content";
 

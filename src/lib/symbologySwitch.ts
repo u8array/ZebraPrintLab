@@ -1,4 +1,4 @@
-import { getEntry, ObjectRegistry } from "@zplab/core/registry/index";
+import { getEntry, ObjectRegistry } from "@zplab/core/registry";
 import { resolveContentSpec, hasValidLength, violatesCharset } from "@zplab/core/registry/contentSpec";
 import type { ContentSpec } from "@zplab/core/types/contentSpec";
 import type { LeafType } from "@zplab/core/registry/leafObject";

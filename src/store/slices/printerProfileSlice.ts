@@ -5,7 +5,7 @@ import {
   printerProfileSchema,
   type PrinterProfile,
 } from '@zplab/core/types/PrinterProfile';
-import { pruneUndefined } from '../../lib/pruneUndefined';
+import { pruneUndefined } from '@zplab/core/lib/pruneUndefined';
 import { selectPreviewLocksEditor } from '../labelStore.selectors';
 import type { LabelState } from '../labelStore';
 

@@ -1,5 +1,5 @@
-import type { ImportFinding } from '../../lib/importReport';
-import type { SetupCommandChoice } from '../../lib/zplImportService';
+import type { ImportFinding } from '@zplab/core/lib/importReport';
+import type { SetupCommandChoice } from '@zplab/core/lib/zplImportService';
 import { useT } from '../../hooks/useT';
 import { FindingRow } from './ImportSummary';
 

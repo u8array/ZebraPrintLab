@@ -9,8 +9,8 @@ import {
   BARCODE_1D_TYPES,
   STACKED_2D_TYPES,
   getEntry,
-} from "@zplab/core/registry/index";
-import type { LeafObject } from "@zplab/core/registry/index";
+} from "@zplab/core/registry";
+import type { LeafObject } from "@zplab/core/registry";
 import { resolveBlockResizeMode } from "@zplab/core/registry/transformHelpers";
 import { resolveTextMode, type TextProps } from "@zplab/core/registry/text";
 import type { ObjectChanges } from "../../../store/labelStore";

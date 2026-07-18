@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ObjectRegistry, getEntry } from '@zplab/core/registry/index';
+import { ObjectRegistry, getEntry } from '@zplab/core/registry';
 import type { LabelObjectBase } from '@zplab/core/types/LabelObject';
 import { defined } from '../test/helpers';
 import { qualityPatch, type DataMatrixProps } from '@zplab/core/registry/datamatrix';
