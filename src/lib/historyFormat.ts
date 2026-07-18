@@ -1,4 +1,4 @@
-import { getEntry } from '@zplab/core/registry/index';
+import { getEntry } from '@zplab/core/registry';
 import { formatTemplate } from './formatTemplate';
 import type { Translations } from '../locales';
 import type { HistoryStepDescriptor } from './historyStep';

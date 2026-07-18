@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { centeredSpawnAnchor, spawnRotationOverride } from './spawn';
 import { objectBoundsDots } from '@zplab/core/lib/objectBounds';
-import { getEntry } from '@zplab/core/registry/index';
+import { getEntry } from '@zplab/core/registry';
 import type { LabelObject } from '@zplab/core/types/Group';
 
 const LABEL = { widthMm: 100, heightMm: 60, dpmm: 8 };

@@ -3,7 +3,7 @@
 
 import bwipjs from "bwip-js/browser";
 import { errorMessage } from "../../lib/errorMessage";
-import { getEntry, type LeafObject } from "@zplab/core/registry/index";
+import { getEntry, type LeafObject } from "@zplab/core/registry";
 import { clampCodablockColumns, CODABLOCK_PREVIEW_COLUMNS_MIN } from "@zplab/core/registry/codablock";
 import { barcodeTextZoneDots, barcodeZoneAbove } from "../../lib/barcodeHri";
 import { upceData6FromFd } from "@zplab/core/registry/hriFormatters";

@@ -1,4 +1,4 @@
-import { objectResolvesCtrl, type LeafObject } from "@zplab/core/registry/index";
+import { objectResolvesCtrl, type LeafObject } from "@zplab/core/registry";
 import { isBarcode } from "@zplab/core/lib/objectBounds";
 import { PREFLIGHT_SEVERITY, type PreflightFinding } from "@zplab/core/lib/preflight";
 import type { Variable } from "@zplab/core/types/Variable";

@@ -4,7 +4,7 @@ import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 import { isGroup, type LabelObject } from "@zplab/core/types/Group";
 import type { Variable } from "@zplab/core/types/Variable";
 import { applyBindingToTree, clockCtxFromLabel, getObjectStringContent, type ActiveCsvRow } from "@zplab/core/lib/variableBinding";
-import { objectResolvesCtrl } from "@zplab/core/registry/index";
+import { objectResolvesCtrl } from "@zplab/core/registry";
 import { placeholderContentFor, samplePropsFor } from "../registry/placeholderContent";
 
 /** Blank fields rendered with their symbology sample, so the preview overlay

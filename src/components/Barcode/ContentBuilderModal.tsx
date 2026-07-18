@@ -8,7 +8,7 @@ import { usePreviewBinding } from "../../store/usePreviewBinding";
 import { getObjectStringContent } from "@zplab/core/lib/variableBinding";
 import { MarkerTextField } from "../Properties/MarkerTextField";
 import { findObjectById } from "@zplab/core/types/Group";
-import { objectResolvesCtrl } from "@zplab/core/registry/index";
+import { objectResolvesCtrl } from "@zplab/core/registry";
 import { encodeContent, parseContent, recommendedEc, isContentComplete, typedContentMarkerFindings, CONTENT_TYPES, type ContentType, type ContentFields } from "@zplab/core/lib/typedContent";
 
 type FieldKind = "text" | "password" | "textarea" | "checkbox" | "auth";

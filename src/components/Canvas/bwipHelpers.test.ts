@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { buildBwipOptions, dataMatrixMinFitIndex, getDisplaySize, getEanUpcHriFragments, parseZplCode128Escapes } from "./bwipHelpers";
-import type { LeafObject } from "@zplab/core/registry/index";
+import type { LeafObject } from "@zplab/core/registry";
 import { dmSizePairs, type DataMatrixProps } from "@zplab/core/registry/datamatrix";
 import { placeholderContentFor, samplePropsFor } from "../../registry/placeholderContent";
 import { ZD230_QA_123 } from "../../test/qrFixtures";

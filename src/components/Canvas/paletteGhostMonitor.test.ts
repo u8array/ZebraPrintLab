@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { DragEndEvent, DragMoveEvent } from "@dnd-kit/core";
 import { paletteGhostHandlers, PALETTE_GHOST_ID, type PaletteGhostDeps } from "./paletteGhostMonitor";
 import { CANVAS_DROPPABLE_ID } from "../../dnd/types";
-import type { LeafObject } from "@zplab/core/registry/index";
+import type { LeafObject } from "@zplab/core/registry";
 import { centeredSpawnAnchor } from "../../lib/spawn";
 
 const CANVAS = CANVAS_DROPPABLE_ID;

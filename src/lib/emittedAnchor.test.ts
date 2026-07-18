@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { emittedAnchorDots } from "@zplab/core/lib/emittedAnchor";
 import type { ObjectBoundsCtx } from "@zplab/core/lib/objectBounds";
 import type { LabelObject } from "@zplab/core/types/Group";
-import type { LeafObject } from "@zplab/core/registry/index";
+import type { LeafObject } from "@zplab/core/registry";
 
 const label = { widthMm: 100, heightMm: 50, dpmm: 8 };
 const ctx: ObjectBoundsCtx = { label };

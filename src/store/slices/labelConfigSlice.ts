@@ -6,7 +6,7 @@ import { forgetImport } from '../../lib/csvImport';
 import { dropLegacyFontBindings } from '@zplab/core/lib/customFonts';
 import { selectPreviewLocksEditor } from '../labelStore.selectors';
 import { configPatchAffectsEmit } from '../labelStore.internals';
-import { dropPageOverlays } from '../../lib/pageOverlay';
+import { dropPageOverlays } from '@zplab/core/lib/pageOverlay';
 import { rescaleDesign } from '../../lib/densityRescale';
 import type { LabelState } from '../labelStore';
 

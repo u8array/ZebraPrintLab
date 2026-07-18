@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getEntry } from "@zplab/core/registry/index";
+import { getEntry } from "@zplab/core/registry";
 import { serialDisablePatch, serialEnablePatch, SERIAL_DEFAULT } from "@zplab/core/registry/serialField";
 
 describe("serialisable capability (matches what the emitter actually emits)", () => {

@@ -4,7 +4,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { FolderPlusIcon } from '@heroicons/react/16/solid';
 import { useLabelStore, useCurrentObjects } from '../../store/labelStore';
 import { canGroupSelection, dragBlockIds, effectiveSelection, findObjectById, isGroup, walkObjects } from '@zplab/core/types/Group';
-import { getEntry } from '@zplab/core/registry/index';
+import { getEntry } from '@zplab/core/registry';
 import { useT } from '../../hooks/useT';
 import { buildBulkToggleUpdates, type ToggleField } from '../../lib/bulkToggle';
 import { buildFlatRows, useLayerDnd, type FlatRow } from './useLayerDnd';

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from "react";
 import { Image as KImage, Group, Rect, Shape, Text } from "react-konva";
 import type Konva from "konva";
-import { BARCODE_1D_TYPES, ObjectRegistry, objectResolvesCtrl } from "@zplab/core/registry/index";
+import { BARCODE_1D_TYPES, ObjectRegistry, objectResolvesCtrl } from "@zplab/core/registry";
 import { dotsToPx, pxToDots } from "@zplab/core/lib/coordinates";
 import { barcodeFtAnchorOffset, qrPrintsAsGraphic } from "@zplab/core/lib/objectBounds";
 import { useColorScheme, CANVAS_WARNING } from "../../hooks/useColorScheme";

@@ -3,7 +3,7 @@ import type { Translations } from '../locales';
 import { useT } from '../hooks/useT';
 import { useLabelStore } from '../store/labelStore';
 import { hasValidLength } from '@zplab/core/registry/contentSpec';
-import { specForObject } from '@zplab/core/registry/index';
+import { specForObject } from '@zplab/core/registry';
 import { RotationSelect } from '../components/Properties/RotationSelect';
 import { NumberInput } from '../components/Properties/NumberInput';
 import { UnitNumberInput } from '../components/Properties/UnitNumberInput';

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { ExclamationTriangleIcon, ExclamationCircleIcon } from "@heroicons/react/16/solid";
 import { typeLabelFor } from "../../registry/palettePresets";
-import type { LeafObject } from "@zplab/core/registry/index";
+import type { LeafObject } from "@zplab/core/registry";
 import { useT } from "../../hooks/useT";
 import { useDismiss } from "../../hooks/useDismiss";
 import { Tooltip } from "../ui/Tooltip";

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useLabelStore } from "../store/labelStore";
-import { importZplText } from "./zplImportService";
+import { importZplText } from "@zplab/core/lib/zplImportService";
 import { generateMultiPageZPL } from "@zplab/core/lib/zplGenerator";
 import { serializeDesign, parseDesignFile } from "@zplab/core/lib/designFile";
 import { getObjectStringContent } from "@zplab/core/lib/variableBinding";

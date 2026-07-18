@@ -1,4 +1,4 @@
-import { getEntry } from '@zplab/core/registry/index';
+import { getEntry } from '@zplab/core/registry';
 import { GS1_SAMPLE_CONTENT } from '@zplab/core/lib/gs1';
 
 /** The sample a blank field renders on canvas and in the Labelary preview

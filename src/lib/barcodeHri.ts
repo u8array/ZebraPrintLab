@@ -1,7 +1,7 @@
 // Pure HRI text-zone resolution shared by the barcode renderer (getDisplaySize)
 // and the group-rotation bbox probe, so zone height and side never drift apart.
 
-import { ObjectRegistry, type LeafObject } from "@zplab/core/registry/index";
+import { ObjectRegistry, type LeafObject } from "@zplab/core/registry";
 import {
   EAN_TEXT_ZONE_DOTS,
   LOGMARS_TEXT_ZONE_DOTS,

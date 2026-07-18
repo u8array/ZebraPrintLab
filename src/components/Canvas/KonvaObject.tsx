@@ -23,7 +23,7 @@ import { GS_SYMBOL_PATHS, GS_VECTOR_CODES, type GsVectorCode } from "../../regis
 import { blockBoundsDots, blockJustifyWordPositions, blockLineStartDots, blockLineStepDots, EMPTY_TEXT_PLACEHOLDER_GLYPHS, isBlankText, tbBoundsDots, tbLineStepDots, wrapBlockLines, zebraAlignOffsetDots, zebraHangingIndentOffsetDots, zebraJustifyGapDots, zebraLineWidthDots, type ZplRotation } from "@zplab/core/lib/zebraTextLayout";
 import { resolveTextMode } from "@zplab/core/registry/text";
 import { isAxisSwapped } from "@zplab/core/registry/rotation";
-import { objectResolvesCtrl, type LeafObject } from "@zplab/core/registry/index";
+import { objectResolvesCtrl, type LeafObject } from "@zplab/core/registry";
 import type { TextProps } from "@zplab/core/registry/text";
 
 type Props = KonvaObjectProps;

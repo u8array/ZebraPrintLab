@@ -1,4 +1,4 @@
-import type { LeafObject } from "@zplab/core/registry/index";
+import type { LeafObject } from "@zplab/core/registry";
 import { objectBoundsDots, type ObjectBoundsCtx } from "@zplab/core/lib/objectBounds";
 
 export const positionTypeOf = (obj: { positionType?: "FO" | "FT" }): "FO" | "FT" =>

@@ -6,7 +6,7 @@ import { CheckboxRow } from "./CheckboxRow";
 import { NumberInput } from "./NumberInput";
 import { SegmentedControl } from "../ui/SegmentedControl";
 import { inputCls, labelCls } from "../ui/formStyles";
-import { getEntry, objectResolvesCtrl, specForObject } from "@zplab/core/registry/index";
+import { getEntry, objectResolvesCtrl, specForObject } from "@zplab/core/registry";
 import {
   serialDisablePatch,
   serialEnablePatch,
