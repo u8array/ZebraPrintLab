@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { generateZPL } from '@zplab/core/lib/zplGenerator';
-import { parseZPL } from '@zplab/core/lib/zplParser';
 import { clampCodablockColumns, type CodablockProps } from '@zplab/core/registry/codablock';
 import type { LabelConfig } from '@zplab/core/types/LabelConfig';
 import type { LabelObject } from '@zplab/core/types/Group';
+import { parseSingle } from '../test/helpers';
 
 const BASE_LABEL: LabelConfig = { widthMm: 100, heightMm: 50, dpmm: 8 };
 
@@ -28,7 +28,7 @@ const cbObjects = (overrides: Partial<CodablockProps> = {}): LabelObject[] =>
   ] as unknown as LabelObject[];
 
 const codablockOf = (zpl: string) =>
-  parseZPL(zpl).objects.find((o) => o.type === 'codablock') as
+  parseSingle(zpl).objects.find((o) => o.type === 'codablock') as
     | (LabelObject & { props: CodablockProps })
     | undefined;
 
@@ -91,7 +91,7 @@ describe('codablock ^BB parse / round-trip', () => {
 
   it('survives a generate → parse → generate round-trip', () => {
     const first = generateZPL(BASE_LABEL, cbObjects({ columns: 10 }));
-    const reparsed = parseZPL(first).objects.filter((o) => o.type === 'codablock');
+    const reparsed = parseSingle(first).objects.filter((o) => o.type === 'codablock');
     const second = generateZPL(BASE_LABEL, reparsed as LabelObject[]);
     expect(second).toContain(',10,,F');
   });

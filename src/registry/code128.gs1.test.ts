@@ -8,6 +8,7 @@ import { PALETTE_PRESET_IDS } from './palettePresets';
 import { gs1EnablePatch } from '@zplab/core/registry/gs1FieldSpec';
 import type { LabelConfig } from '@zplab/core/types/LabelConfig';
 import type { LabelObject } from '@zplab/core/types/Group';
+import { parseSingle } from '../test/helpers';
 
 const LABEL: LabelConfig = { widthMm: 100, heightMm: 50, dpmm: 8 };
 
@@ -54,21 +55,21 @@ describe('GS1-128 (code128 gs1 mode)', () => {
   });
 
   it('parses ^BC..,D as gs1 with canonical (unparenthesized) content', () => {
-    const { objects } = parseZPL('^XA^FO10,10^BCN,100,Y,N,N,D^FD(01)09501101530003^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,10^BCN,100,Y,N,N,D^FD(01)09501101530003^FS^XZ', 8);
     expect((objects[0] as { type: string }).type).toBe('code128');
     expect(propsOf(objects[0]).gs1).toBe(true);
     expect(propsOf(objects[0]).content).toBe(GS1_SAMPLE_CONTENT);
   });
 
   it('parses a plain ^BC as non-gs1', () => {
-    const { objects } = parseZPL('^XA^FO10,10^BCN,100,Y,N,N^FD12345678^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,10^BCN,100,Y,N,N^FD12345678^FS^XZ', 8);
     expect(propsOf(objects[0]).gs1).toBeFalsy();
     expect(propsOf(objects[0]).content).toBe('12345678');
   });
 
   it('round-trips gs1 mode + content through generate->parse', () => {
     const zpl = generateZPL(LABEL, [mk({ ...baseProps, gs1: true })]);
-    const { objects } = parseZPL(zpl, LABEL.dpmm);
+    const { objects } = parseSingle(zpl, LABEL.dpmm);
     expect(propsOf(objects[0]).gs1).toBe(true);
     expect(propsOf(objects[0]).content).toBe(GS1_SAMPLE_CONTENT);
   });
@@ -78,7 +79,7 @@ describe('GS1-128 (code128 gs1 mode)', () => {
     expect(canonical).not.toBeNull();
     const zpl = generateZPL(LABEL, [mk({ ...baseProps, gs1: true, content: canonical! })]);
     expect(zpl).toContain('^FD(01)09501101530003(10)LOT123>8(21)SER456^FS');
-    const { objects } = parseZPL(zpl, LABEL.dpmm);
+    const { objects } = parseSingle(zpl, LABEL.dpmm);
     expect(propsOf(objects[0]).gs1).toBe(true);
     expect(propsOf(objects[0]).content).toBe(canonical);
   });
@@ -95,7 +96,7 @@ describe('GS1-128 (code128 gs1 mode)', () => {
     expect(zpl).toContain('^FD(01)#1#(10)#2#^FS');
     // And it round-trips back to marker content (the parser mints its own
     // variable names for the ^FN slots).
-    const { objects } = parseZPL(zpl, LABEL.dpmm);
+    const { objects } = parseSingle(zpl, LABEL.dpmm);
     expect(propsOf(objects[0]).gs1).toBe(true);
     expect(propsOf(objects[0]).content).toBe('01«field_1»10«field_2»');
   });
@@ -124,14 +125,14 @@ describe('GS1-128 FNC1 separators (mode D)', () => {
     // (10)A>B emits (10)A>0B; parse must unescape so a second export is stable.
     const zpl1 = generateZPL(LABEL, [mk({ ...baseProps, gs1: true, content: '10A>B' })]);
     expect(zpl1).toContain('^FD(10)A>0B^FS');
-    const { objects } = parseZPL(zpl1, LABEL.dpmm);
+    const { objects } = parseSingle(zpl1, LABEL.dpmm);
     expect(propsOf(objects[0]).content).toBe('10A>B');
     expect(generateZPL(LABEL, objects as never)).toContain('^FD(10)A>0B^FS');
   });
 
   it('round-trips the >8 form back to canonical GS content', () => {
     const zpl = '^XA^FO10,10^BCN,100,N,N,N,D^FD(01)04012345678901(10)20260707>8(17)261231(30)144^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     const p = propsOf(objects[0]);
     expect(p.gs1).toBe(true);
     expect(p.content).toBe('0104012345678901' + '1020260707' + GS1_GS + '17261231' + '30144');
@@ -153,7 +154,7 @@ describe('GS1-128 mode-D ^FN value symmetry', () => {
 
   it('normalizes a raw (non-paren) mode-D field payload to model form', () => {
     const zpl = '^XA^FO10,10^BCN,100,N,N,N,D^FD010401234567890110LOT>821SER^FS^XZ';
-    const { objects } = parseZPL(zpl, LABEL.dpmm);
+    const { objects } = parseSingle(zpl, LABEL.dpmm);
     expect(propsOf(objects[0]).content).toBe('010401234567890110LOT' + GS1_GS + '21SER');
   });
 
@@ -161,7 +162,7 @@ describe('GS1-128 mode-D ^FN value symmetry', () => {
     const zpl =
       '^XA^FN1^FD010401234567890110LOT>821SER^FS' +
       '^BY2^FO10,10^BCN,100,N,N,N,D^FE#^FD#1#^FS^XZ';
-    const parsed = parseZPL(zpl, LABEL.dpmm);
+    const parsed = parseSingle(zpl, LABEL.dpmm);
     expect(parsed.variables.find((v) => v.fnNumber === 1)?.defaultValue)
       .toBe('010401234567890110LOT' + GS1_GS + '21SER');
   });
@@ -172,7 +173,7 @@ describe('GS1-128 mode-D ^FN value symmetry', () => {
     const zpl =
       '^XA^FN1^FD0112345678901231^FS' +
       '^BY2^FO10,10^BCN,100,N,N,N,D^FE#^FD(01)04012345678901(10)#1#^FS^XZ';
-    const parsed = parseZPL(zpl, LABEL.dpmm);
+    const parsed = parseSingle(zpl, LABEL.dpmm);
     expect(parsed.variables.find((v) => v.fnNumber === 1)?.defaultValue).toBe('0112345678901231');
   });
 
@@ -180,7 +181,7 @@ describe('GS1-128 mode-D ^FN value symmetry', () => {
     const zpl =
       '^XA^FN1^FD>;>80100003486^FS' +
       '^BY2^FO10,10^BCN,100,N,N,N,D^FE#^FD(01)04012345678901(10)#1#^FS^XZ';
-    const parsed = parseZPL(zpl, LABEL.dpmm);
+    const parsed = parseSingle(zpl, LABEL.dpmm);
     expect(parsed.variables.find((v) => v.fnNumber === 1)?.defaultValue).toBe('>;>80100003486');
   });
 
@@ -197,7 +198,7 @@ describe('GS1-128 mode-D ^FN value symmetry', () => {
 
   it('round-trips the escaped default back to the raw > (no compounding)', () => {
     const zpl = generateZPL(LABEL, [gs1Tpl()], vars);
-    const parsed = parseZPL(zpl, LABEL.dpmm);
+    const parsed = parseSingle(zpl, LABEL.dpmm);
     expect(parsed.variables.find((v) => v.fnNumber === 1)?.defaultValue).toBe('A>B');
     const zpl2 = generateZPL(LABEL, parsed.objects as never, parsed.variables);
     expect(zpl2).toContain('^FN1^FDA>0B^FS');
@@ -219,9 +220,19 @@ describe('GS1-128 mode-D ^FN value symmetry', () => {
     const single = mk({ ...baseProps, gs1: true, content: '«' + 'lot' + '»' });
     const singleVars: Variable[] = [{ id: 'w', name: 'lot', fnNumber: 2, defaultValue: content }];
     const zpl1 = generateZPL(LABEL, [single], singleVars);
-    const parsed = parseZPL(zpl1, LABEL.dpmm);
+    const parsed = parseSingle(zpl1, LABEL.dpmm);
     expect(parsed.variables.find((v) => v.fnNumber === 2)?.defaultValue).toBe(content);
     const zpl2 = generateZPL(LABEL, parsed.objects as never, parsed.variables);
     expect(zpl2).toBe(zpl1);
+  });
+
+  it('scopes mode-D normalization per page: a later block reusing the ^FN number does not suppress it', () => {
+    const zpl =
+      '^XA^FN1^FD010401234567890110LOT>821SER^FS' +
+      '^BY2^FO10,10^BCN,100,N,N,N,D^FE#^FD#1#^FS^XZ' +
+      '^XA^FO10,10^A0N,30,30^FN1^FDplain^FS^XZ';
+    const parsed = parseZPL(zpl, LABEL.dpmm);
+    const modeDVar = parsed.pages[0]?.variables.find((v) => v.fnNumber === 1);
+    expect(modeDVar?.defaultValue).toBe('010401234567890110LOT' + GS1_GS + '21SER');
   });
 });

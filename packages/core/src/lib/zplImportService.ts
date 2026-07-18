@@ -1,7 +1,6 @@
 import { parseZPL, type ImportFinding, type ImportReport } from "./zplParser";
 import { replayRiskFindings, dedupCommandsByKind } from "./importReport";
 import { dropPageOverlays } from "./pageOverlay";
-import { pruneUndefined } from "./pruneUndefined";
 import { stripDrivePrefix } from "./customFonts";
 import { renameTemplateMarkers } from "./fnTemplate";
 import type { CustomFontMapping, LabelConfig } from "../types/LabelConfig";
@@ -26,106 +25,35 @@ export interface ZplImportResult {
   mixedPageGeometry: boolean;
 }
 
-interface SplitBlocks {
-  /** Command text before the first `^XA` (e.g. `~DY` font uploads). Empty
-   *  when the head holds no command token, so pasted prose stays discarded. */
-  preamble: string;
-  /** One entry per `^XA...^XZ` document. */
-  blocks: string[];
-}
-
-/**
- * Splits a ZPL stream into one block per `^XA...^XZ` document plus the
- * preamble that precedes the first `^XA`. ZPL commands are case-insensitive
- * per spec.
- */
-function splitIntoLabelBlocks(zpl: string): SplitBlocks {
-  // Capture group preserves the matched delimiter so mixed-case (^xa) survives.
-  const parts = zpl.split(/(\^XA)/i);
-  const blocks: string[] = [];
-  for (let i = 1; i < parts.length; i += 2) {
-    blocks.push((parts[i] ?? '') + (parts[i + 1] ?? ''));
-  }
-  // ~DY uploads emit before the first ^XA; keep the head only when it
-  // carries a command token (^ or ~). Pure prose is discarded so junk
-  // imports still yield nothing.
-  const head = parts[0] ?? '';
-  const preamble = /[\^~]/.test(head) ? head : '';
-  return { preamble, blocks };
-}
-
 export function importZplText(zpl: string, dpmm: number): ZplImportResult {
-  const { preamble, blocks } = splitIntoLabelBlocks(zpl);
+  // Single pass: stream-persistent state (^MU, ^CC/^CT/^CD, ^CI, ^CW/uploads,
+  // ^CF/^BY, ^LH/^LT/^LR) carries across ^XA blocks, and the parser owns the
+  // page boundaries (prefix-aware, unlike a literal ^XA split).
+  const r = parseZPL(zpl, dpmm, { captureOverlay: true });
 
-  if (blocks.length === 0 && !preamble) {
-    return {
-      labelConfig: {},
-      printerProfile: {},
-      pages: [],
-      variables: [],
-      report: { findings: [], partial: [], browserLimit: [], unknown: [], replayRisk: [], deviceAction: [] },
-      mixedPageGeometry: false,
-    };
-  }
-
-  // Prepend the preamble to block 0 so a font's ~DY and its ^CW alias
-  // decode in one parser pass. Without ^XA the preamble runs alone.
-  const hasLabelBlocks = blocks.length > 0;
-  const parseUnits = hasLabelBlocks
-    ? blocks.map((b, i) => (i === 0 ? preamble + b : b))
-    : [preamble];
-  const uploadedFontPaths: string[] = [];
-  const normPath = (p: string) => p.trim().toUpperCase();
-  // Strip only the uploaded side: driveless refs match any drive on the
-  // printer, but two drived refs on different drives stay distinct.
-  const strippedNorm = (p: string) => stripDrivePrefix(normPath(p));
-  // ^CW aliases + ^A@ direct refs across all blocks; later-block claims
-  // also exclude a preamble-uploaded font.
-  const designFontPaths = new Set<string>();
-
-  let labelConfig: Partial<LabelConfig> = {};
-  // Merge profile fields across blocks: later blocks' values win so a
-  // multi-block ZPL with re-stated Setup-Script commands resolves to
-  // the last-seen state (mirrors what the printer would actually end
-  // up with after executing the stream).
-  const printerProfile: Partial<PrinterProfile> = {};
   const pages: Page[] = [];
   const findings: ImportFinding[] = [];
-  // Variables are document-level; blocks merge by source fnNumber only when
+  // Variables are document-level; pages merge by source fnNumber only when
   // the ^FD defaults agree (^FN is scoped per ^XA format, so a shared slot
   // with a different default is a distinct field). A divergent default
   // becomes a separate Variable on a free fnNumber, keeping fn
   // document-unique for mapping/batch/header.
   const variables: Variable[] = [];
   const variablesBySourceFn = new Map<number, Variable[]>();
-  // Parse all blocks up front: renumbering must avoid every source ^FN in
-  // the document (overlays replay original bytes, so a partial regeneration
-  // would otherwise collide with a verbatim same-numbered field).
-  const parsedBlocks = parseUnits.map((block) => parseZPL(block, dpmm, { captureOverlay: true }));
-  const usedFns = new Set<number>();
-  for (const r of parsedBlocks) for (const fn of r.sourceFnNumbers) usedFns.add(fn);
+  // Renumbering must avoid every source ^FN in the document (overlays replay
+  // original bytes, so a regenerated field would otherwise collide).
+  const usedFns = new Set<number>(r.sourceFnNumbers);
 
-  // Cross-block customFonts merge by alias. Foreign ZPL can split a font
-  // upload from its ^CW alias (~DY in preamble, ^CW in a later block),
-  // and the per-block parser would otherwise lose the entry when block 0's
-  // labelConfig replaces all later labelConfigs.
-  const aggregatedCustomFonts = new Map<string, CustomFontMapping>();
-  parsedBlocks.forEach((result, i) => {
-    uploadedFontPaths.push(...result.uploadedFontPaths);
-    for (const m of result.labelConfig.customFonts ?? []) {
-      if (m.path) designFontPaths.add(normPath(m.path));
-      if (m.alias) aggregatedCustomFonts.set(m.alias, m);
-    }
-    for (const p of result.referencedFontPaths) designFontPaths.add(normPath(p));
-    // Objects link to their variable by marker NAME. When this block's variable
-    // merges into an earlier block's (same ^FN number) under a different name,
+  r.pages.forEach((page, i) => {
+    // Objects link to their variable by marker NAME. When this page's variable
+    // merges into an earlier page's (same ^FN number) under a different name,
     // OR a new fnNumber's name collides and gets disambiguated, its `«name»`
     // markers must be renamed to the kept variable's name.
     const nameRemap = new Map<string, string>();
-    for (const v of result.variables) {
+    for (const v of page.variables) {
       const slotMates = variablesBySourceFn.get(v.fnNumber) ?? [];
       // An empty default is a bare slot declaration, not a divergent value
-      // (mirrors the parser's in-block backfill semantics).
+      // (mirrors the parser's in-page backfill semantics).
       const mate = slotMates.find(
         (m) => m.defaultValue === v.defaultValue || m.defaultValue === "" || v.defaultValue === "",
       );
@@ -148,8 +76,6 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
         fnNumber = free;
         findings.push({ kind: "fnRenumbered", command: `^FN${v.fnNumber} → ^FN${free}`, pageIndex: i });
       }
-      // Disambiguate the name if a prior block took it (e.g. two `field_1`
-      // from different blocks).
       const uniqueName = uniqueVariableName(v.name, variables);
       if (uniqueName !== v.name) nameRemap.set(v.name, uniqueName);
       const kept: Variable = { ...v, name: uniqueName, fnNumber };
@@ -157,45 +83,67 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
       usedFns.add(fnNumber);
       variablesBySourceFn.set(v.fnNumber, [...slotMates, kept]);
     }
-    // Rename this block's content markers onto the kept variable names.
+    // Rename this page's content markers onto the kept variable names.
     // Defensive walk into groups; the parser does not produce groups, but the
     // helper is shape-agnostic.
     if (nameRemap.size > 0) {
-      rewireBindings(result.objects, nameRemap);
+      rewireBindings(page.objects, nameRemap);
     }
-    // A preamble-only unit (no ^XA) usually carries just fonts/profile. But a
+    // A bare page (no ^XA wrapper) usually carries just fonts/profile. But a
     // wrapper-less paste of real fields also lands here; import those as a page
     // so they aren't silently dropped (no overlay: the wrapper-less source has
     // nothing to replay byte-for-byte, and re-export adds the ^XA/^XZ wrapper).
-    if (hasLabelBlocks) {
-      pages.push({ objects: result.objects, overlay: result.overlay });
-    } else if (result.objects.length > 0) {
-      pages.push({ objects: result.objects });
+    if (!page.bare) {
+      pages.push({ objects: page.objects, overlay: page.overlay });
+    } else if (page.objects.length > 0) {
+      pages.push({ objects: page.objects });
     }
-    if (i === 0) {
-      labelConfig = result.labelConfig;
-    }
-    // Fold cross-block profile fields without leaking present-with-
-    // undefined keys: an explicit `undefined` from one block would
-    // otherwise overwrite a real value from a later block and end up
-    // in the returned ZplImportResult as a misleading "field cleared"
-    // signal for any consumer that bypasses patchPrinterProfile.
-    Object.assign(printerProfile, pruneUndefined(result.printerProfile));
-    // Per-block findings come from the parser with pageIndex=0; stamp the
-    // real page index here so the UI can navigate to them. A wrapper-less unit
-    // is pushed without an overlay, so its lossyEdit caveat (which only matters
-    // when an overlay would be replayed) is moot; drop it.
-    for (const f of result.importReport.findings) {
-      if (!hasLabelBlocks && f.kind === "lossyEdit") continue;
-      findings.push({ ...f, pageIndex: i });
+    for (const f of page.findings) {
+      // A bare page replays nothing, so its lossyEdit caveat is moot.
+      if (page.bare && f.kind === "lossyEdit") continue;
+      findings.push(f);
     }
   });
 
+  // Single-label design: keep block 0's config. Per-format fields like ^PQ are
+  // block-scoped, so the document-accumulated last-write would leak later
+  // blocks' values. Fonts stay document-wide, and the ZPLLAB sidecar (dpmm,
+  // which plain ZPL can't carry) is a page-0 preamble that overrides the size.
+  const labelConfig: Partial<LabelConfig> = { ...r.pages[0]?.labelConfig };
+  if (r.labelConfig.customFonts) labelConfig.customFonts = r.labelConfig.customFonts;
+  else delete labelConfig.customFonts;
+  if (r.labelConfig.dpmm !== undefined) {
+    labelConfig.dpmm = r.labelConfig.dpmm;
+    labelConfig.widthMm = r.labelConfig.widthMm;
+    labelConfig.heightMm = r.labelConfig.heightMm;
+  }
+
+  // Dedup ^CW font entries by alias (a re-stated alias resolves to the last
+  // definition, as on the printer).
+  const fontEntries = labelConfig.customFonts ?? [];
+  const byAlias = new Map<string, CustomFontMapping>();
+  for (const m of fontEntries) {
+    if (m.alias) byAlias.set(m.alias, m);
+  }
+  if (byAlias.size > 0) {
+    labelConfig.customFonts = [...byAlias.values()];
+  }
+
   // Uploaded fonts not claimed as design fonts are Setup-Script fonts.
   // Case-insensitive compare since external streams vary in casing.
-  const uploadedUnique = [...new Set(uploadedFontPaths)];
+  const normPath = (p: string) => p.trim().toUpperCase();
+  // Strip only the uploaded side: driveless refs match any drive on the
+  // printer, but two drived refs on different drives stay distinct.
+  const strippedNorm = (p: string) => stripDrivePrefix(normPath(p));
+  const designFontPaths = new Set<string>();
+  for (const m of fontEntries) {
+    if (m.path) designFontPaths.add(normPath(m.path));
+  }
+  for (const p of r.referencedFontPaths) designFontPaths.add(normPath(p));
+  const uploadedUnique = [...new Set(r.uploadedFontPaths)];
   const uploadedNormed = new Map(uploadedUnique.map((p) => [normPath(p), p]));
   const uploadedStripped = new Map(uploadedUnique.map((p) => [strippedNorm(p), p]));
+  const printerProfile: Partial<PrinterProfile> = { ...r.printerProfile };
   const setupFontPaths = uploadedUnique.filter(
     (p) => !designFontPaths.has(normPath(p)) && !designFontPaths.has(strippedNorm(p)),
   );
@@ -203,11 +151,10 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     printerProfile.setupFonts = setupFontPaths.map((path) => ({ path }));
   }
 
-  // Backfill embedInZpl + previewFontName on aggregated entries whose
-  // path matches an uploaded font: the parser's ^CW handler can only
-  // see same-block uploads, so a foreign ZPL with split ~DY/^CW would
-  // otherwise drop the embed flag on re-export.
-  for (const m of aggregatedCustomFonts.values()) {
+  // Backfill embedInZpl + previewFontName on entries whose path matches an
+  // uploaded font: covers a ^CW that precedes its ~DY upload, which the
+  // in-pass handler cannot see.
+  for (const m of labelConfig.customFonts ?? []) {
     if (!m.path) continue;
     const upload = uploadedNormed.get(normPath(m.path))
       ?? uploadedStripped.get(strippedNorm(m.path));
@@ -217,12 +164,21 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     const filename = colon >= 0 ? upload.slice(colon + 1) : upload;
     if (filename && !m.previewFontName) m.previewFontName = filename;
   }
-  if (aggregatedCustomFonts.size > 0) {
-    labelConfig.customFonts = [...aggregatedCustomFonts.values()];
+
+  if (r.mixedPageGeometry) {
+    const sizes = [
+      ...new Set(
+        r.pages
+          .map((p) => p.labelSize)
+          .filter((sz) => sz.widthMm !== undefined || sz.heightMm !== undefined)
+          .map((sz) => `${sz.widthMm ?? ''}x${sz.heightMm ?? ''}`),
+      ),
+    ];
+    findings.push({ kind: 'mixedPageGeometry', command: sizes.join(', '), pageIndex: 0 });
   }
 
   // Bucket views deduplicate by command code to match the JSDoc contract on
-  // ImportReport (see zplParser.ts). The per-occurrence model lives in
+  // ImportReport (zplParser/types.ts). The per-occurrence model lives in
   // `findings`; consumers that only need the set of distinct affected commands
   // read these buckets unchanged. Only command-based kinds get a bucket; a
   // block-level kind like 'lossyEdit' stays in `findings` by design.
@@ -235,24 +191,14 @@ export function importZplText(zpl: string, dpmm: number): ZplImportResult {
     deviceAction: dedupCommandsByKind(findings, 'deviceAction'),
   };
 
-  // ^PW/^LL persist across ^XA on a printer, so only an explicit re-statement
-  // to a different size is a real divergence.
-  const explicitSizes = new Set(
-    parsedBlocks
-      .map((r) => r.labelConfig)
-      .filter((lc) => lc.widthMm !== undefined || lc.heightMm !== undefined)
-      .map((lc) => `${lc.widthMm ?? ''}x${lc.heightMm ?? ''}`),
-  );
-  const mixedPageGeometry = explicitSizes.size > 1;
-  if (mixedPageGeometry) {
-    report.findings.push({
-      kind: 'mixedPageGeometry',
-      command: [...explicitSizes].join(', '),
-      pageIndex: 0,
-    });
-  }
-
-  return { labelConfig, printerProfile, pages, variables, report, mixedPageGeometry };
+  return {
+    labelConfig,
+    printerProfile,
+    pages,
+    variables,
+    report,
+    mixedPageGeometry: r.mixedPageGeometry,
+  };
 }
 
 /** Additive setup-font merge (dedupe by normalized path): a stream lists only

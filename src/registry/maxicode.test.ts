@@ -1,10 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { ObjectRegistry } from "@zplab/core/registry";
-import { parseZPL } from "@zplab/core/lib/zplParser";
 import { validateMaxicodeBwip } from "../components/Canvas/bwipHelpers";
 import type { LabelObjectBase } from "@zplab/core/types/LabelObject";
 import type { MaxicodeProps } from "@zplab/core/registry/maxicode";
-import { defined } from "../test/helpers";
+import { defined, parseSingle } from "../test/helpers";
 
 function makeObj(props: MaxicodeProps, overrides?: Partial<LabelObjectBase>): LabelObjectBase & { props: MaxicodeProps } {
   return {
@@ -59,7 +58,7 @@ describe("validateMaxicodeBwip", () => {
 describe("maxicode parser roundtrip", () => {
   it("parses ^BV back to a maxicode object; the no-op orientation slot is canonicalized away", () => {
     const src = "^XA^PW400^LL400^FO50,50^BVR,3,1,1^FDPAYLOAD^FS^XZ";
-    const { objects } = parseZPL(src);
+    const { objects } = parseSingle(src);
     const obj = objects[0];
     expect(obj?.type).toBe("maxicode");
     if (obj?.type !== "maxicode") return;
@@ -72,7 +71,7 @@ describe("maxicode parser roundtrip", () => {
   it("defaults mode to 4 when an out-of-range value is given", () => {
     // mode 9 doesn't exist; parser clamps to the safe standalone default.
     const src = "^XA^FO0,0^BVN,9,1,1^FDX^FS^XZ";
-    const { objects } = parseZPL(src);
+    const { objects } = parseSingle(src);
     const obj = objects[0];
     if (obj?.type !== "maxicode") throw new Error("expected maxicode");
     expect(obj.props.mode).toBe(4);
@@ -85,7 +84,7 @@ describe("maxicode parser roundtrip", () => {
       mode: 5,
     }));
     const src = `^XA${body}^XZ`;
-    const { objects } = parseZPL(src);
+    const { objects } = parseSingle(src);
     const obj = objects[0];
     if (obj?.type !== "maxicode") throw new Error("expected maxicode");
     expect(obj.props.content).toBe("HELLO123");

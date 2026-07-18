@@ -2,12 +2,14 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseZPL } from "@zplab/core/lib/zplParser";
+import { commandsOf } from "../test/helpers";
 
 // Authentic ZDesigner ZD230-203dpi driver output (GDI job captured via
 // PrintToFile): control-char remap preamble (`CT~~CD,~CC^~CT~`), `##` framing
 // junk with a raw control byte, a settings-only ^XA block, and a job block
 // whose page is rasterized into a single Z64 ^GFA. Real-world import shape
-// for anything printed through the Windows driver.
+// for anything printed through the Windows driver. Two ^XA/^XZ blocks (page 0
+// settings-only, page 1 the rasterized job) so assertions read across pages.
 const fixture = readFileSync(
   path.resolve(process.cwd(), "tests/fixtures/zebradesigner_driver_zd230.prn"),
   "latin1",
@@ -17,11 +19,15 @@ const parse = () => parseZPL(fixture, 8);
 
 describe("parseZPL — ZebraDesigner driver output", () => {
   it("recognizes every driver command (no unknowns)", () => {
-    expect(parse().importReport.unknown).toEqual([]);
+    const findings = parse().pages.flatMap((p) => p.findings);
+    expect(commandsOf({ findings }, "unknown")).toEqual([]);
   });
 
-  it("imports the rasterized page as a single image object", () => {
-    const { objects } = parse();
+  it("imports the rasterized job as a single image on page 1 (page 0 settings-only)", () => {
+    const { pages } = parse();
+    expect(pages).toHaveLength(2);
+    expect(pages[0]?.objects).toEqual([]);
+    const objects = pages[1]?.objects ?? [];
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe("image");
     expect(objects[0]?.x).toBe(56);
@@ -47,6 +53,6 @@ describe("parseZPL — ZebraDesigner driver output", () => {
   });
 
   it("creates no variables from a fully literal job", () => {
-    expect(parse().variables).toEqual([]);
+    expect(parse().pages.flatMap((p) => p.variables)).toEqual([]);
   });
 });

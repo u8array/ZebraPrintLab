@@ -1,5 +1,22 @@
 import { expect } from 'vitest';
 import type { SerialMode } from '@zplab/core/registry/serialField';
+import { parseZPL, type ImportFindingKind } from '@zplab/core/lib/zplParser';
+
+/** Parse a single-label stream: the sole page merged with the document-wide
+ *  fields. Asserts exactly one page; multi-page tests read `pages` directly. */
+export function parseSingle(zpl: string, dpmm = 8, opts?: { captureOverlay?: boolean }) {
+  const r = parseZPL(zpl, dpmm, opts);
+  expect(r.pages).toHaveLength(1);
+  // Keep the document labelConfig: the page snapshot predates the sidecar.
+  return { ...r, ...defined(r.pages[0]), labelConfig: r.labelConfig };
+}
+
+/** Commands of one finding kind, in occurrence order (per-page findings
+ *  replaced the old document-wide report buckets). */
+export const commandsOf = (
+  parsed: { findings: { kind: ImportFindingKind; command: string }[] },
+  kind: ImportFindingKind,
+): string[] => parsed.findings.filter((f) => f.kind === kind).map((f) => f.command);
 
 /** Read the serial-mode prop off a parsed leaf for assertions. */
 export const serialOf = (

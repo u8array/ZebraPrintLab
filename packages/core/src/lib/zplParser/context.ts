@@ -36,13 +36,13 @@ export interface PendingReverseBg {
   span?: { start: number; end: number };
 }
 
-/** Public output accumulators handed back via `ParsedZPL`. */
+/** Shared parse accumulators; pages slice the arrays via offset marks, the
+ *  document-wide fields hand back via `ParsedZPL`. */
 export interface ParserResult {
   objects: LabelObject[];
   labelConfig: Partial<LabelConfig>;
   printerProfile: Partial<PrinterProfile>;
   variables: Variable[];
-  skipped: string[];
   partialCmds: Set<string>;
   browserLimit: string[];
   unknown: string[];
@@ -75,7 +75,9 @@ export interface CommentState {
   fnComment: string | undefined;
 }
 
-/** Format-scoped (per-^XA) state; reset at label boundary. */
+/** Command-format state, mixed scope: embedChar/clockChars reset at ^XA and
+ *  fhActive at page close; prefix/delimiter chars, unitScale, and fhDecoder
+ *  are printer-persistent and carry across pages. */
 export interface FormatState {
   embedChar: string;
   clockChars: ClockChars;
@@ -214,18 +216,19 @@ export interface ParserState {
    *  design, so the post-^FS serial orphan cleanup must not remove them. */
   bareDeclaredFns: Set<number>;
   /** ^FN slots whose single-bind marker a post-^FS ^SN stripped. Orphan
-   *  cleanup runs at end of parse, not here: the slot is shared, so a later
+   *  cleanup runs at page close, not here: the slot is shared, so a later
    *  field or embed may still reference the variable (spec p.200). */
   serialStrippedFns: Set<number>;
+  /** Index into result.variables where the current ^XA format's slots begin.
+   *  ^FN is per-format scoped, so find-or-reuse must not reach into an earlier
+   *  page's variables; advanced at each page close. */
+  varScopeStart: number;
 }
 
-/** Append to `skipped` and `browserLimit` (invariant: browserLimit ⊆ skipped).
- *  trimEnd: `token` carries `rest` up to the next command, which in multi-line
+/** trimEnd: `token` carries `rest` up to the next command, which in multi-line
  *  ZPL includes the trailing newline (noise in this diagnostic surface). */
 export function pushBrowserLimit(result: ParserResult, token: string): void {
-  const clean = token.trimEnd();
-  result.skipped.push(clean);
-  result.browserLimit.push(clean);
+  result.browserLimit.push(token.trimEnd());
 }
 
 /** Default text height: ^CF override, else ZPL baseline 30. */
@@ -243,6 +246,33 @@ export function getPosType(field: FieldState): "FT" | "FO" {
   return field.positionIsFT ? "FT" : "FO";
 }
 
+/** Reset the field-scoped ^FB/^TB block defaults. They bind to a single field
+ *  and clear at its ^FS (and at an ^XA that closes with a field left open). */
+export function resetFieldBlockDefaults(defaults: DefaultsState): void {
+  defaults.fbWidth = 0;
+  defaults.fbLines = 1;
+  defaults.fbSpacing = 0;
+  defaults.fbJustify = "L";
+  defaults.fbHangingIndent = 0;
+  defaults.tbHeight = 0;
+}
+
+/** Format-scoped reset at an ^XA boundary; printer-persistent state (^MU,
+ *  ^CC/^CT/^CD, ^CI, ^CW/fonts, ^CF/^BY, ^LH/^LT/^LR) carries on. Field state
+ *  resets too: a page closing mid-field must not leak a dangling ^FH/^FB. */
+export function resetFormatScopedState(s: ParserState): void {
+  s.result.partialCmds = new Set();
+  s.varScopeStart = s.result.variables.length;
+  s.serialStrippedFns.clear();
+  s.bareDeclaredFns.clear();
+  s.comment.pending = undefined;
+  s.comment.fnNumber = null;
+  s.comment.fnComment = undefined;
+  s.field = freshFieldState();
+  s.format.fhActive = false;
+  resetFieldBlockDefaults(s.defaults);
+}
+
 export function createParserState(): ParserState {
   return {
     result: {
@@ -250,7 +280,6 @@ export function createParserState(): ParserState {
       labelConfig: {},
       printerProfile: {},
       variables: [],
-      skipped: [],
       partialCmds: new Set<string>(),
       browserLimit: [],
       unknown: [],
@@ -303,58 +332,65 @@ export function createParserState(): ParserState {
     reverseBg: null,
     bareDeclaredFns: new Set<number>(),
     serialStrippedFns: new Set<number>(),
-    field: {
-      x: 0,
-      y: 0,
-      positionIsFT: false,
-      justify: "L",
-      fieldType: null,
-      pendingFD: null,
-      frActive: false,
-      fpDirection: "H",
-      fpCharGap: 0,
-      textRot: "N",
-      textH: 30,
-      textW: 0,
-      bcHeight: 100,
-      bcInterp: true,
-      bcInterpAbove: false,
-      bcCheck: false,
-      bcRotation: "N",
-      bcGs1: false,
-      bcCode49Mode: "A",
-      symRot: "N",
-      symH: 30,
-      symW: 30,
-      gsSymbology: 1,
-      gsSegments: undefined,
-      gsMagnification: undefined,
-      qrMag: 4,
-      qrModel: 2,
-      dmDim: 5,
-      dmQuality: 200,
-      dmEscape: undefined,
-      dmAspect: undefined,
-      dmCols: undefined,
-      dmRows: undefined,
-      pdfRowHeight: 10,
-      pdfSecurity: 0,
-      pdfColumns: 0,
-      aztecMag: 4,
-      maxicodeMode: 4,
-      mpdfRowHeight: 10,
-      cbRowHeight: 10,
-      cbColumns: CODABLOCK_DEFAULT_COLUMNS,
-      cbSecurity: "Y",
-      tlcModuleWidth: undefined,
-      tlcHeight: 40,
-      tlcMicroPdfRowHeight: 4,
-      tlcMicroPdfRows: 4,
-      pendingPrinterFontName: undefined,
-      pendingFontId: undefined,
-      snPending: false,
-      snIncrement: 1,
-      snMode: "SN",
-    },
+    varScopeStart: 0,
+    field: freshFieldState(),
+  };
+}
+
+/** Pristine per-field state; also used at ^XA so a field left half-open by a
+ *  missing ^FS cannot leak across the page boundary. */
+export function freshFieldState(): FieldState {
+  return {
+    x: 0,
+    y: 0,
+    positionIsFT: false,
+    justify: "L",
+    fieldType: null,
+    pendingFD: null,
+    frActive: false,
+    fpDirection: "H",
+    fpCharGap: 0,
+    textRot: "N",
+    textH: 30,
+    textW: 0,
+    bcHeight: 100,
+    bcInterp: true,
+    bcInterpAbove: false,
+    bcCheck: false,
+    bcRotation: "N",
+    bcGs1: false,
+    bcCode49Mode: "A",
+    symRot: "N",
+    symH: 30,
+    symW: 30,
+    gsSymbology: 1,
+    gsSegments: undefined,
+    gsMagnification: undefined,
+    qrMag: 4,
+    qrModel: 2,
+    dmDim: 5,
+    dmQuality: 200,
+    dmEscape: undefined,
+    dmAspect: undefined,
+    dmCols: undefined,
+    dmRows: undefined,
+    pdfRowHeight: 10,
+    pdfSecurity: 0,
+    pdfColumns: 0,
+    aztecMag: 4,
+    maxicodeMode: 4,
+    mpdfRowHeight: 10,
+    cbRowHeight: 10,
+    cbColumns: CODABLOCK_DEFAULT_COLUMNS,
+    cbSecurity: "Y",
+    tlcModuleWidth: undefined,
+    tlcHeight: 40,
+    tlcMicroPdfRowHeight: 4,
+    tlcMicroPdfRows: 4,
+    pendingPrinterFontName: undefined,
+    pendingFontId: undefined,
+    snPending: false,
+    snIncrement: 1,
+    snMode: "SN",
   };
 }

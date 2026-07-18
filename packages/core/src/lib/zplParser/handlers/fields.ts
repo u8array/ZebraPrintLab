@@ -4,7 +4,12 @@ import { applySerialToLeaf } from "../../../registry/serialField";
 import { getEntry } from "../../../registry";
 import { classifyField } from "../../variableField";
 import { ZPL_BUILTIN_FONT_LETTERS } from "../../customFonts";
-import { getDefaultTextH, getDefaultTextW, type ParserState } from "../context";
+import {
+  getDefaultTextH,
+  getDefaultTextW,
+  resetFieldBlockDefaults,
+  type ParserState,
+} from "../context";
 import { ciToEncoding, dotsFor, getDecoder, int, readRotation } from "../helpers";
 import type { Handler, Wildcard } from "../types";
 
@@ -178,12 +183,7 @@ export function createFieldHandlers(
       s.field.fpDirection = "H";
       s.field.fpCharGap = 0;
       s.field.gsMagnification = undefined;
-      s.defaults.fbWidth = 0;
-      s.defaults.fbLines = 1;
-      s.defaults.fbSpacing = 0;
-      s.defaults.fbJustify = "L";
-      s.defaults.fbHangingIndent = 0;
-      s.defaults.tbHeight = 0;
+      resetFieldBlockDefaults(s.defaults);
       s.comment.fnNumber = null;
       s.comment.fnComment = undefined;
     },

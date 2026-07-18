@@ -7,7 +7,7 @@ import { markerOf } from "../types/Variable";
 import { getObjectStringContent } from "./variableBinding";
 import { parseLabelMetaComment, type LabelMeta } from "./zplLabelMeta";
 import { tokenize } from "./zplParser/helpers";
-import { createParserState } from "./zplParser/context";
+import { createParserState, resetFormatScopedState } from "./zplParser/context";
 import { createFlushField } from "./zplParser/flushField";
 import { createBarcodeHandlers } from "./zplParser/handlers/barcodes";
 import { createDynamicFontAWildcard, createFieldHandlers } from "./zplParser/handlers/fields";
@@ -16,10 +16,11 @@ import { createLabelConfigHandlers } from "./zplParser/handlers/labelConfig";
 import { createSetupScriptHandlers } from "./zplParser/handlers/setupScript";
 import { createUnitsHandler } from "./zplParser/handlers/units";
 import { createUnsupportedHandlers } from "./zplParser/handlers/unsupported";
-import { buildBlockOverlay, type LinkedSpan } from "./zplOverlay/overlay";
+import { buildBlockOverlay, type BlockOverlay, type LinkedSpan } from "./zplOverlay/overlay";
 import type {
   Handler,
   ImportFinding,
+  ParsedPage,
   ParsedZPL,
   Wildcard,
 } from "./zplParser/types";
@@ -27,8 +28,36 @@ export type {
   ImportFindingKind,
   ImportFinding,
   ImportReport,
+  ParsedPage,
   ParsedZPL,
 } from "./zplParser/types";
+import type { LabelObject } from "../types/Group";
+import type { Variable } from "../types/Variable";
+
+/** Normalize mode-D-exclusive ^FN defaults to model form (inverse of the emit
+ *  escape; mixed slots stay raw, see gs1ModeDExclusiveFns). A lone-marker slot
+ *  holds the whole payload and gets the full decode; an embedded slot is one
+ *  AI's value, where canonicalization could mutate bytes (GTIN check digit), so
+ *  only the >0 escape reverses. Scoped per page: a later page reusing the same
+ *  ^FN number with a plain field must not inherit this page's GS1 decode. */
+function normalizeModeDDefaults(objects: readonly LabelObject[], variables: Variable[]): void {
+  const modeDFns = gs1ModeDExclusiveFns(objects, variables);
+  if (modeDFns.size === 0) return;
+  const fnByVarName = new Map(variables.map((v) => [v.name, v.fnNumber]));
+  const loneMarkerFns = new Set<number>();
+  for (const o of objects) {
+    const c = getObjectStringContent(o);
+    if (c === undefined || !isLoneMarker(c)) continue;
+    const fn = fnByVarName.get(extractTemplateRefs(c)[0] ?? "");
+    if (fn !== undefined) loneMarkerFns.add(fn);
+  }
+  for (const v of variables) {
+    if (!modeDFns.has(v.fnNumber)) continue;
+    v.defaultValue = loneMarkerFns.has(v.fnNumber)
+      ? (zplFdToModelContent(v.defaultValue) ?? unescapeGs1FdValue(v.defaultValue))
+      : unescapeGs1FdValue(v.defaultValue);
+  }
+}
 
 /** Barcode object types whose module width comes from ^BY (mirrors the
  *  `s.defaults.byModuleWidth` consumers in flushField). 2D codes that carry
@@ -51,9 +80,11 @@ export function parseZPL(
 ): ParsedZPL {
   const s = createParserState();
   const tokens = tokenize(zpl, s.format);
+  // partialCmds stays behind s.result: the Set is swapped at each page close
+  // so per-format repeats of a command are re-reported on their own page.
   const {
     objects, labelConfig, printerProfile, variables,
-    skipped, partialCmds, browserLimit, unknown, replayRisk, deviceAction,
+    browserLimit, unknown, replayRisk, deviceAction,
   } = s.result;
 
   const takeComment = (): string | undefined => {
@@ -73,8 +104,10 @@ export function parseZPL(
   const resetComment: Handler = (_, rest) => {
     s.comment.pending = rest.trim() || undefined;
   };
-  // Our geometry sidecar, consumed (not shown as an object comment) from the
-  // leading slot only, so a stray body ^FX can't rewrite the label settings.
+  // Our geometry sidecar, consumed (not shown as an object comment) only while
+  // no design object was seen, so a body ^FX can't rewrite the label settings.
+  // Deliberately document-wide, not page-0: a verbatim settings-only block
+  // precedes the regenerated design block (and its sidecar) on re-export.
   // Holder object so the closure write survives TS flow narrowing.
   const labelMeta: { value: LabelMeta | null } = { value: null };
   // Multi-line ^FX before a field accumulate; XA/XZ reset at label boundaries.
@@ -125,34 +158,161 @@ export function parseZPL(
   // so a handler-table entry always wins over a pattern-match.
   const wildcards: Wildcard[] = [createDynamicFontAWildcard(s)];
 
-  // Overlay capture: a field runs ^FO/^FT … ^FS. `ovStart` is the field's source
-  // start (^FO/^FT), `ovBase` the object count when the field opened; a deferred
-  // reverse-bg that commits mid-field bumps `ovBase` so the field's own object is
-  // still found at `ovBase`. Linking is intentionally conservative: only clean
-  // single-object fields and deferred reverse-bg boxes (committed standalone
-  // before the field's own object) are linked. Any other shape leaves an object
-  // unlinked, which trips the all-linked gate below and drops the overlay so the
-  // block regenerates.
   const overlaySpans: LinkedSpan[] = [];
   const linkedIds = new Set<string>();
-  let ovStart: number | null = null;
-  let ovBase = 0;
   const linkObject = (start: number, end: number, objectId: string) => {
     overlaySpans.push({ start, end, link: { kind: "object", objectId } });
     linkedIds.add(objectId);
   };
-  // Running state that would re-interpret a regenerated object's bytes on
-  // replay (the raw command persists in a raw segment). Verbatim replay is
-  // unaffected; only the dirty/new regeneration path cares. Tracked once per
-  // block; drives the overlay's regenSafe flag.
-  let regenHostileFormat = false;
-  let sawNonUtf8Ci = false;
-  let sawBareBarcode = false;
-  let sawFnDeclaration = false;
-  // Start of a contiguous leading-comment (^FX) run immediately before a field,
-  // so the field's span can own its ^FX bytes (uniform verbatim/regen, and a
-  // comment edit regenerates without leaving a stale ^FX in a raw segment).
-  let commentStart: number | null = null;
+
+  // Page bookkeeping: one page per ^XA block, closed at the NEXT ^XA (so the
+  // inter-block separator stays with the preceding page, which the overlay
+  // replay relies on). Page 0 opens at offset 0 and owns any preamble.
+  const pages: ParsedPage[] = [];
+  let mixedPageGeometry = false;
+  let sawXA = false;
+  let lastPageW: number | undefined;
+  let lastPageH: number | undefined;
+
+  /** Page-scoped parse state, replaced wholesale at each page close so a new
+   *  flag cannot miss the boundary reset. */
+  const freshPageScope = (start: number) => ({
+    // `start` plus the array-length marks delimit this page's slice of the
+    // shared result arrays.
+    start,
+    obj: objects.length,
+    vari: variables.length,
+    browser: browserLimit.length,
+    unknown: unknown.length,
+    replay: replayRisk.length,
+    device: deviceAction.length,
+    span: overlaySpans.length,
+    // Open field's source start (^FO/^FT or its leading ^FX run) and object
+    // count at open; a mid-field reverse-bg commit bumps `ovBase`. Only clean
+    // single-object fields and deferred reverse-bg boxes link; anything else
+    // trips the all-linked gate and the block regenerates.
+    ovStart: null as number | null,
+    ovBase: 0,
+    // Start of a contiguous ^FX run immediately before a field, so the
+    // field's span owns its comment bytes.
+    commentStart: null as number | null,
+    // Format state that would re-interpret a regenerated object's bytes on
+    // replay; drives the overlay's regenSafe flag (verbatim replay unaffected).
+    regenHostileFormat: false,
+    sawNonUtf8Ci: false,
+    sawBareBarcode: false,
+    sawFnDeclaration: false,
+  });
+  let pg = freshPageScope(0);
+
+  const bucketFindings = (
+    pageIndex: number,
+    partial: readonly string[],
+    browser: readonly string[],
+    unk: readonly string[],
+    replay: readonly string[],
+    device: readonly string[],
+  ): ImportFinding[] => [
+    ...partial.map((command): ImportFinding => ({ kind: "partial", command, pageIndex })),
+    ...browser.map((command): ImportFinding => ({ kind: "browserLimit", command, pageIndex })),
+    ...unk.map((command): ImportFinding => ({ kind: "unknown", command, pageIndex })),
+    ...replay.map((command): ImportFinding => ({ kind: "replayRisk", command, pageIndex })),
+    ...device.map((command): ImportFinding => ({ kind: "deviceAction", command, pageIndex })),
+  ];
+
+  /** Close the current page at source offset `end`: per-format serial-orphan
+   *  sweep, per-page findings/overlay, then reset the format-scoped state so
+   *  the next page starts clean (printer-persistent state carries on). */
+  const closePage = (end: number): void => {
+    // ^SN stripped a single-bind marker: drop this format's variables that no
+    // marker in THIS page's objects points at (bare ^FN declarations stay).
+    for (let i = variables.length - 1; i >= pg.vari; i--) {
+      const v = variables[i];
+      if (!v || !s.serialStrippedFns.has(v.fnNumber)) continue;
+      if (s.bareDeclaredFns.has(v.fnNumber)) continue;
+      const marker = markerOf(v.name);
+      let used = false;
+      for (let j = pg.obj; j < objects.length && !used; j++) {
+        const o = objects[j];
+        used = o !== undefined && (getObjectStringContent(o)?.includes(marker) ?? false);
+      }
+      if (!used) variables.splice(i, 1);
+    }
+    const pagePartial = [...s.result.partialCmds];
+    const pageObjects = objects.slice(pg.obj);
+    const pageVariables = variables.slice(pg.vari);
+    normalizeModeDDefaults(pageObjects, pageVariables);
+    const pageIndex = pages.length;
+    const findings = bucketFindings(
+      pageIndex,
+      pagePartial,
+      browserLimit.slice(pg.browser),
+      unknown.slice(pg.unknown),
+      replayRisk.slice(pg.replay),
+      deviceAction.slice(pg.device),
+    );
+    const pageRegenSafe =
+      !pg.regenHostileFormat && !pg.sawNonUtf8Ci && !pg.sawBareBarcode && !pg.sawFnDeclaration;
+    let pageOverlay: BlockOverlay | undefined;
+    if (opts.captureOverlay && pageObjects.every((o) => linkedIds.has(o.id))) {
+      const frame =
+        s.label.lhX !== 0 || s.label.lhY !== 0 || s.label.ltY !== 0
+          ? { homeX: s.label.lhX, homeY: s.label.lhY, top: s.label.ltY }
+          : undefined;
+      // buildBlockOverlay throws on a broken span invariant (unreachable
+      // today); catching drops the overlay instead of crashing import.
+      try {
+        pageOverlay = buildBlockOverlay(
+          zpl.slice(pg.start, end),
+          overlaySpans
+            .slice(pg.span)
+            .map((sp) => ({ ...sp, start: sp.start - pg.start, end: sp.end - pg.start })),
+          { regenSafe: pageRegenSafe, frame },
+        );
+      } catch (err) {
+        console.warn("buildBlockOverlay failed, dropping overlay for this page", err);
+        pageOverlay = undefined;
+      }
+    }
+    // A non-regenSafe overlay replays verbatim only until the first edit;
+    // surface that the byte-exact guarantee is conditional for this page.
+    if (pageOverlay && !pageRegenSafe) {
+      const reason = pg.sawNonUtf8Ci
+        ? "a non-UTF-8 ^CI encoding"
+        : pg.sawBareBarcode
+          ? "a barcode without an explicit ^BY"
+          : pg.sawFnDeclaration
+            ? "a standalone ^FN declaration"
+            : "a non-default format state (prefix, delimiter, unit, embed char, ^FC, or ^LR)";
+      findings.push({ kind: "lossyEdit", command: reason, pageIndex });
+    }
+    const w = labelConfig.widthMm;
+    const h = labelConfig.heightMm;
+    const page: ParsedPage = {
+      objects: pageObjects,
+      variables: pageVariables,
+      findings,
+      labelSize: { widthMm: w, heightMm: h },
+      labelConfig: { ...labelConfig },
+    };
+    if (pageOverlay) page.overlay = pageOverlay;
+    if (!sawXA) page.bare = true;
+    pages.push(page);
+    // ^PW/^LL persist across ^XA, so only a value CHANGE between page closes is
+    // a real divergence the single-label model cannot represent.
+    if (w !== undefined || h !== undefined) {
+      if (
+        (lastPageW !== undefined || lastPageH !== undefined) &&
+        (w !== lastPageW || h !== lastPageH)
+      ) {
+        mixedPageGeometry = true;
+      }
+      lastPageW = w;
+      lastPageH = h;
+    }
+    pg = freshPageScope(end);
+    resetFormatScopedState(s);
+  };
 
   for (const { cmd, rest, start } of tokens) {
     const p = rest.split(s.format.delimiterChar);
@@ -179,15 +339,15 @@ export function parseZPL(
           // field re-derives default chars and would mis-clock under the raw ^FC.
           !isDefaultClockChars(s.format.clockChars)
         ) {
-          regenHostileFormat = true;
+          pg.regenHostileFormat = true;
         }
         // Any non-UTF-8 ^CI makes regen unsafe: a regenerated field emits UTF-8
         // bytes that the surviving raw ^CI would mis-decode (the generator emits
         // ^CI28 only on the full-regen fallback, not in the overlay path).
-        if (s.format.fhDecoder.encoding !== "utf-8") sawNonUtf8Ci = true;
+        if (s.format.fhDecoder.encoding !== "utf-8") pg.sawNonUtf8Ci = true;
         // A bare ^FN declaration (^FN outside an ^FO…^FS field) becomes a raw
         // segment; the scoped header would re-emit it on regen and duplicate it.
-        if (cmd === "FN" && ovStart === null) sawFnDeclaration = true;
+        if (cmd === "FN" && pg.ovStart === null) pg.sawFnDeclaration = true;
         // Track the leading-comment run; a non-^FX command (other than the field
         // opener) breaks contiguity so the span won't swallow intervening config.
         // Known limitation: when a command separates a ^FX from its field, the
@@ -195,9 +355,9 @@ export function parseZPL(
         // producing a duplicate ^FX in the output. Harmless (comments do not
         // print) and rare, so accepted rather than tracked per-object.
         if (cmd === "FX") {
-          if (commentStart === null) commentStart = start;
+          if (pg.commentStart === null) pg.commentStart = start;
         } else if (cmd !== "FO" && cmd !== "FT") {
-          commentStart = null;
+          pg.commentStart = null;
         }
         // A prior stashed reverse-bg committed standalone on this (non-^FS)
         // token (graphics command, ^XA/^XZ): commitPendingReverseBg pushes the
@@ -210,45 +370,53 @@ export function parseZPL(
         ) {
           const box = objects[beforeLen];
           if (box) linkObject(reverseBefore.span.start, reverseBefore.span.end, box.id);
-          if (ovStart !== null) ovBase++;
+          if (pg.ovStart !== null) pg.ovBase++;
         }
         if (cmd === "FO" || cmd === "FT") {
-          ovStart = commentStart ?? start;
-          ovBase = objects.length;
-          commentStart = null;
-        } else if (cmd === "FS" && ovStart !== null) {
+          pg.ovStart = pg.commentStart ?? start;
+          pg.ovBase = objects.length;
+          pg.commentStart = null;
+        } else if (cmd === "FS" && pg.ovStart !== null) {
           const fieldEnd = start + 3;
           // A ^BY-consuming barcode whose ^BY sits outside its own field would
           // inherit a regenerated neighbour's inline ^BY on replay; mark the
           // block unsafe. Classify by the parsed object type (not a regex) so
           // 2D codes that ignore ^BY (QR/DataMatrix/Aztec/MaxiCode) stay
           // regenSafe. The field's own object is the last one pushed.
-          const own = objects.length > ovBase ? objects[objects.length - 1] : undefined;
+          const own = objects.length > pg.ovBase ? objects[objects.length - 1] : undefined;
           if (
             own &&
             BY_CONSUMING_BARCODE_TYPES.has(own.type) &&
-            !/\^BY/i.test(zpl.slice(ovStart, fieldEnd))
+            !/\^BY/i.test(zpl.slice(pg.ovStart, fieldEnd))
           ) {
-            sawBareBarcode = true;
+            pg.sawBareBarcode = true;
           }
-          if (s.reverseBg && s.reverseBg.span === undefined && objects.length === ovBase) {
+          if (s.reverseBg && s.reverseBg.span === undefined && objects.length === pg.ovBase) {
             // This field stashed a reverse-bg (no object yet); record its span
             // so the box can be linked when it commits later.
-            s.reverseBg.span = { start: ovStart, end: fieldEnd };
-          } else if (reverseBefore?.span && s.reverseBg === null && objects.length === ovBase + 2) {
-            // Stashed box committed standalone during this flush (box at ovBase),
-            // then the field's own object (text/barcode) at ovBase+1.
-            const box = objects[ovBase];
-            const own = objects[ovBase + 1];
+            s.reverseBg.span = { start: pg.ovStart, end: fieldEnd };
+          } else if (reverseBefore?.span && s.reverseBg === null && objects.length === pg.ovBase + 2) {
+            // Stashed box committed standalone during this flush (box at pg.ovBase),
+            // then the field's own object (text/barcode) at pg.ovBase+1.
+            const box = objects[pg.ovBase];
+            const own = objects[pg.ovBase + 1];
             if (box) linkObject(reverseBefore.span.start, reverseBefore.span.end, box.id);
-            if (own) linkObject(ovStart, fieldEnd, own.id);
-          } else if (objects.length === ovBase + 1) {
+            if (own) linkObject(pg.ovStart, fieldEnd, own.id);
+          } else if (objects.length === pg.ovBase + 1) {
             // Clean single-object field.
-            const obj = objects[ovBase];
-            if (obj) linkObject(ovStart, fieldEnd, obj.id);
+            const obj = objects[pg.ovBase];
+            if (obj) linkObject(pg.ovStart, fieldEnd, obj.id);
           }
-          ovStart = null;
+          pg.ovStart = null;
         }
+      }
+      // Page boundary: the FIRST ^XA continues page 0 (which owns any
+      // preamble); every further ^XA closes the page at its own offset, after
+      // this token's capture block so a boundary-committed reverse-bg span
+      // still lands in the closing page.
+      if (cmd === "XA") {
+        if (sawXA) closePage(start);
+        sawXA = true;
       }
       continue;
     }
@@ -258,71 +426,13 @@ export function parseZPL(
       // trimEnd: `rest` runs to the next command, dragging the line break in
       // multi-line ZPL into the surfaced token.
       const token = `${zpl[start] ?? "^"}${cmd}${rest}`.trimEnd();
-      skipped.push(token);
       unknown.push(token);
     }
   }
 
-  // A post-^FS ^SN stripped a single-bind marker somewhere; only now, with
-  // every field and embed parsed, is it known whether the shared slot is
-  // still referenced. Drop variables no marker points at, keeping bare
-  // ^FN declarations (marker-less by design). In-place: `variables` is the
-  // returned array.
-  for (let i = variables.length - 1; i >= 0; i--) {
-    const v = variables[i];
-    if (!v || !s.serialStrippedFns.has(v.fnNumber)) continue;
-    if (s.bareDeclaredFns.has(v.fnNumber)) continue;
-    const marker = markerOf(v.name);
-    const used = objects.some((o) => getObjectStringContent(o)?.includes(marker));
-    if (!used) variables.splice(i, 1);
-  }
-
-  // Normalize mode-D-exclusive ^FN defaults to model form (inverse of the
-  // emit escape; mixed slots stay raw, see gs1ModeDExclusiveFns). A lone-marker
-  // slot holds the whole payload and gets the full decode; an embedded slot is
-  // one AI's value, where canonicalization could mutate bytes (GTIN check
-  // digit), so only the >0 escape reverses.
-  const modeDFns = gs1ModeDExclusiveFns(objects, variables);
-  if (modeDFns.size > 0) {
-    const fnByVarName = new Map(variables.map((v) => [v.name, v.fnNumber]));
-    const loneMarkerFns = new Set<number>();
-    for (const o of objects) {
-      const c = getObjectStringContent(o);
-      if (c === undefined || !isLoneMarker(c)) continue;
-      const fn = fnByVarName.get(extractTemplateRefs(c)[0] ?? "");
-      if (fn !== undefined) loneMarkerFns.add(fn);
-    }
-    for (const v of variables) {
-      if (!modeDFns.has(v.fnNumber)) continue;
-      v.defaultValue = loneMarkerFns.has(v.fnNumber)
-        ? (zplFdToModelContent(v.defaultValue) ?? unescapeGs1FdValue(v.defaultValue))
-        : unescapeGs1FdValue(v.defaultValue);
-    }
-  }
-
-  // Build the overlay only when every parsed object linked to a source span;
-  // an unlinked object would double-emit (raw replay + model regenerate), so a
-  // partial capture is unsafe. Falls back to model regeneration for the block.
-  const allLinked = objects.every((o) => linkedIds.has(o.id));
-  const regenSafe =
-    !regenHostileFormat && !sawNonUtf8Ci && !sawBareBarcode && !sawFnDeclaration;
-  const frame =
-    s.label.lhX !== 0 || s.label.lhY !== 0 || s.label.ltY !== 0
-      ? { homeX: s.label.lhX, homeY: s.label.lhY, top: s.label.ltY }
-      : undefined;
-  // buildBlockOverlay throws on overlapping/out-of-bounds spans (a broken span
-  // invariant). Today that is unreachable; catching keeps the contract total
-  // (any capture problem drops the overlay rather than crashing import) and the
-  // warn surfaces the parser bug should a future change ever make it reachable.
-  let overlay: ParsedZPL["overlay"];
-  if (opts.captureOverlay && allLinked) {
-    try {
-      overlay = buildBlockOverlay(zpl, overlaySpans, { regenSafe, frame });
-    } catch (err) {
-      console.warn("buildBlockOverlay failed, dropping overlay for this block", err);
-      overlay = undefined;
-    }
-  }
+  // Close the last page (also the only one for single-block or bare streams);
+  // its serial-orphan sweep runs inside.
+  closePage(zpl.length);
 
   // Apply the geometry sidecar last so it wins over ^PW/^LL-derived mm and
   // restores dpmm, which plain ZPL can't carry.
@@ -332,61 +442,13 @@ export function parseZPL(
     labelConfig.heightMm = labelMeta.value.heightMm;
   }
 
-  // pageIndex stays 0; zplImportService fills it per ^XA…^XZ block.
-  const findings: ImportFinding[] = [
-    ...[...partialCmds].map(
-      (command): ImportFinding => ({ kind: "partial", command, pageIndex: 0 }),
-    ),
-    ...browserLimit.map(
-      (command): ImportFinding => ({
-        kind: "browserLimit",
-        command,
-        pageIndex: 0,
-      }),
-    ),
-    ...unknown.map(
-      (command): ImportFinding => ({ kind: "unknown", command, pageIndex: 0 }),
-    ),
-    ...replayRisk.map(
-      (command): ImportFinding => ({ kind: "replayRisk", command, pageIndex: 0 }),
-    ),
-    ...deviceAction.map(
-      (command): ImportFinding => ({ kind: "deviceAction", command, pageIndex: 0 }),
-    ),
-  ];
-
-  // An overlay that exists but isn't regenSafe replays verbatim only until the
-  // first edit, then falls back to full regeneration (untouched comments /
-  // whitespace / unmodeled commands are not preserved). Surface that so the
-  // user knows the byte-exact guarantee is conditional for this block.
-  if (overlay && !regenSafe) {
-    const reason = sawNonUtf8Ci
-      ? "a non-UTF-8 ^CI encoding"
-      : sawBareBarcode
-        ? "a barcode without an explicit ^BY"
-        : sawFnDeclaration
-          ? "a standalone ^FN declaration"
-          : "a non-default format state (prefix, delimiter, unit, embed char, ^FC, or ^LR)";
-    findings.push({ kind: "lossyEdit", command: reason, pageIndex: 0 });
-  }
-
   return {
+    pages,
+    mixedPageGeometry,
     labelConfig,
     printerProfile,
-    objects,
-    variables,
     uploadedFontPaths: [...s.fonts.downloadedFontPaths],
     referencedFontPaths: [...s.fonts.referencedFontPaths],
     sourceFnNumbers: s.result.sourceFnNumbers,
-    skipped,
-    importReport: {
-      findings,
-      partial: [...partialCmds],
-      browserLimit,
-      unknown,
-      replayRisk,
-      deviceAction,
-    },
-    overlay,
   };
 }

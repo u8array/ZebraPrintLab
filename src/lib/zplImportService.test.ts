@@ -7,6 +7,56 @@ import { replayRiskFindings, printerCommandFindings, resolveRoutedReport } from 
 import type { PrinterProfile } from '@zplab/core/types/PrinterProfile';
 import type { LabelConfig } from '@zplab/core/types/LabelConfig';
 
+describe('importZplText - cross-block parser state (parser-owned pages)', () => {
+  it('carries ^MU units across ^XA blocks (persistent per spec)', () => {
+    const r = importZplText('^XA^MUI^XZ^XA^FO1,1^A0N,0.5,0.5^FDX^FS^XZ', 8);
+    const obj = r.pages.at(-1)?.objects[0] as { x: number; props: { fontHeight: number } };
+    expect(obj.x).toBe(203); // 1 inch at 203 dpi
+    expect(obj.props.fontHeight).toBe(102);
+  });
+
+  it('resolves a ^CW font alias defined in an earlier block', () => {
+    const r = importZplText('^XA^CWM,E:ARIAL.TTF^XZ^XA^FO10,10^AMN,30,0^FDHi^FS^XZ', 8);
+    expect(r.report.partial).not.toContain('^AM');
+  });
+
+  it('splits blocks after a ~CC command-prefix change', () => {
+    const r = importZplText('~CC!!XA!FO50,50!FDA!FS!XZ!XA!FO60,60!FDB!FS!XZ', 8);
+    expect(r.pages).toHaveLength(2);
+  });
+
+  it('does not leak a dangling ^FH hex-decode into the next block', () => {
+    const r = importZplText('^XA^FH^XZ^XA^FO10,10^A0N,30,30^FD_41^FS^XZ', 8);
+    const obj = r.pages.at(-1)?.objects[0] as { props: { content: string } };
+    expect(obj.props.content).toBe('_41');
+  });
+
+  it('does not leak dangling ^FB block defaults into the next block', () => {
+    const r = importZplText('^XA^FB400,2^XZ^XA^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
+    const obj = r.pages.at(-1)?.objects[0] as { props: { blockWidth?: number } };
+    expect(obj.props.blockWidth).toBeUndefined();
+  });
+
+  it('keeps block 0 config; a later block ^PQ does not leak', () => {
+    const r = importZplText('^XA^FO10,10^A0N,30,30^FDx^FS^XZ^XA^PQ99^XZ', 8);
+    expect(r.labelConfig.printQuantity).toBeUndefined();
+  });
+
+  it('accepts the ZPLLAB sidecar from a later block while no object was seen (settings-block re-export)', () => {
+    const sc = '^FXZPLLAB:{"dpmm":12,"wMm":100,"hMm":50}^FS';
+    const r = importZplText(`^XA^MMT^XZ^XA${sc}^PW1200^LL600^FO10,10^A0N,30,30^FDx^FS^XZ`, 8);
+    expect(r.labelConfig.dpmm).toBe(12);
+    expect(r.labelConfig.widthMm).toBe(100);
+    expect(r.labelConfig.heightMm).toBe(50);
+  });
+
+  it('ignores a ZPLLAB sidecar after the first design object', () => {
+    const sc = '^FXZPLLAB:{"dpmm":12,"wMm":100,"hMm":50}^FS';
+    const r = importZplText(`^XA^FO10,10^A0N,30,30^FDx^FS${sc}^XZ`, 8);
+    expect(r.labelConfig.dpmm).toBeUndefined();
+  });
+});
+
 describe('importZplText - replay-risk findings', () => {
   it('flags printer setup commands (run on the printer when exported/printed)', () => {
     const r = importZplText('^XA^KNFOO^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
@@ -169,11 +219,9 @@ describe('importZplText: findings.pageIndex', () => {
   });
 
   it('folds printerProfile across multiple ^XA blocks (last-write-wins per key, non-overlapping preserved)', () => {
-    // Block 1 sets reprintAfterError=N + setRealtimeClock.
-    // Block 2 overrides reprintAfterError to Y.
-    // Result must carry Y from block 2 AND the clock from block 1:
-    // a per-block fold mid-pipeline; a refactor that collapsed the
-    // fold to one end-of-stream pass would lose one of the two.
+    // Block 1 sets reprintAfterError=N + setRealtimeClock; block 2 overrides
+    // reprintAfterError. Both must survive: per-key last-write accumulation,
+    // not last-block-wins.
     const zpl = [
       '^XA^JZN^ST05,20,2026,12,00,00^XZ',
       '^XA^JZY^XZ',
