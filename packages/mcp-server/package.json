@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "tsx src/index.ts"
+    "start": "tsx src/index.ts",
+    "build:sea": "node scripts/build-sea.mjs",
+    "smoke:sea": "node scripts/smoke-sea.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -12,6 +14,8 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "esbuild": "^0.28.1",
+    "postject": "^1.0.0-alpha.6",
     "tsx": "^4.19.2"
   }
 }
