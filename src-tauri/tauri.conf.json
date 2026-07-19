@@ -8,7 +8,7 @@
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "pnpm dev",
-    "beforeBuildCommand": "pnpm build"
+    "beforeBuildCommand": "pnpm build && pnpm --filter @zplab/mcp-server build:sea"
   },
   "app": {
     "windows": [
@@ -37,6 +37,7 @@
   "bundle": {
     "active": true,
     "targets": ["nsis", "app", "dmg", "appimage", "deb", "rpm"],
+    "externalBin": ["binaries/zplab-mcp"],
     "createUpdaterArtifacts": true,
     "publisher": "u8array",
     "copyright": "© 2026 u8array",

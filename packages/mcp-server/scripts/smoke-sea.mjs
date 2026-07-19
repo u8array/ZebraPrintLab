@@ -47,9 +47,8 @@ const check = (name, cond, detail = "") => {
 };
 
 const t0 = Date.now();
-// stderr inherited so a startup crash (port in use, bad binary) shows its
-// real cause instead of only the listening timeout below. The token goes over
-// stdin exactly like the Tauri host hands it over.
+// stderr inherited so a startup crash shows its real cause; token over stdin
+// exactly like the Tauri host hands it over.
 const child = spawn(exe, ["--http", "--port", String(PORT), "--token-stdin"], {
   stdio: ["pipe", "pipe", "inherit"],
 });
