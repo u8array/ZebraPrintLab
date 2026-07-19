@@ -1,12 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-/** Mock the credential-store seam so these run in the node lane without Tauri
- *  or a real keychain. The store slice under test talks only to this seam. */
 const getCredential = vi.fn<(name: string) => Promise<string | null>>();
 const setCredential = vi.fn<(name: string, value: string) => Promise<void>>();
-vi.mock("../lib/credentialStore", () => ({
-  getCredential: (name: string) => getCredential(name),
-  setCredential: (name: string, value: string) => setCredential(name, value),
+// Mock one level deeper (the Tauri invoke seam) so the real credentialStore
+// module, including makeCredentialHydrator, runs in the test.
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: (cmd: string, args: { name: string; value?: string }) => {
+    if (cmd === "credential_get") return getCredential(args.name);
+    if (cmd === "credential_set") return setCredential(args.name, args.value ?? "");
+    if (cmd === "credential_delete") return setCredential(args.name, "");
+    return Promise.reject(new Error(`unmocked command: ${cmd}`));
+  },
 }));
 
 // Pretend we're the desktop shell so a persisted 'printer' provider stays

@@ -79,12 +79,13 @@ export function useMcpServer(): McpServerController {
     setRun({ kind: "error", message: e instanceof Error ? e.message : String(e) });
   };
 
-  // Mount reconcile: a persisted opt-in that never started re-attempts so the
-  // actual reason shows. The tab only mounts when the build has the sidecar
-  // (TAB_GATES), so no availability re-check is needed here.
+  // Mount reconcile: a persisted opt-in that never started re-attempts so
+  // the reason shows. Keychain hydrate first: display and restart must see
+  // the stored token, not mint a fresh one over it.
   useEffect(() => {
     let mounted = true;
     enqueue(async (current) => {
+      await useLabelStore.getState().hydrateMcpToken();
       // catch: a rejected status must not be an unhandled rejection.
       const status = await mcpServerStatus().catch(() => null);
       if (!status || !mounted || !current()) return;
@@ -96,7 +97,8 @@ export function useMcpServer(): McpServerController {
       if (!status.available || !s.mcpServerEnabled) return;
       setRun({ kind: "starting" });
       try {
-        await startMcpServer({ port: s.mcpServerPort, token: s.mcpServerToken });
+        const restartToken = await s.ensureMcpToken();
+        await startMcpServer({ port: s.mcpServerPort, token: restartToken });
         if (mounted && current()) setRun({ kind: "running" });
       } catch (e) {
         if (mounted && current()) fail(e);
@@ -108,7 +110,6 @@ export function useMcpServer(): McpServerController {
   }, []);
 
   const toggle = (checked: boolean) => {
-    // Token is generated synchronously by setEnabled; the op reads it back fresh.
     if (checked) {
       setEnabled(true);
       setRun({ kind: "starting" });
@@ -119,8 +120,9 @@ export function useMcpServer(): McpServerController {
       if (!current()) return; // superseded: don't send a stale start/stop
       try {
         if (checked) {
-          const s = useLabelStore.getState();
-          await startMcpServer({ port: s.mcpServerPort, token: s.mcpServerToken });
+          const token = await useLabelStore.getState().ensureMcpToken();
+          if (!current()) return;
+          await startMcpServer({ port: useLabelStore.getState().mcpServerPort, token });
           if (current()) setRun({ kind: "running" });
         } else {
           await stopMcpServer().catch(() => undefined);

@@ -37,7 +37,9 @@ pnpm --filter @zplab/mcp-server exec tsx src/index.ts --http --port 4923 --token
 `Authorization: Bearer <token>`; loopback-only binding plus Origin/Host checks
 guard against local drive-by and DNS-rebinding.
 
-## Claude Desktop config
+## MCP client config
+
+Most MCP clients (Claude Desktop and others) accept this `mcpServers` shape:
 
 ```json
 {

@@ -14,9 +14,10 @@ export function generateMcpToken(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** Claude-Desktop style config for the loopback Streamable HTTP server. The
- *  server serves the transport on any path, so the tested root `/` is the URL;
- *  every request must carry the bearer token. */
+/** Config snippet in the mcpServers JSON shape most MCP clients accept, for
+ *  the loopback Streamable HTTP server. The server serves the transport on any
+ *  path, so the tested root `/` is the URL; every request must carry the
+ *  bearer token. */
 export function mcpConfigSnippet(port: number, token: string): string {
   return JSON.stringify(
     {

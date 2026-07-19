@@ -30,9 +30,9 @@ async function bootstrap() {
     locale,
     applyLocale,
     hydrateLabelaryApiKey,
+    ensureMcpToken,
     mcpServerEnabled,
     mcpServerPort,
-    mcpServerToken,
   } = useLabelStore.getState();
   // Load the API key from the OS credential store into memory before any
   // preview can fire; fire-and-forget so a slow keychain never delays paint.
@@ -44,9 +44,12 @@ async function bootstrap() {
     .catch(() => undefined);
   // Bring the opt-in MCP server up on launch so an assistant can reach it
   // without opening settings; swallow errors so a failure never blocks paint
-  // (the settings tab re-attempts when the build has the sidecar).
+  // (the settings tab re-attempts when the build has the sidecar). The token
+  // hydrate must land first, so the chain is async but never awaited here.
   if (mcpServerEnabled) {
-    void startMcpServer({ port: mcpServerPort, token: mcpServerToken }).catch(() => undefined);
+    void ensureMcpToken()
+      .then((token) => startMcpServer({ port: mcpServerPort, token }))
+      .catch(() => undefined);
   }
   let timeoutId: number | undefined;
   await Promise.race([
