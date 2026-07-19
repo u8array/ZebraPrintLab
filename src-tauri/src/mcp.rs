@@ -11,6 +11,10 @@ use tokio::sync::oneshot;
 /// Tauri event carrying an openDraft design file to the editor.
 const OPEN_DRAFT_EVENT: &str = "mcp://open-draft";
 
+/// Tauri event carrying a designRequest id; the webview answers the sidecar
+/// directly over its HTTP design-response route.
+const DESIGN_REQUEST_EVENT: &str = "mcp://design-request";
+
 /// Windows: kill-on-close Job Object that ties the child's cmd/pnpm/node tree
 /// to the app. Closing the handle (explicitly, or when the process dies and the
 /// OS closes it) terminates the whole tree, so grandchildren never orphan.
@@ -218,10 +222,19 @@ fn is_listening_event(line: &str) -> bool {
     .unwrap_or(false)
 }
 
+/// Extract the request id from a child `designRequest` line, or None.
+fn design_request_id(line: &str) -> Option<u64> {
+  let value: serde_json::Value = serde_json::from_str(line).ok()?;
+  if value.get("zplabEvent")?.as_str()? != "designRequest" {
+    return None;
+  }
+  value.get("id")?.as_u64()
+}
+
 /// Signal readiness on the child's first `listening` stdout line, then forward
-/// openDraft events. Ends when stdout closes; dropping an unused `ready` sender
-/// then makes wait_until_ready observe the child as gone.
-fn forward_open_draft(
+/// openDraft and designRequest events. Ends when stdout closes; dropping an
+/// unused `ready` sender then makes wait_until_ready observe the child as gone.
+fn forward_child_events(
   stdout: std::process::ChildStdout,
   app: AppHandle,
   ready: oneshot::Sender<()>,
@@ -238,6 +251,8 @@ fn forward_open_draft(
     }
     if let Some(payload) = open_draft_payload(&line) {
       let _ = app.emit(OPEN_DRAFT_EVENT, payload);
+    } else if let Some(id) = design_request_id(&line) {
+      let _ = app.emit(DESIGN_REQUEST_EVENT, id);
     }
   }
 }
@@ -290,7 +305,7 @@ pub async fn mcp_start(
   }
   let (ready_tx, ready_rx) = oneshot::channel();
   if let Some(stdout) = child.stdout.take() {
-    std::thread::spawn(move || forward_open_draft(stdout, app, ready_tx));
+    std::thread::spawn(move || forward_child_events(stdout, app, ready_tx));
   }
   // Store before the wait so a teardown mid-startup still reaps the child.
   *state.child.lock().unwrap() = Some(child);
@@ -379,6 +394,20 @@ mod tests {
     ));
     assert!(!is_listening_event(r#"{"zplabEvent":"openDraft"}"#));
     assert!(!is_listening_event("plain dev log line"));
+  }
+
+  #[test]
+  fn design_request_id_extracts_the_id() {
+    assert_eq!(
+      design_request_id(r#"{"zplabEvent":"designRequest","id":7}"#),
+      Some(7)
+    );
+    assert_eq!(design_request_id(r#"{"zplabEvent":"designRequest"}"#), None);
+    assert_eq!(
+      design_request_id(r#"{"zplabEvent":"openDraft","id":7}"#),
+      None
+    );
+    assert_eq!(design_request_id("plain dev log line"), None);
   }
 
   #[test]

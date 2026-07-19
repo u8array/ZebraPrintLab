@@ -11,6 +11,7 @@ An MCP server that lets an assistant build ZPLab label drafts and turn them into
 - `validate_zpl`: parse raw ZPL (one page per `^XA` block) and report object/page count, detected label, parser findings, preflight warnings, per-object bounds, and bbox overlaps.
 - `import_zpl`: parse raw ZPL into an editable design file (one page per `^XA` block, overlays preserved for verbatim re-export) plus parser findings, per-object bounds, and bbox overlaps.
 - `open_in_app`: push a design file into the running ZPLab desktop app. Only registered when the app spawned the server (HTTP mode), so it is absent over stdio.
+- `get_current_design`: read back the design currently open in the desktop app, with render-measured bounds (nothing `approx`). App-spawned HTTP mode only.
 
 Bounds are dots (visual top-left); `approx` marks headless estimates (barcode
 footprints and single-line text), not render-measured. Overlaps are raw bbox

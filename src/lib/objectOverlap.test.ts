@@ -46,6 +46,21 @@ describe("computeOverlaps", () => {
     expect(overlap?.approx).toBe(true);
   });
 
+  it("a measured footprint makes a barcode exact (bounds + approx)", () => {
+    const bc = {
+      id: "bc", type: "code128", x: 10, y: 10, rotation: 0,
+      props: {
+        content: "12345", height: 80, moduleWidth: 2,
+        printInterpretation: false, checkDigit: false, rotation: "N",
+      },
+    } as LeafObject;
+    const measured = new Map([["bc", { width: 321, height: 88 }]]);
+    const [entry] = leafBoxesDots([bc], { label, measured });
+    expect(entry?.approx).toBe(false);
+    expect(entry?.box.width).toBe(321);
+    expect(entry?.box.height).toBe(88);
+  });
+
   it("flags single-line text as approx (headless font estimate), block text exact", () => {
     const single = {
       id: "t", type: "text", x: 0, y: 0, rotation: 0,
