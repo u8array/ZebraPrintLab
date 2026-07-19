@@ -27,7 +27,7 @@ export function leafBoxesDots(
   return leaves.map((l) => ({
     id: l.id,
     box: objectBoundsDots(l, ctx),
-    approx: boundsAreApprox(l),
+    approx: boundsAreApprox(l, ctx.measured),
   }));
 }
 

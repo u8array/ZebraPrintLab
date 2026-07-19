@@ -175,10 +175,15 @@ export function isBarcode(obj: { type: string }): boolean {
   return BARCODE_TYPES.has(obj.type);
 }
 
-/** True when objectBoundsDots estimates this leaf headlessly (no measured
- *  footprint): barcode registry footprint, single-line-text font estimate,
- *  image-without-heightDots square guess. Everything else is exact. */
-export function boundsAreApprox(obj: LabelObject): boolean {
+/** True when objectBoundsDots estimates this leaf headlessly: barcode registry
+ *  footprint, single-line-text font estimate, image-without-heightDots square
+ *  guess. Everything else, and any leaf with a `measured` footprint (render
+ *  read-back), is exact. */
+export function boundsAreApprox(
+  obj: LabelObject,
+  measured?: ObjectBoundsCtx["measured"],
+): boolean {
+  if (measured?.has(obj.id)) return false;
   if (isBarcode(obj)) return true;
   if (obj.type === "image") return obj.props.heightDots === undefined;
   if (obj.type !== "text") return false;

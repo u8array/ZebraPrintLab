@@ -1,5 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { requestCurrentDesign } from "./appBridge.js";
 import {
+  buildCurrentDesignResult,
   createDraft,
   createDraftShape,
   designFileEnvelopeSchema,
@@ -13,9 +15,10 @@ import {
 } from "./tools.js";
 
 export interface BuildServerOptions {
-  /** Registers open_in_app, whose handler prints an event line to stdout. Set
-   *  only in HTTP mode, where stdout is free (in stdio mode it is JSON-RPC). */
-  openInApp?: boolean;
+  /** ZPLab spawned this server: registers open_in_app and get_current_design,
+   *  which talk to the app over stdout event lines. Set only in HTTP mode,
+   *  where stdout is free (in stdio mode it is JSON-RPC). */
+  hosted?: boolean;
 }
 
 // Compact on purpose: pretty-printing inflates every tool result by ~45%
@@ -38,7 +41,9 @@ export const SERVER_INSTRUCTIONS =
   "import_zpl (editable design file) or validate_zpl (lint only); both split " +
   "multi-label streams into one page per ^XA block. export_zpl returns the " +
   "final ZPL; open_in_app (when present) replaces the design in the running " +
-  "ZPLab editor, so confirm with the user before calling it.";
+  "ZPLab editor, so confirm with the user before calling it. " +
+  "get_current_design (when present) reads back the design open in the editor " +
+  "with render-exact bounds (no approx), including any edits the user made.";
 
 /** Single tool definition shared by the stdio and HTTP entry points. */
 export function buildServer(options: BuildServerOptions = {}): McpServer {
@@ -120,9 +125,9 @@ export function buildServer(options: BuildServerOptions = {}): McpServer {
     async () => json(getSchema()),
   );
 
-  // Only when ZPLab spawned the server (HTTP mode): the handler prints the
-  // draft to stdout, which the app pipes and forwards to its editor.
-  if (options.openInApp) {
+  // Only when ZPLab spawned the server (HTTP mode): these talk to the app
+  // over the piped stdout (and, for the read-back, its HTTP reply).
+  if (options.hosted) {
     server.registerTool(
       "open_in_app",
       {
@@ -137,6 +142,25 @@ export function buildServer(options: BuildServerOptions = {}): McpServer {
         if (!result.ok) return json(result);
         process.stdout.write(result.line + "\n");
         return json({ ok: true });
+      },
+    );
+
+    server.registerTool(
+      "get_current_design",
+      {
+        title: "Get current ZPLab design",
+        description:
+          "Read the design currently open in the ZPLab desktop app: the design file " +
+          "plus render-exact bounds and overlaps (the app reports measured barcode/text " +
+          "sizes, so nothing is approx). Only available when ZPLab launched this server.",
+        inputSchema: {},
+      },
+      async () => {
+        const response = await requestCurrentDesign();
+        if (response === null) {
+          return json({ ok: false, errors: ["The ZPLab app did not respond."] });
+        }
+        return json(buildCurrentDesignResult(response));
       },
     );
   }

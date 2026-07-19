@@ -1,9 +1,14 @@
-import { createServer, type IncomingMessage } from "node:http";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { resolveDesignResponse } from "./appBridge.js";
 import { buildServer } from "./server.js";
 
 const HOST = "127.0.0.1";
+
+/** Cap for the app's design-response body. A design file with embedded
+ *  graphics runs to a few MB; anything beyond this is not a real label. */
+const MAX_DESIGN_RESPONSE_BYTES = 16 * 1024 * 1024;
 
 export interface HttpServerOptions {
   port: number;
@@ -27,6 +32,37 @@ function hasValidToken(req: IncomingMessage, expected: string): boolean {
   return timingSafeEqual(provided, wanted);
 }
 
+/** The app's reply to a designRequest event. Bypasses the SDK transport (it is
+ *  not MCP JSON-RPC), so it re-checks the Host header for loopback itself; the
+ *  bearer token was already verified by the shared gate. */
+function handleDesignResponse(req: IncomingMessage, res: ServerResponse): void {
+  const host = (req.headers.host ?? "").replace(/:\d+$/, "");
+  if (req.method !== "POST" || (host !== "127.0.0.1" && host !== "localhost")) {
+    res.writeHead(403).end();
+    return;
+  }
+  const chunks: Buffer[] = [];
+  let size = 0;
+  req.on("data", (chunk: Buffer) => {
+    size += chunk.length;
+    if (size > MAX_DESIGN_RESPONSE_BYTES) {
+      res.writeHead(413).end();
+      req.destroy();
+      return;
+    }
+    chunks.push(chunk);
+  });
+  req.on("end", () => {
+    let delivered = false;
+    try {
+      delivered = resolveDesignResponse(JSON.parse(Buffer.concat(chunks).toString("utf8")));
+    } catch {
+      // Malformed JSON falls through to the 400 below.
+    }
+    if (!res.writableEnded) res.writeHead(delivered ? 204 : 400).end();
+  });
+}
+
 /** Loopback-only Streamable HTTP server with mandatory bearer auth. A fresh
  *  McpServer + transport is built per request (stateless: our tools are pure
  *  request/response); Origin/Host are checked by the SDK's DNS-rebinding protection. */
@@ -43,6 +79,11 @@ export async function startHttpServer(options: HttpServerOptions): Promise<Runni
       return;
     }
 
+    if (req.url === "/design-response") {
+      handleDesignResponse(req, res);
+      return;
+    }
+
     const boundPort = (httpServer.address() as { port: number }).port;
     const authority = `${HOST}:${boundPort}`;
     const transport = new StreamableHTTPServerTransport({
@@ -52,7 +93,7 @@ export async function startHttpServer(options: HttpServerOptions): Promise<Runni
       allowedHosts: [authority, `localhost:${boundPort}`],
       allowedOrigins: [`http://${authority}`, `http://localhost:${boundPort}`],
     });
-    const server = buildServer({ openInApp: true });
+    const server = buildServer({ hosted: true });
     res.on("close", () => {
       void transport.close();
       void server.close();

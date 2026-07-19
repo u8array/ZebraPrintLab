@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { z } from "zod";
-import { createDraft, createDraftShape, validateDraft, exportZpl, getSchema, importZpl, validateZpl } from "./tools";
+import { buildCurrentDesignResult, createDraft, createDraftShape, validateDraft, exportZpl, getSchema, importZpl, validateZpl } from "./tools";
 import { ObjectRegistry } from "@zplab/core/registry";
 import { textObject } from "./testFixtures";
 
@@ -373,5 +373,42 @@ describe("mcp-server tools", () => {
     expect(created.ok).toBe(false);
     if (created.ok) return;
     expect(created.errors[0]).toMatch(/object limit/);
+  });
+});
+
+describe("buildCurrentDesignResult", () => {
+  const barcode = {
+    id: "bc1",
+    type: "code128",
+    x: 20,
+    y: 20,
+    rotation: 0,
+    props: { content: "12345678", height: 100, moduleWidth: 2, rotation: "N" },
+  };
+  const design = {
+    schemaVersion: 3,
+    label: { widthMm: 100, heightMm: 50, dpmm: 8 },
+    pages: [{ objects: [barcode] }],
+  };
+
+  it("upgrades a measured barcode to render-exact bounds", () => {
+    const result = ok(buildCurrentDesignResult({
+      id: 1,
+      designFile: design,
+      measured: { bc1: { width: 321, height: 118 } },
+    }));
+    const b = result.bounds.find((x) => x.objectId === "bc1");
+    expect(b?.width).toBe(321);
+    expect(b?.height).toBe(118);
+    expect(b?.approx).toBe(false);
+  });
+
+  it("keeps an unmeasured barcode approx", () => {
+    const result = ok(buildCurrentDesignResult({ id: 2, designFile: design }));
+    expect(result.bounds.find((x) => x.objectId === "bc1")?.approx).toBe(true);
+  });
+
+  it("maps a malformed design to the ToolError shape", () => {
+    expect(buildCurrentDesignResult({ id: 3, designFile: { schemaVersion: 3 } }).ok).toBe(false);
   });
 });

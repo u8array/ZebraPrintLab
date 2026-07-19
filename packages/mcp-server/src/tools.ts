@@ -10,7 +10,8 @@ import { generateMultiPageZPL } from "@zplab/core/lib/zplGenerator";
 import { importZplText, type ZplImportResult } from "@zplab/core/lib/zplImportService";
 import type { ImportReport } from "@zplab/core/lib/zplParser";
 import { computePreflight } from "@zplab/core/lib/preflight";
-import type { BoundingBoxDots } from "@zplab/core/lib/objectBounds";
+import type { BoundingBoxDots, ObjectBoundsCtx } from "@zplab/core/lib/objectBounds";
+import type { DesignResponse } from "./appBridge.js";
 import { computeOverlaps, leafBoxesDots, MAX_OVERLAPS, type OverlapDots } from "@zplab/core/lib/objectOverlap";
 import { getEntry, ObjectRegistry } from "@zplab/core/registry";
 import { exportableLeaves, type LabelObject } from "@zplab/core/types/Group";
@@ -242,8 +243,13 @@ const roundRect = (r: BoundingBoxDots): BoundingBoxDots => ({
 
 /** One box pass per page feeds both reports, so they cannot diverge. Bounded:
  *  dense pages skip geometry, and overlaps are capped, to keep the payload and
- *  the O(n²) scan finite on adversarial input. */
-function geometryFor(pages: PageLike[], label: LabelConfig): Geometry {
+ *  the O(n²) scan finite on adversarial input. `measured` (app read-back)
+ *  upgrades the affected boxes from estimate to render-exact. */
+function geometryFor(
+  pages: PageLike[],
+  label: LabelConfig,
+  measured?: ObjectBoundsCtx["measured"],
+): Geometry {
   const bounds: ObjectBounds[] = [];
   const overlaps: ObjectOverlap[] = [];
   let truncated = false;
@@ -253,7 +259,7 @@ function geometryFor(pages: PageLike[], label: LabelConfig): Geometry {
       truncated = true;
       return;
     }
-    const boxes = leafBoxesDots(leaves, { label });
+    const boxes = leafBoxesDots(leaves, { label, measured });
     for (const b of boxes) {
       bounds.push({ pageIndex, objectId: b.id, ...roundRect(b.box), approx: b.approx });
     }
@@ -319,6 +325,32 @@ export function validateDraft(designFile: unknown): ValidateDraftResult {
     ok: true,
     warnings: perPage(pages, label, preflightOf),
     ...geometryFor(pages, label),
+  };
+}
+
+export type GetCurrentDesignResult =
+  | {
+      ok: true;
+      designFile: DesignFileJson;
+      warnings: PreflightWarning[];
+      bounds: ObjectBounds[];
+      overlaps: ObjectOverlap[];
+      geometryTruncated?: boolean;
+    }
+  | ToolError;
+
+/** Turn the app's read-back (design + render-measured footprints) into the
+ *  standard tool report; measured footprints make the bounds render-exact. */
+export function buildCurrentDesignResult(response: DesignResponse): GetCurrentDesignResult {
+  const parsed = parseEnvelope(response.designFile);
+  if (!parsed.ok) return parsed;
+  const { label, pages } = parsed.value;
+  const measured = response.measured ? new Map(Object.entries(response.measured)) : undefined;
+  return {
+    ok: true,
+    designFile: response.designFile as unknown as DesignFileJson,
+    warnings: perPage(pages, label, preflightOf),
+    ...geometryFor(pages, label, measured),
   };
 }
 

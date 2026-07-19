@@ -28,7 +28,7 @@ describe("open_in_app gating", () => {
         return true;
       });
     try {
-      const client = await connect(buildServer({ openInApp: true }));
+      const client = await connect(buildServer({ hosted: true }));
       const { tools } = await client.listTools();
       expect(tools.map((t) => t.name)).toContain("open_in_app");
 
