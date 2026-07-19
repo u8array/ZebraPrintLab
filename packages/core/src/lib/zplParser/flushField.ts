@@ -133,8 +133,10 @@ export function createFlushField(
       ? decodeFH(s.field.pendingFD, s.format.fhDelimiter, s.format.fhDecoder)
       : s.field.pendingFD;
     // FN embeds → markers, then ^FC clock tokens (order matters: `%FN#1#%Y`).
-    const afterFn = applyFnEmbeds(rawDecoded);
-    let content = tokensToMarkers(afterFn, s.format.clockChars);
+    // Both decode only when armed for THIS field: firmware honours ^FE/^FC
+    // solely for the next ^FD (spec p.191/p.1614), unarmed data is literal.
+    const afterFn = s.field.feArmed ? applyFnEmbeds(rawDecoded) : rawDecoded;
+    let content = s.field.fcArmed ? tokensToMarkers(afterFn, s.format.clockChars) : afterFn;
     // Control bytes chip-tokenise only where the symbology can encode them,
     // and never in GS1 mode: there a raw GS is the AI separator the GS1
     // normalisation in the type cases below must still see. Text keeps raw

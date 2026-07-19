@@ -174,6 +174,8 @@ export function createFieldHandlers(
       // Each of these binds only to the field this ^FS closes; without
       // an explicit reset at the boundary a bare ^XX^FS (no ^FD) would
       // leak the pending value into the next real field.
+      s.field.feArmed = false;
+      s.field.fcArmed = false;
       s.field.snPending = false;
       s.field.snIncrement = 1;
       s.field.snMode = "SN";
@@ -365,12 +367,16 @@ export function createFieldHandlers(
         time: accept(p[1], s.format.clockChars.time),
         tertiary: accept(p[2], s.format.clockChars.tertiary),
       };
+      // Arming counts only before the ^FD (spec: ^FC/^FE precede the ^FD they
+      // apply to); a late command must not re-decode captured field data.
+      if (s.field.pendingFD === null) s.field.fcArmed = true;
     },
     FE(p) {
       // ^FE<char>: redefine the FN-embed delimiter used inside ^FD/^FV.
       // Single ASCII character, falls back to '#' when missing/invalid.
       const c = p[0]?.[0];
       s.format.embedChar = c && c !== "^" && c !== "~" ? c : "#";
+      if (s.field.pendingFD === null) s.field.feArmed = true;
     },
     SO(p) {
       // ^SOa,b,c,d,e,f,g where a=clock# (2 or 3), then wire order

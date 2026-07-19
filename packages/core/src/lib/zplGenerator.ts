@@ -6,11 +6,7 @@ import {
   hasTemplateMarkers,
   pickEmbedChar,
 } from './fnTemplate';
-import {
-  hasClockMarkers,
-  pickClockChars,
-  isDefaultClockChars,
-} from './fcTemplate';
+import { hasClockMarkers, pickClockChars } from './fcTemplate';
 import { boundColumnIndex, getObjectStringContent } from './variableBinding';
 import { classifyField } from './variableField';
 import { escapeGs1FdValue } from './gs1';
@@ -55,8 +51,7 @@ function flattenObjects(objects: LabelObject[]): LabelObject[] {
  *  templates, plus the emit context. embedChar is only set when a safe char
  *  exists, which fdFieldFor uses as the "templates allowed" gate. Firmware
  *  honours ^FE/^FC only per ^FD, so fdFieldFor arms them on each consuming
- *  field; the header additionally declares a NON-default delimiter as block
- *  state so re-import decodes literals before the first armed field correctly. */
+ *  field; unarmed fields (and the ^FN defaults) stay literal on both sides. */
 export function planTemplateHeader(
   shifted: LabelObject[],
   label: LabelConfig,
@@ -92,23 +87,14 @@ export function planTemplateHeader(
     }
     if (hasClockMarkers(c)) clockPayloads.push(c);
   }
-  // FN-definition lines are parsed while ^FE is active, so keep the delimiter
-  // out of the referenced DEFAULTS too: firmware that expands embeds inside a
-  // FN-definition ^FD could otherwise mis-reference. Batch recall values run
-  // in their own ^XA block without ^FE and need no scan.
-  const embedScan = [
-    ...templatePayloads,
-    ...[...templateVarsByFn.values()].map((v) => v.defaultValue),
-  ];
+  // FN-definition lines and their defaults never arm ^FE (firmware honours it
+  // only for the next ^FD), so only the armed template payloads need the scan.
   const pickedEmbedChar =
-    templatePayloads.length > 0 ? pickEmbedChar(embedScan) : '#';
+    templatePayloads.length > 0 ? pickEmbedChar(templatePayloads) : '#';
   const headerLines: string[] = [];
   const emitCtx: ZplEmitContext = { label, variables };
 
   if (pickedEmbedChar !== null) {
-    // Default `#` is the parser's own default; only a non-default delimiter
-    // needs the header ^FE (the block-state note on planTemplateHeader).
-    if (pickedEmbedChar !== '#') headerLines.push(`^FE${pickedEmbedChar}`);
     for (const [fn, v] of [...templateVarsByFn].sort(([a], [b]) => a - b)) {
       if (singleBindFns.has(fn)) continue;
       // Mode-D-exclusive slot: > needs its >0 invocation (parser reverses).
@@ -129,11 +115,6 @@ export function planTemplateHeader(
       const so3 = formatSetOffset(3, label.tertiaryClockOffset);
       if (so2) headerLines.push(so2);
       if (so3) headerLines.push(so3);
-      // Non-default clock chars need the header ^FC for the same block-state
-      // reason as ^FE above.
-      if (!isDefaultClockChars(picked)) {
-        headerLines.push(`^FC${picked.date},${picked.time},${picked.tertiary}`);
-      }
       emitCtx.clockChars = picked;
     }
   }

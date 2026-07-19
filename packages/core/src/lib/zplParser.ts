@@ -1,4 +1,4 @@
-import { DEFAULT_CLOCK_CHARS, isDefaultClockChars } from "./fcTemplate";
+import { DEFAULT_CLOCK_CHARS } from "./fcTemplate";
 import { unescapeGs1FdValue, zplFdToModelContent } from "./gs1";
 import { gs1ModeDExclusiveFns } from "./gs1ModeDFns";
 import { extractTemplateRefs } from "./fnTemplate";
@@ -69,6 +69,11 @@ export const BY_CONSUMING_BARCODE_TYPES = new Set<string>([
   "msi", "plessey", "planet", "postal", "upcEanExtension", "gs1databar",
   "pdf417", "code49", "micropdf417", "codablock", "tlc39",
 ]);
+
+/** Commands defining persistent state a later field may consume implicitly;
+ *  in-span they make single-field regen unsafe (the span replace drops the
+ *  definition). ^BY absent: consumers self-flag via sawBareBarcode. */
+const PERSISTENT_DEF_CODES = new Set(["CF", "FW", "CW", "SO", "LH", "LT"]);
 
 /** Parse a ZPL II byte stream into an editable design model. `captureOverlay`
  *  builds a source-patch overlay (segments linking each object to its bytes;
@@ -283,7 +288,7 @@ export function parseZPL(
           ? "a barcode without an explicit ^BY"
           : pg.sawFnDeclaration
             ? "a standalone ^FN declaration"
-            : "a non-default format state (prefix, delimiter, unit, embed char, ^FC, or ^LR)";
+            : "a non-default format state (prefix, delimiter, unit, out-of-field ^FE/^FC, or ^LR)";
       findings.push({ kind: "lossyEdit", command: reason, pageIndex });
     }
     const w = labelConfig.widthMm;
@@ -324,6 +329,15 @@ export function parseZPL(
     if (handler) {
       const reverseBefore = s.reverseBg;
       const beforeLen = objects.length;
+      // Arming unconsumed at ^FS MAY ride to the next ^FD on firmware
+      // (cross-^FS carry unverified; the parser drops it per the spec's
+      // in-field wording), so regen must not run under it. Read pre-^FS.
+      const unconsumedArm =
+        cmd === "FS" && (s.field.feArmed || s.field.fcArmed) && s.field.pendingFD === null;
+      const homeBefore =
+        cmd === "LH" || cmd === "LT"
+          ? { x: s.label.lhX, y: s.label.lhY, t: s.label.ltY }
+          : null;
       handler(p, rest, cmd);
       if (opts.captureOverlay) {
         if (
@@ -331,13 +345,39 @@ export function parseZPL(
           s.format.tildeChar !== "~" ||
           s.format.delimiterChar !== "," ||
           s.format.unitScale !== 1 ||
-          s.format.embedChar !== "#" ||
           // ^LR reverses every following field and is never re-emitted, so a
           // regenerated field under a surviving raw ^LR would double-reverse.
-          s.label.lrActive ||
-          // A non-default ^FC sets the active clock chars; a regenerated clock
-          // field re-derives default chars and would mis-clock under the raw ^FC.
-          !isDefaultClockChars(s.format.clockChars)
+          s.label.lrActive
+        ) {
+          pg.regenHostileFormat = true;
+        }
+        // Arming is span-local only when it precedes its ^FD inside the field;
+        // outside a span or after the ^FD, the surviving raw ^FE/^FC would arm
+        // a neighbouring or regenerated ^FD on firmware.
+        const strayArm =
+          (cmd === "FE" || cmd === "FC") &&
+          (pg.ovStart === null || s.field.pendingFD !== null);
+        // A ^FC omitting a param inherits chars whose defining bytes a regen
+        // may replace, so it is block-state-dependent even in-field.
+        const inheritingFc =
+          cmd === "FC" && !(p[0]?.trim() && p[1]?.trim() && p[2]?.trim());
+        if (unconsumedArm || strayArm || inheritingFc) {
+          pg.regenHostileFormat = true;
+        }
+        // A persistent definition inside a field span: regen replaces the
+        // span and drops the definition a later verbatim field may consume.
+        if (PERSISTENT_DEF_CODES.has(cmd) && pg.ovStart !== null) {
+          pg.regenHostileFormat = true;
+        }
+        // A home change after this page already linked fields: earlier fields
+        // parsed under the old home, but regen shifts by the single end-state
+        // frame, mis-placing (or dropping) a regenerated early field.
+        if (
+          homeBefore &&
+          overlaySpans.length > pg.span &&
+          (s.label.lhX !== homeBefore.x ||
+            s.label.lhY !== homeBefore.y ||
+            s.label.ltY !== homeBefore.t)
         ) {
           pg.regenHostileFormat = true;
         }

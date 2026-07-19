@@ -137,6 +137,10 @@ export interface FieldState {
   // Type discriminator + pending ^FD payload
   fieldType: string | null;
   pendingFD: string | null;
+  /** ^FE armed for the next ^FD only (spec p.191); reset at ^FS. */
+  feArmed: boolean;
+  /** ^FC armed for the next ^FD only (spec p.1614); reset at ^FS. */
+  fcArmed: boolean;
   /** ^FR: single-field reverse, reset on ^FS / new ^FO / ^FT. */
   frActive: boolean;
   /** ^FP direction (H/V/R); per-field, reset to 'H' at ^FS. */
@@ -347,6 +351,8 @@ export function freshFieldState(): FieldState {
     justify: "L",
     fieldType: null,
     pendingFD: null,
+    feArmed: false,
+    fcArmed: false,
     frActive: false,
     fpDirection: "H",
     fpCharGap: 0,
