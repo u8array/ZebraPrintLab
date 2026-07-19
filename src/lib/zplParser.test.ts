@@ -1836,7 +1836,7 @@ describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
     // Same shared-slot rule as the post-^FS path: the embed must see the
     // serial seed as default, not a freshly created empty variable.
     const { objects, variables } = parseSingle(
-      '^XA^FO10,10^A0N,30,0^FN1^SN001,1,Y^FS^FO10,60^A0N,30,0^FDlot #1#^FS^XZ', 8);
+      '^XA^FO10,10^A0N,30,0^FN1^SN001,1,Y^FS^FO10,60^A0N,30,0^FE#^FDlot #1#^FS^XZ', 8);
     expect(variables).toHaveLength(1);
     expect(variables[0]?.defaultValue).toBe('001');
     expect(props(objects[1]).content).toBe('lot «field_1»');
@@ -1846,10 +1846,75 @@ describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
     // The slot is shared (spec p.200): a later #1# must reuse the original
     // variable and its default, not a freshly created empty one.
     const { objects, variables } = parseSingle(
-      '^XA^FO10,10^A0N,30,0^FN1^FD001^FS\n^SN001,1,Y\n^FO10,60^A0N,30,0^FDlot #1#^FS^XZ', 8);
+      '^XA^FO10,10^A0N,30,0^FN1^FD001^FS\n^SN001,1,Y\n^FO10,60^A0N,30,0^FE#^FDlot #1#^FS^XZ', 8);
     expect(variables).toHaveLength(1);
     expect(variables[0]?.defaultValue).toBe('001');
     expect(props(objects[1]).content).toBe('lot «field_1»');
+  });
+});
+
+// ── ^FE/^FC field scoping ────────────────────────────────────────────────────
+
+describe('parseZPL — ^FE/^FC arm only the next ^FD (spec p.191/p.1614)', () => {
+  it('^FE does not leak onto later fields (no phantom variable)', () => {
+    // Spec p.191: "if a ^FE does not immediately precede a ^FD, there is no
+    // field concatenation character active for that ^FD". Firmware prints the
+    // second field's @2@ literally; decoding it would mint a phantom fn2.
+    const { objects, variables } = parseSingle(
+      '^XA^FN1^FDval^FS^FE@^FO10,10^A0N,30,30^FD@1@^FS^FO10,60^A0N,30,30^FD@2@^FS^XZ', 8);
+    expect(props(objects[0]).content).toBe('«field_1»');
+    expect(props(objects[1]).content).toBe('@2@');
+    expect(variables).toHaveLength(1);
+  });
+
+  it('bare #n# without ^FE stays literal', () => {
+    const { objects, variables } = parseSingle(
+      '^XA^FN1^FDval^FS^FO10,10^A0N,30,30^FD#1#^FS^XZ', 8);
+    expect(props(objects[0]).content).toBe('#1#');
+    expect(variables).toHaveLength(1);
+  });
+
+  it('^FE without a parameter arms the default #', () => {
+    const { objects } = parseSingle(
+      '^XA^FN1^FDval^FS^FE^FO10,10^A0N,30,30^FD#1#^FS^XZ', 8);
+    expect(props(objects[0]).content).toBe('«field_1»');
+  });
+
+  it('^FC does not leak onto later fields (%d stays literal)', () => {
+    // Spec p.1614: without a preceding ^FC "the characters %H would print as
+    // text on the label".
+    const { objects } = parseSingle(
+      '^XA^FC%^FO10,10^A0N,30,30^FD%d^FS^FO10,60^A0N,30,30^FD%d^FS^XZ', 8);
+    expect(props(objects[0]).content).toBe('«clock:d»');
+    expect(props(objects[1]).content).toBe('%d');
+  });
+
+  it('bare %d without ^FC stays literal', () => {
+    const { objects } = parseSingle(
+      '^XA^FO10,10^A0N,30,30^FD%d^FS^XZ', 8);
+    expect(props(objects[0]).content).toBe('%d');
+  });
+
+  it('a ^FE after the ^FD does not retroactively decode it', () => {
+    const { objects, variables } = parseSingle(
+      '^XA^FN1^FDval^FS^FO10,10^A0N,30,30^FD@1@^FE@^FS^XZ', 8);
+    expect(props(objects[0]).content).toBe('@1@');
+    expect(variables).toHaveLength(1);
+  });
+
+  it('a ^FC after the ^FD does not retroactively decode it', () => {
+    const { objects } = parseSingle(
+      '^XA^FO10,10^A0N,30,30^FD%d^FC%^FS^XZ', 8);
+    expect(props(objects[0]).content).toBe('%d');
+  });
+
+  it('arming does not carry across ^FS (deliberate: cross-^FS carry is unverified)', () => {
+    // Spec wording is per-field; whether firmware carries an unconsumed arm
+    // past ^FS is unverified. Parse literal (no phantom decode); the overlay
+    // marks the block regen-hostile so the raw bytes replay verbatim.
+    const { objects } = parseSingle(
+      '^XA^FC%^FS^FO10,10^A0N,30,30^FD%d^FS^XZ', 8);
+    expect(props(objects[0]).content).toBe('%d');
   });
 });
 

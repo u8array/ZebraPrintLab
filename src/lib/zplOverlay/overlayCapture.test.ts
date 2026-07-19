@@ -162,9 +162,74 @@ describe("parseZPL overlay capture", () => {
     expect(captured("^XA^FO10,10^BXN,5,200^FDhello^FS^XZ").regenSafe).toBe(true);
   });
 
-  it("flags a non-default ^FC block as not regenSafe (raw ^FC would mis-clock a regen)", () => {
+  it("flags an out-of-field ^FC as not regenSafe (raw ^FC would arm a regenerated neighbour)", () => {
     const o = captured("^XA^FC$,{,#^FO50,50^A0N,30,30^FD$m/$d^FS^XZ");
     expect(o.regenSafe).toBe(false);
+  });
+
+  it("keeps in-field ^FC/^FE arming regenSafe (regen replaces it with the field)", () => {
+    const o = captured("^XA^FO50,50^A0N,30,30^FC$,{,#^FD$m/$d^FS^XZ");
+    expect(o.regenSafe).toBe(true);
+  });
+
+  it("flags a bare in-field ^FC as not regenSafe (inherits chars a regen may redefine)", () => {
+    const o = captured(
+      "^XA^FO10,10^A0N,30,30^FC@,{,#^FD@d^FS^FO10,60^A0N,30,30^FC^FD@m^FS^XZ");
+    expect(o.regenSafe).toBe(false);
+  });
+
+  it("flags a partial ^FC (omitted params) as not regenSafe", () => {
+    const o = captured("^XA^FO10,10^A0N,30,30^FC%^FD%d^FS^XZ");
+    expect(o.regenSafe).toBe(false);
+  });
+
+  it("flags a ^FE after the field's ^FD as not regenSafe (arms the next ^FD on firmware)", () => {
+    const o = captured("^XA^FO50,50^A0N,30,30^FDx^FE@^FS^FO50,90^A0N,30,30^FDy^FS^XZ");
+    expect(o.regenSafe).toBe(false);
+  });
+
+  it("flags an armed field without ^FD as not regenSafe (arming rides past the ^FS)", () => {
+    const o = captured("^XA^FO50,50^FE@^FS^FO50,90^A0N,30,30^FDy^FS^XZ");
+    expect(o.regenSafe).toBe(false);
+  });
+
+  // In-span persistent definitions: regen replaces the span and drops the
+  // definition a later verbatim field consumes.
+  it("flags an in-span ^CF as not regenSafe (later ^A-less field consumes it)", () => {
+    const o = captured("^XA^FO50,50^CF0,80^FDAAA^FS^FO50,200^FDBBB^FS^XZ");
+    expect(o.regenSafe).toBe(false);
+  });
+
+  it("flags an in-span ^FW as not regenSafe", () => {
+    const o = captured("^XA^FO50,50^FWR^FDAAA^FS^FO50,200^FDBBB^FS^XZ");
+    expect(o.regenSafe).toBe(false);
+  });
+
+  it("flags an in-span ^CW as not regenSafe", () => {
+    const o = captured(
+      "^XA^FO50,50^CWZ,E:FONT.FNT^A0N,30,30^FDAAA^FS^FO50,200^AZN,30,30^FDBBB^FS^XZ");
+    expect(o.regenSafe).toBe(false);
+  });
+
+  it("flags an in-span ^SO as not regenSafe", () => {
+    const o = captured(
+      "^XA^FO50,50^SO2,0,0,0,1,0,0^FDAAA^FS^FO50,200^FC%,{,#^FD%m^FS^XZ");
+    expect(o.regenSafe).toBe(false);
+  });
+
+  it("keeps a ^CF between fields regenSafe (raw segment survives regen)", () => {
+    const o = captured("^XA^CF0,80^FO50,50^FDAAA^FS^FO50,200^FDBBB^FS^XZ");
+    expect(o.regenSafe).toBe(true);
+  });
+
+  it("flags a mid-block ^LH change as not regenSafe (single end-state frame)", () => {
+    const o = captured("^XA^FO50,50^FDAAA^FS^LH100,100^FO50,200^FDBBB^FS^XZ");
+    expect(o.regenSafe).toBe(false);
+  });
+
+  it("keeps a pre-field ^LH regenSafe (frame snapshot matches every field)", () => {
+    const o = captured("^XA^LH50,20^FO10,10^A0N,30,30^FDx^FS^XZ");
+    expect(o.regenSafe).toBe(true);
   });
 
   it("flags a block with a bare ^FN declaration as not regenSafe (would duplicate it)", () => {

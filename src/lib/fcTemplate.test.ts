@@ -7,7 +7,6 @@ import {
   tokensToMarkers,
   markersToTokens,
   pickClockChars,
-  isDefaultClockChars,
   DEFAULT_CLOCK_CHARS,
   clockMarkerBody,
   parseClockBody,
@@ -178,15 +177,6 @@ describe("tokensToMarkers safety", () => {
   it("returns the payload unchanged when every clock char is empty", () => {
     expect(tokensToMarkers("Date %d/%m", { date: "", time: "", tertiary: "" }))
       .toBe("Date %d/%m");
-  });
-});
-
-describe("isDefaultClockChars", () => {
-  it("identifies the default triple", () => {
-    expect(isDefaultClockChars(DEFAULT_CLOCK_CHARS)).toBe(true);
-  });
-  it("rejects any deviation", () => {
-    expect(isDefaultClockChars({ date: "@", time: "{", tertiary: "#" })).toBe(false);
   });
 });
 

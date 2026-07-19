@@ -207,11 +207,3 @@ export function pickClockChars(payloads: readonly string[]): ClockChars | null {
   if (!date || !time || !tertiary) return null;
   return { date, time, tertiary };
 }
-
-export function isDefaultClockChars(c: ClockChars): boolean {
-  return (
-    c.date === DEFAULT_CLOCK_CHARS.date &&
-    c.time === DEFAULT_CLOCK_CHARS.time &&
-    c.tertiary === DEFAULT_CLOCK_CHARS.tertiary
-  );
-}

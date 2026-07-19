@@ -1199,7 +1199,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
     // auto-creates the Variables when they don't already exist (same
     // bootstrap convention as the single-bind ^FN path).
     const r = parseSingle(
-      '^XA^FO50,50^A0N,30,30^FD#2# and then #3#^FS^XZ',
+      '^XA^FO50,50^A0N,30,30^FE#^FD#2# and then #3#^FS^XZ',
       8,
     );
     expect(r.variables.map((v) => ({ fn: v.fnNumber, n: v.name })).sort((a, b) => a.fn - b.fn))
@@ -1223,7 +1223,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
   });
 
   it('round-trips a label that uses ^FE inline embeds', () => {
-    const src = '^XA^FO50,50^A0N,30,30^FD#1#-#2#^FS^XZ';
+    const src = '^XA^FO50,50^A0N,30,30^FE#^FD#1#-#2#^FS^XZ';
     const original = parseSingle(src, 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects, original.variables);
     const reparsed = parseSingle(regenerated, 8);
@@ -1233,7 +1233,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
   });
 
   it('parses ^FD clock tokens into «clock:T» markers', () => {
-    const r = parseSingle('^XA^FO50,50^A0N,30,30^FDDate %d/%m/%Y^FS^XZ', 8);
+    const r = parseSingle('^XA^FO50,50^A0N,30,30^FC%^FDDate %d/%m/%Y^FS^XZ', 8);
     const text = defined(r.objects.find((o) => o.type === 'text'));
     expect(props(text).content).toBe('Date «clock:d»/«clock:m»/«clock:Y»');
   });
@@ -1245,7 +1245,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
   });
 
   it('round-trips a label with clock tokens (default chars)', () => {
-    const src = '^XA^FO50,50^A0N,30,30^FD%d/%m/%Y %H:%M^FS^XZ';
+    const src = '^XA^FO50,50^A0N,30,30^FC%^FD%d/%m/%Y %H:%M^FS^XZ';
     const original = parseSingle(src, 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
     const reparsed = parseSingle(regenerated, 8);
@@ -1262,18 +1262,18 @@ describe('generateZPL — parse/generate roundtrip', () => {
     // parse with the leaked chars and misinterpret default tokens.
     const r = parseZPL(
       '^XA^FC@^FE!^FO50,50^A0N,30,30^FD@d !1!^FS^XZ' +
-      '^XA^FO50,50^A0N,30,30^FD%d #1#^FS^XZ',
+      '^XA^FC^FE^FO50,50^A0N,30,30^FD%d #1#^FS^XZ',
       8,
     );
-    // Second page's `%d` must still parse as a clock token; with the leak the
-    // parser would have stuck with `@` and left `%d` literal.
+    // Second page arms with bare ^FC/^FE, so it decodes with the DEFAULT
+    // chars; with the leak the parser would keep `@` and leave `%d` literal.
     const texts = r.pages.flatMap((p) => p.objects).filter((o) => o.type === 'text');
     expect(texts.length).toBeGreaterThanOrEqual(2);
     expect(props(defined(texts[1])).content).toContain('«clock:d»');
   });
 
   it('emits ^FC<alt> when payload contains a literal %', () => {
-    const src = '^XA^FO50,50^A0N,30,30^FD100% match %Y^FS^XZ';
+    const src = '^XA^FO50,50^A0N,30,30^FC%^FD100% match %Y^FS^XZ';
     const original = parseSingle(src, 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
     expect(regenerated).toMatch(/\^FC\$/);
@@ -1304,7 +1304,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
   });
 
   it('round-trips ^SO2 offsets via labelConfig.secondaryClockOffset', () => {
-    const src = '^XA^SO2,1,0,0,0,0,0^FO10,10^A0N,30,30^FD{Y-{m^FS^XZ';
+    const src = '^XA^SO2,1,0,0,0,0,0^FO10,10^A0N,30,30^FC%,{,#^FD{Y-{m^FS^XZ';
     const r = parseSingle(src, 8);
     expect(r.labelConfig.secondaryClockOffset).toEqual({ months: 1 });
     const regenerated = generateZPL({ ...BASE_LABEL, ...r.labelConfig }, r.objects);
@@ -1313,7 +1313,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
   });
 
   it('round-trips ^SO3 offsets independently of ^SO2', () => {
-    const src = '^XA^SO3,0,0,1,0,0,0^FO10,10^A0N,30,30^FD#Y^FS^XZ';
+    const src = '^XA^SO3,0,0,1,0,0,0^FO10,10^A0N,30,30^FC%,{,#^FD#Y^FS^XZ';
     const r = parseSingle(src, 8);
     expect(r.labelConfig.tertiaryClockOffset).toEqual({ years: 1 });
     expect(r.labelConfig.secondaryClockOffset).toBeUndefined();
