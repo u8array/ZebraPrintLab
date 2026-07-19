@@ -139,6 +139,16 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The SEA sidecar clones a node binary; the arm64 runner cross-builds
+      # x86_64, so that leg needs a target-arch node of the exact same version
+      # (the build script rejects a skew).
+      - name: fetch x86_64 node for the SEA sidecar
+        if: matrix.args == '--target x86_64-apple-darwin'
+        run: |
+          V=$(node --version)
+          curl -fsSL "https://nodejs.org/dist/${V}/node-${V}-darwin-x64.tar.gz" | tar xz -C "$RUNNER_TEMP"
+          echo "ZPLAB_SEA_NODE=$RUNNER_TEMP/node-${V}-darwin-x64/bin/node" >> "$GITHUB_ENV"
+
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
