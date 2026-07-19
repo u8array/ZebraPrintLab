@@ -9,17 +9,26 @@ import {
 } from '../labelStore.internals';
 import type { LabelState } from '../labelStore';
 import { defaultPaletteRows } from '../../registry/paletteTypes';
-import { getCredential, setCredential } from '../../lib/credentialStore';
+import { makeCredentialHydrator, setCredential } from '../../lib/credentialStore';
 import { generateMcpToken, stopMcpServer } from '../../lib/mcpServer';
 import { selectEffectivePreviewProvider } from '../labelStore.selectors';
 
 /** Credential-store account name for the Labelary API key. */
 const LABELARY_KEY_CRED = 'labelary-api-key';
 
-/** Deduplicates concurrent startup/settings hydrations of the API key into one
- *  credential read. Module-scoped transient coordination, not source of truth;
- *  cleared when the read settles so a failed load can retry. */
-let hydrateInFlight: Promise<void> | null = null;
+/** Credential-store account name for the MCP loopback bearer token. */
+const MCP_TOKEN_CRED = 'mcp-server-token';
+
+/** Fallback slot for systems without a working credential store: a token
+ *  lost on reboot breaks wired-up client configs, which outweighs plaintext
+ *  storage THERE. Cleared whenever a keychain write succeeds. */
+const MCP_TOKEN_FALLBACK_LS = 'zpl-mcp-token-fallback';
+
+function persistMcpToken(token: string): void {
+  void setCredential(MCP_TOKEN_CRED, token)
+    .then(() => localStorage.removeItem(MCP_TOKEN_FALLBACK_LS))
+    .catch(() => localStorage.setItem(MCP_TOKEN_FALLBACK_LS, token));
+}
 
 export interface CanvasSettings {
   showGrid: boolean;
@@ -136,9 +145,11 @@ export interface UiSlice {
   mcpServerEnabled: boolean;
   mcpServerPort: number;
   /** Bearer token for the loopback server, generated on first enable and reused
-   *  so a Claude Desktop config the user already wired up keeps working.
-   *  Persisted but out of the settings-reset defaults (see labelaryHost). */
+   *  so an MCP-client config the user already wired up keeps working. Held
+   *  in the OS credential store (like the Labelary key), transient here. */
   mcpServerToken: string;
+  /** Keychain hydrate happened (or a fresh token was generated/saved). */
+  mcpServerTokenLoaded: boolean;
   /** Build capability from mcp_status: whether this build can spawn the MCP
    *  sidecar (false on web and sidecar-less releases). Stamped at boot;
    *  null until the first status lands. Transient. */
@@ -207,6 +218,12 @@ export interface UiSlice {
   setMcpServerEnabled: (enabled: boolean) => void;
   setMcpServerPort: (port: number) => void;
   regenerateMcpToken: () => void;
+  /** Load the token from the credential store (single-flight); migrates a
+   *  token still sitting in the old localStorage persist on first run. */
+  hydrateMcpToken: () => Promise<void>;
+  /** The token every server start must use: hydrated, or freshly generated
+   *  only when the store is KNOWN empty. */
+  ensureMcpToken: () => Promise<string>;
   setMcpSidecarAvailable: (available: boolean) => void;
   setSidebarTab: (tab: SidebarTab) => void;
   setBlockDragMode: (mode: BlockDragMode) => void;
@@ -290,9 +307,9 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set, ge
   labelaryHost: '',
   labelaryApiKey: '',
   labelaryApiKeyLoaded: false,
-  // Token is persisted but out of `defaultUiPrefs`, so a settings reset keeps
-  // it (regenerating would break a Claude Desktop config already pointing here).
+  // Keychain-held like the Labelary key; a settings reset keeps it.
   mcpServerToken: '',
+  mcpServerTokenLoaded: false,
   mcpSidecarAvailable: null,
   sidebarTab: 'properties',
   blockDragMode: 'frame',
@@ -347,28 +364,15 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set, ge
     set({ labelaryApiKey: trimmed, labelaryApiKeyLoaded: true });
     if (selectEffectivePreviewProvider(get()) === 'labelary') get().exitPreviewMode();
   },
-  hydrateLabelaryApiKey: () => {
-    if (get().labelaryApiKeyLoaded) return Promise.resolve();
-    // Single-flight: the startup bootstrap and a settings-open retry can race;
-    // share one read so they can't issue two keychain prompts, and so the
-    // preview/print path can await the same load. Reset on completion so a
-    // failed read retries. This is transient coordination, not stored state.
-    hydrateInFlight ??= (async () => {
-      try {
-        const key = await getCredential(LABELARY_KEY_CRED);
-        // A user save during the read already set the key; don't clobber it.
-        if (!get().labelaryApiKeyLoaded) {
-          set({ labelaryApiKey: (key ?? '').trim(), labelaryApiKeyLoaded: true });
-        }
-      } catch {
-        // Store unreadable (e.g. no Secret Service daemon): stay unloaded so a
-        // later settings-open or preview retries instead of caching keyless.
-      } finally {
-        hydrateInFlight = null;
-      }
-    })();
-    return hydrateInFlight;
-  },
+  // Losing this key is harmless (the user re-enters it), so there is no
+  // fallback: an unreadable store stays unloaded and a later open retries.
+  hydrateLabelaryApiKey: makeCredentialHydrator({
+    credName: LABELARY_KEY_CRED,
+    isLoaded: () => get().labelaryApiKeyLoaded,
+    onStored: (key) => set({ labelaryApiKey: key.trim(), labelaryApiKeyLoaded: true }),
+    onEmpty: () => set({ labelaryApiKey: '', labelaryApiKeyLoaded: true }),
+    onError: () => undefined,
+  }),
   acknowledgeLabelaryNotice: () => set({ labelaryNoticeAcknowledged: true }),
   // Revoke consent so the Labelary gate closes again; re-enabling re-shows the
   // disclosure, keeping consent explicit and reversible. Tear down any live
@@ -425,14 +429,49 @@ export const createUiSlice: StateCreator<LabelState, [], [], UiSlice> = (set, ge
   setPaletteView: (view) => set({ paletteView: view }),
   togglePaletteEditing: () => set((state) => ({ paletteEditing: !state.paletteEditing })),
   setShowZplCommands: (show) => set({ showZplCommands: show }),
-  setMcpServerEnabled: (enabled) =>
-    set((state) => ({
-      mcpServerEnabled: enabled,
-      mcpServerToken:
-        enabled && !state.mcpServerToken ? generateMcpToken() : state.mcpServerToken,
-    })),
+  setMcpServerEnabled: (enabled) => set({ mcpServerEnabled: enabled }),
   setMcpServerPort: (port) => set({ mcpServerPort: port }),
-  regenerateMcpToken: () => set({ mcpServerToken: generateMcpToken() }),
+  regenerateMcpToken: () => {
+    const token = generateMcpToken();
+    persistMcpToken(token);
+    set({ mcpServerToken: token, mcpServerTokenLoaded: true });
+  },
+  ensureMcpToken: async () => {
+    await get().hydrateMcpToken();
+    const existing = get().mcpServerToken;
+    if (existing) return existing;
+    // Still unloaded = the read FAILED, not known-empty: minting now could
+    // clobber the stored token wired-up client configs point at.
+    if (!get().mcpServerTokenLoaded) throw new Error('credential store unavailable');
+    const token = generateMcpToken();
+    persistMcpToken(token);
+    set({ mcpServerToken: token, mcpServerTokenLoaded: true });
+    return token;
+  },
+  hydrateMcpToken: makeCredentialHydrator({
+    credName: MCP_TOKEN_CRED,
+    isLoaded: () => get().mcpServerTokenLoaded,
+    onStored: (token) => {
+      localStorage.removeItem(MCP_TOKEN_FALLBACK_LS);
+      set({ mcpServerToken: token.trim(), mcpServerTokenLoaded: true });
+    },
+    onEmpty: () => {
+      // Adopt the broken-store fallback or the pre-keychain persist (migration).
+      const legacy = localStorage.getItem(MCP_TOKEN_FALLBACK_LS) ?? get().mcpServerToken;
+      if (legacy) {
+        persistMcpToken(legacy);
+        set({ mcpServerToken: legacy, mcpServerTokenLoaded: true });
+      } else {
+        set({ mcpServerTokenLoaded: true });
+      }
+    },
+    onError: () => {
+      // The fallback slot is the truth on broken-store systems; without one
+      // stay unloaded so a transient failure retries instead of minting.
+      const fallback = localStorage.getItem(MCP_TOKEN_FALLBACK_LS);
+      if (fallback) set({ mcpServerToken: fallback, mcpServerTokenLoaded: true });
+    },
+  }),
   setMcpSidecarAvailable: (available) => set({ mcpSidecarAvailable: available }),
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
   setBlockDragMode: (mode) => set({ blockDragMode: mode }),

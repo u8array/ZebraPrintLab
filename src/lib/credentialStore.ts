@@ -17,6 +17,36 @@ export async function getCredential(name: string): Promise<string | null> {
   return localStorage.getItem(LS_PREFIX + name);
 }
 
+/** Single-flight hydrate of one credential; the strategy hooks carry the
+ *  policy (what a stored/empty/failed read means). A failed read retries on
+ *  the next call. */
+export function makeCredentialHydrator(strategy: {
+  credName: string;
+  isLoaded: () => boolean;
+  onStored: (value: string) => void;
+  onEmpty: () => void;
+  onError: () => void;
+}): () => Promise<void> {
+  let inFlight: Promise<void> | null = null;
+  return () => {
+    if (strategy.isLoaded()) return Promise.resolve();
+    inFlight ??= (async () => {
+      try {
+        const stored = await getCredential(strategy.credName);
+        // A concurrent save may have set the value while we read; keep it.
+        if (strategy.isLoaded()) return;
+        if (stored) strategy.onStored(stored);
+        else strategy.onEmpty();
+      } catch {
+        strategy.onError();
+      } finally {
+        inFlight = null;
+      }
+    })();
+    return inFlight;
+  };
+}
+
 /** Store a credential; an empty/whitespace value deletes it. Throws (with the
  *  backend's message) when the OS store is unavailable, e.g. a Linux session
  *  without a Secret Service daemon. */

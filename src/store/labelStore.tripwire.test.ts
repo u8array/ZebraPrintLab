@@ -13,7 +13,7 @@ const EXPECTED_PERSIST_KEYS = [
   'locale',
   'mcpServerEnabled',
   'mcpServerPort',
-  'mcpServerToken',
+  // mcpServerToken deliberately absent: keychain-held (see hydrateMcpToken).
   'pages',
   'paletteRows',
   'paletteView',
