@@ -163,8 +163,10 @@ pub const SIDECAR_AVAILABLE: bool = cfg!(debug_assertions);
 
 /// The child that serves the MCP HTTP transport. Dev runs the workspace package
 /// from source; release fails honestly until the sidecar binary is bundled.
+/// The token travels over stdin (--token-stdin), never argv: argv is readable
+/// by any same-user process (/proc/pid/cmdline, WMI CommandLine).
 #[cfg(debug_assertions)]
-fn mcp_command(port: u16, token: &str) -> Result<Command, String> {
+fn mcp_command(port: u16) -> Result<Command, String> {
   // cwd is the repo root (src-tauri's parent) so the pnpm workspace filter
   // resolves the package.
   let repo_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -188,14 +190,13 @@ fn mcp_command(port: u16, token: &str) -> Result<Command, String> {
     "--http",
     "--port",
     &port.to_string(),
-    "--token",
-    token,
+    "--token-stdin",
   ]);
   Ok(cmd)
 }
 
 #[cfg(not(debug_assertions))]
-fn mcp_command(_port: u16, _token: &str) -> Result<Command, String> {
+fn mcp_command(_port: u16) -> Result<Command, String> {
   // Bundling the sidecar binary is a deferred follow-up; fail instead of
   // spawning a dev toolchain that release machines do not have. Stable code the
   // frontend maps to a localized message.
@@ -283,10 +284,11 @@ pub async fn mcp_start(
   if state.is_running() {
     return Ok(());
   }
-  let mut cmd = mcp_command(port, &token)?;
+  let mut cmd = mcp_command(port)?;
   suppress_console(&mut cmd);
   // Pipe stdout for the openDraft event channel; stderr stays inherited.
-  cmd.stdout(Stdio::piped());
+  // stdin is piped solely for the one token line below.
+  cmd.stdout(Stdio::piped()).stdin(Stdio::piped());
   #[cfg(unix)]
   {
     // Own process group so kill() can SIGKILL the whole pnpm/node tree.
@@ -296,6 +298,12 @@ pub async fn mcp_start(
   let mut child = cmd
     .spawn()
     .map_err(|e| format!("failed to spawn mcp server: {e}"))?;
+  // Hand the token over stdin, then drop the handle (EOF): the child reads
+  // exactly one line, and a failed write surfaces as the readiness timeout.
+  if let Some(mut stdin) = child.stdin.take() {
+    use std::io::Write;
+    let _ = writeln!(stdin, "{token}");
+  }
   // Known micro-race: a grandchild forked between spawn and AssignProcessToJobObject
   // escapes the job's kill-on-close. The canonical fix (CREATE_SUSPENDED + ResumeThread)
   // needs the primary-thread handle std::process::Child does not expose.
@@ -394,6 +402,18 @@ mod tests {
     ));
     assert!(!is_listening_event(r#"{"zplabEvent":"openDraft"}"#));
     assert!(!is_listening_event("plain dev log line"));
+  }
+
+  #[cfg(debug_assertions)]
+  #[test]
+  fn mcp_command_keeps_the_token_off_argv() {
+    let cmd = mcp_command(4923).unwrap();
+    let args: Vec<String> = cmd
+      .get_args()
+      .map(|a| a.to_string_lossy().into_owned())
+      .collect();
+    assert!(args.contains(&"--token-stdin".to_string()));
+    assert!(!args.iter().any(|a| a == "--token"));
   }
 
   #[test]
