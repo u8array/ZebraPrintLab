@@ -4,6 +4,7 @@ import type { Page } from '@zplab/core/types/Group';
 import type { Variable, CsvMapping } from '@zplab/core/types/Variable';
 import { forgetImport } from '../../lib/csvImport';
 import { dropLegacyFontBindings } from '@zplab/core/lib/customFonts';
+import { parseDesignFile, designFileErrors } from '@zplab/core/lib/designFile';
 import { selectPreviewLocksEditor } from '../labelStore.selectors';
 import { configPatchAffectsEmit } from '../labelStore.internals';
 import { dropPageOverlays } from '@zplab/core/lib/pageOverlay';
@@ -27,6 +28,9 @@ export interface LabelConfigSlice {
     variables?: Variable[],
     csvMapping?: CsvMapping | null,
   ) => void;
+  /** Parse serialized design-file text and load it, routing a parse failure
+   *  to userError; every text source (file open, MCP push) shares this path. */
+  loadDesignText: (text: string) => void;
   /** Append pages to the current design without touching label config.
    *  Switches focus to the first appended page. */
   appendPages: (pages: Page[]) => void;
@@ -74,6 +78,21 @@ export const createLabelConfigSlice: StateCreator<LabelState, [], [], LabelConfi
       csvMapping: csvMapping ?? null,
       csvDataset: null,
     });
+  },
+
+  loadDesignText: (text) => {
+    const result = parseDesignFile(text);
+    if (!result.ok) {
+      get().setUserError(designFileErrors[result.error]);
+      return;
+    }
+    get().clearUserError();
+    get().loadDesign(
+      result.value.label,
+      result.value.pages,
+      result.value.variables,
+      result.value.csvMapping,
+    );
   },
 
   appendPages: (pages) =>

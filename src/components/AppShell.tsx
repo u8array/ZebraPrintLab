@@ -58,7 +58,7 @@ import { useT } from "../hooks/useT";
 import { kbd } from "../lib/kbd";
 import { useGlobalShortcuts } from "../hooks/useGlobalShortcuts";
 import { useDesignFileActions } from "../hooks/useDesignFileActions";
-import { useMcpDesignRequest } from "../hooks/useMcpDesignRequest";
+import { useMcpBridge } from "../hooks/useMcpBridge";
 import { useCsvImportActions } from "../hooks/useCsvImportActions";
 import { useZplImportExport } from "../hooks/useZplImportExport";
 import { useOutputPanel, OUTPUT_DEFAULT_H } from "../hooks/useOutputPanel";
@@ -162,7 +162,7 @@ export function AppShell() {
   const collisionDetection = makePaletteCollision(paletteEditing);
 
   useGlobalShortcuts();
-  useMcpDesignRequest();
+  useMcpBridge();
   const { handleNew, handleSave, handleOpen, handleLoad, loadInputRef } = useDesignFileActions();
   const {
     csvInputRef,
