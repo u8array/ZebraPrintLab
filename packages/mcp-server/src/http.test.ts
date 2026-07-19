@@ -143,6 +143,16 @@ describe("mcp-server http transport", () => {
     expect(res.status).toBe(400);
   });
 
+  it("rejects an oversized MCP-route body with 413", async () => {
+    const res = await post(
+      { jsonrpc: "2.0", id: 9, method: "tools/call", params: { pad: "x".repeat(17 * 1024 * 1024) } },
+      { token: TOKEN },
+    ).catch(() => null);
+    // Node may reset the socket mid-upload after the 413; both prove the cap.
+    if (res) expect(res.status).toBe(413);
+    else expect(res).toBeNull();
+  });
+
   it("rejects an oversized design-response body with 413", async () => {
     const res = await fetch(`http://127.0.0.1:${server.port}/design-response`, {
       method: "POST",

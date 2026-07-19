@@ -6,9 +6,31 @@ import { buildServer } from "./server.js";
 
 const HOST = "127.0.0.1";
 
-/** Cap for the app's design-response body. A design file with embedded
- *  graphics runs to a few MB; anything beyond this is not a real label. */
-const MAX_DESIGN_RESPONSE_BYTES = 16 * 1024 * 1024;
+/** Body cap for every route: a real design file with graphics is a few MB,
+ *  beyond that is only an authed local DoS vector. */
+const MAX_BODY_BYTES = 16 * 1024 * 1024;
+
+/** Read the whole body, capped. Resolves null after answering 413 and
+ *  destroying the socket (the caller must bail out then). */
+function readBodyCapped(req: IncomingMessage, res: ServerResponse): Promise<Buffer | null> {
+  return new Promise((resolve) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    req.on("data", (chunk: Buffer) => {
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        if (!res.headersSent) res.writeHead(413);
+        res.end();
+        req.destroy();
+        resolve(null);
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", () => resolve(null));
+  });
+}
 
 export interface HttpServerOptions {
   port: number;
@@ -35,32 +57,21 @@ function hasValidToken(req: IncomingMessage, expected: string): boolean {
 /** The app's reply to a designRequest event. Bypasses the SDK transport (it is
  *  not MCP JSON-RPC), so it re-checks the Host header for loopback itself; the
  *  bearer token was already verified by the shared gate. */
-function handleDesignResponse(req: IncomingMessage, res: ServerResponse): void {
+async function handleDesignResponse(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const host = (req.headers.host ?? "").replace(/:\d+$/, "");
   if (req.method !== "POST" || (host !== "127.0.0.1" && host !== "localhost")) {
     res.writeHead(403).end();
     return;
   }
-  const chunks: Buffer[] = [];
-  let size = 0;
-  req.on("data", (chunk: Buffer) => {
-    size += chunk.length;
-    if (size > MAX_DESIGN_RESPONSE_BYTES) {
-      res.writeHead(413).end();
-      req.destroy();
-      return;
-    }
-    chunks.push(chunk);
-  });
-  req.on("end", () => {
-    let delivered = false;
-    try {
-      delivered = resolveDesignResponse(JSON.parse(Buffer.concat(chunks).toString("utf8")));
-    } catch {
-      // Malformed JSON falls through to the 400 below.
-    }
-    if (!res.writableEnded) res.writeHead(delivered ? 204 : 400).end();
-  });
+  const body = await readBodyCapped(req, res);
+  if (body === null) return;
+  let delivered = false;
+  try {
+    delivered = resolveDesignResponse(JSON.parse(body.toString("utf8")));
+  } catch {
+    // Malformed JSON falls through to the 400 below.
+  }
+  if (!res.writableEnded) res.writeHead(delivered ? 204 : 400).end();
 }
 
 /** Loopback-only Streamable HTTP server with mandatory bearer auth. A fresh
@@ -80,7 +91,11 @@ export async function startHttpServer(options: HttpServerOptions): Promise<Runni
     }
 
     if (req.url === "/design-response") {
-      handleDesignResponse(req, res);
+      // An unhandled rejection would kill the process (same guard as below).
+      handleDesignResponse(req, res).catch(() => {
+        if (!res.headersSent && res.writable) res.writeHead(500);
+        res.end();
+      });
       return;
     }
 
@@ -98,14 +113,28 @@ export async function startHttpServer(options: HttpServerOptions): Promise<Runni
       void transport.close();
       void server.close();
     });
-    server
-      .connect(transport)
-      .then(() => transport.handleRequest(req, res))
-      .catch(() => {
-        // Guard against a handler that already responded or closed the socket.
-        if (!res.headersSent && res.writable) res.writeHead(500);
-        res.end();
-      });
+    // Body read here (capped), then passed as parsedBody: a passive cap
+    // listener would start flowing before the transport reads, losing chunks.
+    void (async () => {
+      const body = await readBodyCapped(req, res);
+      if (body === null) return;
+      let parsedBody: unknown;
+      if (body.length > 0) {
+        try {
+          parsedBody = JSON.parse(body.toString("utf8"));
+        } catch {
+          res.writeHead(400, { "content-type": "application/json" });
+          res.end(JSON.stringify({ error: "invalid JSON body" }));
+          return;
+        }
+      }
+      await server.connect(transport);
+      await transport.handleRequest(req, res, parsedBody);
+    })().catch(() => {
+      // Guard against a handler that already responded or closed the socket.
+      if (!res.headersSent && res.writable) res.writeHead(500);
+      res.end();
+    });
   });
 
   const boundPort = await new Promise<number>((resolve, reject) => {
