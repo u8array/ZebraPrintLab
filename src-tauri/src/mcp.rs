@@ -107,9 +107,8 @@ pub struct McpState {
   /// racing the TOCTOU is_running() check.
   start_lock: tokio::sync::Mutex<()>,
   /// Some = webview listeners not up yet, events queue here (a boot-started
-  /// server could otherwise emit into the void and silently drop a draft).
-  /// mcp_listeners_ready takes it to None and flushes. A later webview reload
-  /// re-loses listeners; that dev-only edge is accepted.
+  /// server would otherwise emit into the void and silently drop a draft);
+  /// mcp_listeners_ready takes it to None and flushes. Webview-reload edge accepted.
   event_buffer: Mutex<Option<Vec<BufferedEvent>>>,
   #[cfg(windows)]
   job: Mutex<Option<job::Job>>,
@@ -189,13 +188,20 @@ fn suppress_console(cmd: &mut Command) {
 #[cfg(not(windows))]
 fn suppress_console(_cmd: &mut Command) {}
 
-/// Whether this build can spawn the sidecar; the capability mcp_status reports
-/// so the UI can hide the controls instead of offering a server that cannot
-/// start. Must flip together with mcp_command when bundling lands.
-pub const SIDECAR_AVAILABLE: bool = cfg!(debug_assertions);
+/// Capability mcp_status reports so the UI can hide the controls. Dev always
+/// can (source spawn); release only when the bundled binary is present.
+#[cfg(debug_assertions)]
+pub fn sidecar_available() -> bool {
+  true
+}
+
+#[cfg(not(debug_assertions))]
+pub fn sidecar_available() -> bool {
+  sidecar_path().is_some()
+}
 
 /// The child that serves the MCP HTTP transport. Dev runs the workspace package
-/// from source; release fails honestly until the sidecar binary is bundled.
+/// from source; release spawns the bundled sidecar binary.
 /// The token travels over stdin (--token-stdin), never argv: argv is readable
 /// by any same-user process (/proc/pid/cmdline, WMI CommandLine).
 #[cfg(debug_assertions)]
@@ -232,7 +238,11 @@ fn mcp_command(port: u16) -> Result<Command, String> {
 /// it there on every platform, triple suffix stripped).
 #[cfg(not(debug_assertions))]
 fn sidecar_path() -> Option<std::path::PathBuf> {
-  let name = if cfg!(windows) { "zplab-mcp.exe" } else { "zplab-mcp" };
+  let name = if cfg!(windows) {
+    "zplab-mcp.exe"
+  } else {
+    "zplab-mcp"
+  };
   let path = std::env::current_exe().ok()?.parent()?.join(name);
   path.exists().then_some(path)
 }
@@ -411,7 +421,7 @@ pub struct McpStatus {
 pub fn mcp_status(state: State<'_, McpState>) -> McpStatus {
   McpStatus {
     running: state.is_running(),
-    available: SIDECAR_AVAILABLE,
+    available: sidecar_available(),
   }
 }
 
