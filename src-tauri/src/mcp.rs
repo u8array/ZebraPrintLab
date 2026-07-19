@@ -335,7 +335,11 @@ mod tests {
 
   #[test]
   fn status_serializes_running_and_available_flags() {
-    let json = serde_json::to_string(&McpStatus { running: true, available: false }).unwrap();
+    let json = serde_json::to_string(&McpStatus {
+      running: true,
+      available: false,
+    })
+    .unwrap();
     assert_eq!(json, r#"{"running":true,"available":false}"#);
   }
 

@@ -4,7 +4,7 @@ import { generateZPL, generateMultiPageZPL, generateBatchZpl } from '@zplab/core
 import { parseZPL } from '@zplab/core/lib/zplParser';
 import type { LabelConfig } from '@zplab/core/types/LabelConfig';
 import type { GroupObject, LabelObject } from '@zplab/core/types/Group';
-import { defined, props, serialOf } from '../test/helpers';
+import { defined, parseSingle, props, serialOf } from '../test/helpers';
 import { NON_EMITTING_CONFIG_KEYS } from '../store/labelStore.internals';
 import { putImage } from '@zplab/core/lib/imageCache';
 
@@ -112,7 +112,7 @@ describe('generateZPL — structure', () => {
     expect(zpl).not.toContain('^GB');
     expect(zpl).toContain('^FR^FD');
     expect(zpl).not.toContain('^LRY');
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).reverse).toBe(true);
@@ -128,7 +128,7 @@ describe('generateZPL — structure', () => {
           props: { content: 'Hi', fontHeight: 30, fontWidth: 0, rotation: rot, reverse: true } },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ] as any;
-      const { objects } = parseZPL(generateZPL(BASE_LABEL, objs), 8);
+      const { objects } = parseSingle(generateZPL(BASE_LABEL, objs), 8);
       expect(objects, `${positionType}/${rot}`).toHaveLength(1);
       expect(objects[0]?.type).toBe('text');
       expect(props(objects[0]).reverse).toBe(true);
@@ -140,7 +140,7 @@ describe('generateZPL — structure', () => {
     // A rotated reverse where the ^GB sits at the same anchor as the ^FR text
     // genuinely prints beside the text (the box does not overlap rotated text),
     // so it must NOT collapse into a faked overlap; it stays box + reverse text.
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^FT100,200^GB30,80,30,B,0^FS^FT100,200^A0R,30,0^FR^FDHi^FS^XZ',
       8,
     );
@@ -160,7 +160,7 @@ describe('generateZPL — structure', () => {
     const zpl = generateZPL(BASE_LABEL, objs);
     expect(zpl).toContain('^SN001,5,Y^FS');
     expect(zpl).not.toContain('^FD'); // ^SN carries the data itself
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).content).toBe('001');
@@ -178,7 +178,7 @@ describe('generateZPL — structure', () => {
     const zpl = generateZPL(BASE_LABEL, objs);
     // mask: A,B → 'AA' (upper alpha), 4,2 → 'dd' (decimal); increment 1.
     expect(zpl).toContain('^FDAB42^SFAAdd,1^FS');
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(props(objects[0]).content).toBe('AB42');
     expect(serialOf(objects[0])?.increment).toBe(1);
     expect(serialOf(objects[0])?.zplMode).toBe('SF');
@@ -194,7 +194,7 @@ describe('generateZPL — structure', () => {
     ] as any;
     const zpl = generateZPL(BASE_LABEL, objs);
     expect(zpl).toContain('^SN001,5,Y^FS');
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('code128');
     expect(serialOf(objects[0])?.increment).toBe(5);
@@ -232,7 +232,7 @@ describe('generateZPL — structure', () => {
     ] as any;
     const zpl = generateZPL(BASE_LABEL, objs);
     expect(zpl).toContain('^SN,1,Y^FS');
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(serialOf(objects[0])?.zplMode).toBe('SN');
@@ -515,7 +515,7 @@ describe('generateZPL — printer params', () => {
         },
         [],
       );
-      const { labelConfig } = parseZPL(zpl, 8);
+      const { labelConfig } = parseSingle(zpl, 8);
       const m = labelConfig.customFonts?.[0];
       expect(m?.alias).toBe('M');
       expect(m?.path).toBe('E:ROUND.TTF');
@@ -691,7 +691,7 @@ describe('generateZPL — printer params', () => {
       backfeedSpeed: 4,
     };
     const zpl = generateZPL(original, []);
-    const { labelConfig } = parseZPL(zpl, 8);
+    const { labelConfig } = parseSingle(zpl, 8);
     expect(labelConfig.printSpeed).toBe(6);
     expect(labelConfig.slewSpeed).toBe(6);
     expect(labelConfig.backfeedSpeed).toBe(4);
@@ -764,7 +764,7 @@ describe('generateZPL — printer params', () => {
 
 describe('generateZPL — text object', () => {
   it('emits ^FO, ^A0 and ^FD for a text object', () => {
-    const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FDHello^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^A0N,30,0^FDHello^FS^XZ', 8);
     const zpl = generateZPL(BASE_LABEL, objects);
     expect(zpl).toContain('^FO10,20');
     expect(zpl).toContain('^A0N,30,0');
@@ -774,26 +774,26 @@ describe('generateZPL — text object', () => {
 
 describe('generateZPL — ^FP field-direction modifier', () => {
   it('omits ^FP for the default horizontal layout', () => {
-    const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FDHello^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^A0N,30,0^FDHello^FS^XZ', 8);
     expect(generateZPL(BASE_LABEL, objects)).not.toContain('^FP');
   });
 
   it('emits ^FPV,0 for vertical text', () => {
-    const { objects } = parseZPL('^XA^FO10,20^A0N,30,30^FPV^FDABC^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^A0N,30,30^FPV^FDABC^FS^XZ', 8);
     const zpl = generateZPL(BASE_LABEL, objects);
     expect(zpl).toContain('^FPV,0');
     expect(zpl.indexOf('^FPV')).toBeLessThan(zpl.indexOf('^A0'));
   });
 
   it('emits gap on horizontal layout when only ^FP,g was set', () => {
-    const { objects } = parseZPL('^XA^FO10,20^A0N,30,30^FP,4^FDABC^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^A0N,30,30^FP,4^FDABC^FS^XZ', 8);
     const zpl = generateZPL(BASE_LABEL, objects);
     expect(zpl).toContain('^FPH,4');
   });
 
   it('round-trips ^FPV,2 through parser + generator', () => {
     const original = '^XA^FO50,50^A0N,30,30^FPV,2^FDABC^FS^XZ';
-    const { objects } = parseZPL(original, 8);
+    const { objects } = parseSingle(original, 8);
     const zpl = generateZPL(BASE_LABEL, objects);
     expect(zpl).toContain('^FPV,2');
     expect(zpl).toContain('^FDABC');
@@ -802,7 +802,7 @@ describe('generateZPL — ^FP field-direction modifier', () => {
 
 describe('generateZPL — ^TB text block', () => {
   it('emits ^TB{rot},{w},{h} for a text-block object', () => {
-    const { objects } = parseZPL('^XA^A0N,30^FO0,0^TBN,400,120^FDText block^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^A0N,30^FO0,0^TBN,400,120^FDText block^FS^XZ', 8);
     const zpl = generateZPL(BASE_LABEL, objects);
     expect(zpl).toContain('^TBN,400,120');
     expect(zpl).not.toContain('^FB');
@@ -810,9 +810,9 @@ describe('generateZPL — ^TB text block', () => {
 
   it('round-trips ^TB (native, no lossy collapse to ^FB)', () => {
     const original = '^XA^A0N,30^FO0,0^TBN,400,120^FDText block^FS^XZ';
-    const { objects } = parseZPL(original, 8);
+    const { objects } = parseSingle(original, 8);
     const zpl = generateZPL(BASE_LABEL, objects);
-    const { objects: reparsed } = parseZPL(zpl, 8);
+    const { objects: reparsed } = parseSingle(zpl, 8);
     expect(props(reparsed[0]).textMode).toBe('tb');
     expect(props(reparsed[0]).blockWidth).toBe(400);
     expect(props(reparsed[0]).blockHeight).toBe(120);
@@ -821,9 +821,9 @@ describe('generateZPL — ^TB text block', () => {
 
   it('round-trips an FT-anchored ^TB position (extent uses blockHeight)', () => {
     const original = '^XA^A0N,30^FT400,150^TBN,300,90^FDsample^FS^XZ';
-    const a = parseZPL(original, 8);
+    const a = parseSingle(original, 8);
     const z = generateZPL(BASE_LABEL, a.objects);
-    const b = parseZPL(z, 8);
+    const b = parseSingle(z, 8);
     expect(props(b.objects[0]).blockHeight).toBe(90);
     // Position must survive the FT extent round-trip unchanged.
     expect(b.objects[0]?.x).toBe(a.objects[0]?.x);
@@ -846,9 +846,9 @@ describe('generateZPL — ^TB text block', () => {
 
   it('round-trips ^TBR (R-rotation anchor path)', () => {
     const original = '^XA^A0R,30^FO100,40^TBR,200,90^FDrotated block sample^FS^XZ';
-    const a = parseZPL(original, 8);
+    const a = parseSingle(original, 8);
     const z = generateZPL(BASE_LABEL, a.objects);
-    const b = parseZPL(z, 8);
+    const b = parseSingle(z, 8);
     expect(props(b.objects[0]).textMode).toBe('tb');
     expect(props(b.objects[0]).blockHeight).toBe(90);
     expect(props(b.objects[0]).rotation).toBe('R');
@@ -868,7 +868,7 @@ describe('generateZPL — ^TB text block', () => {
     expect(zpl).not.toContain('^FDa<b');
     // Round-trip: parser must decode the bound default back to the plain value
     // (not the encoded form) so re-emit is byte-identical (no drift).
-    const reparsed = parseZPL(zpl, 8);
+    const reparsed = parseSingle(zpl, 8);
     expect(defined(reparsed.variables[0]).defaultValue).toBe('a<b');
     expect(generateZPL(BASE_LABEL, reparsed.objects, reparsed.variables)).toBe(zpl);
   });
@@ -958,7 +958,7 @@ describe('generateZPL — ^TB text block', () => {
         props: { content: 'rev', fontHeight: 30, fontWidth: 0, rotation: 'N', reverse: true, textMode: 'tb', blockWidth: 200, blockHeight },
       };
       const zpl = generateZPL(BASE_LABEL, [obj]);
-      const { objects } = parseZPL(zpl, 8);
+      const { objects } = parseSingle(zpl, 8);
       // ^FR + ^TB emits no background box, so it re-imports as ONE reverse text.
       expect(objects).toHaveLength(1);
       expect(objects[0]?.type).toBe('text');
@@ -975,14 +975,14 @@ describe('generateZPL — ^TB text block', () => {
     };
     const zpl = generateZPL(BASE_LABEL, [obj as unknown as LabelObject]);
     expect(zpl).toContain('^FDA<<>B');
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(props(objects[0]).content).toBe('A<B');
   });
 });
 
 describe('generateZPL — box object', () => {
   it('emits ^GB for a box object', () => {
-    const { objects } = parseZPL('^XA^FO10,20^GB200,100,3,B,0^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^GB200,100,3,B,0^FS^XZ', 8);
     const zpl = generateZPL(BASE_LABEL, objects);
     expect(zpl).toContain('^GB200,100,3,B,0');
   });
@@ -990,7 +990,7 @@ describe('generateZPL — box object', () => {
 
 describe('generateZPL — line object', () => {
   it('emits a horizontal ^GB line', () => {
-    const { objects } = parseZPL('^XA^FO0,0^GB700,3,3^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^GB700,3,3^FS^XZ', 8);
     const zpl = generateZPL(BASE_LABEL, objects);
     expect(zpl).toContain('^GB700,3,3');
   });
@@ -1002,7 +1002,7 @@ describe('generateZPL — ~DY graphic upload + ^XG recall', () => {
     const zpl =
       `~DYR:LOGO,A,G,4,1,${HEX}\n` +
       `^XA^FO50,80^XGR:LOGO.GRF,1,1^FS^XZ`;
-    const parsed = parseZPL(zpl, 8);
+    const parsed = parseSingle(zpl, 8);
     const out = generateZPL(BASE_LABEL, parsed.objects);
     // ~DY must precede ^XA so the printer has the file before ^XG references it.
     const dyAt = out.indexOf('~DYR:LOGO,A,G,4,1,');
@@ -1035,7 +1035,7 @@ describe('generateZPL — ~DY graphic upload + ^XG recall', () => {
     const zpl =
       `~DYR:CLOGO,C,G,4,1,:Z64:${b64}:${crc(b64)}\n` +
       `^XA^FO0,0^XGR:CLOGO.GRF,1,1^FS^XZ`;
-    const parsed = parseZPL(zpl, 8);
+    const parsed = parseSingle(zpl, 8);
     const out = generateZPL(BASE_LABEL, parsed.objects);
     expect(out).toContain('~DYR:CLOGO,C,G,');
     expect(out).not.toContain('~DYR:CLOGO,A,G,');
@@ -1046,7 +1046,7 @@ describe('generateZPL — ~DY graphic upload + ^XG recall', () => {
     const zpl =
       `~DYR:LOGO,A,G,4,1,${HEX}\n` +
       `^XA^FO10,10^XGR:LOGO.GRF,1,1^FS^FO10,200^XGR:LOGO.GRF,1,1^FS^XZ`;
-    const parsed = parseZPL(zpl, 8);
+    const parsed = parseSingle(zpl, 8);
     const out = generateZPL(BASE_LABEL, parsed.objects);
     const dyMatches = out.match(/~DYR:LOGO,/g) ?? [];
     const xgMatches = out.match(/\^XGR:LOGO\.GRF/g) ?? [];
@@ -1057,7 +1057,7 @@ describe('generateZPL — ~DY graphic upload + ^XG recall', () => {
 
 describe('generateZPL — code128 object', () => {
   it('emits ^BC and ^FD for a Code 128 barcode', () => {
-    const { objects } = parseZPL('^XA^FO100,50^BCN,200,Y,N,N^FD12345678^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO100,50^BCN,200,Y,N,N^FD12345678^FS^XZ', 8);
     const zpl = generateZPL(BASE_LABEL, objects);
     expect(zpl).toContain('^BC');
     expect(zpl).toContain('^FD12345678^FS');
@@ -1084,8 +1084,8 @@ describe('generateMultiPageZPL', () => {
   });
 
   it('preserves per-page objects', () => {
-    const { objects: page1 } = parseZPL('^XA^FO10,20^A0N,30,0^FDOne^FS^XZ', 8);
-    const { objects: page2 } = parseZPL('^XA^FO50,60^A0N,30,0^FDTwo^FS^XZ', 8);
+    const { objects: page1 } = parseSingle('^XA^FO10,20^A0N,30,0^FDOne^FS^XZ', 8);
+    const { objects: page2 } = parseSingle('^XA^FO50,60^A0N,30,0^FDTwo^FS^XZ', 8);
     const zpl = generateMultiPageZPL(BASE_LABEL, [{ objects: page1 }, { objects: page2 }]);
     expect(zpl).toContain('^FDOne^FS');
     expect(zpl).toContain('^FDTwo^FS');
@@ -1094,9 +1094,9 @@ describe('generateMultiPageZPL', () => {
 
 describe('generateZPL — parse/generate roundtrip', () => {
   it('preserves object count through a roundtrip', () => {
-    const original = parseZPL('^XA^FO10,20^A0N,30,0^FDHello^FS^FO10,60^GB200,5,5^FS^XZ', 8);
+    const original = parseSingle('^XA^FO10,20^A0N,30,0^FDHello^FS^FO10,60^GB200,5,5^FS^XZ', 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
-    const reparsed = parseZPL(regenerated, 8);
+    const reparsed = parseSingle(regenerated, 8);
     expect(reparsed.objects).toHaveLength(original.objects.length);
   });
 
@@ -1104,7 +1104,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const label = { ...BASE_LABEL, muResampling: { formatDpi: 200, outputDpi: 600 } as const };
     const regenerated = generateZPL(label, []);
     expect(regenerated).toContain('^MUD,200,600');
-    const reparsed = parseZPL(regenerated, 8);
+    const reparsed = parseSingle(regenerated, 8);
     expect(reparsed.labelConfig.muResampling).toEqual({ formatDpi: 200, outputDpi: 600 });
   });
 
@@ -1117,31 +1117,31 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const zpl = generateZPL(BASE_LABEL, objs);
     expect(zpl).toContain('^BY5');
     expect(zpl).toContain('^BRN,1,5,2,');
-    const reparsed = parseZPL(zpl, 8);
+    const reparsed = parseSingle(zpl, 8);
     expect(props(reparsed.objects[0]).magnification).toBe(5);
   });
 
   it('preserves text content through a roundtrip', () => {
-    const original = parseZPL('^XA^FO10,20^A0N,30,0^FDHello World^FS^XZ', 8);
+    const original = parseSingle('^XA^FO10,20^A0N,30,0^FDHello World^FS^XZ', 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
-    const reparsed = parseZPL(regenerated, 8);
+    const reparsed = parseSingle(regenerated, 8);
     const textObj = defined(reparsed.objects.find((o) => o.type === 'text'));
     expect(props(textObj).content).toBe('Hello World');
   });
 
   it('preserves barcode content and height through a roundtrip', () => {
-    const original = parseZPL('^XA^FO50,50^BCN,150,Y,N,N^FD987654^FS^XZ', 8);
+    const original = parseSingle('^XA^FO50,50^BCN,150,Y,N,N^FD987654^FS^XZ', 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
-    const reparsed = parseZPL(regenerated, 8);
+    const reparsed = parseSingle(regenerated, 8);
     const barcode = defined(reparsed.objects.find((o) => o.type === 'code128'));
     expect(props(barcode).content).toBe('987654');
     expect(props(barcode).height).toBe(150);
   });
 
   it('round-trips a ^BS UPC/EAN extension (5-digit)', () => {
-    const original = parseZPL('^XA^FO10,10^BSN,80,Y^FD54321^FS^XZ', 8);
+    const original = parseSingle('^XA^FO10,10^BSN,80,Y^FD54321^FS^XZ', 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
-    const reparsed = parseZPL(regenerated, 8);
+    const reparsed = parseSingle(regenerated, 8);
     const ext = defined(reparsed.objects.find((o) => o.type === 'upcEanExtension'));
     expect(props(ext).content).toBe('54321');
     expect(props(ext).height).toBe(80);
@@ -1149,27 +1149,27 @@ describe('generateZPL — parse/generate roundtrip', () => {
   });
 
   it('round-trips a ^BS UPC/EAN extension (2-digit)', () => {
-    const original = parseZPL('^XA^FO10,10^BSN,50,N^FD42^FS^XZ', 8);
+    const original = parseSingle('^XA^FO10,10^BSN,50,N^FD42^FS^XZ', 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
-    const reparsed = parseZPL(regenerated, 8);
+    const reparsed = parseSingle(regenerated, 8);
     const ext = defined(reparsed.objects.find((o) => o.type === 'upcEanExtension'));
     expect(props(ext).content).toBe('42');
     expect(props(ext).printInterpretation).toBe(false);
   });
 
   it('round-trips ^BS rotation and moduleWidth (via ^BY)', () => {
-    const original = parseZPL('^XA^BY3^FO10,10^BSR,80,Y^FD12345^FS^XZ', 8);
+    const original = parseSingle('^XA^BY3^FO10,10^BSR,80,Y^FD12345^FS^XZ', 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
-    const reparsed = parseZPL(regenerated, 8);
+    const reparsed = parseSingle(regenerated, 8);
     const ext = defined(reparsed.objects.find((o) => o.type === 'upcEanExtension'));
     expect(props(ext).rotation).toBe('R');
     expect(props(ext).moduleWidth).toBe(3);
   });
 
   it('round-trips a ^B4 Code 49 with default mode A', () => {
-    const original = parseZPL('^XA^FO10,10^B4N,20,Y,A^FDCODE49^FS^XZ', 8);
+    const original = parseSingle('^XA^FO10,10^B4N,20,Y,A^FDCODE49^FS^XZ', 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
-    const reparsed = parseZPL(regenerated, 8);
+    const reparsed = parseSingle(regenerated, 8);
     const bc = defined(reparsed.objects.find((o) => o.type === 'code49'));
     expect(props(bc).content).toBe('CODE49');
     expect(props(bc).height).toBe(20);
@@ -1178,9 +1178,9 @@ describe('generateZPL — parse/generate roundtrip', () => {
   });
 
   it('round-trips ^B4 explicit mode + rotation + moduleWidth', () => {
-    const original = parseZPL('^XA^BY3^FO10,10^B4R,30,N,2^FD12345^FS^XZ', 8);
+    const original = parseSingle('^XA^BY3^FO10,10^B4R,30,N,2^FD12345^FS^XZ', 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
-    const reparsed = parseZPL(regenerated, 8);
+    const reparsed = parseSingle(regenerated, 8);
     const bc = defined(reparsed.objects.find((o) => o.type === 'code49'));
     expect(props(bc).rotation).toBe('R');
     expect(props(bc).moduleWidth).toBe(3);
@@ -1189,7 +1189,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
   });
 
   it('falls back to mode A when ^B4 receives an unknown mode', () => {
-    const r = parseZPL('^XA^FO10,10^B4N,20,Y,X^FDCODE49^FS^XZ', 8);
+    const r = parseSingle('^XA^FO10,10^B4N,20,Y,X^FDCODE49^FS^XZ', 8);
     const bc = defined(r.objects.find((o) => o.type === 'code49'));
     expect(props(bc).mode).toBe('A');
   });
@@ -1198,7 +1198,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
     // The templated field references FN2 and FN3 inline; the parser
     // auto-creates the Variables when they don't already exist (same
     // bootstrap convention as the single-bind ^FN path).
-    const r = parseZPL(
+    const r = parseSingle(
       '^XA^FO50,50^A0N,30,30^FD#2# and then #3#^FS^XZ',
       8,
     );
@@ -1214,7 +1214,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
   it('respects a custom ^FE embed character', () => {
     // ^FE@ redefines the embed delimiter, so `@1@` reads as the FN1
     // embed and the literal `#` survives untouched in the output.
-    const r = parseZPL(
+    const r = parseSingle(
       '^XA^FE@^FO50,50^A0N,30,30^FDItem #@1@^FS^XZ',
       8,
     );
@@ -1224,31 +1224,31 @@ describe('generateZPL — parse/generate roundtrip', () => {
 
   it('round-trips a label that uses ^FE inline embeds', () => {
     const src = '^XA^FO50,50^A0N,30,30^FD#1#-#2#^FS^XZ';
-    const original = parseZPL(src, 8);
+    const original = parseSingle(src, 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects, original.variables);
-    const reparsed = parseZPL(regenerated, 8);
+    const reparsed = parseSingle(regenerated, 8);
     const text = defined(reparsed.objects.find((o) => o.type === 'text'));
     expect(props(text).content).toBe('«field_1»-«field_2»');
     expect(reparsed.variables.map((v) => v.fnNumber).sort()).toEqual([1, 2]);
   });
 
   it('parses ^FD clock tokens into «clock:T» markers', () => {
-    const r = parseZPL('^XA^FO50,50^A0N,30,30^FDDate %d/%m/%Y^FS^XZ', 8);
+    const r = parseSingle('^XA^FO50,50^A0N,30,30^FDDate %d/%m/%Y^FS^XZ', 8);
     const text = defined(r.objects.find((o) => o.type === 'text'));
     expect(props(text).content).toBe('Date «clock:d»/«clock:m»/«clock:Y»');
   });
 
   it('respects a custom ^FC clock char on parse', () => {
-    const r = parseZPL('^XA^FC@^FO50,50^A0N,30,30^FDDate @d/@m/@Y^FS^XZ', 8);
+    const r = parseSingle('^XA^FC@^FO50,50^A0N,30,30^FDDate @d/@m/@Y^FS^XZ', 8);
     const text = defined(r.objects.find((o) => o.type === 'text'));
     expect(props(text).content).toBe('Date «clock:d»/«clock:m»/«clock:Y»');
   });
 
   it('round-trips a label with clock tokens (default chars)', () => {
     const src = '^XA^FO50,50^A0N,30,30^FD%d/%m/%Y %H:%M^FS^XZ';
-    const original = parseZPL(src, 8);
+    const original = parseSingle(src, 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
-    const reparsed = parseZPL(regenerated, 8);
+    const reparsed = parseSingle(regenerated, 8);
     const text = defined(reparsed.objects.find((o) => o.type === 'text'));
     expect(props(text).content).toBe('«clock:d»/«clock:m»/«clock:Y» «clock:H»:«clock:M»');
     // ^FC must arm each clock field even for default chars (ZD230: %Y prints
@@ -1265,18 +1265,16 @@ describe('generateZPL — parse/generate roundtrip', () => {
       '^XA^FO50,50^A0N,30,30^FD%d #1#^FS^XZ',
       8,
     );
-    // parseZPL flattens pages into one objects array; second label's
-    // text is the second text object. Its `%d` should still parse as
-    // a clock token; if the leak existed, the parser would have stuck
-    // with `@` and left `%d` literal in the content.
-    const texts = r.objects.filter((o) => o.type === 'text');
+    // Second page's `%d` must still parse as a clock token; with the leak the
+    // parser would have stuck with `@` and left `%d` literal.
+    const texts = r.pages.flatMap((p) => p.objects).filter((o) => o.type === 'text');
     expect(texts.length).toBeGreaterThanOrEqual(2);
     expect(props(defined(texts[1])).content).toContain('«clock:d»');
   });
 
   it('emits ^FC<alt> when payload contains a literal %', () => {
     const src = '^XA^FO50,50^A0N,30,30^FD100% match %Y^FS^XZ';
-    const original = parseZPL(src, 8);
+    const original = parseSingle(src, 8);
     const regenerated = generateZPL(BASE_LABEL, original.objects);
     expect(regenerated).toMatch(/\^FC\$/);
   });
@@ -1291,7 +1289,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const template = { id: 'b', type: 'text', x: 10, y: 50, rotation: 0,
       props: { content: '«sku» end', fontHeight: 30, fontWidth: 0, rotation: 'N' } } as unknown as LabelObject;
     const zpl = generateZPL(BASE_LABEL, [literal, template], vars);
-    const back = parseZPL(zpl, 8);
+    const back = parseSingle(zpl, 8);
     expect(props(defined(back.objects[0])).content).toBe('lane #1# here');
   });
 
@@ -1301,13 +1299,13 @@ describe('generateZPL — parse/generate roundtrip', () => {
     const clock = { id: 'b', type: 'text', x: 10, y: 50, rotation: 0,
       props: { content: '«clock:Y» 100% done', fontHeight: 30, fontWidth: 0, rotation: 'N' } } as unknown as LabelObject;
     const zpl = generateZPL(BASE_LABEL, [literal, clock]);
-    const back = parseZPL(zpl, 8);
+    const back = parseSingle(zpl, 8);
     expect(props(defined(back.objects[0])).content).toBe('year %Y now');
   });
 
   it('round-trips ^SO2 offsets via labelConfig.secondaryClockOffset', () => {
     const src = '^XA^SO2,1,0,0,0,0,0^FO10,10^A0N,30,30^FD{Y-{m^FS^XZ';
-    const r = parseZPL(src, 8);
+    const r = parseSingle(src, 8);
     expect(r.labelConfig.secondaryClockOffset).toEqual({ months: 1 });
     const regenerated = generateZPL({ ...BASE_LABEL, ...r.labelConfig }, r.objects);
     expect(regenerated).toMatch(/\^SO2,1,0,0,0,0,0/);
@@ -1316,7 +1314,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
 
   it('round-trips ^SO3 offsets independently of ^SO2', () => {
     const src = '^XA^SO3,0,0,1,0,0,0^FO10,10^A0N,30,30^FD#Y^FS^XZ';
-    const r = parseZPL(src, 8);
+    const r = parseSingle(src, 8);
     expect(r.labelConfig.tertiaryClockOffset).toEqual({ years: 1 });
     expect(r.labelConfig.secondaryClockOffset).toBeUndefined();
     const regenerated = generateZPL({ ...BASE_LABEL, ...r.labelConfig }, r.objects);
@@ -1333,19 +1331,19 @@ describe('generateZPL — parse/generate roundtrip', () => {
   });
 
   it('parses ^SO2 with all-zero values as a no-op (no offset stored)', () => {
-    const r = parseZPL('^XA^SO2,0,0,0,0,0,0^FO10,10^A0N,30,30^FD{Y^FS^XZ', 8);
+    const r = parseSingle('^XA^SO2,0,0,0,0,0,0^FO10,10^A0N,30,30^FD{Y^FS^XZ', 8);
     expect(r.labelConfig.secondaryClockOffset).toBeUndefined();
   });
 
   it('rejects ^SO with clock# not in {2,3}', () => {
-    const r = parseZPL('^XA^SO1,1,0,0,0,0,0^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
+    const r = parseSingle('^XA^SO1,1,0,0,0,0,0^FO10,10^A0N,30,30^FDx^FS^XZ', 8);
     expect(r.labelConfig.secondaryClockOffset).toBeUndefined();
     expect(r.labelConfig.tertiaryClockOffset).toBeUndefined();
   });
 
   it('emits ^FE<alt> when payload contains a literal #', () => {
     // Pre-build state via the parser so variable ids are real.
-    const r = parseZPL('^XA^FN1^FDfoo^FS^XZ', 8);
+    const r = parseSingle('^XA^FN1^FDfoo^FS^XZ', 8);
     const v = defined(r.variables[0]);
     const generated = generateZPL(BASE_LABEL, [
       {
@@ -1462,7 +1460,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
     // the mode parameter. The second must default to 'A' even though
     // the parser variable still holds '3' from the previous handler
     // run; the handler resets it on each B4 via the `?? "A"` fallback.
-    const r = parseZPL(
+    const r = parseSingle(
       '^XA^FO10,10^B4N,20,Y,3^FDONE^FS^FO10,200^B4N,20,Y^FDTWO^FS^XZ',
       8,
     );
@@ -1483,7 +1481,7 @@ describe('generateZPL — parse/generate roundtrip', () => {
       defaultFontHeight: 30,
     };
     const regenerated = generateZPL(label, []);
-    const { labelConfig } = parseZPL(regenerated, BASE_LABEL.dpmm);
+    const { labelConfig } = parseSingle(regenerated, BASE_LABEL.dpmm);
     expect(labelConfig.printSpeed).toBe(8);
     expect(labelConfig.darkness).toBe(0);
     expect(labelConfig.mediaType).toBe('D');
@@ -1494,14 +1492,14 @@ describe('generateZPL — parse/generate roundtrip', () => {
 
   it('preserves partial ^CF (id only) through generate -> parse', () => {
     const regenerated = generateZPL({ ...BASE_LABEL, defaultFontId: 'A' }, []);
-    const { labelConfig } = parseZPL(regenerated, BASE_LABEL.dpmm);
+    const { labelConfig } = parseSingle(regenerated, BASE_LABEL.dpmm);
     expect(labelConfig.defaultFontId).toBe('A');
     expect(labelConfig.defaultFontHeight).toBeUndefined();
   });
 
   it('preserves partial ^CF (height only) through generate -> parse', () => {
     const regenerated = generateZPL({ ...BASE_LABEL, defaultFontHeight: 25 }, []);
-    const { labelConfig } = parseZPL(regenerated, BASE_LABEL.dpmm);
+    const { labelConfig } = parseSingle(regenerated, BASE_LABEL.dpmm);
     expect(labelConfig.defaultFontId).toBeUndefined();
     expect(labelConfig.defaultFontHeight).toBe(25);
   });
@@ -1592,7 +1590,7 @@ describe('generateZPL — variable bindings', () => {
 
   it('round-trips a bound text field through parse → variables stay consistent', () => {
     const out = generateZPL(BASE_LABEL, [textObj], [variable]);
-    const { variables, objects } = parseZPL(out);
+    const { variables, objects } = parseSingle(out);
     expect(variables).toHaveLength(1);
     expect(variables[0]?.fnNumber).toBe(7);
     expect(variables[0]?.defaultValue).toBe('ABC-123');
@@ -1602,7 +1600,7 @@ describe('generateZPL — variable bindings', () => {
   });
 
   it('parses ^FN single-bind to a content marker and re-emits inline byte-stable', () => {
-    const { objects, variables } = parseZPL('^XA^FO10,20^A0N,30,30^FN5^FDABC^FS^XZ');
+    const { objects, variables } = parseSingle('^XA^FO10,20^A0N,30,30^FN5^FDABC^FS^XZ');
     expect(props(objects[0]).content).toBe('«field_5»');
     expect(variables[0]?.fnNumber).toBe(5);
     expect(variables[0]?.defaultValue).toBe('ABC');
@@ -1710,7 +1708,7 @@ describe('generateBatchZpl', () => {
   it('re-escapes raw control bytes from an imported ^FH field on model re-emit', () => {
     // Text has no control-key chips, so the decoded raw byte stays in content;
     // regeneration must escape it again or the byte ships raw.
-    const { objects } = parseZPL('^XA^FH_^FO0,0^A0N,30,0^FDAB_09CD^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FH_^FO0,0^A0N,30,0^FDAB_09CD^FS^XZ', 8);
     expect(props(defined(objects[0])).content).toBe('AB\tCD');
     const out = generateZPL(baseLabel, objects);
     expect(out).toContain('^FH_');
@@ -1719,7 +1717,7 @@ describe('generateBatchZpl', () => {
   });
 
   it('imports ^FH control bytes as chips on control-capable barcodes and re-emits them', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BY2^BCN,100,Y,N,N^FH_^FDAB_09CD^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BY2^BCN,100,Y,N,N^FH_^FDAB_09CD^FS^XZ', 8);
     expect(props(defined(objects[0])).content).toBe('AB«ctrl:TAB»CD');
     const out = generateZPL(baseLabel, objects);
     expect(out).toContain('^FH_');
@@ -1832,7 +1830,7 @@ describe('generateZPL — ^FT graphic anchors (bottom corner, spec p.205)', () =
     const zpl = generateZPL(BASE_LABEL, mk('ellipse',
       { width: 100, height: 80, thickness: 3, filled: false, color: 'B' }));
     expect(zpl).toContain('^FT50,150^GE100,80,3,B^FS'); // 70 + 80
-    expect(parseZPL(zpl, 8).objects[0]?.positionType).toBe('FT');
+    expect(parseSingle(zpl, 8).objects[0]?.positionType).toBe('FT');
   });
 
   it('ellipse ^GE right-justified: ^FT,1 anchors bottom-right', () => {
@@ -1863,7 +1861,7 @@ describe('generateZPL — ^FT graphic anchors (bottom corner, spec p.205)', () =
   });
 
   it('round-trips a ^FT ellipse byte-stably through parse → emit', () => {
-    const { objects } = parseZPL('^XA^FT50,150^GE100,80,3,B^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FT50,150^GE100,80,3,B^FS^XZ', 8);
     expect(generateZPL(BASE_LABEL, objects)).toContain('^FT50,150^GE100,80,3,B^FS');
   });
 
@@ -1904,7 +1902,7 @@ describe('generateZPL — ^FT graphic anchors (bottom corner, spec p.205)', () =
     // so the foreign label round-trips with box, text, and position type intact.
     const src =
       '^XA^FT145,172^GB246,44,44,B,0^FS^FT145,172^A0N,44,34^FR^FDPESO LIQUIDO^FS^XZ';
-    const { objects } = parseZPL(src, 8);
+    const { objects } = parseSingle(src, 8);
     expect(objects).toHaveLength(2);
     const [bar, text] = objects;
     // ^GB246,44,44 (thickness == height) is a filled horizontal bar = line.

@@ -11,9 +11,9 @@ import type { QrCodeProps } from "../../../registry/qrcode";
 import { dotsFor, ftTopLeft, int, makeObj, readColor, readRotation } from "../helpers";
 import type { Handler } from "../types";
 
-/** Characters of a `^GF`/`~DY` payload retained in browserLimit/skipped
- *  findings; rest is replaced with an ellipsis so a single multi-KB
- *  base64 blob doesn't drown out the import report. */
+/** Characters of a `^GF`/`~DY` payload retained in browserLimit findings;
+ *  rest is replaced with an ellipsis so a single multi-KB base64 blob
+ *  doesn't drown out the import report. */
 const IMPORT_FINDING_PAYLOAD_LIMIT = 80;
 
 /** Helpers re-exported to parseZPL so flushField can commit a stashed reverse-bg

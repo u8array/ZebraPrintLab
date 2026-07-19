@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { parseZPL } from "@zplab/core/lib/zplParser";
 import { generateZPL } from "@zplab/core/lib/zplGenerator";
 import { overlayText, type BlockOverlay } from "@zplab/core/lib/zplOverlay/overlay";
+import { parseSingle } from "../../test/helpers";
 
 /** Parse with overlay capture and assert the load-bearing invariant:
  *  segment texts always concatenate back to the source. */
 function captured(zpl: string): BlockOverlay {
-  const { overlay } = parseZPL(zpl, 8, { captureOverlay: true });
+  const { overlay } = parseSingle(zpl, 8, { captureOverlay: true });
   expect(overlay, "expected an overlay to be captured").toBeDefined();
   expect(overlayText(overlay!)).toBe(zpl);
   return overlay!;
@@ -20,7 +20,7 @@ function objSeg(o: BlockOverlay, objectId: string) {
 describe("parseZPL overlay capture", () => {
   it("links a clean single text field, gaps stay raw", () => {
     const zpl = "^XA\n^FO10,10^A0N,30,30^FDHello^FS\n^XZ";
-    const { overlay, objects } = parseZPL(zpl, 8, { captureOverlay: true });
+    const { overlay, objects } = parseSingle(zpl, 8, { captureOverlay: true });
     expect(overlay).toBeDefined();
     expect(overlayText(overlay!)).toBe(zpl);
     expect(objects).toHaveLength(1);
@@ -55,7 +55,7 @@ describe("parseZPL overlay capture", () => {
 
   it("links two consecutive fields independently", () => {
     const zpl = "^XA\n^FO10,10^A0N,30,30^FDa^FS\n^FO10,60^A0N,30,30^FDb^FS\n^XZ";
-    const { overlay, objects } = parseZPL(zpl, 8, { captureOverlay: true });
+    const { overlay, objects } = parseSingle(zpl, 8, { captureOverlay: true });
     expect(overlay).toBeDefined();
     expect(overlayText(overlay!)).toBe(zpl);
     expect(objSeg(overlay!, objects[0]!.id)?.text).toBe("^FO10,10^A0N,30,30^FDa^FS");
@@ -66,7 +66,7 @@ describe("parseZPL overlay capture", () => {
     // Filled black ^GB with no ^FR is stashed; nothing follows to collapse it,
     // so it commits as a normal box at ^XZ. Its span must still link.
     const zpl = "^XA^FO5,5^GB80,80,80,B^FS^XZ";
-    const { overlay, objects } = parseZPL(zpl, 8, { captureOverlay: true });
+    const { overlay, objects } = parseSingle(zpl, 8, { captureOverlay: true });
     expect(overlay).toBeDefined();
     expect(overlayText(overlay!)).toBe(zpl);
     expect(objects).toHaveLength(1);
@@ -81,7 +81,7 @@ describe("parseZPL overlay capture", () => {
         props: { content: "Hi", fontHeight: 30, fontWidth: 0, rotation: "N", reverse: true } },
     ] as unknown as Parameters<typeof generateZPL>[1];
     const zpl = generateZPL({ widthMm: 50, heightMm: 30, dpmm: 8 }, reverseText);
-    const { overlay, objects } = parseZPL(zpl, 8, { captureOverlay: true });
+    const { overlay, objects } = parseSingle(zpl, 8, { captureOverlay: true });
     expect(overlay).toBeDefined();
     expect(overlayText(overlay!)).toBe(zpl);
     expect(objects).toHaveLength(1);
@@ -95,7 +95,7 @@ describe("parseZPL overlay capture", () => {
     // standalone during the text flush; both objects must link.
     const zpl =
       "^XA^FO5,5^GB200,200,200,B^FS\n^FO300,300^A0N,30,30^FDx^FS^XZ";
-    const { overlay, objects } = parseZPL(zpl, 8, { captureOverlay: true });
+    const { overlay, objects } = parseSingle(zpl, 8, { captureOverlay: true });
     expect(overlay).toBeDefined();
     expect(overlayText(overlay!)).toBe(zpl);
     expect(objects).toHaveLength(2);
@@ -105,7 +105,7 @@ describe("parseZPL overlay capture", () => {
 
   it("does not link a bare ^FN variable declaration, keeps it raw", () => {
     const zpl = "^XA^FN1^FDdefault^FS^FO10,10^A0N,30,30^FDx^FS^XZ";
-    const { overlay, objects } = parseZPL(zpl, 8, { captureOverlay: true });
+    const { overlay, objects } = parseSingle(zpl, 8, { captureOverlay: true });
     expect(overlay).toBeDefined();
     expect(overlayText(overlay!)).toBe(zpl);
     // The declaration produces a Variable but no object; the real field links.
@@ -178,7 +178,7 @@ describe("parseZPL overlay capture", () => {
   });
 
   it("is undefined when capture is off", () => {
-    const { overlay } = parseZPL("^XA^FO0,0^FDx^FS^XZ", 8);
+    const { overlay } = parseSingle("^XA^FO0,0^FDx^FS^XZ", 8);
     expect(overlay).toBeUndefined();
   });
 

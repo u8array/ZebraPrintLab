@@ -7,19 +7,18 @@
  * full round-trip without structural loss.
  */
 import { describe, it, expect } from 'vitest';
-import { parseZPL } from '@zplab/core/lib/zplParser';
 import { generateZPL } from '@zplab/core/lib/zplGenerator';
 import type { LabelConfig } from '@zplab/core/types/LabelConfig';
-import { props, defined } from './helpers';
+import { props, defined, parseSingle, commandsOf } from './helpers';
 
 const BASE: LabelConfig = { widthMm: 100, heightMm: 60, dpmm: 8 };
 
 function roundtrip(zpl: string, dpmm = 8) {
-  const first = parseZPL(zpl, dpmm);
+  const first = parseSingle(zpl, dpmm);
   // BASE provides fallbacks for labels that omit ^PW/^LL; dpmm always wins over any parsed value
   const label: LabelConfig = { ...BASE, ...first.labelConfig, dpmm };
   const regenerated = generateZPL(label, first.objects);
-  const second = parseZPL(regenerated, dpmm);
+  const second = parseSingle(regenerated, dpmm);
   return { first, second, label, regenerated };
 }
 
@@ -304,7 +303,7 @@ describe('round-trip — field block text', () => {
   // across rotation, justify, hanging indent, line spacing and FT vs FO anchoring
   // without ever growing a ^GB.
   const reverseBlockIsIdempotent = (blockZpl: string) => {
-    const base = parseZPL(blockZpl, 8);
+    const base = parseSingle(blockZpl, 8);
     const obj = base.objects.find((o) => o.type === 'text');
     expect(obj).toBeDefined();
     const reversed = {
@@ -313,7 +312,7 @@ describe('round-trip — field block text', () => {
     } as (typeof base.objects)[number];
     const label: LabelConfig = { ...BASE, ...base.labelConfig, dpmm: 8 };
     const emit1 = generateZPL(label, [reversed]);
-    const parsed = parseZPL(emit1, 8);
+    const parsed = parseSingle(emit1, 8);
     expect(parsed.objects).toHaveLength(1);
     const out = defined(parsed.objects[0]);
     expect(out.type).toBe('text');
@@ -627,7 +626,7 @@ describe('round-trip — text rotation × positionType preservation', () => {
 describe('parseZPL — real-world structural commands are silently ignored', () => {
   // Labels produced by Zebra Designer / ZPL II tools commonly begin with a
   // block of printer configuration commands that carry no canvas-design info.
-  // They must NOT pollute importReport.unknown.
+  // They must NOT pollute the unknown findings.
   const ZEBRA_HEADER_ZPL = [
     '^XA',
     '^CI28',          // UTF-8 encoding
@@ -643,24 +642,24 @@ describe('parseZPL — real-world structural commands are silently ignored', () 
     '^XZ',
   ].join('');
 
-  it('does not add ^CI, ^PR, ^MN, ^JM, ^MT to importReport.unknown', () => {
-    const { importReport } = parseZPL(ZEBRA_HEADER_ZPL, 8);
-    const noiseInUnknown = importReport.unknown.filter(
+  it('does not flag ^CI, ^PR, ^MN, ^JM, ^MT as unknown', () => {
+    const parsed = parseSingle(ZEBRA_HEADER_ZPL, 8);
+    const noiseInUnknown = commandsOf(parsed, 'unknown').filter(
       (s) => /^\^(CI|PR|MN|JM|MT|JA)/.test(s),
     );
     expect(noiseInUnknown).toHaveLength(0);
   });
 
   it('still parses design objects correctly after the header block', () => {
-    const { objects } = parseZPL(ZEBRA_HEADER_ZPL, 8);
+    const { objects } = parseSingle(ZEBRA_HEADER_ZPL, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).content).toBe('Real Label');
   });
 
-  it('genuinely unknown commands still appear in importReport.unknown', () => {
-    const { importReport } = parseZPL(ZEBRA_HEADER_ZPL, 8);
-    expect(importReport.unknown.some((s) => s.startsWith('^XF'))).toBe(true);
+  it('genuinely unknown commands still surface as unknown findings', () => {
+    const parsed = parseSingle(ZEBRA_HEADER_ZPL, 8);
+    expect(commandsOf(parsed, 'unknown').some((s) => s.startsWith('^XF'))).toBe(true);
   });
 });
 
@@ -685,7 +684,7 @@ describe('round-trip — label geometry sidecar', () => {
     expect(zpl).toContain('^FXZPLLAB:');
     // Re-parse at the wrong external dpmm: ^PW/^LL alone would give 85.5×48mm
     // at 8dpmm, but the sidecar restores the authored geometry exactly.
-    const parsed = parseZPL(zpl, 8);
+    const parsed = parseSingle(zpl, 8);
     expect(parsed.labelConfig.dpmm).toBe(12);
     expect(parsed.labelConfig.widthMm).toBe(57);
     expect(parsed.labelConfig.heightMm).toBe(32);

@@ -40,7 +40,7 @@ import type { CodablockProps } from "../../registry/codablock";
 import type { Tlc39Props } from "../../registry/tlc39";
 import { upceData6FromFd } from "../../registry/hriFormatters";
 import { decodeFH, makeObj, variableNameFromComment } from "./helpers";
-import { getPosType, type ParserState } from "./context";
+import { getPosType, resetFieldBlockDefaults, type ParserState } from "./context";
 
 /** Cross-family deps flushField borrows from graphics (^GB+^FR) and parseZPL (^FX). */
 export interface FlushFieldDeps {
@@ -57,13 +57,17 @@ export function createFlushField(
   const { commitPendingReverseBg, getReverseFlag, takeComment } = deps;
   const { objects, variables } = s.result;
 
-  /** Find-or-create Variable for FN slot; silently backfills empty defaultValue. */
+  /** Find-or-create Variable for FN slot; silently backfills empty defaultValue.
+   *  Lookup starts at varScopeStart: ^FN is per-^XA-format scoped, so a later
+   *  page's slot must become a new Variable, never reuse an earlier page's. */
   const upsertVariable = (
     fnNumber: number,
     defaultValue: string,
     commentHint?: string,
   ): Variable => {
-    const existing = variables.find((v) => v.fnNumber === fnNumber);
+    const existing = variables
+      .slice(s.varScopeStart)
+      .find((v) => v.fnNumber === fnNumber);
     if (existing) {
       if (!existing.defaultValue && defaultValue) {
         existing.defaultValue = defaultValue;
@@ -99,18 +103,14 @@ export function createFlushField(
     }
     if (seen.size === 0) return payload;
     for (const n of seen) upsertVariable(n, "");
-    const fnToName = new Map(variables.map((v) => [v.fnNumber, v.name]));
+    // Same per-format scope as the lookup: embeds reference this page's slots.
+    const fnToName = new Map(
+      variables.slice(s.varScopeStart).map((v) => [v.fnNumber, v.name]),
+    );
     return embedsToMarkers(payload, s.format.embedChar, fnToName);
   };
 
-  const resetFB = () => {
-    s.defaults.fbWidth = 0;
-    s.defaults.fbLines = 1;
-    s.defaults.fbSpacing = 0;
-    s.defaults.fbJustify = "L";
-    s.defaults.fbHangingIndent = 0;
-    s.defaults.tbHeight = 0;
-  };
+  const resetFB = () => resetFieldBlockDefaults(s.defaults);
 
   const flushField = () => {
     if (!s.field.fieldType || s.field.pendingFD === null) {

@@ -17,8 +17,8 @@ export type ImportFindingKind =
 
 /**
  * One import finding. Created per-occurrence so each entry can be navigated
- * to its source page in the UI; cross-block dedup happens (if at all) in the
- * service layer that merges per-page parser runs.
+ * to its source page in the UI; cross-page dedup happens (if at all) in the
+ * import service's report buckets.
  */
 export interface ImportFinding {
   kind: ImportFindingKind;
@@ -26,9 +26,8 @@ export interface ImportFinding {
    *  'browserLimit' / 'unknown' the full token including parameters
    *  (e.g. "^IM,R:LOGO.GRF"); for 'lossyEdit' a human-readable reason. */
   command: string;
-  /** Page index this finding originated from. The parser doesn't know about
-   *  pages and emits 0; `zplImportService` overwrites it when it merges the
-   *  per-block parser results into a multi-page report. */
+  /** Page index (^XA block) this finding originated from, stamped by the
+   *  single-pass parser. */
   pageIndex: number;
 }
 
@@ -49,15 +48,42 @@ export interface ImportReport {
   deviceAction: string[];
 }
 
+/** One ^XA…^XZ format from a single-pass parse. Slices reference the same
+ *  object/variable instances as the flat ParsedZPL arrays. */
+export interface ParsedPage {
+  objects: LabelObject[];
+  /** This page's ^FN slots (per-format scope; cross-page merge is the
+   *  import service's job). */
+  variables: Variable[];
+  findings: ImportFinding[];
+  /** Source-patch overlay for byte-verbatim replay, present only when
+   *  `captureOverlay` is set and every parsed object linked to a source span;
+   *  `undefined` means the block regenerates from the model. */
+  overlay?: BlockOverlay;
+  /** ^PW/^LL-derived size in effect at this page's close (pre-sidecar), so the
+   *  import can keep the first block's geometry as the label size. */
+  labelSize: { widthMm?: number; heightMm?: number };
+  /** labelConfig accumulated through this page's close (pre-sidecar, never
+   *  reset): page 0 equals block 0's config, which the single-label import
+   *  reads so block-scoped fields like ^PQ can't leak from later blocks. */
+  labelConfig: Partial<LabelConfig>;
+  /** Page 0 only: stream had no ^XA wrapper (bare field paste). Re-export
+   *  regenerates the wrapper, so the overlay is suppressed by the caller. */
+  bare?: boolean;
+}
+
 export interface ParsedZPL {
+  /** One entry per ^XA block (single-pass; stream-persistent state like
+   *  ^MU/^CC/^CW carries across pages). At least one page, possibly empty. */
+  pages: ParsedPage[];
+  /** ^XA blocks set different explicit ^PW/^LL: a single-label design keeps
+   *  only one size, so callers reject or warn. */
+  mixedPageGeometry: boolean;
   labelConfig: Partial<LabelConfig>;
   /** EEPROM-persistent printer-state extracted from any Setup-Script
    *  commands in the stream (^JZ, ^JT, ~TA, ^ST, ^KD, ^SL, ^KL, ^SE,
    *  ^SZ, ^KN). Caller decides whether to merge into the active profile. */
   printerProfile: Partial<PrinterProfile>;
-  objects: LabelObject[];
-  /** Template variables reconstructed from `^FN` slots. */
-  variables: Variable[];
   /** Full device paths of fonts uploaded via `~DY` (TTF/OTF) in this
    *  stream. A path also claimed by a `^CW` alias or referenced by a
    *  `^A@` direct path is a design font (in `labelConfig.customFonts` or
@@ -71,16 +97,6 @@ export interface ParsedZPL {
   /** Every in-range ^FN slot the tokenizer saw, including on passthrough-only
    *  fields; import renumbering must avoid these (overlays replay the bytes). */
   sourceFnNumbers: ReadonlySet<number>;
-  /** Commands not fully imported (browserLimit + unknown). Prefer
-   *  importReport for categorised access. */
-  skipped: string[];
-  importReport: ImportReport;
-  /** Source-patch overlay for the parsed block, present only when
-   *  `captureOverlay` is set and every parsed object linked to a source
-   *  span. Lets export replay untouched fields/config/comments/whitespace
-   *  byte-identically. `undefined` when capture was off or a field shape
-   *  couldn't be linked (the block then regenerates from the model). */
-  overlay?: BlockOverlay;
 }
 
 export type Handler = (p: string[], rest: string, cmd: string) => void;

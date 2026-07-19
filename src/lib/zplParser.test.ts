@@ -3,7 +3,7 @@ import { zlibSync } from 'fflate';
 import { parseZPL, BY_CONSUMING_BARCODE_TYPES } from '@zplab/core/lib/zplParser';
 import { formatLabelMetaComment } from '@zplab/core/lib/zplLabelMeta';
 import { ObjectRegistry } from '@zplab/core/registry';
-import { props, serialOf } from '../test/helpers';
+import { props, serialOf, parseSingle, commandsOf } from '../test/helpers';
 
 // Drift guard for the bare-^BY hazard set. Every 1D and postal barcode emits a
 // ^BY on regen, so it must be classified ^BY-consuming; a forgotten new one
@@ -60,24 +60,24 @@ function makeZ64Field(bytes: Uint8Array): string {
 
 describe('parseZPL — label config', () => {
   it('parses ^PW and ^LL into mm dimensions at 8 dpmm', () => {
-    const { labelConfig } = parseZPL('^XA^PW800^LL600^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^PW800^LL600^XZ', 8);
     expect(labelConfig.widthMm).toBe(100);   // 800 dots / 8 dpmm
     expect(labelConfig.heightMm).toBe(75);   // 600 dots / 8 dpmm
   });
 
   it('ignores ^PW / ^LL with zero value', () => {
-    const { labelConfig } = parseZPL('^XA^PW0^LL0^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^PW0^LL0^XZ', 8);
     expect(labelConfig.widthMm).toBeUndefined();
     expect(labelConfig.heightMm).toBeUndefined();
   });
 
   it('parses ^PQ print quantity', () => {
-    const { labelConfig } = parseZPL('^XA^PQ3^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^PQ3^XZ', 8);
     expect(labelConfig.printQuantity).toBe(3);
   });
 
   it('ignores ^PQ with 0', () => {
-    const { labelConfig } = parseZPL('^XA^PQ0^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^PQ0^XZ', 8);
     expect(labelConfig.printQuantity).toBeUndefined();
   });
 });
@@ -85,7 +85,7 @@ describe('parseZPL — label config', () => {
 describe('parseZPL — ^MU units of measure', () => {
   it('^MUI rescales following ^GB coords from inches to dots at 8 dpmm', () => {
     // 1 inch @ 8 dpmm = 8 * 25.4 = 203.2 dots, rounded to 203
-    const { objects } = parseZPL('^XA^MUI^FO1,2^GB1,1,0.1^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^MUI^FO1,2^GB1,1,0.1^FS^XZ', 8);
     const [obj] = objects;
     expect(obj?.x).toBe(203);
     expect(obj?.y).toBe(406);
@@ -93,14 +93,14 @@ describe('parseZPL — ^MU units of measure', () => {
 
   it('^MUM rescales following ^GB coords from mm to dots at 8 dpmm', () => {
     // 10 mm @ 8 dpmm = 80 dots
-    const { objects } = parseZPL('^XA^MUM^FO10,20^GB10,10,1^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^MUM^FO10,20^GB10,10,1^FS^XZ', 8);
     const [obj] = objects;
     expect(obj?.x).toBe(80);
     expect(obj?.y).toBe(160);
   });
 
   it('^MUD leaves ^GB coords unchanged (dots-canonical, default)', () => {
-    const { objects } = parseZPL('^XA^MUD^FO100,200^GB50,50,2^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^MUD^FO100,200^GB50,50,2^FS^XZ', 8);
     const [obj] = objects;
     expect(obj?.x).toBe(100);
     expect(obj?.y).toBe(200);
@@ -108,30 +108,28 @@ describe('parseZPL — ^MU units of measure', () => {
 
   it('^MU carries across ^XA per spec (field-by-field until overridden)', () => {
     // Spec: "^MU carries over from field to field until a new mode is
-    // entered." In production parseZPL is called per-block by
-    // zplImportService so cross-block carry-over never surfaces; this
-    // pins the spec-correct behaviour for the parser-API itself.
-    const { objects } = parseZPL(
+    // entered." Single-pass parse carries it across ^XA blocks too.
+    const r = parseZPL(
       '^XA^MUI^FO1,1^GB1,1,1^FS^XZ^XA^FO1,1^GB1,1,1^FS^XZ',
       8,
     );
-    expect(objects[0]?.x).toBe(203);
-    expect(objects[1]?.x).toBe(203);
+    expect(r.pages[0]?.objects[0]?.x).toBe(203);
+    expect(r.pages[1]?.objects[0]?.x).toBe(203);
   });
 
   it('^MU b,c slots persist as a pair on labelConfig for re-emit', () => {
-    const { labelConfig } = parseZPL('^XA^MUD,150,300^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^MUD,150,300^XZ', 8);
     expect(labelConfig.muResampling).toEqual({ formatDpi: 150, outputDpi: 300 });
   });
 
   it('^MU with out-of-spec dpi values surfaces as partial finding', () => {
-    const { labelConfig, importReport } = parseZPL('^XA^MUD,77,999^XZ', 8);
+    const { labelConfig, findings } = parseSingle('^XA^MUD,77,999^XZ', 8);
     expect(labelConfig.muResampling).toBeUndefined();
-    expect(importReport.partial).toContain('^MU');
+    expect(commandsOf({ findings }, 'partial')).toContain('^MU');
   });
 
   it('^MU,150,300 with a-slot omitted resets unit to D and persists the pair', () => {
-    const { labelConfig, objects } = parseZPL(
+    const { labelConfig, objects } = parseSingle(
       '^XA^MU,150,300^FO100,100^GB10,10,1^FS^XZ',
       8,
     );
@@ -143,37 +141,37 @@ describe('parseZPL — ^MU units of measure', () => {
   it('invalid ^MU a-slot surfaces as partial finding without dropping prior unit', () => {
     // ^MUI sets unitScale to inches; a follow-up ^MUX must not silently
     // downgrade subsequent coords to dots.
-    const { objects, importReport } = parseZPL(
+    const { objects, findings } = parseSingle(
       '^XA^MUI^FO1,1^GB1,1,1^FS^MUX^FO1,1^GB1,1,1^FS^XZ',
       8,
     );
-    expect(importReport.partial).toContain('^MU');
+    expect(commandsOf({ findings }, 'partial')).toContain('^MU');
     expect(objects[0]?.x).toBe(203);
     expect(objects[1]?.x).toBe(203);
   });
 
   it('half-set ^MU dpi pair is rejected as partial (both-or-neither invariant)', () => {
-    const { labelConfig, importReport } = parseZPL('^XA^MUD,200^XZ', 8);
+    const { labelConfig, findings } = parseSingle('^XA^MUD,200^XZ', 8);
     expect(labelConfig.muResampling).toBeUndefined();
-    expect(importReport.partial).toContain('^MU');
+    expect(commandsOf({ findings }, 'partial')).toContain('^MU');
   });
 
   it('round-trip: ^MUD,b,c parses + generates back symmetrically', () => {
     const original = '^XA^MUD,200,600^PW600^LL400^CI28^XZ';
-    const { labelConfig } = parseZPL(original, 8);
+    const { labelConfig } = parseSingle(original, 8);
     expect(labelConfig.muResampling).toEqual({ formatDpi: 200, outputDpi: 600 });
   });
 
   it('^MUI also rescales dynamic ^A{font} dims (the wildcard-dispatch path)', () => {
     // 0.5 inch font height @ 8 dpmm = 101.6 → 102 dots
-    const { objects } = parseZPL('^XA^MUI^FO0,0^A1N,0.5,0.5^FDX^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^MUI^FO0,0^A1N,0.5,0.5^FDX^FS^XZ', 8);
     expect(props(objects[0]).fontHeight).toBe(102);
     expect(props(objects[0]).fontWidth).toBe(102);
   });
 
   it('^MUI admits fractional inch values (the whole point of I-mode)', () => {
     // 0.5 inch @ 8 dpmm = 0.5 * 8 * 25.4 = 101.6 dots, rounded to 102
-    const { objects } = parseZPL('^XA^MUI^FO0.5,0.25^GB1,1,0.05^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^MUI^FO0.5,0.25^GB1,1,0.05^FS^XZ', 8);
     const [box] = objects;
     expect(box?.x).toBe(102);
     expect(box?.y).toBe(51);
@@ -182,7 +180,7 @@ describe('parseZPL — ^MU units of measure', () => {
   });
 
   it('^MUI also rescales ^GB dimensions and ^PW/^LL', () => {
-    const { labelConfig, objects } = parseZPL(
+    const { labelConfig, objects } = parseSingle(
       '^XA^MUI^PW4^LL3^FO0,0^GB1,2,0.05^FS^XZ',
       8,
     );
@@ -200,7 +198,7 @@ describe('parseZPL — ^MU units of measure', () => {
 
 describe('parseZPL — text via ^A0', () => {
   it('creates a text object from an explicit ^A0 command', () => {
-    const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FDHello^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^A0N,30,0^FDHello^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     const [obj] = objects;
     expect(obj?.type).toBe('text');
@@ -215,14 +213,14 @@ describe('parseZPL — text via ^A0', () => {
   });
 
   it('parses rotation from ^A0', () => {
-    const { objects } = parseZPL('^XA^FO0,0^A0R,20,0^FDTilt^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^A0R,20,0^FDTilt^FS^XZ', 8);
     expect(props(objects[0]).rotation).toBe('R');
   });
 });
 
 describe('parseZPL — text via ^CF (implicit field)', () => {
   it('creates text from ^CF + ^FD without an explicit ^A', () => {
-    const { objects } = parseZPL('^XA^CF0,60^FO50,50^FDIntershipping, Inc.^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^CF0,60^FO50,50^FDIntershipping, Inc.^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     const [obj] = objects;
     expect(obj?.type).toBe('text');
@@ -232,7 +230,7 @@ describe('parseZPL — text via ^CF (implicit field)', () => {
 
   it('updates fontHeight when ^CF changes between fields', () => {
     const zpl = '^XA^CF0,60^FO0,0^FDFirst^FS^CF0,30^FO0,50^FDSecond^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(2);
     expect(props(objects[0]).fontHeight).toBe(60);
     expect(props(objects[1]).fontHeight).toBe(30);
@@ -240,7 +238,7 @@ describe('parseZPL — text via ^CF (implicit field)', () => {
 
   it('uses ^CFA font command (non-zero font name) to set height', () => {
     // ^CFA,30 → cmd='CF', rest='A,30' → height=30
-    const { objects } = parseZPL('^XA^CFA,30^FO0,0^FDText^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^CFA,30^FO0,0^FDText^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).fontHeight).toBe(30);
   });
@@ -248,12 +246,12 @@ describe('parseZPL — text via ^CF (implicit field)', () => {
 
 describe('parseZPL — text field position', () => {
   it('records positionType FO for ^FO fields', () => {
-    const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FDHi^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^A0N,30,0^FDHi^FS^XZ', 8);
     expect(objects[0]?.positionType).toBe('FO');
   });
 
   it('records positionType FT for ^FT fields', () => {
-    const { objects } = parseZPL('^XA^FT10,20^A0N,30,0^FDHi^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FT10,20^A0N,30,0^FDHi^FS^XZ', 8);
     expect(objects[0]?.positionType).toBe('FT');
   });
 });
@@ -262,7 +260,7 @@ describe('parseZPL — ^FT graphic box/line bottom-left anchor', () => {
   // Spec p.205: a ^FT graphic origin is the bottom-left corner; the model stores
   // the top-left, so it lifts by the box height. ^FO is the top-left verbatim.
   it('lifts a ^FT box by its height to the top-left', () => {
-    const { objects } = parseZPL('^XA^FT100,200^GB50,40,3,B,0^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FT100,200^GB50,40,3,B,0^FS^XZ', 8);
     expect(objects[0]?.type).toBe('box');
     expect(objects[0]?.positionType).toBe('FT');
     expect(objects[0]?.x).toBe(100);
@@ -270,20 +268,20 @@ describe('parseZPL — ^FT graphic box/line bottom-left anchor', () => {
   });
 
   it('keeps a ^FO box at the top-left', () => {
-    const { objects } = parseZPL('^XA^FO100,200^GB50,40,3,B,0^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO100,200^GB50,40,3,B,0^FS^XZ', 8);
     expect(objects[0]?.positionType).toBe('FO');
     expect(objects[0]?.y).toBe(200);
   });
 
   it('lifts a ^FT horizontal line by its thickness', () => {
-    const { objects } = parseZPL('^XA^FT100,200^GB80,4,4,B,0^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FT100,200^GB80,4,4,B,0^FS^XZ', 8);
     expect(objects[0]?.type).toBe('line');
     expect(objects[0]?.positionType).toBe('FT');
     expect(objects[0]?.y).toBe(196); // 200 - 4 (thickness)
   });
 
   it('anchors a right-justified ^FT,1 box at the bottom-right corner', () => {
-    const { objects } = parseZPL('^XA^FT200,200,1^GB50,40,3,B,0^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FT200,200,1^GB50,40,3,B,0^FS^XZ', 8);
     expect(objects[0]?.fieldJustify).toBe('R');
     expect(objects[0]?.x).toBe(150); // 200 - 50 (width)
     expect(objects[0]?.y).toBe(160); // 200 - 40 (height)
@@ -291,7 +289,7 @@ describe('parseZPL — ^FT graphic box/line bottom-left anchor', () => {
 
   it('treats z=2 (auto) like left: bottom-left anchor, no R justify', () => {
     // Only z=1 (right) is modelled; z=2 (auto, bidirectional) narrows to left.
-    const { objects } = parseZPL('^XA^FT200,200,2^GB50,40,3,B,0^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FT200,200,2^GB50,40,3,B,0^FS^XZ', 8);
     expect(objects[0]?.fieldJustify).toBeUndefined();
     expect(objects[0]?.x).toBe(200); // left edge, not shifted by width
     expect(objects[0]?.y).toBe(160); // 200 - 40 (bottom-left lift)
@@ -300,7 +298,7 @@ describe('parseZPL — ^FT graphic box/line bottom-left anchor', () => {
 
 describe('parseZPL — ^LH label home offset', () => {
   it('adds ^LH offset to all field positions', () => {
-    const { objects } = parseZPL('^XA^LH20,10^FO30,40^A0N,30,0^FDText^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^LH20,10^FO30,40^A0N,30,0^FDText^FS^XZ', 8);
     // obj.x = (^FO.x + ^LH.x) - zplAnchorDelta.x; obj.y similar.
     // For FO/N h=30: dx=0, dy=4.62.
     expect(objects[0]?.x).toBeCloseTo(50);  // 30 + 20
@@ -312,19 +310,19 @@ describe('parseZPL — ^LH label home offset', () => {
 
 describe('parseZPL — ^FR field reverse', () => {
   it('sets reverse on a text field when ^FR precedes ^FD', () => {
-    const { objects } = parseZPL('^XA^FO0,0^FR^A0N,30,0^FDReversed^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^FR^A0N,30,0^FDReversed^FS^XZ', 8);
     expect(props(objects[0]).reverse).toBe(true);
   });
 
   it('does not set reverse without ^FR', () => {
-    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^FDNormal^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^A0N,30,0^FDNormal^FS^XZ', 8);
     expect(props(objects[0]).reverse).toBeFalsy();
   });
 
   it('keeps an unrelated filled box + ^FR text at a different anchor as two objects', () => {
     // Anchor mismatch ⇒ no collapse. Hand-written ZPL where a black box
     // and an ^FR text happen to coexist must round-trip unchanged.
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^FO10,10^GB60,30,60,B,0^FS^FO200,200^A0N,30,0^FR^FDHi^FS^XZ',
       8,
     );
@@ -339,7 +337,7 @@ describe('parseZPL — ^FR field reverse', () => {
 
 describe('parseZPL — ^GB box', () => {
   it('creates an unfilled box when thickness < min dimension', () => {
-    const { objects } = parseZPL('^XA^FO10,20^GB200,100,3,B,0^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^GB200,100,3,B,0^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     const [obj] = objects;
     expect(obj?.type).toBe('box');
@@ -354,20 +352,20 @@ describe('parseZPL — ^GB box', () => {
   });
 
   it('creates a filled box when thickness equals the smallest dimension', () => {
-    const { objects } = parseZPL('^XA^FO0,0^GB100,100,100^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^GB100,100,100^FS^XZ', 8);
     expect(objects[0]?.type).toBe('box');
     expect(props(objects[0]).filled).toBe(true);
   });
 
   it('creates a box with rounding', () => {
-    const { objects } = parseZPL('^XA^FO0,0^GB100,50,3,B,5^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^GB100,50,3,B,5^FS^XZ', 8);
     expect(props(objects[0]).rounding).toBe(5);
   });
 });
 
 describe('parseZPL — ^GB line', () => {
   it('creates a horizontal line when height equals thickness', () => {
-    const { objects } = parseZPL('^XA^FO50,100^GB700,3,3^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO50,100^GB700,3,3^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     const [obj] = objects;
     expect(obj?.type).toBe('line');
@@ -377,7 +375,7 @@ describe('parseZPL — ^GB line', () => {
   });
 
   it('creates a vertical line when width equals thickness', () => {
-    const { objects } = parseZPL('^XA^FO100,50^GB3,250,3^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO100,50^GB3,250,3^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     const [obj] = objects;
     expect(obj?.type).toBe('line');
@@ -390,7 +388,7 @@ describe('parseZPL — ^GB line', () => {
 
 describe('parseZPL — ^BC Code 128', () => {
   it('creates a code128 object from ^BC^FD', () => {
-    const { objects } = parseZPL('^XA^FO100,50^BCN,200,Y,N,N^FD12345678^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO100,50^BCN,200,Y,N,N^FD12345678^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     const [obj] = objects;
     expect(obj?.type).toBe('code128');
@@ -401,7 +399,7 @@ describe('parseZPL — ^BC Code 128', () => {
   });
 
   it('inherits height from ^BY when ^BC has no explicit height', () => {
-    const { objects } = parseZPL('^XA^BY5,2,270^FO100,50^BC^FD12345678^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^BY5,2,270^FO100,50^BC^FD12345678^FS^XZ', 8);
     expect(props(objects[0]).height).toBe(270);
     expect(props(objects[0]).moduleWidth).toBe(5);
   });
@@ -411,7 +409,7 @@ describe('parseZPL — ^BR GS1 Databar', () => {
   it('reads ^BR p[2] as the gs1databar magnification, not byModuleWidth', () => {
     // ^BY4 sets dot-typed module width 4; ^BR p[2]=6 is the multiplier.
     // Pre-refactor both wrote into byModuleWidth so the 4 was clobbered.
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^BY4,2,100^FO0,0^BRN,1,6,2,100^FD0112345678901^FS^XZ',
       8,
     );
@@ -421,7 +419,7 @@ describe('parseZPL — ^BR GS1 Databar', () => {
   });
 
   it('falls back to ^BY moduleWidth when ^BR omits the magnification slot', () => {
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^BY3,2,100^FO0,0^BRN,1^FD0112345678901^FS^XZ',
       8,
     );
@@ -433,16 +431,17 @@ describe('parseZPL — ^BR GS1 Databar', () => {
 
 describe('parseZPL — ^FX comment', () => {
   it('does not produce objects or skips for ^FX lines', () => {
-    const { objects, skipped } = parseZPL(
+    const parsed = parseSingle(
       '^XA^FX This is a comment^FO10,20^A0N,30,0^FDText^FS^XZ',
       8,
     );
-    expect(objects).toHaveLength(1);
+    const skipped = [...commandsOf(parsed, 'browserLimit'), ...commandsOf(parsed, 'unknown')];
+    expect(parsed.objects).toHaveLength(1);
     expect(skipped.some((s) => s.startsWith('^FX'))).toBe(false);
   });
 
   it('attaches a single ^FX to the next object as comment', () => {
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^FXTop section^FO10,20^A0N,30,0^FDText^FS^XZ',
       8,
     );
@@ -450,7 +449,7 @@ describe('parseZPL — ^FX comment', () => {
   });
 
   it('joins consecutive ^FX lines with a newline', () => {
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^FXLine 1^FXLine 2^FO10,20^A0N,30,0^FDText^FS^XZ',
       8,
     );
@@ -458,15 +457,15 @@ describe('parseZPL — ^FX comment', () => {
   });
 
   it('does not bleed comments across ^XA boundaries', () => {
-    const { objects } = parseZPL(
+    const r = parseZPL(
       '^XA^FXOnly first^XZ^XA^FO10,20^A0N,30,0^FDText^FS^XZ',
       8,
     );
-    expect(objects[0]?.comment).toBeUndefined();
+    expect(r.pages[1]?.objects[0]?.comment).toBeUndefined();
   });
 
   it('does not reattach a consumed comment to a later object', () => {
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^FXOnly first^FO10,20^A0N,30,0^FDFirst^FS^FO10,60^A0N,30,0^FDSecond^FS^XZ',
       8,
     );
@@ -486,14 +485,14 @@ describe('parseZPL — barcode rotation', () => {
     ['^XA^FO0,0^B7I,4,0,0,,,^FDX^FS^XZ', 'I'],
     ['^XA^FO0,0^B0R,4,N,N,N,N^FDX^FS^XZ', 'R'],
   ])('reads orientation from %s', (zpl, expected) => {
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect((props(objects[0]) as { rotation?: string }).rotation).toBe(expected);
   });
 
   // ^BQ's orientation slot is a firmware no-op; the parser pins it to N (a
   // rotated QR arrives as ^GFA + sidecar instead).
   it('canonicalizes the decorative ^BQ orientation slot to N', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BQR,2,4^FDQA,X^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BQR,2,4^FDQA,X^FS^XZ', 8);
     const obj = objects[0];
     expect((props(obj) as { rotation?: string }).rotation).toBe('N');
   });
@@ -506,7 +505,7 @@ describe('parseZPL — barcode rotation', () => {
       id: 'q', type: 'qrcode', x: 40, y: 60, rotation: 0,
       props: { content: 'X', magnification: 4, errorCorrection: 'Q', model: 2, rotation: 'R' },
     } as never);
-    const { objects } = parseZPL(`^XA^FXmy note
+    const { objects } = parseSingle(`^XA^FXmy note
 ${body}^XZ`, 8);
     expect(objects[0]?.type).toBe('qrcode');
     expect(objects[0]?.comment).toBe('my note');
@@ -520,7 +519,7 @@ ${body}^XZ`, 8);
       id: 'q', type: 'qrcode', x: 40, y: 160, rotation: 0, positionType: 'FT',
       props: { content: 'X', magnification: 4, errorCorrection: 'Q', model: 2, rotation: 'R' },
     } as never);
-    const { objects } = parseZPL(`^XA${body}^XZ`, 8);
+    const { objects } = parseSingle(`^XA${body}^XZ`, 8);
     expect(objects[0]?.type).toBe('qrcode');
     expect(objects[0]?.positionType).toBe('FT');
     expect(objects[0]?.x).toBe(40);
@@ -533,7 +532,7 @@ ${body}^XZ`, 8);
       id: 'q', type: 'qrcode', x: 40, y: 60, rotation: 0,
       props: { content: 'https://x.de', magnification: 5, errorCorrection: 'M', model: 2, rotation: 'B' },
     } as never);
-    const { objects } = parseZPL(`^XA${body}^XZ`, 8);
+    const { objects } = parseSingle(`^XA${body}^XZ`, 8);
     expect(objects).toHaveLength(1);
     const obj = objects[0];
     expect(obj?.type).toBe('qrcode');
@@ -545,7 +544,7 @@ ${body}^XZ`, 8);
   });
 
   it('defaults to N when orientation is missing or unrecognised', () => {
-    const { objects } = parseZPL('^XA^BY2^FO0,0^BC,100,Y,N,N^FD123^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^BY2^FO0,0^BC,100,Y,N,N^FD123^FS^XZ', 8);
     expect((props(objects[0]) as { rotation?: string }).rotation).toBe('N');
   });
 });
@@ -555,14 +554,14 @@ ${body}^XZ`, 8);
 describe('parseZPL — ^FH hex escape', () => {
   it('decodes hex-escaped characters in field data', () => {
     // _41 = hex 41 = 'A'
-    const { objects } = parseZPL('^XA^FH_^FO0,0^A0N,30,0^FD_41BC^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FH_^FO0,0^A0N,30,0^FD_41BC^FS^XZ', 8);
     expect(props(objects[0]).content).toBe('ABC');
   });
 
   it('keeps a ^FH-encoded GS as the GS1 separator instead of a control chip', () => {
     // GS1-128 with a hex-escaped separator between variable AIs: the raw GS
     // must reach the GS1 normalisation, not be chip-tokenised away.
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^FO0,0^BY2^BCN,100,Y,N,N,D^FH_^FD010401234567890110AB_1D21XY^FS^XZ', 8,
     );
     const content = props(objects[0]).content as string;
@@ -571,43 +570,43 @@ describe('parseZPL — ^FH hex escape', () => {
   });
 
   it('chip-tokenises a ^FH control byte on a non-GS1 code128', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BY2^BCN,100,Y,N,N^FH_^FDAB_09CD^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BY2^BCN,100,Y,N,N^FH_^FDAB_09CD^FS^XZ', 8);
     expect(props(objects[0]).content).toBe('AB«ctrl:TAB»CD');
   });
 
   it('decodes UTF-8 multibyte escapes (German umlauts)', () => {
     // _C3_A4 = ä, _C3_B6 = ö, _C3_BC = ü
-    const { objects } = parseZPL('^XA^FH_^FO0,0^A0N,30,0^FD_C3_A4_C3_B6_C3_BC^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FH_^FO0,0^A0N,30,0^FD_C3_A4_C3_B6_C3_BC^FS^XZ', 8);
     expect(props(objects[0]).content).toBe('äöü');
   });
 
   it('decodes UTF-8 multibyte escapes (Nordic)', () => {
     // _C3_A6 = æ, _C3_B8 = ø, _C3_A5 = å
-    const { objects } = parseZPL('^XA^FH_^FO0,0^A0N,30,0^FD_C3_A6_C3_B8_C3_A5^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FH_^FO0,0^A0N,30,0^FD_C3_A6_C3_B8_C3_A5^FS^XZ', 8);
     expect(props(objects[0]).content).toBe('æøå');
   });
 
   it('decodes 3-byte UTF-8 escapes (Euro sign)', () => {
     // _E2_82_AC = €
-    const { objects } = parseZPL('^XA^FH_^FO0,0^A0N,30,0^FD_E2_82_AC^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FH_^FO0,0^A0N,30,0^FD_E2_82_AC^FS^XZ', 8);
     expect(props(objects[0]).content).toBe('€');
   });
 
   it('decodes mixed ASCII and UTF-8 escapes in one field', () => {
     // _48 = H, _69 = i, then ä
-    const { objects } = parseZPL('^XA^FH_^FO0,0^A0N,30,0^FD_48_69 _C3_A4^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FH_^FO0,0^A0N,30,0^FD_48_69 _C3_A4^FS^XZ', 8);
     expect(props(objects[0]).content).toBe('Hi ä');
   });
 
   it('replaces invalid UTF-8 byte sequences with U+FFFD', () => {
     // _C3 alone is a truncated 2-byte sequence
-    const { objects } = parseZPL('^XA^FH_^FO0,0^A0N,30,0^FD_C3^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FH_^FO0,0^A0N,30,0^FD_C3^FS^XZ', 8);
     expect(props(objects[0]).content).toBe('�');
   });
 
   it('decodes ^CI27 (Windows-1252) single-byte escapes', () => {
     // _E4 = 0xE4 = ä in CP1252 (in UTF-8 this would be invalid → U+FFFD)
-    const { objects } = parseZPL('^XA^CI27^FH_^FO0,0^A0N,30,0^FD_E4_F6_FC^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^CI27^FH_^FO0,0^A0N,30,0^FD_E4_F6_FC^FS^XZ', 8);
     expect(props(objects[0]).content).toBe('äöü');
   });
 
@@ -616,15 +615,15 @@ describe('parseZPL — ^FH hex escape', () => {
     const zpl =
       '^XA^FH_^FO0,0^A0N,30,0^FD_C3_A4^FS' +
       '^CI27^FH_^FO0,50^A0N,30,0^FD_E4^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(props(objects[0]).content).toBe('ä');
     expect(props(objects[1]).content).toBe('ä');
   });
 
   it('reports unsupported ^CI N as partial import', () => {
     // ^CI50 is not a real Zebra encoding; falls back to UTF-8 default
-    const { importReport } = parseZPL('^XA^CI50^FH_^FO0,0^A0N,30,0^FDx^FS^XZ', 8);
-    expect(importReport.partial).toContain('^CI50');
+    const { findings } = parseSingle('^XA^CI50^FH_^FO0,0^A0N,30,0^FDx^FS^XZ', 8);
+    expect(commandsOf({ findings }, 'partial')).toContain('^CI50');
   });
 
   it('resets decoder to UTF-8 default on unsupported ^CI', () => {
@@ -633,7 +632,7 @@ describe('parseZPL — ^FH hex escape', () => {
     const zpl =
       '^XA^CI27^FH_^FO0,0^A0N,30,0^FD_E4^FS' +
       '^CI50^FH_^FO0,50^A0N,30,0^FD_C3_A4^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(props(objects[0]).content).toBe('ä');  // CP1252
     expect(props(objects[1]).content).toBe('ä');  // UTF-8 (after reset)
   });
@@ -643,7 +642,7 @@ describe('parseZPL — ^FH hex escape', () => {
 
 describe('parseZPL — ^FB field block', () => {
   it('creates a text object with block properties', () => {
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^FO10,20^A0N,30,0^FB400,3,5,C,0^FDMulti-line text^FS^XZ',
       8,
     );
@@ -655,7 +654,7 @@ describe('parseZPL — ^FB field block', () => {
   });
 
   it('reads ^FB slot e as hanging indent', () => {
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^FO10,20^A0N,30,0^FB400,3,0,L,40^FDMulti-line text^FS^XZ',
       8,
     );
@@ -663,7 +662,7 @@ describe('parseZPL — ^FB field block', () => {
   });
 
   it('clamps negative ^FB hanging indent to 0 (matches Labelary)', () => {
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^FO10,20^A0N,30,0^FB400,3,0,L,-40^FDx^FS^XZ',
       8,
     );
@@ -673,14 +672,14 @@ describe('parseZPL — ^FB field block', () => {
 
   it('resets ^FB state after use (next text has no block)', () => {
     const zpl = '^XA^FO0,0^A0N,30,0^FB400,2,0,L,0^FDFirst^FS^FO0,100^A0N,30,0^FDSecond^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(2);
     expect(props(objects[0]).blockWidth).toBe(400);
     expect(props(objects[1]).blockWidth).toBeUndefined();
   });
 
   it('^FB without ^A creates text using ^CF defaults', () => {
-    const { objects } = parseZPL('^XA^CF0,25^FO0,0^FB300,2,0,R,0^FDBlock text^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^CF0,25^FO0,0^FB300,2,0,R,0^FDBlock text^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).fontHeight).toBe(25);
     expect(props(objects[0]).blockWidth).toBe(300);
@@ -692,7 +691,7 @@ describe('parseZPL — ^FB field block', () => {
 
 describe('parseZPL — ^TB text block', () => {
   it('creates a native text-block object (width + clip height, no line count)', () => {
-    const { objects } = parseZPL('^XA^CF0,30^FO0,0^TBN,400,120^FDText block^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^CF0,30^FO0,0^TBN,400,120^FDText block^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).content).toBe('Text block');
     expect(props(objects[0]).textMode).toBe('tb');
@@ -702,12 +701,12 @@ describe('parseZPL — ^TB text block', () => {
   });
 
   it('decodes the <<> escape to a literal <', () => {
-    const { objects } = parseZPL('^XA^A0N,30^FO0,0^TBN,400,60^FDA<<>B^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^A0N,30^FO0,0^TBN,400,60^FDA<<>B^FS^XZ', 8);
     expect(props(objects[0]).content).toBe('A<B');
   });
 
   it('keeps a bare ^TB as a text block (width clamped, not dropped)', () => {
-    const { objects } = parseZPL('^XA^A0N,30^FO0,0^TBN^FDx^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^A0N,30^FO0,0^TBN^FDx^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).textMode).toBe('tb');
     expect(props(objects[0]).blockWidth).toBe(1);
@@ -716,7 +715,7 @@ describe('parseZPL — ^TB text block', () => {
   it('a ^TB+barcode malformed field does not tb-decode the bound default', () => {
     // ^TB sets fieldType=text, then ^BC flips it to a barcode; the bound
     // default must stay raw (match the barcode content), not tb-decoded.
-    const { objects, variables } = parseZPL(
+    const { objects, variables } = parseSingle(
       '^XA^FO10,10^TBN,200,50^BCN,100,Y,N^FN1^FD<<>HELLO^FS^XZ',
       8,
     );
@@ -733,32 +732,32 @@ describe('parseZPL — ^FP vertical / reverse text', () => {
   const baseField = '^XA^FO50,50^A0N,30,30';
 
   it('parses ^FPV as vertical direction', () => {
-    const { objects } = parseZPL(`${baseField}^FPV^FDABC^FS^XZ`, 8);
+    const { objects } = parseSingle(`${baseField}^FPV^FDABC^FS^XZ`, 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).fpDirection).toBe('V');
     expect(props(objects[0]).fpCharGap).toBeUndefined();
   });
 
   it('parses ^FPR as reverse direction', () => {
-    const { objects } = parseZPL(`${baseField}^FPR^FDABC^FS^XZ`, 8);
+    const { objects } = parseSingle(`${baseField}^FPR^FDABC^FS^XZ`, 8);
     expect(props(objects[0]).fpDirection).toBe('R');
   });
 
   it('parses inter-character gap', () => {
-    const { objects } = parseZPL(`${baseField}^FPV,5^FDABC^FS^XZ`, 8);
+    const { objects } = parseSingle(`${baseField}^FPV,5^FDABC^FS^XZ`, 8);
     expect(props(objects[0]).fpDirection).toBe('V');
     expect(props(objects[0]).fpCharGap).toBe(5);
   });
 
   it('defaults direction to H when only gap is given (^FP,5)', () => {
-    const { objects } = parseZPL(`${baseField}^FP,5^FDABC^FS^XZ`, 8);
+    const { objects } = parseSingle(`${baseField}^FP,5^FDABC^FS^XZ`, 8);
     // H is omitted on emit by leaving fpDirection undefined; gap survives.
     expect(props(objects[0]).fpDirection).toBeUndefined();
     expect(props(objects[0]).fpCharGap).toBe(5);
   });
 
   it('falls back to H for unknown direction letters', () => {
-    const { objects } = parseZPL(`${baseField}^FPX^FDABC^FS^XZ`, 8);
+    const { objects } = parseSingle(`${baseField}^FPX^FDABC^FS^XZ`, 8);
     expect(props(objects[0]).fpDirection).toBeUndefined();
   });
 
@@ -766,7 +765,7 @@ describe('parseZPL — ^FP vertical / reverse text', () => {
     const zpl =
       `${baseField}^FPV,3^FDFirst^FS` +
       `^FO50,150^A0N,30,30^FDSecond^FS^XZ`;
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(2);
     expect(props(objects[0]).fpDirection).toBe('V');
     expect(props(objects[0]).fpCharGap).toBe(3);
@@ -780,7 +779,7 @@ describe('parseZPL — ^FP vertical / reverse text', () => {
 
 describe('parseZPL — ^B3 Code 39', () => {
   it('creates a code39 object', () => {
-    const { objects } = parseZPL('^XA^FO0,0^B3N,N,100,Y,N^FDABC^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^B3N,N,100,Y,N^FDABC^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('code39');
     expect(props(objects[0]).content).toBe('ABC');
@@ -791,7 +790,7 @@ describe('parseZPL — ^B3 Code 39', () => {
 
 describe('parseZPL — ^BQ QR Code', () => {
   it('creates a qrcode object with error correction and content', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BQN,2,6^FDQA,https://example.com^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BQN,2,6^FDQA,https://example.com^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('qrcode');
     expect(props(objects[0]).content).toBe('https://example.com');
@@ -801,19 +800,19 @@ describe('parseZPL — ^BQ QR Code', () => {
   });
 
   it('preserves Model 1 from ^BQ b (round-trip, no silent change to 2)', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BQN,1,4^FDQA,X^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BQN,1,4^FDQA,X^FS^XZ', 8);
     expect(props(objects[0]).model).toBe(1);
   });
 
   it('falls back to Model 2 for a missing/invalid ^BQ b', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BQN,,4^FDQA,X^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BQN,,4^FDQA,X^FS^XZ', 8);
     expect(props(objects[0]).model).toBe(2);
   });
 });
 
 describe('parseZPL — ^BX DataMatrix', () => {
   it('creates a datamatrix object', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BXN,8,200^FD1234567890^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BXN,8,200^FD1234567890^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('datamatrix');
     expect(props(objects[0]).content).toBe('1234567890');
@@ -823,7 +822,7 @@ describe('parseZPL — ^BX DataMatrix', () => {
   });
 
   it('reads GS1 mode from the escape param and decodes FNC1 separators', () => {
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^FO0,0^BXN,8,200,,,,_^FD_1010950110153000310ABC123_12112345^FS^XZ',
       8,
     );
@@ -833,36 +832,36 @@ describe('parseZPL — ^BX DataMatrix', () => {
   });
 
   it('does not treat the escape param as GS1 below quality 200', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BXN,8,140,,,,_^FD_1010950110153000310^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BXN,8,140,,,,_^FD_1010950110153000310^FS^XZ', 8);
     expect(props(objects[0]).gs1).toBe(false);
     expect(props(objects[0]).content).toBe('_1010950110153000310');
   });
 
   it('keeps non-GS1 field data verbatim (no leading FNC1, g set)', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BXN,8,200,,,,_^FDABC_DEF^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BXN,8,200,,,,_^FDABC_DEF^FS^XZ', 8);
     expect(props(objects[0]).gs1).toBe(false);
     expect(props(objects[0]).content).toBe('ABC_DEF');
   });
 
   it('keeps ~dNNN escapes in field data (tilde before a letter that is no immediate command)', () => {
-    const { objects, importReport } = parseZPL(
+    const { objects, findings } = parseSingle(
       '^XA^FO10,10^BXN,8,200,,,,~^FD~1010950110153000310ABC123~d0292112345^FS^XZ',
       8,
     );
-    expect(importReport.unknown).toEqual([]);
+    expect(commandsOf({ findings }, 'unknown')).toEqual([]);
     expect(props(objects[0]).gs1).toBe(true);
     expect(props(objects[0]).content).toBe('010950110153000310ABC123\x1d2112345');
   });
 
   it('still ends field data at a real immediate command (~JA is intercepted by firmware)', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BXN,8,200^FDAB~JACD^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BXN,8,200^FDAB~JACD^FS^XZ', 8);
     expect(props(objects[0]).content).toBe('AB');
   });
 
   it('reads a tilde escape char and the rectangular a param', () => {
     // Production label: g=~ (the historic firmware default escape char), a=2.
     // The tilde inside ^FD must survive tokenization, not start a command.
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^FO50,50^BXN,4,200,,,,~,2^FD~1010426011945468210FM260693^FS^XZ',
       8,
     );
@@ -874,43 +873,43 @@ describe('parseZPL — ^BX DataMatrix', () => {
   });
 
   it('ignores the a param below quality 200 (firmware prints square)', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BXN,8,140,,,,,2^FDX^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BXN,8,140,,,,,2^FDX^FS^XZ', 8);
     expect(props(objects[0]).aspectRatio).toBeUndefined();
   });
 
   it('reads a forced symbol size from the c/r params', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BXN,8,200,22,22^FDX^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BXN,8,200,22,22^FDX^FS^XZ', 8);
     expect(props(objects[0]).columns).toBe(22);
     expect(props(objects[0]).rows).toBe(22);
   });
 
   it('drops a forced c/r below quality 200 (invalid there; preview auto-sizes)', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BXN,8,140,22,22^FDX^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BXN,8,140,22,22^FDX^FS^XZ', 8);
     expect(props(objects[0]).columns).toBeUndefined();
     expect(props(objects[0]).rows).toBeUndefined();
   });
 
   it('derives the rectangular shape from a forced DMRE pair without the a param', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BXN,8,200,18,8^FDX^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BXN,8,200,18,8^FDX^FS^XZ', 8);
     expect(props(objects[0]).columns).toBe(18);
     expect(props(objects[0]).rows).toBe(8);
     expect(props(objects[0]).aspectRatio).toBe(2);
   });
 
   it('a forced square pair overrides a stray a=2', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BXN,8,200,22,22,,,2^FDX^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BXN,8,200,22,22,,,2^FDX^FS^XZ', 8);
     expect(props(objects[0]).aspectRatio).toBeUndefined();
   });
 
   it('accepts quality 100 (convolution ECC)', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BXN,8,100^FDX^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BXN,8,100^FDX^FS^XZ', 8);
     expect(props(objects[0]).quality).toBe(100);
   });
 });
 
 describe('parseZPL — ^BU UPC-A', () => {
   it('creates a upca object', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BUN,80,Y,N,N^FD01234567890^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BUN,80,Y,N,N^FD01234567890^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('upca');
     expect(props(objects[0]).content).toBe('01234567890');
@@ -920,7 +919,7 @@ describe('parseZPL — ^BU UPC-A', () => {
 
 describe('parseZPL — ^B8 EAN-8', () => {
   it('creates an ean8 object', () => {
-    const { objects } = parseZPL('^XA^FO0,0^B8N,80,Y^FD12345670^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^B8N,80,Y^FD12345670^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('ean8');
   });
@@ -928,7 +927,7 @@ describe('parseZPL — ^B8 EAN-8', () => {
 
 describe('parseZPL — ^B9 UPC-E', () => {
   it('creates a upce object', () => {
-    const { objects } = parseZPL('^XA^FO0,0^B9N,80,Y^FD01234565^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^B9N,80,Y^FD01234565^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('upce');
   });
@@ -936,7 +935,7 @@ describe('parseZPL — ^B9 UPC-E', () => {
 
 describe('parseZPL — ^B2 Interleaved 2 of 5', () => {
   it('creates an interleaved2of5 object', () => {
-    const { objects } = parseZPL('^XA^FO0,0^B2N,100,Y,N,Y^FD12345678^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^B2N,100,Y,N,Y^FD12345678^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('interleaved2of5');
     expect(props(objects[0]).checkDigit).toBe(true);
@@ -945,7 +944,7 @@ describe('parseZPL — ^B2 Interleaved 2 of 5', () => {
 
 describe('parseZPL — ^BA Code 93', () => {
   it('creates a code93 object', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BAN,100,Y,N,N^FDABC123^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BAN,100,Y,N,N^FDABC123^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('code93');
   });
@@ -953,7 +952,7 @@ describe('parseZPL — ^BA Code 93', () => {
 
 describe('parseZPL — ^B7 PDF417', () => {
   it('creates a pdf417 object', () => {
-    const { objects } = parseZPL('^XA^FO0,0^B7N,15,3,5,,,^FDTest Data^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^B7N,15,3,5,,,^FDTest Data^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('pdf417');
     expect(props(objects[0]).content).toBe('Test Data');
@@ -965,7 +964,7 @@ describe('parseZPL — ^B7 PDF417', () => {
 
 describe('parseZPL — ^BE EAN-13', () => {
   it('creates an ean13 object', () => {
-    const { objects } = parseZPL('^XA^FO0,0^BEN,100,Y^FD5901234123457^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BEN,100,Y^FD5901234123457^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('ean13');
     expect(props(objects[0]).content).toBe('5901234123457');
@@ -976,7 +975,7 @@ describe('parseZPL — ^BE EAN-13', () => {
 
 describe('parseZPL — ^GE ellipse', () => {
   it('creates an unfilled ellipse', () => {
-    const { objects } = parseZPL('^XA^FO0,0^GE200,100,3,B^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^GE200,100,3,B^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('ellipse');
     expect(props(objects[0]).width).toBe(200);
@@ -985,19 +984,19 @@ describe('parseZPL — ^GE ellipse', () => {
   });
 
   it('detects a filled ellipse when thickness >= min dimension', () => {
-    const { objects } = parseZPL('^XA^FO0,0^GE100,80,80,B^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^GE100,80,80,B^FS^XZ', 8);
     expect(props(objects[0]).filled).toBe(true);
   });
 
   it('preserves the original thickness on filled ^GE (lossless round-trip)', () => {
-    const { objects } = parseZPL('^XA^FO0,0^GE100,80,80,B^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^GE100,80,80,B^FS^XZ', 8);
     expect(props(objects[0]).thickness).toBe(80);
   });
 });
 
 describe('parseZPL — ^GS graphic symbol', () => {
   it('creates a symbol object with code, dims and rotation', () => {
-    const { objects } = parseZPL('^XA^FO30,40^GSR,50,60^FDC^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO30,40^GSR,50,60^FDC^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('symbol');
     expect(props(objects[0]).symbol).toBe('C');
@@ -1007,12 +1006,12 @@ describe('parseZPL — ^GS graphic symbol', () => {
   });
 
   it('falls back to "B" (©) when ^FD payload is not a known code', () => {
-    const { objects } = parseZPL('^XA^FO0,0^GSN,30,30^FDZ^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^GSN,30,30^FDZ^FS^XZ', 8);
     expect(props(objects[0]).symbol).toBe('B');
   });
 
   it('defaults width to height when ^GS width omitted', () => {
-    const { objects } = parseZPL('^XA^FO0,0^GSN,40^FDA^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^GSN,40^FDA^FS^XZ', 8);
     expect(props(objects[0]).height).toBe(40);
     expect(props(objects[0]).width).toBe(40);
   });
@@ -1021,7 +1020,7 @@ describe('parseZPL — ^GS graphic symbol', () => {
     // Bare ^GS without ^FD is malformed but seen in the wild; the
     // parser must NOT treat the next unrelated ^FD (here: a plain
     // text field) as the symbol payload.
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^FO0,0^GSN,40,40^FS^FO100,100^A0N,30,30^FDhello^FS^XZ',
       8,
     );
@@ -1034,7 +1033,7 @@ describe('parseZPL — ^GS graphic symbol', () => {
     for (const code of ['A','B','C','D','E'] as const) {
       for (const rot of ['N','R','I','B'] as const) {
         const zpl = `^XA^FO10,20^GS${rot},40,40^FD${code}^FS^XZ`;
-        const { objects } = parseZPL(zpl, 8);
+        const { objects } = parseSingle(zpl, 8);
         expect(props(objects[0]).symbol).toBe(code);
         expect(props(objects[0]).rotation).toBe(rot);
       }
@@ -1044,7 +1043,7 @@ describe('parseZPL — ^GS graphic symbol', () => {
 
 describe('parseZPL — ^GC circle', () => {
   it('creates an ellipse with equal width and height from ^GC', () => {
-    const { objects } = parseZPL('^XA^FO0,0^GC100,3,B^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^GC100,3,B^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('ellipse');
     expect(props(objects[0]).width).toBe(100);
@@ -1054,19 +1053,19 @@ describe('parseZPL — ^GC circle', () => {
   });
 
   it('creates a filled circle when thickness >= diameter', () => {
-    const { objects } = parseZPL('^XA^FO0,0^GC50,50,B^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^GC50,50,B^FS^XZ', 8);
     expect(props(objects[0]).filled).toBe(true);
   });
 
   it('preserves the original thickness on filled ^GC (lossless round-trip)', () => {
-    const { objects } = parseZPL('^XA^FO0,0^GC50,50,B^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^GC50,50,B^FS^XZ', 8);
     expect(props(objects[0]).thickness).toBe(50);
   });
 });
 
 describe('parseZPL — ^GD diagonal line', () => {
   it('creates a line object from a diagonal ^GD command', () => {
-    const { objects } = parseZPL('^XA^FO10,20^GD200,100,3,B,L^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^GD200,100,3,B,L^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('line');
     expect(props(objects[0]).thickness).toBe(3);
@@ -1084,7 +1083,7 @@ describe('parseZPL — ^GFA graphic field', () => {
   it('creates an image object from a ^GFA command with uncompressed hex', () => {
     // 1 byte per row, 2 rows → 2 bytes total, simple hex data
     const hexData = 'FF00';
-    const { objects } = parseZPL(`^XA^FO0,0^GFA,2,2,1,${hexData}^FS^XZ`, 8);
+    const { objects } = parseSingle(`^XA^FO0,0^GFA,2,2,1,${hexData}^FS^XZ`, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('image');
     expect(props(objects[0]).widthDots).toBe(8); // 1 byte per row Ã— 8 bits
@@ -1094,28 +1093,28 @@ describe('parseZPL — ^GFA graphic field', () => {
   it('imports a :B64:-wrapped ^GFA payload as an image (CRC valid)', () => {
     // 8 bytes = [0,0,0,0xFF,0xFF,0,0,0] → base64 "AAAA//8AAAA="
     // CRC-16/CCITT-FALSE over "AAAA//8AAAA=" = 0xDFF8
-    const { objects, importReport } = parseZPL(
+    const { objects, findings } = parseSingle(
       '^XA^FO0,0^GFA,8,8,1,:B64:AAAA//8AAAA=:DFF8^FS^XZ',
       8,
     );
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('image');
     expect(props(objects[0]).widthDots).toBe(8);
-    expect(importReport.partial).not.toContain('^GF');
+    expect(commandsOf({ findings }, 'partial')).not.toContain('^GF');
   });
 
   it('still renders a :B64: payload with mismatched CRC but flags as partial', () => {
-    const { objects, importReport } = parseZPL(
+    const { objects, findings } = parseSingle(
       '^XA^FO0,0^GFA,8,8,1,:B64:AAAA//8AAAA=:0000^FS^XZ',
       8,
     );
     expect(objects).toHaveLength(1);
-    expect(importReport.partial).toContain('^GF');
+    expect(commandsOf({ findings }, 'partial')).toContain('^GF');
   });
 
   it('accepts :B64: wrapper on ^GFB and ^GFC (no raw-binary path needed)', () => {
     for (const fmt of ['B', 'C'] as const) {
-      const { objects } = parseZPL(
+      const { objects } = parseSingle(
         `^XA^FO0,0^GF${fmt},8,8,1,:B64:AAAA//8AAAA=:DFF8^FS^XZ`,
         8,
       );
@@ -1129,9 +1128,9 @@ describe('parseZPL — ^GFA graphic field', () => {
     // Labelary accepts this; we should too.
     const zpl =
       '^XA^FO0,0^GFA,8,8,1,:B64:AAAA\n//8AAAA=:DFF8^FS^XZ';
-    const { objects, importReport } = parseZPL(zpl, 8);
+    const { objects, findings } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
-    expect(importReport.partial).not.toContain('^GF');
+    expect(commandsOf({ findings }, 'partial')).not.toContain('^GF');
   });
 
   it('tolerates trailing whitespace on wrapped GF payloads', () => {
@@ -1140,24 +1139,24 @@ describe('parseZPL — ^GFA graphic field', () => {
     // to accommodate that.
     const zplWithNewline =
       '^XA\n^FO0,0\n^GFA,8,8,1,:B64:AAAA//8AAAA=:DFF8\n^FS\n^XZ';
-    const { objects, importReport } = parseZPL(zplWithNewline, 8);
+    const { objects, findings } = parseSingle(zplWithNewline, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('image');
-    expect(importReport.browserLimit).toHaveLength(0);
+    expect(commandsOf({ findings }, 'browserLimit')).toHaveLength(0);
   });
 
   it('imports a :Z64:-wrapped ^GFC payload by inflating zlib data', () => {
     // 8 bytes = [0,0,0,0xFF,0xFF,0,0,0] → zlib-compressed → base64 → CRC.
     const bytes = new Uint8Array([0, 0, 0, 0xff, 0xff, 0, 0, 0]);
     const field = makeZ64Field(bytes);
-    const { objects, importReport } = parseZPL(
+    const { objects, findings } = parseSingle(
       `^XA^FO0,0^GFC,8,8,1,${field}^FS^XZ`,
       8,
     );
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('image');
     expect(props(objects[0]).widthDots).toBe(8);
-    expect(importReport.partial).not.toContain('^GF');
+    expect(commandsOf({ findings }, 'partial')).not.toContain('^GF');
   });
 
   it('preserves an undecodable :Z64: ^GF verbatim, sizing height from c not b', () => {
@@ -1167,7 +1166,7 @@ describe('parseZPL — ^GFA graphic field', () => {
     // than c=16 (uncompressed field count); height must come from c/d, not b/d.
     const b64 = btoa('not a valid zlib stream');
     const field = `:Z64:${b64}:${testCrc16(b64)}`;
-    const { objects, importReport } = parseZPL(
+    const { objects, findings } = parseSingle(
       `^XA^FO0,0^GFC,4,16,2,${field}^FS^XZ`,
       8,
     );
@@ -1176,8 +1175,8 @@ describe('parseZPL — ^GFA graphic field', () => {
     expect(p.widthDots).toBe(16); // d=2 → 2*8
     expect(p.heightDots).toBe(8); // c/d = 16/2, not b/d = 4/2
     expect(p.rawGf).toBe(`^GFC,4,16,2,${field}`);
-    expect(importReport.partial).toContain('^GF');
-    expect(importReport.browserLimit).toHaveLength(0);
+    expect(commandsOf({ findings }, 'partial')).toContain('^GF');
+    expect(commandsOf({ findings }, 'browserLimit')).toHaveLength(0);
   });
 
   it('falls back to a square when an opaque ^GF c is under one full row (height would floor to 0)', () => {
@@ -1185,7 +1184,7 @@ describe('parseZPL — ^GFA graphic field', () => {
     // falls back to the square width (d*8) instead of a 0-dot sliver.
     const b64 = btoa('not a valid zlib stream');
     const field = `:Z64:${b64}:${testCrc16(b64)}`;
-    const { objects } = parseZPL(`^XA^FO0,0^GFC,4,1,2,${field}^FS^XZ`, 8);
+    const { objects } = parseSingle(`^XA^FO0,0^GFC,4,1,2,${field}^FS^XZ`, 8);
     expect(objects).toHaveLength(1);
     const p = props(objects[0]);
     expect(p.widthDots).toBe(16);
@@ -1197,7 +1196,7 @@ describe('parseZPL — ^GFA graphic field', () => {
     // the preserved header is rebuilt with commas to round-trip a second time.
     const b64 = btoa('not a real zlib stream');
     const field = `:Z64:${b64}:${testCrc16(b64)}`;
-    const { objects } = parseZPL(`^XA^FO0,0^CD;^GFC;4;16;2;${field}^FS^XZ`, 8);
+    const { objects } = parseSingle(`^XA^FO0,0^CD;^GFC;4;16;2;${field}^FS^XZ`, 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).rawGf).toBe(`^GFC,4,16,2,${field}`);
   });
@@ -1207,7 +1206,7 @@ describe('parseZPL — ^GFA graphic field', () => {
     // bytesPerRow=1, so we need 2 nibbles per row
     // "GF" = 1Ã—F = "F" → only one nibble, padded to "F0"
     // Two rows: "GF,GF" should give us 2 rows → totalBytes=2
-    const { objects } = parseZPL('^XA^FO0,0^GFA,2,2,1,FF,:^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^GFA,2,2,1,FF,:^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('image');
   });
@@ -1219,7 +1218,7 @@ describe('parseZPL — ^FX label metadata sidecar', () => {
   it('recovers dpmm/width/height from the leading sidecar, overriding ^PW/^LL', () => {
     const zpl = `^XA${formatLabelMetaComment({ dpmm: 12, widthMm: 57, heightMm: 32 })}^PW800^LL600^FO0,0^A0N,30,0^FDx^FS^XZ`;
     // External dpmm 8 is deliberately wrong; the sidecar must win.
-    const { labelConfig } = parseZPL(zpl, 8);
+    const { labelConfig } = parseSingle(zpl, 8);
     expect(labelConfig.dpmm).toBe(12);
     expect(labelConfig.widthMm).toBe(57);
     expect(labelConfig.heightMm).toBe(32);
@@ -1227,20 +1226,20 @@ describe('parseZPL — ^FX label metadata sidecar', () => {
 
   it('does not attach the sidecar as the next object comment', () => {
     const zpl = `^XA${formatLabelMetaComment({ dpmm: 8, widthMm: 100, heightMm: 60 })}^FO0,0^A0N,30,0^FDx^FS^XZ`;
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.comment).toBeUndefined();
   });
 
   it('ignores a sidecar that appears after an object (non-leading slot)', () => {
     const zpl = `^XA^FO0,0^A0N,30,0^FDx^FS${formatLabelMetaComment({ dpmm: 24, widthMm: 20, heightMm: 20 })}^FO0,50^A0N,30,0^FDy^FS^XZ`;
-    const { labelConfig, objects } = parseZPL(zpl, 8);
+    const { labelConfig, objects } = parseSingle(zpl, 8);
     expect(labelConfig.dpmm).not.toBe(24);
     expect(props(objects[1]).content).toBe('y');
   });
 
   it('keeps a foreign ^FX as a normal object comment', () => {
-    const { objects } = parseZPL('^XA^FXserial run 42^FO0,0^A0N,30,0^FDx^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FXserial run 42^FO0,0^A0N,30,0^FDx^FS^XZ', 8);
     expect(objects[0]?.comment).toBe('serial run 42');
   });
 });
@@ -1256,14 +1255,14 @@ describe('parseZPL — ~DY + ^XG graphic upload/recall', () => {
     const zpl =
       `~DY${PATH},A,G,4,1,${HEX}\n` +
       `^XA^FO50,80^XG${PATH}.GRF,1,1^FS^XZ`;
-    const { objects, importReport } = parseZPL(zpl, 8);
+    const { objects, findings } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('image');
     expect(props(objects[0]).widthDots).toBe(8);
     expect(props(objects[0]).storedAs).toEqual({ device: 'R', name: 'LOGO', embedInZpl: true });
     expect(objects[0]?.x).toBe(50);
     expect(objects[0]?.y).toBe(80);
-    expect(importReport.browserLimit).toHaveLength(0);
+    expect(commandsOf({ findings }, 'browserLimit')).toHaveLength(0);
   });
 
   it('resolves ^XG even when the .GRF suffix is omitted', () => {
@@ -1272,10 +1271,10 @@ describe('parseZPL — ~DY + ^XG graphic upload/recall', () => {
     const zpl =
       `~DYR:LOGO,A,G,4,1,00FFFF00\n` +
       `^XA^FO50,80^XGR:LOGO,1,1^FS^XZ`;
-    const { objects, importReport } = parseZPL(zpl, 8);
+    const { objects, findings } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).storedAs).toEqual({ device: 'R', name: 'LOGO', embedInZpl: true });
-    expect(importReport.browserLimit).toHaveLength(0);
+    expect(commandsOf({ findings }, 'browserLimit')).toHaveLength(0);
   });
 
   it('^XG without a preceding ~DY imports as recall-only image', () => {
@@ -1284,12 +1283,12 @@ describe('parseZPL — ~DY + ^XG graphic upload/recall', () => {
     // position/edit it; embedInZpl=false stops the emitter from
     // re-uploading bytes we never received.
     const zpl = `^XA^FO0,0^XGR:MISSING.GRF,1,1^FS^XZ`;
-    const { objects, importReport } = parseZPL(zpl, 8);
+    const { objects, findings } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).storedAs).toEqual({
       device: 'R', name: 'MISSING', embedInZpl: false,
     });
-    expect(importReport.partial).toContain('^XG');
+    expect(commandsOf({ findings }, 'partial')).toContain('^XG');
   });
 
   it('accepts :Z64:-wrapped graphic payloads in ~DY (format C)', () => {
@@ -1298,10 +1297,10 @@ describe('parseZPL — ~DY + ^XG graphic upload/recall', () => {
     const zpl =
       `~DY${PATH},C,G,4,1,${field}\n` +
       `^XA^FO0,0^XG${PATH}.GRF,1,1^FS^XZ`;
-    const { objects, importReport } = parseZPL(zpl, 8);
+    const { objects, findings } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).storedAs).toEqual({ device: 'R', name: 'LOGO', embedInZpl: true });
-    expect(importReport.partial).not.toContain('~DY');
+    expect(commandsOf({ findings }, 'partial')).not.toContain('~DY');
   });
 });
 
@@ -1309,13 +1308,13 @@ describe('parseZPL — ~DY + ^XG graphic upload/recall', () => {
 
 describe('parseZPL — ^LR label reverse', () => {
   it('sets reverse on text when ^LRY is active', () => {
-    const { objects } = parseZPL('^XA^LRY^FO0,0^A0N,30,0^FDReversed^FS^LRN^XZ', 8);
+    const { objects } = parseSingle('^XA^LRY^FO0,0^A0N,30,0^FDReversed^FS^LRN^XZ', 8);
     expect(props(objects[0]).reverse).toBe(true);
   });
 
   it('disables reverse after ^LRN', () => {
     const zpl = '^XA^LRY^FO0,0^A0N,30,0^FDFirst^FS^LRN^FO0,50^A0N,30,0^FDSecond^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(props(objects[0]).reverse).toBe(true);
     expect(props(objects[1]).reverse).toBeFalsy();
   });
@@ -1325,7 +1324,7 @@ describe('parseZPL — ^LR label reverse', () => {
 
 describe('parseZPL — ^FW field default rotation', () => {
   it('applies default rotation to implicit text fields', () => {
-    const { objects } = parseZPL('^XA^FWR^CF0,30^FO0,0^FDRotated^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FWR^CF0,30^FO0,0^FDRotated^FS^XZ', 8);
     expect(props(objects[0]).rotation).toBe('R');
   });
 });
@@ -1334,36 +1333,36 @@ describe('parseZPL — ^FW field default rotation', () => {
 
 describe('parseZPL — ^MM and ^LS', () => {
   it('parses media mode', () => {
-    const { labelConfig } = parseZPL('^XA^MMT^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^MMT^XZ', 8);
     expect(labelConfig.mediaMode).toBe('T');
   });
 
   it('parses label shift', () => {
-    const { labelConfig } = parseZPL('^XA^LS10^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^LS10^XZ', 8);
     expect(labelConfig.labelShift).toBe(10);
   });
 });
 
 describe('parseZPL — printer params', () => {
   it('parses ^PR print speed within range', () => {
-    const { labelConfig } = parseZPL('^XA^PR6^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^PR6^XZ', 8);
     expect(labelConfig.printSpeed).toBe(6);
   });
 
   it('ignores ^PR with out-of-range value', () => {
-    const { labelConfig } = parseZPL('^XA^PR1^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^PR1^XZ', 8);
     expect(labelConfig.printSpeed).toBeUndefined();
   });
 
   it('parses ^PR with slew and backfeed', () => {
-    const { labelConfig } = parseZPL('^XA^PR6,8,4^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^PR6,8,4^XZ', 8);
     expect(labelConfig.printSpeed).toBe(6);
     expect(labelConfig.slewSpeed).toBe(8);
     expect(labelConfig.backfeedSpeed).toBe(4);
   });
 
   it('parses extended ^PQ params', () => {
-    const { labelConfig } = parseZPL('^XA^PQ5,2,3,Y^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^PQ5,2,3,Y^XZ', 8);
     expect(labelConfig.printQuantity).toBe(5);
     expect(labelConfig.pauseCount).toBe(2);
     expect(labelConfig.replicates).toBe(3);
@@ -1376,7 +1375,7 @@ describe('parseZPL — printer params', () => {
   });
 
   it('parses ^CF width into defaultFontWidth', () => {
-    const { labelConfig } = parseZPL('^XA^CFA,30,20^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^CFA,30,20^XZ', 8);
     expect(labelConfig.defaultFontId).toBe('A');
     expect(labelConfig.defaultFontHeight).toBe(30);
     expect(labelConfig.defaultFontWidth).toBe(20);
@@ -1387,7 +1386,7 @@ describe('parseZPL — printer params', () => {
     // only carries the alias char so re-emitting produces the same
     // short ^A{id} form. printerFontName remains undefined; that field
     // is for the long ^A@,…E:NAME.TTF form, not for alias-based refs.
-    const { labelConfig, objects } = parseZPL(
+    const { labelConfig, objects } = parseSingle(
       '^XA^CWM,E:ARIAL.TTF^FO10,10^AMN,30,0^FDHi^FS^XZ',
       8,
     );
@@ -1403,7 +1402,7 @@ describe('parseZPL — printer params', () => {
     // ^CFM then ^AMN repeats the default font. The model says
     // "field uses the label default" by leaving fontId undefined, and
     // the generator's default-fallback branch restores the ^AM emit.
-    const { objects } = parseZPL(
+    const { objects } = parseSingle(
       '^XA^CFM,30,0^FO10,10^AMN,30,0^FDHi^FS^XZ',
       8,
     );
@@ -1412,7 +1411,7 @@ describe('parseZPL — printer params', () => {
   });
 
   it('ignores invalid ^CW arguments', () => {
-    const { labelConfig } = parseZPL('^XA^CW,^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^CW,^XZ', 8);
     expect(labelConfig.customFonts).toBeUndefined();
   });
 
@@ -1420,7 +1419,7 @@ describe('parseZPL — printer params', () => {
     // Two ^CW lines for the same alias: the second should overwrite
     // the first in customFonts, matching the runtime fontAliases.set
     // last-wins semantics.
-    const { labelConfig } = parseZPL(
+    const { labelConfig } = parseSingle(
       '^XA^CWM,E:OLD.TTF^CWM,E:NEW.TTF^XZ',
       8,
     );
@@ -1430,7 +1429,7 @@ describe('parseZPL — printer params', () => {
   });
 
   it('keeps separate ^CW mappings that share a path but use different aliases', () => {
-    const { labelConfig } = parseZPL(
+    const { labelConfig } = parseSingle(
       '^XA^CWM,E:FOO.TTF^CWN,E:FOO.TTF^XZ',
       8,
     );
@@ -1448,9 +1447,9 @@ describe('parseZPL — printer params', () => {
   it('parses ~JS backfeed sequence; percent forms surface as partial', () => {
     expect(parseZPL('~JSA^XA^XZ', 8).labelConfig.backfeedSequence).toBe('A');
     expect(parseZPL('~JSO^XA^XZ', 8).labelConfig.backfeedSequence).toBe('O');
-    const { labelConfig, importReport } = parseZPL('~JS40^XA^XZ', 8);
+    const { labelConfig, findings } = parseSingle('~JS40^XA^XZ', 8);
     expect(labelConfig.backfeedSequence).toBeUndefined();
-    expect(importReport.partial).toContain('~JS');
+    expect(commandsOf({ findings }, 'partial')).toContain('~JS');
   });
 
   it('parses ^MD darkness including 0', () => {
@@ -1460,7 +1459,7 @@ describe('parseZPL — printer params', () => {
   });
 
   it('ignores ^MD outside the supported range', () => {
-    const { labelConfig } = parseZPL('^XA^MD99^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^MD99^XZ', 8);
     expect(labelConfig.darkness).toBeUndefined();
   });
 
@@ -1475,7 +1474,7 @@ describe('parseZPL — printer params', () => {
   });
 
   it('parses ^CF into defaultFontId and defaultFontHeight', () => {
-    const { labelConfig } = parseZPL('^XA^CF0,40^XZ', 8);
+    const { labelConfig } = parseSingle('^XA^CF0,40^XZ', 8);
     expect(labelConfig.defaultFontId).toBe('0');
     expect(labelConfig.defaultFontHeight).toBe(40);
   });
@@ -1485,19 +1484,21 @@ describe('parseZPL — printer params', () => {
 
 describe('parseZPL — edge cases', () => {
   it('returns empty results for empty ZPL', () => {
-    const { objects, skipped } = parseZPL('', 8);
-    expect(objects).toHaveLength(0);
+    const parsed = parseSingle('', 8);
+    const skipped = [...commandsOf(parsed, 'browserLimit'), ...commandsOf(parsed, 'unknown')];
+    expect(parsed.objects).toHaveLength(0);
     expect(skipped).toHaveLength(0);
   });
 
   it('handles ^XA^XZ (empty label)', () => {
-    const { objects, skipped } = parseZPL('^XA^XZ', 8);
-    expect(objects).toHaveLength(0);
+    const parsed = parseSingle('^XA^XZ', 8);
+    const skipped = [...commandsOf(parsed, 'browserLimit'), ...commandsOf(parsed, 'unknown')];
+    expect(parsed.objects).toHaveLength(0);
     expect(skipped).toHaveLength(0);
   });
 
   it('handles multiple ^FO without ^FD (bare origins are benign)', () => {
-    const { objects } = parseZPL('^XA^FO10,20^FO30,40^A0N,30,0^FDText^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^FO30,40^A0N,30,0^FDText^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     // FO/N h=30 → obj.y = 40 - 4.62.
     expect(objects[0]?.x).toBeCloseTo(30);
@@ -1505,7 +1506,7 @@ describe('parseZPL — edge cases', () => {
   });
 
   it('supports different dpmm values (12 dpmm / 300 DPI)', () => {
-    const { labelConfig } = parseZPL('^XA^PW1200^LL600^XZ', 12);
+    const { labelConfig } = parseSingle('^XA^PW1200^LL600^XZ', 12);
     expect(labelConfig.widthMm).toBe(100);
     expect(labelConfig.heightMm).toBe(50);
   });
@@ -1558,13 +1559,13 @@ const EXAMPLE_ZPL = `
 `.trim();
 
 describe('parseZPL — example shipping label (integration)', () => {
-  let objects: ReturnType<typeof parseZPL>['objects'];
-  let skipped: ReturnType<typeof parseZPL>['skipped'];
+  let objects: ReturnType<typeof parseSingle>['objects'];
+  let skipped: string[];
 
   beforeAll(() => {
-    const result = parseZPL(EXAMPLE_ZPL, 8);
+    const result = parseSingle(EXAMPLE_ZPL, 8);
     objects = result.objects;
-    skipped = result.skipped;
+    skipped = [...commandsOf(result, 'browserLimit'), ...commandsOf(result, 'unknown')];
   });
 
   it('produces exactly 23 objects', () => {
@@ -1651,7 +1652,7 @@ describe('parseZPL — example shipping label (integration)', () => {
 
 describe('parseZPL — ^SN serialization', () => {
   it('marks a text field serial when ^SN follows ^FD', () => {
-    const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FD001^FS\n^SN001,1,Y^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^A0N,30,0^FD001^FS\n^SN001,1,Y^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).content).toBe('001');
@@ -1660,13 +1661,13 @@ describe('parseZPL — ^SN serialization', () => {
   });
 
   it('picks up increment from ^SN parameters', () => {
-    const { objects } = parseZPL('^XA^FO0,0^A0N,25,0^FD100^FS\n^SN100,5,Y^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^A0N,25,0^FD100^FS\n^SN100,5,Y^XZ', 8);
     expect(serialOf(objects[0])?.increment).toBe(5);
     expect(props(objects[0]).fontHeight).toBe(25);
   });
 
   it('preserves font rotation from ^A0', () => {
-    const { objects } = parseZPL('^XA^FO0,0^A0R,30,0^FD001^FS\n^SN001,1,Y^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^A0R,30,0^FD001^FS\n^SN001,1,Y^XZ', 8);
     expect(props(objects[0]).rotation).toBe('R');
   });
 });
@@ -1675,7 +1676,7 @@ describe('parseZPL — ^SN serialization', () => {
 
 describe('parseZPL — ^SF serialization', () => {
   it('marks a text field serial from ^FD + ^SF', () => {
-    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^FD001^SFddd,1^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^A0N,30,0^FD001^SFddd,1^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).content).toBe('001');
@@ -1684,14 +1685,14 @@ describe('parseZPL — ^SF serialization', () => {
   });
 
   it('picks up the increment from the ^SF increment string (b param)', () => {
-    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^FD100^SFddd,3^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^A0N,30,0^FD100^SFddd,3^FS^XZ', 8);
     expect(serialOf(objects[0])?.increment).toBe(3);
   });
 
   it('serializes a barcode field but does not leak to a sibling', () => {
     const zpl =
       '^XA^FO10,10^BCN,100,Y,N,N^FD123^SF%%%,1^FS^FO50,50^A0N,30,0^FDtext^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(2);
     expect(objects[0]?.type).toBe('code128');
     expect(serialOf(objects[0])?.zplMode).toBe('SF');
@@ -1701,14 +1702,14 @@ describe('parseZPL — ^SF serialization', () => {
 
   it('does not leak snPending across a bare ^SF^FS', () => {
     const zpl = '^XA^SF%%%,1^FS^FO10,10^A0N,30,0^FDtext^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
   });
 
   it('preserves snPending when ^SF appears before ^FO', () => {
     const zpl = '^XA^SFddd,3^FO10,10^A0N,30,0^FD001^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(serialOf(objects[0])?.increment).toBe(3);
@@ -1717,7 +1718,7 @@ describe('parseZPL — ^SF serialization', () => {
   it('does not leak snPending to a sibling field inside the same ^FS block', () => {
     const zpl =
       '^XA^SFddd,3^FO10,10^A0N,30,0^FD001^FO20,20^A0N,30,0^FD002^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(2);
     expect(serialOf(objects[0])?.increment).toBe(3);
     expect(serialOf(objects[1])).toBeUndefined();
@@ -1728,7 +1729,7 @@ describe('parseZPL — ^SF serialization', () => {
 
 describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
   it('in-field ^SF after ^FN resolves to serial, not bound', () => {
-    const { objects } = parseZPL('^XA^FO10,10^A0N,30,0^FN1^FD001^SFddd,1^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,10^A0N,30,0^FN1^FD001^SFddd,1^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(serialOf(objects[0])?.zplMode).toBe('SF');
     // Serial keeps the literal seed, not a variable marker.
@@ -1736,13 +1737,13 @@ describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
   });
 
   it('does not attach serial to a 2D field whose emitter ignores ^SN/^SF', () => {
-    const { objects } = parseZPL('^XA^FO10,10^BQN,2,5^FDQA,0001^SN0001,1,Y^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,10^BQN,2,5^FDQA,0001^SN0001,1,Y^FS^XZ', 8);
     expect(objects[0]?.type).toBe('qrcode');
     expect(serialOf(objects[0])).toBeUndefined();
   });
 
   it('post-^FS ^SN on a single-bound 1D field replaces the marker with a literal seed', () => {
-    const { objects } = parseZPL('^XA^FO10,10^BCN,100,Y,N,N^FN1^FD123^FS\n^SN123,1,Y^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,10^BCN,100,Y,N,N^FN1^FD123^FS\n^SN123,1,Y^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(serialOf(objects[0])?.zplMode).toBe('SN');
     // Not «field_1»: serialFieldData would otherwise filter it to "field1".
@@ -1753,14 +1754,14 @@ describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
     // The ^FD payload (123) differs from the ^SN start (999); ^SN governs, and
     // the emitter re-emits the seed from content, so a stale 123 would rewrite
     // the ZPL on export.
-    const { objects } = parseZPL('^XA^FO10,10^BCN,100,Y,N,N^FD123^FS\n^SN999,1,Y^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,10^BCN,100,Y,N,N^FD123^FS\n^SN999,1,Y^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(serialOf(objects[0])?.zplMode).toBe('SN');
     expect(props(objects[0]).content).toBe('999');
   });
 
   it('post-^FS ^SN with an empty start keeps the field ^FD as the seed', () => {
-    const { objects } = parseZPL('^XA^FO10,10^BCN,100,Y,N,N^FD123^FS\n^SN,1,Y^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,10^BCN,100,Y,N,N^FD123^FS\n^SN,1,Y^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(serialOf(objects[0])?.zplMode).toBe('SN');
     expect(props(objects[0]).content).toBe('123');
@@ -1768,14 +1769,14 @@ describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
 
   it('in-field ^SN start value overrides a prior ^FD', () => {
     // ^FD123^SN999: ^SN's explicit start (999) is the seed, not the ^FD (123).
-    const { objects } = parseZPL('^XA^FO10,10^A0N,30,0^FD123^SN999,1,Y^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,10^A0N,30,0^FD123^SN999,1,Y^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(serialOf(objects[0])?.zplMode).toBe('SN');
     expect(props(objects[0]).content).toBe('999');
   });
 
   it('in-field ^SN with empty start keeps the ^FD as the seed', () => {
-    const { objects } = parseZPL('^XA^FO10,10^A0N,30,0^FD123^SN,1,Y^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,10^A0N,30,0^FD123^SN,1,Y^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(serialOf(objects[0])?.zplMode).toBe('SN');
     expect(props(objects[0]).content).toBe('123');
@@ -1784,7 +1785,7 @@ describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
   it('keeps the ^FN binding on a non-serialisable 2D field that also declares ^SN', () => {
     // QR's emitter ignores ^SN; the variable link must survive instead of the
     // field collapsing to a literal seed (silent binding loss).
-    const { objects, variables } = parseZPL('^XA^FO10,10^BQN,2,5^FN1^FDHELLO^SN001,1,Y^FS^XZ', 8);
+    const { objects, variables } = parseSingle('^XA^FO10,10^BQN,2,5^FN1^FDHELLO^SN001,1,Y^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('qrcode');
     expect(props(objects[0]).content).toBe('«field_1»');
@@ -1793,19 +1794,19 @@ describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
   });
 
   it('post-^FS ^SN on a previously ^FN-bound field clears the binding', () => {
-    const { objects } = parseZPL('^XA^FO10,10^A0N,30,0^FN1^FD001^FS\n^SN001,1,Y^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,10^A0N,30,0^FN1^FD001^FS\n^SN001,1,Y^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(serialOf(objects[0])?.zplMode).toBe('SN');
     expect(props(objects[0]).content).toBe('001');
   });
 
   it('in-field serial on an ^FN field creates no orphan variable', () => {
-    const { variables } = parseZPL('^XA^FO10,10^A0N,30,0^FN1^FD001^SN001,1,Y^FS^XZ', 8);
+    const { variables } = parseSingle('^XA^FO10,10^A0N,30,0^FN1^FD001^SN001,1,Y^FS^XZ', 8);
     expect(variables).toHaveLength(0);
   });
 
   it('a shared slot still gets its variable from the non-serial sibling', () => {
-    const { objects, variables } = parseZPL(
+    const { objects, variables } = parseSingle(
       '^XA^FO10,10^A0N,30,0^FN1^FD001^SN001,1,Y^FS^FO10,60^A0N,30,0^FN1^FDABC^FS^XZ', 8);
     expect(variables).toHaveLength(1);
     expect(serialOf(objects[0])?.zplMode).toBe('SN');
@@ -1813,12 +1814,12 @@ describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
   });
 
   it('post-^FS ^SN removes the variable its stripped binding orphaned', () => {
-    const { variables } = parseZPL('^XA^FO10,10^A0N,30,0^FN1^FD001^FS\n^SN001,1,Y^XZ', 8);
+    const { variables } = parseSingle('^XA^FO10,10^A0N,30,0^FN1^FD001^FS\n^SN001,1,Y^XZ', 8);
     expect(variables).toHaveLength(0);
   });
 
   it('post-^FS ^SN keeps a variable a sibling field still references', () => {
-    const { objects, variables } = parseZPL(
+    const { objects, variables } = parseSingle(
       '^XA^FO10,10^A0N,30,0^FN1^FD001^FS^FO10,60^A0N,30,0^FN1^FDABC^FS\n^SN001,1,Y^XZ', 8);
     expect(variables).toHaveLength(1);
     expect(props(objects[0]).content).toBe('«field_1»');
@@ -1826,7 +1827,7 @@ describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
   });
 
   it('post-^FS ^SN keeps a bare-declared variable', () => {
-    const { variables } = parseZPL(
+    const { variables } = parseSingle(
       '^XA^FN1^FDdecl^FS^FO10,10^A0N,30,0^FN1^FD001^FS\n^SN001,1,Y^XZ', 8);
     expect(variables).toHaveLength(1);
   });
@@ -1834,7 +1835,7 @@ describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
   it('in-field serial keeps the slot default for a later embed', () => {
     // Same shared-slot rule as the post-^FS path: the embed must see the
     // serial seed as default, not a freshly created empty variable.
-    const { objects, variables } = parseZPL(
+    const { objects, variables } = parseSingle(
       '^XA^FO10,10^A0N,30,0^FN1^SN001,1,Y^FS^FO10,60^A0N,30,0^FDlot #1#^FS^XZ', 8);
     expect(variables).toHaveLength(1);
     expect(variables[0]?.defaultValue).toBe('001');
@@ -1844,7 +1845,7 @@ describe('parseZPL — serial wins over a coexisting ^FN binding', () => {
   it('post-^FS ^SN keeps the variable when a later embed references the slot', () => {
     // The slot is shared (spec p.200): a later #1# must reuse the original
     // variable and its default, not a freshly created empty one.
-    const { objects, variables } = parseZPL(
+    const { objects, variables } = parseSingle(
       '^XA^FO10,10^A0N,30,0^FN1^FD001^FS\n^SN001,1,Y\n^FO10,60^A0N,30,0^FDlot #1#^FS^XZ', 8);
     expect(variables).toHaveLength(1);
     expect(variables[0]?.defaultValue).toBe('001');
@@ -1858,18 +1859,18 @@ describe('parseZPL — prefix char followed by another prefix', () => {
   it('discards the incomplete first prefix like firmware does', () => {
     // ZebraDesigner's `CT~~CD,` preamble: the first `~` is immediately
     // followed by another `~` and must be dropped, not read as command `~C`.
-    const { objects, importReport } = parseZPL(
+    const { objects, findings } = parseSingle(
       'CT~~CD,~CC^~CT~^XA^FO10,20^A0N,30,0^FDHi^FS^XZ', 8);
-    expect(importReport.unknown).toEqual([]);
+    expect(commandsOf({ findings }, 'unknown')).toEqual([]);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).content).toBe('Hi');
   });
 
   it('resyncs when a prefix char sits at the second command-name position', () => {
     // A lone `~` before a newline must not swallow the following ^XA.
-    const { objects, importReport } = parseZPL(
+    const { objects, findings } = parseSingle(
       '~\n^XA^FO10,20^A0N,30,0^FDHi^FS^XZ', 8);
-    expect(importReport.unknown).toEqual([]);
+    expect(commandsOf({ findings }, 'unknown')).toEqual([]);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).content).toBe('Hi');
   });
@@ -1877,9 +1878,9 @@ describe('parseZPL — prefix char followed by another prefix', () => {
   it('does not resync on an alphanumeric ^CC prefix that is a valid name char', () => {
     // With ^CCA, `AA0N` is prefix A + command A0; resyncing there would
     // shred every command whose name contains the remapped prefix.
-    const { objects, importReport } = parseZPL(
+    const { objects, findings } = parseSingle(
       '^XA^CCAAFO10,20AA0N,30,0AFDHiAFSAXZ', 8);
-    expect(importReport.unknown).toEqual([]);
+    expect(commandsOf({ findings }, 'unknown')).toEqual([]);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).content).toBe('Hi');
   });
@@ -1889,37 +1890,37 @@ describe('parseZPL — prefix char followed by another prefix', () => {
 
 describe('parseZPL — ^FV field variable', () => {
   it('imports ^FV like ^FD for a plain text field', () => {
-    const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FVHello^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^A0N,30,0^FVHello^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).content).toBe('Hello');
   });
 
   it('binds ^FN + ^FV like ^FN + ^FD', () => {
-    const { objects, variables } = parseZPL('^XA^FO10,10^A0N,30,0^FN1^FVHELLO^FS^XZ', 8);
+    const { objects, variables } = parseSingle('^XA^FO10,10^A0N,30,0^FN1^FVHELLO^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).content).toBe('«field_1»');
     expect(variables.find((v) => v.fnNumber === 1)?.defaultValue).toBe('HELLO');
   });
 
   it('ignores an empty ^FV per spec', () => {
-    const { objects } = parseZPL('^XA^FO10,20^A0N,30,0^FV^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO10,20^A0N,30,0^FV^FS^XZ', 8);
     expect(objects).toHaveLength(0);
   });
 
   it('feeds a bare ^FN declaration through ^FV', () => {
-    const { variables } = parseZPL('^XA^FN1^FV001^FS^XZ', 8);
+    const { variables } = parseSingle('^XA^FN1^FV001^FS^XZ', 8);
     expect(variables.find((v) => v.fnNumber === 1)?.defaultValue).toBe('001');
   });
 
   it('a bare ^FN^FD^FS with empty data still declares the variable', () => {
-    const { variables } = parseZPL('^XA^FN1^FD^FS^XZ', 8);
+    const { variables } = parseSingle('^XA^FN1^FD^FS^XZ', 8);
     expect(variables).toHaveLength(1);
     expect(variables[0]?.defaultValue).toBe('');
   });
 
   it('a bare ^FN^FV^FS with empty data declares nothing', () => {
-    const { variables } = parseZPL('^XA^FN1^FV^FS^XZ', 8);
+    const { variables } = parseSingle('^XA^FN1^FV^FS^XZ', 8);
     expect(variables).toHaveLength(0);
   });
 });
@@ -1930,7 +1931,7 @@ describe('parseZPL — pending field state cleared at ^FS', () => {
   it('does not leak pendingPrinterFontName from a bare ^A@^FS', () => {
     const zpl =
       '^XA^A@N,30,0,E:CUSTOM.FNT^FS^FO10,10^A0N,30,0^FDplain^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).printerFontName).toBeUndefined();
@@ -1939,7 +1940,7 @@ describe('parseZPL — pending field state cleared at ^FS', () => {
   it('does not leak pendingFontId from a bare ^A0^FS into a later ^A@ field', () => {
     const zpl =
       '^XA^CF1,30,0^A0N,30,0^FS^FO10,10^A@N,30,0,E:CUSTOM.FNT^FDx^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).fontId).toBeUndefined();
@@ -1948,7 +1949,7 @@ describe('parseZPL — pending field state cleared at ^FS', () => {
   it('does not leak ^FN slot from a bare ^FN^FS into the next field', () => {
     const zpl =
       '^XA^FN1^FS^FO10,10^A0N,30,0^FDhello^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     // The bare ^FN1^FS slot must not bleed onto the next field's content.
     expect(props(objects[0]).content).toBe('hello');
@@ -1957,7 +1958,7 @@ describe('parseZPL — pending field state cleared at ^FS', () => {
   it('does not leak frActive from a bare ^FR^FS into a fieldless next text', () => {
     const zpl =
       '^XA^FO10,10^FR^FS^A0N,30,0^FDplain^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).reverse).toBeFalsy();
@@ -1966,7 +1967,7 @@ describe('parseZPL — pending field state cleared at ^FS', () => {
   it('does not leak ^FB defaults from a bare ^FB^FS into the next text field', () => {
     const zpl =
       '^XA^FB200^FS^FO10,10^A0N,30,0^FDplain^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).blockWidth).toBeUndefined();
@@ -1975,7 +1976,7 @@ describe('parseZPL — pending field state cleared at ^FS', () => {
   it('does not leak bcCheck from a checked barcode into the next non-checked barcode', () => {
     const zpl =
       '^XA^FO10,10^BCN,100,Y,N,Y^FD123^FS^FO50,50^BIN,100,Y,N^FD12345^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(2);
     expect(objects[0]?.type).toBe('code128');
     expect(props(objects[0]).checkDigit).toBe(true);
@@ -1985,7 +1986,7 @@ describe('parseZPL — pending field state cleared at ^FS', () => {
 
   it('applies ^FR set before ^FO to the next formatted field (spec)', () => {
     const zpl = '^XA^FR^FO10,10^A0N,30,0^FDreversed^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).reverse).toBe(true);
@@ -1996,19 +1997,21 @@ describe('parseZPL — pending field state cleared at ^FS', () => {
 
 describe('parseZPL — ~ tilde commands', () => {
   it('tokenizes ~DG as a known command (skipped)', () => {
-    const { skipped } = parseZPL('^XA~DGR:LOGO.GRF,1024,10,FF^XZ', 8);
+    const parsed = parseSingle('^XA~DGR:LOGO.GRF,1024,10,FF^XZ', 8);
+    const skipped = [...commandsOf(parsed, 'browserLimit'), ...commandsOf(parsed, 'unknown')];
     expect(skipped.some((s) => s.startsWith('~DG'))).toBe(true);
   });
 
   it('does not create objects for ~DG', () => {
-    const { objects } = parseZPL('^XA~DGR:LOGO.GRF,1024,10,FF^XZ', 8);
+    const { objects } = parseSingle('^XA~DGR:LOGO.GRF,1024,10,FF^XZ', 8);
     expect(objects).toHaveLength(0);
   });
 
   it('handles mixed ^ and ~ commands', () => {
-    const { objects, skipped } = parseZPL('^XA~DGR:TEST.GRF,10,1,FF^FO10,20^A0N,30,0^FDHello^FS^XZ', 8);
-    expect(objects).toHaveLength(1);
-    expect(objects[0]?.type).toBe('text');
+    const parsed = parseSingle('^XA~DGR:TEST.GRF,10,1,FF^FO10,20^A0N,30,0^FDHello^FS^XZ', 8);
+    const skipped = [...commandsOf(parsed, 'browserLimit'), ...commandsOf(parsed, 'unknown')];
+    expect(parsed.objects).toHaveLength(1);
+    expect(parsed.objects[0]?.type).toBe('text');
     expect(skipped.some((s) => s.startsWith('~DG'))).toBe(true);
   });
 });
@@ -2018,7 +2021,7 @@ describe('parseZPL — ~ tilde commands', () => {
 describe('parseZPL — change caret / tilde / delimiter (^CC ^CT ^CD)', () => {
   it('^CC switches the command prefix; following commands use the new char', () => {
     const zpl = '^XA^CCYYFO10,10YA0N,30,0YFDhelloYFSYXZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
     expect(props(objects[0]).content).toBe('hello');
@@ -2026,21 +2029,21 @@ describe('parseZPL — change caret / tilde / delimiter (^CC ^CT ^CD)', () => {
 
   it('~CC is a synonym of ^CC', () => {
     const zpl = '^XA~CCYYFO10,10YA0N,30,0YFDhelloYFSYXZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
   });
 
   it('^CT switches the tilde prefix without affecting ^ commands', () => {
     const zpl = '^XA^CT!^FO10,10^A0N,30,0^FDhello^FS!DGR:LOGO.GRF,10,1,FF^XZ';
-    const { objects, importReport } = parseZPL(zpl, 8);
+    const { objects, findings } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
-    expect(importReport.browserLimit.some((s) => s.startsWith('~DG'))).toBe(true);
+    expect(commandsOf({ findings }, 'browserLimit').some((s) => s.startsWith('~DG'))).toBe(true);
   });
 
   it('^CD switches the parameter delimiter', () => {
     const zpl = '^XA^CD;^FO10;10^A0N;30;0^FDhello^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.x).toBe(10);
     expect(props(objects[0]).fontHeight).toBe(30);
@@ -2049,14 +2052,14 @@ describe('parseZPL — change caret / tilde / delimiter (^CC ^CT ^CD)', () => {
 
   it('~CD is a synonym of ^CD', () => {
     const zpl = '^XA~CD;^FO10;10^A0N;30;0^FDhello^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects[0]?.x).toBe(10);
     expect(props(objects[0]).fontHeight).toBe(30);
   });
 
   it('combined ^CC + ^CD: both prefix and delimiter swap', () => {
     const zpl = '^XA^CD;^CCYYFO10;10YA0N;30;0YFDhelloYFSYXZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.x).toBe(10);
     expect(props(objects[0]).fontHeight).toBe(30);
@@ -2065,14 +2068,14 @@ describe('parseZPL — change caret / tilde / delimiter (^CC ^CT ^CD)', () => {
   it('^CC persists across an ^XA boundary within the same parse', () => {
     const zpl =
       '^XA^CCYYXZYXAYFO10,10YA0N,30,0YFDhelloYFSYXZ';
-    const { objects } = parseZPL(zpl, 8);
+    const objects = parseZPL(zpl, 8).pages.flatMap((pg) => pg.objects);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('text');
   });
 
   it('^CC^ resets the caret prefix back to ^', () => {
     const zpl = '^XA^CCYYFO10,10YA0N,30,0YFDfirstYFSYCC^^FO50,50^A0N,30,0^FDsecond^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(2);
     expect(props(objects[0]).content).toBe('first');
     expect(props(objects[1]).content).toBe('second');
@@ -2083,7 +2086,7 @@ describe('parseZPL — change caret / tilde / delimiter (^CC ^CT ^CD)', () => {
     // ^FO is consumed as the (no-op) argument; the FO that follows is
     // no longer a command, so its position is lost.
     const zpl = '^XA^CC^FO10,10^A0N,30,0^FDhello^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).content).toBe('hello');
     expect(objects[0]?.x).toBe(0);
@@ -2093,10 +2096,10 @@ describe('parseZPL — change caret / tilde / delimiter (^CC ^CT ^CD)', () => {
     // ^GFA;total;total;bpr;data uses the mutated delimiter for the four
     // params; a wrong split would push the command into browserLimit.
     const zpl = '^XA^CD;^FO10;10^GFA;6;6;3;111111111111^FS^XZ';
-    const { objects, importReport } = parseZPL(zpl, 8);
+    const { objects, findings } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('image');
-    expect(importReport.browserLimit.some((s) => s.startsWith('^GF'))).toBe(false);
+    expect(commandsOf({ findings }, 'browserLimit').some((s) => s.startsWith('^GF'))).toBe(false);
   });
 
   it('rejects ^CC / ^CT / ^CD args that would collapse role boundaries', () => {
@@ -2104,22 +2107,22 @@ describe('parseZPL — change caret / tilde / delimiter (^CC ^CT ^CD)', () => {
     // ^CD^ would make delimiter == caret (param-split eats command chars).
     // Invalid args land in partialCmds and the prefix stays unchanged.
     const zpl = '^XA^CC~^CD^^FO10,10^A0N,30,0^FDhello^FS^XZ';
-    const { objects, importReport } = parseZPL(zpl, 8);
+    const { objects, findings } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).content).toBe('hello');
-    expect(importReport.partial).toContain('^CC');
-    expect(importReport.partial).toContain('^CD');
+    expect(commandsOf({ findings }, 'partial')).toContain('^CC');
+    expect(commandsOf({ findings }, 'partial')).toContain('^CD');
   });
 
   it('rejects ^CC / ^CT / ^CD args that are space or non-printable', () => {
     // Space/control chars cannot serve as prefixes and would silently
     // break the subsequent stream; reject them up front.
     const zpl = '^XA^CC ^CT\t^FO10,10^A0N,30,0^FDhello^FS^XZ';
-    const { objects, importReport } = parseZPL(zpl, 8);
+    const { objects, findings } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).content).toBe('hello');
-    expect(importReport.partial).toContain('^CC');
-    expect(importReport.partial).toContain('^CT');
+    expect(commandsOf({ findings }, 'partial')).toContain('^CC');
+    expect(commandsOf({ findings }, 'partial')).toContain('^CT');
   });
 });
 
@@ -2128,7 +2131,7 @@ describe('parseZPL — change caret / tilde / delimiter (^CC ^CT ^CD)', () => {
 describe('parseZPL — ^BT TLC39', () => {
   it('parses ^BT with full param set into a tlc39 object', () => {
     const zpl = '^XA^FO50,50^BTN,3,3,60,5,3^FD123456,ABC^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('tlc39');
     const p = props(objects[0]);
@@ -2142,34 +2145,34 @@ describe('parseZPL — ^BT TLC39', () => {
 
   it('falls back to ^BY moduleWidth when ^BT w1 is empty', () => {
     const zpl = '^XA^FO0,0^BY5^BTN,,3,40,4,4^FD123456,X^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(props(objects[0]).moduleWidth).toBe(5);
   });
 
   it('preserves microPdfRows mid-range', () => {
     const zpl = '^XA^FO0,0^BTN,2,3,40,4,6^FD123456,X^FS^XZ';
-    const { objects } = parseZPL(zpl, 8);
+    const { objects } = parseSingle(zpl, 8);
     expect(props(objects[0]).microPdfRows).toBe(6);
   });
 
   it('accepts microPdfRows=1 and =10 (^BT spec bounds)', () => {
-    const z1 = parseZPL('^XA^FO0,0^BTN,2,3,40,4,1^FD123456,X^FS^XZ', 8).objects;
+    const z1 = parseSingle('^XA^FO0,0^BTN,2,3,40,4,1^FD123456,X^FS^XZ', 8).objects;
     expect(props(z1[0]).microPdfRows).toBe(1);
-    const z10 = parseZPL('^XA^FO0,0^BTN,2,3,40,4,10^FD123456,X^FS^XZ', 8).objects;
+    const z10 = parseSingle('^XA^FO0,0^BTN,2,3,40,4,10^FD123456,X^FS^XZ', 8).objects;
     expect(props(z10[0]).microPdfRows).toBe(10);
   });
 
   it('rejects microPdfRows outside ^BT spec range (-1, 0, 11, 20) and falls back to default 4', () => {
     for (const v of [-1, 0, 11, 20]) {
       const zpl = `^XA^FO0,0^BTN,2,3,40,4,${v}^FD123456,X^FS^XZ`;
-      const { objects } = parseZPL(zpl, 8);
+      const { objects } = parseSingle(zpl, 8);
       expect(props(objects[0]).microPdfRows, `rows=${v}`).toBe(4);
     }
   });
 
   it('drops non-canonical r1 on round-trip (re-emits as 2)', async () => {
     const { ObjectRegistry } = await import('@zplab/core/registry');
-    const { objects } = parseZPL('^XA^FO0,0^BTN,2,3,40,4,4^FD123,X^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^BTN,2,3,40,4,4^FD123,X^FS^XZ', 8);
     const emitted = ObjectRegistry.tlc39.toZPL(objects[0] as never);
     expect(emitted).toContain('^BTN,2,2,40,4,4');
   });
@@ -2177,24 +2180,24 @@ describe('parseZPL — ^BT TLC39', () => {
   it('round-trips ^BT without serial (no MicroPDF block, no trailing comma)', async () => {
     const { ObjectRegistry } = await import('@zplab/core/registry');
     const original = '^XA^FO10,20^BY2^BTN,2,2,40,4,4^FD123456^FS^XZ';
-    const { objects } = parseZPL(original, 8);
+    const { objects } = parseSingle(original, 8);
     expect(objects[0]?.type).toBe('tlc39');
     expect(props(objects[0]).content).toBe('123456');
     const emitted = ObjectRegistry.tlc39.toZPL(objects[0] as never);
     expect(emitted).toMatch(/\^FD123456\^FS/);
-    const { objects: round2 } = parseZPL(`^XA${emitted}^XZ`, 8);
+    const { objects: round2 } = parseSingle(`^XA${emitted}^XZ`, 8);
     expect(props(round2[0]).content).toBe('123456');
   });
 
   it('round-trips ^BT via parse → toZPL → parse', async () => {
     const { ObjectRegistry } = await import('@zplab/core/registry');
     const original = '^XA^FO50,60^BY3^BTN,3,2,80,5,8^FD654321,ABCDEF^FS^XZ';
-    const { objects } = parseZPL(original, 8);
+    const { objects } = parseSingle(original, 8);
     expect(objects).toHaveLength(1);
     const emitted = ObjectRegistry.tlc39.toZPL(objects[0] as never);
     expect(emitted).toContain('^BTN,3,2,80,5,8');
     expect(emitted).toContain('^FD654321,ABCDEF');
-    const { objects: round2 } = parseZPL(`^XA${emitted}^XZ`, 8);
+    const { objects: round2 } = parseSingle(`^XA${emitted}^XZ`, 8);
     expect(round2[0]?.type).toBe('tlc39');
     expect(props(round2[0])).toMatchObject(props(objects[0]));
   });
@@ -2238,8 +2241,9 @@ describe('splitTlc39Content', () => {
 
 describe('parseZPL — ^IM image reference', () => {
   it('adds ^IM to skipped (cannot load printer images)', () => {
-    const { objects, skipped } = parseZPL('^XA^FO0,0^IMR:LOGO.GRF^FS^XZ', 8);
-    expect(objects).toHaveLength(0);
+    const parsed = parseSingle('^XA^FO0,0^IMR:LOGO.GRF^FS^XZ', 8);
+    const skipped = [...commandsOf(parsed, 'browserLimit'), ...commandsOf(parsed, 'unknown')];
+    expect(parsed.objects).toHaveLength(0);
     expect(skipped.some((s) => s.startsWith('^IM'))).toBe(true);
   });
 });
@@ -2248,13 +2252,13 @@ describe('parseZPL — ^IM image reference', () => {
 
 describe('parseZPL — \\& line break in ^FB', () => {
   it('decodes \\& as newline in field block text', () => {
-    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^FB400,3,0,L,0^FDLine 1\\&Line 2\\&Line 3^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^A0N,30,0^FB400,3,0,L,0^FDLine 1\\&Line 2\\&Line 3^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(props(objects[0]).content).toBe('Line 1\nLine 2\nLine 3');
   });
 
   it('does not decode \\& outside of ^FB blocks', () => {
-    const { objects } = parseZPL('^XA^FO0,0^A0N,30,0^FDNo\\&Break^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO0,0^A0N,30,0^FDNo\\&Break^FS^XZ', 8);
     expect(props(objects[0]).content).toBe('No\\&Break');
   });
 });
@@ -2263,41 +2267,42 @@ describe('parseZPL — \\& line break in ^FB', () => {
 
 describe('parseZPL — ^A@ TrueType font fallback', () => {
   it('imports ^A@ as text with specified height instead of skipping', () => {
-    const { objects, skipped } = parseZPL('^XA^FO10,20^A@N,40,30,E:ARIAL.TTF^FDTrueType^FS^XZ', 8);
-    expect(objects).toHaveLength(1);
-    expect(objects[0]?.type).toBe('text');
-    expect(props(objects[0]).content).toBe('TrueType');
-    expect(props(objects[0]).fontHeight).toBe(40);
+    const parsed = parseSingle('^XA^FO10,20^A@N,40,30,E:ARIAL.TTF^FDTrueType^FS^XZ', 8);
+    const skipped = [...commandsOf(parsed, 'browserLimit'), ...commandsOf(parsed, 'unknown')];
+    expect(parsed.objects).toHaveLength(1);
+    expect(parsed.objects[0]?.type).toBe('text');
+    expect(props(parsed.objects[0]).content).toBe('TrueType');
+    expect(props(parsed.objects[0]).fontHeight).toBe(40);
     // Should NOT be in skipped list
     expect(skipped.some((s) => s.startsWith('^A@'))).toBe(false);
   });
 
   it('falls back to ^CF defaults when ^A@ has no height', () => {
-    const { objects } = parseZPL('^XA^CF0,50^FO0,0^A@N,0,0,E:FONT.TTF^FDFallback^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^CF0,50^FO0,0^A@N,0,0,E:FONT.TTF^FDFallback^FS^XZ', 8);
     expect(props(objects[0]).fontHeight).toBe(50);
   });
 });
 
-// ── importReport ─────────────────────────────────────────────────────────────
+// ── import findings ──────────────────────────────────────────────────────────
 
-describe('parseZPL — importReport.partial', () => {
-  it('records ^A@ in importReport.partial (font face not imported)', () => {
-    const { importReport } = parseZPL('^XA^FO0,0^A@N,30,0,E:ARIAL.TTF^FDText^FS^XZ', 8);
-    expect(importReport.partial).toContain('^A@');
+describe('parseZPL — partial findings', () => {
+  it('records ^A@ as partial (font face not imported)', () => {
+    const { findings } = parseSingle('^XA^FO0,0^A@N,30,0,E:ARIAL.TTF^FDText^FS^XZ', 8);
+    expect(commandsOf({ findings }, 'partial')).toContain('^A@');
   });
 
   it('deduplicates ^A@ entries when used multiple times', () => {
     const zpl = '^XA^FO0,0^A@N,30,0,E:A.TTF^FDFirst^FS^FO0,50^A@N,30,0,E:B.TTF^FDSecond^FS^XZ';
-    const { importReport } = parseZPL(zpl, 8);
-    expect(importReport.partial.filter((e) => e === '^A@')).toHaveLength(1);
+    const { findings } = parseSingle(zpl, 8);
+    expect(commandsOf({ findings }, 'partial').filter((e) => e === '^A@')).toHaveLength(1);
   });
 
   it('does not flag built-in ^A{letter} fonts (A-H) as partial', () => {
     // ^AB references the built-in Zebra font B; the parser pins it on
     // the field as fontId="B" and the generator re-emits the short
     // form, so the import is lossless and stays out of partial.
-    const { importReport } = parseZPL('^XA^FO0,0^ABN,30,0^FDText^FS^XZ', 8);
-    expect(importReport.partial.some((e) => e.startsWith('^A'))).toBe(false);
+    const { findings } = parseSingle('^XA^FO0,0^ABN,30,0^FDText^FS^XZ', 8);
+    expect(commandsOf({ findings }, 'partial').some((e) => e.startsWith('^A'))).toBe(false);
   });
 
   it('flags ^A{alias} as partial when the alias has no ^CW mapping', () => {
@@ -2305,100 +2310,96 @@ describe('parseZPL — importReport.partial', () => {
     // captures fontId="M" so editing stays lossless, but we surface a
     // partial-import warning because the rendered output will fall
     // back to font 0 on the printer.
-    const { importReport } = parseZPL('^XA^FO0,0^AMN,30,0^FDText^FS^XZ', 8);
-    expect(importReport.partial.some((e) => e.startsWith('^A'))).toBe(true);
+    const { findings } = parseSingle('^XA^FO0,0^AMN,30,0^FDText^FS^XZ', 8);
+    expect(commandsOf({ findings }, 'partial').some((e) => e.startsWith('^A'))).toBe(true);
   });
 
-  it('does not put fully-supported ^A0 in importReport.partial', () => {
-    const { importReport } = parseZPL('^XA^FO0,0^A0N,30,0^FDText^FS^XZ', 8);
-    expect(importReport.partial).toHaveLength(0);
-  });
-});
-
-describe('parseZPL — importReport.browserLimit', () => {
-  it('records ^IM in importReport.browserLimit', () => {
-    const { importReport } = parseZPL('^XA^FO0,0^IMR:LOGO.GRF^FS^XZ', 8);
-    expect(importReport.browserLimit.some((s) => s.startsWith('^IM'))).toBe(true);
-  });
-
-  it('records ~DG in importReport.browserLimit', () => {
-    const { importReport } = parseZPL('^XA~DGR:LOGO.GRF,1024,10,FF^XZ', 8);
-    expect(importReport.browserLimit.some((s) => s.startsWith('~DG'))).toBe(true);
-  });
-
-  it('also keeps ^IM in skipped for backward compatibility', () => {
-    const { skipped, importReport } = parseZPL('^XA^FO0,0^IMR:LOGO.GRF^FS^XZ', 8);
-    expect(skipped.some((s) => s.startsWith('^IM'))).toBe(true);
-    expect(importReport.browserLimit.some((s) => s.startsWith('^IM'))).toBe(true);
+  it('does not flag fully-supported ^A0 as partial', () => {
+    const { findings } = parseSingle('^XA^FO0,0^A0N,30,0^FDText^FS^XZ', 8);
+    expect(commandsOf({ findings }, 'partial')).toHaveLength(0);
   });
 });
 
-describe('parseZPL — importReport.unknown', () => {
-  it('records unrecognised commands in importReport.unknown', () => {
-    const { importReport } = parseZPL('^XA^XX99^FO0,0^A0N,30,0^FDText^FS^XZ', 8);
-    expect(importReport.unknown.some((s) => s.startsWith('^XX'))).toBe(true);
+describe('parseZPL — browserLimit findings', () => {
+  it('records ^IM as browserLimit', () => {
+    const { findings } = parseSingle('^XA^FO0,0^IMR:LOGO.GRF^FS^XZ', 8);
+    expect(commandsOf({ findings }, 'browserLimit').some((s) => s.startsWith('^IM'))).toBe(true);
+  });
+
+  it('records ~DG as browserLimit', () => {
+    const { findings } = parseSingle('^XA~DGR:LOGO.GRF,1024,10,FF^XZ', 8);
+    expect(commandsOf({ findings }, 'browserLimit').some((s) => s.startsWith('~DG'))).toBe(true);
+  });
+});
+
+describe('parseZPL — unknown findings', () => {
+  it('records unrecognised commands as unknown', () => {
+    const { findings } = parseSingle('^XA^XX99^FO0,0^A0N,30,0^FDText^FS^XZ', 8);
+    expect(commandsOf({ findings }, 'unknown').some((s) => s.startsWith('^XX'))).toBe(true);
   });
 
   it('also keeps unknown commands in skipped for backward compatibility', () => {
-    const { skipped, importReport } = parseZPL('^XA^XX99^FO0,0^A0N,30,0^FDText^FS^XZ', 8);
+    const parsed = parseSingle('^XA^XX99^FO0,0^A0N,30,0^FDText^FS^XZ', 8);
+    const skipped = [...commandsOf(parsed, 'browserLimit'), ...commandsOf(parsed, 'unknown')];
     expect(skipped.some((s) => s.startsWith('^XX'))).toBe(true);
-    expect(importReport.unknown.some((s) => s.startsWith('^XX'))).toBe(true);
+    expect(commandsOf(parsed, 'unknown').some((s) => s.startsWith('^XX'))).toBe(true);
   });
 
   it('surfaces unknown/browserLimit tokens without a trailing newline', () => {
-    const { skipped, importReport } = parseZPL('^XA\n^XX99\n^IMR:LOGO.GRF\n^XZ', 8);
-    expect(importReport.unknown).toContain('^XX99');
-    expect(importReport.browserLimit).toContain('^IMR:LOGO.GRF');
-    for (const s of [...importReport.unknown, ...importReport.browserLimit, ...skipped]) {
+    const parsed = parseSingle('^XA\n^XX99\n^IMR:LOGO.GRF\n^XZ', 8);
+    const skipped = [...commandsOf(parsed, 'browserLimit'), ...commandsOf(parsed, 'unknown')];
+    expect(commandsOf(parsed, 'unknown')).toContain('^XX99');
+    expect(commandsOf(parsed, 'browserLimit')).toContain('^IMR:LOGO.GRF');
+    for (const s of [...commandsOf(parsed, 'unknown'), ...commandsOf(parsed, 'browserLimit'), ...skipped]) {
       expect(s).toBe(s.trimEnd());
     }
   });
 
   it('keeps the source prefix on unknown tilde commands', () => {
-    const { importReport } = parseZPL('^XA\n~QQ1,2\n^XZ', 8);
-    expect(importReport.unknown).toContain('~QQ1,2');
+    const { findings } = parseSingle('^XA\n~QQ1,2\n^XZ', 8);
+    expect(commandsOf({ findings }, 'unknown')).toContain('~QQ1,2');
   });
 
   it('does not bake a line break into a truncated ~DY summary token', () => {
     // Short malformed ~DY: rest ended with \n before the appended ellipsis,
     // where the push-site trim cannot reach.
-    const { importReport } = parseZPL('^XA\n~DYR:X,Q,G,10,2,ZZ\n^XZ', 8);
-    expect(importReport.browserLimit).toContain('~DYR:X,Q,G,10,2,ZZ…');
+    const { findings } = parseSingle('^XA\n~DYR:X,Q,G,10,2,ZZ\n^XZ', 8);
+    expect(commandsOf({ findings }, 'browserLimit')).toContain('~DYR:X,Q,G,10,2,ZZ…');
   });
 
   it('preserves an undecodable ^GFB format as an opaque verbatim image', () => {
-    const { objects, importReport } = parseZPL('^XA^FO0,0^GFB,32,32,4,AABBCCDD^FS^XZ', 8);
+    const { objects, findings } = parseSingle('^XA^FO0,0^GFB,32,32,4,AABBCCDD^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.type).toBe('image');
     expect(props(objects[0]).rawGf).toBe('^GFB,32,32,4,AABBCCDD');
-    expect(importReport.partial).toContain('^GF');
-    expect(importReport.browserLimit.some((s) => s.startsWith('^GF'))).toBe(false);
-    expect(importReport.unknown.some((s) => s.startsWith('^GF'))).toBe(false);
+    expect(commandsOf({ findings }, 'partial')).toContain('^GF');
+    expect(commandsOf({ findings }, 'browserLimit').some((s) => s.startsWith('^GF'))).toBe(false);
+    expect(commandsOf({ findings }, 'unknown').some((s) => s.startsWith('^GF'))).toBe(false);
   });
 
   it('returns empty importReport for a fully supported label', () => {
-    const { importReport } = parseZPL('^XA^PW800^LL600^FO50,50^A0N,30,0^FDHello^FS^XZ', 8);
-    expect(importReport.partial).toHaveLength(0);
-    expect(importReport.browserLimit).toHaveLength(0);
-    expect(importReport.unknown).toHaveLength(0);
-    expect(importReport.findings).toHaveLength(0);
+    const { findings } = parseSingle('^XA^PW800^LL600^FO50,50^A0N,30,0^FDHello^FS^XZ', 8);
+    expect(commandsOf({ findings }, 'partial')).toHaveLength(0);
+    expect(commandsOf({ findings }, 'browserLimit')).toHaveLength(0);
+    expect(commandsOf({ findings }, 'unknown')).toHaveLength(0);
+    expect(findings).toHaveLength(0);
   });
 });
 
-describe('parseZPL: importReport.findings', () => {
-  it('emits one finding per kind with pageIndex=0 (set by service layer later)', () => {
+describe('parseZPL: page findings', () => {
+  it('emits one finding per kind with the page index stamped', () => {
     const zpl = '^XA^FO0,0^A@N,30,0,E:ARIAL.TTF^FDText^FS^IMR:LOGO.GRF^XX99^XZ';
-    const { importReport } = parseZPL(zpl, 8);
-    const kinds = importReport.findings.map((f) => f.kind);
+    const { findings } = parseSingle(zpl, 8);
+    const kinds = findings.map((f) => f.kind);
     expect(kinds).toContain('partial');
     expect(kinds).toContain('browserLimit');
     expect(kinds).toContain('unknown');
-    expect(importReport.findings.every((f) => f.pageIndex === 0)).toBe(true);
+    expect(findings.every((f) => f.pageIndex === 0)).toBe(true);
     // Tripwire: findings emit in source order. A pipeline split that
     // collects unknowns / browser-limits in a separate pass would
     // reorder these. Order: ^A@ (L1 partial) → ^IM (L1 browserLimit) →
     // ^XX (L1 unknown).
-    expect(importReport.findings.map((f) => f.command)).toEqual([
+    expect(findings.map((f) => f.command)).toEqual([
       '^A@', '^IMR:LOGO.GRF', '^XX99',
     ]);
   });
@@ -2406,8 +2407,8 @@ describe('parseZPL: importReport.findings', () => {
   it('partial findings are deduplicated by command code', () => {
     // Two ^A@ uses → one partial finding for "^A@".
     const zpl = '^XA^FO0,0^A@N,30,0,E:A.TTF^FDFirst^FS^FO0,50^A@N,30,0,E:B.TTF^FDSecond^FS^XZ';
-    const { importReport } = parseZPL(zpl, 8);
-    const partialFindings = importReport.findings.filter((f) => f.kind === 'partial');
+    const { findings } = parseSingle(zpl, 8);
+    const partialFindings = findings.filter((f) => f.kind === 'partial');
     expect(partialFindings).toHaveLength(1);
     expect(partialFindings[0]?.command).toBe('^A@');
   });
@@ -2417,7 +2418,7 @@ describe('parseZPL: importReport.findings', () => {
 
 describe('parseZPL — ^FO with justification parameter', () => {
   it('parses ^FO with a 3rd parameter without errors', () => {
-    const { objects } = parseZPL('^XA^FO100,200,1^A0N,30,0^FDJustified^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FO100,200,1^A0N,30,0^FDJustified^FS^XZ', 8);
     expect(objects).toHaveLength(1);
     expect(objects[0]?.x).toBeCloseTo(100);
     expect(objects[0]?.y).toBeCloseTo(200 - 4.62);
@@ -2428,7 +2429,7 @@ describe('parseZPL — ^FO with justification parameter', () => {
 describe('^FN / template variables', () => {
   it('creates a Variable for each distinct ^FN and binds the field', () => {
     const zpl = '^XA^FO10,20^A0N,30,30^FN1^FDDefault^FS^XZ';
-    const { objects, variables } = parseZPL(zpl);
+    const { objects, variables } = parseSingle(zpl);
     expect(variables).toHaveLength(1);
     expect(variables[0]?.fnNumber).toBe(1);
     expect(variables[0]?.defaultValue).toBe('Default');
@@ -2439,14 +2440,14 @@ describe('^FN / template variables', () => {
 
   it('derives the Variable name from a preceding ^FX comment', () => {
     const zpl = '^XA^FXField: Customer Name^FO10,20^A0N,30,30^FN1^FDJohn^FS^XZ';
-    const { variables } = parseZPL(zpl);
+    const { variables } = parseSingle(zpl);
     expect(variables[0]?.name).toBe('Customer_Name');
   });
 
   it('falls back to field_<fn> when the ^FX comment is a marker-unsafe name', () => {
     // `clock:Y` would render as a clock chip; `»` breaks the «name» marker.
-    expect(parseZPL('^XA^FXField: clock:Y^FO10,20^A0N,30,30^FN1^FDx^FS^XZ').variables[0]?.name).toBe('field_1');
-    expect(parseZPL('^XA^FXField: sku»oops^FO10,20^A0N,30,30^FN2^FDx^FS^XZ').variables[0]?.name).toBe('field_2');
+    expect(parseSingle('^XA^FXField: clock:Y^FO10,20^A0N,30,30^FN1^FDx^FS^XZ').variables[0]?.name).toBe('field_1');
+    expect(parseSingle('^XA^FXField: sku»oops^FO10,20^A0N,30,30^FN2^FDx^FS^XZ').variables[0]?.name).toBe('field_2');
   });
 
   it('reuses the same Variable when multiple fields share an fnNumber', () => {
@@ -2455,7 +2456,7 @@ describe('^FN / template variables', () => {
       '^FO10,20^A0N,30,30^FN1^FDA^FS' +
       '^FO10,60^A0N,30,30^FN1^FDA^FS' +
       '^XZ';
-    const { objects, variables } = parseZPL(zpl);
+    const { objects, variables } = parseSingle(zpl);
     expect(variables).toHaveLength(1);
     const [a, b] = objects;
     // Both fields reference the shared variable by the same content marker.
@@ -2465,11 +2466,11 @@ describe('^FN / template variables', () => {
 
   it('ignores out-of-range ^FN numbers and records a partial finding', () => {
     const zpl = '^XA^FO10,20^A0N,30,30^FN0^FDIgnored^FS^XZ';
-    const { variables, objects, importReport } = parseZPL(zpl);
+    const { variables, objects, findings } = parseSingle(zpl);
     expect(variables).toHaveLength(0);
     // Out-of-range ^FN is ignored: no marker, content stays the literal ^FD.
     expect(props(objects[0]).content).toBe('Ignored');
-    expect(importReport.partial).toContain('^FN');
+    expect(commandsOf({ findings }, 'partial')).toContain('^FN');
   });
 });
 
@@ -2478,16 +2479,16 @@ describe('^FN / template variables', () => {
 describe('parseZPL — lossyEdit finding for regen-unsafe blocks', () => {
   it('flags a block with a standalone ^FN declaration', () => {
     const zpl = '^XA^FN1^FDdefault^FS^FO10,10^A0N,30,0^FDx^FS^XZ';
-    const { importReport } = parseZPL(zpl, 8, { captureOverlay: true });
-    const f = importReport.findings.find((x) => x.kind === 'lossyEdit');
+    const { findings } = parseSingle(zpl, 8, { captureOverlay: true });
+    const f = findings.find((x) => x.kind === 'lossyEdit');
     expect(f).toBeDefined();
     expect(f?.command).toContain('^FN');
   });
 
   it('does not flag a clean, regen-safe block', () => {
     const zpl = '^XA^FO10,10^A0N,30,0^FDx^FS^XZ';
-    const { importReport } = parseZPL(zpl, 8, { captureOverlay: true });
-    expect(importReport.findings.some((x) => x.kind === 'lossyEdit')).toBe(false);
+    const { findings } = parseSingle(zpl, 8, { captureOverlay: true });
+    expect(findings.some((x) => x.kind === 'lossyEdit')).toBe(false);
   });
 });
 
@@ -2495,7 +2496,7 @@ describe('parseZPL — lossyEdit finding for regen-unsafe blocks', () => {
 
 describe('parseZPL — ^FT graphic anchors lift to model top-left', () => {
   it('^FT ^GE ellipse: bottom-left lifts by height', () => {
-    const { objects } = parseZPL('^XA^FT50,150^GE100,80,3,B^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FT50,150^GE100,80,3,B^FS^XZ', 8);
     expect(objects[0]?.type).toBe('ellipse');
     expect(objects[0]?.positionType).toBe('FT');
     expect(objects[0]?.x).toBe(50);
@@ -2504,7 +2505,7 @@ describe('parseZPL — ^FT graphic anchors lift to model top-left', () => {
   });
 
   it('^FT,1 ^GE ellipse: bottom-right lifts by height and shifts left by width', () => {
-    const { objects } = parseZPL('^XA^FT150,150,1^GE100,80,3,B^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FT150,150,1^GE100,80,3,B^FS^XZ', 8);
     expect(objects[0]?.positionType).toBe('FT');
     expect(objects[0]?.fieldJustify).toBe('R');
     expect(objects[0]?.x).toBe(50); // 150 - width 100
@@ -2512,7 +2513,7 @@ describe('parseZPL — ^FT graphic anchors lift to model top-left', () => {
   });
 
   it('^FT ^GC circle: lifts by the diameter', () => {
-    const { objects } = parseZPL('^XA^FT60,160^GC100,3,B^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FT60,160^GC100,3,B^FS^XZ', 8);
     expect(objects[0]?.type).toBe('ellipse');
     expect(objects[0]?.positionType).toBe('FT');
     expect(objects[0]?.x).toBe(60);
@@ -2520,7 +2521,7 @@ describe('parseZPL — ^FT graphic anchors lift to model top-left', () => {
   });
 
   it('^FT ^GD diagonal line: lifts the bounding box, recovers the start point', () => {
-    const { objects } = parseZPL('^XA^FT10,110^GD80,60,3,B,L^FS^XZ', 8);
+    const { objects } = parseSingle('^XA^FT10,110^GD80,60,3,B,L^FS^XZ', 8);
     expect(objects[0]?.type).toBe('line');
     expect(objects[0]?.positionType).toBe('FT');
     expect(objects[0]?.x).toBe(10);
