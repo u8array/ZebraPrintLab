@@ -151,8 +151,9 @@ export function buildServer(options: BuildServerOptions = {}): McpServer {
         title: "Get current ZPLab design",
         description:
           "Read the design currently open in the ZPLab desktop app: the design file " +
-          "plus render-exact bounds and overlaps (the app reports measured barcode/text " +
-          "sizes, so nothing is approx). Only available when ZPLab launched this server.",
+          "plus bounds and overlaps using the app's render-measured barcode/text sizes " +
+          "(approx only flags anything not rendered yet). Only available when ZPLab " +
+          "launched this server.",
         inputSchema: {},
       },
       async () => {

@@ -5,7 +5,7 @@
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::oneshot;
 
 /// Tauri event carrying an openDraft design file to the editor.
@@ -83,15 +83,48 @@ enum ChildStatus {
   Absent,
 }
 
+/// A child event held back until the webview has its listeners up.
+enum BufferedEvent {
+  OpenDraft(String),
+  DesignRequest(u64),
+}
+
+fn emit_event(app: &AppHandle, ev: &BufferedEvent) {
+  match ev {
+    BufferedEvent::OpenDraft(payload) => {
+      let _ = app.emit(OPEN_DRAFT_EVENT, payload.clone());
+    }
+    BufferedEvent::DesignRequest(id) => {
+      let _ = app.emit(DESIGN_REQUEST_EVENT, *id);
+    }
+  }
+}
+
 /// Managed handle to the running server child, if any.
-#[derive(Default)]
 pub struct McpState {
   child: Mutex<Option<Child>>,
   /// Held for the whole of mcp_start so concurrent starts serialize instead of
   /// racing the TOCTOU is_running() check.
   start_lock: tokio::sync::Mutex<()>,
+  /// Some = webview listeners not up yet, events queue here (a boot-started
+  /// server could otherwise emit into the void and silently drop a draft).
+  /// mcp_listeners_ready takes it to None and flushes. A later webview reload
+  /// re-loses listeners; that dev-only edge is accepted.
+  event_buffer: Mutex<Option<Vec<BufferedEvent>>>,
   #[cfg(windows)]
   job: Mutex<Option<job::Job>>,
+}
+
+impl Default for McpState {
+  fn default() -> Self {
+    Self {
+      child: Mutex::new(None),
+      start_lock: tokio::sync::Mutex::new(()),
+      event_buffer: Mutex::new(Some(Vec::new())),
+      #[cfg(windows)]
+      job: Mutex::new(None),
+    }
+  }
 }
 
 impl McpState {
@@ -195,12 +228,22 @@ fn mcp_command(port: u16) -> Result<Command, String> {
   Ok(cmd)
 }
 
+/// Bundled sidecar binary next to the app executable (tauri externalBin drops
+/// it there on every platform, triple suffix stripped).
 #[cfg(not(debug_assertions))]
-fn mcp_command(_port: u16) -> Result<Command, String> {
-  // Bundling the sidecar binary is a deferred follow-up; fail instead of
-  // spawning a dev toolchain that release machines do not have. Stable code the
-  // frontend maps to a localized message.
-  Err("sidecar_not_bundled".to_string())
+fn sidecar_path() -> Option<std::path::PathBuf> {
+  let name = if cfg!(windows) { "zplab-mcp.exe" } else { "zplab-mcp" };
+  let path = std::env::current_exe().ok()?.parent()?.join(name);
+  path.exists().then_some(path)
+}
+
+#[cfg(not(debug_assertions))]
+fn mcp_command(port: u16) -> Result<Command, String> {
+  // Stable code the frontend maps to a localized message.
+  let exe = sidecar_path().ok_or("sidecar_not_bundled")?;
+  let mut cmd = Command::new(exe);
+  cmd.args(["--http", "--port", &port.to_string(), "--token-stdin"]);
+  Ok(cmd)
 }
 
 /// Extract the design file payload from a child stdout line, or None if the
@@ -250,10 +293,30 @@ fn forward_child_events(
       }
       continue;
     }
-    if let Some(payload) = open_draft_payload(&line) {
-      let _ = app.emit(OPEN_DRAFT_EVENT, payload);
+    let ev = if let Some(payload) = open_draft_payload(&line) {
+      BufferedEvent::OpenDraft(payload)
     } else if let Some(id) = design_request_id(&line) {
-      let _ = app.emit(DESIGN_REQUEST_EVENT, id);
+      BufferedEvent::DesignRequest(id)
+    } else {
+      continue;
+    };
+    let state = app.state::<McpState>();
+    let mut buffer = state.event_buffer.lock().unwrap();
+    match buffer.as_mut() {
+      Some(queue) => queue.push(ev),
+      None => emit_event(&app, &ev),
+    }
+  }
+}
+
+/// The webview's listeners are registered: flush anything queued and emit
+/// directly from now on.
+#[tauri::command]
+pub fn mcp_listeners_ready(app: AppHandle, state: State<'_, McpState>) {
+  let drained = state.event_buffer.lock().unwrap().take();
+  if let Some(events) = drained {
+    for ev in &events {
+      emit_event(&app, ev);
     }
   }
 }

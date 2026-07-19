@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { respondToDesignRequest } from "./useMcpDesignRequest";
+import { respondToDesignRequest } from "./useMcpBridge";
 import { useLabelStore } from "../store/labelStore";
 import { setMeasuredBounds, clearMeasuredBounds } from "../components/Canvas/measuredBoundsCache";
 
