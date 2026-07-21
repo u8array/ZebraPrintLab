@@ -1,34 +1,34 @@
 import { useLabelStore } from "./labelStore";
 import {
-  buildActiveCsvRow,
+  buildActiveRow,
   clockCtxFromLabel,
   resolveContentPreview,
-  type ActiveCsvRow,
+  type ActiveRow,
   type ClockResolveCtx,
 } from "@zplab/core/lib/variableBinding";
 import type { Variable } from "@zplab/core/types/Variable";
 
 export interface PreviewBinding {
   variables: readonly Variable[];
-  /** Active CSV row, or null without a dataset/mapping. */
-  active: ActiveCsvRow | null;
+  /** Active dataset row, or null without a dataset/mapping. */
+  active: ActiveRow | null;
   /** Label-level ^SO2/^SO3 clock offsets. */
   clock: ClockResolveCtx;
   /** Content string -> its builder-preview substitution: variable DEFAULTS +
-   *  label clock, explicitly NO CSV row (the builders' validation semantics).
+   *  label clock, explicitly NO dataset row (the builders' validation semantics).
    *  Named to keep it from being mistaken for an `active`-aware resolver. */
   resolveDefaults: (content: string, opts?: { resolveCtrl?: boolean }) => string;
 }
 
 /** The one seam for "what would this print": every preview consumer (builders,
  *  canvas, preflight) derives the same binding context from the store here
- *  instead of assembling variables/CSV/clock ad hoc per call site. */
+ *  instead of assembling variables/dataset/clock ad hoc per call site. */
 export function usePreviewBinding(): PreviewBinding {
   const variables = useLabelStore((s) => s.variables);
-  const csvDataset = useLabelStore((s) => s.csvDataset);
-  const csvMapping = useLabelStore((s) => s.csvMapping);
+  const dataset = useLabelStore((s) => s.dataset);
+  const columnMapping = useLabelStore((s) => s.columnMapping);
   const label = useLabelStore((s) => s.label);
-  const active = buildActiveCsvRow(csvDataset, csvMapping);
+  const active = buildActiveRow(dataset, columnMapping);
   const clock = clockCtxFromLabel(label);
   return {
     variables,

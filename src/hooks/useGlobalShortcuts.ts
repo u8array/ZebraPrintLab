@@ -22,8 +22,12 @@ export function useGlobalShortcuts() {
       // /page, both of which would visibly drift away from the frozen
       // snapshot. Block them wholesale.
       if (selectPreviewLocksEditor(useLabelStore.getState())) return;
-      const inInput = isEditableTarget(e.target as HTMLElement);
       const mod = e.metaKey || e.ctrlKey;
+
+      // Editable targets keep their native undo/redo, copy/paste and
+      // select-all; every document shortcut below (incl. Ctrl+Z) applies only
+      // outside text fields, so typing in an input isn't hijacked by the model.
+      if (isEditableTarget(e.target as HTMLElement)) return;
 
       if (mod && e.code === "KeyZ") {
         e.preventDefault();
@@ -31,7 +35,6 @@ export function useGlobalShortcuts() {
         else undo();
         return;
       }
-      if (inInput) return;
       if (mod && e.code === "KeyA") {
         e.preventDefault();
         selectObjects(getCurrentObjects().map((o) => o.id));

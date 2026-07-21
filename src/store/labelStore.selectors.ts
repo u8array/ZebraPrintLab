@@ -1,8 +1,8 @@
 import type { LabelObject } from '@zplab/core/types/Group';
 import { isDefaultHost, resolveHost, resolveApiKey } from '../lib/labelary';
 import { isDesktopShell } from '../lib/platform';
-import type { CsvDataset } from './slices/csvSlice';
-import type { CsvMapping } from '@zplab/core/types/Variable';
+import type { Dataset } from './slices/dataSlice';
+import type { ColumnMapping } from '@zplab/core/types/Variable';
 import type { LabelState } from './labelStore';
 import type { PageState } from './labelStore.internals';
 import { PER_LABEL_ZPL_FIELDS } from '@zplab/core/types/LabelConfig';
@@ -51,18 +51,31 @@ export const selectEffectivePreviewProvider = (s: LabelState): 'labelary' | 'pri
 export const selectPreviewLocksEditor = (s: LabelState): boolean =>
   s.previewMode.status === 'loading' || s.previewMode.status === 'active';
 
-/** The dataset + mapping pair that batch emit needs, or null when batch
- *  emit would produce nothing different from a single label. Requires a
- *  loaded CSV with rows and at least one mapped Variable. */
+/** The dataset + mapping pair batch emit needs, or null when a batch would be
+ *  no different from a single label: needs loaded rows and at least one LIVE
+ *  binding (else an all-orphan mapping just prints N identical defaults). */
 export const selectBatchInputs = (
   s: LabelState,
-): { dataset: CsvDataset; mapping: CsvMapping } | null => {
-  const { csvDataset, csvMapping } = s;
-  if (!csvDataset || csvDataset.rows.length === 0) return null;
-  if (!csvMapping || Object.keys(csvMapping.bindings).length === 0) return null;
-  return { dataset: csvDataset, mapping: csvMapping };
+): { dataset: Dataset; mapping: ColumnMapping } | null => {
+  const { dataset, columnMapping } = s;
+  if (!dataset || dataset.rows.length === 0) return null;
+  if (!columnMapping) return null;
+  const headers = new Set(dataset.headers);
+  const hasLiveBinding = s.variables.some((v) => {
+    const header = columnMapping.bindings[v.id];
+    return header !== undefined && headers.has(header);
+  });
+  if (!hasLiveBinding) return null;
+  return { dataset: dataset, mapping: columnMapping };
 };
 
 /** Boolean form of {@link selectBatchInputs}. */
 export const selectCanBatchExport = (s: LabelState): boolean =>
   selectBatchInputs(s) !== null;
+
+/** Physical labels a batch print emits: dataset rows x per-label ^PQ
+ *  (printQuantity multiplies every recall). 0 when there is no batch. */
+export const selectBatchPrintCount = (s: LabelState): number => {
+  const batch = selectBatchInputs(s);
+  return batch ? batch.dataset.rows.length * (s.label.printQuantity ?? 1) : 0;
+};

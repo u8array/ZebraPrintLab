@@ -151,14 +151,14 @@ export const createVariablesSlice: StateCreator<LabelState, [], [], VariablesSli
         pagesChanged = true;
         return { ...p, objects: substituted };
       });
-      // Drop any csvMapping binding pointing at the deleted variable so
+      // Drop any columnMapping binding pointing at the deleted variable so
       // the design file doesn't carry orphan references.
-      let nextMapping = state.csvMapping;
-      if (state.csvMapping && id in state.csvMapping.bindings) {
+      let nextMapping = state.columnMapping;
+      if (state.columnMapping && id in state.columnMapping.bindings) {
         const rest = Object.fromEntries(
-          Object.entries(state.csvMapping.bindings).filter(([k]) => k !== id),
+          Object.entries(state.columnMapping.bindings).filter(([k]) => k !== id),
         );
-        nextMapping = { ...state.csvMapping, bindings: rest };
+        nextMapping = { ...state.columnMapping, bindings: rest };
       }
       // Drop overlays too: a deleted variable's ^FN declaration may sit in a raw
       // overlay segment with no bound object to dirty, so a full regen is the
@@ -167,7 +167,7 @@ export const createVariablesSlice: StateCreator<LabelState, [], [], VariablesSli
       return {
         variables: state.variables.filter((v) => v.id !== id),
         ...(finalPages !== state.pages ? { pages: finalPages } : {}),
-        ...(nextMapping !== state.csvMapping ? { csvMapping: nextMapping } : {}),
+        ...(nextMapping !== state.columnMapping ? { columnMapping: nextMapping } : {}),
       };
     }),
 });

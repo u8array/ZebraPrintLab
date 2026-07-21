@@ -5,6 +5,7 @@ import { useMcpAvailability } from "../../hooks/useMcpServer";
 import { useT } from "../../hooks/useT";
 import { generateSetupScript } from "../../lib/zplSetupScript";
 import { useLabelStore, selectHasPerLabelOverrides } from "../../store/labelStore";
+import { isDesktopShell } from "../../lib/platform";
 import type { PrinterSettingsTab } from "../../store/slices/uiSlice";
 import { TAB_GATES, type TabGateCtx } from "./tabVisibility";
 import type { PrinterProfile } from "@zplab/core/types/PrinterProfile";
@@ -13,6 +14,7 @@ import { Tooltip } from "../ui/Tooltip";
 import { ZplLine } from "../Output/ZplLine";
 import { AppSettingsTab } from "./AppSettingsTab";
 import { ClockAndTimeTab } from "./ClockAndTimeTab";
+import { DataSourcesTab } from "./DataSourcesTab";
 import { EncodingAndLanguageTab } from "./EncodingAndLanguageTab";
 import { FontsTab } from "./FontsTab";
 import { IdentityTab } from "./IdentityTab";
@@ -32,6 +34,7 @@ const TOP_TAB_OF = {
   appSettings: 'app',
   previewSettings: 'app',
   mcpServer: 'app',
+  dataSources: 'app',
   mediaFeed: 'perLabel',
   printQuality: 'perLabel',
   output: 'perLabel',
@@ -65,6 +68,7 @@ const TAB_COMPONENTS: Partial<Record<PrinterSettingsTab, FC>> = {
   appSettings: AppSettingsTab,
   previewSettings: PreviewSettingsTab,
   mcpServer: McpServerTab,
+  dataSources: DataSourcesTab,
   mediaFeed: MediaFeedTab,
   printQuality: PrintQualityTab,
   output: OutputTab,
@@ -129,7 +133,7 @@ export function PrinterSettingsModal() {
   };
   const hasPerLabelOverrides = useLabelStore(selectHasPerLabelOverrides);
   const mcpSidecarAvailable = useLabelStore((s) => s.mcpSidecarAvailable);
-  const gateCtx: TabGateCtx = { mcpSidecarAvailable };
+  const gateCtx: TabGateCtx = { mcpSidecarAvailable, isDesktop: isDesktopShell };
   const openZebraPrint = useLabelStore((s) => s.openZebraPrint);
   const titleId = useId();
   const subtitleId = useId();

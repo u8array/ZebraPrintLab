@@ -5,7 +5,7 @@ import type { Variable } from "@zplab/core/types/Variable";
 import {
   applyBindingToObject,
   getObjectStringContent,
-  type ActiveCsvRow,
+  type ActiveRow,
   type ClockResolveCtx,
 } from "@zplab/core/lib/variableBinding";
 import { renderBarcodeCanvas } from "./bwipHelpers";
@@ -16,7 +16,7 @@ import { renderBarcodeCanvas } from "./bwipHelpers";
  *  too long. */
 export interface EncodeEnv {
   variables: readonly Variable[];
-  active: ActiveCsvRow | null;
+  active: ActiveRow | null;
   clock?: ClockResolveCtx;
 }
 

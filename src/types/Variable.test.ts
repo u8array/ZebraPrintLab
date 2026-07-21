@@ -1,19 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import {
   normalizeHeaderForMatch,
-  suggestCsvMapping,
+  suggestColumnMapping,
   uniqueVariableName,
   nextFreeFnNumber,
   isMappingCompatibleWith,
+  dbExcelParseOptions,
   isValidVariableName,
-  type CsvMapping,
+  type ColumnMapping,
   type Variable,
 } from '@zplab/core/types/Variable';
 
 function mapping(
   headerSnapshot: string[],
-  parseOptions?: CsvMapping['parseOptions'],
-): CsvMapping {
+  parseOptions?: ColumnMapping['parseOptions'],
+): ColumnMapping {
   return { bindings: {}, headerSnapshot, ...(parseOptions ? { parseOptions } : {}) };
 }
 
@@ -34,11 +35,11 @@ describe('normalizeHeaderForMatch', () => {
   });
 });
 
-describe('suggestCsvMapping', () => {
+describe('suggestColumnMapping', () => {
   it('matches variables to headers case- and whitespace-insensitively', () => {
     const variables = [v('sku'), v('productCode'), v('customer')];
     const headers = ['SKU', 'Product Code', 'Customer Name'];
-    const result = suggestCsvMapping(variables, headers);
+    const result = suggestColumnMapping(variables, headers);
     expect(result).toEqual({
       sku: 'SKU',
       productCode: 'Product Code',
@@ -50,18 +51,18 @@ describe('suggestCsvMapping', () => {
   it('consumes each header at most once (ties go to the first variable)', () => {
     const variables = [v('a', 'idA'), v('A', 'idA2')];
     const headers = ['a'];
-    const result = suggestCsvMapping(variables, headers);
+    const result = suggestColumnMapping(variables, headers);
     expect(result).toEqual({ idA: 'a' });
   });
 
   it('returns empty object when nothing matches', () => {
     const variables = [v('sku')];
     const headers = ['totally-unrelated'];
-    expect(suggestCsvMapping(variables, headers)).toEqual({});
+    expect(suggestColumnMapping(variables, headers)).toEqual({});
   });
 
   it('returns empty object when no variables exist', () => {
-    expect(suggestCsvMapping([], ['a', 'b'])).toEqual({});
+    expect(suggestColumnMapping([], ['a', 'b'])).toEqual({});
   });
 });
 
@@ -150,5 +151,19 @@ describe('isValidVariableName', () => {
     for (const n of ['clock:Year', 'clock:', 'clock2:month', 'clockX:Y', 'clock4:Y']) {
       expect(isValidVariableName(n)).toBe(true);
     }
+  });
+});
+
+describe('dbExcelParseOptions', () => {
+  it('drops hasHeaderRow so a later CSV import cannot read as compatible-by-count', () => {
+    expect(dbExcelParseOptions({ hasHeaderRow: false, delimiter: ';' })).toEqual({ delimiter: ';' });
+  });
+
+  it('returns undefined when nothing but hasHeaderRow was set', () => {
+    expect(dbExcelParseOptions({ hasHeaderRow: false })).toBeUndefined();
+  });
+
+  it('passes undefined through', () => {
+    expect(dbExcelParseOptions(undefined)).toBeUndefined();
   });
 });

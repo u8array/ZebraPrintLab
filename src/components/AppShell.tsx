@@ -12,6 +12,7 @@ import { ZPLOutput } from "./Output/ZPLOutput";
 import { ZplImportModal } from "./Output/ZplImportModal";
 import { VariableMappingModal } from "./Variables/VariableMappingModal";
 import { CsvImportConfirmDialog } from "./Variables/CsvImportConfirmDialog";
+import { ExcelSheetModal } from "./Variables/ExcelSheetModal";
 import { PrintToZebraDialog } from "./Output/PrintToZebraDialog";
 import {
   DropdownMenu,
@@ -40,7 +41,9 @@ import {
   MoonIcon,
   GlobeAltIcon,
 } from "@heroicons/react/16/solid";
-import { useLabelStore, useHistory, selectLabelaryNoticeRequired, selectPreviewLocksEditor } from "../store/labelStore";
+import { useLabelStore, useHistory, selectLabelaryNoticeRequired, selectPreviewLocksEditor, selectBatchPrintCount } from "../store/labelStore";
+import { datasetTimestamp } from "@zplab/core/types/DataSource";
+import { isCurrentDataContext } from "../store/datasetActions";
 import { formatTemplate } from "../lib/formatTemplate";
 import { buildMenuModel, type MenuItemId } from "../lib/menuModel";
 import { NativeMenuBridge } from "./NativeMenuBridge";
@@ -60,6 +63,7 @@ import { useGlobalShortcuts } from "../hooks/useGlobalShortcuts";
 import { useDesignFileActions } from "../hooks/useDesignFileActions";
 import { useMcpBridge } from "../hooks/useMcpBridge";
 import { useCsvImportActions } from "../hooks/useCsvImportActions";
+import { useExcelImportActions } from "../hooks/useExcelImportActions";
 import { useZplImportExport } from "../hooks/useZplImportExport";
 import { useOutputPanel, OUTPUT_DEFAULT_H } from "../hooks/useOutputPanel";
 import { useCollapsiblePanel } from "../hooks/useCollapsiblePanel";
@@ -103,6 +107,7 @@ const MENU_ICONS: Partial<Record<MenuItemId, ComponentType<SVGProps<SVGSVGElemen
   openDesign: FolderOpenIcon,
   saveDesign: DocumentArrowDownIcon,
   importCsv: TableCellsIcon,
+  importExcel: TableCellsIcon,
   print: PrinterIcon,
   sendToZebra: PaperAirplaneIcon,
   undo: ArrowUturnLeftIcon,
@@ -113,6 +118,7 @@ const MENU_ICONS: Partial<Record<MenuItemId, ComponentType<SVGProps<SVGSVGElemen
 export function AppShell() {
   const t = useT();
   const label = useLabelStore((s) => s.label);
+  const batchPrintCount = useLabelStore(selectBatchPrintCount);
   const pages = useLabelStore((s) => s.pages);
   const selectObject = useLabelStore((s) => s.selectObject);
   const addPage = useLabelStore((s) => s.addPage);
@@ -172,13 +178,15 @@ export function AppShell() {
     confirmPendingImport,
     cancelPendingImport,
   } = useCsvImportActions();
-  const csvMappingModalOpen = useLabelStore((s) => s.csvMappingModalOpen);
-  const closeCsvMappingModal = useLabelStore((s) => s.closeCsvMappingModal);
+  const { openExcelPicker, pendingExcel, loadSheet, cancelExcelImport } =
+    useExcelImportActions();
+  const mappingModalOpen = useLabelStore((s) => s.mappingModalOpen);
+  const closeMappingModal = useLabelStore((s) => s.closeMappingModal);
   // Remount the mapping modal when the dataset changes (e.g. importing from its
-  // own no-CSV state) so its open-time draft re-seeds with the new CSV.
-  // importedAt is unique per import, so it also catches re-importing the same
-  // filename (which a filename key would miss).
-  const csvDatasetKey = useLabelStore((s) => s.csvDataset?.source.importedAt);
+  // own empty state) so its open-time draft re-seeds with the new data. The
+  // timestamp is unique per import/fetch, so it also catches re-loading the
+  // same file or table (which a name key would miss).
+  const datasetKey = useLabelStore((s) => s.dataset && datasetTimestamp(s.dataset.source));
   const {
     showZplImport,
     openZplImport,
@@ -203,6 +211,8 @@ export function AppShell() {
     hasObjects,
     canBatchExport,
     batchRowCount,
+    batchPrintCount,
+    includeExcelImport: isDesktopShell,
     labelaryEnabled,
     canUndo,
     canRedo,
@@ -219,6 +229,7 @@ export function AppShell() {
     openDesign: handleOpen,
     saveDesign: handleSave,
     importCsv: openCsvPicker,
+    importExcel: openExcelPicker,
     // Print routes through Labelary; clicking before the notice has been
     // acknowledged opens the disclosure first, then prints.
     print: () => (noticeRequired ? setShowPrintNotice(true) : void handlePrint()),
@@ -509,14 +520,26 @@ export function AppShell() {
       </div>
 
       {showZplImport && <ZplImportModal onClose={closeZplImport} />}
-      {csvMappingModalOpen && (
+      {mappingModalOpen && (
         <VariableMappingModal
-          key={csvDatasetKey ?? "none"}
-          onClose={closeCsvMappingModal}
+          key={datasetKey ?? "none"}
+          onClose={closeMappingModal}
           onImportCsv={openCsvPicker}
         />
       )}
-      {pendingImport && (
+      {/* Token gate: a doc/context swap leaves the local pending state stale, so
+          hide the dialog rather than let it hover over the new document. */}
+      {pendingExcel && isCurrentDataContext(pendingExcel.token) && (
+        <ExcelSheetModal
+          // Remount on a fresh pick so the sheet select re-seeds instead of
+          // keeping a previous file's stale selection.
+          key={pendingExcel.path}
+          pending={pendingExcel}
+          onLoad={loadSheet}
+          onCancel={cancelExcelImport}
+        />
+      )}
+      {pendingImport && isCurrentDataContext(pendingImport.token) && (
         <CsvImportConfirmDialog
           pending={pendingImport}
           onConfirm={confirmPendingImport}

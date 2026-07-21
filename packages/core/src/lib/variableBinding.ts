@@ -1,5 +1,5 @@
 import type { LabelObject } from "../types/Group";
-import { markerOf, type CsvMapping, type Variable } from "../types/Variable";
+import { markerOf, type ColumnMapping, type Variable } from "../types/Variable";
 import { resolveTemplateMarkers } from "./fnTemplate";
 import { channelDatesFrom, hasClockMarkers, resolveClockMarkers } from "./fcTemplate";
 import { clockDatesThunk, resolveMarkerChain, type ClockResolveCtx } from "./markerResolve";
@@ -20,10 +20,10 @@ export function getObjectStringContent(obj: LabelObject): string | undefined {
 /** `preview` = actual print value, `schema` = `«name»` placeholder. */
 export type RenderMode = "preview" | "schema";
 
-/** Empty CSV cells render as empty (no defaultValue fallback). */
+/** Empty dataset cells render as empty (no defaultValue fallback). */
 export function resolveVariableValue(
   variable: Variable,
-  active: ActiveCsvRow | null,
+  active: ActiveRow | null,
   mode: RenderMode = "preview",
 ): string {
   if (mode === "schema") return markerOf(variable.name);
@@ -35,38 +35,38 @@ export function resolveVariableValue(
   return active.row[idx] ?? "";
 }
 
-export type VariableSource = "csv" | "orphan" | "default";
+export type VariableSource = "bound" | "orphan" | "default";
 
-/** csv=bound to existing header, orphan=bound to missing header, default=unbound. */
+/** bound=header exists in the dataset, orphan=bound to missing header, default=unbound. */
 export function getVariableSource(
   variable: Variable,
-  csvDataset: { headers: readonly string[] } | null,
-  csvMapping: CsvMapping | null,
+  dataset: { headers: readonly string[] } | null,
+  columnMapping: ColumnMapping | null,
 ): VariableSource {
-  const header = csvMapping?.bindings[variable.id];
+  const header = columnMapping?.bindings[variable.id];
   if (header === undefined) return "default";
-  if (!csvDataset) return "default";
-  return csvDataset.headers.includes(header) ? "csv" : "orphan";
+  if (!dataset) return "default";
+  return dataset.headers.includes(header) ? "bound" : "orphan";
 }
 
-/** False when: no CSV, schema mode, unbound, or orphan. */
+/** False when: no dataset, schema mode, unbound, or orphan. */
 export function shouldShowFallbackTint(
   variable: Variable | undefined,
-  csvDataset: { headers: readonly string[] } | null,
-  csvMapping: CsvMapping | null,
+  dataset: { headers: readonly string[] } | null,
+  columnMapping: ColumnMapping | null,
   mode: RenderMode,
 ): boolean {
   if (mode !== "preview") return false;
-  if (!csvDataset) return false;
+  if (!dataset) return false;
   if (!variable) return false;
-  return getVariableSource(variable, csvDataset, csvMapping) !== "csv";
+  return getVariableSource(variable, dataset, columnMapping) !== "bound";
 }
 
 /** Recurse leaves through applyBindingToObject; preserves group structure. */
 export function applyBindingToTree<T extends LabelObject>(
   objects: readonly T[],
   variables: readonly Variable[],
-  active: ActiveCsvRow | null,
+  active: ActiveRow | null,
   mode: RenderMode = "preview",
   /** Shared clock context so every leaf sees the same instant and the
    *  same label-level ^SO offsets. */
@@ -93,25 +93,25 @@ export function applyBindingToTree<T extends LabelObject>(
   });
 }
 
-export interface ActiveCsvRow {
+export interface ActiveRow {
   headers: readonly string[];
   row: readonly string[];
-  mapping: CsvMapping;
+  mapping: ColumnMapping;
 }
 
-/** CSV column a variable is bound to, or -1 when unbound / the header is
+/** Dataset column a variable is bound to, or -1 when unbound / the header is
  *  missing from the dataset. The one place for the binding→column lookup. */
 export function boundColumnIndex(
   variable: Pick<Variable, "id">,
-  csvDataset: { headers: readonly string[] } | null,
-  csvMapping: Pick<CsvMapping, "bindings"> | null,
+  dataset: { headers: readonly string[] } | null,
+  columnMapping: Pick<ColumnMapping, "bindings"> | null,
 ): number {
-  const header = csvMapping?.bindings[variable.id];
-  if (header === undefined || !csvDataset) return -1;
-  return csvDataset.headers.indexOf(header);
+  const header = columnMapping?.bindings[variable.id];
+  if (header === undefined || !dataset) return -1;
+  return dataset.headers.indexOf(header);
 }
 
-/** Print-time resolution of `raw` for a specific CSV row: clock markers via
+/** Print-time resolution of `raw` for a specific dataset row: clock markers via
  *  the primary clock at `now` (offsets shift real dates, never width or
  *  validity), variable markers via the row's bound cell (an empty cell prints
  *  empty) or the default when unbound / `rowIdx < 0`. Unknown markers stay
@@ -120,8 +120,8 @@ export function resolveForRow(
   raw: string,
   rowIdx: number,
   variables: readonly Variable[],
-  csvDataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null,
-  csvMapping: CsvMapping | null,
+  dataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null,
+  columnMapping: ColumnMapping | null,
   now: Date = new Date(),
 ): string {
   let next = raw;
@@ -132,26 +132,26 @@ export function resolveForRow(
   return resolveTemplateMarkers(next, (name) => {
     const v = byName.get(name);
     if (!v) return undefined;
-    if (rowIdx >= 0 && csvDataset) {
-      const col = boundColumnIndex(v, csvDataset, csvMapping);
-      if (col >= 0) return csvDataset.rows[rowIdx]?.[col] ?? "";
+    if (rowIdx >= 0 && dataset) {
+      const col = boundColumnIndex(v, dataset, columnMapping);
+      if (col >= 0) return dataset.rows[rowIdx]?.[col] ?? "";
     }
     return v.defaultValue;
   });
 }
 
 /** Every value a variable's marker can substitute at print time: its default
- *  plus, when bound, all cells of its CSV column. One tested place for the
+ *  plus, when bound, all cells of its dataset column. One tested place for the
  *  column-lookup/row-walk that validation consumers share. */
 export function variableSubstitutions(
   variable: Variable,
-  csvDataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null,
-  csvMapping: CsvMapping | null,
+  dataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null,
+  columnMapping: ColumnMapping | null,
 ): string[] {
   const out = [variable.defaultValue];
-  const col = boundColumnIndex(variable, csvDataset, csvMapping);
-  if (col === -1 || !csvDataset) return out;
-  for (const row of csvDataset.rows) {
+  const col = boundColumnIndex(variable, dataset, columnMapping);
+  if (col === -1 || !dataset) return out;
+  for (const row of dataset.rows) {
     // An empty cell prints as empty (no default fallback), so it IS a
     // substitution; a short row's missing cell prints empty too.
     out.push(row[col] ?? "");
@@ -160,25 +160,25 @@ export function variableSubstitutions(
 }
 
 /** Null when no dataset, no mapping, or active index out of bounds. */
-export function buildActiveCsvRow(
-  csvDataset: {
+export function buildActiveRow(
+  dataset: {
     headers: readonly string[];
     rows: readonly (readonly string[])[];
     activeRowIndex: number;
   } | null,
-  csvMapping: CsvMapping | null,
-): ActiveCsvRow | null {
-  if (!csvDataset || !csvMapping) return null;
-  const row = csvDataset.rows[csvDataset.activeRowIndex];
+  columnMapping: ColumnMapping | null,
+): ActiveRow | null {
+  if (!dataset || !columnMapping) return null;
+  const row = dataset.rows[dataset.activeRowIndex];
   if (!row) return null;
-  return { headers: csvDataset.headers, row, mapping: csvMapping };
+  return { headers: dataset.headers, row, mapping: columnMapping };
 }
 
 /** Identity-preserving: returns same ref when unbound or unchanged. */
 export function applyBindingToObject<T extends LabelObject>(
   obj: T,
   variables: readonly Variable[],
-  active: ActiveCsvRow | null = null,
+  active: ActiveRow | null = null,
   mode: RenderMode = "preview",
   /** Lazy-initialised inside the clock branch. */
   clock?: ClockResolveCtx,

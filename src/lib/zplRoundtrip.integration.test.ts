@@ -23,8 +23,8 @@ beforeEach(() => {
     currentPageIndex: 0,
     selectedIds: [],
     variables: [],
-    csvMapping: null,
-    csvDataset: null,
+    columnMapping: null,
+    dataset: null,
   });
 });
 
@@ -253,14 +253,14 @@ describe("round-trip integration (real import -> store -> export)", () => {
     // would regenerate them instead of replaying the overlay byte-for-byte.
     importInto(DOC);
     const original = exportZpl();
-    const json = serializeDesign(store().label, store().pages, store().variables, store().csvMapping);
+    const json = serializeDesign(store().label, store().pages, store().variables, store().columnMapping);
     const textId = store().pages[0]!.objects.find((o) => o.type === "text")!.id;
     store().updateObject(textId, { props: { content: "EDITED", fontHeight: 30, fontWidth: 0, rotation: "N" } });
 
     const parsed = parseDesignFile(json);
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
-    store().loadDesign(parsed.value.label, parsed.value.pages, parsed.value.variables, parsed.value.csvMapping);
+    store().loadDesign(parsed.value.label, parsed.value.pages, parsed.value.variables, parsed.value.columnMapping);
 
     const reloaded = store().pages[0]!.objects.find((o) => o.type === "text")!;
     expect(reloaded.dirty).toBeUndefined(); // not falsely stamped by the reload

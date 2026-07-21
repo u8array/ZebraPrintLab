@@ -247,8 +247,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
   const previewBinding = usePreviewBinding();
   // Raw dataset/mapping (not just the active row): markerValueFindings
   // validates marker values across ALL CSV rows, since any row prints.
-  const csvDataset = useLabelStore((s) => s.csvDataset);
-  const csvMapping = useLabelStore((s) => s.csvMapping);
+  const dataset = useLabelStore((s) => s.dataset);
+  const columnMapping = useLabelStore((s) => s.columnMapping);
   const paletteRows = useLabelStore((s) => s.paletteRows);
   const previewMode = useLabelStore((s) => s.previewMode);
   const previewLocks = useLabelStore(selectPreviewLocksEditor);
@@ -614,8 +614,8 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
           ...barcodeEncodeFindings(preflightLeaves, scale, label.dpmm, previewBinding),
           ...markerValueFindings(preflightLeaves, {
             variables: previewBinding.variables,
-            csvDataset,
-            csvMapping,
+            dataset,
+            columnMapping,
           }),
         ],
         pristineEmptyIds,

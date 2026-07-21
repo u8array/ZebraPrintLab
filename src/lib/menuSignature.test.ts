@@ -8,6 +8,8 @@ const FLAGS: MenuFlags = {
   hasObjects: true,
   canBatchExport: false,
   batchRowCount: 0,
+  batchPrintCount: 0,
+  includeExcelImport: false,
   labelaryEnabled: true,
   canUndo: true,
   canRedo: false,

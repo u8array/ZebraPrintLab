@@ -21,12 +21,30 @@ tauri = { version = "2.11.3", features = [] }
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["net", "time", "io-util", "rt"] }
+# Stream a query's rows (db.rs) instead of fetch_all so a huge result is bounded
+# by a byte budget and errors instead of OOMing. Already transitive via sqlx;
+# tokio-stream keeps us in the tokio ecosystem we already depend on directly.
+tokio-stream = { version = "0.1", default-features = false }
 # OS-native raw printing: winspool RAW on Windows, libcups on macOS/Linux.
 # Sole transitive dep is libc. Linux CI needs libcups2-dev to link.
 printers = "2.3.0"
 # OS credential store for API keys: Windows Credential Manager, macOS
 # Keychain, Linux DBus Secret Service. Linux CI needs libdbus-1-dev.
 keyring = { version = "3", features = ["windows-native", "apple-native", "sync-secret-service"] }
+# Read-only dataset connector (db.rs). Bundled SQLite, no system lib to link;
+# rustls-ring for pg/mysql TLS (aws-lc would drag cmake/nasm into every build).
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "sqlite", "postgres", "mysql", "tls-rustls-ring"] }
+# Excel as a plain file reader (excel.rs): ZebraDesigner-parity without the
+# ODBC driver-manager tax. dates maps serial datetimes via chrono.
+calamine = { version = "0.30.1", features = ["dates"] }
+# Already transitive via calamine; used directly in excel.rs to bound a
+# workbook's DECLARED uncompressed size before calamine materializes it, so a
+# decompression bomb can't defeat the compressed-only file-size cap.
+zip = { version = "4", default-features = false, features = ["deflate"] }
+chrono = { version = "0.4.45", default-features = false, features = ["std"] }
+# Typed errors inside the db/excel connector (stringified only at the IPC edge).
+# Already transitive via sqlx.
+thiserror = "1"
 
 [target.'cfg(unix)'.dependencies]
 # Linux: O_NONBLOCK for the usblp read-back fd (AsyncFd needs a non-blocking

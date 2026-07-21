@@ -6,6 +6,8 @@ const FLAGS: MenuFlags = {
   hasObjects: true,
   canBatchExport: false,
   batchRowCount: 0,
+  batchPrintCount: 0,
+  includeExcelImport: false,
   labelaryEnabled: true,
   canUndo: true,
   canRedo: false,
@@ -39,6 +41,23 @@ describe("buildMenuModel", () => {
     const m = buildMenuModel(en, { ...FLAGS, canBatchExport: true, batchRowCount: 7 });
     const item = byId(m, "exportBatch");
     expect(item?.label).toContain("7");
+  });
+
+  it("labels sendToZebra with the physical print count while a batch is mapped", () => {
+    expect(byId(buildMenuModel(en, FLAGS), "sendToZebra")?.label).toBe(en.app.sendToZebra);
+    // 7 rows × ^PQ 3: the send label counts printed labels, the export
+    // label counts file rows.
+    const m = buildMenuModel(en, {
+      ...FLAGS, canBatchExport: true, batchRowCount: 7, batchPrintCount: 21,
+    });
+    expect(byId(m, "sendToZebra")?.label).toContain("21");
+    expect(byId(m, "exportBatch")?.label).toContain("7");
+  });
+
+  it("shows the excel item only on the desktop shell", () => {
+    expect(byId(buildMenuModel(en, FLAGS), "importExcel")).toBeUndefined();
+    const m = buildMenuModel(en, { ...FLAGS, includeExcelImport: true });
+    expect(ids(m).indexOf("importExcel")).toBe(ids(m).indexOf("importCsv") + 1);
   });
 
   it("hides print entirely when the Labelary gate is off", () => {

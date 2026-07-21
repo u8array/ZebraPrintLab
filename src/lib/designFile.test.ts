@@ -42,6 +42,49 @@ describe('serializeDesign', () => {
     const parsed = JSON.parse(json) as { pages: unknown[] };
     expect(parsed.pages).toHaveLength(2);
   });
+
+  it('round-trips a db dataSource pointer and omits it when absent', () => {
+    const ref = { kind: 'db' as const, profileId: 'p1', profileName: 'Prod', table: 'items' };
+    const withRef = serializeDesign(
+      { widthMm: 100, heightMm: 60, dpmm: 8 },
+      [{ objects: SAMPLE_OBJECTS }],
+      [],
+      null,
+      ref,
+    );
+    const parsed = parseDesignFile(withRef);
+    expect(parsed.ok && parsed.value.dataSource).toEqual(ref);
+
+    const without = serializeDesign(
+      { widthMm: 100, heightMm: 60, dpmm: 8 },
+      [{ objects: SAMPLE_OBJECTS }],
+    );
+    expect('dataSource' in (JSON.parse(without) as object)).toBe(false);
+    const parsedWithout = parseDesignFile(without);
+    expect(parsedWithout.ok && parsedWithout.value.dataSource).toBeNull();
+  });
+
+  it('drops a malformed dataSource pointer instead of rejecting the design', () => {
+    const json = serializeDesign({ widthMm: 100, heightMm: 60, dpmm: 8 }, [
+      { objects: SAMPLE_OBJECTS },
+    ]);
+    const mangled = { ...(JSON.parse(json) as object), dataSource: { kind: 'db' } };
+    const parsed = parseDesignFile(JSON.stringify(mangled));
+    expect(parsed.ok).toBe(true);
+    expect(parsed.ok && parsed.value.dataSource).toBeNull();
+  });
+
+  it('keeps the legacy csvMapping key on disk for a non-null mapping', () => {
+    const json = serializeDesign(
+      { widthMm: 100, heightMm: 60, dpmm: 8 },
+      [{ objects: SAMPLE_OBJECTS }],
+      [],
+      { bindings: { v1: 'sku' }, headerSnapshot: ['sku'] },
+    );
+    const onDisk = JSON.parse(json) as Record<string, unknown>;
+    expect(onDisk.csvMapping).toEqual({ bindings: { v1: 'sku' }, headerSnapshot: ['sku'] });
+    expect('columnMapping' in onDisk).toBe(false);
+  });
 });
 
 describe('parseDesignFile', () => {
@@ -495,7 +538,7 @@ describe('parseDesignFile', () => {
     expect(result.value.variables).toEqual([]);
   });
 
-  it('roundtrips csvMapping when present', () => {
+  it('roundtrips columnMapping when present', () => {
     const mapping = {
       bindings: { v1: 'SKU', v2: 'Quantity' },
       headerSnapshot: ['SKU', 'Quantity', 'Notes'],
@@ -509,10 +552,10 @@ describe('parseDesignFile', () => {
     const result = parseDesignFile(json);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.csvMapping).toEqual(mapping);
+    expect(result.value.columnMapping).toEqual(mapping);
   });
 
-  it('omits csvMapping from JSON when null (back-compat)', () => {
+  it('omits columnMapping from JSON when null (back-compat)', () => {
     const json = serializeDesign(
       { widthMm: 100, heightMm: 60, dpmm: 8 },
       [{ objects: SAMPLE_OBJECTS }],
@@ -520,10 +563,10 @@ describe('parseDesignFile', () => {
       null,
     );
     const parsed = JSON.parse(json) as Record<string, unknown>;
-    expect(parsed).not.toHaveProperty('csvMapping');
+    expect(parsed).not.toHaveProperty('columnMapping');
   });
 
-  it('defaults to null csvMapping when JSON lacks the field', () => {
+  it('defaults to null columnMapping when JSON lacks the field', () => {
     const json = serializeDesign(
       { widthMm: 100, heightMm: 60, dpmm: 8 },
       [{ objects: SAMPLE_OBJECTS }],
@@ -531,6 +574,6 @@ describe('parseDesignFile', () => {
     const result = parseDesignFile(json);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.csvMapping).toBeNull();
+    expect(result.value.columnMapping).toBeNull();
   });
 });

@@ -120,7 +120,7 @@ export const csvParseOptionsPersistedSchema = z.object({
 });
 export type CsvParseOptionsPersisted = z.infer<typeof csvParseOptionsPersistedSchema>;
 
-export const csvMappingSchema = z.object({
+export const columnMappingSchema = z.object({
   /** variable.id -> header name. Missing entries fall back to defaultValue. */
   bindings: z.record(z.string(), z.string()),
   /** Headers the mapping was made against; differing re-imports trigger warning. */
@@ -128,12 +128,12 @@ export const csvMappingSchema = z.object({
   /** Parse options at last apply; optional for back-compat. */
   parseOptions: csvParseOptionsPersistedSchema.optional(),
 });
-export type CsvMapping = z.infer<typeof csvMappingSchema>;
+export type ColumnMapping = z.infer<typeof columnMappingSchema>;
 
 /** Mapping <-> headers compatibility. Headerless: column-count match.
  *  Header-row: order-independent name-set match. */
 export function isMappingCompatibleWith(
-  mapping: CsvMapping,
+  mapping: ColumnMapping,
   headers: readonly string[],
 ): boolean {
   const headerless = mapping.parseOptions?.hasHeaderRow === false;
@@ -144,6 +144,18 @@ export function isMappingCompatibleWith(
   return true;
 }
 
+/** parseOptions kept when a mapping moves onto a named-header (db/excel) source:
+ *  delimiter/encoding/skipRows survive for a later CSV re-import, but hasHeaderRow
+ *  is dropped so it can't poison {@link isMappingCompatibleWith}. */
+export function dbExcelParseOptions(
+  opts: CsvParseOptionsPersisted | undefined,
+): CsvParseOptionsPersisted | undefined {
+  if (!opts) return undefined;
+  const { hasHeaderRow: _drop, ...rest } = opts;
+  void _drop;
+  return Object.keys(rest).length === 0 ? undefined : rest;
+}
+
 /** Loose header match: case-insensitive, collapse spaces/dashes/underscores. */
 export function normalizeHeaderForMatch(s: string): string {
   return s.toLowerCase().replace(/[\s_-]+/g, "");
@@ -151,7 +163,7 @@ export function normalizeHeaderForMatch(s: string): string {
 
 /** variable.id -> headerName via normalizeHeaderForMatch; each header
  *  consumed at most once, ties go to first variable. */
-export function suggestCsvMapping(
+export function suggestColumnMapping(
   variables: readonly Variable[],
   headers: readonly string[],
 ): Record<string, string> {

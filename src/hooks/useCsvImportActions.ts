@@ -6,17 +6,18 @@ import {
   csvParseErrors,
   type CsvParseResult,
 } from "../lib/csvImport";
-import { isMappingCompatibleWith, type CsvMapping } from "@zplab/core/types/Variable";
+import { isMappingCompatibleWith, type ColumnMapping } from "@zplab/core/types/Variable";
 import { pickFileBytes, pickViaMenu, CSV_FILTER } from "../lib/fileDialogs";
+import { datasetDisplayName } from "@zplab/core/types/DataSource";
+import { needsMappingReview, currentDataContext, isCurrentDataContext } from "../store/datasetActions";
 
 /** Captures everything decided during parse so the caller can either
  *  apply directly or stash on the pending-import slot until the user
- *  confirms. Bytes/text live here because a "Cancel" must not pollute
- *  the module-scope cache that the modal re-decodes from. */
+ *  confirms. Bytes live here because a "Cancel" must not pollute the
+ *  module-scope cache that the modal re-decodes from. */
 interface ParsedImport {
   filename: string;
   bytes: Uint8Array;
-  text: string;
   result: CsvParseResult;
 }
 
@@ -28,7 +29,11 @@ export type PendingImportKind = "same" | "different";
 export interface PendingImport {
   kind: PendingImportKind;
   parsed: ParsedImport;
-  /** Filename of the dataset being replaced. */
+  /** datasetFetchToken at dialog-open; a mismatch on confirm means the data
+   *  context (or the whole document) changed underneath, so the import is
+   *  dropped rather than applied to the new context. */
+  token: number;
+  /** Display name of the dataset being replaced (filename or db link). */
   replacingFilename: string;
   /** True when the previous mapping treated CSV as headerless. Drives
    *  the dialog copy: column-count match vs. column-name match. */
@@ -47,14 +52,17 @@ export function useCsvImportActions() {
   const setUserError = useLabelStore((s) => s.setUserError);
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
 
-  const importCsvData = (filename: string, bytes: Uint8Array) => {
+  const importCsvData = (filename: string, bytes: Uint8Array, token: number) => {
+    // The context changed during the pick/read (another document loaded): drop
+    // the import rather than commit it into a document it wasn't picked for.
+    if (!isCurrentDataContext(token)) return;
     // Re-read store state AFTER the file IO so a discard/replace that
     // happened meanwhile doesn't drive the decision off a stale snapshot.
-    const { csvMapping, csvDataset } = useLabelStore.getState();
+    const { columnMapping, dataset } = useLabelStore.getState();
     // Re-use the parse options the mapping was last applied with so a
     // headerless / windows-1252 / semicolon-delimited dataset doesn't
     // get re-parsed under defaults and falsely flagged as "different".
-    const persistedOpts = csvMapping?.parseOptions;
+    const persistedOpts = columnMapping?.parseOptions;
     const encoding = persistedOpts?.encoding ?? "utf-8";
     let text: string;
     try {
@@ -75,12 +83,12 @@ export function useCsvImportActions() {
       return;
     }
 
-    const parsed: ParsedImport = { filename, bytes, text, result: result.value };
+    const parsed: ParsedImport = { filename, bytes, result: result.value };
 
     // Fresh import (nothing to overwrite): commit immediately. The
     // mapping-modal auto-open (driven by absent or incompatible
     // mapping) inside applyImport handles UX from there.
-    if (!csvDataset) {
+    if (!dataset) {
       applyImport(parsed, { keepMapping: true });
       return;
     }
@@ -89,13 +97,14 @@ export function useCsvImportActions() {
     // controls the dialog shape (single Replace vs. three-way choice).
     setPendingImport({
       kind:
-        csvMapping && isMappingCompatibleWith(csvMapping, result.value.headers)
+        columnMapping && isMappingCompatibleWith(columnMapping, result.value.headers)
           ? "same"
           : "different",
       parsed,
-      replacingFilename: csvDataset.source.filename,
-      wasHeaderless: csvMapping?.parseOptions?.hasHeaderRow === false,
-      previousColumnCount: csvMapping?.headerSnapshot.length ?? 0,
+      token,
+      replacingFilename: datasetDisplayName(dataset.source),
+      wasHeaderless: columnMapping?.parseOptions?.hasHeaderRow === false,
+      previousColumnCount: columnMapping?.headerSnapshot.length ?? 0,
     });
   };
 
@@ -104,6 +113,9 @@ export function useCsvImportActions() {
     e.target.value = "";
     if (!file) return;
 
+    // Web: the browser file dialog is modal (no doc swap while it is open), so
+    // sampling here, before the read, covers the only exploitable async gap.
+    const token = currentDataContext();
     let bytes: Uint8Array;
     try {
       bytes = new Uint8Array(await file.arrayBuffer());
@@ -111,23 +123,31 @@ export function useCsvImportActions() {
       setUserError(csvParseErrors.read_failed);
       return;
     }
-    importCsvData(file.name, bytes);
+    importCsvData(file.name, bytes, token);
   };
 
   // No clear here: a cancelled pick keeps any existing error; a committed
   // import clears it in applyImport instead.
   const openCsvPicker = () => {
+    // Desktop: sample before the native dialog opens, so an MCP doc-load while
+    // the picker is open supersedes this import (parity with the excel picker).
+    const token = currentDataContext();
     pickViaMenu(
       csvInputRef,
       () => pickFileBytes(CSV_FILTER),
-      (picked) => importCsvData(picked.name, picked.bytes),
+      (picked) => importCsvData(picked.name, picked.bytes, token),
       () => setUserError(csvParseErrors.read_failed),
     );
   };
 
   const confirmPendingImport = (opts: { keepMapping: boolean }) => {
     if (!pendingImport) return;
-    applyImport(pendingImport.parsed, opts);
+    // Drop the import if the data context changed while the confirm was open
+    // (another dataset loaded, or the whole document was replaced): applying
+    // it now would overwrite the new context the user moved on to.
+    if (isCurrentDataContext(pendingImport.token)) {
+      applyImport(pendingImport.parsed, opts);
+    }
     setPendingImport(null);
   };
 
@@ -148,15 +168,12 @@ export function useCsvImportActions() {
  *  modal whenever the resulting state needs user review: no mapping
  *  (fresh / discarded) or a kept-but-incompatible mapping. */
 function applyImport(p: ParsedImport, opts: { keepMapping: boolean }): void {
-  const { loadCsv, setCsvMapping, openCsvMappingModal, csvMapping, clearUserError } =
+  const { loadDataset, setColumnMapping, openMappingModal, columnMapping, clearUserError } =
     useLabelStore.getState();
-  rememberImport(p.bytes, p.text);
-  const effectiveMapping: CsvMapping | null = opts.keepMapping ? csvMapping : null;
-  if (!opts.keepMapping) setCsvMapping(null);
-  loadCsv(p.result);
+  rememberImport(p.bytes);
+  const effectiveMapping: ColumnMapping | null = opts.keepMapping ? columnMapping : null;
+  if (!opts.keepMapping) setColumnMapping(null);
+  loadDataset(p.result);
   clearUserError();
-  const needsReview =
-    !effectiveMapping ||
-    !isMappingCompatibleWith(effectiveMapping, p.result.headers);
-  if (needsReview) openCsvMappingModal();
+  if (needsMappingReview(effectiveMapping, p.result.headers)) openMappingModal();
 }

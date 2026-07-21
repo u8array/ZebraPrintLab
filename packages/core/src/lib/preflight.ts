@@ -11,7 +11,7 @@ import { getObjectStringContent, resolveForRow, variableSubstitutions } from "./
 import { gs1ModeDSharedFns, isModeDLeaf } from "./gs1ModeDFns";
 import { isBlankText } from "./zebraTextLayout";
 import { resolveTextMode } from "../registry/text";
-import type { CsvMapping, Variable } from "../types/Variable";
+import type { ColumnMapping, Variable } from "../types/Variable";
 import type { Unit } from "./units";
 import {
   PREFLIGHT_SEVERITY,
@@ -38,8 +38,8 @@ export function suppressPristineEmpty(
 
 interface MarkerValueDeps {
   variables: readonly Variable[];
-  csvDataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null;
-  csvMapping: CsvMapping | null;
+  dataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null;
+  columnMapping: ColumnMapping | null;
 }
 
 // Per-leaf cache: the row-walk over a large CSV must not rerun every render.
@@ -79,8 +79,8 @@ export function markerValueFindings(
     if (
       hit &&
       hit.variables === deps.variables &&
-      hit.csvDataset === deps.csvDataset &&
-      hit.csvMapping === deps.csvMapping
+      hit.dataset === deps.dataset &&
+      hit.columnMapping === deps.columnMapping
     ) {
       out.push(...hit.findings);
       continue;
@@ -92,10 +92,10 @@ export function markerValueFindings(
         // badge already covers the ACTIVE substitution (defaults, or the
         // active row), so only the OTHER CSV rows need checking here; without
         // a dataset there is nothing the badge doesn't see.
-        const rows = deps.csvDataset && deps.csvMapping ? deps.csvDataset.rows.map((_, i) => i) : [];
+        const rows = deps.dataset && deps.columnMapping ? deps.dataset.rows.map((_, i) => i) : [];
         const details: string[] = [];
         for (const rowIdx of rows) {
-          const resolved = resolveForRow(content, rowIdx, deps.variables, deps.csvDataset, deps.csvMapping);
+          const resolved = resolveForRow(content, rowIdx, deps.variables, deps.dataset, deps.columnMapping);
           const at = rowIdx < 0 ? "defaults" : `row ${rowIdx + 1}`;
           const segs = parseGs1ToSegments(resolved);
           if (segs === null || segs.length === 0) {
@@ -120,12 +120,17 @@ export function markerValueFindings(
           // row, else the defaults) per marker segment against the AI's
           // length/charset/date rules. The resolved value IS the runtime
           // value here, so an empty variable-AI value is a real error.
-          const rows = deps.csvDataset && deps.csvMapping ? deps.csvDataset.rows.map((_, i) => i) : [-1];
+          // A 0-row dataset prints the defaults too, so validate them like the
+          // no-dataset case rather than iterating an empty row set.
+          const rows =
+            deps.dataset && deps.columnMapping && deps.dataset.rows.length > 0
+              ? deps.dataset.rows.map((_, i) => i)
+              : [-1];
           const details: string[] = [];
           outer: for (const rowIdx of rows) {
             for (const seg of segments) {
               if (!hasTemplateMarkers(seg.value)) continue;
-              const resolved = resolveForRow(seg.value, rowIdx, deps.variables, deps.csvDataset, deps.csvMapping);
+              const resolved = resolveForRow(seg.value, rowIdx, deps.variables, deps.dataset, deps.columnMapping);
               const at = rowIdx < 0 ? "defaults" : `row ${rowIdx + 1}`;
               const err = validateGs1SegmentResolved(seg.ai, seg.value, resolved, false);
               if (err) details.push(`${at}: (${seg.ai}) ${err}`);
@@ -147,13 +152,13 @@ export function markerValueFindings(
     } else if (typed) {
       const parsed = parseContent(content);
       const errors = typedContentMarkerFindings(
-        parsed.type, parsed.fields, deps.variables, deps.csvDataset, deps.csvMapping,
+        parsed.type, parsed.fields, deps.variables, deps.dataset, deps.columnMapping,
       );
       for (const [field, chars] of Object.entries(errors)) {
         findings.push(finding(leaf, "markerValueUnsafe", `${field}: ${chars}`));
       }
       const rows = typedContentIncompleteRows(
-        parsed.type, parsed.fields, deps.variables, deps.csvDataset, deps.csvMapping,
+        parsed.type, parsed.fields, deps.variables, deps.dataset, deps.columnMapping,
       );
       if (rows.length > 0) {
         const shown = rows.slice(0, 5).join(", ") + (rows.length > 5 ? ", …" : "");
@@ -169,7 +174,7 @@ export function markerValueFindings(
       for (const name of new Set(extractTemplateRefs(content))) {
         const v = byName.get(name);
         if (!v) continue;
-        if (variableSubstitutions(v, deps.csvDataset, deps.csvMapping).some((val) => val.includes(blockHazard))) {
+        if (variableSubstitutions(v, deps.dataset, deps.columnMapping).some((val) => val.includes(blockHazard))) {
           dirty.push(v.name);
         }
       }
@@ -197,7 +202,7 @@ export function markerValueFindings(
       for (const name of new Set(extractTemplateRefs(content))) {
         const v = byName.get(name);
         if (!v || !shared.has(v.fnNumber)) continue;
-        if (variableSubstitutions(v, deps.csvDataset, deps.csvMapping).some((val) => val.includes(">"))) {
+        if (variableSubstitutions(v, deps.dataset, deps.columnMapping).some((val) => val.includes(">"))) {
           dirty.push(v.name);
         }
       }

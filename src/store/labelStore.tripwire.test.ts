@@ -5,8 +5,10 @@ import { useLabelStore, persistPartialize, temporalPartialize } from './labelSto
 
 const EXPECTED_PERSIST_KEYS = [
   'canvasSettings',
-  'csvMapping',
+  'columnMapping',
   'currentPageIndex',
+  'dataSourceRef',
+  'dbProfiles',
   'label',
   'labelaryHost',
   'labelaryNoticeAcknowledged',
@@ -25,7 +27,7 @@ const EXPECTED_PERSIST_KEYS = [
 ].sort();
 
 const EXPECTED_TEMPORAL_KEYS = [
-  'csvMapping',
+  'columnMapping',
   'currentPageIndex',
   'label',
   'pages',

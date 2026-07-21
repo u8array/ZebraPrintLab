@@ -8,7 +8,8 @@ export function useDesignFileActions() {
   const label = useLabelStore((s) => s.label);
   const pages = useLabelStore((s) => s.pages);
   const variables = useLabelStore((s) => s.variables);
-  const csvMapping = useLabelStore((s) => s.csvMapping);
+  const columnMapping = useLabelStore((s) => s.columnMapping);
+  const dataSourceRef = useLabelStore((s) => s.dataSourceRef);
   const loadDesign = useLabelStore((s) => s.loadDesign);
   const loadDesignText = useLabelStore((s) => s.loadDesignText);
   const setUserError = useLabelStore((s) => s.setUserError);
@@ -20,7 +21,7 @@ export function useDesignFileActions() {
   };
 
   const handleSave = () => {
-    const data = serializeDesign(label, pages, variables, csvMapping);
+    const data = serializeDesign(label, pages, variables, columnMapping, dataSourceRef);
     void saveTextFile(data, {
       filename: "label.json",
       mimeType: "application/json",

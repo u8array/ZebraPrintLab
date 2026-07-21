@@ -1,8 +1,10 @@
 import { TableCellsIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/16/solid";
 import { useT } from "../../hooks/useT";
-import { useLabelStore } from "../../store/labelStore";
+import { useLabelStore, selectPreviewLocksEditor } from "../../store/labelStore";
+import { datasetDisplayName } from "@zplab/core/types/DataSource";
+import { isDesktopShell } from "../../lib/platform";
 import {
-  buildActiveCsvRow,
+  buildActiveRow,
   getVariableSource,
   resolveVariableValue,
 } from "@zplab/core/lib/variableBinding";
@@ -21,15 +23,23 @@ export function VariableCsvPanel({
 }) {
   const t = useT();
   const tv = t.variableBuilder;
-  const csvDataset = useLabelStore((s) => s.csvDataset);
-  const csvMapping = useLabelStore((s) => s.csvMapping);
+  const dataset = useLabelStore((s) => s.dataset);
+  const columnMapping = useLabelStore((s) => s.columnMapping);
   const variables = useLabelStore((s) => s.variables);
   const setActiveRow = useLabelStore((s) => s.setActiveRow);
-  const openCsvMappingModal = useLabelStore((s) => s.openCsvMappingModal);
+  const openMappingModal = useLabelStore((s) => s.openMappingModal);
+  const dataSourceRef = useLabelStore((s) => s.dataSourceRef);
+  // setActiveRow no-ops under the preview lock, so match VariablesPanel and
+  // disable the steppers rather than leave a dead affordance.
+  const previewLocked = useLabelStore(selectPreviewLocksEditor);
+  const setPrinterSettingsTab = useLabelStore((s) => s.setPrinterSettingsTab);
 
   const goManage = () => {
     onLeave();
-    openCsvMappingModal();
+    // A db-linked design without loaded rows dead-ends in the mapping
+    // modal's CSV shell; route to the reconnect surface instead.
+    if (!dataset && dataSourceRef && isDesktopShell) setPrinterSettingsTab('dataSources');
+    else openMappingModal();
   };
 
   const header = (
@@ -42,7 +52,7 @@ export function VariableCsvPanel({
     </div>
   );
 
-  if (!csvDataset) {
+  if (!dataset) {
     return (
       <section className="rounded-[9px] bg-bg border border-border p-3 flex flex-col gap-2">
         {header}
@@ -51,13 +61,13 @@ export function VariableCsvPanel({
     );
   }
 
-  const total = csvDataset.rows.length;
-  const mapped = variables.filter((v) => getVariableSource(v, csvDataset, csvMapping) === "csv").length;
-  const active = buildActiveCsvRow(csvDataset, csvMapping);
-  const rowNo = total > 0 ? csvDataset.activeRowIndex + 1 : 0;
+  const total = dataset.rows.length;
+  const mapped = variables.filter((v) => getVariableSource(v, dataset, columnMapping) === "bound").length;
+  const active = buildActiveRow(dataset, columnMapping);
+  const rowNo = total > 0 ? dataset.activeRowIndex + 1 : 0;
 
   const selectedVar = selectedVarName ? variables.find((v) => v.name === selectedVarName) : undefined;
-  const selHeader = selectedVar ? csvMapping?.bindings[selectedVar.id] : undefined;
+  const selHeader = selectedVar ? columnMapping?.bindings[selectedVar.id] : undefined;
   const selValue = selectedVar && active ? resolveVariableValue(selectedVar, active, "preview") : "";
 
   return (
@@ -66,16 +76,16 @@ export function VariableCsvPanel({
 
       <div className="flex items-center gap-2 text-[11px] text-text">
         <TableCellsIcon className="w-3.5 h-3.5 text-muted shrink-0" />
-        <span className="min-w-0 truncate font-mono">{csvDataset.source.filename}</span>
+        <span className="min-w-0 truncate font-mono">{datasetDisplayName(dataset.source)}</span>
         <span className="ml-auto shrink-0 text-muted">{total} {tv.rowsLabel}</span>
       </div>
 
       <div className="flex items-center justify-between gap-2 text-[10px] text-muted">
         <span>{mapped} / {variables.length} {tv.mappedLabel}</span>
         <span className="inline-flex items-center gap-1.5">
-          <button type="button" aria-label={tv.prevRow} className="px-1 leading-none hover:text-text disabled:opacity-30" disabled={rowNo <= 1} onClick={() => setActiveRow(csvDataset.activeRowIndex - 1)}>‹</button>
+          <button type="button" aria-label={tv.prevRow} className="px-1 leading-none hover:text-text disabled:opacity-30" disabled={rowNo <= 1 || previewLocked} onClick={() => setActiveRow(dataset.activeRowIndex - 1)}>‹</button>
           <span className="font-mono text-text">{tv.rowLabel} {rowNo}/{total}</span>
-          <button type="button" aria-label={tv.nextRow} className="px-1 leading-none hover:text-text disabled:opacity-30" disabled={rowNo >= total} onClick={() => setActiveRow(csvDataset.activeRowIndex + 1)}>›</button>
+          <button type="button" aria-label={tv.nextRow} className="px-1 leading-none hover:text-text disabled:opacity-30" disabled={rowNo >= total || previewLocked} onClick={() => setActiveRow(dataset.activeRowIndex + 1)}>›</button>
         </span>
       </div>
 

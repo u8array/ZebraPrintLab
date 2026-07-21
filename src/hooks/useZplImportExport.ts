@@ -11,7 +11,7 @@ import { printLabel } from "../lib/printPreview";
 import { saveTextFile, saveErrorMessage, ZPL_FILTER } from "../lib/fileDialogs";
 import { labelaryErrorMessage } from "../lib/labelary";
 import { selectLabelaryEndpoint } from "../store/labelStore.selectors";
-import { buildActiveCsvRow } from "@zplab/core/lib/variableBinding";
+import { buildActiveRow } from "@zplab/core/lib/variableBinding";
 
 export function useZplImportExport() {
   // Reactive: only what the UI rendering needs (menu enable +
@@ -20,7 +20,7 @@ export function useZplImportExport() {
   // come from the same point in time and the hook doesn't re-
   // render on every label / page / variable edit.
   const canBatchExport = useLabelStore(selectCanBatchExport);
-  const batchRowCount = useLabelStore((s) => s.csvDataset?.rows.length ?? 0);
+  const batchRowCount = useLabelStore((s) => s.dataset?.rows.length ?? 0);
   // Source-aware Zebra-print state lives in the store so the
   // PrinterSettingsModal can trigger a Setup-Script send without
   // prop-drilling through this hook. Treat `null` as closed.
@@ -73,7 +73,7 @@ export function useZplImportExport() {
         await useLabelStore.getState().hydrateLabelaryApiKey();
       }
       const s = useLabelStore.getState();
-      const active = buildActiveCsvRow(s.csvDataset, s.csvMapping);
+      const active = buildActiveRow(s.dataset, s.columnMapping);
       const { host, apiKey } = selectLabelaryEndpoint(s);
       await printLabel(s.label, currentObjects(s), host, apiKey, s.variables, active);
       clearUserError();

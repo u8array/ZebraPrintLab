@@ -3,7 +3,7 @@ import { fetchPreview } from "./labelary";
 import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 import { isGroup, type LabelObject } from "@zplab/core/types/Group";
 import type { Variable } from "@zplab/core/types/Variable";
-import { applyBindingToTree, clockCtxFromLabel, getObjectStringContent, type ActiveCsvRow } from "@zplab/core/lib/variableBinding";
+import { applyBindingToTree, clockCtxFromLabel, getObjectStringContent, type ActiveRow } from "@zplab/core/lib/variableBinding";
 import { objectResolvesCtrl } from "@zplab/core/registry";
 import { placeholderContentFor, samplePropsFor } from "../registry/placeholderContent";
 
@@ -32,7 +32,7 @@ export function buildPreviewZpl(
   label: LabelConfig,
   objects: LabelObject[],
   variables: readonly Variable[],
-  active: ActiveCsvRow | null,
+  active: ActiveRow | null,
   opts: { blankSamples?: boolean } = {},
 ): string {
   const substituted = applyBindingToTree(objects, variables, active, "preview", clockCtxFromLabel(label), objectResolvesCtrl);
@@ -63,7 +63,7 @@ export async function printLabel(
   host: string,
   apiKey: string | undefined,
   variables: readonly Variable[] = [],
-  active: ActiveCsvRow | null = null,
+  active: ActiveRow | null = null,
 ): Promise<void> {
   // Open the window synchronously (inside the user-click call stack) so browsers
   // don't treat it as a popup. Fill it in once the Labelary preview arrives.

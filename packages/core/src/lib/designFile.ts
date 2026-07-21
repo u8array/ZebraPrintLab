@@ -3,10 +3,11 @@ import { labelConfigSchema, type LabelConfig } from "../types/LabelConfig";
 import { labelObjectBaseSchema } from "../types/LabelObject";
 import {
   variableSchema,
-  csvMappingSchema,
+  columnMappingSchema,
   type Variable,
-  type CsvMapping,
+  type ColumnMapping,
 } from "../types/Variable";
+import { dbSourceRefSchema, type DbSourceRef } from "../types/DataSource";
 import type { LabelObject } from "../types/Group";
 import { blockOverlaySchema, type BlockOverlay } from "./zplOverlay/overlay";
 import { visitLeavesInPages, foldSerialLeaf, bindSingleMarkerLeaf, sanitiseVariableNames, safeUniqueNameById } from "./objectTree";
@@ -26,10 +27,14 @@ export interface DesignFile {
   label: LabelConfig;
   pages: DesignFilePage[];
   variables: Variable[];
-  /** Optional: present only when the user has imported a CSV and set
+  /** Optional: present only when the user has loaded a dataset and set
    *  up a mapping for the current design. Round-trips with the design;
-   *  rows themselves are session-only and not part of the save. */
-  csvMapping: CsvMapping | null;
+   *  rows themselves are session-only and not part of the save. On disk
+   *  the key stays `csvMapping` (pre-rename files keep loading). */
+  columnMapping: ColumnMapping | null;
+  /** Optional pointer to the database the rows came from, so a reopened
+   *  design can offer a one-click re-fetch. */
+  dataSource: DbSourceRef | null;
 }
 
 // Two distinct shapes share the base fields:
@@ -66,7 +71,10 @@ const designFileSchema = z.object({
   label: labelConfigSchema,
   pages: z.array(pageSchema),
   variables: z.array(variableSchema).optional(),
-  csvMapping: csvMappingSchema.optional(),
+  csvMapping: columnMappingSchema.optional(),
+  // Comfort metadata only: a malformed pointer drops instead of rejecting
+  // the whole design (same policy as a broken overlay).
+  dataSource: dbSourceRefSchema.optional().catch(undefined),
 });
 
 export function parseDesignFile(text: string): Result<DesignFile, DesignFileError> {
@@ -93,7 +101,8 @@ export function parseDesignFile(text: string): Result<DesignFile, DesignFileErro
       label: parsed.data.label,
       pages,
       variables,
-      csvMapping: parsed.data.csvMapping ?? null,
+      columnMapping: parsed.data.csvMapping ?? null,
+      dataSource: parsed.data.dataSource ?? null,
     });
   }
 
@@ -183,14 +192,16 @@ interface SerializedDesign {
   label: LabelConfig;
   pages: DesignFilePage[];
   variables?: Variable[];
-  csvMapping?: CsvMapping;
+  csvMapping?: ColumnMapping;
+  dataSource?: DbSourceRef;
 }
 
 export function serializeDesign(
   label: LabelConfig,
   pages: DesignFilePage[],
   variables: Variable[] = [],
-  csvMapping: CsvMapping | null = null,
+  columnMapping: ColumnMapping | null = null,
+  dataSource: DbSourceRef | null = null,
 ): string {
   const payload: SerializedDesign = {
     schemaVersion: CURRENT_DESIGN_SCHEMA_VERSION,
@@ -198,7 +209,8 @@ export function serializeDesign(
     pages,
   };
   if (variables.length > 0) payload.variables = variables;
-  if (csvMapping) payload.csvMapping = csvMapping;
+  if (columnMapping) payload.csvMapping = columnMapping;
+  if (dataSource) payload.dataSource = dataSource;
   return JSON.stringify(payload, null, 2);
 }
 

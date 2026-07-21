@@ -79,8 +79,8 @@ export function formatStep(t: Translations, d: HistoryStepDescriptor): string {
       return h.reorder;
     case 'variable':
       return d.name ? formatTemplate(h.variableFmt, { name: d.name }) : h.variableGeneric;
-    case 'csv':
-      return h.csv;
+    case 'dataset':
+      return h.dataset;
     case 'label':
       return h.label;
     case 'page':

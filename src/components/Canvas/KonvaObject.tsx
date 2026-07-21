@@ -449,17 +449,17 @@ const BARCODE_TYPES = new Set([
 
 export function KonvaObject(props_: Props) {
   const { variables, active, clock } = usePreviewBinding();
-  const csvDataset = useLabelStore((s) => s.csvDataset);
-  const csvMapping = useLabelStore((s) => s.csvMapping);
-  const csvRenderMode = useLabelStore((s) => s.canvasSettings.csvRenderMode);
-  const obj = applyBindingToObject(props_.obj, variables, active, csvRenderMode, clock, objectResolvesCtrl(props_.obj));
+  const dataset = useLabelStore((s) => s.dataset);
+  const columnMapping = useLabelStore((s) => s.columnMapping);
+  const dataRenderMode = useLabelStore((s) => s.canvasSettings.dataRenderMode);
+  const obj = applyBindingToObject(props_.obj, variables, active, dataRenderMode, clock, objectResolvesCtrl(props_.obj));
   const renderProps = obj === props_.obj ? props_ : { ...props_, obj };
 
   // Classify the ORIGINAL content: `obj` has had its markers resolved to print
   // values by applyBindingToObject, so its content no longer matches `«name»`.
   const boundVariable = lookupBoundVariable(props_.obj, variables);
   const showFallbackTint = shouldShowFallbackTint(
-    boundVariable, csvDataset, csvMapping, csvRenderMode,
+    boundVariable, dataset, columnMapping, dataRenderMode,
   );
 
   const shape =

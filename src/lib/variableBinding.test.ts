@@ -1,16 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import {
   resolveVariableValue,
-  buildActiveCsvRow,
+  buildActiveRow,
   applyBindingToObject,
   applyBindingToTree,
   getVariableSource,
   shouldShowFallbackTint,
   resolveContentPreview,
-  type ActiveCsvRow,
+  type ActiveRow,
 } from '@zplab/core/lib/variableBinding';
 import { objectResolvesCtrl } from '@zplab/core/registry';
-import type { CsvMapping, Variable } from '@zplab/core/types/Variable';
+import type { ColumnMapping, Variable } from '@zplab/core/types/Variable';
 import type { LabelObject } from '@zplab/core/types/Group';
 
 const variable = (over: Partial<Variable> = {}): Variable => ({
@@ -21,7 +21,7 @@ const variable = (over: Partial<Variable> = {}): Variable => ({
   ...over,
 });
 
-const mapping = (bindings: Record<string, string> = {}): CsvMapping => ({
+const mapping = (bindings: Record<string, string> = {}): ColumnMapping => ({
   bindings,
   headerSnapshot: [],
 });
@@ -30,7 +30,7 @@ const active = (
   headers: string[],
   row: string[],
   bindings: Record<string, string>,
-): ActiveCsvRow => ({ headers, row, mapping: mapping(bindings) });
+): ActiveRow => ({ headers, row, mapping: mapping(bindings) });
 
 describe('resolveVariableValue', () => {
   it('returns defaultValue when no active row', () => {
@@ -91,14 +91,14 @@ describe('resolveVariableValue', () => {
   });
 });
 
-describe('buildActiveCsvRow', () => {
+describe('buildActiveRow', () => {
   it('returns null when dataset is null', () => {
-    expect(buildActiveCsvRow(null, mapping())).toBeNull();
+    expect(buildActiveRow(null, mapping())).toBeNull();
   });
 
   it('returns null when mapping is null', () => {
     expect(
-      buildActiveCsvRow(
+      buildActiveRow(
         { headers: ['sku'], rows: [['A1']], activeRowIndex: 0 },
         null,
       ),
@@ -107,7 +107,7 @@ describe('buildActiveCsvRow', () => {
 
   it('returns null when activeRowIndex is out of bounds', () => {
     expect(
-      buildActiveCsvRow(
+      buildActiveRow(
         { headers: ['sku'], rows: [], activeRowIndex: 0 },
         mapping(),
       ),
@@ -115,7 +115,7 @@ describe('buildActiveCsvRow', () => {
   });
 
   it('assembles row when dataset, mapping and index align', () => {
-    const result = buildActiveCsvRow(
+    const result = buildActiveRow(
       { headers: ['sku', 'qty'], rows: [['A1', '10'], ['B2', '5']], activeRowIndex: 1 },
       mapping({ v1: 'sku' }),
     );
@@ -248,13 +248,13 @@ describe('getVariableSource', () => {
     ).toBe('default');
   });
 
-  it("returns 'csv' when bound and the header exists in the dataset", () => {
+  it("returns 'bound' when bound and the header exists in the dataset", () => {
     expect(
       getVariableSource(v, datasetWith(['sku', 'qty']), {
         bindings: { v1: 'sku' },
         headerSnapshot: ['sku', 'qty'],
       }),
-    ).toBe('csv');
+    ).toBe('bound');
   });
 
   it("returns 'orphan' when bound but header is missing from current dataset", () => {
@@ -323,7 +323,7 @@ describe('applyBindingToTree', () => {
 describe('shouldShowFallbackTint', () => {
   const v = variable();
   const ds = (headers: string[]) => ({ headers });
-  const map = (bindings: Record<string, string>): CsvMapping => ({
+  const map = (bindings: Record<string, string>): ColumnMapping => ({
     bindings, headerSnapshot: [],
   });
 
