@@ -43,6 +43,8 @@ enum ExcelError {
   TooLargeUncompressed,
   #[error("empty sheet: {0}")]
   EmptySheet(String),
+  #[error("file access not granted; re-select the file")]
+  PathNotAllowed,
   #[error(transparent)]
   Join(#[from] tauri::Error),
 }
@@ -77,11 +79,22 @@ async fn timed_read<T>(
   parsed?
 }
 
+/// Refuse a path the user never granted via the native pick command
+/// (scope::PathGrants).
+fn check_path_scope(app: &tauri::AppHandle, path: &str) -> Result<(), ExcelError> {
+  use tauri::Manager;
+  if !app.state::<crate::scope::PathGrants>().is_granted(path) {
+    return Err(ExcelError::PathNotAllowed);
+  }
+  Ok(())
+}
+
 // calamine parses under the release panic="abort" profile, so a panic on a
 // crafted/corrupt workbook aborts the app instead of returning Err. Accepted;
 // check_size + the dialog-only pick keep realistic inputs benign.
 #[tauri::command]
-pub async fn excel_list_sheets(path: String) -> Result<Vec<String>, String> {
+pub async fn excel_list_sheets(app: tauri::AppHandle, path: String) -> Result<Vec<String>, String> {
+  check_path_scope(&app, &path).map_err(|e| e.to_string())?;
   timed_read(tauri::async_runtime::spawn_blocking(
     move || -> Result<Vec<String>, ExcelError> {
       check_size(&path)?;
@@ -94,7 +107,12 @@ pub async fn excel_list_sheets(path: String) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
-pub async fn excel_fetch(path: String, sheet: String) -> Result<Rows, String> {
+pub async fn excel_fetch(
+  app: tauri::AppHandle,
+  path: String,
+  sheet: String,
+) -> Result<Rows, String> {
+  check_path_scope(&app, &path).map_err(|e| e.to_string())?;
   timed_read(tauri::async_runtime::spawn_blocking(
     move || -> Result<Rows, ExcelError> {
       check_size(&path)?;

@@ -46,6 +46,8 @@ enum DbError {
   PasswordMalformed,
   #[error("sqlite has no password")]
   SqliteNoPassword,
+  #[error("file access not granted; re-select the database file in the profile")]
+  PathNotAllowed,
   #[error(transparent)]
   Join(#[from] tauri::Error),
 }
@@ -254,6 +256,8 @@ async fn keychain_password(profile_id: &str, endpoint: &str) -> Result<Option<St
   password_for_endpoint(blob.as_deref(), endpoint)
 }
 
+/// Callers reached from a `#[tauri::command]` must run `check_path_scope`
+/// first: a sqlite path is only trustworthy after the path-grant gate.
 async fn connect(spec: &DbSpec) -> Result<DbConn, DbError> {
   // Resolved BEFORE the network timeout: a keychain read can block on an OS
   // permission prompt, which must not eat the connect budget.
@@ -507,8 +511,21 @@ async fn run_list_tables(spec: &DbSpec) -> Result<Vec<String>, DbError> {
   out
 }
 
+/// Refuse a sqlite path the user never granted via the native pick command
+/// (scope::PathGrants); network specs carry no path.
+fn check_path_scope(app: &tauri::AppHandle, spec: &DbSpec) -> Result<(), DbError> {
+  use tauri::Manager;
+  match spec {
+    DbSpec::Sqlite { path } if !app.state::<crate::scope::PathGrants>().is_granted(path) => {
+      Err(DbError::PathNotAllowed)
+    }
+    _ => Ok(()),
+  }
+}
+
 #[tauri::command]
-pub async fn db_list_tables(spec: DbSpec) -> Result<Vec<String>, String> {
+pub async fn db_list_tables(app: tauri::AppHandle, spec: DbSpec) -> Result<Vec<String>, String> {
+  check_path_scope(&app, &spec).map_err(|e| e.to_string())?;
   run_list_tables(&spec).await.map_err(|e| e.to_string())
 }
 
@@ -525,7 +542,8 @@ async fn run_fetch(spec: &DbSpec, table: &str) -> Result<Rows, DbError> {
 }
 
 #[tauri::command]
-pub async fn db_fetch(spec: DbSpec, table: String) -> Result<Rows, String> {
+pub async fn db_fetch(app: tauri::AppHandle, spec: DbSpec, table: String) -> Result<Rows, String> {
+  check_path_scope(&app, &spec).map_err(|e| e.to_string())?;
   run_fetch(&spec, &table).await.map_err(|e| e.to_string())
 }
 
