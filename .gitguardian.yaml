@@ -1,6 +1,0 @@
-# Locale files are UI translation strings and never hold secrets; the generic
-# password detector false-positives on keys like `dbPasswordStoredHint`.
-version: 2
-secret:
-  ignored-paths:
-    - "src/locales/**"
