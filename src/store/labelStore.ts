@@ -16,7 +16,8 @@ import {
 import { createUiSlice, type UiSlice } from './slices/uiSlice';
 import { createSelectionSlice, type SelectionSlice } from './slices/selectionSlice';
 import { createPreviewSlice, type PreviewSlice } from './slices/previewSlice';
-import { createCsvSlice, type CsvSlice } from './slices/csvSlice';
+import { createDataSlice, type DataSlice } from './slices/dataSlice';
+import { createDbSlice, type DbSlice } from './slices/dbSlice';
 import { createVariablesSlice, type VariablesSlice } from './slices/variablesSlice';
 import { createLabelConfigSlice, type LabelConfigSlice } from './slices/labelConfigSlice';
 import { createObjectSlice, type ObjectSlice } from './slices/objectSlice';
@@ -36,7 +37,8 @@ export type LabelState =
   & UiSlice
   & SelectionSlice
   & PreviewSlice
-  & CsvSlice
+  & DataSlice
+  & DbSlice
   & VariablesSlice
   & LabelConfigSlice
   & AppUpdateSlice
@@ -52,6 +54,7 @@ export {
   selectHasPerLabelOverrides,
   selectBatchInputs,
   selectCanBatchExport,
+  selectBatchPrintCount,
 } from './labelStore.selectors';
 import { currentObjects, selectPreviewLocksEditor } from './labelStore.selectors';
 
@@ -79,13 +82,13 @@ export function migrateLegacy(persistedState: unknown, version: number): unknown
     s = { ...s, pages: migrateCirclesInPages(s.pages) };
   }
 
-  // v3→v4: canvasSettings.csvRenderMode added for the schema/preview toggle.
+  // v3→v4: canvasSettings.dataRenderMode added for the schema/preview toggle.
   // Default to 'preview' so existing sessions keep showing data-substituted
   // canvas exactly as before.
   if (version < 4) {
     const cs = s.canvasSettings;
-    if (cs && typeof cs === 'object' && !('csvRenderMode' in cs)) {
-      s = { ...s, canvasSettings: { ...(cs as Record<string, unknown>), csvRenderMode: 'preview' } };
+    if (cs && typeof cs === 'object' && !('dataRenderMode' in cs)) {
+      s = { ...s, canvasSettings: { ...(cs as Record<string, unknown>), dataRenderMode: 'preview' } };
     }
   }
 
@@ -282,6 +285,20 @@ export function migrateLegacy(persistedState: unknown, version: number): unknown
     }
   }
 
+  // v14→v15: dataset model generalised beyond CSV; persisted keys renamed
+  // csvMapping → columnMapping and canvasSettings.csvRenderMode → dataRenderMode.
+  if (version < 15) {
+    if ('csvMapping' in s) {
+      const { csvMapping, ...rest } = s;
+      s = { ...rest, columnMapping: csvMapping };
+    }
+    const cs = s.canvasSettings;
+    if (cs && typeof cs === 'object' && 'csvRenderMode' in cs) {
+      const { csvRenderMode, ...restCs } = cs as Record<string, unknown>;
+      s = { ...s, canvasSettings: { ...restCs, dataRenderMode: csvRenderMode } };
+    }
+  }
+
   // Enforce the marker-safe variable-name invariant on any rehydrated session
   // (old data may carry names like `clock:Y` that the content-marker model
   // can't represent). Renames offenders + rewrites their markers in place.
@@ -419,7 +436,9 @@ export const persistPartialize = (state: LabelState) => ({
   mcpServerEnabled: state.mcpServerEnabled,
   mcpServerPort: state.mcpServerPort,
   variables: state.variables,
-  csvMapping: state.csvMapping,
+  columnMapping: state.columnMapping,
+  dataSourceRef: state.dataSourceRef,
+  dbProfiles: state.dbProfiles,
 });
 
 /** zundo undo-timeline subset; narrower than persist. currentPageIndex rides
@@ -432,7 +451,10 @@ export const temporalPartialize = (state: LabelState) => ({
   pages: state.pages,
   currentPageIndex: state.currentPageIndex,
   variables: state.variables,
-  csvMapping: state.csvMapping,
+  columnMapping: state.columnMapping,
+  // dataSourceRef is deliberately NOT temporal: it pairs with the (equally
+  // non-temporal) dataset, and an undo must not silently drop the saved DB
+  // link while the fetched rows stay on the canvas.
 });
 
 type TemporalSlice = ReturnType<typeof temporalPartialize>;
@@ -463,7 +485,8 @@ export const useLabelStore = create<LabelState>()(
       ...createUiSlice(set, get, store),
       ...createSelectionSlice(set, get, store),
       ...createPreviewSlice(set, get, store),
-      ...createCsvSlice(set, get, store),
+      ...createDataSlice(set, get, store),
+      ...createDbSlice(set, get, store),
       ...createVariablesSlice(set, get, store),
       ...createLabelConfigSlice(set, get, store),
       ...createAppUpdateSlice(set, get, store),
@@ -472,7 +495,7 @@ export const useLabelStore = create<LabelState>()(
     }),
     {
       name: 'zpl-designer-session',
-      version: 14,
+      version: 15,
       migrate: (persistedState, version) => migrateLegacy(persistedState, version) as LabelState,
       storage: createJSONStorage(() => localStorage),
       partialize: persistPartialize,

@@ -46,9 +46,9 @@ export interface CanvasSettings {
    *    defaultValue when no row data is available for the variable).
    *  - 'schema': render the placeholder `«variableName»` so the user
    *    sees the field structure regardless of data.
-   *  Only meaningful while a `csvDataset` is loaded; the toolbar
+   *  Only meaningful while a `dataset` is loaded; the toolbar
    *  toggle is hidden otherwise. */
-  csvRenderMode: 'preview' | 'schema';
+  dataRenderMode: 'preview' | 'schema';
 }
 
 export type ThemePreference = 'light' | 'dark';
@@ -63,6 +63,7 @@ export type PrinterSettingsTab =
   | 'appSettings'
   | 'previewSettings'
   | 'mcpServer'
+  | 'dataSources'
   | 'mediaFeed'
   | 'printQuality'
   | 'output'
@@ -254,7 +255,7 @@ export const DEFAULT_CANVAS_SETTINGS: CanvasSettings = {
   zoom: 1,
   unit: 'mm',
   viewRotation: 0,
-  csvRenderMode: 'preview',
+  dataRenderMode: 'preview',
 };
 
 type UiPrefs = Pick<

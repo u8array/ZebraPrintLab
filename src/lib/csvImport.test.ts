@@ -139,7 +139,7 @@ describe('encoding cache', () => {
 
   it('rememberImport + decodeImportedText round-trips UTF-8', () => {
     const bytes = new TextEncoder().encode('sku,qty\n');
-    rememberImport(bytes, new TextDecoder('utf-8').decode(bytes));
+    rememberImport(bytes);
     expect(getImportedBytes()).toBe(bytes);
     expect(decodeImportedText('utf-8')).toBe('sku,qty\n');
     forgetImport();
@@ -150,13 +150,22 @@ describe('encoding cache', () => {
     // a continuation byte (invalid as a standalone), so the two
     // decodings of the same bytes should differ.
     const bytes = new Uint8Array([0x73, 0xE4, 0x6F]); // s ä o (CP1252)
-    rememberImport(bytes, new TextDecoder('utf-8').decode(bytes));
+    rememberImport(bytes);
     expect(decodeImportedText('windows-1252')).toBe('säo');
     forgetImport();
   });
 
+  it('re-decoding to utf-8 rescues a file first imported under cp1252', () => {
+    // Bytes are valid UTF-8 for "café". The modal always re-decodes from bytes,
+    // so switching to utf-8 recovers the original even after a cp1252 import.
+    const bytes = new Uint8Array([0x63, 0x61, 0x66, 0xc3, 0xa9]); // café in UTF-8
+    rememberImport(bytes);
+    expect(decodeImportedText('utf-8')).toBe('café');
+    forgetImport();
+  });
+
   it('forgetImport clears the cache', () => {
-    rememberImport(new Uint8Array([1, 2, 3]), 'abc');
+    rememberImport(new Uint8Array([1, 2, 3]));
     forgetImport();
     expect(getImportedBytes()).toBeNull();
     expect(decodeImportedText('utf-8')).toBeNull();

@@ -1,7 +1,9 @@
 import { useState, type ChangeEvent } from 'react';
 import {
+  ArrowPathIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CircleStackIcon,
   Cog6ToothIcon,
   InformationCircleIcon,
   PlusIcon,
@@ -9,7 +11,12 @@ import {
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/16/solid';
-import { useLabelStore } from '../../store/labelStore';
+import { useLabelStore, selectPreviewLocksEditor } from '../../store/labelStore';
+import { datasetDisplayName, dbRefDisplayName } from '@zplab/core/types/DataSource';
+import { currentDataContext, isCurrentDataContext } from '../../store/datasetActions';
+import { useDbConnectActions } from '../../hooks/useDbConnectActions';
+import { formatTemplate } from '../../lib/formatTemplate';
+import { isDesktopShell } from '../../lib/platform';
 import {
   FN_NUMBER_MIN,
   FN_NUMBER_MAX,
@@ -36,27 +43,35 @@ export function VariablesPanel() {
   const addVariable = useLabelStore((s) => s.addVariable);
   const updateVariable = useLabelStore((s) => s.updateVariable);
   const removeVariable = useLabelStore((s) => s.removeVariable);
-  const csvDataset = useLabelStore((s) => s.csvDataset);
-  const csvMapping = useLabelStore((s) => s.csvMapping);
-  const clearCsv = useLabelStore((s) => s.clearCsv);
+  const dataset = useLabelStore((s) => s.dataset);
+  const columnMapping = useLabelStore((s) => s.columnMapping);
+  const clearDataset = useLabelStore((s) => s.clearDataset);
   const setActiveRow = useLabelStore((s) => s.setActiveRow);
-  const setCsvMapping = useLabelStore((s) => s.setCsvMapping);
-  const openCsvMappingModal = useLabelStore((s) => s.openCsvMappingModal);
-  const csvRenderMode = useLabelStore((s) => s.canvasSettings.csvRenderMode);
+  const setColumnMapping = useLabelStore((s) => s.setColumnMapping);
+  const openMappingModal = useLabelStore((s) => s.openMappingModal);
+  const dataRenderMode = useLabelStore((s) => s.canvasSettings.dataRenderMode);
   const setCanvasSettings = useLabelStore((s) => s.setCanvasSettings);
-  const [pendingCsvDiscard, setPendingCsvDiscard] = useState(false);
+  const dataSourceRef = useLabelStore((s) => s.dataSourceRef);
+  const previewLocked = useLabelStore(selectPreviewLocksEditor);
+  const { reconnect } = useDbConnectActions();
+  // The discard confirm is destructive and scoped to the dataset it was opened
+  // for; hold the data-context epoch (not a bare bool) so a document swap while
+  // it's open can't resurface it and clearDataset a different, newer dataset.
+  const [discardToken, setDiscardToken] = useState<number | null>(null);
+  const discardOpen = discardToken !== null && isCurrentDataContext(discardToken);
+  // Preview renders one row, so stepping under it would leave a stale image.
+  const rowStepDisabled = dataRenderMode === 'schema' || previewLocked;
+  // A db-linked design with no rows this session offers one-click reconnect
+  // (desktop only, the connector is native). The saved-mapping hint is the
+  // mutually-exclusive fallback, so both gate on this one rule.
+  const canReconnect = !dataset && !!dataSourceRef && isDesktopShell;
 
-  // Mapping completeness for the badge's secondary line. Counts only bindings
-  // whose variable still exists AND whose header is still in the dataset; stale
-  // entries (deleted variable / dropped header) don't actually map anything.
-  const mappedCount = (() => {
-    if (!csvMapping || !csvDataset) return 0;
-    const headerSet = new Set(csvDataset.headers);
-    const liveIds = new Set(variables.map((v) => v.id));
-    return Object.entries(csvMapping.bindings).filter(
-      ([id, h]) => liveIds.has(id) && headerSet.has(h),
-    ).length;
-  })();
+  // Mapping completeness for the badge's secondary line. Reuse the core
+  // "is this variable live-bound" rule (getVariableSource) so this count can't
+  // drift from the per-row badges below or VariableCsvPanel's mapped count.
+  const mappedCount = variables.filter(
+    (v) => getVariableSource(v, dataset, columnMapping) === 'bound',
+  ).length;
 
   const [pendingDelete, setPendingDelete] = useState<Variable | null>(null);
 
@@ -68,6 +83,21 @@ export function VariablesPanel() {
   /** Panel-wide message for the one case that has no row to attach to:
    *  add-variable rejected because all 99 slots are taken. */
   const [panelError, setPanelError] = useState<string | null>(null);
+
+  // An external update (undo/redo, File>Open, MCP push) changes a variable's
+  // identity outside tryUpdate, leaving its stale rejection hint. Drop any
+  // rowError whose variable object changed since the last render.
+  const [prevVars, setPrevVars] = useState(variables);
+  if (prevVars !== variables) {
+    setPrevVars(variables);
+    const byId = new Map(prevVars.map((v) => [v.id, v]));
+    setRowError((prev) => {
+      const kept = Object.entries(prev).filter(
+        ([id]) => variables.find((v) => v.id === id) === byId.get(id),
+      );
+      return kept.length === Object.keys(prev).length ? prev : Object.fromEntries(kept);
+    });
+  }
 
   const bindingCounts = countBindings(pages, variables);
   const allSlotsTaken =
@@ -117,8 +147,8 @@ export function VariablesPanel() {
         <div className="flex items-start justify-end gap-2">
           <Tooltip
             content={
-              csvRenderMode === 'preview'
-                ? csvDataset
+              dataRenderMode === 'preview'
+                ? dataset
                   ? tv.csvBadgePreviewTip
                   : tv.csvBadgePreviewTipNoCsv
                 : tv.csvBadgeSchemaTip
@@ -127,23 +157,49 @@ export function VariablesPanel() {
             <button
               onClick={() =>
                 setCanvasSettings({
-                  csvRenderMode:
-                    csvRenderMode === 'preview' ? 'schema' : 'preview',
+                  dataRenderMode:
+                    dataRenderMode === 'preview' ? 'schema' : 'preview',
                 })
               }
               className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-mono transition-colors ${
-                csvRenderMode === 'preview'
+                dataRenderMode === 'preview'
                   ? 'text-accent bg-[--color-accent-dim]'
                   : 'text-muted hover:text-text hover:bg-surface-2 border border-border'
               }`}
             >
-              {csvRenderMode === 'preview' ? tv.csvBadgePreviewMode : tv.csvBadgeSchemaMode}
+              {dataRenderMode === 'preview' ? tv.csvBadgePreviewMode : tv.csvBadgeSchemaMode}
             </button>
           </Tooltip>
         </div>
       )}
 
-      {!csvDataset && csvMapping && Object.keys(csvMapping.bindings).length > 0 && (
+      {canReconnect && dataSourceRef && (
+        /* Design carries a database link but no rows in this session;
+           one click re-fetches (or falls back to the connect dialog when
+           the saved profile is gone on this machine). */
+        <div className="flex flex-col gap-1 px-2 py-1.5 rounded border border-amber-500/40 bg-amber-500/5 font-mono text-[10px] text-text">
+          <div className="flex items-center gap-1.5">
+            <CircleStackIcon className="w-3 h-3 shrink-0 text-amber-400" />
+            <span className="flex-1 min-w-0 truncate text-amber-300">
+              {tv.dbReconnectTitle}
+            </span>
+          </div>
+          <p className="text-muted truncate">
+            {dbRefDisplayName(dataSourceRef)}
+          </p>
+          <button
+            onClick={reconnect}
+            className="self-start flex items-center gap-1.5 px-2 py-1 rounded text-[10px] border border-border text-text hover:bg-surface-2 transition-colors"
+          >
+            <ArrowPathIcon className="w-3 h-3" />
+            {tv.dbReconnectAction}
+          </button>
+        </div>
+      )}
+
+      {/* Web can't reconnect (Rust connector), so a db-linked design falls
+          back to the generic saved-mapping hint there. */}
+      {!dataset && !canReconnect && columnMapping && Object.keys(columnMapping.bindings).length > 0 && (
         /* Mapping persisted (design.json or localStorage) but no CSV
            data in this session; reload, Discard CSV, or opening a
            saved design. Surface it so the saved bindings don't look
@@ -157,7 +213,7 @@ export function VariablesPanel() {
             </span>
             <Tooltip content={tv.csvSavedMappingDiscard}>
               <button
-                onClick={() => setCsvMapping(null)}
+                onClick={() => setColumnMapping(null)}
                 aria-label={tv.csvSavedMappingDiscard}
                 className="shrink-0 text-muted hover:text-amber-400 transition-colors"
               >
@@ -167,25 +223,25 @@ export function VariablesPanel() {
           </div>
           <p className="text-muted">
             {tv.csvSavedMappingDescFmt
-              .replace('{mapped}', String(Object.keys(csvMapping.bindings).length))
+              .replace('{mapped}', String(Object.keys(columnMapping.bindings).length))
               .replace('{total}', String(variables.length))}
           </p>
         </div>
       )}
 
-      {csvDataset && (
+      {dataset && (
         <div className="flex flex-col gap-1 px-2 py-1.5 rounded border border-border bg-surface-2 font-mono text-[10px] text-text">
           <div className="flex items-center gap-1.5">
             <TableCellsIcon className="w-3 h-3 shrink-0 text-muted" />
             <span
               className="truncate flex-1 min-w-0"
-              title={csvDataset.source.filename}
+              title={datasetDisplayName(dataset.source)}
             >
-              {csvDataset.source.filename}
+              {datasetDisplayName(dataset.source)}
             </span>
             <Tooltip content={tv.csvBadgeConfigureMapping}>
               <button
-                onClick={openCsvMappingModal}
+                onClick={openMappingModal}
                 aria-label={tv.csvBadgeConfigureMapping}
                 className="shrink-0 text-muted hover:text-text transition-colors"
               >
@@ -194,7 +250,7 @@ export function VariablesPanel() {
             </Tooltip>
             <Tooltip content={tv.csvBadgeDiscardCsv}>
               <button
-                onClick={() => setPendingCsvDiscard(true)}
+                onClick={() => setDiscardToken(currentDataContext())}
                 aria-label={tv.csvBadgeDiscardCsv}
                 className="shrink-0 text-muted hover:text-amber-400 transition-colors"
               >
@@ -204,18 +260,21 @@ export function VariablesPanel() {
           </div>
           <p className="text-muted">
             {tv.csvBadgeRowsMappedFmt
-              .replace('{rowCount}', String(csvDataset.source.rowCount))
+              .replace('{rowCount}', String(dataset.source.rowCount))
               .replace('{mapped}', String(mappedCount))
               .replace('{total}', String(variables.length))}
           </p>
-          {csvDataset.rows.length > 0 && (
+          {dataset.source.kind !== 'csv' && dataset.source.truncated && (
+            <p className="text-amber-400">
+              {formatTemplate(tv.dbTruncatedFmt, { n: String(dataset.source.rowCount) })}
+            </p>
+          )}
+          {dataset.rows.length > 0 && (
             <div className="flex items-center gap-1 pt-0.5">
               <Tooltip content={tv.csvBadgePrevRow}>
                 <button
-                  onClick={() => setActiveRow(csvDataset.activeRowIndex - 1)}
-                  disabled={
-                    csvDataset.activeRowIndex === 0 || csvRenderMode === 'schema'
-                  }
+                  onClick={() => setActiveRow(dataset.activeRowIndex - 1)}
+                  disabled={dataset.activeRowIndex === 0 || rowStepDisabled}
                   aria-label={tv.csvBadgePrevRow}
                   className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
@@ -226,23 +285,20 @@ export function VariablesPanel() {
               <input
                 type="number"
                 min={1}
-                max={csvDataset.rows.length}
-                value={csvDataset.activeRowIndex + 1}
+                max={dataset.rows.length}
+                value={dataset.activeRowIndex + 1}
                 onChange={(e) => {
                   const n = parseInt(e.target.value, 10);
                   if (!Number.isNaN(n)) setActiveRow(n - 1);
                 }}
-                disabled={csvRenderMode === 'schema'}
+                disabled={rowStepDisabled}
                 className="w-10 bg-surface-2 border border-border rounded px-1 py-0 text-[10px] font-mono text-text focus:border-accent focus:outline-none text-center disabled:opacity-30 disabled:cursor-not-allowed"
               />
-              <span className="text-muted">/ {csvDataset.rows.length}</span>
+              <span className="text-muted">/ {dataset.rows.length}</span>
               <Tooltip content={tv.csvBadgeNextRow}>
                 <button
-                  onClick={() => setActiveRow(csvDataset.activeRowIndex + 1)}
-                  disabled={
-                    csvDataset.activeRowIndex === csvDataset.rows.length - 1 ||
-                    csvRenderMode === 'schema'
-                  }
+                  onClick={() => setActiveRow(dataset.activeRowIndex + 1)}
+                  disabled={dataset.activeRowIndex === dataset.rows.length - 1 || rowStepDisabled}
                   aria-label={tv.csvBadgeNextRow}
                   className="p-0.5 rounded text-muted hover:text-text hover:bg-surface-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
@@ -264,8 +320,8 @@ export function VariablesPanel() {
       ) : (
         <ul className="flex flex-col gap-3">
           {variables.map((entry) => {
-            const source = getVariableSource(entry, csvDataset, csvMapping);
-            const boundHeader = csvMapping?.bindings[entry.id];
+            const source = getVariableSource(entry, dataset, columnMapping);
+            const boundHeader = columnMapping?.bindings[entry.id];
             return (
               <VariableRow
                 key={entry.id}
@@ -342,20 +398,23 @@ export function VariablesPanel() {
         />
       )}
 
-      {pendingCsvDiscard && csvDataset && (
+      {discardOpen && dataset && (
         <ConfirmDialog
-          message={tv.csvDiscardConfirmFmt.replace(
-            '{filename}',
-            csvDataset.source.filename,
-          )}
+          message={
+            dataset.source.kind === 'db'
+              ? tv.dbDiscardConfirmFmt
+              : dataset.source.kind === 'excel'
+                ? tv.excelDiscardConfirm
+                : tv.csvDiscardConfirmFmt.replace('{filename}', dataset.source.filename)
+          }
           confirmLabel={tv.csvDiscardConfirmAction}
           cancelLabel={tv.cancel}
           destructive
           onConfirm={() => {
-            clearCsv();
-            setPendingCsvDiscard(false);
+            clearDataset();
+            setDiscardToken(null);
           }}
-          onCancel={() => setPendingCsvDiscard(false)}
+          onCancel={() => setDiscardToken(null)}
         />
       )}
     </div>
@@ -397,14 +456,20 @@ function VariableRow({
 }: RowProps) {
   // Mirror inputs locally so the user can transiently type invalid values
   // (empty name, mid-edit number) without the store snapping them back on
-  // each keystroke. Commit on blur. Known limitation: an external store
-  // update to the same id (undo, file load) does not flow back into this
-  // local mirror; the user would need to blur and re-focus. Accepted
-  // for Phase 1 because the alternative (effect-based sync) introduced
-  // focus-stealing and setState-in-render bugs.
+  // each keystroke. Commit on blur.
   const [name, setName] = useState(variable.name);
   const [fn, setFn] = useState(String(variable.fnNumber));
   const [def, setDef] = useState(variable.defaultValue);
+  // Render-time adjust (the React derived-state pattern): an external store
+  // update to this id (undo, file load, MCP push) must flow back into the
+  // mirror, or a later blur would write the stale values over it.
+  const [prevVar, setPrevVar] = useState(variable);
+  if (prevVar !== variable) {
+    setPrevVar(variable);
+    setName(variable.name);
+    setFn(String(variable.fnNumber));
+    setDef(variable.defaultValue);
+  }
 
   const commitName = () => {
     const trimmed = name.trim();
@@ -497,9 +562,8 @@ function VariableRow({
               {tv.inheritsLengthFmt.replace('{n}', String(def.length))}
             </span>
           </Tooltip>
-          {/* Source badge only carries meaning under CSV; getVariableSource
-              returns 'default' when there is no dataset, so this also hides
-              the redundant default badge in the common no-CSV state. */}
+          {/* getVariableSource returns 'default' when there is no dataset, so
+              this hides the redundant default badge when nothing is loaded. */}
           {error ? (
             <span className="text-amber-400">{error}</span>
           ) : source !== 'default' ? (

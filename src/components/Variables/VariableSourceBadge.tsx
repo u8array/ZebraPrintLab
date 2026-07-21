@@ -9,8 +9,8 @@ import type { VariableSource } from '@zplab/core/lib/variableBinding';
 
 interface Props {
   source: VariableSource;
-  /** Header name a `csv` or `orphan` source is bound to. Shown as
-   *  inline text for csv/orphan so the user knows the column without
+  /** Header name a `bound` or `orphan` source is bound to. Shown as
+   *  inline text for bound/orphan so the user knows the column without
    *  hovering. Ignored for `default`. */
   boundHeader?: string;
   /** Visual size. `xs` for tight contexts (mapping modal rows);
@@ -35,33 +35,33 @@ export function VariableSourceBadge({
 }: Props) {
   const tv = useT().variables;
   const TIP: Record<VariableSource, string> = {
-    csv: tv.csvSourceCsvTip,
+    bound: tv.csvSourceCsvTip,
     orphan: tv.csvSourceOrphanTip,
     default: tv.csvSourceDefaultTip,
   };
   const colorCls =
-    source === 'csv'
+    source === 'bound'
       ? 'text-accent'
       : source === 'orphan'
         ? 'text-amber-400'
         : 'text-muted/60';
   const iconSize = size === 'xs' ? 'w-3 h-3' : 'w-3.5 h-3.5';
   const Icon =
-    source === 'csv'
+    source === 'bound'
       ? TableCellsIcon
       : source === 'orphan'
         ? ExclamationTriangleIcon
         : MinusIcon;
   const tip = TIP[source].replace('{header}', boundHeader ?? '');
-  // Label uses bare 'orphan' / 'csv' when no header is known instead of
-  // 'orphan: ' (trailing colon-space); the latter happens on a
-  // freshly-cleared select where boundHeader transiently goes undefined.
+  // Label uses the bare word when no header is known instead of a trailing
+  // colon-space; the latter happens on a freshly-cleared select where
+  // boundHeader transiently goes undefined.
   const label =
-    source === 'csv'
-      ? boundHeader ?? 'csv'
+    source === 'bound'
+      ? boundHeader ?? tv.sourceBound
       : source === 'orphan'
-        ? boundHeader ? `orphan: ${boundHeader}` : 'orphan'
-        : 'default';
+        ? boundHeader ? `${tv.sourceOrphan}: ${boundHeader}` : tv.sourceOrphan
+        : tv.sourceDefault;
 
   return (
     <Tooltip content={tip}>

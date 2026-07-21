@@ -1,4 +1,7 @@
 mod credentials;
+mod dataset;
+mod db;
+mod excel;
 mod mcp;
 mod print;
 mod transport;
@@ -19,6 +22,11 @@ pub fn run() {
       usb::send_zpl_usb,
       usb::query_zpl_usb,
       usb::setup_usb_access,
+      db::db_list_tables,
+      db::db_fetch,
+      db::db_set_password,
+      excel::excel_list_sheets,
+      excel::excel_fetch,
       credentials::credential_get,
       credentials::credential_set,
       credentials::credential_delete,

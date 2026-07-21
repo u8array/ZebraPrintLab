@@ -11,7 +11,7 @@
 
 import { extractTemplateRefs, hasTemplateMarkers, mapLiteralSpans } from "./fnTemplate";
 import { resolveForRow, variableSubstitutions } from "./variableBinding";
-import type { CsvMapping, Variable } from "../types/Variable";
+import type { ColumnMapping, Variable } from "../types/Variable";
 
 // The array is the single source; the union derives from it so the two can't
 // drift (the encode/complete switches and the modal's field Record stay
@@ -95,8 +95,8 @@ export function typedContentMarkerFindings(
   type: ContentType,
   fields: ContentFields,
   variables: readonly Variable[],
-  csvDataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null,
-  csvMapping: CsvMapping | null,
+  dataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null,
+  columnMapping: ColumnMapping | null,
 ): Record<string, string> {
   const byName = new Map(variables.map((v) => [v.name, v]));
   const out: Record<string, string> = {};
@@ -106,7 +106,7 @@ export function typedContentMarkerFindings(
     for (const name of new Set(extractTemplateRefs(raw))) {
       const variable = byName.get(name);
       if (!variable) continue;
-      for (const value of variableSubstitutions(variable, csvDataset, csvMapping)) {
+      for (const value of variableSubstitutions(variable, dataset, columnMapping)) {
         const chars = markerUnsafeChars(type, key, value);
         if (chars) for (const c of chars.split(" ")) hits.add(c);
       }
@@ -117,24 +117,24 @@ export function typedContentMarkerFindings(
 }
 
 /** Rows whose print-time substitution yields an incomplete payload (e.g. an
- *  empty CSV cell blanking a required WiFi SSID). With a dataset every row is
- *  checked; without one only the defaults ([0] returned on failure). Clock
- *  markers are never empty. */
+ *  empty CSV cell blanking a required WiFi SSID). Each row is checked, but with
+ *  no dataset OR a 0-row one the defaults print, so those validate `-1` instead.
+ *  Clock markers are never empty. */
 export function typedContentIncompleteRows(
   type: ContentType,
   fields: ContentFields,
   variables: readonly Variable[],
-  csvDataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null,
-  csvMapping: CsvMapping | null,
+  dataset: { headers: readonly string[]; rows: readonly (readonly string[])[] } | null,
+  columnMapping: ColumnMapping | null,
 ): number[] {
   if (!Object.values(fields).some(hasTemplateMarkers)) return [];
-  const rows = csvDataset && csvMapping ? csvDataset.rows.map((_, i) => i) : [-1];
+  const rows = dataset && columnMapping && dataset.rows.length > 0 ? dataset.rows.map((_, i) => i) : [-1];
   const bad: number[] = [];
   for (const rowIdx of rows) {
     const resolved = Object.fromEntries(
       Object.entries(fields).map(([k, v]) => [
         k,
-        hasTemplateMarkers(v) ? resolveForRow(v, rowIdx, variables, csvDataset, csvMapping) : v,
+        hasTemplateMarkers(v) ? resolveForRow(v, rowIdx, variables, dataset, columnMapping) : v,
       ]),
     );
     if (!isContentComplete(type, resolved)) bad.push(rowIdx + 1);

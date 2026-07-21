@@ -14,8 +14,8 @@ function reset() {
     currentPageIndex: 0,
     selectedIds: [],
     variables: [],
-    csvDataset: null,
-    csvMapping: null,
+    dataset: null,
+    columnMapping: null,
     previewMode: { status: "idle" },
   });
   useLabelStore.temporal.getState().clear();

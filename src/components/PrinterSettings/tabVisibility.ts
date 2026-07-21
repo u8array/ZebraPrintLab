@@ -4,9 +4,12 @@ import type { PrinterSettingsTab } from "../../store/slices/uiSlice";
  *  Gates both the rail entry and the content pane. */
 export interface TabGateCtx {
   mcpSidecarAvailable: boolean | null;
+  isDesktop: boolean;
 }
 
 export const TAB_GATES: Partial<Record<PrinterSettingsTab, (ctx: TabGateCtx) => boolean>> = {
   // Web and sidecar-less releases report unavailable, so one fact gates both.
   mcpServer: (ctx) => ctx.mcpSidecarAvailable === true,
+  // Rust connector only; web has no database access.
+  dataSources: (ctx) => ctx.isDesktop,
 };

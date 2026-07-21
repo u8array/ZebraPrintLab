@@ -45,7 +45,7 @@ function snap(over: Partial<HistorySnapshot> = {}): HistorySnapshot {
     pages: EMPTY_PAGES,
     currentPageIndex: 0,
     variables: EMPTY_VARS,
-    csvMapping: undefined,
+    columnMapping: undefined,
     ...over,
   };
 }
@@ -153,10 +153,10 @@ describe("describeHistoryStep", () => {
     });
   });
 
-  it("classifies a csvMapping change as csv", () => {
+  it("classifies a columnMapping change as csv", () => {
     const prev = snap();
-    const next = snap({ csvMapping: { bindings: {}, headerSnapshot: [] } });
-    expect(describeHistoryStep(prev, next)).toEqual({ kind: "csv" });
+    const next = snap({ columnMapping: { bindings: {}, headerSnapshot: [] } });
+    expect(describeHistoryStep(prev, next)).toEqual({ kind: "dataset" });
   });
 
   describe("load", () => {

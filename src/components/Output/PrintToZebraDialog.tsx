@@ -12,6 +12,8 @@ import {
 } from "../../lib/zebraPrint";
 import { isDesktopShell } from "../../lib/platform";
 import { getPrinterAddress, setPrinterAddress } from "../../lib/printerAddress";
+import { useLabelStore, selectBatchInputs, selectBatchPrintCount } from "../../store/labelStore";
+import { formatTemplate } from "../../lib/formatTemplate";
 import { listLocalPrinters, sendZplLocal, isLikelyZebra, type LocalPrinter } from "../../lib/localPrint";
 import { sendZplUsb, setupUsbAccess, isLikelyZebra as isUsbZebra } from "../../lib/usbPrint";
 import { printerOptionLabel } from "../../lib/printerLabel";
@@ -82,6 +84,15 @@ interface Props {
 export function PrintToZebraDialog({ zpl, onClose }: Props) {
   const t = useT();
   const [tab, setTab] = useState<Tab>("network");
+  // The label source silently switches to batch form when a dataset is
+  // mapped; surface the count so nobody sends 10k labels unaware. A per-label
+  // ^PQ rides the stored template and multiplies EVERY recall, so the honest
+  // number (selectBatchPrintCount) is rows × quantity.
+  const batchRows = useLabelStore((s) =>
+    s.zebraPrintSource === "label" ? selectBatchInputs(s)?.dataset.rows.length ?? null : null,
+  );
+  const printQuantity = useLabelStore((s) => s.label.printQuantity ?? 1);
+  const batchCount = useLabelStore(selectBatchPrintCount);
 
   // Network tab state; the address is shared with the preview provider.
   const [ip, setIp] = useState(() => getPrinterAddress().host);
@@ -389,6 +400,18 @@ export function PrintToZebraDialog({ zpl, onClose }: Props) {
           <XMarkIcon className="w-3.5 h-3.5" />
         </button>
       </div>
+
+      {batchRows !== null && (
+        <p className="px-3 py-1.5 border-b border-border font-mono text-[10px] text-amber-400">
+          {printQuantity > 1
+            ? formatTemplate(t.zebraPrint.batchNoticeQtyFmt, {
+                n: String(batchCount),
+                rows: String(batchRows),
+                q: String(printQuantity),
+              })
+            : formatTemplate(t.zebraPrint.batchNoticeFmt, { n: String(batchRows) })}
+        </p>
+      )}
 
       {/* Tabs */}
       <div className="flex border-b border-border">

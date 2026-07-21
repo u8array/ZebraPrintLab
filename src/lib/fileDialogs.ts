@@ -15,12 +15,14 @@ export interface FileFilter {
 export const DESIGN_FILTER: FileFilter = { name: 'JSON', extensions: ['json'] };
 export const CSV_FILTER: FileFilter = { name: 'CSV', extensions: ['csv'] };
 export const ZPL_FILTER: FileFilter = { name: 'ZPL', extensions: ['zpl'] };
+export const SQLITE_FILTER: FileFilter = { name: 'SQLite', extensions: ['sqlite', 'sqlite3', 'db', 'db3'] };
+export const EXCEL_FILTER: FileFilter = { name: 'Excel', extensions: ['xlsx', 'xlsm', 'xls', 'ods'] };
 
 /** Shown when a save/export write fails; domain-neutral so both the design save
  *  and the ZPL export surface the same message. */
 export const saveErrorMessage = 'Could not save the file.';
 
-const basename = (path: string) => path.split(/[\\/]/).pop() ?? path;
+export const basename = (path: string) => path.split(/[\\/]/).pop() ?? path;
 
 /** File-menu entry point shared by open/import: native dialog on desktop,
  *  hidden input on web. `pick` returns null on cancel; a read failure rejects
@@ -55,6 +57,13 @@ async function pickFile<T>(
   const path = await open({ multiple: false, directory: false, filters: [filter] });
   if (!path) return null;
   return { name: basename(path), value: await read(path) };
+}
+
+/** Pick a file and return only its path (desktop-only; consumers that hand
+ *  the path to a Rust command instead of reading the bytes themselves). */
+export async function pickFilePath(filter: FileFilter): Promise<string | null> {
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  return open({ multiple: false, directory: false, filters: [filter] });
 }
 
 export async function pickFileText(filter: FileFilter): Promise<{ name: string; text: string } | null> {

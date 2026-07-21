@@ -5,15 +5,17 @@ import { useT } from '../../hooks/useT';
 import {
   nextDefaultVariableName,
   nextFreeFnNumber,
-  suggestCsvMapping,
+  suggestColumnMapping,
   isValidVariableName,
-  type CsvMapping,
+  isMappingCompatibleWith,
+  dbExcelParseOptions,
+  type ColumnMapping,
   type CsvParseOptionsPersisted,
   type Variable,
 } from '@zplab/core/types/Variable';
+import type { DatasetInput } from '@zplab/core/types/DataSource';
 import {
   decodeImportedText,
-  getImportedText,
   parseCsvText,
 } from '../../lib/csvImport';
 import { DialogShell } from '../ui/DialogShell';
@@ -53,9 +55,13 @@ export function VariableMappingModal({ onClose, onImportCsv }: Props) {
   const t = useT();
   const tv = t.variables;
   const variables = useLabelStore((s) => s.variables);
-  const csvMapping = useLabelStore((s) => s.csvMapping);
-  const csvDataset = useLabelStore((s) => s.csvDataset);
+  const columnMapping = useLabelStore((s) => s.columnMapping);
+  const dataset = useLabelStore((s) => s.dataset);
   const applyMappingDraft = useLabelStore((s) => s.applyMappingDraft);
+  // A db dataset is already tabular: no raw-text cache, no re-parse, no CSV
+  // options; the draft binds directly against the fetched headers/rows.
+  const csvSource = dataset === null || dataset.source.kind === 'csv';
+  const csvMeta = dataset !== null && dataset.source.kind === 'csv' ? dataset.source : null;
 
   // Draft state, initialised once at modal-open. The init-from-prop
   // pattern is the React-blessed way to seed local state from props
@@ -75,26 +81,26 @@ export function VariableMappingModal({ onClose, onImportCsv }: Props) {
     // last Apply), then fall back to the dataset's source metadata
     // (the values active at import time), then to library defaults.
     delimiter:
-      csvMapping?.parseOptions?.delimiter ??
-      csvDataset?.source.delimiter ??
+      columnMapping?.parseOptions?.delimiter ??
+      csvMeta?.delimiter ??
       '',
-    hasHeaderRow: csvMapping?.parseOptions?.hasHeaderRow ?? true,
-    skipRows: csvMapping?.parseOptions?.skipRows ?? 0,
+    hasHeaderRow: columnMapping?.parseOptions?.hasHeaderRow ?? true,
+    skipRows: columnMapping?.parseOptions?.skipRows ?? 0,
     encoding:
-      csvMapping?.parseOptions?.encoding ??
-      csvDataset?.source.encoding ??
+      columnMapping?.parseOptions?.encoding ??
+      csvMeta?.encoding ??
       'utf-8',
   }));
 
-  // Re-decode the cached bytes whenever encoding changes. For UTF-8
-  // (the default) skip the roundtrip and use the already-decoded text
-  // from import time.
+  // Always re-decode the cached raw bytes for the chosen encoding, including
+  // utf-8: reusing the import-time text would keep a prior wrong-encoding
+  // decode, so switching back to utf-8 couldn't rescue a mis-decoded file.
   const rawText = useMemo(() => {
-    if (draftOptions.encoding === 'utf-8') return getImportedText();
+    if (!csvSource) return null;
     return decodeImportedText(draftOptions.encoding);
-  }, [draftOptions.encoding]);
+  }, [csvSource, draftOptions.encoding]);
   const [draftRow, setDraftRow] = useState<number>(
-    csvDataset?.activeRowIndex ?? 0,
+    dataset?.activeRowIndex ?? 0,
   );
   const [addError, setAddError] = useState<string | null>(null);
 
@@ -108,19 +114,19 @@ export function VariableMappingModal({ onClose, onImportCsv }: Props) {
       hasHeaderRow: draftOptions.hasHeaderRow,
       skipRows: draftOptions.skipRows,
       encoding: draftOptions.encoding,
-      filename: csvDataset?.source.filename,
+      filename: csvMeta?.filename,
     });
-  }, [rawText, draftOptions, csvDataset?.source.filename]);
+  }, [rawText, draftOptions, csvMeta?.filename]);
 
   // Memoise so the useEffect deps below stay reference-stable across
   // renders that didn't change the underlying parse.
   const virtualHeaders = useMemo(
-    () => (draftParse?.ok ? draftParse.value.headers : csvDataset?.headers ?? []),
-    [draftParse, csvDataset?.headers],
+    () => (draftParse?.ok ? draftParse.value.headers : dataset?.headers ?? []),
+    [draftParse, dataset?.headers],
   );
   const virtualRows = useMemo(
-    () => (draftParse?.ok ? draftParse.value.rows : csvDataset?.rows ?? []),
-    [draftParse, csvDataset?.rows],
+    () => (draftParse?.ok ? draftParse.value.rows : dataset?.rows ?? []),
+    [draftParse, dataset?.rows],
   );
 
   // Bindings draft. Seeded from existing mapping (only entries whose
@@ -128,7 +134,12 @@ export function VariableMappingModal({ onClose, onImportCsv }: Props) {
   // the rest. Re-derived when virtualHeaders change so newly-vanished
   // headers drop out and newly-appeared ones can be auto-suggested.
   const [draftBindings, setDraftBindings] = useState<Record<string, string>>(
-    () => buildInitialBindings(csvMapping, draftVariables, virtualHeaders),
+    () => buildInitialBindings(columnMapping, draftVariables, virtualHeaders),
+  );
+  // Variables the user explicitly set to (unmapped): auto-suggest must not
+  // re-attach a column they just deliberately removed.
+  const [explicitlyUnmapped, setExplicitlyUnmapped] = useState<ReadonlySet<string>>(
+    () => new Set(),
   );
   useEffect(() => {
     setDraftBindings((prev) => {
@@ -139,22 +150,20 @@ export function VariableMappingModal({ onClose, onImportCsv }: Props) {
         if (headerSet.has(header)) filtered[varId] = header;
         else changed = true;
       }
-      // Auto-suggest only for variables that existed at modal-open
-      // and don't yet have a binding. Inline-added drafts stay
-      // unbound so the user isn't surprised by a header silently
-      // attaching to a freshly added row whose default name
-      // happens to fuzzy-match a column.
+      // Inline-added drafts and explicitly-unmapped rows are excluded from
+      // auto-suggest, so a freshly added row's default name can't silently
+      // attach to a fuzzy-matching header.
       const unboundVars = draftVariables.filter(
-        (v) => initialVariableIds.has(v.id) && !(v.id in filtered),
+        (v) => initialVariableIds.has(v.id) && !(v.id in filtered) && !explicitlyUnmapped.has(v.id),
       );
       const usedHeaders = new Set(Object.values(filtered));
       const freeHeaders = virtualHeaders.filter((h) => !usedHeaders.has(h));
-      const suggested = suggestCsvMapping(unboundVars, freeHeaders);
+      const suggested = suggestColumnMapping(unboundVars, freeHeaders);
       const merged = { ...filtered, ...suggested };
       if (!changed && Object.keys(suggested).length === 0) return prev;
       return merged;
     });
-  }, [virtualHeaders, draftVariables, initialVariableIds]);
+  }, [virtualHeaders, draftVariables, initialVariableIds, explicitlyUnmapped]);
 
   // Clamp active-row to virtual rows length (option-change may have
   // shrunk the dataset).
@@ -198,8 +207,8 @@ export function VariableMappingModal({ onClose, onImportCsv }: Props) {
   }, [draftVariables, tv.csvNameEmpty, tv.csvNameDuplicate, tv.nameInvalid]);
   const hasNameError = Object.keys(nameErrors).length > 0;
 
-  if (!rawText || !csvDataset) {
-    // Defensive: trigger paths gate on csvDataset, but if the cache is
+  if (!dataset || (csvSource && !rawText)) {
+    // Defensive: trigger paths gate on dataset, but if the cache is
     // empty (e.g. user reloaded the page mid-session) show a friendly
     // close-only shell.
     return (
@@ -232,6 +241,13 @@ export function VariableMappingModal({ onClose, onImportCsv }: Props) {
 
   const handleChangeBinding =
     (variableId: string) => (value: string) => {
+      // Track the explicit (unmapped) so the auto-suggest effect leaves it be.
+      setExplicitlyUnmapped((prev) => {
+        const next = new Set(prev);
+        if (value === '') next.add(variableId);
+        else next.delete(variableId);
+        return next;
+      });
       setDraftBindings((prev) => {
         if (value === '') {
           if (!(variableId in prev)) return prev;
@@ -281,24 +297,31 @@ export function VariableMappingModal({ onClose, onImportCsv }: Props) {
   };
 
   const handleConfirm = () => {
-    if (!draftParse?.ok) return;
-    const parse = draftParse.value;
+    // CSV commits the freshly-parsed rows; db/excel commit the already-loaded
+    // dataset. dbExcelParseOptions keeps the carried options safe for re-import.
+    let ds: DatasetInput;
+    let parseOptions: CsvParseOptionsPersisted | undefined;
+    if (csvSource) {
+      if (!draftParse?.ok) return;
+      ds = draftParse.value;
+      parseOptions = persistableParseOptions(draftOptions);
+    } else {
+      ds = dataset;
+      parseOptions = dbExcelParseOptions(columnMapping?.parseOptions);
+    }
     applyMappingDraft({
       variables: draftVariables,
-      dataset: parse,
-      mapping: {
-        bindings: draftBindings,
-        headerSnapshot: parse.headers,
-        parseOptions: persistableParseOptions(draftOptions),
-      },
+      dataset: ds,
+      mapping: { bindings: draftBindings, headerSnapshot: ds.headers, parseOptions },
       activeRowIndex: draftRow,
     });
     onClose();
   };
 
+  // Warn only when the mapping actually stops fitting, not on a pure column
+  // reorder (name-based mappings are order-independent, per isMappingCompatibleWith).
   const showMismatchWarning =
-    csvMapping !== null &&
-    !arraysShallowEqual(csvMapping.headerSnapshot, virtualHeaders);
+    columnMapping !== null && !isMappingCompatibleWith(columnMapping, virtualHeaders);
 
   const allSlotsTaken =
     nextFreeFnNumber(draftVariables.map((v) => v.fnNumber)) === null;
@@ -524,16 +547,18 @@ export function VariableMappingModal({ onClose, onImportCsv }: Props) {
           </Tooltip>
         )}
 
-        <CollapsibleSection
-          id="variable-mapping-csv-options"
-          title={tv.csvOptionsTitle}
-          defaultOpen={false}
-        >
-          <CsvOptionsEditor
-            value={draftOptions}
-            onChange={setDraftOptions}
-          />
-        </CollapsibleSection>
+        {csvSource && (
+          <CollapsibleSection
+            id="variable-mapping-csv-options"
+            title={tv.csvOptionsTitle}
+            defaultOpen={false}
+          >
+            <CsvOptionsEditor
+              value={draftOptions}
+              onChange={setDraftOptions}
+            />
+          </CollapsibleSection>
+        )}
       </div>
 
       <div className="flex justify-end items-center gap-2 px-4 py-3 border-t border-border shrink-0">
@@ -545,7 +570,7 @@ export function VariableMappingModal({ onClose, onImportCsv }: Props) {
         </button>
         <button
           onClick={handleConfirm}
-          disabled={!draftParse?.ok || hasNameError}
+          disabled={(csvSource && !draftParse?.ok) || hasNameError}
           className="px-3 py-1.5 rounded text-xs font-mono bg-accent text-bg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
         >
           {tv.csvApply}
@@ -637,7 +662,7 @@ function CsvOptionsEditor({ value, onChange }: CsvOptionsEditorProps) {
  *  whose header is still present in the current parse, then auto-
  *  suggest for variables that have no binding yet. */
 function buildInitialBindings(
-  csvMapping: CsvMapping | null,
+  columnMapping: ColumnMapping | null,
   variables: readonly Variable[],
   headers: readonly string[],
 ): Record<string, string> {
@@ -646,15 +671,15 @@ function buildInitialBindings(
   // variable) would otherwise be re-saved and block its header from auto-suggest.
   const liveIds = new Set(variables.map((v) => v.id));
   const carried: Record<string, string> = {};
-  if (csvMapping) {
-    for (const [varId, header] of Object.entries(csvMapping.bindings)) {
+  if (columnMapping) {
+    for (const [varId, header] of Object.entries(columnMapping.bindings)) {
       if (headerSet.has(header) && liveIds.has(varId)) carried[varId] = header;
     }
   }
   const unmapped = variables.filter((v) => !(v.id in carried));
   const usedHeaders = new Set(Object.values(carried));
   const free = headers.filter((h) => !usedHeaders.has(h));
-  const suggested = suggestCsvMapping(unmapped, free);
+  const suggested = suggestColumnMapping(unmapped, free);
   return { ...carried, ...suggested };
 }
 
@@ -667,13 +692,4 @@ function persistableParseOptions(d: DraftOptions): CsvParseOptionsPersisted | un
   if (d.skipRows > 0) opts.skipRows = d.skipRows;
   if (d.encoding !== 'utf-8') opts.encoding = d.encoding;
   return Object.keys(opts).length === 0 ? undefined : opts;
-}
-
-function arraysShallowEqual(
-  a: readonly string[],
-  b: readonly string[],
-): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
-  return true;
 }

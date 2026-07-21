@@ -47,22 +47,31 @@ export function makeCredentialHydrator(strategy: {
   };
 }
 
-/** Store a credential; an empty/whitespace value deletes it. Throws (with the
- *  backend's message) when the OS store is unavailable, e.g. a Linux session
- *  without a Secret Service daemon. */
-export async function setCredential(name: string, value: string): Promise<void> {
-  const trimmed = value.trim();
+/** Store a value verbatim (passwords: whitespace is significant). Throws
+ *  (with the backend's message) when the OS store is unavailable, e.g. a
+ *  Linux session without a Secret Service daemon. */
+export async function setCredentialExact(name: string, value: string): Promise<void> {
   if (isDesktopShell) {
-    if (trimmed) {
-      await invoke('credential_set', { name, value: trimmed });
-    } else {
-      await invoke('credential_delete', { name });
-    }
+    await invoke('credential_set', { name, value });
     return;
   }
+  localStorage.setItem(LS_PREFIX + name, value);
+}
+
+export async function deleteCredential(name: string): Promise<void> {
+  if (isDesktopShell) {
+    await invoke('credential_delete', { name });
+    return;
+  }
+  localStorage.removeItem(LS_PREFIX + name);
+}
+
+/** API-key semantics: trim, and an empty/whitespace value deletes. */
+export async function setCredential(name: string, value: string): Promise<void> {
+  const trimmed = value.trim();
   if (trimmed) {
-    localStorage.setItem(LS_PREFIX + name, trimmed);
+    await setCredentialExact(name, trimmed);
   } else {
-    localStorage.removeItem(LS_PREFIX + name);
+    await deleteCredential(name);
   }
 }

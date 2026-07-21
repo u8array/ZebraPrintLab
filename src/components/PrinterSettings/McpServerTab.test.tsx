@@ -42,10 +42,10 @@ describe("McpServerTab", () => {
 describe("mcpServer tab gate", () => {
   it("is visible only when the build can spawn the sidecar", () => {
     const gate = TAB_GATES.mcpServer;
-    expect(gate?.({ mcpSidecarAvailable: true })).toBe(true);
+    expect(gate?.({ mcpSidecarAvailable: true, isDesktop: true })).toBe(true);
     // Web/unbundled release report false; boot ping not yet resolved is null.
-    expect(gate?.({ mcpSidecarAvailable: false })).toBe(false);
-    expect(gate?.({ mcpSidecarAvailable: null })).toBe(false);
+    expect(gate?.({ mcpSidecarAvailable: false, isDesktop: true })).toBe(false);
+    expect(gate?.({ mcpSidecarAvailable: null, isDesktop: true })).toBe(false);
   });
 });
 

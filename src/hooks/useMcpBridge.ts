@@ -49,9 +49,11 @@ function measuredSettled(): Promise<void> {
  *  surfaces via the sidecar's own request timeout. */
 export async function respondToDesignRequest(id: number): Promise<void> {
   await measuredSettled();
-  const { label, pages, variables, csvMapping, mcpServerPort, mcpServerToken } =
+  const { label, pages, variables, columnMapping, dataSourceRef, mcpServerPort, mcpServerToken } =
     useLabelStore.getState();
-  const designFile: unknown = JSON.parse(serializeDesign(label, pages, variables, csvMapping));
+  const designFile: unknown = JSON.parse(
+    serializeDesign(label, pages, variables, columnMapping, dataSourceRef),
+  );
   // A deleted object's leftover footprint must not ride along.
   const liveIds = new Set(pages.flatMap((p) => exportableLeaves(p.objects)).map((o) => o.id));
   const measured = Object.fromEntries(

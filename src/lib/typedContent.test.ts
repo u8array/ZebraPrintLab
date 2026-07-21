@@ -125,14 +125,14 @@ describe("typedContentMarkerFindings", () => {
   });
 
   it("flags an unsafe bound CSV cell even when the default is clean", () => {
-    const csvDataset = { headers: ["net"], rows: [["ok"], ["A;B"]] };
-    const csvMapping = { bindings: { s: "net" }, headerSnapshot: ["net"] };
-    expect(typedContentMarkerFindings("wifi", { ssid: "«ssid»" }, vars, csvDataset, csvMapping)).toEqual({ ssid: ";" });
+    const dataset = { headers: ["net"], rows: [["ok"], ["A;B"]] };
+    const columnMapping = { bindings: { s: "net" }, headerSnapshot: ["net"] };
+    expect(typedContentMarkerFindings("wifi", { ssid: "«ssid»" }, vars, dataset, columnMapping)).toEqual({ ssid: ";" });
   });
 
   it("ignores marker-free fields and unbound datasets", () => {
-    const csvDataset = { headers: ["net"], rows: [["A;B"]] };
-    expect(typedContentMarkerFindings("wifi", { ssid: "literal;net" }, vars, csvDataset, null)).toEqual({});
+    const dataset = { headers: ["net"], rows: [["A;B"]] };
+    expect(typedContentMarkerFindings("wifi", { ssid: "literal;net" }, vars, dataset, null)).toEqual({});
   });
 });
 
@@ -140,9 +140,9 @@ describe("typedContentIncompleteRows", () => {
   const vars = [{ id: "s", name: "ssid", fnNumber: 1, defaultValue: "SafeNet" }];
 
   it("reports 1-based rows whose substitution blanks a required field", () => {
-    const csvDataset = { headers: ["net"], rows: [[""], ["ok"], [""]] };
-    const csvMapping = { bindings: { s: "net" }, headerSnapshot: ["net"] };
-    expect(typedContentIncompleteRows("wifi", { ssid: "«ssid»" }, vars, csvDataset, csvMapping)).toEqual([1, 3]);
+    const dataset = { headers: ["net"], rows: [[""], ["ok"], [""]] };
+    const columnMapping = { bindings: { s: "net" }, headerSnapshot: ["net"] };
+    expect(typedContentIncompleteRows("wifi", { ssid: "«ssid»" }, vars, dataset, columnMapping)).toEqual([1, 3]);
   });
 
   it("checks only the defaults without a bound dataset ([0] when they fail)", () => {
@@ -151,11 +151,18 @@ describe("typedContentIncompleteRows", () => {
     expect(typedContentIncompleteRows("wifi", { ssid: "«ssid»" }, vars, null, null)).toEqual([]);
   });
 
+  it("validates the defaults when a bound dataset has 0 rows (they still print)", () => {
+    const empty = [{ id: "s", name: "ssid", fnNumber: 1, defaultValue: "" }];
+    const dataset = { headers: ["net"], rows: [] as string[][] };
+    const columnMapping = { bindings: { s: "net" }, headerSnapshot: ["net"] };
+    expect(typedContentIncompleteRows("wifi", { ssid: "«ssid»" }, empty, dataset, columnMapping)).toEqual([0]);
+  });
+
   it("treats clock markers as fixed-width digits (never empty), unbound vars as their default", () => {
-    const csvDataset = { headers: ["x"], rows: [["cell"]] };
-    const csvMapping = { bindings: {}, headerSnapshot: ["x"] };
+    const dataset = { headers: ["x"], rows: [["cell"]] };
+    const columnMapping = { bindings: {}, headerSnapshot: ["x"] };
     expect(typedContentIncompleteRows("tel", { number: "«clock:H»" }, vars, null, null)).toEqual([]);
-    expect(typedContentIncompleteRows("wifi", { ssid: "«ssid»" }, vars, csvDataset, csvMapping)).toEqual([]);
+    expect(typedContentIncompleteRows("wifi", { ssid: "«ssid»" }, vars, dataset, columnMapping)).toEqual([]);
   });
 });
 

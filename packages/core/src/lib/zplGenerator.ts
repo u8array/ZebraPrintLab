@@ -314,11 +314,11 @@ export function generateBatchZpl(
   label: LabelConfig,
   objects: LabelObject[],
   variables: readonly Variable[],
-  csvDataset: {
+  dataset: {
     headers: readonly string[];
     rows: readonly (readonly string[])[];
   },
-  csvMapping: { bindings: Record<string, string> },
+  columnMapping: { bindings: Record<string, string> },
 ): string {
   const baseZpl = generateZPL(label, objects, variables);
   // Inject after first ^XA (not at start) because ~DY/~SD preambles
@@ -335,7 +335,7 @@ export function generateBatchZpl(
   const modeDFns = gs1ModeDExclusiveFns(objects, variables);
   const overrides: { fn: number; colIdx: number; transform: (s: string) => string }[] = [];
   for (const v of variables) {
-    const colIdx = boundColumnIndex(v, csvDataset, csvMapping);
+    const colIdx = boundColumnIndex(v, dataset, columnMapping);
     if (colIdx === -1) continue;
     // Apply the bound field's ^FD transform (QR prefix, UPC-E compaction, GS1
     // escaping) to each row value, matching the single-format export so the
@@ -355,7 +355,7 @@ export function generateBatchZpl(
     overrides.push({ fn: v.fnNumber, colIdx, transform });
   }
 
-  const recallBlocks = csvDataset.rows.map((row) => {
+  const recallBlocks = dataset.rows.map((row) => {
     const lines: string[] = ['^XA', `^XF${BATCH_TEMPLATE_PATH}`];
     for (const { fn, colIdx, transform } of overrides) {
       const value = row[colIdx] ?? '';

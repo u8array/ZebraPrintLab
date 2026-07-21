@@ -19,6 +19,7 @@ export type MenuItemId =
   | 'openDesign'
   | 'saveDesign'
   | 'importCsv'
+  | 'importExcel'
   | 'print'
   | 'sendToZebra'
   | 'undo'
@@ -64,6 +65,11 @@ export interface MenuFlags {
   hasObjects: boolean;
   canBatchExport: boolean;
   batchRowCount: number;
+  /** Physical labels a batch send produces: rows × per-label ^PQ quantity.
+   *  exportBatch keeps batchRowCount (it names file content, not printing). */
+  batchPrintCount: number;
+  /** The Excel reader needs the desktop shell's Rust side; web hides it. */
+  includeExcelImport: boolean;
   /** Labelary gate off hides the print item entirely (matches the dropdown). */
   labelaryEnabled: boolean;
   canUndo: boolean;
@@ -94,12 +100,21 @@ export function buildMenuModel(t: Translations, f: MenuFlags): MenuModel {
       { id: 'openDesign', label: t.app.openDesign, enabled: true },
       { id: 'saveDesign', label: t.app.saveDesign, enabled: f.hasObjects },
       { id: 'importCsv', label: t.app.importCsvData, enabled: true },
+      ...(f.includeExcelImport
+        ? [{ id: 'importExcel' as const, label: t.app.importExcelData, enabled: true }]
+        : []),
     ],
     [
       ...(f.labelaryEnabled
         ? [{ id: 'print' as const, label: t.app.print, enabled: f.hasObjects }]
         : []),
-      { id: 'sendToZebra', label: t.app.sendToZebra, enabled: f.hasObjects },
+      {
+        id: 'sendToZebra',
+        label: f.canBatchExport
+          ? formatTemplate(t.app.sendToZebraBatchFmt, { n: String(f.batchPrintCount) })
+          : t.app.sendToZebra,
+        enabled: f.hasObjects,
+      },
     ],
     ...(f.includeQuit
       ? [[{ id: 'quit' as const, label: t.app.quitMenu, enabled: true }]]

@@ -4,9 +4,11 @@ import {
   useLabelStore,
   currentObjects,
   selectHasPerLabelOverrides,
+  selectBatchInputs,
   __resetPreviewCacheForTests,
   migrateLegacy,
 } from './labelStore';
+import { loadFetchedDataset, currentDataContext, isCurrentDataContext } from './datasetActions';
 import { isGroup, getAllLeaves, type LabelObject } from '@zplab/core/types/Group';
 import { DEFAULT_CANVAS_SETTINGS } from './slices/uiSlice';
 import { toggleShapeMode } from '../lib/lineBoxConvert';
@@ -44,9 +46,12 @@ function reset() {
     clipboard: [],
     pasteCount: 0,
     variables: [],
-    csvDataset: null,
-    csvMapping: null,
-    csvMappingModalOpen: false,
+    dataset: null,
+    dataSourceRef: null,
+    dbProfiles: [],
+    datasetFetchToken: 0,
+    columnMapping: null,
+    mappingModalOpen: false,
     previewMode: { status: 'idle' },
     previewProvider: 'labelary',
     canvasSettings: { ...DEFAULT_CANVAS_SETTINGS },
@@ -1568,6 +1573,28 @@ describe('migrateLegacy — v13→v14 smartSnapEnabled', () => {
   });
 });
 
+describe('migrateLegacy — v14→v15 dataset-model renames', () => {
+  it('renames csvMapping → columnMapping and csvRenderMode → dataRenderMode', () => {
+    const persisted = {
+      csvMapping: { bindings: { v1: 'sku' }, headerSnapshot: ['sku'] },
+      canvasSettings: { zoom: 1, csvRenderMode: 'schema' },
+    };
+    const migrated = migrateLegacy(persisted, 14) as Record<string, unknown> & {
+      canvasSettings: Record<string, unknown>;
+    };
+    expect(migrated.columnMapping).toEqual({ bindings: { v1: 'sku' }, headerSnapshot: ['sku'] });
+    expect('csvMapping' in migrated).toBe(false);
+    expect(migrated.canvasSettings.dataRenderMode).toBe('schema');
+    expect('csvRenderMode' in migrated.canvasSettings).toBe(false);
+  });
+
+  it('leaves state without the legacy keys untouched', () => {
+    const persisted = { canvasSettings: { zoom: 1, dataRenderMode: 'preview' } };
+    const migrated = migrateLegacy(persisted, 14) as { canvasSettings: Record<string, unknown> };
+    expect(migrated.canvasSettings.dataRenderMode).toBe('preview');
+  });
+});
+
 describe('migrateLegacy — v9→v10 reverse text backing', () => {
   it('inserts a black backing before a legacy reverse text', () => {
     const persisted = {
@@ -2166,13 +2193,14 @@ describe('variables', () => {
   });
 });
 
-describe('csvDataset', () => {
+describe('dataset', () => {
   beforeEach(reset);
 
   const sampleResult = {
     headers: ['sku', 'qty'],
     rows: [['A1', '10'], ['B2', '5'], ['C3', '7']],
     source: {
+      kind: 'csv' as const,
       filename: 'test.csv',
       importedAt: '2026-05-23T00:00:00.000Z',
       encoding: 'utf-8',
@@ -2181,51 +2209,256 @@ describe('csvDataset', () => {
     },
   };
 
-  it('loadCsv stores headers, rows, source and resets activeRowIndex to 0', () => {
-    state().loadCsv(sampleResult);
-    const ds = state().csvDataset;
+  it('loadDataset stores headers, rows, source and resets activeRowIndex to 0', () => {
+    state().loadDataset(sampleResult);
+    const ds = state().dataset;
     expect(ds?.headers).toEqual(['sku', 'qty']);
     expect(ds?.rows).toHaveLength(3);
-    expect(ds?.source.filename).toBe('test.csv');
+    expect(ds?.source.kind === 'csv' && ds.source.filename).toBe('test.csv');
     expect(ds?.activeRowIndex).toBe(0);
   });
 
-  it('clearCsv drops the dataset', () => {
-    state().loadCsv(sampleResult);
-    state().clearCsv();
-    expect(state().csvDataset).toBeNull();
+  it('clearDataset drops the dataset', () => {
+    state().loadDataset(sampleResult);
+    state().clearDataset();
+    expect(state().dataset).toBeNull();
   });
 
   it('setActiveRow updates within bounds', () => {
-    state().loadCsv(sampleResult);
+    state().loadDataset(sampleResult);
     state().setActiveRow(2);
-    expect(state().csvDataset?.activeRowIndex).toBe(2);
+    expect(state().dataset?.activeRowIndex).toBe(2);
   });
 
   it('setActiveRow clamps below 0 and above rows.length - 1', () => {
-    state().loadCsv(sampleResult);
+    state().loadDataset(sampleResult);
     state().setActiveRow(-5);
-    expect(state().csvDataset?.activeRowIndex).toBe(0);
+    expect(state().dataset?.activeRowIndex).toBe(0);
     state().setActiveRow(99);
-    expect(state().csvDataset?.activeRowIndex).toBe(2);
+    expect(state().dataset?.activeRowIndex).toBe(2);
   });
 
   it('setActiveRow is a no-op when no CSV is loaded', () => {
     state().setActiveRow(5);
-    expect(state().csvDataset).toBeNull();
+    expect(state().dataset).toBeNull();
   });
 
-  it('loadCsv with subsequent loadCsv replaces dataset and resets activeRowIndex', () => {
-    state().loadCsv(sampleResult);
+  const dbResult = {
+    headers: ['sku'],
+    rows: [['A1']],
+    source: {
+      kind: 'db' as const,
+      profileId: 'p1',
+      profileName: 'Prod',
+      table: 'items',
+      fetchedAt: '2026-07-20T00:00:00.000Z',
+      rowCount: 1,
+      truncated: false,
+    },
+  };
+
+  it('loadDataset records no undo step (dataset AND ref are non-temporal)', () => {
+    useLabelStore.temporal.getState().clear();
+    state().loadDataset(dbResult);
+    expect(useLabelStore.temporal.getState().pastStates).toHaveLength(0);
+  });
+
+  it('loadDataset derives dataSourceRef from a db source', () => {
+    state().loadDataset(dbResult);
+    expect(state().dataSourceRef).toEqual({
+      kind: 'db',
+      profileId: 'p1',
+      profileName: 'Prod',
+      table: 'items',
+    });
+  });
+
+  it('loadDataset clears dataSourceRef when a file source replaces db data', () => {
+    state().loadDataset(dbResult);
+    state().loadDataset(sampleResult);
+    expect(state().dataSourceRef).toBeNull();
+  });
+
+  it('clearDataset keeps dataSourceRef so the reconnect link survives a discard', () => {
+    state().loadDataset(dbResult);
+    state().clearDataset();
+    expect(state().dataset).toBeNull();
+    expect(state().dataSourceRef).not.toBeNull();
+  });
+
+  it('loadDesign seeds dataSourceRef from the design file and resets it otherwise', () => {
+    state().loadDataset(dbResult);
+    state().loadDesign({ widthMm: 50, heightMm: 30, dpmm: 8 }, [{ objects: [] }]);
+    expect(state().dataSourceRef).toBeNull();
+    state().loadDesign(
+      { widthMm: 50, heightMm: 30, dpmm: 8 },
+      [{ objects: [] }],
+      [],
+      null,
+      { kind: 'db', profileId: 'p9', profileName: 'X', table: 't' },
+    );
+    expect(state().dataSourceRef?.profileId).toBe('p9');
+  });
+
+  it('applyMappingDraft keeps the ref for db datasets', () => {
+    const varId = defined(state().addVariable({ name: 'sku' }));
+    state().applyMappingDraft({
+      variables: state().variables.slice(),
+      dataset: dbResult,
+      mapping: { bindings: { [varId]: 'sku' }, headerSnapshot: ['sku'] },
+      activeRowIndex: 0,
+    });
+    expect(state().dataSourceRef?.table).toBe('items');
+  });
+
+  it('selectBatchInputs requires at least one live binding, not just any entry', () => {
+    const varId = defined(state().addVariable({ name: 'sku' }));
+    state().loadDataset(sampleResult); // headers ['sku','qty']
+    // Binding points at a header that is NOT in the dataset -> all-orphan.
+    state().setColumnMapping({ bindings: { [varId]: 'gone' }, headerSnapshot: ['gone'] });
+    expect(selectBatchInputs(state())).toBeNull();
+    // Re-point to a live header.
+    state().setColumnMapping({ bindings: { [varId]: 'sku' }, headerSnapshot: ['sku'] });
+    expect(selectBatchInputs(state())).not.toBeNull();
+  });
+
+  it('loadFetchedDataset forces mapping review for a headerless mapping', async () => {
+    const varId = defined(state().addVariable({ name: 'sku' }));
+    // Headerless CSV mapping, compatible only by column count.
+    state().setColumnMapping({
+      bindings: { [varId]: 'Column 1' },
+      headerSnapshot: ['Column 1', 'Column 2'],
+      parseOptions: { hasHeaderRow: false },
+    });
+    await loadFetchedDataset(async () => ({
+      headers: ['sku', 'qty'],
+      rows: [['A', '1']],
+      source: {
+        kind: 'db', profileId: 'p', profileName: 'X', table: 't',
+        fetchedAt: '', rowCount: 1, truncated: false,
+      },
+    }));
+    expect(state().mappingModalOpen).toBe(true);
+  });
+
+  it('loadFetchedDataset drops a result superseded while the fetch was in flight', async () => {
+    state().loadDataset(sampleResult);
+    const applied = await loadFetchedDataset(async () => {
+      state().invalidateDatasetFetches(); // a newer op lands mid-fetch
+      return dbResult;
+    });
+    expect(applied).toBe(false);
+    expect(state().dataset?.source.kind).toBe('csv');
+    expect(state().dataset?.rows).toHaveLength(3);
+  });
+
+  it('loadFetchedDataset applies when nothing supersedes it', async () => {
+    const applied = await loadFetchedDataset(async () => dbResult);
+    expect(applied).toBe(true);
+    expect(state().dataset?.source.kind).toBe('db');
+  });
+
+  it('loadFetchedDataset with a pre-sampled token drops if the context changed since', async () => {
+    // loadFromDb samples before awaitCredWrites; a doc load during that wait
+    // must supersede the fetch even though the fetch is initiated afterwards.
+    const token = currentDataContext();
+    state().loadDataset(sampleResult);
+    const applied = await loadFetchedDataset(async () => dbResult, token);
+    expect(applied).toBe(false);
+    expect(state().dataset?.source.kind).toBe('csv');
+  });
+
+  it('loadDesign supersedes a fetch started before the document swap', async () => {
+    state().loadDataset(sampleResult);
+    const applied = await loadFetchedDataset(async () => {
+      // Document replaced (File>New/Open, MCP) while the fetch was in flight.
+      state().loadDesign({ widthMm: 50, heightMm: 30, dpmm: 8 }, [{ objects: [] }]);
+      return dbResult;
+    });
+    expect(applied).toBe(false);
+    expect(state().dataset).toBeNull();
+  });
+
+  it('loadDesign closes the settings and mapping modals so stale selections cannot load', () => {
+    useLabelStore.setState({ printerSettingsTab: 'dataSources', mappingModalOpen: true });
+    state().loadDesign({ widthMm: 50, heightMm: 30, dpmm: 8 }, [{ objects: [] }]);
+    expect(state().printerSettingsTab).toBeNull();
+    expect(state().mappingModalOpen).toBe(false);
+  });
+
+  it('isCurrentDataContext tracks the epoch a held-open dialog captured', () => {
+    const token = currentDataContext();
+    expect(isCurrentDataContext(token)).toBe(true);
+    state().loadDataset(sampleResult); // any dataset op bumps the epoch
+    expect(isCurrentDataContext(token)).toBe(false);
+  });
+
+  it('loadDesign clears undo history so an undo cannot strand dataSourceRef', () => {
+    state().loadDataset(dbResult);
+    state().addVariable({ name: 'x' }); // create at least one undo step
+    expect(useLabelStore.temporal.getState().pastStates.length).toBeGreaterThan(0);
+    state().loadDesign({ widthMm: 50, heightMm: 30, dpmm: 8 }, [{ objects: [] }]);
+    expect(useLabelStore.temporal.getState().pastStates).toHaveLength(0);
+  });
+
+  it('setActiveRow is a no-op while preview locks the editor', () => {
+    state().loadDataset(sampleResult); // 3 rows
+    useLabelStore.setState({ previewMode: { status: 'active', url: 'blob:x' } });
     state().setActiveRow(2);
-    state().loadCsv({
+    expect(state().dataset?.activeRowIndex).toBe(0);
+  });
+
+  it('loadDataset exits an active preview and applies (no silent drift)', () => {
+    useLabelStore.setState({ previewMode: { status: 'active', url: 'blob:x' } });
+    state().loadDataset(sampleResult);
+    expect(state().dataset).not.toBeNull();
+    expect(state().previewMode.status).toBe('idle');
+  });
+
+  it('clearDataset exits an active preview and discards', () => {
+    state().loadDataset(sampleResult);
+    useLabelStore.setState({ previewMode: { status: 'active', url: 'blob:x' } });
+    state().clearDataset();
+    expect(state().dataset).toBeNull();
+    expect(state().previewMode.status).toBe('idle');
+  });
+
+  it('loadDataset with subsequent loadDataset replaces dataset and resets activeRowIndex', () => {
+    state().loadDataset(sampleResult);
+    state().setActiveRow(2);
+    state().loadDataset({
       ...sampleResult,
       rows: [['X', '1']],
       source: { ...sampleResult.source, rowCount: 1, filename: 'other.csv' },
     });
-    expect(state().csvDataset?.source.filename).toBe('other.csv');
-    expect(state().csvDataset?.activeRowIndex).toBe(0);
-    expect(state().csvDataset?.rows).toHaveLength(1);
+    const src = state().dataset?.source;
+    expect(src?.kind === 'csv' && src.filename).toBe('other.csv');
+    expect(state().dataset?.activeRowIndex).toBe(0);
+    expect(state().dataset?.rows).toHaveLength(1);
+  });
+});
+
+describe('dbProfiles', () => {
+  beforeEach(reset);
+
+  it('add/update/remove round-trip', () => {
+    state().addDbProfile({ id: 'p1', name: 'Prod', driver: 'sqlite', path: 'C:/x.sqlite' });
+    state().updateDbProfile({ id: 'p1', name: 'Prod DB', driver: 'sqlite', path: 'C:/x.sqlite' });
+    expect(state().dbProfiles).toEqual([
+      { id: 'p1', name: 'Prod DB', driver: 'sqlite', path: 'C:/x.sqlite' },
+    ]);
+    state().removeDbProfile('p1');
+    expect(state().dbProfiles).toEqual([]);
+  });
+
+  it('updateDbProfile can switch the driver shape (full replace)', () => {
+    state().addDbProfile({ id: 'p2', name: 'Net', driver: 'sqlite', path: 'C:/y.sqlite' });
+    state().updateDbProfile({
+      id: 'p2', name: 'Net', driver: 'postgres', host: 'db.local', database: 'wms', user: 'label',
+    });
+    expect(state().dbProfiles[0]).toEqual({
+      id: 'p2', name: 'Net', driver: 'postgres', host: 'db.local', database: 'wms', user: 'label',
+    });
   });
 });
 
@@ -2338,7 +2571,7 @@ describe('applyMappingDraft — rename ripple', () => {
       dataset: {
         headers: [],
         rows: [],
-        source: { filename: 'f.csv', importedAt: '', encoding: 'utf-8', delimiter: ',', rowCount: 0 },
+        source: { kind: 'csv' as const, filename: 'f.csv', importedAt: '', encoding: 'utf-8', delimiter: ',', rowCount: 0 },
       },
       mapping: { bindings: {}, headerSnapshot: [] },
       activeRowIndex: 0,
@@ -2346,6 +2579,22 @@ describe('applyMappingDraft — rename ripple', () => {
 
     expect(state().variables[0]?.name).toBe('price');
     expect(props(state().pages[0]?.objects[0]).content).toBe('Item «price»');
+  });
+
+  it('preserves the variables ref when only the mapping changed (history reads a dataset step)', () => {
+    const id = defined(state().addVariable({ name: 'sku', defaultValue: 'X' }));
+    const before = state().variables;
+    state().applyMappingDraft({
+      variables: [...before], // same element refs, like the modal's draft seed; no edit
+      dataset: {
+        headers: ['sku'], rows: [['A']],
+        source: { kind: 'csv' as const, filename: 'f.csv', importedAt: '', encoding: 'utf-8', delimiter: ',', rowCount: 1 },
+      },
+      mapping: { bindings: { [id]: 'sku' }, headerSnapshot: ['sku'] },
+      activeRowIndex: 0,
+    });
+    expect(state().variables).toBe(before);
+    expect(state().columnMapping?.bindings[id]).toBe('sku');
   });
 
   it('handles a name swap in one pass (markers do not cascade)', () => {
@@ -2374,7 +2623,7 @@ describe('applyMappingDraft — rename ripple', () => {
       dataset: {
         headers: [],
         rows: [],
-        source: { filename: 'f.csv', importedAt: '', encoding: 'utf-8', delimiter: ',', rowCount: 0 },
+        source: { kind: 'csv' as const, filename: 'f.csv', importedAt: '', encoding: 'utf-8', delimiter: ',', rowCount: 0 },
       },
       mapping: { bindings: {}, headerSnapshot: [] },
       activeRowIndex: 0,

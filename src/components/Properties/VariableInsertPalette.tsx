@@ -44,8 +44,8 @@ export function VariableInsertPalette({
   const variables = useLabelStore((s) => s.variables);
   const showZpl = useLabelStore((s) => s.showZplCommands);
   const addVariable = useLabelStore((s) => s.addVariable);
-  const csvDataset = useLabelStore((s) => s.csvDataset);
-  const csvMapping = useLabelStore((s) => s.csvMapping);
+  const dataset = useLabelStore((s) => s.dataset);
+  const columnMapping = useLabelStore((s) => s.columnMapping);
   const secondaryOffset = useLabelStore((s) => s.label.secondaryClockOffset);
   const tertiaryOffset = useLabelStore((s) => s.label.tertiaryClockOffset);
   const setLabelConfig = useLabelStore((s) => s.setLabelConfig);
@@ -71,8 +71,10 @@ export function VariableInsertPalette({
     channel === 1 ? t.app.clockChannelPrimary : channel === 2 ? t.app.clockChannelSecondary : t.app.clockChannelTertiary;
 
   const previewFor = (v: Variable): { text: string; cls: string } => {
-    if (getVariableSource(v, csvDataset, csvMapping) === "csv") {
-      return { text: `${csvMapping?.bindings[v.id]} · CSV`, cls: "text-accent" };
+    if (getVariableSource(v, dataset, columnMapping) === "bound") {
+      const tag =
+        dataset?.source.kind === "db" ? "DB" : dataset?.source.kind === "excel" ? "Excel" : "CSV";
+      return { text: `${columnMapping?.bindings[v.id]} · ${tag}`, cls: "text-accent" };
     }
     return { text: v.defaultValue ? `"${v.defaultValue}"` : "", cls: "text-muted" };
   };

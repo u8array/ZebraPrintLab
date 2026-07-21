@@ -102,9 +102,9 @@ function ContentBuilder({ objectId }: { objectId: string }) {
   // when any substituted value (variable default or a bound CSV cell, all
   // rows) carries chars this field's encoding can't take. Authoring-time gate
   // only: later CSV re-imports aren't re-checked here.
-  const csvDataset = useLabelStore((s) => s.csvDataset);
-  const csvMapping = useLabelStore((s) => s.csvMapping);
-  const markerErrors = typedContentMarkerFindings(type, fields, variables, csvDataset, csvMapping);
+  const dataset = useLabelStore((s) => s.dataset);
+  const columnMapping = useLabelStore((s) => s.columnMapping);
+  const markerErrors = typedContentMarkerFindings(type, fields, variables, dataset, columnMapping);
   const valid = isContentComplete(type, validationFields) && Object.keys(markerErrors).length === 0;
   const ec = recommendedEc(resolveDefaults(content));
   // EC recommendation is QR-only; DataMatrix uses fixed ECC200.

@@ -94,9 +94,11 @@ Byte capture at import is deliberately conservative: when a field can't be mappe
 
 File menu → **Add page** creates a new page. With multiple pages, the control at the bottom-center of the canvas switches between them and removes them. All pages share the same dimensions; export and import handle each page as a separate label.
 
-### Batch printing from CSV
+### Batch printing from data
 
 File menu → **Import CSV data** loads a CSV. The mapping dialog pairs each Variable with a column, saved with the design. **Export batch ZPL** or **Send to Zebra Printer** then outputs one label per row.
+
+On desktop, **Import Excel data** reads a worksheet and **Printer settings… → Data sources** pulls from a read-only SQLite/PostgreSQL/MySQL database (password in the OS keychain), through the same mapping and batch output. A design remembers its database link for one-click reload.
 
 ### Printer settings
 
@@ -137,7 +139,7 @@ Both `.zpl` and `.json` round-trip cleanly. `.zpl` preserves all printable conte
 - Layers panel with reordering
 - Lossless ZPL round-trip: imported ZPL re-exports byte-for-byte, regenerating only what you edit ([import guarantees](#import-guarantees))
 - Variables: bind text and barcode fields to named defaults that emit as `^FN` slots (or `^FE` inline embeds when one field references multiple variables), round-tripping with printer-side templates
-- CSV batch printing: import a CSV, map columns to Variables, print or export with efficient printer-side data merge (template ships once, each row sends only its overrides)
+- Batch printing: map columns to Variables from a CSV, an Excel worksheet, or a read-only database (desktop), then print or export with efficient printer-side data merge (template ships once, each row sends only its overrides)
 - GS1 content builder: assemble GS1 content from Application Identifiers (DataBar Expanded, GS1-128, and GS1 DataMatrix), validated per field and against GS1 combination rules
 - Content builder: generate typed QR/DataMatrix/Aztec content (URL, WiFi, contact, email, phone, SMS, geo) with the right encoding and escaping
 - EAN/UPC inline validation: live length counter, computed check-digit preview, and a GS1 prefix hint right under the content field

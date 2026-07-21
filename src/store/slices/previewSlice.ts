@@ -8,7 +8,7 @@ import {
   type PrinterRenderDims,
 } from '../../lib/printerPreview';
 import { getPreviewTransport, getPrinterAddress, getUsbPrinterId } from '../../lib/printerAddress';
-import { buildActiveCsvRow } from '@zplab/core/lib/variableBinding';
+import { buildActiveRow } from '@zplab/core/lib/variableBinding';
 import { buildPreviewZpl } from '../../lib/printPreview';
 import { currentObjects, selectEffectivePreviewProvider, selectLabelaryEndpoint } from '../labelStore.selectors';
 import type { LabelState } from '../labelStore';
@@ -99,7 +99,7 @@ export const createPreviewSlice: StateCreator<LabelState, [], [], PreviewSlice> 
     // preview, so a stale value would render the wrong renderer.
     const provider = selectEffectivePreviewProvider(state);
     const objs = currentObjects(state);
-    const active = buildActiveCsvRow(state.csvDataset, state.csvMapping);
+    const active = buildActiveRow(state.dataset, state.columnMapping);
     const zpl = buildPreviewZpl(state.label, objs, state.variables, active, { blankSamples: true });
     // The printer target resolves before the cache lookup so the key can fold
     // the device in; an unconfigured target fails here, before 'loading'.

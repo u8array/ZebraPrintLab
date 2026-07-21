@@ -1,19 +1,14 @@
 // Single source of truth for CSV ingestion; no direct papaparse imports elsewhere.
 import Papa from "papaparse";
 import { ok, err, type Result } from "@zplab/core/lib/result";
+import type { CsvDatasetSource } from "@zplab/core/types/DataSource";
 
 export interface CsvParseResult {
   /** Header names from the first row, in source order. */
   headers: string[];
   /** Ragged rows padded to headers.length so consumers can index without bounds-checks. */
   rows: string[][];
-  source: {
-    filename: string;
-    importedAt: string;
-    encoding: string;
-    delimiter: string;
-    rowCount: number;
-  };
+  source: CsvDatasetSource;
 }
 
 export type CsvParseError =
@@ -87,6 +82,7 @@ export function parseCsvText(
     headers,
     rows,
     source: {
+      kind: "csv",
       filename: options.filename ?? "(pasted)",
       importedAt: new Date().toISOString(),
       encoding: options.encoding ?? "utf-8",
@@ -96,22 +92,16 @@ export function parseCsvText(
   });
 }
 
-// Outside the store: runtime-only values that can't survive persist.
+// Outside the store: the raw bytes (can't survive persist), re-decoded per
+// chosen encoding by decodeImportedText.
 let lastImportedBytes: Uint8Array | null = null;
-let lastImportedText: string | null = null;
 
-export function rememberImport(bytes: Uint8Array, text: string): void {
+export function rememberImport(bytes: Uint8Array): void {
   lastImportedBytes = bytes;
-  lastImportedText = text;
 }
 
 export function forgetImport(): void {
   lastImportedBytes = null;
-  lastImportedText = null;
-}
-
-export function getImportedText(): string | null {
-  return lastImportedText;
 }
 
 export function getImportedBytes(): Uint8Array | null {

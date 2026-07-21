@@ -1,7 +1,8 @@
 import type { StateCreator } from 'zustand';
 import { PER_LABEL_ZPL_FIELDS, type LabelConfig } from '@zplab/core/types/LabelConfig';
 import type { Page } from '@zplab/core/types/Group';
-import type { Variable, CsvMapping } from '@zplab/core/types/Variable';
+import type { Variable, ColumnMapping } from '@zplab/core/types/Variable';
+import type { DbSourceRef } from '@zplab/core/types/DataSource';
 import { forgetImport } from '../../lib/csvImport';
 import { dropLegacyFontBindings } from '@zplab/core/lib/customFonts';
 import { parseDesignFile, designFileErrors } from '@zplab/core/lib/designFile';
@@ -11,6 +12,13 @@ import { dropPageOverlays } from '@zplab/core/lib/pageOverlay';
 import { rescaleDesign } from '../../lib/densityRescale';
 import type { LabelState } from '../labelStore';
 
+/** zundo attaches `.temporal` to the store api; reach it through the injected
+ *  `api` rather than importing the store module (which would create a
+ *  labelStore <-> slice import cycle). */
+interface WithTemporal {
+  temporal: { getState(): { clear(): void } };
+}
+
 export interface LabelConfigSlice {
   label: LabelConfig;
   /** Patch the per-label config; undefined keys fall back to width/dpmm
@@ -19,14 +27,15 @@ export interface LabelConfigSlice {
   /** Clear every PER_LABEL_ZPL_FIELDS override back to unset (printer default). */
   resetPerLabelConfig: () => void;
   /** Atomic file-open: resets label, pages, currentPageIndex,
-   *  selectedIds, variables, csvMapping, csvDataset in one set() so
+   *  selectedIds, variables, columnMapping, dataset in one set() so
    *  zundo records one undo step and no intermediate state leaks.
    *  Also clears the CSV-import module cache. */
   loadDesign: (
     label: LabelConfig,
     pages: Page[],
     variables?: Variable[],
-    csvMapping?: CsvMapping | null,
+    columnMapping?: ColumnMapping | null,
+    dataSource?: DbSourceRef | null,
   ) => void;
   /** Parse serialized design-file text and load it, routing a parse failure
    *  to userError; every text source (file open, MCP push) shares this path. */
@@ -58,8 +67,11 @@ export const createLabelConfigSlice: StateCreator<LabelState, [], [], LabelConfi
       Object.fromEntries(PER_LABEL_ZPL_FIELDS.map((k) => [k, undefined])) as Partial<LabelConfig>,
     ),
 
-  loadDesign: (label, pages, variables, csvMapping) => {
-    if (selectPreviewLocksEditor(get())) return;
+  loadDesign: (label, pages, variables, columnMapping, dataSource) => {
+    // A document replacement supersedes any active preview; exit it and load,
+    // rather than no-op under the lock (which silently dropped File>Open and
+    // MCP open-draft pushes, error already cleared, with no feedback).
+    get().exitPreviewMode();
     // Drop the prior design's CSV cache: the raw text in the module
     // cache belongs to that file, not the one being loaded.
     forgetImport();
@@ -75,9 +87,22 @@ export const createLabelConfigSlice: StateCreator<LabelState, [], [], LabelConfi
       currentPageIndex: 0,
       selectedIds: [],
       variables: variables ?? [],
-      csvMapping: csvMapping ?? null,
-      csvDataset: null,
+      columnMapping: columnMapping ?? null,
+      dataset: null,
+      dataSourceRef: dataSource ?? null,
+      // Replacing the document supersedes any in-flight dataset fetch and any
+      // open import dialog, so they can't commit into the new document.
+      datasetFetchToken: get().datasetFetchToken + 1,
+      // Close the transient modals: they seed local state (selected profile/
+      // table, mapping draft) from the old document at mount and would otherwise
+      // load stale selections into the new one.
+      printerSettingsTab: null,
+      mappingModalOpen: false,
     });
+    // A document replacement is not an undoable step back into the previous
+    // file; clearing also prevents an undo from stranding the new design's
+    // non-temporal dataSourceRef on the old document.
+    (api as unknown as WithTemporal).temporal.getState().clear();
   },
 
   loadDesignText: (text) => {
@@ -91,7 +116,8 @@ export const createLabelConfigSlice: StateCreator<LabelState, [], [], LabelConfi
       result.value.label,
       result.value.pages,
       result.value.variables,
-      result.value.csvMapping,
+      result.value.columnMapping,
+      result.value.dataSource,
     );
   },
 

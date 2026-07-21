@@ -35,7 +35,7 @@ const KIND_ICON: Record<HistoryStepKind, ComponentType<{ className?: string }>> 
   group: RectangleGroupIcon,
   reorder: ArrowsUpDownIcon,
   variable: VariableIcon,
-  csv: TableCellsIcon,
+  dataset: TableCellsIcon,
   label: Cog6ToothIcon,
   page: DocumentIcon,
   mixed: EllipsisHorizontalIcon,

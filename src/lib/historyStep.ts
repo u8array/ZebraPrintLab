@@ -6,7 +6,7 @@ import type { LabelConfig } from "@zplab/core/types/LabelConfig";
 /** The undoable document slice zundo snapshots (mirrors `temporalPartialize`).
  *  Fields are compared by reference: the store is identity-preserving, so an
  *  unchanged domain keeps its ref across snapshots and a changed one gets a new
- *  one. `printerProfile`/`csvMapping` are only ref-compared, hence `unknown`. */
+ *  one. `printerProfile`/`columnMapping` are only ref-compared, hence `unknown`. */
 export interface HistorySnapshot {
   label: LabelConfig;
   printerProfile: unknown;
@@ -16,7 +16,7 @@ export interface HistorySnapshot {
    *  so the classifier does not key off it. */
   currentPageIndex: number;
   variables: readonly Variable[];
-  csvMapping: unknown;
+  columnMapping: unknown;
 }
 
 export type HistoryStepKind =
@@ -29,7 +29,7 @@ export type HistoryStepKind =
   | "group"
   | "reorder"
   | "variable"
-  | "csv"
+  | "dataset"
   | "label"
   | "page"
   | "load"
@@ -84,13 +84,13 @@ export function describeHistoryStep(
   const profileChanged = prev.printerProfile !== next.printerProfile;
   const pagesChanged = prev.pages !== next.pages;
   const varsChanged = prev.variables !== next.variables;
-  const csvChanged = prev.csvMapping !== next.csvMapping;
+  const mappingChanged = prev.columnMapping !== next.columnMapping;
 
   // Whole-document replace (loadDesign): label + pages + variables all swap at
   // once. Variable ops never touch `label`, so this can't catch them.
   if (labelChanged && pagesChanged && varsChanged) return { kind: "load" };
 
-  // Variable add/remove/rename ripples into pages + csvMapping; it wins.
+  // Variable add/remove/rename ripples into pages + columnMapping; it wins.
   if (varsChanged) {
     const pv = prev.variables;
     const nv = next.variables;
@@ -106,7 +106,7 @@ export function describeHistoryStep(
     return { kind: "variable", name: renamed?.name };
   }
 
-  if (csvChanged) return { kind: "csv" };
+  if (mappingChanged) return { kind: "dataset" };
 
   if (pagesChanged) {
     const prevLeaves = leavesOf(prev.pages);
