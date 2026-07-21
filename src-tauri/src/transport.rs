@@ -34,8 +34,9 @@ pub(crate) fn check_payload(len: usize) -> Result<(), String> {
   Ok(())
 }
 
-/// Run a blocking closure on the runtime's blocking pool, flattening the
-/// `JoinError` into a String so every blocking command drops that boilerplate.
+/// Run a blocking closure on the pool, flattening the `JoinError` to a String
+/// for the String-returning command edges. Typed callers (db/excel) use
+/// `spawn_blocking` directly so `#[from] tauri::Error` folds the panic in.
 pub(crate) async fn blocking<F, T>(f: F) -> Result<T, String>
 where
   F: FnOnce() -> T + Send + 'static,

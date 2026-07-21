@@ -46,10 +46,8 @@ enum DbError {
   PasswordMalformed,
   #[error("sqlite has no password")]
   SqliteNoPassword,
-  /// The transport::blocking worker thread panicked (stringified JoinError).
-  /// The one explicit stringly bridge; converted only at that call site.
-  #[error("{0}")]
-  Join(String),
+  #[error(transparent)]
+  Join(#[from] tauri::Error),
 }
 
 /// Single source of the over-budget check, so the streaming query and its test
@@ -251,9 +249,8 @@ fn password_for_endpoint(blob: Option<&str>, endpoint: &str) -> Result<Option<St
 
 async fn keychain_password(profile_id: &str, endpoint: &str) -> Result<Option<String>, DbError> {
   let name = password_cred(profile_id);
-  let blob = blocking(move || credentials::read_password(&name))
-    .await
-    .map_err(DbError::Join)??;
+  let blob =
+    tauri::async_runtime::spawn_blocking(move || credentials::read_password(&name)).await??;
   password_for_endpoint(blob.as_deref(), endpoint)
 }
 
