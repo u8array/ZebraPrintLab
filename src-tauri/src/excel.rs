@@ -8,7 +8,6 @@ use std::time::Duration;
 use calamine::{open_workbook_auto, Data, Reader};
 
 use crate::dataset::{Rows, ROW_CAP};
-use crate::transport::blocking;
 
 /// Same budget as the db queries. Cannot cancel the blocking parse (calamine
 /// materializes the whole sheet), but bounds what the user waits on.
@@ -44,10 +43,8 @@ enum ExcelError {
   TooLargeUncompressed,
   #[error("empty sheet: {0}")]
   EmptySheet(String),
-  /// The transport::blocking worker thread panicked (stringified JoinError).
-  /// The one explicit stringly bridge; converted only in timed_read.
-  #[error("{0}")]
-  Join(String),
+  #[error(transparent)]
+  Join(#[from] tauri::Error),
 }
 
 fn check_size(path: &str) -> Result<(), ExcelError> {
@@ -72,12 +69,12 @@ fn check_size(path: &str) -> Result<(), ExcelError> {
 }
 
 async fn timed_read<T>(
-  work: impl std::future::Future<Output = Result<Result<T, ExcelError>, String>>,
+  work: impl std::future::Future<Output = Result<Result<T, ExcelError>, tauri::Error>>,
 ) -> Result<T, ExcelError> {
   let parsed = tokio::time::timeout(READ_TIMEOUT, work)
     .await
     .map_err(|_| ExcelError::Timeout)?;
-  parsed.map_err(ExcelError::Join)?
+  parsed?
 }
 
 // calamine parses under the release panic="abort" profile, so a panic on a
@@ -85,56 +82,60 @@ async fn timed_read<T>(
 // check_size + the dialog-only pick keep realistic inputs benign.
 #[tauri::command]
 pub async fn excel_list_sheets(path: String) -> Result<Vec<String>, String> {
-  timed_read(blocking(move || -> Result<Vec<String>, ExcelError> {
-    check_size(&path)?;
-    let workbook = open_workbook_auto(&path)?;
-    Ok(workbook.sheet_names().to_vec())
-  }))
+  timed_read(tauri::async_runtime::spawn_blocking(
+    move || -> Result<Vec<String>, ExcelError> {
+      check_size(&path)?;
+      let workbook = open_workbook_auto(&path)?;
+      Ok(workbook.sheet_names().to_vec())
+    },
+  ))
   .await
   .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub async fn excel_fetch(path: String, sheet: String) -> Result<Rows, String> {
-  timed_read(blocking(move || -> Result<Rows, ExcelError> {
-    check_size(&path)?;
-    let mut workbook = open_workbook_auto(&path)?;
-    let range = workbook.worksheet_range(&sheet)?;
-    // The range starts at the first used cell; offset so a synthesized name
-    // matches the sheet's real column number.
-    let col_offset = range.start().map_or(0, |(_, c)| c as usize);
-    let mut rows_iter = range.rows();
-    let Some(header_row) = rows_iter.next() else {
-      return Err(ExcelError::EmptySheet(sheet.clone()));
-    };
-    let headers: Vec<String> = header_row
-      .iter()
-      .enumerate()
-      // Blank header cells still need a stable, mappable name.
-      .map(|(i, c)| {
-        let name = cell_text(c);
-        if name.is_empty() {
-          format!("Column {}", col_offset + i + 1)
-        } else {
-          name
+  timed_read(tauri::async_runtime::spawn_blocking(
+    move || -> Result<Rows, ExcelError> {
+      check_size(&path)?;
+      let mut workbook = open_workbook_auto(&path)?;
+      let range = workbook.worksheet_range(&sheet)?;
+      // The range starts at the first used cell; offset so a synthesized name
+      // matches the sheet's real column number.
+      let col_offset = range.start().map_or(0, |(_, c)| c as usize);
+      let mut rows_iter = range.rows();
+      let Some(header_row) = rows_iter.next() else {
+        return Err(ExcelError::EmptySheet(sheet));
+      };
+      let headers: Vec<String> = header_row
+        .iter()
+        .enumerate()
+        // Blank header cells still need a stable, mappable name.
+        .map(|(i, c)| {
+          let name = cell_text(c);
+          if name.is_empty() {
+            format!("Column {}", col_offset + i + 1)
+          } else {
+            name
+          }
+        })
+        .collect();
+      let mut truncated = false;
+      let mut rows: Vec<Vec<String>> = Vec::new();
+      for row in rows_iter {
+        if rows.len() >= ROW_CAP {
+          truncated = true;
+          break;
         }
-      })
-      .collect();
-    let mut truncated = false;
-    let mut rows: Vec<Vec<String>> = Vec::new();
-    for row in rows_iter {
-      if rows.len() >= ROW_CAP {
-        truncated = true;
-        break;
+        rows.push(row.iter().map(cell_text).collect());
       }
-      rows.push(row.iter().map(cell_text).collect());
-    }
-    Ok(Rows {
-      headers,
-      rows,
-      truncated,
-    })
-  }))
+      Ok(Rows {
+        headers,
+        rows,
+        truncated,
+      })
+    },
+  ))
   .await
   .map_err(|e| e.to_string())
 }
