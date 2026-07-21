@@ -63,7 +63,9 @@ pub async fn credential_get(name: String) -> Result<Option<String>, String> {
     return Err(CredError::NotReadable(name).to_string());
   }
   // keyring is blocking (DBus/OS calls); keep it off the async runtime.
-  blocking(move || read_password(&name)).await?.map_err(|e| e.to_string())
+  blocking(move || read_password(&name))
+    .await?
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -71,7 +73,9 @@ pub async fn credential_set(name: String, value: String) -> Result<(), String> {
   if is_rust_only(&name) {
     return Err(CredError::NotWritable(name).to_string());
   }
-  blocking(move || write_password(&name, &value)).await?.map_err(|e| e.to_string())
+  blocking(move || write_password(&name, &value))
+    .await?
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

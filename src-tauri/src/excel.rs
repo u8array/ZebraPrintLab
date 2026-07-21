@@ -37,7 +37,10 @@ enum ExcelError {
   Timeout,
   #[error("file too large: {0} bytes (max {})", MAX_FILE_BYTES)]
   TooLarge(u64),
-  #[error("workbook expands to more than {} bytes uncompressed", MAX_UNCOMPRESSED_BYTES)]
+  #[error(
+    "workbook expands to more than {} bytes uncompressed",
+    MAX_UNCOMPRESSED_BYTES
+  )]
   TooLargeUncompressed,
   #[error("empty sheet: {0}")]
   EmptySheet(String),
@@ -110,7 +113,11 @@ pub async fn excel_fetch(path: String, sheet: String) -> Result<Rows, String> {
       // Blank header cells still need a stable, mappable name.
       .map(|(i, c)| {
         let name = cell_text(c);
-        if name.is_empty() { format!("Column {}", col_offset + i + 1) } else { name }
+        if name.is_empty() {
+          format!("Column {}", col_offset + i + 1)
+        } else {
+          name
+        }
       })
       .collect();
     let mut truncated = false;
@@ -122,7 +129,11 @@ pub async fn excel_fetch(path: String, sheet: String) -> Result<Rows, String> {
       }
       rows.push(row.iter().map(cell_text).collect());
     }
-    Ok(Rows { headers, rows, truncated })
+    Ok(Rows {
+      headers,
+      rows,
+      truncated,
+    })
   }))
   .await
   .map_err(|e| e.to_string())
@@ -182,8 +193,11 @@ mod tests {
     std::fs::create_dir_all(&dir).unwrap();
     let p = dir.join("small.xlsx");
     let mut zw = zip::ZipWriter::new(std::fs::File::create(&p).unwrap());
-    zw.start_file("xl/worksheets/sheet1.xml", zip::write::SimpleFileOptions::default())
-      .unwrap();
+    zw.start_file(
+      "xl/worksheets/sheet1.xml",
+      zip::write::SimpleFileOptions::default(),
+    )
+    .unwrap();
     zw.write_all(b"<sheetData/>").unwrap();
     zw.finish().unwrap();
     assert!(check_size(&p.to_string_lossy()).is_ok());
@@ -197,16 +211,22 @@ mod tests {
     assert_eq!(cell_text(&Data::Float(3.25)), "3.25");
     assert_eq!(cell_text(&Data::Int(7)), "7");
     assert_eq!(cell_text(&Data::Bool(true)), "TRUE");
-    assert_eq!(cell_text(&Data::DateTimeIso("2026-07-20T10:00".into())), "2026-07-20T10:00");
+    assert_eq!(
+      cell_text(&Data::DateTimeIso("2026-07-20T10:00".into())),
+      "2026-07-20T10:00"
+    );
   }
 
   #[test]
   fn time_only_cell_drops_the_phantom_epoch_date() {
     // Serial 0.395833… = 09:30, no date component.
-    assert_eq!(cell_text(&Data::DateTime(calamine::ExcelDateTime::new(
-      0.395_833_333_333_333_3,
-      calamine::ExcelDateTimeType::DateTime,
-      false,
-    ))), "09:30:00");
+    assert_eq!(
+      cell_text(&Data::DateTime(calamine::ExcelDateTime::new(
+        0.395_833_333_333_333_3,
+        calamine::ExcelDateTimeType::DateTime,
+        false,
+      ))),
+      "09:30:00"
+    );
   }
 }

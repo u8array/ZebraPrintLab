@@ -33,7 +33,10 @@ enum DbError {
   ConnectTimeout,
   #[error("query timed out")]
   QueryTimeout,
-  #[error("result too large (over {} bytes); narrow the selection", MAX_FETCH_BYTES)]
+  #[error(
+    "result too large (over {} bytes); narrow the selection",
+    MAX_FETCH_BYTES
+  )]
   OverBudget,
   #[error("unknown table: {0}")]
   UnknownTable(String),
@@ -194,23 +197,46 @@ fn endpoint_id(host: &str, port: u16, ssl: SslMode, user: &str, database: &str) 
 fn password_binding(spec: &DbSpec) -> Option<(&str, String)> {
   match spec {
     DbSpec::Sqlite { .. } => None,
-    DbSpec::Postgres { profile_id, host, port, ssl_mode, user, database } => Some((
+    DbSpec::Postgres {
       profile_id,
-      endpoint_id(host, port.unwrap_or(PG_DEFAULT_PORT), *ssl_mode, user, database),
+      host,
+      port,
+      ssl_mode,
+      user,
+      database,
+    } => Some((
+      profile_id,
+      endpoint_id(
+        host,
+        port.unwrap_or(PG_DEFAULT_PORT),
+        *ssl_mode,
+        user,
+        database,
+      ),
     )),
-    DbSpec::Mysql { profile_id, host, port, ssl_mode, user, database } => Some((
+    DbSpec::Mysql {
       profile_id,
-      endpoint_id(host, port.unwrap_or(MYSQL_DEFAULT_PORT), *ssl_mode, user, database),
+      host,
+      port,
+      ssl_mode,
+      user,
+      database,
+    } => Some((
+      profile_id,
+      endpoint_id(
+        host,
+        port.unwrap_or(MYSQL_DEFAULT_PORT),
+        *ssl_mode,
+        user,
+        database,
+      ),
     )),
   }
 }
 
 /// Extract the password from a stored `endpoint\npassword` blob only when the
 /// endpoint matches; a mismatch or malformed blob refuses rather than leak.
-fn password_for_endpoint(
-  blob: Option<&str>,
-  endpoint: &str,
-) -> Result<Option<String>, DbError> {
+fn password_for_endpoint(blob: Option<&str>, endpoint: &str) -> Result<Option<String>, DbError> {
   match blob {
     None => Ok(None),
     Some(b) => match b.split_once('\n') {
@@ -225,7 +251,9 @@ fn password_for_endpoint(
 
 async fn keychain_password(profile_id: &str, endpoint: &str) -> Result<Option<String>, DbError> {
   let name = password_cred(profile_id);
-  let blob = blocking(move || credentials::read_password(&name)).await.map_err(DbError::Join)??;
+  let blob = blocking(move || credentials::read_password(&name))
+    .await
+    .map_err(DbError::Join)??;
   password_for_endpoint(blob.as_deref(), endpoint)
 }
 
@@ -245,7 +273,14 @@ async fn connect(spec: &DbSpec) -> Result<DbConn, DbError> {
           .connect()
           .await?,
       )),
-      DbSpec::Postgres { host, port, database, user, ssl_mode, .. } => {
+      DbSpec::Postgres {
+        host,
+        port,
+        database,
+        user,
+        ssl_mode,
+        ..
+      } => {
         let mut opts = PgConnectOptions::new()
           .host(host)
           .port(port.unwrap_or(PG_DEFAULT_PORT))
@@ -260,7 +295,14 @@ async fn connect(spec: &DbSpec) -> Result<DbConn, DbError> {
         }
         Ok(DbConn::Postgres(opts.connect().await?))
       }
-      DbSpec::Mysql { host, port, database, user, ssl_mode, .. } => {
+      DbSpec::Mysql {
+        host,
+        port,
+        database,
+        user,
+        ssl_mode,
+        ..
+      } => {
         let mut opts = MySqlConnectOptions::new()
           .host(host)
           .port(port.unwrap_or(MYSQL_DEFAULT_PORT))
@@ -344,8 +386,9 @@ macro_rules! impl_text_query {
       let mut bytes: usize = 0;
       while let Some(row) = stream.next().await {
         let row = row?;
-        let cells: Vec<String> =
-          (0..width).map(|i| text_cell_at(&row, i)).collect::<Result<_, _>>()?;
+        let cells: Vec<String> = (0..width)
+          .map(|i| text_cell_at(&row, i))
+          .collect::<Result<_, _>>()?;
         bytes = bytes.saturating_add(cells.iter().map(|c| c.len()).sum());
         check_fetch_budget(bytes)?;
         out.push(cells);
@@ -389,7 +432,13 @@ async fn list_tables(conn: &mut DbConn) -> Result<Vec<String>, DbError> {
        WHERE table_schema = DATABASE() ORDER BY 1"
     }
   };
-  Ok(text_query(conn, sql, &[], 1).await?.into_iter().flatten().collect())
+  Ok(
+    text_query(conn, sql, &[], 1)
+      .await?
+      .into_iter()
+      .flatten()
+      .collect(),
+  )
 }
 
 async fn list_columns(conn: &mut DbConn, table: &str) -> Result<Vec<String>, DbError> {
@@ -407,7 +456,13 @@ async fn list_columns(conn: &mut DbConn, table: &str) -> Result<Vec<String>, DbE
        ORDER BY ordinal_position"
     }
   };
-  Ok(text_query(conn, sql, &[table], 1).await?.into_iter().flatten().collect())
+  Ok(
+    text_query(conn, sql, &[table], 1)
+      .await?
+      .into_iter()
+      .flatten()
+      .collect(),
+  )
 }
 
 async fn fetch_table(conn: &mut DbConn, table: &str) -> Result<Rows, DbError> {
@@ -441,7 +496,11 @@ async fn fetch_table(conn: &mut DbConn, table: &str) -> Result<Rows, DbError> {
   let mut rows = text_query(conn, &sql, &[], headers.len()).await?;
   let truncated = rows.len() > ROW_CAP;
   rows.truncate(ROW_CAP);
-  Ok(Rows { headers, rows, truncated })
+  Ok(Rows {
+    headers,
+    rows,
+    truncated,
+  })
 }
 
 async fn run_list_tables(spec: &DbSpec) -> Result<Vec<String>, DbError> {
@@ -458,7 +517,12 @@ pub async fn db_list_tables(spec: DbSpec) -> Result<Vec<String>, String> {
 
 async fn run_fetch(spec: &DbSpec, table: &str) -> Result<Rows, DbError> {
   let mut conn = connect(spec).await?;
-  let out = with_timeout(QUERY_TIMEOUT, DbError::QueryTimeout, fetch_table(&mut conn, table)).await;
+  let out = with_timeout(
+    QUERY_TIMEOUT,
+    DbError::QueryTimeout,
+    fetch_table(&mut conn, table),
+  )
+  .await;
   close(conn).await;
   out
 }
@@ -478,7 +542,9 @@ pub async fn db_set_password(spec: DbSpec, password: String) -> Result<(), Strin
   };
   let blob = format!("{endpoint}\n{password}");
   let name = password_cred(profile_id);
-  blocking(move || credentials::write_password(&name, &blob)).await?.map_err(|e| e.to_string())
+  blocking(move || credentials::write_password(&name, &blob))
+    .await?
+    .map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
@@ -537,7 +603,10 @@ mod tests {
         .connect()
         .await
         .unwrap();
-      sqlx::query("CREATE TABLE b (v BLOB)").execute(&mut c).await.unwrap();
+      sqlx::query("CREATE TABLE b (v BLOB)")
+        .execute(&mut c)
+        .await
+        .unwrap();
       sqlx::query("INSERT INTO b VALUES (x'fffe0001'), (x'48656c6c6f')")
         .execute(&mut c)
         .await
@@ -588,7 +657,9 @@ mod tests {
   fn rejects_unknown_table_names() {
     rt().block_on(async {
       let mut conn = open_seeded("unknown").await;
-      let err = fetch_table(&mut conn, "items; DROP TABLE items").await.unwrap_err();
+      let err = fetch_table(&mut conn, "items; DROP TABLE items")
+        .await
+        .unwrap_err();
       assert!(err.to_string().contains("unknown table"));
     });
   }
@@ -597,7 +668,9 @@ mod tests {
   fn connection_is_read_only() {
     rt().block_on(async {
       let conn = open_seeded("ro").await;
-      let DbConn::Sqlite(mut c) = conn else { panic!("sqlite expected") };
+      let DbConn::Sqlite(mut c) = conn else {
+        panic!("sqlite expected")
+      };
       let err = sqlx::query("INSERT INTO items VALUES ('C-3', 1, 1.0, NULL)")
         .execute(&mut c)
         .await;
@@ -609,8 +682,14 @@ mod tests {
   fn quoting_and_cast_follow_the_dialect() {
     assert_eq!(quote_ident(Dialect::Ansi, "a\"b"), "\"a\"\"b\"");
     assert_eq!(quote_ident(Dialect::MySql, "a`b"), "`a``b`");
-    assert_eq!(text_cell(Dialect::Ansi, "\"c\""), "COALESCE(CAST(\"c\" AS TEXT), '')");
-    assert_eq!(text_cell(Dialect::MySql, "`c`"), "COALESCE(CAST(`c` AS CHAR), '')");
+    assert_eq!(
+      text_cell(Dialect::Ansi, "\"c\""),
+      "COALESCE(CAST(\"c\" AS TEXT), '')"
+    );
+    assert_eq!(
+      text_cell(Dialect::MySql, "`c`"),
+      "COALESCE(CAST(`c` AS CHAR), '')"
+    );
   }
 
   #[test]
@@ -620,7 +699,12 @@ mod tests {
     )
     .unwrap();
     match pg {
-      DbSpec::Postgres { port, profile_id, ssl_mode, .. } => {
+      DbSpec::Postgres {
+        port,
+        profile_id,
+        ssl_mode,
+        ..
+      } => {
         assert_eq!(port, Some(5433));
         assert_eq!(password_cred(&profile_id), "db-profile-p1");
         // Omitted in this payload -> the Prefer default.
@@ -632,7 +716,14 @@ mod tests {
       r#"{"driver":"mysql","host":"h","database":"d","user":"u","profileId":"p2","sslMode":"verify-full"}"#,
     )
     .unwrap();
-    assert!(matches!(my, DbSpec::Mysql { port: None, ssl_mode: SslMode::VerifyFull, .. }));
+    assert!(matches!(
+      my,
+      DbSpec::Mysql {
+        port: None,
+        ssl_mode: SslMode::VerifyFull,
+        ..
+      }
+    ));
   }
 
   #[test]
@@ -640,18 +731,43 @@ mod tests {
     let ep = endpoint_id("db.local", 5432, SslMode::Require, "reader", "sales");
     let blob = format!("{ep}\nsecret");
     // Same endpoint -> released.
-    assert_eq!(password_for_endpoint(Some(blob.as_str()), &ep).unwrap(), Some("secret".into()));
+    assert_eq!(
+      password_for_endpoint(Some(blob.as_str()), &ep).unwrap(),
+      Some("secret".into())
+    );
     // Redirected host -> refused, secret not leaked.
-    let other = endpoint_id("attacker.example", 5432, SslMode::Require, "reader", "sales");
+    let other = endpoint_id(
+      "attacker.example",
+      5432,
+      SslMode::Require,
+      "reader",
+      "sales",
+    );
     assert!(password_for_endpoint(Some(blob.as_str()), &other).is_err());
     // Different port on the same host is also a different endpoint.
-    assert!(password_for_endpoint(Some(blob.as_str()), &endpoint_id("db.local", 5433, SslMode::Require, "reader", "sales")).is_err());
+    assert!(password_for_endpoint(
+      Some(blob.as_str()),
+      &endpoint_id("db.local", 5433, SslMode::Require, "reader", "sales")
+    )
+    .is_err());
     // A downgraded ssl_mode is a different endpoint: the secret is withheld so
     // it can't be forced onto a plaintext connection to the real host.
-    assert!(password_for_endpoint(Some(blob.as_str()), &endpoint_id("db.local", 5432, SslMode::Disable, "reader", "sales")).is_err());
+    assert!(password_for_endpoint(
+      Some(blob.as_str()),
+      &endpoint_id("db.local", 5432, SslMode::Disable, "reader", "sales")
+    )
+    .is_err());
     // A different user or database on the same host cannot reuse the secret.
-    assert!(password_for_endpoint(Some(blob.as_str()), &endpoint_id("db.local", 5432, SslMode::Require, "postgres", "sales")).is_err());
-    assert!(password_for_endpoint(Some(blob.as_str()), &endpoint_id("db.local", 5432, SslMode::Require, "reader", "payroll")).is_err());
+    assert!(password_for_endpoint(
+      Some(blob.as_str()),
+      &endpoint_id("db.local", 5432, SslMode::Require, "postgres", "sales")
+    )
+    .is_err());
+    assert!(password_for_endpoint(
+      Some(blob.as_str()),
+      &endpoint_id("db.local", 5432, SslMode::Require, "reader", "payroll")
+    )
+    .is_err());
     // No stored credential -> no password (passwordless connect), not an error.
     assert_eq!(password_for_endpoint(None, &ep).unwrap(), None);
     // A legacy plain value (no endpoint prefix) refuses rather than leaking.
@@ -689,7 +805,10 @@ mod tests {
   fn keychain_set(profile_id: &str, port: u16, user: &str, value: &str) {
     // Mirror db_set_password: endpoint-bound blob for host 127.0.0.1, db zpltest,
     // default ssl_mode (the live specs omit sslMode, so serde yields Prefer).
-    let blob = format!("{}\n{value}", endpoint_id("127.0.0.1", port, SslMode::Prefer, user, "zpltest"));
+    let blob = format!(
+      "{}\n{value}",
+      endpoint_id("127.0.0.1", port, SslMode::Prefer, user, "zpltest")
+    );
     keyring::Entry::new("ZPLab", &password_cred(profile_id))
       .unwrap()
       .set_password(&blob)
@@ -707,7 +826,10 @@ mod tests {
       let mut conn = connect(spec).await.unwrap();
       let tables = list_tables(&mut conn).await.unwrap();
       assert!(tables.contains(&"items".to_string()), "items in {tables:?}");
-      assert!(tables.contains(&"cheap".to_string()), "cheap view in {tables:?}");
+      assert!(
+        tables.contains(&"cheap".to_string()),
+        "cheap view in {tables:?}"
+      );
       let got = fetch_table(&mut conn, "items").await.unwrap();
       assert_eq!(got.headers, vec!["sku", "qty", "price", "note", "made"]);
       assert_eq!(got.rows[0], vec!["A-1", "3", "1.50", "", "2026-01-15"]);
@@ -716,8 +838,14 @@ mod tests {
       assert_eq!(view.rows, vec![vec!["A-1"]]);
       // Read-only proof: the session must reject writes server-side.
       let write = match &mut conn {
-        DbConn::Postgres(c) => sqlx::query("INSERT INTO items (sku) VALUES ('X')").execute(c).await.err(),
-        DbConn::Mysql(c) => sqlx::query("INSERT INTO items (sku) VALUES ('X')").execute(c).await.err(),
+        DbConn::Postgres(c) => sqlx::query("INSERT INTO items (sku) VALUES ('X')")
+          .execute(c)
+          .await
+          .err(),
+        DbConn::Mysql(c) => sqlx::query("INSERT INTO items (sku) VALUES ('X')")
+          .execute(c)
+          .await
+          .err(),
         DbConn::Sqlite(_) => unreachable!(),
       };
       assert!(write.is_some(), "write must fail on a read-only session");
@@ -746,10 +874,17 @@ mod tests {
   fn live_wrong_password_fails_cleanly() {
     keychain_set("live-bad", 5432, "postgres", "wrong");
     let err = rt()
-      .block_on(connect(&live_spec("postgres", 5432, "postgres", "live-bad")))
+      .block_on(connect(&live_spec(
+        "postgres", 5432, "postgres", "live-bad",
+      )))
       .err();
     keychain_drop("live-bad");
-    let err = err.expect("connect must fail with a wrong password").to_string();
-    assert!(!err.contains("wrong"), "error must not echo the password: {err}");
+    let err = err
+      .expect("connect must fail with a wrong password")
+      .to_string();
+    assert!(
+      !err.contains("wrong"),
+      "error must not echo the password: {err}"
+    );
   }
 }
