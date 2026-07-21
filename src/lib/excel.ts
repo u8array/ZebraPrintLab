@@ -1,6 +1,13 @@
 import type { DatasetInput } from '@zplab/core/types/DataSource';
 import type { DbRows } from './db';
 
+/** Native pick that also grants the path Rust-side (session): excel_* commands
+ *  refuse paths that did not come from this dialog. Null on cancel. */
+export async function pickExcelFile(): Promise<string | null> {
+  const { invoke } = await import('@tauri-apps/api/core');
+  return invoke<string | null>('pick_excel_file');
+}
+
 export async function excelListSheets(path: string): Promise<string[]> {
   const { invoke } = await import('@tauri-apps/api/core');
   return invoke<string[]>('excel_list_sheets', { path });

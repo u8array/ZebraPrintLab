@@ -66,6 +66,22 @@ const specOf = (profile: DbProfile): DbSpec =>
         sslMode: profile.sslMode ?? 'prefer',
       };
 
+/** Native pick that also grants the path Rust-side (persisted): the sqlite
+ *  db_* commands refuse paths that did not come from this dialog. Returns the
+ *  canonical path (store it verbatim), null on cancel; `suggest` preseeds. */
+export async function pickSqliteFile(suggest?: string): Promise<string | null> {
+  const { invoke } = await import('@tauri-apps/api/core');
+  return invoke<string | null>('pick_sqlite_file', { suggest: suggest ?? null });
+}
+
+/** Drop a persisted sqlite path grant so the set doesn't ratchet up forever.
+ *  `keep` = every path still referenced by a profile; Rust compares them
+ *  canonically, so a sibling under another spelling keeps its grant. */
+export async function revokeSqlitePath(path: string, keep: string[]): Promise<void> {
+  const { invoke } = await import('@tauri-apps/api/core');
+  await invoke('revoke_db_path', { path, keep });
+}
+
 /** Keychain account for a profile's password (mirrors Rust `password_cred`). */
 export const dbPasswordCred = (profileId: string): string => `db-profile-${profileId}`;
 

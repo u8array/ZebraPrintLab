@@ -4,6 +4,7 @@ mod db;
 mod excel;
 mod mcp;
 mod print;
+mod scope;
 mod transport;
 mod usb;
 
@@ -13,6 +14,12 @@ use tauri::Manager;
 pub fn run() {
   let builder = tauri::Builder::default()
     .manage(mcp::McpState::default())
+    // In setup, not manage(): loading the persisted grants needs the app paths.
+    .setup(|app| {
+      let grants = scope::PathGrants::load(app.handle());
+      app.manage(grants);
+      Ok(())
+    })
     .invoke_handler(tauri::generate_handler![
       print::send_zpl_tcp,
       print::query_zpl_tcp,
@@ -27,6 +34,9 @@ pub fn run() {
       db::db_set_password,
       excel::excel_list_sheets,
       excel::excel_fetch,
+      scope::pick_sqlite_file,
+      scope::pick_excel_file,
+      scope::revoke_db_path,
       credentials::credential_get,
       credentials::credential_set,
       credentials::credential_delete,

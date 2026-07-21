@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useLabelStore } from '../store/labelStore';
 import { loadFetchedDataset, currentDataContext, isCurrentDataContext } from '../store/datasetActions';
-import { excelFetchDataset, excelListSheets } from '../lib/excel';
-import { basename, pickFilePath, EXCEL_FILTER } from '../lib/fileDialogs';
+import { excelFetchDataset, excelListSheets, pickExcelFile } from '../lib/excel';
+import { basename } from '../lib/fileDialogs';
 import { formatTemplate } from '../lib/formatTemplate';
 import { useT } from './useT';
 
@@ -32,7 +32,7 @@ export function useExcelImportActions() {
       // import, not silently inherit the new context's token.
       const token = currentDataContext();
       try {
-        const path = await pickFilePath(EXCEL_FILTER);
+        const path = await pickExcelFile();
         if (!path) return;
         const sheets = await excelListSheets(path);
         // A document loaded during the pick/list: don't open a dialog that is

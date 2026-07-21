@@ -8,9 +8,10 @@ import {
   dbPasswordCred,
   dbSetPassword,
   enqueueCredWrite,
+  pickSqliteFile,
+  revokeSqlitePath,
 } from '../../lib/db';
 import { deleteCredential } from '../../lib/credentialStore';
-import { pickFilePath, SQLITE_FILTER } from '../../lib/fileDialogs';
 import { formatTemplate } from '../../lib/formatTemplate';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { Select } from '../ui/Select';
@@ -49,8 +50,9 @@ export function DataSourcesTab() {
   // Local mirror of the password input; committed to the keychain on blur,
   // never into the store. Empty means "keep whatever is stored".
   const [passwordDraft, setPasswordDraft] = useState('');
-  // Bumped when a new password lands so a previously-failed table fetch retries.
-  const [credNonce, setCredNonce] = useState(0);
+  // Bumped when a new password or path grant lands so a previously-failed
+  // table fetch retries even when the profile content is unchanged.
+  const [retryNonce, setRetryNonce] = useState(0);
 
   const connectionReady =
     profile !== null &&
@@ -61,7 +63,7 @@ export function DataSourcesTab() {
   // Keyed by full connection identity so edits refetch but a rename doesn't;
   // a key mismatch is a stale result, reset derived in render (not via effect).
   const tablesKey = profile
-    ? `${credNonce} ${JSON.stringify({ ...profile, name: undefined })}`
+    ? `${retryNonce} ${JSON.stringify({ ...profile, name: undefined })}`
     : '';
   const [tablesResult, setTablesResult] = useState<{
     key: string;
@@ -113,6 +115,15 @@ export function DataSourcesTab() {
     setSelectedTable('');
   };
 
+  // Call AFTER the profile mutation so the keep list reflects the new state
+  // (revokeSqlitePath documents the shared-grant semantics).
+  const revokeOrphanedGrant = (path: string) => {
+    const keep = useLabelStore
+      .getState()
+      .dbProfiles.flatMap((p) => (p.driver === 'sqlite' && p.path ? [p.path] : []));
+    void revokeSqlitePath(path, keep);
+  };
+
   const handleDriverChange = (driver: Driver) => {
     if (!profile || driver === profile.driver) return;
     // Leaving the network drivers orphans the keychain password; drop it so a
@@ -120,21 +131,41 @@ export function DataSourcesTab() {
     if (driver === 'sqlite' && profile.driver !== 'sqlite') {
       void deleteStoredPassword(profile.id);
     }
+    const orphanedPath = profile.driver === 'sqlite' ? profile.path : '';
     const base = { id: profile.id, name: profile.name };
     updateDbProfile(
       driver === 'sqlite'
         ? { ...base, driver, path: '' }
         : { ...base, driver, host: '', database: '', user: '' },
     );
+    // Leaving sqlite orphans the path grant; drop it like the password above.
+    if (orphanedPath) revokeOrphanedGrant(orphanedPath);
     setSelectedTable('');
     setPasswordDraft('');
   };
 
   const handleBrowse = () => {
-    void pickFilePath(SQLITE_FILTER).then((path) => {
-      if (path && profile?.driver === 'sqlite') updateDbProfile({ ...profile, path });
-    });
+    if (!profile || profile.driver !== 'sqlite') return;
+    const previous = profile.path;
+    void pickSqliteFile(previous || undefined).then((path) => {
+      if (path && profile.driver === 'sqlite') {
+        updateDbProfile({ ...profile, path });
+        // Re-picking the SAME file (grant recovery) leaves the profile content
+        // unchanged, so tablesKey alone would not refetch; bump explicitly.
+        setRetryNonce((n) => n + 1);
+        // After the update, so the keep list already contains the new path
+        // (Rust keeps the grant when both resolve to the same file).
+        if (previous && previous !== path) revokeOrphanedGrant(previous);
+      }
+    }, browseError);
   };
+
+  // Pick succeeded but the file vanished before it could be granted; surface
+  // it instead of an unhandled rejection (path stays unchanged).
+  const browseError = (e: unknown) =>
+    useLabelStore
+      .getState()
+      .setUserError(formatTemplate(tv.dbFetchErrorFmt, { error: String(e) }));
 
   // Keychain writes serialize through the module-level queue in lib/db (shared
   // with the reconnect chip). A failed save leaves the keychain unchanged, so a
@@ -153,7 +184,7 @@ export function DataSourcesTab() {
     void enqueueCredWrite(() =>
       dbSetPassword(netProfile, value).then(() => {
         setPasswordDraft('');
-        setCredNonce((n) => n + 1);
+        setRetryNonce((n) => n + 1);
       }, credError), // draft stays so the user can retry
     );
   };
@@ -163,7 +194,7 @@ export function DataSourcesTab() {
     const id = profile.id;
     setPasswordDraft('');
     void enqueueCredWrite(() =>
-      deleteCredential(dbPasswordCred(id)).then(() => setCredNonce((n) => n + 1), credError),
+      deleteCredential(dbPasswordCred(id)).then(() => setRetryNonce((n) => n + 1), credError),
     );
   };
 
@@ -401,7 +432,11 @@ export function DataSourcesTab() {
           cancelLabel={tv.cancel}
           destructive
           onConfirm={() => {
+            const doomed = dbProfiles.find((p) => p.id === pendingDelete.id);
             removeDbProfile(pendingDelete.id);
+            // After the removal, so the keep list no longer contains the
+            // deleted profile; a sibling on the same file keeps the grant.
+            if (doomed?.driver === 'sqlite' && doomed.path) revokeOrphanedGrant(doomed.path);
             // Drop the orphaned keychain password with the profile.
             void deleteStoredPassword(pendingDelete.id);
             setPendingDelete(null);
