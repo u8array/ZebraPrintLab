@@ -121,6 +121,13 @@ function applyResizeObjectSnap(
  *  it for multi-resize so member nodes never stretch live. */
 export const MULTI_RESIZE_PROXY_ID = "multi-resize-proxy";
 
+/** Types the transformer mirrors under Alt (1D barcodes, uniform-2D matrix
+ *  codes); mirrors the barcodeReflow arming, so the exposed centeredResizeArmed
+ *  matches it. Others pin one edge and jitter under Alt. Registry-derived. */
+function supportsCenteredResize(type: string): boolean {
+  return BARCODE_1D_TYPES.has(type) || !!getEntry(type)?.uniformScaleProp;
+}
+
 interface Options {
   transformerRef: React.RefObject<Konva.Transformer | null>;
   stageRef: React.RefObject<Konva.Stage | null>;
@@ -162,8 +169,11 @@ export interface TransformerState {
   /** Center-justified glyph blocks scale from the center so the box grows
    *  symmetrically and tracks the centered text live. */
   centeredScaling: boolean;
+  /** The single selection supports Alt-centered resize (1D barcode or 2D matrix
+   *  code); the Alt-handle bypass gates on it. */
+  centeredResizeArmed: boolean;
   onTransformStart: () => void;
-  onTransform: () => void;
+  onTransform: (e?: Konva.KonvaEventObject<Event>) => void;
   boundBoxFunc: (oldBox: BoundingBox, newBox: BoundingBox) => BoundingBox;
   onTransformEnd: () => void;
 }
@@ -255,12 +265,14 @@ export function useKonvaTransformer({
         uprightH0: number;
         snapshot: { x: number; y: number; moduleWidth: number; height?: number };
         changed: boolean;
+        lastCentered: boolean;
       })
     | (BarcodeHeightReflowStart & {
         mode: "height";
         uprightW0: number;
         snapshot: { x: number; y: number; height: number };
         changed: boolean;
+        lastCentered: boolean;
       })
     | (UniformReflowStart & {
         mode: "uniform";
@@ -272,6 +284,7 @@ export function useKonvaTransformer({
         uprightH0?: number;
         snapshot: { x: number; y: number; modules: number };
         changed: boolean;
+        lastCentered: boolean;
       })
     | null
   >(null);
@@ -306,7 +319,9 @@ export function useKonvaTransformer({
   // commit so toggling Alt mid-drag can't make start and end disagree.
   const blockResizeModeRef = useRef<"frame" | "glyph">("frame");
 
-  // Alt held at drag release flips the block resize mode for that one drag.
+  // Live Alt state: sampled once at drag start for the block resize mode,
+  // and read live per tick for centered barcode resize (mirrors Konva's own
+  // Alt-driven preview).
   const altKeyRef = useRef(false);
   useEffect(() => {
     const sync = (e: KeyboardEvent) => { altKeyRef.current = e.altKey; };
@@ -433,6 +448,9 @@ export function useKonvaTransformer({
       ? multiResizeBboxDots != null
       : selectedIds.length === 1 && !singleSelected?.locked;
   const singleType = singleSelected?.type ?? "";
+  // Exposed so the Alt-handle bypass (useAltClickCycle) gates on the SAME
+  // resolved leaf selection the reflow arming uses, not a re-derived one.
+  const centeredResizeArmed = supportsCenteredResize(singleType);
   const typeEntry = getEntry(singleType);
   const uniformScaleDef = typeEntry?.uniformScale;
   // uniformScaleProp implies uniformScale: integer-module 2D symbology scales
@@ -727,6 +745,7 @@ export function useKonvaTransformer({
             // baseline must restore that too.
             snapshot: { x: obj.x, y: obj.y, moduleWidth: p.moduleWidth, height: p.height },
             changed: false,
+            lastCentered: altKeyRef.current,
           };
           useLabelStore.temporal.getState().pause();
         } else if (heightAxisActive && typeof p.height === "number" && p.height > 0 && uprightH0 > 0) {
@@ -743,6 +762,7 @@ export function useKonvaTransformer({
             uprightW0: cache.uprightBarWDots ?? 0,
             snapshot: { x: obj.x, y: obj.y, height: p.height },
             changed: false,
+            lastCentered: altKeyRef.current,
           };
           useLabelStore.temporal.getState().pause();
         }
@@ -772,6 +792,7 @@ export function useKonvaTransformer({
           uprightH0: cache?.uprightBarHDots,
           snapshot: { x: obj.x, y: obj.y, modules },
           changed: false,
+          lastCentered: altKeyRef.current,
         };
         useLabelStore.temporal.getState().pause();
       }
@@ -782,7 +803,10 @@ export function useKonvaTransformer({
   // into blockWidth/blockLines, re-wrap via a synchronous store update, reset
   // the scale, re-pin the anchored edge, and re-baseline the handles. Keeps
   // glyphs constant and justify correct because the content actually re-renders.
-  const onTransform = () => {
+  const onTransform = (e?: Konva.KonvaEventObject<Event>) => {
+    // Track the drag's own Alt state, so a keydown missed before window focus
+    // (or an Alt+Tab blur) can't desync us from Konva's e.altKey centering.
+    if (e?.evt && "altKey" in e.evt) altKeyRef.current = (e.evt as MouseEvent).altKey;
     const mr = multiResizeRef.current;
     if (mr) {
       const fx = mr.proxy.scaleX();
@@ -878,16 +902,21 @@ export function useKonvaTransformer({
     const br = barcodeReflowRef.current;
     if (br) {
       const natural = naturalRect(node);
-      // The FT anchor and QR firmware shift both scale with magnification, so
-      // the same inversion as the 1D modes keeps them consistent with the
-      // render.
+      // Alt is read live (Konva's own preview mirrors on e.altKey live too), so
+      // holding or releasing it mid-drag flips centered resize like the preview.
+      const centered = altKeyRef.current;
+      // A mid-band Alt flip moves the pin by half the accumulated delta; write
+      // the store on the flip too, else release commits the crossing-time position.
+      const modeFlip = br.changed && centered !== br.lastCentered;
+      // The FT anchor and QR firmware shift both scale with magnification, so the
+      // same inversion as the 1D modes keeps them consistent with the render.
       if (br.mode === "uniform") {
-        const geo = uniformReflowGeometry(br, natural.width * sx, natural.height * sy);
+        const geo = uniformReflowGeometry(br, natural.width * sx, natural.height * sy, centered);
         if (!geo) return;
         const modCurrent = (cur.props as unknown as Record<string, number>)[br.propName];
         if (typeof modCurrent !== "number" || !(modCurrent > 0)) return;
         const crossed = geo.modules !== modCurrent;
-        if (crossed) {
+        if (crossed || modeFlip) {
           const ratio = geo.modules / br.modules0;
           const model = modelPositionFromRenderedTopLeft(
             cur,
@@ -905,6 +934,7 @@ export function useKonvaTransformer({
             });
           });
           br.changed = true;
+          br.lastCentered = centered;
         }
         // Pin every tick; subtract the child render offset (QR draws off the
         // group origin) so the rendered top-left lands on the target.
@@ -923,10 +953,10 @@ export function useKonvaTransformer({
         const mwCurrent = (cur.props as { moduleWidth?: number }).moduleWidth;
         if (typeof mwCurrent !== "number" || !(mwCurrent > 0)) return;
         const frameExtentPx = swapped ? natural.height * sy : natural.width * sx;
-        const geo = barcodeMwReflowGeometry(br, frameExtentPx);
+        const geo = barcodeMwReflowGeometry(br, frameExtentPx, centered);
         if (!geo) return;
         const crossed = geo.moduleWidth !== mwCurrent;
-        if (crossed) {
+        if (crossed || modeFlip) {
           const ratio = geo.moduleWidth / br.mw0;
           // Same inversion as the end commit for the ACTIVE axis; the anchored
           // axis keeps its pre-drag model value (mirrors the end commit's
@@ -947,6 +977,7 @@ export function useKonvaTransformer({
             });
           });
           br.changed = true;
+          br.lastCentered = centered;
         }
         // Pin every tick, not just on crossings: the reflow is the sole band
         // pin, so the raster holds in rotated views where boundBoxFunc bails.
@@ -969,7 +1000,7 @@ export function useKonvaTransformer({
       // The height re-render lands on the frame exactly, so the pin needs no
       // residual; the scale just resets to 1.
       const frameExtentPx = swapped ? natural.width * sx : natural.height * sy;
-      const geo = barcodeHeightReflowGeometry(br, frameExtentPx);
+      const geo = barcodeHeightReflowGeometry(br, frameExtentPx, centered);
       if (!geo) return;
       const newHeightDots = pxToDots(geo.barExtentPx, scale, dpmm);
       const hCurrent = (cur.props as { height?: number }).height;
@@ -985,9 +1016,9 @@ export function useKonvaTransformer({
         resizeMode: blockResizeModeRef.current,
       }) as { height?: number } | undefined;
       const hNext = committed?.height ?? newHeightDots;
-      const pin = barcodeHeightReflowGeometry(br, dotsToPx(hNext, scale, dpmm));
+      const pin = barcodeHeightReflowGeometry(br, dotsToPx(hNext, scale, dpmm), centered);
       if (!pin) return;
-      if (hNext !== hCurrent) {
+      if (hNext !== hCurrent || modeFlip) {
         const model = modelPositionFromRenderedTopLeft(
           cur,
           pxToDots(pin.targetXPx - objectsOffsetX, scale, dpmm),
@@ -1003,6 +1034,7 @@ export function useKonvaTransformer({
           });
         });
         br.changed = true;
+        br.lastCentered = centered;
       }
       // Pin every tick for the same reason as the mw axis: hold the node in
       // rotated views between dot bakes, else the anchored edge jitters.
@@ -1054,14 +1086,26 @@ export function useKonvaTransformer({
       return shrinkingBelowFloor(oldBox, newBox, MIN_RESIZE_BOX_PX) ? oldBox : newBox;
     }
     if (shrinkingBelowFloor(oldBox, newBox, MIN_RESIZE_BOX_PX)) return oldBox;
+    // Capture the TRUE drag-start box on tick 0, before any bail: a bail path
+    // (Alt) that later hands back to the snap path (Alt released mid-drag) must
+    // re-baseline from the real start, not a box already grown under the bail.
+    if (!transformStartBboxRef.current) {
+      transformStartBboxRef.current = {
+        id: selectedIds[0] ?? "",
+        x: oldBox.x,
+        y: oldBox.y,
+        width: oldBox.width,
+        height: oldBox.height,
+      };
+    }
     // The text-block reflow re-pins from its own captured edges, so the snap /
     // inactive-edge pin below would fight it; skip entirely.
     if (liveReflowRef.current) return newBox;
-    // Uniform 2D bails too, INCLUDING forceAspectBox: its moved-edge inference
-    // reads the box position in the transformer frame, so it re-anchors on the
-    // wrong axis under view rotation (the mid-drag sideways walk). The per-tick
-    // pin is the sole aspect and band snap.
-    if (barcodeReflowRef.current?.mode === "uniform") return newBox;
+    // boundBoxFunc yields to the per-tick reflow pin as sole authority: always
+    // for uniform-2D (moved-edge aspect is frame-wrong under view rotation),
+    // and for any barcode reflow under Alt (both edges move, snap fights mirror).
+    const br = barcodeReflowRef.current;
+    if (br && (br.mode === "uniform" || altKeyRef.current)) return newBox;
     // Locked-circle reflow needs forceAspectBox so Konva keeps sx==sy; node and
     // reflow only agree when the bbox keeps its aspect. Snap/pin below is free-axis only.
     if (shapeReflowRef.current && isUniformScale) {
@@ -1078,22 +1122,13 @@ export function useKonvaTransformer({
     // not rotated anyway.
     //
     // Latent coord-frame mismatch: at viewRotation=0 the transformer-frame
-    // bboxes (oldBox/newBox here, and the lazily-captured startBbox below)
-    // coincide with stage coords, which is the same frame othersSnapshotRef
-    // and labelRect use. Removing this early-return without first lifting
-    // the others / labelRect snapshot into the transformer frame would
-    // re-introduce the rotated-resize drift this whole block guards against.
+    // bboxes (oldBox/newBox here, and the startBbox captured above) coincide
+    // with stage coords, which is the same frame othersSnapshotRef and
+    // labelRect use. Removing this early-return without first lifting the
+    // others / labelRect snapshot into the transformer frame would re-introduce
+    // the rotated-resize drift this whole block guards against.
     if (viewRotation !== 0) return newBox;
     const dotPx = scale / dpmm;
-    if (!transformStartBboxRef.current) {
-      transformStartBboxRef.current = {
-        id: selectedIds[0] ?? "",
-        x: oldBox.x,
-        y: oldBox.y,
-        width: oldBox.width,
-        height: oldBox.height,
-      };
-    }
     const startBbox = transformStartBboxRef.current;
     let bbox = applyHeightSnap(
       oldBox,
@@ -1456,6 +1491,7 @@ export function useKonvaTransformer({
     resizeEnabled,
     enabledAnchors,
     centeredScaling,
+    centeredResizeArmed,
     onTransformStart,
     onTransform,
     boundBoxFunc,

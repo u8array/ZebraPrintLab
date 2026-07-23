@@ -85,6 +85,22 @@ describe("barcodeMwReflowGeometry", () => {
     expect(geoTop).toEqual({ moduleWidth: 3, targetXPx: 100, targetYPx: 10, linearExtentPx: 120 });
   });
 
+  it("centered (Alt) mirrors the band around the start centre, any handle", () => {
+    // Start centre x = 200; band 300 px -> 50..350 regardless of handle side.
+    const geo = barcodeMwReflowGeometry(start(), 300, true);
+    expect(geo).toEqual({ moduleWidth: 3, targetXPx: 50, targetYPx: 50, linearExtentPx: 300 });
+    const leftGeo = barcodeMwReflowGeometry(start({ edges: edges({ left: true }) }), 300, true);
+    expect(leftGeo?.targetXPx).toBe(50);
+    // R/B: the mirrored axis is screen Y. Box 50..130 (centre 90), frame 120
+    // -> module 3, linear 120 -> top = 30.
+    const rb = barcodeMwReflowGeometry(
+      start({ rotation: "R", edges: edges({ bottom: true }) }),
+      120,
+      true,
+    );
+    expect(rb).toEqual({ moduleWidth: 3, targetXPx: 100, targetYPx: 30, linearExtentPx: 120 });
+  });
+
   it("rejects degenerate extents", () => {
     expect(barcodeMwReflowGeometry(start(), 0)).toBeNull();
     expect(barcodeMwReflowGeometry(start({ rightX: 100 }), 300)).toBeNull();
@@ -120,6 +136,12 @@ describe("barcodeHeightReflowGeometry", () => {
     const geo = barcodeHeightReflowGeometry(start({ edges: edges({ top: true }) }), 100);
     // Bbox extent = frame 100 + zone 20 = 120; bottom fixed at 150 -> top = 30.
     expect(geo).toEqual({ barExtentPx: 100, targetXPx: 100, targetYPx: 30 });
+  });
+
+  it("centered (Alt) mirrors the bbox (frame + zone) around the start centre", () => {
+    // Frame 100 -> bbox 120; centre y = 100 (box 50..150) -> top = 40.
+    const geo = barcodeHeightReflowGeometry(start(), 100, true);
+    expect(geo).toEqual({ barExtentPx: 100, targetXPx: 100, targetYPx: 40 });
   });
 
   it("R/B rotations run the height axis on screen X and pin left/right", () => {
@@ -466,6 +488,15 @@ describe("uniformReflowGeometry", () => {
     expect(geo?.targetYPx).toBe(150 - 150);
     expect((geo?.targetXPx ?? 0) + (geo?.linearW ?? 0)).toBe(150);
     expect((geo?.targetYPx ?? 0) + (geo?.linearH ?? 0)).toBe(150);
+  });
+
+  it("centered (Alt) mirrors both axes around the start centre, any corner", () => {
+    // Centre (100, 100), linear 150 -> 25..175 on both axes.
+    for (const e of [E(false, false), E(true, true)]) {
+      const geo = uniformReflowGeometry(start(e), 140, 140, true);
+      expect(geo?.targetXPx).toBe(25);
+      expect(geo?.targetYPx).toBe(25);
+    }
   });
 
   // Regression: at 90 degree view rotation the visual right handles are the

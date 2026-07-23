@@ -12,6 +12,9 @@ interface Options {
   containerRef: React.RefObject<HTMLDivElement | null>;
   stageRef: React.RefObject<Konva.Stage | null>;
   selectObject: (id: string | null) => void;
+  /** True when the single selection supports Alt-centered resize (1D barcode or
+   *  2D matrix code); only then does an Alt+handle grab bypass the cycle. */
+  resizeArmed: boolean;
 }
 
 /**
@@ -23,7 +26,18 @@ interface Options {
  * takes over selection without competing with the per-object onClick
  * handlers in KonvaObject.
  */
-export function useAltClickCycle({ containerRef, stageRef, selectObject }: Options): void {
+export function useAltClickCycle({
+  containerRef,
+  stageRef,
+  selectObject,
+  resizeArmed,
+}: Options): void {
+  // Kept in a ref so the capture-phase listener reads the latest value without
+  // re-subscribing on every selection change.
+  const resizeArmedRef = useRef(resizeArmed);
+  useEffect(() => {
+    resizeArmedRef.current = resizeArmed;
+  }, [resizeArmed]);
   const anchorRef = useRef<CycleAnchor | null>(null);
   useEffect(() => {
     const el = containerRef.current;
@@ -35,6 +49,10 @@ export function useAltClickCycle({ containerRef, stageRef, selectObject }: Optio
       if (!stage) return;
       const rect = el.getBoundingClientRect();
       const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      // A handle sits over object ink, so without this the cycle eats the
+      // Alt+handle grab; gated on resizeArmed so only centered-capable types
+      // bypass (supportsCenteredResize documents why others must not).
+      if (resizeArmedRef.current && stage.getIntersection(point)?.hasName("_anchor")) return;
       // Konva's own hit-graph respects view rotation, pan offset,
       // per-shape transforms and the listening flag; the cycle variant adds
       // a client-rect fallback so frame interiors stay reachable.
