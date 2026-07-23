@@ -501,7 +501,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-### @fontsource/ibm-plex-mono 5.2.7
+### @fontsource/ibm-plex-mono 5.3.0
 
 - License: OFL-1.1
 - Author: Google Inc.
@@ -603,7 +603,7 @@ FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 ```
 
-### @fontsource/ibm-plex-sans 5.2.8
+### @fontsource/ibm-plex-sans 5.3.0
 
 - License: OFL-1.1
 - Author: Google Inc.
@@ -2472,7 +2472,7 @@ SOFTWARE.
    END OF TERMS AND CONDITIONS
 ```
 
-### @tauri-apps/plugin-dialog 2.7.1
+### @tauri-apps/plugin-dialog 2.7.2
 
 - License: MIT OR Apache-2.0
 - Homepage: https://github.com/tauri-apps/plugins-workspace#readme
@@ -2898,7 +2898,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-### react 19.2.7
+### react 19.2.8
 
 - License: MIT
 - Homepage: https://react.dev/
@@ -3136,7 +3136,7 @@ SOFTWARE.
    limitations under the License.
 ```
 
-### react-dom 19.2.7
+### react-dom 19.2.8
 
 - License: MIT
 - Homepage: https://react.dev/
