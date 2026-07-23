@@ -8,6 +8,10 @@ export interface CycleAnchor {
 
 export const ALT_CYCLE_TOL_PX = 5;
 
+/** Konva name shared by a line's endpoint hit-rects; the Alt-cycle handler lets
+ *  their grabs through so Alt-centred resize works instead of cycling. */
+export const LINE_HANDLE_NAME = "line-handle";
+
 export function nextCycleIndex(
   hits: readonly string[],
   anchor: CycleAnchor | null,
