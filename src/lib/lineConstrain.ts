@@ -37,6 +37,29 @@ export function makeFree(dxDots: number, dyDots: number): LineGeometry {
   return { length, angle, dx: Math.round(dxDots), dy: Math.round(dyDots) };
 }
 
+/** Alt-centred endpoint resize: the far endpoint mirrors around the fixed
+ *  midpoint. `movingDot` is the dragged endpoint (unrounded dots); `sumDot` =
+ *  start+end = 2*centre. The origin is rounded to a whole dot, but length and
+ *  angle come from the *unrounded* vector so a line shrinking toward the centre
+ *  keeps its direction (rounding both endpoints first would collapse a short
+ *  diagonal to makeFree(0,0) = a 1-dot horizontal line). */
+export function centeredEndpointCommit(
+  movingDot: { x: number; y: number },
+  sumDot: { x: number; y: number },
+  forStart: boolean,
+): { x: number; y: number; length: number; angle: number } {
+  const other = { x: sumDot.x - movingDot.x, y: sumDot.y - movingDot.y };
+  const origin = forStart ? movingDot : other;
+  const end = forStart ? other : movingDot;
+  const g = makeFree(end.x - origin.x, end.y - origin.y);
+  return {
+    x: Math.round(origin.x),
+    y: Math.round(origin.y),
+    length: g.length,
+    angle: g.angle,
+  };
+}
+
 /** Wrap to (-180, 180] so flipped axis angles stay in atan2's natural range. */
 function normalizeAngle(deg: number): number {
   let n = deg % 360;

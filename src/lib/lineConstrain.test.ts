@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { constrainLine } from "./lineConstrain";
+import { constrainLine, centeredEndpointCommit } from "./lineConstrain";
 
 describe("constrainLine — free", () => {
   it("returns Euclidean length and exact angle", () => {
@@ -10,6 +10,54 @@ describe("constrainLine — free", () => {
 
   it("clamps length to at least 1", () => {
     expect(constrainLine(0, 0, "free").length).toBe(1);
+  });
+});
+
+describe("centeredEndpointCommit", () => {
+  // A 0..5 horizontal line: start+end = {5,0}.
+  const sum = { x: 5, y: 0 };
+
+  it("keeps an odd length on a no-op drag (no doubled-half overshoot)", () => {
+    // End dropped on its own spot must stay length 5, not jump to 6.
+    expect(centeredEndpointCommit({ x: 5, y: 0 }, sum, false)).toEqual({
+      x: 0, y: 0, length: 5, angle: 0,
+    });
+    // Start likewise.
+    expect(centeredEndpointCommit({ x: 0, y: 0 }, sum, true)).toEqual({
+      x: 0, y: 0, length: 5, angle: 0,
+    });
+  });
+
+  it("grows symmetrically around the midpoint", () => {
+    // Drag end to 7 → start mirrors to -2, length 9, centre stays at 2.5.
+    expect(centeredEndpointCommit({ x: 7, y: 0 }, sum, false)).toEqual({
+      x: -2, y: 0, length: 9, angle: 0,
+    });
+  });
+
+  it("keeps the diagonal angle when shrinking toward the centre", () => {
+    // Short diagonal near the centre {2,2}: length rounds to 1 but the angle
+    // must survive (rounding both endpoints first would collapse to angle 0).
+    const diag = { x: 4, y: 4 };
+    expect(centeredEndpointCommit({ x: 2.4, y: 2.4 }, diag, true)).toMatchObject({
+      length: 1, angle: -135,
+    });
+  });
+
+  it("degenerates to a 1-dot line only at the exact centre", () => {
+    expect(centeredEndpointCommit({ x: 2, y: 2 }, { x: 4, y: 4 }, true)).toEqual({
+      x: 2, y: 2, length: 1, angle: 0,
+    });
+  });
+
+  it("preserves a diagonal's length on a no-op drag (exact dot inputs)", () => {
+    // A length-5 45° line's endpoint sits at 5*cos45 ≈ 3.54 dots. The real path
+    // feeds these exact (unrounded) coords via pxToDotsExact; rounding each to
+    // (4,4) first would inflate makeFree to length 6.
+    const d = 5 * Math.SQRT1_2;
+    expect(
+      centeredEndpointCommit({ x: d, y: d }, { x: d, y: d }, false),
+    ).toMatchObject({ length: 5, angle: 45 });
   });
 });
 

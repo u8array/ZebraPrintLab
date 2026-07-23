@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Group, Line as KLine, Rect } from "react-konva";
 import type Konva from "konva";
 import type { LabelObject } from "@zplab/core/types/Group";
-import { dotsToPx, pxToDots } from "@zplab/core/lib/coordinates";
-import { constrainLine, type ConstrainMode } from "../../lib/lineConstrain";
+import { dotsToPx, pxToDots, pxToDotsExact } from "@zplab/core/lib/coordinates";
+import {
+  constrainLine,
+  centeredEndpointCommit,
+  type ConstrainMode,
+} from "../../lib/lineConstrain";
 import { useColorScheme } from "../../hooks/useColorScheme";
 import {
   computePointSnap,
@@ -12,6 +16,7 @@ import {
 } from "../../lib/snapGuides";
 import { diagonalPolygonPoints } from "../../lib/shapeGeometry";
 import { selectionHandlers, type KonvaObjectProps, MIN_HIT_STROKE_PX, lineHandlesNodeId, lineRootNodeId } from "./konvaObjectProps";
+import { LINE_HANDLE_NAME } from "./altClickCycle";
 
 
 const HANDLE_VISIBLE_SIZE = 7;
@@ -103,6 +108,9 @@ export function LineObject({
 
   const [livePt1, setLivePt1] = useState<{ x: number; y: number } | null>(null);
   const [livePt2, setLivePt2] = useState<{ x: number; y: number } | null>(null);
+  // Alt of the last drag-move: a keyup fires no drag event, so the commit reads
+  // this (not e.evt.altKey at mouse-up) to match the last centered preview.
+  const lastEndpointAlt = useRef(false);
 
   const [dragDelta, setDragDelta] = useState<{ x: number; y: number }>({
     x: 0,
@@ -329,6 +337,18 @@ export function LineObject({
   const thickHandleY =
     lineCenterY + (isHorizontal ? lineStrokeWidth : 0);
 
+  // Alt-centered endpoint drag: the dragged point is snapped normally (its real
+  // opposite endpoint as anchor, no drift), then both endpoints mirror around
+  // the fixed midpoint. endpointSumDot = start+end = 2*centre.
+  const endpointSumDot = {
+    x: obj.x + pxToDotsExact(x2 - offsetX, scale, dpmm),
+    y: obj.y + pxToDotsExact(y2 - offsetY, scale, dpmm),
+  };
+  const mirrorPx = (pt: { x: number; y: number }) => ({
+    x: x1 + x2 - pt.x,
+    y: y1 + y2 - pt.y,
+  });
+
   return (
     <Group id={lineRootNodeId(obj.id)}>
       {isAxisAligned ? (
@@ -406,8 +426,10 @@ export function LineObject({
             width={HANDLE_HIT_SIZE}
             height={HANDLE_HIT_SIZE}
             fill="transparent"
+            name={LINE_HANDLE_NAME}
             draggable={!obj.locked}
             onDragMove={(e) => {
+              const alt = e.evt.altKey;
               const endDotX = pxToDots(x2 - offsetX, scale, dpmm);
               const endDotY = pxToDots(y2 - offsetY, scale, dpmm);
               const r = endpointDrag(
@@ -424,8 +446,11 @@ export function LineObject({
                 y: r.movingPx.y - HANDLE_HIT_SIZE / 2,
               });
               setLivePt1(r.movingPx);
+              setLivePt2(alt ? mirrorPx(r.movingPx) : null);
+              lastEndpointAlt.current = alt;
             }}
             onDragEnd={(e) => {
+              const alt = lastEndpointAlt.current;
               const cursor = livePt1 ?? {
                 x: e.target.x() + HANDLE_HIT_SIZE / 2,
                 y: e.target.y() + HANDLE_HIT_SIZE / 2,
@@ -435,6 +460,7 @@ export function LineObject({
                 y: y1 + dy - HANDLE_HIT_SIZE / 2,
               });
               setLivePt1(null);
+              setLivePt2(null);
               const endDotX = pxToDots(x2 - offsetX, scale, dpmm);
               const endDotY = pxToDots(y2 - offsetY, scale, dpmm);
               const r = endpointDrag(
@@ -448,15 +474,27 @@ export function LineObject({
               );
               clearSnap();
               // Cap thickness to length; t > length triggers ^GB promotion (t x t).
-              onChange({
-                x: r.movingDotX,
-                y: r.movingDotY,
-                props: {
-                  length: r.length,
-                  angle: r.angle,
-                  thickness: Math.min(p.thickness, r.length),
-                },
-              });
+              if (alt) {
+                const c = centeredEndpointCommit(
+                  {
+                    x: pxToDotsExact(r.movingPx.x - offsetX, scale, dpmm),
+                    y: pxToDotsExact(r.movingPx.y - offsetY, scale, dpmm),
+                  },
+                  endpointSumDot,
+                  true,
+                );
+                onChange({
+                  x: c.x,
+                  y: c.y,
+                  props: { length: c.length, angle: c.angle, thickness: Math.min(p.thickness, c.length) },
+                });
+              } else {
+                onChange({
+                  x: r.movingDotX,
+                  y: r.movingDotY,
+                  props: { length: r.length, angle: r.angle, thickness: Math.min(p.thickness, r.length) },
+                });
+              }
             }}
           />
           <Rect
@@ -476,8 +514,10 @@ export function LineObject({
             width={HANDLE_HIT_SIZE}
             height={HANDLE_HIT_SIZE}
             fill="transparent"
+            name={LINE_HANDLE_NAME}
             draggable={!obj.locked}
             onDragMove={(e) => {
+              const alt = e.evt.altKey;
               const r = endpointDrag(
                 e.target.x() + HANDLE_HIT_SIZE / 2,
                 e.target.y() + HANDLE_HIT_SIZE / 2,
@@ -492,8 +532,11 @@ export function LineObject({
                 y: r.movingPx.y - HANDLE_HIT_SIZE / 2,
               });
               setLivePt2(r.movingPx);
+              setLivePt1(alt ? mirrorPx(r.movingPx) : null);
+              lastEndpointAlt.current = alt;
             }}
             onDragEnd={(e) => {
+              const alt = lastEndpointAlt.current;
               const cursor = livePt2 ?? {
                 x: e.target.x() + HANDLE_HIT_SIZE / 2,
                 y: e.target.y() + HANDLE_HIT_SIZE / 2,
@@ -503,6 +546,7 @@ export function LineObject({
                 y: y2 + dy - HANDLE_HIT_SIZE / 2,
               });
               setLivePt2(null);
+              setLivePt1(null);
               const r = endpointDrag(
                 cursor.x,
                 cursor.y,
@@ -513,13 +557,25 @@ export function LineObject({
                 e.target.getParent(),
               );
               clearSnap();
-              onChange({
-                props: {
-                  length: r.length,
-                  angle: r.angle,
-                  thickness: Math.min(p.thickness, r.length),
-                },
-              });
+              if (alt) {
+                const c = centeredEndpointCommit(
+                  {
+                    x: pxToDotsExact(r.movingPx.x - offsetX, scale, dpmm),
+                    y: pxToDotsExact(r.movingPx.y - offsetY, scale, dpmm),
+                  },
+                  endpointSumDot,
+                  false,
+                );
+                onChange({
+                  x: c.x,
+                  y: c.y,
+                  props: { length: c.length, angle: c.angle, thickness: Math.min(p.thickness, c.length) },
+                });
+              } else {
+                onChange({
+                  props: { length: r.length, angle: r.angle, thickness: Math.min(p.thickness, r.length) },
+                });
+              }
             }}
           />
           <Rect
@@ -532,7 +588,9 @@ export function LineObject({
             strokeWidth={1}
             listening={false}
           />
-          {/* Thickness handle, perpendicular drag; flip-on-overshoot deferred. */}
+          {/* Thickness handle, perpendicular drag; flip-on-overshoot deferred.
+              No line-handle name: Alt has no centering role here, so an Alt+click
+              should keep cycling rather than dead-click on the handle. */}
           <Rect
             x={thickHandleX - HANDLE_HIT_SIZE / 2}
             y={thickHandleY - HANDLE_HIT_SIZE / 2}

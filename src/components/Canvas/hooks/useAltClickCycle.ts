@@ -3,6 +3,7 @@ import type Konva from "konva";
 import { getCurrentObjects } from "../../../store/labelStore";
 import {
   ALT_CYCLE_TOL_PX,
+  LINE_HANDLE_NAME,
   nextCycleIndex,
   type CycleAnchor,
 } from "../altClickCycle";
@@ -13,8 +14,8 @@ interface Options {
   stageRef: React.RefObject<Konva.Stage | null>;
   selectObject: (id: string | null) => void;
   /** True when the single selection supports Alt-centered resize (1D barcode,
-   *  2D matrix code, or box/ellipse); only then does an Alt+handle grab bypass
-   *  the cycle. */
+   *  2D matrix code, or box/ellipse); gates the transformer-anchor bypass only.
+   *  Line endpoint handles bypass the cycle unconditionally (LINE_HANDLE_NAME). */
   resizeArmed: boolean;
 }
 
@@ -51,9 +52,14 @@ export function useAltClickCycle({
       const rect = el.getBoundingClientRect();
       const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       // A handle sits over object ink, so without this the cycle eats the
-      // Alt+handle grab; gated on resizeArmed so only centered-capable types
-      // bypass (supportsCenteredResize documents why others must not).
-      if (resizeArmedRef.current && stage.getIntersection(point)?.hasName("_anchor")) return;
+      // Alt+handle grab. Line endpoint handles always edit (Alt-centred resize);
+      // transformer anchors only for centered-capable types (else they jitter,
+      // see supportsCenteredResize), hence the resizeArmed gate.
+      const hit = stage.getIntersection(point);
+      // draggable() excludes a locked line's handles: they render but can't drag,
+      // so cycling must pass through them instead of a dead spot.
+      if (hit?.hasName(LINE_HANDLE_NAME) && hit.draggable()) return;
+      if (resizeArmedRef.current && hit?.hasName("_anchor")) return;
       // Konva's own hit-graph respects view rotation, pan offset,
       // per-shape transforms and the listening flag; the cycle variant adds
       // a client-rect fallback so frame interiors stay reachable.
