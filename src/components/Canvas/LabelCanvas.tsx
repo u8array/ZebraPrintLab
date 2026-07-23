@@ -336,7 +336,6 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     return () => observer.disconnect();
   }, []);
 
-  useAltClickCycle({ containerRef, stageRef, selectObject });
 
   // Global binding so user can exit preview from anywhere.
   useEffect(() => {
@@ -895,6 +894,7 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     resizeEnabled,
     enabledAnchors,
     centeredScaling,
+    centeredResizeArmed,
     onTransformStart,
     onTransform,
     boundBoxFunc,
@@ -921,6 +921,10 @@ export const LabelCanvas = forwardRef<LabelCanvasHandle, Props>(function LabelCa
     viewRotation,
     previewLocks,
   });
+
+  // After useKonvaTransformer: reuses its centeredResizeArmed so the Alt-handle
+  // bypass matches the reflow arming's resolved leaf selection exactly.
+  useAltClickCycle({ containerRef, stageRef, selectObject, resizeArmed: centeredResizeArmed });
 
   // Step-rotation only (text/barcodes); box/ellipse/line/image use Transformer.
   const singleSelected = selectedIds.length === 1

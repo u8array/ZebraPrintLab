@@ -40,6 +40,7 @@ export interface BarcodeMwReflowStart {
 export function barcodeMwReflowGeometry(
   start: BarcodeMwReflowStart,
   frameExtentPx: number,
+  centered = false,
 ): { moduleWidth: number; targetXPx: number; targetYPx: number; linearExtentPx: number } | null {
   if (!(start.mw0 > 0)) return null;
   const swapped = isAxisSwapped(start.rotation);
@@ -50,7 +51,7 @@ export function barcodeMwReflowGeometry(
   if (!swapped) {
     return {
       moduleWidth,
-      targetXPx: start.edges.left ? start.rightX - linearExtentPx : start.leftX,
+      targetXPx: pinnedMin(start.edges.left, start.leftX, start.rightX, linearExtentPx, centered),
       targetYPx: start.topY,
       linearExtentPx,
     };
@@ -58,9 +59,23 @@ export function barcodeMwReflowGeometry(
   return {
     moduleWidth,
     targetXPx: start.leftX,
-    targetYPx: start.edges.top ? start.bottomY - linearExtentPx : start.topY,
+    targetYPx: pinnedMin(start.edges.top, start.topY, start.bottomY, linearExtentPx, centered),
     linearExtentPx,
   };
+}
+
+/** Min-coordinate of the pinned new extent: centered (Alt) mirrors around the
+ *  start centre so both sides move; else the anchored (non-grabbed) edge holds
+ *  via the same math as `pinAnchoredEdge` (delegated so the two can't drift). */
+function pinnedMin(
+  minEdgeActive: boolean,
+  min: number,
+  max: number,
+  extent: number,
+  centered: boolean,
+): number {
+  if (centered) return (min + max - extent) / 2;
+  return pinAnchoredEdge(minEdgeActive, min, max - min, extent);
 }
 
 /** Start-of-drag frame for the 1D bar-height live reflow: the footprint bbox in
@@ -87,6 +102,7 @@ export interface BarcodeHeightReflowStart {
 export function barcodeHeightReflowGeometry(
   start: BarcodeHeightReflowStart,
   frameExtentPx: number,
+  centered = false,
 ): { barExtentPx: number; targetXPx: number; targetYPx: number } | null {
   if (!(frameExtentPx > 0)) return null;
   const barExtentPx = frameExtentPx;
@@ -95,14 +111,14 @@ export function barcodeHeightReflowGeometry(
   if (swapped) {
     return {
       barExtentPx,
-      targetXPx: start.edges.left ? start.rightX - bboxExtentPx : start.leftX,
+      targetXPx: pinnedMin(start.edges.left, start.leftX, start.rightX, bboxExtentPx, centered),
       targetYPx: start.topY,
     };
   }
   return {
     barExtentPx,
     targetXPx: start.leftX,
-    targetYPx: start.edges.top ? start.bottomY - bboxExtentPx : start.topY,
+    targetYPx: pinnedMin(start.edges.top, start.topY, start.bottomY, bboxExtentPx, centered),
   };
 }
 
@@ -191,6 +207,7 @@ export function uniformReflowGeometry(
   start: UniformReflowStart,
   frameWPx: number,
   frameHPx: number,
+  centered = false,
 ): { modules: number; targetXPx: number; targetYPx: number; linearW: number; linearH: number } | null {
   const startW = start.rightX - start.leftX;
   const startH = start.bottomY - start.topY;
@@ -203,8 +220,8 @@ export function uniformReflowGeometry(
   const linearH = startH * factor;
   return {
     modules,
-    targetXPx: start.edges.left ? start.rightX - linearW : start.leftX,
-    targetYPx: start.edges.top ? start.bottomY - linearH : start.topY,
+    targetXPx: pinnedMin(start.edges.left, start.leftX, start.rightX, linearW, centered),
+    targetYPx: pinnedMin(start.edges.top, start.topY, start.bottomY, linearH, centered),
     linearW,
     linearH,
   };
