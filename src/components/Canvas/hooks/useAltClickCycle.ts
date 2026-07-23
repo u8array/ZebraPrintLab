@@ -12,8 +12,9 @@ interface Options {
   containerRef: React.RefObject<HTMLDivElement | null>;
   stageRef: React.RefObject<Konva.Stage | null>;
   selectObject: (id: string | null) => void;
-  /** True when the single selection supports Alt-centered resize (1D barcode or
-   *  2D matrix code); only then does an Alt+handle grab bypass the cycle. */
+  /** True when the single selection supports Alt-centered resize (1D barcode,
+   *  2D matrix code, or box/ellipse); only then does an Alt+handle grab bypass
+   *  the cycle. */
   resizeArmed: boolean;
 }
 

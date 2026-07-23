@@ -22,7 +22,7 @@ import {
   barcodeHeightReflowGeometry,
   barcodeMwReflowGeometry,
   uniformReflowGeometry,
-  pinAnchoredEdge,
+  pinnedMin,
   pinInactiveEdges,
   positionDidMove,
   forceAspectBox,
@@ -121,11 +121,18 @@ function applyResizeObjectSnap(
  *  it for multi-resize so member nodes never stretch live. */
 export const MULTI_RESIZE_PROXY_ID = "multi-resize-proxy";
 
-/** Types the transformer mirrors under Alt (1D barcodes, uniform-2D matrix
- *  codes); mirrors the barcodeReflow arming, so the exposed centeredResizeArmed
- *  matches it. Others pin one edge and jitter under Alt. Registry-derived. */
+/** Shapes whose reflow is center-aware (box/ellipse); line resizes via endpoint
+ *  handles, not this reflow, so it stays out. One source for both the arming and
+ *  supportsCenteredResize so they can't drift. */
+const SHAPE_REFLOW_TYPES: ReadonlySet<string> = new Set(["box", "ellipse"]);
+
+/** Types the transformer mirrors under Alt: 1D barcodes, uniform-2D matrix
+ *  codes, and box/ellipse. Mirrors the reflow arming (registry-derived for
+ *  barcodes, SHAPE_REFLOW_TYPES for shapes) so centeredResizeArmed matches it. */
 function supportsCenteredResize(type: string): boolean {
-  return BARCODE_1D_TYPES.has(type) || !!getEntry(type)?.uniformScaleProp;
+  return (
+    BARCODE_1D_TYPES.has(type) || !!getEntry(type)?.uniformScaleProp || SHAPE_REFLOW_TYPES.has(type)
+  );
 }
 
 interface Options {
@@ -252,6 +259,9 @@ export function useKonvaTransformer({
   const shapeReflowRef = useRef<{
     snapshot: { x: number; y: number; width: number; height: number };
     changed: boolean;
+    /** Alt state of the last live pin, so the commit centres to match the last
+     *  preview frame even if Alt is released before mouse-up (no transform tick). */
+    lastCentered: boolean;
   } | null>(null);
 
   // Barcode live reflow: re-renders on each integer crossing (module width,
@@ -699,11 +709,12 @@ export function useKonvaTransformer({
     }
     // Free-resize shapes reflow live (see onTransform): pause undo so the
     // per-tick writes collapse into one entry on release.
-    if (obj && !isGroup(obj) && (obj.type === "box" || obj.type === "ellipse")) {
+    if (obj && !isGroup(obj) && SHAPE_REFLOW_TYPES.has(obj.type)) {
       const sp = obj.props as { width: number; height: number };
       shapeReflowRef.current = {
         snapshot: { x: obj.x, y: obj.y, width: sp.width, height: sp.height },
         changed: false,
+        lastCentered: false,
       };
       useLabelStore.temporal.getState().pause();
     }
@@ -1061,13 +1072,20 @@ export function useKonvaTransformer({
       const height = Math.max(1, Math.round(sp.height * scaleH));
       // Pin the anchored edge from the snapshot (mirrors the end commit):
       // rebuilding it from a rounded node.x/y plus a float dim oscillated it.
+      // Alt mirrors the box around its start centre instead.
+      const centered = altKeyRef.current;
       const edges = activeEdgesRef.current;
-      const x = pinAnchoredEdge(!!edges?.left, sr.snapshot.x, sr.snapshot.width, width);
-      const y = pinAnchoredEdge(!!edges?.top, sr.snapshot.y, sr.snapshot.height, height);
+      const x = Math.round(
+        pinnedMin(!!edges?.left, sr.snapshot.x, sr.snapshot.x + sr.snapshot.width, width, centered),
+      );
+      const y = Math.round(
+        pinnedMin(!!edges?.top, sr.snapshot.y, sr.snapshot.y + sr.snapshot.height, height, centered),
+      );
       flushSync(() => {
         updateObject(id, { x, y, props: { width, height } });
       });
       sr.changed = true;
+      sr.lastCentered = centered;
       node.scaleX(1);
       node.scaleY(1);
       node.x(objectsOffsetX + dotsToPx(x, scale, dpmm));
@@ -1111,6 +1129,9 @@ export function useKonvaTransformer({
     if (shapeReflowRef.current && isUniformScale) {
       return forceAspectBox(oldBox, newBox);
     }
+    // A free box/ellipse under Alt: onTransform's centered pin is the authority,
+    // so skip the edge-anchored snap/pin below that would fight the mirror.
+    if (shapeReflowRef.current && altKeyRef.current) return newBox;
     // Free-resize shapes fall through: object-snap + inactive-edge pin still
     // apply (reflow pins from the same node position), keeping edge snapping.
     if (isUniformScale) newBox = forceAspectBox(oldBox, newBox);
@@ -1267,11 +1288,18 @@ export function useKonvaTransformer({
         const width = Math.max(1, snap(Math.round(sp.width)));
         const height = Math.max(1, snap(Math.round(sp.height)));
         const edges = activeEdgesRef.current;
+        // The last live pin's Alt state (not the current ref): a keyup fires no
+        // transform tick, so committing on the live value avoids a snap on release.
+        const centered = sr.lastCentered;
         commit = {
           restore: { x: sr.snapshot.x, y: sr.snapshot.y, props: { width: sr.snapshot.width, height: sr.snapshot.height } },
           final: {
-            x: pinAnchoredEdge(!!edges?.left, sr.snapshot.x, sr.snapshot.width, width),
-            y: pinAnchoredEdge(!!edges?.top, sr.snapshot.y, sr.snapshot.height, height),
+            x: Math.round(
+              pinnedMin(!!edges?.left, sr.snapshot.x, sr.snapshot.x + sr.snapshot.width, width, centered),
+            ),
+            y: Math.round(
+              pinnedMin(!!edges?.top, sr.snapshot.y, sr.snapshot.y + sr.snapshot.height, height, centered),
+            ),
             props: { width, height },
           },
         };

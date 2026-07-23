@@ -66,8 +66,9 @@ export function barcodeMwReflowGeometry(
 
 /** Min-coordinate of the pinned new extent: centered (Alt) mirrors around the
  *  start centre so both sides move; else the anchored (non-grabbed) edge holds
- *  via the same math as `pinAnchoredEdge` (delegated so the two can't drift). */
-function pinnedMin(
+ *  via the same math as `pinAnchoredEdge` (delegated so the two can't drift).
+ *  Used by the barcode reflow geometry and the box/ellipse pin. */
+export function pinnedMin(
   minEdgeActive: boolean,
   min: number,
   max: number,
