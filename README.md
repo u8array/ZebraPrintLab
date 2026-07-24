@@ -12,7 +12,7 @@ Writing ZPL (Zebra Programming Language) by hand is tedious: cryptic commands, d
 
 Existing ZPL files are a first-class source, not a one-way import: a re-exported label stays byte-for-byte identical except for the objects you actually edited (see [Import guarantees](#import-guarantees)); GS1 and EAN/UPC content is validated field by field.
 
-**[Try it](https://zebraprintlab.org/)** · [Download the desktop app](#download) · [Report an issue](https://github.com/u8array/ZPLab/issues)
+**[Try it](https://zplab.org/)** · [Download the desktop app](#download) · [Report an issue](https://github.com/u8array/ZPLab/issues)
 
 > **Disclaimer:** This is an independent open-source tool, not affiliated with, endorsed by, or associated with Zebra Technologies Corp. Zebra is a trademark of Zebra Technologies Corp.; all other trademarks are the property of their respective owners.
 
