@@ -5767,7 +5767,7 @@ SOFTWARE.
 
 Used by:
 
-- [zplab 0.1.0](https://github.com/u8array/ZPLab)
+- [zplab 0.2.0](https://github.com/u8array/ZPLab)
 - [atoi_simd 0.16.1](https://github.com/RoDmitry/atoi_simd)
 - [block2 0.6.2](https://github.com/madsmtm/objc2)
 - [brotli-decompressor 5.0.3](https://github.com/dropbox/rust-brotli-decompressor)
