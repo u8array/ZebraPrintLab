@@ -28,11 +28,11 @@ Existing ZPL files are a first-class source, not a one-way import: a re-exported
 
 ## Download
 
-| Platform | [v0.1.0](https://github.com/u8array/ZPLab/releases/tag/v0.1.0) (pre-release) |
+| Platform | [v0.2.0](https://github.com/u8array/ZPLab/releases/tag/v0.2.0) |
 |---|---|
-| Windows | [x64 installer](https://github.com/u8array/ZPLab/releases/download/v0.1.0/ZPLab_0.1.0_x64-setup.exe) |
-| macOS | [Apple Silicon](https://github.com/u8array/ZPLab/releases/download/v0.1.0/ZPLab_0.1.0_aarch64.dmg) · [Intel](https://github.com/u8array/ZPLab/releases/download/v0.1.0/ZPLab_0.1.0_x64.dmg) |
-| Linux | [AppImage](https://github.com/u8array/ZPLab/releases/download/v0.1.0/ZPLab_0.1.0_amd64.AppImage) · [deb](https://github.com/u8array/ZPLab/releases/download/v0.1.0/ZPLab_0.1.0_amd64.deb) · [rpm](https://github.com/u8array/ZPLab/releases/download/v0.1.0/ZPLab-0.1.0-1.x86_64.rpm) |
+| Windows | [x64 installer](https://github.com/u8array/ZPLab/releases/download/v0.2.0/ZPLab_0.2.0_x64-setup.exe) |
+| macOS | [Apple Silicon](https://github.com/u8array/ZPLab/releases/download/v0.2.0/ZPLab_0.2.0_aarch64.dmg) · [Intel](https://github.com/u8array/ZPLab/releases/download/v0.2.0/ZPLab_0.2.0_x64.dmg) |
+| Linux | [AppImage](https://github.com/u8array/ZPLab/releases/download/v0.2.0/ZPLab_0.2.0_amd64.AppImage) · [deb](https://github.com/u8array/ZPLab/releases/download/v0.2.0/ZPLab_0.2.0_amd64.deb) · [rpm](https://github.com/u8array/ZPLab/releases/download/v0.2.0/ZPLab-0.2.0-1.x86_64.rpm) |
 
 macOS blocks the first launch; allow the app under *System Settings > Privacy & Security*.
 
