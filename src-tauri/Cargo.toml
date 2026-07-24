@@ -1,15 +1,15 @@
 [package]
-name = "zebra-print-lab"
+name = "zplab"
 version = "0.1.0"
 description = "ZPLab desktop shell"
 authors = ["u8array"]
 license = "MIT"
-repository = "https://github.com/u8array/ZebraPrintLab"
+repository = "https://github.com/u8array/ZPLab"
 edition = "2021"
 rust-version = "1.77.2"
 
 [lib]
-name = "zebra_print_lab_lib"
+name = "zplab_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

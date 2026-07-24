@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-  zebra_print_lab_lib::run();
+  zplab_lib::run();
 }

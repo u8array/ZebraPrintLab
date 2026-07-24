@@ -23,7 +23,7 @@ const DATA_DIR = join(ROOT, 'scripts', 'data');
 
 const PREAMBLE = `# Third-party licenses
 
-ZebraPrintLab's own source is under the license in \`LICENSE\`. This file records
+ZPLab's own source is under the license in \`LICENSE\`. This file records
 third-party material redistributed in the built app (\`dist/\`) and its
 attribution terms, and it ships in \`dist/\` so the notices accompany the code
 and fonts they cover. The npm section is generated from the production

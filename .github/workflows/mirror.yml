@@ -21,4 +21,4 @@ jobs:
       # Mirror exactly the ref that triggered (checkout only fetches that one);
       # never --mirror, which would force-push and DELETE unknown refs.
       - if: steps.token.outputs.have == 'true'
-        run: git push --force "https://u8array:${{ secrets.CODEBERG_TOKEN }}@codeberg.org/u8array/ZebraPrintLab.git" "HEAD:${{ github.ref }}"
+        run: git push --force "https://u8array:${{ secrets.CODEBERG_TOKEN }}@codeberg.org/u8array/ZPLab.git" "HEAD:${{ github.ref }}"
