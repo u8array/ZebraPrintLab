@@ -6201,35 +6201,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "zebra-print-lab"
-version = "0.1.0"
-dependencies = [
- "calamine",
- "chrono",
- "dunce",
- "keyring",
- "libc",
- "nusb",
- "printers",
- "serde",
- "serde_json",
- "sqlx",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-fs",
- "tauri-plugin-opener",
- "tauri-plugin-process",
- "tauri-plugin-updater",
- "tauri-plugin-window-state",
- "thiserror 1.0.69",
- "tokio",
- "tokio-stream",
- "windows-sys 0.61.2",
- "zip",
-]
-
-[[package]]
 name = "zerocopy"
 version = "0.8.54"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6359,6 +6330,35 @@ dependencies = [
  "crc32fast",
  "log",
  "simd-adler32",
+]
+
+[[package]]
+name = "zplab"
+version = "0.1.0"
+dependencies = [
+ "calamine",
+ "chrono",
+ "dunce",
+ "keyring",
+ "libc",
+ "nusb",
+ "printers",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-fs",
+ "tauri-plugin-opener",
+ "tauri-plugin-process",
+ "tauri-plugin-updater",
+ "tauri-plugin-window-state",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-stream",
+ "windows-sys 0.61.2",
+ "zip",
 ]
 
 [[package]]

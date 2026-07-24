@@ -1,6 +1,6 @@
 # Third-party licenses (Rust)
 
-Licenses of the Rust crates redistributed in the ZebraPrintLab desktop app (the
+Licenses of the Rust crates redistributed in the ZPLab desktop app (the
 Tauri bundle). Generated from the crate dependency tree by `cargo-about` via
 `src-tauri/about.hbs`; the Rust-side counterpart of `THIRD-PARTY-LICENSES.md`
 (npm). A freshness gate in CI regenerates this file and fails the build if it
@@ -5767,7 +5767,7 @@ SOFTWARE.
 
 Used by:
 
-- [zebra-print-lab 0.1.0](https://github.com/u8array/ZebraPrintLab)
+- [zplab 0.1.0](https://github.com/u8array/ZPLab)
 - [atoi_simd 0.16.1](https://github.com/RoDmitry/atoi_simd)
 - [block2 0.6.2](https://github.com/madsmtm/objc2)
 - [brotli-decompressor 5.0.3](https://github.com/dropbox/rust-brotli-decompressor)

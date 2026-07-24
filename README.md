@@ -1,18 +1,18 @@
-# ZebraPrintLab
+# ZPLab
 
-<img src="public/favicon.png" alt="Zebra Print Lab logo" width="64" align="right" />
+<img src="public/favicon.png" alt="ZPLab logo" width="64" align="right" />
 
-[![Deploy](https://github.com/u8array/ZebraPrintLab/actions/workflows/deploy.yml/badge.svg?branch=prod)](https://github.com/u8array/ZebraPrintLab/actions/workflows/deploy.yml?query=branch%3Aprod)
-[![CI](https://github.com/u8array/ZebraPrintLab/actions/workflows/pr.yml/badge.svg)](https://github.com/u8array/ZebraPrintLab/actions/workflows/pr.yml)
+[![Deploy](https://github.com/u8array/ZPLab/actions/workflows/deploy.yml/badge.svg?branch=prod)](https://github.com/u8array/ZPLab/actions/workflows/deploy.yml?query=branch%3Aprod)
+[![CI](https://github.com/u8array/ZPLab/actions/workflows/pr.yml/badge.svg)](https://github.com/u8array/ZPLab/actions/workflows/pr.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A browser-based ZPL editor for Zebra printers: design labels visually, or import existing ZPL, edit it, and re-export it byte-for-byte.
 
-Writing ZPL (Zebra Programming Language) by hand is tedious: cryptic commands, dot coordinates, no visual feedback until something comes out of the printer. Zebra Print Lab lets you build labels visually instead. Drag elements onto the canvas, tweak them in the properties panel, then copy or download the ZPL. No installation, no ZPL knowledge required.
+Writing ZPL (Zebra Programming Language) by hand is tedious: cryptic commands, dot coordinates, no visual feedback until something comes out of the printer. ZPLab lets you build labels visually instead. Drag elements onto the canvas, tweak them in the properties panel, then copy or download the ZPL. No installation, no ZPL knowledge required.
 
 Existing ZPL files are a first-class source, not a one-way import: a re-exported label stays byte-for-byte identical except for the objects you actually edited (see [Import guarantees](#import-guarantees)); GS1 and EAN/UPC content is validated field by field.
 
-**[Try it](https://zebraprintlab.org/)** · [Download the desktop app](#download) · [Report an issue](https://github.com/u8array/ZebraPrintLab/issues)
+**[Try it](https://zebraprintlab.org/)** · [Download the desktop app](#download) · [Report an issue](https://github.com/u8array/ZPLab/issues)
 
 > **Disclaimer:** This is an independent open-source tool, not affiliated with, endorsed by, or associated with Zebra Technologies Corp. Zebra is a trademark of Zebra Technologies Corp.; all other trademarks are the property of their respective owners.
 
@@ -21,18 +21,18 @@ Existing ZPL files are a first-class source, not a one-way import: a re-exported
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/screenshot-dark.png">
   <source media="(prefers-color-scheme: light)" srcset="docs/screenshot-light.png">
-  <img alt="Zebra Print Lab: designer with a sample label" src="docs/screenshot-light.png">
+  <img alt="ZPLab: designer with a sample label" src="docs/screenshot-light.png">
 </picture>
 
 ---
 
 ## Download
 
-| Platform | [v0.1.0](https://github.com/u8array/ZebraPrintLab/releases/tag/v0.1.0) (pre-release) |
+| Platform | [v0.1.0](https://github.com/u8array/ZPLab/releases/tag/v0.1.0) (pre-release) |
 |---|---|
-| Windows | [x64 installer](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_x64-setup.exe) |
-| macOS | [Apple Silicon](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_aarch64.dmg) · [Intel](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_x64.dmg) |
-| Linux | [AppImage](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_amd64.AppImage) · [deb](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab_0.1.0_amd64.deb) · [rpm](https://github.com/u8array/ZebraPrintLab/releases/download/v0.1.0/ZPLab-0.1.0-1.x86_64.rpm) |
+| Windows | [x64 installer](https://github.com/u8array/ZPLab/releases/download/v0.1.0/ZPLab_0.1.0_x64-setup.exe) |
+| macOS | [Apple Silicon](https://github.com/u8array/ZPLab/releases/download/v0.1.0/ZPLab_0.1.0_aarch64.dmg) · [Intel](https://github.com/u8array/ZPLab/releases/download/v0.1.0/ZPLab_0.1.0_x64.dmg) |
+| Linux | [AppImage](https://github.com/u8array/ZPLab/releases/download/v0.1.0/ZPLab_0.1.0_amd64.AppImage) · [deb](https://github.com/u8array/ZPLab/releases/download/v0.1.0/ZPLab_0.1.0_amd64.deb) · [rpm](https://github.com/u8array/ZPLab/releases/download/v0.1.0/ZPLab-0.1.0-1.x86_64.rpm) |
 
 macOS blocks the first launch; allow the app under *System Settings > Privacy & Security*.
 
